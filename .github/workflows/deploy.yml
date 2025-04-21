@@ -1,30 +1,30 @@
-name: Auto Deploy to Ubuntu NUC
+name: 🚀 Deploy to NUC
 
 on:
   push:
-    branches: [main]  # oder master, je nachdem
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-        ssh-keyscan -H komplettwebdesign.duckdns.org >> ~/.ssh/known_hosts
+      - name: 🔐 Setup SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p 2222 -H komplettwebdesign.duckdns.org >> ~/.ssh/known_hosts
 
-    - name: Deploy to NUC
-      run: |
-        ssh -i ~/.ssh/id_ed25519 blocksdorf@komplettwebdesign.duckdns.org << 'EOF'
-          cd ~/komplettwebdesign
-          git pull origin main
-          npm install
-          pm2 restart komplettwebdesign || pm2 start index.js --name komplettwebdesign
-        EOF
-
+      - name: 🚀 Deploy to NUC via SSH
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p 2222 blocksdorf@komplettwebdesign.duckdns.org << 'EOF'
+            cd ~/komplettwebdesign
+            git pull origin main
+            npm install
+            pm2 restart komplettwebdesign
+          EOF
