@@ -18,11 +18,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p 22 -H komplettwebdesign.duckdns.org >> ~/.ssh/known_hosts
+          ssh-keyscan -p 2222 -H komplettwebdesign.duckdns.org >> ~/.ssh/known_hosts
 
       - name: 🚀 Deploy to NUC via SSH
         run: |
-          ssh -i ~/.ssh/id_ed25519 -p 22 blocksdorf@komplettwebdesign.duckdns.org << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -p 2222 blocksdorf@komplettwebdesign.duckdns.org << 'EOF'
             cd ~/komplettwebdesign
             git pull origin main
             npm install
