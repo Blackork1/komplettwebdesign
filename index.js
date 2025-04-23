@@ -41,3 +41,5 @@ pool.connect((err, client, done) => {
     console.log('✅ Erfolgreich mit der Datenbank verbunden');
     done();
 });
+// In deiner index.js oder app.js
+console.log("✨ Webhook-Test erfolgreich!");
