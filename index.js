@@ -20,4 +20,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 app.get('/', (req, res) => res.send('Willkommen bei komplettwebdesign!'));
-app.listen(3000);
+app.listen(3000, () => {
+    console.log('✅ Server läuft auf Port 3000');
+  });
+const pool = new pg.Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+pool.connect((err, client, done) => {
+    if (err) {
+        console.error('Fehler beim Verbinden zur Datenbank', err);
+        return;
+    }
+    console.log('✅ Erfolgreich mit der Datenbank verbunden');
+    done();
+});
