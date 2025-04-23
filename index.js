@@ -42,4 +42,4 @@ pool.connect((err, client, done) => {
     done();
 });
 // In deiner index.js oder app.js
-console.log("✨ Webhook-Tessst erfolgreich!");
+console.log("✨ Webhook-Tess st erfolgreich!");
