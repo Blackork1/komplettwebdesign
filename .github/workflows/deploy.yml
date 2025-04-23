@@ -22,9 +22,4 @@ jobs:
 
       - name: 🚀 Deploy to NUC via SSH
         run: |
-          ssh -i ~/.ssh/id_ed25519 -p 22 blocksdorf@komplettwebdesign.duckdns.org << 'EOF'
-            cd ~/komplettwebdesign
-            git pull origin main
-            npm install
-            pm2 restart komplettwebdesign
-          EOF
+           ssh -i ~/.ssh/id_ed25519 nucadmin@komplettwebdesign.duckdns.org 'cd ~/apps && ./deploy.sh'
