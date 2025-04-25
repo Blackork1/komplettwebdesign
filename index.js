@@ -18,7 +18,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-app.get('/', (req, res) => res.send('Willkommen bei komplettwebdesiger!'));
+app.get('/', (req, res) => res.send('Willkommen bei Mir!'));
 
 app.listen(3000, () => {
   console.log('✅ Server läuft auf Port 3000');
