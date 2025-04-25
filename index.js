@@ -45,4 +45,4 @@ pool.connect((err, client, done) => {
   done();
 });
 
-console.log("✨ Webhook-Test erfolgreich Kleine Änderung!");
+console.log("✨ Webhook-Test erfolgreich Kleine !");
