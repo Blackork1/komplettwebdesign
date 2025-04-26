@@ -21,28 +21,30 @@ app.use(express.static("public"));
 app.get('/', (req, res) => res.send('Willkommen auf meinen Seite S!'));
 
 app.listen(3000, () => {
-  console.log('✅ Server läuft auf Port 3000');
+    console.log('✅ Webhook-Deployment Test v2');
+
+    console.log('✅ Server läuft auf Port 3000');
 });
 
 // PostgreSQL-Verbindung
 const pool = new pg.Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-  ssl: {
-    rejectUnauthorized: false
-  }
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 pool.connect((err, client, done) => {
-  if (err) {
-    console.error('❌ Fehler beim Verbinden zur Datenbank:', err);
-    return;
-  }
-  console.log('✅ Erfolgreich mit der Datenbank verbunden');
-  done();
+    if (err) {
+        console.error('❌ Fehler beim Verbinden zur Datenbank:', err);
+        return;
+    }
+    console.log('✅ Erfolgreich mit der Datenbank verbunden');
+    done();
 });
 
 console.log("✨ Webhook-Test erfolgreich Kleine !");
