@@ -18,7 +18,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-app.get('/', (req, res) => res.send('Willkommen auf meinen Seite S!'));
+app.get('/', (req, res) => res.send('Willkommen auf meinen Seite Sören!'));
 
 app.listen(3000, () => {
     console.log('✅ Webhook-Deployment Test v2');
