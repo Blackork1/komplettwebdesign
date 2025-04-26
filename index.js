@@ -18,7 +18,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-app.get('/', (req, res) => res.send('Willkommen auf meiner!'));
+app.get('/', (req, res) => res.send('Willkommen auf mein!'));
 
 app.listen(3000, () => {
   console.log('✅ Server läuft auf Port 3000');
