@@ -11,14 +11,22 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.set('view engine', 'ejs');
+
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '30d' }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-app.get('/', (req, res) => res.send('Willkommen auf meinen Seite Komplettwebdesign Geht alles!'));
+app.get('/', async (req, res) => {
+    try {
+        res.render("index", { title: 'Willkommen auf meinen Seite Komplettwebdesign!' });
+    } catch (err) {
+        console.error("Database error:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
 
 app.listen(3000, () => {
     console.log('✅ Webhook-Deployment Test v2');
@@ -47,4 +55,3 @@ pool.connect((err, client, done) => {
     done();
 });
 
-console.log("✨ Webhook-Test erfolgreich Kleine !");
