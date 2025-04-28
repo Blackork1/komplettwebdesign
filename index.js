@@ -21,7 +21,7 @@ app.use(express.static("public"));
 
 
 // const pool = new Pool({
-//     host: process.env.DB_HOST,
+//     host: process.env.DB_HOST,s
 //     user: process.env.DB_USER,ss
 //     password: process.env.DB_PASSWORD,
 //     database: process.env.DB_NAME,
