@@ -18,22 +18,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-app.get('/', async (req, res) => {
-    try {
-        res.render("index", { title: 'Willkommen auf meinen Seite Komplettwebdesign!' });
-    } catch (err) {
-        console.error("Database error:", err);
-        res.status(500).send("Internal Server Error");
-    }
-});
-
-
-app.listen(3000, () => {
-    console.log('✅ Webhook-Deployment Test v2');
-
-    console.log('✅ Server läuft auf Port 3000');
-});
-
 // PostgreSQL-Verbindung
 const pool = new pg.Pool({
     user: process.env.DB_USER,
@@ -54,4 +38,62 @@ pool.connect((err, client, done) => {
     console.log('✅ Erfolgreich mit der Datenbank verbunden');
     done();
 });
+
+app.get('/', async (req, res) => {
+    try {
+        res.render("index", { title: 'Willkommen auf meinen Seite Komplettwebdesign!' });
+    } catch (err) {
+        console.error("Database error:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// Startseite anzeigen
+app.get('/', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM users');
+        res.render('index', {
+            title: 'Willkommen auf meinen Seite Komplettwebdesign!',
+            users: result.rows
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Fehler beim Abrufen der Daten.');
+    }
+});
+
+// Neues Element speichern
+app.post('/add', async (req, res) => {
+    const { name } = req.body;
+    try {
+        await pool.query('INSERT INTO users (name) VALUES ($1)', [name]);
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Fehler beim Speichern.');
+    }
+});
+
+// Benutzer löschen
+app.post('/delete', async (req, res) => {
+    const { id } = req.body;
+    try {
+        await pool.query('DELETE FROM users WHERE id = $1', [id]);
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Fehler beim Löschen.');
+    }
+});
+
+
+
+
+app.listen(3000, () => {
+    console.log('✅ Webhook-Deployment Test v2');
+
+    console.log('✅ Server läuft auf Port 3000');
+});
+
+
 
