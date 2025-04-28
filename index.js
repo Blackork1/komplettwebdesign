@@ -1,9 +1,10 @@
-import express from 'express';
 import bodyParser from 'body-parser';
-import pg from 'pg';
 import env from "dotenv";
+import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
+import { log } from 'console';
 
 env.config();
 const app = express();
@@ -18,16 +19,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// PostgreSQL-Verbindung
-const pool = new pg.Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-    ssl: {
-        rejectUnauthorized: false
-    }
+
+// const pool = new Pool({
+//     host: process.env.DB_HOST,
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_NAME,
+//     port: process.env.DB_PORT,
+// });
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: false  // ❗ WICHTIG: Cloudflare-Tunnel ist verschlüsselt, Postgres selbst braucht hier kein SSL
 });
 
 pool.connect((err, client, done) => {
@@ -39,19 +42,11 @@ pool.connect((err, client, done) => {
     done();
 });
 
-app.get('/', async (req, res) => {
-    try {
-        res.render("index", { title: 'Willkommen auf meinen Seite Komplettwebdesign!' });
-    } catch (err) {
-        console.error("Database error:", err);
-        res.status(500).send("Internal Server Error");
-    }
-});
-
 // Startseite anzeigen
 app.get('/', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM users');
+        log('Datenbankabfrage:', result.rows);
         res.render('index', {
             title: 'Willkommen auf meinen Seite Komplettwebdesign!',
             users: result.rows
