@@ -30,8 +30,9 @@ app.use(express.static("public"));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: false  // ❗ WICHTIG: Cloudflare-Tunnel ist verschlüsselt, Postgres selbst braucht hier kein SSL
+    ssl: false
 });
+
 
 pool.connect((err, client, done) => {
     if (err) {
