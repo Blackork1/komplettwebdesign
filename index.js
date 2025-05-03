@@ -28,7 +28,7 @@ const pool = new Pool({
     database: process.env.DB_NAME,
   });
 // const pool = new Pool({
-//     connectionString: process.env.DATABASE_URL, test
+//     connectionString: process.env.DATABASE_URL, testing
 //     ssl: false
 // });
 
