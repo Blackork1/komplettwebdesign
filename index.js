@@ -20,18 +20,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 
-// const pool = new Pool({
-//     host: process.env.DB_HOST,s
-//     user: process.env.DB_USER,sss
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_NAME,
-//     port: process.env.DB_PORT,
-// });
-
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: false
-});
+    host:     process.env.DB_HOST,
+    port:     Number(process.env.DB_PORT),        // jetzt 443, nicht 5432
+    user:     process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+// const pool = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: false
+// });
 
 
 pool.connect((err, client, done) => {
