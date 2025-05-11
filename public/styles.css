@@ -67,16 +67,22 @@ ul {
 /* ----------------------------------------
    3) Navigation
 ---------------------------------------- */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 4rem;
+.hero-nav {
   background-color: var(--color-white);
-  position: relative;
-  z-index: 10;
 }
 
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    position: relative; /* To help position the mobile dropdown */
+    /* padding-top: 30px; */
+    padding-bottom: 5px;
+    z-index: 10;
+    /* height: 80px; */
+    border-bottom: 1px solid var(--secondary-button-color);
+  }
 /* Logo */
 .logo img {
   height: 70px;
@@ -84,65 +90,26 @@ ul {
 }
 
 /* Desktop-Links */
-.nav-links {
+.heroLinks {
   display: flex;
   gap: 1.5rem;
 }
-.nav-links a {
+
+
+.heroLinks a:not(.btn-tertiary) {
   color: var(--color-primary);
   font-weight: 500;
-  transition: color 0.2s;
-}
-.nav-links a:hover {
-  color: var(--color-accent);
-}
-
-/* Desktop-Button */
-.nav-actions .btn {
-  margin-left: 2rem;
-}
-
-/* Hamburger (versteckt auf Desktop) */
-.hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-}
-.hamburger span {
-  display: block;
-  width: 25px;
-  height: 3px;
-  background-color: var(--color-primary);
-  border-radius: 2px;
-}
-
-.hero-nav {
-  background-color: var(--color-white);
-}
-
-/* Nav-Bar-Settings */
-/* General nav bar styling */
-.navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: transparent;
-  position: relative; /* To help position the mobile dropdown */
-  /* padding-top: 30px; */
-  padding-bottom: 5px;
-  z-index: 10;
-  /* height: 80px; */
-  border-bottom: 1px solid var(--secondary-button-color);
-}
-.navigation a {
-  color: var(--main-button-color);
   text-decoration: none;
+  transition: all 0.2s ease;
   font-weight: bold;
-  transition: all 0.5 ease;
+  padding: 5px;
 }
-.navigation a:hover:not(.reserve-button) {
-  border-bottom: 3px solid #ff9900;
+.heroLinks a:hover {
+  color: var(--color-accent);
+  transition: all 0.2s ease;
+  transform: translateY(-5px);
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--color-accent-light);
 }
 
 .nav-right {
@@ -194,6 +161,20 @@ ul {
   border: 2px solid var(--color-primary);
 }
 
+.btn-tertiary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: 15px;
+  transition: all 0.5s ease;
+  border-radius: 10px;
+}
+.btn-tertiary:hover {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  transform: translateY(255px);
+}
+
 /* ----------------------------------------
    5) Hero-Section
 ---------------------------------------- */
@@ -220,7 +201,7 @@ ul {
 .hero-image img {
   max-width: 100%;
   height: auto;
-  margin-left: 100px;
+  padding-left: 100px;
 }
 
 .hero-flex {
@@ -290,20 +271,14 @@ ul {
   }
 
   /* Mobile link styling */
-  .links a {
-    margin: 5px 20px;
+.heroLinks  a {
+    margin: 5px 20px; 
     padding: 5px 10px;
     border-bottom: 1px solid #555;
-    color: var(--color-white);
+    color: var(--color-white) !important;
   }
 
-  .selected-table-container {
-    height: auto;
-  }
 
-  .reservation-container {
-    padding: 0 20px;
-  }
   .hero-nav {
     padding: 0 40px;
   }
@@ -318,9 +293,9 @@ ul {
   .hero-image {
     max-width: 100%;
   }
-  .hero-image  img{
+  .hero-image img {
     margin-top: 2rem;
-    margin-left: 0px;
+    padding-left: 0px;
   }
   .hero-content h1 {
     font-size: 2.5rem;
