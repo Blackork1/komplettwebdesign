@@ -1,0 +1,333 @@
+/* ----------------------------------------
+   0) Google Fonts
+---------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400&family=Poppins:wght@600&display=swap");
+
+/* ----------------------------------------
+   1) CSS-Variablen
+---------------------------------------- */
+:root {
+  /* Farben */
+  --color-primary: #0b2a46; /* Marineblau */
+  --color-accent: #e94a1b; /* Tiefes Orange */
+  --color-bg: #f5f4f1; /* Warm-Light */
+  --color-text: #2e2e2e; /* Dunkelgrau */
+  --color-white: #ffffff; /* Weiß */
+  --color-accent-light: #e94b1be6; /* Helles Orange */
+
+  /* Typografie */
+  --font-heading: "Poppins", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Buttons */
+  --radius: 8px;
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ----------------------------------------
+   2) Reset & Basis
+---------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: var(--font-body);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+}
+a {
+  text-decoration: none;
+}
+ul {
+  list-style: none;
+}
+.section {
+  padding: 0 60px;
+  overflow: hidden;
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1200px;
+}
+
+/* ----------------------------------------
+   3) Navigation
+---------------------------------------- */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 4rem;
+  background-color: var(--color-white);
+  position: relative;
+  z-index: 10;
+}
+
+/* Logo */
+.logo img {
+  height: 70px;
+  transform: translate3d(-15px, 3px, 0);
+}
+
+/* Desktop-Links */
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+.nav-links a {
+  color: var(--color-primary);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover {
+  color: var(--color-accent);
+}
+
+/* Desktop-Button */
+.nav-actions .btn {
+  margin-left: 2rem;
+}
+
+/* Hamburger (versteckt auf Desktop) */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+}
+.hamburger span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background-color: var(--color-primary);
+  border-radius: 2px;
+}
+
+.hero-nav {
+  background-color: var(--color-white);
+}
+
+/* Nav-Bar-Settings */
+/* General nav bar styling */
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  position: relative; /* To help position the mobile dropdown */
+  /* padding-top: 30px; */
+  padding-bottom: 5px;
+  z-index: 10;
+  /* height: 80px; */
+  border-bottom: 1px solid var(--secondary-button-color);
+}
+.navigation a {
+  color: var(--main-button-color);
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.5 ease;
+}
+.navigation a:hover:not(.reserve-button) {
+  border-bottom: 3px solid #ff9900;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+}
+/* Desktop styles */
+/* Hide the menu icon on larger screens */
+.menu-icon {
+  display: none;
+}
+.logo {
+  display: flex;
+  align-items: center;
+}
+/* Display the links inline on the right */
+.links {
+  display: flex;
+  align-items: center;
+}
+
+.links a {
+  margin-left: 20px;
+}
+
+/* ----------------------------------------
+   4) Buttons
+---------------------------------------- */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: opacity 0.2s;
+}
+.btn:hover {
+  opacity: 0.9;
+}
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-white);
+  border: none;
+}
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+/* ----------------------------------------
+   5) Hero-Section
+---------------------------------------- */
+.hero {
+  padding: 4rem 4rem;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.hero-content {
+  max-width: 50%;
+}
+.hero-content h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--color-white);
+}
+.hero-content p {
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+}
+.hero-ctas .btn {
+  margin-right: 1rem;
+}
+.hero-image img {
+  max-width: 100%;
+  height: auto;
+  margin-left: 100px;
+}
+
+.hero-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-content: center;
+  flex-direction: row;
+  min-height: 70vh;
+}
+
+/* ----------------------------------------
+   6) Icons
+---------------------------------------- */
+/* Beispiel-Klasse für Line-Icons (Hero-Icons o.ä.) */
+.icon {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  fill: var(--color-primary);
+}
+
+/* ----------------------------------------
+   7) Mobile (bis 768px)
+---------------------------------------- */
+@media (max-width: 768px) {
+  .section {
+    padding: 0 20px;
+  }
+
+  /* Show the menu icon on mobile */
+  .menu-icon {
+    display: block;
+    width: 40px; /* Adjust the size as needed */
+    height: auto;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  .navigation.active {
+    border-radius: 8px 8px 0px 0px;
+  }
+
+  /* Hide the inline links by default on mobile */
+  .links {
+    display: flex; /* Keep it as flex so that children layout correctly */
+    flex-direction: column;
+    background: var(--color-accent-light);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    text-align: right;
+    overflow: hidden;
+    max-height: 0; /* Collapsed by default */
+    opacity: 0; /* Fully transparent by default */
+    transition: all 0.3s ease-out;
+  }
+
+  /* When active, display the links in a vertical list */
+  .links.active {
+    max-height: fit-content; /* Set to a value that can contain all links */
+    opacity: 1;
+    align-items: end;
+    border-radius: 0px 0px 8px 8px;
+    padding: 20px 0;
+  }
+
+  /* Mobile link styling */
+  .links a {
+    margin: 5px 20px;
+    padding: 5px 10px;
+    border-bottom: 1px solid #555;
+    color: var(--color-white);
+  }
+
+  .selected-table-container {
+    height: auto;
+  }
+
+  .reservation-container {
+    padding: 0 20px;
+  }
+  .hero-nav {
+    padding: 0 40px;
+  }
+
+  /* Hero: Spalten auflösen */
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .hero-content,
+  .hero-image {
+    max-width: 100%;
+  }
+  .hero-image  img{
+    margin-top: 2rem;
+    margin-left: 0px;
+  }
+  .hero-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-flex {
+    flex-direction: column;
+    align-items: center;
+  }
+}

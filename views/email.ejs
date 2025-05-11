@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <h1>Willkommen auf der Startseite von Komplettwebdesign! Viel Spaß euch!</h1>
+    
+    <h2>Hinterlege deine Mail, um auf dem Laufenen zu bleiben.</h2>
+    <form method="POST" action="/add">
+      <input type="text" name="name" placeholder="E-Mail eingeben" required />
+      <button type="submit">Hinzufügen</button>
+    </form>
+
+    <hr />
+
+    <h2>Gespeicherte Benutzer:</h2>
+    <ul>
+      <% users.forEach(user => { %>
+      <li>
+        <%= user.name %>
+        <form class="delete-form" method="POST" action="/delete">
+          <input type="hidden" name="id" value="<%= user.id %>" />
+        </form>
+      </li>
+      <% }) %>
+    </ul>
+  </body>
+</html>

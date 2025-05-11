@@ -14,7 +14,11 @@ const __dirname = path.dirname(__filename);
 
 app.set('view engine', 'ejs');
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '30d' }));
+if (process.env.NODE_ENV === 'development') {
+    app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0 }));
+  } else {
+    app.use(express.static(path.join(__dirname, 'public'), { maxAge: '30d' }));
+  }
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
