@@ -1,95 +1,126 @@
-import bodyParser from 'body-parser';
-import env from "dotenv";
 import express from 'express';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Pool } from 'pg';
-import { log } from 'console';
+import dotenv from 'dotenv';
 
-env.config();
+import pool from './util/db.js';
+import cloudinary from './util/cloudinary.js';
+
+import { getAvailableCssFiles, getCssClasses }  from './helpers/cssHelper.js';
+import { FIELD_CONFIG }                         from './helpers/componentConfig.js';
+import { navbarMiddleware }                     from './helpers/navHelper.js';
+
+import mainRoutes           from './routes/main.js';
+import pricingRoutes        from './routes/pricing.js';
+import checkoutRoutes       from './routes/checkout.js';
+import webhookRoutes        from './routes/webhook.js';
+import * as errorController from './controllers/errorController.js';
+import adminPageRoutes      from './routes/adminPages.js';
+import adminComponentRoutes from './routes/adminComponents.js';
+import authRoutes           from './routes/authRoutes.js';
+import bookingRoutes        from './routes/bookingRoutes.js';
+import adminRoutes          from './routes/adminRoutes.js';
+import slugRoutes           from './routes/slug.js';
+import widgetApiRoutes      from './routes/widgetApiRoutes.js';   
+// import contactRouter        from './routes/contact_legacy.js'; 
+import blogRoutes           from './routes/blogRoutes.js';
+import adminBlogRoutes      from './routes/adminBlogRoutes.js';
+import newsletterRoutes     from './routes/newsletter.js';
+import starticPagesRoutes   from './routes/staticPages.js';
+import packageRoutes        from './routes/packages.js';
+import faqRoutes            from './routes/faq.js';
+import contactRoutes        from "./routes/contactRoutes.js";
+
+
+
+
+
+
+
+import Stripe from 'stripe';
+
+// Umgebungsvariablen laden
+dotenv.config();
+
 const app = express();
+app.use(compression());
 
+// EJS konfigurieren
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-if (process.env.NODE_ENV === 'development') {
-    app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0 }));
-  } else {
-    app.use(express.static(path.join(__dirname, 'public'), { maxAge: '30d' }));
-  }
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// Static und Body-Parser
+const staticOpts = process.env.NODE_ENV === 'development'
+  ? { maxAge: 0 } : { immutable: true, maxAge: '365d' };
+app.use(express.static(path.join(__dirname, 'public'), staticOpts));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
+app.use(express.json());
 
+// Session
+const PgSession = connectPg(session);
+app.use(session({
+  store: new PgSession({pool, createTableIfMissing: true}),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 1000 * 60 * 60 * 24} // 1 Tag
+}));
 
-const pool = new Pool({
-    host:     process.env.DB_HOST,
-    port:     Number(process.env.DB_PORT),        // jetzt 443, nicht 5432
-    user:     process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  });
-// const pool = new Pool({ 
-//     connectionString: process.env.DATABASE_URL, testing neuer 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28
-//     ssl: false
-// });
+// DB, Cloudinary & Stripe auf app setzen
+app.set('db', pool);
+app.set('cloudinary', cloudinary);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+app.set('stripe', stripe);
 
+// CSS-Klassen & Feldkonfiguration
+app.set('cssClasses', getCssClasses());
+app.set('fieldConfig', FIELD_CONFIG);
 
-pool.connect((err, client, done) => {
-    if (err) {
-        console.error('❌ Fehler beim Verbinden zur Datenbank:', err);
-        return;
-    }
-    console.log('✅ Erfolgreich mit der Datenbank verbunden');
-    done();
+// Verfügbare CSS-Dateien aus public/css global bereitstellen
+// (damit z.B. page_edit.ejs und alle anderen Views darauf zugreifen können)
+const availableCssFiles = getAvailableCssFiles();
+app.locals.availableCssFiles = availableCssFiles;
+app.use(navbarMiddleware(pool));
+
+// ganz am Anfang von index.js
+process.on('unhandledRejection', err => {
+  console.error('❌ Unhandled Rejection:', err);
+});
+process.on('uncaughtException', err => {
+  console.error('❌ Uncaught Exception:', err);
 });
 
-// Startseite anzeigen
-app.get('/', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM users');
-        log('Datenbankabfrage:', result.rows);
-        res.render('index', {
-            title: 'Willkommen auf meinen Seite Komplettwebdesign!',
-            users: result.rows
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Fehler beim Abrufen der Daten.');
-    }
-});
-
-// Neues Element speichern
-app.post('/add', async (req, res) => {
-    const { name } = req.body;
-    try {
-        await pool.query('INSERT INTO users (name) VALUES ($1)', [name]);
-        res.redirect('/');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Fehler beim Speichern.');
-    }
-});
-
-// Benutzer löschen
-app.post('/delete', async (req, res) => {
-    const { id } = req.body;
-    try {
-        await pool.query('DELETE FROM users WHERE id = $1', [id]);
-        res.redirect('/');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Fehler beim Löschen.');
-    }
-});
+// Routen einbinden
+app.use('/', mainRoutes);
+app.use('/pricing', pricingRoutes);
+app.use('/create-checkout-session', checkoutRoutes);
+app.use('/webhook', webhookRoutes);
+app.use('/admin/pages',      adminPageRoutes);
+app.use(adminComponentRoutes);
+app.use(slugRoutes);
+app.use(authRoutes);
+app.use(bookingRoutes);
+app.use(adminRoutes);
+app.use(widgetApiRoutes);
+// app.use('/kontakt', contactRouter);
+app.use(newsletterRoutes);
+app.use(blogRoutes);
+app.use(adminBlogRoutes);
+app.use('/', starticPagesRoutes);
+app.use(packageRoutes);
+app.use(faqRoutes);
+app.use("/kontakt", contactRoutes);
 
 
+// 404-Handler
+app.use(errorController.get404);
 
-
-app.listen(3000, () => {
-    console.log('✅ Webhook-Deployment Test v2');
-
-    console.log('✅ Server läuft auf Port 3000');
-});
+// Server starten
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server läuft auf Port ${PORT}`));

@@ -1,0 +1,119 @@
+/* === Grundfarben ===================================================== */
+:root {
+  --accent: var(--color-accent, #e94a1b);
+  --accentLight: color-mix(in srgb, var(--accent) 30%, transparent);
+  --bgCard: #ffffff;
+  --border: #d7d7d7;
+}
+
+/* === Container ======================================================= */
+.kwd-booking-widget {
+  font-family: var(--font-body, Arial, sans-serif);
+  margin: 2rem 0;
+}
+
+/* === Slot-Karten (drei nebeneinander) ================================ */
+.kwd-slot-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kwd-slot-card {
+  flex: 1 1 30%;
+  min-width: 200px;
+  max-width: 300px;
+  background: var(--accentLight);
+  border: 2px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.kwd-slot-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Nicht gewählte Slot-Karten ausblenden */
+.kwd-slot-card.faded {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+}
+
+/* Gewählte Karte vergrößern + volle Farbe */
+.kwd-slot-card.selected {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* === Pfeil „Zurück“ ================================================== */
+.kwd-back {
+  display: none;
+  margin: 0 0 1rem auto;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+.kwd-back.visible {
+  display: block;
+}
+
+/* === Formular (erscheint nach Wahl) ================================= */
+.kwd-booking-form {
+  margin-top: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 600px;
+}
+
+.kwd-booking-form label {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.kwd-booking-form input,
+.kwd-booking-form textarea {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+}
+
+.kwd-booking-form .btn {
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  padding: 0.5rem 1.2rem;
+  margin-top: 0.8rem;
+  cursor: pointer;
+  border-radius: 0.4rem;
+}
+
+.kwd-booking-form .err {
+  display: none;
+  color: #e94a1b;
+  font-size: 0.8rem;
+}
+
+.kwd-booking-form.invalid .err {
+  display: inline;
+}
+
+/* Feedback-Meldung */
+.form-msg {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+}
+
+/* === Responsive – Stapeln ab 600 px ================================== */
+@media (max-width: 600px) {
+  .kwd-slot-card {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,47 @@
+<main class="container">
+  <h1><%= branche.title %> Webseite erstellen lassen – Webdesign für <%= branche.title %> in Berlin & Umgebung</h1>
+
+  <p><%= branche.intro %></p>
+
+  <h2>Warum eine eigene <%= branche.title %>-Webseite sinnvoll ist</h2>
+  <p><%= branche.benefit_intro %></p>
+
+  <ul>
+    <% branche.keywords.forEach(function(keyword) { %>
+      <li><%= keyword %></li>
+    <% }) %>
+  </ul>
+
+  <h2>Leistungen für dein <%= branche.title %>-Unternehmen</h2>
+  <ul>
+    <% branche.features.forEach(function(feature) { %>
+      <li><strong><%= feature.title %>:</strong> <%= feature.description %></li>
+    <% }) %>
+  </ul>
+
+  <h2>Unsere Pakete</h2>
+
+  <h3>Basis-Paket</h3>
+  <p><%= branche.pakete.basis %></p>
+
+  <h3>Business-Paket</h3>
+  <p><%= branche.pakete.business %></p>
+
+  <h3>Premium-Paket</h3>
+  <p><%= branche.pakete.premium %></p>
+
+  <h2>Fragen & Antworten</h2>
+  <ul>
+    <% branche.faq.forEach(function(eintrag) { %>
+      <li>
+        <strong><%= eintrag.frage %></strong><br>
+        <%= eintrag.antwort %>
+      </li>
+    <% }) %>
+  </ul>
+
+  <h2>Jetzt Beratung anfragen</h2>
+  <p>Du möchtest mehr erfahren? Dann sende mir eine Nachricht. Ich melde mich innerhalb von 24 Stunden bei dir zurück.</p>
+
+  <a href="/kontakt" class="cta-button">Unverbindlich anfragen</a>
+</main>

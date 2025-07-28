@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Neue Seite erstellen</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <%- include('../partials/admin_header') %> <!-- optional -->
+
+  <h1>Neue Seite erstellen</h1>
+  <form action="/admin/pages" method="POST">
+    <p>
+      <label>Titel:<br>
+        <input type="text" name="title" required>
+      </label>
+    </p>
+    <p>
+      <label>Slug (URL-Pfad):<br>
+        <input type="text" name="slug" required pattern="[a-z0-9\-]+">
+      </label>
+    </p>
+    <p>
+      <label>Beschreibung (Meta-Tag):<br>
+        <textarea name="meta" rows="3"></textarea>
+      </label>
+    </p>
+    <p>
+      <label>Navigation Beschreibung (Nav):<br>
+        <input type="text" name="nav" required>
+      </label>
+    </p>
+    <button type="submit">Seite anlegen</button>
+    <a href="/admin/pages">Zurück zur Übersicht</a>
+  </form>
+</body>
+
+</html>

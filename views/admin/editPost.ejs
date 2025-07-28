@@ -1,0 +1,84 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container my-5">
+  <h1 class="mb-4">Blog-Artikel bearbeiten</h1>
+
+  <!-- ─ Form: Update ─ -->
+  <form action="/admin/blog/<%= post.id %>/edit"
+        method="POST"
+        enctype="multipart/form-data"
+        class="needs-validation" novalidate>
+
+    <!-- Titel -->
+    <div class="mb-3">
+      <label for="title" class="form-label">Titel *</label>
+      <input type="text" id="title" name="title"
+             class="form-control" required
+             value="<%= post.title %>">
+    </div>
+
+    <!-- Excerpt -->
+    <div class="mb-3">
+      <label for="excerpt" class="form-label">
+        Kurzbeschreibung
+      </label>
+      <textarea id="excerpt" name="excerpt"
+                rows="2" class="form-control"><%= post.excerpt %></textarea>
+    </div>
+
+    <!-- Kategorie -->
+    <div class="mb-3">
+      <label for="category" class="form-label">Kategorie</label>
+      <input type="text" id="category" name="category"
+             class="form-control"
+             value="<%= post.category %>">
+    </div>
+
+    <!-- Featured -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox"
+             id="featured" name="featured"
+             <%= post.featured ? 'checked' : '' %>>
+      <label class="form-check-label" for="featured">
+        Artikel ist „Featured“
+      </label>
+    </div>
+
+    <!-- Inhalt -->
+    <div class="mb-3">
+      <label for="content" class="form-label">Inhalt *</label>
+      <textarea id="content" name="content"
+                rows="10" class="form-control" required><%= post.content %></textarea>
+    </div>
+
+    <!-- Aktuelles Bild -->
+    <div class="mb-3">
+      <p class="mb-1">Aktuelles Titelbild:</p>
+      <img src="<%= post.image_url %>" alt=""
+           class="img-fluid rounded mb-2" style="max-height:150px;">
+    </div>
+
+    <!-- Neues Bild -->
+    <div class="mb-4">
+      <label class="form-label">Neues Titelbild wählen (optional)</label>
+      <input type="file" name="hero_image" accept="image/*"
+             class="form-control">
+    </div>
+
+    <button class="btn btn-primary">Änderungen speichern</button>
+    <a href="/blog" class="btn btn-secondary">Abbrechen</a>
+  </form>
+
+  <!-- ─ Delete-Button ─ -->
+  <hr class="my-5">
+  <form action="/admin/blog/<%= post.id %>/delete"
+        method="POST"
+        onsubmit="return confirm('Diesen Artikel endgültig löschen?');">
+
+    <button class="btn btn-danger">
+      <i class="bi bi-trash me-1"></i> Artikel löschen
+    </button>
+  </form>
+</div>
+
+<%- include('../partials/admin_footer') %>

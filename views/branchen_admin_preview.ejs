@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Vorschau: <%= branche.title %> Webseite</title>
+</head>
+<body>
+  <h1><%= branche.title %> Webseite erstellen lassen</h1>
+  <p><%= branche.intro %></p>
+
+  <h2>Warum eine Webseite?</h2>
+  <p><%= branche.benefit_intro %></p>
+
+  <h2>Keywords</h2>
+  <ul>
+    <% branche.keywords.forEach(k => { %>
+      <li><%= k %></li>
+    <% }) %>
+  </ul>
+
+  <h2>Leistungen</h2>
+  <ul>
+    <% branche.features.forEach(f => { %>
+      <li><strong><%= f.title %>:</strong> <%= f.description %></li>
+    <% }) %>
+  </ul>
+
+  <h2>Pakete</h2>
+  <p><strong>Basis:</strong> <%= branche.pakete.basis %></p>
+  <p><strong>Business:</strong> <%= branche.pakete.business %></p>
+  <p><strong>Premium:</strong> <%= branche.pakete.premium %></p>
+
+  <h2>FAQ</h2>
+  <ul>
+    <% branche.faq.forEach(f => { %>
+      <li><strong><%= f.frage %></strong><br><%= f.antwort %></li>
+    <% }) %>
+  </ul>
+
+  <form action="/admin/branchen" method="POST">
+    <% for (let key in formData) { %>
+      <input type="hidden" name="<%= key %>" value="<%= formData[key] %>">
+    <% } %>
+    <button type="submit">Jetzt speichern</button>
+    <a href="/admin/branchen/neu">Zurück</a>
+  </form>
+</body>
+</html>

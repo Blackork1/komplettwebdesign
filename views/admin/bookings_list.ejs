@@ -1,0 +1,50 @@
+<%- include('../partials/admin_header') %>
+
+<h1>Buchungen</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Termin</th><th>Name</th><th>E-Mail</th><th>Status</th><th>Aktion</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% bookings.forEach(b => { %>
+    <tr>
+      <td>
+        <%= new Date(b.start_time)
+              .toLocaleString('de-DE',{ weekday:'short', day:'2-digit',
+                                         month:'2-digit', hour:'2-digit',
+                                         minute:'2-digit' }) %>
+      </td>
+      <td><%= b.name %></td>
+      <td><%= b.email %></td>
+      <td><%= b.status %></td>
+      <td>
+        <% if (b.status === 'pending') { %>
+          <form method="POST"
+                action="/admin/bookings/<%= b.id %>/confirm"
+                style="display:inline">
+            <button class="btn">Bestätigen</button>
+          </form>
+        <% } %>
+        <% if (b.status !== 'cancelled') { %>
+          <form method="POST"
+                action="/admin/bookings/<%= b.id %>/cancel"
+                style="display:inline">
+            <button class="btn alt">Stornieren</button>
+          </form>
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+
+<style>
+.table{border-collapse:collapse;width:100%}
+.table th,.table td{border:1px solid #ccc;padding:.4rem}
+.btn.alt{background:#999}
+</style>
+
+<% include('../partials/admin_footer') %>

@@ -1,0 +1,32 @@
+<%- include('../partials/admin_header') %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <h1>Neuen Termin anlegen</h1>
+
+    <form action="/admin/appointments" method="POST" class="slot-form">
+        <label>Start:
+            <input id="start" name="start" type="text" class="flatpickr" required>
+        </label><br>
+        <label>Ende:
+            <input id="end" name="end" type="text" class="flatpickr" required>
+        </label><br>
+        <label>Titel (optional):
+            <input type="text" name="title">
+        </label><br>
+        <button class="btn">Speichern</button>
+        <a href="/admin/appointments">Abbrechen</a>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/de.js"></script>
+
+    <script>
+        flatpickr('.flatpickr', {
+            enableTime: true,
+            dateFormat: 'Y-m-d H:i',
+            time_24hr: true,
+            locale: 'de'
+        });
+    </script>
+
+    <%- include('../partials/admin_footer') %>

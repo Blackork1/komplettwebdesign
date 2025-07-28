@@ -1,0 +1,161 @@
+<% /* views/component.ejs – universelles Partial für alle Komponenten */ %>
+
+<% if (component.type === 'form') { %>
+  <form
+    action="<%- component.action %>"
+    method="<%- component.method || 'post' %>"
+    class="<%- component.classes %>"
+  >
+    <% component.children.forEach(child => { %>
+      <%- include('component', { component: child }) %>
+    <% }) %>
+  </form>
+
+<% } else if (component.type === 'input') { %>
+  <input
+    type="<%- component.input_type || 'text' %>"
+    name="<%- component.name %>"
+    value="<%- component.value || '' %>"
+    placeholder="<%- component.placeholder || '' %>"
+    <%- component.required ? 'required' : '' %>
+    <%- component.pattern  ? 'pattern="' + component.pattern + '"' : '' %>
+    <%- component.minlength ? 'minlength="' + component.minlength + '"' : '' %>
+    class="<%- component.classes %>"
+  />
+
+<% } else if (component.type === 'textarea') { %>
+  <textarea
+    name="<%- component.name %>"
+    placeholder="<%- component.placeholder || '' %>"
+    <%- component.required ? 'required' : '' %>
+    <%- component.pattern  ? 'pattern="' + component.pattern + '"' : '' %>
+    <%- component.minlength ? 'minlength="' + component.minlength + '"' : '' %>
+    class="<%- component.classes %>"
+  ><%- component.value || '' %></textarea>
+
+<% } else if (component.type === 'select') {
+     const opts = (component.options||'').split('|'); %>
+  <select
+    name="<%- component.name %>"
+    class="<%- component.classes %>"
+    <%- component.required ? 'required' : '' %>
+  >
+    <% opts.forEach(o => {
+         const t = o.trim();
+         if (!t) return;
+    %>
+      <option value="<%- t %>"><%- t %></option>
+    <% }) %>
+  </select>
+
+<% } else if (component.type === 'radio') {
+     const opts = (component.options||'').split('|'); %>
+  <div class="<%- component.classes %>">
+    <% opts.forEach((o,i) => {
+         const t = o.trim();
+         if (!t) return;
+         const id = 'r' + component.id + '_' + i;
+    %>
+      <label for="<%- id %>">
+        <input
+          id="<%- id %>"
+          type="radio"
+          name="<%- component.name %>"
+          value="<%- t %>"
+          <%- component.required ? 'required' : '' %>
+        />
+        <%- t %>
+      </label>
+    <% }) %>
+  </div>
+
+<% } else if (component.type === 'checkbox') { %>
+  <label class="<%- component.classes %>">
+    <input
+      type="checkbox"
+      name="<%- component.name %>"
+      value="<%- component.value || 'on' %>"
+      <%- component.required ? 'required' : '' %>
+    />
+    <%- component.value && isNaN(component.value) ? component.value : '' %>
+  </label>
+
+<% } else if (component.type === 'submit' || component.type === 'button') { %>
+  <button
+    type="<%- component.type === 'submit' ? 'submit' : 'button' %>"
+    class="<%- component.classes %>"
+  >
+    <%- component.value || 'Button' %>
+  </button>
+
+<% } else if (component.type === 'img') { %>
+  <img
+    src="<%- component.src %>"
+    alt="<%- component.alt %>"
+    class="<%- component.classes %>"
+  />
+
+<% } else if (component.type === 'iframe') { %>
+  <iframe
+    src="<%- component.src %>"
+    class="<%- component.classes %>"
+    <% if (component.width)  { %> width="<%- component.width %>"  <% } %>
+    <% if (component.height) { %> height="<%- component.height %>" <% } %>
+  ></iframe>
+
+<% } else if (['br','hr'].includes(component.type)) { %>
+  <<%- component.type %> class="<%- component.classes %>" />
+
+<% } else if (component.type === 'a') { %>
+  <a href="<%- component.href %>" class="<%- component.classes %>">
+    <% if (component.children && component.children.length) { %>
+      <% component.children.forEach(child => { %>
+        <%- include('component', { component: child }) %>
+      <% }) %>
+    <% } else { %>
+      <%- component.content %>
+    <% } %>
+  </a>
+
+<% } else if (component.type === 'ul' || component.type === 'ol') { %>
+  <<%- component.type %> class="<%- component.classes %>">
+    <% component.children.forEach(child => { %>
+      <%- include('component', { component: child }) %>
+    <% }) %>
+  </<%- component.type %>>
+
+<% } else if (component.type === 'li') { %>
+  <li class="<%- component.classes %>">
+    <% if (component.children && component.children.length) { %>
+      <% component.children.forEach(child => { %>
+        <%- include('component', { component: child }) %>
+      <% }) %>
+    <% } else { %>
+      <%- component.content %>
+    <% } %>
+  </li>
+
+<% } else if (component.type === 'div') { %>
+  <div class="<%- component.classes %>">
+    <% component.children.forEach(child => { %>
+      <%- include('component', { component: child }) %>
+    <% }) %>
+  </div>
+
+<% } else if (component.type === 'p') { %>
+  <p class="<%- component.classes %>"><%- component.content %></p>
+
+<% } else if (['h1','h2','h3','h4','h5','h6'].includes(component.type)) { %>
+  <<%- component.type %> class="<%- component.classes %>">
+    <%- component.content %>
+  </<%- component.type %>>
+
+<% } else { %>
+  <!-- Fallback -->
+  <<%- component.type %> class="<%- component.classes %>">
+    <% if (component.content) { %><%- component.content %><% } %>
+    <% component.children.forEach(child => { %>
+      <%- include('component', { component: child }) %>
+    <% }) %>
+  </<%- component.type %>>
+<% } %>

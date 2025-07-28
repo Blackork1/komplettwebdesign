@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Seite bearbeiten - <%= page.title %>
+  </title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+
+<body>
+  <h1>
+    Seite bearbeiten: <%= page.title %>
+      <small>(Slug: <%= page.slug %>)</small>
+  </h1>
+  <!-- ★ CSS-Dateien für diese Seite auswählen -->
+  <section class="css-selection">
+    <h2>Stylesheets</h2>
+    <form action="/admin/pages/<%= page.id %>/styles" method="POST">
+      <label for="cssFiles">Zusätzliche CSS-Dateien:</label><br>
+      <select id="cssFiles" name="css_files" multiple size="5">
+        <% availableCssFiles.forEach(file=> { %>
+          <option value="<%= file %>" <%=(page.css_files||[]).includes(file) ? 'selected' : '' %>>
+            <%= file %>
+          </option>
+          <% }) %>
+      </select>
+      <button type="submit">Speichern</button>
+    </form>
+  </section>
+  <!-- ★ Ende CSS-Auswahl -->
+
+  <div class="builder">
+    <!-- Linke Spalte: Komponentenbaum -->
+    <div class="components-panel">
+      <h2>Inhalt & Struktur</h2>
+      <p>
+        <a href="/admin/pages/<%= page.id %>/components/new">+ Komponente auf oberster Ebene hinzufügen</a>
+      </p>
+      <ul class="sortable-list" data-parent="">
+        <% components.forEach(comp=> { %> <%- include('component_item', { component: comp }) %>
+            <% }) %>
+      </ul>
+    </div>
+
+    <!-- Rechte Spalte: Live-Vorschau -->
+    <div class="preview-panel">
+      <h2>Live-Vorschau</h2>
+      <iframe id="previewFrame" src="/<%= page.slug %>" width="100%" height="500"></iframe>
+    </div>
+  </div>
+
+  <p><a href="/admin/pages">« Zurück zur Übersicht</a></p>
+
+  <!-- Drag-and-Drop Script -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+    /* Funktion, um eine <ul class="sortable-list"> initialisierbar zu machen */
+    function makeSortable(listEl) {
+      new Sortable(listEl, {
+        group: {
+          // ALLE Listen gehören zu demselben Drag-&-Drop-Verb.
+          name: "components",
+          pull: true, // Darf aus dieser Liste herausgezogen werden
+          put: true, // … und in andere Listen abgelegt werden
+        },
+        animation: 150,
+        ghostClass: "drag-ghost",
+
+        onEnd(evt) {
+          /* In welche Liste wurde das Element abgelegt? */
+          const newParentId = evt.to.getAttribute("data-parent") || null;
+
+          /* Reihenfolge der Kinder dieses Parents einsammeln */
+          const order = Array.from(evt.to.children).map((li) =>
+            li.getAttribute("data-id")
+          );
+
+          /* An Server schicken – Parent & Sortierung in einem Rutsch speichern */
+          fetch("/admin/components/reorder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ parentId: newParentId, order }),
+          }).then(() => {
+            /* iFrame neu laden, damit die Vorschau stimmt */
+            document
+              .getElementById("previewFrame")
+              .contentWindow.location.reload();
+          });
+        },
+      });
+    }
+
+    /* ALLE existierenden Listen (auch verschachtelte) initialisieren */
+    document.querySelectorAll(".sortable-list").forEach(makeSortable);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <title>
+    <%= typeof title !=='undefined' ? title + ' – Admin' : 'Admin – Komplettwebdesign' %>
+  </title>
+  <link rel="stylesheet" href="/admin.css">
+  <link rel="stylesheet" href="/styles.css?v=<%= Date.now() %>" />
+</head>
+
+<body>
+  <nav>
+    <a href="/admin/appointments">Termine</a> |
+    <a href="/admin/bookings">Buchungen</a> |
+    <a href="/admin/blog">Blog</a> |
+    <a href="/admin/pages">Seitenerstellung</a> |
+    <a href="/logout">Logout</a>
+    </li>
+  </nav>
+  <hr>

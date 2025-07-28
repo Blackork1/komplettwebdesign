@@ -1,0 +1,5 @@
+.slot-list { list-style:none; padding:0 }
+.slot-list li { margin:1rem 0; background:#fff; border-radius:.5rem; padding:1rem }
+.slot-form input { margin:.25rem 0; padding:.3rem .4rem }
+.btn { background:#e94a1b; color:#fff; border:0; padding:.4rem 1rem; cursor:pointer }
+.heading { color:#0b2a46; }

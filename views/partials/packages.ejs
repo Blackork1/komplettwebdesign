@@ -1,0 +1,151 @@
+<div class="pricing-grid">
+    <% packages.forEach(pkg=> { %>
+        <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
+            <h3>
+                <%= pkg.name %>
+            </h3>
+            <div class="p1rem">
+                <!-- Kurzbeschreibung -->
+                <!-- <% if (pkg.description) { %>
+                  <p class="package-description"><%= pkg.description %></p>
+                  <% } %> -->
+
+                <!-- Mehrzeiliger Detail-Text -->
+                <!-- <% pkg.details.forEach(line => { %>
+                  <p class="package-detail"><%= line %></p>
+                  <% }); %> -->
+
+                <!-- Preis -->
+                <p class="price">
+                    <%= pkg.price %>
+                </p>
+
+                <!-- Bullet-Points -->
+                <ul class="features-list">
+                    <% pkg.features.forEach(feat=> { %>
+                        <li>
+                            <%= feat %>
+                        </li>
+                        <% }); %>
+                </ul>
+
+                <!-- Button -->
+                <form class="checkout-form" action="/create-checkout-session" method="POST">
+                    <input type="hidden" name="packageId" value="<%= pkg.id %>" />
+                    <input type="hidden" name="mode" value="once" />
+                    <button type="submit" class="btn btn-primary">
+                        Auswählen
+                        <span class="visually-hidden">Paket für <%= pkg.price %> kaufen</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <% }); %>
+</div>
+
+<div class="pricing-grid">
+    <div class="pricing-card animate-on-scroll" id="1">
+        <h3>
+            Standart Paket
+        </h3>
+        <div class="p1rem">
+            <!-- Preis -->
+            <p class="price">
+                <%= pkg.price %>
+            </p>
+
+            <!-- Bullet-Points -->
+            <ul class="features-list">
+                <li>OnePage Website</li>
+                <li>Responsive Design</li>
+                <li>OnePage Website</li>
+            </ul>
+            <!-- Button -->
+            <form class="checkout-form" action="/create-checkout-session" method="POST">
+                <input type="hidden" name="packageId" value="<%= pkg.id %>" />
+                <input type="hidden" name="mode" value="once" />
+                <button type="submit" class="btn btn-primary">
+                    Auswählen
+                    <span class="visually-hidden">Paket für <%= pkg.price %> kaufen</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="pricing-card">
+    <h3>Standart Paket</h3>
+    <div class="p1rem">
+        <!-- Preis -->
+        <p class="price">
+            999,00 €
+        </p>
+
+        <!-- Bullet-Points -->
+        <ul class="features-list">
+            <li>OnePage Website</li>
+            <li>Responsive Design</li>
+            <li>OnePage Website</li>
+        </ul>
+        <!-- Button -->
+        <form class="checkout-form" action="/create-checkout-session" method="POST">
+            <input type="hidden" name="packageId" value="1" />
+            <input type="hidden" name="mode" value="once" />
+            <button type="submit" class="btn btn-primary">
+                Auswählen
+                <span class="visually-hidden">Paket für 999,00 € kaufen</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="pricing-card">
+    <h3>Business Paket</h3>
+    <div class="p1rem">
+        <!-- Preis -->
+        <p class="price">
+            1999,00 €
+        </p>
+
+        <!-- Bullet-Points -->
+        <ul class="features-list">
+            <li>Mehrseitige Website</li>
+            <li>Individuelles Layout</li>
+            <li>SEO-optimiert</li>
+        </ul>
+        <!-- Button -->
+        <form class="checkout-form" action="/create-checkout-session" method="POST">
+            <input type="hidden" name="packageId" value="2" />
+            <input type="hidden" name="mode" value="once" />
+            <button type="submit" class="btn btn-primary">
+                Auswählen
+                <span class="visually-hidden">Paket für 1999,00 € kaufen</span>
+            </button>
+        </form>
+    </div>
+</div>
+<div class="pricing-card">
+    <h3>Premium Paket</h3>
+    <div class="p1rem">
+        <!-- Preis -->
+        <p class="price">
+            2499,00 €
+        </p>
+
+        <!-- Bullet-Points -->
+        <ul class="features-list">
+            <li>Maßgeschneiderte Lösung</li>
+            <li>Online-Shop</li>
+            <li>Erweiterte Funktionen</li>
+        </ul>
+        <!-- Button -->
+        <form class="checkout-form" action="/create-checkout-session" method="POST">
+            <input type="hidden" name="packageId" value="3" />
+            <input type="hidden" name="mode" value="once" />
+            <button type="submit" class="btn btn-primary">
+                Auswählen
+                <span class="visually-hidden">Paket für 2499,00 € kaufen</span>
+            </button>
+        </form>
+    </div>
+</div>

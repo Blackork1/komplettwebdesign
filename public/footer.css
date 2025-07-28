@@ -1,0 +1,206 @@
+/* --------------------------------------------------
+   Footer Main Layout (Logo links, Content rechts)
+   -------------------------------------------------- */
+.site-footer .footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-top: 5rem;
+}
+
+.footer-container {
+    border-radius: 10px;
+    margin: 0px auto 0px auto;
+}
+
+/* Rechte Spalte: Nav + Newsletter */
+.site-footer .footer-right {
+  flex: 1 1 auto;
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  gap: 5rem;
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+/* --------------------------------------------------
+   Seiten-Footer
+   -------------------------------------------------- */
+.site-footer {
+  background-color: #0b2a46;
+  opacity: 1;
+  background-image: radial-gradient(
+      rgba(231, 182, 166, 0.1) 2px,
+      transparent 2px
+    ),
+    radial-gradient(rgba(231, 182, 166, 0.1) 2px, #0b2a46 2px);
+  background-size: 80px 80px;
+  background-position: 0 0, 40px 40px;
+  color: #fff;
+  padding: 2rem 2rem 2rem;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+/* Link-Liste oben */
+.site-footer .footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+  flex-direction: column;
+}
+
+.site-footer .footer-nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.site-footer .footer-nav a:hover {
+  text-decoration: underline;
+}
+
+/* Newsletter-Form */
+.site-footer .newsletter {
+  max-width: 500px;
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+}
+
+.site-footer .newsletter h4 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: start;
+  color: var(--color-bg)
+}
+
+.site-footer .newsletter-form {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  align-items: center;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.site-footer .newsletter-form input[type="email"] {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+.site-footer .newsletter-form input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.site-footer .newsletter-form button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+}
+.site-footer .newsletter-form button svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: #fff;
+  transition: transform 0.2s;
+}
+.site-footer .newsletter-form button:hover svg {
+  transform: translateX(4px);
+}
+
+/* Consent-Checkbox */
+.site-footer .newsletter-consent {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: start;
+}
+.site-footer .newsletter-consent a {
+  color: #fff;
+  text-decoration: underline;
+  
+}
+
+/* Footer-Bottom mit Copyright & Socials */
+.site-footer .footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.site-footer .social-links a {
+  margin-left: 1rem;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.site-footer .social-links a:hover {
+  text-decoration: underline;
+}
+
+.footerLogo img {
+  border-radius: 18px;
+  height: 70px;
+}
+
+.footer-nav h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .site-footer .footer-nav {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .site-footer .footer-bottom {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .site-footer .social-links {
+    order: -1;
+  }
+  .footer-nav h3 {
+    color: #fff;
+  }
+  .site-footer .footer-nav a {
+    font-size: 0.7rem;
+  }
+  .footer-right{
+    justify-content: center;
+  }
+  .footer-left{
+    display: none;
+  }
+
+  .social-links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .site-footer .footer-right {
+    gap: 1rem;
+    justify-content: space-between;
+  }
+
+  .footer-bottom span{
+    text-align: center;
+  }
+}

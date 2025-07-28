@@ -1,0 +1,109 @@
+/* === Basisfarben / Variablen =================================== */
+:root{
+  --navy:#0b2a46;
+  --navy-light:#13335c;
+  --white:#eaeae9;
+  --gray:#5a5a5a;
+  --accent:#ff572d;
+  --shadow:0 4px 14px rgba(0,0,0,.12);
+  --radius:16px;
+  --maxw:1140px;
+  --ff:"Inter",system-ui,sans-serif;
+  --fz:17px;
+}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--ff);color:var(--navy);background:var(--navy)}
+*{box-sizing:border-box}
+img{max-width:100%;display:block}
+
+/* === Utilities ================================================= */
+/* .container{max-width:var(--maxw);margin:0 auto;padding:0 1rem}
+.btn{display:inline-block;padding:.9rem 1.75rem;border-radius:var(--radius);font-weight:600;text-decoration:none;transition:.15s}
+.btn--primary{background:var(--accent);color:var(--white)}
+.btn--primary:hover{filter:brightness(110%)}
+.btn--ghost{background:var(--white);color:var(--navy-light)}
+.btn--ghost:hover{color:var(--accent)}
+.btn--xl{font-size:1.1rem}
+.btn-row{display:flex;flex-wrap:wrap;gap:1rem}
+.u-accent{color:var(--accent)} */
+
+/* === Section Cards ============================================ */
+.card{background:var(--white);color:var(--navy);border-radius:var(--radius);box-shadow:var(--shadow);margin:4rem auto;padding:3rem 1.5rem;max-width:var(--maxw)}
+.section-title{text-align:center;margin:0 0 2rem;font-size:2rem}
+
+/* === Hero ===================================================== */
+.hero{background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwHigh2.jpg") center / cover no-repeat !important;padding:5rem 0 6rem !important}
+.hero__grid{display:grid;gap:3rem}
+@media(min-width:860px){.hero__grid{grid-template-columns:1fr 1fr;align-items:center} .hero{  background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwWide3.jpg") center / cover no-repeat !important;}}
+.hero h1{font-size:2.4rem;line-height:1.2;margin:0 0 1.25rem}
+.lead{font-size:1.1rem;margin-bottom:1.5rem;color:var(--white)}
+.hero__bullets{list-style:none;padding:0;margin:0 0 2rem}
+.hero__bullets li{margin:.35rem 0}
+.hero_image{max-height: 500px;}
+
+/* === KPI Grid ================================================= */
+.kpi-grid{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:center}
+.kpi{flex:1 1 200px;text-align:center}
+.kpi strong{display:block;font-size:2.2rem;color:var(--accent)}
+.kpi span{font-size:.9rem}
+
+/* === Benefits Grid =========================================== */
+.benefits-grid{display:grid;gap:2rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.benefit{text-align:center}
+.benefit h3{margin:.2rem 0 .4rem;font-size:1.15rem}
+.benefit strong{color:var(--accent);}
+
+/* === Services List =========================================== */
+.service-lists{display:grid;gap:1rem 2rem;margin-bottom:1rem;}
+.service-lists li {background: linear-gradient(to bottom,/* erste Farbe */ var(--color-primary) 40%,/* zweite Farbe */ var(--color-white) 40%);border-radius: var(--radius);
+box-shadow: var(--shadow);transition: transform 0.2s ease, box-shadow 0.2s ease;color: var(--color-text);font-size: 0.85rem;position: relative;height: 210px;display: flex;
+flex-direction: column;justify-content: flex-start;padding-bottom: 10px;padding-right: 10px;padding-left: 10px;}
+.service-lists li strong {display: flex;font-size: 1.1rem;color: var(--color-bg);line-height: 1.2;margin-bottom: 25px;height: 70px;justify-content: center;align-items: center; text-align: center;}
+.service-list li:hover {transform: translateY(-4px);box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);}
+@media(min-width:720px){.service-lists{grid-template-columns:repeat(4, 1fr)}}
+.home-grids {display: grid;grid-template-columns: 1fr;gap: 2rem;align-items: stretch;}
+@media(min-width:768px){.home-grids{grid-template-rows:1fr 2fr}}
+
+
+/* === Timeline ================================================ */
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;}
+.timeline li{position:relative;padding-left:3.5rem;margin-bottom:2.6rem}
+.timeline li span{position:absolute;left:-5px;top:-15px;width:3.5rem;height:3.5rem;background:var(--accent);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* === Cases ==================================================== */
+.case-list{list-style:none;padding:0;margin:0;font-size:.95rem}
+.case-list li{margin:.5rem 0}
+
+/* === FAQ ====================================================== */
+.card--faq details{border-top:1px solid #e5e5e5;padding:1rem 0}
+.card--faq summary{cursor:pointer;font-weight:600}
+.card--faq a{color:var(--accent);text-decoration:none;transition:.15s}
+.card--faq p{margin:.8rem 0 0;font-weight:normal;text-align:left;}
+.detailsList li{margin-bottom:.5rem;margin-left:1rem;list-style-type:disc;padding-left:1.25rem;line-height:1.55;font-size:1rem;font-weight:normal;}
+.detailsList li:first-child{margin-top:0.8rem}
+
+/* === CTA ====================================================== */
+.cta{background:linear-gradient(135deg,#2563eb 0%,#1e3a8a 100%);color:var(--white);text-align:center;padding:4rem 1rem}
+.cta__box{max-width:680px;margin:0 auto}
+.cta h2{font-size:2rem;margin:0 0 1rem}
+.cta__note{font-size:.85rem;opacity:.8;margin-top:.8rem}
+
+/* === ABOUT-ME ================================================= */
+.about-grid{display:grid;gap:2rem;align-items:center}
+@media(min-width:720px){.about-grid{grid-template-columns:240px 1fr}}
+.about-photo img{border-radius:50%;box-shadow:var(--shadow)}
+.about-text p{margin:.9rem 0;line-height:1.55;text-align:left;}
+
+/* === ROI SECTION ============================================= */
+.card--roi p{margin:1.1rem 0;line-height:1.55;text-align:left;}
+
+/* === TECH LIST =============================================== */
+.tech-list{list-style:square;margin-left:1.3rem;text-align:left;}
+.tech-list li{margin:.5rem 0}
+.card--tech p{text-align:left !important;}
+
+/* === PACKAGE INFO ============================================ */
+.package-bullets{list-style:disc;margin-left:1.25rem;text-align:left;}
+.package-bullets li{margin:.45rem 0}
+.dns{font-family:monospace}
+.card--package-info p{text-align:left !important;}

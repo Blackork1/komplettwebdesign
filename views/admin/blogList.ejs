@@ -1,0 +1,47 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container my-5">
+  <h1 class="mb-4">Blog-Artikel verwalten</h1>
+
+  <p>
+    <a href="/admin/blog/new" class="btn btn-success">
+      + Neuer Artikel
+    </a>
+  </p>
+
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th style="padding-right: 100px;">ID</th>
+        <th style="padding-right: 100px; min-width: 300px">Titel</th>
+        <th style="padding-right: 100px;">Kategorie</th>
+        <th style="padding-right: 100px;">Featured</th>
+        <th style="padding-right: 100px;">Erstellt am</th>
+        <th style="padding-right: 100px;">Aktionen</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% posts.forEach(p => { %>
+        <tr>
+          <td><%= p.id %></td>
+          <td><%= p.title %></td>
+          <td><%= p.category || '-' %></td>
+          <td><%= p.featured ? 'Ja' : 'Nein' %></td>
+          <td><%= new Date(p.created_at).toLocaleDateString('de-DE') %></td>
+          <td>
+            <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary" style="display: inline-block; margin-right: 10px;">
+              Bearbeiten
+            </a>
+            <form action="/admin/blog/<%= p.id %>/delete"
+                  method="POST" class="d-inline" style="display: inline-block;"
+                  onsubmit="return confirm('Artikel wirklich löschen?');">
+              <button class="btn btn-sm btn-danger" style="display: inline-block;">Löschen</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/admin_footer') %>

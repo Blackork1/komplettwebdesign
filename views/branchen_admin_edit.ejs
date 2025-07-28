@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Branche bearbeiten</title>
+</head>
+<body>
+  <h1>Branche bearbeiten: <%= branche.title %></h1>
+  <form action="/admin/branchen/<%= branche.id %>/bearbeiten" method="POST">
+    <input type="text" name="slug" value="<%= branche.slug %>" required><br>
+    <input type="text" name="title" value="<%= branche.title %>" required><br>
+    <textarea name="intro"><%= branche.intro %></textarea><br>
+    <textarea name="benefit_intro"><%= branche.benefit_intro %></textarea><br>
+    <input type="text" name="keywords" value="<%= branche.keywords.join(', ') %>"><br>
+
+    <select name="template_id">
+      <% templates.forEach(t => { %>
+        <option value="<%= t.id %>" <% if (t.id === branche.template_id) { %>selected<% } %>><%= t.name %></option>
+      <% }) %>
+    </select><br>
+
+    <button type="submit" name="action" value="save">Speichern</button>
+    <button type="submit" name="action" value="preview">Vorschau</button>
+  </form>
+</body>
+</html>

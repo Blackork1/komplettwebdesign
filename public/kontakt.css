@@ -1,0 +1,108 @@
+/* ==== Grundlayout je Slide ========================== */
+.carousel-item {
+  min-height: 80vh; /* nimmt fast die gesamte View-Höhe ein */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertikal zentriert */
+  align-items: center; /* horizontal zentriert */
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: #ffffffdb;
+  border-radius: 20px;
+}
+
+/* zentrales Card-Feeling wie Screenshot #1 */
+.carousel-item > *:not(.back-btn) {
+  /* alles außer Zurück-Button */
+  max-width: 650px;
+}
+
+/* ==== Buttons statt Radio-Dots ====================== */
+/* 1) Radio ausblenden, Label als Button stylen */
+.option-radio {
+  display: none; /* visuell verstecken – bleibt fokussierbar */
+}
+.option-label {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.9rem 1.2rem;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background-color: #b6c8e0; /* helleres Blau ⇒ “Primär Hell” */
+  color: #0e2b4c; /* dunkles Navy (= dein Headline-Farbton) */
+  transition: all 0.18s ease-in-out;
+}
+.option-radio:focus + .option-label,
+.option-check:focus + .option-label {
+  background: #0e2b4c;
+  color: #fff;
+}
+
+.option-label:hover{
+  background: #536f8e;
+}
+
+
+/* 2) “Checked” = hover-Stil beibehalten + Outline */
+/* 👉  Hier der neue Checked-Stil für Checkbox & Radio */
+.option-radio:checked + .option-label,
+.option-check:checked + .option-label {
+  background: #0e2b4c; /* dunkelblau */
+  color: #ffffff;
+  border: 2px solid #ffffff55; /* dezente Outline, optional */
+}
+
+/* ==== Überschriften ===== */
+.carousel-item h1,
+.carousel-item h2 {
+  color: #0e2b4c; /* deine dunkle Hauptfarbe */
+}
+
+/* ==== Zurück-Button links oben ====================== */
+.back-btn {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.2rem;
+  background: #ffffff;
+  border: 2px solid #0e2b4c;
+  color: #0e2b4c;
+  border-radius: 12px;
+  padding: 0.4rem 1.1rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.back-btn:hover {
+  background: #0e2b4c;
+  color: #ffffff;
+}
+
+/* ==== Absenden-Button (Slide 9) ===================== */
+button[type="submit"] {
+  background: #0e2b4c;
+  border: none;
+}
+button[type="submit"]:hover {
+  background: #092039;
+}
+
+.option-check {
+  display: none;
+}
+
+.carousel-item:not(.active) {
+  display: none !important; /* überschreibt unsere Flex-Regel */
+}
+
+.carousel-item.active {
+  display: flex; /* nur aktives Element anzeigen */
+}
+@media (min-width: 768px) {
+  .white-container {
+    width: 60%;
+    margin: 0 auto;
+  }
+}

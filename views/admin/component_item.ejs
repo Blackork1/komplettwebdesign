@@ -1,0 +1,29 @@
+<li data-id="<%= component.id %>">
+  <!-- Komponententyp und kurzer Inhalt anzeigen -->
+  <strong><%= component.type.toUpperCase() %></strong>
+  <% if (component.content) { %>
+    „<%= component.content.length > 20 ? component.content.substring(0, 20) + '…' : component.content %>”
+  <% } %>
+  <% if (component.type === 'img') { %>
+    [Bild]
+  <% } %>
+  <% if (component.classes) { %>
+    <em>(Klassen: <%= component.classes %>)</em>
+  <% } %>
+  <!-- Aktionen: Kind hinzufügen, bearbeiten, löschen -->
+  <span class="actions">
+    <% if (component.type !== 'hr' && component.type !== 'br') { %>
+      <!-- Für nicht-selbstschließende Elemente kann ein Kindelement hinzugefügt werden -->
+      <a href="/admin/pages/<%= component.page_id %>/components/new?parent=<%= component.id %>">+ Kind</a>
+    <% } %>
+    <a href="/admin/components/<%= component.id %>/edit">Bearbeiten</a>
+    <a href="/admin/components/<%= component.id %>/delete">Löschen</a>
+  </span>
+  <% if (component.children && component.children.length) { %>
+    <ul class="sortable-list" data-parent="<%= component.id %>">
+      <% component.children.forEach(child => { %>
+        <%- include('component_item', { component: child }) %>
+      <% }) %>
+    </ul>
+  <% } %>
+</li>

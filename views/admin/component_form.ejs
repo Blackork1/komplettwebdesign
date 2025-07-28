@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <%- include('../partials/admin_header') %> <!-- optional -->
+
+  <meta charset="UTF-8">
+  <title>
+    <% if (component) { %>Komponente bearbeiten<% } else { %>Neue Komponente hinzufügen<% } %>
+    <% if (page) { %> – <small>Seite: "<%= page.title %>"</small><% } %>
+  </title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <h1>
+    <% if (component) { %>Komponente bearbeiten<% } else { %>Neue Komponente hinzufügen<% } %>
+    <% if (page) { %> – <small>Seite: "<%= page.title %>"</small><% } %>
+  </h1>
+
+  <form action="<% if (component) { %>/admin/components/<%= component.id %><% } else { %>/admin/components<% } %>"
+        method="POST"
+        enctype="multipart/form-data">
+    <% if (!component) { %>
+      <!-- Hidden Inputs für Seite und Parent -->
+      <input type="hidden" name="page_id" value="<%= page.id %>">
+      <input type="hidden" name="parent_id" value="<%= parentId %>">
+    <% } %>
+
+    <!-- ==== Typ auswählen ================================================= -->
+    <p>
+      <label for="typeSel">Typ:</label>
+      <% if (component) { %>
+        <input type="text" id="typeSel" readonly value="<%= component.type %>">
+        <input type="hidden" name="type" value="<%= component.type %>">
+      <% } else { %>
+        <select id="typeSel" name="type" required autofocus>
+          <% 
+            const types = [
+              'form','input','textarea','select','radio','checkbox',
+              'submit','button','p','h1','h2','h3','img','a','ul','ol','li','div'
+            ];
+            types.forEach(t => { 
+          %>
+            <option value="<%= t %>"><%= t %></option>
+          <% }) %>
+        </select>
+      <% } %>
+    </p>
+
+    <!-- ==== Alle möglichen Felder (data-field steuert Anzeige) =========== -->
+
+    <!-- form: action + method -->
+    <div data-field="action" style="display:none;">
+      <label for="inpAction">Formular-Action (Ziel-URL):<br>
+        <input type="text" id="inpAction" name="action"
+               value="<%= component ? component.action : '' %>"
+               placeholder="/kontakt-senden">
+      </label>
+    </div>
+    <div data-field="method" style="display:none;">
+      <label for="inpMethod">Methode:</label>
+      <select id="inpMethod" name="method">
+        <option value="post" <%= component && component.method==='post' ? 'selected="selected"' : '' %>>POST</option>
+        <option value="get"  <%= component && component.method==='get'  ? 'selected="selected"' : '' %>>GET</option>
+      </select>
+    </div>
+
+    <!-- input: input_type, name, placeholder, value, required, pattern, minlength -->
+    <div data-field="input_type" style="display:none;">
+      <label for="inpInputType">Input-Typ:</label>
+      <select id="inpInputType" name="input_type">
+        <% ['text','email','password','date','file','number','hidden'].forEach(it => { %>
+          <option value="<%= it %>" 
+            <%= component && component.input_type===it ? 'selected="selected"' : '' %>>
+            <%= it %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div data-field="name" style="display:none;">
+      <label for="inpName">Name (für Formular-Felder):<br>
+        <input type="text" id="inpName" name="name" 
+               value="<%= component ? component.name : '' %>" 
+               placeholder="feldname">
+      </label>
+    </div>
+
+    <div data-field="placeholder" style="display:none;">
+      <label for="inpPlaceholder">Placeholder:<br>
+        <input type="text" id="inpPlaceholder" name="placeholder" 
+               value="<%= component ? component.placeholder : '' %>" 
+               placeholder="Platzhaltertext">
+      </label>
+    </div>
+
+    <div data-field="value" style="display:none;">
+      <label for="inpValue">Wert / Label:<br>
+        <input type="text" id="inpValue" name="value" 
+               value="<%= component ? component.value : '' %>" 
+               placeholder="Standardwert oder Button-Text">
+      </label>
+    </div>
+
+    <div data-field="required" style="display:none;">
+      <label>
+        <input type="checkbox" name="required" 
+          <%= component && component.required ? 'checked="checked"' : '' %> >
+        Pflichtfeld
+      </label>
+    </div>
+
+    <div data-field="pattern" style="display:none;">
+      <label for="inpPattern">Muster (RegEx) pattern:<br>
+        <input type="text" id="inpPattern" name="pattern" 
+               value="<%= component ? component.pattern : '' %>" 
+               placeholder="z.B. ^[A-Za-z]+$">
+      </label>
+    </div>
+
+    <div data-field="minlength" style="display:none;">
+      <label for="inpMinlength">Minimale Länge:<br>
+        <input type="number" id="inpMinlength" name="minlength" min="0"
+               value="<%= component ? component.minlength : '' %>">
+      </label>
+    </div>
+
+    <!-- textarea: content (Name + placeholder gelten ebenfalls) -->
+    <div data-field="content" style="display:none;">
+      <label for="inpContent">Text-Inhalt:<br>
+        <textarea id="inpContent" name="content" rows="10" style="min-width:500px"><%= component ? component.content : '' %></textarea>
+      </label>
+    </div>
+
+    <!-- select / radio: options -->
+    <div data-field="options" style="display:none;">
+      <label for="inpOptions">Optionen (bei Select/Radio), mit '|' trennen:<br>
+        <input type="text" id="inpOptions" name="options" 
+               value="<%= component ? component.options : '' %>" 
+               placeholder="Option 1|Option 2|Option 3">
+      </label>
+    </div>
+
+    <!-- img: alt + src -->
+    <div data-field="alt" style="display:none;">
+      <label for="inpAlt">Alt-Text (Bildbeschreibung):<br>
+        <input type="text" id="inpAlt" name="alt" 
+               value="<%= component ? component.alt : '' %>" 
+               placeholder="Alternativer Text">
+      </label>
+    </div>
+
+    <div data-field="src" style="display:none;">
+      <label for="inpImage">Bild-Datei hochladen / URL:<br>
+        <input type="file" id="inpImage" name="imageFile">
+        <br>
+        <input type="text" name="src" 
+               value="<%= component ? component.src : '' %>" 
+               placeholder="http://... (Bild-URL)">
+      </label>
+    </div>
+
+    <!-- a: href (Linkziel); Inhalt über content gesteuert -->
+    <div data-field="href" style="display:none;">
+      <label for="inpHref">Link-Ziel href:<br>
+        <input type="text" id="inpHref" name="href" 
+               value="<%= component ? component.href : '' %>" 
+               placeholder="http://...">
+      </label>
+    </div>
+
+    <!-- ul/ol und div: nur classes, kein spezielles Feld hier -->
+
+
+
+    <!-- ==== CSS-Klassen-Auswahl mit eigenem Dropdown statt datalist ======== -->
+<!-- component_form.ejs – Ausschnitt für das CSS-Klassen-Feld -->
+<div data-field="classes">
+  <label for="inpClasses">CSS-Klassen:<br></label>
+  <div class="classes-container">
+    <input
+      type="text"
+      id="inpClasses"
+      name="classes"
+      autocomplete="off"
+      value="<%= component ? component.classes : '' %>"
+      placeholder="z.B. flex text-center"
+      class="classes-input"
+    >
+    <div id="clsDropdown" class="cls-dropdown"></div>
+  </div>
+</div>
+
+
+    <!-- ==== Abschicken ==================================================== -->
+    <button type="submit">Speichern</button>
+    <a href="/admin/pages/<%= page.id %>/edit">Abbrechen</a>
+  </form>
+
+  <!-- === CLIENT-SIDE SCRIPT 1: Felder je Typ ein-/ausblenden ============== -->
+  <script>
+    // Feld-Konfiguration, die aus /helpers/componentConfig.js kommt:
+    const FIELD_CFG = JSON.parse('<%- JSON.stringify(fieldConfig) %>');
+    //<%- JSON.stringify(fieldConfig) %>;
+
+    function toggleFieldsByType(type) {
+      // Alle data-field-Container verbergen (außer classes)
+      document.querySelectorAll('[data-field]').forEach(el => {
+        if (el.getAttribute('data-field') === 'classes') return;
+        el.style.display = 'none';
+      });
+      // Nur die Felder anzeigen, die in FIELD_CFG[type] gelistet sind
+      ;(FIELD_CFG[type] || []).forEach(fieldName => {
+        const node = document.querySelector(`[data-field="${fieldName}"]`);
+        if (node) node.style.display = '';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('typeSel');
+      if (sel) {
+        sel.addEventListener('change', () => toggleFieldsByType(sel.value));
+        toggleFieldsByType(sel.value); // Initiale Sichtbarkeit
+      }
+    });
+  </script>
+  <!-- === CLIENT-SIDE SCRIPT: Eigenes Dropdown statt datalist ====== -->
+<script>
+  // 1) Alle Klassen‐Vorschläge, die du vom Server übergeben hast:
+  const fullClassLists = JSON.parse('<%- JSON.stringify(cssClasses) %>');
+  //<%- JSON.stringify(cssClasses) %>;
+
+  // 2) DOM-Referenzen
+  const classInputs = document.getElementById('inpClasses');
+  const dropdown   = document.getElementById('clsDropdown');
+
+  // 3) Hilfsfunktion: Dropdown unsichtbar machen
+  function hideDropdown() {
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+  }
+
+  // 4) Hilfsfunktion: befüllt die Dropdown-Box mit "matches" als klickbare Elemente
+  function buildDropdown(matches) {
+    // Leeren und sichtbar machen
+    dropdown.innerHTML = '';
+    dropdown.style.display = matches.length ? 'block' : 'none';
+
+    matches.forEach(cls => {
+      const div = document.createElement('div');
+      div.classList.add('item');
+      div.textContent = cls;
+      // Klick auf ein Item: füge es ins Input und verborg das Dropdown
+      div.addEventListener('mousedown', function(e) {
+        e.preventDefault(); // verhindert, dass Input‐Fokus verloren geht
+        // Aktuellen Inhalt des Inputs in Tokens aufsplitten
+        const parts = classInputs.value.trim().split(/\s+/);
+        // Letztes Token durch diesen Klick‐Wert ersetzen (oder anhängen)
+        if (parts.length === 1 && parts[0] === '') {
+          // wenn nur leerer String drin war
+          classInputs.value = cls + ' ';
+        } else {
+          parts[parts.length - 1] = cls;
+          classInputs.value = parts.join(' ') + ' ';
+        }
+        hideDropdown();
+        classInputs.focus();
+      });
+      dropdown.appendChild(div);
+    });
+  }
+
+  // 5) Hauptfunktion: ermittelt das „letzte Token“ und filtert danach
+  function updateClassSuggestions() {
+    const val   = classInputs.value;           // z. B. "features-gri"
+    const parts = val.trim().split(/\s+/);    // ["features-gri"] oder ["feature","item"]
+    const last  = parts[parts.length - 1] || '';
+
+    // 5a) Wenn leer (z. B. nur Leerzeichen oder nichts getippt), zeige alle Klassen
+    if (last === '') {
+      buildDropdown(fullClassLists);
+      return;
+    }
+
+    // 5b) Filtere nur Klassen, die mit dem letzten Token beginnen
+    const filtered = fullClassLists.filter(c =>
+      c.toLowerCase().startsWith(last.toLowerCase())
+    );
+
+    // 5c) Wenn kein Treffer → zeige alle Klassen
+    if (filtered.length === 0) {
+      buildDropdown(fullClassLists);
+    } else {
+      buildDropdown(filtered);
+    }
+  }
+
+  // 6) Event‐Listener lösen das Dropdown aus:
+  document.addEventListener('click', function(e) {
+    // Wenn Klick außerhalb des Dropdowns bzw. Input, Dropdown verbergen
+    if (!classInputs.contains(e.target) && !dropdown.contains(e.target)) {
+      hideDropdown();
+    }
+  });
+
+  classInputs.addEventListener('input', updateClassSuggestions);
+  classInputs.addEventListener('focus', updateClassSuggestions);
+
+  // 7) Initial einmal aufbauen (falls das Feld schon vorbefüllt ist)
+  document.addEventListener('DOMContentLoaded', () => {
+    updateClassSuggestions();
+  });
+</script>
+</body>
+</html>

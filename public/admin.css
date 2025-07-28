@@ -1,0 +1,67 @@
+/* --------------------------------------------------------
+   admin.css: Styling für das eigene CSS-Klassen-Dropdown
+   -------------------------------------------------------- */
+
+/* 1) Der Container, in dem Input + Dropdown liegen */
+.classes-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;   /* nach Bedarf anpassen */
+  margin-top: 4px;    /* optional, damit etwas Abstand entsteht */
+}
+
+/* 2) Das Input-Feld selbst */
+.classes-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #888;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1rem;
+  outline: none;
+}
+
+/* 3) Das Dropdown-Element, standardmäßig unsichtbar */
+.cls-dropdown {
+  display: none;               /* Start: ausgeblendet */
+  position: absolute;          /* Absolut im .classes-container */
+  top: 100%;                   /* Direkt unter dem Input */
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;            /* Verbindet sich mit Input-Rahmen */
+  max-height: 200px;           /* Scrollbar, wenn zu lang */
+  overflow-y: auto;
+  z-index: 1000;               /* Immer im Vordergrund */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 4) Jedes Vorschlags-Item im Dropdown */
+.cls-dropdown .item {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* 5) Hover-Effekt, wenn Maus über einem Item ist */
+.cls-dropdown .item:hover {
+  background-color: #f0f0f0;
+}
+
+/* admin.css */
+.css-selection {
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+}
+.css-selection select {
+  width: 100%;
+  min-height: 6rem;
+  font-family: inherit;
+  font-size: 1rem;
+}
+.css-selection button {
+  margin-top: 0.5rem;
+}

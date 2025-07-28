@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Branche bearbeiten oder erstellen</title>
+</head>
+<body>
+  <h1>Neue Branche anlegen</h1>
+  <form action="/admin/branchen" method="POST">
+    <label for="slug">Slug (URL):</label><br>
+    <input type="text" id="slug" name="slug" placeholder="z.B. restaurant" required><br><br>
+
+    <label for="title">Branchentitel:</label><br>
+    <input type="text" id="title" name="title" placeholder="z.B. Restaurant" required><br><br>
+
+    <label for="intro">Einleitung:</label><br>
+    <textarea id="intro" name="intro" rows="3" required></textarea><br><br>
+
+    <label for="benefit_intro">Abschnitt „Warum eine Webseite?“:</label><br>
+    <textarea id="benefit_intro" name="benefit_intro" rows="3"></textarea><br><br>
+
+    <label for="keywords">Keywords (kommagetrennt):</label><br>
+    <input type="text" id="keywords" name="keywords" placeholder="Webdesign Restaurant, digitale Speisekarte"><br><br>
+
+    <label for="template_id">Template wählen:</label><br>
+    <select id="template_id" name="template_id" required>
+      <% templates.forEach(template => { %>
+        <option value="<%= template.id %>"><%= template.name %></option>
+      <% }) %>
+    </select><br><br>
+
+    <button type="submit">Speichern</button>
+  </form>
+</body>
+</html>

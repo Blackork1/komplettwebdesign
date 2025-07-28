@@ -1,228 +1,756 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/styles.css?v=<%= Date.now() %>" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  </head>
+
+<!-- <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+  </title>
+  <link rel="stylesheet" href="/styles.css?v=<%= Date.now() %>" />
+  <link rel="stylesheet" href="/footer.css?v=<%= Date.now() %>" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+</head> -->
+
+<%- include('partials/head') %>
+
+  <style>
+    /* ---------- Grafik-Container ---------- */
+    .figure-speed {
+      max-width: 640px;
+      /* begrenzt Breite */
+      margin: 2rem auto;
+      /* zentriert + Abstand */
+      text-align: center;
+    }
+
+    .figure-speed img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .figure-speed figcaption {
+      font-size: 0.9rem;
+      color: #5a5a5a;
+      margin-top: 0.5rem;
+    }
+
+    /* ---------- CTA-Bereich ---------- */
+    .cta-section {
+      color: var(--color-primary);
+      padding: 3rem 2rem;
+      border-radius: 1.25rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      margin-top: 3rem;
+    }
+
+    .cta-section h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta-section p {
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .cta-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.5rem 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .cta-section li {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .cta-section a.cta-button {
+      display: inline-block;
+      background: #ffffff;
+      color: #1e3a8a;
+      font-weight: 600;
+      padding: 0.9rem 1.75rem;
+      border-radius: 0.75rem;
+      text-decoration: none;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .cta-section a.cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .cta-section .price-note {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+
+    /* public/css/cta.css */
+    .background-gradient {
+      /* 1. Grundfarbe: von #E84632 → #FCD09A */
+      background-image: linear-gradient(135deg,
+          /* 45° nach unten rechts ➜ etwas steiler wirkt oft moderner */
+          #E84632 0%,
+          /* Start: sattes Rot */
+          #F59763 40%,
+          /* sanfter Übergang */
+          #FCD09A 100%
+          /* Ende: helles Orange/Beige */
+        );
+
+      /* 2. Optional weicher machen */
+      filter: saturate(110%) blur(0.2px);
+    }
+  </style>
+
   <body>
-    <header>
-      <div class="hero-nav">
-        <div class="navigation" id="navigation">
-          <a href="/" class="logo">
-            <img
-              src="/images/LogoTransparent.svg"
-              alt="Komplett Webdesign Logo"
-            />
-          </a>
-          <div class="nav-right">
-            <img
-              src="/images/Nav-Bar-Icon.svg"
-              alt="Menu Icon"
-              class="menu-icon"
-              id="menu-icon"
-            />
-            <div class="links heroLinks" id="nav-links">
-              <a href="/leistungen">Leistungen</a>
-              <a href="/referenzen">Referenzen</a>
-              <a href="/info">Über mich</a>
-              <a href="/blog">Blog</a>
-              <a href="/preise">Preise</a>
-              <a href="/faw">FAQ</a>
-              <a href="/termin-buchen" class="btn-tertiary">Termin buchen</a>
-              <!-- <a href="/reservation" class="reserve-button">Reservierung</a> -->
+    <%- include('partials/header') %>
+      <main>
+        <!-- 1) Hero-Section -->
+        <section class="hero hero-main" id="hero">
+          <div class="hero-section">
+            <div class="container">
+              <div class="hero-flex">
+                <div class="hero-content">
+                  <h1>
+                    Ich erstelle dir in kurzer Zeit deine professionelle Website.
+                  </h1>
+                  <p>
+                    <img src="/images/icons/check.svg" class="icon-transform-6" alt="check icon" />
+                    Optimiert für alle Endgeräte
+                    <br />
+                    <img src="/images/icons/check.svg" class="icon-transform-6" alt="check icon" />
+                    Mit einem modernen Design
+                    <br />
+                    <img src="/images/icons/check.svg" class="icon-transform-6" alt="check icon" />
+                    Für Selbstständige, Unternehmen und Privatpersonen
+                  </p>
+                  <div class="hero-ctas">
+                    <a href="/termin-buchen" class="btn btn-primary">Termin buchen</a>
+                    <a href="/kontakt" class="btn btn-secondary">Kontakt</a>
+                  </div>
+                </div>
+                <div class="hero-image">
+                  <!-- <img src="/images/heroImageBlue.webp"
+                    fetchpriority="high" loading="eager" decoding="async" alt="Ein Bild von einem Laptop, Tablet und Smartphone"> -->
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </header>
+        </section>
 
-    <main>
-      <!-- Hero-Section -->
-      <section class="hero">
-        <div class="section">
-          <div class="container">
-            <div class="hero-flex">
-              <div class="hero-content">
-                <h1>
-                  Ich erstelle dir in kurzer Zeit deine professionelle Website.
-                </h1>
-                <p>
-                  <img
-                    src="/images/icons/check.svg"
-                    class="icon-transform-6"
-                    alt="check icon"
-                  />
-                  Optimiert für alle Endgeräte
-                  <br />
-                  <img
-                    src="/images/icons/check.svg"
-                    class="icon-transform-6"
-                    alt="check icon"
-                  />
-                  Mit einem modernen Design
-                  <br />
-                  <img
-                    src="/images/icons/check.svg"
-                    class="icon-transform-6"
-                    alt="check icon"
-                  />
-                  Für Selbstständige, Unternehmen und Privatpersonen
+        <!-- 2) Agentur-Einleitung -->
+        <section class="section" id="erklaerung">
+          <div class="container animate-on-scroll">
+            <div class="outer-wrapper">
+              <div class="inner-wrapper text-left">
+                <h2 class="animate-on-scroll ">
+                  Webseite in Berlin erstellen lassen – professionelles Webdesign
+                  aus einer Hand bei <span class="brand">Komplettwebdesign</span>
+                </h2>
+                <div class="readable animate-on-scroll">
+                  <p>
+                    In der digitalen Welt von heute benötigen Unternehmen eine
+                    moderne, ansprechende und mobilfreundliche Online-Präsenz. Mit
+                    Komplettwebdesign.de, Ihrer Webdesign-Agentur aus Berlin,
+                    können Sie Ihre Webseite professionell erstellen lassen –
+                    schnell, zuverlässig und vollständig aus einer Hand.
+                  </p>
+                  <p>
+                    Wir betreuen Kunden aus verschiedensten Branchen. Unser
+                    Schwerpunkt liegt auf Webseiten für Restaurants,
+                    Handwerksbetriebe, Cafés sowie Kitas und Schulen. Durch unsere
+                    Erfahrung kennen wir die spezifischen Anforderungen jeder
+                    Branche und setzen diese gezielt um, damit Ihre neue Webseite
+                    bei Ihrer Zielgruppe optimal ankommt.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3) Features Section -->
+        <section class="section" id="features">
+          <div class="container animate-on-scroll">
+            <!-- Features Section -->
+            <section class="outer-wrapper">
+              <div class="inner-wrapper">
+                <h2 class="animate-on-scroll">Wie du profitierst</h2>
+                <div class="features-grid">
+                  <!-- 1 -->
+                  <div class="feature-item animate-on-scroll">
+                    <!-- Icon: als SVG oder <img> -->
+                    <img src="/images/icons/gift1.svg" alt="Wünsche integriert" class="feature-icon" />
+                    <h3>Wünsche integriert</h3>
+                    <p>
+                      Deine Vorstellungen fließen vollständig in das Design mit
+                      ein.
+                    </p>
+                  </div>
+                  <!-- 2 -->
+                  <div class="feature-item animate-on-scroll">
+                    <img src="/images/icons/delivery1.svg" alt="Schnelle Umsetzung" class="feature-icon" />
+                    <h3>Schnelle Umsetzung</h3>
+                    <p>
+                      Eine funktionierende Startseite ist in nur 4 Wochen online.
+                    </p>
+                  </div>
+                  <!-- 3 -->
+                  <div class="feature-item animate-on-scroll">
+                    <img src="/images/icons/support1.svg" alt="Fortlaufender Support" class="feature-icon" />
+                    <h3>Fortlaufender Support</h3>
+                    <p>
+                      Auch nach Fertigstellung der Seite stehe ich für dich zur
+                      Verfügung.
+                    </p>
+                  </div>
+                  <!-- 4 -->
+                  <div class="feature-item animate-on-scroll">
+                    <img src="/images/icons/abstimmung1.svg" alt="Persönliche Abstimmung" class="feature-icon" />
+                    <h3>Persönliche Abstimmung</h3>
+                    <p>
+                      Wir planen und erstellen die komplette Webseite gemeinsam.
+                    </p>
+                  </div>
+                  <!-- 5 -->
+                  <div class="feature-item animate-on-scroll">
+                    <img src="/images/icons/austausch1.svg" alt="Dauerhafter Austausch" class="feature-icon" />
+                    <h3>Dauerhafter Austausch</h3>
+                    <p>
+                      Bei Fragen oder Wünschen, kannst du mich jederzeit
+                      erreichen.
+                    </p>
+                  </div>
+                  <!-- 6 -->
+                  <div class="feature-item animate-on-scroll">
+                    <img src="/images/icons/individual1.svg" alt="Individuelle Lösungen" class="feature-icon" />
+                    <h3>Individuelle Lösungen</h3>
+                    <p>
+                      Egal was du dir vorstellst, wir finden eine passende
+                      Möglichkeit.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- 4) Leistungen -->
+        <section class="section" id="leistungen">
+          <div class="container animate-on-scroll">
+            <div class="outer-wrapper">
+              <div class="inner-wrapper text-left">
+                <h2 class="animate-on-scroll">
+                  Alles aus einer Hand – unsere Leistungen
+                </h2>
+                <div class="readable animate-on-scroll">
+                  <p>
+                    Von der Planung über das Design bis zu SEO, Wartung und
+                    Hosting bekommen Sie bei uns alle Leistungen aus einer Hand.
+                    Sie haben einen festen Ansprechpartner und müssen nicht
+                    mehrere Dienstleister koordinieren – wir kümmern uns um alles
+                    rund um Ihre Website. Unsere Websites sind technisch und
+                    inhaltlich für Suchmaschinen optimiert.
+                  </p>
+                  <p>
+                    Schon bei der Erstellung achten wir auf saubere
+                    Programmierung, schnelle Ladezeiten und SEO-freundliche
+                    Inhalte. So wird Ihre Seite bei Google gut gefunden – egal ob
+                    Webseite für Handwerksbetrieb Berlin oder komplette Website
+                    für Coaches, wir sorgen für maximale Sichtbarkeit bei
+                    relevanten Suchanfragen.
+                  </p>
+                </div>
+                <ul class="service-list">
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/LandingPage.svg" alt="Bild eines Designs" />
+                        <p class="listText">Webdesign</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Webdesign</strong> Modernes und individuelles Layout,
+                          ausgelegt und angepasst für alle Endgeräte
+                        </li>
+                      </div>
+                      <img class="click" src="/images/icons/click.svg" alt="hier clicken" />
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/code.webp" alt="Bild von Code" />
+                        <p class="listText">Coding</p>
+
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Programmierung / Coding</strong> Zuverlässige
+                          Entwicklung mit sauberem und leicht anpassbaren Code
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/hosting.webp" alt="Bild eines Routers" />
+                        <p class="listText">Hosting</p>
+
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Hosting</strong> Sicheres, leistungsstarkes und
+                          zuverlässiges Webhosting für Ihre Homepage
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/datenbank.webp" alt="Bild einer Datenbank" />
+                        <p class="listText">Datenbanken</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Verwaltung der Datenbanken</strong> Effiziente und
+                          sichere Pflege Ihrer Website-Datenbanken für optimale
+                          Performance
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/seo.webp" alt="Bild der Googlesuche" />
+                        <p class="listText">SEO-Optimierung</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>SEO-Optimierung</strong> Google
+                          Suchmaschinenoptimierung für bessere Sichtbarkeit, schnelleres
+                          Finden in Google
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/wartung.webp" alt="Bild eines Technikers der etwas repariert" />
+                        <p class="listText">Wartung</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Wartung & technischer Service</strong> Regelmäßige
+                          Updates, Sicherheitspatches und persönlicher Support
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/texterstellung.webp" alt="Bild eines Buches mit Bleistift" />
+                        <p class="listText">Texterstellung</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Texterstellung</strong> Auf Wunsch professionelle
+                          Inhalte und Texte inkl. SEO-Texte für Ihre Webseite
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-container">
+                    <div class="card-inner">
+                      <div class="card-front card-back-image">
+                        <img src="/images/fotos.webp" alt="Bild eines Stockfotos am Laptop" />
+                        <p class="listText">Stockfotos</p>
+                      </div>
+                      <div class="card-back">
+                        <li>
+                          <strong>Stockfotos</strong> Hochwertiges Bildmaterial aus
+                          Bilddatenbanken oder deine eigenen individuelle Fotos
+                        </li>
+                      </div>
+                    </div>
+                  </div>
+                </ul>
+                <p class="extra-text animate-on-scroll">
+                  Wir liefern kein Webdesign von der Stange, sondern
+                  maßgeschneiderte Lösungen. Jede Branche hat besondere
+                  Anforderungen – eine maßgeschneiderte Homepage für Restaurant
+                  benötigt beispielsweise andere Funktionen als eine Website für
+                  lokale Dienstleister Berlin. Wir wissen genau, worauf es in
+                  Ihrem Bereich ankommt, und setzen dies gezielt um.
                 </p>
-                <div class="hero-ctas">
-                  <a href="/termin-buchen" class="btn btn-primary"
-                    >Termin buchen</a
-                  >
-                  <a href="/kontakt" class="btn btn-secondary">Kontakt</a>
-                </div>
-              </div>
-              <div class="hero-image">
-                <img
-                  src="/images/heroImageBlue.jpg"
-                  alt="Webdesign Illustration"
-                />
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="section">
-        <div class="container">
-          <!-- Features Section -->
-          <section class="outer-wrapper">
-            <div class="inner-wrapper">
-              <h2>Wie du profitierst</h2>
-              <div class="features-grid">
-                <!-- 1 -->
-                <div class="feature-item">
-                  <!-- Icon: als SVG oder <img> -->
-                  <img
-                    src="/images/icons/gift1.svg"
-                    alt="Wünsche integriert"
-                    class="feature-icon"
-                  />
-                  <h3>Wünsche integriert</h3>
-                  <p>Deine Vorstellungen fließen vollständig ins Design.</p>
+        <!-- 5) Blog + Review Section -->
+        <section class="section" id="blog-reviews">
+          <div class="container animate-on-scroll">
+            <section class="outer-wrapper">
+              <div class="inner-wrapper">
+                <h2 class="animate-on-scroll ">
+                  Aktuelles zum Thema Webseiten und bisherige Kundenstimmen
+                </h2>
+                <div class="home-grid">
+                  <!-- Links: Aktueller Blog-Post (2/3) -->
+                  <div class="latest-blog">
+                    <article class="content-card animate-on-scroll">
+                      <h3>Aktueller Blog-Artikel</h3>
+                      <div class="p2rem">
+                        <!-- Titelbild -->
+                        <div class="blog-image">
+                          <a href="/blog/<%= latestPost.slug %>">
+                            <img src="<%= latestPost.image_url %>" alt="Bild zum Artikel: <%= latestPost.title %>"
+                              loading="lazy" />
+                          </a>
+                        </div>
+
+                        <!-- Überschrift -->
+                        <h4>
+                          <a href="/blog/<%= latestPost.slug %>">
+                            <%= latestPost.title %>
+                              <% if (latestPost.isDefault) { %>
+                                <small>(Demnächst mehr…)</small>
+                                <% } %>
+                          </a>
+                        </h4>
+
+                        <!-- Auszug -->
+                        <p class="excerpt">
+                          <%= latestPost.excerpt %>
+                        </p>
+
+                        <!-- Datum -->
+                        <% if (!latestPost.isDefault) { %>
+                          <p class="date">
+                            vor <%= Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)) %>
+                              Tagen
+                          </p>
+                          <% } %>
+
+                            <!-- Link zum Artikel -->
+                            <a href="/blog/<%= latestPost.slug %>" class="btn btn-primary mb-2">
+                              Zum Artikel
+                            </a>
+                            <a href="/blog" class="btn btn-tertiary">Zum Blog</a>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- Rechts: Kunden-Rezension (1/3) -->
+                  <div class="testimonial">
+                    <div class="content-card animate-on-scroll">
+                      <h3>Kundenstimme und erstellte Website</h3>
+                      <div class="review-card">
+                        <div class="p2rem">
+                          <!-- Avatar -->
+                          <img src="<%= review.avatar_url %>" alt="Avatar von <%= review.author %>"
+                            class="review-avatar" loading="lazy" />
+
+                          <!-- Zitat -->
+                          <blockquote>
+                            <%- review.content.replace( /https?:\/\/[^\s]+/gi, match=> {
+                              // ↓ Linktext hübsch machen (https:// & www. entfernen)
+                              const display = match.replace(/^https?:\/\/(www\.)?/i, '');
+                              return `<a href="${match}" target="_blank" rel="noopener">${display}</a>`;
+                              }
+                              )
+                              %>
+
+                          </blockquote>
+
+                          <!-- Autor -->
+                          <cite>
+                            — <%= review.author %>
+                              <% if (review.isDefault) { %>
+                                <small>(Demnächst echte Stimmen…)</small>
+                                <% } %>
+                          </cite>
+                        </div>
+                        <a class="image-review" href="https://www.zuraltenbackstube.de"></a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <!-- 2 -->
-                <div class="feature-item">
-                  <img
-                    src="/images/icons/delivery1.svg"
-                    alt="Schnelle Umsetzung"
-                    class="feature-icon"
-                  />
-                  <h3>Schnelle Umsetzung</h3>
-                  <p>Eine funktionierende Startseite in nur 2 Wochen.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- 6) Preis & Pakete -->
+        <section class="section" id="preise">
+          <div class="container animate-on-scroll">
+            <section class="outer-wrapper">
+              <div class="inner-wrapper">
+                <h2 class="animate-on-scroll">
+                  Bereit für eine professionelle Website?
+                </h2>
+                <div class="readable pb2rem animate-on-scroll">
+                  <p>
+                    In nur zwei Wochen kannst du mit deiner neuen Webseite online
+                    sein: Wähle das passende Paket aus und starte dein Projekt!
+                    Für jeden Wunsch haben wir ein passende Paket. Egal ob du eine
+                    einfache Webseite, eine umfangreiche Unternehmenspräsenz oder
+                    eine individuelle Lösung benötigst. Wir haben das Richtige für
+                    dich. Nähere Informationen zu den verschiedenen Angeboten
+                    findest du auf der Seite <a href="/pakete">Preise</a>. 
+                    <!-- <a href="/pricing"></a> -->
+                  </p>
+                  <p>
+                    Unsere Angebote sind so gestaltet, dass sie verschiedene
+                    Bedürfnisse abdecken und dir helfen, schnell und unkompliziert
+                    online zu gehen. Jedes Paket enthält alles, was du für den
+                    Start benötigst: modernes Design, responsive Umsetzung,
+                    SEO-Optimierung und fortlaufenden Support. So kannst du dich
+                    auf dein Kerngeschäft konzentrieren, während wir uns um deine
+                    Online-Präsenz kümmern.
+                  </p>
                 </div>
-                <!-- 3 -->
-                <div class="feature-item">
-                  <img
-                    src="/images/icons/support1.svg"
-                    alt="Fortlaufender Support"
-                    class="feature-icon"
-                  />
-                  <h3>Fortlaufender Support</h3>
-                  <p>Auch nach Fertigstellung stehe ich für dich bereit.</p>
+                <div class="pricing-grid">
+                  <% packages.forEach(pkg=> { %>
+                    <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
+                      <h3>
+                        <%= pkg.name %>
+                      </h3>
+                      <div class="p1rem">
+                        <!-- Kurzbeschreibung -->
+                        <!-- <% if (pkg.description) { %>
+                  <p class="package-description"><%= pkg.description %></p>
+                  <% } %> -->
+
+                        <!-- Mehrzeiliger Detail-Text -->
+                        <!-- <% pkg.detailshero.forEach(line => { %>
+                  <p class="package-detail"><%= line %></p>
+                  <% }); %> -->
+
+                        <!-- Preis -->
+                        <p class="price">
+                          <%= pkg.price %>
+                        </p>
+
+                        <!-- Bullet-Points -->
+                        <ul class="features-list">
+                          <% pkg.features.forEach(feat=> { %>
+                            <li>
+                              <%= feat %>
+                            </li>
+                            <% }); %>
+                        </ul>
+
+                        <!-- Button -->
+                        <a class="btn btn-primary" href="/pakete/<%=pkg.name%>">Details</a>
+                        <!-- <form class="checkout-form" action="/create-checkout-session" method="POST">
+                          <input type="hidden" name="packageId" value="<%= pkg.id %>" />
+                          <input type="hidden" name="mode" value="once" />
+                          <button type="submit" class="btn btn-primary">
+                            Auswählen
+                            <span class="visually-hidden">Paket für <%= pkg.price %> kaufen</span>
+                          </button>
+                        </form> -->
+                      </div>
+                    </div>
+                    <% }); %>
                 </div>
-                <!-- 4 -->
-                <div class="feature-item">
-                  <img
-                    src="/images/icons/abstimmung1.svg"
-                    alt="Persönliche Abstimmung"
-                    class="feature-icon"
-                  />
-                  <h3>Persönliche Abstimmung</h3>
-                  <p>Dauerhafter Austausch während der Erstellung.</p>
-                </div>
-                <!-- 5 -->
-                <div class="feature-item">
-                  <img
-                    src="/images/icons/austausch1.svg"
-                    alt="Dauerhafter Austausch"
-                    class="feature-icon"
-                  />
-                  <h3>Dauerhafter Austausch</h3>
-                  <p>während der Erstellung.</p>
-                </div>
-                <!-- 6 -->
-                <div class="feature-item">
-                  <img
-                    src="/images/icons/individual1.svg"
-                    alt="Individuelle Lösungen"
-                    class="feature-icon"
-                  />
-                  <h3>Individuelle Lösungen</h3>
-                  <p>Maßgeschneiderte Pakete auf Anfrage.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- 7) Branchen -->
+        <section class="section" id="branchen">
+          <div class="container animate-on-scroll">
+            <div class="outer-wrapper">
+              <div class="inner-wrapper text-left">
+                <h2 class="animate-on-scroll">
+                  Webseiten für Restaurants, Handwerksbetriebe, Cafés und
+                  Bildungseinrichtungen
+                </h2>
+                <div class="industry-grid">
+                  <div class="industry-item card-container animate-on-scroll">
+                    <div class="card-inner">
+                      <div class="card-front">
+                        <h4>Restaurants</h4>
+                        <p>
+                          Wir präsentieren Ihr Lokal online von seiner besten
+                          Seite – mit appetitanregenden Fotos, digitaler
+                          Speisekarte und unkomplizierter Reservierungsfunktion.
+                        </p>
+                      </div>
+                      <div class="card-back card-back-image">
+                        <img src="/images/restaurant-min.webp" alt="Bild eines Restaurants" />
+                      </div>
+                    </div>
+                    <img class="click" src="/images/icons/click.svg" alt="hier clicken" />
+                  </div>
+                  <div class="industry-item card-container animate-on-scroll">
+                    <div class="card-inner">
+                      <div class="card-front">
+                        <h4>Handwerksbetriebe</h4>
+                        <p>
+                          Klare Struktur, aussagekräftige Bilder Ihrer Arbeit und
+                          gut sichtbare Kontaktinformationen überzeugen
+                          potenzielle Kunden.
+                        </p>
+                      </div>
+                      <div class="card-back card-back-image">
+                        <img src="/images/handwerker-min.webp" alt="Bild eines Handwerkers" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="industry-item card-container animate-on-scroll">
+                    <div class="card-inner">
+                      <div class="card-front">
+                        <h4>Cafés</h4>
+                        <p>
+                          Stimmungsvoller Stil, Präsentation Ihrer Spezialitäten,
+                          Öffnungszeiten und Karte mit Ihrem Standort – so finden
+                          neue Gäste den Weg zu Ihnen.
+                        </p>
+                      </div>
+                      <div class="card-back card-back-image">
+                        <img src="/images/cafe-min.webp" alt="Bild eines Cafés" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="industry-item card-container animate-on-scroll">
+                    <div class="card-inner">
+                      <div class="card-front">
+                        <h4>Kitas & Schulen</h4>
+                        <p>
+                          Vertrauenswürdiges Design, übersichtliche Informationen
+                          zu Betreuungszeiten, Veranstaltungen und mehr für Eltern
+                          und Schüler.
+                        </p>
+                      </div>
+                      <div class="card-back card-back-image">
+                        <img src="/images/kindergarten-min.webp" alt="Bild eines Kindergartens" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </section>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <section class="section">
-        <div class="container">
-          <!-- Pricing Section -->
-          <section class="outer-wrapper">
-            <div class="inner-wrapper">
-              <h2>Bereit für eine professionelle Website?</h2>
-              <p class="lead">
-                In nur zwei Wochen kannst du mit deiner neuen Webseite online
-                sein: Wähle das passende Paket aus und starte dein Projekt!
-              </p>
+        <!-- 8) Call-to-Action -->
+        <section class="section" id="cta">
+          <div class="container animate-on-scroll">
+            <div class="outer-wrapper background-gradient">
+              <div class="inner-wrapper text-center">
+                <%- include('partials/booking_widget') %>
 
-              <div class="pricing-grid">
-                <!-- STARTER -->
-                <div class="pricing-card">
-                  <h3>Starter</h3>
-                  <p class="price">€ 700</p>
-                  <ul class="features-list">
-                    <li>Onepage Website</li>
-                    <li>Responsives Design</li>
-                    <li>DSGVO konform</li>
-                  </ul>
-                  <a href="/preise#starter" class="btn btn-primary"
-                    >Mehr erfahren</a
-                  >
-                </div>
-
-                <!-- BUSINESS -->
-                <div class="pricing-card">
-                  <h3>Business</h3>
-                  <p class="price">€ 1400</p>
-                  <ul class="features-list">
-                    <li>Mehrseitige Website</li>
-                    <li>Individuelles Layout</li>
-                    <li>SEO-optimiert</li>
-                  </ul>
-                  <a href="/preise#business" class="btn btn-primary"
-                    >Mehr erfahren</a
-                  >
-                </div>
-
-                <!-- PREMIUM -->
-                <div class="pricing-card">
-                  <h3>Premium</h3>
-                  <p class="price">ab € 2000+</p>
-                  <ul class="features-list">
-                    <li>Maßgeschneiderte Lösung</li>
-                    <li>Online-Shop möglich</li>
-                    <li>Erweiterte Funktionen</li>
-                  </ul>
-                  <a href="/preise#premium" class="btn btn-primary"
-                    >Mehr erfahren</a
-                  >
-                </div>
               </div>
             </div>
-          </section>
-        </div>
-      </section>
-      <!-- Hier könnten später die Feature-Blöcke und Preise folgen -->
-    </main>
-    <script src="/js/navToggle.js"></script>
+          </div>
+        </section>
+        <%- include('partials/footer') %>
+
+
+
+          <!-- Hier könnten später die Feature-Blöcke und Preise folgen -->
+          <!-- Scroll-Indikator Leiste (fixed an linker Seite) -->
+          <aside class="scroll-indicator">
+            <!-- Vertikaler Strich -->
+            <div class="progress-line">
+              <div class="progress-fill"></div>
+              <div class="section-icons">
+                <a href="#hero" class="icon-link active" aria-label="Zum Startbereich"> <!-- Hero Section Icon -->
+                  <i class="fas fa-home"></i> <!-- Beispiel Font Awesome Icon -->
+                </a>
+                <a href="#erklaerung" class="icon-link" aria-label="Zum Erklärungsbereich">
+                  <i class="fas fa-star"></i>
+                </a>
+                <a href="#features" class="icon-link" aria-label="Zum Features-Bereich">
+                  <i class="fas fa-list"></i>
+                </a>
+                <a href="#leistungen" class="icon-link" aria-label="Zu den Leistungen">
+                  <i class="fas fa-info-circle"></i>
+                </a>
+                <a href="#blog-reviews" class="icon-link" aria-label="Zum Blog- und Review-Bereich">
+                  <i class="fas fa-thumbs-up"></i></i>
+                </a>
+                <a href="#preise" class="icon-link" aria-label="Zu den Preisen">
+                  <i class="fas fa-money-bill"></i>
+                </a>
+                <a href="#branchen" class="icon-link" aria-label="Zu den Branchen">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <a href="#cta" class="icon-link" aria-label="Zum Call-to-Action-Bereich">
+                  <i class="fas fa-envelope" style="transform: translateY(-5px);"></i></i>
+                </a>
+                <a href="#footer" class="icon-link" aria-label="Zum Footer-Bereich">
+                  <i class="fas fa-shoe-prints" style="transform: translateY(10px);"></i>
+                </a>
+                <!-- <a href="#features" class="icon-link">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="... ICON PFAD ..."></path>
+          </svg>
+          </a>
+          <a href="#kontakt" class="icon-link">
+            <i class="fas fa-envelope"></i>
+          </a> -->
+              </div>
+            </div>
+            <!-- Icons für die Sections -->
+          </aside>
+      </main>
+
+      <script>
+        const stripe = Stripe("<%= stripePublishable %>");
+        document.querySelectorAll(".checkout-form").forEach((form) => {
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const data = {
+              packageId: form.querySelector('input[name="packageId"]').value,
+              mode: form.querySelector('input[name="mode"]').value,
+            };
+            const response = await fetch(form.action, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+            const { sessionId, error } = await response.json();
+            if (error) return alert(error);
+            await stripe.redirectToCheckout({ sessionId });
+          });
+        });
+      </script>
+      <script>
+        // Beispiel in public/js/main.js
+        document.querySelectorAll(".card-container").forEach((card) => {
+          card.addEventListener("click", () => {
+            card.classList.toggle("flipped");
+          });
+        });
+      </script>
+      <!--Scroll Indicator-->
   </body>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    integrity="...">
+
 </html>

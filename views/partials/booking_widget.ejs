@@ -1,0 +1,35 @@
+<!-- Booking Widget -->
+<link rel="stylesheet" href="/booking-widget.css">
+
+<h2>Lass uns zusammen deine Website starten!</h2>
+<p>Hast du Lust bekommen, dein Projekt gemeinsam mit mir umzusetzen? Dann lass uns quatschen!</p>
+<p>In einem unverbindlichen Gespräch finden wir heraus, wie ich dir am besten helfen kann. Und selbst
+  wenn du noch gar nicht genau weißt, was du brauchst – lass uns trotzdem reden und gemeinsam
+  herausfinden, welche Lösung für dich passt. Klingt gut? Dann nichts wie los – klick einfach auf den
+  Button und such dir einen passenden Zeitpunkt für ein Gespräch aus.</p>
+<div class="kwd-booking-widget" data-sitekey="<%= process.env.RECAPTCHA_SITEKEY %>">
+  <div class="kwd-slot-container">
+    <!-- Slots werden per JS eingefügt -->
+  </div>
+  <!-- Inputs erscheinen erst nach Slot-Wahl -->
+  <form class="kwd-booking-form" action="/booking" method="POST" hidden>
+    <input type="hidden" name="slotId">
+    <input type="hidden" name="token"> <!-- reCAPTCHA -->
+    <label> Name
+      <input type="text" name="name" required>
+      <span class="err">Bitte Name eingeben</span>
+    </label>
+    <label> E-Mail
+      <input type="email" name="email" required>
+      <span class="err">Bitte gültige E-Mail</span>
+    </label>
+    <label> Bemerkung (optional)
+      <textarea name="note" rows="3"></textarea>
+    </label>
+    <button class="btn">Termin buchen</button>
+    <p class="form-msg"></p>
+  </form>
+</div>
+
+<script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>"></script>
+<script type="module" src="/js/booking-widget.js"></script>

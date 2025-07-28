@@ -1,0 +1,63 @@
+<%- include ('../partials/admin_header') %>
+
+    <h1>Termin</h1>
+    <p>
+        <a href="/admin/appointments/new" class="btn">+ Neuer Termin</a>
+    </p>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Datum / Uhrzeit</th>
+                <th>Status</th>
+                <th>Aktion</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            <% apts.forEach(a=> { %>
+                <tr class="<%= a.is_booked ? 'booked' : 'free' %>">
+                    <td>
+                        <%= new Date(a.start_time).toLocaleDateString('de-DE', { weekday: 'short' , day: "2-digit" ,
+                            month: "short" , hour: "2-digit" , minute: "2-digit" }) %>
+                    </td>
+                    <td>
+                        <%= a.is_booked ? "belegt" : "frei" %>
+                    </td>
+                    <td>
+                        <% if (!a.is_booked) { %>
+                            <form method="POST" + action="/admin/appointments/<%= a.id %>/delete"
+                                onsubmit="return confirm('Termin wirklich löschen?');">
+                                <button class="btn alt">Löschen</button>
+                            </form>
+                            <% } else { %>
+                                –
+                                <% } %>
+                    </td>
+                </tr>
+                <%})%>
+        </tbody>
+    </table>
+
+    <style>
+        .table {
+            border-collapse: collapse;
+            width: 100%
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ccc;
+            padding: .4rem
+        }
+
+        .booked {
+            background: #ffe3e3
+        }
+
+        .free {
+            background: #e8ffe8
+        }
+    </style>
+
+    <%- include('../partials/admin_footer') %>

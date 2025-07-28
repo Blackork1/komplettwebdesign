@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Branchenübersicht</title>
+</head>
+<body>
+  <h1>Alle Branchen</h1>
+  <a href="/admin/branchen/neu">+ Neue Branche hinzufügen</a>
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Slug</th>
+        <th>Titel</th>
+        <th>Template</th>
+        <th>Aktionen</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% branchen.forEach(b => { %>
+        <tr>
+          <td><%= b.id %></td>
+          <td><%= b.slug %></td>
+          <td><%= b.title %></td>
+          <td><%= b.template_name %></td>
+          <td>
+            <a href="/branchen/<%= b.slug %>" target="_blank">Ansehen</a> |
+            <a href="/admin/branchen/<%= b.id %>/bearbeiten">Bearbeiten</a>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</body>
+</html>

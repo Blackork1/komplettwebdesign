@@ -1,0 +1,62 @@
+<%- include('../partials/admin_header') %> <!-- optional -->
+
+<div class="container my-5">
+  <h1 class="mb-4">Neuen Blog-Artikel anlegen</h1>
+
+  <form action="/admin/blog/new"
+        method="POST"
+        enctype="multipart/form-data"
+        class="needs-validation" novalidate>
+
+    <!-- Titel -->
+    <div class="mb-3">
+      <label for="title" class="form-label">Titel *</label>
+      <input type="text" id="title" name="title"
+             class="form-control" required>
+    </div>
+
+    <!-- Excerpt -->
+    <div class="mb-3">
+      <label for="excerpt" class="form-label">
+        Kurzbeschreibung (optional)
+      </label>
+      <textarea id="excerpt" name="excerpt"
+                rows="2" class="form-control"></textarea>
+    </div>
+
+    <!-- Kategorie -->
+    <div class="mb-3">
+      <label for="category" class="form-label">Kategorie</label>
+      <input type="text" id="category" name="category"
+             class="form-control" placeholder="z. B. SEO, KI, Design">
+    </div>
+
+    <!-- Featured -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox"
+             id="featured" name="featured">
+      <label class="form-check-label" for="featured">
+        Artikel als „Featured“ markieren
+      </label>
+    </div>
+
+    <!-- Inhalt -->
+    <div class="mb-3">
+      <label for="content" class="form-label">Inhalt (HTML erlaubt) *</label>
+      <textarea id="content" name="content"
+                rows="10" class="form-control" required></textarea>
+    </div>
+
+    <!-- Titelbild -->
+    <div class="mb-4">
+      <label class="form-label">Titelbild (jpg/png/webp) *</label>
+      <input type="file" name="hero_image" accept="image/*"
+             class="form-control" required>
+    </div>
+
+    <button class="btn btn-primary">Artikel speichern</button>
+    <a href="/blog" class="btn btn-secondary">Abbrechen</a>
+  </form>
+</div>
+
+<%- include('../partials/admin_footer') %> <!-- optional -->

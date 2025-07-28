@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Seitenverwaltung</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <%- include('../partials/admin_header') %> <!-- optional -->
+
+    <h1>Seitenverwaltung</h1>
+    <p><a href="/admin/pages/new">+ Neue Seite erstellen</a></p>
+    <table class="pages-table">
+      <tr>
+        <th style="padding-right: 100px;">ID</th>
+        <th style="padding-right: 100px;">Titel</th>
+        <th style="padding-right: 100px;">Slug</th>
+        <th style="padding-right: 100px;">Aktionen</th>
+      </tr>
+      <% pages.forEach(page=> { %>
+        <tr>
+          <td>
+            <%= page.id %>
+          </td>
+          <td>
+            <%= page.title %>
+          </td>
+          <td>
+            <%= page.slug %>
+          </td>
+          <td>
+            <a href="/admin/pages/<%= page.id %>/edit">Bearbeiten</a>
+            <a href="/admin/pages/<%= page.id %>/delete"
+              onclick="return confirm('Seite wirklich löschen?');">Löschen</a>
+          </td>
+        </tr>
+        <% }) %>
+    </table>
+</body>
+
+</html>

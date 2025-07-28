@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webdesign-Pakete</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 2rem;
+      }
+
+      .card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+</head>
+  <%- include('partials/head') %>
+
+<body>
+  <h1>Unsere Pakete</h1>
+
+  <% packages.forEach(pkg=> { %>
+    <div class="card">
+      <h2>
+        <%= pkg.name %>
+      </h2>
+      <p>Einmalig: €<%= (pkg.price_amount_cents/100).toFixed(0) %>
+      </p>
+      <form class="checkout-form" method="POST" action="/create-checkout-session">
+        <input type="hidden" name="packageId" value="<%= pkg.id %>">
+        <input type="hidden" name="mode" value="once">
+        <button type="submit">Jetzt kaufen</button>
+      </form>
+
+      <p>oder als Abo (monatlich):</p>
+      <form class="checkout-form" method="POST" action="/create-checkout-session">
+        <input type="hidden" name="packageId" value="<%= pkg.id %>">
+        <input type="hidden" name="mode" value="subscription">
+        <button type="submit">Abo abschließen</button>
+      </form>
+    </div>
+    <% }) %>
+
+      <script>
+        const stripe = Stripe('<%= stripePublishable %>');
+        document.querySelectorAll('.checkout-form').forEach(form => {
+          form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const data = {
+              packageId: form.querySelector('input[name="packageId"]').value,
+              mode: form.querySelector('input[name="mode"]').value
+            };
+            const response = await fetch(form.action, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            const { sessionId, error } = await response.json();
+            if (error) return alert(error);
+            await stripe.redirectToCheckout({ sessionId });
+          });
+        });
+      </script>
+</body>
+
+</html>

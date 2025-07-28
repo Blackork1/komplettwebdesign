@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/about.css" />
+    <link rel="stylesheet" href="/footer.css">
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+
+    <!-- Header / Navigation (falls eine Header-Partial existiert) -->
+    <%- include('partials/header.ejs') %>
+
+        <section id="about-hero" class="hero-section circleBg">
+            <div class="hero-content">
+                <h1>Hallo, ich bin Sören <span class="wave">👋</span></h1>
+                <p class="subtitle">Webdesigner aus Berlin, 29 Jahre jung, mit Leidenschaft für großartige Websites.
+                </p>
+            </div>
+            <div class="hero-image">
+                <img src="/images/meinAvatar.jpg" alt="Sören Blocksdorf Portrait" class="profile-pic" />
+                <!-- Alternativ: Hier könnte eine Illustration oder ein Foto von Sören eingefügt werden -->
+            </div>
+        </section>
+
+        <section id="about-intro" class="about-section two-column">
+            <h2>Über mich</h2>
+            <div class="column">
+                <p>Hey! Schön, dass du hier vorbeischaust. Ich bin Sören Blocksdorf, 29 Jahre alt, und lebe und wirke in
+                    Berlin. Als Webdesigner und Entwickler mit Herz und Humor erstelle ich <strong>maßgeschneiderte
+                        Komplettlösungen</strong> für deine Online-Präsenz. Was das heißt? Ganz einfach: Du bekommst bei
+                    mir alles aus einer Hand – vom ersten Designentwurf über den Programmier-Code bis hin zum Hosting
+                    und SEO. Und das Beste daran: Du kannst dich entspannt zurücklehnen, während ich deine Vision zum
+                    Leben erwecke.</p>
+                <p>Stell dir vor, du hast eine großartige Idee für eine Website, weißt aber nicht, wo du anfangen
+                    sollst. **Genau da komme ich ins Spiel.** Mit mittlerweile über 10 Jahren Erfahrung in Webdesign und
+                    Webentwicklung und Dutzenden realisierten Projekten habe ich gelernt, Projekte effizient und
+                    zuverlässig umzusetzen. Schon als Jugendlicher habe ich meine erste eigene kleine Website gebastelt
+                    – eine Fan-Seite zu meinem damaligen Lieblingsspiel – und seitdem lässt mich die Faszination fürs
+                    Web nicht mehr los.</p>
+                <p>Dabei lege ich großen Wert darauf, dass <em>du</em> dich verstanden fühlst und wir auf Augenhöhe
+                    zusammenarbeiten. Ich duze meine Kundinnen und Kunden, weil mir eine lockere, freundliche Atmosphäre
+                    wichtig ist – schließlich arbeiten wir eng zusammen an deinem digitalen Zuhause!</p>
+                <p>Ob du als Existenzgründer:in gerade durchstartest, ein etabliertes kleines Unternehmen leitest oder
+                    als Privatperson einfach eine tolle Website möchtest – ich arbeite mit jedem gern zusammen, der eine
+                    professionelle Web-Präsenz mit persönlicher Note sucht. Meine Kundschaft ist so vielfältig wie
+                    Berlin selbst: vom Familiencafé um die Ecke über Künstler und Berater bis hin zum Tech-Startup war
+                    schon alles dabei. Und falls du nicht aus Berlin kommst – keine Sorge: Dank Video-Calls und
+                    Online-Tools können wir problemlos zusammenarbeiten, egal wo du gerade bist. Mir ist vor allem
+                    wichtig, dass du dich gut aufgehoben fühlst – unabhängig von Branche, Budget oder Vorkenntnissen.
+                </p>
+            </div>
+            <div class="column">
+                <p><strong>Kurz gesagt:</strong> Ich bin dein freundlicher Web-Nerd von nebenan, der dafür sorgt, dass
+                    dein Projekt im Internet glänzt – unkompliziert, zuverlässig und mit einem Lächeln.</p>
+                <p>Seit der Gründung meiner eigenen Webdesign-Agentur hat sich viel getan. Was als kleiner
+                    Ein-Mann-Betrieb begann, ist heute ein Full-Service-Dienstleister – klein, aber oho. Jede neue
+                    Herausforderung spornt mich an, und ich bin stolz, mit jedem Projekt dazuzulernen.</p>
+                <p><strong>Meine Philosophie:</strong> Webdesign darf Spaß machen – sowohl mir bei der Umsetzung als
+                    auch dir beim Ergebnis. Deshalb mische ich Professionalität mit einer Prise Humor. Ich glaube fest
+                    daran, dass man die besten Ergebnisse erzielt, wenn die Zusammenarbeit auch ein bisschen Freude
+                    bereitet. Du kannst also damit rechnen, dass wir beim Projekt auch mal lachen – sei es über einen
+                    witzigen Platzhaltertext oder wenn ich dir begeistert den zigsten Entwurf präsentiere, weil mir über
+                    Nacht noch eine geniale Idee kam. Außerdem gilt: Auf mich ist Verlass – Termine, Zusagen und
+                    Absprachen halte ich ein, und transparente Kommunikation ist für mich selbstverständlich.</p>
+                <p>Als gebürtiger Berliner (und stolzer Koffein-Junkie) kenne ich die Startup-Szene und die Bedürfnisse
+                    lokaler Unternehmen gut. Gleichzeitig bin ich immer auf dem neuesten Stand, was moderne
+                    Webtechnologien und Designtrends angeht. Von <strong>responsivem Design</strong> über
+                    <strong>Suchmaschinenoptimierung (SEO)</strong> bis hin zu Performance-Tuning – ich sorge dafür,
+                    dass deine Website nicht nur hübsch aussieht, sondern auch technisch rockt. Und keine Sorge:
+                    Begriffe wie HTML, CSS, JavaScript, Domain, Hoster, Datenbank & Co. musst du nicht verstehen. Dafür
+                    hast du ja mich! Ich erkläre dir auf verständliche Weise, was nötig ist, und nehme dir die
+                    technischen Hürden ab. Berlin ist für mich übrigens nicht nur Heimat, sondern tägliche Inspiration –
+                    die Vielfalt und Dynamik der Stadt spiegeln sich auch in meinen Projekten wider.
+                </p>
+            </div>
+        </section>
+
+        <section id="services" class="about-section two-column">
+            <h2>Was ich dir biete</h2>
+            <div class="column">
+                <p>Bei mir bekommst du keinen Website-Baukasten von der Stange, sondern einen
+                    <strong>Rundum-sorglos-Service</strong> für deinen Webauftritt. Folgende Leistungen übernehme ich
+                    persönlich für dich:
+                </p>
+                <ul class="services-list">
+                    <li><span class="icon">🎨</span> <strong>Design:</strong> Ein individuelles, modernes Layout, das zu
+                        dir und deiner Zielgruppe passt. Hier achte ich darauf, dass deine Marke sich im Design
+                        widerspiegelt und Besucher sich sofort angesprochen fühlen.</li>
+                    <li><span class="icon">💻</span> <strong>Code &amp; Entwicklung:</strong> Sauber programmiert mit
+                        aktuellen Web-Technologien – damit alles schnell, sicher und zuverlässig läuft. Ich habe einen
+                        hohen Anspruch an meinen Code: wartbar, erweiterbar und nach modernen Standards.</li>
+                    <li><span class="icon">🚀</span> <strong>Performance &amp; SEO:</strong> Optimierung der Ladezeiten
+                        und Suchmaschinenfreundlichkeit, damit deine Seite nicht nur schön, sondern auch erfolgreich
+                        ist. Von Bildkomprimierung bis Keyword-Optimierung wird alles berücksichtigt, damit du bei
+                        Google &amp; Co. glänzt.</li>
+                    <li><span class="icon">🔒</span> <strong>Hosting &amp; Sicherheit:</strong> Einrichtung von Hosting,
+                        Domain und SSL-Zertifikat, regelmäßige Backups und Sicherheitsupdates inklusive. (Natürlich
+                        achte ich auch auf Datenschutz und DSGVO-Konformität.) Du musst dich um nichts Technisches
+                        kümmern – ich halte dir den Rücken frei und deine Website online und sicher.</li>
+                    <li><span class="icon">🤝</span> <strong>Support &amp; Betreuung:</strong> Auch nach dem Launch bin
+                        ich für dich da – sei es für Updates, Erweiterungen oder einfach, um deine Fragen zu
+                        beantworten. Du hast einen festen Ansprechpartner, der deine Website in- und auswendig kennt und
+                        sich schnell um Anliegen kümmert.</li>
+                </ul>
+            </div>
+            <div class="column">
+                <p>Der Name meiner Agentur ist übrigens Programm: <strong>Komplettwebdesign</strong> bedeutet, dass du
+                    dich um nichts kümmern musst – ich übernehme wirklich alle Aspekte deines Webprojekts, von A bis Z.
+                </p>
+                <p>Und das alles in enger Abstimmung mit dir. Dein Input ist mir wichtig, denn niemand kennt dein
+                    Business so gut wie du. Ich höre zu, berate dich ehrlich und hole das Beste aus deinem Projekt
+                    heraus. Am Ende sollst du nicht nur eine Website haben, sondern dich damit rundum wohl und stolz
+                    fühlen.</p>
+                <p>Übrigens bin ich technisch flexibel: Ob ein schlanker Onepager, ein WordPress-basiertes Blogsystem
+                    oder eine maßgeschneiderte Web-App – wir wählen die Lösung, die für dich am meisten Sinn ergibt. Es
+                    gibt nicht die eine Technologie, die immer richtig ist; wichtig ist, dass sie zu deinen Zielen
+                    passt.</p>
+                <p><em>Ach ja:</em> Ich arbeite außerdem nach dem Prinzip <strong>„weniger ist mehr“</strong>. Lieber
+                    eine Webseite, die schlank, schnell und zielgerichtet ist, als ein überfrachtetes Online-Monster,
+                    das niemand bedienen kann. In der heutigen Zeit entscheidet der erste Eindruck – und der passiert
+                    oft in Sekundenbruchteilen online. Daher sorge ich dafür, dass deine Seite <strong>sofort
+                        überzeugt</strong>: optisch, inhaltlich und technisch.</p>
+            </div>
+        </section>
+
+        <section id="project-highlight" class="about-section highlight two-column">
+            <h2>Projekt-Highlight: Zur alten Backstube</h2>
+            <div class="column">
+                <p>Eines meiner jüngsten Projekte, auf das ich besonders stolz bin, ist die Webseite für das gemütliche
+                    Café <a href="https://www.zuraltenbackstube.de" target="_blank" rel="noopener">„Zur alten
+                        Backstube“</a> in Berlin-Rosenthal. Die Inhaber wünschten sich einen Internetauftritt, der den
+                    Charme ihres Cafés einfängt – und gleichzeitig aktuellen Webstandards entspricht. Von der warmen
+                    Farbgestaltung bis zur Einbindung eines Online-Reservierungssystems habe ich hier eine
+                    Komplettlösung umgesetzt.</p>
+                <p>Das Ergebnis kann sich sehen lassen: Die Seite empfängt dich mit großen, einladenden Bildern von
+                    frisch gebackenem Kuchen und dem historischen Ambiente der alten Backstube. Du findest dort alle
+                    wichtigen Infos auf einen Blick – von der Geschichte des Cafés über die Öffnungszeiten bis hin zur
+                    Möglichkeit, direkt online eine Feier im Café zu buchen. Durch responsive Design macht die Seite
+                    auch auf dem Smartphone eine gute Figur, sodass Gäste unterwegs schnell nachschauen können, was es
+                    Neues gibt.</p>
+                <p>Für mich war dieses Projekt ein perfektes Beispiel dafür, wie Design und Funktion Hand in Hand gehen:
+                    Die Nutzer erleben eine stimmige, gemütliche Atmosphäre, während im Hintergrund moderne Web-Technik
+                    läuft (inklusive SEO-Optimierung, damit das Café bei Google gefunden wird). **Die Rückmeldungen der
+                    Betreiber waren durchweg positiv – sie haben nun mehr Reservierungsanfragen über die Website als
+                    zuvor.** Schau gern mal vorbei – vielleicht bekommst du ja Lust auf Kaffee und Kuchen <span
+                        class="emoji">😉</span>.</p>
+            </div>
+            <div class="column">
+                <div class="project-image">
+                    <img src="/images/review-bg.png" alt="Screenshot der Website Zur alten Backstube" />
+                    <!-- Dieses Bild sollte idealerweise ein Screenshot oder Foto der erstellten Webseite zeigen -->
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="about-section two-column">
+            <h2>So arbeiten wir zusammen</h2>
+            <div class="column">
+
+                <p>Vielleicht fragst du dich, wie der Ablauf ist, wenn wir gemeinsam dein Webprojekt starten. Keine
+                    Sorge, ich führe dich Schritt für Schritt durch den Prozess:</p>
+                <ol class="workflow-steps">
+                    <li><strong>Kennenlerngespräch:</strong> Zuerst setzen wir uns unverbindlich zusammen (telefonisch
+                        oder per Video-Call) und sprechen über deine Ideen, Ziele und Wünsche. Hier lernen wir uns
+                        kennen – schließlich soll die Chemie stimmen! In diesem Gespräch können wir auch schon grob die
+                        Richtung deines Projekts abstecken und offene Fragen klären.</li>
+                    <li><strong>Angebot &amp; Planung:</strong> Anhand unseres Gesprächs erstelle ich dir ein
+                        maßgeschneidertes Angebot. Wenn alles passt, planen wir gemeinsam das weitere Vorgehen. Du
+                        erhältst von mir einen klaren Fahrplan, was als nächstes passiert, sodass du jederzeit den
+                        Überblick behältst.</li>
+                    <li><strong>Designphase:</strong> Jetzt wird’s kreativ. Ich entwerfe erste Layouts und Designs für
+                        deine Website. Du bekommst Mockups (z.B. in Adobe XD oder Figma) zu sehen und wir stimmen uns
+                        eng ab, bis das Design deinen Vorstellungen entspricht (und meine hohen Ansprüche erfüllt).
+                        Dabei kannst du so viel Feedback geben, wie du möchtest – der Feinschliff ist wichtig.</li>
+                    <li><strong>Umsetzung &amp; Entwicklung:</strong> Sobald das Design steht, geht es an den Code. Ich
+                        entwickle deine Seite mit sauberem HTML, CSS und JavaScript (und falls nötig, mit einem
+                        passenden Backend). Ich teste alle Funktionen gründlich und stelle sicher, dass deine Seite in
+                        verschiedenen Browsern und auf unterschiedlichen Geräten top aussieht. Du kannst den Fortschritt
+                        live mitverfolgen – Transparenz ist mir wichtig.</li>
+                    <li><strong>Feedback &amp; Revision:</strong> Du erhältst einen ersten Prototypen deiner Website zum
+                        Ausprobieren. Jetzt bist du dran: Gib mir dein Feedback! Was gefällt dir, was fehlt dir noch? In
+                        dieser Phase feilen wir gemeinsam an den Details, bis alles perfekt ist. Änderungen und
+                        Verbesserungen lassen sich hier am besten einarbeiten, und ich bin da sehr geduldig –
+                        Hauptsache, du bist am Ende glücklich.</li>
+                    <li><strong>Launch &amp; Schulung:</strong> Wenn du rundum zufrieden bist, geht die Seite online! 🎉
+                        Ich kümmere mich um den Launch, die Domain-Einrichtung und alles Technische, damit du einen
+                        stressfreien Start hast. Auf Wunsch zeige ich dir anschließend in einer kurzen Schulung, wie du
+                        kleine Änderungen selbst vornehmen oder Inhalte aktualisieren kannst. So hast du die Kontrolle
+                        über deine Website, wenn du das möchtest.</li>
+                    <li><strong>Betreuung:</strong> Auch nach dem Livegang lasse ich dich nicht allein. Ob regelmäßige
+                        Backups, Sicherheitsupdates oder einfach mal eine Frage zwischendurch – ich stehe dir weiterhin
+                        zur Seite. Viele meiner Kunden schätzen es, einen verlässlichen Ansprechpartner zu haben, der
+                        ihre Website betreut. Wenn du später zusätzliche Funktionen oder Änderungen brauchst, helfe ich
+                        dir gerne dabei – dein Online-Auftritt kann mit deinem Business mitwachsen.</li>
+                </ol>
+            </div>
+            <div class="column">
+                <p>Wie du siehst, lege ich großen Wert auf eine persönliche und transparente Zusammenarbeit. Du sollst
+                    jederzeit das Gefühl haben, Teil des Projekts zu sein – schließlich geht es um deine Website. Und
+                    keine Angst: Es gibt keine dummen Fragen. Lieber fragst du einmal mehr nach, als dass du dich am
+                    Ende mit etwas unwohl fühlst.</p>
+            </div>
+        </section>
+
+        <section id="personal-touch" class="about-section two-column">
+            <h2>Ein paar persönliche Fun Facts</h2>
+            <div class="column">
+
+                <p>Zum Schluss noch ein paar Dinge, die du über mich vielleicht nicht wusstest – einfach, damit du einen
+                    Eindruck bekommst, was für ein Mensch hinter dem Bildschirm steckt:</p>
+                <ul class="fun-facts">
+                    <li><strong>Kaffee-Enthusiast:</strong> Ohne meinen Morgenkaffee läuft bei mir gar nichts. Gute
+                        Ideen brauchen Koffein! Fun Fact: Mein Büro duftet immer ein bisschen nach frisch gemahlenen
+                        Bohnen.</li>
+                    <li><strong>Nachteule:</strong> Die besten Geistesblitze kommen mir oft spät in der Nacht. Kein
+                        Wunder also, dass ich manchmal E-Mails um 2 Uhr morgens abschicke (Antworten erwarte ich aber
+                        nicht um die Zeit!). Trotz Nachtaktivität bin ich tagsüber natürlich erreichbar – notfalls mit
+                        einer Extra-Tasse Kaffee.</li>
+                    <li><strong>Gaming &amp; Design:</strong> In meiner Freizeit zocke ich gern mal – und ja, ich schaue
+                        mir dabei auch immer die Spiel-Menüs und Interfaces an und überlege, wie man sie verbessern
+                        könnte. Berufskrankheit! Das inspiriert mich oft zu neuen Webdesign-Ideen, gerade was die
+                        Benutzerfreundlichkeit angeht.</li>
+                    <li><strong>Immer in Bewegung:</strong> Ausgleich muss sein. Wenn ich nicht am Schreibtisch sitze,
+                        findet man mich draußen beim Joggen an der Spree oder beim Spazieren durch die Berliner Kieze –
+                        frische Luft inspiriert. Letztes Jahr bin ich sogar meinen ersten Halbmarathon gelaufen. Die
+                        Ausdauer nehme ich mit in unsere Projekte.</li>
+                    <li><strong>Lebenslanges Lernen:</strong> Webdesign ist ein Feld, das sich ständig verändert. Ich
+                        liebe es, neue Tools und Trends auszuprobieren. Mein neuestes Spielzeug: eine 3D-Designsoftware,
+                        mit der man richtig coole Web-Animationen bauen kann. Wer weiß, vielleicht siehst du ja bald auf
+                        meiner Seite ein paar interaktive 3D-Effekte.</li>
+                </ul>
+            </div>
+            <div class="column">
+                <p>Jetzt kennst du mich schon ein Stückchen besser. Ich bin jedenfalls gespannt, dich kennenzulernen und
+                    mehr über dein Projekt zu erfahren. Zusammen machen wir dein Vorhaben zum Erfolg – und haben im
+                    besten Fall auch noch eine Menge Spaß dabei!</p>
+            </div>
+        </section>
+
+        <section id="cta" class="cta-section">
+            <div class="booking-widget">
+                <!-- Einbindung des vorhandenen Buchungs-Widgets -->
+                <%- include('partials/booking_widget.ejs') %>
+            </div>
+            <p class="note">*Keine Sorge, der Termin ist natürlich kostenlos und du gehst keine Verpflichtungen ein.
+                Ich freue mich einfach, von dir zu hören!</p>
+        </section>
+
+
+        <%- include('partials/footer.ejs') %>
+
+</body>
+
+</html>
