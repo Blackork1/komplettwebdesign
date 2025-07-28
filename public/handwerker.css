@@ -32,9 +32,9 @@ img{max-width:100%;display:block}
 .section-title{text-align:center;margin:0 0 2rem;font-size:2rem}
 
 /* === Hero ===================================================== */
-.hero{background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwHigh2.jpg") center / cover no-repeat !important;padding:5rem 0 6rem !important}
+.hero{background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwHigh2.webp") center / cover no-repeat !important;padding:5rem 0 6rem !important}
 .hero__grid{display:grid;gap:3rem}
-@media(min-width:860px){.hero__grid{grid-template-columns:1fr 1fr;align-items:center} .hero{  background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwWide3.jpg") center / cover no-repeat !important;}}
+@media(min-width:860px){.hero__grid{grid-template-columns:1fr 1fr;align-items:center} .hero{  background: linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0.2) 20%),url("/images/bgHwWide3.webp") center / cover no-repeat !important;}}
 .hero h1{font-size:2.4rem;line-height:1.2;margin:0 0 1.25rem}
 .lead{font-size:1.1rem;margin-bottom:1.5rem;color:var(--white)}
 .hero__bullets{list-style:none;padding:0;margin:0 0 2rem}

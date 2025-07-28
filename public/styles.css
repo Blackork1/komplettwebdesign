@@ -483,7 +483,7 @@ a.logo {
   color: var(--color-white);
   background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0) 1%),
     linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-    url("/images/heroBackgroundW.jpg") center / cover no-repeat;
+    url("/images/heroBackgroundW.webp") center / cover no-repeat;
 }
 .hero-section {
   padding: 0 150px;
@@ -699,7 +699,7 @@ Agentur-Einleitung
   overflow: hidden;
   border-radius: var(--radius);
   margin-bottom: 1rem;
-  background: url("/images/review-bg.png") center / contain no-repeat;
+  background: url("/images/review-bg.webp") center / contain no-repeat;
 }
 
 .text-image {
@@ -1182,7 +1182,7 @@ table.table.table-sm {
         rgba(255, 255, 255, 0) 5%
       ),
       linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-      url(/images/heroBackgroundH.jpg) center / cover no-repeat;
+      url(/images/heroBackgroundH.webp) center / cover no-repeat;
   }
 
   .section {
@@ -1259,7 +1259,7 @@ table.table.table-sm {
 
   .image-review {
     min-height: 350px;
-    background: url(/images/review-bg-mobile.png) center / contain no-repeat;
+    background: url(/images/review-bg-mobile.webp) center / contain no-repeat;
   }
 }
 

@@ -14,7 +14,7 @@ body {
 /* Hero Section Styles */
 .hero {
   position: relative;
-  background: url("/images/blogW.jpeg") center center no-repeat;
+  background: url("/images/blogW.webp") center center no-repeat;
   background-size: cover;
   color: #fff;
   padding: 4rem 2rem;
