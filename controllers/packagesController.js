@@ -2,6 +2,7 @@
 import { de } from 'date-fns/locale';
 import pool from '../util/db.js';
 import nodemailer from 'nodemailer';
+import { title } from 'process';
 
 // ────────────────────────────────────────────────────────────────────────────────
 //  Nodemailer-Transport (nutzt deine SMTP-Env-Variablen)
@@ -52,9 +53,52 @@ export async function showPackage(req, res) {
 //  Kontaktformular verarbeiten
 //  POST /packages/:slug/kontakt
 // ────────────────────────────────────────────────────────────────────────────────
+// export async function handleContact(req, res) {
+//   const slug = req.params.slug.toLowerCase();
+//   const { name, email, slot } = req.body;           // slot = ausgewählter Termin
+//   try {
+//     // Paketdaten holen (für Mail & Bestätigung)
+//     const { rows } = await pool.query(
+//       'SELECT * FROM packages WHERE LOWER(name) = $1 LIMIT 1',
+//       [slug]
+//     );
+//     if (!rows.length) return res.status(404).send('Paket nicht gefunden');
+//     const pack = rows[0];
+
+//     // Bestätigungs-Mail an Kunden
+//     const html = `
+//       <p>Hallo <strong>${name}</strong>,</p>
+//       <p>
+//         Sie haben sich für das <strong>${pack.name}-Paket</strong> entschieden.
+//         Keine Sorge, Sie müssen noch nichts bezahlen. 
+//         Wir treffen uns zunächst zu einem Online-Beratungsgespräch 
+//         (gern auch persönlich).<br><br>
+//         <em>Ausgewählter Termin:</em> ${slot || 'wird noch abgestimmt'}
+//       </p>
+//       <p>Beste Grüße<br>Komplettwebdesign</p>
+//     `;
+
+//     await transporter.sendMail({
+//       from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
+//       to:   email,
+//       subject: `Ihre Anfrage – ${pack.name}-Paket`,
+//       html
+//     });
+
+//     // Erfolgsmeldung zurück auf Detailseite
+//     res.render('package_detail', {
+//       pack,
+//       successMessage: 'Vielen Dank! Wir haben Ihre Anfrage erhalten und melden uns bald.'
+//     });
+//   } catch (err) {
+//     console.error('❌ handleContact:', err);
+//     res.status(500).send('Fehler beim Senden der Anfrage. Bitte später erneut versuchen.');
+//   }
+// }
+
 export async function handleContact(req, res) {
   const slug = req.params.slug.toLowerCase();
-  const { name, email, slot } = req.body;           // slot = ausgewählter Termin
+  const { name, email } = req.body;           // slot = ausgewählter Termin
   try {
     // Paketdaten holen (für Mail & Bestätigung)
     const { rows } = await pool.query(
@@ -72,7 +116,6 @@ export async function handleContact(req, res) {
         Keine Sorge, Sie müssen noch nichts bezahlen. 
         Wir treffen uns zunächst zu einem Online-Beratungsgespräch 
         (gern auch persönlich).<br><br>
-        <em>Ausgewählter Termin:</em> ${slot || 'wird noch abgestimmt'}
       </p>
       <p>Beste Grüße<br>Komplettwebdesign</p>
     `;
@@ -86,6 +129,8 @@ export async function handleContact(req, res) {
 
     // Erfolgsmeldung zurück auf Detailseite
     res.render('package_detail', {
+      title: `Paket: ${pack.name} | Komplettwebdesign`,
+      description: 'Details zu unserem Paket',
       pack,
       successMessage: 'Vielen Dank! Wir haben Ihre Anfrage erhalten und melden uns bald.'
     });

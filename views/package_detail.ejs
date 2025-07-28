@@ -70,7 +70,7 @@
               <%= successMessage %>
             </div>
             <% } %>
-              <form action="/packages/<%= pack.name.toLowerCase() %>/kontakt" method="POST">
+              <form action="/pakete/<%= pack.name.toLowerCase() %>/kontakt" method="POST">
                 <div class="mb-3">
                   <label for="inputName" class="form-label">Ihr Name</label>
                   <input type="text" id="inputName" name="name" class="form-control" placeholder="Max Mustermann"
@@ -82,16 +82,16 @@
                     required>
                 </div>
                 <!-- Slot-Auswahlfeld (vom bestehenden Buchungssystem integriert) -->
-                <div class="mb-3">
-                  <label for="slot" class="form-label">Wunschtermin für Beratungsgespräch</label>
+                <!-- <div class="mb-3">
+                  <label for="slot" class="form-label">Wunschtermin für Beratungsgespräch</label> -->
                   <!-- Beispiel: Ein Dropdown oder ein eingebettetes Widget -->
-                  <select id="slot" name="slot" class="form-select">
+                  <!-- <select id="slot" name="slot" class="form-select">
                     <option value="">Bitte wählen...</option>
                     <option value="slot1">Mo 10:00 - 11:00</option>
-                    <option value="slot2">Di 14:00 - 15:00</option>
+                    <option value="slot2">Di 14:00 - 15:00</option> -->
                     <!-- Dynamische Slot-Optionen vom Buchungssystem hier einfügen -->
-                  </select>
-                </div>
+                  <!-- </select>
+                </div> -->
                 <!-- Paket-Referenz als Hidden Feld (falls benötigt, hier redundanter, da im URL enthalten) -->
                 <input type="hidden" name="package" value="<%= pack.name %>">
                 <button type="submit" class="btn btn-success">Anfrage absenden</button>
