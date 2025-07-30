@@ -1,3 +1,7 @@
+import { webcrypto } from 'crypto';
+if (!global.crypto) {
+  global.crypto = webcrypto;
+}
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
@@ -6,7 +10,7 @@ import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { webcrypto } from 'crypto';
+
 
 
 import pool from './util/db.js';
@@ -45,9 +49,7 @@ import contactRoutes        from "./routes/contactRoutes.js";
 
 import Stripe from 'stripe';
 
-if (!global.crypto) {
-  global.crypto = webcrypto;
-}
+
 
 // Umgebungsvariablen laden
 dotenv.config();
