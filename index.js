@@ -6,6 +6,8 @@ import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { webcrypto } from 'crypto';
+
 
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
@@ -43,8 +45,13 @@ import contactRoutes        from "./routes/contactRoutes.js";
 
 import Stripe from 'stripe';
 
+if (!global.crypto) {
+  global.crypto = webcrypto;
+}
+
 // Umgebungsvariablen laden
 dotenv.config();
+
 
 const app = express();
 app.use(compression());
