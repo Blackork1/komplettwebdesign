@@ -1,6 +1,29 @@
 import pool from '../util/db.js';
 import { sendBookingMail } from '../services/mailService.js';
 
+export async function adminHome(_req, res) {
+  const { rows: pending } = await pool.query(`
+    SELECT b.*, a.start_time, a.end_time
+      FROM bookings b
+      JOIN appointments a ON a.id = b.appointment_id
+     WHERE b.status = 'pending'
+     ORDER BY a.start_time`);
+
+  const { rows: confirmed } = await pool.query(`
+    SELECT b.*, a.start_time, a.end_time
+      FROM bookings b
+      JOIN appointments a ON a.id = b.appointment_id
+     WHERE b.status = 'confirmed'
+     ORDER BY a.start_time`);
+
+  res.render('admin/dashboard', {
+    title: 'Admin-Startseite',
+    pending,
+    confirmed
+  });
+}
+
+
 /* ------------------------------------------------------------------ */
 /*  Termine (appointments)                                            */
 /* ------------------------------------------------------------------ */

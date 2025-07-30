@@ -5,6 +5,8 @@ import { isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
+router.get('/admin', isAdmin, admin.adminHome);
+
 /* ---------- Termine (appointments) ---------- */
 router.get('/admin/appointments',        isAdmin, admin.listAppointments);
 router.get('/admin/appointments/new',    isAdmin, admin.newAppointmentForm);

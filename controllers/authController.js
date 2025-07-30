@@ -17,7 +17,7 @@ export async function login(req, res) {
     }
 
     req.session.user = { is: user.id, username: user.username, isAdmin: true };
-    res.redirect('/admin/appointments');
+    res.redirect('/admin');
 }
 
 export function logout(req, res) {

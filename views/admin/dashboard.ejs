@@ -1,0 +1,67 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container my-5">
+  <h1 class="mb-4">Admin-Dashboard</h1>
+
+  <div class="row mb-5">
+    <div class="col-md-4">
+      <div class="list-group">
+        <a href="/admin/appointments" class="list-group-item list-group-item-action">Termine verwalten</a>
+        <a href="/admin/bookings" class="list-group-item list-group-item-action">Buchungen verwalten</a>
+        <a href="/admin/blog" class="list-group-item list-group-item-action">Blog</a>
+        <a href="/admin/pages" class="list-group-item list-group-item-action">Seitenerstellung</a>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="mt-4">Offene Terminreservierungen</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Termin</th>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Aktion</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pending.forEach(b => { %>
+        <tr>
+          <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+          <td><%= b.name %></td>
+          <td><%= b.email %></td>
+          <td>
+            <form method="POST" action="/admin/bookings/<%= b.id %>/confirm" class="d-inline">
+              <button class="btn btn-sm btn-success">Bestätigen</button>
+            </form>
+            <form method="POST" action="/admin/bookings/<%= b.id %>/cancel" class="d-inline">
+              <button class="btn btn-sm btn-danger">Stornieren</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h2 class="mt-5">Akzeptierte Termine</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Termin</th>
+        <th>Name</th>
+        <th>E-Mail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% confirmed.forEach(b => { %>
+        <tr>
+          <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+          <td><%= b.name %></td>
+          <td><%= b.email %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/admin_footer') %>
