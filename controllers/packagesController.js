@@ -3,15 +3,23 @@ import { de } from 'date-fns/locale';
 import pool from '../util/db.js';
 import nodemailer from 'nodemailer';
 import { title } from 'process';
+import {
+  getNextOpenSlots,
+  lockSlot,
+  unlockSlot
+} from '../models/appointmentModel.js';
+import * as Book from '../models/bookingModel.js';
+import { sendBookingMail } from '../services/mailService.js';
+
 
 // ────────────────────────────────────────────────────────────────────────────────
 //  Nodemailer-Transport (nutzt deine SMTP-Env-Variablen)
 // ────────────────────────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST,
-  port:   Number(process.env.SMTP_PORT),
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
   secure: Number(process.env.SMTP_PORT) === 465,      // SSL nur bei Port 465
-  auth:   { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -42,7 +50,13 @@ export async function showPackage(req, res) {
       [slug]
     );
     if (!rows.length) return res.status(404).send('Paket nicht gefunden');
-    res.render('package_detail', { pack: rows[0] , title: `Paket: ${rows[0].name} | Komplettwebdesign`, description: 'Details zu unserem Paket' });
+    const slots = await getNextOpenSlots(3);
+    res.render('package_detail', {
+      pack: rows[0],
+      slots,
+      title: `Paket: ${rows[0].name} | Komplettwebdesign`,
+      description: 'Details zu unserem Paket'
+    });
   } catch (err) {
     console.error('❌ showPackage:', err);
     res.status(500).send('Paket konnte nicht geladen werden.');
@@ -98,7 +112,9 @@ export async function showPackage(req, res) {
 
 export async function handleContact(req, res) {
   const slug = req.params.slug.toLowerCase();
-  const { name, email } = req.body;           // slot = ausgewählter Termin
+  const { name, email, slot } = req.body;
+  let lockedSlot = null;
+  let booking = null;
   try {
     // Paketdaten holen (für Mail & Bestätigung)
     const { rows } = await pool.query(
@@ -108,34 +124,55 @@ export async function handleContact(req, res) {
     if (!rows.length) return res.status(404).send('Paket nicht gefunden');
     const pack = rows[0];
 
-    // Bestätigungs-Mail an Kunden
-    const html = `
-      <p>Hallo <strong>${name}</strong>,</p>
-      <p>
-        Sie haben sich für das <strong>${pack.name}-Paket</strong> entschieden.
-        Keine Sorge, Sie müssen noch nichts bezahlen. 
-        Wir treffen uns zunächst zu einem Online-Beratungsgespräch 
-        (gern auch persönlich).<br><br>
-      </p>
-      <p>Beste Grüße<br>Komplettwebdesign</p>
-    `;
+    if (slot) {
+      lockedSlot = await lockSlot(Number(slot));
+      if (!lockedSlot) return res.render('booking/slot_taken');
+      booking = await Book.create(lockedSlot.id, name, email);
+    }
 
-    await transporter.sendMail({
-      from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
-      to:   email,
-      subject: `Ihre Anfrage – ${pack.name}-Paket`,
-      html
-    });
+    const slots = await getNextOpenSlots(3);
+
+    const slotText = lockedSlot
+      ? new Date(lockedSlot.start_time).toLocaleString('de-DE', {
+        weekday: 'short', day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit'
+      })
+      : null;
+
+    if (lockedSlot) {
+      await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending' });
+      await sendBookingMail({ to: 'kontakt@komplettwebdesign.de', name: 'Admin', appointment: lockedSlot, type: 'pending' });
+    } else {
+      const html = `
+        <p>Hallo <strong>${name}</strong>,</p>
+        <p>
+          Sie haben sich für das <strong>${pack.name}-Paket</strong> entschieden.
+          Keine Sorge, Sie müssen noch nichts bezahlen.
+          Wir treffen uns zunächst zu einem Online-Beratungsgespräch
+          (gern auch persönlich).
+        </p>
+        <p>Beste Grüße<br>Komplettwebdesign</p>
+      `;
+      await transporter.sendMail({
+        from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
+        to: email,
+        subject: `Ihre Anfrage – ${pack.name}-Paket`,
+        html
+      });
+    }
 
     // Erfolgsmeldung zurück auf Detailseite
     res.render('package_detail', {
       title: `Paket: ${pack.name} | Komplettwebdesign`,
       description: 'Details zu unserem Paket',
+      slots: slots,
       pack,
       successMessage: 'Vielen Dank! Wir haben Ihre Anfrage erhalten und melden uns bald.'
     });
   } catch (err) {
     console.error('❌ handleContact:', err);
+    if (lockedSlot) await unlockSlot(lockedSlot.id);
+    if (booking) await Book.remove(booking.id);
     res.status(500).send('Fehler beim Senden der Anfrage. Bitte später erneut versuchen.');
   }
 }

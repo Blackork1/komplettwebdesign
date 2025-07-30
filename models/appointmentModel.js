@@ -10,6 +10,19 @@ export async function getOpenSlots () {
   return rows;
 }
 
+export async function getNextOpenSlots(limit = 3) {
+  const { rows } = await pool.query(
+    `SELECT * FROM appointments
+       WHERE start_time >= NOW()
+         AND is_booked = FALSE
+     ORDER BY start_time
+     LIMIT $1`,
+    [limit]
+  );
+  return rows;
+}
+
+
 export async function lockSlot (id) {
   const { rows } = await pool.query(`
     UPDATE appointments               -- <- hier auch
