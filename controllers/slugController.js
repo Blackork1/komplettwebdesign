@@ -6,7 +6,7 @@ export async function getPageBySlug(req, res, next) {
   try {
     // Lade Seite nach Slug
     const { rows: pages } = await db.query(
-      'SELECT * FROM pages WHERE slug = $1',
+      'SELECT * FROM pages WHERE slug = $1 AND display = TRUE',
       [slug]
     );
     if (!pages.length) return next(); // keine Seite -> weiter zu 404

@@ -11,8 +11,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-
-
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
 
@@ -32,7 +30,6 @@ import bookingRoutes        from './routes/bookingRoutes.js';
 import adminRoutes          from './routes/adminRoutes.js';
 import slugRoutes           from './routes/slug.js';
 import widgetApiRoutes      from './routes/widgetApiRoutes.js';   
-// import contactRouter        from './routes/contact_legacy.js'; 
 import blogRoutes           from './routes/blogRoutes.js';
 import adminBlogRoutes      from './routes/adminBlogRoutes.js';
 import newsletterRoutes     from './routes/newsletter.js';
@@ -40,11 +37,7 @@ import starticPagesRoutes   from './routes/staticPages.js';
 import packageRoutes        from './routes/packages.js';
 import faqRoutes            from './routes/faq.js';
 import contactRoutes        from "./routes/contactRoutes.js";
-
-
-
-
-
+import chatRoutes           from './routes/chat.js';
 
 
 import Stripe from 'stripe';
@@ -125,6 +118,8 @@ app.use('/', starticPagesRoutes);
 app.use(packageRoutes);
 app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
+app.use(chatRoutes);
+
 
 
 // 404-Handler

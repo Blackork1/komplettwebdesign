@@ -13,8 +13,8 @@ export function navbarMiddleware(pool) {
     try {
       const { rows: pages } = await pool.query(`
         SELECT title, slug, nav
-        FROM pages
-        ORDER BY title
+        FROM pages WHERE display = true
+        ORDER BY title 
       `);
       res.locals.navPages = pages;
     } catch (err) {
