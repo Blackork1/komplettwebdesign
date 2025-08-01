@@ -1,0 +1,31 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<div class="section">
+  <div class="container mt-5">
+    <h1 class="white">Vielen Dank!</h1>
+    <p class="white">Hallo <%= data.name %>,</p>
+    <p class="white">vielen Dank für deine Anfrage über unser Kontaktformular. Wir haben die folgenden Angaben erhalten:</p>
+    <table class="table">
+      <tr><th>Paket:</th><td><%= data.paket %></td></tr>
+      <tr><th>Seitenumfang:</th><td><%= data.umfang %></td></tr>
+      <tr><th>Texte:</th><td><%= data.texterstellung === 'erstellt' ? 'Texterstellung benötigt' : 'Eigene Texte vorhanden' %></td></tr>
+      <tr><th>Bilder:</th><td><%= data.bilderstellung === 'erstellt' ? 'Bildrecherche/-erstellung benötigt' : 'Eigene Bilder vorhanden' %></td></tr>
+      <tr><th>Funktionen:</th><td><%= Array.isArray(data.inhalte) ? data.inhalte.join(', ') : (data.inhalte || 'Keine') %></td></tr>
+      <tr><th>Weitere Wünsche:</th><td><%= data.weitereWuensche || 'Keine' %></td></tr>
+      <% if (formattedAppointment) { %>
+      <tr><th>Termin:</th><td><%= formattedAppointment %></td></tr>
+      <% } %>
+      <tr><th>Name:</th><td><%= data.name %></td></tr>
+      <tr><th>E-Mail:</th><td><%= data.email %></td></tr>
+      <tr><th>Telefon:</th><td><%= data.telefon %></td></tr>
+      <tr><th>Firma:</th><td><%= data.firma || 'Keine' %></td></tr>
+      <tr><th>Sonstige Infos:</th><td><%= data.sonstigeInfos || 'Keine' %></td></tr>
+    </table>
+    <% if (appointment) { %>
+      <p><a href="/kontakt/ics/<%= appointment.id %>" class="btn btn-primary">Termin als ICS herunterladen</a></p>
+    <% } %>
+    <p class="white">Wir werden uns in Kürze bei dir melden, um die Details zu besprechen.</p>
+    <p class="white">Mit freundlichen Grüßen<br>Dein Komplettwebdesign-Team</p>
+  </div>
+</div>
+<%- include('../partials/footer') %>

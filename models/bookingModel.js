@@ -7,6 +7,7 @@ export async function findByAppointment(aptId) {
     `SELECT *
        FROM bookings
       WHERE appointment_id = $1
+      AND status <> 'cancelled'
       LIMIT 1`,
     [aptId]
   );

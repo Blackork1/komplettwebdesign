@@ -38,3 +38,13 @@ export async function unlockSlot (id) {
     'UPDATE appointments SET is_booked = FALSE WHERE id = $1',
     [id]);
 }
+
+
+/* einzelnen Termin anhand der ID holen */
+export async function getById(id) {
+  const { rows } = await pool.query(
+    'SELECT * FROM appointments WHERE id = $1 LIMIT 1',
+    [id]
+  );
+  return rows[0] ?? null;
+}

@@ -5,5 +5,7 @@ const router = express.Router();
 
 router.get("/", contactCtrl.showForm);
 router.post("/", contactCtrl.processForm);
+router.get("/ics/:id", contactCtrl.downloadIcs);
+
 
 export default router;

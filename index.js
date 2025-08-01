@@ -61,6 +61,9 @@ app.set('views', path.join(__dirname, 'views'));
 const staticOpts = process.env.NODE_ENV === 'development'
   ? { maxAge: 0 } : { immutable: true, maxAge: '365d' };
 app.use(express.static(path.join(__dirname, 'public'), staticOpts));
+app.get('/sitemap.xml', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
