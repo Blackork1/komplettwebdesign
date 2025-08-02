@@ -73,8 +73,8 @@ app.use(session({
   store: new PgSession({pool, createTableIfMissing: true}),
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24} // 1 Tag
+  saveUninitialized: true,
+  cookie: { maxAge: 1000*60*60 } // 1 Tag
 }));
 
 // DB, Cloudinary & Stripe auf app setzen
