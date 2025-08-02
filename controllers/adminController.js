@@ -27,7 +27,7 @@ export async function adminHome(_req, res) {
 /* ------------------------------------------------------------------ */
 /*  Termine (appointments)                                            */
 /* ------------------------------------------------------------------ */
-export async function listAppointments (_req, res) {
+export async function listAppointments(_req, res) {
   const { rows } = await pool.query(
     'SELECT * FROM appointments ORDER BY start_time');
   res.render('admin/appointments_list', {
@@ -36,13 +36,13 @@ export async function listAppointments (_req, res) {
   });
 }
 
-export async function newAppointmentForm (_req, res) {
+export async function newAppointmentForm(_req, res) {
   res.render('admin/appointment_form', {
     title: 'Neuer Termin'
   });
 }
 
-export async function createAppointment (req, res) {
+export async function createAppointment(req, res) {
   const { start, end, title } = req.body;
   await pool.query(
     `INSERT INTO appointments (start_time, end_time, title)
@@ -52,18 +52,35 @@ export async function createAppointment (req, res) {
   res.redirect('/admin/appointments');
 }
 
-export async function deleteAppointment (req, res) {
-    const { id } = req.params;
-    await pool.query(
-        'DELETE FROM appointments WHERE id = $1',
-        [id]);
-    res.redirect('/admin/appointments');
+export async function deleteAppointment(req, res) {
+  const { id } = req.params;
+
+  // Zu diesem Termin gehörende Kontaktanfragen entfernen
+  await pool.query(
+    `DELETE FROM contact_requests
+          WHERE booking_id IN (
+            SELECT id FROM bookings WHERE appointment_id = $1
+          )`,
+    [id]
+  );
+
+  // Eventuelle Buchungen löschen
+  await pool.query(
+    'DELETE FROM bookings WHERE appointment_id = $1',
+    [id]
+  );
+
+  // Termin löschen
+  await pool.query(
+    'DELETE FROM appointments WHERE id = $1',
+    [id]);
+  res.redirect('/admin/appointments');
 }
 
 /* ------------------------------------------------------------------ */
 /*  Buchungen (bookings)                                              */
 /* ------------------------------------------------------------------ */
-export async function listBookings (_req, res) {
+export async function listBookings(_req, res) {
   const { rows } = await pool.query(`
     SELECT b.*, a.start_time, a.end_time
       FROM bookings b
@@ -75,7 +92,7 @@ export async function listBookings (_req, res) {
   });
 }
 
-export async function confirmBooking (req, res) {
+export async function confirmBooking(req, res) {
   const { id } = req.params;
 
   /* Status auf confirmed setzen */
@@ -92,16 +109,17 @@ export async function confirmBooking (req, res) {
     'SELECT * FROM appointments WHERE id = $1',
     [booking.appointment_id]);
   await sendBookingMail({
-    to:   booking.email,
+    to: booking.email,
     name: booking.name,
     appointment: aptRows[0],
-    type: 'confirmed'
+    type: 'confirmed',
+    bookingId: booking.id
   });
 
   res.redirect('/admin/bookings');
 }
 
-export async function cancelBooking (req, res) {
+export async function cancelBooking(req, res) {
   const { id } = req.params;
 
   /* Buchung stornieren */
@@ -124,7 +142,7 @@ export async function cancelBooking (req, res) {
     'SELECT * FROM appointments WHERE id = $1',
     [booking.appointment_id]);
   await sendBookingMail({
-    to:   booking.email,
+    to: booking.email,
     name: booking.name,
     appointment: aptRows[0],
     type: 'cancelled'

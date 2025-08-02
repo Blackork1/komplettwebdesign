@@ -33,7 +33,7 @@ export async function embedAllPages() {
         });
         const vecSql = '[' + resp.data[0].embedding.join(',') + ']';
         await pool.query(
-            'UPDATE faq_entries SET embedding = $1 WHERE id = $2',
+            'UPDATE pages SET embedding = $1 WHERE id = $2',
             [vecSql, id]
         );
         console.log(`Embedded Page ${id}`);

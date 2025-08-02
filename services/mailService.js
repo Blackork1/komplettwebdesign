@@ -2,6 +2,8 @@ import nodemailer from "nodemailer";
 import { generateICS } from "./icsService.js";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { generateToken } from "../util/bookingToken.js";
+
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -10,7 +12,7 @@ const transporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
 
-export async function sendBookingMail({ to, name, appointment, type }) {
+export async function sendBookingMail({ to, name, appointment, type, bookingId = null }) {
     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
     const pretty = format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
 
@@ -20,6 +22,17 @@ export async function sendBookingMail({ to, name, appointment, type }) {
         confirmed: `Termin bestätigt: ${pretty}`,
         cancelled: `Termin abgesagt: ${pretty}`
     }[type];
+
+    /* Optionale Aktionslinks */
+    let actionHtml = "";
+    if (type === "confirmed" && bookingId) {
+        const token = generateToken(bookingId);
+        const base = process.env.BASE_URL || "";
+        const cancelUrl = `${base}/booking/${bookingId}/cancel/${token}`;
+        const rescheduleUrl = `${base}/booking/${bookingId}/reschedule/${token}`;
+        actionHtml = `<p><a href="${cancelUrl}">Termin stornieren</a> oder <a href="${rescheduleUrl}">neuen Termin anfragen</a></p>`;
+    }
+
 
     /*Mail Body*/
     const html = `
@@ -31,6 +44,7 @@ export async function sendBookingMail({ to, name, appointment, type }) {
                 : `Leider mussten wir den Termin stornieren. Bitte buchen Sie einen neuen Termin über unsere Website.`
         }</p>
     <p><strong>Termin:</strong> ${pretty}</p>
+    ${actionHtml}
     <p>Beste Grüße<br>Komplettwebdesign</p>
     `;
 
@@ -70,6 +84,38 @@ export async function sendRequestMail({ to, name }) {
     };
     return transporter.sendMail(mail);
 }
+
+
+export async function sendAdminBookingInfo({ booking, appointment, type }) {
+    const pretty = format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
+    const subject = {
+        new: `Neue Buchung: ${pretty}`,
+        cancel: `Buchung storniert: ${pretty}`,
+        reschedule: `Neuer Termin gewünscht: ${pretty}`
+    }[type];
+
+    const message = {
+        new: "Neue Buchung eingegangen.",
+        cancel: "Kunde hat den Termin storniert.",
+        reschedule: "Kunde wünscht einen neuen Termin und der Termin wurde storniert."
+    }[type];
+
+    const html = `
+        <p>${message}</p>
+        <p><strong>Name:</strong> ${booking.name}<br>
+        <strong>E-Mail:</strong> ${booking.email}</p>
+        <p><strong>Termin:</strong> ${pretty}</p>
+    `;
+
+    const mail = {
+        from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+        to: 'kontakt@komplettwebdesign.de',
+        subject,
+        html
+    };
+    return transporter.sendMail(mail);
+}
+
 // export async function sendRequestMail({ to, name, type }) {
 //     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
 

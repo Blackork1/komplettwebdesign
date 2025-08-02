@@ -154,12 +154,6 @@ export const processForm = [
                     appointment: slot,
                     type: "pending"
                 });
-                await sendBookingMail({
-                    to: "kontakt@komplettwebdesign.de",
-                    name: "Admin",
-                    appointment: slot,
-                    type: "pending"
-                });
                 attachments.push({
                     filename: 'Beratungstermin.ics',
                     content: generateICS(slot, 'pending'),

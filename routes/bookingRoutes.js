@@ -8,5 +8,7 @@ router.post("/booking", booking.validate, booking.createBooking);
 router.get('/booking/thankyou', (_req, res) =>{
   res.render('booking/thankyou', { title:'Danke' });
 });
+router.get('/booking/:id/cancel/:token', booking.cancelByToken);
+router.get('/booking/:id/reschedule/:token', booking.rescheduleByToken);
 
 export default router;

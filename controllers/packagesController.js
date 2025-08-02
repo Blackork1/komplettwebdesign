@@ -9,7 +9,7 @@ import {
   unlockSlot
 } from '../models/appointmentModel.js';
 import * as Book from '../models/bookingModel.js';
-import { sendBookingMail } from '../services/mailService.js';
+import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export async function handleContact(req, res) {
 
     if (lockedSlot) {
       await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending' });
-      await sendBookingMail({ to: 'kontakt@komplettwebdesign.de', name: 'Admin', appointment: lockedSlot, type: 'pending' });
+      await sendAdminBookingInfo({ booking, appointment: lockedSlot, type: 'new' });
     } else {
       const html = `
         <p>Hallo <strong>${name}</strong>,</p>
