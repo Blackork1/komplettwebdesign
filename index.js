@@ -74,7 +74,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 1000*60*60 } // 1 Tag
+  cookie: { maxAge: 1000*60*60 } // 1 stunde
 }));
 
 // DB, Cloudinary & Stripe auf app setzen
