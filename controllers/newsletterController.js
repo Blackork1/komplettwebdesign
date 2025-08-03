@@ -55,7 +55,7 @@ export async function unsubscribe(req, res) {
     if (!ok) return res.status(404).send('Token ungültig oder bereits abgemeldet');
 
     // Einfache Bestätigungs-Seite
-    res.render('newsletter/unsubscribed');     // views/newsletter/unsubscribed.ejs
+    res.render('blog/unsubscribed', {title: "Erfolgreich vom Newsletter abgemeldet", description: "Deine Abmeldung war erfolgreich!"});     // views/newsletter/unsubscribed.ejs
   } catch (err) {
     console.error('Newsletter-Unsubscribe-Fehler:', err);
     res.status(500).send('Fehler bei der Abmeldung');
