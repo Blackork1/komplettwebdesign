@@ -44,7 +44,7 @@ export async function renderFaqPage(req, res) {
     const faqs = await getFaqsByCategory(selectedId);
     
     res.render('faq', {
-      title: 'Häufige Fragen – Komplettwebdesign',
+      title: 'Häufige Fragen – KomplettWebdesign',
       categories,
       selectedCategory,
       faqs,

@@ -31,7 +31,7 @@ export async function listPackages(req, res) {
     const { rows: packages } = await pool.query(
       'SELECT * FROM packages ORDER BY price'   // oder price_amount_cents
     );
-    res.render('packages_list', { packages, title: 'Pakete | Komplettwebdesign', description: 'Unsere Pakete im Überblick' });
+    res.render('packages_list', { packages, title: 'Pakete | KomplettWebdesign', description: 'Unsere Pakete im Überblick' });
   } catch (err) {
     console.error('❌ listPackages:', err);
     res.status(500).send('Pakete konnten nicht geladen werden.');
@@ -54,7 +54,7 @@ export async function showPackage(req, res) {
     res.render('package_detail', {
       pack: rows[0],
       slots,
-      title: `Paket: ${rows[0].name} | Komplettwebdesign`,
+      title: `Paket: ${rows[0].name} | KomplettWebdesign`,
       description: 'Details zu unserem Paket'
     });
   } catch (err) {
@@ -62,53 +62,6 @@ export async function showPackage(req, res) {
     res.status(500).send('Paket konnte nicht geladen werden.');
   }
 }
-
-// ────────────────────────────────────────────────────────────────────────────────
-//  Kontaktformular verarbeiten
-//  POST /packages/:slug/kontakt
-// ────────────────────────────────────────────────────────────────────────────────
-// export async function handleContact(req, res) {
-//   const slug = req.params.slug.toLowerCase();
-//   const { name, email, slot } = req.body;           // slot = ausgewählter Termin
-//   try {
-//     // Paketdaten holen (für Mail & Bestätigung)
-//     const { rows } = await pool.query(
-//       'SELECT * FROM packages WHERE LOWER(name) = $1 LIMIT 1',
-//       [slug]
-//     );
-//     if (!rows.length) return res.status(404).send('Paket nicht gefunden');
-//     const pack = rows[0];
-
-//     // Bestätigungs-Mail an Kunden
-//     const html = `
-//       <p>Hallo <strong>${name}</strong>,</p>
-//       <p>
-//         Sie haben sich für das <strong>${pack.name}-Paket</strong> entschieden.
-//         Keine Sorge, Sie müssen noch nichts bezahlen. 
-//         Wir treffen uns zunächst zu einem Online-Beratungsgespräch 
-//         (gern auch persönlich).<br><br>
-//         <em>Ausgewählter Termin:</em> ${slot || 'wird noch abgestimmt'}
-//       </p>
-//       <p>Beste Grüße<br>Komplettwebdesign</p>
-//     `;
-
-//     await transporter.sendMail({
-//       from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
-//       to:   email,
-//       subject: `Ihre Anfrage – ${pack.name}-Paket`,
-//       html
-//     });
-
-//     // Erfolgsmeldung zurück auf Detailseite
-//     res.render('package_detail', {
-//       pack,
-//       successMessage: 'Vielen Dank! Wir haben Ihre Anfrage erhalten und melden uns bald.'
-//     });
-//   } catch (err) {
-//     console.error('❌ handleContact:', err);
-//     res.status(500).send('Fehler beim Senden der Anfrage. Bitte später erneut versuchen.');
-//   }
-// }
 
 export async function handleContact(req, res) {
   const slug = req.params.slug.toLowerCase();
@@ -126,7 +79,7 @@ export async function handleContact(req, res) {
 
     if (slot) {
       lockedSlot = await lockSlot(Number(slot));
-      if (!lockedSlot) return res.render('booking/slot_taken');
+      if (!lockedSlot) return res.render('booking/slot_taken', { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." });
       booking = await Book.create(lockedSlot.id, name, email);
     }
 
@@ -151,10 +104,10 @@ export async function handleContact(req, res) {
           Wir treffen uns zunächst zu einem Online-Beratungsgespräch
           (gern auch persönlich).
         </p>
-        <p>Beste Grüße<br>Komplettwebdesign</p>
+        <p>Beste Grüße<br>KomplettWebdesign</p>
       `;
       await transporter.sendMail({
-        from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
+        from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
         to: email,
         subject: `Ihre Anfrage – ${pack.name}-Paket`,
         html
@@ -163,7 +116,7 @@ export async function handleContact(req, res) {
 
     // Erfolgsmeldung zurück auf Detailseite
     res.render('package_detail', {
-      title: `Paket: ${pack.name} | Komplettwebdesign`,
+      title: `Paket: ${pack.name} | KomplettWebdesign`,
       description: 'Details zu unserem Paket',
       slots: slots,
       pack,

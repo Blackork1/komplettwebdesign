@@ -12,7 +12,7 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Website erstellen lassen in Berlin - Komplettwebdesign',
+      title: 'Website erstellen lassen in Berlin - KomplettWebdesign',
       description: 'Websiteerstellung in Berlin, Website schnell und günstig erstellen lassen, Schon ab 499€ deine Website erstellen lassen. Wir bauen deine Website in Berlin.',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
       users,
@@ -45,6 +45,6 @@ export async function postDeleteUser(req, res) {
 export async function getAbout(req, res) {
   res.render('about', {
     title: 'Über uns',
-    description: 'Erfahren Sie mehr über Komplettwebdesign und unser Team.'
+    description: 'Erfahren Sie mehr über KomplettWebdesign und unser Team.'
   });
 }

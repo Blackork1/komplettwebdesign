@@ -1,44 +1,47 @@
-<% include('../partials/header') %>
-<link rel="stylesheet" href="/booking.css">
+<%- include("../partials/head") %>
+  <%- include('../partials/header') %>
+    <link rel="stylesheet" href="/booking.css">
 
-<h1 class="heading">Termin buchen</h1>
-<p>Wähle einen Termin und gib deine Kontaktdaten an.</p>
+    <div class="section">
+      <div class="container">
+        <h1 class="white">Beratungstermin buchen</h1>
+        <p class="white">Wähle deinen Beratungstermin aus und gib deine Kontaktdaten ein.</p>
 
-<ul class="slot-list">
-  <% if (slots.length === 0) { %>
-    <li>Aktuell sind keine freien Termine verfügbar.</li>
-  <% } %>
-  <% slots.forEach(s => { %>
-    <li>
-      <form class="slot-form" action="/booking" method="POST">
-        <strong>
-          <%= new Date(s.start_time)
-                .toLocaleString('de-DE',{ weekday:'short', day:'2-digit',
-                                           month:'short', hour:'2-digit',
-                                           minute:'2-digit' }) %>
-        </strong><br>
-        <input type="hidden" name="slotId" value="<%= s.id %>">
-        <input type="hidden" name="token"><!-- reCAPTCHA -->
-        <input type="text"  name="name"  placeholder="Name"  required>
-        <input type="email" name="email" placeholder="E-Mail" required>
-        <button class="btn">Buchen</button>
-      </form>
-    </li>
-  <% }) %>
-</ul>
+        <ul class="slot-list">
+          <% if (slots.length===0) { %>
+            <li>Aktuell sind keine freien Termine verfügbar.</li>
+            <% } %>
+              <% slots.forEach(s=> { %>
+                <li>
+                  <form class="slot-form" action="/booking" method="POST">
+                    <strong>
+                      <%= new Date(s.start_time) .toLocaleString('de-DE',{ weekday:'short', day:'2-digit',
+                        month:'short', hour:'2-digit', minute:'2-digit' }) %>
+                    </strong><br>
+                    <input type="hidden" name="slotId" value="<%= s.id %>">
+                    <input type="hidden" name="token"><!-- reCAPTCHA -->
+                    <input type="text" name="name" placeholder="Name" required>
+                    <input type="email" name="email" placeholder="E-Mail" required>
+                    <button class="btn">Buchen</button>
+                  </form>
+                </li>
+                <% }) %>
+        </ul>
+      </div>
+    </div>
 
-<script
-  src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>">
-</script>
-<script>
-  document.querySelectorAll('.slot-form').forEach(form=>{
-    form.addEventListener('submit', async e=>{
-      e.preventDefault();
-      const token = await grecaptcha.execute(
-        '<%= process.env.RECAPTCHA_SITEKEY %>', { action:'submit' });
-      form.token.value = token;
-      form.submit();
-    });
-  });
-</script>
-<% include('../partials/footer') %>
+
+    <script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>">
+    </script>
+    <script>
+      document.querySelectorAll('.slot-form').forEach(form => {
+        form.addEventListener('submit', async e => {
+          e.preventDefault();
+          const token = await grecaptcha.execute(
+            '<%= process.env.RECAPTCHA_SITEKEY %>', { action: 'submit' });
+          form.token.value = token;
+          form.submit();
+        });
+      });
+    </script>
+    <%- include('../partials/footer') %>

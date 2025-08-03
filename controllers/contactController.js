@@ -14,7 +14,7 @@ import { body, validationResult } from "express-validator";
 import * as Apt from "../models/appointmentModel.js";
 import * as Book from "../models/bookingModel.js";
 import * as CReq from "../models/contactRequestModel.js";
-import { sendBookingMail } from "../services/mailService.js";
+// import { sendBookingMail } from "../services/mailService.js";
 import nodemailer from "nodemailer";
 import { generateICS } from "../services/icsService.js";
 import { format } from "date-fns";
@@ -26,7 +26,7 @@ export async function showForm(req, res) {
     const freieTermine = await Apt.getOpenSlots();
     res.render("kontakt", {
         title: "Kontakt",
-        description: "Kontaktformular für Komplettwebdesign",
+        description: "Kontaktformular für KomplettWebdesign",
         freieTermine,
         sitekey: process.env.RECAPTCHA_SITEKEY
     });
@@ -78,7 +78,7 @@ export const processForm = [
             /* 2) Slot sperren + Buchung anlegen ------------------------------ */
             if (slotId) {
                 slot = await Apt.lockSlot(slotId);               // is_booked = TRUE
-                if (!slot) return res.render("booking/slot_taken");
+                if (!slot) return res.render("booking/slot_taken", { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." } );
 
                 booking = await Book.create(
                     slotId,
@@ -143,17 +143,11 @@ export const processForm = [
                     <tr><th>Sonstige Infos:</th><td>${req.body.sonstigeInfos || 'Keine'}</td></tr>
                 </table>
                 <p>Wir werden uns in Kürze bei dir melden, um die Details zu besprechen.</p>
-                <p>Mit freundlichen Grüßen<br>Dein Komplettwebdesign-Team</p>
+                <p>Mit freundlichen Grüßen<br>Dein KomplettWebdesign-Team</p>
             `;
 
             const attachments = [];
             if (slot) {
-                await sendBookingMail({
-                    to: req.body.email,
-                    name: req.body.name,
-                    appointment: slot,
-                    type: "pending"
-                });
                 attachments.push({
                     filename: 'Beratungstermin.ics',
                     content: generateICS(slot, 'pending'),
@@ -169,60 +163,19 @@ export const processForm = [
             });
 
             await transporter.sendMail({
-                from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
+                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
                 to: req.body.email,
                 subject: 'Bestätigung deiner Kontaktanfrage',
                 html: summaryHtml,
                 attachments
             });
             await transporter.sendMail({
-                from: '"Komplettwebdesign" <kontakt@komplettwebdesign.de>',
+                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
                 to: 'kontakt@komplettwebdesign.de',
                 subject: `Neue Kontaktanfrage von ${req.body.name}`,
                 html: summaryHtml,
                 attachments
             });
-
-            // if (slot) {
-            //     await sendBookingMail({
-            //         to: req.body.email,
-            //         name: req.body.name,
-            //         appointment: slot,
-            //         type: "pending"
-            //     });
-            //     await sendBookingMail({
-            //         to: "kontakt@komplettwebdesign.de",
-            //         name: "Admin",
-            //         appointment: slot,
-            //         type: "pending"
-            //     });
-
-            // } else {
-            //     const transporter = nodemailer.createTransport({
-            //         host: process.env.SMTP_HOST,
-            //         port: Number(process.env.SMTP_PORT) || 587,
-            //         secure: Number(process.env.SMTP_PORT) === 465,
-            //         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-            //     });
-            //     await transporter.sendMail({
-            //         from: '"Komplettwebdesign" <no-reply@komplettwebdesign.de>',
-            //         to: req.body.email,
-            //         subject: "Bestätigung deiner Kontaktanfrage",
-            //         text: `Hallo ${req.body.name},
-            //                 vielen Dank für deine Anfrage! Wir melden uns in Kürze bei dir,
-            //                 um einen passenden Beratungstermin zu vereinbaren.
-            //                 Liebe Grüße
-            //                 Dein Komplettwebdesign-Team`,
-            //         html: `<p>Hallo <strong>${req.body.name}</strong>,</p>
-            //                 <p>vielen Dank für deine Anfrage! Wir melden uns in Kürze bei dir, um einen passenden Beratungstermin zu vereinbaren.</p>
-            //                 <p>Liebe Grüße<br><strong>Dein Komplettwebdesign-Team</strong></p>`
-            //     });
-            //     await sendRequestMail({
-            //         to: "kontakt@komplettwebdesign.de",
-            //         name: "Admin",
-            //         type: "pending"
-            //     });
-            // }
 
             /* 6) Erfolg ------------------------------------------------------ */
 

@@ -9,9 +9,9 @@ import ical from 'ical-generator';
 
 export function generateICS(apt, status ="pending"){
     const cal = ical ({
-        name: "KomplettWebDesign Termin",
+        name: "KomplettWebdesign Termin",
         domain: "komplettwebdesign.de",
-        prodId: "//KomplettWebDesign//Booking 1.0//DE",
+        prodId: "//KomplettWebdesign//Booking 1.0//DE",
         timezone: "Europe/Berlin",
     });
 

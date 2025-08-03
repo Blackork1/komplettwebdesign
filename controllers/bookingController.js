@@ -5,6 +5,7 @@ import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import pool from '../util/db.js';
 import { verifyToken } from '../util/bookingToken.js';
+import { de } from 'date-fns/locale';
 
 export const validate = [
     body("slotId").isInt().toInt(),
@@ -15,7 +16,7 @@ export const validate = [
 
 export async function listSlots(_req, res) {
     const slots = await Apt.getOpenSlots();
-    res.render('booking', { title: "Termin buchen", slots });
+    res.render('booking', { title: "Termin buchen", slots, description: "Wählen Sie einen Termin für Ihre Buchung aus." });
 }
 
 export async function createBooking(req, res) {
@@ -36,7 +37,7 @@ export async function createBooking(req, res) {
 
     /* 3) Slot sperren + Buchung anlegen (transaktion nicht nötig, weil lockSlot -> Unique-Constraint auf bookins verhindert Doppelbuchung)*/
     const slot = await Apt.lockSlot(req.body.slotId);
-    if (!slot) return res.render('booking/slot_taken');
+    if (!slot) return res.render('booking/slot_taken', { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." });
 
     try {
         const booking = await Book.create(req.body.slotId, req.body.name, req.body.email, req.body.note || null);
@@ -48,9 +49,8 @@ export async function createBooking(req, res) {
         });
         await sendAdminBookingInfo({ booking, appointment: slot, type: 'new' });
 
-
         /* 5) Weiterleitung zur Danke-Seite */
-        res.render('booking/thankyou', { title: "Danke für Ihre Buchung", booking, apt: slot });
+        res.render('booking/thankyou', { title: "Danke für Ihre Buchung", booking, apt: slot, description: "Danke für Ihre Buchung. Wir haben Ihnen eine Bestätigung per E-Mail gesendet." });
     } catch (err) {
         /*Wenn beim Einfügen ein UNIQUE-Fehler auftritt, dann Slot wieder freigeben*/
         console.error('❌ Fehler beim Buchen:', err);   //  <<<<<<<<<<<<<<
@@ -82,9 +82,9 @@ async function handleUserCancellation(req, res, action) {
     const apt = aptRows[0];
 
     await sendBookingMail({ to: booking.email, name: booking.name, appointment: apt, type: 'cancelled' });
-    await sendAdminBookingInfo({ booking, appointment: apt, type: action === 'reschedule' ? 'reschedule' : 'cancel' });
+    await sendAdminBookingInfo({ booking, appointment: slot, type: action === 'reschedule' ? 'reschedule' : 'cancel' });
 
-    res.render(action === 'reschedule' ? 'booking/reschedule' : 'booking/cancelled', { title: 'Termin storniert' });
+    res.render(action === 'reschedule' ? 'booking/reschedule' : 'booking/cancelled', { title: 'Termin storniert', description: 'Ihr Termin wurde storniert. Wir haben die Verwaltung informiert.' });
 }
 
 export async function cancelByToken(req, res) {

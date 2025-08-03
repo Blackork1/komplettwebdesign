@@ -18,7 +18,7 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
 
     /*Betreff je nach Status */
     const subject = {
-        pending: `Terminbestätigung für ${pretty} ist eingegangen`,
+        pending: `Terminanfrage für ${pretty} ist eingegangen`,
         confirmed: `Termin bestätigt: ${pretty}`,
         cancelled: `Termin abgesagt: ${pretty}`
     }[type];
@@ -115,38 +115,3 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
     };
     return transporter.sendMail(mail);
 }
-
-// export async function sendRequestMail({ to, name, type }) {
-//     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
-
-//     /*Betreff je nach Status */
-//     const subject = {
-//         pending: `Deine Anfrage ist eingegangen`,
-//         confirmed: `Termin bestätigt: ${pretty}`,
-//         cancelled: `Termin abgesagt: ${pretty}`
-//     }[type];
-
-//     /*Mail Body*/
-//     const html = `
-//     <p>Hallo ${name}</p>
-//     <p>${type === "pending"
-//             ? `vielen Dank für die Anfrage. Wir prüfen deine Angaben und melden uns in kurze mit einem Beratungstermin bei dir..`
-//             : type === "confirmed"
-//                 ? `Ihr Termin wurde bestätigt. Wir freuen uns auf das Gespräch!`
-//                 : `Leider mussten wir den Termin stornieren. Bitte buchen Sie einen neuen Termin über unsere Website.`
-//         }</p>
-//     <p><strong>Termin:</strong> ${pretty}</p>
-//     <p>Beste Grüße<br>Komplettwebdesign</p>
-//     `;
-
-//     /* Mail Objekt zusammenstellen */
-//     const mail = {
-//         from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
-//         to,
-//         subject,
-//         html
-//     };
-
-//     /* Mail senden - Fehler werden im aufrufenden Controller gefangen */
-//     return transporter.sendMail(mail)
-// }

@@ -24,9 +24,9 @@ export async function signup(req, res) {
 
     // Willkommens-Mail mit individuellem Abmelde-Link
     const mailOpts = {
-      from: `"Komplettwebdesign" <${process.env.SMTP_FROM}>`,
+      from: `"KomplettWebdesign" <${process.env.SMTP_FROM}>`,
       to: email,
-      subject: 'Willkommen beim Komplettwebdesign-Newsletter',
+      subject: 'Willkommen beim KomplettWebdesign-Newsletter',
       html: `
         <p>Danke für deine Anmeldung!</p>
         <p>Du kannst dich jederzeit abmelden, indem du hier klickst:</p>

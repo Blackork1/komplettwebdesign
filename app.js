@@ -210,9 +210,9 @@ app.get('/', async (req, res) => {
 
         log('Datenbankabfrage:', result.rows);
         res.render('index', {
-            title: 'Willkommen auf meinen Seite Komplettwebdesign!',
+            title: 'Willkommen auf meinen Seite KomplettWebdesign!',
             description: 'Hier findest du alles rund um Webdesign, Webentwicklung und Online-Marketing.',
-            keywords: 'Webdesign, Webentwicklung, Online-Marketing, Komplettwebdesign',
+            keywords: 'Webdesign, Webentwicklung, Online-Marketing, Komplettwebdesign, Webseite erstellen lassen, Handwerker Website erstellen lassen',
             users: result.rows,
             latestPost,
             review,
