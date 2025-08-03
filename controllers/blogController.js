@@ -9,7 +9,7 @@ export async function listPosts(req, res) {
 
 export async function showPost(req, res) {
   const post = await BlogPostModel.findBySlug(req.params.slug);
-  const description = await BlogPostModel.findExcerpt(req.params.excerpt);
+  const excerpt = await BlogPostModel.findExcerpt(req.params.excerpt);
   if (!post) return res.status(404).send('Artikel nicht gefunden');
-  res.render('blog/show', { title: post, description: description, post });
+  res.render('blog/show', { title: post.title, description: post.description, post, excerpt: excerpt });
 }

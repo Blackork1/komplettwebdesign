@@ -26,7 +26,8 @@ export async function createPost(req, res) {
       excerpt   = '',
       content,
       category  = '',
-      featured
+      featured,
+      description = ''                   // optional, falls im Formular
     } = req.body;
 
     if (!req.file) throw new Error('Bild fehlt');
@@ -41,7 +42,8 @@ export async function createPost(req, res) {
       hero_image     : secure_url,       // oder image_url – je nach Spalte
       hero_public_id : public_id,
       category,
-      featured: !!featured
+      featured: !!featured,
+      description
     });
 
     res.redirect('/blog');

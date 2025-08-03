@@ -13,7 +13,8 @@ export default class BlogPostModel {
     hero_public_id = null,
     category = '',
     featured = false,
-    published = true
+    published = true,
+    description = ''                   // optional, falls im Formular
   }) {
     const slug = slugify(title, { lower: true, strict: true });
 
@@ -21,18 +22,18 @@ export default class BlogPostModel {
       `INSERT INTO posts
          (title, slug, excerpt, content,
           image_url, hero_public_id,
-          category, featured, published,
+          category, featured, published, description,
           created_at, updated_at)
        VALUES
          ($1, $2, $3, $4,
           $5, $6,
-          $7, $8, $9,
+          $7, $8, $9, $10,
           NOW(), NOW())
        RETURNING *`,
       [
         title, slug, excerpt, content,
         hero_image, hero_public_id,
-        category, featured, published
+        category, featured, published, description
       ]
     );
     return rows[0];
@@ -69,12 +70,32 @@ export default class BlogPostModel {
     return rows[0] ?? null;
   }
 
+  static async findTitle(title) {
+    const { rows } = await pool.query(
+      `SELECT * FROM posts
+       WHERE title = $1 AND published = true
+       LIMIT 1`,
+      [title]
+    );
+    return rows[0] ?? null;
+  }
+
   static async findExcerpt(excerpt) {
     const { rows } = await pool.query(
       `SELECT * FROM posts
        WHERE excerpt ILIKE $1 AND published = true
        LIMIT 1`,
       [`%${excerpt}%`]
+    );
+    return rows[0] ?? null;
+  }
+
+  static async findDescription(description) {
+    const { rows } = await pool.query(
+      `SELECT * FROM posts
+       WHERE description ILIKE $1 AND published = true
+       LIMIT 1`,
+      [`%${description}%`]
     );
     return rows[0] ?? null;
   }
