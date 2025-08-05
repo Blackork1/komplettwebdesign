@@ -14,30 +14,32 @@ import dotenv from 'dotenv';
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
 
-import { getAvailableCssFiles, getCssClasses }  from './helpers/cssHelper.js';
-import { FIELD_CONFIG }                         from './helpers/componentConfig.js';
-import { navbarMiddleware }                     from './helpers/navHelper.js';
+import { getAvailableCssFiles, getCssClasses } from './helpers/cssHelper.js';
+import { FIELD_CONFIG } from './helpers/componentConfig.js';
+import { navbarMiddleware } from './helpers/navHelper.js';
 
-import mainRoutes           from './routes/main.js';
-import pricingRoutes        from './routes/pricing.js';
-import checkoutRoutes       from './routes/checkout.js';
-import webhookRoutes        from './routes/webhook.js';
+import mainRoutes from './routes/main.js';
+import pricingRoutes from './routes/pricing.js';
+import checkoutRoutes from './routes/checkout.js';
+import webhookRoutes from './routes/webhook.js';
 import * as errorController from './controllers/errorController.js';
-import adminPageRoutes      from './routes/adminPages.js';
+import adminPageRoutes from './routes/adminPages.js';
 import adminComponentRoutes from './routes/adminComponents.js';
-import authRoutes           from './routes/authRoutes.js';
-import bookingRoutes        from './routes/bookingRoutes.js';
-import adminRoutes          from './routes/adminRoutes.js';
-import slugRoutes           from './routes/slug.js';
-import widgetApiRoutes      from './routes/widgetApiRoutes.js';   
-import blogRoutes           from './routes/blogRoutes.js';
-import adminBlogRoutes      from './routes/adminBlogRoutes.js';
-import newsletterRoutes     from './routes/newsletter.js';
-import starticPagesRoutes   from './routes/staticPages.js';
-import packageRoutes        from './routes/packages.js';
-import faqRoutes            from './routes/faq.js';
-import contactRoutes        from "./routes/contactRoutes.js";
-import chatRoutes           from './routes/chat.js';
+import authRoutes from './routes/authRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import slugRoutes from './routes/slug.js';
+import widgetApiRoutes from './routes/widgetApiRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import adminBlogRoutes from './routes/adminBlogRoutes.js';
+import newsletterRoutes from './routes/newsletter.js';
+import starticPagesRoutes from './routes/staticPages.js';
+import packageRoutes from './routes/packages.js';
+import faqRoutes from './routes/faq.js';
+import contactRoutes from "./routes/contactRoutes.js";
+import chatRoutes from './routes/chat.js';
+import adminGalleryRoutes from './routes/adminGalleryRoutes.js';
+
 
 
 import Stripe from 'stripe';
@@ -49,6 +51,32 @@ dotenv.config();
 
 
 const app = express();
+app.disable('x-powered-by');      // Header unterdrücken
+if (process.env.NODE_ENV === 'production') {
+  app.enable('trust proxy');                // hinter Cloudflare/Nginx wichtig
+
+  const CANON_HOST = 'www.komplettwebdesign.de';
+
+  app.use((req, res, next) => {
+    // 1) Aufrufe von localhost NICHT umlenken
+    if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') {
+      return next();
+    }
+
+    // 2) Protokoll & Host prüfen
+    const isHttps = req.secure || req.get('x-forwarded-proto') === 'https';
+    const isCanon = req.hostname === CANON_HOST;
+
+    if (!isHttps || !isCanon) {
+      const target = `https://${CANON_HOST}${req.originalUrl}`;
+      return res.redirect(301, target);
+    }
+    next();
+  });
+}
+
+
+
 app.use(compression());
 
 // EJS konfigurieren
@@ -70,11 +98,11 @@ app.use(express.json());
 // Session
 const PgSession = connectPg(session);
 app.use(session({
-  store: new PgSession({pool, createTableIfMissing: true}),
+  store: new PgSession({ pool, createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 1000*60*60 } // 1 stunde
+  cookie: { maxAge: 1000 * 60 * 60 } // 1 stunde
 }));
 
 // DB, Cloudinary & Stripe auf app setzen
@@ -106,7 +134,7 @@ app.use('/', mainRoutes);
 app.use('/pricing', pricingRoutes);
 app.use('/create-checkout-session', checkoutRoutes);
 app.use('/webhook', webhookRoutes);
-app.use('/admin/pages',      adminPageRoutes);
+app.use('/admin/pages', adminPageRoutes);
 app.use(adminComponentRoutes);
 app.use(slugRoutes);
 app.use(authRoutes);
@@ -122,6 +150,8 @@ app.use(packageRoutes);
 app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
 app.use(chatRoutes);
+app.use(adminGalleryRoutes);
+
 
 
 

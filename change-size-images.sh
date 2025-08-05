@@ -9,7 +9,7 @@ find "$IMG_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -
   # Neuer Dateiname: alte Endung durch .webp ersetzen
   out="${file%.*}.webp"
   echo "→ Converting $file → $out"
-  magick "$file" -resize 33% "$out"
+  magick "$file" -resize 10% "$out"
 done
 
 echo "✅ Alle Bilder sind nun als WebP vorhanden."

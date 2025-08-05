@@ -483,7 +483,7 @@ a.logo {
   color: var(--color-white);
   background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0) 1%),
     linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-    url("/images/heroBackgroundW.webp") center / cover no-repeat;
+    url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395811/admin_gallery/wfrpglprlohl9ntdaegt.webp) center / cover no-repeat;
 }
 .hero-section {
   padding: 0 150px;
@@ -1183,7 +1183,7 @@ table.table.table-sm {
         rgba(255, 255, 255, 0) 5%
       ),
       linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-      url(/images/heroBackgroundH.webp) center / cover no-repeat;
+      url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
   }
 
   .section {

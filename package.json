@@ -45,5 +45,9 @@
     "stripe": "^18.1.0",
     "url": "^0.11.4",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "bootstrap": "^5.3.3",
+    "penthouse": "^2.3.3"
   }
 }

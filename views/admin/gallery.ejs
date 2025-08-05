@@ -1,0 +1,90 @@
+<%- include('../partials/admin_header') %>
+<style>
+  .copy-link {
+    overflow: hidden;
+  }
+</style>
+<div class="container">
+  <h1>Galerie</h1>
+  <form action="/admin/gallery/upload" method="post" enctype="multipart/form-data" class="mb-4">
+    <div class="mb-2">
+      <label>Orientierung</label>
+      <select name="orientation" id="orientation" class="form-select">
+        <option value="landscape">Querformat</option>
+        <option value="portrait">Hochformat</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Format</label>
+      <select name="ratio" id="ratio" class="form-select"></select>
+    </div>
+    <div class="mb-2">
+      <label>Auflösung (lange Seite)</label>
+      <select name="resolution" class="form-select">
+        <% RESOLUTIONS.forEach(r => { %>
+          <option value="<%= r %>"><%= r %>px</option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Kompression (1-100)</label>
+      <input type="number" name="quality" class="form-control" min="1" max="100" value="80" />
+    </div>
+    <div class="mb-2">
+      <input type="file" name="image" accept="image/*" class="form-control" required />
+    </div>
+    <button class="btn btn-primary">Upload</button>
+  </form>
+
+  <div class="mb-3">
+    <a href="/admin/gallery">Alle</a> |
+    <a href="/admin/gallery/portrait">Hochkant</a> |
+    <a href="/admin/gallery/landscape">Querformat</a>
+  </div>
+
+  <div class="row">
+    <% images.forEach(img => { %>
+      <div class="col-md-3 mb-4 text-center position-relative">
+        <button class="btn btn-sm btn-danger position-absolute top-0 end-0 delete-image" data-id="<%= img.id %>">X</button>
+        <img src="<%= img.src %>" class="img-fluid copy-link" data-url="<%= img.src %>" />
+        <a href="<%= img.src %>" class="copy-link d-block" data-url="<%= img.src %>"><%= img.src %></a>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<script>
+const LANDSCAPE = <%- JSON.stringify(LANDSCAPE_RATIOS) %>;
+const PORTRAIT = <%- JSON.stringify(PORTRAIT_RATIOS) %>;
+function populateRatios(){
+  const orientation = document.getElementById('orientation').value;
+  const sel = document.getElementById('ratio');
+  const list = orientation === 'portrait' ? PORTRAIT : LANDSCAPE;
+  sel.innerHTML = '';
+  list.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    sel.appendChild(opt);
+  });
+}
+document.getElementById('orientation').addEventListener('change', populateRatios);
+populateRatios();
+document.querySelectorAll('.copy-link').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    const url = e.currentTarget.dataset.url;
+    navigator.clipboard.writeText(url);
+  });
+});
+document.querySelectorAll('.delete-image').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    e.preventDefault();
+    if (confirm('wirklich löschen')) {
+      const id = e.currentTarget.dataset.id;
+      await fetch(`/admin/gallery/delete/${id}`, { method: 'POST' });
+      location.reload();
+    }
+  });
+});
+</script>
+<%- include('../partials/admin_footer') %>
