@@ -68,15 +68,12 @@ if (process.env.NODE_ENV === 'production') {
     const isCanon = req.hostname === CANON_HOST;
 
     if (!isHttps || !isCanon) {
-      const target = `https://${CANON_HOST}${req.originalUrl}`;
-      console.log(`🔄 Redirecting to canonical URL: ${target}`);
+      const target = `https://${CANON_HOST}${req.originalUrl || '/'}`;
       return res.redirect(301, target);
     }
     next();
   });
 }
-
-
 
 app.use(compression());
 
