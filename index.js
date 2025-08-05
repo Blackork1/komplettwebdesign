@@ -76,6 +76,7 @@ if (process.env.NODE_ENV === 'production') {
     if (needsHttps || needsWww) {
       // Pfad + Query aus req.originalUrl (inkl. "/kontakt" oder "?foo=bar")
       const suffix = req.originalUrl || '/';
+      console.log("Suffix:", suffix);
       // neuer Host
       const targetHost = CANON_HOST;
       const redirectTo  = `https://${targetHost}${suffix}`;
