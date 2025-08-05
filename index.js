@@ -52,25 +52,36 @@ dotenv.config();
 
 const app = express();
 app.disable('x-powered-by');      // Header unterdrücken
+// 2) nur in Production aktivieren
 if (process.env.NODE_ENV === 'production') {
-  app.enable('trust proxy');                // hinter Cloudflare/Nginx wichtig
+  app.enable('trust proxy');
 
   const CANON_HOST = 'www.komplettwebdesign.de';
+  const IGNORED_HOSTS = ['localhost', '127.0.0.1'];
 
   app.use((req, res, next) => {
-    // 1) Aufrufe von localhost NICHT umlenken
-    if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') {
+    const hostHeader = req.headers.host || '';             // z.B. "komplettwebdesign.de:3000"
+    const hostname   = hostHeader.replace(/:\d+$/, '');    // Port rauswerfen
+    const protoHdr   = (req.get('x-forwarded-proto') || req.protocol).toLowerCase();
+
+    // 1) Ausnahmen: Localhost, inneres Docker-Netz, …
+    if (IGNORED_HOSTS.includes(hostname)) {
       return next();
     }
 
-    // 2) Protokoll & Host prüfen
-    const isHttps = req.secure || req.get('x-forwarded-proto') === 'https';
-    const isCanon = req.hostname === CANON_HOST;
+    // 2) prüfen, ob HTTPS & WWW
+    const needsHttps = protoHdr !== 'https';
+    const needsWww   = !hostname.startsWith('www.');
 
-    if (!isHttps || !isCanon) {
-      const target = `https://${CANON_HOST}${req.originalUrl || '/'}`;
-      return res.redirect(301, target);
+    if (needsHttps || needsWww) {
+      // Pfad + Query aus req.originalUrl (inkl. "/kontakt" oder "?foo=bar")
+      const suffix = req.originalUrl || '/';
+      // neuer Host
+      const targetHost = CANON_HOST;
+      const redirectTo  = `https://${targetHost}${suffix}`;
+      return res.redirect(301, redirectTo);
     }
+
     next();
   });
 }
