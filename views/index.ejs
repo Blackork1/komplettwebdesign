@@ -702,7 +702,7 @@
           </aside>
       </main>
 
-      <script>
+      <!-- <script>
         const stripe = Stripe("<%= stripePublishable %>");
         document.querySelectorAll(".checkout-form").forEach((form) => {
           form.addEventListener("submit", async (e) => {
@@ -721,7 +721,7 @@
             await stripe.redirectToCheckout({ sessionId });
           });
         });
-      </script>
+      </script> -->
       <script>
         // Beispiel in public/js/main.js
         document.querySelectorAll(".card-container").forEach((card) => {
