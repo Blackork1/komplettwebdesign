@@ -103,7 +103,6 @@ if (process.env.NODE_ENV === 'production') {
 app.use(compression());
 // Sessions & Consent-Flag
 // app.use(sessionMiddleware);
-app.use(consentMiddleware);
 
 // EJS konfigurieren
 const __filename = fileURLToPath(import.meta.url);
@@ -130,6 +129,9 @@ app.use(session({
   saveUninitialized: true,
   cookie: { maxAge: 1000 * 60 * 60 } // 1 stunde
 }));
+
+app.use(consentMiddleware);
+
 
 // DB, Cloudinary & Stripe auf app setzen
 app.set('db', pool);
