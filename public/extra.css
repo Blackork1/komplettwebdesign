@@ -1,0 +1,10 @@
+.chat-button {
+    clip-path: none;
+    width: 150px;
+    right: -50px;
+    transition: transform 0.5s ease, width 0.5s ease;
+}
+
+.chat-button:hover {
+    transform: translateX(-40px);
+}

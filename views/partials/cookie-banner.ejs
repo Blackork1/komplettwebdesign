@@ -1,0 +1,45 @@
+<% if (!session.cookieConsent) { %>
+<div
+  id="cookie-banner"
+  style="
+    background: #0b2a46;
+    color: #fff;
+    padding: 1rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 1000;"
+>
+  <p>
+    Wir verwenden Cookies für Analyse und Marketing. Es werden keine
+    persönlichen Daten gespeichert. Für das Nutzen des ChatBots ist es Erforderlich, dass deine Fragen gespeichert werden.
+    <a href="/datenschutz">Datenschutzvereinbarung</a>
+  </p>
+  <button
+    id="accept-all"
+    style="
+      background: #e94a1b;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      margin: 0 0.5rem;
+    "
+  >
+    Alles akzeptieren
+  </button>
+  <button
+    id="accept-necessary"
+    style="
+      background: #fff;
+      color: #0b2a46;
+      border: 1px solid #0b2a46;
+      padding: 0.5rem 1rem;
+      margin: 0 0.5rem;
+    "
+  >
+    Nur Notwendiges
+  </button>
+</div>
+<% } %>
+<script src="/js/cookie-consent.js"></script>

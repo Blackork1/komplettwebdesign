@@ -16,43 +16,54 @@ import cookieParser from 'cookie-parser';
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
 
-import { getAvailableCssFiles, getCssClasses } from './helpers/cssHelper.js';
-import { FIELD_CONFIG } from './helpers/componentConfig.js';
-import { navbarMiddleware } from './helpers/navHelper.js';
+import { getAvailableCssFiles, getCssClasses }    from './helpers/cssHelper.js';
+import { FIELD_CONFIG }                           from './helpers/componentConfig.js';
+import { navbarMiddleware }                       from './helpers/navHelper.js';
+import sessionMiddleware                          from './middleware/session.js';
+import consentMiddleware                          from './middleware/consentMiddleware.js';
 
-import mainRoutes from './routes/main.js';
-import pricingRoutes from './routes/pricing.js';
-import checkoutRoutes from './routes/checkout.js';
-import webhookRoutes from './routes/webhook.js';
+
+import mainRoutes           from './routes/main.js';
+import pricingRoutes        from './routes/pricing.js';
+import checkoutRoutes       from './routes/checkout.js';
+import webhookRoutes        from './routes/webhook.js';
 import * as errorController from './controllers/errorController.js';
-import adminPageRoutes from './routes/adminPages.js';
+import adminPageRoutes      from './routes/adminPages.js';
 import adminComponentRoutes from './routes/adminComponents.js';
-import authRoutes from './routes/authRoutes.js';
-import bookingRoutes from './routes/bookingRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
-import slugRoutes from './routes/slug.js';
-import widgetApiRoutes from './routes/widgetApiRoutes.js';
-import blogRoutes from './routes/blogRoutes.js';
-import adminBlogRoutes from './routes/adminBlogRoutes.js';
-import newsletterRoutes from './routes/newsletter.js';
-import starticPagesRoutes from './routes/staticPages.js';
-import packageRoutes from './routes/packages.js';
-import faqRoutes from './routes/faq.js';
-import contactRoutes from "./routes/contactRoutes.js";
-import chatRoutes from './routes/chat.js';
-import adminGalleryRoutes from './routes/adminGalleryRoutes.js';
-
+import authRoutes           from './routes/authRoutes.js';
+import bookingRoutes        from './routes/bookingRoutes.js';
+import adminRoutes          from './routes/adminRoutes.js';
+import slugRoutes           from './routes/slug.js';
+import widgetApiRoutes      from './routes/widgetApiRoutes.js';
+import blogRoutes           from './routes/blogRoutes.js';
+import adminBlogRoutes      from './routes/adminBlogRoutes.js';
+import newsletterRoutes     from './routes/newsletter.js';
+import starticPagesRoutes   from './routes/staticPages.js';
+import packageRoutes        from './routes/packages.js';
+import faqRoutes            from './routes/faq.js';
+import contactRoutes        from "./routes/contactRoutes.js";
+import chatRoutes           from './routes/chat.js';
+import adminGalleryRoutes   from './routes/adminGalleryRoutes.js';
+import consentRoutes        from './routes/consent.js';
 
 
 import Stripe from 'stripe';
 
-
-
 // Umgebungsvariablen laden
 dotenv.config();
-
-
+// Cookie-Parser für Cookie-Zustimmung
 const app = express();
+app.use(cookieParser());
+app.use((req, res, next) => {
+  let enabled = false;
+  try {
+    const consent = JSON.parse(req.cookies.cookieConsent);
+    enabled = Boolean(consent.analytics);
+  } catch { }
+  res.locals.gaEnabled = enabled;
+  next();
+});
+
 app.disable('x-powered-by');      // Header unterdrücken
 // 2) nur in Production aktivieren
 if (process.env.NODE_ENV === 'production') {
@@ -63,8 +74,8 @@ if (process.env.NODE_ENV === 'production') {
 
   app.use((req, res, next) => {
     const hostHeader = req.headers.host || '';             // z.B. "komplettwebdesign.de:3000"
-    const hostname   = hostHeader.replace(/:\d+$/, '');    // Port rauswerfen
-    const protoHdr   = (req.get('x-forwarded-proto') || req.protocol).toLowerCase();
+    const hostname = hostHeader.replace(/:\d+$/, '');    // Port rauswerfen
+    const protoHdr = (req.get('x-forwarded-proto') || req.protocol).toLowerCase();
 
     // 1) Ausnahmen: Localhost, inneres Docker-Netz, …
     if (IGNORED_HOSTS.includes(hostname)) {
@@ -73,7 +84,7 @@ if (process.env.NODE_ENV === 'production') {
 
     // 2) prüfen, ob HTTPS & WWW
     const needsHttps = protoHdr !== 'https';
-    const needsWww   = !hostname.startsWith('www.');
+    const needsWww = !hostname.startsWith('www.');
 
     if (needsHttps || needsWww) {
       // Pfad + Query aus req.originalUrl (inkl. "/kontakt" oder "?foo=bar")
@@ -81,7 +92,7 @@ if (process.env.NODE_ENV === 'production') {
       console.log("Suffix:", suffix);
       // neuer Host
       const targetHost = CANON_HOST;
-      const redirectTo  = `https://${targetHost}${suffix}`;
+      const redirectTo = `https://${targetHost}${suffix}`;
       return res.redirect(301, redirectTo);
     }
 
@@ -90,6 +101,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(compression());
+// Sessions & Consent-Flag
+app.use(sessionMiddleware);
+app.use(consentMiddleware);
 
 // EJS konfigurieren
 const __filename = fileURLToPath(import.meta.url);
@@ -163,6 +177,7 @@ app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
 app.use(chatRoutes);
 app.use(adminGalleryRoutes);
+app.use('/api/consent', consentRoutes);
 
 
 
