@@ -4,7 +4,7 @@ import BlogPostModel from '../models/BlogPostModel.js';
 export async function listPosts(req, res) {
   const posts         = await BlogPostModel.findAll();
   const featuredPosts = await BlogPostModel.findFeatured(5);
-  res.render('blog/index', { title: "Blog-Seite", description: "Alles neue zu Technik, Webseiten, Hosting und mehr",posts, featuredPosts });
+  res.render('blog/index', { title: "Aktuelles und News aus dem Technikbereich sowie Rabattaktionen", description: "Neue Informationen zu KI, Websiten, Wissenswertes sowie Angebote und Rabattaktionen.",posts, featuredPosts });
 }
 
 export async function showPost(req, res) {

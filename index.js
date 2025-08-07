@@ -10,6 +10,8 @@ import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+
 
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';

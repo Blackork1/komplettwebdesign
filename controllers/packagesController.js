@@ -31,7 +31,7 @@ export async function listPackages(req, res) {
     const { rows: packages } = await pool.query(
       'SELECT * FROM packages ORDER BY price'   // oder price_amount_cents
     );
-    res.render('packages_list', { packages, title: 'Pakete | KomplettWebdesign', description: 'Unsere Pakete im Überblick' });
+    res.render('packages_list', { packages, title: 'Pakete & Angebote | KomplettWebdesign', description: 'Unsere Pakete im Überblick. Hier erhälst du Informationen zu unserem Paketen und Angeboten.' });
   } catch (err) {
     console.error('❌ listPackages:', err);
     res.status(500).send('Pakete konnten nicht geladen werden.');
@@ -55,7 +55,7 @@ export async function showPackage(req, res) {
       pack: rows[0],
       slots,
       title: `Paket: ${rows[0].name} | KomplettWebdesign`,
-      description: 'Details zu unserem Paket'
+      description: `Details zu unserem Paket ${rows[0].name}. Nutzte den ChatBot, um mehr zu erfahren oder buche direkt einen Termin.`,
     });
   } catch (err) {
     console.error('❌ showPackage:', err);

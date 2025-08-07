@@ -25,8 +25,8 @@ const upload = multer({ dest: "uploads/" });
 export async function showForm(req, res) {
     const freieTermine = await Apt.getOpenSlots();
     res.render("kontakt", {
-        title: "Kontakt",
-        description: "Kontaktformular für KomplettWebdesign",
+        title: "Bertatrungsgespräch vereinbaren",
+        description: "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
         freieTermine,
         sitekey: process.env.RECAPTCHA_SITEKEY
     });
@@ -78,7 +78,7 @@ export const processForm = [
             /* 2) Slot sperren + Buchung anlegen ------------------------------ */
             if (slotId) {
                 slot = await Apt.lockSlot(slotId);               // is_booked = TRUE
-                if (!slot) return res.render("booking/slot_taken", { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." } );
+                if (!slot) return res.render("booking/slot_taken", { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." });
 
                 booking = await Book.create(
                     slotId,
