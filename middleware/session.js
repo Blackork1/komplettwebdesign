@@ -14,7 +14,7 @@ export default session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Tage in ms
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Tage in ms
     // secure: process.env.NODE_ENV === 'production' && process.env.USE_HTTPS === 'true',
     // httpOnly: true,
     // sameSite: 'lax'
