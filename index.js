@@ -19,7 +19,7 @@ import cloudinary from './util/cloudinary.js';
 import { getAvailableCssFiles, getCssClasses }    from './helpers/cssHelper.js';
 import { FIELD_CONFIG }                           from './helpers/componentConfig.js';
 import { navbarMiddleware }                       from './helpers/navHelper.js';
-import sessionMiddleware                          from './middleware/session.js';
+// import sessionMiddleware                          from './middleware/session.js';
 import consentMiddleware                          from './middleware/consentMiddleware.js';
 
 
@@ -102,7 +102,7 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(compression());
 // Sessions & Consent-Flag
-app.use(sessionMiddleware);
+// app.use(sessionMiddleware);
 app.use(consentMiddleware);
 
 // EJS konfigurieren
