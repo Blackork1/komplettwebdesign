@@ -539,7 +539,7 @@ Agentur-Einleitung
 
 /* Erste Letter – Drop Cap */
 .readable p:first-of-type::first-letter {
-  font-size: 3.4rem;
+  font-size: 3rem;
   line-height: 1;
   float: left;
   font-weight: 700;

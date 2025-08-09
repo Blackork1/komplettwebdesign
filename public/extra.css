@@ -8,3 +8,7 @@
 .chat-button:hover {
     transform: translateX(-40px);
 }
+
+.readable p:first-of-type::first-letter {
+  font-size: 3rem;
+}

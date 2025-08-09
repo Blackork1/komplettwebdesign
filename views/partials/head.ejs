@@ -1,67 +1,74 @@
 <!DOCTYPE html>
 <html lang="de">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <title>
-        <%= title %>
-    </title>
+    <title><%= title %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="<%= description %>" />
-    <!-- ‼️ Bootstrap 5 CSS (CDN)
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous"> -->
-    <!-- 🆕 Perf‑Hints -->
-    <!-- Öffentliches CSS einbinden (vom Entwickler gestaltetes Stylesheet) -->
 
-    <link rel="preload" href="/css/bootstrap.min.css" as="style" onload="this.rel='stylesheet'">
+    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+
+    <!-- Bootstrap 5.3.7 CSS -->
+    <link
+      rel="preload"
+      href="/css/bootstrap.min.css"
+      as="style"
+      onload="this.rel='stylesheet'"
+    />
     <noscript>
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
+      <link rel="stylesheet" href="/css/bootstrap.min.css" />
     </noscript>
 
-    <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
-    <link rel="stylesheet" href="/extra.css?v=<%= Date.now() %>">
-
-
-    <!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
-    <!-- jQuery wird nirgends mehr benötigt – entfernt -->
+    <!-- CSS Setup-->
+    <link
+      rel="preload"
+      href="/css/main.min.css"
+      as="style"
+      onload="this.rel='stylesheet'"
+    />
+    <noscript><link rel="stylesheet" href="/css/main.min.css" /></noscript>
+    <link
+      rel="preload"
+      href="/extra.css"
+      as="style"
+      onload="this.rel='stylesheet'"
+    />
+    <noscript><link rel="stylesheet" href="/extra.css" /></noscript>
 
     <script src="https://js.stripe.com/v3/" defer></script>
 
-    <!-- Material Symbols Outlined Font -->
-    <!-- <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" /> -->
-
-    <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin>
-
     <!-- Favicon und App Icons -->
-    <link rel="icon" type="image/png" sizes="16x16" href="images/icon16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="images/icon32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="images/icon192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="images/icon180.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/icon16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/icon32.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="images/icon192.png"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/icon180.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Selbst gehostete Font‑Subset Datei – siehe Abschnitt §3 -->
-    <!-- <link rel="preload" as="style" href="/fonts/fonts.css" onload="this.rel='stylesheet'">
-    <noscript>
-        <link rel="stylesheet" href="/fonts/fonts.css">
-    </noscript> -->
-
-    <!-- Google tag (gtag.js) -->
-    <!-- … meta, title, CSS … -->
-  <!-- GA4 nur bei Zustimmung -->
-  <% if (gaEnabled) { %>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"></script>
+    <% if (gaEnabled) { %>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"
+    ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '<%= process.env.GA_MEASUREMENT_ID %>');
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "<%= process.env.GA_MEASUREMENT_ID %>");
     </script>
-  <% } %>
+    <% } %>
 
-  <!-- Mess-ID für clientseitiges Nachladen -->
-  <script>
-    window.env = { GA_MEASUREMENT_ID: '<%= process.env.GA_MEASUREMENT_ID %>' };
-  </script>
-</head>
+    <!-- Mess-ID für clientseitiges Nachladen -->
+    <script>
+      window.env = {
+        GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
+      };
+    </script>
+  </head>
+</html>
