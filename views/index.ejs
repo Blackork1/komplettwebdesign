@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 
-  <style>
-.navigation {
+<style>
+  .navigation {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -176,6 +176,55 @@ a.logo {
 }
 
 @media (max-width: 1180px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .service-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .industry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .industry-item p {
+    padding-bottom: 1rem;
+  }
+  .menu-icon {
+    display: block;
+    width: 40px;
+    height: auto;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+  .navigation.active {
+    border-radius: 8px 8px 0 0;
+  }
+  .links {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-accent-light);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    text-align: right;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: all 0.3s ease-out;
+  }
+  .links.active {
+    max-height: fit-content;
+    opacity: 1;
+    align-items: end;
+    border-radius: 0 0 8px 8px;
+    padding: 20px 0;
+  }
+  .heroLinks a:not(.main-color) {
+    margin: 5px 20px;
+    padding: 5px 10px;
+    border-bottom: 1px solid #555;
+    color: var(--color-white) !important;
+  }
   .hero-nav {
     padding: 0 40px;
   }
@@ -201,12 +250,14 @@ a.logo {
     max-width: 100%;
     padding-left: 0;
   }
-}
-@media (max-width: 380px) {
-  .hero-content h1 {
-    font-size: 2.2rem;
+  div#pkg-3 {
+    grid-column: span 1;
+  }
+  .span2 {
+    grid-column: span 1;
   }
 }
+
 @media (max-width: 768px) {
   .hero {
     background: linear-gradient(
@@ -215,7 +266,7 @@ a.logo {
         rgba(255, 255, 255, 0) 5%
       ),
       linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-      src("/images/heroImageV") center / cover no-repeat;
+      url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
   }
 
   .section {
@@ -237,6 +288,68 @@ a.logo {
     min-height: 50vh;
     padding: 10px;
   }
+  .readable p {
+    text-align: left;
+  }
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  .service-list {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+  .service-list li {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  .industry-grid {
+    grid-template-columns: 1fr;
+  }
+  .cta-block {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-blog-review {
+    padding: 2rem 1rem;
+  }
+  .industry-grid {
+    justify-items: center;
+  }
+  .icon-link {
+    display: none;
+  }
+  .progress-line {
+    height: 100vh;
+    border-radius: 0px;
+  }
+  .scroll-indicator {
+    left: 0px;
+  }
+  .hero-ctas .btn {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+  .review-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .image-review {
+    min-height: 350px;
+    background: url(/images/review-bg-mobile.webp) center / contain no-repeat;
+  }
+}
+@media (max-width: 380px) {
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
 }
 .hero-nav {
   background-color: var(--color-white);
@@ -245,7 +358,7 @@ a.logo {
 
   .hero-badge{ display:inline-flex; gap:.5rem; align-items:center; background:#fff; color:#0f172a; border-radius:999px; padding:.4rem .8rem; font-weight:600; font-size:.875rem; box-shadow:0 6px 20px rgba(0,0,0,.12); }
 
-  </style>
+</style>
 
   <body>
     <%- include('partials/header') %>
