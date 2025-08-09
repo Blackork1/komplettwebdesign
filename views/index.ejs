@@ -104,6 +104,138 @@
     .timeline .step small{ color:#64748b; }
     .hero-content h1{font-size:2.5rem}
     @media(max-width:380px){.hero-content h1{font-size:2.2rem}}
+    @media (max-width: 768px) {
+  .hero {
+    background: linear-gradient(
+        to bottom,
+        #ffffff 0%,
+        rgba(255, 255, 255, 0) 5%
+      ),
+      linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
+      url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
+  }
+
+  .section {
+    padding: 0 20px;
+  }
+  .hero-section {
+    padding: 0 20px;
+  }
+  .container {
+    border-radius: 10px;
+    margin: 20px auto;
+  }
+  .outer-wrapper {
+    padding: 2rem 1rem;
+  }
+  .hero-content,
+  .hero-image {
+    max-width: 100%;
+    min-height: 50vh;
+    padding: 10px;
+  }}
+  .hero-nav {
+  background-color: var(--color-white);
+  padding: 0 60px;
+}
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  padding-bottom: 5px;
+  z-index: 10;
+  border-bottom: 1px solid var(--secondary-button-color);
+}
+.logo img {
+  height: 70px;
+  transform: translate3d(-15px, 3px, 0);
+}
+a.logo {
+  height: 70px;
+}
+.heroLinks {
+  display: flex;
+  gap: 1rem;
+}
+.heroLinks a:not(.btn-tertiary) {
+  color: var(--color-primary);
+  font-weight: bold;
+  padding: 5px;
+  transition: all 0.2s ease;
+}
+.heroLinks a:hover:not(.btn-tertiary) {
+  color: var(--color-accent);
+  border-bottom: 3px solid var(--color-accent-light);
+  padding-bottom: 10px;
+  transform: translateY(-3px);
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+}
+.menu-icon {
+  display: none;
+}
+.links {
+  display: flex;
+  align-items: center;
+}
+
+/* Navbar-Grundstruktur */
+.main-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.main-nav li {
+  position: relative;
+}
+
+/* Das Dropdown-Menü verstecken */
+.main-nav .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  min-width: 160px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  border-radius: 8px;
+}
+
+/* Die einzelnen Einträge */
+.main-nav .dropdown-menu li {
+  margin: 0;
+}
+
+.main-nav .dropdown-menu li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+/* Hover-Effekt */
+.main-nav .dropdown-menu li a:hover {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Dropdown beim Überfahren anzeigen */
+.main-nav .dropdown:hover .dropdown-menu {
+  opacity: 1;
+  display: block;
+  border-radius: 8px;
+}
   </style>
 
   <body>
