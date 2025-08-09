@@ -9,6 +9,37 @@
     <link rel="preconnect" href="https://js.stripe.com" crossorigin />
     <!-- <link rel="stylesheet" href="/css/critical.css?:<%= Date.now() %>" /> -->
 
+    <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
+    <link
+      rel="preload"
+      href="/fonts/inter-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-semibold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
+    <link
+      rel="preload"
+      href="/fonts/poppins-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/poppins-bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <!-- Bootstrap 5.3.7 CSS -->
     <link
       rel="preload"
