@@ -239,3 +239,5 @@ a.logo {
   background-color: var(--color-white);
   padding: 0 60px;
 }
+
+  .hero-badge{ display:inline-flex; gap:.5rem; align-items:center; background:#fff; color:#0f172a; border-radius:999px; padding:.4rem .8rem; font-weight:600; font-size:.875rem; box-shadow:0 6px 20px rgba(0,0,0,.12); }
