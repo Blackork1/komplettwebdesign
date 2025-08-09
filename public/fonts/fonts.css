@@ -4,7 +4,7 @@
   src: url('/fonts/inter-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 /* Inter SemiBold */
@@ -13,7 +13,7 @@
   src: url('/fonts/inter-semibold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 /* Poppins Regular */
@@ -22,7 +22,7 @@
   src: url('/fonts/poppins-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 /* Poppins Bold */
@@ -31,5 +31,5 @@
   src: url('/fonts/poppins-bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
