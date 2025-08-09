@@ -1,14 +1,153 @@
 .chat-button {
-    clip-path: none;
-    width: 150px;
-    right: -50px;
-    transition: transform 0.5s ease, width 0.5s ease;
+  clip-path: none;
+  width: 150px;
+  right: -50px;
+  transition: transform 0.5s ease, width 0.5s ease;
 }
 
 .chat-button:hover {
-    transform: translateX(-40px);
+  transform: translateX(-40px);
 }
 
 .readable p:first-of-type::first-letter {
   font-size: 3rem;
+}
+
+.hero-badge {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: #fff;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.text-accent {
+  color: var(--color-accent);
+}
+.timeline {
+  position: relative;
+  padding: 1rem 0 0;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 26px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+.timeline .step {
+  position: relative;
+  text-align: center;
+}
+.timeline .step .dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin: 0 auto 0.5rem;
+  box-shadow: 0 0 0 6px rgba(232, 70, 50, 0.15);
+}
+.timeline .step small {
+  color: #64748b;
+}
+/* ---------- Grafik-Container ---------- */
+.figure-speed {
+  max-width: 640px;
+  /* begrenzt Breite */
+  margin: 2rem auto;
+  /* zentriert + Abstand */
+  text-align: center;
+}
+
+.figure-speed img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.figure-speed figcaption {
+  font-size: 0.9rem;
+  color: #5a5a5a;
+  margin-top: 0.5rem;
+}
+
+/* ---------- CTA-Bereich ---------- */
+.cta-section {
+  color: var(--color-primary);
+  padding: 3rem 2rem;
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-top: 3rem;
+}
+
+.cta-section h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.cta-section p {
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.cta-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.cta-section li {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.cta-section a.cta-button {
+  display: inline-block;
+  background: #ffffff;
+  color: #1e3a8a;
+  font-weight: 600;
+  padding: 0.9rem 1.75rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta-section a.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+.cta-section .price-note {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 0.5rem;
+}
+
+.readable p {
+  margin: 0 0 1rem;
+  text-align: justify;
+}
+
+/* Erste Letter – Drop Cap */
+.readable p:first-of-type::first-letter {
+  font-size: 3rem;
+  line-height: 1;
+  float: left;
+  font-weight: 700;
+  color: var(--color-primary);
 }
