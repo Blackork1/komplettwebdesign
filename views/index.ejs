@@ -2,743 +2,830 @@
 
 <style>
   .navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-  padding-bottom: 5px;
-  z-index: 10;
-  border-bottom: 1px solid var(--secondary-button-color);
-}
-.logo img {
-  height: 70px;
-  transform: translate3d(-15px, 3px, 0);
-}
-a.logo {
-  height: 70px;
-}
-.heroLinks {
-  display: flex;
-  gap: 1rem;
-}
-.heroLinks a:not(.btn-tertiary) {
-  color: var(--color-primary);
-  font-weight: bold;
-  padding: 5px;
-  transition: all 0.2s ease;
-}
-.heroLinks a:hover:not(.btn-tertiary) {
-  color: var(--color-accent);
-  border-bottom: 3px solid var(--color-accent-light);
-  padding-bottom: 10px;
-  transform: translateY(-3px);
-}
-.nav-right {
-  display: flex;
-  align-items: center;
-  padding-top: 10px;
-}
-.menu-icon {
-  display: none;
-}
-.links {
-  display: flex;
-  align-items: center;
-}
-
-/* Navbar-Grundstruktur */
-.main-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-}
-
-.main-nav li {
-  position: relative;
-}
-
-/* Das Dropdown-Menü verstecken */
-.main-nav .dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: #fff;
-  border: 1px solid #ccc;
-  min-width: 160px;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  border-radius: 8px;
-}
-
-/* Die einzelnen Einträge */
-.main-nav .dropdown-menu li {
-  margin: 0;
-}
-
-.main-nav .dropdown-menu li a {
-  display: block;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: #333;
-  transition: all 0.2s ease;
-}
-
-/* Hover-Effekt */
-.main-nav .dropdown-menu li a:hover {
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  display: block;
-}
-
-/* Dropdown beim Überfahren anzeigen */
-.main-nav .dropdown:hover .dropdown-menu {
-  opacity: 1;
-  display: block;
-  border-radius: 8px;
-}
-.hero-ctas .btn {
-  margin: 0 auto 1rem;
-}
-.btn {
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  display: inline-block;
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-}
-/* public/css/cta.css */
-.background-gradient {
-  /* 1. Grundfarbe: von #E84632 → #FCD09A */
-  background-image: linear-gradient(
-    135deg,
-    /* 45° nach unten rechts ➜ etwas steiler wirkt oft moderner */ #e84632 0%,
-    /* Start: sattes Rot */ #f59763 40%,
-    /* sanfter Übergang */ #fcd09a 100% /* Ende: helles Orange/Beige */
-  );
-}
-.hero-content h1 {
-  font-size: 2.5rem;
-}
-.hero {
-  padding: 0rem 4rem 0rem 4rem;
-  /* background-color: var(--color-primary); */
-  color: var(--color-white);
-  background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0) 1%),
-    linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-    src("/images/heroImageH") center / cover no-repeat;
-}
-.hero-section {
-  padding: 0 150px;
-  overflow: hidden;
-}
-
-.hero-content {
-  flex: 1;
-  background: rgba(11, 42, 70, 0.28);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(2.6px);
-  -webkit-backdrop-filter: blur(2.6px);
-  /* border: 1px solid rgba(11, 42, 70, 0.35); */
-  padding: 20px;
-}
-.hero-content h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: var(--color-white);
-}
-.hero-content p {
-  font-size: 1.125rem;
-  margin-bottom: 2rem;
-}
-.hero-ctas .btn {
-  margin-right: 1rem;
-}
-.hero-image {
-  flex: 1;
-  padding-left: 100px;
-}
-.hero-image img {
-  max-width: 100%;
-}
-.hero-flex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 70vh;
-}
-.icon-transform-6 {
-  transform: translateY(6px);
-}
-
-@media (max-width: 1180px) {
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding-bottom: 5px;
+    z-index: 10;
+    border-bottom: 1px solid var(--secondary-button-color);
   }
-  .service-list {
-    grid-template-columns: repeat(2, 1fr);
+
+  .logo img {
+    height: 70px;
+    transform: translate3d(-15px, 3px, 0);
   }
-  .industry-grid {
-    grid-template-columns: repeat(2, 1fr);
+
+  a.logo {
+    height: 70px;
   }
-  .industry-item p {
-    padding-bottom: 1rem;
+
+  .heroLinks {
+    display: flex;
+    gap: 1rem;
   }
+
+  .heroLinks a:not(.btn-tertiary) {
+    color: var(--color-primary);
+    font-weight: bold;
+    padding: 5px;
+    transition: all 0.2s ease;
+  }
+
+  .heroLinks a:hover:not(.btn-tertiary) {
+    color: var(--color-accent);
+    border-bottom: 3px solid var(--color-accent-light);
+    padding-bottom: 10px;
+    transform: translateY(-3px);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    padding-top: 10px;
+  }
+
   .menu-icon {
-    display: block;
-    width: 40px;
-    height: auto;
-    cursor: pointer;
-    margin-left: 10px;
+    display: none;
   }
-  .navigation.active {
-    border-radius: 8px 8px 0 0;
-  }
+
   .links {
     display: flex;
-    flex-direction: column;
-    background: var(--color-accent-light);
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 100%;
-    text-align: right;
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: all 0.3s ease-out;
-  }
-  .links.active {
-    max-height: fit-content;
-    opacity: 1;
-    align-items: end;
-    border-radius: 0 0 8px 8px;
-    padding: 20px 0;
-  }
-  .heroLinks a:not(.main-color) {
-    margin: 5px 20px;
-    padding: 5px 10px;
-    border-bottom: 1px solid #555;
-    color: var(--color-white) !important;
-  }
-  .hero-nav {
-    padding: 0 40px;
-  }
-  .hero {
-    flex-direction: column;
-    text-align: center;
-    padding: 2rem 1rem;
-  }
-  .hero-flex {
-    flex-direction: column;
     align-items: center;
   }
-  .hero-image img {
-    max-width: 100%;
-    margin-top: 2rem;
-    padding-left: 0;
+
+  /* Navbar-Grundstruktur */
+  .main-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
   }
+
+  .main-nav li {
+    position: relative;
+  }
+
+  /* Das Dropdown-Menü verstecken */
+  .main-nav .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    min-width: 160px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    border-radius: 8px;
+  }
+
+  /* Die einzelnen Einträge */
+  .main-nav .dropdown-menu li {
+    margin: 0;
+  }
+
+  .main-nav .dropdown-menu li a {
+    display: block;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s ease;
+  }
+
+  /* Hover-Effekt */
+  .main-nav .dropdown-menu li a:hover {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* Dropdown beim Überfahren anzeigen */
+  .main-nav .dropdown:hover .dropdown-menu {
+    opacity: 1;
+    display: block;
+    border-radius: 8px;
+  }
+
+  .hero-ctas .btn {
+    margin: 0 auto 1rem;
+  }
+
+  .btn {
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    display: inline-block;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+  }
+
+  /* public/css/cta.css */
+  .background-gradient {
+    /* 1. Grundfarbe: von #E84632 → #FCD09A */
+    background-image: linear-gradient(135deg,
+        /* 45° nach unten rechts ➜ etwas steiler wirkt oft moderner */
+        #e84632 0%,
+        /* Start: sattes Rot */
+        #f59763 40%,
+        /* sanfter Übergang */
+        #fcd09a 100%
+        /* Ende: helles Orange/Beige */
+      );
+  }
+
   .hero-content h1 {
     font-size: 2.5rem;
   }
-  .hero-content,
-  .hero-image {
-    max-width: 100%;
-    padding-left: 0;
-  }
-  div#pkg-3 {
-    grid-column: span 1;
-  }
-  .span2 {
-    grid-column: span 1;
-  }
-}
 
-@media (max-width: 768px) {
   .hero {
-    background: linear-gradient(
-        to bottom,
-        #ffffff 0%,
-        rgba(255, 255, 255, 0) 5%
-      ),
+    padding: 0rem 4rem 0rem 4rem;
+    /* background-color: var(--color-primary); */
+    color: var(--color-white);
+    background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0) 1%),
       linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-      url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
+      src("/images/heroImageH") center / cover no-repeat;
   }
 
-  .section {
-    padding: 0 20px;
-  }
   .hero-section {
-    padding: 0 20px;
-  }
-  .container {
-    border-radius: 10px;
-    margin: 20px auto;
-  }
-  .outer-wrapper {
-    padding: 2rem 1rem;
-  }
-  .hero-content,
-  .hero-image {
-    max-width: 100%;
-    min-height: 50vh;
-    padding: 10px;
-  }
-  .readable p {
-    text-align: left;
-  }
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  .pricing-grid {
-    grid-template-columns: 1fr;
-  }
-  .service-list {
-    grid-template-columns: 1fr;
-    padding-left: 0;
-  }
-  .service-list li {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-  .industry-grid {
-    grid-template-columns: 1fr;
-  }
-  .cta-block {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .home-grid {
-    grid-template-columns: 1fr;
-  }
-  .home-blog-review {
-    padding: 2rem 1rem;
-  }
-  .industry-grid {
-    justify-items: center;
-  }
-  .icon-link {
-    display: none;
-  }
-  .progress-line {
-    height: 100vh;
-    border-radius: 0px;
-  }
-  .scroll-indicator {
-    left: 0px;
-  }
-  .hero-ctas .btn {
-    margin-right: 0;
-    margin-bottom: 10px;
-  }
-  .review-card {
-    grid-template-columns: 1fr;
-    text-align: center;
+    padding: 0 150px;
+    overflow: hidden;
   }
 
-  .image-review {
-    min-height: 350px;
-    background: url(/images/review-bg-mobile.webp) center / contain no-repeat;
+  .hero-content {
+    flex: 1;
+    background: rgba(11, 42, 70, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2.6px);
+    -webkit-backdrop-filter: blur(2.6px);
+    /* border: 1px solid rgba(11, 42, 70, 0.35); */
+    padding: 20px;
   }
-}
-@media (max-width: 380px) {
+
   .hero-content h1 {
-    font-size: 2.2rem;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--color-white);
   }
-}
-.hero-nav {
-  background-color: var(--color-white);
-  padding: 0 60px;
-}
 
-  .hero-badge{ display:inline-flex; gap:.5rem; align-items:center; background:#fff; color:#0f172a; border-radius:999px; padding:.4rem .8rem; font-weight:600; font-size:.875rem; box-shadow:0 6px 20px rgba(0,0,0,.12); }
+  .hero-content p {
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+  }
 
+  .hero-ctas .btn {
+    margin-right: 1rem;
+  }
+
+  .hero-image {
+    flex: 1;
+    padding-left: 100px;
+  }
+
+  .hero-image img {
+    max-width: 100%;
+  }
+
+  .hero-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 70vh;
+  }
+
+  .icon-transform-6 {
+    transform: translateY(6px);
+  }
+
+  @media (max-width: 1180px) {
+    .features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .service-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .industry-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .industry-item p {
+      padding-bottom: 1rem;
+    }
+
+    .menu-icon {
+      display: block;
+      width: 40px;
+      height: auto;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .navigation.active {
+      border-radius: 8px 8px 0 0;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      background: var(--color-accent-light);
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 100%;
+      text-align: right;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: all 0.3s ease-out;
+    }
+
+    .links.active {
+      max-height: fit-content;
+      opacity: 1;
+      align-items: end;
+      border-radius: 0 0 8px 8px;
+      padding: 20px 0;
+    }
+
+    .heroLinks a:not(.main-color) {
+      margin: 5px 20px;
+      padding: 5px 10px;
+      border-bottom: 1px solid #555;
+      color: var(--color-white) !important;
+    }
+
+    .hero-nav {
+      padding: 0 40px;
+    }
+
+    .hero {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    .hero-flex {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-image img {
+      max-width: 100%;
+      margin-top: 2rem;
+      padding-left: 0;
+    }
+
+    .hero-content h1 {
+      font-size: 2.5rem;
+    }
+
+    .hero-content,
+    .hero-image {
+      max-width: 100%;
+      padding-left: 0;
+    }
+
+    div#pkg-3 {
+      grid-column: span 1;
+    }
+
+    .span2 {
+      grid-column: span 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      background: linear-gradient(to bottom,
+          #ffffff 0%,
+          rgba(255, 255, 255, 0) 5%),
+        linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
+        url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
+    }
+
+    .section {
+      padding: 0 20px;
+    }
+
+    .hero-section {
+      padding: 0 20px;
+    }
+
+    .container {
+      border-radius: 10px;
+      margin: 20px auto;
+    }
+
+    .outer-wrapper {
+      padding: 2rem 1rem;
+    }
+
+    .hero-content,
+    .hero-image {
+      max-width: 100%;
+      min-height: 50vh;
+      padding: 10px;
+    }
+
+    .readable p {
+      text-align: left;
+    }
+
+    .features-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .pricing-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .service-list {
+      grid-template-columns: 1fr;
+      padding-left: 0;
+    }
+
+    .service-list li {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    .industry-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-block {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .home-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .home-blog-review {
+      padding: 2rem 1rem;
+    }
+
+    .industry-grid {
+      justify-items: center;
+    }
+
+    .icon-link {
+      display: none;
+    }
+
+    .progress-line {
+      height: 100vh;
+      border-radius: 0px;
+    }
+
+    .scroll-indicator {
+      left: 0px;
+    }
+
+    .hero-ctas .btn {
+      margin-right: 0;
+      margin-bottom: 10px;
+    }
+
+    .review-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .image-review {
+      min-height: 350px;
+      background: url(/images/review-bg-mobile.webp) center / contain no-repeat;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .hero-content h1 {
+      font-size: 2.2rem;
+    }
+  }
+
+  .hero-nav {
+    background-color: var(--color-white);
+    padding: 0 60px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+    background: #fff;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: .4rem .8rem;
+    font-weight: 600;
+    font-size: .875rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+  }
 </style>
 
-  <body>
-    <%- include('partials/header') %>
-      <main>
-        <!-- 1) Hero-Section -->
-        <section class="hero hero-main" id="hero" fetchpriority=high>
-          <div class="hero-section">
-            <div class="container">
-              <div class="hero-flex">
-                <div class="hero-content">
-            <span class="hero-badge mb-3">
-              <i class="fas fa-bolt"></i> Schnell live. Sichtbar in Berlin.
-            </span>
-            <h1 class="display-5 fw-bold mt-2">
-              Website in Berlin erstellen lassen – <span class="text-accent">günstig, fix</span> & mit echtem Umsatz-Impact
-            </h1>
-            <p>
-              <img src="/images/icons/check.svg" alt="check icon"/>
-              Optimiert für Handy, Tablet & Desktop
-              <br />
-              <img src="/images/icons/check.svg" alt="check icon" />
-              Lokale Sichtbarkeit: „Website in Berlin erstellen lassen“
-              <br />
-              <img src="/images/icons/check.svg" alt="check icon" />
-              Klare Preise, klare Deadlines – <strong>0</strong> Technik-Stress für dich
-            </p>
-            <div class="hero-ctas">
-              <a href="/kontakt" class="btn btn-primary">Beratungstermin</a>
-              <a href="/pakete" class="btn btn-secondary">Angebote</a>
-            </div>
-            <p class="mt-2 mb-0">
-              <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
-              <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
-              <span class="badge text-bg-success">All-in ab 1499,99 €</span>
-            </p>
-                </div>
-                <div class="hero-image"></div>
+<body>
+  <%- include('partials/header') %>
+  <main>
+    <!-- 1) Hero-Section -->
+    <section class="hero hero-main" id="hero" fetchpriority=high>
+      <div class="hero-section">
+        <div class="container">
+          <div class="hero-flex">
+            <div class="hero-content">
+              <span class="hero-badge mb-3">
+                <i class="fas fa-bolt"></i> Schnell live. Sichtbar in Berlin.
+              </span>
+              <h1 class="display-5 fw-bold mt-2">
+                Website in Berlin erstellen lassen – <span class="text-accent">günstig, fix</span> & mit echtem Umsatz-Impact
+              </h1>
+              <p>
+                <img src="/images/icons/check.svg" alt="check icon" />
+                Optimiert für Handy, Tablet & Desktop
+                <br />
+                <img src="/images/icons/check.svg" alt="check icon" />
+                Lokale Sichtbarkeit: „Website in Berlin erstellen lassen“
+                <br />
+                <img src="/images/icons/check.svg" alt="check icon" />
+                Klare Preise, klare Deadlines – <strong>0</strong> Technik-Stress für dich
+              </p>
+              <div class="hero-ctas">
+                <a href="/kontakt" class="btn btn-primary">Beratungstermin</a>
+                <a href="/pakete" class="btn btn-secondary">Angebote</a>
               </div>
+              <p class="mt-2 mb-0">
+                <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
+                <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
+                <span class="badge text-bg-success">All-in ab 1499,99 €</span>
+              </p>
             </div>
+            <div class="hero-image"></div>
           </div>
-        </section>
+        </div>
+      </div>
+    </section>
 
-        <!-- 2) Agentur-Einleitung -->
-        <section class="section" id="erklaerung">
-          <div class="container animate-on-scroll">
-            <div class="outer-wrapper">
-              <div class="inner-wrapper text-left">
-                <h2 class="animate-on-scroll ">
-                  <bold>Webseite in Berlin erstellen lassen</bold> – professionelles Webdesign in Berlin
-                  aus einer Hand bei <span class="brand">KomplettWebdesign</span>
-                </h2>
-                <div class="readable animate-on-scroll">
-                  <p>
-                    In der digitalen Welt von heute benötigen Unternehmen eine
-                    moderne, ansprechende und mobilfreundliche Online-Präsenz.
-                    Und das am besten günstig, fix & mit echtem Umsatz-Impact. Mit
-                    Komplettwebdesign.de, Ihrer Webdesign-Agentur aus Berlin,
-                    können Sie Ihre Webseite professionell erstellen lassen –
-                    schnell, zuverlässig und vollständig aus einer Hand.
-                  </p>
-                  <p>
-                    Wir betreuen Kunden aus verschiedensten Branchen. Unser
-                    Schwerpunkt liegt auf Webseiten für Restaurants,
-                    Handwerksbetriebe, Cafés sowie Kitas und Schulen. Durch unsere
-                    Erfahrung kennen wir die spezifischen Anforderungen jeder
-                    Branche und setzen diese gezielt um, damit Ihre neue Webseite
-                    bei Ihrer Zielgruppe optimal ankommt. 
-                  </p>
-                </div>
-              </div>
+    <!-- 2) Agentur-Einleitung -->
+    <section class="section" id="erklaerung">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <h2 class="animate-on-scroll ">
+              <bold>Webseite in Berlin erstellen lassen</bold> – professionelles Webdesign in Berlin
+              aus einer Hand bei <span class="brand">KomplettWebdesign</span>
+            </h2>
+            <div class="readable animate-on-scroll">
+              <p>
+                In der digitalen Welt von heute benötigen Unternehmen eine
+                moderne, ansprechende und mobilfreundliche Online-Präsenz.
+                Und das am besten günstig, fix & mit echtem Umsatz-Impact. Mit
+                Komplettwebdesign.de, Ihrer Webdesign-Agentur aus Berlin,
+                können Sie Ihre Webseite professionell erstellen lassen –
+                schnell, zuverlässig und vollständig aus einer Hand.
+              </p>
+              <p>
+                Wir betreuen Kunden aus verschiedensten Branchen. Unser
+                Schwerpunkt liegt auf Webseiten für Restaurants,
+                Handwerksbetriebe, Cafés sowie Kitas und Schulen. Durch unsere
+                Erfahrung kennen wir die spezifischen Anforderungen jeder
+                Branche und setzen diese gezielt um, damit Ihre neue Webseite
+                bei Ihrer Zielgruppe optimal ankommt.
+              </p>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
+    </section>
 
-        <!-- 3) Features Section -->
-        <section class="section" id="features">
-          <div class="container animate-on-scroll">
-            <!-- Features Section -->
-            <section class="outer-wrapper">
-              <div class="inner-wrapper">
-                <h2 class="animate-on-scroll">Was biete ich dir für deine <strong>Websiteerstellung</strong>?</h2>
-                <div class="features-grid">
-                  <!-- 1 -->
-                  <div class="feature-item animate-on-scroll">
-                    <!-- Icon: als SVG oder <img> -->
-                    <img src="/images/icons/gift1.svg" alt="Wünsche integriert" class="feature-icon" loading="lazy" />
-                    <h3>Wünsche integriert</h3>
-                    <p>
-                      Deine Vorstellungen fließen vollständig in die Websiteerstellung mit ein.
-                    </p>
-                  </div>
-                  <!-- 2 -->
-                  <div class="feature-item animate-on-scroll"><img src="/images/icons/delivery1.svg"
-                      alt="Schnelle Umsetzung" class="feature-icon" loading="lazy"/>
-                    <h3>Schnelle Umsetzung</h3>
-                    <p>
-                      Eine funktionierende Startseite ist in nur 4 Wochen online.
-                    </p>
-                  </div>
-                  <!-- 3 -->
-                  <div class="feature-item animate-on-scroll">
-                    <img src="/images/icons/support1.svg" alt="Fortlaufender Support" class="feature-icon" loading="lazy"/>
-                    <h3>Fortlaufender Support</h3>
-                    <p>
-                      Auch nach Fertigstellung der Seite stehe ich für dich zur
-                      Verfügung.
-                    </p>
-                  </div>
-                  <!-- 4 -->
-                  <div class="feature-item animate-on-scroll">
-                    <img src="/images/icons/abstimmung1.svg" alt="Persönliche Abstimmung" class="feature-icon" loading="lazy"/>
-                    <h3>Persönliche Abstimmung</h3>
-                    <p>
-                      Wir planen und erstellen die komplette Webseite gemeinsam.
-                    </p>
-                  </div>
-                  <!-- 5 -->
-                  <div class="feature-item animate-on-scroll">
-                    <img src="/images/icons/austausch1.svg" alt="Dauerhafter Austausch" class="feature-icon" loading="lazy"/>
-                    <h3>Dauerhafter Austausch</h3>
-                    <p>
-                      Bei Fragen oder Wünschen, kannst du mich jederzeit
-                      erreichen.
-                    </p>
-                  </div>
-                  <!-- 6 -->
-                  <div class="feature-item animate-on-scroll">
-                    <img src="/images/icons/individual1.svg" alt="Individuelle Lösungen" class="feature-icon" loading="lazy"/>
-                    <h3>Individuelle Lösungen</h3>
-                    <p>
-                      Egal was du dir vorstellst, wir finden eine passende
-                      Möglichkeit.
-                    </p>
-                  </div>
-                </div>
-                <div class="text-center my-4">
-                  <h2 class="animate-on-scroll ">Dein Zeitplan – heute starten, <span class="brand">in 30 Tagen live</span></h2>
-                  <p class="text-muted animate-on-scroll">Für größere Websites verlängern sich die Zeiten entsprechend.</p>
-                </div>
-                <div class="row text-center timeline gx-4">
-                  <div class="col-6 col-md"><div class="step"><div class="dot"></div><h6 class="fw-bold">Tag 0</h6><small>Kennenlernen (20 Min.)</small></div></div>
-                  <div class="col-6 col-md"><div class="step"><div class="dot"></div><h6 class="fw-bold">Tag 7</h6><small>Erstentwurf</small></div></div>
-                  <div class="col-6 col-md"><div class="step"><div class="dot"></div><h6 class="fw-bold">Tag 14</h6><small>Fertiges Webdesign</small></div></div>
-                  <div class="col-6 col-md"><div class="step"><div class="dot"></div><h6 class="fw-bold">Tag 21</h6><small>Live-Test</small></div></div>
-                  <div class="col-12 col-md"><div class="step"><div class="dot"></div><h6 class="fw-bold">Tag 30</h6><small>Launch</small></div></div>
-                </div>
+    <!-- 3) Features Section -->
+    <section class="section" id="features">
+      <div class="container animate-on-scroll">
+        <!-- Features Section -->
+        <section class="outer-wrapper">
+          <div class="inner-wrapper">
+            <h2 class="animate-on-scroll">Was biete ich dir für deine <strong>Websiteerstellung</strong>?</h2>
+            <div class="features-grid">
+              <!-- 1 -->
+              <div class="feature-item animate-on-scroll">
+                <!-- Icon: als SVG oder <img> -->
+                <img src="/images/icons/gift1.svg" alt="Wünsche integriert" class="feature-icon" loading="lazy" />
+                <h3>Wünsche integriert</h3>
+                <p>
+                  Deine Vorstellungen fließen vollständig in die Websiteerstellung mit ein.
+                </p>
               </div>
-            </section>
-          </div>
-        </section>
-
-        <!-- 4) Leistungen -->
-        <section class="section" id="leistungen">
-          <div class="container animate-on-scroll">
-            <div class="outer-wrapper">
-              <div class="inner-wrapper text-left">
-                <h2 class="animate-on-scroll">
-                  Alles aus einer Hand – Wir erstellen deine Website in Berlin
-                </h2>
-                <div class="readable animate-on-scroll">
-                  <p>
-                    Von der Planung über das Webdesign bis zu SEO, Wartung und
-                    Hosting bekommen Sie bei uns alle Leistungen aus einer Hand.
-                    Sie haben einen festen Ansprechpartner und müssen nicht
-                    mehrere Dienstleister koordinieren – wir kümmern uns um alles
-                    rund um Ihre Website. Unsere Websites sind technisch und
-                    inhaltlich für Suchmaschinen optimiert.
-                  </p>
-                  <p>
-                    Schon bei der Erstellung achten wir auf saubere
-                    Programmierung, schnelle Ladezeiten und SEO-freundliche
-                    Inhalte. So wird Ihre Seite bei Google gut gefunden – egal ob
-                    Webseite für Handwerksbetrieb Berlin oder komplette Website
-                    für Coaches, wir sorgen für maximale Sichtbarkeit bei
-                    relevanten Suchanfragen.
-                  </p>
-                </div>
-                <ul class="service-list">
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img
-                          src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp"
-                          alt="Bild eines Designs" loading="lazy"/>
-                        <p class="listText">Webdesign in Berlin</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Webdesign</strong> Modernes und individuelles Layout,
-                          ausgelegt und angepasst für alle Endgeräte
-                        </li>
-                      </div>
-                      <img class="click" src="/images/icons/click.svg" alt="hier clicken" loading="lazy"/>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/code.webp" alt="Bild von Code" loading="lazy"/>
-                        <p class="listText">Coding</p>
-
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Programmierung / Coding</strong> Zuverlässige
-                          Entwicklung mit sauberem und leicht anpassbaren Code
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/hosting.webp" alt="Bild eines Routers" loading="lazy"/>
-                        <p class="listText">Hosting</p>
-
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Hosting</strong> Sicheres, leistungsstarkes und
-                          zuverlässiges Webhosting für Ihre Homepage
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/datenbank.webp" alt="Bild einer Datenbank" loading="lazy"/>
-                        <p class="listText">Datenbanken</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Verwaltung der Datenbanken</strong> Effiziente und
-                          sichere Pflege Ihrer Website-Datenbanken für optimale
-                          Performance
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/seo.webp" alt="Bild der Googlesuche" loading="lazy"/>
-                        <p class="listText">SEO-Optimierung</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>SEO-Optimierung</strong> Google
-                          Suchmaschinenoptimierung für bessere Sichtbarkeit, schnelleres
-                          Finden in Google
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/wartung.webp" alt="Bild eines Technikers der etwas repariert" loading="lazy"/>
-                        <p class="listText">Wartung</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Wartung & technischer Service</strong> Regelmäßige
-                          Updates, Sicherheitspatches und persönlicher Support
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img src="/images/texterstellung.webp" alt="Bild eines Buches mit Bleistift" loading="lazy"/>
-                        <p class="listText">Texterstellung</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Texterstellung</strong> Auf Wunsch professionelle
-                          Inhalte und Texte inkl. SEO-Texte für Ihre Webseite
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-container">
-                    <div class="card-inner">
-                      <div class="card-front card-back-image">
-                        <img
-                          src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp"
-                          alt="Bild eines Stockfotos am Laptop" loading="lazy"/>
-                        <p class="listText">Stockfotos</p>
-                      </div>
-                      <div class="card-back">
-                        <li>
-                          <strong>Stockfotos</strong> Hochwertiges Bildmaterial aus
-                          Bilddatenbanken oder deine eigenen individuelle Fotos
-                        </li>
-                      </div>
-                    </div>
-                  </div>
-                </ul>
-                <p class="extra-text animate-on-scroll">
-                  Wir liefern kein Webdesign von der Stange, sondern
-                  maßgeschneiderte Lösungen. Jede Branche hat besondere
-                  Anforderungen – eine maßgeschneiderte Homepage für Restaurant
-                  benötigt beispielsweise andere Funktionen als eine Website für
-                  lokale Dienstleister Berlin. Wir wissen genau, worauf es in
-                  Ihrem Bereich ankommt, und setzen dies gezielt um.
+              <!-- 2 -->
+              <div class="feature-item animate-on-scroll"><img src="/images/icons/delivery1.svg" alt="Schnelle Umsetzung" class="feature-icon" loading="lazy" />
+                <h3>Schnelle Umsetzung</h3>
+                <p>
+                  Eine funktionierende Startseite ist in nur 4 Wochen online.
+                </p>
+              </div>
+              <!-- 3 -->
+              <div class="feature-item animate-on-scroll">
+                <img src="/images/icons/support1.svg" alt="Fortlaufender Support" class="feature-icon" loading="lazy" />
+                <h3>Fortlaufender Support</h3>
+                <p>
+                  Auch nach Fertigstellung der Seite stehe ich für dich zur
+                  Verfügung.
+                </p>
+              </div>
+              <!-- 4 -->
+              <div class="feature-item animate-on-scroll">
+                <img src="/images/icons/abstimmung1.svg" alt="Persönliche Abstimmung" class="feature-icon" loading="lazy" />
+                <h3>Persönliche Abstimmung</h3>
+                <p>
+                  Wir planen und erstellen die komplette Webseite gemeinsam.
+                </p>
+              </div>
+              <!-- 5 -->
+              <div class="feature-item animate-on-scroll">
+                <img src="/images/icons/austausch1.svg" alt="Dauerhafter Austausch" class="feature-icon" loading="lazy" />
+                <h3>Dauerhafter Austausch</h3>
+                <p>
+                  Bei Fragen oder Wünschen, kannst du mich jederzeit
+                  erreichen.
+                </p>
+              </div>
+              <!-- 6 -->
+              <div class="feature-item animate-on-scroll">
+                <img src="/images/icons/individual1.svg" alt="Individuelle Lösungen" class="feature-icon" loading="lazy" />
+                <h3>Individuelle Lösungen</h3>
+                <p>
+                  Egal was du dir vorstellst, wir finden eine passende
+                  Möglichkeit.
                 </p>
               </div>
             </div>
+            <div class="text-center my-4">
+              <h2 class="animate-on-scroll ">Dein Zeitplan – heute starten, <span class="brand">in 30 Tagen live</span></h2>
+              <p class="text-muted animate-on-scroll">Für größere Websites verlängern sich die Zeiten entsprechend.</p>
+            </div>
+            <div class="row text-center timeline gx-4">
+              <div class="col-6 col-md">
+                <div class="step">
+                  <div class="dot"></div>
+                  <h6 class="fw-bold">Tag 0</h6><small>Kennenlernen (20 Min.)</small>
+                </div>
+              </div>
+              <div class="col-6 col-md">
+                <div class="step">
+                  <div class="dot"></div>
+                  <h6 class="fw-bold">Tag 7</h6><small>Erstentwurf</small>
+                </div>
+              </div>
+              <div class="col-6 col-md">
+                <div class="step">
+                  <div class="dot"></div>
+                  <h6 class="fw-bold">Tag 14</h6><small>Fertiges Webdesign</small>
+                </div>
+              </div>
+              <div class="col-6 col-md">
+                <div class="step">
+                  <div class="dot"></div>
+                  <h6 class="fw-bold">Tag 21</h6><small>Live-Test</small>
+                </div>
+              </div>
+              <div class="col-12 col-md">
+                <div class="step">
+                  <div class="dot"></div>
+                  <h6 class="fw-bold">Tag 30</h6><small>Launch</small>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
+      </div>
+    </section>
 
-        <!-- 5) Blog + Review Section -->
-        <section class="section" id="blog-reviews">
-          <div class="container animate-on-scroll">
-            <section class="outer-wrapper">
-              <div class="inner-wrapper">
-                <h2 class="animate-on-scroll ">
-                  Aktuelles zum Thema Webseiten und bisherige Kundenstimmen
-                </h2>
-                <div class="home-grid">
-                  <!-- Links: Aktueller Blog-Post (2/3) -->
-                  <div class="latest-blog">
-                    <article class="content-card animate-on-scroll">
-                      <h3>Aktueller Blog-Artikel</h3>
-                      <div class="p2rem">
-                        <!-- Titelbild -->
-                        <div class="blog-image">
-                          <a href="/blog/<%= latestPost.slug %>">
-                            <img src="<%= latestPost.image_url %>" alt="Bild zum Artikel: <%= latestPost.title %>"
-                              loading="lazy" />
-                          </a>
-                        </div>
-
-                        <!-- Überschrift -->
-                        <h4>
-                          <a href="/blog/<%= latestPost.slug %>">
-                            <%= latestPost.title %>
-                              <% if (latestPost.isDefault) { %>
-                                <small>(Demnächst mehr…)</small>
-                                <% } %>
-                          </a>
-                        </h4>
-
-                        <!-- Auszug -->
-                        <p class="excerpt">
-                          <%= latestPost.excerpt %>
-                        </p>
-
-                        <!-- Datum -->
-                        <% if (!latestPost.isDefault) { %>
-                          <p class="date">
-                            vor <%= Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)) %>
-                              Tagen
-                          </p>
-                          <% } %>
-
-                            <!-- Link zum Artikel -->
-                            <a href="/blog/<%= latestPost.slug %>" class="btn btn-primary mb-2">
-                              Zum Artikel
-                            </a>
-                            <a href="/blog" class="btn btn-tertiary mb-2">Zum Blog</a>
-                      </div>
-                    </article>
+    <!-- 4) Leistungen -->
+    <section class="section" id="leistungen">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <h2 class="animate-on-scroll">
+              Alles aus einer Hand – Wir erstellen deine Website in Berlin
+            </h2>
+            <div class="readable animate-on-scroll">
+              <p>
+                Von der Planung über das Webdesign bis zu SEO, Wartung und
+                Hosting bekommen Sie bei uns alle Leistungen aus einer Hand.
+                Sie haben einen festen Ansprechpartner und müssen nicht
+                mehrere Dienstleister koordinieren – wir kümmern uns um alles
+                rund um Ihre Website. Unsere Websites sind technisch und
+                inhaltlich für Suchmaschinen optimiert.
+              </p>
+              <p>
+                Schon bei der Erstellung achten wir auf saubere
+                Programmierung, schnelle Ladezeiten und SEO-freundliche
+                Inhalte. So wird Ihre Seite bei Google gut gefunden – egal ob
+                Webseite für Handwerksbetrieb Berlin oder komplette Website
+                für Coaches, wir sorgen für maximale Sichtbarkeit bei
+                relevanten Suchanfragen.
+              </p>
+            </div>
+            <ul class="service-list">
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="Bild eines Designs" loading="lazy" />
+                    <p class="listText">Webdesign in Berlin</p>
                   </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Webdesign</strong> Modernes und individuelles Layout,
+                      ausgelegt und angepasst für alle Endgeräte
+                    </li>
+                  </div>
+                  <img class="click" src="/images/icons/click.svg" alt="hier clicken" loading="lazy" />
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/code.webp" alt="Bild von Code" loading="lazy" />
+                    <p class="listText">Coding</p>
 
-                  <!-- Rechts: Kunden-Rezension (1/3) -->
-                  <div class="testimonial">
-                    <div class="content-card animate-on-scroll">
-                      <h3>Kundenstimme und erstellte Website</h3>
-                      <div class="review-card">
-                        <div class="p2rem">
-                          <!-- Avatar -->
-                          <img src="<%= review.avatar_url %>" alt="Avatar von <%= review.author %>"
-                            class="review-avatar" loading="lazy" />
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Programmierung / Coding</strong> Zuverlässige
+                      Entwicklung mit sauberem und leicht anpassbaren Code
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/hosting.webp" alt="Bild eines Routers" loading="lazy" />
+                    <p class="listText">Hosting</p>
 
-                          <!-- Zitat -->
-                          <blockquote>
-                            <%- review.content.replace( /https?:\/\/[^\s]+/gi, match=> {
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Hosting</strong> Sicheres, leistungsstarkes und
+                      zuverlässiges Webhosting für Ihre Homepage
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/datenbank.webp" alt="Bild einer Datenbank" loading="lazy" />
+                    <p class="listText">Datenbanken</p>
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Verwaltung der Datenbanken</strong> Effiziente und
+                      sichere Pflege Ihrer Website-Datenbanken für optimale
+                      Performance
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/seo.webp" alt="Bild der Googlesuche" loading="lazy" />
+                    <p class="listText">SEO-Optimierung</p>
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>SEO-Optimierung</strong> Google
+                      Suchmaschinenoptimierung für bessere Sichtbarkeit, schnelleres
+                      Finden in Google
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/wartung.webp" alt="Bild eines Technikers der etwas repariert" loading="lazy" />
+                    <p class="listText">Wartung</p>
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Wartung & technischer Service</strong> Regelmäßige
+                      Updates, Sicherheitspatches und persönlicher Support
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="/images/texterstellung.webp" alt="Bild eines Buches mit Bleistift" loading="lazy" />
+                    <p class="listText">Texterstellung</p>
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Texterstellung</strong> Auf Wunsch professionelle
+                      Inhalte und Texte inkl. SEO-Texte für Ihre Webseite
+                    </li>
+                  </div>
+                </div>
+              </div>
+              <div class="card-container">
+                <div class="card-inner">
+                  <div class="card-front card-back-image">
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp" alt="Bild eines Stockfotos am Laptop" loading="lazy" />
+                    <p class="listText">Stockfotos</p>
+                  </div>
+                  <div class="card-back">
+                    <li>
+                      <strong>Stockfotos</strong> Hochwertiges Bildmaterial aus
+                      Bilddatenbanken oder deine eigenen individuelle Fotos
+                    </li>
+                  </div>
+                </div>
+              </div>
+            </ul>
+            <p class="extra-text animate-on-scroll">
+              Wir liefern kein Webdesign von der Stange, sondern
+              maßgeschneiderte Lösungen. Jede Branche hat besondere
+              Anforderungen – eine maßgeschneiderte Homepage für Restaurant
+              benötigt beispielsweise andere Funktionen als eine Website für
+              lokale Dienstleister Berlin. Wir wissen genau, worauf es in
+              Ihrem Bereich ankommt, und setzen dies gezielt um.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5) Blog + Review Section -->
+    <section class="section" id="blog-reviews">
+      <div class="container animate-on-scroll">
+        <section class="outer-wrapper">
+          <div class="inner-wrapper">
+            <h2 class="animate-on-scroll ">
+              Aktuelles zum Thema Webseiten und bisherige Kundenstimmen
+            </h2>
+            <div class="home-grid">
+              <!-- Links: Aktueller Blog-Post (2/3) -->
+              <div class="latest-blog">
+                <article class="content-card animate-on-scroll">
+                  <h3>Aktueller Blog-Artikel</h3>
+                  <div class="p2rem">
+                    <!-- Titelbild -->
+                    <div class="blog-image">
+                      <a href="/blog/<%= latestPost.slug %>">
+                        <img src="<%= latestPost.image_url %>" alt="Bild zum Artikel: <%= latestPost.title %>" loading="lazy" />
+                      </a>
+                    </div>
+
+                    <!-- Überschrift -->
+                    <h4>
+                      <a href="/blog/<%= latestPost.slug %>">
+                        <%= latestPost.title %>
+                        <% if (latestPost.isDefault) { %>
+                        <small>(Demnächst mehr…)</small>
+                        <% } %>
+                      </a>
+                    </h4>
+
+                    <!-- Auszug -->
+                    <p class="excerpt">
+                      <%= latestPost.excerpt %>
+                    </p>
+
+                    <!-- Datum -->
+                    <% if (!latestPost.isDefault) { %>
+                    <p class="date">
+                      vor <%= Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)) %>
+                      Tagen
+                    </p>
+                    <% } %>
+
+                    <!-- Link zum Artikel -->
+                    <a href="/blog/<%= latestPost.slug %>" class="btn btn-primary mb-2">
+                      Zum Artikel
+                    </a>
+                    <a href="/blog" class="btn btn-tertiary mb-2">Zum Blog</a>
+                  </div>
+                </article>
+              </div>
+
+              <!-- Rechts: Kunden-Rezension (1/3) -->
+              <div class="testimonial">
+                <div class="content-card animate-on-scroll">
+                  <h3>Kundenstimme und erstellte Website</h3>
+                  <div class="review-card">
+                    <div class="p2rem">
+                      <!-- Avatar -->
+                      <img src="<%= review.avatar_url %>" alt="Avatar von <%= review.author %>" class="review-avatar" loading="lazy" />
+
+                      <!-- Zitat -->
+                      <blockquote>
+                        <%- review.content.replace( /https?:\/\/[^\s]+/gi, match=> {
                               // ↓ Linktext hübsch machen (https:// & www. entfernen)
                               const display = match.replace(/^https?:\/\/(www\.)?/i, '');
                               return `<a href="${match}" target="_blank" rel="noopener">${display}</a>`;
@@ -746,89 +833,89 @@ a.logo {
                               )
                               %>
 
-                          </blockquote>
+                      </blockquote>
 
-                          <!-- Autor -->
-                          <cite>
-                            — <%= review.author %>
-                              <% if (review.isDefault) { %>
-                                <small>(Demnächst echte Stimmen…)</small>
-                                <% } %>
-                          </cite>
-                        </div>
-                        <a class="image-review" href="https://www.zuraltenbackstube.de" aria-label="Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen."></a>
-                      </div>
+                      <!-- Autor -->
+                      <cite>
+                        — <%= review.author %>
+                        <% if (review.isDefault) { %>
+                        <small>(Demnächst echte Stimmen…)</small>
+                        <% } %>
+                      </cite>
                     </div>
+                    <a class="image-review" href="https://www.zuraltenbackstube.de" aria-label="Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen."></a>
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
           </div>
         </section>
+      </div>
+    </section>
 
-        <!-- 6) Preis & Pakete -->
-        <section class="section" id="preise">
-          <div class="container animate-on-scroll">
-            <section class="outer-wrapper">
-              <div class="inner-wrapper">
-                <h2 class="animate-on-scroll">
-                  Bereit für eine professionelle Website?
-                </h2>
-                <div class="readable pb2rem animate-on-scroll">
-                  <p>
-                    In nur zwei Wochen kannst du mit deiner neuen Webseite online
-                    sein: Wähle das passende Paket aus und starte dein Projekt!
-                    Für jeden Wunsch haben wir ein passende Paket. Egal ob du eine
-                    einfache Webseite, eine umfangreiche Unternehmenspräsenz oder
-                    eine individuelle Lösung benötigst. Wir haben das Richtige für
-                    dich. Nähere Informationen zu den verschiedenen Angeboten
-                    findest du auf der Seite <a href="/pakete">Preise</a>.
-                    <!-- <a href="/pricing"></a> -->
-                  </p>
-                  <p>
-                    Unsere Angebote sind so gestaltet, dass sie verschiedene
-                    Bedürfnisse abdecken und dir helfen, schnell und unkompliziert
-                    online zu gehen. Jedes Paket enthält alles, was du für den
-                    Start benötigst: modernes Webdesign, responsive Umsetzung,
-                    SEO-Optimierung und fortlaufenden Support. So kannst du dich
-                    auf dein Kerngeschäft konzentrieren, während wir uns um deine
-                    Online-Präsenz kümmern.
-                  </p>
-                </div>
-                <div class="pricing-grid">
-                  <% packages.forEach(pkg=> { %>
-                    <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
-                      <h3>
-                        <%= pkg.name %>
-                      </h3>
-                      <div class="p1rem">
-                        <!-- Kurzbeschreibung -->
-                        <!-- <% if (pkg.description) { %>
+    <!-- 6) Preis & Pakete -->
+    <section class="section" id="preise">
+      <div class="container animate-on-scroll">
+        <section class="outer-wrapper">
+          <div class="inner-wrapper">
+            <h2 class="animate-on-scroll">
+              Bereit für eine professionelle Website?
+            </h2>
+            <div class="readable pb2rem animate-on-scroll">
+              <p>
+                In nur zwei Wochen kannst du mit deiner neuen Webseite online
+                sein: Wähle das passende Paket aus und starte dein Projekt!
+                Für jeden Wunsch haben wir ein passende Paket. Egal ob du eine
+                einfache Webseite, eine umfangreiche Unternehmenspräsenz oder
+                eine individuelle Lösung benötigst. Wir haben das Richtige für
+                dich. Nähere Informationen zu den verschiedenen Angeboten
+                findest du auf der Seite <a href="/pakete">Preise</a>.
+                <!-- <a href="/pricing"></a> -->
+              </p>
+              <p>
+                Unsere Angebote sind so gestaltet, dass sie verschiedene
+                Bedürfnisse abdecken und dir helfen, schnell und unkompliziert
+                online zu gehen. Jedes Paket enthält alles, was du für den
+                Start benötigst: modernes Webdesign, responsive Umsetzung,
+                SEO-Optimierung und fortlaufenden Support. So kannst du dich
+                auf dein Kerngeschäft konzentrieren, während wir uns um deine
+                Online-Präsenz kümmern.
+              </p>
+            </div>
+            <div class="pricing-grid">
+              <% packages.forEach(pkg=> { %>
+              <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
+                <h3>
+                  <%= pkg.name %>
+                </h3>
+                <div class="p1rem">
+                  <!-- Kurzbeschreibung -->
+                  <!-- <% if (pkg.description) { %>
                   <p class="package-description"><%= pkg.description %></p>
                   <% } %> -->
 
-                        <!-- Mehrzeiliger Detail-Text -->
-                        <!-- <% pkg.detailshero.forEach(line => { %>
+                  <!-- Mehrzeiliger Detail-Text -->
+                  <!-- <% pkg.detailshero.forEach(line => { %>
                   <p class="package-detail"><%= line %></p>
                   <% }); %> -->
 
-                        <!-- Preis -->
-                        <p class="price">
-                          <%= pkg.price %>
-                        </p>
+                  <!-- Preis -->
+                  <p class="price">
+                    <%= pkg.price %>
+                  </p>
 
-                        <!-- Bullet-Points -->
-                        <ul class="features-list">
-                          <% pkg.features.forEach(feat=> { %>
-                            <li>
-                              <%= feat %>
-                            </li>
-                            <% }); %>
-                        </ul>
+                  <!-- Bullet-Points -->
+                  <ul class="features-list">
+                    <% pkg.features.forEach(feat=> { %>
+                    <li>
+                      <%= feat %>
+                    </li>
+                    <% }); %>
+                  </ul>
 
-                        <!-- Button -->
-                        <a class="btn btn-primary" href="/pakete/<%=pkg.name%>">Details</a>
-                        <!-- <form class="checkout-form" action="/create-checkout-session" method="POST">
+                  <!-- Button -->
+                  <a class="btn btn-primary" href="/pakete/<%=pkg.name%>">Details</a>
+                  <!-- <form class="checkout-form" action="/create-checkout-session" method="POST">
                           <input type="hidden" name="packageId" value="<%= pkg.id %>" />
                           <input type="hidden" name="mode" value="once" />
                           <button type="submit" class="btn btn-primary">
@@ -836,168 +923,167 @@ a.logo {
                             <span class="visually-hidden">Paket für <%= pkg.price %> kaufen</span>
                           </button>
                         </form> -->
-                      </div>
-                    </div>
-                    <% }); %>
                 </div>
-                <p class="text-center mt-3 text-muted small">„Günstige Website erstellen lassen“ heißt: smart geplant, modular umgesetzt, ohne versteckte Kosten.</p>
               </div>
-            </section>
+              <% }); %>
+            </div>
+            <p class="text-center mt-3 text-muted small">„Günstige Website erstellen lassen“ heißt: smart geplant, modular umgesetzt, ohne versteckte Kosten.</p>
           </div>
         </section>
+      </div>
+    </section>
 
-        <!-- 7) Branchen -->
-        <section class="section" id="branchen">
-          <div class="container animate-on-scroll">
-            <div class="outer-wrapper">
-              <div class="inner-wrapper text-left">
-                <h2 class="animate-on-scroll">
-                  Webseiten für Restaurants, Handwerksbetriebe, Cafés und
-                  Bildungseinrichtungen
-                </h2>
-                <div class="readable pb2rem animate-on-scroll">
-                  <p>
-                    <strong>Websiteerstellung</strong> in Berlin – wir bieten maßgeschneiderte
-                    Lösungen für verschiedene Branchen. Egal ob du ein Restaurant,
-                    ein Handwerksbetrieb, ein Café oder eine Bildungseinrichtung
-                    betreibst, wir haben die passende Lösung für dich. Wenn du deine 
-                    <strong>Webseite in Berlin erstellen lassen</strong> möchtest, dann sind wir
-                    der richtige Partner für dich.
-                    <!-- <a href="/pricing"></a> -->
-                  </p>
-                  <p>
-                    Wir verstehen die spezifischen Anforderungen jeder Branche und
-                    setzen diese gezielt um. Unsere Webseiten sind nicht nur
-                    optisch ansprechend, sondern auch funktional und benutzerfreundlich.
-                    Mit deiner eigenen professionellen Webseite kannst du deine Zielgruppe 
-                    effektiv ansprechen und neue Kunden gewinnen. Mit einem positiven ersten 
-                    Eindruck, kommen die Kunden gerne in dein Geschäft.
-                  </p>
+    <!-- 7) Branchen -->
+    <section class="section" id="branchen">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <h2 class="animate-on-scroll">
+              Webseiten für Restaurants, Handwerksbetriebe, Cafés und
+              Bildungseinrichtungen
+            </h2>
+            <div class="readable pb2rem animate-on-scroll">
+              <p>
+                <strong>Websiteerstellung</strong> in Berlin – wir bieten maßgeschneiderte
+                Lösungen für verschiedene Branchen. Egal ob du ein Restaurant,
+                ein Handwerksbetrieb, ein Café oder eine Bildungseinrichtung
+                betreibst, wir haben die passende Lösung für dich. Wenn du deine
+                <strong>Webseite in Berlin erstellen lassen</strong> möchtest, dann sind wir
+                der richtige Partner für dich.
+                <!-- <a href="/pricing"></a> -->
+              </p>
+              <p>
+                Wir verstehen die spezifischen Anforderungen jeder Branche und
+                setzen diese gezielt um. Unsere Webseiten sind nicht nur
+                optisch ansprechend, sondern auch funktional und benutzerfreundlich.
+                Mit deiner eigenen professionellen Webseite kannst du deine Zielgruppe
+                effektiv ansprechen und neue Kunden gewinnen. Mit einem positiven ersten
+                Eindruck, kommen die Kunden gerne in dein Geschäft.
+              </p>
+            </div>
+            <div class="industry-grid">
+              <div class="industry-item card-container animate-on-scroll">
+                <div class="card-inner">
+                  <div class="card-front">
+                    <h4>Restaurants</h4>
+                    <p>
+                      Wir präsentieren Ihr Lokal online von seiner besten
+                      Seite – mit appetitanregenden Fotos, digitaler
+                      Speisekarte und unkomplizierter Reservierungsfunktion.
+                    </p>
+                  </div>
+                  <div class="card-back card-back-image">
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp" alt="Bild eines Restaurants" loading="lazy" />
+                  </div>
                 </div>
-                <div class="industry-grid">
-                  <div class="industry-item card-container animate-on-scroll">
-                    <div class="card-inner">
-                      <div class="card-front">
-                        <h4>Restaurants</h4>
-                        <p>
-                          Wir präsentieren Ihr Lokal online von seiner besten
-                          Seite – mit appetitanregenden Fotos, digitaler
-                          Speisekarte und unkomplizierter Reservierungsfunktion.
-                        </p>
-                      </div>
-                      <div class="card-back card-back-image">
-                        <img
-                          src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp"
-                          alt="Bild eines Restaurants" loading="lazy"/>
-                      </div>
-                    </div>
-                    <img class="click" src="/images/icons/click.svg" alt="hier clicken" loading="lazy"/>
+                <img class="click" src="/images/icons/click.svg" alt="hier clicken" loading="lazy" />
+              </div>
+              <div class="industry-item card-container animate-on-scroll">
+                <div class="card-inner">
+                  <div class="card-front">
+                    <h4>Handwerksbetriebe</h4>
+                    <p>
+                      Klare Struktur, aussagekräftige Bilder Ihrer Arbeit und
+                      gut sichtbare Kontaktinformationen überzeugen
+                      potenzielle Kunden.
+                    </p>
                   </div>
-                  <div class="industry-item card-container animate-on-scroll">
-                    <div class="card-inner">
-                      <div class="card-front">
-                        <h4>Handwerksbetriebe</h4>
-                        <p>
-                          Klare Struktur, aussagekräftige Bilder Ihrer Arbeit und
-                          gut sichtbare Kontaktinformationen überzeugen
-                          potenzielle Kunden.
-                        </p>
-                      </div>
-                      <div class="card-back card-back-image">
-                        <img src="/images/handwerker-min.webp" alt="Bild eines Handwerkers" loading="lazy"/>
-                      </div>
-                    </div>
+                  <div class="card-back card-back-image">
+                    <img src="/images/handwerker-min.webp" alt="Bild eines Handwerkers" loading="lazy" />
                   </div>
-                  <div class="industry-item card-container animate-on-scroll">
-                    <div class="card-inner">
-                      <div class="card-front">
-                        <h4>Cafés</h4>
-                        <p>
-                          Stimmungsvoller Stil, Präsentation Ihrer Spezialitäten,
-                          Öffnungszeiten und Karte mit Ihrem Standort – so finden
-                          neue Gäste den Weg zu Ihnen.
-                        </p>
-                      </div>
-                      <div class="card-back card-back-image">
-                        <img src="/images/cafe-min.webp" alt="Bild eines Cafés" loading="lazy"/>
-                      </div>
-                    </div>
+                </div>
+              </div>
+              <div class="industry-item card-container animate-on-scroll">
+                <div class="card-inner">
+                  <div class="card-front">
+                    <h4>Cafés</h4>
+                    <p>
+                      Stimmungsvoller Stil, Präsentation Ihrer Spezialitäten,
+                      Öffnungszeiten und Karte mit Ihrem Standort – so finden
+                      neue Gäste den Weg zu Ihnen.
+                    </p>
                   </div>
-                  <div class="industry-item card-container animate-on-scroll">
-                    <div class="card-inner">
-                      <div class="card-front">
-                        <h4>Kitas & Schulen</h4>
-                        <p>
-                          Vertrauenswürdiges <strong>Webdesign in Berlin</strong>, übersichtliche Informationen
-                          zu Betreuungszeiten, Veranstaltungen und mehr für Eltern
-                          und Schüler.
-                        </p>
-                      </div>
-                      <div class="card-back card-back-image">
-                        <img src="/images/kindergarten-min.webp" alt="Bild eines Kindergartens" loading="lazy"/>
-                      </div>
-                    </div>
+                  <div class="card-back card-back-image">
+                    <img src="/images/cafe-min.webp" alt="Bild eines Cafés" loading="lazy" />
+                  </div>
+                </div>
+              </div>
+              <div class="industry-item card-container animate-on-scroll">
+                <div class="card-inner">
+                  <div class="card-front">
+                    <h4>Kitas & Schulen</h4>
+                    <p>
+                      Vertrauenswürdiges <strong>Webdesign in Berlin</strong>, übersichtliche Informationen
+                      zu Betreuungszeiten, Veranstaltungen und mehr für Eltern
+                      und Schüler.
+                    </p>
+                  </div>
+                  <div class="card-back card-back-image">
+                    <img src="/images/kindergarten-min.webp" alt="Bild eines Kindergartens" loading="lazy" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
+    </section>
 
-        <!-- 8) Call-to-Action -->
-        <section class="section" id="cta">
-          <div class="container animate-on-scroll">
-            <div class="outer-wrapper background-gradient">
-              <div class="inner-wrapper text-center">
-                <%- include('partials/booking_widget') %>
+    <!-- 8) Call-to-Action -->
+    <section class="section" id="cta">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper background-gradient">
+          <div class="inner-wrapper text-center">
+            <%- include('partials/booking_widget') %>
 
-              </div>
-            </div>
           </div>
-        </section>
-        <%- include('partials/footer') %>
+        </div>
+      </div>
+    </section>
+    <%- include('partials/footer') %>
 
 
-          <!-- Hier könnten später die Feature-Blöcke und Preise folgen -->
-          <!-- Scroll-Indikator Leiste (fixed an linker Seite) -->
-          <aside class="scroll-indicator">
-            <!-- Vertikaler Strich -->
-            <div class="progress-line">
-              <div class="progress-fill"></div>
-              <div class="section-icons">
-                <a href="#hero" class="icon-link active" aria-label="Zum Startbereich"> <!-- Hero Section Icon -->
-                  <i class="fas fa-home"></i> <!-- Beispiel Font Awesome Icon -->
-                </a>
-                <a href="#erklaerung" class="icon-link" aria-label="Zum Erklärungsbereich">
-                  <i class="fas fa-star"></i>
-                </a>
-                <a href="#features" class="icon-link" aria-label="Zum Features-Bereich">
-                  <i class="fas fa-list"></i>
-                </a>
-                <a href="#leistungen" class="icon-link" aria-label="Zu den Leistungen">
-                  <i class="fas fa-info-circle"></i>
-                </a>
-                <a href="#blog-reviews" class="icon-link" aria-label="Zum Blog- und Review-Bereich">
-                  <i class="fas fa-thumbs-up"></i>
-                </a>
-                <a href="#preise" class="icon-link" aria-label="Zu den Preisen">
-                  <i class="fas fa-money-bill"></i>
-                </a>
-                <a href="#branchen" class="icon-link" aria-label="Zu den Branchen">
-                  <i class="fas fa-layer-group"></i>
-                </a>
-                <a href="#cta" class="icon-link" aria-label="Zum Call-to-Action-Bereich">
-                  <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>
-                </a>
-                <a href="#footer" class="icon-link" aria-label="Zum Footer-Bereich">
-                  <i class="fas fa-shoe-prints" style="transform: translateY(10px);"></i>
-                </a>
-              </div>
-            </div>
-          </aside>
-      </main>
+    <!-- Hier könnten später die Feature-Blöcke und Preise folgen -->
+    <!-- Scroll-Indikator Leiste (fixed an linker Seite) -->
+    <aside class="scroll-indicator">
+      <!-- Vertikaler Strich -->
+      <div class="progress-line">
+        <div class="progress-fill"></div>
+        <div class="section-icons">
+          <a href="#hero" class="icon-link active" aria-label="Zum Startbereich">
+            <!-- Hero Section Icon -->
+            <i class="fas fa-home"></i> <!-- Beispiel Font Awesome Icon -->
+          </a>
+          <a href="#erklaerung" class="icon-link" aria-label="Zum Erklärungsbereich">
+            <i class="fas fa-star"></i>
+          </a>
+          <a href="#features" class="icon-link" aria-label="Zum Features-Bereich">
+            <i class="fas fa-list"></i>
+          </a>
+          <a href="#leistungen" class="icon-link" aria-label="Zu den Leistungen">
+            <i class="fas fa-info-circle"></i>
+          </a>
+          <a href="#blog-reviews" class="icon-link" aria-label="Zum Blog- und Review-Bereich">
+            <i class="fas fa-thumbs-up"></i>
+          </a>
+          <a href="#preise" class="icon-link" aria-label="Zu den Preisen">
+            <i class="fas fa-money-bill"></i>
+          </a>
+          <a href="#branchen" class="icon-link" aria-label="Zu den Branchen">
+            <i class="fas fa-layer-group"></i>
+          </a>
+          <a href="#cta" class="icon-link" aria-label="Zum Call-to-Action-Bereich">
+            <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>
+          </a>
+          <a href="#footer" class="icon-link" aria-label="Zum Footer-Bereich">
+            <i class="fas fa-shoe-prints" style="transform: translateY(10px);"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </main>
 
-      <!-- <script>
+  <!-- <script>
         const stripe = Stripe("<%= stripePublishable %>");
         document.querySelectorAll(".checkout-form").forEach((form) => {
           form.addEventListener("submit", async (e) => {
@@ -1017,77 +1103,90 @@ a.logo {
           });
         });
       </script> -->
-      <script>
-        // Beispiel in public/js/main.js
-        document.querySelectorAll(".card-container").forEach((card) => {
-          card.addEventListener("click", () => {
-            card.classList.toggle("flipped");
-          });
-        });
-      </script>
-      <!--Scroll Indicator-->
-  </body>
+  <script>
+    // Beispiel in public/js/main.js
+    document.querySelectorAll(".card-container").forEach((card) => {
+      card.addEventListener("click", () => {
+        card.classList.toggle("flipped");
+      });
+    });
+  </script>
+  <!--Scroll Indicator-->
+</body>
 
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [{
-        "@type": "Question",
-        "name": "Wie schnell bin ich sichtbar?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Deine Landingpage kann in 30 Tagen live gehen. Erste lokale Rankings und Anfragen sind oft innerhalb weniger Wochen möglich – abhängig von Wettbewerb und Inhalten."
-        }
-      },{
-        "@type": "Question",
-        "name": "Was kostet eine Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
-        }
-      }]
-    }
-    </script>
-
-    <!-- JSON-LD: ProfessionalService (online-first, ohne Adresse) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": ["ProfessionalService","Organization"],
-      "name": "KomplettWebdesign | Sören Blocksdorf",
-      "url": "https://www.komplettwebdesign.de/",
-      "areaServed": "Berlin",
-      "priceRange": "€€",
-      "email": "kontakt@komplettwebdesign.de",
-      "telephone": "+49 1525 4350378",
-      "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-      "sameAs": [
-        "https://www.instagram.com/KomplettWebdesign",
-        "https://www.tiktok.com/@KomplettWebdesign",
-        "https://www.youtube.com/@KomplettWebdesign",
-        "https://www.threads.net/@KomplettWebdesign"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+49 1525 4350378",
-        "email": "kontakt@komplettwebdesign.de",
-        "contactType": "customer support",
-        "availableLanguage": ["de","en"]
-      },
-      "offers": {
-        "@type": "OfferCatalog",
-        "name": "Webdesign Pakete",
-        "itemListElement": [
-          { "@type": "Offer", "name": "Landingpage", "price": "499.99", "priceCurrency": "EUR" },
-          { "@type": "Offer", "name": "Mehrseitige Website", "price": "899.99", "priceCurrency": "EUR" },
-          { "@type": "Offer", "name": "Große Website (alle Funktionen)", "price": "1499.99", "priceCurrency": "EUR" }
-        ]
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+      "@type": "Question",
+      "name": "Wie schnell bin ich sichtbar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Deine Landingpage kann in 30 Tagen live gehen. Erste lokale Rankings und Anfragen sind oft innerhalb weniger Wochen möglich – abhängig von Wettbewerb und Inhalten."
       }
-    }
-    </script>
+    }, {
+      "@type": "Question",
+      "name": "Was kostet eine Website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
+      }
+    }]
+  }
+</script>
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    integrity="...">
+<!-- JSON-LD: ProfessionalService (online-first, ohne Adresse) -->
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["ProfessionalService", "Organization"],
+    "name": "KomplettWebdesign | Sören Blocksdorf",
+    "url": "https://www.komplettwebdesign.de/",
+    "areaServed": "Berlin",
+    "priceRange": "€€",
+    "email": "kontakt@komplettwebdesign.de",
+    "telephone": "+49 1525 4350378",
+    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+    "sameAs": [
+      "https://www.instagram.com/KomplettWebdesign",
+      "https://www.tiktok.com/@KomplettWebdesign",
+      "https://www.youtube.com/@KomplettWebdesign",
+      "https://www.threads.net/@KomplettWebdesign"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+49 1525 4350378",
+      "email": "kontakt@komplettwebdesign.de",
+      "contactType": "customer support",
+      "availableLanguage": ["de", "en"]
+    },
+    "offers": {
+      "@type": "OfferCatalog",
+      "name": "Webdesign Pakete",
+      "itemListElement": [{
+          "@type": "Offer",
+          "name": "Landingpage",
+          "price": "499.99",
+          "priceCurrency": "EUR"
+        },
+        {
+          "@type": "Offer",
+          "name": "Mehrseitige Website",
+          "price": "899.99",
+          "priceCurrency": "EUR"
+        },
+        {
+          "@type": "Offer",
+          "name": "Große Website (alle Funktionen)",
+          "price": "1499.99",
+          "priceCurrency": "EUR"
+        }
+      ]
+    }
+  }
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="...">
 
 </html>

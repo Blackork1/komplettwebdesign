@@ -1,114 +1,82 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <title><%= title %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="<%= description %>" />
 
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
-    <!-- <link rel="stylesheet" href="/css/critical.css?:<%= Date.now() %>" /> -->
+<head>
+  <meta charset="UTF-8" />
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="<%= description %>" />
 
-    <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
-    <link
-      rel="preload"
-      href="/fonts/inter-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/inter-semibold.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
-    <link
-      rel="preload"
-      href="/fonts/poppins-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/poppins-bold.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+  <link rel="preconnect" href="https://js.stripe.com" crossorigin />
 
-    <!-- Bootstrap 5.3.7 CSS -->
-    <link
-      rel="preload"
-      href="/css/bootstrap.min.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="/css/bootstrap.min.css" />
-    </noscript>
+  <link rel="preload" href="/fonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
-    <!-- CSS Setup-->
-    <link
-      rel="preload"
-      href="/css/main.min.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript><link rel="stylesheet" href="/css/main.min.css" /></noscript>
-    <link
-      rel="preload"
-      href="/extra.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript><link rel="stylesheet" href="/extra.css" /></noscript>
+  <link rel="preload" href="/assets/css/fontawesome.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/fontawesome.min.css" />
+  </noscript>
 
-    <link
-      rel="preload"
-      href="/booking-widget.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript><link rel="stylesheet" href="/booking-widget.css" /></noscript>
+  <link rel="preload" href="/assets/css/solid.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/solid.min.css" />
+  </noscript>
 
-    <script src="https://js.stripe.com/v3/" defer></script>
+  <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
+  <link rel="preload" href="/fonts/inter-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-semibold.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
+  <link rel="preload" href="/fonts/poppins-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/poppins-bold.woff2" as="font" type="font/woff2" crossorigin />
 
-    <!-- Favicon und App Icons -->
-    <link rel="icon" type="image/png" sizes="16x16" href="images/icon16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="images/icon32.png" />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="192x192"
-      href="images/icon192.png"
-    />
-    <link rel="apple-touch-icon" sizes="180x180" href="images/icon180.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+  <!-- Bootstrap 5.3.7 CSS -->
+  <link rel="preload" href="/css/bootstrap.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  </noscript>
 
-    <% if (gaEnabled) { %>
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "<%= process.env.GA_MEASUREMENT_ID %>");
-    </script>
-    <% } %>
+  <!-- CSS Setup-->
+  <link rel="preload" href="/css/main.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/css/main.min.css" />
+  </noscript>
+  <link rel="preload" href="/extra.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/extra.css" />
+  </noscript>
 
-    <!-- Mess-ID für clientseitiges Nachladen -->
-    <script>
-      window.env = {
-        GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
-      };
-    </script>
-  </head>
+  <link rel="preload" href="/booking-widget.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/booking-widget.css" />
+  </noscript>
+
+  <script src="https://js.stripe.com/v3/" defer></script>
+
+  <!-- Favicon und App Icons -->
+  <link rel="icon" type="image/png" sizes="16x16" href="images/icon16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/icon32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="images/icon180.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <% if (gaEnabled) { %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+    gtag("config", "<%= process.env.GA_MEASUREMENT_ID %>");
+  </script>
+  <% } %>
+
+  <!-- Mess-ID für clientseitiges Nachladen -->
+  <script>
+    window.env = {
+      GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
+    };
+  </script>
+</head>
+
 </html>

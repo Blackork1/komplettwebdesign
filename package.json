@@ -49,6 +49,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^7.0.0",
     "bootstrap": "^5.3.3",
     "cssnano": "^7.1.0",
     "penthouse": "^2.3.3",
