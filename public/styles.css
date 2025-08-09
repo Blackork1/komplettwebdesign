@@ -120,7 +120,7 @@ p {
   padding: 2.5em 1em;
 }
 
-.brand {
+.brand .accentColor{
   color: var(--color-accent);
 }
 
@@ -198,10 +198,6 @@ p {
 
 .darkColor {
   color: var(--color-text);
-}
-
-.accentColor {
-  color: var(--color-accent);
 }
 
 .topWhiteGradients {

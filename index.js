@@ -45,6 +45,7 @@ import contactRoutes        from "./routes/contactRoutes.js";
 import chatRoutes           from './routes/chat.js';
 import adminGalleryRoutes   from './routes/adminGalleryRoutes.js';
 import consentRoutes        from './routes/consent.js';
+import shopRoutes           from './routes/shopRoutes.js';
 
 
 import Stripe from 'stripe';
@@ -180,6 +181,8 @@ app.use("/kontakt", contactRoutes);
 app.use(chatRoutes);
 app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
+app.use(shopRoutes);
+
 
 
 
