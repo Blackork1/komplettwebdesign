@@ -1,61 +1,28 @@
-<% if (!session.cookieConsent) { %>
-
 <style>
-  #accept-all:hover,
-  #accept-necessary:hover {
+  .hidden { display:none; }
+  #accept-all:hover, #accept-necessary:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0,0,0,.2);
   }
 </style>
 
-<div
-  id="cookie-banner"
-  style="
-    background: #ffffff;
-    color: #000000;
-    padding: 1rem;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    text-align: center;
-    z-index: 1000;
-    box-shadow: 0px -4px 1px -1px rgb(255 255 255);
-  "
->
+<!-- IMMER im DOM; initial versteckt. Kein EJS-if mehr -->
+<div id="cookie-banner" class="hidden"
+  style="background:#fff;color:#000;padding:1rem;position:fixed;bottom:0;width:100%;
+         text-align:center;z-index:1000;box-shadow:0 -4px 1px -1px rgb(255 255 255);">
   <p>
-    Wir verwenden Cookies für Analyse und Marketing. Es werden keine
-    persönlichen Daten gespeichert. Für das Nutzen des ChatBots ist es
-    Erforderlich, dass deine Fragen gespeichert werden.
-    <a href="/datenschutz" style="color: #942605">Datenschutzvereinbarung</a>
+    Wir verwenden Cookies für Analyse und Marketing. Es werden keine persönlichen Daten gespeichert.
+    Für das Nutzen des ChatBots ist es erforderlich, dass deine Fragen gespeichert werden.
+    <a href="/datenschutz" style="color:#942605">Datenschutzvereinbarung</a>
   </p>
-  <button
-    id="accept-all"
-    style="
-      background: rgb(52 195 129) !important;
-      color: #000000;
-      border: none;
-      padding: 0.5rem 1rem;
-      margin: 0 0.5rem;
-      border-radius: 8px;
-      transition: ease 0.3s;
-    "
-  >
+  <button id="accept-all"
+    style="background:rgb(52 195 129)!important;color:#000;border:none;padding:.5rem 1rem;margin:0 .5rem;border-radius:8px;transition:ease .3s;">
     Alles akzeptieren
   </button>
-  <button
-    id="accept-necessary"
-    style="
-      background: #dededecf;
-      color: #000000;
-      border: none;
-      padding: 0.5rem 1rem;
-      margin: 0 0.5rem;
-      border-radius: 8px;
-      transition: ease 0.3s;
-    "
-  >
+  <button id="accept-necessary"
+    style="background:#dededecf;color:#000;border:none;padding:.5rem 1rem;margin:0 .5rem;border-radius:8px;transition:ease .3s;">
     Nur Notwendiges
   </button>
 </div>
-<% } %>
+
 <script src="/js/cookie-consent.js" defer></script>

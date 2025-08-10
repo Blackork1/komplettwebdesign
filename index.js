@@ -102,8 +102,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(compression());
-// Sessions & Consent-Flag
-// app.use(sessionMiddleware);
 
 // EJS konfigurieren
 const __filename = fileURLToPath(import.meta.url);
@@ -128,7 +126,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 1000 * 60 * 60 } // 1 stunde
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7} // 7 Tage
 }));
 
 app.use(consentMiddleware);
@@ -170,7 +168,6 @@ app.use(authRoutes);
 app.use(bookingRoutes);
 app.use(adminRoutes);
 app.use(widgetApiRoutes);
-// app.use('/kontakt', contactRouter);
 app.use(newsletterRoutes);
 app.use(blogRoutes);
 app.use(adminBlogRoutes);
@@ -183,12 +180,10 @@ app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
 
-
-
-
-
 // 404-Handler
 app.use(errorController.get404);
+// 500-Handler
+app.use(errorController.get500);
 
 // Server starten
 const PORT = process.env.PORT || 3000;

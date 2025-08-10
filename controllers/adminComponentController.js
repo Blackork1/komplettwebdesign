@@ -134,7 +134,12 @@ export async function postUpdateComponent(req, res) {
             try { await cloud.uploader.destroy(comp.public_id); } catch { }
         }
         const up = await cloud.uploader.upload(req.file.path, {
-            folder: 'Bilder', format: 'webp'
+            folder: 'Bilder', format: 'webp',
+            transformation: [
+                { width: 500, crop: "scale" },
+                { fetch_format: 'auto' },
+                { quality: 'auto' }
+            ]
         });
         src = up.secure_url;
         publicId = up.public_id;

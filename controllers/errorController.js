@@ -5,3 +5,8 @@ export function get404(req, res) {
     path: req.originalUrl
   });
 }
+export function get500(req, res) {
+  console.error('❌ Error:', err);
+  if (req.accepts('html')) return res.status(500).render('error', { message: 'Unerwarteter Fehler' });
+  res.status(500).json({ error: 'Internal Server Error' });
+}
