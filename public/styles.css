@@ -200,6 +200,10 @@ p {
   color: var(--color-text);
 }
 
+.primaryColor {
+  color: var(--color-primary);
+}
+
 .topWhiteGradients {
   background: linear-gradient(
     to bottom,
