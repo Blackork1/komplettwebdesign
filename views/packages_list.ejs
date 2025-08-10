@@ -15,7 +15,7 @@
           <h1 class="mb-4 text-center white">Website-Pakete</h1>
           <p class="text-center mb-5">Wählen Sie das passende Paket für Ihr Webdesign-Projekt:</p>
           <div class="row">
-            <% packages.forEach(pkg=> { %>
+            <% packages.forEach(pkg=> { if(pkg.display){%>
               <div class="col-md-4 mb-4">
                 <div class="card h-100">
                   <!-- Optional: Paketbild als Thumbnail innerhalb der Karte -->
@@ -32,7 +32,7 @@
                   </div>
                 </div>
               </div>
-              <% }) %>
+              <% }}) %>
           </div>
         </div>
       </div>

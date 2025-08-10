@@ -330,6 +330,16 @@
       padding: 10px;
     }
 
+    .scroll-snap-align {
+      scroll-snap-align: start;
+    }
+
+    .scroll-snap-container {
+      scroll-snap-type: x mandatory;
+      flex-wrap: nowrap;
+      overflow-y: auto;
+    }
+
     .readable p {
       text-align: left;
     }
@@ -565,32 +575,32 @@
               <h2 class="animate-on-scroll ">Dein Zeitplan – heute starten, <span class="brand">in 30 Tagen live</span></h2>
               <p class="text-muted animate-on-scroll">Für größere Websites verlängern sich die Zeiten entsprechend.</p>
             </div>
-            <div class="row text-center timeline gx-4">
-              <div class="col-6 col-md">
+            <div class="row text-center timeline gx-4 scroll-snap-container">
+              <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
                   <h6 class="fw-bold">Tag 0</h6><small>Kennenlernen (20 Min.)</small>
                 </div>
               </div>
-              <div class="col-6 col-md">
+              <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
                   <h6 class="fw-bold">Tag 7</h6><small>Erstentwurf</small>
                 </div>
               </div>
-              <div class="col-6 col-md">
+              <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
                   <h6 class="fw-bold">Tag 14</h6><small>Fertiges Webdesign</small>
                 </div>
               </div>
-              <div class="col-6 col-md">
+              <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
                   <h6 class="fw-bold">Tag 21</h6><small>Live-Test</small>
                 </div>
               </div>
-              <div class="col-12 col-md">
+              <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
                   <h6 class="fw-bold">Tag 30</h6><small>Launch</small>
@@ -882,7 +892,7 @@
               </p>
             </div>
             <div class="pricing-grid">
-              <% packages.forEach(pkg=> { %>
+              <% packages.forEach(pkg=> { if(pkg.display){%>
               <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
                 <h3>
                   <%= pkg.name %>
@@ -924,7 +934,7 @@
                         </form> -->
                 </div>
               </div>
-              <% }); %>
+              <% }}); %>
             </div>
             <p class="text-center mt-3 text-muted small">„Günstige Website erstellen lassen“ heißt: smart geplant, modular umgesetzt, ohne versteckte Kosten.</p>
           </div>
@@ -1112,6 +1122,8 @@
   </script>
   <!--Scroll Indicator-->
 </body>
+<script src="/js/progressSlider.js" defer></script>
+
 
 <script type="application/ld+json">
   {

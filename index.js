@@ -68,7 +68,7 @@ app.use((req, res, next) => {
 app.disable('x-powered-by');      // Header unterdrücken
 // 2) nur in Production aktivieren
 if (process.env.NODE_ENV === 'production') {
-  app.enable('trust proxy');
+  app.enable('trust proxy', 1);
 
   const CANON_HOST = 'www.komplettwebdesign.de';
   const IGNORED_HOSTS = ['localhost', '127.0.0.1'];
