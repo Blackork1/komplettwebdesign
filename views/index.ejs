@@ -1,6 +1,12 @@
 <%- include('partials/head') %>
 
 <style>
+  .hero-button{
+    color: var(--color-primary);
+  }
+  .hero-button:hover {
+    color: var(--color-accent);
+  }
   .navigation {
     display: flex;
     justify-content: space-between;
@@ -464,7 +470,7 @@
                 Klare Preise, klare Deadlines – <strong>0</strong> Technik-Stress für dich
               </p>
               <div class="hero-ctas">
-                <a href="/kontakt" class="btn btn-primary">Beratungstermin</a>
+                <a href="/kontakt" class="btn btn-primary hero-button">Beratungstermin</a>
                 <a href="/pakete" class="btn btn-secondary">Angebote</a>
               </div>
               <p class="mt-2 mb-0">
