@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('chat-toggle');
-  const closeBtn  = document.getElementById('chat-close');
+  const closeBtn = document.getElementById('chat-close');
   const container = document.getElementById('chat-container');
   const windowDiv = document.getElementById('chat-window');
-  const form      = document.getElementById('chat-form');
-  const input     = document.getElementById('chat-input');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('chat-input');
 
   // Appendet eine Nachricht in den Chat
   function appendMessage(role, msg) {
@@ -31,7 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2) Toggle (öffnen)
   toggleBtn.addEventListener('click', () => {
     toggleBtn.style.display = 'none';
-    container.classList.add('open');
+    container.style.display = 'flex';
+    // ensure the transition runs after display change
+    requestAnimationFrame(() => container.classList.add('open'));
 
     // Begrüßung nur beim allerersten Öffnen
     if (!sessionStorage.getItem('chatGreeted')) {
@@ -43,7 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3) Schließen
   closeBtn.addEventListener('click', () => {
     container.classList.remove('open');
-    toggleBtn.style.display = 'block';
+    // wait for slide-out transition before hiding completely
+    setTimeout(() => {
+      container.style.display = 'none';
+      toggleBtn.style.display = 'block';
+    }, 300);
   });
 
   // 4) Nachricht senden
