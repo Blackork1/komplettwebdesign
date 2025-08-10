@@ -1,5 +1,13 @@
+<style>
+  .hidden { display:none; }
+  #accept-all:hover, #accept-necessary:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.2);
+  }
+</style>
+
 <!-- IMMER im DOM; initial versteckt. Kein EJS-if mehr -->
-<div id="cookie-banner"
+<div id="cookie-banner" class="hidden"
   style="background:#fff;color:#000;padding:1rem;position:fixed;bottom:0;width:100%;
          text-align:center;z-index:1000;box-shadow:0 -4px 1px -1px rgb(255 255 255);">
   <p>
@@ -17,4 +25,4 @@
   </button>
 </div>
 
-<script src="/js/cookie-consent.js"></script>
+<script src="/js/cookie-consent.js" defer></script>
