@@ -1,82 +1,151 @@
+<style>
+  .chat-container.open {
+    transform: translateX(0);
+  }
+  .chat-container {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    bottom: 20px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    height: 450px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    width: 320px;
+  }
+  .chat-button {
+    position: fixed;
+    right: -50px;
+    z-index: 990;
+  }
+</style>
+
 <section class="section" id="footer">
-    <div class="footer-container">
-        <footer class="site-footer">
-            <div class="footer-main">
-                <!-- LINKS: Logo -->
-                <div class="footer-left">
-                    <a href="/" class="footerLogo">
-                        <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo"  loading="lazy"/>
-                    </a>
-                </div>
-
-                <!-- RECHTS: Nav-Liste + Newsletter -->
-                <div class="footer-right">
-                    <!-- Link-Liste -->
-                    <nav class="footer-nav">
-                        <h3>Rechtliches</h3>
-                        <a href="/impressum">Impressum</a>
-                        <a href="/datenschutz">Datenschutz</a>
-                        <!-- <a href="/agb">AGB</a> -->
-                    </nav>
-                    <nav class="footer-nav">
-                        <h3>Informationen</h3>
-                        <a href="/kontakt">Kontakt</a>
-                        <a href="/faq">FAQ</a>
-                        <a href="/kontakt">Termin vereinbaren</a>
-                    </nav>
-
-                    <!-- Newsletter-Sektion -->
-                    <div class="newsletter">
-                        <h4>Zum Newsletter anmelden</h4>
-                        <form action="/newsletter/signup" method="POST" class="newsletter-form">
-                            <input type="email" name="email" id="newsletterEmail" class="form-control"
-                                placeholder="Deine E-Mail" required>
-                            <button type="submit" aria-label="Subscribe">
-                                <!-- Pfeil-Icon -->
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10 17l5-5-5-5v10z" />
-                                </svg>
-                            </button>
-                        </form>
-                        <div class="newsletter-consent">
-                            <label>
-                                <input type="checkbox" name="consent" required />
-                                Ich möchte mich für den Newsletter anmelden und akzeptiere die
-                                <a href="/datenschutz">Datenschutz Richtlinien</a>.*
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom: Copyright & Socials -->
-            <div class="footer-bottom">
-                <span>© 2025 KomplettWebdesign. All rights reserved.</span>
-                <div class="social-links">
-                    <a href="https://linkedin.com/Komplettwebdesign" target="_blank" rel="noopener">LinkedIn</a>
-                    <a href="https://instagram.com/Komplettwebdesign" target="_blank" rel="noopener">Instagram</a>
-                    <a href="https://facebook.com/Komplettwebdesign" target="_blank" rel="noopener">Facebook</a>
-                    <a href="https://youtube.com/Komplettwebdesign" target="_blank" rel="noopener">YouTube</a>
-                </div>
-            </div>
-        </footer>
-    </div>
-    <!-- Floating Chat-Button -->
-    <button id="chat-toggle" class="btn btn-primary chat-button">
-        Chat
-    </button>
-    <!-- Chat-Container -->
-    <div id="chat-container" class="chat-container" style="display: none;">
-        <div class="chat-header d-flex justify-content-between align-items-center p-2 border-bottom">
-            <strong>Chatbot</strong>
-            <button id="chat-close" type="button" class="btn-close" aria-label="Button zum schließen des Chatbots"></button>
+  <div class="footer-container">
+    <footer class="site-footer">
+      <div class="footer-main">
+        <!-- LINKS: Logo -->
+        <div class="footer-left">
+          <a href="/" class="footerLogo">
+            <img
+              src="/images/LogoWhite.svg"
+              alt="Komplett Webdesign Logo"
+              loading="lazy"
+            />
+          </a>
         </div>
-        <div id="chat-window" class="chat-window"></div>
-        <form id="chat-form" class="chat-form input-group">
-            <input id="chat-input" type="text" class="form-control" placeholder="Frage eingeben…" required />
-            <button class="btn btn-primary">Senden</button>
-        </form>
+
+        <!-- RECHTS: Nav-Liste + Newsletter -->
+        <div class="footer-right">
+          <!-- Link-Liste -->
+          <nav class="footer-nav">
+            <h3>Rechtliches</h3>
+            <a href="/impressum">Impressum</a>
+            <a href="/datenschutz">Datenschutz</a>
+            <!-- <a href="/agb">AGB</a> -->
+          </nav>
+          <nav class="footer-nav">
+            <h3>Informationen</h3>
+            <a href="/kontakt">Kontakt</a>
+            <a href="/faq">FAQ</a>
+            <a href="/kontakt">Termin vereinbaren</a>
+          </nav>
+
+          <!-- Newsletter-Sektion -->
+          <div class="newsletter">
+            <h4>Zum Newsletter anmelden</h4>
+            <form
+              action="/newsletter/signup"
+              method="POST"
+              class="newsletter-form"
+            >
+              <input
+                type="email"
+                name="email"
+                id="newsletterEmail"
+                class="form-control"
+                placeholder="Deine E-Mail"
+                required
+              />
+              <button type="submit" aria-label="Subscribe">
+                <!-- Pfeil-Icon -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 17l5-5-5-5v10z" />
+                </svg>
+              </button>
+            </form>
+            <div class="newsletter-consent">
+              <label>
+                <input type="checkbox" name="consent" required />
+                Ich möchte mich für den Newsletter anmelden und akzeptiere die
+                <a href="/datenschutz">Datenschutz Richtlinien</a>.*
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Copyright & Socials -->
+      <div class="footer-bottom">
+        <span>© 2025 KomplettWebdesign. All rights reserved.</span>
+        <div class="social-links">
+          <a
+            href="https://linkedin.com/Komplettwebdesign"
+            target="_blank"
+            rel="noopener"
+            >LinkedIn</a
+          >
+          <a
+            href="https://instagram.com/Komplettwebdesign"
+            target="_blank"
+            rel="noopener"
+            >Instagram</a
+          >
+          <a
+            href="https://facebook.com/Komplettwebdesign"
+            target="_blank"
+            rel="noopener"
+            >Facebook</a
+          >
+          <a
+            href="https://youtube.com/Komplettwebdesign"
+            target="_blank"
+            rel="noopener"
+            >YouTube</a
+          >
+        </div>
+      </div>
+    </footer>
+  </div>
+  <!-- Floating Chat-Button -->
+  <button id="chat-toggle" class="btn btn-primary chat-button">Chat</button>
+  <!-- Chat-Container -->
+  <div id="chat-container" class="chat-container" style="display: none;">
+    <div
+      class="chat-header d-flex justify-content-between align-items-center p-2 border-bottom"
+    >
+      <strong>Chatbot</strong>
+      <button
+        id="chat-close"
+        type="button"
+        class="btn-close"
+        aria-label="Button zum schließen des Chatbots"
+      ></button>
     </div>
+    <div id="chat-window" class="chat-window"></div>
+    <form id="chat-form" class="chat-form input-group">
+      <input
+        id="chat-input"
+        type="text"
+        class="form-control"
+        placeholder="Frage eingeben…"
+        required
+      />
+      <button class="btn btn-primary">Senden</button>
+    </form>
+  </div>
 </section>
 
 <%- include('cookie-banner') %>
@@ -86,7 +155,7 @@
     integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous">
     </script> -->
 
-    <!-- Bootstrap JS (lokal, nicht CDN) -->
+<!-- Bootstrap JS (lokal, nicht CDN) -->
 <script src="/assets/js/bootstrap.bundle.min.js"></script>
 
 <script src="/js/navToggle.js" defer></script>
