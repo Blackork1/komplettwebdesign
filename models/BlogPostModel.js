@@ -8,6 +8,7 @@ export default class BlogPostModel {
   static async create({
     title,
     excerpt = '',
+    slug = '', // optional, wird automatisch generiert
     content,
     hero_image,
     hero_public_id = null,
@@ -16,8 +17,9 @@ export default class BlogPostModel {
     published = true,
     description = ''                   // optional, falls im Formular
   }) {
-    const slug = slugify(title, { lower: true, strict: true });
-
+    if (!slug) {
+      const slug = slugify(title, { lower: true, strict: true });
+    }
     const { rows } = await pool.query(
       `INSERT INTO posts
          (title, slug, excerpt, content,
@@ -139,4 +141,20 @@ export default class BlogPostModel {
     );
     return rows[0];
   }
+}
+
+export async function getPublishedPosts(db) {
+  // Beispiel-Query – bitte auf dein Schema anpassen
+  const { rows } = await pool.query(`
+    SELECT slug, COALESCE(updated_at, created_at) AS updated_at
+    FROM posts
+    WHERE status = 'published'
+    ORDER BY updated_at DESC
+    LIMIT 5000
+  `);
+  console.log("Sitemap: Gefundene Blogposts:", rows.length);
+  return rows.map(r => ({
+    slug: r.slug,
+    lastmod: new Date(r.updated_at).toISOString()
+  }));
 }

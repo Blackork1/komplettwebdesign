@@ -24,6 +24,7 @@ export async function createPost(req, res) {
     const {
       title,
       excerpt   = '',
+      slug      = '',
       content,
       category  = '',
       featured,

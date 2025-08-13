@@ -46,6 +46,8 @@ import chatRoutes           from './routes/chat.js';
 import adminGalleryRoutes   from './routes/adminGalleryRoutes.js';
 import consentRoutes        from './routes/consent.js';
 import shopRoutes           from './routes/shopRoutes.js';
+import districtRoutes       from "./routes/districtRoutes.js";
+import sitemapRoutes        from "./routes/sitemapRoutes.js";
 
 
 import Stripe from 'stripe';
@@ -113,9 +115,9 @@ app.set('views', path.join(__dirname, 'views'));
 const staticOpts = process.env.NODE_ENV === 'development'
   ? { maxAge: 0 } : { immutable: true, maxAge: '365d' };
 app.use(express.static(path.join(__dirname, 'public'), staticOpts));
-app.get('/sitemap.xml', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-});
+// app.get('/sitemap.xml', (_req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+// });
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -179,6 +181,10 @@ app.use(chatRoutes);
 app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
+app.use("/webdesign-berlin", districtRoutes);
+
+// Sitemap
+app.use("/", sitemapRoutes);
 
 // 404-Handler
 app.use(errorController.get404);
