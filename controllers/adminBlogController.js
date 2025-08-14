@@ -39,6 +39,7 @@ export async function createPost(req, res) {
     await BlogPostModel.create({
       title,
       excerpt,
+      slug,
       content,
       hero_image     : secure_url,       // oder image_url – je nach Spalte
       hero_public_id : public_id,

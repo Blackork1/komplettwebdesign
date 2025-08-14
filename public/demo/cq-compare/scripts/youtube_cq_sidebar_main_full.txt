@@ -1,0 +1,74 @@
+Titel: Sidebar/Main – Der echte Unterschied zwischen Viewport‑Media‑Queries und @container + Subgrid
+
+Länge: ~7–8 Minuten
+Ziel: Klarer Aha‑Moment, warum @container im Sidebar/Main‑Layout überlegen ist; Subgrid erklärt an einer Timeline. 
+Setup: Nutze die bereitgestellte Demo „/demo/cq-sidebar-main/“. Nimm dein Gesicht + Screen auf (PiP), oder nur Screen mit Voiceover.
+
+---------------------------------------------------------
+00:00 – 00:12  (Hook)
+VOICE: „Deine Sidebar sieht gequetscht aus, obwohl du Desktop‑Breakpoints hast? Das liegt daran, dass du am falschen Ort misst. Heute zeige ich dir, warum @container + Subgrid Sidebar/Main endgültig sauber macht.“
+BILD: Kurzer Showreel: links (rot gestrichelter Rahmen) gequetschte Sidebar‑Card; rechts dieselbe Sidebar‑Card sauber gestapelt.
+
+00:12 – 00:35  (Intro, Nutzen)
+VOICE: „Wir vergleichen die alte Welt – Viewport‑Media‑Queries – mit der neuen Welt aus Container Queries und Subgrid. Ziel: Karten, die sich an IHREN Container anpassen, und Timelines, die pixelgenau fluchten.“
+BILD: Titel‑Overlay „Viewport‑MQ vs. @container + Subgrid“. Danach Demo‑Seite öffnen.
+
+---------------------------------------------------------
+KAPITEL 1 – Die Ausgangslage (Layout erklären)
+00:35 – 01:10
+VOICE: „Beide Panels haben dasselbe Seiten‑Layout: eine Sidebar und einen Main‑Content. In der Sidebar liegen Cards und eine kurze Timeline, im Main ebenfalls. Links siehst du die alte Lösung, rechts die neue.“
+BILD: Auf „/demo/cq-sidebar-main/“ scrollen; Panels zeigen. Sidebar/Main‑Labels highlighten.
+
+---------------------------------------------------------
+KAPITEL 2 – Warum Viewport‑Media‑Queries hier versagen
+01:10 – 02:20
+VOICE: „Links steuert ein klassischer Desktop‑Breakpoint bei 900px, dass die Card in ein Zwei‑Spalten‑Layout springt. Problem: Der Viewport ist zwar groß, aber die Sidebar ist schmal. Die Regel greift trotzdem – Ergebnis: gequetschte Card.“
+BILD: CSS im linken Panel einblenden:
+@media (min-width: 900px){ .old .card{ grid-template-columns:1fr 1.2fr } }
+Und Sidebars‑Card rot gestrichelt hervorheben. Fensterbreite ändern: Effekt bleibt – Regel ist Viewport‑basiert.
+VOICE: „Media Queries wissen nichts über die Container‑Breite. Sie triggern global. In der Sidebar ist schlicht nicht genug Platz.“
+
+---------------------------------------------------------
+KAPITEL 3 – Container Queries: Messen am richtigen Ort
+02:20 – 04:00
+VOICE: „Rechts macht die Card selbst Messung: Wir aktivieren Container Queries mit ‚container-type:inline-size‘ an der Komponente. Danach definieren wir @container‑Breakpoints. Erst wenn die Card‑Breite 480px erreicht, wird sie Zweispalter – nicht vorher.“
+BILD: CSS im rechten Panel einblenden:
+.new .card.cq{ container-type:inline-size }
+@container (min-width:480px){ .new .card.cq{ grid-template-columns:1fr 1.2fr } }
+@container (min-width:720px){ .new .card.cq{ gap:18px } }
+Fensterbreite ändern und Kamera auf die rechte Sidebar‑Card: Sie bleibt gestapelt, weil der Container schmal ist.
+VOICE: „Im Main ist der Container breit – dort wird dieselbe Card Zweispalter. Gleiches Markup, aber kontextintelligent.“
+BILD: Markiere „Sidebar bleibt Stack“ / „Main wird Grid‑Zweispalter“ mit Pfeilen.
+
+PRO‑TIPP (einblenden):
+• Natürliche Container‑Breakpoints wählen (z. B. 480px, 720px)
+• Keine Zusatzklassen nötig (keine .card--sidebar)
+
+---------------------------------------------------------
+KAPITEL 4 – Subgrid: Perfekte Ausrichtung in Listen/Timelines
+04:00 – 05:20
+VOICE: „In Timelines fluchten Zeit und Text oft nicht exakt, weil jeder Eintrag ein eigenes Grid nutzt. Mit Subgrid erben die Einträge die Spalten des Eltern‑Grids – exakt dieselben 120px | 1fr.“
+BILD: Linkes Panel zeigen: Timeline‑Einträge haben jeweils eigenes Grid (fast in Linie). Rechtes Panel: @supports‑Block einblenden:
+@supports (grid-template-columns: subgrid){
+  .new .timeline.use-subgrid .event{
+    grid-column:1/-1; grid-template-columns: subgrid; column-gap: inherit;
+  }
+}
+VOICE: „Ohne Subgrid – gute, aber leicht versetzte Ausrichtung. Mit Subgrid – pixelgenau durchziehende Spalten.“
+BILD: Browser‑Grid‑Inspector aktivieren und Linien zeigen.
+
+---------------------------------------------------------
+KAPITEL 5 – Praxisfragen & Fallbacks
+05:20 – 06:20
+VOICE: „Was ist mit älteren Browsern? Kein Stress: Die Card hat ein voll nutzbares Basis‑Layout. @container liefert Komfort, fällt aber nicht alles zusammen. Bei der Timeline nutzen wir Fallback: eigenes Grid pro Eintrag. Subgrid ist nur ein Upgrade über @supports.“
+BILD: Basiszustand zeigen (Stacked Card, Timeline mit eigenem Grid). Dann @supports aktivieren → Upgrade zeigen.
+
+PRO‑TIPP (einblenden):
+• CQ‑Units (cqw/cqh) für Typo/Spacing pro Container
+• Breakpoints als Design‑Tokens pflegen
+
+---------------------------------------------------------
+KAPITEL 6 – TL;DR & Call‑to‑Action
+06:20 – 07:10
+VOICE: „TL;DR: Miss dort, wo das Problem entsteht – im Container, nicht im Fenster. Container Queries lösen Sidebar/Main‑Brüche elegant. Subgrid macht Ausrichtung wirklich konsistent. Den kompletten Code und die Demo findest du unten verlinkt. Wenn dir das hilft, lass ein Like da und abonnier für mehr Frontend‑Wow.“
+BILD: Outro‑Overlay mit Link‑Hinweis „/demo/cq-sidebar-main/“, Buttons für Like/Subscribe, kurzer Teaser auf nächstes Video: „MPA View Transitions in Express/EJS“.

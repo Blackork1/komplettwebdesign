@@ -1,0 +1,1 @@
+Container Queries + Subgrid: Komponenten, die sich an ihren Container anpassen – nicht am Viewport. Cards passen sich smart an, Timelines bleiben mit subgrid perfekt ausgerichtet. Modern only, mit sinnvollen Fallbacks. Demo & Code im Blog. #CSS #ContainerQueries #Subgrid #Frontend

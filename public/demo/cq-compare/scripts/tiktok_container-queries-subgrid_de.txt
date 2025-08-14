@@ -1,0 +1,5 @@
+[0–3s] Hook: „Eine Komponente, drei Layouts – ohne Media Queries!“
+[3–10s] Zeig dieselbe Card in drei Containern (schmal/medium/breit). Text: „@container statt @media“
+[10–18s] Codeblenden: .product-card { container-type:inline-size } + @container (min-width:…)
+[18–24s] Timeline vor/nach: „Subgrid = perfekte Ausrichtung“
+[24–30s] CTA: „Code + Demo im Blog. Folge für mehr Frontend-Wow!“

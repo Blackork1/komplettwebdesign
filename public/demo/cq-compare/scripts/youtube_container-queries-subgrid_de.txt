@@ -1,0 +1,30 @@
+[HOOK – 0:00–0:15]
+„Deine Komponenten brechen im Sidebar schmal – und im Main sehen sie gequetscht aus? Heute lösen wir das sauber mit Container Queries und Subgrid…“
+
+[KAPITEL 1 – Problem & Ziel – 0:15–0:45]
+— Bisher reagieren wir auf den Viewport (Media Queries). Aber dieselbe Komponente braucht in unterschiedlichen Containern anderes Verhalten.
+— Ziel: Eine Card passt sich an ihren Container an; eine Timeline bleibt über Elemente perfekt ausgerichtet.
+
+[KAPITEL 2 – Container Queries – 0:45–2:30]
+— HTML: <article class="product-card">…
+— CSS Basis: .product-card { display:grid; gap:12px; container-type:inline-size; }
+— Breakpoints an den Container koppeln:
+  @container (min-width: 480px) { grid-template-columns: 1fr 1.2fr; }
+  @container (min-width: 720px) { grid-template-columns: 1.2fr 1.3fr; … }
+— Demo zeigen: dieselbe Card in schmal, mittel, breit (Wrapper). Kein zusätzliches Markup!
+— Fallback: Ohne Support bleibt die Basis-Variante (gestapelt). Nutzbar, nur simpler.
+
+[KAPITEL 3 – Subgrid – 2:30–4:20]
+— Problem: Timelines/Listen mit Zeitspalte – Elemente haben unterschiedliche Höhen; Ausrichtung verrutscht.
+— Eltern: .timeline { display:grid; grid-template-columns: 120px 1fr; gap:… }
+— Kinder (Events): @supports (grid-template-columns: subgrid) { .event { grid-template-columns: subgrid; column-gap: inherit; } }
+— Ergebnis: Zeitspalte, Content und Buttons fluchten pixelgenau durch – egal, wie hoch der Content wird.
+— Fallback: Ohne subgrid hat jedes Event ein eigenes Grid – sieht weiterhin gut aus, nur nicht perfekt ausgerichtet.
+
+[KAPITEL 4 – Praxis-Tipps – 4:20–4:50]
+— Container-Query-Units (cqw/cqh) kannst du für Typo/Spacing einsetzen.
+— Breakpoints als Design-Tokens definieren (z. B. --card-cq-1:480px).
+— In Bootstrap-Kosmos: .card.product { container-type:inline-size; } und dann @container-Regeln.
+
+[CALL TO ACTION – 4:50–5:00]
+„Den vollständigen Code und eine Live‑Demo findest du im Blog. Wenn hilfreich: Like & Abo – dann bauen wir beim nächsten Mal View Transitions in EJS!“

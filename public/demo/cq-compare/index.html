@@ -1,0 +1,185 @@
+
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sidebar/Main: Viewport-MQ vs. Container Queries + Subgrid</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>Sidebar/Main Vergleich: Viewport‑MQ vs. Container Queries + Subgrid</h1>
+    <p class="lead">Links: „Früher“ mit Viewport‑Media‑Queries. Rechts: „Heute“ mit @container (Card) und Subgrid (Timeline).</p>
+    <div class="tips">Zieh das Fenster in der Breite – achte darauf, wie sich die <strong>Sidebar‑Cards</strong> links quetschen, während sie rechts sauber gestapelt bleiben.</div>
+  </header>
+
+  <div class="compare">
+    <!-- ================================= OLD ================================= -->
+    <section class="panel old" aria-labelledby="old-title">
+      <h2 id="old-title">Vorher · Viewport‑Media‑Queries</h2>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <h3>Sidebar</h3>
+
+          <article class="card">
+            <img src="https://picsum.photos/id/1018/800/500" alt="Natur">
+            <div class="card-body">
+              <h4>Card in der Sidebar</h4>
+              <p class="desc">Viewport groß ⇒ Regel greift ⇒ versucht Zweispalter … Sidebar ist aber schmal.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="timeline">
+            <div class="event">
+              <div class="time">09:00</div>
+              <div class="content">
+                <h5>Kickoff</h5>
+                <p>Eigenes Grid pro Eintrag – okay, aber nicht exakt deckungsgleich.</p>
+                <div class="controls"><button class="btn ghost">Details</button></div>
+              </div>
+            </div>
+            <div class="event">
+              <div class="time">11:00</div>
+              <div class="content">
+                <h5>Design‑Session</h5>
+                <p>Unterschiedliche Höhen lassen die Ausrichtung wandern.</p>
+                <div class="controls"><button class="btn ghost">Slides</button></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <h3>Main Content</h3>
+
+          <article class="card">
+            <img src="https://picsum.photos/id/1015/800/500" alt="Fluss">
+            <div class="card-body">
+              <h4>Card im Main</h4>
+              <p class="desc">Hier passt der Zweispalter – aber dieselbe Regel greift fälschlich auch in der Sidebar.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <img src="https://picsum.photos/id/1025/800/500" alt="Adler">
+            <div class="card-body">
+              <h4>Noch eine Card</h4>
+              <p class="desc">Viewport‑Breakpoints berücksichtigen den Container nicht.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="timeline">
+            <div class="event">
+              <div class="time">14:30</div>
+              <div class="content">
+                <h5>Dev Handoff</h5>
+                <p>Langer Blindtext – Spalten wirken ähnlich, sind aber nicht exakt deckungsgleich.</p>
+                <div class="controls"><button class="btn ghost">Doku</button></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- ================================= NEW ================================= -->
+    <section class="panel new" aria-labelledby="new-title">
+      <h2 id="new-title">Nachher · @container + Subgrid</h2>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <h3>Sidebar</h3>
+
+          <article class="card cq">
+            <img src="https://picsum.photos/id/1018/800/500" alt="Natur">
+            <div class="card-body">
+              <h4>Card in der Sidebar</h4>
+              <p class="desc">Container schmal ⇒ bleibt gestapelt. Kein Quetschen.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="timeline use-subgrid">
+            <div class="event">
+              <div class="time">09:00</div>
+              <div class="content">
+                <h5>Kickoff</h5>
+                <p>Subgrid übernimmt Spalten vom Eltern‑Grid ⇒ perfekte Flucht.</p>
+                <div class="controls"><button class="btn ghost">Details</button></div>
+              </div>
+            </div>
+            <div class="event">
+              <div class="time">11:00</div>
+              <div class="content">
+                <h5>Design‑Session</h5>
+                <p>Auch bei anderer Höhe bleiben Zeit, Text und Button exakt auf Linie.</p>
+                <div class="controls"><button class="btn ghost">Slides</button></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <h3>Main Content</h3>
+
+          <article class="card cq">
+            <img src="https://picsum.photos/id/1015/800/500" alt="Fluss">
+            <div class="card-body">
+              <h4>Card im Main</h4>
+              <p class="desc">Container breit ⇒ Zweispalter, großzügigere Typo/Spacing.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card cq">
+            <img src="https://picsum.photos/id/1025/800/500" alt="Adler">
+            <div class="card-body">
+              <h4>Noch eine Card</h4>
+              <p class="desc">Gleiches Markup, container‑intelligentes Verhalten.</p>
+              <div class="actions">
+                <button class="btn primary">Mehr</button>
+                <button class="btn ghost">Merken</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="timeline use-subgrid">
+            <div class="event">
+              <div class="time">14:30</div>
+              <div class="content">
+                <h5>Dev Handoff</h5>
+                <p>Langer Blindtext – Spalten bleiben exakt deckungsgleich.</p>
+                <div class="controls"><button class="btn ghost">Doku</button></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <p>© 2025 Demo – Sidebar/Main: MQ vs. @container + Subgrid</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,86 @@
+
+:root{
+  --bg:#f5f7fa; --ink:#1f2b3a; --muted:#5b6b7a; --card:#fff; --brand:#0b2a46;
+  --sidebar-w: 300px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+
+.site-header{padding:clamp(24px,6vw,56px) 5vw 10px}
+.site-header h1{margin:0 0 6px;font-size:clamp(28px,5vw,46px)}
+.lead{margin:0;color:var(--muted)}
+.tips{margin-top:8px;color:#3a4a5a}
+
+.compare{display:grid;grid-template-columns:1fr;gap:24px;padding:24px 5vw}
+.panel{background:var(--card);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:16px}
+.panel h2{margin:0 0 12px;font-size:1.25rem}
+
+.layout{display:grid;grid-template-columns:var(--sidebar-w) 1fr;gap:16px}
+.sidebar,.main{background:#fff;border:1px solid #e8eef5;border-radius:12px;padding:14px}
+.sidebar h3,.main h3{margin:0 0 12px}
+
+/* Card (shared base) */
+.card{display:grid;gap:12px;margin-bottom:14px}
+.card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
+.card .desc{color:#586779}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.ghost{background:#e8eef5;color:var(--brand)}
+
+/* OLD: Viewport‑Media‑Queries (scoped unter .old) */
+@media (min-width: 900px){
+  .old .card{
+    grid-template-columns:1fr 1.2fr; /* versucht überall Zweispalter, auch in Sidebar */
+    align-items:center;
+  }
+  .old .card img{height:100%}
+}
+.old .sidebar .card{outline:2px dashed #e88787;outline-offset:6px}
+.old .sidebar .card .desc::after{content:"  (gequetscht durch Viewport‑MQ)";color:#b85c5c;font-weight:600}
+
+/* NEW: Container Queries + Subgrid (scoped unter .new) */
+.new .card.cq{container-type:inline-size} /* aktiviert Container Queries pro Card */
+
+/* Ab ~480px Containerbreite: Bild links, Text rechts */
+@container (min-width: 480px){
+  .new .card.cq{grid-template-columns:1fr 1.2fr;align-items:center}
+  .new .card.cq img{height:100%}
+}
+
+/* Ab ~720px Containerbreite: großzügiger */
+@container (min-width: 720px){
+  .new .card.cq{grid-template-columns:1.2fr 1.3fr;gap:18px}
+  .new .card.cq h4{font-size:1.2rem}
+  .new .card.cq .desc{font-size:1.05rem;line-height:1.6}
+}
+
+/* Timeline (shared) */
+.timeline{display:grid;grid-template-columns:120px 1fr;gap:12px 18px;margin-top:8px}
+.timeline .event{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;align-items:start;padding:10px 0;border-bottom:1px solid #e9eef5}
+.timeline .event:last-child{border-bottom:0}
+.time{font-weight:600;color:var(--brand)}
+.content{display:grid;gap:6px}
+.content h5{margin:0}
+.content p{margin:0;color:#586779}
+.controls{margin-top:6px}
+
+/* Subgrid Upgrade nur in NEW-Panel */
+@supports (grid-template-columns: subgrid){
+  .new .timeline.use-subgrid .event{
+    grid-column:1 / -1;
+    grid-template-columns: subgrid; /* übernimmt exakt 120px | 1fr */
+    column-gap: inherit;
+  }
+}
+
+.site-footer{padding:40px 5vw 80px;color:#7a8694}
+
+/* Responsive: Panels untereinander */
+@media (max-width: 1000px){
+  .compare{grid-template-columns:1fr}
+}
+@media (max-width: 760px){
+  :root{ --sidebar-w: 100%; }
+  .layout{grid-template-columns:1fr}
+}
