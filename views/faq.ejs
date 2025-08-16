@@ -1,146 +1,168 @@
-<%- include('partials/head') %>
-  <%- include('partials/header') %>
+<%- include('partials/head') %> <%- include('partials/header') %>
 
-    <link rel="stylesheet" href="/faq.css">
+<style>
+  .chat-container.open {
+    display: none;
+  }
+  .chat-container {
+    display: none;
+  }
+  .chat-button {
+    display: none;
+  }
+</style>
 
-    <!-- 1) Voll-Breite Header -->
-    <header class="faq-header text-center py-5 px-3">
-      <h1>Häufig gestellte Fragen</h1>
-      <p>
-        Kannst du die Antwort nicht finden?
-        Ruf mich an unter <a href="tel:+4915254350378">+49 152 54350378</a>
-        oder schreib eine Mail an
-        <a href="mailto:kontakt@komplettwebdesign.de">kontakt@komplettwebdesign.de</a>.
-      </p>
-    </header>
+<link rel="stylesheet" href="/faq.css" />
 
-    <div class="container-fluid backgroundColor">
-      <!-- 2) Row mit align-items-start für gleiche Höhe -->
-      <div class="row align-items-start">
+<!-- 1) Voll-Breite Header -->
+<header class="faq-header text-center py-5 px-3">
+  <h1>Häufig gestellte Fragen</h1>
+  <p>
+    Kannst du die Antwort nicht finden? Ruf mich an unter
+    <a href="tel:+4915254350378">+49 152 54350378</a>
+    oder schreib eine Mail an
+    <a href="mailto:kontakt@komplettwebdesign.de"
+      >kontakt@komplettwebdesign.de</a
+    >.
+  </p>
+</header>
 
-        <!-- Sidebar (Desktop) -->
-        <aside class="col-md-3 d-none d-md-block">
-          <div class="faq-cat-list p-3">
-            <% categories.forEach(cat=> { %>
-              <a href="/faq?cat=<%=cat.id%>"
-                class="faq-cat-item d-flex align-items-start <%=cat.id===selectedCategory.id?'active':''%>">
-                <img src="<%=cat.icon%>" alt="" class="faq-cat-icon mt-1">
-                <div class="mb-2 categorieContainer">
-                  <h5 class="mb-1 accentColor">
-                    <%=cat.name%>
-                  </h5>
-                  <p class="mb-0 small darkColor">
-                    <%=cat.description%>
-                  </p>
-                </div>
-              </a>
-              <% }) %>
+<div class="container-fluid backgroundColor">
+  <!-- 2) Row mit align-items-start für gleiche Höhe -->
+  <div class="row align-items-start">
+    <!-- Sidebar (Desktop) -->
+    <aside class="col-md-3 d-none d-md-block">
+      <div class="faq-cat-list p-3">
+        <% categories.forEach(cat=> { %>
+        <a
+          href="/faq?cat=<%=cat.id%>"
+          class="faq-cat-item d-flex align-items-start <%=cat.id===selectedCategory.id?'active':''%>"
+        >
+          <img src="<%=cat.icon%>" alt="" class="faq-cat-icon mt-1" />
+          <div class="mb-2 categorieContainer">
+            <h5 class="mb-1 accentColor"><%=cat.name%></h5>
+            <p class="mb-0 small darkColor"><%=cat.description%></p>
           </div>
-        </aside>
-
-        <!-- Hauptbereich -->
-        <main class="col-12 col-md-9 p-4">
-
-          <!-- Mobile-Kategorien (horizontal) -->
-          <div class="faq-cats-mobile d-block d-md-none mb-4">
-            <div class="d-flex overflow-auto px-2">
-              <% categories.forEach(cat=> { %>
-                <a href="/faq?cat=<%=cat.id%>"
-                  class="faq-cat-card text-center me-3 <%=cat.id===selectedCategory.id?'active':''%>">
-                  <img src="<%=cat.icon%>" alt="" class="faq-cat-icon mb-1">
-                  <div class="small darkColor">
-                    <%=cat.name%>
-                  </div>
-                </a>
-                <% }) %>
-            </div>
-          </div>
-
-          <!-- Accordion -->
-          <div class="accordion" id="faqAccordion">
-            <% faqs.forEach((faq,i)=> { %>
-              <div class="accordion-item mb-2">
-                <h2 class="accordion-header" id="heading<%=i%>">
-                  <button class="accordion-button <%=i===0?'':'collapsed'%>" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#collapse<%=i%>" aria-expanded="<%=i===0%>" aria-controls="collapse<%=i%>">
-                    <%=faq.question%>
-                  </button>
-                </h2>
-                <div id="collapse<%=i%>" class="accordion-collapse collapse <%=i===0?'show':''%>"
-                  aria-labelledby="heading<%=i%>" data-bs-parent="#faqAccordion">
-                  <div class="accordion-body">
-                    <%- faq.answer %>
-                  </div>
-                </div>
-              </div>
-              <% }) %>
-          </div>
-
-        </main>
+        </a>
+        <% }) %>
       </div>
-    </div>
-    <div class="mt-5 p-4 border rounded">
-      <h4>Chatbot</h4>
-      <div id="chat-window" style="max-height:200px; overflow-y:auto;"></div>
-      <form id="chat-form" class="mt-2">
-        <div class="input-group">
-          <input id="chat-input" type="text" class="form-control" placeholder="Frage eingeben…" required>
-          <button class="btn btn-primary">Senden</button>
+    </aside>
+
+    <!-- Hauptbereich -->
+    <main class="col-12 col-md-9 p-4">
+      <!-- Mobile-Kategorien (horizontal) -->
+      <div class="faq-cats-mobile d-block d-md-none mb-4">
+        <div class="d-flex overflow-auto px-2">
+          <% categories.forEach(cat=> { %>
+          <a
+            href="/faq?cat=<%=cat.id%>"
+            class="faq-cat-card text-center me-3 <%=cat.id===selectedCategory.id?'active':''%>"
+          >
+            <img src="<%=cat.icon%>" alt="" class="faq-cat-icon mb-1" />
+            <div class="small darkColor"><%=cat.name%></div>
+          </a>
+          <% }) %>
         </div>
-      </form>
+      </div>
+
+      <!-- Accordion -->
+      <div class="accordion" id="faqAccordion">
+        <% faqs.forEach((faq,i)=> { %>
+        <div class="accordion-item mb-2">
+          <h2 class="accordion-header" id="heading<%=i%>">
+            <button
+              class="accordion-button <%=i===0?'':'collapsed'%>"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapse<%=i%>"
+              aria-expanded="<%=i===0%>"
+              aria-controls="collapse<%=i%>"
+            >
+              <%=faq.question%>
+            </button>
+          </h2>
+          <div
+            id="collapse<%=i%>"
+            class="accordion-collapse collapse <%=i===0?'show':''%>"
+            aria-labelledby="heading<%=i%>"
+            data-bs-parent="#faqAccordion"
+          >
+            <div class="accordion-body"><%- faq.answer %></div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="mt-5 p-4 border rounded">
+  <h4>Chatbot</h4>
+  <div id="chat-window" style="max-height: 200px; overflow-y: auto"></div>
+  <form id="chat-form" class="mt-2">
+    <div class="input-group">
+      <input
+        id="chat-input"
+        type="text"
+        class="form-control"
+        placeholder="Frage eingeben…"
+        required
+      />
+      <button class="btn btn-primary">Senden</button>
     </div>
+  </form>
+</div>
 
-    <script>
-      const form = document.getElementById('chat-form');
-      const input = document.getElementById('chat-input');
-      const windowDiv = document.getElementById('chat-window');
+<script>
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("chat-input");
+  const windowDiv = document.getElementById("chat-window");
 
-      /**
-       * Wandelt Markdown-Links [Text](url) in echte <a>-Tags um.
-       * Beispiel: "[Pakete](/pakete)" → '<a href="/pakete">Pakete</a>'
-       */
-      function mdToHtmlLinks(str) {
-        return str.replace(/\[([^\]]+)]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener">$1</a>');
-      }
+  /**
+   * Wandelt Markdown-Links [Text](url) in echte <a>-Tags um.
+   * Beispiel: "[Pakete](/pakete)" → '<a href="/pakete">Pakete</a>'
+   */
+  function mdToHtmlLinks(str) {
+    return str.replace(
+      /\[([^\]]+)]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener">$1</a>'
+    );
+  }
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        const q = input.value.trim();
-        if (!q) return;
+    const q = input.value.trim();
+    if (!q) return;
 
-        // Nutzereingabe anzeigen
-        const u = document.createElement('div');
-        u.className = 'text-end mb-2';
-        u.innerHTML = `<strong>Ich:</strong> ${q}`;
-        windowDiv.append(u);
+    // Nutzereingabe anzeigen
+    const u = document.createElement("div");
+    u.className = "text-end mb-2";
+    u.innerHTML = `<strong>Ich:</strong> ${q}`;
+    windowDiv.append(u);
 
-        input.value = '';
+    input.value = "";
 
-        // Anfrage an Backend
-        const res = await fetch('/faq/query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q })
-        });
+    // Anfrage an Backend
+    const res = await fetch("/faq/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q }),
+    });
 
-        const { answer } = await res.json();
+    const { answer } = await res.json();
 
-        // Bot-Antwort anzeigen, Markdown-Links zu HTML konvertieren
-        const b = document.createElement('div');
-        b.className = 'text-start mb-2';
-        b.innerHTML = `<strong>Bot:</strong> ${mdToHtmlLinks(answer)}`;
-        windowDiv.append(b);
+    // Bot-Antwort anzeigen, Markdown-Links zu HTML konvertieren
+    const b = document.createElement("div");
+    b.className = "text-start mb-2";
+    b.innerHTML = `<strong>Bot:</strong> ${mdToHtmlLinks(answer)}`;
+    windowDiv.append(b);
 
-        // Scroll nach unten
-        windowDiv.scrollTop = windowDiv.scrollHeight;
-      });
-    </script>
+    // Scroll nach unten
+    windowDiv.scrollTop = windowDiv.scrollHeight;
+  });
+</script>
 
+<!-- Bootstrap JS Bundle (inkl. Collapse) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-
-    <!-- Bootstrap JS Bundle (inkl. Collapse) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <%- include('partials/footer') %>
+<%- include('partials/footer') %>
