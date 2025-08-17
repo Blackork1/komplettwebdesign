@@ -64,7 +64,7 @@
     />
 
     <!-- Bootstrap 5.3.7 CSS -->
-    <link
+    <!-- <link
       rel="preload"
       href="/css/bootstrap.min.css"
       as="style"
@@ -72,18 +72,25 @@
     />
     <noscript>
       <link rel="stylesheet" href="/css/bootstrap.min.css" />
-    </noscript>
+    </noscript> -->
+
+    <link rel="preload" href="/css/bootstrap.min.css" as="style" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
 
     <!-- CSS Setup-->
-    <link
+    <!-- <link
       rel="preload"
-      href="/css/main.min.css"
+      href="/css/main.min.css?v=<%= Date.now() %>"
       as="style"
       onload="this.rel='stylesheet'"
     />
     <noscript>
       <link rel="stylesheet" href="/css/main.min.css" />
-    </noscript>
+    </noscript> -->
+
+    <link rel="preload" href="/css/main.min.css" as="style" />
+    <link rel="stylesheet" href="/css/main.min.css" />
+
     <link
       rel="preload"
       href="/extra.css?v=<%= Date.now() %>"
@@ -107,15 +114,15 @@
     <script src="https://js.stripe.com/v3/" defer></script>
 
     <!-- Favicon und App Icons -->
-    <link rel="icon" type="image/png" sizes="16x16" href="images/icon16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="images/icon32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/icon32.png" />
     <link
       rel="icon"
       type="image/png"
       sizes="192x192"
-      href="images/icon192.png"
+      href="/images/icon192.png"
     />
-    <link rel="apple-touch-icon" sizes="180x180" href="images/icon180.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/icon180.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <% if (gaEnabled) { %>
@@ -141,3 +148,4 @@
       };
     </script>
   </head>
+</html>

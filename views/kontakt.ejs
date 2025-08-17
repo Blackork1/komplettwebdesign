@@ -13,21 +13,21 @@
 
                                 <!-- ====================  Slide 1 – Paket  ==================== -->
                                 <div class="carousel-item active">
-                                    <h2>1. Welches Paket wünschst du?</h2>
+                                    <h2>1. Was für ein Umfang soll deine Website haben?</h2>
                                     <p>Bitte wähle ein Paket:</p>
 
                                     <div class="w-100 option-wrapper" style="max-width:340px">
                                         <input class="option-radio" type="radio" id="paketBasis" name="paket"
                                             value="Basis" required>
-                                        <label class="option-label" for="paketBasis">Basis</label>
+                                        <label class="option-label" for="paketBasis">Kleines Projekt</label>
 
                                         <input class="option-radio" type="radio" id="paketBusiness" name="paket"
                                             value="Business" required>
-                                        <label class="option-label" for="paketBusiness">Business</label>
+                                        <label class="option-label" for="paketBusiness">Mittleres Projekt</label>
 
                                         <input class="option-radio" type="radio" id="paketPremium" name="paket"
                                             value="Premium" required>
-                                        <label class="option-label" for="paketPremium">Premium</label>
+                                        <label class="option-label" for="paketPremium">Großes Projekt</label>
                                     </div>
                                 </div>
 
@@ -35,7 +35,7 @@
                                 <div class="carousel-item">
                                     <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2>2. Wie groß ist der Umfang der Seiten?</h2>
+                                    <h2>2. Wie viele Seiten soll deine Website haben?</h2>
                                     <p>Wähle den ungefähren Seitenumfang:</p>
 
                                     <div class="w-100 option-wrapper" style="max-width:340px">
@@ -162,11 +162,12 @@
                                                 hour:'2-digit', minute:'2-digit' });
                                                 %>
                                                 <input type="radio" class="option-radio" id="termin<%= term.id %>"
-                                                    name="slotId" value="<%= term.id %>" required>
+                                                    name="slotId" value="<%= term.id %>">
                                                 <label class="option-label" for="termin<%= term.id %>">
                                                     <%= startTime %>
                                                 </label>
                                                 <% }) %>
+                                            <button type="button" class="btn btn-primary mt-3 next-btn">Anderer Termin</button>
                                         </div>
                                         <% } else { %>
                                             <p><em>Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren

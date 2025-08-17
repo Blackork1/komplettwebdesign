@@ -1,0 +1,122 @@
+<%- include("../partials/head") %>
+<%- include("../partials/header") %>
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<%= og?.title %>">
+  <meta property="og:description" content="<%= og?.description %>">
+  <meta property="og:url" content="<%= og?.url %>">
+  <meta property="og:image" content="<%= og?.image %>">
+  <meta property="og:image:alt" content="Komplett Webdesign – Berlin">
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json"><%= JSON.stringify(ld.breadcrumbList) %></script>
+  <script type="application/ld+json"><%= JSON.stringify(ld.service) %></script>
+
+  <style>
+    :root{--color-primary:#0b2a46;--color-accent:#e94a1b;--radius:12px}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;color:#2e2e2e;background:#fff}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;padding:40px 20px 20px}
+    .hero h1{color:var(--color-primary);font-size:clamp(28px,4vw,44px);margin:0 0 10px}
+    .lead{font-size:1.15rem;color:#444}
+    .hero__cta{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+    .btn{display:inline-block;padding:12px 16px;border-radius:10px;border:1px solid #ddd;text-decoration:none}
+    .btn-primary{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+    .btn-secondary{background:#fff;color:var(--color-primary)}
+    .hero__image img{width:100%;height:auto;border-radius:16px;display:block}
+    .intro{padding:10px 20px}
+    .intro p{margin:0 0 10px}
+    .usp{padding:10px 20px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .card{border:1px solid #eee;border-radius:12px;padding:14px;background:#fafafa}
+    .faqs{padding:10px 20px}
+    details{border:1px solid #eee;border-radius:10px;padding:10px;background:#fff;margin:8px 0}
+    summary{cursor:pointer;font-weight:600}
+    .cta{padding:24px 20px 56px}
+    .cta__box{border:2px dashed var(--color-primary);border-radius:16px;padding:18px;text-align:center}
+    header,footer{background:#f7f7f7;border-bottom:1px solid #eee}
+    footer{border-top:1px solid #eee;border-bottom:none;padding:30px 0;margin-top:40px}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
+    <a href="/" style="text-decoration:none;color:var(--color-primary);font-weight:700">Komplett Webdesign</a>
+    <nav>
+      <a class="btn" href="/kontakt">Kontakt</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero container">
+    <div>
+      <h1><%= hero.title %></h1>
+      <p class="lead"><%= hero.subtitle %></p>
+      <div class="hero__cta">
+        <a class="btn btn-primary" href="<%= cta.href %>"><%= cta.label %></a>
+        <a class="btn btn-secondary" href="tel:<%= phone.replace(/\s+/g,'') %>">Anrufen: <%= phone %></a>
+      </div>
+    </div>
+    <div class="hero__image">
+      <img src="<%= hero.image %>" alt="Webdesign <%= districtName %> – Hero" loading="eager" fetchpriority="high" width="1600" height="900">
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section class="intro container">
+    <% (intro||[]).forEach(p => { %><p><%= p %></p><% }) %>
+  </section>
+
+  <!-- USPs -->
+  <% if ((usp||[]).length) { %>
+  <section class="usp container">
+    <h2>Warum <%= brand %> in <%= districtName %>?</h2>
+    <ul class="grid-3" style="list-style:none;padding:0;margin:0">
+      <% usp.forEach(item => { %>
+        <li class="card">✓ <%= item %></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <!-- FAQs -->
+  <% if ((faqs||[]).length) { %>
+  <section class="faqs container">
+    <h2>Häufige Fragen</h2>
+    <% faqs.forEach((f,i) => { %>
+      <details <%= i===0 ? 'open' : '' %>>
+        <summary><%= f.q %></summary>
+        <div><p><%= f.a %></p></div>
+      </details>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <!-- CTA -->
+  <section class="cta container">
+    <div class="cta__box">
+      <h2>Bereit für mehr Anfragen in <%= districtName %>?</h2>
+      <p>Wir setzen deinen Auftritt in <%= districtName %> performant & SEO-stark um.</p>
+      <div class="hero__cta" style="justify-content:center">
+        <a class="btn btn-primary" href="<%= cta.href %>"><%= cta.label %></a>
+        <a class="btn btn-secondary" href="tel:<%= phone.replace(/\s+/g,'') %>">Telefon: <%= phone %></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container" style="display:flex;gap:12px;justify-content:space-between;align-items:center;">
+    <small>© <%= new Date().getFullYear() %> Komplett Webdesign – Berlin</small>
+    <nav style="display:flex;gap:10px">
+      <a class="btn" href="/impressum">Impressum</a>
+      <a class="btn" href="/datenschutz">Datenschutz</a>
+      <a class="btn" href="/sitemap.xml">Sitemap</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

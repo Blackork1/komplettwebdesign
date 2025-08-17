@@ -10,6 +10,8 @@ import {
 } from '../models/appointmentModel.js';
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
+import { buildPackageSchemas } from '../util/seoSchemas.js';
+
 
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -21,6 +23,15 @@ const transporter = nodemailer.createTransport({
   secure: Number(process.env.SMTP_PORT) === 465,      // SSL nur bei Port 465
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
+
+// (optional) falls du kein util/resolveBaseUrl.js nutzt:
+function resolveBaseUrl(req) {
+  const proto = req.headers['cf-visitor']
+    ? (JSON.parse(req.headers['cf-visitor']).scheme || 'https')
+    : (req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http'));
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  return `${proto}://${host}`;
+}
 
 // ────────────────────────────────────────────────────────────────────────────────
 //  Übersicht aller Pakete
@@ -50,12 +61,20 @@ export async function showPackage(req, res) {
       [slug]
     );
     if (!rows.length) return res.status(404).send('Paket nicht gefunden');
+
+    const pack = rows[0];
     const slots = await getNextOpenSlots(3);
+
+    const baseUrl = resolveBaseUrl(req);
+    const url = `${baseUrl}${req.originalUrl}`;
+    const jsonLd = buildPackageSchemas({ pack, url, baseUrl });
+
     res.render('package_detail', {
-      pack: rows[0],
+      pack,
       slots,
-      title: `Paket: ${rows[0].name} | KomplettWebdesign`,
-      description: `Details zu unserem Paket ${rows[0].name}. Nutzte den ChatBot, um mehr zu erfahren oder buche direkt einen Termin.`,
+      title: `Paket: ${pack.name} | KomplettWebdesign`,
+      description: `Details zu unserem Paket ${pack.name}.`,
+      jsonLd // ← hier rein
     });
   } catch (err) {
     console.error('❌ showPackage:', err);

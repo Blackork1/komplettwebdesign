@@ -1,0 +1,21 @@
+<%- include("../partials/head") %>
+<%- include("../partials/header") %>
+  <style>
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0}
+    .container{max-width:900px;margin:0 auto;padding:20px}
+    ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;list-style:none;padding:0}
+    li{border:1px solid #eee;border-radius:12px;padding:14px;background:#fafafa}
+    a{text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Webdesign Berlin – Bezirke</h1>
+    <ul>
+      <% districts.forEach(d => { %>
+        <li><a href="/webdesign-berlin/<%= d.slug %>">Webdesign <%= d.name %></a></li>
+      <% }) %>
+    </ul>
+  </div>
+</body>
+</html>
