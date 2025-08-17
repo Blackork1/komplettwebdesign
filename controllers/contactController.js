@@ -25,7 +25,7 @@ const upload = multer({ dest: "uploads/" });
 export async function showForm(req, res) {
     const freieTermine = await Apt.getOpenSlots();
     res.render("kontakt", {
-        title: "Bertatrungsgespräch vereinbaren",
+        title: "Beratungsgespräch vereinbaren",
         description: "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
         freieTermine,
         sitekey: process.env.RECAPTCHA_SITEKEY
