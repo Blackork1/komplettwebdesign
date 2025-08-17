@@ -42,3 +42,13 @@ export async function retrieveFaqs(question, topK = 5) {
   );
   return rows;
 }
+
+export async function getPublishedFaqs(db) {
+  const { rows } = await db.query(
+    `SELECT id, category_id, question, answer
+     FROM faqs
+     WHERE is_published = TRUE
+     ORDER BY category_id, id`
+  );
+  return rows;
+}
