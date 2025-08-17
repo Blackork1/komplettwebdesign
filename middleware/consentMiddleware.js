@@ -5,6 +5,9 @@ export default (req, res, next) => {
     marketing: false
   };
 
+  req.consent = consent;              // <— diese Zeile ergänzen ✅
+
+
   // Für Templates angenehm:
   res.locals.session = req.session ?? {};
   res.locals.consent = consent;

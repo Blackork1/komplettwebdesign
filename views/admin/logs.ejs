@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Access Logs</title>
+  <style>
+    body{font-family:system-ui, sans-serif;padding:20px;}
+    table{border-collapse:collapse;width:100%;}
+    th,td{border:1px solid #ddd;padding:6px;font-size:14px;}
+    th{background:#f4f4f4;position:sticky;top:0;}
+    tr:nth-child(even){background:#fafafa;}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;}
+  </style>
+</head>
+<body>
+  <h1>Access Logs (letzte 200)</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>ts</th><th>ip</th><th>ip_raw</th><th>Land</th><th>City</th><th>Reg.</th>
+        <th>m</th><th>path</th><th>st</th><th>rt(ms)</th><th>UA</th><th>OS</th><th>Dev</th><th>Ref</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(r => { %>
+        <tr>
+          <td><%= r.ts.toISOString() %></td>
+          <td><%= r.ip || '' %></td>
+          <td><%= r.ip_raw || '' %></td>
+          <td><%= r.cf_country || '' %></td>
+          <td><%= r.city || '' %></td>
+          <td><%= r.region || '' %></td>
+          <td><%= r.method %></td>
+          <td><code><%= r.path %></code></td>
+          <td><%= r.status %></td>
+          <td><%= r.rt_ms || '' %></td>
+          <td><%= r.ua_name || '' %></td>
+          <td><%= r.os_name || '' %></td>
+          <td><%= r.device_type || '' %></td>
+          <td><%= r.referrer || '' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</body>
+</html>

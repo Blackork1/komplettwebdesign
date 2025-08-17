@@ -16,38 +16,42 @@ import cookieParser from 'cookie-parser';
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
 
-import { getAvailableCssFiles, getCssClasses }    from './helpers/cssHelper.js';
-import { FIELD_CONFIG }                           from './helpers/componentConfig.js';
-import { navbarMiddleware }                       from './helpers/navHelper.js';
+import { getAvailableCssFiles, getCssClasses } from './helpers/cssHelper.js';
+import { FIELD_CONFIG } from './helpers/componentConfig.js';
+import { navbarMiddleware } from './helpers/navHelper.js';
 // import sessionMiddleware                          from './middleware/session.js';
-import consentMiddleware                          from './middleware/consentMiddleware.js';
+import consentMiddleware from './middleware/consentMiddleware.js';
+import { accessLog } from './middleware/accessLog.js';
 
 
-import mainRoutes           from './routes/main.js';
-import pricingRoutes        from './routes/pricing.js';
-import checkoutRoutes       from './routes/checkout.js';
-import webhookRoutes        from './routes/webhook.js';
+
+import mainRoutes from './routes/main.js';
+import pricingRoutes from './routes/pricing.js';
+import checkoutRoutes from './routes/checkout.js';
+import webhookRoutes from './routes/webhook.js';
 import * as errorController from './controllers/errorController.js';
-import adminPageRoutes      from './routes/adminPages.js';
+import adminPageRoutes from './routes/adminPages.js';
 import adminComponentRoutes from './routes/adminComponents.js';
-import authRoutes           from './routes/authRoutes.js';
-import bookingRoutes        from './routes/bookingRoutes.js';
-import adminRoutes          from './routes/adminRoutes.js';
-import slugRoutes           from './routes/slug.js';
-import widgetApiRoutes      from './routes/widgetApiRoutes.js';
-import blogRoutes           from './routes/blogRoutes.js';
-import adminBlogRoutes      from './routes/adminBlogRoutes.js';
-import newsletterRoutes     from './routes/newsletter.js';
-import starticPagesRoutes   from './routes/staticPages.js';
-import packageRoutes        from './routes/packages.js';
-import faqRoutes            from './routes/faq.js';
-import contactRoutes        from "./routes/contactRoutes.js";
-import chatRoutes           from './routes/chat.js';
-import adminGalleryRoutes   from './routes/adminGalleryRoutes.js';
-import consentRoutes        from './routes/consent.js';
-import shopRoutes           from './routes/shopRoutes.js';
-import districtRoutes       from "./routes/districtRoutes.js";
-import sitemapRoutes        from "./routes/sitemapRoutes.js";
+import authRoutes from './routes/authRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import slugRoutes from './routes/slug.js';
+import widgetApiRoutes from './routes/widgetApiRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import adminBlogRoutes from './routes/adminBlogRoutes.js';
+import newsletterRoutes from './routes/newsletter.js';
+import starticPagesRoutes from './routes/staticPages.js';
+import packageRoutes from './routes/packages.js';
+import faqRoutes from './routes/faq.js';
+import contactRoutes from "./routes/contactRoutes.js";
+import chatRoutes from './routes/chat.js';
+import adminGalleryRoutes from './routes/adminGalleryRoutes.js';
+import consentRoutes from './routes/consent.js';
+import shopRoutes from './routes/shopRoutes.js';
+import districtRoutes from "./routes/districtRoutes.js";
+import sitemapRoutes from "./routes/sitemapRoutes.js";
+import adminLogs from './routes/adminLogs.js';
+
 
 
 import Stripe from 'stripe';
@@ -56,6 +60,9 @@ import Stripe from 'stripe';
 dotenv.config();
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
+
+app.set('trust proxy', true);            // hinter Cloudflare wichtig
+
 app.use(cookieParser());
 app.use((req, res, next) => {
   let enabled = false;
@@ -118,7 +125,7 @@ app.use(express.static(path.join(__dirname, 'public'), staticOpts));
 // app.get('/sitemap.xml', (_req, res) => {
 //   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 // });
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Session
@@ -127,12 +134,21 @@ app.use(session({
   store: new PgSession({ pool, createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7} // 7 Tage
+  saveUninitialized: false,
+  cookie: { secure: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 } // 7 Tage
 }));
 
-app.use(consentMiddleware);
+app.use(consentMiddleware);               // setzt req/session/locals
 
+
+app.use(accessLog({                     
+  pool,
+  getConsent: (req) => ({ analytics: !!req.session?.cookieConsent?.analytics }),
+  useMaxMind: false,              // auf true stellen, wenn du City/Region willst
+  // maxmindCityPath: '/data/GeoLite2-City.mmdb',
+  excludePrivate: true,           // ::1 / 127.0.0.1 etc. nicht speichern
+  respectDNT: true                // falls du DNT respektieren willst
+}));
 
 // DB, Cloudinary & Stripe auf app setzen
 app.set('db', pool);
@@ -182,6 +198,8 @@ app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
 app.use("/webdesign-berlin", districtRoutes);
+app.use(adminLogs);
+
 
 // Sitemap
 app.use("/", sitemapRoutes);
