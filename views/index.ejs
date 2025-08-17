@@ -1,17 +1,33 @@
 <%- include('partials/head') %>
 
-<!-- <style>
+<style>
   .primaryColor {
-  color: var(--color-primary);
-}
-  .hero-button{
+    color: var(--color-primary);
+  }
+
+  .hero-button {
     color: #fafafa;
     background-color: var(--color-primary);
   }
-  .hero-button:hover{
+
+  .hero-button:hover {
     border-color: white;
   }
-  .navigation {
+
+  @media (max-width: 768px) {
+    .scroll-snap-align {
+      scroll-snap-align: start;
+    }
+
+    .scroll-snap-container {
+      scroll-snap-type: x mandatory;
+      flex-wrap: nowrap;
+      overflow-y: auto;
+    }
+  }
+</style>
+
+<!--<style>  .navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -341,15 +357,7 @@
       padding: 10px;
     }
 
-    .scroll-snap-align {
-      scroll-snap-align: start;
-    }
 
-    .scroll-snap-container {
-      scroll-snap-type: x mandatory;
-      flex-wrap: nowrap;
-      overflow-y: auto;
-    }
 
     .readable p {
       text-align: left;
@@ -465,13 +473,13 @@
                 Website in Berlin erstellen lassen – <span class="primaryColor">günstig, fix</span> & mit echtem Umsatz-Impact
               </h1>
               <p>
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26"/>
+                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
                 Optimiert für Handy, Tablet & Desktop
                 <br />
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26"/>
+                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
                 Lokale Sichtbarkeit: „Website in Berlin erstellen lassen“
                 <br />
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26"/>
+                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
                 Klare Preise, klare Deadlines – <strong>0</strong> Technik-Stress für dich
               </p>
               <div class="hero-ctas">
@@ -1171,8 +1179,8 @@
     "telephone": "+49 1525 4350378",
     "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
     "image": [
-    "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-    "https://www.komplettwebdesign.de/images/blogW.webp"
+      "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+      "https://www.komplettwebdesign.de/images/blogW.webp"
     ],
     "sameAs": [
       "https://www.instagram.com/KomplettWebdesign",
@@ -1209,14 +1217,14 @@
           "priceCurrency": "EUR"
         }
       ]
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Möllendorffstr 26",
+      "postalCode": "10367",
+      "addressLocality": "Berlin",
+      "addressCountry": "DE"
     }
-      ,"address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Möllendorffstr 26",
-        "postalCode": "10367",
-        "addressLocality": "Berlin",
-        "addressCountry": "DE"
-      }
   }
 </script>
 
