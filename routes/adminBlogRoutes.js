@@ -36,6 +36,6 @@ router.post('/admin/blog/:id/edit',    isAdmin, upload.single('hero_image'), upd
 
 router.post('/admin/blog/:id/delete',  isAdmin, deletePost);
 
-router.get('/admin/blog', listAdminPosts);  
+router.get('/admin/blog', isAdmin,listAdminPosts);  
 
 export default router;
