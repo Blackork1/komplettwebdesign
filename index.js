@@ -80,7 +80,9 @@ if (process.env.NODE_ENV === 'production') {
   app.enable('trust proxy', 1);
 
   const CANON_HOST = 'www.komplettwebdesign.de';
-  const IGNORED_HOSTS = ['localhost', '127.0.0.1'];
+  const IGNORED_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0'];
+  const isPrivateLan = (h) =>
+    /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(h);
 
   app.use((req, res, next) => {
     const hostHeader = req.headers.host || '';             // z.B. "komplettwebdesign.de:3000"
@@ -88,7 +90,7 @@ if (process.env.NODE_ENV === 'production') {
     const protoHdr = (req.get('x-forwarded-proto') || req.protocol).toLowerCase();
 
     // 1) Ausnahmen: Localhost, inneres Docker-Netz, …
-    if (IGNORED_HOSTS.includes(hostname)) {
+    if (IGNORED_HOSTS.includes(hostname) || isPrivateLan(hostname)) {
       return next();
     }
 
@@ -128,6 +130,8 @@ app.use(express.static(path.join(__dirname, 'public'), staticOpts));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // Session
 const PgSession = connectPg(session);
 app.use(session({
@@ -135,7 +139,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 } // 7 Tage
+  cookie: { secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 } // 7 Tage
 }));
 
 app.use(consentMiddleware);               // setzt req/session/locals
