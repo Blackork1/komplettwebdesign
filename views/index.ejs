@@ -520,21 +520,17 @@
               </p>
             </div>
             <div class="pricing-grid">
-              <% packages.forEach(pkg=> { if(pkg.display){%>
+              <% packages.forEach(pkg=> { %>
+              <% if(pkg.display){%>
               <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
                 <h3>
                   <%= pkg.name %>
                 </h3>
                 <div class="p1rem">
                   <!-- Kurzbeschreibung -->
-                  <!-- <% if (pkg.description) { %>
+                  <% if (pkg.description) { %>
                   <p class="package-description"><%= pkg.description %></p>
-                  <% } %> -->
-
-                  <!-- Mehrzeiliger Detail-Text -->
-                  <!-- <% pkg.detailshero.forEach(line => { %>
-                  <p class="package-detail"><%= line %></p>
-                  <% }); %> -->
+                  <% } %>
 
                   <!-- Preis -->
                   <p class="price">
@@ -552,14 +548,6 @@
 
                   <!-- Button -->
                   <a class="btn btn-primary" href="/pakete/<%=pkg.name%>">Details</a>
-                  <!-- <form class="checkout-form" action="/create-checkout-session" method="POST">
-                          <input type="hidden" name="packageId" value="<%= pkg.id %>" />
-                          <input type="hidden" name="mode" value="once" />
-                          <button type="submit" class="btn btn-primary">
-                            Auswählen
-                            <span class="visually-hidden">Paket für <%= pkg.price %> kaufen</span>
-                          </button>
-                        </form> -->
                 </div>
               </div>
               <% }}); %>
