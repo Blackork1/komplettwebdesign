@@ -1,84 +1,87 @@
 <!-- views/blog/index.ejs -->
-<%- include('../partials/head') %> <!-- Head Partial -->
-  <%- include('../partials/header') %> <!-- Header Partial -->
-    <link rel="stylesheet" href="/blog.css?v=<%= Date.now() %>" />
+<%- include('../partials/head') %>
+<!-- Head Partial -->
+<%- include('../partials/header') %>
+<!-- Header Partial -->
+<link rel="stylesheet" href="/blog.css?v=<%= Date.now() %>" />
 
-    <!-- ────────── Hero mit Newsletter ────────── -->
-    <section class="hero d-flex align-items-center">
-      <div class="hero-content">
-        <h1 class="display-5 fw-bold mb-3">Komplettwebdesign-Blog</h1>
-        <p class="lead mb-4">
-          Aktuelle Insights zu Web-Design, KI, Performance & SEO.<br />
-          Jetzt Newsletter abonnieren und nichts verpassen!
-        </p>
-        <%- include('../partials/newsletter_form') %>
-      </div>
-    </section>
+<!-- ────────── Hero mit Newsletter ────────── -->
+<section class="hero d-flex align-items-center">
+  <div class="hero-content">
+    <h1 class="display-5 fw-bold mb-3">Komplettwebdesign-Blog</h1>
+    <p class="lead mb-4">
+      Aktuelle Insights zu Web-Design, KI, Performance & SEO.<br />
+      Jetzt Newsletter abonnieren und nichts verpassen!
+    </p>
+    <%- include('../partials/newsletter_form') %>
+  </div>
+</section>
 
-    <div class="container my-5">
-      <div class="row">
-        <!-- Hauptliste der Blogposts (linke Spalte) -->
-        <div class="col-md-8">
-          <h2 class="mb-4">Aktuelle Artikel</h2>
-          <div class="post-list"> <!-- <<< Neuer Wrapper -->
-            <% posts.forEach(function(post) { %>
-              <div class="post-card mb-4">
-                <!-- Verlinkter Artikel -->
-                <a href="/blog/<%= post.slug %>" class="post-card-link">
-                  <!-- Hintergrundbild + Overlay -->
-                  <div class="post-card-bg" style="background-image: url('<%= post.image_url%>');">
-                    <div class="post-card-content">
-                      <div class="post-card-overlay">
-                        <h2 class="post-card-title">
-                          <%= post.title %>
-                        </h2>
-                        <!-- <p class="post-card-excerpt"><%= (post.excerpt) %></p> -->
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-              <% }); %>
-          </div>
-        </div>
-
-        <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
-        <div class="col-md-4 d-none d-md-block">
-          <h3>Empfohlene Artikel</h3>
-          <% featuredPosts.forEach(function(post) { %>
-            <div class="featured-post-card mb-3">
-              <a href="/blog/<%= post.slug %>" class="d-flex">
-                <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img" />
-                <div class="featured-post-info">
-                  <h5 class="featured-post-title">
+<div class="container my-5">
+  <div class="row">
+    <!-- Hauptliste der Blogposts (linke Spalte) -->
+    <div class="col-md-8">
+      <h2 class="mb-4">Aktuelle Artikel</h2>
+      <div class="post-list">
+        <!-- <<< Neuer Wrapper -->
+        <% posts.forEach(function(post) { %>
+        <div class="post-card mb-4">
+          <!-- Verlinkter Artikel -->
+          <a href="/blog/<%= post.slug %>" class="post-card-link">
+            <!-- Hintergrundbild + Overlay -->
+            <div class="post-card-bg" style="background-image: url('<%= post.image_url%>');">
+              <div class="post-card-content">
+                <div class="post-card-overlay">
+                  <h2 class="post-card-title">
                     <%= post.title %>
-                  </h5>
-                  <p class="featured-post-excerpt">
-                    <%= (post.excerpt) %>
-                  </p>
+                  </h2>
                 </div>
-              </a>
+              </div>
             </div>
-            <% }); %>
+          </a>
         </div>
-      </div>
-
-      <!-- Featured Posts horizontal (mobil sichtbar) -->
-      <div class="d-block d-md-none mt-4">
-        <h4>Empfohlene Artikel</h4>
-        <div class="featured-mobile-scroll d-flex">
-          <% featuredPosts.forEach(function(post) { %>
-            <div class="featured-post-card-mobile me-3">
-              <a href="/blog/<%= post.slug %>">
-                <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img-mobile" />
-                <h5 class="featured-post-title-mobile">
-                  <%= post.title %>
-                </h5>
-              </a>
-            </div>
-            <% }); %>
-        </div>
+        <% }); %>
       </div>
     </div>
 
-    <%- include('../partials/footer') %> <!-- Footer Partial -->
+    <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
+    <div class="col-md-4 d-none d-md-block">
+      <h3>Empfohlene Artikel</h3>
+      <% featuredPosts.forEach(function(post) { %>
+      <div class="featured-post-card mb-3">
+        <a href="/blog/<%= post.slug %>" class="d-flex">
+          <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img" />
+          <div class="featured-post-info">
+            <h5 class="featured-post-title">
+              <%= post.title %>
+            </h5>
+            <p class="featured-post-excerpt">
+              <%= (post.excerpt) %>
+            </p>
+          </div>
+        </a>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <!-- Featured Posts horizontal (mobil sichtbar) -->
+  <div class="d-block d-md-none mt-4">
+    <h4>Empfohlene Artikel</h4>
+    <div class="featured-mobile-scroll d-flex">
+      <% featuredPosts.forEach(function(post) { %>
+      <div class="featured-post-card-mobile me-3">
+        <a href="/blog/<%= post.slug %>">
+          <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img-mobile" />
+          <h5 class="featured-post-title-mobile">
+            <%= post.title %>
+          </h5>
+        </a>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+<!-- Footer Partial -->

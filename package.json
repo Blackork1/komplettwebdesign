@@ -38,6 +38,7 @@
     "fs": "^0.0.1-security",
     "ical-generator": "^9.0.0",
     "ipaddr.js": "^2.2.0",
+    "luxon": "^3.7.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
     "on-finished": "^2.4.1",
