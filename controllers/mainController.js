@@ -49,3 +49,10 @@ export async function getAbout(req, res) {
     keywords: 'Webdesign,Webentwicklung,Über uns,KomplettWebdesign'
   });
 }
+
+export async function getPolicy(req, res) {
+  res.render('return_policy', {
+    title: 'Return Policy / Rückgaberegelung – Komplett Webdesign',
+    description: 'Unsere rechtlich verbindliche Rückgaberegelung für individuell erstellte Software-Projekte. Keine Rückgabe möglich.',
+  });
+}
