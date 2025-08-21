@@ -12,7 +12,7 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Website in Berlin erstellen lassen',
+      title: 'Webseite in Berlin erstellen lassen – Komplett Webdesign',
       description: 'Schnelle, SEO-optimierte Websites aus Berlin: Konzept, Design, Programmierung & Hosting – alles aus einer Hand. Jetzt kostenlose Beratung sichern!.',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
       users,
@@ -44,7 +44,7 @@ export async function postDeleteUser(req, res) {
 
 export async function getAbout(req, res) {
   res.render('about', {
-    title: 'Über uns - Wer ist KomplettWebdesign?',
+    title: 'Über uns - Wer ist Komplett Webdesign?',
     description: 'Erfahren Sie mehr über KomplettWebdesign und mich. Ich bin ein leidenschaftlicher Webentwickler aus Berlin, der es liebt, kreative und funktionale Websites zu erstellen.',
     keywords: 'Webdesign,Webentwicklung,Über uns,KomplettWebdesign'
   });
