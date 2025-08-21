@@ -1,261 +1,237 @@
 <%- include('partials/head') %>
-    <%- include('partials/header') %> <!-- Header mit Navigation (stellt sicher, dass "Kontakt" verlinkt ist) -->
-        <div class="section">
-            <div class="container mt-5">
-                <h1 style="text-align: center; color:#eaeae9">Kontaktiere uns</h1>
-                <form id="kontaktForm" action="/kontakt" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
+<%- include('partials/header') %>
+<!-- Header mit Navigation (stellt sicher, dass "Kontakt" verlinkt ist) -->
+<meta property="og:title" content="Vereinbare deinen Beratungstermin – Komplett Webdesign">
+<meta property="og:site_name" content="Komplett Webdesign Kontakt">
+<meta property="og:description" content="Nutze unser Kontaktformular, um dein individuelles Webdesign-Projekt zu starten. Wähle dein Paket, Umfang und Termin für ein Beratungsgespräch.">
+<meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
+<div class="section">
+  <div class="container mt-5">
+    <h1 style="text-align: center; color:#eaeae9">Kontaktiere uns</h1>
+    <form id="kontaktForm" action="/kontakt" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
 
-                    <!-- Bootstrap Carousel für die Slides -->
-                    <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
-                        <div class="carousel-inner">
-                            <div class="white-container">
+      <!-- Bootstrap Carousel für die Slides -->
+      <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
+        <div class="carousel-inner">
+          <div class="white-container">
 
-                                <!-- ====================  Slide 1 – Paket  ==================== -->
-                                <div class="carousel-item active">
-                                    <h2>1. Was für ein Umfang soll deine Website haben?</h2>
-                                    <p>Bitte wähle ein Paket:</p>
+            <!-- ====================  Slide 1 – Paket  ==================== -->
+            <div class="carousel-item active">
+              <h2>1. Was für ein Umfang soll deine Website haben?</h2>
+              <p>Bitte wähle ein Paket:</p>
 
-                                    <div class="w-100 option-wrapper" style="max-width:340px">
-                                        <input class="option-radio" type="radio" id="paketBasis" name="paket"
-                                            value="Basis" required>
-                                        <label class="option-label" for="paketBasis">Kleines Projekt</label>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <input class="option-radio" type="radio" id="paketBasis" name="paket" value="Basis" required>
+                <label class="option-label" for="paketBasis">Kleines Projekt</label>
 
-                                        <input class="option-radio" type="radio" id="paketBusiness" name="paket"
-                                            value="Business" required>
-                                        <label class="option-label" for="paketBusiness">Mittleres Projekt</label>
+                <input class="option-radio" type="radio" id="paketBusiness" name="paket" value="Business" required>
+                <label class="option-label" for="paketBusiness">Mittleres Projekt</label>
 
-                                        <input class="option-radio" type="radio" id="paketPremium" name="paket"
-                                            value="Premium" required>
-                                        <label class="option-label" for="paketPremium">Großes Projekt</label>
-                                    </div>
-                                </div>
+                <input class="option-radio" type="radio" id="paketPremium" name="paket" value="Premium" required>
+                <label class="option-label" for="paketPremium">Großes Projekt</label>
+              </div>
+            </div>
 
-                                <!-- ================  Slide 2 – Seiten-Umfang  ================= -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
+            <!-- ================  Slide 2 – Seiten-Umfang  ================= -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2>2. Wie viele Seiten soll deine Website haben?</h2>
-                                    <p>Wähle den ungefähren Seitenumfang:</p>
+              <h2>2. Wie viele Seiten soll deine Website haben?</h2>
+              <p>Wähle den ungefähren Seitenumfang:</p>
 
-                                    <div class="w-100 option-wrapper" style="max-width:340px">
-                                        <input class="option-radio" type="radio" id="umfang1" name="umfang"
-                                            value="1 Seite" required>
-                                        <label class="option-label" for="umfang1">1&nbsp;Seite</label>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <input class="option-radio" type="radio" id="umfang1" name="umfang" value="1 Seite" required>
+                <label class="option-label" for="umfang1">1&nbsp;Seite</label>
 
-                                        <input class="option-radio" type="radio" id="umfang2-5" name="umfang"
-                                            value="2-5 Seiten" required>
-                                        <label class="option-label" for="umfang2-5">2-5&nbsp;Seiten</label>
+                <input class="option-radio" type="radio" id="umfang2-5" name="umfang" value="2-5 Seiten" required>
+                <label class="option-label" for="umfang2-5">2-5&nbsp;Seiten</label>
 
-                                        <input class="option-radio" type="radio" id="umfang5plus" name="umfang"
-                                            value=">5 Seiten" required>
-                                        <label class="option-label" for="umfang5plus">&gt;5&nbsp;Seiten</label>
-                                    </div>
-                                </div>
+                <input class="option-radio" type="radio" id="umfang5plus" name="umfang" value=">5 Seiten" required>
+                <label class="option-label" for="umfang5plus">&gt;5&nbsp;Seiten</label>
+              </div>
+            </div>
 
-                                <!-- ================  Slide 3 – Texterstellung  ================= -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
+            <!-- ================  Slide 3 – Texterstellung  ================= -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2>3. Texterstellung</h2>
-                                    <p>Sind Texte für die Seiten vorhanden, oder sollen wir sie erstellen?</p>
+              <h2>3. Texterstellung</h2>
+              <p>Sind Texte für die Seiten vorhanden, oder sollen wir sie erstellen?</p>
 
-                                    <div class="w-100 option-wrapper" style="max-width:340px">
-                                        <input class="option-radio" type="radio" id="textErstellen"
-                                            name="texterstellung" value="erstellt" required>
-                                        <label class="option-label"
-                                            for="textErstellen">Bitte&nbsp;Texte&nbsp;erstellen</label>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <input class="option-radio" type="radio" id="textErstellen" name="texterstellung" value="erstellt" required>
+                <label class="option-label" for="textErstellen">Bitte&nbsp;Texte&nbsp;erstellen</label>
 
-                                        <input class="option-radio" type="radio" id="textEigen" name="texterstellung"
-                                            value="eigen" required>
-                                        <label class="option-label"
-                                            for="textEigen">Eigene&nbsp;Texte&nbsp;sind&nbsp;vorhanden</label>
-                                    </div>
-                                </div>
+                <input class="option-radio" type="radio" id="textEigen" name="texterstellung" value="eigen" required>
+                <label class="option-label" for="textEigen">Eigene&nbsp;Texte&nbsp;sind&nbsp;vorhanden</label>
+              </div>
+            </div>
 
-                                <!-- ================  Slide 4 – Bilder  ================= -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
+            <!-- ================  Slide 4 – Bilder  ================= -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2>4. Bilder</h2>
-                                    <p>Sind passende Bilder vorhanden, oder sollen wir Bilder
-                                        erstellen/beschaffen?
-                                    </p>
+              <h2>4. Bilder</h2>
+              <p>Sind passende Bilder vorhanden, oder sollen wir Bilder
+                erstellen/beschaffen?
+              </p>
 
-                                    <div class="w-100 option-wrapper" style="max-width:340px">
-                                        <input class="option-radio" type="radio" id="bilderErstellen"
-                                            name="bilderstellung" value="erstellt" required>
-                                        <label class="option-label"
-                                            for="bilderErstellen">Bitte&nbsp;Bilder&nbsp;erstellen/besorgen</label>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <input class="option-radio" type="radio" id="bilderErstellen" name="bilderstellung" value="erstellt" required>
+                <label class="option-label" for="bilderErstellen">Bitte&nbsp;Bilder&nbsp;erstellen/besorgen</label>
 
-                                        <input class="option-radio" type="radio" id="bilderEigen" name="bilderstellung"
-                                            value="eigen" required>
-                                        <label class="option-label"
-                                            for="bilderEigen">Eigene&nbsp;Bilder&nbsp;sind&nbsp;vorhanden</label>
-                                    </div>
+                <input class="option-radio" type="radio" id="bilderEigen" name="bilderstellung" value="eigen" required>
+                <label class="option-label" for="bilderEigen">Eigene&nbsp;Bilder&nbsp;sind&nbsp;vorhanden</label>
+              </div>
 
-                                    <div id="uploadImagesField" class="mt-3" style="display:none">
-                                        <label>Du kannst hier deine Bilder hochladen (mehrfache Auswahl
-                                            möglich):</label><br>
-                                        <input type="file" name="images" id="imagesInput" multiple accept="image/*">
-                                    </div>
-                                </div>
+              <div id="uploadImagesField" class="mt-3" style="display:none">
+                <label>Du kannst hier deine Bilder hochladen (mehrfache Auswahl
+                  möglich):</label><br>
+                <input type="file" name="images" id="imagesInput" multiple accept="image/*">
+              </div>
+            </div>
 
-                                <!-- ========================  Slide 5 – Inhalte/Funktionen  ======================== -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
+            <!-- ========================  Slide 5 – Inhalte/Funktionen  ======================== -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2 style="padding-top: 30px;">5. Gewünschte Inhalte/Funktionen</h2>
-                                    <p>Welche Features soll deine Website enthalten? (Mehrfach­auswahl möglich)
-                                    </p>
+              <h2 style="padding-top: 30px;">5. Gewünschte Inhalte/Funktionen</h2>
+              <p>Welche Features soll deine Website enthalten? (Mehrfach­auswahl möglich)
+              </p>
 
-                                    <div class="w-100 option-wrapper" style="max-width:340px">
-                                        <input class="option-check" type="checkbox" id="featureKontakt" name="inhalte"
-                                            value="Kontaktformular">
-                                        <label class="option-label" for="featureKontakt">Kontaktformular</label>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <input class="option-check" type="checkbox" id="featureKontakt" name="inhalte" value="Kontaktformular">
+                <label class="option-label" for="featureKontakt">Kontaktformular</label>
 
-                                        <input class="option-check" type="checkbox" id="featureTermin" name="inhalte"
-                                            value="Terminbuchung">
-                                        <label class="option-label" for="featureTermin">Online-Terminbuchung</label>
+                <input class="option-check" type="checkbox" id="featureTermin" name="inhalte" value="Terminbuchung">
+                <label class="option-label" for="featureTermin">Online-Terminbuchung</label>
 
-                                        <input class="option-check" type="checkbox" id="featureBlog" name="inhalte"
-                                            value="Blog">
-                                        <label class="option-label" for="featureBlog">Blog</label>
+                <input class="option-check" type="checkbox" id="featureBlog" name="inhalte" value="Blog">
+                <label class="option-label" for="featureBlog">Blog</label>
 
-                                        <input class="option-check" type="checkbox" id="featureShop" name="inhalte"
-                                            value="Onlineshop">
-                                        <label class="option-label" for="featureShop">Onlineshop</label>
+                <input class="option-check" type="checkbox" id="featureShop" name="inhalte" value="Onlineshop">
+                <label class="option-label" for="featureShop">Onlineshop</label>
 
-                                        <input class="option-check" type="checkbox" id="featureMaps" name="inhalte"
-                                            value="Google Maps Einbindung">
-                                        <label class="option-label" for="featureMaps">Google&nbsp;Maps</label>
+                <input class="option-check" type="checkbox" id="featureMaps" name="inhalte" value="Google Maps Einbindung">
+                <label class="option-label" for="featureMaps">Google&nbsp;Maps</label>
 
-                                        <input class="option-check" type="checkbox" id="featureBusiness" name="inhalte"
-                                            value="Google Business Eintrag">
-                                        <label class="option-label" for="featureBusiness">Google Business
-                                            Eintrag</label>
-                                    </div>
+                <input class="option-check" type="checkbox" id="featureBusiness" name="inhalte" value="Google Business Eintrag">
+                <label class="option-label" for="featureBusiness">Google Business
+                  Eintrag</label>
+              </div>
 
-                                    <div class="mt-3" style="max-width:650px;width:100%">
-                                        <label for="weitereWuensche">Weitere Wünsche oder Funktionen:</label>
-                                        <textarea id="weitereWuensche" name="weitereWuensche" class="form-control"
-                                            rows="2"
-                                            placeholder="Weitere Funktionen, spezifische Anforderungen …"></textarea>
-                                    </div>
+              <div class="mt-3" style="max-width:650px;width:100%">
+                <label for="weitereWuensche">Weitere Wünsche oder Funktionen:</label>
+                <textarea id="weitereWuensche" name="weitereWuensche" class="form-control" rows="2" placeholder="Weitere Funktionen, spezifische Anforderungen …"></textarea>
+              </div>
 
-                                    <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
-                                </div>
+              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+            </div>
 
-                                <!-- ========================  Slide 6 – Terminwahl  ======================== -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
+            <!-- ========================  Slide 6 – Terminwahl  ======================== -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
 
-                                    <h2>6. Termin für ein Gespräch wählen</h2>
-                                    <p>Wähle einen freien Termin für ein Beratungsgespräch:</p>
+              <h2>6. Termin für ein Gespräch wählen</h2>
+              <p>Wähle einen freien Termin für ein Beratungsgespräch:</p>
 
-                                    <% if (freieTermine && freieTermine.length> 0) { %>
-                                        <div class="w-100 option-wrapper" style="max-width:340px">
-                                            <% freieTermine.forEach(term=> {
+              <% if (freieTermine && freieTermine.length> 0) { %>
+              <div class="w-100 option-wrapper" style="max-width:340px">
+                <% freieTermine.forEach(term=> {
                                                 const startTime = new Date(term.start_time)
                                                 .toLocaleDateString('de-DE',
                                                 { weekday:'short', day:'2-digit', month:'short',
                                                 hour:'2-digit', minute:'2-digit' });
                                                 %>
-                                                <input type="radio" class="option-radio" id="termin<%= term.id %>"
-                                                    name="slotId" value="<%= term.id %>">
-                                                <label class="option-label" for="termin<%= term.id %>">
-                                                    <%= startTime %>
-                                                </label>
-                                                <% }) %>
-                                            <button type="button" class="btn btn-primary mt-3 next-btn">Anderer Termin</button>
-                                        </div>
-                                        <% } else { %>
-                                            <p><em>Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren
-                                                    dich
-                                                    zur
-                                                    Termin­vereinbarung.</em></p>
-                                            <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
-                                            <% } %>
-                                </div>
-
-                                <!-- ========================  Slide 7 – Kontaktdaten  ======================== -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
-
-                                    <h2 class="pt-5">7. Deine Kontaktdaten</h2>
-                                    <p>Bitte gib deine Kontaktdaten ein, damit wir dich erreichen können:</p>
-
-                                    <div class="mb-3 w-100" style="max-width:460px">
-                                        <label for="nameInput" class="form-label">Name *</label>
-                                        <input type="text" id="nameInput" name="name" class="form-control"
-                                            placeholder="Max Mustermann" required>
-                                    </div>
-                                    <div class="mb-3 w-100" style="max-width:460px">
-                                        <label for="emailInput" class="form-label">E-Mail *</label>
-                                        <input type="email" id="emailInput" name="email" class="form-control"
-                                            placeholder="name@beispiel.de" required>
-                                    </div>
-                                    <div class="mb-3 w-100" style="max-width:460px">
-                                        <label for="telefonInput" class="form-label">Telefonnummer *</label>
-                                        <input type="tel" id="telefonInput" name="telefon" class="form-control"
-                                            placeholder="+49 …" required>
-                                    </div>
-                                    <div class="mb-3 w-100" style="max-width:460px">
-                                        <label for="firmaInput" class="form-label">Firma (optional)</label>
-                                        <input type="text" id="firmaInput" name="firma" class="form-control"
-                                            placeholder="Dein Firmenname">
-                                    </div>
-
-                                    <button type="button" class="btn btn-primary mt-2 next-btn">Weiter</button>
-                                </div>
-
-                                <!-- ========================  Slide 8 – Sonstige Infos  ======================== -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
-
-                                    <h2 style="padding-top: 30px;">8. Weitere Informationen</h2>
-                                    <p>Gibt es sonst noch etwas, das du uns mitteilen möchtest?</p>
-
-                                    <textarea name="sonstigeInfos" class="form-control" rows="3"
-                                        style="max-width:650px;width:100%"
-                                        placeholder="Weitere Anmerkungen, Wünsche oder Infos …"></textarea>
-
-                                    <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
-                                </div>
-
-                                <!-- ========================  Slide 9 – Zusammenfassung & Absenden  ======================== -->
-                                <div class="carousel-item">
-                                    <button type="button" class="back-btn">← Zurück</button>
-
-                                    <h2 class="pt-5">Zusammenfassung deiner Angaben</h2>
-
-                                    <div id="summaryBox" class="table-responsive mb-4">
-                                        <!-- wird durch JS gefüllt -->
-                                    </div>
-
-                                    <p>Wenn alles stimmt, klicke auf <strong>Absenden</strong>.</p>
-                                    <button type="submit" class="btn btn-success btn-lg">Absenden</button>
-                                </div>
-
-                            </div>
-                            <!-- Wir verwenden eigene Navigation (Back/Next Buttons in den Slides), daher keine standard Carousel-Control-Buttons -->
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Erfolgsmeldung anzeigen, falls per Query-Param 'erfolg=1' übergeben -->
-                <% if (typeof query !=='undefined' && query.erfolg=='1' ) { %>
-                    <div class="alert alert-success mt-4">
-                        Vielen Dank für deine Anfrage! Wir haben deine Angaben erhalten und melden uns bald bei
-                        dir.
-                    </div>
-                    <% } %>
+                <input type="radio" class="option-radio" id="termin<%= term.id %>" name="slotId" value="<%= term.id %>">
+                <label class="option-label" for="termin<%= term.id %>">
+                  <%= startTime %>
+                </label>
+                <% }) %>
+                <button type="button" class="btn btn-primary mt-3 next-btn">Anderer Termin</button>
+              </div>
+              <% } else { %>
+              <p><em>Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren
+                  dich
+                  zur
+                  Termin­vereinbarung.</em></p>
+              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+              <% } %>
             </div>
-        </div>
-        <%- include('partials/footer') %>
-            <script>
-                window.SITEKEY = "<%= process.env.RECAPTCHA_SITEKEY %>";
-            </script>
 
-            <script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>"></script>
-            <script src="/js/kontakt.js" defer></script> <!-- Kontakt-spezifisches JS -->
+            <!-- ========================  Slide 7 – Kontaktdaten  ======================== -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
+
+              <h2 class="pt-5">7. Deine Kontaktdaten</h2>
+              <p>Bitte gib deine Kontaktdaten ein, damit wir dich erreichen können:</p>
+
+              <div class="mb-3 w-100" style="max-width:460px">
+                <label for="nameInput" class="form-label">Name *</label>
+                <input type="text" id="nameInput" name="name" class="form-control" placeholder="Max Mustermann" required>
+              </div>
+              <div class="mb-3 w-100" style="max-width:460px">
+                <label for="emailInput" class="form-label">E-Mail *</label>
+                <input type="email" id="emailInput" name="email" class="form-control" placeholder="name@beispiel.de" required>
+              </div>
+              <div class="mb-3 w-100" style="max-width:460px">
+                <label for="telefonInput" class="form-label">Telefonnummer *</label>
+                <input type="tel" id="telefonInput" name="telefon" class="form-control" placeholder="+49 …" required>
+              </div>
+              <div class="mb-3 w-100" style="max-width:460px">
+                <label for="firmaInput" class="form-label">Firma (optional)</label>
+                <input type="text" id="firmaInput" name="firma" class="form-control" placeholder="Dein Firmenname">
+              </div>
+
+              <button type="button" class="btn btn-primary mt-2 next-btn">Weiter</button>
+            </div>
+
+            <!-- ========================  Slide 8 – Sonstige Infos  ======================== -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
+
+              <h2 style="padding-top: 30px;">8. Weitere Informationen</h2>
+              <p>Gibt es sonst noch etwas, das du uns mitteilen möchtest?</p>
+
+              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="Weitere Anmerkungen, Wünsche oder Infos …"></textarea>
+
+              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+            </div>
+
+            <!-- ========================  Slide 9 – Zusammenfassung & Absenden  ======================== -->
+            <div class="carousel-item">
+              <button type="button" class="back-btn">← Zurück</button>
+
+              <h2 class="pt-5">Zusammenfassung deiner Angaben</h2>
+
+              <div id="summaryBox" class="table-responsive mb-4">
+                <!-- wird durch JS gefüllt -->
+              </div>
+
+              <p>Wenn alles stimmt, klicke auf <strong>Absenden</strong>.</p>
+              <button type="submit" class="btn btn-success btn-lg">Absenden</button>
+            </div>
+
+          </div>
+          <!-- Wir verwenden eigene Navigation (Back/Next Buttons in den Slides), daher keine standard Carousel-Control-Buttons -->
+        </div>
+      </div>
+    </form>
+
+    <!-- Erfolgsmeldung anzeigen, falls per Query-Param 'erfolg=1' übergeben -->
+    <% if (typeof query !=='undefined' && query.erfolg=='1' ) { %>
+    <div class="alert alert-success mt-4">
+      Vielen Dank für deine Anfrage! Wir haben deine Angaben erhalten und melden uns bald bei
+      dir.
+    </div>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>
+<script>
+  window.SITEKEY = "<%= process.env.RECAPTCHA_SITEKEY %>";
+</script>
+
+<script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>"></script>
+<script src="/js/kontakt.js" defer></script> <!-- Kontakt-spezifisches JS -->
