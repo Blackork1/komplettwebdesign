@@ -12,8 +12,8 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Webseite in Berlin erstellen lassen – Komplett Webdesign',
-      description: 'Schnelle, SEO-optimierte Websites aus Berlin: Konzept, Design, Programmierung & Hosting – alles aus einer Hand. Jetzt kostenlose Beratung sichern!.',
+      title: 'Website in Berlin erstellen lassen – Komplett Webdesign',
+      description: 'Schnelle, SEO-optimierte Websites aus Berlin: Konzept, Design, Programmierung & Hosting. Blog und Onlineshop ebenfalls möglich.',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
       users,
       packages,

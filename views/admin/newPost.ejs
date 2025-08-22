@@ -1,67 +1,78 @@
-<%- include('../partials/admin_header') %> <!-- optional -->
+<%- include('../partials/admin_header') %>
+<!-- optional -->
 
-  <div class="container my-5">
-    <h1 class="mb-4">Neuen Blog-Artikel anlegen</h1>
+<div class="container my-5">
+  <h1 class="mb-4">Neuen Blog-Artikel anlegen</h1>
 
-    <form action="/admin/blog/new" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+  <form action="/admin/blog/new" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
 
-      <!-- Titel -->
-      <div class="mb-3">
-        <label for="title" class="form-label">Titel *</label>
-        <input type="text" id="title" name="title" class="form-control" required>
-      </div>
+    <!-- Titel -->
+    <div class="mb-3">
+      <label for="title" class="form-label">Titel *</label>
+      <input type="text" id="title" name="title" class="form-control" required>
+    </div>
 
-      <!-- Excerpt -->
-      <div class="mb-3">
-        <label for="excerpt" class="form-label">
-          Kurzbeschreibung (optional)
-        </label>
-        <textarea id="excerpt" name="excerpt" rows="2" class="form-control"></textarea>
-      </div>
+    <!-- Excerpt -->
+    <div class="mb-3">
+      <label for="excerpt" class="form-label">
+        Kurzbeschreibung (optional)
+      </label>
+      <textarea id="excerpt" name="excerpt" rows="2" class="form-control"></textarea>
+    </div>
 
-      <!-- Slug -->
-      <div class="mb-3">
-        <label for="slug" class="form-label">
-          Url-Slug
-        </label>
-        <textarea id="slug" name="slug" rows="2" class="form-control"></textarea>
-      </div>
+    <!-- Slug -->
+    <div class="mb-3">
+      <label for="slug" class="form-label">
+        Url-Slug
+      </label>
+      <textarea id="slug" name="slug" rows="2" class="form-control"></textarea>
+    </div>
 
-      <!-- Kategorie -->
-      <div class="mb-3">
-        <label for="category" class="form-label">Kategorie</label>
-        <input type="text" id="category" name="category" class="form-control" placeholder="z. B. SEO, KI, Design">
-      </div>
+    <!-- Kategorie -->
+    <div class="mb-3">
+      <label for="category" class="form-label">Kategorie</label>
+      <input type="text" id="category" name="category" class="form-control" placeholder="z. B. SEO, KI, Design">
+    </div>
 
-      <!-- Description -->
-      <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <input type="text" id="description" name="description" class="form-control" placeholder="Meta-Beschreibung für SEO">
-      </div>
+    <!-- Description -->
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <input type="text" id="description" name="description" class="form-control" placeholder="Meta-Beschreibung für SEO">
+    </div>
 
-      <!-- Featured -->
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="featured" name="featured">
-        <label class="form-check-label" for="featured">
-          Artikel als „Featured“ markieren
-        </label>
-      </div>
+    <!-- FAQ (JSON) -->
+    <div class="mb-3">
+      <label for="faq_json" class="form-label">FAQ (JSON für FAQPage‑Schema)</label>
+      <textarea id="faq_json" name="faq_json" rows="6" class="form-control" placeholder='[
+  { "@type": "Question", "name": "Frage 1?", "acceptedAnswer": { "@type": "Answer", "text": "Antwort 1..." } }
+]'></textarea>
+      <small class="text-muted">JSON‑Array von Fragen/Antworten. Optional – lass es leer, wenn du keine FAQ willst.</small>
+    </div>
 
-      <!-- Inhalt -->
-      <div class="mb-3">
-        <label for="content" class="form-label">Inhalt (HTML erlaubt) *</label>
-        <textarea id="content" name="content" rows="10" class="form-control" required></textarea>
-      </div>
+    <!-- Featured -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="featured" name="featured">
+      <label class="form-check-label" for="featured">
+        Artikel als „Featured“ markieren
+      </label>
+    </div>
 
-      <!-- Titelbild -->
-      <div class="mb-4">
-        <label class="form-label">Titelbild (jpg/png/webp) *</label>
-        <input type="file" name="hero_image" accept="image/*" class="form-control" required>
-      </div>
+    <!-- Inhalt -->
+    <div class="mb-3">
+      <label for="content" class="form-label">Inhalt (HTML erlaubt) *</label>
+      <textarea id="content" name="content" rows="10" class="form-control" required></textarea>
+    </div>
 
-      <button class="btn btn-primary">Artikel speichern</button>
-      <a href="/blog" class="btn btn-secondary">Abbrechen</a>
-    </form>
-  </div>
+    <!-- Titelbild -->
+    <div class="mb-4">
+      <label class="form-label">Titelbild (jpg/png/webp) *</label>
+      <input type="file" name="hero_image" accept="image/*" class="form-control" required>
+    </div>
 
-  <%- include('../partials/admin_footer') %> <!-- optional -->
+    <button class="btn btn-primary">Artikel speichern</button>
+    <a href="/blog" class="btn btn-secondary">Abbrechen</a>
+  </form>
+</div>
+
+<%- include('../partials/admin_footer') %>
+<!-- optional -->

@@ -1,70 +1,35 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <title><%= title %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="<%= description %>" />
 
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+<head>
+  <meta charset="UTF-8" />
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="<%= description %>" />
 
-    <link
-      rel="preload"
-      href="/assets/css/fa-solid-900.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+  <link rel="preconnect" href="https://js.stripe.com" crossorigin />
 
-    <link
-      rel="preload"
-      href="/assets/css/fontawesome.min.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="/assets/css/fontawesome.min.css" />
-    </noscript>
+  <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
-    <link
-      rel="preload"
-      href="/assets/css/solid.min.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="/assets/css/solid.min.css" />
-    </noscript>
+  <link rel="preload" href="/assets/css/fontawesome.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/fontawesome.min.css" />
+  </noscript>
 
-    <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
-    <link
-      href="/fonts/inter-v19-latin-600.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      href="/fonts/inter-v19-latin-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
-    <link
-      href="/fonts/poppins-v23-latin-700.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      href="/fonts/poppins-v23-latin-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+  <link rel="preload" href="/assets/css/solid.min.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/solid.min.css" />
+  </noscript>
 
-    <!-- Bootstrap 5.3.7 CSS -->
-    <!-- <link
+  <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
+  <link href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
+  <link href="/fonts/poppins-v23-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link href="/fonts/poppins-v23-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- Bootstrap 5.3.7 CSS -->
+  <!-- <link
       rel="preload"
       href="/css/bootstrap.min.css"
       as="style"
@@ -74,11 +39,11 @@
       <link rel="stylesheet" href="/css/bootstrap.min.css" />
     </noscript> -->
 
-    <link rel="preload" href="/css/bootstrap.min.css" as="style" />
-    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <link rel="preload" href="/css/bootstrap.min.css" as="style" />
+  <link rel="stylesheet" href="/css/bootstrap.min.css" />
 
-    <!-- CSS Setup-->
-    <!-- <link
+  <!-- CSS Setup-->
+  <!-- <link
       rel="preload"
       href="/css/main.min.css?v=<%= Date.now() %>"
       as="style"
@@ -88,64 +53,50 @@
       <link rel="stylesheet" href="/css/main.min.css" />
     </noscript> -->
 
-    <link rel="preload" href="/css/main.min.css?v=<%= Date.now() %>" as="style" />
-    <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
+  <link rel="preload" href="/css/main.min.css?v=<%= Date.now() %>" as="style" />
+  <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
 
-    <link
-      rel="preload"
-      href="/extra.css?v=<%= Date.now() %>"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="/extra.css" />
-    </noscript>
+  <link rel="preload" href="/extra.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/extra.css" />
+  </noscript>
 
-    <link
-      rel="preload"
-      href="/booking-widget.css"
-      as="style"
-      onload="this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="/booking-widget.css" />
-    </noscript>
+  <link rel="preload" href="/booking-widget.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="/booking-widget.css" />
+  </noscript>
 
-    <script src="https://js.stripe.com/v3/" defer></script>
+  <script src="https://js.stripe.com/v3/" defer></script>
 
-    <!-- Favicon und App Icons -->
-    <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/icon32.png" />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="192x192"
-      href="/images/icon192.png"
-    />
-    <link rel="apple-touch-icon" sizes="180x180" href="/images/icon180.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+  <!-- Favicon und App Icons -->
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/icon32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/images/icon192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/icon180.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <%if(locals.seoExtra) {%>
+  <%- typeof seoExtra === 'string' ? seoExtra : '' %>
+  <%}%>
 
-    <% if (gaEnabled) { %>
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
+  <% if (gaEnabled) { %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
 
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "<%= process.env.GA_MEASUREMENT_ID %>");
-    </script>
-    <% } %>
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+    gtag("config", "<%= process.env.GA_MEASUREMENT_ID %>");
+  </script>
+  <% } %>
 
-    <!-- Mess-ID für clientseitiges Nachladen -->
-    <script>
-      window.env = {
-        GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
-      };
-    </script>
-  </head>
+  <!-- Mess-ID für clientseitiges Nachladen -->
+  <script>
+    window.env = {
+      GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
+    };
+  </script>
+</head>
+
 </html>

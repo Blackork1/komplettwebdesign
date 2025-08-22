@@ -15,7 +15,8 @@ export default class BlogPostModel {
     category = '',
     featured = false,
     published = true,
-    description = ''                   // optional, falls im Formular
+    description = '',                   // optional, falls im Formular
+    faq_json = []                       // optional, falls im Formular
   }) {
     if (!slug) {
       const slug = slugify(title, { lower: true, strict: true });
@@ -24,18 +25,18 @@ export default class BlogPostModel {
       `INSERT INTO posts
          (title, slug, excerpt, content,
           image_url, hero_public_id,
-          category, featured, published, description,
+          category, featured, published, description, faq_json,
           created_at, updated_at)
        VALUES
          ($1, $2, $3, $4,
           $5, $6,
-          $7, $8, $9, $10,
+          $7, $8, $9, $10, $11,
           NOW(), NOW())
        RETURNING *`,
       [
         title, slug, excerpt, content,
         hero_image, hero_public_id,
-        category, featured, published, description
+        category, featured, published, description, faq_json
       ]
     );
     return rows[0];

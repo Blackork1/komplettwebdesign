@@ -15,7 +15,7 @@ function uploadBufferToCloudinary(buffer, folder = 'blog_images') {
 
 /* ---------- GET /admin/blog/new ---------- */
 export function newPostForm(req, res) {
-  res.render('admin/newPost', {title: "Neuen Blog-Artikel anlegen"});           // dein Formular-Template
+  res.render('admin/newPost', { title: "Neuen Blog-Artikel anlegen" });           // dein Formular-Template
 }
 
 /* ---------- POST /admin/blog/new ---------- */
@@ -23,13 +23,24 @@ export async function createPost(req, res) {
   try {
     const {
       title,
-      excerpt   = '',
-      slug      = '',
+      excerpt = '',
+      slug = '',
       content,
-      category  = '',
+      category = '',
       featured,
       description = ''                   // optional, falls im Formular
     } = req.body;
+
+    let faq_json = req.body.faq_json;
+    if (typeof faq_json === 'string') {
+      faq_json = faq_json.trim();
+      if (faq_json) {
+        try { faq_json = JSON.parse(faq_json); } catch { faq_json = []; }
+      } else {
+        faq_json = [];
+      }
+    }
+    if (!Array.isArray(faq_json)) faq_json = [];
 
     if (!req.file) throw new Error('Bild fehlt');
 
@@ -41,11 +52,12 @@ export async function createPost(req, res) {
       excerpt,
       slug,
       content,
-      hero_image     : secure_url,       // oder image_url – je nach Spalte
-      hero_public_id : public_id,
+      hero_image: secure_url,       // oder image_url – je nach Spalte
+      hero_public_id: public_id,
       category,
       featured: !!featured,
-      description
+      description,
+      faq_json 
     });
 
     res.redirect('/blog');
@@ -59,13 +71,13 @@ export async function createPost(req, res) {
 export async function editPostForm(req, res) {
   const post = await BlogPostModel.findById(req.params.id);
   if (!post) return res.status(404).send('Post nicht gefunden');
-  res.render('admin/editPost', { title: "Bestehenden Blog-Post bearbeiten" ,post });
+  res.render('admin/editPost', { title: "Bestehenden Blog-Post bearbeiten", post });
 }
 
 /* ---------- POST /admin/blog/:id/edit ---------- */
 export async function updatePost(req, res) {
   try {
-    const id      = req.params.id;
+    const id = req.params.id;
     const current = await BlogPostModel.findById(id);
     if (!current) return res.status(404).send('Post nicht gefunden');
 
@@ -75,20 +87,20 @@ export async function updatePost(req, res) {
     if (req.file) {
       // altes Bild löschen (wenn public_id gespeichert)
       if (current.hero_public_id) {
-        try { await cloudinary.uploader.destroy(current.hero_public_id); } catch {}
+        try { await cloudinary.uploader.destroy(current.hero_public_id); } catch { }
       }
       const up = await uploadBufferToCloudinary(req.file.buffer);
-      hero_image     = up.secure_url;
+      hero_image = up.secure_url;
       hero_public_id = up.public_id;
     }
 
     await BlogPostModel.update(id, {
-      title     : req.body.title,
-      excerpt   : req.body.excerpt,
-      content   : req.body.content,
-      category  : req.body.category,
-      featured  : req.body.featured !== undefined ? !!req.body.featured : undefined,
-      image_url : hero_image,         // oder hero_image – je nach Spalte
+      title: req.body.title,
+      excerpt: req.body.excerpt,
+      content: req.body.content,
+      category: req.body.category,
+      featured: req.body.featured !== undefined ? !!req.body.featured : undefined,
+      image_url: hero_image,         // oder hero_image – je nach Spalte
       hero_public_id
     });
 
@@ -107,7 +119,7 @@ export async function deletePost(req, res) {
 
     // Bild in Cloudinary entfernen
     if (deleted.hero_public_id) {
-      try { await cloudinary.uploader.destroy(deleted.hero_public_id); } catch {}
+      try { await cloudinary.uploader.destroy(deleted.hero_public_id); } catch { }
     }
 
     res.redirect('/blog');
