@@ -94,13 +94,13 @@
       <source media="(min-width: 769px)" srcset="/images/heroBg.webp" type="image/webp">
 
       <!-- Mobile bis 800px -->
-      <source media="(max-width: 768px)" srcset="/images/heroBGG.webp" type="image/webp">
+      <source media="(max-width: 768px)" srcset="/images/heroBGG.webp" type="image/webp" fetchpriority="low" loading="lazy" decoding="async">
 
       <!-- Fallback + Attribute -->
       <img src="/images/heroBGG.webp" alt="Hero Bild: Begrüßungsbild von mir" fetchpriority="high" loading="eager" decoding="async" style="width:100%;height:100%;">
     </picture>
 
-    <section class="hero hero-main" id="hero" fetchpriority=high>
+    <section class="hero hero-main" id="hero">
       <div class="hero-section">
         <div class="container">
           <div class="hero-flex">
