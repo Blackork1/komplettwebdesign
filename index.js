@@ -201,7 +201,7 @@ app.use(chatRoutes);
 app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
-app.use(districtRoutes);
+app.use("/webdesign-berlin", districtRoutes);
 app.use(adminLogs);
 
 
