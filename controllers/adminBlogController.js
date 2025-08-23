@@ -28,19 +28,25 @@ export async function createPost(req, res) {
       content,
       category = '',
       featured,
-      description = ''                   // optional, falls im Formular
+      description = '',                   // optional, falls im Formular
+      faq_json : faqRaw = ''                       // optional, falls im Formular
     } = req.body;
 
-    let faq_json = req.body.faq_json;
-    if (typeof faq_json === 'string') {
-      faq_json = faq_json.trim();
-      if (faq_json) {
-        try { faq_json = JSON.parse(faq_json); } catch { faq_json = []; }
-      } else {
+    let faq_json = [];
+    if (typeof faqRaw === 'string' && faqRaw.trim()) {
+      try {
+        // Typografische Anführungszeichen notfalls ersetzen:
+        const normalized = faqRaw
+          .replace(/[“”]/g, '"')
+          .replace(/[‘’]/g, "'");
+        faq_json = JSON.parse(normalized);
+        if (!Array.isArray(faq_json)) faq_json = [];
+      } catch (e) {
+        // Hier kannst du auch 400 zurückgeben – ich fallbacke auf [] und logge
+        console.warn('FAQ JSON parse warn:', e.message);
         faq_json = [];
       }
     }
-    if (!Array.isArray(faq_json)) faq_json = [];
 
     if (!req.file) throw new Error('Bild fehlt');
 

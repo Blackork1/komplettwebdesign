@@ -12,24 +12,40 @@
           <div class="links heroLinks" id="nav-links">
             <a href="/">Home</a>
             <a href="/kontakt">Kontakt</a>
-            <a href="/about">Über mich</a>
-            <a href="/blog">Blog</a>
             <a href="/pakete">Preise</a>
-            <a href="/faq">FAQ</a>
+            <nav class="main-nav">
+              <ul>
+                <li class="dropdown">
+                  <a href="#">Bezirke ▾</a>
+                  <ul class="dropdown-menu">
+                    <li><a href="/kreuzberg" class="main-color">Kreuzberg</a></li>
+                    <li><a href="/friedrichshain" class="main-color">Friedrichshain</a></li>
+                    <li><a href="/charlottenburg" class="main-color">Charlottenburg</a></li>
+                    <li><a href="/Lichtenberg" class="main-color">Lichtenberg</a></li>
+                    <li><a href="/mitte" class="main-color">Mitte</a></li>
+                    <li><a href="/prenzlauer-berg" class="main-color">Prenzlauer-Berg</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </nav>
             <nav class="main-nav">
               <ul>
                 <li class="dropdown">
                   <a href="#">Branchen ▾</a>
                   <ul class="dropdown-menu">
                     <% navPages.forEach(page=> { %>
-                      <li><a href="/<%= page.slug %>" class="main-color">
-                          <%= page.nav %>
-                        </a></li>
-                      <% }) %>
+                    <li><a href="/<%= page.slug %>" class="main-color">
+                        <%= page.nav %>
+                      </a></li>
+                    <% }) %>
                   </ul>
                 </li>
               </ul>
             </nav>
+            <a href="/blog">Blog</a>
+            <a href="/about">Über mich</a>
+            <a href="/faq">FAQ</a>
+
             <a href="/kontakt" class="btn btn-tertiary">Termin buchen</a>
             <!-- <a href="/reservation" class="reserve-button">Reservierung</a> -->
           </div>

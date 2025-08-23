@@ -36,7 +36,7 @@ export default class BlogPostModel {
       [
         title, slug, excerpt, content,
         hero_image, hero_public_id,
-        category, featured, published, description, faq_json
+        category, featured, published, description, JSON.stringify(faq_json) 
       ]
     );
     return rows[0];
