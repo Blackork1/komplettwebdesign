@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="<%= description %>" />
 
-  <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+  <!-- <link rel="preconnect" href="https://js.stripe.com" crossorigin /> -->
 
   <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
@@ -66,7 +66,16 @@
     <link rel="stylesheet" href="/booking-widget.css" />
   </noscript>
 
-  <script src="https://js.stripe.com/v3/" defer></script>
+  <!-- <script src="https://js.stripe.com/v3/" defer></script> -->
+
+  <script>
+    window.addEventListener("load", function() {
+      var script = document.createElement("script");
+      script.src = "https://js.stripe.com/v3/";
+      script.async = true;
+      document.body.appendChild(script);
+    });
+  </script>
 
   <!-- Favicon und App Icons -->
   <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
