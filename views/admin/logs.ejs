@@ -1,79 +1,240 @@
-<%- include('../partials/admin_header') %>
-<!-- optional -->
-
-<style>
-  body {
-    font-family: system-ui, sans-serif;
-    padding: 20px;
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  th,
-  td {
-    border: 1px solid #ddd;
-    padding: 6px;
-    font-size: 14px;
-  }
-
-  th {
-    background: #f4f4f4;
-    position: sticky;
-    top: 0;
-  }
-
-  tr:nth-child(even) {
-    background: #fafafa;
-  }
-
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
-</style>
-
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Access Logs</title>
+  <style>
+    body{font-family:system-ui, sans-serif;padding:20px;}
+    .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:10px 0}
+    .pill{display:inline-block;background:#eef;border:1px solid #ccd;padding:2px 8px;border-radius:999px;font-size:12px}
+    .muted{color:#888}
+    .filters{display:none;margin:12px 0;padding:12px;border:1px solid #e3e3e3;border-radius:8px;background:#fafafa}
+    .filters.open{display:block}
+    .grid{display:grid;grid-template-columns:repeat(6, minmax(140px,1fr));gap:10px}
+    label.small{font-size:12px;color:#444;display:block;margin-bottom:3px}
+    select[multiple]{min-height:112px}
+    table{border-collapse:collapse;width:100%;}
+    th,td{border:1px solid #ddd;padding:6px;font-size:13px;vertical-align:top}
+    th{background:#f4f4f4;position:sticky;top:0;z-index:1}
+    tr:nth-child(even){background:#fafafa;}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;}
+    .pagination{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin:10px 0}
+    .pagination a{padding:4px 8px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#333}
+    .pagination .active{background:#333;color:#fff;border-color:#333}
+    .col-toggle{display:flex;flex-wrap:wrap;gap:8px}
+    .col-toggle label{font-size:12px;border:1px solid #ddd;padding:4px 8px;border-radius:999px;background:#fff;cursor:pointer}
+    .th-sort a{text-decoration:none;color:inherit}
+  </style>
+</head>
 <body>
-  <h1>Access Logs (letzte 200)</h1>
+  <h1>Access Logs</h1>
+
+  <div class="toolbar">
+    <div>
+      <span class="pill"><strong><%= total %></strong> Treffer</span>
+      <span class="pill">Seite <%= page %> / <%= pages %></span>
+    </div>
+    <div>
+      <button id="toggleFilters">Filter ein/aus</button>
+      <a href="/admin/logs.csv?<%= new URLSearchParams(q).toString() %>">CSV exportieren</a>
+      <a class="muted" href="/admin/logs">Zurücksetzen</a>
+    </div>
+  </div>
+
+  <form id="filterForm" class="filters <%= (q.open==='1') ? 'open' : '' %>" method="get">
+    <input type="hidden" name="open" value="<%= q.open || '1' %>">
+    <div class="grid">
+      <div>
+        <label class="small" for="from">Von</label>
+        <input type="date" id="from" name="from" value="<%= q.from || '' %>">
+      </div>
+      <div>
+        <label class="small" for="to">Bis</label>
+        <input type="date" id="to" name="to" value="<%= q.to || '' %>">
+      </div>
+      <div>
+        <label class="small" for="country">Land(e)</label>
+        <select id="country" name="country" multiple>
+          <% facets.countries.forEach(c => { %>
+            <option value="<%= c %>" <%= (Array.isArray(q.country)?q.country:[q.country]).includes(c) ? 'selected' : '' %>><%= c %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="small" for="status">Status</label>
+        <select id="status" name="status" multiple>
+          <% facets.statuses.forEach(s => { %>
+            <option value="<%= s %>" <%= (Array.isArray(q.status)?q.status:[q.status]).includes(String(s)) ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="small" for="method">Methode</label>
+        <select id="method" name="method" multiple>
+          <% facets.methods.forEach(m => { %>
+            <option value="<%= m %>" <%= (Array.isArray(q.method)?q.method:[q.method]).includes(m) ? 'selected' : '' %>><%= m %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="small">IP (Consent)</label>
+        <select name="ip_presence">
+          <option value="any"     <%= (q.ip_presence||'any')==='any' ? 'selected' : '' %>>alle</option>
+          <option value="with"    <%= q.ip_presence==='with' ? 'selected' : '' %>>mit ip_raw</option>
+          <option value="without" <%= q.ip_presence==='without' ? 'selected' : '' %>>ohne ip_raw</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="small">IP-Typ</label>
+        <select name="ip_type">
+          <option value="any"     <%= (q.ip_type||'any')==='any' ? 'selected' : '' %>>alle</option>
+          <option value="public"  <%= q.ip_type==='public' ? 'selected' : '' %>>öffentlich</option>
+          <option value="private" <%= q.ip_type==='private' ? 'selected' : '' %>>privat/localhost</option>
+        </select>
+        <label class="small"><input type="checkbox" name="only_loopback" value="1" <%= q.only_loopback==='1'?'checked':'' %> /> nur localhost</label>
+      </div>
+
+      <div>
+        <label class="small" for="path">Pfad enthält</label>
+        <input type="text" id="path" name="path" placeholder="/kontakt" value="<%= q.path || '' %>">
+      </div>
+      <div>
+        <label class="small" for="host">Host enthält</label>
+        <input type="text" id="host" name="host" placeholder="komplettwebdesign.de" value="<%= q.host || '' %>">
+      </div>
+      <div>
+        <label class="small" for="city">City enthält</label>
+        <input type="text" id="city" name="city" value="<%= q.city || '' %>">
+      </div>
+      <div>
+        <label class="small" for="region">Region enthält</label>
+        <input type="text" id="region" name="region" value="<%= q.region || '' %>">
+      </div>
+      <div>
+        <label class="small" for="ua_name">UA enthält</label>
+        <input type="text" id="ua_name" name="ua_name" value="<%= q.ua_name || '' %>">
+      </div>
+      <div>
+        <label class="small" for="os_name">OS enthält</label>
+        <input type="text" id="os_name" name="os_name" value="<%= q.os_name || '' %>">
+      </div>
+      <div>
+        <label class="small" for="device_type">Device enthält</label>
+        <input type="text" id="device_type" name="device_type" value="<%= q.device_type || '' %>">
+      </div>
+      <div>
+        <label class="small" for="referrer">Referrer enthält</label>
+        <input type="text" id="referrer" name="referrer" value="<%= q.referrer || '' %>">
+      </div>
+
+      <div>
+        <label class="small">Sortierung</label>
+        <select name="sort_by">
+          <% [['ts','Zeit'],['status','Status'],['rt_ms','Dauer'],['bytes_sent','Bytes']].forEach(([v,l]) => { %>
+            <option value="<%= v %>" <%= (q.sort_by||'ts')===v ? 'selected' : '' %>><%= l %></option>
+          <% }) %>
+        </select>
+        <select name="sort_dir">
+          <option value="desc" <%= (q.sort_dir||'desc')==='desc' ? 'selected' : '' %>>↓</option>
+          <option value="asc"  <%= q.sort_dir==='asc' ? 'selected' : '' %>>↑</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="small">pro Seite</label>
+        <select name="size">
+          <% [25,50,100,200].forEach(s => { %>
+            <option value="<%= s %>" <%= String(q.size||'50')===String(s) ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <!-- Spaltenauswahl -->
+      <div style="grid-column:1/-1">
+        <label class="small">Spalten (an/aus)</label>
+        <div class="col-toggle">
+          <% allCols.forEach(([key,label]) => { %>
+            <label>
+              <input type="checkbox" name="col" value="<%= key %>" <%= cols.includes(key) ? 'checked' : '' %> >
+              <%= label %>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+
+      <div style="grid-column:1/-1">
+        <button type="submit">Filtern</button>
+        <a href="/admin/logs" class="muted">Zurücksetzen</a>
+      </div>
+    </div>
+  </form>
+
   <table>
     <thead>
       <tr>
-        <th>ts</th>
-        <th>ip</th>
-        <th>ip_raw</th>
-        <th>Land</th>
-        <th>m</th>
-        <th>path</th>
-        <th>st</th>
-        <th>rt(ms)</th>
-        <th>UA</th>
-        <th>OS</th>
-        <th>Dev</th>
-        <th>Ref</th>
+        <% 
+          // Helper: build link to toggle sort
+          function sortHref(colKey) {
+            const qs = new URLSearchParams(q);
+            const newDir = (q.sort_by===colKey && q.sort_dir!=='asc') ? 'asc' : 'desc';
+            qs.set('sort_by', colKey);
+            qs.set('sort_dir', newDir);
+            return '/admin/logs?' + qs.toString();
+          }
+          const labels = Object.fromEntries(allCols);
+        %>
+        <% cols.forEach(key => { %>
+          <th class="th-sort"><a href="<%= sortHref(key==='ts_berlin'?'ts':key) %>"><%= labels[key] %></a></th>
+        <% }) %>
       </tr>
     </thead>
     <tbody>
       <% rows.forEach(r => { %>
-      <tr>
-        <td><%= r.ts_berlin %> <small>(Berlin)</small></td>
-        <td><%= r.ip || '' %></td>
-        <td><%= r.ip_raw || '' %></td>
-        <td><%= r.cf_country || '' %></td>
-        <td><%= r.method %></td>
-        <td><code><%= r.path %></code></td>
-        <td><%= r.status %></td>
-        <td><%= r.rt_ms || '' %></td>
-        <td><%= r.ua_name || '' %></td>
-        <td><%= r.os_name || '' %></td>
-        <td><%= r.device_type || '' %></td>
-        <td><%= r.referrer || '' %></td>
-      </tr>
+        <tr>
+          <% cols.forEach(key => { %>
+            <% if (key === 'ts_berlin') { %>
+              <td title="<%= r.ts.toISOString() %> UTC"><%= r.ts_berlin %></td>
+            <% } else if (key === 'path') { %>
+              <td><code><%= r.path %></code></td>
+            <% } else if (key === 'ip_txt') { %>
+              <td><%= r.ip_txt || '' %> <%= r.is_private ? '<span class="muted">(priv)</span>' : '' %></td>
+            <% } else { %>
+              <td><%= r[key] || '' %></td>
+            <% } %>
+          <% }) %>
+        </tr>
       <% }) %>
     </tbody>
   </table>
-</body>
-<%- include('../partials/admin_footer') %>
-<!-- optional -->
 
+  <div class="pagination">
+    <% const baseQs = new URLSearchParams(q); %>
+    <% for (let p = 1; p <= pages; p++) { baseQs.set('page', p); %>
+      <a href="/admin/logs?<%= baseQs.toString() %>" class="<%= p===page ? 'active' : '' %>"><%= p %></a>
+    <% } %>
+  </div>
+
+  <script>
+    // Filterzeile toggle + Zustand in localStorage
+    const form = document.getElementById('filterForm');
+    const btn  = document.getElementById('toggleFilters');
+    const key  = 'logs.filters.open';
+    function applyState() {
+      const open = (localStorage.getItem(key) ?? '1') === '1';
+      form.classList.toggle('open', open);
+      const qs = new URLSearchParams(window.location.search);
+      if (open) qs.set('open','1'); else qs.delete('open');
+      // URL nicht neu laden – nur State merken
+    }
+    btn.addEventListener('click', () => {
+      const open = form.classList.toggle('open');
+      localStorage.setItem(key, open ? '1' : '0');
+    });
+    applyState();
+
+    // Multi-select UX: Strg/Cmd/Shift für Mehrfachauswahl – optional Buttons?
+    // (Kompakt gehalten; bei Bedarf baue ich dir "Alle/Keiner"-Buttons).
+  </script>
+</body>
 </html>

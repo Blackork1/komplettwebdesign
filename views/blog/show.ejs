@@ -19,6 +19,14 @@
         <img src="<%= post.image_url %>" alt="" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
       </figure>
 
+      <nav class="container pt-3" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Startseite</a></li>
+          <li class="breadcrumb-item"><a href="/blog">Blog</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
+        </ol>
+      </nav>
+
       <!-- Inhalt (HTML) -->
       <div class="post-content">
         <%- renderedContent %>

@@ -23,7 +23,7 @@ const upload = multer({ dest: "uploads/" });
 
 /* ---------- GET /kontakt --------------------------------------------- */
 export async function showForm(req, res) {
-    const freieTermine = await Apt.getOpenSlots();
+    const freieTermine = await Apt.getOpenSlotPerDay(3);
     res.render("kontakt", {
         title: "Beratungsgespräch vereinbaren",
         description: "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
