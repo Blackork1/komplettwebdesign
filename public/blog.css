@@ -1,13 +1,13 @@
 /* Hero Section Styles */
-.hero {
+.heroB {
   position: relative;
   background: url("/images/blogW.webp") center center no-repeat;
   background-size: cover;
   color: #fff;
   padding: 4rem 2rem;
-  min-height: 80vh;
+  min-height: 100vh;
 }
-.hero::before {
+.heroB::before {
   content: "";
   position: absolute;
   top: 0;
@@ -143,6 +143,15 @@
 
 /* Mobile: horizontal scrollen, kein Wrap */
 @media (max-width: 767.98px) {
+  .heroB {
+    position: relative;
+    background: url("/images/blogH.webp") center center no-repeat;
+    background-size: cover;
+    color: #fff;
+    padding: 4rem 2rem;
+    min-height: 80vh;
+  }
+
   .post-list {
     flex-wrap: nowrap; /* eine Zeile */
     overflow-x: auto;

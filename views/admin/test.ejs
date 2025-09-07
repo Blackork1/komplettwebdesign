@@ -1,0 +1,368 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<style>
+  /* ===== Basis (gemeinsam für 2D & 3D) ===== */
+  .kwd-carousel {
+    --card-w: 300px;
+    --card-h: 200px;
+    --radius: 25px;
+    --gap: 50px;
+    --far-gap: 30px;
+    /* Abstand zwischen Karten */
+    --shadow: 0 5px 35px rgba(0, 0, 0, .75);
+    --rot-near: 10deg;
+    /* links/rechts */
+    --rot-far: 20deg;
+    /* äußerste */
+    --offset-near-y: 35px;
+    /* NEU: vertikal (außen) */
+    --offset-far-y: 130px;
+    /* NEU: vertikal (äußerst) */
+  }
+
+  .kwd-carousel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+  }
+
+  .kwd-carousel-stage {
+    position: relative;
+    width: 100%;
+    max-width: calc(5 * var(--card-w) + 4 * var(--gap));
+    /* NEU: Höhe vergrößert, damit die 100px-Offsets Platz haben */
+    height: calc(var(--card-h) + var(--offset-far-y) + 20px);
+  }
+
+  .kwd-card {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: var(--card-w);
+    height: var(--card-h);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    background: #e9ecef center/cover no-repeat;
+    color: #111;
+    display: block;
+    align-items: flex-end;
+    justify-content: flex-start;
+
+    transition: transform 600ms cubic-bezier(.22, .61, .36, 1),
+      opacity 600ms, filter 600ms, z-index 0s linear 200ms;
+    will-change: transform;
+  }
+
+  .kwd-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+    /* über dem Bild, unter dem Titel */
+    background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0.5) 35%,
+        rgba(244, 164, 141, 0.5) 100%);
+  }
+
+  .kwd-card-img {
+    position: absolute;
+    inset: 0;
+    /* top:0; right:0; bottom:0; left:0 */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* ersetzt background-size: cover */
+    object-position: center;
+    /* wie background-position: center */
+    border-radius: inherit;
+    display: block;
+    backface-visibility: hidden;
+    /* vermeidet 3D-Flimmern */
+    transform: translateZ(0);
+    /* kleines Rendering-Upgrade */
+    z-index: 0;
+  }
+
+  .kwd-card-title {
+    font: 700 18px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    padding: 14px 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    /* gewünschter Abstand */
+    transform: translateX(-50%);
+    /* horizontal zentrieren */
+    text-align: center;
+    padding: 0 16px;
+    /* seitlich Luft für Umbrüche */
+    width: calc(100% - 32px);
+    /* nie über den Rand hinaus */
+    line-height: 1.25;
+    pointer-events: none;
+    /* klicks gehen an die Karte */
+    z-index: 2;
+  }
+
+  /* ===== 2D-Variante (Standard: Z-Rotation + Y-Offset) ===== */
+  .kwd-2d .kwd-card.pos--center {
+    transform: translateX(-50%) translateY(0) rotate(0) scale(1);
+    z-index: 5;
+    opacity: 1;
+  }
+
+  .kwd-2d .kwd-card.pos--left {
+    transform: translateX(calc(-50% - (var(--card-w) + var(--gap)))) translateY(var(--offset-near-y)) rotate(calc(-1 * var(--rot-near))) scale(.96);
+    z-index: 4;
+    opacity: .92;
+  }
+
+  .kwd-2d .kwd-card.pos--right {
+    transform: translateX(calc(-50% + (var(--card-w) + var(--gap)))) translateY(var(--offset-near-y)) rotate(var(--rot-near)) scale(.96);
+    z-index: 4;
+    opacity: .92;
+  }
+
+  .kwd-2d .kwd-card.pos--far-left {
+    transform: translateX(calc(-50% - 2 * (var(--card-w) + var(--far-gap)))) translateY(var(--offset-far-y)) rotate(calc(-1 * var(--rot-far))) scale(.90);
+    z-index: 3;
+    opacity: .78;
+    filter: saturate(.95);
+  }
+
+  .kwd-2d .kwd-card.pos--far-right {
+    transform: translateX(calc(-50% + 2 * (var(--card-w) + var(--far-gap)))) translateY(var(--offset-far-y)) rotate(var(--rot-far)) scale(.90);
+    z-index: 3;
+    opacity: .78;
+    filter: saturate(.95);
+  }
+
+  /* ===== 3D-Variante (rotateY + Perspective + gleicher Y-Offset) ===== */
+  .kwd-3d .kwd-carousel-stage {
+    perspective: 1100px;
+  }
+
+  .kwd-3d .kwd-card {
+    transform-origin: center center;
+  }
+
+  .kwd-3d .kwd-card.pos--center {
+    transform: translateX(-50%) translateY(0) rotateY(0) scale(1);
+    z-index: 6;
+    opacity: 1;
+  }
+
+  .kwd-3d .kwd-card.pos--left {
+    transform: translateX(calc(-50% - (var(--card-w) + var(--gap)))) translateY(var(--offset-near-y)) rotateY(calc(-1 * var(--rot-near))) scale(.96);
+    z-index: 4;
+    opacity: .92;
+  }
+
+  .kwd-3d .kwd-card.pos--right {
+    transform: translateX(calc(-50% + (var(--card-w) + var(--gap)))) translateY(var(--offset-near-y)) rotateY(var(--rot-near)) scale(.96);
+    z-index: 4;
+    opacity: .92;
+  }
+
+  .kwd-3d .kwd-card.pos--far-left {
+    transform: translateX(calc(-50% - 2 * (var(--card-w) + var(--gap)))) translateY(var(--offset-far-y)) rotateY(calc(-1 * var(--rot-far))) scale(.90);
+    z-index: 3;
+    opacity: .78;
+    filter: saturate(.95);
+  }
+
+  .kwd-3d .kwd-card.pos--far-right {
+    transform: translateX(calc(-50% + 2 * (var(--card-w) + var(--gap)))) translateY(var(--offset-far-y)) rotateY(var(--rot-far)) scale(.90);
+    z-index: 3;
+    opacity: .78;
+    filter: saturate(.95);
+  }
+
+  /* ===== Controls & Dots (wie gehabt) ===== */
+  .kwd-controls {
+    margin-top: -50px;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+
+  .kwd-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 0;
+    background: #172633;
+    color: #fff;
+    box-shadow: var(--shadow);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease;
+  }
+
+  .kwd-btn:active {
+    transform: scale(.98);
+  }
+
+  .kwd-btn:hover {
+    filter: brightness(1.06);
+  }
+
+  .kwd-dots {
+    margin-top: 25px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kwd-dots .dot {
+    width: 10px;
+    height: 10px;
+    border: 0;
+    border-radius: 50%;
+    background: #c9ccd1;
+    cursor: pointer;
+  }
+
+  .kwd-dots .dot.active {
+    background: #172633;
+  }
+
+  /* Bühne darf horizontal „mitziehen“, ohne das Page-Scroll zu blockieren */
+  .kwd-carousel-stage {
+    touch-action: pan-y;
+    /* vertikales Scrollen erlaubt, horizontal übernehmen wir */
+    will-change: transform;
+    transform: translateX(var(--dragX, 0px));
+    transition: transform 220ms cubic-bezier(.22, .61, .36, 1);
+  }
+
+  /* Während des Draggens keine Ease-Animation */
+  .kwd-carousel-stage.dragging {
+    transition: none;
+  }
+
+  /* (Optional) Während Drag keine Text-Selektion */
+  .kwd-carousel.dragging {
+    user-select: none;
+  }
+
+  /* Optional etwas responsive */
+  @media (max-width: 720px) {
+    .kwd-carousel {
+      --card-w: 240px;
+      --card-h: 160px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .kwd-carousel {
+      --card-w: 200px;
+      --card-h: 130px;
+      --gap: 20px;
+      --far-gap: 20px;
+    }
+
+    .kwd-btn {
+      width: 70px;
+      height: 70px;
+    }
+
+    .kwd-controls {
+      margin-top: -100px;
+      z-index: 10;
+    }
+
+    .kwd-dots {
+      margin-top: 10px;
+    }
+  }
+</style>
+
+<!-- kwd-3d für 3D effect -->
+<div class="kwd-carousel kwd-2d" id="kwdSlider" aria-roledescription="carousel">
+  <div class="kwd-carousel-stage">
+    <div class="kwd-card pos--far-left" data-index="0">
+      <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756663532/admin_gallery/wq3w9si3c4fsdsrfk2sd.webp" alt="Unabhängigkeit von Plattformen" width="300" height="200" loading="lazy" decoding="async">
+      <div class="kwd-card-title">Unabhängigkeit von Plattformen</div>
+    </div>
+
+    <div class="kwd-card pos--left" data-index="1">
+      <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656653/admin_gallery/pk1jxlqxryda1vritrdt.webp" alt="Events & Aktionen" width="300" height="200" loading="lazy" decoding="async">
+      <div class="kwd-card-title">Events & Aktionen</div>
+    </div>
+
+    <div class="kwd-card pos--center" data-index="2">
+      <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655341/admin_gallery/b6vmm0jzk0cvyshdv3sz.webp" alt="Sichtbarkeit bei Google" width="300" height="200" loading="eager" fetchpriority="high" decoding="async">
+      <div class="kwd-card-title">Sichtbarkeit bei Google</div>
+    </div>
+
+    <div class="kwd-card pos--right" data-index="3">
+      <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656476/admin_gallery/aoz2w22qt1jgvrcrhf0s.webp" alt="Authentische Präsentation" width="300" height="200" loading="lazy" decoding="async">
+      <div class="kwd-card-title">Authentische Präsentation</div>
+    </div>
+
+    <div class="kwd-card pos--far-right" data-index="4">
+      <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756650496/admin_gallery/sbjnycvmfh90bx9r6nsm.webp" alt="Online-Speisekarte" width="300" height="200" loading="lazy" decoding="async">
+      <div class="kwd-card-title">Online-Speisekarte</div>
+    </div>
+  </div>
+
+  <!-- Pfeil-Buttons: Abstand 55px zur Mitte, 70x70, 30px Gap -->
+  <div class="kwd-controls">
+    <button class="kwd-btn prev" aria-label="Zurück">
+      <!-- simpler Pfeil -->
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+    <button class="kwd-btn next" aria-label="Weiter">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Punkte: 45px unter den Kreisen, 5 Punkte à 10x10, 10px Abstand -->
+  <div class="kwd-dots" role="tablist" aria-label="Slider-Punkte">
+    <button class="dot" aria-label="Slide 1"></button>
+    <button class="dot" aria-label="Slide 2"></button>
+    <button class="dot" aria-label="Slide 3"></button>
+    <button class="dot" aria-label="Slide 4"></button>
+    <button class="dot" aria-label="Slide 5"></button>
+  </div>
+</div>
+
+<!-- Dynamisch -->
+<!--  const POS = ['pos--far-left','pos--left','pos--center','pos--right','pos--far-right']; %> -->
+<!-- slides.forEach((s,i)=>{ const eager = i===2; %> -->
+<!-- <div class="kwd-card  POS[i] %>" data-index=" i %>"> -->
+<!-- <picture> -->
+<!-- falls du Cloudinary nutzt: AVIF/WebP mit Auto-Format/Quality -->
+<!-- <source srcset=" s.img %>?f=auto&q=auto&fmt=avif&w=600" type="image/avif"> -->
+<!-- <source srcset=" s.img %>?f=auto&q=auto&fmt=webp&w=600" type="image/webp"> -->
+<!-- <img class="kwd-card-img"
+           src=" s.img %>" alt=" s.alt %>"
+           width="300" height="200"
+           loading="eager ? 'eager':'lazy' %>"
+           fetchpriority=" eager ? 'high':'low' %>"
+           decoding="async">
+    </picture>
+    <div class="kwd-card-title"> s.title %></div>
+  </div> -->
+<!-- }) %> -->
+
+
+
+<script src="/js/carousel.js" defer></script>
+
+<%- include('../partials/footer') %>

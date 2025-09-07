@@ -26,4 +26,6 @@ router.get('/admin/bookings',              isAdmin, admin.listBookings);
 router.post('/admin/bookings/:id/confirm', isAdmin, admin.confirmBooking);
 router.post('/admin/bookings/:id/cancel',  isAdmin, admin.cancelBooking);
 
+router.get('/admin/test',                   isAdmin, admin.getTest);
+
 export default router;

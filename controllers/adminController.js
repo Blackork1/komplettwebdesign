@@ -150,3 +150,11 @@ export async function cancelBooking(req, res) {
 
   res.redirect('/admin/bookings');
 }
+
+export async function getTest(req, res) {
+  res.render('admin/test', {
+    title: 'Testseite',
+    description: 'Dies ist eine Testseite'
+  });
+}
+
