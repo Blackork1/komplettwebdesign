@@ -12,8 +12,8 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Website in Berlin erstellen lassen – Landingpage, Blog, Shop',
-      description: 'Schnelle, SEO-optimierte Websites in Berlin erstellen lassen: Konzept bis Hosting. Mit eigenen Blog und Onlineshop deinen Umsatz steigern. Kostenlose Beratung!',
+      title: 'Website in Berlin erstellen lassen – Blog bis Shop',
+      description: 'Schnelle, SEO-optimierte Website in Berlin erstellen lassen: Konzept bis Hosting. Mit eigenen Blog und Onlineshop deinen Umsatz steigern.',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
       users,
       packages,
