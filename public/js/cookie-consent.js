@@ -2,17 +2,24 @@
 document.addEventListener('DOMContentLoaded', () => {
   const banner = document.getElementById('cookie-banner');
 
-  // ---------- Helpers: Banner ----------
-  const showBanner = () => { if (banner) banner.classList.remove('hidden'); };
-  const hideBanner = () => { if (banner) banner.classList.add('hidden'); };
+  // ---------- Helpers: Banner (robust: Klasse + display) ----------
+  const showBanner = () => {
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    banner.style.display = 'block';
+  };
+  const hideBanner = () => {
+    if (!banner) return;
+    banner.classList.add('hidden');
+    banner.style.display = 'none';
+  };
 
-  // ---------- Helpers: Cookie löschen (eigene Domain) ----------
+  // ---------- Helpers: Cookies löschen (eigene Domain) ----------
   function deleteCookie(name, path = '/') {
     const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
-    const host = location.hostname;
-    const bare = host.replace(/^www\./, '');
+    const host = location.hostname;           // z. B. www.komplettwebdesign.de
+    const bare = host.replace(/^www\./, '');  // komplettwebdesign.de
 
-    // verschiedene Domain-Varianten, damit es wirklich weg ist
     [
       `${name}=; expires=${expires}; path=${path}`,
       `${name}=; expires=${expires}; path=${path}; domain=${host}`,
@@ -32,28 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Kandidaten (erweitern, falls du noch Tools nutzt)
-  const ANALYTICS_COOKIE_NAMES = [
-    '_ga', '_gid', '_gat', '_gcl_au', '_ga_', '_gac_'
-  ];
+  const ANALYTICS_COOKIE_NAMES = ['_ga', '_gid', '_gat', '_gcl_au', '_ga_', '_gac_'];
 
   // ---------- Consent Mode steuern ----------
   function ensureGtagShim() {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
   }
 
+  // Setzt die vier CMv2-Flags je nach Auswahl (immer 'update', niemals 'default granted')
   function applyConsent(prefs) {
     // prefs: { analytics: boolean, marketing: boolean }
     ensureGtagShim();
     window.gtag('consent', 'update', {
-      analytics_storage: prefs.analytics ? 'granted' : 'denied',
-      ad_storage: prefs.marketing ? 'granted' : 'denied',
-      ad_user_data: prefs.marketing ? 'granted' : 'denied',
+      analytics_storage:  prefs.analytics ? 'granted' : 'denied',
+      ad_storage:         prefs.marketing ? 'granted' : 'denied',
+      ad_user_data:       prefs.marketing ? 'granted' : 'denied',
       ad_personalization: prefs.marketing ? 'granted' : 'denied'
     });
     window.dataLayer.push({ event: 'consent_updated' });
   }
 
+  // Blockt alles (z. B. Erstbesuch oder nach Widerruf)
   function blockAll() {
     ensureGtagShim();
     window.gtag('consent', 'update', {
@@ -62,18 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
       ad_user_data: 'denied',
       ad_personalization: 'denied'
     });
-
-    // GA kill switch (optional)
+    // Optional: GA Kill-Switch
     const id = window.env?.GA_MEASUREMENT_ID || '';
     if (id) window['ga-disable-' + id] = true;
   }
 
-  // ---------- GA Loader ----------
+  // ---------- GA Loader (nur laden, wenn analytics erlaubt) ----------
   function loadGA() {
     const id = window.env?.GA_MEASUREMENT_ID;
     if (!id) return;
 
-    // Script nur einmal anhängen
     if (!document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${id}"]`)) {
       const s = document.createElement('script');
       s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
@@ -128,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!json.success) throw new Error('Consent withdrawal failed');
 
           // 1) Tracking sofort stoppen
-          setConsentDenied();
+          blockAll();
 
           // 2) Analytics-Cookies aktiv löschen (eigene Domain)
           deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
@@ -157,13 +162,16 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(json => {
           if (!json.success) return;
 
-          // (2) Beim Erteilen des Consents: Consent Mode korrekt setzen
+          // Consent Mode korrekt setzen
           applyConsent({ analytics, marketing });
+
+          // GA nur laden, wenn Analytics erlaubt
           if (analytics) {
             loadGA();
           } else {
             deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
           }
+
           hideBanner();
           showRevokeButton();
         })
@@ -173,15 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const acceptAllBtn = document.getElementById('accept-all');
     const acceptNecBtn = document.getElementById('accept-necessary');
 
-    if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true, true);
+    if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true,  true);
     if (acceptNecBtn) acceptNecBtn.onclick = () => setConsent(false, false);
   }
 
-  // ---------- Initial-Load: aktuellen Consent prüfen ----------
-  // ===== Initial-Load: aktuellen Consent aus der Session holen =====
+  // ---------- Initial-Load: aktuellen Consent aus der Session holen ----------
   fetch('/api/consent', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(({ cookieConsent }) => {
+      // console.log('[Consent] GET /api/consent →', cookieConsent); // DEBUG optional
       const consent = cookieConsent;
 
       if (consent) {
@@ -189,17 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
         hideBanner();
         showRevokeButton();
 
-        // Consent Mode v2 entsprechend der Auswahl setzen
+        // Consent Mode v2 gemäß Auswahl
         applyConsent({
           analytics: !!consent.analytics,
           marketing: !!consent.marketing
         });
 
-        // GA nur laden, wenn Analytics erlaubt ist
+        // GA nur laden, wenn Analytics erlaubt
         if (consent.analytics) {
           loadGA();
         } else {
-          // vorhandene _ga/_gid etc. wegräumen (falls früher gesetzt)
           deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
         }
       } else {
@@ -208,9 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showBanner();
       }
     })
-    .catch(() => {
-      // Fallback: blocken und Banner zeigen
+    .catch(err => {
+      console.warn('[Consent] GET /api/consent failed:', err);
       blockAll();
       showBanner();
     });
-
+});
