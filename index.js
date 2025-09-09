@@ -63,16 +63,17 @@ const app = express();
 
 app.set('trust proxy', true);            // hinter Cloudflare wichtig
 
-app.use(cookieParser());
-app.use((req, res, next) => {
-  let enabled = false;
-  try {
-    const consent = JSON.parse(req.cookies.cookieConsent);
-    enabled = Boolean(consent.analytics);
-  } catch { }
-  res.locals.gaEnabled = enabled;
-  next();
-});
+// nur wenn andere Cookies noch verwendet werden, gaEnabled wird über consentMiddleware gesetzt
+// app.use(cookieParser());
+// app.use((req, res, next) => {
+//   let enabled = false;
+//   try {
+//     const consent = JSON.parse(req.cookies.cookieConsent);
+//     enabled = Boolean(consent.analytics);
+//   } catch { }
+//   res.locals.gaEnabled = enabled;
+//   next();
+// });
 
 app.disable('x-powered-by');      // Header unterdrücken
 // 2) nur in Production aktivieren

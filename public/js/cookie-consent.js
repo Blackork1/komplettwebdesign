@@ -39,34 +39,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Consent Mode steuern ----------
   function ensureGtagShim() {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
   }
 
-  function setConsentGranted() {
+  function applyConsent(prefs) {
+    // prefs: { analytics: boolean, marketing: boolean }
     ensureGtagShim();
-    window.gtag('consent', 'default', {
-      'analytics_storage': 'granted',
-      // Falls du keine Ads nutzt, alles weitere geblockt lassen:
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied'
+    window.gtag('consent', 'update', {
+      analytics_storage: prefs.analytics ? 'granted' : 'denied',
+      ad_storage: prefs.marketing ? 'granted' : 'denied',
+      ad_user_data: prefs.marketing ? 'granted' : 'denied',
+      ad_personalization: prefs.marketing ? 'granted' : 'denied'
     });
+    window.dataLayer.push({ event: 'consent_updated' });
   }
 
-  function setConsentDenied() {
-    try {
-      ensureGtagShim();
-      window.gtag('consent', 'update', {
-        'analytics_storage': 'denied',
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied'
-      });
+  function blockAll() {
+    ensureGtagShim();
+    window.gtag('consent', 'update', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
 
-      // UA-Style Kill-Switch (unschädlich bei GA4, aber ok)
-      const id = window.env?.GA_MEASUREMENT_ID || '';
-      if (id) window['ga-disable-' + id] = true;
-    } catch (_) {}
+    // GA kill switch (optional)
+    const id = window.env?.GA_MEASUREMENT_ID || '';
+    if (id) window['ga-disable-' + id] = true;
   }
 
   // ---------- GA Loader ----------
@@ -91,19 +90,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function createRevokeButton() {
     const wrapper = document.createElement('div');
     wrapper.id = 'cookie-revoke';
-    Object.assign(wrapper.style, { position:'fixed', bottom:'0', left:'0', zIndex:1000 });
+    Object.assign(wrapper.style, { position: 'fixed', bottom: '0', left: '0', zIndex: 1000 });
 
     const btn = document.createElement('button');
     btn.id = 'revoke-cookies';
     btn.textContent = 'Cookies widerrufen';
     Object.assign(btn.style, {
-      background:'#e94b1b65',
-      color:'#fff',
-      border:'none',
-      padding:'.2rem .2rem',
-      borderRadius:'0 0.25rem 0.25rem 0',
-      cursor:'pointer',
-      fontSize:'10px'
+      background: '#e94b1b65',
+      color: '#fff',
+      border: 'none',
+      padding: '.2rem .2rem',
+      borderRadius: '0 0.25rem 0.25rem 0',
+      cursor: 'pointer',
+      fontSize: '10px'
     });
 
     wrapper.appendChild(btn);
@@ -150,65 +149,68 @@ document.addEventListener('DOMContentLoaded', () => {
   if (banner) {
     const setConsent = (analytics, marketing) => {
       fetch('/api/consent', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify({ analytics, marketing })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analytics, marketing })
       })
-      .then(r => r.json())
-      .then(json => {
-        if (!json.success) return;
+        .then(r => r.json())
+        .then(json => {
+          if (!json.success) return;
 
-        // (2) Beim Erteilen des Consents: Consent Mode korrekt setzen
-        if (analytics) {
-          setConsentGranted();  // <-- HIER Consent Mode "granted"
-          loadGA();             // und erst dann GA laden
-        } else {
-          setConsentDenied();   // alles andere bleibt "denied"
-          // zur Sicherheit evtl. vorhandene _ga/_gid entfernen
-          deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
-        }
-
-        hideBanner();
-        showRevokeButton();
-      })
-      .catch(err => console.error(err));
+          // (2) Beim Erteilen des Consents: Consent Mode korrekt setzen
+          applyConsent({ analytics, marketing });
+          if (analytics) {
+            loadGA();
+          } else {
+            deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
+          }
+          hideBanner();
+          showRevokeButton();
+        })
+        .catch(err => console.error(err));
     };
 
     const acceptAllBtn = document.getElementById('accept-all');
     const acceptNecBtn = document.getElementById('accept-necessary');
 
-    if (acceptAllBtn) acceptAllBtn.onclick       = () => setConsent(true,  true);
-    if (acceptNecBtn) acceptNecBtn.onclick       = () => setConsent(false, false);
+    if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true, true);
+    if (acceptNecBtn) acceptNecBtn.onclick = () => setConsent(false, false);
   }
 
   // ---------- Initial-Load: aktuellen Consent prüfen ----------
-  fetch('/api/consent')
-    .then(r => r.json())
-    .then(json => {
-      const consent = json.cookieConsent;
+  // ===== Initial-Load: aktuellen Consent aus der Session holen =====
+  fetch('/api/consent', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(({ cookieConsent }) => {
+      const consent = cookieConsent;
 
       if (consent) {
-        // Consent vorhanden -> Banner weg, Revoke sichtbar
+        // Consent vorhanden -> Banner aus, Revoke an
         hideBanner();
         showRevokeButton();
 
+        // Consent Mode v2 entsprechend der Auswahl setzen
+        applyConsent({
+          analytics: !!consent.analytics,
+          marketing: !!consent.marketing
+        });
+
+        // GA nur laden, wenn Analytics erlaubt ist
         if (consent.analytics) {
-          setConsentGranted();
           loadGA();
         } else {
-          setConsentDenied();
-          // Vorsichtshalber Cookies wegräumen, falls sie vorhanden sind
+          // vorhandene _ga/_gid etc. wegräumen (falls früher gesetzt)
           deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES);
         }
       } else {
-        // Kein Consent -> Banner zeigen und Consent Mode blocken
-        setConsentDenied();
+        // Kein Consent -> blocken und Banner zeigen
+        blockAll();
         showBanner();
       }
     })
     .catch(() => {
-      // Im Zweifel: Banner zeigen und blocken
-      setConsentDenied();
+      // Fallback: blocken und Banner zeigen
+      blockAll();
       showBanner();
     });
-});
+

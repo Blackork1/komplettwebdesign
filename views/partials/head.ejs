@@ -87,6 +87,19 @@
   <%- typeof seoExtra === 'string' ? seoExtra : '' %>
   <%}%>
 
+  <!-- Consent Mode v2: Default DENIED, noch bevor GA/GTM lädt -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    wait_for_update: 500
+  });
+</script>
+
   <% if (gaEnabled) { %>
   <script async src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"></script>
   <script>
