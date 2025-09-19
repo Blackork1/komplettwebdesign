@@ -1,0 +1,435 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<link rel="preload" href="/branchen.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
+<noscript>
+  <link rel="stylesheet" href="/branchen.css" />
+</noscript>
+
+<style>
+
+</style>
+<div id="OverflowHidden">
+  <div id="ContainerMarginSetup">
+    <div id="ContainerCenterWidthSetup">
+      <section id="Hero">
+        <div class="heroContainer">
+          <div class="upperHero">
+            <div class="heroLeft">
+              <h1 class="heroH1" data-text="Café Website erstellen">
+                <span class="heroH1-text">Café Website erstellen</span>
+              </h1>
+              <h2 class="heroH1-cursive">Professionelles Webdesign für Cafés, Coffee-Shops und Bistros</h2>
+              <div class="heroCheckContainer">
+                <figure class="heroCheck"><img src="../images/icons/Group.svg" alt="checkMark">
+                  <figcaption>Optimiert für Handy, Tablet & Desktop</figcaption>
+                </figure>
+                <figure class="heroCheck"><img src="../images/icons/Group.svg" alt="checkMark">
+                  <figcaption>Lokale Sichtbarkeit: „Website in Berlin erstellen lassen“</figcaption>
+                </figure>
+                <figure class="heroCheck"><img src="../images/icons/Group.svg" alt="checkMark">
+                  <figcaption>Klare Preise, klare Deadlines – 0 Technik-Stress für dich</figcaption>
+                </figure>
+              </div>
+              <p class="mt-2 mb-0 heroPriceInfo">
+                <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
+                <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
+                <span class="badge text-bg-success">All-in ab 1499,99 €</span>
+              </p>
+            </div>
+            <div class="heroRight">
+              <img class="heroImage" src="../images/branchen/heroImageCafe.png" alt="Bild eines Cafés mit Herzmuster" loading="eager" fetchpriority="high">
+            </div>
+          </div>
+          <div class="lowerHero">
+            <a class="hoverElement" href="/kontakt">Lass dich beraten</a>
+            <a class="triggerElement" href="/kontakt"><img src="../images/icons/ArrowRight.svg"></img></a>
+            <div class="hoverBorder"></div>
+          </div>
+          <div class="heroBorder"></div>
+        </div>
+      </section>
+
+      <section id="WarumWebsite">
+        <div class="orangeContainer">
+          <h2 class="containerRight animate-on-scroll alignRight">Warum eine Website?</h2>
+        </div>
+        <div class="imageLeftTextRight">
+          <div class="imageLeft animate-on-scroll">
+            <img src="../images/branchen/Fragezeichen.png" alt="Ein Fragezeichen" loading="lazy" fetchpriority="low">
+          </div>
+          <div class="upperText animate-on-scroll">
+            <p>Cafés sind längst mehr als nur Orte für Kaffee und Kuchen.
+              Sie sind Treffpunkte, Wohlfühloasen und Lifestyle-Spots.
+              Gerade in Städten wie Berlin, Hamburg oder München gibt es eine riesige Auswahl an Cafés –
+              vom hippen Coffee-Shop bis zum traditionellen Familienbetrieb.
+              Doch bei dieser Konkurrenz stellt sich die Frage:
+              <strong>Wie schaffen Sie es, dass Gäste genau Ihr Café finden und besuchen?</strong>
+              <br>
+              <strong>Die Antwort: mit einer professionellen Café-Website.</strong>
+            </p>
+          </div>
+          <div class="lowerText animate-on-scroll">
+            <p>In der heutigen digitalen Welt suchen Gäste nicht mehr auf gut Glück nach einem Café,
+              sondern informieren sich zuerst online.
+              <strong> Laut einer Google-Studie (2022) nutzen über 80 % der Menschen ihr Smartphone,
+                um ein Café in ihrer Nähe zu finden. </strong>
+              Die Entscheidung fällt dabei in Sekunden.
+              Wer eine moderne Website mit klarer Speisekarte,
+              schönen Bildern und einfacher Kontaktmöglichkeit bietet,
+              gewinnt – wer keine oder eine veraltete Website hat, verliert Gäste an die Konkurrenz.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="WebsiteUnverzichtbar">
+        <div class="blueContainer">
+        </div>
+        <h2 class="alignLeft h2Margin animate-on-scroll">Warum eine Website für Cafés unverzichtbar ist?</h2>
+        <p class="col10W smCol12W animate-on-scroll">Ein Café ohne Website ist für viele potenzielle Gäste unsichtbar.
+          Plattformen wie Google Maps, TripAdvisor oder Yelp sind zwar wichtig,
+          aber am Ende wollen die meisten Gäste die eigene Website des Cafés sehen.</p>
+        <h3 class="alignCenter animate-on-scroll">Gründe, warum Cafés eine Website brauchen:</h3>
+        <!-- kwd-3d für 3D effect -->
+        <div class="kwd-carousel kwd-2d animate-on-scroll" id="kwdSlider" aria-roledescription="carousel">
+          <div class="kwd-carousel-stage">
+            <div class="kwd-card pos--far-left" data-index="0">
+              <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756663532/admin_gallery/wq3w9si3c4fsdsrfk2sd.webp" alt="Unabhängigkeit von Plattformen" width="300" height="200" loading="lazy" decoding="async">
+              <div class="kwd-card-title">Unabhängigkeit von Plattformen</div>
+            </div>
+
+            <div class="kwd-card pos--left" data-index="1">
+              <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656653/admin_gallery/pk1jxlqxryda1vritrdt.webp" alt="Events & Aktionen" width="300" height="200" loading="lazy" decoding="async">
+              <div class="kwd-card-title">Events & Aktionen</div>
+            </div>
+
+            <div class="kwd-card pos--center" data-index="2">
+              <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655341/admin_gallery/b6vmm0jzk0cvyshdv3sz.webp" alt="Sichtbarkeit bei Google" width="300" height="200" loading="eager" fetchpriority="high" decoding="async">
+              <div class="kwd-card-title">Sichtbarkeit bei Google</div>
+            </div>
+
+            <div class="kwd-card pos--right" data-index="3">
+              <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656476/admin_gallery/aoz2w22qt1jgvrcrhf0s.webp" alt="Authentische Präsentation" width="300" height="200" loading="lazy" decoding="async">
+              <div class="kwd-card-title">Authentische Präsentation</div>
+            </div>
+
+            <div class="kwd-card pos--far-right" data-index="4">
+              <img class="kwd-card-img" src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1756650496/admin_gallery/sbjnycvmfh90bx9r6nsm.webp" alt="Online-Speisekarte" width="300" height="200" loading="lazy" decoding="async">
+              <div class="kwd-card-title">Online-Speisekarte</div>
+            </div>
+          </div>
+
+          <!-- Pfeil-Buttons: Abstand 55px zur Mitte, 70x70, 30px Gap -->
+          <div class="kwd-controls">
+            <button class="kwd-btn prev" aria-label="Zurück">
+              <!-- simpler Pfeil -->
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button class="kwd-btn next" aria-label="Weiter">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Punkte: 45px unter den Kreisen, 5 Punkte à 10x10, 10px Abstand -->
+          <div class="kwd-dots" role="tablist" aria-label="Slider-Punkte">
+            <button class="dot" aria-label="Slide 1"></button>
+            <button class="dot" aria-label="Slide 2"></button>
+            <button class="dot" aria-label="Slide 3"></button>
+            <button class="dot" aria-label="Slide 4"></button>
+            <button class="dot" aria-label="Slide 5"></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="Statistik">
+        <h2 class="alignCenter animate-on-scroll">Statistiken & Studien: Online-Suche im Café-Bereich</h2>
+
+        <section class="statsSection" aria-label="Statistiken & Studien">
+          <div class="statsGrid">
+            <!-- Linke Spalte: genau 5 Cards (Accordion) -->
+            <div class="statsLeft">
+              <ul class="statStack" role="list">
+                <!-- Card 1 (startet geöffnet) -->
+                <li class="statCard is-open animate-on-scroll">
+                  <button class="statHeader" aria-expanded="true">
+                    <span class="itemIcon" aria-hidden="true">📈</span>
+                    <h2 class="itemLabel">Statista (2023)</h2>
+                  </button>
+                  <div class="statBody" aria-hidden="false">
+                    <p>Laut Statista (2023) suchen 92&nbsp;% der Deutschen regelmäßig online nach Restaurants, Cafés oder Bars.</p>
+                  </div>
+                </li>
+
+                <!-- Card 2 -->
+                <li class="statCard animate-on-scroll">
+                  <button class="statHeader" aria-expanded="false">
+                    <span class="itemIcon" aria-hidden="true">📱</span>
+                    <h2 class="itemLabel">Smartphone Nutzer</h2>
+                  </button>
+                  <div class="statBody" aria-hidden="true">
+                    <p>Über 80&nbsp;% der Gäste suchen Cafés zuerst mobil. Mobile-Performance entscheidet in Sekunden.</p>
+                  </div>
+                </li>
+
+                <!-- Card 3 -->
+                <li class="statCard animate-on-scroll">
+                  <button class="statHeader" aria-expanded="false">
+                    <span class="itemIcon" aria-hidden="true">📊</span>
+                    <h2 class="itemLabel">IHK-Studie</h2>
+                  </button>
+                  <div class="statBody" aria-hidden="true">
+                    <p>IHK-Befragungen zeigen: Aktuelle Öffnungszeiten, Speisekarte &amp; Reservierung sind Top-Infos.</p>
+                  </div>
+                </li>
+
+                <!-- Card 4 -->
+                <li class="statCard animate-on-scroll">
+                  <button class="statHeader" aria-expanded="false">
+                    <span class="itemIcon" aria-hidden="true">🗺️</span>
+                    <h2 class="itemLabel">Google Maps</h2>
+                  </button>
+                  <div class="statBody" aria-hidden="true">
+                    <p>Ein gepflegtes Google-Profil + Website steigert Anrufe und Wegbeschreibungen messbar.</p>
+                  </div>
+                </li>
+
+                <!-- Card 5 -->
+                <li class="statCard animate-on-scroll">
+                  <button class="statHeader" aria-expanded="false">
+                    <span class="itemIcon" aria-hidden="true">📅</span>
+                    <h2 class="itemLabel">OpenTable</h2>
+                  </button>
+                  <div class="statBody" aria-hidden="true">
+                    <p>Online-Reservierung reduziert No-Shows und füllt Randzeiten – ideal in Kombination mit der Website.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Rechte Spalte: Bild „außerhalb“ bis an rechten Bildschirmrand -->
+            <div class="statsRight bleedRight animate-on-scroll">
+              <figure class="phoneFigure">
+                <img src="../images/branchen/Statistik.png" alt="Smartphone mit Statistik-Ansicht" loading="lazy" fetchpriority="low">
+              </figure>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="SEO">
+        <div class="orangeContainer">
+          <h2 class="containerLeft animate-on-scroll alignLeft">SEO für Cafés <br>
+            so werden Sie gefunden</h2>
+        </div>
+        <p style="margin-top: 50px;"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit Gäste Ihr Café online entdecken.</strong></p>
+        <div>
+          <h3>Die wichtigsten SEO-Maßnahmen:</h3>
+          <div class="horizontalSlider animate-on-scroll">
+            <div class="sliderItem">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <img src="../images/branchen/SEO1.png" alt="Ein Bild mit verschiedenen Keywords" loading="lazy" fetchpriority="low">
+              </div>
+              <div class="upperSlideContainer">
+                <p>Lokale Keywords</p>
+              </div>
+              <div class="lowerSlideContainer">
+                <p>Begriffe wie:
+                  „Café Berlin Kreuzberg“,- „veganes Café München Schwabing“
+                  „Frühstück Hamburg Altona“.
+                </p>
+              </div>
+            </div>
+            <div class="sliderItem">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <img src="../images/branchen/SEO1.png" alt="Ein Bild mit verschiedenen Keywords" loading="lazy" fetchpriority="low">
+              </div>
+              <div class="upperSlideContainer">
+                <p>Lokale Keywords</p>
+              </div>
+              <div class="lowerSlideContainer">
+                <p>Begriffe wie:
+                  „Café Berlin Kreuzberg“,- „veganes Café München Schwabing“
+                  „Frühstück Hamburg Altona“.
+                </p>
+              </div>
+            </div>
+            <div class="sliderItem">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <img src="../images/branchen/SEO1.png" alt="Ein Bild mit verschiedenen Keywords" loading="lazy" fetchpriority="low">
+              </div>
+              <div class="upperSlideContainer">
+                <p>Lokale Keywords</p>
+              </div>
+              <div class="lowerSlideContainer">
+                <p>Begriffe wie:
+                  „Café Berlin Kreuzberg“,- „veganes Café München Schwabing“
+                  „Frühstück Hamburg Altona“.
+                </p>
+              </div>
+            </div>
+            <div class="sliderItem">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <img src="../images/branchen/SEO1.png" alt="Ein Bild mit verschiedenen Keywords" loading="lazy" fetchpriority="low">
+              </div>
+              <div class="upperSlideContainer">
+                <p>Lokale Keywords</p>
+              </div>
+              <div class="lowerSlideContainer">
+                <p>Begriffe wie:
+                  „Café Berlin Kreuzberg“,- „veganes Café München Schwabing“
+                  „Frühstück Hamburg Altona“.
+                </p>
+              </div>
+            </div>
+            <div class="sliderItem">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <img src="../images/branchen/SEO1.png" alt="Ein Bild mit verschiedenen Keywords" loading="lazy" fetchpriority="low">
+              </div>
+              <div class="upperSlideContainer">
+                <p>Lokale Keywords</p>
+              </div>
+              <div class="lowerSlideContainer">
+                <p>Begriffe wie:
+                  „Café Berlin Kreuzberg“,- „veganes Café München Schwabing“
+                  „Frühstück Hamburg Altona“.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<style>
+  .horizontalSlider {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 36px;
+    padding-bottom: 10px;
+    margin-top: 20px;
+    padding-top: 40px;
+  }
+
+  .sliderItem {
+    flex: 0 0 auto;
+    width: 263px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    scroll-snap-align: start;
+    background-color: transparent;
+    position: relative;
+    height: 400px;
+  }
+
+
+  .slideImage {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+
+  .slideImage .gradient {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border-radius: 25px;
+  }
+
+  .slideImage img {
+    width: 100%;
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .upperSlideContainer {
+    width: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+    position: relative;
+    top: -30px;
+    border-radius: 25px;
+    background-color: #336796;
+  }
+
+  .upperSlideContainer p {
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .lowerSlideContainer {
+    padding: 10px;
+    text-align: center;
+    width: 243px;
+    height: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    position: absolute;
+    bottom: 10px;
+    background-color: rgba(182, 191, 199, 0.90);
+    border-radius: 25px;
+  }
+
+  .lowerSlideContainer p {
+    margin-bottom: 0px;
+  }
+</style>
+
+
+<script src="../js/carousel.js" defer></script>
+<script>
+  // Accordion-Logik: exakt eine Card „open“
+  (function() {
+    const cards = document.querySelectorAll('.statCard');
+
+    function openCard(target) {
+      cards.forEach(card => {
+        const header = card.querySelector('.statHeader');
+        const body = card.querySelector('.statBody');
+        const isOpen = card === target;
+
+        card.classList.toggle('is-open', isOpen);
+        header.setAttribute('aria-expanded', String(isOpen));
+        body.setAttribute('aria-hidden', String(!isOpen));
+      });
+    }
+
+    cards.forEach(card => {
+      const header = card.querySelector('.statHeader');
+      header.addEventListener('click', () => openCard(card));
+      header.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openCard(card);
+        }
+      });
+    });
+
+    // Initial sicherstellen: erste Card offen
+    if (cards.length) {
+      openCard(cards[0]);
+    }
+  })();
+</script>
+
+
+
+<%- include('partials/footer') %>

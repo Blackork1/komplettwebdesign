@@ -340,14 +340,14 @@
 </div>
 
 <!-- Dynamisch -->
-<!--  const POS = ['pos--far-left','pos--left','pos--center','pos--right','pos--far-right']; %> -->
-<!-- slides.forEach((s,i)=>{ const eager = i===2; %> -->
-<!-- <div class="kwd-card  POS[i] %>" data-index=" i %>"> -->
-<!-- <picture> -->
+ const POS = ['pos--far-left','pos--left','pos--center','pos--right','pos--far-right']; %>
+slides.forEach((s,i)=>{ const eager = i===2; %>
+<div class="kwd-card  POS[i] %>" data-index=" i %>">
+<picture>
 <!-- falls du Cloudinary nutzt: AVIF/WebP mit Auto-Format/Quality -->
-<!-- <source srcset=" s.img %>?f=auto&q=auto&fmt=avif&w=600" type="image/avif"> -->
-<!-- <source srcset=" s.img %>?f=auto&q=auto&fmt=webp&w=600" type="image/webp"> -->
-<!-- <img class="kwd-card-img"
+<source srcset=" s.img %>?f=auto&q=auto&fmt=avif&w=600" type="image/avif">
+<source srcset=" s.img %>?f=auto&q=auto&fmt=webp&w=600" type="image/webp">
+<img class="kwd-card-img"
            src=" s.img %>" alt=" s.alt %>"
            width="300" height="200"
            loading="eager ? 'eager':'lazy' %>"
@@ -355,8 +355,8 @@
            decoding="async">
     </picture>
     <div class="kwd-card-title"> s.title %></div>
-  </div> -->
-<!-- }) %> -->
+  </div>
+}) %>
 
 
 

@@ -50,6 +50,15 @@ export async function getAbout(req, res) {
   });
 }
 
+export async function getBranchen(req, res) {
+  res.render('branchen-tempaltes', {
+    title: 'Branchen-Websites erstellen lassen – Komplett Webdesign',
+    description: 'Professionelles Webdesign für verschiedene Branchen: Lass deine Website von Experten erstellen. Maßgeschneiderte Lösungen für deinen Erfolg.',
+    keywords: 'Webdesign,Branchen-Websites,Webentwicklung'
+  });
+}
+
+
 export async function getPolicy(req, res) {
   res.render('return_policy', {
     title: 'Return Policy / Rückgaberegelung – Komplett Webdesign',
