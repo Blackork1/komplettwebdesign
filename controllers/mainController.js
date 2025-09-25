@@ -51,10 +51,13 @@ export async function getAbout(req, res) {
 }
 
 export async function getBranchen(req, res) {
+  const packages = await Package.fetchAll();
+
   res.render('branchen-tempaltes', {
     title: 'Branchen-Websites erstellen lassen – Komplett Webdesign',
     description: 'Professionelles Webdesign für verschiedene Branchen: Lass deine Website von Experten erstellen. Maßgeschneiderte Lösungen für deinen Erfolg.',
-    keywords: 'Webdesign,Branchen-Websites,Webentwicklung'
+    keywords: 'Webdesign,Branchen-Websites,Webentwicklung',
+    packages
   });
 }
 
