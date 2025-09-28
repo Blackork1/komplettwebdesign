@@ -1,0 +1,201 @@
+[
+  {
+    "slug": "blumenladen",
+    "name": "Blumenladen",
+    "title": "Blumenladen Website erstellen – Professionelles Webdesign für Floristik & Gärtnereien",
+    "description": "Moderne Websites für Blumenläden & Gärtnereien: Galerie, Online-Shop, lokale Sichtbarkeit, SEO, mobil optimiert. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "og_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+
+    "hero_h1": "Blumenladen Website erstellen",
+    "hero_h2": "Professionelles Webdesign für Floristik & Gärtnereien",
+    "hero_checks": [
+      "Optimiert für Handy, Tablet & Desktop",
+      "Lokale Sichtbarkeit: \"Blumenladen in [Stadt] finden\"",
+      "Klare Preise, klare Deadlines – 0 Technik-Stress für dich"
+    ],
+    "hero_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+    "hero_image_alt": "Blumenladen mit Sträußen im Schaufenster",
+
+    "warum_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756650001/admin_gallery/fragezeichen.png",
+    "warum_image_alt": "Illustration eines Fragezeichens",
+    "warum_upper": "<p>Blumen haben eine besondere Sprache – sie wecken Emotionen, schaffen Atmosphäre und begleiten die wichtigsten Momente des Lebens. Ob Brautstrauß, Trauerfloristik, ein Strauß zum Geburtstag oder einfach ein bisschen Farbe im Alltag: Der erste Weg vieler Kunden führt heute nicht mehr direkt in die nächste Gärtnerei, sondern ins Internet.</p><p>Wer einen Blumenladen betreibt und keine professionelle Website hat, verliert potenzielle Kunden an die Konkurrenz. Denn moderne Floristik beginnt längst online: Kunden suchen nach „Blumenladen in meiner Nähe“, stöbern durch Bildergalerien, vergleichen Preise und möchten oft sogar direkt bestellen. Eine Website ist daher mehr als eine digitale Visitenkarte – sie ist Schaufenster, Verkaufsfläche und Kundenmagnet zugleich.</p>",
+    "warum_lower": "<p><strong>Warum eine Website für Blumenläden unverzichtbar ist:</strong> Früher war die Laufkundschaft das Herzstück eines Blumenladens. Heute informieren sich die meisten Kunden zuerst online, bevor sie ein Geschäft betreten oder eine Bestellung aufgeben. Eine moderne Website sorgt dafür, dass Ihr Blumenladen sichtbar wird – und zwar genau dann, wenn Kunden nach Blumen suchen.</p>",
+
+    "unverzichtbar_intro": "Ein Blumenladen ohne Website ist für viele potenzielle Kunden unsichtbar. Plattformen sind hilfreich – aber die <strong>eigene Website</strong> ist Ihr digitales Schaufenster.",
+    "unverzichtbar_h3": "Gründe, warum Blumenläden eine Website brauchen:",
+
+    "carousel_items": [
+      {
+        "title": "Unabhängigkeit von Plattformen",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656476/admin_gallery/aoz2w22qt1jgvrcrhf0s.webp",
+        "img_alt": "Website eines Blumenladens auf Laptop und Smartphone"
+      },
+      {
+        "title": "Aktionen & Saisonware",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978400/admin_gallery/xctfqhgz5omipgpv17cr.webp",
+        "img_alt": "Saisonale Blumenaktion"
+      },
+      {
+        "title": "Sichtbarkeit bei Google",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655341/admin_gallery/b6vmm0jzk0cvyshdv3sz.webp",
+        "img_alt": "Google-Suchergebnisse eines Blumenladens"
+      },
+      {
+        "title": "Atmosphäre zeigen",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978310/admin_gallery/sokngu50web7ioqjxvf3.webp",
+        "img_alt": "Innenraum eines floralen Geschäfts"
+      },
+      {
+        "title": "Online-Shop",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978105/admin_gallery/f9lizewiryygnjiyerpf.webp",
+        "img_alt": "Digitale Produktansicht mit Sträußen"
+      }
+    ],
+
+    "stats_cards": [
+      {
+        "icon": "📊",
+        "label": "Statista (2022)",
+        "body": "<p>87&nbsp;% der Konsumenten nutzen das Internet, um lokale Geschäfte wie Blumenläden zu finden.</p>"
+      },
+      {
+        "icon": "📍",
+        "label": "Local Intent",
+        "body": "<p>76&nbsp;% der Nutzer, die online nach einem Blumenladen suchen, besuchen noch am selben Tag ein Geschäft.</p>"
+      },
+      {
+        "icon": "💶",
+        "label": "Kaufrecherche",
+        "body": "<p>68&nbsp;% informieren sich vor dem Kauf online über Preise und Angebote.</p>"
+      },
+      {
+        "icon": "🛒",
+        "label": "E-Commerce",
+        "body": "<p>Online-Blumenverkäufe stiegen laut HDE (2023) um &gt;35&nbsp;%.</p>"
+      },
+      {
+        "icon": "💐",
+        "label": "Events",
+        "body": "<p>Floristik-Websites generieren bis zu 40&nbsp;% mehr Anfragen für Hochzeiten &amp; Events.</p>"
+      }
+    ],
+
+    "seo_items": [
+      {
+        "title": "Lokale Keywords",
+        "text": "„Blumenladen Berlin Mitte“, „Floristik München Schwabing“, „Hochzeitsfloristik Hamburg“ – präzise Stadt/Bezirk-Bezüge.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655275/admin_gallery/hjvleomny0wd8xxtjnzi.webp",
+        "img_alt": "Keyword-Liste mit lokalen Begriffen"
+      },
+      {
+        "title": "Google Business & Maps",
+        "text": "Profil pflegen: Kategorien, Öffnungszeiten, Fotos, Produkte – für Top-Sichtbarkeit in der Kartenansicht.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655506/admin_gallery/zr3urtt9yps048wnrua4.webp",
+        "img_alt": "Google-Unternehmensprofil Beispiel"
+      },
+      {
+        "title": "Mobile Performance",
+        "text": "Schnelle Ladezeiten & Core Web Vitals – besonders wichtig für Nutzer unterwegs.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655434/admin_gallery/pcimwespifkdsykyip13.webp",
+        "img_alt": "Performance-Diagramm"
+      },
+      {
+        "title": "Technik & Struktur",
+        "text": "Saubere Struktur, Bild-Komprimierung, Caching & strukturierte Daten (LocalBusiness, Product, FAQ).",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978624/admin_gallery/nuhgls3vy4xiallbxwix.webp",
+        "img_alt": "Symbol für strukturierte Daten"
+      },
+      {
+        "title": "Bewertungen & Inhalte",
+        "text": "Kundenstimmen und Inhalte wie Blumensymbolik, Pflege-Tipps & Saison-Trends schaffen Vertrauen.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756657030/admin_gallery/qwxxe97wnkx4gusxffcb.webp",
+        "img_alt": "Bewertungs- und Inhalts-Symbole"
+      }
+    ],
+
+    "funktionen_items": [
+      { "icon_url": "/images/icons/galery.svg",       "title": "Bildergalerie",            "text": "Sträuße, Dekorationen & Hochzeitsfloristik eindrucksvoll präsentieren." },
+      { "icon_url": "/images/icons/bi_table.svg",     "title": "Online-Shop",             "text": "Direkt bestellen & liefern lassen – auch mit Wunschdatum." },
+      { "icon_url": "/images/icons/door.svg",         "title": "Kontakt & Öffnungszeiten","text": "Klar sichtbar, klickbar & mit Google Maps Integration." },
+      { "icon_url": "/images/icons/bookmark.svg",     "title": "Leistungsübersicht",      "text": "Hochzeits- & Trauerfloristik, Event-Deko, Sträuße nach Anlass." },
+      { "icon_url": "/images/icons/chat.svg",         "title": "Angebote & Aktionen",     "text": "Saisonale Rabatte, Muttertags-Specials & Workshops." },
+      { "icon_url": "/images/icons/kontakte.svg",     "title": "Newsletter & Social",     "text": "Kundenbindung durch Newsletter & Instagram-Feed." }
+    ],
+
+    "vorteile": {
+      "pros": [
+        "Sichtbarkeit bei Google",
+        "Mehr Kunden & Umsatz",
+        "Unabhängigkeit von Plattformen",
+        "Moderne Präsentation",
+        "Kundenbindung durch Newsletter & Aktionen"
+      ],
+      "cons": [
+        "Veraltete Öffnungszeiten frustrieren Kunden",
+        "Schwache Fotos wirken unprofessionell",
+        "Fehlende SEO = geringe Sichtbarkeit"
+      ]
+    },
+
+    "tipps_items": [
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979160/admin_gallery/bcrwvvfjsy5obbfzrnws.webp",
+        "img_alt": "geöffnetes Buch",
+        "heading": "Professionelle Fotos",
+        "text": "Blumen wirken nur, wenn sie perfekt präsentiert werden."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979179/admin_gallery/ka0mrtecj0b4ptvzvea8.webp",
+        "img_alt": "Smiley-Symbol",
+        "heading": "Emotionale Geschichte",
+        "text": "Erzähle die Story deines Geschäfts & deiner Leidenschaft."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979188/admin_gallery/dxieq3vnxspku2nrek9o.webp",
+        "img_alt": "Wort „Simple“",
+        "heading": "Einfach bestellen",
+        "text": "Online-Shop klar strukturieren – wenige Klicks bis zum Kauf."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979197/admin_gallery/pkwskoehcpwhrxjwhoc4.webp",
+        "img_alt": "SEO-Grafik",
+        "heading": "SEO von Anfang an",
+        "text": "Lokale Keywords, Produkttexte & Bilder richtig beschreiben."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979207/admin_gallery/oe0s7nxbw8tjlgyc9ngv.webp",
+        "img_alt": "Aktuelles-Symbol",
+        "heading": "Regelmäßig aktualisieren",
+        "text": "Neue Sträuße, Aktionen, Events & saisonale Themen."
+      }
+    ],
+
+    "cta_headline": "Benötigst du eine Website für deinen Blumenladen?",
+    "cta_text": "Eine Website ist Schaufenster, Shop und Kundenmagnet zugleich. Mit professionellem Webdesign, Online-Shop und SEO gewinnst du neue Kunden und steigerst deinen Umsatz.",
+    "cta_left_image": "/images/branchen/BasisPaket.webp",
+    "cta_right_image": "/images/branchen/BusinessPaket.webp",
+
+    "faq_items": [
+      {
+        "q": "Wie lange dauert die Erstellung einer Blumenladen-Website?",
+        "a": "<p>Zwischen 3 und 6 Wochen – abhängig von Umfang und Funktionen.</p>"
+      },
+      {
+        "q": "Kann ich Galerie oder Shop-Produkte selbst pflegen?",
+        "a": "<p>Ja, mit modernen Systemen kannst du Produkte und Bilder jederzeit selbst ändern.</p>"
+      },
+      {
+        "q": "Ist SEO wirklich wichtig für Floristen?",
+        "a": "<p>Ja – die meisten Kunden suchen über Google nach einem Blumenladen.</p>"
+      },
+      {
+        "q": "Bietet ihr auch Online-Shops für Blumenläden an?",
+        "a": "<p>Ja, inkl. Zahlungsoptionen und Liefersystemen.</p>"
+      },
+      {
+        "q": "Lohnt sich die Investition?",
+        "a": "<p>Ja – bereits wenige zusätzliche Aufträge pro Monat decken die Kosten.</p>"
+      }
+    ]
+  }
+]

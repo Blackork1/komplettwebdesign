@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "cafe",
+    "name": "Café",
+    "title": "Café-Website erstellen lassen – Webdesign & SEO",
+    "description": "Professionelle Café-Websites mit Reservierung, Speisekarte und SEO.",
+    "og_image_url": "https://res.cloudinary.com/demo/image/upload/og_cafe.webp",
+    "hero_h1": "Café Website erstellen",
+    "hero_h2": "Professionelles Webdesign für Cafés, Coffee-Shops und Bistros",
+    "hero_checks": ["Optimiert für Handy, Tablet & Desktop", "Lokale Sichtbarkeit", "Klare Preise & Deadlines"],
+    "hero_image_url": "https://res.cloudinary.com/demo/image/upload/hero_cafe.png",
+    "hero_image_alt": "Café mit Latte Art",
+    "warum_image_url": "https://res.cloudinary.com/demo/image/upload/fragezeichen.png",
+    "warum_image_alt": "Fragezeichen",
+    "warum_upper": "<p>Cafés sind längst mehr als nur Orte ...</p>",
+    "warum_lower": "<p>In der heutigen digitalen Welt ...</p>",
+    "carousel_items": [
+      { "title": "Unabhängigkeit von Plattformen", "img_url": "https://res.cloudinary.com/demo/image/upload/car1.webp" },
+      { "title": "Events & Aktionen", "img_url": "https://res.cloudinary.com/demo/image/upload/car2.webp" },
+      { "title": "Sichtbarkeit bei Google", "img_url": "https://res.cloudinary.com/demo/image/upload/car3.webp" },
+      { "title": "Authentische Präsentation", "img_url": "https://res.cloudinary.com/demo/image/upload/car4.webp" },
+      { "title": "Online-Speisekarte", "img_url": "https://res.cloudinary.com/demo/image/upload/car5.webp" }
+    ],
+    "stats_cards": [
+      { "icon":"📈", "label":"Statista (2023)", "body":"<p>92% suchen online ...</p>" }
+    ],
+    "seo_items": [
+      { "title":"Lokale Keywords", "text":"„Café Berlin Kreuzberg“…", "img_url":"https://res.cloudinary.com/demo/image/upload/seo1.png" }
+    ],
+    "funktionen_items": [
+      { "icon_url":"https://res.cloudinary.com/demo/image/upload/icon_speisekarte.svg", "title":"Online-Speisekarte", "text":"Preise und Specials sichtbar" }
+    ],
+    "vorteile": { "pros": ["Mehr Sichtbarkeit"], "cons": ["Veraltete Speisekarte"] },
+    "tipps_items": [
+      { "img_url":"https://res.cloudinary.com/demo/image/upload/tipp.webp", "img_alt":"", "heading":"#1 Storytelling", "text":"Erzähle deine Geschichte." }
+    ],
+    "cta_headline": "Benötigst du eine Website für dein Café?",
+    "cta_text": "Eine professionelle Website ist der Schlüssel ...",
+    "cta_left_image": "https://res.cloudinary.com/demo/image/upload/basis.webp",
+    "cta_right_image": "https://res.cloudinary.com/demo/image/upload/business.webp",
+    "faq_items": [
+      { "q":"Wie lange dauert es?", "a":"<p>3–6 Wochen</p>", "link_url":"/pakete/basis", "link_label":"Zum Basis-Paket" }
+    ]
+  },
+  {
+    "slug": "zahnarzt",
+    "name": "Zahnarzt",
+    "title": "Webdesign für Zahnarztpraxen",
+    "description": "Patientenfreundliche Websites mit Online-Termin, Team & Leistungen.",
+    "hero_h1": "Zahnarzt-Website erstellen",
+    "hero_h2": "Seriös, vertrauenswürdig, gut auffindbar",
+    "hero_checks": ["Online-Terminvergabe", "Leistungen & Kassen", "Teamvorstellung"],
+    "hero_image_url": "https://res.cloudinary.com/demo/image/upload/hero_dent.png",
+    "carousel_items": [],
+    "stats_cards": [],
+    "seo_items": [],
+    "funktionen_items": [],
+    "vorteile": { "pros": [], "cons": [] },
+    "tipps_items": [],
+    "faq_items": []
+  }
+]

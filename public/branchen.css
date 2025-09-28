@@ -56,7 +56,7 @@ h1 {
 }
 
 h2 {
-  font-size: clamp(1.675rem, 0.6321rem + 3.0476vw, 3.375rem);
+  font-size: clamp(1.5rem, 0.8398rem + 2.8169vw, 3.375rem);
   color: var(--color-primary);
   letter-spacing: 6px;
 }
@@ -177,6 +177,7 @@ p > strong {
 
 /* ===== H2 (Unterzeile) ===== */
 .heroH1-cursive {
+  position: relative;
   perspective: 1000px;
   font-family: "inter", sans-serif;
   font-style: italic;
@@ -184,7 +185,7 @@ p > strong {
   font-size: clamp(1.375rem, 0.7714rem + 2.4762vw, 3rem);
   line-height: clamp(2.625rem, 1.9286rem + 2.8571vw, 4.5rem);
   letter-spacing: clamp(0.1875rem, 0.0482rem + 0.5714vw, 0.5625rem);
-  z-index: 0;
+  z-index: 1;
   max-width: 850px;
   opacity: 0;
   animation: fadeUp 0.7s ease-out forwards, rotateDown20 0.7s ease-out forwards;
@@ -414,6 +415,13 @@ p > strong {
   left: clamp(1.25rem, -1.5357rem + 11.4286vw, 8.75rem);
 }
 
+.containerCenter {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%) !important;
+}
+
 .imageLeftTextRight {
   margin: 50px 0;
   display: grid;
@@ -517,7 +525,7 @@ p > strong {
   width: var(--card-w);
   height: var(--card-h);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: -2px 7px 3px 0px rgb(0 0 0 / 20%);
   overflow: hidden;
   background: #e9ecef center/cover no-repeat;
   color: #111;
@@ -783,9 +791,13 @@ p > strong {
   overflow: hidden;
   background: var(--c-muted-bg); /* 30% #0B2A46 */
   color: var(--c-muted-fg); /* 50% #0B2A46 */
-  transition: background-color 0.25s ease, color 0.25s ease,
-    box-shadow 0.25s ease;
+  transition: all 0.25s ease;
   border: 2px solid transparent;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 20%);
+}
+
+.statCard:not(.is-open):hover {
+  transform: scaleX(1.04) scaleY(1.02);
 }
 
 /* Kopfzeile der Card (immer sichtbar) */
@@ -902,6 +914,8 @@ p > strong {
   padding: 40px 0 10px;
   margin: 20px 0 24px;
   /* Platz zu den Controls darunter */
+
+  overflow-y: hidden;
 }
 
 /* End-Spacer: sorgt dafür, dass das LETZTE Item links einrasten kann */
@@ -933,8 +947,7 @@ p > strong {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-top-left-radius: 25px;
-  border-top-right-radius: 25px;
+  border-radius: 25px;
 }
 
 .slideImage .gradient {
@@ -946,6 +959,7 @@ p > strong {
     rgba(255, 255, 255, 0) 0%,
     rgba(255, 255, 255, 0.8) 100%
   );
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 41%);
 }
 
 .upperSlideContainer {
@@ -1021,19 +1035,46 @@ p > strong {
   width: 40px;
   height: 40px;
   fill: var(--nav-icon);
+  transition: all 0.2s ease;
+}
+
+.prev:hover,
+.next:hover {
+  transform: translateY(-4px) scale(1.05) !important;
+  filter: opacity(0.9);
+}
+
+.sliderArrow svg:hover {
+  filter: opacity(0.9);
+}
+
+.dot {
+  transition: all 0.2s ease;
+}
+
+.dot:hover {
+  transform: scale(1.3) !important;
+  border: 2px solid black;
+}
+
+.sliderDots button:hover {
+  transform: scale(1.3) !important;
+  border: 2px solid black;
 }
 
 .sliderArrow.prev {
   background: var(--nav-prev-bg);
+  transition: all 0.2s ease;
 }
 
 .sliderArrow.next {
   background: var(--nav-next-bg);
+  transition: all 0.2s ease;
 }
 
-.sliderArrow:hover {
-  filter: brightness(1.05);
-}
+/* .sliderArrow:hover {
+  filter: brightness(1.5);
+} */
 
 .sliderArrow:active {
   transform: scale(0.98);
@@ -1097,7 +1138,7 @@ p > strong {
   color: white;
   padding-top: 40px;
   text-align: end;
-  width: clamp(350px, 80%, 758px);
+  width: clamp(350px, 80%, 830px);
 }
 
 .alignEnd p {
@@ -1128,6 +1169,7 @@ p > strong {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  overflow-y: hidden;
 }
 
 .funktionenItem {
@@ -1140,6 +1182,7 @@ p > strong {
   border-radius: 25px;
   height: 250px;
   scroll-snap-align: start;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 51%);
 }
 
 .iconContainer {
@@ -1205,6 +1248,7 @@ p > strong {
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 20%);
 }
 
 .headerNachteileGrid {
@@ -1215,6 +1259,7 @@ p > strong {
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 20%);
 }
 
 .flexVorteile {
@@ -1225,6 +1270,7 @@ p > strong {
   scroll-snap-type: x mandatory;
   overflow-x: auto;
   scroll-behavior: smooth;
+  overflow-y: hidden;
   gap: 50px;
 }
 
@@ -1263,6 +1309,7 @@ p > strong {
   align-items: center;
   width: clamp(18.75rem, 14.1071rem + 19.0476vw, 31.25rem);
   border-radius: 25px;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 10%);
 }
 
 .greenContainer {
@@ -1291,6 +1338,7 @@ p > strong {
   overscroll-behavior-x: contain;
   height: 300px;
   align-items: center;
+  overflow-y: hidden;
 }
 
 .tippsContainer::-webkit-scrollbar {
@@ -1311,6 +1359,7 @@ p > strong {
   padding: 10px 20px;
   background: rgba(244, 163, 141, 0.5);
   border-radius: 25px;
+  box-shadow: inset -1px -1px 3px 0px rgb(0 0 0 / 50%);
 }
 
 .horizontalSliderTips::after {
@@ -1348,6 +1397,7 @@ p > strong {
 .sliderControlsFunktionen {
   position: relative;
   margin-bottom: 40px;
+  opacity: 0;
 }
 
 .sliderControlsTipps .sliderDots {
@@ -1379,6 +1429,142 @@ p > strong {
   margin-bottom: 150px;
 }
 
+/* CTA */
+
+.imageCTALeft {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: clamp(9.375rem, 7.0536rem + 9.5238vw, 15.625rem);
+  height: auto;
+  z-index: 0;
+  border-radius: 25px;
+  box-shadow: -11px -4px 50px 20px rgb(0 0 0 / 20%);
+}
+
+.imageCTARight {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: clamp(9.375rem, 7.0536rem + 9.5238vw, 15.625rem);
+  height: auto;
+  border-radius: 25px;
+  z-index: 0;
+  box-shadow: -11px -4px 50px 20px rgb(0 0 0 / 20%);
+}
+
+.imageCTALeft img,
+.imageCTARight img {
+  width: 100%;
+  height: auto;
+  border-radius: 25px;
+}
+
+.animate-on-scroll-right {
+  opacity: 0;
+  transform: translateY(40px) translateX(-40px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Wenn sichtbar (im Viewport): gleitet an Position und wird sichtbar */
+.animate-on-scroll-right.visible {
+  border: white solid 1px;
+  opacity: 1;
+  perspective: 1000px;
+  transform: translateX(50%) translateY(-50%) rotateZ(-15deg);
+}
+
+/* Wenn gerade verlassen (Viewport nach oben verlassen): nach rechts versetzen und ausblenden */
+.animate-on-scroll-right.out {
+  opacity: 0;
+  transform: translateY(-40px) translateX(40px);
+}
+
+.animate-on-scroll-left {
+  opacity: 0;
+  transform: translateY(40px) translateX(-40px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Wenn sichtbar (im Viewport): gleitet an Position und wird sichtbar */
+.animate-on-scroll-left.visible {
+  border: white solid 1px;
+  opacity: 1;
+  perspective: 1000px;
+  transform: translateX(-50%) translateY(-50%) rotateZ(15deg);
+}
+
+/* Wenn gerade verlassen (Viewport nach oben verlassen): nach rechts versetzen und ausblenden */
+.animate-on-scroll-left.out {
+  opacity: 0;
+  transform: translateY(-40px) translateX(40px);
+}
+
+#CTA {
+  background: #0b2a46;
+  padding: 20px;
+  margin-bottom: 150px;
+  position: relative;
+}
+
+.ctaH2 {
+  font-size: clamp(2.1rem, 1.6511rem + 1.9155vw, 3.375rem);
+  margin-bottom: 20px;
+  color: #eaeae9;
+}
+
+.ctaText {
+  opacity: 0 !important;
+  padding-top: 50px;
+}
+
+.orange {
+  font-style: italic;
+  color: #f24822;
+}
+
+#CTA p {
+  color: #eaeae9;
+}
+
+.ctaButton {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.5s;
+  background: #43a04780;
+  color: #eaeae9;
+  border: #eaeaea solid 5px;
+  border-radius: 50px;
+  margin-bottom: 20px;
+  margin-top: 150px;
+}
+
+@media (min-width: 1000px) {
+  .ctaText {
+    opacity: 1 !important;
+    position: relative;
+    width: 300px;
+    left: 50%;
+    transform: translateX(-50%) !important;
+  }
+
+  .marginRight100px {
+    margin-right: 100px;
+  }
+
+  .imageCTALeft:hover {
+    transform: translateX(50%) translateY(-60%) rotateZ(0deg) !important;
+  }
+
+  .imageCTARight:hover {
+    transform: translateX(-50%) translateY(-60%) rotateZ(0deg) !important;
+  }
+}
+
 @media (max-width: 1400px) {
   #ContainerMarginSetup {
     margin: 0 40px;
@@ -1392,6 +1578,14 @@ p > strong {
   }
   .blueContainerVorteile {
     height: 1330px;
+  }
+  .sliderControlsFunktionen {
+    opacity: 1;
+    margin-top: 20px;
+  }
+  .sliderControlsFunktionen .sliderDots {
+    position: relative;
+    left: 25px;
   }
 }
 
@@ -1473,7 +1667,8 @@ p > strong {
   .sliderDots {
     margin: 0;
   }
-  .sliderControlsTipps .sliderDots, .sliderControlsFunktionen .sliderDots {
+  .sliderControlsTipps .sliderDots,
+  .sliderControlsFunktionen .sliderDots {
     margin: 20px 0;
     position: absolute;
     left: 50%;
@@ -1579,6 +1774,26 @@ p > strong {
 
   .sliderControlsVorteile {
     opacity: 1;
+  }
+  .animate-on-scroll-left.visible {
+    border: white solid 1px;
+    opacity: 1;
+    perspective: 1000px;
+    transform: translateX(-30%) translateY(0%) rotateZ(15deg);
+  }
+
+  .animate-on-scroll-right.visible {
+    border: white solid 1px;
+    opacity: 1;
+    perspective: 1000px;
+    transform: translateX(30%) translateY(-80%) rotateZ(-15deg);
+  }
+  .containerCenter {
+    position: absolute;
+    bottom: -50px;
+    width: 100%;
+    left: 50%;
+    transform: translateX(-50%) !important;
   }
 }
 

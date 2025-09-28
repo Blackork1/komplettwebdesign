@@ -1,0 +1,149 @@
+<%- include('../partials/head', { title, description: '', ogImage: '' }) %>
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+  <h1><%= mode==='create' ? 'Neue Branche' : 'Branche bearbeiten' %></h1>
+  <% if (errors) { %>
+  <div class="alert alert-danger"><%= errors.message %></div>
+  <% } %>
+
+  <form method="post" action="<%= mode==='create' ? '/admin/industries' : '/admin/industries/'+row.id %>">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Slug</label>
+        <input name="slug" class="form-control" required value="<%= row.slug || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Name (Anzeige)</label>
+        <input name="name" class="form-control" required value="<%= row.name || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">OG Image URL</label>
+        <input name="og_image_url" class="form-control" value="<%= row.og_image_url || '' %>">
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">SEO Title</label>
+        <input name="title" class="form-control" required value="<%= row.title || '' %>">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Meta Description</label>
+        <textarea name="description" class="form-control" rows="2"><%= row.description || '' %></textarea>
+      </div>
+
+      <hr>
+
+      <div class="col-md-6">
+        <label class="form-label">Hero H1</label>
+        <input name="hero_h1" class="form-control" required value="<%= row.hero_h1 || '' %>">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Hero H2</label>
+        <input name="hero_h2" class="form-control" value="<%= row.hero_h2 || '' %>">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Hero Checks (eine pro Zeile)</label>
+        <textarea name="hero_checks" class="form-control" rows="4"><%= (row.hero_checks||[]).join('\n') %></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Hero Bild (Cloudinary URL)</label>
+        <input name="hero_image_url" class="form-control" value="<%= row.hero_image_url || '' %>">
+        <input name="hero_image_alt" class="form-control mt-2" placeholder="Alt-Text" value="<%= row.hero_image_alt || '' %>">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Warum Bild (Cloudinary URL)</label>
+        <input name="warum_image_url" class="form-control" value="<%= row.warum_image_url || '' %>">
+        <input name="warum_image_alt" class="form-control mt-2" placeholder="Alt-Text" value="<%= row.warum_image_alt || '' %>">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Warum Text oben (HTML erlaubt)</label>
+        <textarea name="warum_upper" class="form-control" rows="4"><%= row.warum_upper || '' %></textarea>
+        <label class="form-label mt-2">Warum Text unten (HTML erlaubt)</label>
+        <textarea name="warum_lower" class="form-control" rows="4"><%= row.warum_lower || '' %></textarea>
+      </div>
+
+      <div class="col-md-6">
+        <label for="unverzichtbar_intro">Unverzichtbar – Intro (HTML erlaubt)</label>
+        <textarea id="unverzichtbar_intro" name="unverzichtbar_intro" rows="4"><%= row.unverzichtbar_intro || '' %></textarea>
+        <small>Textabsatz unter der H2. Du kannst <p>, <strong> usw. verwenden.</small>
+      </div>
+
+      <div class="col-md-6">
+        <label for="unverzichtbar_h3">Unverzichtbar – Subheadline (H3)</label>
+        <input id="unverzichtbar_h3" name="unverzichtbar_h3" value="<%= row.unverzichtbar_h3 || '' %>" />
+      </div>
+
+      <hr>
+
+      <!-- JSON-Editor Felder -->
+      <div class="col-md-6">
+        <label class="form-label">Carousel Items (JSON Array)</label>
+        <textarea data-json-editor name="carousel_items" class="form-control" rows="8"><%= JSON.stringify(row.carousel_items || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "title": "...", "img_url": "https://..." }]</small>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Stats Cards (JSON Array)</label>
+        <textarea data-json-editor name="stats_cards" class="form-control" rows="8"><%= JSON.stringify(row.stats_cards || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "icon":"📈","label":"...","body":"<p>HTML</p>" }]</small>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">SEO Items (JSON Array)</label>
+        <textarea data-json-editor name="seo_items" class="form-control" rows="8"><%= JSON.stringify(row.seo_items || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "title":"...","text":"...","img_url":"https://..." }]</small>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Funktionen Items (JSON Array)</label>
+        <textarea data-json-editor name="funktionen_items" class="form-control" rows="8"><%= JSON.stringify(row.funktionen_items || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "icon_url":"https://...","title":"...","text":"..." }]</small>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Vorteile (JSON Objekt)</label>
+        <textarea data-json-editor name="vorteile" class="form-control" rows="8"><%= JSON.stringify(row.vorteile || {pros:[],cons:[]}, null, 2) %></textarea>
+        <small class="text-muted">Format: { "pros":[...], "cons":[...] }</small>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Tipps Items (JSON Array)</label>
+        <textarea data-json-editor name="tipps_items" class="form-control" rows="8"><%= JSON.stringify(row.tipps_items || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "img_url":"https://...","img_alt":"...","heading":"...","text":"..." }]</small>
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">FAQ Items (JSON Array)</label>
+        <textarea data-json-editor name="faq_items" class="form-control" rows="8"><%= JSON.stringify(row.faq_items || [], null, 2) %></textarea>
+        <small class="text-muted">Format: [{ "q":"...","a":"<p>HTML</p>","link_url":"/pakete/basis","link_label":"Mehr erfahren" }]</small>
+      </div>
+
+      <hr>
+
+      <div class="col-md-6">
+        <label class="form-label">CTA Headline</label>
+        <input name="cta_headline" class="form-control" value="<%= row.cta_headline || '' %>">
+        <label class="form-label mt-2">CTA Text</label>
+        <textarea name="cta_text" class="form-control" rows="3"><%= row.cta_text || '' %></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">CTA Bilder (Cloudinary URLs)</label>
+        <input name="cta_left_image" class="form-control" placeholder="Left" value="<%= row.cta_left_image || '' %>">
+        <input name="cta_right_image" class="form-control mt-2" placeholder="Right" value="<%= row.cta_right_image || '' %>">
+      </div>
+
+      <div class="col-12 form-check mt-3">
+        <input type="checkbox" id="rebuild_embeddings" name="rebuild_embeddings" class="form-check-input">
+        <label class="form-check-label" for="rebuild_embeddings">Embeddings nach Speichern neu aufbauen</label>
+      </div>
+
+      <div class="col-12 mt-4">
+        <button class="btn btn-primary"><%= mode==='create' ? 'Anlegen' : 'Speichern' %></button>
+        <a class="btn btn-outline-secondary" href="/admin/industries">Abbrechen</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script src="/js/admin_json_editor.js" defer></script>
+
+<%- include('../partials/footer') %>

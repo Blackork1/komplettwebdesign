@@ -1,0 +1,58 @@
+<%- include('../partials/head', { title, description: '', ogImage: '' }) %>
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+  <h1>Branchen-Import</h1>
+  <p class="text-muted">
+    Lade eine JSON-Datei (Array oder einzelnes Objekt) per Drag&Drop hoch
+    oder füge den JSON-Inhalt direkt ein. Felder, die vorhanden sind, werden upserted (ON CONFLICT slug).
+  </p>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <h5>Drag &amp; Drop / Datei wählen</h5>
+      <div id="dropZone" class="border rounded p-4 text-center" style="border-style:dashed">
+        <p class="mb-2">Datei hierher ziehen</p>
+        <p class="small text-muted">oder</p>
+        <input id="fileInput" type="file" accept=".json,application/json" class="form-control" />
+      </div>
+
+      <div class="form-check mt-3">
+        <input class="form-check-input" type="checkbox" id="rebuildEmb" />
+        <label class="form-check-label" for="rebuildEmb">Embeddings nach Import neu aufbauen</label>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <button id="btnPreview" class="btn btn-outline-secondary" disabled>Vorschau</button>
+        <button id="btnImport" class="btn btn-primary" disabled>Import starten</button>
+      </div>
+
+      <form class="mt-3" method="post" action="/admin/industries/import/file" enctype="multipart/form-data">
+        <input type="hidden" name="rebuild_embeddings" value="on" id="fallbackRebuild">
+        <div class="d-flex align-items-center gap-2">
+          <input name="file" type="file" accept=".json,application/json" class="form-control" />
+          <button class="btn btn-outline-primary">Fallback Upload</button>
+        </div>
+        <small class="text-muted">Fallback ohne Drag&Drop / JS – lädt direkt die Datei hoch.</small>
+      </form>
+    </div>
+
+    <div class="col-lg-6">
+      <h5>JSON einfügen</h5>
+      <textarea id="jsonArea" class="form-control" rows="16" placeholder='[ { "slug": "cafe", "name": "Café", ... }, ... ]'></textarea>
+      <div class="small mt-1" id="jsonStatus"></div>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <div>
+    <h5>Vorschau</h5>
+    <pre id="preview" class="bg-light p-3 rounded" style="max-height:360px; overflow:auto"></pre>
+    <div id="importResult"></div>
+  </div>
+</div>
+
+<script src="/js/admin_import.js" defer></script>
+
+<%- include('../partials/footer') %>

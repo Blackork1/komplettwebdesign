@@ -1,0 +1,530 @@
+<%- include('../partials/head', { title, description, ogImage }) %>
+<%- include('../partials/header') %>
+
+<!-- branchen.css lazy laden -->
+<link rel="preload" href="/branchen.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
+<noscript>
+  <link rel="stylesheet" href="/branchen.css" />
+</noscript>
+
+<%
+// Helper zum sicheren Parsen
+function asArray(v) {
+  if (Array.isArray(v)) return v;
+  if (!v) return [];
+  if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+  return [];
+}
+function asObject(v) {
+  if (v && typeof v === 'object' && !Array.isArray(v)) return v;
+  if (typeof v === 'string') { try { const p = JSON.parse(v); return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {}; } catch { return {}; } }
+  return {};
+}
+
+// Alle JSON-Felder normalisieren
+const carouselItems   = asArray(industry.carousel_items);
+const statsCards      = asArray(industry.stats_cards);
+const seoItems        = asArray(industry.seo_items);
+const funktionenItems = asArray(industry.funktionen_items);
+const tippsItems      = asArray(industry.tipps_items);
+const faqItems        = asArray(industry.faq_items);
+const vorteile        = asObject(industry.vorteile);
+
+// für das Carousel die Positionen
+const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--far-right"];
+%>
+
+<!-- Optional: Mini-Fallback, damit disabled-Buttons vor JS korrekt aussehen -->
+<style>
+  .sliderArrow[disabled] {
+    opacity: .45;
+    pointer-events: none
+  }
+</style>
+
+<div id="OverflowHidden">
+  <div id="ContainerMarginSetup">
+    <div id="ContainerCenterWidthSetup">
+
+      <!-- ===================== HERO ===================== -->
+      <section id="Hero">
+        <div class="heroContainer">
+          <div class="upperHero">
+            <div class="heroLeft">
+              <h1 class="heroH1" data-text="<%= industry.hero_h1 %>">
+                <span class="heroH1-text"><%= industry.hero_h1 %></span>
+              </h1>
+
+              <% if (industry.hero_h2) { %>
+              <h2 class="heroH1-cursive"><%= industry.hero_h2 %></h2>
+              <% } %>
+
+              <% if ((industry.hero_checks||[]).length) { %>
+              <div class="heroCheckContainer">
+                <% industry.hero_checks.forEach(txt => { %>
+                <figure class="heroCheck">
+                  <img src="/images/icons/Group.svg" alt="Check">
+                  <figcaption><%= txt %></figcaption>
+                </figure>
+                <% }) %>
+              </div>
+              <% } %>
+
+              <!-- Preisinformation (falls du sie dynamisch willst, später aus DB ziehen) -->
+              <p class="mt-2 mb-0 heroPriceInfo">
+                <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
+                <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
+                <span class="badge text-bg-success">All-in ab 1.499,99 €</span>
+              </p>
+            </div>
+
+            <div class="heroRight">
+              <% if (industry.hero_image_url) { %>
+              <img class="heroImage" src="<%= industry.hero_image_url %>" alt="<%= industry.hero_image_alt || industry.name %>" loading="eager" fetchpriority="high">
+              <% } %>
+            </div>
+          </div>
+
+          <div class="lowerHero">
+            <a class="hoverElement" href="/kontakt">Lass dich beraten</a>
+            <a class="triggerElement" href="/kontakt" aria-label="Zur Kontaktseite">
+              <img src="/images/icons/ArrowRight.svg" alt="" />
+            </a>
+            <div class="hoverBorder"></div>
+          </div>
+
+          <div class="heroBorder"></div>
+        </div>
+      </section>
+
+      <!-- ===================== WARUM WEBSITE ===================== -->
+      <section id="WarumWebsite">
+        <div class="orangeContainer">
+          <h2 class="containerRight animate-on-scroll alignRight">Warum eine Website?</h2>
+        </div>
+
+        <div class="imageLeftTextRight">
+          <div class="imageLeft animate-on-scroll">
+            <% if (industry.warum_image_url) { %>
+            <img src="<%= industry.warum_image_url %>" alt="<%= industry.warum_image_alt || ('Bild: '+industry.name) %>" loading="lazy" fetchpriority="low">
+            <% } %>
+          </div>
+
+          <% if (industry.warum_upper) { %>
+          <div class="upperText animate-on-scroll">
+            <!-- Upper darf HTML enthalten -->
+            <p><%- industry.warum_upper %></p>
+          </div>
+          <% } %>
+
+          <% if (industry.warum_lower) { %>
+          <div class="lowerText animate-on-scroll">
+            <!-- Lower darf HTML enthalten -->
+            <p><%- industry.warum_lower %></p>
+          </div>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- ===================== UNVERZICHTBAR (2D Carousel) ===================== -->
+      <section id="WebsiteUnverzichtbar">
+        <div class="blueContainer"></div>
+
+        <h2 class="alignLeft h2Margin animate-on-scroll">
+          Warum eine Website für <%= industry.name %> unverzichtbar ist?
+        </h2>
+
+        <% if (industry.unverzichtbar_intro) { %>
+        <p class="col10W smCol12W animate-on-scroll"><%- industry.unverzichtbar_intro %></p>
+        <% } %>
+
+        <% if (industry.unverzichtbar_h3) { %>
+        <h3 class="alignCenter animate-on-scroll"><%= industry.unverzichtbar_h3 %></h3>
+        <% } %>
+
+        <div class="kwd-carousel kwd-2d animate-on-scroll" id="kwdSlider" aria-roledescription="carousel">
+          <div class="kwd-carousel-stage">
+            <% carouselItems.forEach((it, i) => { const pos = positions[i] || "pos--far-right"; %>
+            <div class="kwd-card <%= pos %>" data-index="<%= i %>">
+              <% if (it.img_url) { %>
+              <img class="kwd-card-img" src="<%= it.img_url %>" alt="<%= it.img_alt || '' %>" loading="lazy" decoding="async">
+              <% } %>
+              <div class="kwd-card-title"><%= it.title || '' %></div>
+            </div>
+            <% }) %>
+          </div>
+
+          <div class="kwd-controls">
+            <button class="kwd-btn prev" aria-label="Zurück">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button class="kwd-btn next" aria-label="Weiter">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="kwd-dots" role="tablist" aria-label="Slider-Punkte">
+            <% (industry.carousel_items||[]).forEach((_,i)=> { %>
+            <button class="dot" aria-label="Slide <%= i+1 %>"></button>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===================== STATISTIK / STUDIEN ===================== -->
+      <section id="Statistik">
+        <h2 class="alignCenter animate-on-scroll">Statistiken & Studien: Online-Suche im <%= industry.name %>-Bereich</h2>
+
+        <section class="statsSection" aria-label="Statistiken & Studien">
+          <div class="statsGrid">
+            <div class="statsLeft">
+              <ul class="statStack" role="list">
+                <% (industry.stats_cards||[]).forEach((c, idx) => { %>
+                <li class="statCard <%= idx===0?'is-open':'' %> animate-on-scroll">
+                  <button class="statHeader" aria-expanded="<%= idx===0 ? 'true' : 'false' %>">
+                    <span class="itemIcon" aria-hidden="true"><%= c.icon || '📊' %></span>
+                    <h2 class="itemLabel"><%= c.label %></h2>
+                  </button>
+                  <div class="statBody" aria-hidden="<%= idx===0 ? 'false' : 'true' %>">
+                    <p><%- c.body %></p>
+                  </div>
+                </li>
+                <% }) %>
+              </ul>
+            </div>
+
+            <div class="statsRight bleedRight animate-on-scroll">
+              <figure class="phoneFigure">
+                <img src="/images/branchen/Statistik.png" alt="Smartphone mit Statistik" loading="lazy" fetchpriority="low">
+              </figure>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ===================== SEO FÜR BRANCHE (HORIZONTAL SLIDER) ===================== -->
+      <section id="SEO">
+        <div class="orangeContainer">
+          <h2 class="containerLeft animate-on-scroll alignLeft">SEO für <%= industry.name %> – so wirst du gefunden</h2>
+        </div>
+
+        <p class="animate-on-scroll" style="margin-top: 50px;"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit dich Kund:innen online entdecken.</strong></p>
+
+        <div class="sliderWrap animate-on-scroll" data-slider>
+          <% if ((industry.seo_items||[]).length) { %>
+          <h3>Die wichtigsten SEO-Maßnahmen:</h3>
+          <% } %>
+
+          <div class="horizontalSlider" draggable="false">
+            <% (industry.seo_items||[]).forEach((it) => { %>
+            <div class="sliderItem animate-on-scroll" draggable="false">
+              <div class="slideImage">
+                <div class="gradient"></div>
+                <% if (it.img_url) { %>
+                <img src="<%= it.img_url %>" alt="<%= it.img_alt || it.title || industry.name %>" loading="lazy" fetchpriority="low">
+                <% } %>
+              </div>
+              <% if (it.title) { %>
+              <div class="upperSlideContainer">
+                <p><%= it.title %></p>
+              </div>
+              <% } %>
+              <% if (it.text) { %>
+              <div class="lowerSlideContainer">
+                <p><%= it.text %></p>
+              </div>
+              <% } %>
+            </div>
+            <% }) %>
+          </div>
+
+          <div class="sliderControls">
+            <div class="arrowRow">
+              <button class="sliderArrow prev" aria-label="Vorheriger Slide" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="15,6 7,12 15,18" />
+                </svg>
+              </button>
+              <button class="sliderArrow next" aria-label="Nächster Slide">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="9,6 17,12 9,18" />
+                </svg>
+              </button>
+            </div>
+            <div class="sliderDots" role="tablist" aria-label="Slides" data-dots></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== FUNKTIONEN (HORIZONTAL GRID SLIDER) ===================== -->
+      <section id="Funktionen">
+        <div class="funktionenContainer">
+          <div id="ContainerMarginSetup">
+            <div id="ContainerCenterWidthSetup">
+              <div class="alignEnd marginRight100px">
+                <h2 class="animate-on-scroll">Wichtige Funktionen einer <%= industry.name %>-Website</h2>
+                <% if (industry.funktionen_items && industry.funktionen_items.length) { %>
+                <p class="animate-on-scroll">Eine erfolgreiche Website ist mehr als eine Startseite mit Adresse. Sie muss die Bedürfnisse der Gäste erfüllen:</p>
+                <% } %>
+              </div>
+
+              <div data-funktionen>
+                <div class="funktionenItemContainer horizontalSliderFunktionen">
+                  <% (industry.funktionen_items || []).forEach((f, i) => { %>
+                  <div class="funktionenItem <%= i < 3 ? 'itemScrollFunktionen' : '' %> animate-on-scroll">
+                    <div class="iconContainer">
+                      <% if (f.icon_url) { %>
+                      <img src="<%= f.icon_url %>" alt="" />
+                      <% } %>
+                    </div>
+                    <h3><%= f.title %></h3>
+                    <p><%= f.text %></p>
+                  </div>
+                  <% }) %>
+                </div>
+
+                <div class="sliderControlsFunktionen">
+                  <div class="arrowRow">
+                    <button class="sliderArrow prev funktionenArrow" aria-label="Vorheriger Slide" disabled>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polygon points="15,6 7,12 15,18" />
+                      </svg>
+                    </button>
+                    <button class="sliderArrow next funktionenArrow" aria-label="Nächster Slide">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polygon points="9,6 17,12 9,18" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="sliderDots" role="tablist" aria-label="Slides" data-dots-funktionen></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hintergrundbild (optional statisch) -->
+          <img class="backgroundImage" src="/images/branchen/features.webp" alt="Verschiedene Funktionen einer Website" loading="lazy" fetchpriority="low">
+        </div>
+      </section>
+
+      <!-- ===================== PREISE (Pakete aus DB) ===================== -->
+      <section id="Preise">
+        <h2 class="alignCenter animate-on-scroll">Kosten für eine Website</h2>
+        <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Was kostet eine Website?“</strong></p>
+
+        <div class="pricing-grid marginPricingGrid">
+          <% (packages||[]).forEach(pkg => { if (pkg.display) { %>
+          <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
+            <h3 class="alignCenter"><%= pkg.name %></h3>
+            <div class="p1rem alignCenter">
+              <% if (pkg.description) { %>
+              <p class="package-description"><%= pkg.description %></p>
+              <% } %>
+
+              <p class="price alignCenter"><%= pkg.price %></p>
+
+              <% if ((pkg.features||[]).length) { %>
+              <ul class="features-list alignCenter">
+                <% pkg.features.forEach(feat => { %><li><%= feat %></li><% }) %>
+              </ul>
+              <% } %>
+
+              <a class="btn btn-primary alignCenter" href="/pakete/<%= pkg.name %>">Details</a>
+            </div>
+          </div>
+          <% } }) %>
+        </div>
+
+        <p class="alignCenter underLindeText animate-on-scroll">
+          Ein zusätzliches Stammkunden-Paar pro Woche kann die Investition bereits decken.
+        </p>
+      </section>
+
+      <!-- ===================== VORTEILE / NACHTEILE (HORIZONTAL SLIDER) ===================== -->
+      <section id="Vorteile">
+        <div class="blueContainerVorteile"></div>
+        <h2 class="alignCenter vorteileH2 animate-on-scroll">Vorteile und mögliche Nachteile</h2>
+
+        <div data-vorteile>
+          <div class="flexVorteile horizontalSliderVorteile">
+            <div class="vorteileHeaderItem">
+              <h3 class="alignCenter mb-0 headerVorteileGrid">Vorteile</h3>
+              <div class="vorteileFlex">
+                <% ((industry.vorteile && industry.vorteile.pros) ? industry.vorteile.pros : []).forEach(txt => { %>
+                <div class="greenContainer animate-on-scroll">
+                  <img src="/images/icons/checkgreen.svg" alt="check">
+                  <p class="mb-0"><%= txt %></p>
+                </div>
+                <% }) %>
+              </div>
+            </div>
+
+            <div class="vorteileHeaderItem">
+              <h3 class="alignCenter mb-0 headerNachteileGrid ">Nachteile</h3>
+              <div class="nachteileFlex">
+                <% ((industry.vorteile && industry.vorteile.cons) ? industry.vorteile.cons : []).forEach(txt => { %>
+                <div class="redContainer animate-on-scroll">
+                  <img src="/images/icons/uncheck.svg" alt="uncheck">
+                  <p class="mb-0"><%= txt %></p>
+                </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+
+          <div class="sliderControlsVorteile">
+            <div class="arrowRow">
+              <button class="sliderArrow prev" aria-label="Vorheriger Slide" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="15,6 7,12 15,18" />
+                </svg>
+              </button>
+              <button class="sliderArrow next" aria-label="Nächster Slide">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="9,6 17,12 9,18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p class="containerTitleBlack alignCenter">
+          Eine professionell erstellte Website eliminiert Nachteile und hebt Vorteile hervor.
+        </p>
+      </section>
+
+      <!-- ===================== TIPPS (HORIZONTAL SLIDER) ===================== -->
+      <section id="Tipps">
+        <h2 class="alignEnd">Tipps für erfolgreiche Website</h2>
+
+        <div class="tippsWrap" data-tips>
+          <div class="tippsContainer horizontalSliderTips">
+            <% (industry.tipps_items||[]).forEach(t => { %>
+            <div class="tippsItem animate-on-scroll">
+              <div class="tippsImage">
+                <% if (t.img_url) { %>
+                <img style="width: 100%;" src="<%= t.img_url %>" alt="<%= t.img_alt || '' %>" loading="lazy" fetchpriority="low">
+                <% } %>
+              </div>
+              <% if (t.heading) { %><p class="headingTipps"><%= t.heading %></p><% } %>
+              <% if (t.text)    { %><p class="textTipps"><%= t.text %></p><% } %>
+            </div>
+            <% }) %>
+          </div>
+
+          <div class="sliderControlsTipps">
+            <div class="arrowRow">
+              <button class="sliderArrow prev" aria-label="Vorheriger Slide" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="15,6 7,12 15,18" />
+                </svg>
+              </button>
+              <button class="sliderArrow next" aria-label="Nächster Slide">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="9,6 17,12 9,18" />
+                </svg>
+              </button>
+            </div>
+            <div class="sliderDots" role="tablist" aria-label="Slides" data-dots></div>
+          </div>
+        </div>
+
+        <p class="alignCenter">
+          So machen wir deine Website schnell sichtbar – für echte Anfragen und Reservierungen.
+        </p>
+      </section>
+
+      <!-- ===================== CTA ===================== -->
+      <section id="CTA">
+        <div class="ctaContainer">
+          <div style="z-index: 2; position: relative;">
+            <h2 class="alignCenter ctaH2 animate-on-scroll">
+              Benötigst du eine Website für<br><strong class="orange">dein <%= industry.name %>?</strong>
+            </h2>
+          </div>
+
+          <% if (industry.cta_text) { %>
+          <p class="alignCenter ctaText animate-on-scroll"><%= industry.cta_text %></p>
+          <% } %>
+
+          <div class="imageCTAContainer">
+            <div class="imageCTALeft animate-on-scroll-right">
+              <a href="/pakete/basis">
+                <img src="<%= industry.cta_left_image || '/images/branchen/BasisPaket.webp' %>" alt="Basis-Paket" loading="lazy" fetchpriority="low">
+              </a>
+            </div>
+            <div class="imageCTARight animate-on-scroll-left">
+              <a href="/pakete/business">
+                <img src="<%= industry.cta_right_image || '/images/branchen/BusinessPaket.webp' %>" alt="Business-Paket" loading="lazy" fetchpriority="low">
+              </a>
+            </div>
+          </div>
+
+          <div class="alignCenter animate-on-scroll">
+            <a class="btn ctaButton" href="/kontakt">Beratungsgespräch vereinbaren</a>
+          </div>
+          <p class="alignCenter animate-on-scroll">Kontaktiere uns für eine kostenlose Erstberatung!</p>
+        </div>
+      </section>
+
+      <!-- ===================== FAQ (mit optionalem Link) ===================== -->
+      <section id="FAQ">
+        <div class="orangeContainer">
+          <h2 class="containerCenter animate-on-scroll alignCenter">
+            FAQ<br>Häufige Fragen zu <br> <%= industry.name %>-Websites
+          </h2>
+        </div>
+
+        <div class="mt-5" id="details">
+          <div class="accordion" id="paketDetails">
+            <% (industry.faq_items||[]).forEach((f, idx) => { 
+                 const hid = `heading${idx+1}`;
+                 const cid = `collapse${idx+1}`;
+                 const open = idx === 0;
+            %>
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="<%= hid %>">
+                <button class="accordion-button <%= open ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#<%= cid %>" aria-expanded="<%= open ? 'true' : 'false' %>" aria-controls="<%= cid %>">
+                  <%= f.q %>
+                </button>
+              </h3>
+              <div id="<%= cid %>" class="accordion-collapse collapse <%= open ? 'show' : '' %>" aria-labelledby="<%= hid %>" data-bs-parent="#paketDetails">
+                <div class="accordion-body">
+                  <p><%- f.a %></p>
+                  <% if (f.link_url) { %>
+                  <p class="mb-0">
+                    <a href="<%= f.link_url %>" class="btn btn-link p-0">
+                      <%= f.link_label || 'Mehr erfahren' %>
+                    </a>
+                  </p>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Page JS -->
+<script src="/js/sliderAnimation.js" defer></script>
+<script src="/js/carousel.js" defer></script>
+<script src="/js/openField.js" defer></script>
+
+<!-- JSON-LD -->
+<% (jsonLd||[]).forEach(block => { %>
+<script type="application/ld+json">
+  <%- JSON.stringify(block) %>
+</script>
+<% }) %>
+
+<%- include('../partials/footer') %>

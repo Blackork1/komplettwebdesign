@@ -1,0 +1,31 @@
+<%- include('../partials/head', { title, description: '', ogImage: '' }) %>
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+  <h1><%= title %></h1>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <% if (results && results.length) { %>
+    <table class="table table-striped">
+      <thead><tr><th>Slug</th><th>Name</th><th>Aktion</th><th>Seite</th></tr></thead>
+      <tbody>
+        <% results.forEach(r => { %>
+          <tr>
+            <td><code><%= r.slug %></code></td>
+            <td><%= r.name || '' %></td>
+            <td><span class="badge <%= r.action==='inserted' ? 'bg-success' : 'bg-warning text-dark' %>"><%= r.action %></span></td>
+            <td><a class="btn btn-sm btn-outline-secondary" href="/webdesign-<%= r.slug %>" target="_blank">ansehen</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+
+  <a class="btn btn-outline-secondary" href="/admin/industries/import">Zurück zum Import</a>
+  <a class="btn btn-primary" href="/admin/industries">Zur Branchenliste</a>
+</div>
+
+<%- include('../partials/footer') %>

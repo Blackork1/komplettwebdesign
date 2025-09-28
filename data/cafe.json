@@ -1,0 +1,237 @@
+[
+  {
+    "slug": "cafe",
+    "name": "Café",
+    "title": "Café-Website erstellen lassen – Webdesign & SEO für Cafés",
+    "description": "Professionelle Café-Websites: Speisekarte, Reservierung, SEO, mobil optimiert und schnell. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "og_image_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/og_cafe.webp",
+
+    "hero_h1": "Café Website erstellen",
+    "hero_h2": "Professionelles Webdesign für Cafés, Coffee-Shops und Bistros",
+    "hero_checks": [
+      "Optimiert für Handy, Tablet & Desktop",
+      "Lokale Sichtbarkeit: \"Website in Berlin erstellen lassen\"",
+      "Klare Preise, klare Deadlines – 0 Technik-Stress für dich"
+    ],
+    "hero_image_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/hero_cafe.png",
+    "hero_image_alt": "Barista gießt Latte Art in einem modernen Café",
+
+    "warum_image_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/warum_fragezeichen.png",
+    "warum_image_alt": "Illustration eines Fragezeichens",
+    "warum_upper": "<p>Cafés sind längst mehr als nur Orte für Kaffee und Kuchen. Sie sind Treffpunkte, Wohlfühloasen und Lifestyle-Spots. Gerade in Städten wie Berlin, Hamburg oder München gibt es eine riesige Auswahl – vom hippen Coffee-Shop bis zum traditionellen Familienbetrieb. Doch bei dieser Konkurrenz stellt sich die Frage: <strong>Wie schaffen Sie es, dass Gäste genau Ihr Café finden und besuchen?</strong><br><strong>Die Antwort: mit einer professionellen Café-Website.</strong></p>",
+    "warum_lower": "<p>In der digitalen Welt informieren sich Gäste zuerst online. <strong>Viele Menschen nutzen ihr Smartphone, um ein Café in ihrer Nähe zu finden.</strong> Die Entscheidung fällt in Sekunden. Wer eine moderne Website mit klarer Speisekarte, schönen Bildern und einfacher Kontaktmöglichkeit bietet, gewinnt – wer keine oder eine veraltete Website hat, verliert Gäste an die Konkurrenz.</p>",
+
+    "unverzichtbar_intro": "Ein Café ohne Website ist für viele potenzielle Gäste unsichtbar. Plattformen wie Google Maps, TripAdvisor oder Yelp sind wichtig, aber am Ende wollen die meisten Gäste die <strong>eigene Website</strong> des Cafés sehen.",
+    "unverzichtbar_h3": "Gründe, warum Cafés eine Website brauchen:",
+
+    "carousel_items": [
+      {
+        "title": "Unabhängigkeit von Plattformen",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/carousel_unabhaengig.webp",
+        "img_alt": "Café-Website auf Laptop und Smartphone"
+      },
+      {
+        "title": "Events & Aktionen",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/carousel_events.webp",
+        "img_alt": "Eventplakat und Kaffeebohnen"
+      },
+      {
+        "title": "Sichtbarkeit bei Google",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/carousel_google.webp",
+        "img_alt": "Google-Suchergebnisse mit Café-Eintrag"
+      },
+      {
+        "title": "Authentische Präsentation",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/carousel_authentisch.webp",
+        "img_alt": "Innenraum eines gemütlichen Cafés"
+      },
+      {
+        "title": "Online-Speisekarte",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/carousel_speisekarte.webp",
+        "img_alt": "Digitale Speisekarte auf einem Smartphone"
+      }
+    ],
+
+    "stats_cards": [
+      {
+        "icon": "📈",
+        "label": "Statista (2023)",
+        "body": "<p>92&nbsp;% der Menschen in Deutschland suchen regelmäßig online nach Restaurants, Cafés oder Bars.</p>"
+      },
+      {
+        "icon": "📱",
+        "label": "Smartphone Nutzer",
+        "body": "<p>Über 80&nbsp;% der Gäste starten mobil. Performance &amp; mobile UX entscheiden in Sekunden.</p>"
+      },
+      {
+        "icon": "📊",
+        "label": "IHK-Studie",
+        "body": "<p>Top-Infos: Öffnungszeiten, Speisekarte, Reservierung, Adresse. Diese Punkte sollten prominent sein.</p>"
+      },
+      {
+        "icon": "🗺️",
+        "label": "Google Maps",
+        "body": "<p>Gepflegtes Unternehmensprofil + Website steigern Anrufe und Wegbeschreibungen messbar.</p>"
+      },
+      {
+        "icon": "📅",
+        "label": "OpenTable",
+        "body": "<p>Online-Reservierungen reduzieren No-Shows und füllen Randzeiten – ideal in Kombination mit der Website.</p>"
+      }
+    ],
+
+    "seo_items": [
+      {
+        "title": "Lokale Keywords",
+        "text": "Begriffe wie \"Café Berlin Kreuzberg\", \"veganes Café München Schwabing\", \"Frühstück Hamburg Altona\" – klarer Bezug zu Stadt/Bezirk.",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_keywords.png",
+        "img_alt": "Keyword-Liste mit lokalen Begriffen"
+      },
+      {
+        "title": "Google Unternehmensprofil",
+        "text": "Name, Kategorien, Öffnungszeiten, Fotos, Speisekarte verlinken. Bewertungen aktiv managen.",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_gmb.png",
+        "img_alt": "Google-Unternehmensprofil Beispiel"
+      },
+      {
+        "title": "Technische Performance",
+        "text": "Schnelle Ladezeit (Core Web Vitals), Bildkompression, Caching – besonders wichtig für mobile Nutzer.",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_performance.png",
+        "img_alt": "Performance-Diagramm"
+      },
+      {
+        "title": "Strukturierte Daten",
+        "text": "Schema.org für LocalBusiness, Menu, FAQ. Erhöht Chancen auf Rich Results.",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_schema.png",
+        "img_alt": "Schema.org Markup Symbol"
+      },
+      {
+        "title": "Lokale Backlinks",
+        "text": "Einträge in relevante Verzeichnisse & lokale Partnerschaften aufbauen – stärkt Trust & Sichtbarkeit.",
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_backlinks.png",
+        "img_alt": "Verzeichnis-Symbole und Link-Ketten"
+      }
+    ],
+
+    "funktionen_items": [
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_menu.svg",
+        "title": "Online-Speisekarte",
+        "text": "Aktuelle Gerichte, Preise & Specials – strukturiert und mobilfreundlich."
+      },
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_booking.svg",
+        "title": "Reservierungssystem",
+        "text": "Tisch online buchen – optional mit Zeitfenstern & Bestätigung per E-Mail."
+      },
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_time.svg",
+        "title": "Öffnungszeiten & Kontakt",
+        "text": "Klar, prominent & klickbar (Call/Maps)."
+      },
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_gallery.svg",
+        "title": "Galerie",
+        "text": "Starke Bilder übertragen Atmosphäre und Qualität."
+      },
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_newsletter.svg",
+        "title": "Newsletter & Aktionen",
+        "text": "Stammkundschaft binden, Events & Wochenkarten bewerben."
+      },
+      {
+        "icon_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/icons/icon_accessibility.svg",
+        "title": "Mehrsprachig & barrierearm",
+        "text": "UX für Touristen und Nutzer mit Assistenztechnologien verbessern."
+      }
+    ],
+
+    "vorteile": {
+      "pros": [
+        "Mehr Sichtbarkeit & Reichweite",
+        "Unabhängigkeit von Plattformen",
+        "Direkter Kundenkontakt",
+        "Stärkung der Marke & Atmosphäre",
+        "Mehr Gäste durch Online-Präsenz"
+      ],
+      "cons": [
+        "Fehlende mobile Optimierung = Absprünge",
+        "Schlechte Fotos = unprofessioneller Eindruck",
+        "Veraltete Speisekarte = enttäuschte Gäste"
+      ]
+    },
+
+    "tipps_items": [
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_storytelling.webp",
+        "img_alt": "Barista und Gäste",
+        "heading": "#1 Storytelling",
+        "text": "Erzähle deine Geschichte – Gäste lieben Authentizität."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_fotos.webp",
+        "img_alt": "Kaffee und Croissant",
+        "heading": "Professionelle Fotos",
+        "text": "Licht & Perspektive machen den Unterschied."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_navigation.webp",
+        "img_alt": "Navigationsmenü",
+        "heading": "Klare Navigation",
+        "text": "Wenige, eindeutige Menüpunkte – schnelle Orientierung."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_speed.webp",
+        "img_alt": "Stoppuhr und Rakete",
+        "heading": "Ladezeit optimieren",
+        "text": "Komprimierte Bilder & Caching – mobile Nutzer danken es."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_reviews.webp",
+        "img_alt": "Stern-Bewertungen",
+        "heading": "Bewertungen einbinden",
+        "text": "Social Proof steigert Vertrauen und Conversions."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/tipp_aktuelles.webp",
+        "img_alt": "Tafel mit Tageskarte",
+        "heading": "Aktuelle Inhalte",
+        "text": "Wochenkarte, Events, Saisons – regelmäßig aktualisieren."
+      }
+    ],
+
+    "cta_headline": "Benötigst du eine Website für dein Café?",
+    "cta_text": "Ein Café lebt von Gästen – und diese finden dich heute online. Eine professionelle Website mit Speisekarte, Bildern, SEO und Reservierungssystem ist dein Schlüssel zu mehr Sichtbarkeit, mehr Besuchern und mehr Umsatz.",
+    "cta_left_image": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/cta_basis.webp",
+    "cta_right_image": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/cta_business.webp",
+
+    "faq_items": [
+      {
+        "q": "Wie lange dauert es, eine Café-Website zu erstellen?",
+        "a": "<p>Zwischen 3 und 6 Wochen – je nach Umfang, Inhalten und Funktionen.</p>",
+        "link_url": "/pakete/basis",
+        "link_label": "Zum Basis-Paket"
+      },
+      {
+        "q": "Braucht jedes Café eine Website?",
+        "a": "<p>Ja – gerade in Städten ist die Konkurrenz groß. Ohne Website wirst du seltener gefunden und verlierst potenzielle Gäste.</p>",
+        "link_url": "/pakete/business",
+        "link_label": "Zum Business-Paket"
+      },
+      {
+        "q": "Wie wichtig ist SEO für Cafés?",
+        "a": "<p>Sehr wichtig. Lokale Suchanfragen (Google &amp; Maps) entscheiden häufig in Sekunden über den Besuch.</p>",
+        "link_url": "/pakete/all-in",
+        "link_label": "Zum All-in-Paket"
+      },
+      {
+        "q": "Kann ich meine Speisekarte selbst aktualisieren?",
+        "a": "<p>Ja. Mit modernen Systemen (z.&nbsp;B. WordPress/Headless) geht das ohne Programmierkenntnisse.</p>"
+      },
+      {
+        "q": "Bietet ihr auch Online-Reservierungen an?",
+        "a": "<p>Ja. Gäste können direkt über die Website Tische buchen – inkl. Bestätigungs-E-Mail und optionaler Terminverwaltung.</p>"
+      }
+    ]
+  }
+]

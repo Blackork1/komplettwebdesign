@@ -51,8 +51,8 @@ import shopRoutes from './routes/shopRoutes.js';
 import districtRoutes from "./routes/districtRoutes.js";
 import sitemapRoutes from "./routes/sitemapRoutes.js";
 import adminLogs from './routes/adminLogs.js';
-
-
+import industriesRoutes from './routes/industries.js';
+import adminIndustriesRoutes from './routes/adminIndustries.js';
 
 import Stripe from 'stripe';
 
@@ -204,6 +204,8 @@ app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
 app.use("/webdesign-berlin", districtRoutes);
 app.use(adminLogs);
+app.use(industriesRoutes);
+app.use('/admin', adminIndustriesRoutes);
 
 
 // Sitemap
