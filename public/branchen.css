@@ -1431,27 +1431,31 @@ p > strong {
 
 /* CTA */
 
-.imageCTALeft {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: clamp(9.375rem, 7.0536rem + 9.5238vw, 15.625rem);
-  height: auto;
-  z-index: 0;
-  border-radius: 25px;
-  box-shadow: -11px -4px 50px 20px rgb(0 0 0 / 20%);
+.ctaContainer {
+  position: relative;
 }
 
+.imageCTALeft,
 .imageCTARight {
   position: absolute;
-  right: 0;
   top: 50%;
   width: clamp(9.375rem, 7.0536rem + 9.5238vw, 15.625rem);
-  height: auto;
-  border-radius: 25px;
-  z-index: 0;
+  aspect-ratio: 1 / 1; /* garantiert Fläche, auch wenn img noch lazy ist */
+  transform: translate(-50%, -50%); /* Basis-Referenz, siehe unten */
   box-shadow: -11px -4px 50px 20px rgb(0 0 0 / 20%);
+  z-index: 1;
+  border-radius: 25px;
+  height: auto;
 }
+
+.imageCTALeft {
+  left: 0;
+  transform: translate(50%, -50%);
+} /* links */
+.imageCTARight {
+  right: 0;
+  transform: translate(-50%, -50%);
+} /* rechts */
 
 .imageCTALeft img,
 .imageCTARight img {
@@ -1555,7 +1559,6 @@ p > strong {
   .marginRight100px {
     margin-right: 100px;
   }
-
   .imageCTALeft:hover {
     transform: translateX(50%) translateY(-60%) rotateZ(0deg) !important;
   }
