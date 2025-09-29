@@ -35,7 +35,7 @@ export async function sitemapXml(req, res, next) {
 
     const { rows: pages } = await pool.query(
       `SELECT slug,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(created_at, now()) AS updated_at
          FROM pages
         WHERE display = true`
     );
@@ -75,7 +75,7 @@ export async function sitemapXml(req, res, next) {
     // CMS Pages
     const pageRoutes = pages.map(p => ({
       loc: `${base}/${p.slug}`,
-      lastmod: new Date(p.updated_at).toISOString(),
+      lastmod: new Date().toISOString(),
       changefreq: "weekly",
       priority: 0.8
     }));
