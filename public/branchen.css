@@ -1464,6 +1464,10 @@ p > strong {
   border-radius: 25px;
 }
 
+.imageCTAContainer {
+    min-height: 240px;
+}
+
 .animate-on-scroll-right {
   opacity: 0;
   transform: translateY(40px) translateX(-40px);
@@ -1549,7 +1553,7 @@ p > strong {
 @media (min-width: 1000px) {
   .ctaText {
     opacity: 1 !important;
-    position: relative;
+    position: absolute;
     width: 300px;
     left: 50%;
     transform: translateX(-50%) !important;
@@ -1785,6 +1789,11 @@ p > strong {
   .animate-on-scroll-right.visible {
     transform: translateX(30%) translateY(-80%) rotateZ(-15deg) !important;
   }
+
+  .ctaText{
+    display: none !important;
+  }
+
   .containerCenter {
     position: absolute;
     bottom: -50px;
