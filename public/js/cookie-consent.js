@@ -1,7 +1,7 @@
 // /public/js/cookie-consent.js  — Option B: GA immer geladen, aber vor Consent blockiert
 document.addEventListener('DOMContentLoaded', () => {
   const banner = document.getElementById('cookie-banner');
-  const ANALYTICS_COOKIE_NAMES = ['_ga', '_gid', '_gat', '_gcl_au', '_ga_', '_gac_'];
+  const ANALYTICS_COOKIE_NAMES = ['_ga', '_gid', '_gat', '_gcl_au', '_ga_', '_gac_', '_clck', '_clsk'];
   let firstPageviewSent = false;
 
   // ---------- Banner show/hide (robust) ----------
@@ -137,6 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function loadClarityInline(id) {
+    if (!id || window.clarity) return;
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + id;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, "clarity", "script", id);
+
+    (function tryConsent() {
+      if (typeof window.clarity === 'function') { try { window.clarity('consent', true); } catch (e) { } }
+      else setTimeout(tryConsent, 200);
+    })();
+  }
+
   // ---------- Banner-Buttons ----------
   if (banner) {
     const setConsent = (analytics, marketing) => {
@@ -162,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (acceptAllBtn) acceptAllBtn.onclick = () => {
       setConsent(true, true);
-      if (window.env?.CLARITY_ID) window.loadClarityOnce(window.env.CLARITY_ID);
+      if (window.env?.CLARITY_ID) loadClarityInline(window.env.CLARITY_ID);
     };
     if (acceptNecBtn) acceptNecBtn.onclick = () => {
       setConsent(false, false); // kein Clarity-Laden
@@ -186,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
           marketing: !!consent.marketing
         });
         sendInitialPageviewIfNeeded(!!consent.analytics, !!consent.marketing);
-        if (consent.analytics && window.env?.CLARITY_ID) {
-          window.loadClarityOnce(window.env.CLARITY_ID);
+        if (consent.analytics && window.env?.CLARITY_ID && !window.clarity) {
+          loadClarityInline(window.env.CLARITY_ID);
         }
       } else {
         blockAll();
