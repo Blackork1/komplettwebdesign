@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Consent Mode Helpers ----------
   function ensureGtagShim() {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
   }
 
   // Setzt CMv2-Flags je nach Auswahl (immer 'update', niemals 'default granted')
@@ -47,9 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // prefs: { analytics: boolean, marketing: boolean }
     ensureGtagShim();
     window.gtag('consent', 'update', {
-      analytics_storage:  prefs.analytics ? 'granted' : 'denied',
-      ad_storage:         prefs.marketing ? 'granted' : 'denied',
-      ad_user_data:       prefs.marketing ? 'granted' : 'denied',
+      analytics_storage: prefs.analytics ? 'granted' : 'denied',
+      ad_storage: prefs.marketing ? 'granted' : 'denied',
+      ad_user_data: prefs.marketing ? 'granted' : 'denied',
       ad_personalization: prefs.marketing ? 'granted' : 'denied'
     });
     window.dataLayer.push({ event: 'consent_updated' });
@@ -160,8 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const acceptAllBtn = document.getElementById('accept-all');
     const acceptNecBtn = document.getElementById('accept-necessary');
 
-    if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true,  true);
-    if (acceptNecBtn) acceptNecBtn.onclick = () => setConsent(false, false);
+    if (acceptAllBtn) acceptAllBtn.onclick = () => {
+      setConsent(true, true);
+      if (window.env?.CLARITY_ID) window.loadClarityOnce(window.env.CLARITY_ID);
+    };
+    if (acceptNecBtn) acceptNecBtn.onclick = () => {
+      setConsent(false, false); // kein Clarity-Laden
+    };
+
+    // if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true, true);
+    // if (acceptNecBtn) acceptNecBtn.onclick = () => setConsent(false, false);
   }
 
   // ---------- Initial-Load: aktuellen Consent aus der Session ----------
@@ -178,6 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
           marketing: !!consent.marketing
         });
         sendInitialPageviewIfNeeded(!!consent.analytics, !!consent.marketing);
+        if (consent.analytics && window.env?.CLARITY_ID) {
+          window.loadClarityOnce(window.env.CLARITY_ID);
+        }
       } else {
         blockAll();
         showBanner();
