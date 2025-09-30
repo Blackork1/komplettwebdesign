@@ -1,5 +1,5 @@
 <%- include('../partials/head', { title, description: '', ogImage: '' }) %>
-<%- include('../partials/header') %>
+<%- include('../partials/admin_header') %>
 
 <div class="container py-4">
   <h1><%= mode==='create' ? 'Neue Branche' : 'Branche bearbeiten' %></h1>
@@ -146,4 +146,4 @@
 
 <script src="/js/admin_json_editor.js" defer></script>
 
-<%- include('../partials/footer') %>
+<%- include('../partials/admin_footer') %>

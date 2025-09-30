@@ -86,8 +86,9 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
 
           <div class="lowerHero">
-            <a class="hoverElement" href="/kontakt">Lass dich beraten</a>
-            <a class="triggerElement" href="/kontakt" aria-label="Zur Kontaktseite">
+            <a id="cta-hero" class="hoverElement" href="/kontakt" data-track="cta" data-cta-name="lass_dich_beraten">
+              Lass dich beraten
+            </a> <a class="triggerElement" href="/kontakt" aria-label="Zur Kontaktseite">
               <img src="/images/icons/ArrowRight.svg" alt="" />
             </a>
             <div class="hoverBorder"></div>
@@ -466,7 +467,9 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
 
           <div class="alignCenter animate-on-scroll">
-            <a class="btn ctaButton" href="/kontakt">Beratungsgespräch vereinbaren</a>
+            <a id="cta-footer" class="btn ctaButton" href="/kontakt" data-track="cta" data-cta-name="beratungsgespraech_vereinbaren">
+              Beratungsgespräch vereinbaren
+            </a>
           </div>
           <p class="alignCenter animate-on-scroll">Kontaktiere uns für eine kostenlose Erstberatung!</p>
         </div>
@@ -519,6 +522,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="/js/sliderAnimation.js" defer></script>
 <script src="/js/carousel.js" defer></script>
 <script src="/js/openField.js" defer></script>
+<script src="/js/ga-events.js" defer></script>
+
 
 <!-- JSON-LD -->
 <% (jsonLd||[]).forEach(block => { %>
