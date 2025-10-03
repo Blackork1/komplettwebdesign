@@ -170,7 +170,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
           <div class="kwd-dots" role="tablist" aria-label="Slider-Punkte">
             <% (industry.carousel_items||[]).forEach((_,i)=> { %>
-            <button class="dot" aria-label="Slide <%= i+1 %>"></button>
+            <button class="dot" role="tab" aria-label="Slide <%= i+1 %>" aria-selected="false" tabindex="-1"></button>
             <% }) %>
           </div>
         </div>
@@ -357,7 +357,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               <h3 class="alignCenter mb-0 headerVorteileGrid">Vorteile</h3>
               <div class="vorteileFlex">
                 <% ((industry.vorteile && industry.vorteile.pros) ? industry.vorteile.pros : []).forEach(txt => { %>
-                <div class="greenContainer animate-on-scroll">
+                <div class="greenContainer animate-on-scroll out">
                   <img src="/images/icons/checkgreen.svg" alt="check">
                   <p class="mb-0"><%= txt %></p>
                 </div>
@@ -523,6 +523,70 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="/js/carousel.js" defer></script>
 <script src="/js/openField.js" defer></script>
 <script src="/js/ga-events.js" defer></script>
+
+<script defer>
+  (function() {
+    // Alle Dot-Container, auch die außerhalb von #kwdSlider
+    const dotLists = document.querySelectorAll('.kwd-dots[role="tablist"], .sliderDots[role="tablist"]');
+    dotLists.forEach(list => {
+      // Fallback: sicherstellen, dass es wirklich ein Tablist ist
+      if (!list.hasAttribute('role')) list.setAttribute('role', 'tablist');
+      if (!list.hasAttribute('aria-label') && !list.hasAttribute('aria-labelledby')) {
+        list.setAttribute('aria-label', 'Slides');
+      }
+
+      // Buttons in Tabs verwandeln
+      const btns = Array.from(list.querySelectorAll('button, .dot'));
+      btns.forEach((b, i) => {
+        b.setAttribute('role', 'tab');
+        b.setAttribute('type', 'button');
+        if (!b.hasAttribute('aria-selected')) b.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        if (!b.hasAttribute('tabindex')) b.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      });
+
+      // Keyboard-Navigation (roving tabindex)
+      list.addEventListener('keydown', (e) => {
+        const tabs = Array.from(list.querySelectorAll('[role="tab"]'));
+        const current = tabs.indexOf(document.activeElement);
+        if (current === -1) return;
+
+        let t = null;
+        switch (e.key) {
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            e.preventDefault();
+            e.stopPropagation();
+            t = (current - 1 + tabs.length) % tabs.length;
+            break;
+          case 'ArrowRight':
+          case 'ArrowDown':
+            e.preventDefault();
+            e.stopPropagation();
+            t = (current + 1) % tabs.length;
+            break;
+          case 'Home':
+            e.preventDefault();
+            e.stopPropagation();
+            t = 0;
+            break;
+          case 'End':
+            e.preventDefault();
+            e.stopPropagation();
+            t = tabs.length - 1;
+            break;
+          case ' ':
+          case 'Enter':
+            e.preventDefault();
+            e.stopPropagation();
+            document.activeElement.click();
+            return;
+        }
+        if (t !== null) tabs[t].focus();
+      });
+    });
+  })();
+</script>
+
 
 
 <!-- JSON-LD -->
