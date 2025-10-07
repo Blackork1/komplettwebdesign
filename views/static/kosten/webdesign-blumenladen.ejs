@@ -1,0 +1,171 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/header') %>
+  <style>
+    /* Nur Farben & Schriften übernehmen; Layout via Bootstrap */
+    :root { --brand: var(--color-primary, #0b2a46); --accent: var(--color-accent, #e94a1b); }
+    body { font-family: var(--font-body, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif); color: var(--color-text, #111); background: var(--color-bg, #fff); }
+    h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading, inherit); color: var(--color-primary, #0b2a46); }
+    .bg-brand { background-color: var(--brand) !important; }
+    .btn-accent { background: var(--accent); color: #fff; border: none; }
+    .btn-accent:hover { filter: brightness(0.9); color: #fff; }
+    .hero { background: linear-gradient(0deg, color-mix(in srgb, var(--brand) 88%, #0000), color-mix(in srgb, var(--brand) 88%, #0000)); color:#fff; }
+    .breadcrumb a { text-decoration: none; }
+    .card-shadow { box-shadow: 0 8px 18px rgba(0,0,0,.06); }
+    .hero {height: 600px;}
+  </style>
+
+  <link rel="canonical" href="https://www.komplettwebdesign.de/branchen/webdesign-blumenladen" />
+  <meta property="og:title" content="Blumenladen-Website: Kosten & 4-Wochen-Zeitplan (Sortiment, Lieferung, Saison)" />
+  <meta property="og:description" content="Klarer Preisrahmen, 4-Wochen-Ablauf und Tipps zu Sortiment, Lieferanfrage & saisonalen Specials." />
+</head>
+<body>
+
+  <!-- Hero -->
+  <header class="hero py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a class="text-white-50" href="/">Start</a></li>
+          <li class="breadcrumb-item text-white-50"><a class="text-white-50" href="/webdesign-blumenladen">Webdesign-Blumenladen</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Kosten und Zeitplan</li>
+        </ol>
+      </nav>
+      <div class="col-lg-9">
+        <h1 class="display-6 fw-bold text-white">Kosten & Zeitplan für eine Blumenladen-Website (Sortiment, Lieferanfrage, Saison-Specials)</h1>
+        <p class="lead mt-2 text-white">Anlässe, Verfügbarkeit und schöne Bilder: So überzeugt dein Blumenladen online.</p>
+        <div class="mt-3 d-flex gap-2">
+          <a href="/webdesign-blumenladen" class="btn btn-accent btn-lg">Blumenladen-Details</a>
+          <a href="/kontakt" class="btn btn-outline-light btn-lg">Kostenschätzung</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Inhalte -->
+    <section class="container my-5">
+      <h2 class="h3">Was gehört in eine gute Blumenladen-Website?</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">Start & Story: kurze Vorstellung, Ladenfotos</li>
+            <li class="list-group-item">Sortiment: Sträuße nach Anlass, Pflanzen, Deko</li>
+            <li class="list-group-item">Liefer-/Abholanfrage: Datum, Uhrzeit, Budget, Adresse</li>
+            <li class="list-group-item">Galerie: 12–20 aussagekräftige Fotos</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">Anlässe & Services: Hochzeit, Trauer, Abo-Sträuße, Workshops</li>
+            <li class="list-group-item">Infos: Öffnungszeiten, Lage/Anfahrt (Google Maps)</li>
+            <li class="list-group-item">Bewertungen: Google-Reviews dezent</li>
+            <li class="list-group-item">Saison: Valentinstag, Muttertag, Weihnachten</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preise -->
+    <section class="container my-5">
+      <h2 class="h3">Preisrahmen</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Kompakt (499 - 899 €)</h3>
+            <p class="small mb-0">Start, Sortiment (1–2 Kategorien), Galerie, Kontakt/Öffnungszeiten.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Plus (ab 1.499 €)</h3>
+            <p class="small mb-0">+ Liefer-/Abholanfrage, Anlässe-Seiten, Saison-Bereich, optional zweite Sprache.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Zeitplan -->
+    <section class="container my-5">
+      <h2 class="h3">Realistischer 4-Wochen-Ablauf</h2>
+      <div class="row g-4">
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 1</strong><br>Kickoff, Inhalte (Kategorien/Anlässe, Liefergebiet), Bilder</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 2</strong><br>Design & Struktur, erste Vorschau</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 3</strong><br>Umsetzung, Formular-Logik, Maps & Bewertungen</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 4</strong><br>Tests (Formular/Mails), Rechtstexte, Go-Live</div></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="container my-5">
+      <h2 class="h3">Kurze FAQ</h2>
+      <div class="accordion" id="faq4">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q4a">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#a4a" aria-expanded="true" aria-controls="a4a">
+              Brauche ich direkt einen kompletten Shop?
+            </button>
+          </h2>
+          <div id="a4a" class="accordion-collapse collapse show" aria-labelledby="q4a" data-bs-parent="#faq4">
+            <div class="accordion-body">Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q4b">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a4b" aria-expanded="false" aria-controls="a4b">
+              Wie pflege ich mein Sortiment?
+            </button>
+          </h2>
+          <div id="a4b" class="accordion-collapse collapse" aria-labelledby="q4b" data-bs-parent="#faq4">
+            <div class="accordion-body">Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q4c">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a4c" aria-expanded="false" aria-controls="a4c">
+              Wie mache ich Saison-Angebote sichtbar?
+            </button>
+          </h2>
+          <div id="a4c" class="accordion-collapse collapse" aria-labelledby="q4c" data-bs-parent="#faq4">
+            <div class="accordion-body">Mit einer Saison-Box auf der Startseite und kurzen Landingpages (z. B. Valentinstag, Muttertag), die du schnell ein- und ausblendest.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="container my-5">
+      <div class="p-4 border rounded-3 d-lg-flex justify-content-between align-items-center">
+        <div class="me-3">
+          <h3 class="h5 mb-1">Starte deine Blumenladen-Website</h3>
+          <p class="mb-0 text-muted small">Sortiment & Lieferanfrage klar präsentiert – in 4 Wochen machbar.</p>
+        </div>
+        <div class="mt-3 mt-lg-0 d-flex gap-2">
+          <a href="/kontakt" class="btn btn-accent">Kostenschätzung</a>
+          <a href="/webdesign-blumenladen" class="btn btn-outline-secondary">Details ansehen</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<%- include('../../partials/footer') %>
+
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
+    {"@type":"ListItem","position":3,"name":"Blumenladen-Website"}
+  ]}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Brauche ich direkt einen kompletten Shop?","acceptedAnswer":{"@type":"Answer","text":"Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen."}},
+    {"@type":"Question","name":"Wie pflege ich mein Sortiment?","acceptedAnswer":{"@type":"Answer","text":"Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren."}},
+    {"@type":"Question","name":"Wie mache ich Saison-Angebote sichtbar?","acceptedAnswer":{"@type":"Answer","text":"Saison-Box auf der Startseite und kurze Landingpages, die du schnell ein- und ausblendest."}}
+  ]}
+  </script>
+</body>
+</html>

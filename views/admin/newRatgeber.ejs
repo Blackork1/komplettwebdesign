@@ -1,0 +1,73 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container my-5">
+  <h1 class="mb-4">Neuen Ratgeber anlegen</h1>
+
+  <form action="/admin/ratgeber/new" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+
+    <!-- Titel -->
+    <div class="mb-3">
+      <label for="title" class="form-label">Titel *</label>
+      <input type="text" id="title" name="title" class="form-control" required>
+    </div>
+
+    <!-- Kurzbeschreibung -->
+    <div class="mb-3">
+      <label for="excerpt" class="form-label">Kurzbeschreibung (optional)</label>
+      <textarea id="excerpt" name="excerpt" rows="2" class="form-control" placeholder="Kurzes Intro für Listing/OG"></textarea>
+    </div>
+
+    <!-- Slug -->
+    <div class="mb-3">
+      <label for="slug" class="form-label">URL-Slug (optional)</label>
+      <textarea id="slug" name="slug" rows="2" class="form-control" placeholder="z. B. website-kosten-zeitplan"></textarea>
+      <small class="text-muted">Leer lassen = wird automatisch aus dem Titel generiert.</small>
+    </div>
+
+    <!-- Kategorie -->
+    <div class="mb-3">
+      <label for="category" class="form-label">Kategorie</label>
+      <input type="text" id="category" name="category" class="form-control" placeholder="z. B. Kosten, SEO, Design">
+    </div>
+
+    <!-- Description (Meta) -->
+    <div class="mb-3">
+      <label for="description" class="form-label">Meta-Description (optional)</label>
+      <input type="text" id="description" name="description" class="form-control" placeholder="Kurze Meta-Beschreibung für SEO (ca. 150–160 Zeichen)">
+    </div>
+
+    <!-- FAQ JSON -->
+    <div class="mb-3">
+      <label for="faq_json" class="form-label">FAQ (JSON für FAQPage-Schema, optional)</label>
+      <textarea id="faq_json" name="faq_json" rows="6" class="form-control" placeholder='[
+  { "@type": "Question", "name": "Frage 1?", "acceptedAnswer": { "@type": "Answer", "text": "Antwort 1..." } }
+]'></textarea>
+      <small class="text-muted">JSON-Array von Fragen/Antworten. Lass es leer, wenn du keine FAQ willst.</small>
+    </div>
+
+    <!-- Featured -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="featured" name="featured">
+      <label class="form-check-label" for="featured">Ratgeber als „Featured“ markieren</label>
+    </div>
+
+    <!-- Inhalt -->
+    <div class="mb-3">
+      <label for="content" class="form-label">Inhalt (HTML/EJS erlaubt) *</label>
+      <textarea id="content" name="content" rows="12" class="form-control" required placeholder="<h2>Überschrift</h2><p>Dein Inhalt …"></textarea>
+      <small class="text-muted">Du kannst EJS einsetzen; im Render stehen <code>post.*</code>, <code>helpers</code>, <code>publishedISO</code>, <code>modifiedISO</code> zur Verfügung.</small>
+    </div>
+
+    <!-- Titelbild -->
+    <div class="mb-4">
+      <label class="form-label">Titelbild (jpg/png/webp) *</label>
+      <input type="file" name="hero_image" accept="image/*" class="form-control" required>
+      <small class="text-muted">Wird nach Cloudinary hochgeladen und als <code>image_url</code> gespeichert.</small>
+    </div>
+
+    <button class="btn btn-primary">Ratgeber speichern</button>
+    <a href="/admin/ratgeber" class="btn btn-secondary">Abbrechen</a>
+  </form>
+</div>
+
+<%- include('../partials/admin_footer') %>

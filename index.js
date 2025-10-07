@@ -53,6 +53,8 @@ import sitemapRoutes from "./routes/sitemapRoutes.js";
 import adminLogs from './routes/adminLogs.js';
 import industriesRoutes from './routes/industries.js';
 import adminIndustriesRoutes from './routes/adminIndustries.js';
+import ratgeberRoutes from './routes/ratgeberRoutes.js';
+import adminRatgeberRoutes from './routes/adminRatgeberRoutes.js';
 
 import Stripe from 'stripe';
 
@@ -206,6 +208,8 @@ app.use("/webdesign-berlin", districtRoutes);
 app.use(adminLogs);
 app.use(industriesRoutes);
 app.use('/admin', adminIndustriesRoutes);
+app.use(ratgeberRoutes);
+app.use(adminRatgeberRoutes);
 
 
 // Sitemap

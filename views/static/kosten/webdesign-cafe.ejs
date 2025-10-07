@@ -1,0 +1,170 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/header') %>
+  <style>
+    :root { --brand: var(--color-primary, #0b2a46); --accent: var(--color-accent, #e94a1b); }
+    body { font-family: var(--font-body, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif); color: var(--color-text, #111); background: var(--color-bg, #fff); }
+    h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading, inherit); color: var(--color-primary, #0b2a46); }
+    .bg-brand { background-color: var(--brand) !important; }
+    .btn-accent { background: var(--accent); color: #fff; border: none; }
+    .btn-accent:hover { filter: brightness(0.9); color: #fff; }
+    .hero { background: linear-gradient(0deg, color-mix(in srgb, var(--brand) 88%, #0000), color-mix(in srgb, var(--brand) 88%, #0000)); color:#fff; }
+    .breadcrumb a { text-decoration: none; }
+    .card-shadow { box-shadow: 0 8px 18px rgba(0,0,0,.06); }
+    .hero {height: 600px;}
+  </style>
+
+  <link rel="canonical" href="https://www.komplettwebdesign.de/branchen/webdesign-cafe" />
+  <meta property="og:title" content="Café-Website: Kosten & 4-Wochen-Zeitplan (Speisekarte, Reservierung)" />
+  <meta property="og:description" content="Preisrahmen, 4-Wochen-Plan und Tipps zu Speisekarte, Reservierung & Bildern." />
+</head>
+<body>
+
+  <!-- Hero -->
+  <header class="hero py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a class="text-white-50" href="/">Start</a></li>
+          <li class="breadcrumb-item text-white-50"><a class="text-white-50" href="/webdesign-cafe">Café-Website</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Kosten & Zeitplan</li>
+        </ol>
+      </nav>
+      <div class="col-lg-9">
+        <h1 class="display-6 fw-bold text-white">Kosten & Zeitplan für eine Café-Website (Speisekarte, Reservierung, Bilder)</h1>
+        <p class="lead mt-2 text-white">Menüpflege, Tisch-Anfragen und Stimmung in Bildern – so wird dein Café online sichtbar.</p>
+        <div class="mt-3 d-flex gap-2">
+          <a href="/webdesign-cafe" class="btn btn-accent btn-lg">Café-Details</a>
+          <a href="/kontakt" class="btn btn-outline-light btn-lg">Kostenschätzung</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Inhalte -->
+    <section class="container my-5">
+      <h2 class="h3">Was gehört in eine gute Café-Website?</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">Start & Story: Atmosphäre, kurze Vorstellung, echte Bilder</li>
+            <li class="list-group-item">Speisekarte: übersichtlich, leicht zu aktualisieren (als Text)</li>
+            <li class="list-group-item">Reservierung: Formular oder Tool (Uhrzeit, Personenzahl)</li>
+            <li class="list-group-item">Galerie: 8–15 starke Fotos</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">Infos: Öffnungszeiten, Lage/Anfahrt, Kontakt</li>
+            <li class="list-group-item">Bewertungen: Google-Bewertungen dezent einbinden</li>
+            <li class="list-group-item">Events/Blog (optional)</li>
+            <li class="list-group-item">Allergene & Hinweise (optional)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preise -->
+    <section class="container my-5">
+      <h2 class="h3">Preisrahmen</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Kompakt (499 - 899 €)</h3>
+            <p class="small mb-0">Start, Speisekarte, Galerie, Kontakt/Öffnungszeiten.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Plus (ab 1.499 €)</h3>
+            <p class="small mb-0">+ Reservierung, Events/Blog, zwei Sprachen, mehr Bilder.</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small mt-3">Praxis: Oft Business– bis Premium-Bereich – je nach Reservierungslösung & Bildmaterial.</p>
+    </section>
+
+    <!-- Zeitplan -->
+    <section class="container my-5">
+      <h2 class="h3">Realistischer 4-Wochen-Ablauf</h2>
+      <div class="row g-4">
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 1</strong><br>Kickoff, Inhalte sammeln (Menü), Bildauswahl</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 2</strong><br>Design & Struktur, erste Vorschau</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 3</strong><br>Umsetzung, mobile Feinschliff, Reservierung</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 4</strong><br>Tests, Rechtstexte, Go-Live & Google-Profil</div></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="container my-5">
+      <h2 class="h3">Kurze FAQ</h2>
+      <div class="accordion" id="faq3">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q3a">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#a3a" aria-expanded="true" aria-controls="a3a">
+              Wie pflege ich die Speisekarte selbst?
+            </button>
+          </h2>
+          <div id="a3a" class="accordion-collapse collapse show" aria-labelledby="q3a" data-bs-parent="#faq3">
+            <div class="accordion-body">Du bekommst einen einfachen Editor. Änderungen sind in wenigen Minuten online.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q3b">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3b" aria-expanded="false" aria-controls="a3b">
+              Brauche ich eine Reservierungs-App?
+            </button>
+          </h2>
+          <div id="a3b" class="accordion-collapse collapse" aria-labelledby="q3b" data-bs-parent="#faq3">
+            <div class="accordion-body">Nicht zwingend. Für den Start reicht oft ein Anfrage-Formular mit Uhrzeit/Personenzahl.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q3c">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3c" aria-expanded="false" aria-controls="a3c">
+              Müssen wir neue Fotos machen?
+            </button>
+          </h2>
+          <div id="a3c" class="accordion-collapse collapse" aria-labelledby="q3c" data-bs-parent="#faq3">
+            <div class="accordion-body">Schöne, helle Fotos lohnen sich sehr. Gern organisiere ich das – oder wir nutzen zunächst deine besten Bilder.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="container my-5">
+      <div class="p-4 border rounded-3 d-lg-flex justify-content-between align-items-center">
+        <div class="me-3">
+          <h3 class="h5 mb-1">Lass uns dein Café online sichtbar machen</h3>
+          <p class="mb-0 text-muted small">Speisekarte & Reservierung sauber integriert – in 4 Wochen realistisch.</p>
+        </div>
+        <div class="mt-3 mt-lg-0 d-flex gap-2">
+          <a href="/kontakt" class="btn btn-accent">Kostenschätzung</a>
+          <a href="/webdesign-cafe" class="btn btn-outline-secondary">Details ansehen</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<%- include('../../partials/footer') %>
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
+    {"@type":"ListItem","position":3,"name":"Café-Website"}
+  ]}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Wie pflege ich die Speisekarte selbst?","acceptedAnswer":{"@type":"Answer","text":"Du bekommst einen einfachen Editor. Änderungen sind in wenigen Minuten online."}},
+    {"@type":"Question","name":"Brauche ich eine Reservierungs-App?","acceptedAnswer":{"@type":"Answer","text":"Nicht zwingend. Für den Start reicht oft ein Anfrage-Formular mit Uhrzeit/Personenzahl."}},
+    {"@type":"Question","name":"Müssen wir neue Fotos machen?","acceptedAnswer":{"@type":"Answer","text":"Schöne, helle Fotos lohnen sich sehr. Gern organisiere ich das – oder wir nutzen zunächst deine besten Bilder."}}
+  ]}
+  </script>
+</body>
+</html>

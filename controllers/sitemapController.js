@@ -49,6 +49,16 @@ export async function sitemapXml(req, res, next) {
         ORDER BY name`
     );
 
+    // 👉 NEU: Ratgeber für /ratgeber/:slug
+    const { rows: guides } = await pool.query(
+      `SELECT slug,
+              COALESCE(image_url,'') AS img,
+              COALESCE(updated_at, created_at, now()) AS updated_at
+         FROM ratgeber
+        WHERE published = true
+        ORDER BY created_at DESC`
+    );
+
     // ---- Statische Routen ----
     const staticRoutes = [
       { loc: `${base}/`,                changefreq: "weekly",  priority: 1.0 },
@@ -59,9 +69,14 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/pakete/premium`,  changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/about`,           changefreq: "monthly", priority: 0.5 },
       { loc: `${base}/blog`,            changefreq: "monthly", priority: 0.7 },
+      // 👉 NEU: Ratgeber-Übersicht
+      { loc: `${base}/ratgeber`,        changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/faq`,             changefreq: "yearly",  priority: 0.7 },
       { loc: `${base}/datenschutz`,     changefreq: "yearly",  priority: 0.3 },
-      { loc: `${base}/impressum`,       changefreq: "yearly",  priority: 0.3 }
+      { loc: `${base}/impressum`,       changefreq: "yearly",  priority: 0.3 },
+      { loc: `${base}/webdesign-cafe/kosten`,         changefreq: "yearly",  priority: 0.3 },
+      { loc: `${base}/webdesign-blumenladen/kosten`,  changefreq: "yearly",  priority: 0.3 },
+
     ];
 
     // Bezirke
@@ -86,10 +101,9 @@ export async function sitemapXml(req, res, next) {
       lastmod: new Date(p.updated_at).toISOString(),
       changefreq: "weekly",
       priority: 0.8
-      // Falls du ein <image:image> Element willst, müsstest du den XML-NS erweitern.
     }));
 
-    // 👉 Industries
+    // Industries
     const industryRoutes = industries.map(r => ({
       loc: `${base}/webdesign-${r.slug}`,
       lastmod: new Date(r.updated_at).toISOString(),
@@ -97,12 +111,21 @@ export async function sitemapXml(req, res, next) {
       priority: 0.85
     }));
 
+    // 👉 NEU: Ratgeber-Detailseiten
+    const guideRoutes = guides.map(g => ({
+      loc: `${base}/ratgeber/${g.slug}`,
+      lastmod: new Date(g.updated_at).toISOString(),
+      changefreq: "weekly",
+      priority: 0.8
+    }));
+
     const allUrls = [
       ...staticRoutes,
       ...districtRoutes,
       ...pageRoutes,
       ...postRoutes,
-      ...industryRoutes
+      ...industryRoutes,
+      ...guideRoutes   // 👉 NEU aufnehmen
     ];
 
     // ---- XML bauen ----

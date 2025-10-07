@@ -1,0 +1,80 @@
+<!-- views/ratgeber/index.ejs -->
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<!-- Blog-/Ratgeber-Styles -->
+<link rel="stylesheet" href="/blog.css?v=<%= Date.now() %>" />
+
+<!-- ────────── Hero mit Newsletter ────────── -->
+<section class="heroB d-flex align-items-center">
+  <div class="hero-content">
+    <h1 class="display-5 fw-bold mb-3">Komplett Webdesign – Ratgeber</h1>
+    <p class="lead mb-4">
+      Praxisnahe Guides zu Webdesign, Performance & SEO.<br />
+      Jetzt Newsletter abonnieren und nichts verpassen!
+    </p>
+    <%- include('../partials/newsletter_form') %>
+  </div>
+</section>
+
+<div class="container my-5">
+  <div class="row">
+    <!-- Hauptliste der Ratgeber -->
+    <div class="col-md-8">
+      <h2 class="mb-4">Aktuelle Ratgeber</h2>
+
+      <!-- Mobile: horizontal / Desktop: Grid (via /blog.css) -->
+      <div class="post-list">
+        <% (posts || []).forEach(function(post) { %>
+        <div class="post-card mb-4">
+          <a href="/ratgeber/<%= post.slug %>" class="post-card-link" aria-label="<%= post.title %>">
+            <div class="post-card-bg" style="background-image: url('<%= post.image_url%>');">
+              <div class="post-card-content">
+                <div class="post-card-overlay">
+                  <h2 class="post-card-title"><%= post.title %></h2>
+                  <% if (post.excerpt) { %>
+                  <p class="post-card-excerpt"><%= post.excerpt %></p>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <!-- Sidebar: Empfohlene Ratgeber (nur Desktop) -->
+    <div class="col-md-4 d-none d-md-block">
+      <h3>Empfohlene Ratgeber</h3>
+      <% (featuredPosts || []).forEach(function(post) { %>
+      <div class="featured-post-card mb-3">
+        <a href="/ratgeber/<%= post.slug %>" class="d-flex">
+          <img src="<%= post.image_url || '/images/placeholder.webp' %>" alt="<%= post.title %>" class="featured-post-img" />
+          <div class="featured-post-info">
+            <h5 class="featured-post-title"><%= post.title %></h5>
+            <% if (post.excerpt) { %>
+            <p class="featured-post-excerpt"><%= post.excerpt %></p>
+            <% } %>
+          </div>
+        </a>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <!-- Featured mobil: horizontal scroll -->
+  <div class="d-block d-md-none mt-4">
+    <h4>Empfohlene Ratgeber</h4>
+    <div class="featured-mobile-scroll d-flex">
+      <% (featuredPosts || []).forEach(function(post) { %>
+      <div class="featured-post-card-mobile me-3">
+        <a href="/ratgeber/<%= post.slug %>">
+          <img src="<%= post.image_url || '/images/placeholder.webp' %>" alt="<%= post.title %>" class="featured-post-img-mobile" />
+          <h5 class="featured-post-title-mobile"><%= post.title %></h5>
+        </a>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+</div>

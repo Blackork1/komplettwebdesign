@@ -1,0 +1,106 @@
+<!-- views/ratgeber/show.ejs -->
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<style>
+  .hero-content {
+    width: 100%;
+    flex: auto;
+  }
+
+  @media (max-width: 600px) {
+    .d-flex {
+      flex-direction: column;
+    }
+  }
+  
+</style>
+
+<!-- Hero: nutzt Beitragsbild -->
+<section class="heroB d-flex align-items-end" style="background-image: url('<%= post.image_url%>');">
+  <div class="hero-content">
+    <nav aria-label="breadcrumb" class="mb-2">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Startseite</a></li>
+        <li class="breadcrumb-item"><a href="/ratgeber">Ratgeber</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
+      </ol>
+    </nav>
+
+    <h1 class="display-5 fw-bold mb-2"><%= post.title %></h1>
+    <p class="lead mt-2 text-white"><%= post.description %></p>
+    <div class="mt-3 d-flex gap-2">
+      <a href="/pakete" class="btn btn-accent btn-lg">Pakete vergleichen</a>
+      <a href="/kontakt" class="btn btn-outline-light btn-lg">Kurzberatung</a>
+    </div>
+    <p class="mb-0">
+      <small>
+        Veröffentlicht am <time datetime="<%= publishedISO %>"><%= new Date(publishedISO).toLocaleDateString('de-DE') %></time>
+        <% if (modifiedISO && modifiedISO !== publishedISO) { %>
+        · Aktualisiert am <time datetime="<%= modifiedISO %>"><%= new Date(modifiedISO).toLocaleDateString('de-DE') %></time>
+        <% } %>
+      </small>
+    </p>
+  </div>
+</section>
+
+<div class="container my-5">
+  <div class="row">
+    <!-- Artikel-Content -->
+    <article class="col-lg-8">
+      <!-- DB-Content (bereits serverseitig gerendert) -->
+      <div class="mb-4">
+        <%- renderedContent %>
+      </div>
+
+      <!-- FAQ (falls vorhanden) -->
+      <% if (post.faq_json && post.faq_json.length) { %>
+      <h2 class="h4 mt-5 mb-3">Häufige Fragen</h2>
+      <div class="accordion" id="faqRatgeber">
+        <% post.faq_json.forEach(function(faq, idx){ %>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="hfaq<%= idx %>">
+            <button class="accordion-button <%= idx ? 'collapsed' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#cfag<%= idx %>" aria-expanded="<%= idx ? 'false' : 'true' %>" aria-controls="cfag<%= idx %>">
+              <%= faq.name || (faq.question || 'Frage') %>
+            </button>
+          </h2>
+          <div id="cfag<%= idx %>" class="accordion-collapse collapse <%= idx ? '' : 'show' %>" aria-labelledby="hfaq<%= idx %>" data-bs-parent="#faqRatgeber">
+            <div class="accordion-body">
+              <%= (faq.acceptedAnswer && faq.acceptedAnswer.text) || faq.answer || '' %>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+      <% } %>
+    </article>
+
+    <!-- Sidebar: Newsletter / weitere Ratgeber -->
+    <aside class="col-lg-4">
+      <div class="newsletter-sidebar mb-4">
+        <h3 class="h5">Newsletter</h3>
+        <p class="small mb-3">Neue Ratgeber zu Webdesign, Performance & SEO.</p>
+        <%- include('../partials/newsletter_form') %>
+      </div>
+
+      <!-- Optional: weitere Ratgeber (zeige 4 neueste außer aktuellem) -->
+      <% if (typeof others !== 'undefined' && others && others.length) { %>
+      <div class="mb-4">
+        <h3 class="h6 mb-3">Weitere Ratgeber</h3>
+        <% others.slice(0,4).forEach(function(o){ if (o.slug === post.slug) return; %>
+        <div class="d-flex align-items-center mb-3">
+          <a href="/ratgeber/<%= o.slug %>" class="d-flex text-decoration-none">
+            <div class="ms-2">
+              <div class="fw-semibold small"><%= o.title %></div>
+              <% if (o.excerpt) { %><div class="text-muted small"><%= o.excerpt %></div><% } %>
+            </div>
+          </a>
+        </div>
+        <% }); %>
+      </div>
+      <% } %>
+    </aside>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
