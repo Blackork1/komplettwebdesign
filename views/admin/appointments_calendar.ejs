@@ -1,0 +1,39 @@
+<%- include('../partials/admin_header') %>
+<link rel="stylesheet" href="/admin-appointments.css">
+
+<div class="cal-header">
+  <button class="nav" data-dir="-1">‹</button>
+  <h2 class="month-label"></h2>
+  <div style="display:flex; gap:.5rem;">
+    <a href="/admin/appointments/new" class="btn alt">+ Neuer Termin</a>
+    <form action="/admin/appointments/auto/run" method="POST" style="display:inline">
+      <button class="btn">Auto-Slots auffüllen</button>
+    </form>
+  </div>
+</div>
+
+<div class="cal-wrap">
+  <aside class="cal-left">
+    <div class="cal-header">
+      <button class="nav" data-dir="-1">‹</button>
+      <h2 class="month-label"></h2>
+      <button class="nav" data-dir="+1">›</button>
+    </div>
+
+    <div class="weekday-row">
+      <span>So</span><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span>
+    </div>
+    <div class="grid-days"></div>
+  </aside>
+
+  <section class="cal-right">
+    <div class="day-summary">
+      <h3 class="selected-date">–</h3>
+      <p class="hint">Klicke im Kalender einen Tag mit freien Terminen an.</p>
+    </div>
+    <ul class="slot-list"></ul>
+  </section>
+</div>
+
+<script type="module" src="/js/admin-appointments.js"></script>
+<%- include('../partials/admin_footer') %>

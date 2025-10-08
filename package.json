@@ -40,6 +40,7 @@
     "ipaddr.js": "^2.2.0",
     "luxon": "^3.7.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
     "on-finished": "^2.4.1",
     "openai": "^5.10.2",

@@ -1,0 +1,201 @@
+[
+  {
+    "slug": "wellness",
+    "name": "Massage & Wellness",
+    "title": "Massage & Wellness Website erstellen – Professionelles Webdesign für Entspannung & Gesundheit",
+    "description": "Moderne Websites für Massagepraxen & Wellness-Studios: Leistungen, Preise, Online-Buchung, Galerie, SEO & mobile Optimierung. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "og_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+
+    "hero_h1": "Massage & Wellness Website erstellen",
+    "hero_h2": "Professionelles Webdesign für Entspannung & Gesundheit",
+    "hero_checks": [
+      "Online-Buchung 24/7 – weniger Telefonaufwand",
+      "Mobil optimiert, schnell & DSGVO-konform",
+      "SEO lokal: Mehr Sichtbarkeit bei Google & Maps"
+    ],
+    "hero_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+    "hero_image_alt": "Entspannte Wellness-Atmosphäre in einer Massagepraxis",
+
+    "warum_image_url": "../images/branchen/Fragezeichen.png",
+    "warum_image_alt": "Illustration eines Fragezeichens",
+    "warum_upper": "<p>Massagen und Wellnessangebote sind weit mehr als Luxus – sie sind Gesundheitsvorsorge, Stressabbau und ein wichtiger Teil moderner Lebensqualität. Ob klassische Massage, Spa-Behandlung oder ganzheitliche Konzepte: Menschen suchen gezielt nach Anbietern, die Entspannung, Linderung und neue Energie schenken. Bevor sie sich entscheiden, vergleichen sie online.</p><p>Eine professionelle Massage- oder Wellness-Website ist daher unverzichtbar: Sie ist digitales Schaufenster, Buchungsplattform und Vertrauensaufbau zugleich. Wer sich nur auf Social Media verlässt, verliert täglich potenzielle Kund:innen.</p>",
+    "warum_lower": "<p><strong>Warum eine Website für Massage- &amp; Wellness-Studios unverzichtbar ist:</strong> Massage ist ein emotionales Angebot – Vertrauen, Ambiente und Professionalität müssen sich schon beim ersten Klick zeigen. Eine moderne Website vermittelt genau diese Wohlfühlatmosphäre, informiert klar über Leistungen &amp; Preise und ermöglicht eine bequeme Terminbuchung.</p>",
+
+    "unverzichtbar_intro": "Kund:innen erwarten eine moderne, mobilfreundliche Website, die Ruhe, Seriosität und Professionalität ausstrahlt – inklusive Online-Buchung und klaren Infos.",
+    "unverzichtbar_h3": "Gründe, warum Massage- & Wellness-Studios eine Website brauchen:",
+
+    "carousel_items": [
+      {
+        "title": "Unabhängigkeit von Plattformen",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656476/admin_gallery/aoz2w22qt1jgvrcrhf0s.webp",
+        "img_alt": "Wellness-Website auf Laptop und Smartphone"
+      },
+      {
+        "title": "Online-Buchung 24/7",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978400/admin_gallery/xctfqhgz5omipgpv17cr.webp",
+        "img_alt": "Buchungskalender mit Terminen"
+      },
+      {
+        "title": "Sichtbarkeit bei Google",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655341/admin_gallery/b6vmm0jzk0cvyshdv3sz.webp",
+        "img_alt": "Google-Suchergebnisse für Massage-Anbieter"
+      },
+      {
+        "title": "Atmosphäre zeigen",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978310/admin_gallery/sokngu50web7ioqjxvf3.webp",
+        "img_alt": "Ruhiger Spa-Raum mit warmem Licht"
+      },
+      {
+        "title": "Gutscheine & Pakete",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978105/admin_gallery/f9lizewiryygnjiyerpf.webp",
+        "img_alt": "Geschenkgutschein und Wellness-Paket"
+      }
+    ],
+
+    "stats_cards": [
+      {
+        "icon": "📊",
+        "label": "Statista (2023)",
+        "body": "<p>&gt;72&nbsp;% der Kund:innen suchen online nach Massagen oder Wellnessangeboten.</p>"
+      },
+      {
+        "icon": "🖥️",
+        "label": "Web-Präsenz",
+        "body": "<p>65&nbsp;% entscheiden sich eher, wenn eine professionelle Website vorhanden ist.</p>"
+      },
+      {
+        "icon": "📅",
+        "label": "Online-Buchung",
+        "body": "<p>Anbieter mit Buchungssystem erzielen bis zu 45&nbsp;% mehr Termine.</p>"
+      },
+      {
+        "icon": "📱",
+        "label": "Mobile Nutzung",
+        "body": "<p>Rund 80&nbsp;% der Zugriffe erfolgen über Smartphones.</p>"
+      },
+      {
+        "icon": "📈",
+        "label": "SEO-Effekt",
+        "body": "<p>SEO-optimierte Wellness-Websites steigern Anfragen um bis zu 50&nbsp;% (IHK).</p>"
+      }
+    ],
+
+    "seo_items": [
+      {
+        "title": "Lokale Keywords",
+        "text": "Short-Tail: Massage Website erstellen, Wellness Homepage, Webdesign Massage. Long-Tail: professionelle Website für Massagepraxis, Wellness Website Kunden gewinnen, Massage Studio Homepage erstellen lassen, SEO Massagepraxis Website.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655275/admin_gallery/hjvleomny0wd8xxtjnzi.webp",
+        "img_alt": "Keyword-Liste mit lokalen Begriffen"
+      },
+      {
+        "title": "Google Maps & Local SEO",
+        "text": "Optimiertes Google Business Profil (Kategorien, Öffnungszeiten, Fotos, Leistungen, Website-Link) für Suchen wie &quot;Massage in meiner Nähe&quot;.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655506/admin_gallery/zr3urtt9yps048wnrua4.webp",
+        "img_alt": "Google-Unternehmensprofil Beispiel"
+      },
+      {
+        "title": "Content-Marketing",
+        "text": "Ratgeber &amp; Blog: z.&nbsp;B. &quot;10 Tipps gegen Verspannungen&quot;, &quot;Wellness-Trends&quot; – schafft Vertrauen und Rankings.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756657030/admin_gallery/qwxxe97wnkx4gusxffcb.webp",
+        "img_alt": "Bewertungs- und Inhalts-Symbole"
+      },
+      {
+        "title": "Bilder-SEO",
+        "text": "Authentische Fotos mit optimierten Dateinamen, ALT-Texten und komprimierten Formaten (WebP/AVIF).",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655434/admin_gallery/pcimwespifkdsykyip13.webp",
+        "img_alt": "Performance-Diagramm"
+      },
+      {
+        "title": "Technische SEO",
+        "text": "Mobile UX, schnelle Ladezeiten, SSL, strukturierte Daten (LocalBusiness, Service, FAQ) &amp; saubere Informationsarchitektur.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978624/admin_gallery/nuhgls3vy4xiallbxwix.webp",
+        "img_alt": "Symbol für strukturierte Daten"
+      }
+    ],
+
+    "funktionen_items": [
+      { "icon_url": "/images/icons/bookmark.svg", "title": "Leistungsübersicht", "text": "Klassische Massage, Thai, Aromaöl, Hot Stone &amp; Wellness-Pakete." },
+      { "icon_url": "/images/icons/bi_table.svg", "title": "Online-Buchung", "text": "Termine jederzeit direkt über die Website buchen." },
+      { "icon_url": "/images/icons/galery.svg", "title": "Atmosphärische Galerie", "text": "Räume, Behandlungen &amp; Ambiente präsentieren." },
+      { "icon_url": "/images/icons/kontakte.svg", "title": "Über uns", "text": "Team, Qualifikationen &amp; Philosophie vorstellen." },
+      { "icon_url": "/images/icons/chat.svg", "title": "Gutscheine & Angebote", "text": "Gutscheine online kaufen und saisonale Pakete bewerben." },
+      { "icon_url": "/images/icons/door.svg", "title": "Kontakt & Standort", "text": "Telefon, E-Mail, Google Maps und optional WhatsApp." }
+    ],
+
+    "vorteile": {
+      "pros": [
+        "Mehr Kunden durch Online-Sichtbarkeit",
+        "Vertrauen durch professionelle Präsentation",
+        "Mehr Buchungen dank 24/7-Buchungssystem",
+        "Stärkeres Branding &amp; Wiedererkennung",
+        "Kundenbindung durch Gutscheine &amp; Newsletter"
+      ],
+      "cons": [
+        "Überladene Seiten wirken unentspannt",
+        "Fehlende mobile Optimierung f&uuml;hrt zu Absprüngen",
+        "Ohne SEO kaum Auffindbarkeit bei Google"
+      ]
+    },
+
+    "tipps_items": [
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979160/admin_gallery/bcrwvvfjsy5obbfzrnws.webp",
+        "img_alt": "Symbolbild",
+        "heading": "Atmosphäre spürbar machen",
+        "text": "Bilder, Farben und Texte sollen Ruhe &amp; Vertrauen vermitteln."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979179/admin_gallery/ka0mrtecj0b4ptvzvea8.webp",
+        "img_alt": "Symbolbild",
+        "heading": "Mobile First",
+        "text": "Kund:innen suchen &amp; buchen unterwegs – mobil muss perfekt sein."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979188/admin_gallery/dxieq3vnxspku2nrek9o.webp",
+        "img_alt": "Symbolbild",
+        "heading": "Authentische Fotos",
+        "text": "Eigene Räume und Behandlungen zeigen – nicht nur Stockfotos."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979197/admin_gallery/pkwskoehcpwhrxjwhoc4.webp",
+        "img_alt": "Symbolbild",
+        "heading": "Bewertungen einbinden",
+        "text": "Kundenstimmen stärken Vertrauen &amp; Conversion."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979207/admin_gallery/oe0s7nxbw8tjlgyc9ngv.webp",
+        "img_alt": "Symbolbild",
+        "heading": "Regelmäßige Inhalte",
+        "text": "Blog/Tipps zu Gesundheit &amp; Stressabbau für Sichtbarkeit."
+      }
+    ],
+
+    "cta_headline": "Benötigst du eine Website für dein Massage- oder Wellness-Studio?",
+    "cta_text": "Eine Website ist dein wichtigstes Werkzeug, um Kund:innen zu überzeugen, neue Termine zu generieren und dein Studio stark zu positionieren. Mit SEO, Online-Buchung und stimmungsvollem Design hebst du dich ab.",
+    "cta_left_image": "/images/branchen/BasisPaket.webp",
+    "cta_right_image": "/images/branchen/BusinessPaket.webp",
+
+    "faq_items": [
+      {
+        "q": "Wie lange dauert die Erstellung einer Massage-Website?",
+        "a": "<p>Zwischen 4 und 6 Wochen – je nach Umfang und Funktionen.</p>"
+      },
+      {
+        "q": "Kann ich Gutscheine online verkaufen?",
+        "a": "<p>Ja, das kann direkt in die Website integriert werden.</p>"
+      },
+      {
+        "q": "Ist SEO wirklich notwendig für Massage &amp; Wellness?",
+        "a": "<p>Ja – ohne SEO bleibt man in der lokalen Suche meist unsichtbar.</p>"
+      },
+      {
+        "q": "Was kostet eine Massage-Website?",
+        "a": "<p>Zwischen 499&nbsp;€ und 1.499&nbsp;€, abhängig vom Funktionsumfang.</p>"
+      },
+      {
+        "q": "Profitieren auch kleine Studios?",
+        "a": "<p>Ja – gerade kleine Anbieter gewinnen stark durch lokale Sichtbarkeit.</p>"
+      }
+    ]
+  }
+]

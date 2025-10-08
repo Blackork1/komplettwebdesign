@@ -1,5 +1,9 @@
 import pool from '../util/db.js';
 import { sendBookingMail } from '../services/mailService.js';
+import { startOfMonth, addMonths, format } from 'date-fns';
+
+
+
 
 export async function adminHome(_req, res) {
   const { rows: pending } = await pool.query(`
@@ -21,6 +25,59 @@ export async function adminHome(_req, res) {
     pending,
     confirmed
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Kalenderseite rendern                                             */
+/* ------------------------------------------------------------------ */
+export async function calendarPage(_req, res) {
+  res.render('admin/appointments_calendar', { title: 'Termine' });
+}
+
+/** JSON: Verfügbarkeit eines Monats (Tage mit freien Slots) */
+export async function monthAvailability(req, res) {
+  // month=YYYY-MM (z.B. "2025-07")
+  const today = new Date();
+  const [y, m] = (req.query.month || format(today, 'yyyy-MM')).split('-').map(n => parseInt(n, 10));
+  const monthStart = startOfMonth(new Date(y, m - 1, 1));
+  const nextStart  = addMonths(monthStart, 1);
+
+  const { rows } = await pool.query(
+    `
+    SELECT DATE(start_time) AS day, COUNT(*)::int AS free_count
+      FROM appointments
+     WHERE is_booked = FALSE
+       AND start_time >= $1::timestamp
+       AND start_time <  $2::timestamp
+     GROUP BY DATE(start_time)
+     ORDER BY DATE(start_time)
+    `,
+    [format(monthStart, 'yyyy-MM-01 00:00'), format(nextStart, 'yyyy-MM-01 00:00')]
+  );
+
+  res.json({
+    month: format(monthStart, 'yyyy-MM'),
+    days: rows.map(r => ({ date: format(new Date(r.day), 'yyyy-MM-dd'), count: r.free_count }))
+  });
+}
+
+/** JSON: freie Slots eines Tages */
+export async function daySlotsJSON(req, res) {
+  const d = req.query.date; // "YYYY-MM-DD"
+  if (!d) return res.status(400).json({ error: 'date required (YYYY-MM-DD)' });
+
+  const { rows } = await pool.query(
+    `
+    SELECT id, start_time, end_time
+      FROM appointments
+     WHERE is_booked = FALSE
+       AND DATE(start_time) = $1::date
+     ORDER BY start_time
+    `,
+    [d]
+  );
+
+  res.json(rows);
 }
 
 

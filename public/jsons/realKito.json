@@ -1,0 +1,201 @@
+[
+  {
+    "slug": "kita",
+    "name": "Kita",
+    "title": "Kita Website erstellen – Professionelles Webdesign für Kindergärten & Betreuungseinrichtungen",
+    "description": "Moderne Kita-Websites: Konzept, Team, Anmeldeinfos, Elternbereich, SEO & mobile Optimierung. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "og_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+
+    "hero_h1": "Kita Website erstellen",
+    "hero_h2": "Professionelles Webdesign für Kindergärten & Betreuungseinrichtungen",
+    "hero_checks": [
+      "Transparenz: Konzept, Team & Tagesablauf klar dargestellt",
+      "Eltern schnell informieren: Downloads, Termine & Newsletter",
+      "Mobil optimiert, sicher (SSL) & DSGVO-konform"
+    ],
+    "hero_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
+    "hero_image_alt": "Helle Kita-Umgebung mit Spiel- und Lernelementen",
+
+    "warum_image_url": "../images/branchen/Fragezeichen.png",
+    "warum_image_alt": "Illustration eines Fragezeichens",
+    "warum_upper": "<p>Die Wahl einer Kita oder eines Kindergartens gehört zu den wichtigsten Entscheidungen für Eltern. Sie möchten wissen, wem sie ihr Kind anvertrauen, welche pädagogischen Konzepte umgesetzt werden und wie der Alltag aussieht. Früher informierten sich Eltern über Bekannte oder persönliche Besuche – heute beginnt die Suche fast immer online.</p><p>Eine professionelle Kita-Website ist daher unverzichtbar: Informationsplattform, Aushängeschild und Vertrauensaufbau zugleich. Wer keine Website hat oder nur eine veraltete Homepage bietet, verliert täglich potenzielle Anmeldungen an die Konkurrenz.</p>",
+    "warum_lower": "<p><strong>Warum eine Website für Kitas unverzichtbar ist:</strong> Eltern informieren sich heute primär online über Einrichtungen. Sie erwarten klare Informationen, transparente Strukturen und eine moderne, sympathische Darstellung – idealerweise mit Einblicken in den Alltag, dem Team und gut auffindbaren Anmeldeinfos.</p>",
+
+    "unverzichtbar_intro": "Eltern recherchieren zuerst online – eine moderne Kita-Website schafft Transparenz, Vertrauen und entlastet das Team durch gut strukturierte Informationen.",
+    "unverzichtbar_h3": "Gründe, warum Kitas eine Website brauchen:",
+
+    "carousel_items": [
+      {
+        "title": "Unabhängigkeit von Plattformen",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756656476/admin_gallery/aoz2w22qt1jgvrcrhf0s.webp",
+        "img_alt": "Kita-Website auf Laptop und Smartphone"
+      },
+      {
+        "title": "Aktuelle Infos & Termine",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978400/admin_gallery/xctfqhgz5omipgpv17cr.webp",
+        "img_alt": "Kalender und Aushang für Eltern"
+      },
+      {
+        "title": "Sichtbarkeit bei Google",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655341/admin_gallery/b6vmm0jzk0cvyshdv3sz.webp",
+        "img_alt": "Google-Suchergebnisse für Kita-Suche"
+      },
+      {
+        "title": "Einblicke in den Alltag",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978310/admin_gallery/sokngu50web7ioqjxvf3.webp",
+        "img_alt": "Innenraum einer Kita"
+      },
+      {
+        "title": "Dokumente & Downloads",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978105/admin_gallery/f9lizewiryygnjiyerpf.webp",
+        "img_alt": "Formulare und Informationsblätter"
+      }
+    ],
+
+    "stats_cards": [
+      {
+        "icon": "📊",
+        "label": "Statista (2023)",
+        "body": "<p>Über 70&nbsp;% der Eltern suchen online nach Kitas in ihrer Umgebung.</p>"
+      },
+      {
+        "icon": "🔎",
+        "label": "Research Journey",
+        "body": "<p>65&nbsp;% informieren sich intensiv auf Websites, bevor sie eine Anfrage stellen.</p>"
+      },
+      {
+        "icon": "📄",
+        "label": "Digitale Unterlagen",
+        "body": "<p>60&nbsp;% erwarten Anmeldeformulare &amp; Infos als Download.</p>"
+      },
+      {
+        "icon": "📈",
+        "label": "Website-Effekt",
+        "body": "<p>Moderne Websites f&uuml;hren zu bis zu 40&nbsp;% mehr Anfragen (IHK-Studie).</p>"
+      },
+      {
+        "icon": "📱",
+        "label": "Mobile First",
+        "body": "<p>&gt;75&nbsp;% der Eltern recherchieren via Smartphone.</p>"
+      }
+    ],
+
+    "seo_items": [
+      {
+        "title": "Lokale Keywords",
+        "text": "Short-Tail: Kita Website erstellen, Kindergarten Homepage, Webdesign Kita. Long-Tail: moderne Kita Website erstellen lassen, professionelle Homepage für Kindergarten, Eltern informieren Kita Website, SEO Kita Homepage lokal.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655275/admin_gallery/hjvleomny0wd8xxtjnzi.webp",
+        "img_alt": "Keyword-Liste mit lokalen Begriffen"
+      },
+      {
+        "title": "Google Maps & Local SEO",
+        "text": "Optimiertes Google Business Profil: Kategorien, Öffnungszeiten, Fotos, Leistungen &amp; Link zur Website – f&uuml;r Suchanfragen wie „Kita in meiner Nähe“.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655506/admin_gallery/zr3urtt9yps048wnrua4.webp",
+        "img_alt": "Google-Unternehmensprofil Beispiel"
+      },
+      {
+        "title": "Technische SEO",
+        "text": "Schnelle Ladezeiten, mobile UX, SSL, saubere Struktur &amp; Bildkomprimierung. Core Web Vitals im Blick behalten.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655434/admin_gallery/pcimwespifkdsykyip13.webp",
+        "img_alt": "Performance-Diagramm"
+      },
+      {
+        "title": "Strukturierte Daten",
+        "text": "Schema.org (LocalBusiness, FAQ, Event) f&uuml;r mehr Sichtbarkeit &amp; Rich Results.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978624/admin_gallery/nuhgls3vy4xiallbxwix.webp",
+        "img_alt": "Symbol für strukturierte Daten"
+      },
+      {
+        "title": "Content & Bewertungen",
+        "text": "Elternfragen per Blog &amp; FAQ beantworten (z.B. Eingewöhnung, Sprachf&ouml;rderung). Bewertungen schaffen Vertrauen.",
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756657030/admin_gallery/qwxxe97wnkx4gusxffcb.webp",
+        "img_alt": "Bewertungs- und Inhalts-Symbole"
+      }
+    ],
+
+    "funktionen_items": [
+      { "icon_url": "/images/icons/bookmark.svg",   "title": "Pädagogisches Konzept",      "text": "Werte, Methoden & Ziele verständlich darstellen." },
+      { "icon_url": "/images/icons/kontakte.svg",   "title": "Teamvorstellung",            "text": "Fotos & Kurzprofile schaffen Vertrauen." },
+      { "icon_url": "/images/icons/galery.svg",     "title": "Alltag & Galerie",           "text": "Einblicke in Projekte, Räume & Tagesablauf." },
+      { "icon_url": "/images/icons/bi_table.svg",   "title": "Anmeldeinformationen",       "text": "Formulare, Fristen & Ansprechpartner auf einen Blick." },
+      { "icon_url": "/images/icons/chat.svg",       "title": "Elternbereich",              "text": "Downloads, Newsletter & Veranstaltungskalender." },
+      { "icon_url": "/images/icons/door.svg",       "title": "Kontakt & Standort",         "text": "Telefon, E-Mail & Google Maps – schnell erreichbar." }
+    ],
+
+    "vorteile": {
+      "pros": [
+        "Bessere Sichtbarkeit für Eltern",
+        "Vertrauensaufbau durch Transparenz",
+        "Entlastung des Teams (FAQs & Downloads)",
+        "Höhere Anmeldezahlen",
+        "Stärkung des Images der Einrichtung"
+      ],
+      "cons": [
+        "Veraltete Infos wirken unprofessionell",
+        "Fehlende mobile Optimierung führt zu Absprüngen",
+        "Ohne SEO kaum Auffindbarkeit bei Google"
+      ]
+    },
+
+    "tipps_items": [
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979160/admin_gallery/bcrwvvfjsy5obbfzrnws.webp",
+        "img_alt": "geöffnetes Buch",
+        "heading": "Authentische Fotos",
+        "text": "Alltagsszenen, Spiele & Projekte zeigen, was die Kita ausmacht."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979179/admin_gallery/ka0mrtecj0b4ptvzvea8.webp",
+        "img_alt": "Smiley-Symbol",
+        "heading": "Einfach & verständlich",
+        "text": "Texte klar strukturieren – f&uuml;r Eltern auf einen Blick erfassbar."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979188/admin_gallery/dxieq3vnxspku2nrek9o.webp",
+        "img_alt": "Wort „Simple“",
+        "heading": "Wenige Klicks",
+        "text": "Anmeldeinfos &amp; Kontakt maximal leicht erreichbar machen."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979197/admin_gallery/pkwskoehcpwhrxjwhoc4.webp",
+        "img_alt": "SEO-Grafik",
+        "heading": "SEO von Anfang an",
+        "text": "Relevante Keywords gezielt einsetzen &amp; Inhalte pflegen."
+      },
+      {
+        "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979207/admin_gallery/oe0s7nxbw8tjlgyc9ngv.webp",
+        "img_alt": "Aktuelles-Symbol",
+        "heading": "Regelmäßig aktualisieren",
+        "text": "Termine, Formulare &amp; Infos aktuell halten."
+      }
+    ],
+
+    "cta_headline": "Benötigst du eine Website für deine Kita?",
+    "cta_text": "Eine moderne Kita-Website schafft Vertrauen, entlastet das Team und sorgt für mehr Anmeldungen. Mit professionellem Webdesign, SEO und Elternportal gewinnst du neue Familien.",
+    "cta_left_image": "/images/branchen/BasisPaket.webp",
+    "cta_right_image": "/images/branchen/BusinessPaket.webp",
+
+    "faq_items": [
+      {
+        "q": "Wie lange dauert die Erstellung einer Kita-Website?",
+        "a": "<p>Etwa 4 bis 8 Wochen – je nach Umfang und Funktionen.</p>"
+      },
+      {
+        "q": "Können Eltern Unterlagen online abrufen?",
+        "a": "<p>Ja, Anmeldeformulare, Checklisten und Infos können als Download bereitstehen.</p>"
+      },
+      {
+        "q": "Ist SEO wirklich wichtig für Kitas?",
+        "a": "<p>Ja – Eltern googeln gezielt nach Einrichtungen in ihrer Nähe.</p>"
+      },
+      {
+        "q": "Können auch kleine Einrichtungen profitieren?",
+        "a": "<p>Auf jeden Fall – gerade kleine Kitas gewinnen stark durch Online-Sichtbarkeit.</p>"
+      },
+      {
+        "q": "Welche Kosten entstehen?",
+        "a": "<p>Zwischen 499&nbsp;€ und 1.499&nbsp;€, je nach Paket und Funktionsumfang.</p>"
+      }
+    ]
+  }
+]

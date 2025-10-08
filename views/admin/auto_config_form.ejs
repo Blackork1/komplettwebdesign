@@ -1,0 +1,51 @@
+<%- include('../partials/admin_header') %>
+
+<h1>Automatische Termine</h1>
+<p>
+  Definiere Wochentage & Zeitfenster (Format: <code>HH:MM-HH:MM</code>, mehrere durch Komma trennen).
+  Die Slots werden bis zu <strong><%= cfg.weeks_ahead %></strong> Wochen im Voraus erzeugt.
+</p>
+
+<form action="/admin/auto-config" method="POST" class="form">
+  <div class="grid">
+    <label> Dienstage (2)
+      <input type="text" name="w2" value="<%= cfg.w2 %>"
+             placeholder="16:00-17:00, 18:00-19:00, 20:00-21:00">
+    </label>
+    <label> Donnerstage (4)
+      <input type="text" name="w4" value="<%= cfg.w4 %>"
+             placeholder="16:00-17:00, 18:00-19:00, 20:00-21:00">
+    </label>
+    <label> Samstage (6)
+      <input type="text" name="w6" value="<%= cfg.w6 %>"
+             placeholder="12:00-13:00, 14:00-15:00, 16:00-17:00">
+    </label>
+    <label> Sonntage (0)
+      <input type="text" name="w0" value="<%= cfg.w0 %>"
+             placeholder="12:00-13:00, 14:00-15:00, 16:00-17:00">
+    </label>
+  </div>
+
+  <div class="grid">
+    <label> Wochen im Voraus (1–12)
+      <input type="number" name="weeks_ahead" min="1" max="12" value="<%= cfg.weeks_ahead %>">
+    </label>
+    <label> Zeitzone (nur Anzeige/ICS)
+      <input type="text" name="timezone" value="<%= cfg.timezone %>" placeholder="Europe/Berlin">
+    </label>
+  </div>
+
+  <button class="btn">Speichern</button>
+  <button class="btn alt" name="fill_now" value="1">Speichern & jetzt auffüllen</button>
+  <a href="/admin/appointments" class="btn link">Zurück</a>
+</form>
+
+<style>
+.form .grid{display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:1rem; margin:1rem 0;}
+.form input[type="text"], .form input[type="number"]{width:100%; padding:.4rem .6rem; border:1px solid #ccc; border-radius:.4rem;}
+.btn{background:#e94a1b;color:#fff;border:0;padding:.5rem 1rem;border-radius:.4rem;cursor:pointer}
+.btn.alt{background:#999}
+.btn.link{background:transparent;color:#0b2a46;text-decoration:underline}
+</style>
+
+<%- include('../partials/admin_footer') %>

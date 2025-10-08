@@ -11,7 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-
+import cron from 'node-cron';
 
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
@@ -22,7 +22,8 @@ import { navbarMiddleware } from './helpers/navHelper.js';
 // import sessionMiddleware                          from './middleware/session.js';
 import consentMiddleware from './middleware/consentMiddleware.js';
 import { accessLog } from './middleware/accessLog.js';
-
+import { ensureAutoSlots } from './services/autoAppointmentService.js';
+import { deleteExpiredUnbooked } from './services/cleanupService.js';
 
 
 import mainRoutes from './routes/main.js';
@@ -63,19 +64,7 @@ dotenv.config();
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
 
-app.set('trust proxy', true);            // hinter Cloudflare wichtig
-
-// nur wenn andere Cookies noch verwendet werden, gaEnabled wird über consentMiddleware gesetzt
-// app.use(cookieParser());
-// app.use((req, res, next) => {
-//   let enabled = false;
-//   try {
-//     const consent = JSON.parse(req.cookies.cookieConsent);
-//     enabled = Boolean(consent.analytics);
-//   } catch { }
-//   res.locals.gaEnabled = enabled;
-//   next();
-// });
+app.set('trust proxy', true);
 
 app.disable('x-powered-by');      // Header unterdrücken
 // 2) nur in Production aktivieren
@@ -180,6 +169,20 @@ process.on('unhandledRejection', err => {
 process.on('uncaughtException', err => {
   console.error('❌ Uncaught Exception:', err);
 });
+
+/* Beim Start einmal auffüllen + einmal aufräumen */
+ensureAutoSlots().catch(console.error);
+deleteExpiredUnbooked().catch(console.error);
+
+/* Täglich 02:00 Uhr neue Auto-Slots bis X Wochen */
+cron.schedule('0 2 * * *', () => {
+  ensureAutoSlots().catch(console.error);
+}, { timezone: 'Europe/Berlin' });
+
+/* Alle 5 Minuten abgelaufene freie Slots aufräumen */
+cron.schedule('*/5 * * * *', () => {
+  deleteExpiredUnbooked().catch(console.error);
+}, { timezone: 'Europe/Berlin' });
 
 // Routen einbinden
 app.use('/', mainRoutes);

@@ -1,0 +1,90 @@
+:root{
+  --primary: var(--color-primary, #0b2a46);
+  --accent:  var(--color-accent,  #e94a1b);
+  --bg:      var(--color-bg,      #eaeae9);
+  --text:    var(--color-text,    #2e2e2e);
+  --white:   #fff;
+  --muted:   #a3a3a3;
+}
+
+.cal-wrap{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:2rem;
+  padding:1.5rem;
+  background: var(--bg);
+  border-radius: 18px;
+}
+
+.cal-left{
+  background: var(--white);
+  border-radius: 16px;
+  padding:1rem 1rem 1.25rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+}
+
+.cal-header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:.6rem;
+}
+.cal-header .month-label{
+  font-family: var(--font-heading,"Poppins",sans-serif);
+  font-weight:600; color: var(--primary); margin:0;
+}
+.cal-header .nav{
+  border:0; background:var(--bg); color:var(--primary);
+  width:36px; height:36px; border-radius:12px; cursor:pointer;
+}
+
+.weekday-row{
+  display:grid; grid-template-columns: repeat(7,1fr);
+  gap:.25rem; margin:.25rem 0 .4rem; color:var(--muted); font-size:.85rem;
+  text-align:center;
+}
+.grid-days{
+  display:grid; grid-template-columns: repeat(7,1fr);
+  gap:.25rem;
+}
+
+.day{
+  aspect-ratio: 1/1;
+  display:flex; align-items:center; justify-content:center;
+  border-radius: 12px;
+  font-weight: 600;
+  user-select:none;
+}
+.day.muted{ color: #c7c7c7; }
+.day.empty{ background:transparent;cursor:default }
+.day.has-free{
+  color: #111; cursor:pointer; background:#f7f7f7;
+}
+.day.has-free:hover{ outline:2px solid var(--accent); }
+.day.selected{ background: var(--primary); color:#fff; }
+
+.cal-right{
+  background: var(--primary);
+  color:#fff;
+  border-radius:16px;
+  padding:1.25rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+}
+.day-summary h3{ margin:.2rem 0 .6rem }
+.hint{ color:rgba(255,255,255,.8); margin:0 0 .8rem }
+
+.slot-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.6rem; }
+.slot{
+  display:flex; align-items:center; justify-content:space-between;
+  background:#1c3f63; border-radius:12px; padding:.65rem .75rem;
+}
+.slot-time{ font-weight:600 }
+.slot-del{
+  width:28px; height:28px; min-width:28px;
+  background:#fff; color:#d02828; border-radius:8px; border:0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; cursor:pointer;
+}
+.slot-del:hover{ filter: brightness(.95); }
+
+@media (max-width: 900px){
+  .cal-wrap{ grid-template-columns: 1fr; }
+}
