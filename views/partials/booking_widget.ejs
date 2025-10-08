@@ -5,15 +5,14 @@
   herausfinden, welche Lösung für dich passt. Klingt gut? Dann nichts wie los – klick einfach auf den
   Button und such dir einen passenden Zeitpunkt für ein Gespräch aus.</p>
 <div class="kwd-booking-widget" data-sitekey="<%= process.env.RECAPTCHA_SITEKEY %>">
-  <div class="kwd-slot-container">
-    <!-- Slots werden per JS eingefügt -->
-  </div>
-  <!-- Inputs erscheinen erst nach Slot-Wahl -->
+  <div class="kwd-slot-container"></div>
+
   <form class="kwd-booking-form" action="/booking" method="POST" hidden>
     <input type="hidden" name="slotId">
-    <input type="hidden" name="token"> <!-- reCAPTCHA -->
+    <!-- v3 erwartet standardmäßig g-recaptcha-response -->
+    <input type="hidden" name="g-recaptcha-response" />
     <label> Name
-      <input type="text" name="name" required onfocus="loadCaptcha()">
+      <input type="text" name="name" required>
       <span class="err">Bitte Name eingeben</span>
     </label>
     <label> E-Mail
@@ -23,24 +22,12 @@
     <label> Bemerkung (optional)
       <textarea name="note" rows="3"></textarea>
     </label>
-    <div id="recaptcha-container"></div>
 
     <button class="btn">Termin buchen</button>
     <p class="form-msg"></p>
   </form>
 </div>
 
-<!-- <script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>" async defer></script> -->
+<script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>" async defer></script>
 <script src="/js/booking-widget.js" defer></script>
-<script>
-function loadCaptcha() {
-  if (!window.recaptchaLoaded) {
-    var script = document.createElement("script");
-    script.src = "https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>";
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-    window.recaptchaLoaded = true;
-  }
-}
 </script>
