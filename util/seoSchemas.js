@@ -9,7 +9,7 @@ const ORG = {
   "@type": "Organization",
   name: "Komplett Webdesign",
   url: "https://www.komplettwebdesign.de/",
-  telephone: "+49 1525 4350378"
+  telephone: "+49 1551 1245048"
 };
 
 function defaultFaq(slug) {

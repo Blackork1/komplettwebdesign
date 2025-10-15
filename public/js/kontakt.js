@@ -61,7 +61,6 @@ function updateSummary(){
       ${row('Texte',          labelText('texterstellung'))}
       ${row('Bilder',         labelText('bilderstellung'))}
       ${row('Funktionen',     features)}
-      ${row('Weitere Wünsche',document.getElementById('weitereWuensche').value)}
       ${row('Termin',         labelText('slotId'))}
       ${row('Name',           document.getElementById('nameInput').value)}
       ${row('E-Mail',         document.getElementById('emailInput').value)}
@@ -71,7 +70,7 @@ function updateSummary(){
     </tbody></table>`;
 }
 carouselEl.addEventListener('slide.bs.carousel',e=>{ if(e.to===8) updateSummary(); });
-
+//       ${row('Weitere Wünsche',document.getElementById('weitereWuensche').value)}
 /* ---------- Submit: ReCAPTCHA v3 ---------- */
 document.getElementById('kontaktForm').addEventListener('submit', async e=>{
   e.preventDefault();

@@ -48,7 +48,7 @@ export async function ensureAutoSlots() {
           `INSERT INTO appointments (start_time, end_time, title, is_auto)
            VALUES ($1::timestamp, $2::timestamp, $3, TRUE)
            ON CONFLICT (start_time, end_time) DO NOTHING`,
-          [startStr, endStr, 'Beratung (auto)']
+          [startStr, endStr, 'Beratungstermin Komplett Webdesign']
         );
       } catch (e) {
         console.error('AutoSlot-Insert-Fehler:', e);

@@ -121,9 +121,11 @@ export const processForm = [
             });
 
             /* 5) Bestätigungs-Mails ----------------------------------------- */
+            // <tr><th>Weitere Wünsche:</th><td>${req.body.weitereWuensche || 'Keine'}</td></tr>
             const formattedAppointment = slot
                 ? `${format(new Date(slot.start_time), 'dd.MM.yyyy HH:mm')}-${format(new Date(slot.end_time), 'HH:mm')} Uhr`
                 : null;
+
 
             const summaryHtml = `
                 <p>Hallo <strong>${req.body.name}</strong>,</p>
@@ -134,7 +136,6 @@ export const processForm = [
                     <tr><th>Texte:</th><td>${req.body.texterstellung === 'erstellt' ? 'Texterstellung benötigt' : 'Eigene Texte vorhanden'}</td></tr>
                     <tr><th>Bilder:</th><td>${req.body.bilderstellung === 'erstellt' ? 'Bildrecherche/-erstellung benötigt' : 'Eigene Bilder vorhanden'}</td></tr>
                     <tr><th>Funktionen:</th><td>${Array.isArray(req.body.inhalte) ? req.body.inhalte.join(', ') : (req.body.inhalte || 'Keine')}</td></tr>
-                    <tr><th>Weitere Wünsche:</th><td>${req.body.weitereWuensche || 'Keine'}</td></tr>
                     ${formattedAppointment ? `<tr><th>Termin:</th><td>${formattedAppointment}</td></tr>` : ''}
                     <tr><th>Name:</th><td>${req.body.name}</td></tr>
                     <tr><th>E-Mail:</th><td>${req.body.email}</td></tr>

@@ -11,7 +11,7 @@ export async function renderDistrictPage(req, res, next) {
     const metaTitle = `Webdesign ${district.name} | Komplett Webdesign – Landingpages & Relaunch in Berlin`;
     const metaDescription =
       `Komplett Webdesign: Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. ` +
-      `Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1525 4350378.`;
+      `Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.`;
 
     res.locals.title = metaTitle;
     res.locals.metaDescription = metaDescription;
@@ -22,7 +22,7 @@ export async function renderDistrictPage(req, res, next) {
       title: metaTitle,
       description: metaDescription,
       company: "Komplett Webdesign",
-      phone: "+4915254350378"
+      phone: "+4915511245048"
     });
   } catch (err) {
     next(err);
