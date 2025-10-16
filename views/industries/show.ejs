@@ -524,6 +524,25 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="/js/openField.js" defer></script>
 <script src="/js/ga-events.js" defer></script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Webdesign für <%= industry.name %>",
+  "serviceType": "Website-Erstellung & SEO für <%= industry.name %>",
+  "provider": {
+    "@type": "Organization",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de"
+  },
+  "areaServed": { "@type": "City", "name": "Berlin" },
+  "offers": [
+    { "@type": "Offer", "name": "Basis", "price": "499.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/basis" },
+    { "@type": "Offer", "name": "Business", "price": "899.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/business" },
+    { "@type": "Offer", "name": "Premium", "price": "1499.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/premium" }
+  ]
+}
+</script>
 
 
 <!-- JSON-LD -->
