@@ -52,11 +52,11 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <div class="upperHero">
             <div class="heroLeft">
               <h1 class="heroH1" data-text="<%= industry.hero_h1 %>">
-                <span class="heroH1-text"><%= industry.hero_h1 %></span>
+                <span class="heroH1-text"><%- industry.hero_h1 %></span>
               </h1>
 
               <% if (industry.hero_h2) { %>
-              <h2 class="heroH1-cursive"><%= industry.hero_h2 %></h2>
+              <h2 class="heroH1-cursive"><%- industry.hero_h2 %></h2>
               <% } %>
 
               <% if ((industry.hero_checks||[]).length) { %>
