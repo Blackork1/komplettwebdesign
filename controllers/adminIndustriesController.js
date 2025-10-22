@@ -1,14 +1,20 @@
 // controllers/adminIndustriesController.js
 import pool from '../util/db.js';
 import { rebuildIndustryEmbeddings } from '../scripts/embeddingsService.js';
+import * as Industry from '../models/industryModel.js'; // optional in anderen Controllern genutzt
 
 // ------------------------------------------------------------
 // Konstanten / Helpers
 // ------------------------------------------------------------
+// JSONB-Felder (serverseitig als ::jsonb gespeichert)
+// ✨ zentral: nur noch "blocks"
 const JSONB_COLS = new Set([
   'carousel_items', 'stats_cards', 'seo_items',
-  'funktionen_items', 'vorteile', 'tipps_items', 'faq_items'
+  'funktionen_items', 'vorteile', 'tipps_items', 'faq_items',
+  'blocks'
 ]);
+
+// text[]-Felder
 const TEXT_ARRAY_COLS = new Set(['hero_checks']);
 
 function slugify(str = '') {
@@ -19,67 +25,40 @@ function slugify(str = '') {
     .replace(/^-+|-+$/g, '') || 'item';
 }
 
-/**
- * Versucht ein unbekanntes Feld in den passenden Typ zu überführen:
- * - JSONB: akzeptiert JS-Objekt/Array oder JSON-String; gibt einen JSON-String zurück
- * - text[]: akzeptiert Array<string> oder zeilengetrennten String; gibt Array<string> zurück
- * - andere Felder: unverändert
- */
 function normalizeFieldValue(key, val) {
   if (JSONB_COLS.has(key)) {
-    // Ziel: gültiger JSON-Text (string), der später mit ::jsonb gecastet wird
-    if (val == null || val === '') return '[]'; // leere Default-Struktur
+    if (val == null || val === '') return '[]';
     if (typeof val === 'string') {
-      // Wenn schon String: validieren
       try { JSON.parse(val); return val; }
-      catch {
-        // könnte HTML/“smart quotes” enthalten; als letzte Option: String in JSON-String hüllen
-        // Das hilft bei "vorteile" nicht; dort erwarten wir Objekt/Array.
-        // Besser: Fehler werfen, damit der Benutzer das Feld sieht.
-        throw new Error(`Feld "${key}" enthält keinen gültigen JSON-Text.`);
-      }
+      catch { throw new Error(`Feld "${key}" enthält keinen gültigen JSON-Text.`); }
     }
-    // JS-Objekt/Array → JSON-String
     try { return JSON.stringify(val); }
     catch { throw new Error(`Feld "${key}" konnte nicht in JSON serialisiert werden.`); }
   }
 
   if (TEXT_ARRAY_COLS.has(key)) {
-    if (Array.isArray(val)) {
-      return val.map(v => String(v));
-    }
+    if (Array.isArray(val)) return val.map(v => String(v));
     if (typeof val === 'string') {
-      // Zeilenweise (Textarea) → Array
-      return val
-        .split(/\r?\n/)
-        .map(s => s.trim())
-        .filter(Boolean);
+      return val.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     }
     if (val == null) return [];
-    // Irgendwas anderes → Stringifizieren
     return [String(val)];
   }
 
-  // Default: unverändert
   return val;
 }
 
-/**
- * Normalisiert das ganze Industry-Objekt (nur vorhandene Keys).
- */
 function normalizeIndustryPayload(obj = {}) {
   const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[k] = normalizeFieldValue(k, v);
-  }
-  // slug ableiten falls fehlt
+  for (const [k, v] of Object.entries(obj)) out[k] = normalizeFieldValue(k, v);
   if (!out.slug && out.name) out.slug = slugify(out.name);
   return out;
 }
 
 /**
- * Baut ein dynamisches UPSERT auf Basis der gelieferten Keys.
- * JSONB-Felder werden mit ::jsonb gecastet.
+ * Dynamisches UPSERT (Konflikt auf slug).
+ * - 'id' wird nicht gesetzt
+ * - JSONB-Felder ::jsonb, text[] ::text[]
  */
 async function upsertIndustryDynamic(rawObj) {
   if (!rawObj || (!rawObj.slug && !rawObj.name)) {
@@ -89,14 +68,18 @@ async function upsertIndustryDynamic(rawObj) {
   const obj = normalizeIndustryPayload(rawObj);
   if (!obj.slug) obj.slug = slugify(obj.name);
 
-  const keys = Object.keys(obj);
+  const keysAll = Object.keys(obj);
+  const keys = keysAll.filter(k => k !== 'id'); // id nie manuell setzen
   if (!keys.length) throw new Error('Keine Felder vorhanden.');
 
   const columns = keys.map(k => `"${k}"`).join(',');
   const placeholders = keys.map((k, i) => {
     const p = `$${i + 1}`;
-    return JSONB_COLS.has(k) ? `${p}::jsonb` : p;
+    if (JSONB_COLS.has(k)) return `${p}::jsonb`;
+    if (TEXT_ARRAY_COLS.has(k)) return `${p}::text[]`;
+    return p;
   }).join(',');
+
   const updates = keys
     .filter(k => k !== 'slug')
     .map(k => `"${k}" = EXCLUDED."${k}"`)
@@ -131,7 +114,7 @@ export async function importForm(req, res) {
 }
 
 // ------------------------------------------------------------
-// API: JSON-Import (application/json): { items: [...], rebuild_embeddings?: boolean }
+// API: JSON-Import
 // ------------------------------------------------------------
 export async function importJSON(req, res) {
   try {
@@ -160,9 +143,6 @@ export async function importJSON(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// Datei-Upload (multipart/form-data) – JSON-Datei
-// ------------------------------------------------------------
 export async function importFile(req, res) {
   try {
     if (!req.file || !req.file.buffer) {
@@ -173,7 +153,7 @@ export async function importFile(req, res) {
       });
     }
     const text = req.file.buffer.toString('utf8').trim();
-    const data = JSON.parse(text); // wirf bei ungültigem JSON
+    const data = JSON.parse(text);
     const rebuild_embeddings = !!req.body.rebuild_embeddings;
     const items = Array.isArray(data) ? data : [data];
 
@@ -205,11 +185,12 @@ export async function importFile(req, res) {
 }
 
 // ------------------------------------------------------------
-// Admin-CRUD (Form basiert) – optional
+// Admin-CRUD (Form basiert)
 // ------------------------------------------------------------
 const JSON_FIELDS = [
   'carousel_items', 'stats_cards', 'seo_items',
-  'funktionen_items', 'vorteile', 'tipps_items', 'faq_items'
+  'funktionen_items', 'vorteile', 'tipps_items', 'faq_items',
+  'blocks'
 ];
 
 function parseJSONSafe(val, fallback) {
@@ -240,7 +221,9 @@ export async function newForm(req, res) {
       carousel_items: [], stats_cards: [], seo_items: [],
       funktionen_items: [], vorteile: { pros: [], cons: [] }, tipps_items: [],
       cta_headline: '', cta_text: '', cta_left_image: '', cta_right_image: '',
-      faq_items: []
+      faq_items: [],
+      // ✨ NEU – eine zentrale Liste:
+      blocks: []
     },
     errors: null
   });
@@ -267,7 +250,11 @@ export async function create(req, res) {
     return res.render('admin/industries_form', {
       title: 'Neue Branche',
       mode: 'create',
-      row: { ...b, hero_checks, ...Object.fromEntries(JSON_FIELDS.map(f => [f, b[f]])) },
+      row: {
+        ...b,
+        hero_checks,
+        ...Object.fromEntries(JSON_FIELDS.map(f => [f, b[f]]))
+      },
       errors: { message: `JSON-Feld "${jsonError[0]}" enthält ungültiges JSON.` }
     });
   }
@@ -282,11 +269,10 @@ export async function create(req, res) {
   const simple = pick(b, keys);
   simple.slug = String(simple.slug || '').toLowerCase();
 
-  // Verwende unser dynamisches Upsert mit sauberen Typen
   const row = await upsertIndustryDynamic({
     ...simple,
     hero_checks,
-    ...parsed
+    ...parsed // enthält auch "blocks"
   });
 
   if (b.rebuild_embeddings === 'on') {
@@ -324,22 +310,24 @@ export async function update(req, res) {
     return res.render('admin/industries_form', {
       title: 'Branche bearbeiten',
       mode: 'edit',
-      row: { id, ...b, hero_checks, ...Object.fromEntries(JSON_FIELDS.map(f => [f, b[f]])) },
+      row: {
+        id,
+        ...b,
+        hero_checks,
+        ...Object.fromEntries(JSON_FIELDS.map(f => [f, b[f]]))
+      },
       errors: { message: `JSON-Feld "${jsonError[0]}" enthält ungültiges JSON.` }
     });
   }
 
-  // Wir nutzen wieder das dynamische UPSERT (mit gleicher Logik),
-  // aber stellen sicher, dass die ID existiert:
   const { rows: exist } = await pool.query(`SELECT id, slug FROM industries WHERE id=$1`, [id]);
   if (!exist.length) return res.status(404).send('Nicht gefunden');
 
   const row = await upsertIndustryDynamic({
-    id: exist[0].id, // wird ignoriert, da wir konflikt auf slug machen
     ...b,
     slug: String(b.slug || exist[0].slug).toLowerCase(),
     hero_checks,
-    ...parsed
+    ...parsed // enthält auch "blocks"
   });
 
   if (b.rebuild_embeddings === 'on') {

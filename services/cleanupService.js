@@ -17,12 +17,7 @@ export async function deleteExpiredUnbooked() {
     DELETE FROM appointments a
      WHERE a.is_booked = FALSE
        AND a.start_time <= (NOW() AT TIME ZONE $1)
-       AND NOT EXISTS (
-             SELECT 1
-               FROM bookings b
-              WHERE b.appointment_id = a.id
-                AND COALESCE(b.status, 'pending') <> 'cancelled'
-           )
+       AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.appointment_id = a.id)
     `,
     [tz]
   );

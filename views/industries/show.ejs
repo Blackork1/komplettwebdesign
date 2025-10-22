@@ -101,7 +101,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       <!-- ===================== WARUM WEBSITE ===================== -->
       <section id="WarumWebsite">
         <div class="orangeContainer">
-          <h2 class="containerRight animate-on-scroll alignRight">Warum eine Website?</h2>
+          <h2 class="containerRight animate-on-scroll alignRight">Warum eine Website als <%= industry.name %>?</h2>
         </div>
 
         <div class="imageLeftTextRight">
@@ -126,6 +126,9 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <% } %>
         </div>
       </section>
+
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_warum' }) %>
+
 
       <!-- ===================== UNVERZICHTBAR (2D Carousel) ===================== -->
       <section id="WebsiteUnverzichtbar">
@@ -176,6 +179,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </div>
       </section>
 
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_unverzichtbar' }) %>
 
       <!-- ===================== STATISTIK / STUDIEN ===================== -->
       <section id="Statistik">
@@ -207,6 +211,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
         </section>
       </section>
+
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_statistik' }) %>
 
       <!-- ===================== SEO FÜR BRANCHE (HORIZONTAL SLIDER) ===================== -->
       <section id="SEO">
@@ -262,6 +268,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </div>
       </section>
 
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_seo' }) %>
+
       <!-- ===================== FUNKTIONEN (HORIZONTAL GRID SLIDER) ===================== -->
       <section id="Funktionen">
         <div class="funktionenContainer">
@@ -313,10 +321,17 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </div>
       </section>
 
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_funktionen' }) %>
+
       <!-- ===================== PREISE (Pakete aus DB) ===================== -->
       <section id="Preise">
-        <h2 class="alignCenter animate-on-scroll">Kosten für eine Website</h2>
-        <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Was kostet eine Website?“</strong></p>
+        <h2 class="alignCenter animate-on-scroll">Was kostet eine Website für ein <%= industry.name %>?</h2>
+        <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Was kostet eine vollständige Website 2025? Lohnt sich das überhaupt und kann ich mir das leisten?“</strong></p>
+        <p class="alignCenter animate-on-scroll">Eine Website erhälst du bei uns innerhalb von 14 Tagen bereits ab 499 €. Wir bieten dir dazu Ratenzahlungen zu 0% an, 
+          damit kannst du sofort starten und die Kosten bequem verteilen. Investiere in deine Online-Präsenz und profitiere von den <a href="/ratgeber/professionellen-website-vs-baukasten">Vorteilen einer professionellen Website!</a> 
+          Schau dir gerne die folgende Pakete genauer an. Ich bereate dich gerne individual1 zu deinen Wünschen, selbstverständlich kostenlos. <br>
+          <a href="/kontakt" class="primaryColor">Hier geht's zum Kontaktformular.</a>
+        </p>
 
         <div class="pricing-grid marginPricingGrid">
           <% (packages||[]).forEach(pkg => { if (pkg.display) { %>
@@ -345,6 +360,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           Ein zusätzliches Stammkunden-Paar pro Woche kann die Investition bereits decken.
         </p>
       </section>
+
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_preise' }) %>
 
       <!-- ===================== VORTEILE / NACHTEILE (HORIZONTAL SLIDER) ===================== -->
       <section id="Vorteile">
@@ -399,6 +416,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </p>
       </section>
 
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_vorteile' }) %>
+
       <!-- ===================== TIPPS (HORIZONTAL SLIDER) ===================== -->
       <section id="Tipps">
         <h2 class="alignEnd">Tipps für erfolgreiche Website</h2>
@@ -440,12 +459,14 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </p>
       </section>
 
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_tipps' }) %>
+
       <!-- ===================== CTA ===================== -->
       <section id="CTA">
         <div class="ctaContainer">
           <div style="z-index: 2; position: relative;">
             <h2 class="alignCenter ctaH2 animate-on-scroll">
-              Benötigst du eine Website für<br><strong class="orange">dein <%= industry.name %>?</strong>
+              Benötigst du eine Website mit professionellen Webdesign als<br><strong class="orange"> <%= industry.name %>?</strong>
             </h2>
           </div>
 
@@ -474,6 +495,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <p class="alignCenter animate-on-scroll">Kontaktiere uns für eine kostenlose Erstberatung!</p>
         </div>
       </section>
+
+      <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_cta' }) %>
 
       <!-- ===================== FAQ (mit optionalem Link) ===================== -->
       <section id="FAQ">
@@ -513,6 +536,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
         </div>
       </section>
+
 
     </div>
   </div>

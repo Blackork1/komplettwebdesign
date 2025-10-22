@@ -118,7 +118,7 @@ async function handleUserCancellation(req, res, action) {
   if (!verifyToken(id, token)) return res.status(403).send('Ungültiger Link');
 
   const { rows } = await pool.query(
-    `UPDATE bookings SET status = 'cancelled' WHERE id = $1 RETURNING *`,
+    `UPDATE bookings SET status = 'cancelled', updated_at = NOW() WHERE id = $1 RETURNING *`,
     [id]
   );
   if (!rows.length) return res.status(404).send('Buchung nicht gefunden');

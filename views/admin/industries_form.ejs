@@ -119,6 +119,7 @@
 
       <hr>
 
+
       <div class="col-md-6">
         <label class="form-label">CTA Headline</label>
         <input name="cta_headline" class="form-control" value="<%= row.cta_headline || '' %>">
@@ -134,6 +135,33 @@
       <div class="col-12 form-check mt-3">
         <input type="checkbox" id="rebuild_embeddings" name="rebuild_embeddings" class="form-check-input">
         <label class="form-check-label" for="rebuild_embeddings">Embeddings nach Speichern neu aufbauen</label>
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Flexible Blöcke (JSON Array mit "position")</label>
+        <textarea data-json-editor name="blocks" class="form-control" rows="12"><%= JSON.stringify(row.blocks || [], null, 2) %></textarea>
+        <small class="text-muted">
+          Jeder Block hat mindestens <code>type</code> und <code>position</code>.<br>
+          Zulässige <strong>position</strong>-Werte (Beispiele):
+          <code>after_warum</code>, <code>after_unverzichtbar</code>, <code>after_statistik</code>, <code>after_seo</code>, <code>after_funktionen</code> <code>after_preise</code>, <code>after_vorteile</code>, <code>after_tipps</code>, <code>before_seo</code>,.<br><br>
+          Beispiele:<br>
+          Richtext:
+          <pre>[
+  { "type":"richtext", "position":"before_cta", "html":"&lt;h2&gt;Zusatz&lt;/h2&gt;&lt;p&gt;Freier HTML-Text…&lt;/p&gt;" }
+]</pre>
+          Gallery:
+          <pre>[
+  { "type":"gallery", "position":"after_intro", "items":[
+    { "img_url":"https://…/1.webp", "img_alt":"…" },
+    { "img_url":"https://…/2.webp", "img_alt":"…" }
+  ]}
+]</pre>
+          CTA:
+          <pre>[
+  { "type":"cta", "position":"after_faq", "headline":"Jetzt starten", "subline":"Unverbindlich beraten lassen",
+    "button": { "label":"Kontakt", "url":"/kontakt" } }
+]</pre>
+        </small>
       </div>
 
       <div class="col-12 mt-4">
