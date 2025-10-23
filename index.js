@@ -137,7 +137,7 @@ app.use(session({
 app.use(consentMiddleware);               // setzt req/session/locals
 
 
-app.use(accessLog({                     
+app.use(accessLog({
   pool,
   getConsent: (req) => ({ analytics: !!req.session?.cookieConsent?.analytics }),
   useMaxMind: false,              // auf true stellen, wenn du City/Region willst
@@ -172,7 +172,9 @@ process.on('uncaughtException', err => {
 
 /* Beim Start einmal auffüllen + einmal aufräumen */
 ensureAutoSlots().catch(console.error);
-deleteExpiredUnbooked().catch(console.error);
+if (isProd) {
+  deleteExpiredUnbooked().catch(console.error);
+}
 
 /* Täglich 02:00 Uhr neue Auto-Slots bis X Wochen */
 cron.schedule('0 2 * * *', () => {
@@ -180,10 +182,11 @@ cron.schedule('0 2 * * *', () => {
 }, { timezone: 'Europe/Berlin' });
 
 /* Alle 5 Minuten abgelaufene freie Slots aufräumen */
-cron.schedule('*/5 * * * *', () => {
-  deleteExpiredUnbooked().catch(console.error);
-}, { timezone: 'Europe/Berlin' });
-
+if (isProd) {
+  cron.schedule('*/5 * * * *', () => {
+    deleteExpiredUnbooked().catch(console.error);
+  }, { timezone: 'Europe/Berlin' });
+}
 // Routen einbinden
 app.use('/', mainRoutes);
 app.use('/pricing', pricingRoutes);
