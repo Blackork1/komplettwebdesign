@@ -20,48 +20,25 @@
 </section>
 
 <div class="container my-5">
-
-  <div class="container my-5">
-    <div class="row">
-      <!-- Hauptliste der Blogposts (linke Spalte) -->
-      <div class="col-md-8">
-        <h2 class="mb-4">Wichtige Branchen</h2>
-        <div class="post-list">
-          <!-- <<< Neuer Wrapper -->
-          <% (others && others.length ? others : []).forEach(function(ind){ %>
-          <div class="post-card mb-4">
-            <!-- Verlinkter Artikel -->
-            <a href="<%= toPath(ind) %>" class="post-card-link">
-              <!-- Hintergrundbild + Overlay -->
-              <div class="post-card-bg" style="background-image: url('<%= ind.og_image_url%>');">
-                <div class="post-card-content">
-                  <div class="post-card-overlay">
-                    <h2 class="post-card-title alignCenter">
-                      <%= ind.name %>
-                    </h2>
-                  </div>
+  <div class="row">
+    <!-- Hauptliste der Blogposts (linke Spalte) -->
+    <div class="col-md-8">
+      <h2 class="mb-4">Wichtige Branchen</h2>
+      <div class="post-list">
+        <!-- <<< Neuer Wrapper -->
+        <% (others && others.length ? others : []).forEach(function(ind){ %>
+        <div class="post-card mb-4">
+          <!-- Verlinkter Artikel -->
+          <a href="<%= toPath(ind) %>" class="post-card-link">
+            <!-- Hintergrundbild + Overlay -->
+            <div class="post-card-bg" style="background-image: url('<%= ind.og_image_url%>');">
+              <div class="post-card-content">
+                <div class="post-card-overlay">
+                  <h2 class="post-card-title alignCenter">
+                    <%= ind.name %>
+                  </h2>
                 </div>
               </div>
-            </a>
-          </div>
-          <% }); %>
-        </div>
-      </div>
-
-      <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
-      <div class="col-md-4 d-none d-md-block">
-        <h3>Empfohlene Artikel</h3>
-        <% featured.forEach(function(ind){ %>
-        <div class="featured-post-card mb-3">
-          <a href="<%= toPath(ind) %>" class="d-flex">
-            <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img" />
-            <div class="featured-post-info">
-              <h5 class="featured-post-title">
-                <%= ind.title %>
-              </h5>
-              <p class="featured-post-excerpt">
-                <%= (ind.excerpt) %>
-              </p>
             </div>
           </a>
         </div>
@@ -69,104 +46,42 @@
       </div>
     </div>
 
-    <!-- Featured Posts horizontal (mobil sichtbar) -->
-    <div class="d-block d-md-none mt-4">
-      <h4>Empfohlene Artikel</h4>
-      <div class="featured-mobile-scroll d-flex">
-        <% featured.forEach(function(ind){  %>
-        <div class="featured-post-card-mobile me-3">
-          <a href="<%= toPath(ind) %>">
-            <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img-mobile" />
-            <h5 class="featured-post-title-mobile">
+    <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
+    <div class="col-md-4 d-none d-md-block">
+      <h3>Neue Branchen</h3>
+      <% featured.forEach(function(ind){ %>
+      <div class="featured-post-card mb-3">
+        <a href="<%= toPath(ind) %>" class="d-flex">
+          <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img" />
+          <div class="featured-post-info">
+            <h5 class="featured-post-title">
               <%= ind.title %>
             </h5>
-          </a>
-        </div>
-        <% }); %>
+            <p class="featured-post-excerpt">
+              <%= (ind.excerpt) %>
+            </p>
+          </div>
+        </a>
       </div>
+      <% }); %>
     </div>
   </div>
 
-
-
-
-
-  <!-- Wichtige Branchen (featured) -->
-  <% if (featured && featured.length) { %>
-  <h2 class="mb-4">Wichtige Branchen</h2>
-  <div class="row">
-    <% featured.forEach(function(ind){ 
-           const img = ind.hero_image_url || ind.og_image_url || "/images/branchen/fallback.webp";
-           const alt = (ind.title || ind.name) + " – Branchenbild";
-      %>
-    <div class="col-md-6 col-lg-4 mb-4">
-      <a href="<%= toPath(ind) %>" class="post-card-link" aria-label="<%= ind.title || ind.name %>">
-        <div class="post-card">
-          <!-- Bild statt background-image -->
-          <div class="post-card-bg" style="position:relative; aspect-ratio:16/9; overflow:hidden;">
-            <img src="<%= img %>" alt="<%- alt %>" loading="lazy" decoding="async" class="post-card-img" style="width:100%; height:100%; object-fit:cover; display:block;" />
-
-            <!-- Overlay/Content wie gehabt -->
-            <div class="post-card-content" style="position:absolute; inset:0;">
-              <div class="post-card-overlay">
-                <h2 class="post-card-title"><%= ind.title || ind.name %></h2>
-                <span class="badge text-bg-warning">Wichtig</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
+  <!-- Featured Posts horizontal (mobil sichtbar) -->
+  <div class="d-block d-md-none mt-4">
+    <h4>Neue Branchen</h4>
+    <div class="featured-mobile-scroll d-flex">
+      <% featured.forEach(function(ind){  %>
+      <div class="featured-post-card-mobile me-3">
+        <a href="<%= toPath(ind) %>">
+          <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img-mobile" />
+          <h5 class="featured-post-title-mobile">
+            <%= ind.title %>
+          </h5>
+        </a>
+      </div>
+      <% }); %>
     </div>
-    <% }) %>
-  </div>
-  <% } %>
-
-  <!-- Alle Branchen -->
-  <h2 class="mb-4">Alle Branchen</h2>
-  <div class="row">
-    <% (others && others.length ? others : []).forEach(function(ind){ 
-         const img = ind.hero_image_url || ind.og_image_url || "/images/branchen/fallback.webp";
-         const alt = (ind.title || ind.name) + " – Branchenbild";
-    %>
-    <div class="col-md-6 col-lg-4 mb-4">
-      <a href="<%= toPath(ind) %>" class="post-card-link" aria-label="<%= ind.title || ind.name %>">
-        <div class="post-card">
-          <div class="post-card-bg" style="position:relative; aspect-ratio:16/9; overflow:hidden;">
-            <img src="<%= img %>" alt="<%- alt %>" loading="lazy" decoding="async" class="post-card-img" style="width:100%; height:100%; object-fit:cover; display:block;" />
-
-            <div class="post-card-content" style="position:absolute; inset:0;">
-              <div class="post-card-overlay">
-                <h2 class="post-card-title"><%= ind.title || ind.name %></h2>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-    <% }) %>
-
-    <% if (!others || others.length === 0) { %>
-    <% (featured || []).forEach(function(ind){ 
-           const img = ind.hero_image_url || ind.og_image_url || "/images/branchen/fallback.webp";
-           const alt = (ind.title || ind.name) + " – Branchenbild";
-      %>
-    <div class="col-md-6 col-lg-4 mb-4">
-      <a href="<%= toPath(ind) %>" class="post-card-link" aria-label="<%= ind.title || ind.name %>">
-        <div class="post-card">
-          <div class="post-card-bg" style="position:relative; aspect-ratio:16/9; overflow:hidden;">
-            <img src="<%= img %>" alt="<%- alt %>" loading="lazy" decoding="async" class="post-card-img" style="width:100%; height:100%; object-fit:cover; display:block;" />
-
-            <div class="post-card-content" style="position:absolute; inset:0;">
-              <div class="post-card-overlay">
-                <h2 class="post-card-title"><%= ind.title || ind.name %></h2>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-    <% }) %>
-    <% } %>
   </div>
 </div>
 
