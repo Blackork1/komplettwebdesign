@@ -11,6 +11,7 @@ import {
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
+import { mockPackages } from '../data/mockPackages.js';
 
 
 
@@ -38,13 +39,40 @@ function resolveBaseUrl(req) {
 //  GET /packages
 // ────────────────────────────────────────────────────────────────────────────────
 export async function listPackages(req, res) {
+  const pageMeta = {
+    title: 'Unsere Website Pakete - Premium Webdesign Pakete',
+    description: 'Professionelle Website Pakete für Selbstständige & KMU. Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt - deine Website ab 499€.'
+  };
   try {
     const { rows: packages } = await pool.query(
-      'SELECT * FROM packages ORDER BY price'   // oder price_amount_cents
+      `SELECT id, name, slug, description, image, price_amount_cents, price, display
+         FROM packages
+         ORDER BY price_amount_cents NULLS LAST, id`
     );
-    res.render('packages_list', { packages, title: 'Unsere Website Pakete - Landingpage bis Shop', description: 'Unsere Pakete im Überblick. Hier erhälst du Informationen zu unserem Paketen und Angeboten.' });
+
+    const { rows: featureRows } = await pool.query(
+      'SELECT package_id, feature FROM package_features ORDER BY id'
+    );
+
+    const featureMap = featureRows.reduce((acc, row) => {
+      acc[row.package_id] = acc[row.package_id] || [];
+      acc[row.package_id].push(row.feature);
+      return acc;
+    }, {});
+
+    const enhancedPackages = packages.map(pkg => ({
+      ...pkg,
+      features: featureMap[pkg.id] || []
+    }));
+
+    res.render('packages_list', { packages: enhancedPackages, ...pageMeta });
   } catch (err) {
     console.error('❌ listPackages:', err);
+    if (process.env.NODE_ENV !== 'production' && mockPackages.length) {
+      console.warn('⚠️ Fallback auf Mock-Pakete für /pakete aktiviert.');
+      res.render('packages_list', { packages: mockPackages, ...pageMeta });
+      return;
+    }
     res.status(500).send('Pakete konnten nicht geladen werden.');
   }
 }

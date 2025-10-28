@@ -1,232 +1,396 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <%- include('partials/head') %>
-    <!-- Annahme: Enthält Bootstrap CSS etc. -->
-    <title>Unsere Website Pakete - Landingpage bis Shop</title>
-  </head>
 
-  <body>
-    <%- include('partials/header') %>
+<head>
+  <%- include('partials/head') %>
+  <!-- Annahme: Enthält Bootstrap CSS etc. -->
+  <title>Unsere Website Pakete - Premium Webdesign Pakete</title>
+</head>
 
-    <div class="backgroundColor">
-      <div class="topWhiteGradient">
-        <div class="container py-5 my-0">
-          <h1 class="mb-4 text-center white">Website-Pakete</h1>
-          <p class="text-center mb-5">
-            Wählen Sie das passende Paket für Ihr Webdesign-Projekt:
-          </p>
-          <div class="row">
-            <% packages.forEach(pkg=> { if(pkg.display){%>
-            <div class="col-md-4 mb-4">
-              <div class="card h-100">
-                <!-- Optional: Paketbild als Thumbnail innerhalb der Karte -->
-                <img
-                  src="/images/<%= pkg.image %>"
-                  class="card-img-top"
-                  alt="<%= pkg.name %> Paket Bild"
-                />
-                <div class="card-body d-flex flex-column">
-                  <!-- <h5 class="card-title"><%= pkg.name %>-Paket</h5> -->
-                  <p class="card-text"><%= pkg.description %></p>
-                  <h6 class="mt-auto">
-                    Preis: <strong> <%= pkg.price %> € </strong>
-                  </h6>
-                  <a
-                    href="/pakete/<%= pkg.name.toLowerCase() %>"
-                    class="btn btn-primary mt-3"
-                    >Details</a
-                  >
-                </div>
-              </div>
-            </div>
-            <% }}) %>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="packages-page">
+    <section class="packages-hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="hero-badge">Websitepakete für Selbstständige &amp; KMU</span>
+          <h1 class="hero-title">Was kostet eine Professionelle Website?</h1>
+          <h2 class="hero-subtitle">
+            Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt –
+            wir begleiten Sie mit Design, Technik, Inhalt und Wartung. Finden Sie das
+            Paket, das zu Ihrem Unternehmen passt.
+          </h2>
+          <ul class="hero-highlights">
+            <li>Responsive Designs mit individuellen Brand-Farben</li>
+            <li>Texte, SEO-Basics &amp; rechtliche Seiten inklusive</li>
+            <li>Optionaler Wartungsservice &amp; persönliche Beratung</li>
+          </ul>
+          <div class="hero-actions">
+            <a class="btn btn-hero" href="#paket-angebote">Pakete entdecken</a>
+            <a class="btn btn-soft-outline" href="/kontakt">Kostenlose Beratung</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-image-frame">
+            <picture>
+              <source srcset="/images/preiseHero.webp" type="image/webp" />
+              <img src="/images/preiseHero.webp" alt="Websitepakete Basis, Business, Premium" loading="lazy" />
+            </picture>
           </div>
         </div>
       </div>
-    </div>
-    <%- include('partials/footer') %>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Startseite",
-            "item": "https://www.komplettwebdesign.de/"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Pakete",
-            "item": "https://www.komplettwebdesign.de/pakete"
-          }
-        ]
-      }
-    </script>
+    </section>
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        "name": "Website-Pakete – Komplett Webdesign Berlin",
-        "url": "https://www.komplettwebdesign.de/pakete",
-        "description": "Website-Pakete für Berlin & Brandenburg: Basis, Business und Premium mit Design, Text, SEO, Hosting & Wartung.",
-        "inLanguage": "de",
-        "isPartOf": {
-          "@type": "WebSite",
-          "name": "Komplett Webdesign",
-          "url": "https://www.komplettwebdesign.de/"
+    <section class="packages-intro">
+      <div class="container intro-grid">
+        <article class="intro-card">
+          <h2>Schnell online – ohne Kompromisse</h2>
+          <p>
+            Wir liefern komplette Websites inklusive Design, Texten, SEO-Basics und
+            Technik. Sie konzentrieren sich auf Ihr Business, wir auf Ihren digitalen
+            Auftritt.
+          </p>
+        </article>
+        <article class="intro-card">
+          <h2>Transparente Paketpreise</h2>
+          <p>
+            Einmalige Erstellungskosten plus optionale Wartung – klar kalkuliert und
+            ohne versteckte Gebühren. Jedes Paket enthält Hosting, Sicherheit und DSGVO.
+          </p>
+        </article>
+        <article class="intro-card">
+          <h2>Mehr Leads &amp; Vertrauen</h2>
+          <p>
+            Conversion-orientierte Strukturen, klare Botschaften und vertrauensbildende
+            Elemente sorgen dafür, dass Besucher zu Kunden werden.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="paket-angebote" class="package-collection">
+      <div class="container">
+        <%
+            function slugify(value) {
+              if (!value) return '';
+              return value
+                .toString()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\w\s-]/g, '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            }
+
+            function formatPrice(pkg) {
+              if (!pkg) return '';
+              if (pkg.price && typeof pkg.price === 'string') return pkg.price;
+              if (pkg.price_formatted) return pkg.price_formatted;
+              if (pkg.price_amount_cents != null) {
+                return (Number(pkg.price_amount_cents) / 100).toLocaleString('de-DE', {
+                  style: 'currency',
+                  currency: 'EUR'
+                });
+              }
+              if (pkg.price_amount != null) {
+                return Number(pkg.price_amount).toLocaleString('de-DE', {
+                  style: 'currency',
+                  currency: 'EUR'
+                });
+              }
+              return '';
+            }
+
+            const fallbackFeatures = {
+              basis: [
+                'Individuelles Onepager-Design mit klarer Struktur',
+                'Alle wichtigen rechtlichen Seiten &amp; DSGVO umgesetzt',
+                'Einrichtung von Kontaktformular &amp; Google Analytics (Consent ready)'
+              ],
+              business: [
+                'Mehrseitige Unternehmens-Website inklusive SEO-Grundoptimierung',
+                'Texterstellung für Kernseiten &amp; verkaufsstarke Call-to-Actions',
+                'Integration von Kalender, Blog oder Lead-Tools nach Bedarf'
+              ],
+              premium: [
+                'Strategische UX-Workshops &amp; individuelle Conversion-Strecken',
+                'Umfangreiche Content-Produktion (Text, Visuals, Animationen)',
+                'Laufende Betreuung mit Performance-Reports &amp; Optimierungen'
+              ]
+            };
+
+            const visiblePackages = (packages || []).filter(pkg => pkg && pkg.display !== false);
+          %>
+        <% if (visiblePackages.length) { %>
+        <% visiblePackages.forEach((pkg, index) => { %>
+        <%
+            const slug = pkg.slug ? slugify(pkg.slug) : slugify(pkg.name);
+            const normalizedKey = slugify(pkg.name || slug) || '';
+            const priceDisplay = formatPrice(pkg);
+            const featureList = Array.isArray(pkg.features) && pkg.features.length
+              ? pkg.features
+              : (pkg.feature_list
+                  ? pkg.feature_list
+                      .split(/\r?\n/)
+                      .map(item => item.trim())
+                      .filter(Boolean)
+                  : (fallbackFeatures[normalizedKey] || []));
+            const imagePath = pkg.image
+              ? (pkg.image.startsWith('http') || pkg.image.startsWith('/') ? pkg.image : `/images/${pkg.image}`)
+              : '/images/heroBGG.webp';
+          %>
+        <article class="package-row <%= index % 2 === 1 ? 'is-reversed' : '' %>">
+          <div class="package-visual">
+            <div class="package-frame">
+              <img src="<%= imagePath %>" alt="<%= pkg.name %> Paket" loading="lazy" />
+              <a class="package-overlay" href="/pakete/<%= slug %>" aria-label="Mehr erfahren über das <%= pkg.name %>-Paket">
+                <span>Zum <%= pkg.name %>-Paket</span>
+              </a>
+            </div>
+          </div>
+          <div class="package-content">
+            <div class="package-header">
+              <span class="package-index">0<%= index + 1 %></span>
+              <span class="package-eyebrow">Komplettpaket <%= pkg.name %></span>
+            </div>
+            <h2 class="package-title"><%= pkg.name %>-Paket</h2>
+            <p class="package-description"><%= pkg.description %></p>
+            <% if (featureList.length) { %>
+            <ul class="package-features">
+              <% featureList.forEach(feature => { %>
+              <li>
+                <span class="feature-icon" aria-hidden="true">✓</span>
+                <span><%= feature %></span>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+            <div class="package-meta">
+              <span class="price-label">Preis ab</span>
+              <span class="price-amount"><%= priceDisplay %></span>
+            </div>
+            <div class="package-actions">
+              <a class="btn btn-hero" href="/pakete/<%= slug %>">
+                Details ansehen
+              </a>
+              <a class="btn btn-soft-outline" href="/kontakt">Jetzt beraten lassen</a>
+            </div>
+          </div>
+        </article>
+        <% }) %>
+        <% } else { %>
+        <div class="text-center py-5">
+          <p>Aktuell sind keine Pakete verfügbar. Bitte schauen Sie später noch einmal vorbei.</p>
+        </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="packages-cta">
+      <div class="container cta-inner">
+        <div>
+          <h2>Bereit für Ihren neuen Webauftritt?</h2>
+          <p>
+            Wir kombinieren Design, Performance und Suchmaschinenoptimierung, damit
+            Ihr Unternehmen online sichtbar wird.
+          </p>
+        </div>
+        <a class="btn btn-hero" href="/kontakt">Unverbindliches Erstgespräch sichern</a>
+      </div>
+    </section>
+  </main>
+  <%- include('partials/footer') %>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Startseite",
+          "item": "https://www.komplettwebdesign.de/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Pakete",
+          "item": "https://www.komplettwebdesign.de/pakete"
         }
-      }
-    </script>
+      ]
+    }
+  </script>
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        "url": "https://www.komplettwebdesign.de/pakete",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "url": "https://www.komplettwebdesign.de/pakete/basis",
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Website-Pakete – Komplett Webdesign Berlin",
+      "url": "https://www.komplettwebdesign.de/pakete",
+      "description": "Website-Pakete für Berlin & Brandenburg: Basis, Business und Premium mit Design, Text, SEO, Hosting & Wartung.",
+      "inLanguage": "de",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Komplett Webdesign",
+        "url": "https://www.komplettwebdesign.de/"
+      }
+    }
+  </script>
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "url": "https://www.komplettwebdesign.de/pakete",
+      "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://www.komplettwebdesign.de/pakete/basis",
+          "name": "Basis-Paket",
+          "item": {
+            "@type": "Product",
             "name": "Basis-Paket",
-            "item": {
-              "@type": "Product",
-              "name": "Basis-Paket",
-              "description": "Der schnelle Einstieg: moderne Onepager/kleine Seite inkl. Design, DSGVO, Basis-SEO & Hosting.",
-              "brand": { "@type": "Brand", "name": "Komplett Webdesign" },
-              "image": "https://www.komplettwebdesign.de/images/paket-basis.webp",
-              "offers": {
-                "@type": "Offer",
-                "price": "499",
-                "priceCurrency": "EUR",
-                "availability": "https://schema.org/InStock",
-                "url": "https://www.komplettwebdesign.de/pakete/basis",
-                "seller": {
-                  "@type": "Organization",
-                  "name": "Komplett Webdesign",
-                  "url": "https://www.komplettwebdesign.de/"
-                }
+            "description": "Der schnelle Einstieg: moderne Onepager/kleine Seite inkl. Design, DSGVO, Basis-SEO & Hosting.",
+            "brand": {
+              "@type": "Brand",
+              "name": "Komplett Webdesign"
+            },
+            "image": "https://www.komplettwebdesign.de/images/paket-basis.webp",
+            "offers": {
+              "@type": "Offer",
+              "price": "499",
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock",
+              "url": "https://www.komplettwebdesign.de/pakete/basis",
+              "seller": {
+                "@type": "Organization",
+                "name": "Komplett Webdesign",
+                "url": "https://www.komplettwebdesign.de/"
               }
             }
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "url": "https://www.komplettwebdesign.de/pakete/business",
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://www.komplettwebdesign.de/pakete/business",
+          "name": "Business-Paket",
+          "item": {
+            "@type": "Product",
             "name": "Business-Paket",
-            "item": {
-              "@type": "Product",
-              "name": "Business-Paket",
-              "description": "Mehr Seiten, mehr Leads: Conversion-optimierte Struktur, erweitertes SEO & Tracking.",
-              "brand": { "@type": "Brand", "name": "Komplett Webdesign" },
-              "image": "https://www.komplettwebdesign.de/images/paket-business.webp",
-              "offers": {
-                "@type": "Offer",
-                "price": "899",
-                "priceCurrency": "EUR",
-                "availability": "https://schema.org/InStock",
-                "url": "https://www.komplettwebdesign.de/pakete/business",
-                "seller": {
-                  "@type": "Organization",
-                  "name": "Komplett Webdesign",
-                  "url": "https://www.komplettwebdesign.de/"
-                }
+            "description": "Mehr Seiten, mehr Leads: Conversion-optimierte Struktur, erweitertes SEO & Tracking.",
+            "brand": {
+              "@type": "Brand",
+              "name": "Komplett Webdesign"
+            },
+            "image": "https://www.komplettwebdesign.de/images/paket-business.webp",
+            "offers": {
+              "@type": "Offer",
+              "price": "899",
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock",
+              "url": "https://www.komplettwebdesign.de/pakete/business",
+              "seller": {
+                "@type": "Organization",
+                "name": "Komplett Webdesign",
+                "url": "https://www.komplettwebdesign.de/"
               }
             }
-          },
-          {
-            "@type": "ListItem",
-            "position": 3,
-            "url": "https://www.komplettwebdesign.de/pakete/premium",
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://www.komplettwebdesign.de/pakete/premium",
+          "name": "Premium-Paket",
+          "item": {
+            "@type": "Product",
             "name": "Premium-Paket",
-            "item": {
-              "@type": "Product",
-              "name": "Premium-Paket",
-              "description": "Rundum-sorglos: individuelles Design, Content-Erstellung, starke SEO, Wartung & Support.",
-              "brand": { "@type": "Brand", "name": "Komplett Webdesign" },
-              "image": "https://www.komplettwebdesign.de/images/paket-premium.webp",
-              "offers": {
-                "@type": "Offer",
-                "price": "1499",
-                "priceCurrency": "EUR",
-                "availability": "https://schema.org/InStock",
-                "url": "https://www.komplettwebdesign.de/pakete/premium",
-                "seller": {
-                  "@type": "Organization",
-                  "name": "Komplett Webdesign",
-                  "url": "https://www.komplettwebdesign.de/"
-                }
+            "description": "Rundum-sorglos: individuelles Design, Content-Erstellung, starke SEO, Wartung & Support.",
+            "brand": {
+              "@type": "Brand",
+              "name": "Komplett Webdesign"
+            },
+            "image": "https://www.komplettwebdesign.de/images/paket-premium.webp",
+            "offers": {
+              "@type": "Offer",
+              "price": "1499",
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock",
+              "url": "https://www.komplettwebdesign.de/pakete/premium",
+              "seller": {
+                "@type": "Organization",
+                "name": "Komplett Webdesign",
+                "url": "https://www.komplettwebdesign.de/"
               }
             }
           }
-        ]
-      }
-    </script>
+        }
+      ]
+    }
+  </script>
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "AggregateOffer",
-        "url": "https://www.komplettwebdesign.de/pakete",
-        "priceCurrency": "EUR",
-        "lowPrice": "499",
-        "highPrice": "1499",
-        "offerCount": "3"
-      }
-    </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AggregateOffer",
+      "url": "https://www.komplettwebdesign.de/pakete",
+      "priceCurrency": "EUR",
+      "lowPrice": "499",
+      "highPrice": "1499",
+      "offerCount": "3"
+    }
+  </script>
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Welches Paket passt zu mir?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Für kleine Projekte reicht meist das Basis-Paket. Wächst das Projekt oder sind mehrere Unterseiten/Tracking nötig, ist Business ideal. Premium ist für individuelle Designs, Content und laufende Betreuung."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Sind Hosting und Wartung inklusive?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Ja, jedes Paket kann mit Hosting und Wartung gebucht werden. Im Premium-Paket ist die laufende Betreuung bereits enthalten."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Wie schnell ist meine Website online?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Je nach Paket und Material (Texte/Bilder) zwischen 5 und 15 Werktagen. Express-Umsetzung ist nach Absprache möglich."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Gibt es feste Preise?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Ja. Basis 499 €, Business 899 €, Premium 1.499 €. Zusatzleistungen (z. B. Mehrsprachigkeit) werden transparent vorab angeboten."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Kann ich später upgraden?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Klar – du kannst jederzeit vom Basis- auf Business- oder Premium-Paket wechseln. Wir rechnen fair die Differenz an."
-            }
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+          "@type": "Question",
+          "name": "Welches Paket passt zu mir?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Für kleine Projekte reicht meist das Basis-Paket. Wächst das Projekt oder sind mehrere Unterseiten/Tracking nötig, ist Business ideal. Premium ist für individuelle Designs, Content und laufende Betreuung."
           }
-        ]
-      }
-    </script>
-  </body>
+        },
+        {
+          "@type": "Question",
+          "name": "Sind Hosting und Wartung inklusive?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ja, jedes Paket kann mit Hosting und Wartung gebucht werden. Im Premium-Paket ist die laufende Betreuung bereits enthalten."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Wie schnell ist meine Website online?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Je nach Paket und Material (Texte/Bilder) zwischen 5 und 15 Werktagen. Express-Umsetzung ist nach Absprache möglich."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Gibt es feste Preise?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ja. Basis 499 €, Business 899 €, Premium 1.499 €. Zusatzleistungen (z. B. Mehrsprachigkeit) werden transparent vorab angeboten."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Kann ich später upgraden?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Klar – du kannst jederzeit vom Basis- auf Business- oder Premium-Paket wechseln. Wir rechnen fair die Differenz an."
+          }
+        }
+      ]
+    }
+  </script>
+</body>
+
 </html>

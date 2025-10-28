@@ -44,6 +44,9 @@ export async function getPageBySlug(req, res, next) {
     });
   } catch (err) {
     console.error('Fehler beim Slug-Routing:', err);
+    if (process.env.NODE_ENV !== 'production') {
+      return next();
+    }
     res.status(500).send('Interner Serverfehler');
   }
 }
