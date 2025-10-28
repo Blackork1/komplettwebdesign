@@ -54,6 +54,10 @@ export async function listPackages(req, res) {
       'SELECT package_id, feature FROM package_features ORDER BY id'
     );
 
+    const mockFeatureBySlug = new Map(
+      (mockPackages || []).map(p => [String(p.slug || '').toLowerCase(), Array.isArray(p.features) ? p.features : []])
+    );
+
     const featureMap = featureRows.reduce((acc, row) => {
       acc[row.package_id] = acc[row.package_id] || [];
       acc[row.package_id].push(row.feature);
@@ -62,7 +66,9 @@ export async function listPackages(req, res) {
 
     const enhancedPackages = packages.map(pkg => ({
       ...pkg,
-      features: featureMap[pkg.id] || []
+      features: mockFeatureBySlug.get(String(pkg.slug || '').toLowerCase())
+        ?? featureMap[pkg.id]
+        ?? []
     }));
 
     res.render('packages_list', { packages: enhancedPackages, ...pageMeta });
