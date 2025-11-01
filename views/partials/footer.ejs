@@ -111,3 +111,44 @@
 <script src="/js/slideOnScroll.js" defer></script>
 
 <script src="/js/chat.js" defer></script>
+<script>
+  (function() {
+    var siteKey = "<%= process.env.RECAPTCHA_SITEKEY || '' %>";
+    if (!siteKey) return;
+    if (typeof window === 'undefined') return;
+    window.SITEKEY = window.SITEKEY || siteKey;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var contactForm = document.getElementById('kontaktForm');
+      var forms = Array.prototype.slice.call(document.forms || []);
+      var needsRecaptcha = forms.some(function(form) {
+        if (!form) return false;
+        if (form === contactForm) return false; // eigenes Handling in kontakt.ejs
+        if (form.dataset && typeof form.dataset.recaptcha === 'string' && form.dataset.recaptcha.toLowerCase() === 'v3') {
+          return true;
+        }
+        var action = (form.getAttribute('action') || '').trim();
+        if (!action) return false;
+        try {
+          if (/^https?:/i.test(action)) {
+            action = new URL(action, window.location.origin).pathname;
+          }
+        } catch (err) {
+          action = '';
+        }
+        return action === '/kontakt';
+      });
+
+      if (!needsRecaptcha) return;
+
+      if (!document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]')) {
+        var script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(window.SITEKEY);
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+    });
+  })();
+</script>
+<script src="/js/recaptcha-form.js" defer></script>

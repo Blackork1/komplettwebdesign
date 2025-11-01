@@ -11,6 +11,6 @@ r.get('/branchen', listIndustries);
 r.get('/branchen/webdesign-:slug', showIndustryPage);
 
 /* Alt: /webdesign-:slug --> 301 auf /branchen/webdesign-:slug */
-r.get('/webdesign-:slug', redirectOldIndustry);
+// r.get('/webdesign-:slug', redirectOldIndustry);
 
 export default r;

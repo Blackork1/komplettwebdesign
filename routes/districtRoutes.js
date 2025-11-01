@@ -1,8 +1,14 @@
 // routes/districtRoutes.js
 import { Router } from "express";
-import { renderDistrictPage } from "../controllers/districtController.js";
+import { renderDistrictPage, renderWebdesignBerlinHub } from "../controllers/districtController.js";
+import { processWebdesignBerlinForm } from "../controllers/contactController.js";
+
 
 const router = Router();
+
+router.get("/", renderWebdesignBerlinHub);
+// Kontaktformular der Landingpage
+router.post("/kontakt", processWebdesignBerlinForm);
 
 // /webdesign-berlin/:slug  →  z. B. /webdesign-berlin/kreuzberg
 router.get("/:slug", renderDistrictPage);

@@ -19,6 +19,221 @@ import nodemailer from "nodemailer";
 import { generateICS } from "../services/icsService.js";
 import { format } from "date-fns";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const LABEL_OVERRIDES = {
+    name: "Name",
+    fullname: "Name",
+    full_name: "Name",
+    vorname: "Vorname",
+    firstname: "Vorname",
+    nachname: "Nachname",
+    lastname: "Nachname",
+    email: "E-Mail",
+    mail: "E-Mail",
+    emailadresse: "E-Mail",
+    email_adresse: "E-Mail",
+    emailaddress: "E-Mail",
+    email_address: "E-Mail",
+    telefon: "Telefon",
+    phone: "Telefon",
+    tel: "Telefon",
+    company: "Firma",
+    firma: "Firma",
+    unternehmen: "Unternehmen",
+    website: "Website",
+    webseite: "Webseite",
+    domain: "Domain",
+    url: "URL",
+    goals: "Ziele",
+    ziel: "Ziel",
+    ziele: "Ziele",
+    budget: "Budget",
+    preisrahmen: "Budget",
+    kostenrahmen: "Budget",
+    timeline: "Zeitplan",
+    zeitplan: "Zeitplan",
+    startdatum: "Startdatum",
+    message: "Nachricht",
+    nachricht: "Nachricht",
+    sonstiges: "Sonstiges",
+    bemerkungen: "Bemerkungen",
+    projekt: "Projekt",
+    project: "Projekt",
+    projecttype: "Projekt",
+    projektart: "Projektart",
+    dienstleistung: "Dienstleistung",
+    services: "Leistungen",
+    service: "Leistungen",
+    leistungen: "Leistungen",
+    inhalte: "Inhalte",
+    district: "Bezirk",
+    stadtteil: "Stadtteil",
+    bezirk: "Bezirk",
+    currentwebsite: "Bestehende Website",
+    websitevorhanden: "Bestehende Website",
+    bestandswebsite: "Bestehende Website",
+    utm_source: "UTM Source",
+    utm_medium: "UTM Medium",
+    utm_campaign: "UTM Kampagne"
+};
+
+const KNOWN_FORM_KEYS = new Set([
+    "name", "fullname", "full_name",
+    "vorname", "firstname", "first_name",
+    "nachname", "lastname", "last_name",
+    "email", "mail", "emailadresse", "email_adresse", "emailaddress", "email_address",
+    "telefon", "phone", "tel", "phone_number", "telefonnummer",
+    "company", "firma", "unternehmen", "business",
+    "website", "webseite", "domain", "url", "current_site",
+    "goals", "ziel", "ziele", "ziele_projekt", "ziele_des_projekts",
+    "budget", "preisrahmen", "kostenrahmen",
+    "timeline", "zeitplan", "startdatum", "start", "go_live",
+    "message", "nachricht", "notes", "bemerkungen", "sonstiges", "beschreibung", "anliegen",
+    "projekt", "project", "projectType", "projecttype", "projektart", "dienstleistung",
+    "services", "service", "leistungen", "inhalte",
+    "currentWebsite", "websiteVorhanden", "bestandswebsite",
+    "district", "stadtteil", "bezirk",
+    "utm_source", "utm_medium", "utm_campaign",
+    "paket", "umfang", "texterstellung", "bilderstellung", "weitereWuensche",
+    "slotId", "token"
+]);
+
+function expectsJson(req) {
+    if (req.get("X-Requested-With")?.toLowerCase() === "xmlhttprequest") return true;
+    const accept = req.headers.accept || "";
+    const contentType = req.headers["content-type"] || "";
+    return /application\/json/i.test(accept) || /application\/json/i.test(contentType);
+}
+
+const createTransporter = () => nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+});
+
+const escapeHtml = value => String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const formatLabel = key => {
+    if (LABEL_OVERRIDES[key]) return LABEL_OVERRIDES[key];
+    return key
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[._-]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+        .replace(/\b\w/g, c => c.toUpperCase());
+};
+
+const toCleanString = value => {
+    if (value === undefined || value === null) return "";
+    return String(value).trim();
+};
+
+const toPlainValue = value => {
+    if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean).join(", ");
+    if (value && typeof value === "object") return JSON.stringify(value);
+    return toCleanString(value);
+};
+
+const toHtmlValue = value => {
+    if (Array.isArray(value)) return value.map(v => escapeHtml(toCleanString(v))).join(", ");
+    if (value && typeof value === "object") return escapeHtml(JSON.stringify(value));
+    const str = toCleanString(value);
+    return str ? escapeHtml(str) : "&mdash;";
+};
+
+const joinNonEmpty = (parts, separator = " | ") => parts.map(p => toCleanString(p)).filter(Boolean).join(separator);
+
+function pickField(body, keys) {
+    for (const key of keys) {
+        if (body[key] !== undefined && toCleanString(body[key])) {
+            return toCleanString(body[key]);
+        }
+    }
+    return "";
+}
+
+function normalizeWebdesignBerlinBody(body) {
+    const firstName = pickField(body, ["name", "fullname", "full_name", "vorname", "firstname", "first_name"]);
+    const lastName = pickField(body, ["nachname", "lastname", "last_name"]);
+    const explicitName = pickField(body, ["name", "fullname", "full_name"]);
+    const name = explicitName || joinNonEmpty([firstName, lastName], " ") || firstName;
+
+    const email = pickField(body, [
+        "email", "mail", "emailadresse", "email_adresse", "emailaddress", "email_address"
+    ]);
+
+    const phone = pickField(body, ["telefon", "phone", "tel", "phone_number", "telefonnummer"]);
+    const company = pickField(body, ["company", "firma", "unternehmen", "business"]);
+    const website = pickField(body, ["website", "webseite", "domain", "url", "current_site"]);
+    const projectType = pickField(body, [
+        "projekt", "project", "projectType", "projecttype", "projektart", "dienstleistung"
+    ]);
+    const goals = pickField(body, ["goals", "ziel", "ziele", "ziele_projekt", "ziele_des_projekts"]);
+    const budget = pickField(body, ["budget", "preisrahmen", "kostenrahmen"]);
+    const timeline = pickField(body, ["timeline", "zeitplan", "startdatum", "start", "go_live"]);
+    const message = pickField(body, [
+        "message", "nachricht", "notes", "bemerkungen", "sonstiges", "beschreibung", "anliegen"
+    ]);
+    const currentWebsite = pickField(body, ["currentWebsite", "websiteVorhanden", "bestandswebsite"]);
+    const location = pickField(body, ["district", "stadtteil", "bezirk"]);
+
+    const servicesField = body.services ?? body.service ?? body.leistungen ?? body.inhalte ?? null;
+    const services = Array.isArray(servicesField)
+        ? servicesField.map(v => toCleanString(v)).filter(Boolean)
+        : toCleanString(servicesField)
+            ? toCleanString(servicesField).split(/[,;\n]/).map(v => v.trim()).filter(Boolean)
+            : [];
+
+    const utmSource = pickField(body, ["utm_source"]);
+    const utmMedium = pickField(body, ["utm_medium"]);
+    const utmCampaign = pickField(body, ["utm_campaign"]);
+
+    const usedKeys = new Set(KNOWN_FORM_KEYS);
+
+    const extras = Object.entries(body)
+        .filter(([key]) => !usedKeys.has(key))
+        .map(([key, value]) => [key, value]);
+
+    return {
+        name,
+        email,
+        phone,
+        company,
+        website,
+        projectType,
+        goals,
+        budget,
+        timeline,
+        message,
+        currentWebsite,
+        services,
+        location,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        extras
+    };
+}
+
+const buildHtmlSummary = rows => `
+    <table style="border-collapse:collapse;width:100%;max-width:640px">${rows.map(([label, value]) => `
+        <tr>
+            <th style="text-align:left;padding:6px 8px;border:1px solid #e5e5e5;background:#f8f9fa;white-space:nowrap;">${escapeHtml(label)}</th>
+            <td style="padding:6px 8px;border:1px solid #e5e5e5;">${toHtmlValue(value)}</td>
+        </tr>
+    `).join("")}
+    </table>
+`;
+
+
 const upload = multer({ dest: "uploads/" });
 
 /* ---------- GET /kontakt --------------------------------------------- */
@@ -156,12 +371,8 @@ export const processForm = [
                 });
             }
 
-            const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: Number(process.env.SMTP_PORT) || 587,
-                secure: Number(process.env.SMTP_PORT) === 465,
-                auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-            });
+            const transporter = createTransporter();
+
 
             await transporter.sendMail({
                 from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
@@ -200,6 +411,183 @@ export const processForm = [
         }
     }
 ];
+
+/* ---------- POST /webdesign-berlin/kontakt --------------------------- */
+export async function processWebdesignBerlinForm(req, res) {
+    const token = toCleanString(req.body.token);
+    if (token) {
+        try {
+            const resp = await axios.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                null,
+                { params: { secret: process.env.RECAPTCHA_SECRET, response: token } }
+            );
+            if (!resp.data.success) throw new Error("reCaptcha failed");
+        } catch (err) {
+            console.error("❌ reCaptcha-Validierung (Webdesign Berlin)", err);
+            const message = "reCaptcha-Validierung fehlgeschlagen";
+            if (expectsJson(req)) {
+                return res.status(400).json({ success: false, message });
+            }
+            return res.status(400).send(message);
+        }
+    }
+
+    const normalized = normalizeWebdesignBerlinBody(req.body || {});
+    const hasValidEmail = normalized.email && EMAIL_REGEX.test(normalized.email);
+    const hasName = toCleanString(normalized.name);
+    if (!hasName || !hasValidEmail) {
+        const message = "Bitte gib deinen Namen und eine gültige E-Mail-Adresse an.";
+        if (expectsJson(req)) {
+            return res.status(422).json({ success: false, message });
+        }
+        return res.status(422).send(message);
+    }
+
+    const addRow = (rows, label, value) => {
+        if (Array.isArray(value)) {
+            const filtered = value.map(v => toCleanString(v)).filter(Boolean);
+            if (filtered.length) rows.push([label, filtered]);
+            return;
+        }
+        if (toCleanString(value)) rows.push([label, value]);
+    };
+
+    const summaryRows = [];
+    addRow(summaryRows, "Name", normalized.name);
+    addRow(summaryRows, "E-Mail", normalized.email);
+    addRow(summaryRows, "Telefon", normalized.phone);
+    addRow(summaryRows, "Firma", normalized.company);
+    addRow(summaryRows, "Bezirk", normalized.location);
+    addRow(summaryRows, "Projekt", normalized.projectType);
+    addRow(summaryRows, "Website", normalized.website);
+    addRow(summaryRows, "Bestehende Website", normalized.currentWebsite);
+    addRow(summaryRows, "Leistungen", normalized.services);
+    addRow(summaryRows, "Ziele", normalized.goals);
+    addRow(summaryRows, "Budget", normalized.budget);
+    addRow(summaryRows, "Zeitplan", normalized.timeline);
+    addRow(summaryRows, "Nachricht", normalized.message);
+    addRow(summaryRows, "UTM Source", normalized.utmSource);
+    addRow(summaryRows, "UTM Medium", normalized.utmMedium);
+    addRow(summaryRows, "UTM Kampagne", normalized.utmCampaign);
+
+    normalized.extras.forEach(([key, value]) => addRow(summaryRows, formatLabel(key), value));
+
+    const summaryHtml = buildHtmlSummary(summaryRows);
+    const summaryPlain = summaryRows
+        .map(([label, value]) => `${label}: ${toPlainValue(value)}`)
+        .join(" | ");
+
+    const extrasPlain = normalized.extras
+        .map(([key, value]) => `${formatLabel(key)}: ${toPlainValue(value)}`)
+        .join(" | ");
+    const utmPlain = joinNonEmpty([
+        normalized.utmSource && `UTM Source: ${normalized.utmSource}`,
+        normalized.utmMedium && `UTM Medium: ${normalized.utmMedium}`,
+        normalized.utmCampaign && `UTM Kampagne: ${normalized.utmCampaign}`
+    ]);
+
+    const featuresOther = joinNonEmpty([
+        normalized.website && `Website: ${normalized.website}`,
+        normalized.currentWebsite && `Bestehende Website: ${normalized.currentWebsite}`,
+        normalized.location && `Bezirk: ${normalized.location}`,
+        extrasPlain,
+        utmPlain
+    ]);
+    const additionalInfo = joinNonEmpty([
+        normalized.message,
+        normalized.goals && `Ziele: ${normalized.goals}`,
+        normalized.budget && `Budget: ${normalized.budget}`,
+        normalized.timeline && `Zeitplan: ${normalized.timeline}`
+    ]);
+
+    try {
+        await CReq.create({
+            paket: normalized.projectType || "Webdesign Berlin Anfrage",
+            umfang: normalized.goals || null,
+            texterstellung: "n/a",
+            bilderstellung: "n/a",
+            features: normalized.services.length ? normalized.services.join(", ") : "",
+            featuresOther: featuresOther || summaryPlain,
+            bookingId: null,
+            name: normalized.name,
+            email: normalized.email,
+            phone: normalized.phone || "",
+            company: normalized.company || "",
+            additionalInfo: additionalInfo || summaryPlain,
+            images: "",
+            appointmentTime: null
+        });
+    } catch (err) {
+        console.error("❌ Fehler beim Speichern der Webdesign-Berlin-Anfrage:", err);
+    }
+
+    const transporter = createTransporter();
+    const greetingName = escapeHtml(normalized.name || "Interessent:in");
+    const userHtml = `
+        <p>Hallo <strong>${greetingName}</strong>,</p>
+        <p>vielen Dank für deine Anfrage über unsere Seite Webdesign-Berlin. Wir haben die folgenden Angaben erhalten:</p>
+        ${summaryHtml}
+        <p>Wir melden uns in Kürze bei dir, um die nächsten Schritte zu besprechen.</p>
+        <p>Mit freundlichen Grüßen<br>Dein Komplett Webdesign-Team</p>
+    `;
+    const adminHtml = `
+        <p>Neue Anfrage über die Landingpage <strong>Webdesign Berlin</strong>.</p>
+        ${summaryHtml}
+    `;
+
+    const mailPromises = [];
+    if (hasValidEmail) {
+        mailPromises.push(
+            transporter.sendMail({
+                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+                to: normalized.email,
+                subject: "Bestätigung deiner Anfrage – Webdesign Berlin",
+                html: userHtml
+            }).catch(err => console.error("❌ Fehler beim Versand (Kunde Webdesign Berlin):", err))
+        );
+    }
+    mailPromises.push(
+        transporter.sendMail({
+            from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+            to: 'kontakt@komplettwebdesign.de',
+            replyTo: hasValidEmail ? normalized.email : undefined,
+            subject: `Neue Webdesign-Berlin-Anfrage von ${normalized.name}`,
+            html: adminHtml
+        }).catch(err => console.error("❌ Fehler beim Versand (Admin Webdesign Berlin):", err))
+    );
+    await Promise.all(mailPromises);
+
+    const successPayload = {
+        success: true,
+        message: "Danke für deine Anfrage. Wir melden uns schnellstmöglich."
+    };
+
+    if (expectsJson(req)) {
+        return res.json(successPayload);
+    }
+
+    const thankYouData = {
+        paket: normalized.projectType || "Webdesign Berlin",
+        umfang: normalized.goals || "",
+        inhalte: normalized.services,
+        weitereWuensche: featuresOther,
+        name: normalized.name,
+        email: normalized.email,
+        telefon: normalized.phone,
+        firma: normalized.company,
+        sonstigeInfos: additionalInfo
+    };
+
+    return res.render('kontakt/thankyou', {
+        title: 'Danke für deine Anfrage',
+        description: 'Bestätigung deiner Kontaktanfrage',
+        data: thankYouData,
+        appointment: null,
+        formattedAppointment: null
+    });
+}
+
 
 /* ---------- GET /kontakt/ics/:id ------------------------------------ */
 export async function downloadIcs(req, res) {

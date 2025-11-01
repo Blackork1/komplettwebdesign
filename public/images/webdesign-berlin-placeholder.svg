@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-labelledby="title desc">
+  <title id="title">Portrait Platzhalter</title>
+  <desc id="desc">Illustration eines lächelnden Gesichts als Platzhalterbild</desc>
+  <rect width="400" height="400" fill="#f2ede6" />
+  <circle cx="200" cy="170" r="120" fill="#f5d5b5" stroke="#d2a172" stroke-width="6" />
+  <ellipse cx="160" cy="150" rx="20" ry="28" fill="#3b2f2f" />
+  <ellipse cx="240" cy="150" rx="20" ry="28" fill="#3b2f2f" />
+  <path d="M140 210 Q200 260 260 210" fill="none" stroke="#c4725a" stroke-width="14" stroke-linecap="round" />
+  <rect x="90" y="240" width="220" height="110" rx="30" fill="#ffffff" stroke="#d9d9d9" stroke-width="6" />
+  <text x="200" y="360" text-anchor="middle" font-family="'Inter', 'Helvetica', 'Arial', sans-serif" font-size="24" fill="#8c6f4d">Foto folgt</text>
+</svg>

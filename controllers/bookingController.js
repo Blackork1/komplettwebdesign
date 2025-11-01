@@ -14,8 +14,8 @@ const RECAPTCHA_ACTION     = 'booking_submit';
 export const validate = [
   body('slotId').isInt().toInt(),
   body('name').trim().isLength({ min: 2 }).withMessage('Name muss länger als 2 Zeichen sein'),
-  body('email').isEmail().normalizeEmail(),
-  body('note').optional().isLength({ max: 2000 }),
+  body('email').isEmail().normalizeEmail().withMessage('Ungültige E-Mail-Adresse'),
+  body('note').optional().isLength({ max: 2000 }).withMessage('Notiz zu lang'),
   // v3-Token heisst jetzt g-recaptcha-response
   body('g-recaptcha-response').isString().notEmpty().withMessage('reCAPTCHA fehlt'),
 ];
