@@ -251,11 +251,6 @@
 
   <section class="wd-container wd-section" aria-labelledby="wd-contact-title">
     <div class="wd-contact">
-      <div class="wd-contact__intro">
-        <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
-        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
-        <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
-      </div>
       <form action="/webdesign-berlin/kontakt" method="post" class="wd-contact__form">
         <div class="wd-form-row">
           <div>
@@ -287,9 +282,14 @@
         </div>
         <button type="submit" class="wd-btn wd-btn-primary">Kostenloses Erstgespräch sichern</button>
       </form>
-      <figure class="wd-contact__visual">
-        <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
-      </figure>
+      <div class="wd-contact__intro">
+        <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
+        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
+        <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
+        <figure class="wd-contact__visual">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
+        </figure>
+      </div>
     </div>
   </section>
 </main>

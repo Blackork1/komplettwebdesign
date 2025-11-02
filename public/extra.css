@@ -1843,4 +1843,9 @@ p.step-description {
   .webdesign-berlin-page .wd-contact {
     grid-template-columns: 1fr;
   }
+
+  .wd-contact {
+    display: flex;
+    flex-direction: column-reverse;
+  }
 }
