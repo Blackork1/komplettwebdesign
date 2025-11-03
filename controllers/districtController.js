@@ -135,6 +135,7 @@ export function renderWebdesignBerlinHub(req, res) {
       price: "499 €",
       anchor: "basis",
       tagline: "Schnell startklar",
+      image: "/images/basic.webp",
       description: "Ideal für Solo-Selbstständige & lokale Dienstleister, die schnell sichtbar sein wollen.",
       features: [
         "One-Pager mit klarer Story & Call-to-Action",
@@ -149,6 +150,7 @@ export function renderWebdesignBerlinHub(req, res) {
       price: "899 €",
       anchor: "business",
       tagline: "Beliebt bei KMU",
+      image: "/images/business.webp",
       popular: true,
       description: "Für KMU mit mehreren Leistungen und lokalem SEO-Fokus.",
       features: [
@@ -164,6 +166,7 @@ export function renderWebdesignBerlinHub(req, res) {
       price: "1.499 €",
       anchor: "premium",
       tagline: "Alles drin",
+      image: "/images/premium.webp",
       description: "Relaunch oder komplexe Projekte mit individueller UX und Content-Produktion.",
       features: [
         "Strategie-Workshop & Customer-Journey-Mapping",
@@ -341,6 +344,9 @@ export function renderWebdesignBerlinHub(req, res) {
   ];
 
   const YOUTUBE_ID = "M_fYtNuPcGg"; // Beispiel-ID
+  const SITE_URL = "https://www.komplettwebdesign.de";
+  const DEFAULT_PACKAGE_IMAGE = SITE_URL + "/images/heroImageH.webp"; // Fallback
+  const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00"; // 02.11.2025 (Berlin)
 
   const schema = {
     breadcrumbList: {
@@ -386,15 +392,35 @@ export function renderWebdesignBerlinHub(req, res) {
           .replace(/[^0-9,]/g, "")
           .replace(",", ".");
 
+        console.log("Normalized Price for", pkg, ":", normalizedPrice);
+
+        // Bildquelle priorisieren: pkg.image.src → pkg.image → Fallback
+        const imageUrl =
+          pkg.image ||
+          DEFAULT_PACKAGE_IMAGE;
+
+        const pkgUrl = SITE_URL + "/pakete#" + (pkg.anchor || (pkg.slug || ("pkg-" + (index + 1))));
+
+
         return {
           "@type": "Product",
           name: `${pkg.name} Paket`,
           description: pkg.description.replace(/<[^>]*>/g, ""),
+          image: imageUrl,                     // <-- WICHTIG: Pflichtfeld
+          url: pkgUrl,                         // optional, aber sinnvoll
           offers: {
             "@type": "Offer",
             priceCurrency: "EUR",
             price: normalizedPrice || "0",
-            availability: "https://schema.org/InStock"
+            availability: "https://schema.org/InStock",
+            url: pkgUrl,                       // optional
+            // Optional: Saubere Rückgaberichtlinie (für Dienstleistungen i. d. R. nicht möglich)
+            hasMerchantReturnPolicy: {
+              "@type": "MerchantReturnPolicy",
+              applicableCountry: "DE",
+              returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted"
+            }
+            // shippingDetails ist für physische Produkte gedacht → für Services weglassen
           },
           position: index + 1
         };
@@ -406,8 +432,7 @@ export function renderWebdesignBerlinHub(req, res) {
       name: (typeof video !== "undefined" && video.name) || "Was dich im Erstgespräch erwartet",
       description: (typeof video !== "undefined" && video.description) || "Kurz erklärt: Ablauf, Ergebnisse und was dich im Erstgespräch erwartet.",
       thumbnailUrl: (typeof video !== "undefined" && video.thumbnailUrl) || `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`,
-      // uploadDate ist optional; wenn du keinen Wert hast, wird undefined von JSON.stringify ausgelassen:
-      uploadDate: (typeof video !== "undefined" && video.uploadDate) || undefined,
+      uploadDate: VIDEO_UPLOAD_ISO, // <-- hinzugefügt
       embedUrl: `https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}`,
       contentUrl: `https://www.youtube.com/watch?v=${YOUTUBE_ID}`,
       publisher: {
@@ -415,7 +440,7 @@ export function renderWebdesignBerlinHub(req, res) {
         name: "Komplett Webdesign",
         logo: {
           "@type": "ImageObject",
-          url: "/images/LogoTransparent.webp"
+          url: "https://www.komplettwebdesign.de/images/LogoTransparent.webp"
         }
       }
     }
