@@ -135,7 +135,7 @@ export function renderWebdesignBerlinHub(req, res) {
       price: "499 €",
       anchor: "basis",
       tagline: "Schnell startklar",
-      image: "/images/basic.webp",
+      image: "/images/basis.webp",
       description: "Ideal für Solo-Selbstständige & lokale Dienstleister, die schnell sichtbar sein wollen.",
       features: [
         "One-Pager mit klarer Story & Call-to-Action",
