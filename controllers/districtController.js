@@ -399,7 +399,7 @@ export function renderWebdesignBerlinHub(req, res) {
           pkg.image ||
           DEFAULT_PACKAGE_IMAGE;
 
-        const pkgUrl = SITE_URL + "/pakete#" + (pkg.anchor || (pkg.slug || ("pkg-" + (index + 1))));
+        const pkgUrl = SITE_URL + "/pakete/" + (pkg.anchor || (pkg.slug || ("pkg-" + (index + 1))));
 
 
         return {
