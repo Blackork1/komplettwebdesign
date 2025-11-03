@@ -40,15 +40,29 @@
     </div>
   </section>
 
-  <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
-    <div class="wd-video-placeholder" role="presentation">
-      <div class="wd-video-placeholder__frame">
-        <div class="wd-video-placeholder__badge">Video Platzhalter</div>
-        <h2 id="wd-video-title">Was dich im Erstgespräch erwartet</h2>
-        <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
+<section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
+  <div class="wd-container">
+    <div class="wd-video">
+      <h2 id="wd-video-title">Was dich im Erstgespräch erwartet</h2>
+      <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
+
+      <div class="wd-video__wrap">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/M_fYtNuPcGg?rel=0&modestbranding=1&playsinline=1"
+          title="Was dich im Erstgespräch erwartet – KomplettWebdesign"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin">
+        </iframe>
       </div>
+
+      <noscript>
+        <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener">auf YouTube ansehen</a></p>
+      </noscript>
     </div>
-  </section>
+  </div>
+</section>
 
   <section class="wd-container wd-section wd-section--audience" aria-labelledby="wd-audience-title">
     <div class="wd-section__inner wd-section__inner--audience">
@@ -297,14 +311,20 @@
 <%- include('../partials/footer') %>
 
 <script type="application/ld+json">
-  <%= JSON.stringify(schema.breadcrumbList) %>
+  <%- JSON.stringify(schema.breadcrumbList) %>
 </script>
 <script type="application/ld+json">
-  <%= JSON.stringify(schema.localBusiness) %>
+  <%- JSON.stringify(schema.localBusiness) %>
 </script>
 <script type="application/ld+json">
-  <%= JSON.stringify(schema.faqPage) %>
+  <%- JSON.stringify(schema.faqPage) %>
 </script>
 <script type="application/ld+json">
-  <%= JSON.stringify(schema.offers) %>
+  <%- JSON.stringify(schema.offers) %>
+</script>
+
+<script type="application/ld+json">
+  <%- JSON.stringify(schema.videoObject) %>
+</script>
+
 </script>

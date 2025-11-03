@@ -340,6 +340,8 @@ export function renderWebdesignBerlinHub(req, res) {
     { label: "Webdesign Checkliste für Selbstständige", href: "/blog/website-checkliste-für-selbstandige" }
   ];
 
+  const YOUTUBE_ID = "M_fYtNuPcGg"; // Beispiel-ID
+
   const schema = {
     breadcrumbList: {
       "@context": "https://schema.org",
@@ -397,6 +399,25 @@ export function renderWebdesignBerlinHub(req, res) {
           position: index + 1
         };
       })
+    },
+    videoObject: {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      name: (typeof video !== "undefined" && video.name) || "Was dich im Erstgespräch erwartet",
+      description: (typeof video !== "undefined" && video.description) || "Kurz erklärt: Ablauf, Ergebnisse und was dich im Erstgespräch erwartet.",
+      thumbnailUrl: (typeof video !== "undefined" && video.thumbnailUrl) || `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`,
+      // uploadDate ist optional; wenn du keinen Wert hast, wird undefined von JSON.stringify ausgelassen:
+      uploadDate: (typeof video !== "undefined" && video.uploadDate) || undefined,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}`,
+      contentUrl: `https://www.youtube.com/watch?v=${YOUTUBE_ID}`,
+      publisher: {
+        "@type": "Organization",
+        name: "Komplett Webdesign",
+        logo: {
+          "@type": "ImageObject",
+          url: "/images/LogoTransparent.webp"
+        }
+      }
     }
   };
 

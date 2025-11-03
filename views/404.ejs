@@ -1,14 +1,14 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= pageTitle %></title>
-</head>
-<body>
-  <h1>404 - Seite nicht gefunden</h1>
-  <p>Leider konnte die Seite "<%= path %>" nicht gefunden werden.</p>
-  <a href="/">Zur Startseite</a>
+<%- include('partials/head') %>
+<%- include('partials/header', {title: "404"})  %>
+
+<body class="center">
+  <div style="padding: 100px 0;">
+    <h1>404 - Seite nicht gefunden</h1>
+    <p>Leider konnte die Seite "<%= path %>" nicht gefunden werden.</p>
+    <p>Das ist ja echt blöd gelaufen.</p>
+    <a href="/"><button class="btn btn-tertiary">Erstmal zurück zur Startseite</button></a>
+  </div>
+
 </body>
-</html>
+
+<%- include('partials/footer') %>
