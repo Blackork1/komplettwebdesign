@@ -68,14 +68,29 @@
 
   <!-- <script src="https://js.stripe.com/v3/" defer></script> -->
 
-  <script>
-    window.addEventListener("load", function() {
-      var script = document.createElement("script");
-      script.src = "https://js.stripe.com/v3/";
-      script.async = true;
-      document.body.appendChild(script);
+<script>
+  // Lädt Stripe erst, wenn du es wirklich brauchst (z. B. Klick auf "Paket wählen")
+  window.ensureStripe = function (pk) {
+    return new Promise(resolve => {
+      if (window.Stripe) return resolve(window.Stripe(pk));
+      const s = document.createElement('script');
+      s.src = "https://js.stripe.com/v3/";
+      s.async = true;
+      s.onload = () => resolve(window.Stripe(pk));
+      document.head.appendChild(s);
     });
-  </script>
+  };
+
+  // Beispiel: Buttons mit data-open-checkout
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-open-checkout]');
+    if (!btn) return;
+    e.preventDefault();
+    const stripe = await window.ensureStripe("<%= process.env.STRIPE_PUBLISHABLE_KEY %>");
+    // TODO: deinen Checkout starten:
+    // await stripe.redirectToCheckout({ sessionId: '...' });
+  }, { passive: false });
+</script>
 
   <!-- Favicon und App Icons -->
   <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
@@ -98,19 +113,40 @@
     ad_personalization: 'denied',
     wait_for_update: 500
   });
-</script>
+    // Lazy Loader für GA4
+  function loadGA(){
+    if (window.__gaLoaded) return;
+    window.__gaLoaded = true;
+    var s = document.createElement('script');
+    s.src = "https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>";
+  s.async = true;
+  document.head.appendChild(s);
+  s.onload = function(){
+  gtag('js', new Date());
+  gtag('config', '<%= process.env.GA_MEASUREMENT_ID %>', { send_page_view: false, allow_google_signals: false });
+  // Pageview erst im Idle senden
+  if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => gtag('event', 'page_view'));
+  } else {
+  setTimeout(() => gtag('event', 'page_view'), 1500);
+  }
+  };
+  }
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>"></script>
-  <script>
-    // gtag-Stub kommt vom Consent-Default oben
-    gtag('js', new Date());
+  // Lade GA4 erst bei Interaktion oder spätestens im Idle
+  window.addEventListener('pointerdown', loadGA, { once: true, passive: true });
+  window.addEventListener('load', () => {
+  if ('requestIdleCallback' in window) requestIdleCallback(loadGA, { timeout: 5000 });
+  else setTimeout(loadGA, 3000);
+  });
 
-    // Vor Einwilligung: KEIN automatischer Pageview
-    gtag('config', '<%= process.env.GA_MEASUREMENT_ID %>', {
-      send_page_view: false,
-      allow_google_signals: false // wird nach Marketing-Consent auf true gesetzt
-    });
+  // Hook für deinen Cookie-Banner (Analytics akzeptiert → Consent updaten + GA laden)
+  window.updateAnalyticsConsent = function(granted){
+  gtag('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
+  if (granted) loadGA();
+  };
   </script>
+
 
   <!-- Mess-ID für clientseitige Nutzung -->
   <script>

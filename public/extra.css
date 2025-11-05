@@ -794,6 +794,7 @@
   box-shadow: 0 40px 90px rgba(31, 27, 22, 0.12);
   position: relative;
   overflow: hidden;
+  margin-bottom: 100px;
 }
 
 .webdesign-berlin-page .wd-hero__content {

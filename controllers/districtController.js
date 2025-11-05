@@ -392,8 +392,6 @@ export function renderWebdesignBerlinHub(req, res) {
           .replace(/[^0-9,]/g, "")
           .replace(",", ".");
 
-        console.log("Normalized Price for", pkg, ":", normalizedPrice);
-
         // Bildquelle priorisieren: pkg.image.src → pkg.image → Fallback
         const imageUrl =
           pkg.image ||

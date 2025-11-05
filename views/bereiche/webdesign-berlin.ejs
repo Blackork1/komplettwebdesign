@@ -40,30 +40,6 @@
     </div>
   </section>
 
-<section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
-  <div class="wd-container">
-    <div class="wd-video">
-      <h2 id="wd-video-title">Was dich im Erstgespräch erwartet</h2>
-      <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
-
-      <div class="wd-video__wrap">
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/M_fYtNuPcGg?rel=0&modestbranding=1&playsinline=1"
-          title="Was dich im Erstgespräch erwartet – KomplettWebdesign"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin">
-        </iframe>
-      </div>
-
-      <noscript>
-        <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener">auf YouTube ansehen</a></p>
-      </noscript>
-    </div>
-  </div>
-</section>
-
   <section class="wd-container wd-section wd-section--audience" aria-labelledby="wd-audience-title">
     <div class="wd-section__inner wd-section__inner--audience">
       <div class="wd-audience__media">
@@ -79,6 +55,22 @@
           <li><%= point %></li>
           <% }) %>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
+    <div class="wd-container">
+      <div class="wd-video">
+        <h2 id="wd-video-title">Was dich im Erstgespräch erwartet</h2>
+        <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
+
+        <div class="wd-video__wrap" data-yt="M_fYtNuPcGg" aria-label="YouTube-Video"></div>
+
+
+        <noscript>
+          <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener">auf YouTube ansehen</a></p>
+        </noscript>
       </div>
     </div>
   </section>
@@ -324,4 +316,45 @@
 </script>
 <script type="application/ld+json">
   <%- JSON.stringify(schema.videoObject) %>
+</script>
+
+<script>
+  (() => {
+    const el = document.querySelector('.wd-video__wrap[data-yt]');
+    if (!el) return;
+
+    const loadYT = () => {
+      if (el.dataset.loaded) return;
+      el.dataset.loaded = "1";
+      const id = el.dataset.yt;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
+      iframe.title = "Was dich im Erstgespräch erwartet – KomplettWebdesign";
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      iframe.allowFullscreen = true;
+      iframe.loading = "lazy";
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      el.appendChild(iframe);
+    };
+
+    // Laden, sobald der Bereich (200px vorher) in Sicht kommt
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          loadYT();
+          obs.disconnect();
+        }
+      });
+    }, {
+      rootMargin: "200px"
+    });
+    io.observe(el);
+
+    // Fallback: bei erster Nutzerinteraktion sofort laden
+    window.addEventListener('pointerdown', loadYT, {
+      once: true,
+      passive: true
+    });
+  })();
 </script>
