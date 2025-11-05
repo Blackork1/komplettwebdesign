@@ -928,7 +928,7 @@ p > strong {
 .sliderItem {
   flex: 0 0 auto;
   width: var(--slide-w);
-  height: 400px;
+  height: 440px;
   border: 1px solid #ccc;
   border-radius: 25px;
   background: transparent;
@@ -1515,7 +1515,7 @@ p > strong {
 }
 
 .ctaH2 {
-  font-size: clamp(2.1rem, 1.6511rem + 1.9155vw, 3.375rem);
+  font-size: clamp(1.5rem, 0.8398rem + 2.8169vw, 3.375rem);
   margin-bottom: 20px;
   color: #eaeae9;
 }
@@ -1587,7 +1587,7 @@ p > strong {
   }
   .sliderControlsFunktionen {
     opacity: 1;
-    margin-top: 20px;
+    margin-top: -10px;
   }
   .sliderControlsFunktionen .sliderDots {
     position: relative;
@@ -1671,7 +1671,7 @@ p > strong {
     fill: rgba(11, 43, 70, 0.5);
   }
   .sliderDots {
-    margin: 0;
+    margin: -40px;
   }
   .sliderControlsTipps .sliderDots,
   .sliderControlsFunktionen .sliderDots {
