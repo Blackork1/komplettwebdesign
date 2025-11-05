@@ -105,7 +105,7 @@ export async function sitemapXml(req, res, next) {
 
     // Industries
     const industryRoutes = industries.map(r => ({
-      loc: `${base}/webdesign-${r.slug}`,
+      loc: `${base}/branchen/webdesign-${r.slug}`,
       lastmod: new Date(r.updated_at).toISOString(),
       changefreq: "weekly",
       priority: 0.85
