@@ -11,7 +11,7 @@
 
   <section class="wd-container wd-hero" aria-labelledby="wd-hero-title">
     <div class="wd-hero__content">
-      <span class="wd-eyebrow">KomplettWebdesign · Berlin</span>
+      <span class="wd-eyebrow">Komplett Webdesign · Berlin</span>
       <h1 id="wd-hero-title"><%= hero.title %></h1>
       <p class="wd-lead"><%= hero.description %></p>
       <div class="wd-hero-ctas">
@@ -49,7 +49,7 @@
       </div>
       <div class="wd-section__content wd-audience__content">
         <h2 id="wd-audience-title"><%= audience.title %></h2>
-        <p class="wd-lead"><%= audience.description %></p>
+        <p class="wd-lead"><%- audience.description %></p>
         <ul class="wd-list">
           <% audience.painPoints.forEach(function (point) { %>
           <li><%= point %></li>
@@ -62,7 +62,7 @@
   <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
     <div class="wd-container">
       <div class="wd-video">
-        <h2 id="wd-video-title">Was dich im Erstgespräch erwartet</h2>
+        <h2 id="wd-video-title">Was dich im Erstgespräch erwartet:</h2>
         <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
 
         <div class="wd-video__wrap" data-yt="M_fYtNuPcGg" aria-label="YouTube-Video"></div>
@@ -76,15 +76,15 @@
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-services-title">
-    <h2 id="wd-services-title">Leistungen im Überblick</h2>
+    <h2 id="wd-services-title">Was beinhaltet das Webdesign?</h2>
     <div class="wd-card-grid wd-card-grid--services">
       <% services.forEach(function(service) { %>
       <article class="wd-card wd-service-card">
         <header class="wd-card__header">
           <div class="wd-card__icon" aria-hidden="true">✦</div>
           <div>
-            <h3><%= service.name %></h3>
-            <p><%= service.description %></p>
+            <h3><%- service.name %></h3>
+            <p><%- service.description %></p>
           </div>
         </header>
         <ul class="wd-card__list">
@@ -103,8 +103,15 @@
   <section class="wd-container wd-section wd-section--packages" aria-labelledby="wd-packages-title">
     <div class="wd-packages__intro">
       <span class="wd-packages__badge">Unsere Pakete</span>
-      <h2 id="wd-packages-title">Preise – klar &amp; fair</h2>
-      <p>Wähle das Paket, das zu deiner Ausgangslage passt. Transparente Leistungen, klare Timings und ein Team, das direkt erreichbar ist.</p>
+      <h2 id="wd-packages-title">Was kostet eine Website 2025?</h2>
+      <div class="readable">
+        <p>Die Kosten für eine Website variieren 2025 stark je nach Umfang und Inhalten der Seite. Eine einfach Websites mit wenigen Unterseiten,
+          fangen in der Regel schon ab 500 € an. Bei komplexeren und umfangreichen Webseiten, welche zum Beispiel einen Onlineshop, Blog, Terminbuchungssystem
+          oder Galerie haben,</p>
+        <p> befindet man sich schnell bei 3.000€ für eine fertige Website.Das sind jedoch nur die Preise als Freelancer.
+          Bei größeren Agenturen und Unternehmen befindest du dich schnell bei 15.000-50.000€ für eine komplexe Website.</p>
+      </div>
+      <p><strong style="font-size: 18px">Wähle dazu ein Paket aus, das zu deiner Ausgangslage passt:</strong></p>
     </div>
     <div class="wd-packages-grid">
       <% packages.forEach(function(pkg) { %>
@@ -126,6 +133,19 @@
         </div>
       </article>
       <% }) %>
+    </div>
+    <div class="wd-packages__intro">
+      <h3>Was erhälst du bei mir?</h3>
+      <div class="readable">
+        <p>Bei mir bekommst du bereits <a href="/pakete/basis">ab 499,-€</a> eine einfache Homepage mit allen rechtlichen Seiten wie dem Impressum, Datenschutz, AGB und FAQs.
+          Dabei nutze wir keine fertigen Templates und Vorlagen, sondern erstellen jedes Design individuell auf deine Wünsche.
+          Templates funktionieren grundsätzlich gut, können jedoch nie alle spezifischen Wünsche und Vorstellungen erfüllen.
+          Eine umfangreichere Website mit zum Beispiel einem Blog oder einer Speisekarte für deine Kunde, erhältst du <a href="/pakete/business">ab 899,- €</a>.</p>
+        <p>Benötigst du einen Onlineshop oder ein Reservierungssystem, dann beläuft sich der Preis <a href="/pakete/premium">auf 1.499,- €</a>.
+          Zuzüglich fallen für jedes Paket entsprechend 5/10/15 € für Hosting pro Monat an.
+          Darüberhinaus kommen keine versteckten Kosten auf dich zu. Somit erhältst du mit einer einmaligen Investition von maximal 1.499€ eine Website,
+          die dir auf Dauer neue Kunden und somit mehr Umsatz einbringt. </p>
+      </div>
     </div>
   </section>
 
@@ -157,7 +177,7 @@
 
   <section class="wd-container wd-section" aria-labelledby="wd-process-title">
     <div class="wd-process">
-      <h2 id="wd-process-title">So läuft’s in 5 Schritten</h2>
+      <h2 id="wd-process-title">Wie läuft die Erstellung einer Website ab?</h2>
       <ol class="wd-process__steps">
         <% processSteps.forEach(function(step, index) { %>
         <li>
@@ -168,12 +188,12 @@
         </li>
         <% }) %>
       </ol>
-      <p class="wd-lead">Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen – mit klaren Feedbackschleifen und transparenten Milestones.</p>
+      <p class="wd-lead" style="text-align: center;">Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen – mit klaren Feedbackschleifen und transparenten Milestones.</p>
     </div>
   </section>
 
   <section class="wd-section wd-section--berlin" aria-labelledby="wd-berlin-title">
-    <h2 id="wd-berlin-title">Berlin &amp; Bezirke</h2>
+    <h2 id="wd-berlin-title">Berlin und Bezirke - Webdesign in Berlin</h2>
     <div class="wd-container">
       <div class="wd-section__inner wd-section__inner--berlin">
         <div class="wd-section__content">
@@ -229,7 +249,7 @@
 
   <section class="wd-container wd-section" aria-labelledby="wd-trust-title">
     <h2 id="wd-trust-title">Sicher, DSGVO-konform &amp; betreut</h2>
-    <p class="wd-lead">Mit KomplettWebdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut – ohne Technikstress.</p>
+    <p class="wd-lead" style="text-align: start;">Mit Komplett Webdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut – ohne Technikstress.</p>
     <ul class="wd-trust-list">
       <% trust.forEach(function(item) { %>
       <li>
@@ -330,7 +350,7 @@
 
       const iframe = document.createElement('iframe');
       iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
-      iframe.title = "Was dich im Erstgespräch erwartet – KomplettWebdesign";
+      iframe.title = "Was dich im Erstgespräch erwartet – Komplett Webdesign";
       iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
       iframe.allowFullscreen = true;
       iframe.loading = "lazy";

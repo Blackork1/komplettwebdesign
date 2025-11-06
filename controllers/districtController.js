@@ -8,7 +8,7 @@ export async function renderDistrictPage(req, res, next) {
     if (!district) return next(); // 404 → geht in dein NotFound-Handler
 
     // Optional: Meta für Head-Partial (dein Hauptcontent enthält bereits JSON-LD)
-    const metaTitle = `Webdesign ${district.name} | Komplett Webdesign – Landingpages & Relaunch in Berlin`;
+    const metaTitle = `Webdesign ${district.name} | Professionelle Website erstellen lassen`;
     const metaDescription =
       `Komplett Webdesign: Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. ` +
       `Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.`;
@@ -32,14 +32,14 @@ export async function renderDistrictPage(req, res, next) {
 const WEBDESIGN_BERLIN_URL = "https://www.komplettwebdesign.de/webdesign-berlin";
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Webdesign Berlin – Schnelle, SEO-optimierte Websites für mehr Kunden";
+  const metaTitle = "Webdesign in Berlin – professionelle Website erstellen lassen";
   const metaDescription =
     "Professionelles Webdesign Berlin: Wir erstellen schnelle, suchmaschinenoptimierte Websites, die Sichtbarkeit, Anfragen und messbare Ergebnisse bringen.";
 
   const hero = {
-    title: "Webdesign Berlin: Sichtbar werden, Anfragen steigern, Technik stressfrei",
+    title: "Webdesign in Berlin: Professionelle Website erstellen lassen",
     description:
-      "Wir entwickeln schnelle, SEO-optimierte Websites für Berliner Unternehmen, damit Leads planbar werden, Inhalte verkaufen und Technik nicht ausbremst.",
+      "Wir entwickeln schnelle, professionelle und SEO-optimierte Websites für Berliner Unternehmen, damit Leads planbar werden, Inhalte verkaufen und Technik nicht ausbremst.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 1 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
@@ -55,9 +55,9 @@ export function renderWebdesignBerlinHub(req, res) {
   };
 
   const audience = {
-    title: "Für Berliner Einzelunternehmer & KMU, die planbare Anfragen wollen",
+    title: "Webdesign für Berliner Einzel- und Kleinunternehmer",
     description:
-      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen.",
+      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen. Dazu optimieren wird deine Website mittels SEO für Google, damit du gefunden wirst. Einige Tipps zu <a href='blog/Lokale-SEO-Hacks-fuer-Berlin'>Local SEO in Berlin</a> findest du auch in unserem Blog.",
     painPoints: [
       "Du hast keine konstanten Leads aus Google oder Empfehlungen?",
       "Langsame Seiten & technische Fehler schrecken Besucher ab!",
@@ -86,7 +86,7 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "SEO & Local SEO",
+      name: "<a href='/ratgeber/seo-zielgruppen-content-marketing' style='color:var(--wd-accent)'>SEO & Local SEO</a>",
       description: "Wir verbinden Keyword-Strategie mit lokalem Relevance-Boost für Berlin und deine Bezirke.",
       features: [
         "<strong>OnPage</strong> Texte, Meta-Daten & Struktur",
@@ -304,7 +304,7 @@ export function renderWebdesignBerlinHub(req, res) {
     {
       question: "+ Wie sichert ihr meine Website?",
       answer:
-        "Hosting in Deutschland, tägliche Backups, Monitoring und Sicherheitsupdates laufen automatisch."
+        "Hosting in Deutschland, tägliche Backups nach Wunsch, Monitoring und Sicherheitsupdates laufen automatisch."
     },
     {
       question: "+ Brauche ich Hosting bei euch?",
@@ -360,7 +360,7 @@ export function renderWebdesignBerlinHub(req, res) {
     localBusiness: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-      name: "KomplettWebdesign Berlin",
+      name: "Komplett Webdesign Berlin",
       url: WEBDESIGN_BERLIN_URL,
       telephone: "+493012345678",
       areaServed: "Berlin",
