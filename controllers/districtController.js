@@ -185,7 +185,7 @@ export function renderWebdesignBerlinHub(req, res) {
         "Neues Design, Online-Reservierung und ultraschnelle Ladezeiten führten zu signifikant mehr Gästen.",
       bullets: ["+70 % Reservierungen in 3 Monaten", "1,4 s Largest Contentful Paint", "50% mehr Buchungen von Feiern und Events"],
       quote: "Wir bekommen täglich neue Gäste über unsere Website. Endlich professionell und modern.",
-      // link: "/cases/cafe-aroma",
+      link: "http://www.zuraltenbackstube.de",
       image: "/images/review-bg.webp"
     }
     // {
@@ -277,6 +277,12 @@ export function renderWebdesignBerlinHub(req, res) {
       description: "Produktdarstellung, Checkout-Optimierung und rechtssichere Prozesse.",
       link: "/",
       image: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847762/admin_gallery/fqq4ofor4dmsbszhoqqs.webp"
+    },
+    {
+      name: "Weitere Branchen",
+      description: "Wir bieten noch viele weitere Branchenlösungen an. Schau gerne vorbei!",
+      link: "/branchen",
+      image: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1760635311/admin_gallery/kgfq7wwg6aqh8ikxhce6.webp"
     }
   ];
 

@@ -38,7 +38,7 @@
     "fs": "^0.0.1-security",
     "ical-generator": "^9.0.0",
     "ipaddr.js": "^2.2.0",
-    "luxon": "^3.7.1",
+    "luxon": "^3.7.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",

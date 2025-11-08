@@ -750,20 +750,27 @@
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
 }
 
+#content {
+  --wd-accent-strong: #b24322;
+  --wd-accent: #d75b36;
+}
+
 .webdesign-berlin-page .wd-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--wd-page-block) var(--wd-page-inline);
 }
 
-.webdesign-berlin-page .wd-breadcrumbs {
+.webdesign-berlin-page .wd-breadcrumbs,
+.wd-breadcrumbs {
   margin: 0;
   padding: 1.25rem var(--wd-page-inline) 0;
   font-size: 0.9rem;
   color: var(--wd-muted);
 }
 
-.webdesign-berlin-page .wd-breadcrumbs ol {
+.webdesign-berlin-page .wd-breadcrumbs ol,
+.wd-breadcrumbs ol {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -772,7 +779,8 @@
   gap: 0.45rem;
 }
 
-.webdesign-berlin-page .wd-breadcrumbs a {
+.webdesign-berlin-page .wd-breadcrumbs a,
+.wd-breadcrumbs a {
   color: var(--wd-accent-strong);
   text-decoration: none;
 }

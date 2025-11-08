@@ -950,6 +950,15 @@ p > strong {
   border-radius: 25px;
 }
 
+.badge{
+  transition: all 0.2s ease;
+}
+
+.badge:hover {
+  transform: scale(1.04) translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .slideImage .gradient {
   position: absolute;
   inset: 0;

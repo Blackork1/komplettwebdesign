@@ -125,10 +125,24 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
           <% } %>
         </div>
+        <div style="margin-bottom: 100px;">
+          <h3 class="alignCenter animate-on-scroll">Webdesign Berlin - Was erwartet dich!</h3>
+          <p class="center animate-on-scroll"> Du suchst professionelles <strong>Webdesign in Berlin</strong>, das nicht nur gut aussieht,
+            sondern auch Ergebnisse liefert? Unser <strong>Webdesign</strong>-Service ist darauf ausgerichtet,
+            deine Online-Präsenz zu stärken und messbar mehr Kunden zu gewinnen. Wir entwickeln moderne,
+            benutzerfreundliche Websites mit durchdachtem User-Interface, optimieren deine Seite für Suchmaschinen (SEO),
+            damit du bei Google besser gefunden wirst, und kümmern uns um zuverlässiges Hosting sowie regelmäßige Wartung.
+            Zusätzlich stellen wir sicher, dass deine Website rechtlich abgesichert ist und allen Datenschutzanforderungen entspricht.
+            Auf Wunsch erstellen wir auch überzeugende Inhalte und Texte, die deine Zielgruppe ansprechen.
+            Mit unserem ganzheitlichen <a href="/webdesign-berlin">Webdesign Berlin</a>-Ansatz erhältst du alles aus einer Hand –
+            von der ersten Idee bis zur erfolgreichen Online-Präsenz, die kontinuierlich mehr Umsatz generiert.
+          </p>
+        </div>
+
+
       </section>
 
       <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_warum' }) %>
-
 
       <!-- ===================== UNVERZICHTBAR (2D Carousel) ===================== -->
       <section id="WebsiteUnverzichtbar">
@@ -220,7 +234,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <h2 class="containerLeft animate-on-scroll alignLeft">SEO für <%= industry.name %> – so wirst du gefunden</h2>
         </div>
 
-        <p class="animate-on-scroll" style="margin-top: 50px;"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit dich Kund:innen online entdecken.</strong></p>
+        <p class="animate-on-scroll" style="margin-top: 50px;"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit dich Kund:innen online entdecken.</strong><br>
+          Falls du dich fragst, was SEO überhaupt ist und eine kleine Einleitung benötigst, kannst du dich hier in das Thema <a href="/ratgeber/seo-zielgruppen-content-marketing">SEO und Zielgruppen</a> einlesen.</p>
 
         <div class="sliderWrap animate-on-scroll" data-slider>
           <% if ((industry.seo_items||[]).length) { %>
@@ -327,8 +342,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       <section id="Preise">
         <h2 class="alignCenter animate-on-scroll">Was kostet eine Website für ein <%= industry.name %>?</h2>
         <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Was kostet eine vollständige Website 2025? Lohnt sich das überhaupt und kann ich mir das leisten?“</strong></p>
-        <p class="alignCenter animate-on-scroll">Eine Website erhälst du bei uns innerhalb von 14 Tagen bereits ab 499 €. Wir bieten dir dazu Ratenzahlungen zu 0% an, 
-          damit kannst du sofort starten und die Kosten bequem verteilen. Investiere in deine Online-Präsenz und profitiere von den <a href="/ratgeber/professionellen-website-vs-baukasten">Vorteilen einer professionellen Website!</a> 
+        <p class="alignCenter animate-on-scroll">Eine Website erhälst du bei uns innerhalb von 14 Tagen bereits ab 499 €. Wir bieten dir dazu Ratenzahlungen zu 0% an,
+          damit kannst du sofort starten und die Kosten bequem verteilen. Investiere in deine Online-Präsenz und profitiere von den <a href="/ratgeber/professionellen-website-vs-baukasten">Vorteilen einer professionellen Website!</a>
           Schau dir gerne die folgende Pakete genauer an. Ich bereate dich gerne individual1 zu deinen Wünschen, selbstverständlich kostenlos. <br>
           <a href="/kontakt" class="primaryColor">Hier geht's zum Kontaktformular.</a>
         </p>
@@ -549,23 +564,43 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="/js/ga-events.js" defer></script>
 
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": "Webdesign für <%= industry.name %>",
-  "serviceType": "Website-Erstellung & SEO für <%= industry.name %>",
-  "provider": {
-    "@type": "Organization",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de"
-  },
-  "areaServed": { "@type": "City", "name": "Berlin" },
-  "offers": [
-    { "@type": "Offer", "name": "Basis", "price": "499.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/basis" },
-    { "@type": "Offer", "name": "Business", "price": "899.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/business" },
-    { "@type": "Offer", "name": "Premium", "price": "1499.00", "priceCurrency": "EUR", "url": "https://www.komplettwebdesign.de/pakete/premium" }
-  ]
-}
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Webdesign für <%= industry.name %>",
+    "serviceType": "Website-Erstellung & SEO für <%= industry.name %>",
+    "provider": {
+      "@type": "Organization",
+      "name": "Komplett Webdesign",
+      "url": "https://www.komplettwebdesign.de"
+    },
+    "areaServed": {
+      "@type": "City",
+      "name": "Berlin"
+    },
+    "offers": [{
+        "@type": "Offer",
+        "name": "Basis",
+        "price": "499.00",
+        "priceCurrency": "EUR",
+        "url": "https://www.komplettwebdesign.de/pakete/basis"
+      },
+      {
+        "@type": "Offer",
+        "name": "Business",
+        "price": "899.00",
+        "priceCurrency": "EUR",
+        "url": "https://www.komplettwebdesign.de/pakete/business"
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium",
+        "price": "1499.00",
+        "priceCurrency": "EUR",
+        "url": "https://www.komplettwebdesign.de/pakete/premium"
+      }
+    ]
+  }
 </script>
 
 

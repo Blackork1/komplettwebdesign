@@ -172,21 +172,26 @@ process.on('uncaughtException', err => {
 
 /* Beim Start einmal auffüllen + einmal aufräumen */
 ensureAutoSlots().catch(console.error);
-if (isProd) {
+// if (isProd) {
   deleteExpiredUnbooked().catch(console.error);
-}
+// }
 
 /* Täglich 02:00 Uhr neue Auto-Slots bis X Wochen */
-cron.schedule('0 2 * * *', () => {
-  ensureAutoSlots().catch(console.error);
-}, { timezone: 'Europe/Berlin' });
+// cron.schedule('0 2 * * *', () => {
+//   ensureAutoSlots().catch(console.error);
+// }, { timezone: 'Europe/Berlin' });
 
 /* Alle 5 Minuten abgelaufene freie Slots aufräumen */
-if (isProd) {
-  cron.schedule('*/5 * * * *', () => {
-    deleteExpiredUnbooked().catch(console.error);
-  }, { timezone: 'Europe/Berlin' });
-}
+// if (isProd) {
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await ensureAutoSlots();
+      await deleteExpiredUnbooked();
+    } catch (err) {
+      console.error('Cron Fehler:', err);
+    }
+  });
+// }
 // Routen einbinden
 app.use('/', mainRoutes);
 app.use('/pricing', pricingRoutes);
