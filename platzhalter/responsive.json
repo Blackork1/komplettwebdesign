@@ -1,0 +1,257 @@
+{
+  "page": {
+    "slug": "responsives-design-mobile",
+    "title": "Responsives Design & Mobile",
+    "subtitle": "Wenn deine Website überall funktioniert",
+    "hero": {
+      "title": "Responsives Design & Mobile",
+      "subtitle": "Wenn deine Website überall funktioniert – perfekt auf Smartphone, Tablet und Desktop",
+      "icons": [
+        {
+          "icon": "fa-mobile-alt",
+          "label": "Mobile-optimiert"
+        },
+        {
+          "icon": "fa-tablet-alt",
+          "label": "Alle Geräte"
+        },
+        {
+          "icon": "fa-expand-arrows-alt",
+          "label": "Responsive"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "Mehr als die Hälfte aller Website-Besuche erfolgen über Smartphones. Trotzdem gibt es immer noch Websites, die auf dem Handy kaum bedienbar sind: winzige Schrift, Buttons zu klein zum Tippen, horizontales Scrollen, ewig lange Ladezeiten. Das kostet dich konkret Kunden und schadet deinem Google-Ranking."
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Wir entwickeln Websites, die auf jedem Gerät überzeugen. Dabei denken wir mobile Nutzung von Anfang an mit – nicht als Nachgedanken, sondern als gleichwertiges Erlebnis zum Desktop. Durchdachte Layouts, optimierte Ladezeiten, gut bedienbare Navigation und Inhalte, die sich intelligent anpassen."
+      }
+    },
+    "description": [
+      "Mehr als die Hälfte aller Website-Besuche erfolgen heute über Smartphones oder Tablets. Trotzdem gibt es immer noch Websites, die auf dem Handy kaum bedienbar sind: winzige Schrift, Buttons zu klein zum Tippen, horizontales Scrollen, ewig lange Ladezeiten. Das ist nicht nur ärgerlich für Besucher – es kostet dich konkret Kunden und schadet deinem Google-Ranking.",
+      "Responsive Design bedeutet, dass sich deine Website automatisch an verschiedene Bildschirmgrößen anpasst. Egal ob jemand mit dem iPhone, Android-Tablet oder dem Desktop-PC kommt – die Website sieht gut aus und funktioniert einwandfrei. Wir entwickeln Websites, die auf jedem Gerät überzeugen. Deine Besucher merken gar nicht, dass im Hintergrund komplexe Technik arbeitet – sie erleben einfach eine Website, die funktioniert."
+    ],
+    "services": [
+      {
+        "id": "bedeutung-responsive",
+        "icon": "fa-sync-alt",
+        "title": "Bedeutung von \"responsive\"",
+        "intro": "Der Begriff \"responsive\" stammt aus dem Englischen und bedeutet \"reagierend\" oder \"antwortend\". Eine responsive Website reagiert auf die Bildschirmgröße des Geräts und passt sich automatisch an. Das ist der moderne Standard – im Gegensatz zu früher, als es oft separate mobile Versionen gab (erkennbar an URLs wie m.beispiel.de).",
+        "content": [
+          "Responsive Design nutzt flexible Layouts, skalierbare Bilder und sogenannte Media Queries, um Inhalte für verschiedene Bildschirmgrößen zu optimieren. Der große Vorteil: Eine Website, eine URL, ein Inhalt – aber optimiert für jedes Gerät. Das erleichtert die Pflege und ist auch aus SEO-Sicht die beste Lösung, denn Google empfiehlt explizit responsive Design."
+        ],
+        "highlights": [
+          "Flexible Layouts passen sich automatisch an",
+          "Skalierbare Bilder für verschiedene Bildschirmgrößen",
+          "Media Queries optimieren für spezifische Geräte",
+          "Eine Website, eine URL – optimiert für alle Geräte",
+          "Erleichtert Pflege und Wartung",
+          "Von Google explizit empfohlen"
+        ]
+      },
+      {
+        "id": "layout-smartphone",
+        "icon": "fa-mobile-screen",
+        "title": "Layout fürs Smartphone optimieren",
+        "intro": "Ein Layout, das am Desktop perfekt funktioniert, kann mobil zur Katastrophe werden. Drei Spalten nebeneinander? Auf einem 6-Zoll-Display unleserlich. Große Textblöcke? Auf dem Handy erschlagend. Feine Details? Werden zu klein und gehen unter. Mobile Optimierung bedeutet deshalb oft radikales Umdenken.",
+        "content": [
+          "Wir gestalten mobile Layouts nach dem Prinzip der Vereinfachung: Inhalte stapeln sich vertikal statt horizontal. Unwichtige Elemente verschwinden oder werden minimiert. Der Fokus liegt auf dem Wesentlichen. Ein gutes mobiles Layout fühlt sich nicht wie eine abgespeckte Version an, sondern wie eine durchdachte Adaption."
+        ],
+        "highlights": [
+          "Inhalte stapeln sich vertikal statt horizontal",
+          "Unwichtige Elemente minimieren oder ausblenden",
+          "Großzügige Touch-Bereiche (mindestens 44x44 Pixel)",
+          "Ausreichend Abstand zwischen klickbaren Elementen",
+          "Logische Reihenfolge der Inhalte",
+          "Fokus auf dem Wesentlichen – Inhalt und Interaktion"
+        ]
+      },
+      {
+        "id": "desktop-vs-mobile",
+        "icon": "fa-desktop",
+        "title": "Darstellung Desktop vs. Mobile verstehen",
+        "intro": "Desktop und Mobile sind zwei völlig verschiedene Nutzungskontexte. Am Desktop sitzen Menschen entspannt vor einem großen Bildschirm, nutzen Maus und Tastatur, haben Zeit und Aufmerksamkeit. Mobil sind sie oft unterwegs, nutzen die Website mit einer Hand, sind abgelenkt und ungeduldig. Diese Unterschiede müssen sich im Design widerspiegeln.",
+        "content": [
+          "Wir berücksichtigen diese unterschiedlichen Kontexte: Am Desktop können wir komplexe Informationen nebeneinander darstellen, mit Hover-Effekten arbeiten und mehrstufige Interaktionen ermöglichen. Mobil vereinfachen wir radikal. So respektieren wir die jeweiligen Stärken und Limitierungen beider Welten."
+        ],
+        "highlights": [
+          "Desktop: Komplexe Informationen nebeneinander, Hover-Effekte, mehrstufige Interaktionen",
+          "Mobile: Radikale Vereinfachung – eine Information nach der anderen",
+          "Große Buttons statt kleiner Links",
+          "Sofort verfügbare Kontaktmöglichkeiten (Telefon, WhatsApp)",
+          "Angepasste Informationsdichte mit \"Mehr anzeigen\"-Option",
+          "Verschiedene Nutzungskontexte respektieren"
+        ]
+      },
+      {
+        "id": "schriftgroessen-mobil",
+        "icon": "fa-text-height",
+        "title": "Lesbare Schriftgrößen mobil",
+        "intro": "Einer der häufigsten Fehler bei mobilen Websites: zu kleine Schrift. Was am Desktop bei 14 Pixel noch lesbar ist, wird auf dem Smartphone zur Augenfolter. Besucher müssen zoomen, verlieren die Übersicht und springen frustriert ab. Google wertet zu kleine mobile Schrift sogar negativ für das Ranking.",
+        "content": [
+          "Wir setzen mobile Schriftgrößen so, dass sie ohne Zoomen bequem lesbar sind. Dabei geht es nicht nur um die Schriftgröße selbst, sondern auch um Zeilenhöhe und Zeilenbreite. Wir testen Schriftgrößen auf echten Geräten, nicht nur im Browser-Emulator. Lesbarkeit hat bei uns oberste Priorität."
+        ],
+        "highlights": [
+          "Mindestens 16 Pixel für Fließtext, besser 18 Pixel",
+          "Überschriften entsprechend größer skalieren",
+          "Optimale Zeilenhöhe und Zeilenbreite",
+          "Tests auf echten Geräten, nicht nur Emulatoren",
+          "Lesbarkeit auch bei Sonneneinstrahlung gewährleisten",
+          "Google bewertet zu kleine Schrift negativ"
+        ]
+      },
+      {
+        "id": "tests-geraete-tools",
+        "icon": "fa-vial",
+        "title": "Tests auf verschiedenen Geräten & Tools",
+        "intro": "Es gibt hunderte verschiedene Geräte mit unterschiedlichen Bildschirmgrößen, Betriebssystemen und Browsern. Ein iPhone 15 zeigt Websites anders als ein Samsung Galaxy, ein iPad anders als ein Huawei-Tablet. Wie stellt man sicher, dass die Website überall funktioniert?",
+        "content": [
+          "Wir kombinieren verschiedene Test-Methoden. Wichtig ist, nicht nur das Layout zu testen, sondern auch die Funktionalität: Lassen sich Formulare ausfüllen? Funktionieren alle Buttons? Laden Bilder korrekt? Diese Tests decken Probleme auf, bevor deine echten Besucher sie erleben."
+        ],
+        "highlights": [
+          "Browser-Developer-Tools für schnelle Tests während Entwicklung",
+          "Echte Geräte: iPhones, Android-Phones, iPads, verschiedene Tablets",
+          "Tools wie BrowserStack für hunderte Geräte-Simulationen",
+          "Layout-Tests UND Funktionalitäts-Tests",
+          "Formulare, Buttons, Bildladung prüfen",
+          "Probleme finden, bevor echte Besucher sie erleben"
+        ]
+      },
+      {
+        "id": "mobile-menues",
+        "icon": "fa-bars",
+        "title": "Mobile Menüs (Burger, Sticky etc.)",
+        "intro": "Das klassische horizontale Menü funktioniert mobil nicht – dafür ist einfach zu wenig Platz. Die Lösung: mobile Menüvarianten, die platzsparend und trotzdem gut bedienbar sind. Das bekannteste ist das Burger-Menü – drei horizontale Striche, die ein ausklappbares Menü öffnen.",
+        "content": [
+          "Wir wählen die Menü-Variante passend zu deiner Website. Wichtig ist, dass das Menü schnell reagiert, gut erreichbar ist (nicht zu klein, nicht zu weit oben) und klar zeigt, wo man sich befindet. Ein gutes mobiles Menü fällt nicht auf – es funktioniert einfach."
+        ],
+        "highlights": [
+          "Burger-Menü: funktioniert für die meisten Projekte, weitverbreitet",
+          "Sticky-Menü: bleibt beim Scrollen fixiert, wichtigste Links immer erreichbar",
+          "Tab-Bars am unteren Rand: für Apps-ähnliche Websites mit wenigen Hauptkategorien",
+          "Schnelle Reaktion und gute Erreichbarkeit",
+          "Klare Orientierung (wo bin ich gerade?)",
+          "Unauffällig, aber funktional"
+        ]
+      },
+      {
+        "id": "bilder-mobile-ladezeit",
+        "icon": "fa-image",
+        "title": "Bilder für mobile Ladezeit optimieren",
+        "intro": "Große, hochauflösende Bilder sehen am Desktop fantastisch aus – bremsen aber mobile Nutzer aus, besonders wenn die Internetverbindung schwach ist. Ein 3 MB großes Hero-Bild kann auf dem Smartphone zehn Sekunden oder länger zum Laden brauchen. Die meisten Besucher warten nicht so lange.",
+        "content": [
+          "Wir optimieren Bilder speziell für mobile Nutzung. So bekommt das iPhone die kleine Version, der Desktop-PC die große. Das Ergebnis: Deine Website lädt auf dem Smartphone blitzschnell, ohne dass die Bildqualität sichtbar leidet. Schnelle Ladezeiten bedeuten zufriedenere Besucher und besseres Google-Ranking."
+        ],
+        "highlights": [
+          "Kleinere Bildgrößen für kleinere Bildschirme",
+          "Moderne Bildformate wie WebP (gleiche Qualität, deutlich kleiner)",
+          "Lazy Loading – Bilder laden erst, wenn sie sichtbar werden",
+          "Responsive Images – passende Bildgröße je nach Gerät",
+          "iPhone bekommt kleine Version, Desktop die große",
+          "Blitzschnelle Ladezeiten ohne Qualitätsverlust"
+        ]
+      },
+      {
+        "id": "breakpoints",
+        "icon": "fa-arrows-alt-h",
+        "title": "Sinnvolle Breakpoints wählen",
+        "intro": "Breakpoints sind die Bildschirmbreiten, an denen sich das Layout ändert – etwa von Desktop zu Tablet oder von Tablet zu Smartphone. Die klassischen Breakpoints liegen oft bei 768 Pixel (Tablet) und 1024 Pixel (Desktop), aber ist das immer sinnvoll?",
+        "content": [
+          "Wir setzen Breakpoints nicht willkürlich, sondern orientieren uns am konkreten Design. Wir testen nicht nur feste Größen, sondern skalieren das Browser-Fenster stufenlos, um Brüche im Layout zu finden. Ein gut gewähltes Breakpoint-System sorgt dafür, dass die Website von der kleinsten Smartwatch bis zum 4K-Monitor überall optimal dargestellt wird."
+        ],
+        "highlights": [
+          "Breakpoints am konkreten Design orientieren, nicht willkürlich",
+          "Manchmal 2 Breakpoints (Mobile/Desktop), manchmal 4-5",
+          "Layout muss an jedem Breakpoint gut aussehen und funktionieren",
+          "Stufenlos testen, nicht nur feste Größen",
+          "Brüche im Layout aufspüren und beheben",
+          "Von Smartwatch bis 4K-Monitor optimal"
+        ]
+      },
+      {
+        "id": "buttons-klickbar",
+        "icon": "fa-hand-pointer",
+        "title": "Buttons groß & klickbar gestalten",
+        "intro": "Am Desktop ist es egal, ob ein Button 30 oder 50 Pixel hoch ist – mit der Maus trifft man beide problemlos. Auf dem Touchscreen ist das anders. Zu kleine Buttons führen zu Fehlklicks, Frust und Abbrüchen. Apple empfiehlt mindestens 44x44 Pixel, Google mindestens 48x48 Pixel – aus gutem Grund.",
+        "content": [
+          "Wir gestalten mobile Buttons großzügig. Auch der tatsächlich klickbare Bereich ist wichtig: Wir machen den kompletten Button-Bereich interaktiv und geben visuelles Feedback beim Antippen. Das klingt nach Details, macht aber den Unterschied zwischen einer frustrierenden und einer angenehmen mobilen Erfahrung."
+        ],
+        "highlights": [
+          "Mindestens 44 Pixel Höhe, besser 50-60 Pixel",
+          "Ausreichend Abstand zu anderen klickbaren Elementen (mind. 8 Pixel)",
+          "Klar als Button erkennbar (Farbe, Form, Beschriftung)",
+          "Kompletter Button-Bereich klickbar, nicht nur Text",
+          "Visuelles Feedback beim Antippen",
+          "Verhindert Fehlklicks und Frust"
+        ]
+      },
+      {
+        "id": "mobile-first-google",
+        "icon": "fa-search",
+        "title": "Mobile First & Einfluss auf Google",
+        "intro": "Google nutzt seit 2019 primär die mobile Version deiner Website für das Ranking – selbst wenn jemand am Desktop sucht. Das nennt sich \"Mobile First Indexing\". Eine schlecht optimierte mobile Website schadet also nicht nur der mobilen Nutzererfahrung, sondern dem gesamten Google-Ranking.",
+        "content": [
+          "Wir entwickeln Websites nach dem Mobile-First-Prinzip: Zuerst entsteht die mobile Version, dann wird für größere Bildschirme erweitert. Das zwingt uns, von Anfang an zu priorisieren – was ist wirklich wichtig? Mit unserem Mobile-First-Ansatz erfüllst du nicht nur Googles Anforderungen, sondern bietest auch deinen Besuchern ein optimales Erlebnis."
+        ],
+        "highlights": [
+          "Google nutzt primär mobile Version für Ranking (Mobile First Indexing seit 2019)",
+          "Mobile-First-Prinzip: Erst mobile Version, dann Desktop-Erweiterung",
+          "Zwingt zu Priorisierung: Was ist wirklich wichtig?",
+          "Google bewertet: Ladegeschwindigkeit, Lesbarkeit ohne Zoomen, Touch-Elemente",
+          "Keine horizontalen Scrollbalken",
+          "Besseres Ranking UND bessere Nutzererfahrung"
+        ]
+      }
+    ],
+    "risks": {
+      "title": "Häufige Mobile-Fehler & ihre Folgen",
+      "intro": "Viele Websites sind theoretisch responsive, aber in der Praxis schlecht umgesetzt. Das führt nicht nur zu schlechter Nutzererfahrung, sondern kostet konkret Kunden und Rankings. Hier sind die häufigsten Mobile-Fehler und ihre Auswirkungen.",
+      "items": [
+        {
+          "icon": "fa-eye-slash",
+          "title": "Zu kleine Schrift",
+          "description": "Besucher müssen zoomen – 70% springen ab"
+        },
+        {
+          "icon": "fa-hand-paper",
+          "title": "Zu kleine Touch-Bereiche",
+          "description": "Fehlklicks und Frust – direkte Abbrüche"
+        },
+        {
+          "icon": "fa-hourglass-half",
+          "title": "Langsame Ladezeiten",
+          "description": "Über 3 Sekunden? 50% der Besucher weg"
+        },
+        {
+          "icon": "fa-arrows-alt-h",
+          "title": "Horizontales Scrollen",
+          "description": "Google wertet negativ, Nutzer genervt"
+        },
+        {
+          "icon": "fa-times-circle",
+          "title": "Versteckte oder fehlende CTAs",
+          "description": "Keine Conversions trotz Interesse"
+        },
+        {
+          "icon": "fa-chart-line",
+          "title": "Nicht Mobile-First",
+          "description": "Schlechtere Google-Rankings seit 2019"
+        }
+      ],
+      "conclusion": [
+        "Über 50% aller Website-Besuche erfolgen mobil – Tendenz steigend. Eine schlecht optimierte mobile Website bedeutet: Du verlierst die Hälfte deiner potenziellen Kunden. Noch schlimmer: Seit Mobile First Indexing schadet eine schlechte mobile Version auch deinem Desktop-Ranking bei Google.",
+        "Die gute Nachricht: Mit durchdachtem responsivem Design vermeidest du diese Fallen. Websites, die mobil schnell laden, gut lesbar sind und einfach bedienbar funktionieren, haben messbar höhere Conversion-Rates und bessere Rankings. Wir entwickeln von Anfang an mobile-first – so bist du für die Zukunft gerüstet."
+      ]
+    },
+    "cta": {
+      "title": "Bereit für eine Mobile-optimierte Website?",
+      "text": "Deine Website soll auf jedem Gerät überzeugen? Sprich mit uns – wir entwickeln responsive Websites, die überall funktionieren und deine Besucher begeistern!",
+      "buttonText": "Jetzt Responsive-Beratung anfragen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}

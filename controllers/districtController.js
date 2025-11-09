@@ -75,7 +75,7 @@ export function renderWebdesignBerlinHub(req, res) {
       name: "<a href='/webdesign-berlin/design-ux-ui' style='color:var(--wd-accent)'>Webdesign & UX</a>",
       description: "Maßgeschneiderte Layouts, die Markenwerte transportieren und Nutzer sicher zur Anfrage führen.",
       features: [
-        "<strong>Responsive</strong> für Desktop, Tablet & Smartphone",
+        "<strong><a href='/webdesign-berlin/responsives-design-mobile' style='color:var(--wd-accent)'>Responsive Design</a></strong> für Desktop, Tablet & Smartphone",
         "<strong>Core Web Vitals</strong> und Performance-Fokus",
         "<strong>Barrierearme UX</strong> mit klaren Journeys",
         "<strong>CMS</strong> für eigenständige Pflege (WordPress, Kirby)"
@@ -86,7 +86,7 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "<a href='/ratgeber/seo-zielgruppen-content-marketing' style='color:var(--wd-accent)'>SEO & Local SEO</a>",
+      name: "<a href='/webdesign-berlin/seo-sichtbarkeit-einsteiger' style='color:var(--wd-accent)'>SEO & Local SEO</a>",
       description: "Wir verbinden Keyword-Strategie mit lokalem Relevance-Boost für Berlin und deine Bezirke.",
       features: [
         "<strong>OnPage</strong> Texte, Meta-Daten & Struktur",
@@ -100,7 +100,7 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "Hosting & Wartung",
+      name: "<a href='/webdesign-berlin/domain-hosting-technik' style='color:var(--wd-accent)'>Hosting & Wartung</a>",
       description: "Sichere Infrastruktur, automatisierte Updates und Monitoring – alles aus einer Hand.",
       features: [
         "<strong>Hosting</strong> in ISO-zertifizierten Rechenzentren",

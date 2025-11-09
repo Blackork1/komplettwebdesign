@@ -1,0 +1,258 @@
+{
+  "page": {
+    "slug": "seo-sichtbarkeit-einsteiger",
+    "title": "SEO & Sichtbarkeit (Einsteiger)",
+    "subtitle": "Wenn Google deine Website findet",
+    "hero": {
+      "title": "SEO & Sichtbarkeit (Einsteiger)",
+      "subtitle": "Wenn Google deine Website findet – verständlich erklärt, nachhaltig umgesetzt",
+      "icons": [
+        {
+          "icon": "fa-search",
+          "label": "Besser gefunden"
+        },
+        {
+          "icon": "fa-chart-line",
+          "label": "Mehr Traffic"
+        },
+        {
+          "icon": "fa-trophy",
+          "label": "Top Rankings"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "Viele Einsteiger haben falsche Vorstellungen von SEO: Entweder sie halten es für Hexenwerk, das nur Spezialisten verstehen, oder sie glauben an schnelle Tricks für garantierte Top-Rankings. Die Wahrheit liegt dazwischen. Gute Rankings brauchen Zeit, Geduld und kontinuierliche Arbeit."
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Du musst kein SEO-Experte werden, um grundlegende Optimierungen vorzunehmen. Wir erklären dir die wichtigsten SEO-Grundlagen so, dass du verstehst, was hinter den Maßnahmen steckt – ohne Fachchinesisch, ohne leere Versprechungen, dafür mit realistischen Erwartungen."
+      }
+    },
+    "description": [
+      "Du kannst die schönste Website der Welt haben – wenn sie niemand findet, nützt sie nichts. Genau hier kommt Suchmaschinenoptimierung ins Spiel, kurz SEO (Search Engine Optimization). SEO sorgt dafür, dass deine Website bei Google gefunden wird, wenn potenzielle Kunden nach deinen Leistungen suchen. Klingt technisch? Ist es teilweise auch, aber die Grundlagen sind verständlicher als du denkst.",
+      "Die gute Nachricht: Du musst kein SEO-Experte werden, um grundlegende Optimierungen vorzunehmen. Mit dem richtigen Verständnis der Basics bringst du deine Website schon deutlich nach vorne. Wir erklären dir die wichtigsten SEO-Grundlagen so, dass du verstehst, was hinter den Maßnahmen steckt – ohne Fachchinesisch, ohne leere Versprechungen, dafür mit realistischen Erwartungen und praktischen Tipps."
+    ],
+    "services": [
+      {
+        "id": "was-ist-seo",
+        "icon": "fa-question-circle",
+        "title": "Was ist SEO & warum wichtig?",
+        "intro": "Stell dir Google als riesige Bibliothek vor, in der Milliarden von Websites katalogisiert sind. Wenn jemand etwas sucht, muss Google in Sekundenbruchteilen entscheiden: Welche Websites sind am relevantesten? Welche verdienen die vorderen Plätze? SEO ist der Prozess, deine Website so zu optimieren, dass Google sie als relevant und wertvoll einstuft – für die Suchanfragen, die zu deinem Angebot passen.",
+        "content": [
+          "Warum ist das wichtig? Weil die ersten drei Google-Ergebnisse über 50% aller Klicks bekommen. Seite zwei von Google sieht praktisch niemand mehr. Wenn deine Konkurrenz auf Seite eins steht und du auf Seite drei, bekommt sie die Kunden – selbst wenn dein Angebot besser ist. Gutes SEO ist langfristige Investition in die Sichtbarkeit deines Business."
+        ],
+        "highlights": [
+          "Die ersten 3 Google-Ergebnisse bekommen über 50% aller Klicks",
+          "Seite 2 von Google wird praktisch nicht besucht",
+          "Organischer Traffic über Google ist kostenlos (im Gegensatz zu Anzeigen)",
+          "Qualifizierte Besucher: Menschen, die aktiv nach deiner Lösung suchen",
+          "Langfristige Investition in die Sichtbarkeit deines Business"
+        ]
+      },
+      {
+        "id": "keywords-finden",
+        "icon": "fa-key",
+        "title": "Keywords der Zielgruppe finden",
+        "intro": "Keywords sind die Begriffe, die Menschen bei Google eingeben – \"Webdesign Berlin\", \"Zahnarzt Hamburg\", \"WordPress Hilfe\". Die Kunst ist, herauszufinden, welche Keywords deine Zielgruppe tatsächlich nutzt. Viele Unternehmen optimieren für Begriffe, nach denen niemand sucht, oder übersehen wichtige Suchbegriffe, weil sie selbst eine andere Sprache sprechen als ihre Kunden.",
+        "content": [
+          "Wir finden die richtigen Keywords durch verschiedene Methoden. Wichtig ist die Balance: Zu allgemeine Keywords (\"Webdesign\") haben massive Konkurrenz, zu spezifische (\"Webdesign für vegane Cafés in Berlin-Kreuzberg\") werden kaum gesucht. Wir suchen den Sweet Spot – Keywords mit ausreichend Suchvolumen und realistischen Ranking-Chancen."
+        ],
+        "highlights": [
+          "Brainstorming aus Kundensicht (Wie würde ich suchen?)",
+          "Tools nutzen: Google Keyword Planner, Ubersuggest für Suchvolumen",
+          "Konkurrenz-Analyse (Für welche Keywords ranken die gut?)",
+          "Google Autocomplete (Was schlägt Google vor?)",
+          "Balance finden: nicht zu allgemein, nicht zu spezifisch",
+          "Sweet Spot: ausreichend Suchvolumen + realistische Ranking-Chancen"
+        ]
+      },
+      {
+        "id": "keywords-platzieren",
+        "icon": "fa-map-marker-alt",
+        "title": "Keywords richtig platzieren",
+        "intro": "Keywords zu kennen ist eine Sache – sie richtig einzusetzen eine andere. Früher hat man einfach Keywords so oft wie möglich im Text untergebracht, \"Keyword Stuffing\" genannt. Das funktioniert heute nicht mehr und wird von Google sogar bestraft. Moderne Keyword-Optimierung ist subtiler und natürlicher.",
+        "content": [
+          "Wir platzieren Keywords strategisch an den richtigen Stellen. Dabei gilt: Schreibe primär für Menschen, nicht für Suchmaschinen. Ein Text, der sich holprig liest, weil das Keyword zwanghaft alle zwei Sätze vorkommt, ist kontraproduktiv. Google erkennt mittlerweile auch Synonyme und verwandte Begriffe. Ein natürlicher, hilfreicher Text mit gezielten Keyword-Platzierungen schlägt einen überoptimierten Text jedes Mal."
+        ],
+        "highlights": [
+          "Im Seitentitel (Title-Tag) – der wichtigste Faktor",
+          "In der URL (z.B. /webdesign-berlin statt /seite-123)",
+          "In der Hauptüberschrift (H1)",
+          "In Zwischenüberschriften (H2, H3)",
+          "Natürlich im Text verteilt",
+          "In Bild-Alt-Texten",
+          "Für Menschen schreiben, nicht für Suchmaschinen"
+        ]
+      },
+      {
+        "id": "meta-daten",
+        "icon": "fa-tags",
+        "title": "Starke Meta-Titel & Descriptions schreiben",
+        "intro": "Der Meta-Titel und die Meta-Description sind das, was in den Google-Suchergebnissen angezeigt wird – quasi dein Schaufenster. Ein langweiliger Titel wie \"Startseite - Firma XY\" verschenkt Potenzial. Ein überzeugender Titel wie \"Webdesign Berlin – Moderne Websites ab 499€ | Sprachenatelier\" macht Lust aufs Klicken.",
+        "content": [
+          "Diese Texte beeinflussen zwar nicht direkt das Ranking, aber sie entscheiden über die Klickrate – und eine hohe Klickrate signalisiert Google wiederum, dass deine Seite relevant ist. Wichtig: Jede Seite braucht einen einzigartigen Titel und eine einzigartige Description. Duplizierte Meta-Daten sind verschenktes SEO-Potenzial."
+        ],
+        "highlights": [
+          "Meta-Titel: Hauptkeyword enthalten, neugierig machen, unter 60 Zeichen",
+          "Meta-Description: Details, Mehrwert oder Call-to-Action, unter 160 Zeichen",
+          "Keyword in beide Texte integrieren",
+          "Jede Seite braucht einzigartige Meta-Daten",
+          "Hohe Klickrate signalisiert Google Relevanz"
+        ]
+      },
+      {
+        "id": "ladezeit-performance",
+        "icon": "fa-tachometer-alt",
+        "title": "Ladezeit & Performance optimieren",
+        "intro": "Google hat es offiziell bestätigt: Die Ladegeschwindigkeit ist ein Ranking-Faktor. Eine langsame Website wird schlechter gerankt als eine schnelle – aus gutem Grund. Menschen sind ungeduldig. Dauert eine Seite länger als drei Sekunden zum Laden, springen viele ab. Mobile ist das Problem noch größer.",
+        "content": [
+          "Wir optimieren die Performance auf mehreren Ebenen. Tools wie Google PageSpeed Insights zeigen, wo Verbesserungsbedarf besteht. Das Ziel: Ladezeit unter zwei Sekunden. Das ist ambitioniert, aber erreichbar – und macht einen messbaren Unterschied für deine Rankings und deine Conversion-Rate. Eine schnelle Website bedeutet: zufriedenere Besucher, bessere Rankings, mehr Conversions."
+        ],
+        "highlights": [
+          "Bilder komprimieren (oft der größte Zeitfresser)",
+          "Modernes Bildformat WebP nutzen",
+          "Unnötige Plugins und Skripte entfernen",
+          "Caching aktivieren (Seiten werden \"vorgeladen\")",
+          "Code minimieren (CSS und JavaScript verkleinern)",
+          "Schnellen Hosting-Anbieter wählen",
+          "Ziel: Ladezeit unter 2 Sekunden"
+        ]
+      },
+      {
+        "id": "alt-texte",
+        "icon": "fa-image",
+        "title": "Alt-Texte für Bilder nutzen",
+        "intro": "Alt-Texte (Alternative Texte) sind Beschreibungen für Bilder, die im HTML-Code hinterlegt werden. Google kann Bilder nicht \"sehen\" wie Menschen – es liest diese Alt-Texte, um zu verstehen, was auf dem Bild zu sehen ist. Alt-Texte erfüllen also zwei Zwecke: Sie machen deine Website zugänglicher für Menschen mit Sehbehinderung (Screen-Reader lesen die Alt-Texte vor), und sie helfen Google, deine Bilder zu verstehen und in der Bildersuche anzuzeigen.",
+        "content": [
+          "Alt-Texte sind kein Ranking-Wunder, aber sie sind ein einfacher SEO-Baustein, der oft vernachlässigt wird. Und sie können dir zusätzlichen Traffic über die Google-Bildersuche bringen – ein unterschätzter Kanal."
+        ],
+        "highlights": [
+          "Bild konkret beschreiben (nicht \"Bild1.jpg\", sondern \"Modernes Bürogebäude in Berlin-Friedrichshain\")",
+          "Relevantes Keyword enthalten, wenn es passt (ohne zu spammen)",
+          "Kurz aber präzise (ein Satz genügt meist)",
+          "Zugänglichkeit für Menschen mit Sehbehinderung",
+          "Zusätzlicher Traffic über Google-Bildersuche möglich"
+        ]
+      },
+      {
+        "id": "impressum-datenschutz-seo",
+        "icon": "fa-shield-alt",
+        "title": "Impressum & Datenschutz im Kontext SEO",
+        "intro": "Impressum und Datenschutzerklärung sind rechtlich verpflichtend – aber wusstest du, dass sie auch für SEO relevant sind? Google bewertet Websites unter anderem nach E-A-T: Expertise, Authoritativeness, Trustworthiness (Expertise, Autorität, Vertrauenswürdigkeit). Ein vollständiges Impressum mit echten Kontaktdaten signalisiert Seriosität.",
+        "content": [
+          "Auch SSL-Verschlüsselung (https://) gehört zum Vertrauenssignal. Google bevorzugt sichere Websites und markiert unsichere als \"Nicht sicher\" – das schreckt Besucher ab und schadet dem Ranking. Rechtlich sauber sein und SEO-freundlich sein geht Hand in Hand."
+        ],
+        "highlights": [
+          "Vollständige Angaben (Name, Adresse, Kontakt)",
+          "Gut erreichbar (im Footer jeder Seite verlinkt)",
+          "Keine Indexierungs-Blockierung für Google",
+          "SSL-Verschlüsselung (https://) als Vertrauenssignal",
+          "E-A-T-Faktor: Expertise, Autorität, Vertrauenswürdigkeit"
+        ]
+      },
+      {
+        "id": "backlinks-aufbauen",
+        "icon": "fa-link",
+        "title": "Erste Backlinks seriös aufbauen",
+        "intro": "Backlinks sind Links von anderen Websites zu deiner Website. Sie sind wie Empfehlungen – wenn viele hochwertige Websites auf dich verlinken, interpretiert Google das als Vertrauenssignal. Backlinks gehören zu den wichtigsten Ranking-Faktoren. Aber Vorsicht: Nicht alle Backlinks sind gut. Spam-Links von dubiosen Seiten können sogar schaden.",
+        "content": [
+          "Google erkennt Manipulationen wie gekaufte Links, Link-Tausch-Netzwerke oder Spam-Kommentare und bestraft sie. Lieber wenige hochwertige Backlinks als hunderte minderwertige. Qualität schlägt Quantität – auch bei Backlinks."
+        ],
+        "highlights": [
+          "Eintragung in relevante Branchenverzeichnisse (gezielt, nicht wahllos)",
+          "Kooperationen mit Partnern (gegenseitige Verlinkungen)",
+          "Gastbeiträge auf thematisch passenden Blogs",
+          "Lokale Einträge (Google My Business, lokale Verzeichnisse)",
+          "Hochwertige Inhalte, die andere von selbst verlinken wollen",
+          "NICHT: Backlinks kaufen, Link-Tausch-Netzwerke, Spam-Kommentare"
+        ]
+      },
+      {
+        "id": "seo-dauer",
+        "icon": "fa-clock",
+        "title": "Realistische Dauer für SEO-Ergebnisse",
+        "intro": "Eine der häufigsten Fragen: \"Wie lange dauert es, bis ich bei Google oben stehe?\" Die ehrliche Antwort: Es kommt darauf an. Auf die Konkurrenz, auf deine Ausgangslage, auf die gewählten Keywords. Aber generell gilt: SEO ist ein Marathon, kein Sprint. Wer dir Top-Rankings in vier Wochen verspricht, lügt.",
+        "content": [
+          "Wichtig ist Kontinuität – einmalige Optimierung reicht nicht. SEO ist ein fortlaufender Prozess: Inhalte erweitern, Backlinks aufbauen, Performance verbessern. Wer dranbleibt, wird belohnt. Wer nach zwei Monaten aufgibt, verschenkt Potenzial."
+        ],
+        "highlights": [
+          "Erste Verbesserungen: nach 3-4 Monaten (kleinere Keywords, geringe Konkurrenz)",
+          "Spürbare Ergebnisse: nach 6-9 Monaten (mittlere Keywords, moderate Konkurrenz)",
+          "Top-Rankings: nach 12-18 Monaten oder länger (stark umkämpfte Keywords)",
+          "Lokale SEO kann schneller funktionieren (mit Google My Business)",
+          "Kontinuität ist entscheidend – einmalige Optimierung reicht nicht",
+          "Fortlaufender Prozess: Inhalte erweitern, Backlinks aufbauen, Performance verbessern"
+        ]
+      },
+      {
+        "id": "anfaengerfehler",
+        "icon": "fa-exclamation-triangle",
+        "title": "Typische SEO-Anfängerfehler vermeiden",
+        "intro": "Viele Anfänger machen ähnliche Fehler, die ihre SEO-Bemühungen zunichtemachen. Die gute Nachricht: Diese Fehler lassen sich leicht vermeiden, wenn man sie kennt. Hier sind die häufigsten Stolpersteine und wie du sie umgehst.",
+        "content": [
+          "Wir helfen dir, diese Fallen zu vermeiden. Mit der richtigen Strategie von Anfang an sparst du dir viel Frust und verschwendete Zeit. SEO ist kein Hexenwerk, aber es erfordert Grundlagenwissen und einen klaren Plan – genau das bieten wir dir."
+        ],
+        "highlights": [
+          "Zu viele Keywords auf einer Seite (Fokus ist besser als Fülle)",
+          "Identische Inhalte auf mehreren Seiten (Duplicate Content schadet)",
+          "Fehlende oder duplizierte Meta-Daten",
+          "Zu dünne Inhalte (Seiten mit nur 100 Wörtern ranken selten gut)",
+          "Ignorieren der mobilen Optimierung",
+          "Keine SSL-Verschlüsselung",
+          "Langsame Ladezeiten",
+          "Unnatürlicher Linkaufbau",
+          "Ungeduld (nach zwei Monaten frustriert aufgeben)"
+        ]
+      }
+    ],
+    "risks": {
+      "title": "Häufige SEO-Mythen & Missverständnisse",
+      "intro": "Rund um SEO kursieren viele Mythen und Halbwahrheiten. Manche versprechen schnelle Erfolge, andere schüren unbegründete Ängste. Was stimmt wirklich? Hier räumen wir mit den häufigsten SEO-Missverständnissen auf.",
+      "items": [
+        {
+          "icon": "fa-rocket",
+          "title": "\"Top-Rankings in 4 Wochen\"",
+          "description": "Unrealistische Versprechen – seriöses SEO braucht Monate"
+        },
+        {
+          "icon": "fa-magic",
+          "title": "\"Es gibt geheime SEO-Tricks\"",
+          "description": "Keine Geheimnisse – nur solide Grundlagen und Arbeit"
+        },
+        {
+          "icon": "fa-money-bill-wave",
+          "title": "\"Backlinks kaufen ist ok\"",
+          "description": "Google erkennt und bestraft gekaufte Links"
+        },
+        {
+          "icon": "fa-sync",
+          "title": "\"Einmal optimiert = fertig\"",
+          "description": "SEO ist fortlaufend – Kontinuität zählt"
+        },
+        {
+          "icon": "fa-hashtag",
+          "title": "\"Keywords überall reinpacken\"",
+          "description": "Keyword Stuffing schadet mehr als es nutzt"
+        },
+        {
+          "icon": "fa-ban",
+          "title": "\"SEO ist tot\"",
+          "description": "Organische Suche bleibt wichtigster Traffic-Kanal"
+        }
+      ],
+      "conclusion": [
+        "SEO ist weder Hexenwerk noch gibt es magische Abkürzungen. Was funktioniert: Solide Grundlagen, qualitative Inhalte, technische Optimierung und Geduld. Schwarze-Hut-Techniken wie gekaufte Links oder Keyword-Spam werden von Google erkannt und bestraft.",
+        "Die gute Nachricht: Mit den richtigen Basics, realistischen Erwartungen und kontinuierlicher Arbeit kommst du ans Ziel. SEO ist ein Marathon, aber einer, der sich lohnt. Wir helfen dir, von Anfang an die richtigen Schritte zu gehen – ohne Mythen, ohne leere Versprechen, mit messbaren Ergebnissen."
+      ]
+    },
+    "cta": {
+      "title": "Bereit für bessere Google-Rankings?",
+      "text": "Du möchtest bei Google gefunden werden, aber weißt nicht, wo du anfangen sollst? Kontaktiere uns – wir entwickeln eine SEO-Strategie, die zu deinem Business passt und realistische Ergebnisse liefert!",
+      "buttonText": "Jetzt SEO-Beratung anfragen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}

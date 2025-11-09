@@ -49,6 +49,15 @@ export async function sitemapXml(req, res, next) {
         ORDER BY name`
     );
 
+    // Leistungen für webdesign-berlin/:slug 
+    const { rows: leistungen_pages } = await pool.query(
+      `SELECT slug,
+              COALESCE(updated_at, created_at, now()) AS updated_at
+         FROM leistungen_pages
+        WHERE is_published = true
+        ORDER BY created_at DESC`
+    );
+
     // 👉 NEU: Ratgeber für /ratgeber/:slug
     const { rows: guides } = await pool.query(
       `SELECT slug,
@@ -76,6 +85,7 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/impressum`,       changefreq: "yearly",  priority: 0.3 },
       { loc: `${base}/webdesign-cafe/kosten`,         changefreq: "yearly",  priority: 0.3 },
       { loc: `${base}/webdesign-blumenladen/kosten`,  changefreq: "yearly",  priority: 0.3 },
+      { loc: `${base}/webdesign-berlin`,   changefreq: "monthly",  priority: 1.0}
 
     ];
 
@@ -111,6 +121,13 @@ export async function sitemapXml(req, res, next) {
       priority: 0.85
     }));
 
+    const serviceRoutes = leistungen_pages.map(s => ({
+      loc: `${base}/webdesign-berlin/${s.slug}`,
+      lastmod: new Date(s.updated_at).toISOString(),
+      changefreq: "weekly",
+      priority: 0.8
+    }));
+
     // 👉 NEU: Ratgeber-Detailseiten
     const guideRoutes = guides.map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
@@ -125,6 +142,7 @@ export async function sitemapXml(req, res, next) {
       ...pageRoutes,
       ...postRoutes,
       ...industryRoutes,
+      ...serviceRoutes,
       ...guideRoutes   // 👉 NEU aufnehmen
     ];
 
