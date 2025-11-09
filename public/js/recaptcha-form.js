@@ -145,9 +145,9 @@
   function waitForRecaptchaReady(callback) {
     if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
       window.grecaptcha.ready(callback);
-    } else {
-      setTimeout(function () { waitForRecaptchaReady(callback); }, 20000);
+      return;
     }
+    setTimeout(function () { waitForRecaptchaReady(callback); }, 200);
   }
 
   function init() {

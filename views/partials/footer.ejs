@@ -120,34 +120,81 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       var contactForm = document.getElementById('kontaktForm');
-      var forms = Array.prototype.slice.call(document.forms || []);
-      var needsRecaptcha = forms.some(function(form) {
+      var scriptRequested = false;
+
+      function normaliseAction(action) {
+        if (!action) return '';
+        action = action.trim();
+        if (!action) return '';
+        try {
+          if (/^https?:/i.test(action)) {
+            return new URL(action, window.location.origin).pathname;
+          }
+          if (window.location && action.indexOf(window.location.origin) === 0) {
+            return action.slice(window.location.origin.length);
+          }
+        } catch (err) {
+          return '';
+        }
+        return action;
+      }
+
+      function shouldHandle(form) {
         if (!form) return false;
         if (form === contactForm) return false; // eigenes Handling in kontakt.ejs
+
         if (form.dataset && typeof form.dataset.recaptcha === 'string' && form.dataset.recaptcha.toLowerCase() === 'v3') {
           return true;
         }
-        var action = (form.getAttribute('action') || '').trim();
-        if (!action) return false;
-        try {
-          if (/^https?:/i.test(action)) {
-            action = new URL(action, window.location.origin).pathname;
-          }
-        } catch (err) {
-          action = '';
-        }
+
+        var action = normaliseAction(form.getAttribute('action'));
         return action === '/kontakt';
-      });
+      }
 
-      if (!needsRecaptcha) return;
+      function ensureRecaptchaScript() {
+        if (scriptRequested) return;
+        scriptRequested = true;
 
-      if (!document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]')) {
+        if (document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]')) {
+          return;
+        }
         var script = document.createElement('script');
         script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(window.SITEKEY);
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
       }
+
+      function bindLazyLoader(form) {
+        if (!form) return;
+        var triggered = false;
+
+        function cleanup() {
+          form.removeEventListener('focusin', onInteraction, true);
+          form.removeEventListener('pointerdown', onInteraction, true);
+          form.removeEventListener('click', onInteraction, true);
+        }
+
+        function onInteraction() {
+          if (triggered) return;
+          triggered = true;
+          cleanup();
+          ensureRecaptchaScript();
+        }
+
+        form.addEventListener('focusin', onInteraction, true);
+        form.addEventListener('pointerdown', onInteraction, true);
+        form.addEventListener('click', onInteraction, true);
+
+        if (document.activeElement && form.contains(document.activeElement)) {
+          onInteraction();
+        }
+      }
+
+      var forms = Array.prototype.slice.call(document.forms || []).filter(shouldHandle);
+      if (!forms.length) return;
+
+      forms.forEach(bindLazyLoader);
     });
   })();
 </script>
