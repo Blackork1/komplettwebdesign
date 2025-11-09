@@ -171,9 +171,9 @@ process.on('uncaughtException', err => {
 });
 
 /* Beim Start einmal auffüllen + einmal aufräumen */
-ensureAutoSlots().catch(console.error);
+// ensureAutoSlots().catch(console.error);
 // if (isProd) {
-  deleteExpiredUnbooked().catch(console.error);
+//   deleteExpiredUnbooked().catch(console.error);
 // }
 
 /* Täglich 02:00 Uhr neue Auto-Slots bis X Wochen */
@@ -181,8 +181,8 @@ ensureAutoSlots().catch(console.error);
 //   ensureAutoSlots().catch(console.error);
 // }, { timezone: 'Europe/Berlin' });
 
-/* Alle 5 Minuten abgelaufene freie Slots aufräumen */
-// if (isProd) {
+/* Alle 1 Minuten abgelaufene freie Slots aufräumen */
+if (isProd) {
   cron.schedule('*/5 * * * *', async () => {
     try {
       await ensureAutoSlots();
@@ -191,7 +191,7 @@ ensureAutoSlots().catch(console.error);
       console.error('Cron Fehler:', err);
     }
   });
-// }
+}
 // Routen einbinden
 app.use('/', mainRoutes);
 app.use('/pricing', pricingRoutes);

@@ -45,7 +45,7 @@ export async function postDeleteUser(req, res) {
 export async function getAbout(req, res) {
   res.render('about', {
     title: 'Über uns - Wer ist Komplett Webdesign?',
-    description: 'Erfahren Sie mehr über KomplettWebdesign und mich. Ich bin ein leidenschaftlicher Webentwickler aus Berlin, der es liebt, kreative und funktionale Websites zu erstellen.',
+    description: 'Erfahren Sie mehr über Komplett Webdesign und mich. Ich bin ein leidenschaftlicher Webentwickler aus Berlin, der es liebt, kreative und funktionale Websites zu erstellen.',
     keywords: 'Webdesign,Webentwicklung,Über uns,KomplettWebdesign'
   });
 }
