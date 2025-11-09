@@ -3,6 +3,7 @@ import { de } from 'date-fns/locale';
 import pool from '../util/db.js';
 import nodemailer from 'nodemailer';
 import { title } from 'process';
+import axios from 'axios';
 import {
   getNextOpenSlots,
   lockSlot,
@@ -24,6 +25,10 @@ const transporter = nodemailer.createTransport({
   secure: Number(process.env.SMTP_PORT) === 465,      // SSL nur bei Port 465
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
+
+const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+const RECAPTCHA_ACTION = 'package_contact';
+
 
 // (optional) falls du kein util/resolveBaseUrl.js nutzt:
 function resolveBaseUrl(req) {
@@ -151,6 +156,39 @@ export async function handleContact(req, res) {
   const { name, email, slot } = req.body;
   let lockedSlot = null;
   let booking = null;
+  const token = typeof req.body.token === 'string' ? req.body.token.trim() : '';
+
+  if (!token) {
+    return res.status(400).send('reCAPTCHA-Token fehlt. Bitte versuche es erneut.');
+  }
+
+  try {
+    const secret = process.env.RECAPTCHA_SECRET;
+    if (!secret) throw new Error('Kein reCAPTCHA-Secret konfiguriert.');
+
+    const params = new URLSearchParams({
+      secret,
+      response: token,
+      remoteip: req.ip ?? '',
+    });
+
+    const { data } = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      params.toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    if (!data?.success) throw new Error('reCAPTCHA: success=false');
+    if (typeof data.score === 'number' && data.score < RECAPTCHA_MIN_SCORE) {
+      throw new Error(`reCAPTCHA: score ${data.score} < ${RECAPTCHA_MIN_SCORE}`);
+    }
+    if (data.action && data.action !== RECAPTCHA_ACTION) {
+      throw new Error(`reCAPTCHA: action mismatch "${data.action}" != "${RECAPTCHA_ACTION}"`);
+    }
+  } catch (err) {
+    console.error('reCAPTCHA-Validierung fehlgeschlagen:', err?.message || err);
+    return res.status(400).send('reCAPTCHA-Validierung fehlgeschlagen. Bitte versuche es erneut.');
+  }
   try {
     // Paketdaten holen (für Mail & Bestätigung)
     const { rows } = await pool.query(

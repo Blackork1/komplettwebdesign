@@ -1,47 +1,151 @@
 <%- include("../partials/head") %>
-  <%- include('../partials/header') %>
-    <link rel="stylesheet" href="/booking.css">
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/booking.css">
 
-    <div class="section">
-      <div class="container">
-        <h1 class="white">Beratungstermin buchen</h1>
-        <p class="white">Wähle deinen Beratungstermin aus und gib deine Kontaktdaten ein.</p>
+<div class="section">
+  <div class="container">
+    <h1 class="white">Beratungstermin buchen</h1>
+    <p class="white">Wähle deinen Beratungstermin aus und gib deine Kontaktdaten ein.</p>
 
-        <ul class="slot-list">
-          <% if (slots.length===0) { %>
-            <li>Aktuell sind keine freien Termine verfügbar.</li>
-            <% } %>
-              <% slots.forEach(s=> { %>
-                <li>
-                  <form class="slot-form" action="/booking" method="POST">
-                    <strong>
-                      <%= new Date(s.start_time) .toLocaleString('de-DE',{ weekday:'short', day:'2-digit',
+    <ul class="slot-list">
+      <% if (slots.length===0) { %>
+      <li>Aktuell sind keine freien Termine verfügbar.</li>
+      <% } %>
+      <% slots.forEach(s=> { %>
+      <li>
+        <form class="slot-form" action="/booking" method="POST">
+          <strong>
+            <%= new Date(s.start_time) .toLocaleString('de-DE',{ weekday:'short', day:'2-digit',
                         month:'short', hour:'2-digit', minute:'2-digit' }) %>
-                    </strong><br>
-                    <input type="hidden" name="slotId" value="<%= s.id %>">
-                    <input type="hidden" name="token"><!-- reCAPTCHA -->
-                    <input type="text" name="name" placeholder="Name" required>
-                    <input type="email" name="email" placeholder="E-Mail" required>
-                    <button class="btn">Buchen</button>
-                  </form>
-                </li>
-                <% }) %>
-        </ul>
-      </div>
-    </div>
+          </strong><br>
+          <input type="hidden" name="slotId" value="<%= s.id %>">
+          <input type="hidden" name="token"><!-- reCAPTCHA -->
+          <input type="text" name="name" placeholder="Name" required>
+          <input type="email" name="email" placeholder="E-Mail" required>
+          <button class="btn">Buchen</button>
+        </form>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+</div>
 
 
-    <script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITEKEY %>">
-    </script>
-    <script>
-      document.querySelectorAll('.slot-form').forEach(form => {
-        form.addEventListener('submit', async e => {
-          e.preventDefault();
-          const token = await grecaptcha.execute(
-            '<%= process.env.RECAPTCHA_SITEKEY %>', { action: 'submit' });
+<script>
+  (function() {
+    const siteKey = '<%= process.env.RECAPTCHA_SITEKEY %>';
+    if (!siteKey) return;
+
+    window.SITEKEY = window.SITEKEY || siteKey;
+    let recaptchaPromise = null;
+
+    function waitForGrecaptchaReady() {
+      return new Promise((resolve) => {
+        if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
+          window.grecaptcha.ready(resolve);
+          return;
+        }
+        const iv = window.setInterval(() => {
+          if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
+            window.clearInterval(iv);
+            window.grecaptcha.ready(resolve);
+          }
+        }, 50);
+      });
+    }
+
+    function loadRecaptchaScript() {
+      if (window.grecaptcha && typeof window.grecaptcha.execute === 'function') {
+        return waitForGrecaptchaReady();
+      }
+
+      if (recaptchaPromise) return recaptchaPromise;
+
+      recaptchaPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]');
+
+        function handleReady() {
+          waitForGrecaptchaReady().then(resolve).catch(reject);
+        }
+
+        if (existing) {
+          if (existing.hasAttribute('data-recaptcha-loaded')) {
+            handleReady();
+            return;
+          }
+
+          existing.addEventListener('load', () => {
+            existing.setAttribute('data-recaptcha-loaded', 'true');
+            handleReady();
+          }, {
+            once: true
+          });
+          existing.addEventListener('error', () => {
+            existing.remove();
+            reject(new Error('reCAPTCHA konnte nicht geladen werden.'));
+          }, {
+            once: true
+          });
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(siteKey);
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          script.setAttribute('data-recaptcha-loaded', 'true');
+          handleReady();
+        };
+        script.onerror = () => {
+          script.remove();
+          reject(new Error('reCAPTCHA konnte nicht geladen werden.'));
+        };
+        document.head.appendChild(script);
+      });
+
+      return recaptchaPromise.finally(() => {
+        recaptchaPromise = null;
+      });
+    }
+
+    function bindPrefetch(form) {
+      if (!form) return;
+      const triggerOnce = () => {
+        form.removeEventListener('focusin', triggerOnce, true);
+        form.removeEventListener('pointerdown', triggerOnce, true);
+        form.removeEventListener('click', triggerOnce, true);
+        loadRecaptchaScript().catch((err) => console.warn(err));
+      };
+
+      form.addEventListener('focusin', triggerOnce, true);
+      form.addEventListener('pointerdown', triggerOnce, true);
+      form.addEventListener('click', triggerOnce, true);
+
+      if (document.activeElement && form.contains(document.activeElement)) {
+        triggerOnce();
+      }
+    }
+
+    document.querySelectorAll('.slot-form').forEach(form => {
+      bindPrefetch(form);
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+
+        try {
+          await loadRecaptchaScript();
+          const token = await grecaptcha.execute(siteKey, {
+            action: 'booking_submit'
+          });
           form.token.value = token;
           form.submit();
-        });
+        } catch (err) {
+          console.error('reCAPTCHA Fehler:', err);
+          alert('reCAPTCHA konnte nicht geladen werden. Bitte versuche es erneut.');
+        }
       });
-    </script>
-    <%- include('../partials/footer') %>
+    });
+  })();
+</script>
+<%- include('../partials/footer') %>

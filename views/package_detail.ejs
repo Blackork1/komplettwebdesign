@@ -838,7 +838,7 @@
           </ul>
         </div>
         <div class="contact-form-wrapper">
-          <form action="/pakete/<%= slug %>/kontakt" method="POST" class="contact-form">
+          <form action="/pakete/<%= slug %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
             <div class="form-group">
               <label for="inputName">Ihr Name</label>
               <input type="text" id="inputName" name="name" placeholder="Max Mustermann" required>
@@ -864,6 +864,7 @@
             <% } else { %>
             <p class="no-slots">Zurzeit sind keine freien Termine buchbar. Wir melden uns zeitnah mit Terminvorschlägen.</p>
             <% } %>
+            <input type="hidden" name="token"><!-- reCAPTCHA -->
             <input type="hidden" name="package" value="<%= pack.name %>">
             <button type="submit" class="btn btn-hero w-100">Unverbindliche Anfrage senden</button>
           </form>
