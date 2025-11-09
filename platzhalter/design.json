@@ -1,0 +1,200 @@
+{
+  "page": {
+    "slug": "design-ux-ui",
+    "title": "Design & Benutzerführung (UX/UI)",
+    "subtitle": "Wenn Form und Funktion verschmelzen",
+    "hero": {
+      "title": "Design & Benutzerführung (UX/UI)",
+      "subtitle": "Wenn Form und Funktion verschmelzen – optisch überzeugend, intuitiv nutzbar",
+      "icons": [
+        {
+          "icon": "fa-palette",
+          "label": "Ansprechendes Design"
+        },
+        {
+          "icon": "fa-users",
+          "label": "Nutzerfreundlich"
+        },
+        {
+          "icon": "fa-chart-line",
+          "label": "Conversion-optimiert"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "Viele Websites scheitern nicht am fehlenden Inhalt, sondern an schlechter Benutzerführung. Besucher finden nicht, was sie suchen. Buttons sind versteckt. Die Navigation ist verwirrend. Oder das Design wirkt einfach nicht professionell genug, um Vertrauen aufzubauen."
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Gutes Design ist unsichtbar – es lenkt nicht ab, sondern führt den Nutzer sanft zum Ziel. Wir gestalten deine Website so, dass Besucher intuitiv wissen, was als nächstes zu tun ist. Dabei vereinen wir ansprechendes Design mit psychologisch fundierter Benutzerführung."
+      }
+    },
+    "description": [
+      "Eine schöne Website allein reicht nicht – sie muss auch funktionieren. Genau hier kommt die Kombination aus Design und Benutzerführung ins Spiel. UX (User Experience) beschreibt, wie sich deine Besucher auf der Website fühlen und wie intuitiv sie ihr Ziel erreichen. UI (User Interface) ist das, was sie sehen – Farben, Schriften, Buttons, Bilder. Beide Bereiche greifen ineinander und entscheiden darüber, ob ein Besucher bleibt oder nach wenigen Sekunden wieder verschwindet.",
+      "Gutes Design ist unsichtbar – es lenkt nicht ab, sondern führt den Nutzer sanft zum Ziel. Ob Kontaktaufnahme, Produktkauf oder Newsletter-Anmeldung: Wir gestalten deine Website so, dass Besucher intuitiv wissen, was als nächstes zu tun ist. Dabei vereinen wir ansprechendes Design mit psychologisch fundierter Benutzerführung – für eine Website, die nicht nur gut aussieht, sondern auch messbar besser konvertiert."
+    ],
+    "services": [
+      {
+        "id": "farben-marke",
+        "icon": "fa-palette",
+        "title": "Farben passend zur Marke wählen",
+        "intro": "Farben sind mehr als Dekoration – sie transportieren Emotionen, schaffen Wiedererkennungswert und beeinflussen Kaufentscheidungen. Ein Anwaltsbüro braucht andere Farben als ein Kindergarten, und ein Tech-Startup kommuniziert anders als ein Bio-Laden. Die richtige Farbwahl macht den Unterschied zwischen \"passt irgendwie\" und \"fühlt sich genau richtig an\".",
+        "content": [
+          "Wir entwickeln für deine Website ein Farbkonzept, das zu deiner Marke, deiner Branche und deiner Zielgruppe passt. Dabei berücksichtigen wir nicht nur ästhetische Aspekte, sondern auch psychologische Wirkungen: Blau schafft Vertrauen, Rot erregt Aufmerksamkeit, Grün steht für Nachhaltigkeit."
+        ],
+        "highlights": [
+          "Psychologische Farbwirkungen berücksichtigen (Blau = Vertrauen, Rot = Aufmerksamkeit, Grün = Nachhaltigkeit)",
+          "Harmonisches Farbschema entwickeln passend zu Marke und Branche",
+          "Optimale Kontraste für Lesbarkeit gewährleisten",
+          "Farbkonzept für Texte und Call-to-Action-Buttons"
+        ]
+      },
+      {
+        "id": "schriftarten",
+        "icon": "fa-font",
+        "title": "Gut lesbare, moderne Schriftarten",
+        "intro": "Die Schriftart entscheidet maßgeblich darüber, ob deine Texte gelesen werden oder nicht. Eine verschnörkelte, schwer lesbare Schrift mag auf den ersten Blick interessant wirken – nach drei Zeilen springen die meisten Besucher aber ab. Lesbarkeit geht immer vor Kreativität, besonders bei längeren Texten.",
+        "content": [
+          "Wir wählen für deine Website Schriftarten, die modern aussehen und gleichzeitig auf allen Geräten perfekt lesbar sind. Dabei kombinieren wir meist zwei bis drei Schriften: eine für Überschriften, eine für Fließtext und manchmal eine dritte für besondere Elemente."
+        ],
+        "highlights": [
+          "2-3 Schriften kombinieren (Überschriften, Fließtext, besondere Elemente)",
+          "Optimale Lesbarkeit auf allen Geräten",
+          "Zeilenhöhe, Zeichenabstand und Schriftgröße anpassen",
+          "Besondere Optimierung für mobile Geräte"
+        ]
+      },
+      {
+        "id": "startseite-struktur",
+        "icon": "fa-home",
+        "title": "Startseite klar strukturieren",
+        "intro": "Die Startseite ist deine Visitenkarte im Internet. Innerhalb der ersten drei Sekunden entscheidet der Besucher, ob er bleibt oder geht. Eine überladene, unstrukturierte Startseite verwirrt und vertreibt potenzielle Kunden. Eine klare, fokussierte Startseite hingegen führt den Besucher gezielt weiter.",
+        "content": [
+          "Wir strukturieren deine Startseite nach dem Prinzip der umgekehrten Pyramide: Das Wichtigste steht oben. Der Besucher soll sofort verstehen, wer du bist, was du anbietest und warum er hier richtig ist."
+        ],
+        "highlights": [
+          "Wichtigste Informationen oben (Wer bist du? Was bietest du an?)",
+          "Logische Reihenfolge: Leistungen, Vorteile, Social Proof, Kontakt",
+          "Jeder Abschnitt mit klarem Ziel",
+          "Ausgewogene Länge – nicht zu kurz, nicht überladen"
+        ]
+      },
+      {
+        "id": "menuepunkte",
+        "icon": "fa-bars",
+        "title": "Sinnvolle Anzahl an Menüpunkten",
+        "intro": "Wie viele Punkte sollte das Hauptmenü haben? Sieben? Zehn? Fünfzehn? Die Antwort ist: So wenige wie möglich, so viele wie nötig. Studien zeigen, dass Menschen maximal sieben Optionen auf einmal erfassen können. Ein überladenes Menü überfordert und führt dazu, dass Besucher gar keine Wahl treffen.",
+        "content": [
+          "Wir reduzieren dein Menü auf die wirklich wichtigen Hauptkategorien – meist zwischen vier und sieben Punkten. Unterseiten lassen sich in Dropdown-Menüs organisieren oder über die Hauptseiten verlinken."
+        ],
+        "highlights": [
+          "4-7 Hauptmenüpunkte (maximal erfassbare Anzahl)",
+          "Unterseiten in Dropdown-Menüs organisieren",
+          "Aus Nutzersicht denken: kürzester Weg zum Ziel",
+          "Optimiert für mobile Geräte"
+        ]
+      },
+      {
+        "id": "call-to-actions",
+        "icon": "fa-hand-pointer",
+        "title": "Call-to-Actions strategisch platzieren",
+        "intro": "Ein Call-to-Action (CTA) ist eine Handlungsaufforderung: \"Jetzt anfragen\", \"Termin buchen\", \"Kostenlos testen\". Ohne klare CTAs wissen Besucher oft nicht, was sie als nächstes tun sollen – selbst wenn sie interessiert sind. Die strategische Platzierung von CTAs kann deine Conversion-Rate verdoppeln oder sogar verdreifachen.",
+        "content": [
+          "Wir platzieren CTAs dort, wo Besucher eine Entscheidung treffen: am Ende eines überzeugenden Textabschnitts, nach einer Auflistung deiner Vorteile, im sichtbaren Bereich der Startseite. Dabei folgen wir der Regel: Ein Hauptziel pro Seite."
+        ],
+        "highlights": [
+          "Strategische Platzierung an Entscheidungspunkten",
+          "Ein Hauptziel pro Seite (keine Verwirrung)",
+          "Hauptkategorie-CTA auffällig gestalten (Farbe, Beschriftung, Größe)",
+          "Sekundäre CTAs subtiler gestalten"
+        ]
+      },
+      {
+        "id": "white-space",
+        "icon": "fa-expand",
+        "title": "White Space gezielt nutzen",
+        "intro": "White Space – oder Weißraum – bezeichnet die leeren Flächen auf deiner Website. Viele denken: \"Leerer Platz ist verschwendeter Platz, da muss noch mehr rein!\" Das Gegenteil ist richtig. White Space gibt deinen Inhalten Raum zum Atmen und macht deine Website übersichtlicher, moderner und professioneller.",
+        "content": [
+          "Wir nutzen White Space strategisch, um wichtige Elemente hervorzuheben und die Aufmerksamkeit zu lenken. Ein Button mit viel Freiraum drum herum fällt mehr auf als einer, der zwischen Text eingequetscht ist."
+        ],
+        "highlights": [
+          "Wichtige Elemente durch Freiraum hervorheben",
+          "Großzügige Abstände zwischen Absätzen",
+          "Visuelle Hierarchie schaffen",
+          "Kognitive Last reduzieren – schnellere Informationserfassung"
+        ]
+      },
+      {
+        "id": "navigation-responsive",
+        "icon": "fa-mobile-alt",
+        "title": "Navigation für Desktop & Mobile planen",
+        "intro": "Über die Hälfte aller Website-Besuche erfolgen heute über Smartphones. Eine Navigation, die am Desktop funktioniert, kann auf dem Handy zur Katastrophe werden. Zu kleine Buttons, zu viele Ebenen, unklare Struktur – mobile Nutzer sind ungeduldig und wechseln schnell zur Konkurrenz.",
+        "content": [
+          "Wir entwickeln deine Navigation von Anfang an für beide Welten: Am Desktop kann das Menü ausführlicher sein, mit Dropdown-Menüs und visuellen Elementen. Auf dem Smartphone setzen wir auf das klassische Burger-Menü oder eine Tab-Navigation – je nach Projekt."
+        ],
+        "highlights": [
+          "Desktop: ausführliches Menü mit Dropdown-Menüs",
+          "Mobile: Burger-Menü oder Tab-Navigation",
+          "Wichtigste Bereiche mobil mit einem Klick erreichbar",
+          "Tests auf verschiedenen Geräten und Bildschirmgrößen"
+        ]
+      },
+      {
+        "id": "bilder-authentisch",
+        "icon": "fa-images",
+        "title": "Authentische vs. Stock-Bilder wählen",
+        "intro": "Bilder wecken Emotionen und schaffen Vertrauen – oder das Gegenteil. Jeder kennt diese generischen Stock-Fotos: perfekt ausgeleuchtete Menschen mit strahlendem Lächeln, die in Konferenzräumen in die Kamera winken. Sie wirken austauschbar und wenig glaubwürdig. Authentische Bilder hingegen zeigen dein echtes Team, deine echten Räume, deine echte Arbeit.",
+        "content": [
+          "Wir empfehlen wann immer möglich eigene, authentische Fotos. Sie machen deine Website persönlicher und unterscheidbar. Falls professionelle Fotos nötig sind, wählen wir hochwertige Stock-Bilder, die nicht wie typische Stock-Fotos aussehen – natürlich, divers, glaubwürdig."
+        ],
+        "highlights": [
+          "Eigene, authentische Fotos bevorzugen (echtes Team, echte Räume)",
+          "Hochwertige Stock-Bilder falls nötig (natürlich, nicht generisch)",
+          "Technische Qualität: scharf, richtig zugeschnitten",
+          "Web-Optimierung für schnelle Ladezeiten"
+        ]
+      },
+      {
+        "id": "nutzer-halten",
+        "icon": "fa-hourglass-half",
+        "title": "Nutzer länger auf der Seite halten",
+        "intro": "Je länger ein Besucher auf deiner Website bleibt, desto wahrscheinlicher wird eine Conversion – sei es ein Kauf, eine Anfrage oder eine Anmeldung. Aber wie hält man Nutzer auf der Seite? Mit interessanten Inhalten allein ist es nicht getan – auch die Präsentation muss stimmen.",
+        "content": [
+          "Wir setzen verschiedene Strategien ein, um Besucher zu fesseln und die Verweildauer zu erhöhen. Die Kombination aus spannendem Content, ansprechendem Design und technischer Optimierung schafft eine Website, auf der Besucher gerne verweilen."
+        ],
+        "highlights": [
+          "Interne Verlinkungen zu verwandten Inhalten",
+          "Interaktive Elemente (Slider, Rechner, Quiz)",
+          "Videos zur Aufmerksamkeitsbindung",
+          "Durchdachtes Design mit klarer visueller Hierarchie",
+          "Performance-Optimierung für schnelle Ladezeiten"
+        ]
+      },
+      {
+        "id": "professionelle-gestaltung",
+        "icon": "fa-gem",
+        "title": "Professionell vs. billig wirkende Gestaltung",
+        "intro": "Was unterscheidet eine professionelle Website von einer, die billig wirkt? Es sind oft Kleinigkeiten: unscharfe Bilder, inkonsistente Schriftarten, falsch gesetzte Abstände, grell blinkende Banner, zu viele verschiedene Farben. Diese Details entscheiden darüber, ob Besucher dir vertrauen oder skeptisch sind.",
+        "content": [
+          "Professionelles Design zeichnet sich durch Konsistenz, Zurückhaltung und Liebe zum Detail aus. Wir verwenden ein einheitliches Gestaltungsraster, achten auf harmonische Farbkombinationen und setzen auf hochwertige Bilder."
+        ],
+        "highlights": [
+          "Einheitliches Gestaltungsraster verwenden",
+          "Harmonische Farbkombinationen und hochwertige Bilder",
+          "Pixelgenaue Ausrichtung aller Elemente",
+          "Konsistente Schriftformatierung und gleichmäßige Abstände",
+          "Weniger ist mehr: klare, moderne Gestaltung statt überladener Effekte",
+          "Subtile Animationen und Hover-Effekte für Qualitätswahrnehmung"
+        ]
+      }
+    ],
+    "cta": {
+      "title": "Bereit für professionelles Design?",
+      "text": "Du möchtest eine Website, die nicht nur schön aussieht, sondern auch funktioniert? Lass uns sprechen – wir entwickeln ein Design, das deine Marke stärkt und deine Besucher begeistert!",
+      "buttonText": "Jetzt Kontakt aufnehmen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}

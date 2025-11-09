@@ -1,0 +1,44 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1><%= title %></h1>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <% if (results && results.length) { %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Slug</th>
+          <th>Titel</th>
+          <th>Aktion</th>
+          <th>Seite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% results.forEach(r => { %>
+          <tr>
+            <td><code><%= r.slug %></code></td>
+            <td><%= r.title || '' %></td>
+            <td>
+              <span class="badge <%= r.action === 'inserted' ? 'bg-success' : 'bg-warning text-dark' %>">
+                <%= r.action %>
+              </span>
+            </td>
+            <td>
+              <a class="btn btn-sm btn-outline-secondary" href="/leistungen/<%= r.slug %>" target="_blank">
+                ansehen
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+
+  <a class="btn btn-outline-secondary" href="/admin/leistungen-pages/import">Zurück zum Import</a>
+</div>
+
+<%- include('../partials/admin_footer') %>

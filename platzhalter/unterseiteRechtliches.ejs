@@ -1,61 +1,754 @@
-<h1>Rechtliches, Sicherheit & Vertrauen – Wenn deine Website sauber und sicher ist</h1>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechtliches, Sicherheit & Vertrauen</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<p>Eine professionelle Website braucht mehr als gutes Design und starke Inhalte – sie muss auch rechtlich einwandfrei und technisch sicher sein. Klingt trocken? Ist aber existenziell wichtig. Rechtsverstöße können teure Abmahnungen nach sich ziehen, Sicherheitslücken können deine Website lahmlegen oder Kundendaten gefährden. Gleichzeitig sind Vertrauenssignale entscheidend dafür, ob Besucher zu Kunden werden.</p>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            color: #2d3748;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
 
-<p>Viele Website-Betreiber fühlen sich von rechtlichen Anforderungen überfordert. DSGVO, Impressumspflicht, Cookie-Banner – die Anforderungen scheinen undurchschaubar. Gleichzeitig hört man immer wieder von Abmahnwellen und teuren Bußgeldern. Das verunsichert, besonders Einsteiger und kleine Unternehmen. Dabei ist es gar nicht so kompliziert, die wichtigsten Pflichten zu erfüllen – wenn man weiß, worauf es ankommt.</p>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
 
-<p>Wir kümmern uns darum, dass deine Website nicht nur gut aussieht, sondern auch rechtlich abgesichert und technisch geschützt ist. Von der korrekten Datenschutzerklärung über sichere Backups bis zu Vertrauenssignalen, die deine Conversion-Rate steigern – wir decken alle wichtigen Bereiche ab. So kannst du dich auf dein Business konzentrieren, während deine Website auf solidem rechtlichen und technischen Fundament steht.</p>
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 40px;
+            border-radius: 20px;
+            margin-bottom: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
 
-<p>In den folgenden Bereichen erfährst du, wie du deine Website rechtssicher, sicher und vertrauenswürdig machst:</p>
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
 
-<h2>Impressumspflicht (DE/EU)</h2>
-<p>In Deutschland und den meisten EU-Ländern gilt: Fast jede geschäftliche Website braucht ein Impressum. Die Impressumspflicht ist keine bürokratische Schikane, sondern soll Transparenz schaffen – Besucher sollen wissen, mit wem sie es zu tun haben. Fehlt das Impressum oder ist es unvollständig, drohen Abmahnungen mit Kosten von mehreren hundert bis tausend Euro.</p>
+        @keyframes pulse {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-10%, -10%) scale(1.1); }
+        }
 
-<p>Wir erstellen für dich ein vollständiges Impressum mit allen notwendigen Angaben: vollständiger Name (bei Unternehmen: Firmenname und Rechtsform), vollständige Anschrift (kein Postfach), Kontaktdaten (E-Mail und Telefon), bei juristischen Personen: Vertretungsberechtigte, Registereintrag und Registernummer (falls vorhanden), Umsatzsteuer-ID (falls vorhanden), und je nach Branche weitere Pflichtangaben (z.B. Aufsichtsbehörde, Berufskammer). Das Impressum muss von jeder Seite aus mit maximal zwei Klicks erreichbar sein – typischerweise im Footer verlinkt. Wir achten darauf, dass dein Impressum alle Anforderungen erfüllt und rechtssicher ist.</p>
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
 
-<h2>Mindestangaben Datenschutzerklärung</h2>
-<p>Seit der DSGVO (Datenschutz-Grundverordnung) 2018 ist die Datenschutzerklärung Pflicht für praktisch jede Website. Sie informiert Besucher darüber, welche personenbezogenen Daten erhoben werden, zu welchem Zweck und wie sie geschützt werden. Eine fehlende oder unvollständige Datenschutzerklärung kann Bußgelder bis zu 20 Millionen Euro oder 4% des Jahresumsatzes nach sich ziehen – auch wenn solche Höchststrafen selten sind, solltest du das Thema ernst nehmen.</p>
+        .hero h1 {
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
 
-<p>Wir erstellen eine vollständige Datenschutzerklärung, die alle Mindestangaben enthält: Name und Kontaktdaten des Verantwortlichen, Zweck der Datenverarbeitung, Rechtsgrundlage (z.B. berechtigtes Interesse, Einwilligung), Speicherdauer, Rechte der Betroffenen (Auskunft, Löschung, Widerspruch etc.), Information über alle eingesetzten Tools (Analytics, Social Media, Newsletter etc.), und Details zu Cookies und Tracking. Jede Website ist anders, deshalb gibt es keine Standard-Datenschutzerklärung, die für alle passt. Wir passen die Datenschutzerklärung an deine konkret genutzten Tools und Dienste an – nur so ist sie rechtssicher.</p>
+        .hero-subtitle {
+            font-size: 1.3em;
+            opacity: 0.95;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
 
-<h2>Cookie-Banner rechtssicher einsetzen</h2>
-<p>Cookies sind kleine Datenpakete, die Websites im Browser speichern – für verschiedene Zwecke wie Session-Verwaltung, Statistiken oder Werbung. Seit dem "Cookie-Urteil" des EuGH 2019 gilt: Nicht zwingend notwendige Cookies dürfen nur mit aktiver Einwilligung gesetzt werden. Ein Cookie-Banner, der automatisch alle Cookies akzeptiert, ist nicht rechtskonform.</p>
+        .hero-icons {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
 
-<p>Wir implementieren Cookie-Banner, die alle Anforderungen erfüllen: Einwilligung vor dem Setzen nicht-notwendiger Cookies (kein Pre-Ticking), gleich prominente Ablehnen-Option wie Akzeptieren-Option, detaillierte Information über alle Cookie-Kategorien, einfache Widerrufsmöglichkeit, und Dokumentation der Einwilligung. Technisch notwendige Cookies (z.B. für den Warenkorb) dürfen ohne Einwilligung gesetzt werden – aber nur diese. Tools wie Google Analytics, Facebook Pixel oder YouTube-Videos brauchen Einwilligung. Wir verwenden Cookie-Consent-Tools wie Borlabs Cookie oder Cookiebot, die nicht nur das Banner anzeigen, sondern auch tatsächlich das Setzen von Cookies blockieren, bis die Einwilligung vorliegt.</p>
+        .hero-icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s ease;
+        }
 
-<h2>Schutz vor Spam & Bots</h2>
-<p>Kontaktformulare und Kommentarbereiche sind beliebte Angriffsziele für Spam-Bots – automatisierte Programme, die massenhaft Spam-Nachrichten versenden oder versuchen, Sicherheitslücken zu finden. Ungeschützte Formulare können innerhalb von Tagen hunderte Spam-Mails generieren. Das ist nicht nur nervig, sondern kann auch deinen Server belasten oder deine E-Mail-Adresse auf Blacklists bringen.</p>
+        .hero-icon-item:hover {
+            transform: translateY(-5px);
+        }
 
-<p>Wir schützen deine Formulare mit verschiedenen Methoden: Honeypot-Technik (versteckte Felder, die nur Bots ausfüllen), Google reCAPTCHA (das "Ich bin kein Roboter"-Häkchen), Double-Opt-In bei Newsletter-Anmeldungen, Rate-Limiting (maximal X Anfragen pro Zeiteinheit), und serverseitige Validierung. Wichtig ist die Balance: Zu strenge Spam-Filter können auch echte Anfragen blockieren. Wir setzen auf Lösungen, die effektiv Spam verhindern, aber die Nutzererfahrung nicht beeinträchtigen. Ein gut geschütztes Formular spart dir Zeit, Nerven und schützt deine Website vor Missbrauch.</p>
+        .hero-icon-item i {
+            font-size: 2.5em;
+            opacity: 0.9;
+        }
 
-<h2>Sichere Logins & Passwörter nutzen</h2>
-<p>Schwache Passwörter sind eine der häufigsten Ursachen für gehackte Websites. "admin" als Benutzername und "12345" als Passwort? Klingt absurd, kommt aber noch immer vor. Hacker nutzen automatisierte Tools, die tausende gängige Passwörter durchprobieren. Ist das Admin-Passwort schwach, haben sie binnen Minuten Zugriff – mit potenziell verheerenden Folgen.</p>
+        .hero-icon-item span {
+            font-size: 0.9em;
+            opacity: 0.85;
+        }
 
-<p>Wir setzen auf mehrschichtige Sicherheit: Starke Passwörter (mindestens 12 Zeichen, Mix aus Groß-, Kleinbuchstaben, Zahlen, Sonderzeichen), einzigartige Benutzernamen (nicht "admin"), Zwei-Faktor-Authentifizierung (zusätzlicher Code per App oder SMS), Limitierung von Login-Versuchen (nach X Fehlversuchen wird das Login gesperrt), und regelmäßige Passwort-Wechsel bei mehreren Nutzern. Wir empfehlen Password-Manager wie 1Password oder Bitwarden – sie generieren und speichern sichere Passwörter, so dass du dir keine Sorgen um Passwort-Sicherheit machen musst. Ein gehackter Admin-Zugang kann dein gesamtes Business lahmlegen – sichere Logins sind keine Übervorsicht, sondern Grundvoraussetzung.</p>
+        /* Problem-Solution Section */
+        .problem-solution {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 60px;
+        }
 
-<h2>Backup-Konzept erstellen</h2>
-<p>Stell dir vor, deine Website ist plötzlich weg. Server-Absturz, Hackerangriff, versehentliches Löschen – solche Szenarien sind selten, aber sie passieren. Ohne Backup sind alle Inhalte, alle Kunden-Daten, alle E-Mails unwiederbringlich verloren. Ein funktionierendes Backup-Konzept ist deshalb nicht optional, sondern essentiell.</p>
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-<p>Wir richten ein mehrstufiges Backup-System ein: Automatische tägliche Backups (idealerweise nachts, wenn wenig Traffic ist), Speicherung an mindestens zwei Orten (Server + externe Speicherung, z.B. Cloud), mindestens 30 Tage Backup-Historie (falls ein Problem erst später bemerkt wird), regelmäßige Test-Restores (ein Backup, das nicht wiederherstellbar ist, ist wertlos), und Dokumentation des Restore-Prozesses. Viele Hoster bieten Backup-Dienste an, aber verlasse dich nicht allein darauf – zusätzliche externe Backups erhöhen die Sicherheit. Mit einem soliden Backup-Konzept kannst du im Notfall deine Website innerhalb von Stunden wiederherstellen. Das gibt Sicherheit und schützt dein Business.</p>
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
 
-<h2>Vertrauenssignale (Siegel, Reviews etc.)</h2>
-<p>Vertrauen ist im Internet schwerer aufzubauen als offline – Besucher können dich nicht persönlich treffen, dein Büro nicht sehen, dir nicht in die Augen schauen. Deshalb sind Vertrauenssignale so wichtig. Sie überzeugen Besucher davon, dass sie bei dir in guten Händen sind – und erhöhen messbar die Conversion-Rate.</p>
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
 
-<p>Wir integrieren verschiedene Vertrauenssignale auf deiner Website: Echte Kundenbewertungen (Google Reviews, Trusted Shops, ProvenExpert), Gütesiegel und Zertifikate (nur seriöse, keine selbst gemalten), Referenzen und Fallstudien mit konkreten Ergebnissen, Presselogos (falls du in Medien erwähnt wurdest), SSL-Zertifikat (das kleine Schloss in der Browserzeile), vollständiges Impressum und Datenschutzerklärung, echte Teammitglieder mit Fotos und Namen, und transparente Kontaktmöglichkeiten (Telefon, E-Mail, ggf. Chat). Wichtig: Alle Vertrauenssignale müssen echt sein. Gefälschte Bewertungen oder erfundene Zertifikate schaden mehr als sie nutzen. Authentizität schlägt Perfektion – eine ehrliche Bewertung mit 4,5 Sternen wirkt glaubwürdiger als zehn perfekte 5-Sterne-Bewertungen ohne Ecken und Kanten.</p>
+        .card-icon {
+            font-size: 2.5em;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+        }
 
-<h2>Bildrechte korrekt beachten</h2>
-<p>Bilder machen Websites lebendig – aber nur, wenn du sie rechtmäßig nutzen darfst. Bildrechte werden oft unterschätzt, dabei sind sie eine der häufigsten Abmahngründe. Einfach Bilder von Google runterladen und auf die Website packen? Das kann teuer werden. Professionelle Fotografen und Stockfoto-Anbieter verfolgen Rechtsverletzungen systematisch – Abmahnungen kosten schnell mehrere tausend Euro.</p>
+        .problem-card .card-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
 
-<p>Wir achten penibel auf korrekte Bildrechte: Eigene Fotos (selbst fotografiert = keine rechtlichen Probleme, aber Achtung bei Personen: Model-Release nötig), lizenzierte Stockfotos von seriösen Anbietern (Shutterstock, Adobe Stock, Unsplash etc.), korrekte Lizenzbedingungen beachten (manche verlangen Namensnennung), keine Bilder von Google oder Social Media (außer ausdrücklich erlaubt), und bei beauftragten Fotografen: klare vertragliche Regelung der Nutzungsrechte. Wir dokumentieren die Bildquellen und Lizenzen, falls später Nachweise nötig sind. Vorsicht auch bei Markenlogos, Gebäuden oder Kunstwerken – auch hier gibt es Rechte zu beachten. Lieber einmal mehr nachfragen als eine teure Abmahnung riskieren.</p>
+        .solution-card .card-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
 
-<h2>Externe Tools (Fonts, Analytics) rechtskonform nutzen</h2>
-<p>Moderne Websites nutzen oft externe Dienste: Google Fonts für Schriftarten, Google Analytics für Statistiken, YouTube für Videos, Social-Media-Plugins. Das Problem: Diese Tools übertragen häufig Daten in die USA oder andere Drittländer – und das ist datenschutzrechtlich heikel. Seit dem "Schrems II"-Urteil 2020 gelten verschärfte Anforderungen für solche Datenübermittlungen.</p>
+        .card h2 {
+            font-size: 1.8em;
+            color: #2d3748;
+        }
 
-<p>Wir setzen externe Tools datenschutzkonform ein: Google Fonts lokal hosten statt von Google-Servern laden (verhindert Datenübertragung), Google Analytics nur mit Einwilligung, IP-Anonymisierung und Auftragsverarbeitungsvertrag (oder Alternativen wie Matomo nutzen), YouTube im "erweiterten Datenschutzmodus" einbinden oder nach Consent nachladen, Social-Media-Plugins nur als Zwei-Klick-Lösung (erst nach aktiver Einwilligung), und bei allen externen Tools: Nennung in der Datenschutzerklärung. Wir prüfen jedes Tool einzeln und wägen ab: Ist es wirklich nötig? Gibt es datenschutzfreundlichere Alternativen? Kann es lokal gehostet werden? So minimieren wir rechtliche Risiken und respektieren die Privatsphäre deiner Besucher.</p>
+        .card p {
+            font-size: 1.05em;
+            line-height: 1.8;
+            color: #4a5568;
+        }
 
-<h2>Risiken bei Verstößen einschätzen</h2>
-<p>Wie hoch ist das Risiko einer Abmahnung wirklich? Muss man wegen jeder Kleinigkeit Panik haben? Die Wahrheit liegt dazwischen: Ja, es gibt Abmahnungen – aber meist treffen sie die offensichtlichsten Verstöße. Wer die grundlegenden Pflichten erfüllt, reduziert das Risiko erheblich.</p>
+        /* Services Intro */
+        .services-intro {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
 
-<p>Häufige Abmahngründe sind: fehlendes oder unvollständiges Impressum, fehlende oder mangelhafte Datenschutzerklärung, unzulässige Cookie-Nutzung ohne Einwilligung, Bildrechtsverletzungen, irreführende Werbung oder fehlende Preisangaben. Bußgelder nach DSGVO sind bei kleinen Unternehmen selten und meist nicht existenzbedrohend – außer bei groben, vorsätzlichen Verstößen. Abmahnungen von Mitbewerbern oder spezialisierten Kanzleien sind realistischer. Die gute Nachricht: Mit korrektem Impressum, vollständiger Datenschutzerklärung, Cookie-Consent und sauberen Bildrechten bist du auf der sicheren Seite. Perfektion ist nicht nötig – aber die Basics müssen stimmen. Wir helfen dir, die wichtigsten Risiken zu identifizieren und abzusichern, damit du beruhigt schlafen kannst.</p>
+        .services-intro h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
 
-<p class="cta">Du möchtest sichergehen, dass deine Website rechtlich sauber und technisch geschützt ist? <a href="/kontakt">Kontaktiere uns</a> – wir prüfen deine Website und setzen alle notwendigen Maßnahmen um!</p>
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .service-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .service-item:hover {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            transform: translateY(-3px);
+        }
+
+        .service-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .service-icon {
+            font-size: 2.5em;
+            min-width: 60px;
+        }
+
+        .service-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .service-content {
+            padding: 0 30px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, padding 0.5s ease;
+        }
+
+        .service-item.active .service-content {
+            max-height: 2000px;
+            padding: 30px;
+        }
+
+        .service-content p {
+            margin-bottom: 15px;
+            font-size: 1.05em;
+            line-height: 1.8;
+        }
+
+        .service-content ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 20px 0;
+        }
+
+        .service-content li {
+            padding: 10px 0 10px 30px;
+            position: relative;
+            font-size: 1.05em;
+        }
+
+        .service-content li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .expand-indicator {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .service-item.active .expand-indicator {
+            transform: rotate(180deg);
+        }
+
+        /* Risk Assessment Section */
+        .risk-section {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            padding: 50px 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .risk-section h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .risk-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .risk-content > p {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+
+        .risk-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .risk-item {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .risk-item:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.3);
+        }
+
+        .risk-item i {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .risk-item strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .cta-section h2 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            background: #f7fafc;
+        }
+
+        .cta-button i {
+            margin-right: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2em;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1em;
+            }
+
+            .problem-solution {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-icons {
+                gap: 20px;
+            }
+
+            .service-header {
+                padding: 20px;
+            }
+
+            .service-title {
+                font-size: 1.3em;
+            }
+
+            .card {
+                padding: 25px;
+            }
+
+            .hero {
+                padding: 50px 25px;
+            }
+
+            .service-content {
+                padding: 0 20px;
+            }
+
+            .service-item.active .service-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Rechtliches, Sicherheit & Vertrauen</h1>
+                <p class="hero-subtitle">Wenn deine Website sauber und sicher ist – rechtlich einwandfrei, technisch geschützt, vertrauenswürdig</p>
+                <div class="hero-icons">
+                    <div class="hero-icon-item">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Rechtssicher</span>
+                    </div>
+                    <div class="hero-icon-item">
+                        <i class="fas fa-lock"></i>
+                        <span>Geschützt</span>
+                    </div>
+                    <div class="hero-icon-item">
+                        <i class="fas fa-certificate"></i>
+                        <span>Vertrauenswürdig</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem & Solution Cards -->
+        <div class="problem-solution">
+            <div class="card problem-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2>Das Problem</h2>
+                </div>
+                <p>DSGVO, Impressumspflicht, Cookie-Banner – viele Website-Betreiber fühlen sich überfordert. Abmahnungen und Bußgelder verunsichern, besonders Einsteiger und kleine Unternehmen. Rechtsverstöße können teuer werden, Sicherheitslücken deine Website lahmlegen.</p>
+            </div>
+
+            <div class="card solution-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2>Unsere Lösung</h2>
+                </div>
+                <p>Wir kümmern uns um alles: Von der korrekten Datenschutzerklärung über sichere Backups bis zu Vertrauenssignalen. Du konzentrierst dich auf dein Business, während deine Website auf solidem rechtlichen und technischen Fundament steht.</p>
+            </div>
+        </div>
+
+        <!-- Services Intro -->
+        <div class="services-intro">
+            <h2>Unsere Leistungen im Detail</h2>
+            <p style="font-size: 1.1em; color: #4a5568; margin-top: 10px;">Klicke auf einen Bereich, um mehr zu erfahren</p>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="services-grid">
+            <!-- Impressum -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-file-contract service-icon"></i>
+                    <span class="service-title">Impressumspflicht (DE/EU)</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>In Deutschland und den meisten EU-Ländern gilt: Fast jede geschäftliche Website braucht ein Impressum. Die Impressumspflicht schafft Transparenz – Besucher sollen wissen, mit wem sie es zu tun haben. Fehlt das Impressum oder ist es unvollständig, drohen Abmahnungen mit Kosten von mehreren hundert bis tausend Euro.</p>
+                    <p><strong>Wir erstellen für dich ein vollständiges Impressum mit:</strong></p>
+                    <ul>
+                        <li>Vollständiger Name bzw. Firmenname und Rechtsform</li>
+                        <li>Vollständige Anschrift (kein Postfach)</li>
+                        <li>Kontaktdaten (E-Mail und Telefon)</li>
+                        <li>Vertretungsberechtigte bei juristischen Personen</li>
+                        <li>Registereintrag und Umsatzsteuer-ID (falls vorhanden)</li>
+                        <li>Branchenspezifische Pflichtangaben (z.B. Aufsichtsbehörde, Berufskammer)</li>
+                    </ul>
+                    <p>Das Impressum wird von jeder Seite aus mit maximal zwei Klicks erreichbar sein – typischerweise im Footer verlinkt. Wir achten darauf, dass dein Impressum alle Anforderungen erfüllt und rechtssicher ist.</p>
+                </div>
+            </div>
+
+            <!-- Datenschutzerklärung -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-user-shield service-icon"></i>
+                    <span class="service-title">Datenschutzerklärung nach DSGVO</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Seit der DSGVO (Datenschutz-Grundverordnung) 2018 ist die Datenschutzerklärung Pflicht für praktisch jede Website. Sie informiert Besucher darüber, welche personenbezogenen Daten erhoben werden, zu welchem Zweck und wie sie geschützt werden. Eine fehlende oder unvollständige Datenschutzerklärung kann Bußgelder bis zu 20 Millionen Euro oder 4% des Jahresumsatzes nach sich ziehen – auch wenn solche Höchststrafen selten sind, solltest du das Thema ernst nehmen.</p>
+                    <p><strong>Unsere vollständige Datenschutzerklärung enthält:</strong></p>
+                    <ul>
+                        <li>Name und Kontaktdaten des Verantwortlichen</li>
+                        <li>Zweck der Datenverarbeitung und Rechtsgrundlage (z.B. berechtigtes Interesse, Einwilligung)</li>
+                        <li>Speicherdauer und Rechte der Betroffenen (Auskunft, Löschung, Widerspruch etc.)</li>
+                        <li>Information über alle eingesetzten Tools (Analytics, Social Media, Newsletter etc.)</li>
+                        <li>Details zu Cookies und Tracking</li>
+                    </ul>
+                    <p>Jede Website ist anders, deshalb gibt es keine Standard-Datenschutzerklärung, die für alle passt. Wir passen die Datenschutzerklärung an deine konkret genutzten Tools und Dienste an – nur so ist sie rechtssicher.</p>
+                </div>
+            </div>
+
+            <!-- Cookie-Banner -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-cookie-bite service-icon"></i>
+                    <span class="service-title">Cookie-Banner rechtssicher</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Cookies sind kleine Datenpakete, die Websites im Browser speichern – für verschiedene Zwecke wie Session-Verwaltung, Statistiken oder Werbung. Seit dem "Cookie-Urteil" des EuGH 2019 gilt: Nicht zwingend notwendige Cookies dürfen nur mit aktiver Einwilligung gesetzt werden. Ein Cookie-Banner, der automatisch alle Cookies akzeptiert, ist nicht rechtskonform.</p>
+                    <p><strong>Unser Cookie-Banner erfüllt alle Anforderungen:</strong></p>
+                    <ul>
+                        <li>Einwilligung vor dem Setzen nicht-notwendiger Cookies (kein Pre-Ticking)</li>
+                        <li>Gleich prominente Ablehnen-Option wie Akzeptieren-Option</li>
+                        <li>Detaillierte Information über alle Cookie-Kategorien</li>
+                        <li>Einfache Widerrufsmöglichkeit</li>
+                        <li>Dokumentation der Einwilligung</li>
+                    </ul>
+                    <p>Technisch notwendige Cookies (z.B. für den Warenkorb) dürfen ohne Einwilligung gesetzt werden – aber nur diese. Tools wie Google Analytics, Facebook Pixel oder YouTube-Videos brauchen Einwilligung. Wir verwenden Cookie-Consent-Tools wie Borlabs Cookie oder Cookiebot, die nicht nur das Banner anzeigen, sondern auch tatsächlich das Setzen von Cookies blockieren, bis die Einwilligung vorliegt.</p>
+                </div>
+            </div>
+
+            <!-- Spam & Bot Protection -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-robot service-icon"></i>
+                    <span class="service-title">Schutz vor Spam & Bots</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Kontaktformulare und Kommentarbereiche sind beliebte Angriffsziele für Spam-Bots – automatisierte Programme, die massenhaft Spam-Nachrichten versenden oder versuchen, Sicherheitslücken zu finden. Ungeschützte Formulare können innerhalb von Tagen hunderte Spam-Mails generieren. Das ist nicht nur nervig, sondern kann auch deinen Server belasten oder deine E-Mail-Adresse auf Blacklists bringen.</p>
+                    <p><strong>Wir schützen deine Formulare mit:</strong></p>
+                    <ul>
+                        <li>Honeypot-Technik (versteckte Felder, die nur Bots ausfüllen)</li>
+                        <li>Google reCAPTCHA (das "Ich bin kein Roboter"-Häkchen)</li>
+                        <li>Double-Opt-In bei Newsletter-Anmeldungen</li>
+                        <li>Rate-Limiting (maximal X Anfragen pro Zeiteinheit)</li>
+                        <li>Serverseitige Validierung</li>
+                    </ul>
+                    <p>Wichtig ist die Balance: Zu strenge Spam-Filter können auch echte Anfragen blockieren. Wir setzen auf Lösungen, die effektiv Spam verhindern, aber die Nutzererfahrung nicht beeinträchtigen. Ein gut geschütztes Formular spart dir Zeit, Nerven und schützt deine Website vor Missbrauch.</p>
+                </div>
+            </div>
+
+            <!-- Sichere Logins -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-key service-icon"></i>
+                    <span class="service-title">Sichere Logins & Passwörter</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Schwache Passwörter sind eine der häufigsten Ursachen für gehackte Websites. "admin" als Benutzername und "12345" als Passwort? Klingt absurd, kommt aber noch immer vor. Hacker nutzen automatisierte Tools, die tausende gängige Passwörter durchprobieren. Ist das Admin-Passwort schwach, haben sie binnen Minuten Zugriff – mit potenziell verheerenden Folgen.</p>
+                    <p><strong>Wir setzen auf mehrschichtige Sicherheit:</strong></p>
+                    <ul>
+                        <li>Starke Passwörter (mindestens 12 Zeichen, Mix aus Groß-, Kleinbuchstaben, Zahlen, Sonderzeichen)</li>
+                        <li>Einzigartige Benutzernamen (nicht "admin")</li>
+                        <li>Zwei-Faktor-Authentifizierung (zusätzlicher Code per App oder SMS)</li>
+                        <li>Limitierung von Login-Versuchen (nach X Fehlversuchen wird das Login gesperrt)</li>
+                        <li>Regelmäßige Passwort-Wechsel bei mehreren Nutzern</li>
+                    </ul>
+                    <p>Wir empfehlen Password-Manager wie 1Password oder Bitwarden – sie generieren und speichern sichere Passwörter, so dass du dir keine Sorgen um Passwort-Sicherheit machen musst. Ein gehackter Admin-Zugang kann dein gesamtes Business lahmlegen – sichere Logins sind keine Übervorsicht, sondern Grundvoraussetzung.</p>
+                </div>
+            </div>
+
+            <!-- Backup-Konzept -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-cloud-upload-alt service-icon"></i>
+                    <span class="service-title">Backup-Konzept erstellen</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Stell dir vor, deine Website ist plötzlich weg. Server-Absturz, Hackerangriff, versehentliches Löschen – solche Szenarien sind selten, aber sie passieren. Ohne Backup sind alle Inhalte, alle Kunden-Daten, alle E-Mails unwiederbringlich verloren. Ein funktionierendes Backup-Konzept ist deshalb nicht optional, sondern essentiell.</p>
+                    <p><strong>Unser mehrstufiges Backup-System:</strong></p>
+                    <ul>
+                        <li>Automatische tägliche Backups (idealerweise nachts, wenn wenig Traffic ist)</li>
+                        <li>Speicherung an mindestens zwei Orten (Server + externe Speicherung, z.B. Cloud)</li>
+                        <li>Mindestens 30 Tage Backup-Historie (falls ein Problem erst später bemerkt wird)</li>
+                        <li>Regelmäßige Test-Restores (ein Backup, das nicht wiederherstellbar ist, ist wertlos)</li>
+                        <li>Dokumentation des Restore-Prozesses</li>
+                    </ul>
+                    <p>Viele Hoster bieten Backup-Dienste an, aber verlasse dich nicht allein darauf – zusätzliche externe Backups erhöhen die Sicherheit. Mit einem soliden Backup-Konzept kannst du im Notfall deine Website innerhalb von Stunden wiederherstellen. Das gibt Sicherheit und schützt dein Business.</p>
+                </div>
+            </div>
+
+            <!-- Vertrauenssignale -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-award service-icon"></i>
+                    <span class="service-title">Vertrauenssignale (Siegel, Reviews)</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Vertrauen ist im Internet schwerer aufzubauen als offline – Besucher können dich nicht persönlich treffen, dein Büro nicht sehen, dir nicht in die Augen schauen. Deshalb sind Vertrauenssignale so wichtig. Sie überzeugen Besucher davon, dass sie bei dir in guten Händen sind – und erhöhen messbar die Conversion-Rate.</p>
+                    <p><strong>Wir integrieren verschiedene Vertrauenssignale:</strong></p>
+                    <ul>
+                        <li>Echte Kundenbewertungen (Google Reviews, Trusted Shops, ProvenExpert)</li>
+                        <li>Gütesiegel und Zertifikate (nur seriöse, keine selbst gemalten)</li>
+                        <li>Referenzen und Fallstudien mit konkreten Ergebnissen</li>
+                        <li>Presselogos (falls du in Medien erwähnt wurdest)</li>
+                        <li>SSL-Zertifikat (das kleine Schloss in der Browserzeile)</li>
+                        <li>Vollständiges Impressum und Datenschutzerklärung</li>
+                        <li>Echte Teammitglieder mit Fotos und Namen</li>
+                        <li>Transparente Kontaktmöglichkeiten (Telefon, E-Mail, ggf. Chat)</li>
+                    </ul>
+                    <p><strong>Wichtig:</strong> Alle Vertrauenssignale müssen echt sein. Gefälschte Bewertungen oder erfundene Zertifikate schaden mehr als sie nutzen. Authentizität schlägt Perfektion – eine ehrliche Bewertung mit 4,5 Sternen wirkt glaubwürdiger als zehn perfekte 5-Sterne-Bewertungen ohne Ecken und Kanten.</p>
+                </div>
+            </div>
+
+            <!-- Bildrechte -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-image service-icon"></i>
+                    <span class="service-title">Bildrechte korrekt beachten</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Bilder machen Websites lebendig – aber nur, wenn du sie rechtmäßig nutzen darfst. Bildrechte werden oft unterschätzt, dabei sind sie eine der häufigsten Abmahngründe. Einfach Bilder von Google runterladen und auf die Website packen? Das kann teuer werden. Professionelle Fotografen und Stockfoto-Anbieter verfolgen Rechtsverletzungen systematisch – Abmahnungen kosten schnell mehrere tausend Euro.</p>
+                    <p><strong>Wir achten penibel auf korrekte Bildrechte:</strong></p>
+                    <ul>
+                        <li>Eigene Fotos (selbst fotografiert = keine rechtlichen Probleme, aber Achtung bei Personen: Model-Release nötig)</li>
+                        <li>Lizenzierte Stockfotos von seriösen Anbietern (Shutterstock, Adobe Stock, Unsplash etc.)</li>
+                        <li>Korrekte Lizenzbedingungen beachten (manche verlangen Namensnennung)</li>
+                        <li>Keine Bilder von Google oder Social Media (außer ausdrücklich erlaubt)</li>
+                        <li>Bei beauftragten Fotografen: klare vertragliche Regelung der Nutzungsrechte</li>
+                    </ul>
+                    <p>Wir dokumentieren die Bildquellen und Lizenzen, falls später Nachweise nötig sind. Vorsicht auch bei Markenlogos, Gebäuden oder Kunstwerken – auch hier gibt es Rechte zu beachten. Lieber einmal mehr nachfragen als eine teure Abmahnung riskieren.</p>
+                </div>
+            </div>
+
+            <!-- Externe Tools -->
+            <div class="service-item">
+                <div class="service-header">
+                    <i class="fas fa-plug service-icon"></i>
+                    <span class="service-title">Externe Tools rechtskonform nutzen</span>
+                    <i class="fas fa-chevron-down expand-indicator"></i>
+                </div>
+                <div class="service-content">
+                    <p>Moderne Websites nutzen oft externe Dienste: Google Fonts für Schriftarten, Google Analytics für Statistiken, YouTube für Videos, Social-Media-Plugins. Das Problem: Diese Tools übertragen häufig Daten in die USA oder andere Drittländer – und das ist datenschutzrechtlich heikel. Seit dem "Schrems II"-Urteil 2020 gelten verschärfte Anforderungen für solche Datenübermittlungen.</p>
+                    <p><strong>Wir setzen externe Tools datenschutzkonform ein:</strong></p>
+                    <ul>
+                        <li>Google Fonts lokal hosten statt von Google-Servern laden (verhindert Datenübertragung)</li>
+                        <li>Google Analytics nur mit Einwilligung, IP-Anonymisierung und Auftragsverarbeitungsvertrag (oder Alternativen wie Matomo nutzen)</li>
+                        <li>YouTube im "erweiterten Datenschutzmodus" einbinden oder nach Consent nachladen</li>
+                        <li>Social-Media-Plugins nur als Zwei-Klick-Lösung (erst nach aktiver Einwilligung)</li>
+                        <li>Bei allen externen Tools: Nennung in der Datenschutzerklärung</li>
+                    </ul>
+                    <p>Wir prüfen jedes Tool einzeln und wägen ab: Ist es wirklich nötig? Gibt es datenschutzfreundlichere Alternativen? Kann es lokal gehostet werden? So minimieren wir rechtliche Risiken und respektieren die Privatsphäre deiner Besucher.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment Section -->
+        <div class="risk-section">
+            <h2><i class="fas fa-exclamation-circle"></i> Risiken bei Verstößen einschätzen</h2>
+            <div class="risk-content">
+                <p style="text-align: center; margin-bottom: 30px;">Wie hoch ist das Risiko einer Abmahnung wirklich? Muss man wegen jeder Kleinigkeit Panik haben? Die Wahrheit liegt dazwischen: Ja, es gibt Abmahnungen – aber meist treffen sie die offensichtlichsten Verstöße. Wer die grundlegenden Pflichten erfüllt, reduziert das Risiko erheblich.</p>
+                
+                <div class="risk-list">
+                    <div class="risk-item">
+                        <i class="fas fa-file-invoice"></i>
+                        <strong>Fehlendes Impressum</strong>
+                        <span>Häufigster Abmahngrund</span>
+                    </div>
+                    <div class="risk-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Mangelhafte Datenschutzerklärung</strong>
+                        <span>Kann teuer werden</span>
+                    </div>
+                    <div class="risk-item">
+                        <i class="fas fa-cookie"></i>
+                        <strong>Unzulässige Cookie-Nutzung</strong>
+                        <span>Ohne Einwilligung riskant</span>
+                    </div>
+                    <div class="risk-item">
+                        <i class="fas fa-camera"></i>
+                        <strong>Bildrechtsverletzungen</strong>
+                        <span>Mehrere tausend Euro möglich</span>
+                    </div>
+                    <div class="risk-item">
+                        <i class="fas fa-bullhorn"></i>
+                        <strong>Irreführende Werbung</strong>
+                        <span>Abmahnungen von Mitbewerbern</span>
+                    </div>
+                    <div class="risk-item">
+                        <i class="fas fa-tag"></i>
+                        <strong>Fehlende Preisangaben</strong>
+                        <span>Bei Online-Shops kritisch</span>
+                    </div>
+                </div>
+
+                <p style="text-align: center; margin-top: 30px;">Bußgelder nach DSGVO sind bei kleinen Unternehmen selten und meist nicht existenzbedrohend – außer bei groben, vorsätzlichen Verstößen. Abmahnungen von Mitbewerbern oder spezialisierten Kanzleien sind realistischer.</p>
+                
+                <p style="text-align: center; margin-top: 20px; font-size: 1.15em;"><strong>Die gute Nachricht:</strong> Mit korrektem Impressum, vollständiger Datenschutzerklärung, Cookie-Consent und sauberen Bildrechten bist du auf der sicheren Seite. Perfektion ist nicht nötig – aber die Basics müssen stimmen. Wir helfen dir, die wichtigsten Risiken zu identifizieren und abzusichern, damit du beruhigt schlafen kannst.</p>
+                </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>Bereit für eine rechtssichere Website?</h2>
+            <p>Du möchtest sichergehen, dass deine Website rechtlich sauber und technisch geschützt ist? Lass uns gemeinsam dafür sorgen!</p>
+            <a href="/kontakt" class="cta-button">
+                <i class="fas fa-envelope"></i> Jetzt Kontakt aufnehmen
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle service items
+        document.querySelectorAll('.service-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Prevent closing when clicking links inside content
+                if (e.target.tagName === 'A') return;
+                
+                const wasActive = this.classList.contains('active');
+                
+                // Close all items
+                document.querySelectorAll('.service-item').forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                });
+                
+                // Open clicked item if it wasn't active
+                if (!wasActive) {
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll for hero icons
+        document.querySelectorAll('.hero-icon-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.05)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

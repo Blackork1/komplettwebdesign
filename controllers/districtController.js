@@ -72,7 +72,7 @@ export function renderWebdesignBerlinHub(req, res) {
 
   const services = [
     {
-      name: "Webdesign & UX",
+      name: "<a href='/webdesign-berlin/design-ux-ui' style='color:var(--wd-accent)'>Webdesign & UX</a>",
       description: "Maßgeschneiderte Layouts, die Markenwerte transportieren und Nutzer sicher zur Anfrage führen.",
       features: [
         "<strong>Responsive</strong> für Desktop, Tablet & Smartphone",
@@ -125,6 +125,34 @@ export function renderWebdesignBerlinHub(req, res) {
       image: {
         src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1761069237/admin_gallery/bupxdaaopyjco898drrl.webp",
         alt: "E-Commerce & Buchungensysteme Grafik "
+      }
+    },
+    {
+      name: "<a href='/webdesign-berlin/rechtliches-sicherheit' style='color:var(--wd-accent)'>Rechtliches und Sicherheit</a>",
+      description: "Rechtlich einwandfrei, technisch geschützt, vertrauenswürdig",
+      features: [
+        "<strong>Impressumspflicht</strong> ist erfüllt",
+        "<strong>Datenschutzerklärung</strong> nach DSGVO",
+        "<strong>Coockie-Banner</strong> rechtssichere",
+        "<strong>Schutz</strong> vor Spam & Bots"
+      ],
+      image: {
+        src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1762705635/admin_gallery/swxxej4dyupgnp7vzzds.webp",
+        alt: "Rechtliches und Sicherheit Grafik"
+      }
+    },
+    {
+      name: "<a href='/webdesign-berlin/inhalte-texte-content' style='color:var(--wd-accent)'>Inhalte & Texte</a>",
+      description: "überzeugend, verständlich, authentisch",
+      features: [
+        "<strong>Must-haves</strong> auf der Startseite",
+        "<strong>Vertrauenswürdig</strong> über mich Seite",
+        "<strong>Textlänge</strong> richtig Wählen",
+        "<strong>Blog</strong> wichtig oder nicht?"
+      ],
+      image: {
+        src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655275/admin_gallery/hjvleomny0wd8xxtjnzi.webp",
+        alt: "Inhalte & Texte Grafik"
       }
     }
   ];

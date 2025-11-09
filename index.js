@@ -56,6 +56,10 @@ import industriesRoutes from './routes/industries.js';
 import adminIndustriesRoutes from './routes/adminIndustries.js';
 import ratgeberRoutes from './routes/ratgeberRoutes.js';
 import adminRatgeberRoutes from './routes/adminRatgeberRoutes.js';
+import testRouter from './routes/testRouter.js';
+import adminLeistungenRoutes from './routes/adminLeistungenRoutes.js';
+import leistungenRoutes from './routes/leistungenRoutes.js';
+
 
 import Stripe from 'stripe';
 
@@ -221,7 +225,9 @@ app.use(industriesRoutes);
 app.use('/admin', adminIndustriesRoutes);
 app.use(ratgeberRoutes);
 app.use(adminRatgeberRoutes);
-
+app.use(testRouter);
+app.use(adminLeistungenRoutes);
+app.use(leistungenRoutes);
 
 // Sitemap
 app.use("/", sitemapRoutes);

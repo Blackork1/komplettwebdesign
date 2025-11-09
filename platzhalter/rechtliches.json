@@ -1,0 +1,237 @@
+{
+  "page": {
+    "slug": "rechtliches-sicherheit",
+    "title": "Rechtliches, Sicherheit & Vertrauen",
+    "subtitle": "Wenn deine Website sauber und sicher ist",
+    "meta_description": "Sorge dafür, dass deine Website rechtlich einwandfrei, technisch geschützt und vertrauenswürdig ist. Vermeide Abmahnungen und baue Vertrauen bei deinen Besuchern auf.",
+    "hero": {
+      "title": "Rechtliches, Sicherheit & Vertrauen",
+      "subtitle": "Wenn deine Website sauber und sicher ist – rechtlich einwandfrei, technisch geschützt, vertrauenswürdig",
+      "icons": [
+        {
+          "icon": "fa-shield-halved",
+          "label": "Rechtssicher"
+        },
+        {
+          "icon": "fa-lock",
+          "label": "Geschützt"
+        },
+        {
+          "icon": "fa-certificate",
+          "label": "Vertrauenswürdig"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "DSGVO, Impressumspflicht, Cookie-Banner – viele Website-Betreiber fühlen sich überfordert. Abmahnungen und Bußgelder verunsichern, besonders Einsteiger und kleine Unternehmen. Rechtsverstöße können teuer werden, Sicherheitslücken deine Website lahmlegen."
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Wir kümmern uns um alles: Von der korrekten Datenschutzerklärung über sichere Backups bis zu Vertrauenssignalen. Du konzentrierst dich auf dein Business, während deine Website auf solidem rechtlichen und technischen Fundament steht."
+      }
+    },
+    "description": [
+      "Eine professionelle Website braucht mehr als gutes Design und starke Inhalte – sie muss auch rechtlich einwandfrei und technisch sicher sein. Klingt trocken? Ist aber existenziell wichtig. Rechtsverstöße können teure Abmahnungen nach sich ziehen, Sicherheitslücken können deine Website lahmlegen oder Kundendaten gefährden. Gleichzeitig sind Vertrauenssignale entscheidend dafür, ob Besucher zu Kunden werden.",
+      "Wir kümmern uns darum, dass deine Website nicht nur gut aussieht, sondern auch rechtlich abgesichert und technisch geschützt ist. Von der korrekten Datenschutzerklärung über sichere Backups bis zu Vertrauenssignalen, die deine Conversion-Rate steigern – wir decken alle wichtigen Bereiche ab. So kannst du dich auf dein Business konzentrieren, während deine Website auf solidem rechtlichen und technischen Fundament steht."
+    ],
+    "services": [
+      {
+        "id": "impressum",
+        "icon": "fa-file-contract",
+        "title": "Impressumspflicht (DE/EU)",
+        "intro": "In Deutschland und den meisten EU-Ländern gilt: Fast jede geschäftliche Website braucht ein Impressum. Die Impressumspflicht ist keine bürokratische Schikane, sondern soll Transparenz schaffen – Besucher sollen wissen, mit wem sie es zu tun haben. Fehlt das Impressum oder ist es unvollständig, drohen Abmahnungen mit Kosten von mehreren hundert bis tausend Euro.",
+        "content": [
+          "Wir erstellen für dich ein vollständiges Impressum mit allen notwendigen Angaben. Das Impressum muss von jeder Seite aus mit maximal zwei Klicks erreichbar sein – typischerweise im Footer verlinkt. Wir achten darauf, dass dein Impressum alle Anforderungen erfüllt und rechtssicher ist."
+        ],
+        "highlights": [
+          "Vollständiger Name bzw. Firmenname und Rechtsform",
+          "Vollständige Anschrift (kein Postfach)",
+          "Kontaktdaten (E-Mail und Telefon)",
+          "Vertretungsberechtigte bei juristischen Personen",
+          "Registereintrag und Umsatzsteuer-ID (falls vorhanden)",
+          "Branchenspezifische Pflichtangaben (z.B. Aufsichtsbehörde, Berufskammer)"
+        ]
+      },
+      {
+        "id": "datenschutz",
+        "icon": "fa-user-shield",
+        "title": "Mindestangaben Datenschutzerklärung",
+        "intro": "Seit der DSGVO (Datenschutz-Grundverordnung) 2018 ist die Datenschutzerklärung Pflicht für praktisch jede Website. Sie informiert Besucher darüber, welche personenbezogenen Daten erhoben werden, zu welchem Zweck und wie sie geschützt werden. Eine fehlende oder unvollständige Datenschutzerklärung kann Bußgelder bis zu 20 Millionen Euro oder 4% des Jahresumsatzes nach sich ziehen – auch wenn solche Höchststrafen selten sind, solltest du das Thema ernst nehmen.",
+        "content": [
+          "Wir erstellen eine vollständige Datenschutzerklärung, die alle Mindestangaben enthält. Jede Website ist anders, deshalb gibt es keine Standard-Datenschutzerklärung, die für alle passt. Wir passen die Datenschutzerklärung an deine konkret genutzten Tools und Dienste an – nur so ist sie rechtssicher."
+        ],
+        "highlights": [
+          "Name und Kontaktdaten des Verantwortlichen",
+          "Zweck der Datenverarbeitung und Rechtsgrundlage (z.B. berechtigtes Interesse, Einwilligung)",
+          "Speicherdauer",
+          "Rechte der Betroffenen (Auskunft, Löschung, Widerspruch etc.)",
+          "Information über alle eingesetzten Tools (Analytics, Social Media, Newsletter etc.)",
+          "Details zu Cookies und Tracking"
+        ]
+      },
+      {
+        "id": "cookie-banner",
+        "icon": "fa-cookie-bite",
+        "title": "Cookie-Banner rechtssicher einsetzen",
+        "intro": "Cookies sind kleine Datenpakete, die Websites im Browser speichern – für verschiedene Zwecke wie Session-Verwaltung, Statistiken oder Werbung. Seit dem \"Cookie-Urteil\" des EuGH 2019 gilt: Nicht zwingend notwendige Cookies dürfen nur mit aktiver Einwilligung gesetzt werden. Ein Cookie-Banner, der automatisch alle Cookies akzeptiert, ist nicht rechtskonform.",
+        "content": [
+          "Wir implementieren Cookie-Banner, die alle Anforderungen erfüllen. Technisch notwendige Cookies (z.B. für den Warenkorb) dürfen ohne Einwilligung gesetzt werden – aber nur diese. Tools wie Google Analytics, Facebook Pixel oder YouTube-Videos brauchen Einwilligung. Wir verwenden Cookie-Consent-Tools wie Borlabs Cookie oder Cookiebot, die nicht nur das Banner anzeigen, sondern auch tatsächlich das Setzen von Cookies blockieren, bis die Einwilligung vorliegt."
+        ],
+        "highlights": [
+          "Einwilligung vor dem Setzen nicht-notwendiger Cookies (kein Pre-Ticking)",
+          "Gleich prominente Ablehnen-Option wie Akzeptieren-Option",
+          "Detaillierte Information über alle Cookie-Kategorien",
+          "Einfache Widerrufsmöglichkeit",
+          "Dokumentation der Einwilligung"
+        ]
+      },
+      {
+        "id": "spam-schutz",
+        "icon": "fa-robot",
+        "title": "Schutz vor Spam & Bots",
+        "intro": "Kontaktformulare und Kommentarbereiche sind beliebte Angriffsziele für Spam-Bots – automatisierte Programme, die massenhaft Spam-Nachrichten versenden oder versuchen, Sicherheitslücken zu finden. Ungeschützte Formulare können innerhalb von Tagen hunderte Spam-Mails generieren. Das ist nicht nur nervig, sondern kann auch deinen Server belasten oder deine E-Mail-Adresse auf Blacklists bringen.",
+        "content": [
+          "Wir schützen deine Formulare mit verschiedenen Methoden. Wichtig ist die Balance: Zu strenge Spam-Filter können auch echte Anfragen blockieren. Wir setzen auf Lösungen, die effektiv Spam verhindern, aber die Nutzererfahrung nicht beeinträchtigen. Ein gut geschütztes Formular spart dir Zeit, Nerven und schützt deine Website vor Missbrauch."
+        ],
+        "highlights": [
+          "Honeypot-Technik (versteckte Felder, die nur Bots ausfüllen)",
+          "Google reCAPTCHA (das \"Ich bin kein Roboter\"-Häkchen)",
+          "Double-Opt-In bei Newsletter-Anmeldungen",
+          "Rate-Limiting (maximal X Anfragen pro Zeiteinheit)",
+          "Serverseitige Validierung"
+        ]
+      },
+      {
+        "id": "sichere-logins",
+        "icon": "fa-key",
+        "title": "Sichere Logins & Passwörter nutzen",
+        "intro": "Schwache Passwörter sind eine der häufigsten Ursachen für gehackte Websites. \"admin\" als Benutzername und \"12345\" als Passwort? Klingt absurd, kommt aber noch immer vor. Hacker nutzen automatisierte Tools, die tausende gängige Passwörter durchprobieren. Ist das Admin-Passwort schwach, haben sie binnen Minuten Zugriff – mit potenziell verheerenden Folgen.",
+        "content": [
+          "Wir setzen auf mehrschichtige Sicherheit. Wir empfehlen Password-Manager wie 1Password oder Bitwarden – sie generieren und speichern sichere Passwörter, so dass du dir keine Sorgen um Passwort-Sicherheit machen musst. Ein gehackter Admin-Zugang kann dein gesamtes Business lahmlegen – sichere Logins sind keine Übervorsicht, sondern Grundvoraussetzung."
+        ],
+        "highlights": [
+          "Starke Passwörter (mindestens 12 Zeichen, Mix aus Groß-, Kleinbuchstaben, Zahlen, Sonderzeichen)",
+          "Einzigartige Benutzernamen (nicht \"admin\")",
+          "Zwei-Faktor-Authentifizierung (zusätzlicher Code per App oder SMS)",
+          "Limitierung von Login-Versuchen (nach X Fehlversuchen wird das Login gesperrt)",
+          "Regelmäßige Passwort-Wechsel bei mehreren Nutzern"
+        ]
+      },
+      {
+        "id": "backup-konzept",
+        "icon": "fa-cloud-upload-alt",
+        "title": "Backup-Konzept erstellen",
+        "intro": "Stell dir vor, deine Website ist plötzlich weg. Server-Absturz, Hackerangriff, versehentliches Löschen – solche Szenarien sind selten, aber sie passieren. Ohne Backup sind alle Inhalte, alle Kunden-Daten, alle E-Mails unwiederbringlich verloren. Ein funktionierendes Backup-Konzept ist deshalb nicht optional, sondern essentiell.",
+        "content": [
+          "Wir richten ein mehrstufiges Backup-System ein. Viele Hoster bieten Backup-Dienste an, aber verlasse dich nicht allein darauf – zusätzliche externe Backups erhöhen die Sicherheit. Mit einem soliden Backup-Konzept kannst du im Notfall deine Website innerhalb von Stunden wiederherstellen. Das gibt Sicherheit und schützt dein Business."
+        ],
+        "highlights": [
+          "Automatische tägliche Backups (idealerweise nachts, wenn wenig Traffic ist)",
+          "Speicherung an mindestens zwei Orten (Server + externe Speicherung, z.B. Cloud)",
+          "Mindestens 30 Tage Backup-Historie (falls ein Problem erst später bemerkt wird)",
+          "Regelmäßige Test-Restores (ein Backup, das nicht wiederherstellbar ist, ist wertlos)",
+          "Dokumentation des Restore-Prozesses"
+        ]
+      },
+      {
+        "id": "vertrauenssignale",
+        "icon": "fa-award",
+        "title": "Vertrauenssignale (Siegel, Reviews etc.)",
+        "intro": "Vertrauen ist im Internet schwerer aufzubauen als offline – Besucher können dich nicht persönlich treffen, dein Büro nicht sehen, dir nicht in die Augen schauen. Deshalb sind Vertrauenssignale so wichtig. Sie überzeugen Besucher davon, dass sie bei dir in guten Händen sind – und erhöhen messbar die Conversion-Rate.",
+        "content": [
+          "Wir integrieren verschiedene Vertrauenssignale auf deiner Website. Wichtig: Alle Vertrauenssignale müssen echt sein. Gefälschte Bewertungen oder erfundene Zertifikate schaden mehr als sie nutzen. Authentizität schlägt Perfektion – eine ehrliche Bewertung mit 4,5 Sternen wirkt glaubwürdiger als zehn perfekte 5-Sterne-Bewertungen ohne Ecken und Kanten."
+        ],
+        "highlights": [
+          "Echte Kundenbewertungen (Google Reviews, Trusted Shops, ProvenExpert)",
+          "Gütesiegel und Zertifikate (nur seriöse, keine selbst gemalten)",
+          "Referenzen und Fallstudien mit konkreten Ergebnissen",
+          "Presselogos (falls du in Medien erwähnt wurdest)",
+          "SSL-Zertifikat (das kleine Schloss in der Browserzeile)",
+          "Vollständiges Impressum und Datenschutzerklärung",
+          "Echte Teammitglieder mit Fotos und Namen",
+          "Transparente Kontaktmöglichkeiten (Telefon, E-Mail, ggf. Chat)"
+        ]
+      },
+      {
+        "id": "bildrechte",
+        "icon": "fa-image",
+        "title": "Bildrechte korrekt beachten",
+        "intro": "Bilder machen Websites lebendig – aber nur, wenn du sie rechtmäßig nutzen darfst. Bildrechte werden oft unterschätzt, dabei sind sie eine der häufigsten Abmahngründe. Einfach Bilder von Google runterladen und auf die Website packen? Das kann teuer werden. Professionelle Fotografen und Stockfoto-Anbieter verfolgen Rechtsverletzungen systematisch – Abmahnungen kosten schnell mehrere tausend Euro.",
+        "content": [
+          "Wir achten penibel auf korrekte Bildrechte. Wir dokumentieren die Bildquellen und Lizenzen, falls später Nachweise nötig sind. Vorsicht auch bei Markenlogos, Gebäuden oder Kunstwerken – auch hier gibt es Rechte zu beachten. Lieber einmal mehr nachfragen als eine teure Abmahnung riskieren."
+        ],
+        "highlights": [
+          "Eigene Fotos (selbst fotografiert = keine rechtlichen Probleme, aber Achtung bei Personen: Model-Release nötig)",
+          "Lizenzierte Stockfotos von seriösen Anbietern (Shutterstock, Adobe Stock, Unsplash etc.)",
+          "Korrekte Lizenzbedingungen beachten (manche verlangen Namensnennung)",
+          "Keine Bilder von Google oder Social Media (außer ausdrücklich erlaubt)",
+          "Bei beauftragten Fotografen: klare vertragliche Regelung der Nutzungsrechte"
+        ]
+      },
+      {
+        "id": "externe-tools",
+        "icon": "fa-plug",
+        "title": "Externe Tools (Fonts, Analytics) rechtskonform nutzen",
+        "intro": "Moderne Websites nutzen oft externe Dienste: Google Fonts für Schriftarten, Google Analytics für Statistiken, YouTube für Videos, Social-Media-Plugins. Das Problem: Diese Tools übertragen häufig Daten in die USA oder andere Drittländer – und das ist datenschutzrechtlich heikel. Seit dem \"Schrems II\"-Urteil 2020 gelten verschärfte Anforderungen für solche Datenübermittlungen.",
+        "content": [
+          "Wir setzen externe Tools datenschutzkonform ein. Wir prüfen jedes Tool einzeln und wägen ab: Ist es wirklich nötig? Gibt es datenschutzfreundlichere Alternativen? Kann es lokal gehostet werden? So minimieren wir rechtliche Risiken und respektieren die Privatsphäre deiner Besucher."
+        ],
+        "highlights": [
+          "Google Fonts lokal hosten statt von Google-Servern laden (verhindert Datenübertragung)",
+          "Google Analytics nur mit Einwilligung, IP-Anonymisierung und Auftragsverarbeitungsvertrag (oder Alternativen wie Matomo nutzen)",
+          "YouTube im \"erweiterten Datenschutzmodus\" einbinden oder nach Consent nachladen",
+          "Social-Media-Plugins nur als Zwei-Klick-Lösung (erst nach aktiver Einwilligung)",
+          "Bei allen externen Tools: Nennung in der Datenschutzerklärung"
+        ]
+      }
+    ],
+    "risks": {
+      "title": "Risiken bei Verstößen einschätzen",
+      "intro": "Wie hoch ist das Risiko einer Abmahnung wirklich? Muss man wegen jeder Kleinigkeit Panik haben? Die Wahrheit liegt dazwischen: Ja, es gibt Abmahnungen – aber meist treffen sie die offensichtlichsten Verstöße. Wer die grundlegenden Pflichten erfüllt, reduziert das Risiko erheblich.",
+      "items": [
+        {
+          "icon": "fa-file-invoice",
+          "title": "Fehlendes Impressum",
+          "description": "Häufigster Abmahngrund"
+        },
+        {
+          "icon": "fa-shield-alt",
+          "title": "Mangelhafte Datenschutzerklärung",
+          "description": "Kann teuer werden"
+        },
+        {
+          "icon": "fa-cookie",
+          "title": "Unzulässige Cookie-Nutzung",
+          "description": "Ohne Einwilligung riskant"
+        },
+        {
+          "icon": "fa-camera",
+          "title": "Bildrechtsverletzungen",
+          "description": "Mehrere tausend Euro möglich"
+        },
+        {
+          "icon": "fa-bullhorn",
+          "title": "Irreführende Werbung",
+          "description": "Abmahnungen von Mitbewerbern"
+        },
+        {
+          "icon": "fa-tag",
+          "title": "Fehlende Preisangaben",
+          "description": "Bei Online-Shops kritisch"
+        }
+      ],
+      "conclusion": [
+        "Bußgelder nach DSGVO sind bei kleinen Unternehmen selten und meist nicht existenzbedrohend – außer bei groben, vorsätzlichen Verstößen. Abmahnungen von Mitbewerbern oder spezialisierten Kanzleien sind realistischer.",
+        "Die gute Nachricht: Mit korrektem Impressum, vollständiger Datenschutzerklärung, Cookie-Consent und sauberen Bildrechten bist du auf der sicheren Seite. Perfektion ist nicht nötig – aber die Basics müssen stimmen. Wir helfen dir, die wichtigsten Risiken zu identifizieren und abzusichern, damit du beruhigt schlafen kannst."
+      ]
+    },
+    "cta": {
+      "title": "Bereit für eine rechtssichere Website?",
+      "text": "Du möchtest sichergehen, dass deine Website rechtlich sauber und technisch geschützt ist? Lass uns gemeinsam dafür sorgen!",
+      "buttonText": "Jetzt Kontakt aufnehmen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}

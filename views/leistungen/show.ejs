@@ -1,0 +1,857 @@
+<%- include('../partials/head', { title, description, ogImage }) %>
+<%- include('../partials/header') %>
+<%
+  // Basis-Variablen für Schema.org
+  const baseUrl = (typeof canonicalBaseUrl !== 'undefined'
+    ? canonicalBaseUrl
+    : 'https://www.komplettwebdesign.de'
+  ).replace(/\/$/, '');
+
+  const pageSlug = page.slug || '';
+  const pageUrl = `${baseUrl}/webdesign-berlin/${pageSlug}`;
+  const pageName = page.title || (page.hero && page.hero.title) || title || 'Leistung';
+  const pageDesc = description || page.meta_description || (page.hero && page.hero.subtitle) || '';
+  const orgName = typeof schemaOrgName !== 'undefined' ? schemaOrgName : 'Komplett Webdesign';
+  const orgLogo = typeof schemaOrgLogo !== 'undefined' ? schemaOrgLogo : `${baseUrl}/images/LogoWhite.svg`;
+  const orgSameAs = (typeof schemaOrgSameAs !== 'undefined' && Array.isArray(schemaOrgSameAs))
+    ? schemaOrgSameAs
+    : [];
+
+  // Organization
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": baseUrl + "#organization",
+    "name": orgName,
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": orgLogo
+    }
+  };
+  if (orgSameAs.length) {
+    orgSchema.sameAs = orgSameAs;
+  }
+
+  // WebSite
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": baseUrl + "#website",
+    "url": baseUrl,
+    "name": orgName,
+    "publisher": {
+      "@id": baseUrl + "#organization"
+    }
+  };
+
+  // BreadcrumbList
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": pageUrl + "#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Startseite",
+        "item": baseUrl + "/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Webdesign-Berlin",
+        "item": baseUrl + "/webdesign-berlin"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": pageName,
+        "item": pageUrl
+      }
+    ]
+  };
+
+  // Service + OfferCatalog aus den Services dieser Unterseite
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": pageUrl + "#service",
+    "serviceType": pageName,
+    "name": pageName,
+    "url": pageUrl,
+    "description": pageDesc,
+    "provider": {
+      "@id": baseUrl + "#organization"
+    }
+  };
+
+  if (page.services && page.services.length) {
+    serviceSchema.hasOfferCatalog = {
+      "@type": "OfferCatalog",
+      "name": pageName + " – Leistungen",
+      "itemListElement": page.services.map(function(s, index) {
+        return {
+          "@type": "Offer",
+          "position": index + 1,
+          "itemOffered": {
+            "@type": "Service",
+            "name": s.title,
+            "description": s.intro || (s.content && s.content[0]) || ''
+          }
+        };
+      })
+    };
+  }
+
+  // WebPage (verweist auf Service & Breadcrumb)
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": pageUrl + "#webpage",
+    "url": pageUrl,
+    "name": pageName,
+    "description": pageDesc,
+    "isPartOf": {
+      "@id": baseUrl + "#website"
+    },
+    "about": {
+      "@id": pageUrl + "#service"
+    },
+    "breadcrumb": {
+      "@id": pageUrl + "#breadcrumb"
+    }
+  };
+
+  if (ogImage) {
+    webPageSchema.primaryImageOfPage = {
+      "@type": "ImageObject",
+      "url": ogImage
+    };
+  }
+%>
+
+<!-- Schema.org: Organization -->
+<script type="application/ld+json">
+  <%- JSON.stringify(orgSchema, null, 2) %>
+</script>
+
+<!-- Schema.org: WebSite -->
+<script type="application/ld+json">
+  <%- JSON.stringify(websiteSchema, null, 2) %>
+</script>
+
+<!-- Schema.org: BreadcrumbList -->
+<script type="application/ld+json">
+  <%- JSON.stringify(breadcrumbSchema, null, 2) %>
+</script>
+
+<!-- Schema.org: Service + Leistungen-Katalog -->
+<script type="application/ld+json">
+  <%- JSON.stringify(serviceSchema, null, 2) %>
+</script>
+
+<!-- Schema.org: WebPage -->
+<script type="application/ld+json">
+  <%- JSON.stringify(webPageSchema, null, 2) %>
+</script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* Farb- & Typo-Setup für Leistungsseiten */
+  .leistungen-page {
+    --wd-bg: #f3f0eb;
+    --wd-sand: #faf6f0;
+    --wd-ink: #3d3b3b;
+    --wd-muted: #5e5346;
+    --wd-accent: #d75b36;
+    --wd-accent-strong: #b24322;
+    --wd-border: rgba(215, 91, 54, 0.22);
+
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.7;
+    color: var(--wd-ink);
+    background: linear-gradient(180deg, var(--wd-sand) 0%, #ffffff 60%);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* Breadcrumbs oben */
+  .breadcrumbs {
+    font-size: 0.85em;
+    color: #8b8175;
+    margin-bottom: 25px;
+  }
+
+  .breadcrumbs ol {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breadcrumbs li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .breadcrumbs li+li::before {
+    content: "/";
+    color: #c7bfb4;
+  }
+
+  .breadcrumbs a {
+    color: #8b8175;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--wd-accent-strong);
+  }
+
+  .breadcrumbs li[aria-current="page"] {
+    color: var(--wd-ink);
+    font-weight: 500;
+  }
+
+  /* Hero Section (Layout unverändert, Farben angepasst) */
+  .hero {
+    background: linear-gradient(135deg,
+        var(--wd-accent) 0%,
+        var(--wd-accent-strong) 100%);
+    color: #ffffff;
+    padding: 80px 40px;
+    border-radius: 20px;
+    margin-bottom: 60px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    height: auto;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle,
+        rgba(255, 255, 255, 0.16) 0%,
+        transparent 70%);
+    animation: pulse 15s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+      transform: translate(-10%, -10%) scale(1.1);
+    }
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero h1 {
+    font-size: 2.8em;
+    margin-bottom: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .hero-subtitle {
+    font-size: 1.3em;
+    opacity: 0.96;
+    max-width: 800px;
+    margin: 0 auto 30px;
+    line-height: 1.6;
+  }
+
+  .hero-icons {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+
+  .hero-icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hero-icon-item i {
+    font-size: 2.5em;
+    opacity: 0.95;
+    color: #ffffff;
+  }
+
+  .hero-icon-item span {
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+
+  .hero-icon-item:hover {
+    transform: translateY(-5px);
+  }
+
+  /* Problem-Solution Section */
+  .problem-solution {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .card {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--wd-border);
+    transition: transform 0.3s ease, box-shadow 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    border-color: var(--wd-accent);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .card-icon {
+    font-size: 2.5em;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    color: #ffffff;
+  }
+
+  .problem-card .card-icon {
+    background: linear-gradient(135deg,
+        var(--wd-accent-strong) 0%,
+        var(--wd-accent) 100%);
+  }
+
+  .solution-card .card-icon {
+    background: linear-gradient(135deg, var(--wd-accent) 0%, #f4a17a 100%);
+  }
+
+  .card h2 {
+    font-size: 1.8em;
+    color: var(--wd-ink);
+  }
+
+  .card p {
+    font-size: 1.05em;
+    line-height: 1.8;
+    color: var(--wd-muted);
+  }
+
+  /* Services Intro */
+  .services-intro {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 15px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--wd-border);
+    text-align: center;
+  }
+
+  .services-intro h2 {
+    font-size: 2em;
+    margin-bottom: 15px;
+    color: var(--wd-ink);
+  }
+
+  .services-intro p {
+    color: var(--wd-muted) !important;
+  }
+
+  /* Services Grid */
+  .services-grid {
+    display: grid;
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .service-item {
+    background: #ffffff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--wd-border);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .service-item:hover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    border-color: var(--wd-accent);
+  }
+
+  .service-header {
+    background: linear-gradient(135deg,
+        #86351dbd 0%,
+        var(--wd-accent-strong) 100%);
+    color: #ffffff;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .service-icon {
+    font-size: 2.5em;
+    min-width: 60px;
+  }
+
+  .service-title {
+    font-size: 1.6em;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .expand-indicator {
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
+  }
+
+  .service-content {
+    padding: 0 30px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.5s ease;
+  }
+
+  .service-item.active .service-content {
+    max-height: 2000px;
+    padding: 30px;
+  }
+
+  .service-content p {
+    margin-bottom: 15px;
+    font-size: 1.05em;
+    line-height: 1.8;
+    color: var(--wd-muted);
+  }
+
+  .service-content ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 20px 0;
+  }
+
+  .service-content li {
+    padding: 10px 0 10px 30px;
+    position: relative;
+    font-size: 1.05em;
+    color: var(--wd-muted);
+  }
+
+  .service-content li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--wd-accent);
+    font-weight: bold;
+    font-size: 1.2em;
+  }
+
+  .service-item.active .expand-indicator {
+    transform: rotate(180deg);
+  }
+
+  /* Risk Assessment Section */
+  .risk-section {
+    background: linear-gradient(135deg, #fff4ec 0%, var(--wd-sand) 100%);
+    color: var(--wd-ink);
+    padding: 50px 40px;
+    border-radius: 15px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--wd-border);
+  }
+
+  .risk-section h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--wd-ink);
+  }
+
+  .risk-section h2 i {
+    color: var(--wd-accent);
+    margin-right: 8px;
+  }
+
+  .risk-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .risk-content>p {
+    font-size: 1.05em;
+    line-height: 1.8;
+    color: var(--wd-muted);
+  }
+
+  .risk-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+  }
+
+  .risk-item {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(215, 91, 54, 0.16);
+    transition: transform 0.3s ease, box-shadow 0.3s ease,
+      border-color 0.3s ease;
+    color: var(--wd-muted);
+  }
+
+  .risk-item i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    display: block;
+    color: var(--wd-accent);
+  }
+
+  .risk-item strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    color: var(--wd-ink);
+  }
+
+  .risk-item:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    border-color: var(--wd-accent);
+  }
+
+  .risk-content p[style] {
+    color: var(--wd-muted) !important;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    background: linear-gradient(135deg,
+        var(--wd-accent) 0%,
+        var(--wd-accent-strong) 100%);
+    color: #ffffff;
+    padding: 60px 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  }
+
+  .cta-section h2 {
+    font-size: 2.2em;
+    margin-bottom: 20px;
+  }
+
+  .cta-section p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    opacity: 0.98;
+  }
+
+  .cta-button {
+    display: inline-block;
+    background: #ffffff;
+    color: var(--wd-accent-strong);
+    padding: 18px 45px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  .cta-button i {
+    margin-right: 8px;
+  }
+
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    background: #fdf8f4;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 {
+      font-size: 2em;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1em;
+    }
+
+    .problem-solution {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-icons {
+      gap: 20px;
+    }
+
+    .service-header {
+      padding: 20px;
+    }
+
+    .service-title {
+      font-size: 1.3em;
+    }
+
+    .card {
+      padding: 25px;
+    }
+
+    .hero {
+      padding: 50px 25px;
+    }
+
+    .service-content {
+      padding: 0 20px;
+    }
+
+    .service-item.active .service-content {
+      padding: 20px;
+    }
+  }
+</style>
+
+<main class="leistungen-page">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+      <ol>
+        <li><a href="/">Startseite</a></li>
+        <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
+        <li aria-current="page"><%- page.title %></li>
+      </ol>
+    </nav>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1><%= page.hero.title %></h1>
+
+        <% if (page.hero.subtitle) { %>
+        <p class="hero-subtitle"><%= page.hero.subtitle %></p>
+        <% } %> <% if (page.hero.icons && page.hero.icons.length) { %>
+        <div class="hero-icons">
+          <% page.hero.icons.forEach(function(icon){ %>
+          <div class="hero-icon-item">
+            <i class="fas <%= icon.icon %>"></i>
+            <span><%= icon.label %></span>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Problem & Solution Cards -->
+    <% if ( (page.intro.problem && (page.intro.problem.title ||
+    page.intro.problem.text)) || (page.intro.solution &&
+    (page.intro.solution.title || page.intro.solution.text)) ) { %>
+    <section class="problem-solution">
+      <% if (page.intro.problem && (page.intro.problem.title ||
+      page.intro.problem.text)) { %>
+      <div class="card problem-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h2><%= page.intro.problem.title || 'Das Problem' %></h2>
+        </div>
+        <% if (page.intro.problem.text) { %>
+        <p><%= page.intro.problem.text %></p>
+        <% } %>
+      </div>
+      <% } %> <% if (page.intro.solution && (page.intro.solution.title ||
+      page.intro.solution.text)) { %>
+      <div class="card solution-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h2><%= page.intro.solution.title || 'Unsere Lösung' %></h2>
+        </div>
+        <% if (page.intro.solution.text) { %>
+        <p><%= page.intro.solution.text %></p>
+        <% } %>
+      </div>
+      <% } %>
+    </section>
+    <% } %>
+
+    <!-- Description / Einleitungstexte -->
+    <% if (page.description && page.description.length) { %>
+    <section class="services-intro">
+      <h2>Unsere Leistungen im Detail</h2>
+      <% page.description.forEach(function(paragraph) { %>
+      <p><%= paragraph %></p>
+      <% }) %>
+    </section>
+    <% } %>
+
+    <!-- Services Grid (Akkordeon) -->
+    <% if (page.services && page.services.length) { %>
+    <section class="services-grid">
+      <% page.services.forEach(function(service) { %>
+      <div class="service-item">
+        <div class="service-header">
+          <% if (service.icon) { %>
+          <i class="fas <%= service.icon %> service-icon"></i>
+          <% } %>
+          <span class="service-title"><%= service.title %></span>
+          <i class="fas fa-chevron-down expand-indicator"></i>
+        </div>
+        <div class="service-content">
+          <% if (service.intro) { %>
+          <p><%= service.intro %></p>
+          <% } %> <% if (service.content && service.content.length) { %> <%
+          service.content.forEach(function(block) { %>
+          <p><%= block %></p>
+          <% }) %> <% } %> <% if (service.highlights &&
+          service.highlights.length) { %>
+          <ul>
+            <% service.highlights.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+    </section>
+    <% } %>
+
+    <!-- Risk Assessment Section -->
+    <% if ( (page.risks && (page.risks.title || page.risks.intro)) ||
+    (page.risks.items && page.risks.items.length) || (page.risks.conclusion &&
+    page.risks.conclusion.length) ) { %>
+    <section class="risk-section">
+      <% if (page.risks.title) { %>
+      <h2>
+        <i class="fas fa-exclamation-circle"></i>
+        <%= page.risks.title %>
+      </h2>
+      <% } %>
+
+      <div class="risk-content">
+        <% if (page.risks.intro) { %>
+        <p style="text-align: center; margin-bottom: 30px">
+          <%= page.risks.intro %>
+        </p>
+        <% } %> <% if (page.risks.items && page.risks.items.length) { %>
+        <div class="risk-list">
+          <% page.risks.items.forEach(function(risk) { %>
+          <div class="risk-item">
+            <% if (risk.icon) { %>
+            <i class="fas <%= risk.icon %>"></i>
+            <% } %> <% if (risk.title) { %>
+            <strong><%= risk.title %></strong>
+            <% } %> <% if (risk.description) { %>
+            <span><%= risk.description %></span>
+            <% } %>
+          </div>
+          <% }) %>
+        </div>
+        <% } %> <% if (page.risks.conclusion && page.risks.conclusion.length) {
+        %> <% page.risks.conclusion.forEach(function(text) { %>
+        <p style="text-align: center; margin-top: 20px; font-size: 1.05em">
+          <%= text %>
+        </p>
+        <% }) %> <% } %>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- CTA Section -->
+    <% if (page.cta && (page.cta.title || page.cta.text)) { %>
+    <section class="cta-section">
+      <% if (page.cta.title) { %>
+      <h2><%= page.cta.title %></h2>
+      <% } %> <% if (page.cta.text) { %>
+      <p><%= page.cta.text %></p>
+      <% } %> <% if (page.cta.buttonLink && page.cta.buttonText) { %>
+      <a href="<%= page.cta.buttonLink %>" class="cta-button">
+        <i class="fas fa-envelope"></i> <%= page.cta.buttonText %>
+      </a>
+      <% } %>
+    </section>
+    <% } %>
+  </div>
+</main>
+
+<script>
+  // Toggle service items (Akkordeon)
+  document.querySelectorAll(".service-item").forEach((item) => {
+    item.addEventListener("click", function(e) {
+      if (e.target.tagName === "A" || e.target.closest("a")) return;
+
+      const wasActive = this.classList.contains("active");
+
+      document.querySelectorAll(".service-item").forEach((other) => {
+        other.classList.remove("active");
+      });
+
+      if (!wasActive) {
+        this.classList.add("active");
+      }
+    });
+  });
+
+  // Hover-Effekt für Hero-Icons
+  document.querySelectorAll(".hero-icon-item").forEach((item) => {
+    item.addEventListener("mouseenter", function() {
+      this.style.transform = "translateY(-5px) scale(1.05)";
+    });
+
+    item.addEventListener("mouseleave", function() {
+      this.style.transform = "translateY(0) scale(1)";
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

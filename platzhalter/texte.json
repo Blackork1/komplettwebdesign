@@ -1,0 +1,253 @@
+{
+  "page": {
+    "slug": "inhalte-texte-content",
+    "title": "Inhalte & Texte (Content)",
+    "subtitle": "Was du sagst, ist wichtiger als wie du es sagst",
+    "meta_description": "Lass uns Inhalte und Texte erstellen, die deine Expertise zeigen, Vertrauen aufbauen und deine Besucher zu Kunden machen.",
+    "hero": {
+      "title": "Inhalte & Texte (Content)",
+      "subtitle": "Was du sagst, ist wichtiger als wie du es sagst – überzeugend, verständlich, authentisch",
+      "icons": [
+        {
+          "icon": "fa-pen-fancy",
+          "label": "Überzeugende Texte"
+        },
+        {
+          "icon": "fa-comments",
+          "label": "Zielgruppengerecht"
+        },
+        {
+          "icon": "fa-bullseye",
+          "label": "Conversion-fokussiert"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "Viele Unternehmen unterschätzen, wie wichtig durchdachte Texte sind. Sie kopieren Formulierungen von der Konkurrenz, packen ihre Startseite voll mit Fachbegriffen oder schreiben aus reiner Pflichterfüllung. Das Ergebnis: Besucher kommen, verstehen nicht sofort den Mehrwert und verlassen die Seite wieder."
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Wir entwickeln Inhalte, die ankommen. Texte, die deine Expertise zeigen, ohne abzuheben. Die komplexe Themen verständlich machen. Die Vertrauen aufbauen und zum Handeln motivieren. Dabei achten wir nicht nur darauf, was gesagt wird, sondern auch wie – mit der richtigen Tonalität und passenden Länge."
+      }
+    },
+    "description": [
+      "Das schönste Design nützt nichts, wenn die Inhalte nicht überzeugen. Deine Texte entscheiden darüber, ob Besucher verstehen, was du anbietest – und ob sie dir vertrauen. Guter Content beantwortet Fragen, bevor sie gestellt werden. Er spricht die Sprache deiner Zielgruppe, weckt Emotionen und führt zum Handeln. Schlechter Content hingegen verwirrt, langweilt oder klingt wie tausend andere Websites.",
+      "Wir entwickeln Inhalte, die ankommen. Texte, die deine Expertise zeigen, ohne abzuheben. Die komplexe Themen verständlich machen. Die Vertrauen aufbauen und zum Handeln motivieren. Dabei achten wir nicht nur darauf, was gesagt wird, sondern auch wie – mit der richtigen Tonalität, der passenden Länge und einer Struktur, die zum Weiterlesen einlädt."
+    ],
+    "services": [
+      {
+        "id": "startseite-musthaves",
+        "icon": "fa-star",
+        "title": "Must-haves auf der Startseite",
+        "intro": "Deine Startseite hat eine klare Aufgabe: In wenigen Sekunden vermitteln, wer du bist, was du anbietest und warum Besucher hier richtig sind. Klingt simpel, scheitert aber erstaunlich oft. Viele Startseiten beginnen mit belanglosen Floskeln wie \"Herzlich willkommen\" oder verlieren sich in Details, bevor das Wesentliche klar wird.",
+        "content": [
+          "Wir strukturieren deine Startseite nach bewährten Prinzipien: Ganz oben steht eine prägnante Headline, die dein Hauptangebot auf den Punkt bringt. Diese Struktur funktioniert, weil sie der natürlichen Aufmerksamkeitsspanne folgt – vom Allgemeinen zum Spezifischen."
+        ],
+        "highlights": [
+          "Prägnante Headline, die das Hauptangebot auf den Punkt bringt",
+          "Kurzer Absatz, der das Versprechen konkretisiert",
+          "Drei bis vier Hauptleistungen übersichtlich präsentiert",
+          "Social Proof (Kundenstimmen oder Referenzen)",
+          "Klarer Call-to-Action für den nächsten Schritt",
+          "Weitere Details: Team, Philosophie, Auszeichnungen"
+        ]
+      },
+      {
+        "id": "ueber-uns-seite",
+        "icon": "fa-users",
+        "title": "Vertrauenswürdige \"Über mich/uns\"-Seite",
+        "intro": "Die \"Über uns\"-Seite gehört zu den meistbesuchten Seiten jeder Website – und wird trotzdem oft stiefmütterlich behandelt. Dabei ist sie deine Chance, eine persönliche Verbindung aufzubauen. Menschen kaufen von Menschen, nicht von anonymen Unternehmen. Eine gute \"Über uns\"-Seite macht dich greifbar, sympathisch und vertrauenswürdig.",
+        "content": [
+          "Wir schreiben \"Über uns\"-Seiten, die echte Geschichten erzählen. Nicht die langweilige Aufzählung von Gründungsjahr und Mitarbeiterzahl. Das Ziel: Der Besucher denkt am Ende \"Die verstehen mich\" oder \"Mit denen möchte ich zusammenarbeiten\"."
+        ],
+        "highlights": [
+          "Warum gibt es dein Unternehmen? Welches Problem löst du?",
+          "Was treibt dich an? Wer steht dahinter?",
+          "Authentische Fotos vom Team, von den Räumen oder von der Arbeit",
+          "Werte und Philosophie ohne ins Allgemeine abzugleiten",
+          "Echte Geschichten statt Jahreszahlen und Mitarbeiterzahlen"
+        ]
+      },
+      {
+        "id": "leistungen-erklaeren",
+        "icon": "fa-list-check",
+        "title": "Leistungen klar & verständlich erklären",
+        "intro": "Viele Unternehmen machen es Besuchern unnötig schwer zu verstehen, was genau sie anbieten. Statt klarer Beschreibungen gibt es schwammige Formulierungen, Fachbegriffe ohne Erklärung oder eine Aufzählung von Schlagworten, die mehr Fragen aufwerfen als beantworten. \"Ganzheitliche Lösungen\", \"innovative Konzepte\", \"maßgeschneiderte Strategien\" – klingt nett, sagt aber nichts aus.",
+        "content": [
+          "Wir beschreiben deine Leistungen so, dass auch jemand ohne Vorwissen sofort versteht, was du tust und wem du hilfst. Statt \"Wir bieten Webdesign\" schreiben wir \"Wir gestalten moderne Websites, die deine Kunden überzeugen und dir messbar mehr Anfragen bringen\". Der Unterschied: Klarheit statt Nebel."
+        ],
+        "highlights": [
+          "Aussagekräftige Überschrift für jede Leistung",
+          "Verständliche Erklärung in einfachen Worten",
+          "Konkrete Beispiele oder Anwendungsfälle",
+          "Nutzen für den Kunden klar herausstellen",
+          "Jede Leistung bekommt eigene Seite oder eigenen Abschnitt"
+        ]
+      },
+      {
+        "id": "textlaenge",
+        "icon": "fa-ruler-horizontal",
+        "title": "Passende Textlänge finden",
+        "intro": "Wie lang sollte ein Text sein? Die unbefriedigende, aber ehrliche Antwort: So lang wie nötig, so kurz wie möglich. Ein komplexes Thema braucht mehr Worte als eine einfache Dienstleistung. Eine Produktseite hat andere Anforderungen als ein Blogartikel. Die Kunst liegt darin, alle wichtigen Informationen zu vermitteln, ohne den Leser zu langweilen.",
+        "content": [
+          "Wir orientieren uns am Informationsbedarf deiner Zielgruppe. Wichtig ist, dass der Text nicht künstlich gestreckt wird – lieber prägnant auf den Punkt als redundant und langatmig. Die Faustregel: Der Text ist fertig, wenn alles Wichtige gesagt ist – nicht früher, aber auch nicht später."
+        ],
+        "highlights": [
+          "Einfache Angebote: 200-300 Worte",
+          "Erklärungsbedürftige Leistungen: 500-800 Worte oder mehr",
+          "Längere Texte mit Zwischenüberschriften strukturieren",
+          "Absätze und gelegentliche Aufzählungen für Lesbarkeit",
+          "Kein künstliches Strecken – Qualität vor Quantität"
+        ]
+      },
+      {
+        "id": "features-benefits",
+        "icon": "fa-trophy",
+        "title": "Features vs. Benefits verständlich machen",
+        "intro": "Einer der häufigsten Fehler in Website-Texten: Es werden Features aufgezählt statt Benefits erklärt. Features sind Eigenschaften oder Funktionen – \"5 Jahre Garantie\", \"SSL-Verschlüsselung\", \"responsive Design\". Benefits sind der konkrete Nutzen für den Kunden – \"Du bist langfristig abgesichert\", \"Deine Daten sind sicher\", \"Deine Website funktioniert auf jedem Gerät perfekt\".",
+        "content": [
+          "Menschen interessieren sich nicht primär für technische Details, sondern dafür, was diese Details für sie bedeuten. Wir übersetzen Features systematisch in Benefits. Die Formel: Feature + \"Das bedeutet für dich\" = Benefit. Der Fokus liegt immer auf dem Kundennutzen, nicht auf deinen Eigenschaften. Das macht Texte relevanter und überzeugender."
+        ],
+        "highlights": [
+          "Features in Benefits übersetzen mit der Formel: Feature + \"Das bedeutet für dich\"",
+          "Statt \"Wir arbeiten mit modernstem CMS\" → \"Du kannst Inhalte jederzeit selbst aktualisieren\"",
+          "Fokus auf Kundennutzen statt auf eigene Eigenschaften",
+          "Konkrete Vorteile statt technischer Details",
+          "Was bedeutet es für den Kunden? Diese Frage immer beantworten"
+        ]
+      },
+      {
+        "id": "blog-themenwahl",
+        "icon": "fa-blog",
+        "title": "Brauche ich einen Blog? Themenwahl",
+        "intro": "Die Frage nach einem Blog spaltet Unternehmen. Manche pflegen begeistert einen Unternehmensblog, andere sehen darin nur zusätzliche Arbeit ohne erkennbaren Nutzen. Die Wahrheit liegt dazwischen: Ein Blog kann extrem wertvoll sein – wenn er strategisch geplant und regelmäßig gepflegt wird.",
+        "content": [
+          "Ein Blog hilft dir bei mehreren Zielen: Er stärkt deine Expertise, verbessert dein Google-Ranking durch zusätzliche Inhalte und bietet Mehrwert für deine Zielgruppe. Die entscheidende Frage ist: Hast du relevante Themen und die Kapazität für regelmäßige Beiträge? Wichtig: Lieber einmal im Monat ein guter Artikel als wöchentlich lieblose Pflichtbeiträge. Qualität schlägt Quantität – auch beim Bloggen."
+        ],
+        "highlights": [
+          "Blog stärkt deine Expertise und Positionierung",
+          "Verbessert Google-Ranking durch zusätzliche Inhalte",
+          "Bietet Mehrwert für deine Zielgruppe",
+          "Gute Themen: Kundenfragen beantworten, aktuelle Entwicklungen, praktische Tipps",
+          "Qualität vor Quantität – lieber ein guter Artikel pro Monat als wöchentlich lieblos",
+          "Themenplan entwickeln für langfristige Planung"
+        ]
+      },
+      {
+        "id": "lesbare-texte",
+        "icon": "fa-glasses",
+        "title": "Lesbare & scannbare Texte schreiben",
+        "intro": "Die meisten Menschen lesen Websites nicht Wort für Wort – sie scannen. Die Augen springen von Überschrift zu Überschrift, von Fettgedrucktem zu Aufzählungen. Erst wenn etwas relevant erscheint, wird genauer gelesen. Texte, die dieses Verhalten ignorieren, werden schlicht übersehen.",
+        "content": [
+          "Wir schreiben Texte, die auch beim Scannen funktionieren. Ein guter Text lässt sich in 30 Sekunden überfliegen und in drei Minuten vollständig erfassen. Der Leser kann selbst entscheiden, wie tief er einsteigen möchte. Diese Flexibilität erhöht die Chance, dass deine Botschaft ankommt."
+        ],
+        "highlights": [
+          "Aussagekräftige Zwischenüberschriften, die bereits eine Geschichte erzählen",
+          "Kurze Absätze mit maximal drei bis fünf Zeilen",
+          "Gelegentliche Aufzählungen für klare Strukturen",
+          "Hervorhebungen wichtiger Begriffe (sparsam eingesetzt)",
+          "Klare Gedankenführung ohne Umwege",
+          "In 30 Sekunden überfliegbar, in 3 Minuten vollständig erfassbar"
+        ]
+      },
+      {
+        "id": "referenzen-bewertungen",
+        "icon": "fa-quote-left",
+        "title": "Referenzen & Bewertungen einbauen",
+        "intro": "Nichts überzeugt so sehr wie die Meinung zufriedener Kunden. Referenzen und Bewertungen sind sozialer Beweis – sie zeigen, dass andere bereits gute Erfahrungen mit dir gemacht haben. Das baut Vertrauen auf und senkt die Hemmschwelle zur Kontaktaufnahme erheblich.",
+        "content": [
+          "Wir integrieren Kundenstimmen strategisch auf deiner Website. Wichtig: Echte Bewertungen mit erkennbaren Menschen wirken deutlich glaubwürdiger als anonyme Lobeshymnen. Die Regel: Lieber drei authentische Kundenstimmen als zehn generische. Qualität und Glaubwürdigkeit zählen mehr als Quantität."
+        ],
+        "highlights": [
+          "1-3 kurze Testimonials auf der Startseite für Vertrauen",
+          "Dedizierte Referenzseite mit ausführlichen Erfolgsgeschichten",
+          "Mit Foto, Name, Unternehmen und konkreten Ergebnissen",
+          "Externe Bewertungen einbinden (Google, ProvenExpert, branchenspezifische Plattformen)",
+          "Authentizität vor Quantität – echte Menschen, echte Erfahrungen"
+        ]
+      },
+      {
+        "id": "tonalitaet",
+        "icon": "fa-volume-up",
+        "title": "Du oder Sie? Tonalität festlegen",
+        "intro": "Du oder Sie? Locker oder professionell? Diese Entscheidung prägt den gesamten Ton deiner Website und sollte gut überlegt sein. Es gibt keine universal richtige Antwort – es kommt auf deine Branche, deine Zielgruppe und deine Positionierung an.",
+        "content": [
+          "Wir helfen dir, die passende Tonalität zu finden. Wichtig ist Konsistenz: Einmal festgelegt, zieht sich die gewählte Ansprache durch alle Texte. Auch der Sprachstil muss passen – lockere Ansprache verträgt sich nicht mit gestelzten Formulierungen. Wir entwickeln für dich einen Tone of Voice, der authentisch ist und deine Zielgruppe anspricht."
+        ],
+        "highlights": [
+          "\"Du\": Startups, Kreativagenturen, jüngere Zielgruppen (modern, nahbar, sympathisch)",
+          "\"Sie\": Rechtsanwälte, Steuerberater, B2B für Konzerne (seriös, professionell)",
+          "Konsistenz durch alle Texte hindurch",
+          "Sprachstil muss zur Ansprache passen",
+          "Tone of Voice entwickeln: authentisch und zielgruppengerecht",
+          "Mischformen vermeiden – wirken unsicher"
+        ]
+      },
+      {
+        "id": "inhalte-aktuell",
+        "icon": "fa-sync-alt",
+        "title": "Inhalte aktuell halten ohne alles neu zu schreiben",
+        "intro": "Eine Website ist nie wirklich fertig – sie muss gepflegt und aktualisiert werden. Veraltete Inhalte schaden deiner Glaubwürdigkeit und deinem Google-Ranking. Aber bedeutet das, dass du ständig alles neu schreiben musst? Nein, mit der richtigen Strategie hältst du deine Inhalte aktuell, ohne von vorne zu beginnen.",
+        "content": [
+          "Wir unterscheiden zwischen zeitlosen und zeitgebundenen Inhalten. Kleine Updates reichen oft: Ein Datum aktualisieren, einen Absatz ergänzen, ein altes Beispiel durch ein neues ersetzen. Bei Blogartikeln lohnt sich gelegentlich ein \"Content Refresh\" – bestehende Artikel werden überarbeitet, ergänzt und neu veröffentlicht. Das ist effizienter als ständig neue Artikel zu schreiben und hält deine Website trotzdem frisch."
+        ],
+        "highlights": [
+          "Zeitlose Inhalte (Leistungen, \"Über uns\"): ca. einmal jährlich updaten",
+          "Zeitgebundene Inhalte (News, Blog, Angebote): regelmäßiger pflegen",
+          "Kleine Updates reichen: Datum, Absatz ergänzen, Beispiel austauschen",
+          "\"Zuletzt aktualisiert\"-Datum signalisiert Aktualität",
+          "Content Refresh bei Blogartikeln: überarbeiten, ergänzen, neu veröffentlichen",
+          "Effizienter als ständig neue Artikel schreiben"
+        ]
+      }
+    ],
+    "risks": {
+      "title": "Risiken schwacher Inhalte & austauschbarer Texte",
+      "intro": "Keine Rechtsverstöße – aber klare wirtschaftliche Risiken: Schlechte oder unklare Inhalte kosten Vertrauen, Sichtbarkeit und Anfragen. Besucher verstehen nicht, was du anbietest, fühlen sich nicht abgeholt oder finden deine Seite gar nicht erst über Suchmaschinen.",
+      "items": [
+        {
+          "icon": "fa-door-open",
+          "title": "Hohe Absprungraten",
+          "description": "Besucher finden nicht sofort Antworten auf ihre Fragen und verlassen deine Seite nach wenigen Sekunden."
+        },
+        {
+          "icon": "fa-user-times",
+          "title": "Verlorenes Vertrauen",
+          "description": "Unklare, generische Texte wirken unprofessionell – deine Expertise kommt nicht rüber, du wirst austauschbar."
+        },
+        {
+          "icon": "fa-search",
+          "title": "Schwache Sichtbarkeit",
+          "description": "Ohne klar strukturierte, relevante Inhalte verschenkst du SEO-Potenzial und wirst seltener gefunden."
+        },
+        {
+          "icon": "fa-random",
+          "title": "Falsche Zielgruppe",
+          "description": "Wenn Texte zu technisch, zu allgemein oder am Thema vorbei sind, ziehst du die falschen Anfragen an."
+        },
+        {
+          "icon": "fa-hand-holding-usd",
+          "title": "Weniger Anfragen & Umsatz",
+          "description": "Ohne klare Nutzenkommunikation und Call-to-Actions springen Interessenten ab, bevor sie dich kontaktieren."
+        },
+        {
+          "icon": "fa-clone",
+          "title": "Keine Differenzierung",
+          "description": "Klingen deine Inhalte wie bei allen anderen, gehst du im Wettbewerb unter – trotz guter Leistung."
+        }
+      ],
+      "conclusion": [
+        "Die gute Nachricht: Du musst keine Romane schreiben. Schon klar strukturierte, zielgruppengerechte Texte mit klarer Botschaft machen einen enormen Unterschied für deine Wirkung nach außen.",
+        "Mit einem durchdachten Content-Konzept sorgst du dafür, dass Besucher dich verstehen, dir vertrauen und den nächsten Schritt gehen – statt unbemerkt wieder abzuspringen. Genau dabei unterstützen wir dich."
+      ]
+    },
+    "cta": {
+      "title": "Bereit für überzeugende Inhalte?",
+      "text": "Du brauchst Texte, die überzeugen statt nur zu füllen? Melde dich bei uns – wir entwickeln Inhalte, die deine Expertise zeigen und deine Besucher zu Kunden machen!",
+      "buttonText": "Jetzt Kontakt aufnehmen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}
