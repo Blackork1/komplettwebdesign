@@ -271,7 +271,8 @@
 
   <section class="wd-container wd-section" aria-labelledby="wd-contact-title">
     <div class="wd-contact">
-      <form action="/webdesign-berlin/kontakt" method="post" class="wd-contact__form">
+
+      <form action="/webdesign-berlin/kontakt" method="post" class="wd-contact__form" data-recaptcha="v3" data-recaptcha-action="webdesign_berlin_kontakt" enctype="multipart/form-data">
         <div class="wd-form-row">
           <div>
             <label for="contact-name">Name</label>
@@ -297,19 +298,20 @@
           <textarea id="contact-message" name="message" placeholder="Beschreibe kurz dein Projekt"></textarea>
         </div>
         <div>
-          <label for="contact-file">Datei hochladen (optional)</label>
-          <input id="contact-file" name="file" type="file" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg">
+          <label for="contact-file">Dateien hochladen (optional)</label>
+          <input id="contact-file" name="attachments" type="file" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" multiple aria-describedby="contact-file-hint">
+          <p id="contact-file-hint" class="wd-form-hint">Du kannst bis zu 10 Dateien (max. 15&nbsp;MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.</p>
         </div>
         <button type="submit" class="wd-btn wd-btn-primary">Kostenloses Erstgespräch sichern</button>
-      </form>
-      <div class="wd-contact__intro">
-        <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
-        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
-        <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
-        <figure class="wd-contact__visual">
-          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
-        </figure>
-      </div>
+        </form>
+        <div class="wd-contact__intro">
+          <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
+          <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
+          <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
+          <figure class="wd-contact__visual">
+            <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
+          </figure>
+        </div>
     </div>
   </section>
 </main>

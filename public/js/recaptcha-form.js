@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   function normaliseAction(action) {
@@ -46,8 +46,87 @@
     if (!form || form.dataset.recaptchaBound === 'true') return;
     form.dataset.recaptchaBound = 'true';
     var actionName = (form.dataset && form.dataset.recaptchaAction) || 'kontakt';
+    var tokenInput = ensureHiddenToken(form);
+    var pendingPromise = null;
 
-    form.addEventListener('submit', function(event) {
+    function requestToken() {
+      if (!window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
+        return Promise.reject(new Error('reCAPTCHA ist nicht bereit.'));
+      }
+      if (pendingPromise) return pendingPromise;
+
+      try {
+        pendingPromise = window.grecaptcha.execute(siteKey, { action: actionName })
+          .then(function (token) {
+            tokenInput.value = token || '';
+            return token;
+          })
+          .finally(function () {
+            pendingPromise = null;
+          });
+      } catch (err) {
+        pendingPromise = null;
+        return Promise.reject(err);
+      }
+
+      return pendingPromise;
+    }
+
+    function showError(err) {
+      console.error('reCAPTCHA Fehler:', err);
+      var message = (form.dataset && form.dataset.recaptchaError) ||
+        'Die reCAPTCHA-Validierung ist fehlgeschlagen. Bitte versuche es erneut.';
+      if (typeof window.alert === 'function') {
+        window.alert(message);
+      }
+    }
+
+    function detachInteractionHandlers() {
+      form.removeEventListener('focusin', onInteraction, true);
+      form.removeEventListener('pointerdown', onInteraction, true);
+      form.removeEventListener('click', onInteraction, true);
+    }
+
+    function prefetchToken() {
+      if (tokenInput.value) {
+        detachInteractionHandlers();
+        return;
+      }
+      requestToken().then(function () {
+        detachInteractionHandlers();
+      }).catch(function (err) {
+        console.warn('reCAPTCHA konnte nicht vorab geladen werden:', err);
+      });
+    }
+
+    function onInteraction(event) {
+      if (!event) {
+        prefetchToken();
+        return;
+      }
+      var target = event.target;
+      if (!target) {
+        prefetchToken();
+        return;
+      }
+      if (target === form) {
+        prefetchToken();
+        return;
+      }
+      if (typeof target.closest === 'function') {
+        var relatedForm = target.closest('form');
+        if (relatedForm && relatedForm !== form) {
+          return;
+        }
+      }
+      prefetchToken();
+    }
+
+    form.addEventListener('focusin', onInteraction, true);
+    form.addEventListener('pointerdown', onInteraction, true);
+    form.addEventListener('click', onInteraction, true);
+
+    form.addEventListener('submit', function (event) {
       if (!window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
         console.warn('reCAPTCHA ist noch nicht bereit.');
         return;
@@ -55,16 +134,10 @@
 
       event.preventDefault();
 
-      window.grecaptcha.execute(siteKey, { action: actionName }).then(function(token) {
-        ensureHiddenToken(form).value = token;
+      requestToken().then(function () {
         form.submit();
-      }).catch(function(err) {
-        console.error('reCAPTCHA Fehler:', err);
-        var message = (form.dataset && form.dataset.recaptchaError) ||
-          'Die reCAPTCHA-Validierung ist fehlgeschlagen. Bitte versuche es erneut.';
-        if (typeof window.alert === 'function') {
-          window.alert(message);
-        }
+      }).catch(function (err) {
+        showError(err);
       });
     });
   }
@@ -73,7 +146,7 @@
     if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
       window.grecaptcha.ready(callback);
     } else {
-      setTimeout(function() { waitForRecaptchaReady(callback); }, 150);
+      setTimeout(function () { waitForRecaptchaReady(callback); }, 20000);
     }
   }
 
@@ -84,8 +157,8 @@
     var forms = Array.prototype.slice.call(document.forms || []).filter(isEligibleForm);
     if (!forms.length) return;
 
-    waitForRecaptchaReady(function() {
-      forms.forEach(function(form) { bindForm(form, siteKey); });
+    waitForRecaptchaReady(function () {
+      forms.forEach(function (form) { bindForm(form, siteKey); });
     });
   }
 

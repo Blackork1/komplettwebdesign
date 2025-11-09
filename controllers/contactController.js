@@ -20,6 +20,8 @@ import { generateICS } from "../services/icsService.js";
 import { format } from "date-fns";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_ATTACHMENTS = 10;
+const MAX_TOTAL_ATTACHMENT_SIZE = 15 * 1024 * 1024; // 15 MB
 
 const LABEL_OVERRIDES = {
     name: "Name",
@@ -112,6 +114,33 @@ const createTransporter = () => nodemailer.createTransport({
     secure: Number(process.env.SMTP_PORT) === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
+
+const webdesignBerlinMulter = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_TOTAL_ATTACHMENT_SIZE }
+});
+
+export const webdesignBerlinUpload = (req, res, next) => {
+    webdesignBerlinMulter.array("attachments", MAX_ATTACHMENTS)(req, res, err => {
+        if (!err) return next();
+
+        let message = "Deine Dateien konnten nicht hochgeladen werden.";
+        if (err instanceof multer.MulterError) {
+            if (err.code === "LIMIT_FILE_SIZE") {
+                message = "Jede Datei darf maximal 15 MB groß sein.";
+            } else if (err.code === "LIMIT_FILE_COUNT") {
+                message = `Du kannst maximal ${MAX_ATTACHMENTS} Dateien hochladen.`;
+            } else if (err.code === "LIMIT_UNEXPECTED_FILE") {
+                message = "Es wurde ein unerwartetes Dateifeld hochgeladen.";
+            }
+        }
+
+        if (expectsJson(req)) {
+            return res.status(400).json({ success: false, message });
+        }
+        return res.status(400).send(message);
+    });
+};
 
 const escapeHtml = value => String(value)
     .replace(/&/g, "&amp;")
@@ -234,7 +263,7 @@ const buildHtmlSummary = rows => `
 `;
 
 
-const upload = multer({ dest: "uploads/" });
+const generalUpload = multer({ dest: "uploads/" });
 
 /* ---------- GET /kontakt --------------------------------------------- */
 export async function showForm(req, res) {
@@ -259,7 +288,7 @@ export const validate = [
 
 /* ---------- POST /kontakt -------------------------------------------- */
 export const processForm = [
-    upload.array("images"),
+    generalUpload.array("images"),
     validate,
     async (req, res) => {
 
@@ -436,6 +465,7 @@ export async function processWebdesignBerlinForm(req, res) {
     const normalized = normalizeWebdesignBerlinBody(req.body || {});
     const hasValidEmail = normalized.email && EMAIL_REGEX.test(normalized.email);
     const hasName = toCleanString(normalized.name);
+    const attachments = Array.isArray(req.files) ? req.files : [];
     if (!hasName || !hasValidEmail) {
         const message = "Bitte gib deinen Namen und eine gültige E-Mail-Adresse an.";
         if (expectsJson(req)) {
@@ -443,6 +473,24 @@ export async function processWebdesignBerlinForm(req, res) {
         }
         return res.status(422).send(message);
     }
+
+    if (attachments.length > MAX_ATTACHMENTS) {
+        const message = `Du kannst maximal ${MAX_ATTACHMENTS} Dateien hochladen.`;
+        if (expectsJson(req)) {
+            return res.status(400).json({ success: false, message });
+        }
+        return res.status(400).send(message);
+    }
+
+    const totalAttachmentSize = attachments.reduce((sum, file) => sum + (file?.size || 0), 0);
+    if (totalAttachmentSize > MAX_TOTAL_ATTACHMENT_SIZE) {
+        const message = "Die hochgeladenen Dateien überschreiten die maximale Gesamtgröße von 15 MB.";
+        if (expectsJson(req)) {
+            return res.status(400).json({ success: false, message });
+        }
+        return res.status(400).send(message);
+    }
+
 
     const addRow = (rows, label, value) => {
         if (Array.isArray(value)) {
@@ -467,6 +515,9 @@ export async function processWebdesignBerlinForm(req, res) {
     addRow(summaryRows, "Budget", normalized.budget);
     addRow(summaryRows, "Zeitplan", normalized.timeline);
     addRow(summaryRows, "Nachricht", normalized.message);
+    if (attachments.length) {
+        addRow(summaryRows, "Dateien", attachments.map(file => file.originalname));
+    }
     addRow(summaryRows, "UTM Source", normalized.utmSource);
     addRow(summaryRows, "UTM Medium", normalized.utmMedium);
     addRow(summaryRows, "UTM Kampagne", normalized.utmCampaign);
@@ -524,10 +575,18 @@ export async function processWebdesignBerlinForm(req, res) {
 
     const transporter = createTransporter();
     const greetingName = escapeHtml(normalized.name || "Interessent:in");
+    const attachmentListHtml = attachments.length
+        ? `<p>Folgende Dateien hast du übermittelt:</p><ul>${attachments
+            .map(file => `<li>${escapeHtml(file.originalname)}</li>`)
+            .join("")}</ul>`
+        : "";
+    const uploadHintHtml = `<p style="color:#6c757d;font-size:14px;">Hinweis: Du kannst bis zu ${MAX_ATTACHMENTS} Dateien mit insgesamt 15 MB senden.</p>`;
     const userHtml = `
         <p>Hallo <strong>${greetingName}</strong>,</p>
         <p>vielen Dank für deine Anfrage über unsere Seite Webdesign-Berlin. Wir haben die folgenden Angaben erhalten:</p>
         ${summaryHtml}
+        ${attachmentListHtml}
+        ${uploadHintHtml}
         <p>Wir melden uns in Kürze bei dir, um die nächsten Schritte zu besprechen.</p>
         <p>Mit freundlichen Grüßen<br>Dein Komplett Webdesign-Team</p>
     `;
@@ -535,6 +594,11 @@ export async function processWebdesignBerlinForm(req, res) {
         <p>Neue Anfrage über die Landingpage <strong>Webdesign Berlin</strong>.</p>
         ${summaryHtml}
     `;
+    const adminAttachments = attachments.map(file => ({
+        filename: file.originalname,
+        content: file.buffer,
+        contentType: file.mimetype
+    }));
 
     const mailPromises = [];
     if (hasValidEmail) {
@@ -553,7 +617,8 @@ export async function processWebdesignBerlinForm(req, res) {
             to: 'kontakt@komplettwebdesign.de',
             replyTo: hasValidEmail ? normalized.email : undefined,
             subject: `Neue Webdesign-Berlin-Anfrage von ${normalized.name}`,
-            html: adminHtml
+            html: adminHtml,
+            attachments: adminAttachments
         }).catch(err => console.error("❌ Fehler beim Versand (Admin Webdesign Berlin):", err))
     );
     await Promise.all(mailPromises);

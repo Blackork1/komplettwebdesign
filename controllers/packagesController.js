@@ -89,31 +89,61 @@ export async function listPackages(req, res) {
 // ────────────────────────────────────────────────────────────────────────────────
 export async function showPackage(req, res) {
   const slug = req.params.slug.toLowerCase();
+  let pack = null;
+  let slots = [];
+  let jsonLd = [];
+
   try {
     const { rows } = await pool.query(
       'SELECT * FROM packages WHERE LOWER(name) = $1 LIMIT 1',
       [slug]
     );
-    if (!rows.length) return res.status(404).send('Paket nicht gefunden');
+    if (rows.length) {
+      pack = rows[0];
+    }
+  } catch (err) {
+    console.error('❌ showPackage (DB):', err);
+  }
+  if (!pack) {
+    const fallbackPack = (mockPackages || []).find(mock => {
+      const mockSlug = String(mock.slug || mock.name || '').toLowerCase();
+      const mockName = String(mock.name || '').toLowerCase();
+      return mockSlug === slug || mockName === slug;
+    });
 
-    const pack = rows[0];
-    const slots = await getNextOpenSlots(3);
+    if (fallbackPack) {
+      pack = fallbackPack;
+    } else {
+      return res.status(404).send('Paket nicht gefunden');
+    }
+  }
+
+  try {
+    slots = await getNextOpenSlots(3);
+  } catch (err) {
+    console.error('❌ showPackage (slots):', err);
+    slots = [];
+  }
+
+  try {
 
     const baseUrl = resolveBaseUrl(req);
     const url = `${baseUrl}${req.originalUrl}`;
-    const jsonLd = buildPackageSchemas({ pack, url, baseUrl });
+    jsonLd = buildPackageSchemas({ pack, url, baseUrl });
 
-    res.render('package_detail', {
-      pack,
-      slots,
-      title: `Paket: ${pack.name} - Komplett Webdesign`,
-      description: `Details zu unserem Paket ${pack.name}.`,
-      jsonLd // ← hier rein
-    });
   } catch (err) {
-    console.error('❌ showPackage:', err);
-    res.status(500).send('Paket konnte nicht geladen werden.');
+    console.error('❌ showPackage (schema):', err);
+    jsonLd = [];
   }
+
+  res.render('package_detail', {
+    pack,
+    slots,
+    title: `Paket: ${pack.name} - Komplett Webdesign`,
+    description: `Details zu unserem Paket ${pack.name}.`,
+    jsonLd,
+    successMessage: null
+  });
 }
 
 export async function handleContact(req, res) {
