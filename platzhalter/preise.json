@@ -1,0 +1,273 @@
+{
+  "page": {
+    "slug": "kosten-preise-pakete",
+    "title": "Kosten, Preise & Pakete",
+    "subtitle": "Was eine Website wirklich kostet",
+    "hero": {
+      "title": "Kosten, Preise & Pakete",
+      "subtitle": "Was eine Website wirklich kostet – transparent, fair, ohne versteckte Kosten",
+      "icons": [
+        {
+          "icon": "fa-euro-sign",
+          "label": "Faire Preise"
+        },
+        {
+          "icon": "fa-file-invoice-dollar",
+          "label": "Transparente Kosten"
+        },
+        {
+          "icon": "fa-handshake",
+          "label": "Festpreise"
+        }
+      ]
+    },
+    "intro": {
+      "problem": {
+        "title": "Das Problem",
+        "text": "Von \"Website ab 10€ monatlich\" bis \"50.000€ und mehr\" – die Preisspanne verwirrt mehr, als sie hilft. Viele Interessenten sind überrascht von versteckten Kosten, unklaren Abrechnungsmodellen oder unrealistischen Versprechen. Was kostet eine Website wirklich?"
+      },
+      "solution": {
+        "title": "Unsere Lösung",
+        "text": "Wir bringen Klarheit in den Preis-Dschungel. Transparente Festpreise statt unkalkulierbarer Stundenabrechnungen. Drei klare Pakete ab 499€ – du wählst, was zu deinem Projekt passt. Inklusive Hosting, ohne versteckte Kosten, ohne böse Überraschungen."
+      }
+    },
+    "description": [
+      "Die Frage nach den Kosten für eine Website ist eine der häufigsten – und gleichzeitig eine der schwierigsten zu beantworten. Warum? Weil \"Website\" nicht gleich Website ist. Eine einfache Visitenkarte im Netz kostet anders als ein umfangreicher Online-Shop. Ein Do-it-yourself-Projekt mit Baukasten kostet anders als eine maßgeschneiderte Lösung vom Profi. Und die einmaligen Erstellungskosten sind nur ein Teil der Rechnung – die laufenden Kosten kommen noch dazu.",
+      "In diesem Bereich erklären wir dir transparent und realistisch, mit welchen Kosten du rechnen musst – sowohl in der Branche allgemein als auch konkret bei uns. Von der Domain über das Hosting bis zur professionellen Entwicklung: Wir zeigen dir, wo dein Budget hingeht und wie du die beste Lösung für deine Anforderungen findest. Keine versteckten Kosten, keine unrealistischen Versprechen – nur ehrliche Zahlen und fundierte Empfehlungen."
+    ],
+    "services": [
+      {
+        "id": "website-kosten-2025",
+        "icon": "fa-calculator",
+        "title": "Was kostet eine Website 2025?",
+        "intro": "Die Kosten für eine Website variieren 2025 stark je nach Umfang und Anforderungen. Am Markt liegt eine einfache Visitenkarten-Website mit 3-5 Seiten bei 500-3.000€. Professionelle Unternehmensseiten mit individuellem Design, 10-20 Seiten und erweiterten Funktionen kosten 3.000-15.000€. Komplexe E-Commerce-Lösungen oder maßgeschneiderte Webapplikationen können 15.000-50.000€ und deutlich mehr kosten.",
+        "content": [
+          "Diese Preisspanne erklärt sich durch unterschiedliche Faktoren: Template oder individuelles Design? Anzahl der Seiten und Funktionen? Content-Erstellung inklusive? Spezielle Features wie Buchungssysteme oder Shops? Bei uns erhältst du transparente Festpreise mit drei klaren Paketen – vom Einsteiger bis zum Premium-Angebot. Alle Preise verstehen sich als einmalige Investition plus geringes monatliches Hosting."
+        ],
+        "highlights": [
+          "Markt: Einfache Website 500-3.000€, Business 3.000-15.000€, E-Commerce 15.000-50.000€+",
+          "Bei uns: Drei klare Pakete mit Festpreisen",
+          "Basis-Paket: 499€ (Startseite + rechtliche Seiten) + 5€/Monat Hosting",
+          "Business-Paket: 899€ (2-5 Seiten, Kontaktformular, Gallery) + 10€/Monat Hosting",
+          "Premium-Paket: 1.499€ (bis 25 Seiten, Shop, Blog, CMS, Buchung) + 15€/Monat Hosting",
+          "Transparent und ohne versteckte Kosten"
+        ]
+      },
+      {
+        "id": "unsere-pakete",
+        "icon": "fa-boxes",
+        "title": "Unsere Pakete im Detail",
+        "intro": "Wir bieten drei durchdachte Pakete, die zu unterschiedlichen Bedürfnissen passen – vom schnellen Start bis zur umfangreichen Business-Lösung. Jedes Paket ist ein Festpreis ohne versteckte Kosten. Du weißt von Anfang an, was dich erwartet.",
+        "content": [
+          "Alle Pakete beinhalten: Responsives Design (mobile-optimiert), SSL-Zertifikat, Impressum & Datenschutzerklärung, Cookie-Banner (DSGVO-konform), Basis-SEO (Meta-Tags, Sitemap), Google Analytics Einrichtung, 30 Tage Support nach Go-Live. Der Unterschied liegt im Umfang der Seiten und Funktionen – wähle das Paket, das zu deinem Projekt passt."
+        ],
+        "highlights": [
+          "BASIS (499€ + 5€/Monat): Startseite + rechtliche Seiten – perfekt für schnellen Online-Start",
+          "BUSINESS (899€ + 10€/Monat): 2-5 Seiten (Über uns, Leistungen, Kontakt, Gallery, Speisekarte) – ideal für kleine Unternehmen",
+          "PREMIUM (1.499€ + 15€/Monat): Bis 25 Seiten, Terminbuchung, einfaches Shop-System, Blog, CMS zum selbst pflegen – für ambitionierte Projekte",
+          "Alle Pakete: Responsive, SSL, DSGVO, Basis-SEO, 30 Tage Support inklusive",
+          "Festpreise – keine Stundenabrechnung, keine Überraschungen"
+        ]
+      },
+      {
+        "id": "laufende-kosten",
+        "icon": "fa-calendar-alt",
+        "title": "Laufende Kosten: Hosting & Wartung",
+        "intro": "Mit der einmaligen Erstellung ist es nicht getan – eine Website verursacht auch laufende Kosten. Die gute Nachricht: Diese sind überschaubar und planbar. Am Markt liegen die jährlichen Grundkosten für Domain (10-30€), Hosting (50-500€), SSL-Zertifikat (0-100€) und Plugin-Lizenzen (0-500€) bei mindestens 100-200€ pro Jahr für den reinen Betrieb.",
+        "content": [
+          "Bei uns ist das Hosting bereits paketabhängig inkludiert: Basis 5€/Monat (60€/Jahr), Business 10€/Monat (120€/Jahr), Premium 15€/Monat (180€/Jahr). Darin enthalten sind Webspace, Domain, SSL-Zertifikat und technischer Support. Hinzu kommen optional Wartung und Content-Pflege – am Markt üblich sind 500-2.000€/Jahr für professionelle Wartung. Wir bieten flexible Wartungspakete: Wartung Basic 50€/Monat (Updates, Backups, Sicherheit), Wartung Plus 100€/Monat (+ monatliche Content-Änderungen bis 2 Stunden), Wartung Premium 200€/Monat (+ monatliche Content-Änderungen bis 5 Stunden, Priority-Support)."
+        ],
+        "highlights": [
+          "Markt-Grundkosten: 100-500€/Jahr (Domain, Hosting, SSL)",
+          "Bei uns inklusive: Hosting 5€/10€/15€ pro Monat (je nach Paket)",
+          "Enthalten: Webspace, Domain, SSL, technischer Support",
+          "Wartung Basic: 50€/Monat (Updates, Backups, Sicherheit)",
+          "Wartung Plus: 100€/Monat (+2h Content-Änderungen/Monat)",
+          "Wartung Premium: 200€/Monat (+5h Content-Änderungen/Monat, Priority-Support)"
+        ]
+      },
+      {
+        "id": "content-aenderungen",
+        "icon": "fa-edit",
+        "title": "Content-Änderungen & Anpassungen",
+        "intro": "Nach dem Go-Live möchtest du vielleicht Texte anpassen, Bilder austauschen oder neue Inhalte hinzufügen. Am Markt verlangen Webdesigner dafür 60-120€ pro Stunde. Kleinere Änderungen (Text anpassen, Bild austauschen) kosten oft 50-150€, größere Anpassungen (neue Sektion, Formular-Anpassung) 150-500€. Bei Content-intensiven Projekten summiert sich das schnell.",
+        "content": [
+          "Wir bieten dir mehrere Optionen: Premium-Paket mit CMS – Du pflegst selbst (kostenlos, wann immer du möchtest). Wartung Plus/Premium – Monatliche Änderungen inklusive (2h bzw. 5h). Einzelabrechnung – 75€/Stunde für spontane Anpassungen ohne Wartungspaket. Kleine Anpassungen (bis 30 Min.) – Pauschal 40€. So bleibst du flexibel und zahlst nur, was du wirklich brauchst."
+        ],
+        "highlights": [
+          "Markt: 60-120€/Stunde für Content-Änderungen",
+          "Kleine Änderungen am Markt: 50-150€, größere 150-500€",
+          "Bei uns: Premium-Paket mit CMS – du pflegst selbst (kostenlos)",
+          "Wartung Plus: 2h Änderungen/Monat inklusive (100€/Monat)",
+          "Wartung Premium: 5h Änderungen/Monat inklusive (200€/Monat)",
+          "Einzelabrechnung: 75€/Stunde oder 40€ pauschal (bis 30 Min.)"
+        ]
+      },
+      {
+        "id": "spezialfaelle",
+        "icon": "fa-file-alt",
+        "title": "Spezialfälle: One-Page, statisch, privat",
+        "intro": "Nicht jedes Projekt braucht eine umfangreiche Website. Am Markt kostet eine professionelle One-Page-Website 500-2.500€ – sie eignet sich perfekt für Freelancer, kleine Dienstleister oder Events. Eine statische Website (ohne CMS) liegt bei 1.000-3.000€, hat aber den Nachteil, dass Änderungen nur durch einen Entwickler möglich sind.",
+        "content": [
+          "Für private Websites gibt es günstigere Alternativen: Mit Baukästen (Wix, Jimdo) ab 10-30€ monatlich oder selbst mit WordPress für 5-15€ monatlich plus Zeitaufwand. Durch einen Freelancer kostet eine private Website 300-1.500€. Unser Basis-Paket (499€) ist ideal für One-Page-Projekte oder einfache Startseiten – professionell umgesetzt, rechtssicher, und trotzdem erschwinglich."
+        ],
+        "highlights": [
+          "Markt One-Page: 500-2.500€ (Freelancer), statisch 1.000-3.000€",
+          "DIY Baukasten: 10-30€/Monat, WordPress selbst: 5-15€/Monat + Zeit",
+          "Private Website durch Freelancer: 300-1.500€",
+          "Unser Basis-Paket: 499€ – ideal für One-Page oder einfache Starts",
+          "Professionell, rechtssicher, erschwinglich"
+        ]
+      },
+      {
+        "id": "markt-vergleich",
+        "icon": "fa-balance-scale",
+        "title": "Marktvergleich: Freelancer, Agentur, Baukasten",
+        "intro": "Wer soll deine Website erstellen? Am Markt hast du mehrere Optionen. DIY mit Baukasten (Wix, Jimdo, Squarespace): 10-30€/Monat, einfach, aber eingeschränkt und wenig individuell. DIY mit WordPress: 5-15€/Monat Hosting, volle Kontrolle, aber steile Lernkurve und sehr zeitaufwändig. Freelancer: 1.500-10.000€, 40-120€/Stunde, persönliche Betreuung, aber Qualität schwankt. Agentur: 3.000-50.000€+, professionell, aber teuer.",
+        "content": [
+          "Bei uns bekommst du das Beste aus beiden Welten: Die persönliche Betreuung und Flexibilität eines Freelancers kombiniert mit klaren Strukturen und Festpreisen. Keine Stundenabrechnungen, die eskalieren. Keine monatelangen Wartezeiten wie bei Agenturen. Und kein mühsames Selberbasteln mit Baukästen. Professionelle Websites zu fairen Festpreisen – ab 499€, fertig in 4 Wochen."
+        ],
+        "highlights": [
+          "Markt DIY Baukasten: 10-30€/Monat (einfach, aber eingeschränkt)",
+          "Markt Freelancer: 1.500-10.000€, 40-120€/Std. (Qualität variiert)",
+          "Markt Agentur: 3.000-50.000€+ (professionell, aber teuer)",
+          "Bei uns: Festpreise ab 499€, keine Stundenabrechnung",
+          "Persönliche Betreuung + klare Strukturen",
+          "Fertig in 4 Wochen, professionell, fair"
+        ]
+      },
+      {
+        "id": "zeitaufwand",
+        "icon": "fa-clock",
+        "title": "Zeitaufwand & Projektablauf",
+        "intro": "Am Markt dauert eine einfache 5-Seiten-Website 2-4 Wochen (20-40 Arbeitsstunden), mittlere Projekte mit 10-20 Seiten 4-8 Wochen (40-80 Stunden). Komplexe Websites mit Shop und individuellen Funktionen können 3-6 Monate (100-300 Stunden) in Anspruch nehmen. Hinzu kommen Wartezeiten auf Inhalte und Feedback-Schleifen.",
+        "content": [
+          "Bei uns erhältst du deine Website standardmäßig innerhalb von 4 Wochen. Der Ablauf: Woche 1 – Kostenloses Beratungsgespräch, Anforderungen klären, Design-Konzept erstellen. Woche 2 – Design umsetzen, Farben/Schriften/Bilder festlegen, erste Seite programmieren. Woche 3 – Restliche Seiten fertigstellen, Inhalte einpflegen, technisch einrichten. Woche 4 – Feedback-Phase (du zeigst die Seite deinen Kunden für 14 Tage), finale Anpassungen, Go-Live. Voraussetzung: Deine Texte und Bilder sind bereit – falls nicht, helfen wir natürlich dabei."
+        ],
+        "highlights": [
+          "Markt: Einfach 2-4 Wochen, mittel 4-8 Wochen, komplex 3-6 Monate",
+          "Bei uns: Standardmäßig 4 Wochen von Beratung bis Go-Live",
+          "Woche 1: Beratung & Design-Konzept",
+          "Woche 2: Design-Umsetzung & erste Seite",
+          "Woche 3: Restliche Seiten & technische Einrichtung",
+          "Woche 4: 14 Tage Feedback-Phase & Go-Live",
+          "Voraussetzung: Texte & Bilder bereit (oder wir helfen)"
+        ]
+      },
+      {
+        "id": "was-inklusive",
+        "icon": "fa-check-circle",
+        "title": "Was ist bei uns immer inklusive?",
+        "intro": "Viele Anbieter locken mit niedrigen Einstiegspreisen, aber wichtige Leistungen kosten extra. Am Markt sind SSL-Zertifikate (50-100€/Jahr), DSGVO-Texte (100-300€), Cookie-Banner (50-150€), Basis-SEO (200-500€) und Support nach Go-Live (50-200€/Monat) oft nicht enthalten. Das summiert sich schnell auf zusätzliche 500-1.500€.",
+        "content": [
+          "Bei uns ist in jedem Paket enthalten: Responsives Design (mobile-optimiert), SSL-Zertifikat (https://), Impressum & Datenschutzerklärung (rechtssicher), Cookie-Banner (DSGVO-konform), Kontaktformular mit Spam-Schutz, Google Analytics Einrichtung, Basis-SEO (Meta-Tags, Sitemap, robots.txt), 30 Tage Support nach Go-Live, Schulung für CMS (im Premium-Paket). Keine versteckten Kosten, keine nachträglichen Rechnungen – alles transparent von Anfang an."
+        ],
+        "highlights": [
+          "Markt oft extra: SSL 50-100€/Jahr, DSGVO-Texte 100-300€, Cookie-Banner 50-150€",
+          "Bei uns immer inklusive: Responsive Design, SSL-Zertifikat, Impressum & Datenschutz",
+          "Cookie-Banner (DSGVO), Kontaktformular mit Spam-Schutz",
+          "Google Analytics, Basis-SEO (Meta-Tags, Sitemap)",
+          "30 Tage Support nach Go-Live",
+          "Premium-Paket: CMS-Schulung inklusive"
+        ]
+      },
+      {
+        "id": "erweiterungen",
+        "icon": "fa-plus-circle",
+        "title": "Erweiterungen & Add-ons",
+        "intro": "Manche Projekte brauchen mehr als die Standard-Pakete bieten. Am Markt kosten Erweiterungen oft überproportional viel: Mehrsprachigkeit +40-80% auf den Gesamtpreis, zusätzliche Seiten 100-300€ pro Seite, erweiterte SEO-Optimierung 500-3.000€, professionelle Texterstellung 150-300€ pro Seite, Foto-Shooting 500-2.000€.",
+        "content": [
+          "Bei uns bieten wir flexible Add-ons: Zusätzliche Seiten (über Paket-Limit): 75€ pro Seite. Mehrsprachigkeit (technisches Setup): +400€, Übersetzung extra. Erweiterte SEO-Optimierung: 500€ einmalig. Professionelle Texterstellung: 100€ pro Seite (bis 500 Wörter). Fotografie/Bildbearbeitung: auf Anfrage. Newsletter-Integration: 200€. Erweiterte Shop-Funktionen: ab 500€. So kannst du dein Projekt flexibel erweitern, wenn du mehr brauchst – ohne für Features zu zahlen, die du nicht nutzt."
+        ],
+        "highlights": [
+          "Markt: Zusätzliche Seiten 100-300€, Mehrsprachigkeit +40-80%, SEO 500-3.000€",
+          "Bei uns: Zusätzliche Seiten 75€/Seite",
+          "Mehrsprachigkeit (Setup): +400€ (Übersetzung extra)",
+          "Erweiterte SEO: 500€ einmalig",
+          "Texterstellung: 100€/Seite (bis 500 Wörter)",
+          "Newsletter-Integration: 200€, erweiterte Shop-Funktionen ab 500€"
+        ]
+      },
+      {
+        "id": "besonderheiten",
+        "icon": "fa-shopping-cart",
+        "title": "Besonderheiten: Shops & komplexe Systeme",
+        "intro": "Manche Projekte sind aufwändiger als Standard-Websites. Am Markt kostet ein Online-Shop deutlich mehr: Kleine Shops (10-30 Produkte, Standard-Features) starten bei 5.000€, umfangreiche Shops (hunderte Produkte, individuelle Logiken, Warenwirtschaft-Anbindung) bei 15.000-40.000€+. Hinzu kommen monatliche Gebühren für Shop-Systeme wie Shopify (ab 39€/Monat) oder WooCommerce-Erweiterungen.",
+        "content": [
+          "Unser Premium-Paket beinhaltet bereits ein einfaches Shop-System für kleine Sortimente (bis 25 Produkte). Das reicht für viele Einsteiger und kleine Shops perfekt aus. Für umfangreichere E-Commerce-Lösungen erstellen wir individuelle Angebote. Mehrsprachige Websites fügen 40-80% Aufwand hinzu – bei uns +400€ für das technische Setup plus Übersetzungskosten. Individuelle Web-Applikationen oder Datenbank-Integrationen kalkulieren wir projektspezifisch. Wir beraten dich ehrlich: Brauchst du alle Features vom Start weg, oder reicht zunächst eine MVP-Version?"
+        ],
+        "highlights": [
+          "Markt: Kleiner Shop 5.000-15.000€, umfangreicher Shop 15.000-40.000€+",
+          "Unser Premium-Paket: Einfaches Shop-System für bis 25 Produkte inklusive (1.499€)",
+          "Umfangreichere Shops: Individuelle Angebote",
+          "Mehrsprachigkeit am Markt: +40-80%, bei uns +400€ Setup (Übersetzung extra)",
+          "Web-Apps/Datenbank-Integrationen: Projektspezifische Kalkulation",
+          "Ehrliche Beratung: MVP starten oder alle Features sofort?"
+        ]
+      },
+      {
+        "id": "preisvergleich-fazit",
+        "icon": "fa-chart-bar",
+        "title": "Preisvergleich: Markt vs. unsere Pakete",
+        "intro": "Lass uns die Zahlen gegenüberstellen. Am Markt zahlst du für eine einfache 5-Seiten-Website bei einem Freelancer durchschnittlich 2.000-5.000€ einmalig plus 200-500€/Jahr laufende Kosten (Hosting, Wartung). Bei einer Agentur sind es 3.000-8.000€ einmalig plus 500-1.500€/Jahr. Mit DIY-Baukästen zahlst du 15-30€/Monat (180-360€/Jahr), investierst aber viel eigene Zeit und erhältst weniger Individualität.",
+        "content": [
+          "Bei uns: Business-Paket (899€ einmalig + 10€/Monat Hosting = 120€/Jahr) – vergleichbar mit Markt-Angeboten für 2.000-3.000€. Inkludiert sind 5 Seiten, professionelles Design, alle rechtlichen Aspekte und Basis-SEO. Optional buchst du Wartung (ab 50€/Monat) hinzu – dann bist du bei 1.019€ im ersten Jahr (899€ + 120€ Hosting) plus optional 600€ Wartung = 1.619€ Gesamtkosten. Damit liegst du deutlich unter Markt-Niveau bei gleicher oder besserer Leistung. Und das Beste: Alles aus einer Hand, klare Festpreise, kein Versteckspiel."
+        ],
+        "highlights": [
+          "Markt Freelancer 5 Seiten: 2.000-5.000€ + 200-500€/Jahr = 2.200-5.500€ im Jahr 1",
+          "Markt Agentur 5 Seiten: 3.000-8.000€ + 500-1.500€/Jahr = 3.500-9.500€ im Jahr 1",
+          "Unser Business-Paket: 899€ + 120€ Hosting = 1.019€ im Jahr 1",
+          "Mit Wartung Basic: 1.019€ + 600€ = 1.619€ im Jahr 1",
+          "Deutlich unter Markt-Niveau bei gleicher/besserer Leistung",
+          "Alles aus einer Hand, klare Festpreise"
+        ]
+      }
+    ],
+    "risks": {
+      "title": "Versteckte Kosten & häufige Kostenfallen",
+      "intro": "Viele Website-Projekte werden teurer als geplant – nicht wegen böser Absicht, sondern weil Kosten übersehen oder unterschätzt wurden. Hier sind die häufigsten Kostenfallen am Markt und wie du sie bei uns vermeidest.",
+      "items": [
+        {
+          "icon": "fa-eye-slash",
+          "title": "\"Wartung & Updates inklusive\"",
+          "description": "Oft nur 3-6 Monate – danach 500-2.000€/Jahr extra"
+        },
+        {
+          "icon": "fa-image",
+          "title": "Bilder & Content nicht bedacht",
+          "description": "Professionelle Texte/Fotos: +1.000-5.000€"
+        },
+        {
+          "icon": "fa-plug",
+          "title": "Premium-Plugins & Lizenzen",
+          "description": "Jährliche Kosten 200-1.000€ nicht einkalkuliert"
+        },
+        {
+          "icon": "fa-clock",
+          "title": "Stundenabrechnung eskaliert",
+          "description": "\"Geschätzt 40 Std.\" werden 80 Std. – doppelte Kosten"
+        },
+        {
+          "icon": "fa-search",
+          "title": "SEO kostet extra",
+          "description": "Basis-SEO reicht nicht – 500-10.000€/Jahr nötig"
+        },
+        {
+          "icon": "fa-sync-alt",
+          "title": "Änderungswünsche nicht limitiert",
+          "description": "Jede Änderung kostet – keine Korrekturschleifen definiert"
+        }
+      ],
+      "conclusion": [
+        "Die größte Kostenfalle am Markt ist fehlende Transparenz. \"Website ab 500€\" klingt gut – bis sich herausstellt, dass Wartung, Content, Premium-Features und laufende Kosten extra sind. Am Ende zahlst du das Doppelte oder Dreifache des ursprünglichen Angebots. Stundenabrechnung eskaliert oft, weil der Aufwand unterschätzt wurde.",
+        "Bei uns gibt es diese Fallen nicht: Klare Festpreise mit genauer Leistungsbeschreibung. Hosting transparent ausgewiesen (5€/10€/15€ pro Monat). Wartung optional und klar beziffert (50€/100€/200€ pro Monat). Alle wichtigen Features inklusive (SSL, DSGVO, SEO). Keine Stundenabrechnung, keine nachträglichen Überraschungen. Ein Preis, eine Leistung – so einfach sollte es sein."
+      ]
+    },
+    "cta": {
+      "title": "Bereit für deine Website mit klaren Kosten?",
+      "text": "Du möchtest wissen, welches Paket zu deinem Projekt passt – ohne Überraschungen, ohne versteckte Kosten? Kontaktiere uns für eine unverbindliche Beratung. Wir besprechen deine Anforderungen und empfehlen dir das passende Paket – transparent, fair, verbindlich!",
+      "buttonText": "Jetzt kostenlose Beratung anfragen",
+      "buttonLink": "/kontakt"
+    }
+  }
+}
