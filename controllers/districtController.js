@@ -32,14 +32,14 @@ export async function renderDistrictPage(req, res, next) {
 const WEBDESIGN_BERLIN_URL = "https://www.komplettwebdesign.de/webdesign-berlin";
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Webdesign in Berlin – professionelle Website erstellen lassen";
+  const metaTitle = "Webdesign Berlin – Website erstellen lassen ab 499 € | Komplett Webdesign";
   const metaDescription =
-    "Professionelles Webdesign Berlin: Wir erstellen schnelle, suchmaschinenoptimierte Websites, die Sichtbarkeit, Anfragen und messbare Ergebnisse bringen.";
+    "Webdesign Berlin: Lass dir deine Website in Berlin professionell erstellen – schnell, suchmaschinenoptimiert und ab 499 €. In 4–6 Wochen online, inkl. rechtssicherer Inhalte, Local SEO & persönlichem Ansprechpartner.";
 
   const hero = {
-    title: "Webdesign in Berlin: Professionelle Website erstellen lassen",
+    title: "Webdesign Berlin: Professionelle Website in Berlin erstellen lassen",
     description:
-      "Wir entwickeln schnelle, professionelle und SEO-optimierte Websites für Berliner Unternehmen, damit Leads planbar werden, Inhalte verkaufen und Technik nicht ausbremst.",
+      "Als Berliner Webdesign-Agentur erstellen wir Websites, mit denen du in Berlin gefunden wirst. Wenn du deine Website in Berlin erstellen lassen möchtest, kümmern wir uns um Design, Texte, SEO und Technik – damit aus Besuchern Kunden werden.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 1 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
@@ -57,7 +57,7 @@ export function renderWebdesignBerlinHub(req, res) {
   const audience = {
     title: "Webdesign für Berliner Einzel- und Kleinunternehmer",
     description:
-      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen. Dazu optimieren wird deine Website mittels SEO für Google, damit du gefunden wirst. Einige Tipps zu <a href='blog/Lokale-SEO-Hacks-fuer-Berlin'>Local SEO in Berlin</a> findest du auch in unserem Blog.",
+      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen. Dazu optimieren wird deine Website mittels SEO für Google, damit du gefunden wirst. Einige Tipps zu <a href='blog/Lokale-SEO-Hacks-fuer-Berlin'>Local SEO in Berlin</a> findest du auch in unserem Blog. Wenn du deine Website in Berlin erstellen lassen möchtest, schauen wir nicht nur auf Design, sondern auch auf Local SEO, damit du bei Suchanfragen wie „Webdesign Berlin“ oder „Website erstellen lassen Berlin“ sichtbar wirst.",
     painPoints: [
       "Du hast keine konstanten Leads aus Google oder Empfehlungen?",
       "Langsame Seiten & technische Fehler schrecken Besucher ab!",
