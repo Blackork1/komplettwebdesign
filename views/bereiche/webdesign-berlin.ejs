@@ -64,10 +64,23 @@
       <div class="wd-video">
         <h2 id="wd-video-title">Was dich im Erstgespräch erwartet:</h2>
         <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
-
-        <div class="wd-video__wrap" data-yt="M_fYtNuPcGg"></div>
-
-
+        <div class="wd-video__wrap youtube-wrapper" data-youtube-id="M_fYtNuPcGg" data-youtube-title="Was dich im Erstgespräch erwartet – Komplett Webdesign">
+          <div class="youtube-placeholder" role="group" aria-label="YouTube Video Platzhalter">
+            <div class="youtube-thumb">
+              <img src="https://img.youtube.com/vi/M_fYtNuPcGg/hqdefault.jpg" alt="Vorschaubild: Was dich im Erstgespräch erwartet" loading="lazy" width="640" height="360" />
+              <button class="youtube-play-btn" type="button" aria-label="Video laden">
+                ▶
+              </button>
+            </div>
+            <p class="youtube-hint">
+              Beim Abspielen des Videos werden Daten an YouTube (Google) übertragen.
+              Mehr Informationen findest du in unserer <a href="/datenschutz">Datenschutzerklärung</a>.
+            </p>
+            <button class="youtube-consent-btn wd-btn wd-btn-primary" type="button">
+              Video laden und abspielen
+            </button>
+          </div>
+        </div>
         <noscript>
           <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener">auf YouTube ansehen</a></p>
         </noscript>
@@ -303,15 +316,15 @@
           <p id="contact-file-hint" class="wd-form-hint">Du kannst bis zu 10 Dateien (max. 15&nbsp;MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.</p>
         </div>
         <button type="submit" class="wd-btn wd-btn-primary">Kostenloses Erstgespräch sichern</button>
-        </form>
-        <div class="wd-contact__intro">
-          <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
-          <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
-          <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
-          <figure class="wd-contact__visual">
-            <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
-          </figure>
-        </div>
+      </form>
+      <div class="wd-contact__intro">
+        <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
+        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
+        <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
+        <figure class="wd-contact__visual">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
+        </figure>
+      </div>
     </div>
   </section>
 </main>
@@ -332,45 +345,4 @@
 </script>
 <script type="application/ld+json">
   <%- JSON.stringify(schema.videoObject) %>
-</script>
-
-<script>
-  (() => {
-    const el = document.querySelector('.wd-video__wrap[data-yt]');
-    if (!el) return;
-
-    const loadYT = () => {
-      if (el.dataset.loaded) return;
-      el.dataset.loaded = "1";
-      const id = el.dataset.yt;
-
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
-      iframe.title = "Was dich im Erstgespräch erwartet – Komplett Webdesign";
-      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-      iframe.allowFullscreen = true;
-      iframe.loading = "lazy";
-      iframe.referrerPolicy = "strict-origin-when-cross-origin";
-      el.appendChild(iframe);
-    };
-
-    // Laden, sobald der Bereich (200px vorher) in Sicht kommt
-    const io = new IntersectionObserver((entries, obs) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          loadYT();
-          obs.disconnect();
-        }
-      });
-    }, {
-      rootMargin: "200px"
-    });
-    io.observe(el);
-
-    // Fallback: bei erster Nutzerinteraktion sofort laden
-    window.addEventListener('pointerdown', loadYT, {
-      once: true,
-      passive: true
-    });
-  })();
 </script>

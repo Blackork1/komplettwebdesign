@@ -1166,6 +1166,103 @@
   border: 0;
   display: block;
 }
+.youtube-wrapper {
+  background: linear-gradient(135deg, rgba(16, 13, 9, 0.85), rgba(25, 19, 13, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 58px rgba(31, 27, 22, 0.3);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.youtube-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: #f7f4f0;
+}
+
+.youtube-thumb {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.youtube-thumb img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.youtube-play-btn {
+  position: absolute;
+  inset: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 2rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.youtube-thumb:hover .youtube-play-btn,
+.youtube-thumb:focus-within .youtube-play-btn {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.youtube-hint {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(247, 244, 240, 0.9);
+}
+
+.youtube-hint a {
+  color: #ffd2b9;
+  text-decoration: underline;
+}
+
+.youtube-consent-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  color: #1f1b16;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.youtube-consent-btn:hover,
+.youtube-consent-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.youtube-wrapper--loading .youtube-consent-btn {
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .youtube-placeholder {
+    padding: 1rem;
+  }
+}
 
 .webdesign-berlin-page .wd-section--video {
   display: block;

@@ -1,154 +1,142 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
   <meta charset="UTF-8" />
   <title><%= title %></title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="<%= description %>" />
 
+  <!-- Fonts / CSS (wie bei dir) -->
   <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="/assets/css/fontawesome.min.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="/assets/css/fontawesome.min.css" />
-  </noscript>
+  <noscript><link rel="stylesheet" href="/assets/css/fontawesome.min.css" /></noscript>
 
   <link rel="preload" href="/assets/css/solid.min.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="/assets/css/solid.min.css" />
-  </noscript>
+  <noscript><link rel="stylesheet" href="/assets/css/solid.min.css" /></noscript>
 
-  <!-- Fonts aktiv vorladen (nur die wirklich oben sichtbaren Schnitte) -->
   <link href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
   <link href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <!-- Falls Poppins wirklich im sichtbaren Bereich gebraucht wird: -->
   <link href="/fonts/poppins-v23-latin-700.woff2" as="font" type="font/woff2" crossorigin />
   <link href="/fonts/poppins-v23-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+
   <link rel="preload" href="/css/bootstrap.min.css" as="style" />
   <link rel="stylesheet" href="/css/bootstrap.min.css" />
+
   <link rel="preload" href="/css/main.min.css?v=<%= Date.now() %>" as="style" />
   <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
 
   <link rel="preload" href="/extra.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="/extra.css" />
-  </noscript>
+  <noscript><link rel="stylesheet" href="/extra.css" /></noscript>
 
   <link rel="preload" href="/booking-widget.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="/booking-widget.css" />
-  </noscript>
-<script>
-  // Lädt Stripe erst, wenn du es wirklich brauchst (z. B. Klick auf "Paket wählen")
-  window.ensureStripe = function (pk) {
-    return new Promise(resolve => {
-      if (window.Stripe) return resolve(window.Stripe(pk));
-      const s = document.createElement('script');
-      s.src = "https://js.stripe.com/v3/";
-      s.async = true;
-      s.onload = () => resolve(window.Stripe(pk));
-      document.head.appendChild(s);
-    });
-  };
+  <noscript><link rel="stylesheet" href="/booking-widget.css" /></noscript>
 
-  // Beispiel: Buttons mit data-open-checkout
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-open-checkout]');
-    if (!btn) return;
-    e.preventDefault();
-    const stripe = await window.ensureStripe("<%= process.env.STRIPE_PUBLISHABLE_KEY %>");
-    // TODO: deinen Checkout starten:
-    // await stripe.redirectToCheckout({ sessionId: '...' });
-  }, { passive: false });
-</script>
+  <!-- Stripe lazy loader (wie bei dir) -->
+  <script>
+    window.ensureStripe = function (pk) {
+      return new Promise(resolve => {
+        if (window.Stripe) return resolve(window.Stripe(pk));
+        const s = document.createElement('script');
+        s.src = "https://js.stripe.com/v3/";
+        s.async = true;
+        s.onload = () => resolve(window.Stripe(pk));
+        document.head.appendChild(s);
+      });
+    };
 
-  <!-- Favicon und App Icons -->
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-open-checkout]');
+      if (!btn) return;
+      e.preventDefault();
+      const stripe = await window.ensureStripe("<%= process.env.STRIPE_PUBLISHABLE_KEY %>");
+      // await stripe.redirectToCheckout({ sessionId: '...' });
+    }, { passive: false });
+  </script>
+
+  <!-- Favicon / Manifest -->
   <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/images/icon32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/images/icon192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/icon180.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <%if(locals.seoExtra) {%>
-  <%- typeof seoExtra === 'string' ? seoExtra : '' %>
-  <%}%>
 
-  <!-- Consent Mode v2: Default DENIED, noch bevor GA/GTM lädt -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){ dataLayer.push(arguments); }
-  gtag('consent', 'default', {
-    analytics_storage: 'denied',
-    ad_storage: 'denied',
-    ad_user_data: 'denied',
-    ad_personalization: 'denied',
-    wait_for_update: 500
-  });
-    // Lazy Loader für GA4
-  function loadGA(){
-    if (window.__gaLoaded) return;
-    window.__gaLoaded = true;
-    var s = document.createElement('script');
-    s.src = "https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>";
-  s.async = true;
-  document.head.appendChild(s);
-  s.onload = function(){
-  gtag('js', new Date());
-  gtag('config', '<%= process.env.GA_MEASUREMENT_ID %>', { send_page_view: false, allow_google_signals: false });
-  // Pageview erst im Idle senden
-  if ('requestIdleCallback' in window) {
-  requestIdleCallback(() => gtag('event', 'page_view'));
-  } else {
-  setTimeout(() => gtag('event', 'page_view'), 1500);
-  }
-  };
-  }
+  <% if (locals.seoExtra) { %>
+    <%- typeof seoExtra === 'string' ? seoExtra : '' %>
+  <% } %>
 
-  // Lade GA4 erst bei Interaktion oder spätestens im Idle
-  window.addEventListener('pointerdown', loadGA, { once: true, passive: true });
-  window.addEventListener('load', () => {
-  if ('requestIdleCallback' in window) requestIdleCallback(loadGA, { timeout: 5000 });
-  else setTimeout(loadGA, 3000);
-  });
-
-  // Hook für deinen Cookie-Banner (Analytics akzeptiert → Consent updaten + GA laden)
-  window.updateAnalyticsConsent = function(granted){
-  gtag('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
-  if (granted) loadGA();
-  };
-  </script>
-
-
-  <!-- Mess-ID für clientseitige Nutzung -->
+  <!-- =========================================================
+       DSGVO-SICHER / BASIC CONSENT MODE
+       - Default denied VOR jeglichem Google-Script
+       - GA & Clarity werden erst nach Einwilligung geladen
+       - KEINE Auto-Pageviews im Head
+       ========================================================= -->
   <script>
+    // globale IDs für clientseitige Scripts
     window.env = {
       GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
       CLARITY_ID: "<%= process.env.CLARITY_ID %>"
     };
-  </script>
-  <% if (locals.clarityEnabled && locals.clarityId) { %>
-  <script type="text/javascript">
-    (function(c, l, a, r, i, t, y) {
-      c[a] = c[a] || function() {
-        (c[a].q = c[a].q || []).push(arguments)
+
+    // Consent Mode Defaults (alles denied)
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+
+    gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      wait_for_update: 500
+    });
+
+    // --------- GA Loader (wird NUR nach Consent aufgerufen) ---------
+    function loadGA() {
+      if (window.__gaLoaded) return;
+      window.__gaLoaded = true;
+
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>";
+      document.head.appendChild(s);
+
+      s.onload = function () {
+        gtag('js', new Date());
+        gtag('config', "<%= process.env.GA_MEASUREMENT_ID %>", {
+          send_page_view: false,          // PV kommt erst per cookie-consent.js
+          allow_google_signals: false     // wird dort je nach marketing gesetzt
+        });
       };
-      t = l.createElement(r);
-      t.async = 1;
-      t.src = "https://www.clarity.ms/tag/<%= locals.clarityId %>";
-      y = l.getElementsByTagName(r)[0];
-      y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script");
+    }
 
-    // (optional) Consent explizit markieren
-    (function tryConsent() {
-      if (typeof window.clarity === 'function') {
-        try {
-          window.clarity('consent', true);
-        } catch (e) {}
-      } else setTimeout(tryConsent, 200);
-    })();
+    // Hook für dein Banner:
+    // cookie-consent.js ruft bei Analytics-Einwilligung updateAnalyticsConsent(true) auf
+    window.updateAnalyticsConsent = function (granted) {
+      gtag('consent', 'update', {
+        analytics_storage: granted ? 'granted' : 'denied'
+      });
+      if (granted) loadGA();
+    };
+
+    // --------- Clarity Loader (nur nach Consent) ---------
+    window.loadClarity = function () {
+      var id = window.env && window.env.CLARITY_ID;
+      if (!id) return;
+      if (window.clarity) return;
+      if (document.querySelector('script[src*="clarity.ms/tag/"]')) return;
+
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r); t.async=1; t.src="https://www.clarity.ms/tag/"+id;
+        y=l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script");
+
+      (function tryConsent() {
+        if (typeof window.clarity === 'function') {
+          try { window.clarity('consent', true); } catch(e){}
+        } else setTimeout(tryConsent, 200);
+      })();
+    };
   </script>
-  <% } %>
 </head>
-
 </html>

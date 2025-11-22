@@ -1,9 +1,46 @@
-// /public/js/cookie-consent.js  — Option B: GA immer geladen, aber vor Consent blockiert
+window.cookieConsentState = window.cookieConsentState || {
+  necessary: true,
+  analytics: false,
+  marketing: false,
+  youtubeVideos: false
+};
+
+window.requestYoutubeConsent = window.requestYoutubeConsent || function () {
+  return Promise.reject(new Error('Consent manager not ready yet.'));
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const banner = document.getElementById('cookie-banner');
   const ANALYTICS_COOKIE_NAMES = ['_ga', '_gid', '_gat', '_gcl_au', '_ga_', '_gac_', '_clck', '_clsk'];
   let firstPageviewSent = false;
+  const DEFAULT_CONSENT = {
+    necessary: true,
+    analytics: false,
+    marketing: false,
+    youtubeVideos: false
+  };
+  let currentConsent = { ...DEFAULT_CONSENT };
 
+  function emitConsentEvent() {
+    window.cookieConsentState = { ...currentConsent };
+    let event;
+    try {
+      event = new CustomEvent('cookieConsentUpdate', { detail: window.cookieConsentState });
+    } catch (err) {
+      event = document.createEvent('CustomEvent');
+      event.initCustomEvent('cookieConsentUpdate', true, true, window.cookieConsentState);
+    }
+    document.dispatchEvent(event);
+  }
+
+  function setConsentState(partial) {
+    currentConsent = {
+      ...DEFAULT_CONSENT,
+      ...partial,
+      necessary: true
+    };
+    emitConsentEvent();
+  }
   // ---------- Banner show/hide (robust) ----------
   const showBanner = () => {
     if (!banner) return;
@@ -55,6 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.dataLayer.push({ event: 'consent_updated' });
   }
 
+  function disableClarityIfLoaded() {
+    if (typeof window.clarity === 'function') {
+      try { window.clarity('consent', false); } catch (e) { }
+    }
+  }
+
   // Blockt alles (Erstbesuch / Widerruf)
   function blockAll() {
     ensureGtagShim();
@@ -66,7 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     const id = window.env?.GA_MEASUREMENT_ID || '';
     if (id) window['ga-disable-' + id] = true; // optionaler Kill-Switch
+    disableClarityIfLoaded();
     firstPageviewSent = false;
+    setConsentState(DEFAULT_CONSENT);
+  }
+
+  // Setzt das ga-disable-Flag je nach Analytics-Einwilligung
+  function syncGaDisableFlag(analytics) {
+    const id = window.env?.GA_MEASUREMENT_ID;
+    if (!id) return;
+    window['ga-disable-' + id] = !analytics;
   }
 
   // Nach erteilter Einwilligung: ersten PV senden & Signals je nach Marketing
@@ -151,39 +203,68 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
   }
 
+  function saveConsent(nextPrefs, options = {}) {
+    const payload = {
+      analytics: !!nextPrefs.analytics,
+      marketing: !!nextPrefs.marketing,
+      youtubeVideos: !!nextPrefs.youtubeVideos
+    };
+    const hideAfterSave = options.hideBanner !== false;
+
+    return fetch('/api/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(json => {
+        if (!json.success) throw new Error('Consent save failed');
+        setConsentState(payload);
+        syncGaDisableFlag(payload.analytics);
+
+        if (typeof window.updateAnalyticsConsent === 'function') {
+          window.updateAnalyticsConsent(payload.analytics);
+        }
+        if (payload.analytics && typeof window.loadClarity === 'function') {
+          window.loadClarity();
+        }
+
+        applyConsent(payload);
+        sendInitialPageviewIfNeeded(payload.analytics, payload.marketing);
+
+        // if (payload.analytics && window.env?.CLARITY_ID && !window.clarity) {
+        //   loadClarityInline(window.env.CLARITY_ID);
+        // }
+
+        if (hideAfterSave) hideBanner();
+        showRevokeButton();
+        return payload;
+      })
+      .catch(err => {
+        console.error(err);
+        throw err;
+      });
+  }
+
+  window.requestYoutubeConsent = function () {
+    if (currentConsent.youtubeVideos) {
+      return Promise.resolve({ ...currentConsent });
+    }
+    return saveConsent({ ...currentConsent, youtubeVideos: true }, { hideBanner: false });
+  };
+
   // ---------- Banner-Buttons ----------
   if (banner) {
-    const setConsent = (analytics, marketing) => {
-      fetch('/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        body: JSON.stringify({ analytics, marketing })
-      })
-        .then(r => r.json())
-        .then(json => {
-          if (!json.success) return;
-          applyConsent({ analytics, marketing });          // CMv2 umstellen
-          sendInitialPageviewIfNeeded(analytics, marketing); // ggf. ersten PV senden
-          hideBanner();
-          showRevokeButton();
-        })
-        .catch(err => console.error(err));
-    };
-
     const acceptAllBtn = document.getElementById('accept-all');
     const acceptNecBtn = document.getElementById('accept-necessary');
 
     if (acceptAllBtn) acceptAllBtn.onclick = () => {
-      setConsent(true, true);
-      if (window.env?.CLARITY_ID) loadClarityInline(window.env.CLARITY_ID);
+      saveConsent({ analytics: true, marketing: true, youtubeVideos: true }).catch(() => { });
     };
     if (acceptNecBtn) acceptNecBtn.onclick = () => {
-      setConsent(false, false); // kein Clarity-Laden
+      saveConsent({ analytics: false, marketing: false, youtubeVideos: false }).catch(() => { });
     };
-
-    // if (acceptAllBtn) acceptAllBtn.onclick = () => setConsent(true, true);
-    // if (acceptNecBtn) acceptNecBtn.onclick = () => setConsent(false, false);
   }
 
   // ---------- Initial-Load: aktuellen Consent aus der Session ----------
@@ -193,6 +274,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const consent = cookieConsent;
 
       if (consent) {
+        setConsentState(consent);
+        syncGaDisableFlag(!!consent.analytics);
+
+        if (typeof window.updateAnalyticsConsent === 'function') {
+          window.updateAnalyticsConsent(!!consent.analytics);
+        }
+        if (consent.analytics && typeof window.loadClarity === 'function') {
+          window.loadClarity();
+        }
+
         hideBanner();
         showRevokeButton();
         applyConsent({
@@ -200,9 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
           marketing: !!consent.marketing
         });
         sendInitialPageviewIfNeeded(!!consent.analytics, !!consent.marketing);
-        if (consent.analytics && window.env?.CLARITY_ID && !window.clarity) {
-          loadClarityInline(window.env.CLARITY_ID);
-        }
+
+        // if (consent.analytics && window.env?.CLARITY_ID && !window.clarity) {
+        //   loadClarityInline(window.env.CLARITY_ID);
+        // }
+
       } else {
         blockAll();
         showBanner();
@@ -214,3 +307,40 @@ document.addEventListener('DOMContentLoaded', () => {
       showBanner();
     });
 });
+
+const DEBUG = location.search.includes('debug-consent');
+
+
+if (DEBUG) (function consentDebug() {
+  function report(label) {
+    const id = window.env?.GA_MEASUREMENT_ID;
+    const gaDisabled = id ? !!window['ga-disable-' + id] : null;
+    const clarityLoaded = typeof window.clarity === 'function';
+    const clarityScript = !!document.querySelector('script[src*="clarity.ms/tag"]');
+    const clarityCookies = document.cookie.includes('_clck') || document.cookie.includes('_clsk');
+    const ytIframe = !!document.querySelector('iframe[src*="youtube-nocookie.com"]');
+
+    console.log(
+      `%c[CONSENT DEBUG] ${label}`,
+      'font-weight:bold;',
+      {
+        consentState: window.cookieConsentState,
+        gaMeasurementId: id,
+        gaDisabled,
+        clarityLoaded,
+        clarityScript,
+        clarityCookies,
+        youtubeIframeLoaded: ytIframe
+      }
+    );
+  }
+
+  report('initial');
+
+  document.addEventListener('cookieConsentUpdate', (e) => {
+    report('cookieConsentUpdate');
+  });
+
+  // Optional: auch nach 3s nochmal, falls async geladen
+  setTimeout(() => report('after 3s'), 3000);
+})();
