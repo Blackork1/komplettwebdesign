@@ -1,8 +1,10 @@
 export default (req, res, next) => {
-  const consent = req.session?.cookieConsent ?? {
+  const consent = {
     necessary: true,
     analytics: false,
-    marketing: false
+    marketing: false,
+    youtubeVideos: false,
+    ...(req.session?.cookieConsent ?? {})
   };
 
   req.consent = consent;              // <— diese Zeile ergänzen ✅
