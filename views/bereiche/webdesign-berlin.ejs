@@ -44,7 +44,7 @@
     <div class="wd-section__inner wd-section__inner--audience">
       <div class="wd-audience__media">
         <figure class="wd-section__visual">
-          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761846940/admin_gallery/qhi0ozk9fqclwv8r1fzj.webp" width="400" height="400" alt="Illustration für Zielgruppen in Berlin" loading="lazy">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761846940/admin_gallery/qhi0ozk9fqclwv8r1fzj.webp" width="400" height="400" alt="Webdesign für Selbstständige und KMU in Berlin" loading="lazy">
         </figure>
       </div>
       <div class="wd-section__content wd-audience__content">
@@ -214,14 +214,14 @@
           </nav>
         </div>
         <figure class="wd-section__visual">
-          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847566/admin_gallery/ukiymhlne3z9yq1xcia7.webp" width="600" height="600" alt="Service-Gebiet Berlin – Webdesign" loading="lazy">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847566/admin_gallery/ukiymhlne3z9yq1xcia7.webp" width="600" height="600" alt="Webdesign in allen Berliner Bezirken – Servicekarte" loading="lazy">
         </figure>
       </div>
     </div>
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-industries-title">
-    <h2 id="wd-industries-title">Branchen, in denen wir stark sind</h2>
+    <h2 id="wd-industries-title">Webdesign Berlin für verschiedene Branchen</h2>
     <div class="wd-industry-grid">
       <% industries.forEach(function(industry) { %>
       <article class="wd-industry-card">
@@ -319,7 +319,10 @@
       </form>
       <div class="wd-contact__intro">
         <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
-        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.</p>
+        <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.
+        <br>Du suchst allgemeine Informationen zur <a href="/">professionellen Websiteerstellung</a>? 
+          Auf unserer Hauptseite findest du alle Leistungen im Überblick – auch für Kunden außerhalb von Berlin.
+        </p>
         <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
         <figure class="wd-contact__visual">
           <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
@@ -332,16 +335,19 @@
 <%- include('../partials/footer') %>
 
 <script type="application/ld+json">
-  <%- JSON.stringify(schema.breadcrumbList) %>
+  <%- JSON.stringify(schema.localBusiness) %>
 </script>
 <script type="application/ld+json">
-  <%- JSON.stringify(schema.localBusiness) %>
+  <%- JSON.stringify(schema.webPage) %>
+</script>
+<script type="application/ld+json">
+  <%- JSON.stringify(schema.breadcrumbList) %>
 </script>
 <script type="application/ld+json">
   <%- JSON.stringify(schema.faqPage) %>
 </script>
 <script type="application/ld+json">
-  <%- JSON.stringify(schema.offers) %>
+  <%- JSON.stringify(schema.offerCatalog) %>
 </script>
 <script type="application/ld+json">
   <%- JSON.stringify(schema.videoObject) %>

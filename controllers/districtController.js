@@ -30,6 +30,11 @@ export async function renderDistrictPage(req, res, next) {
 }
 
 const WEBDESIGN_BERLIN_URL = "https://www.komplettwebdesign.de/webdesign-berlin";
+const SITE_URL = "https://www.komplettwebdesign.de";
+const DEFAULT_PACKAGE_IMAGE = SITE_URL + "/images/heroImageH.webp";
+const YOUTUBE_ID = "M_fYtNuPcGg";
+const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
+
 
 export function renderWebdesignBerlinHub(req, res) {
   const metaTitle = "Webdesign Berlin – Website erstellen lassen ab 499 € | Komplett Webdesign";
@@ -42,10 +47,10 @@ export function renderWebdesignBerlinHub(req, res) {
       "Als Berliner Webdesign-Agentur erstellen wir Websites, mit denen du in Berlin gefunden wirst. Wenn du deine Website in Berlin erstellen lassen möchtest, kümmern wir uns um Design, Texte, SEO und Technik – damit aus Besuchern Kunden werden.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
-    rating: { label: "★★★★★ 5,0/5 · 1 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
+    rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
     image: {
       src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
-      alt: "Portrait Platzhalter für Webdesign Berlin"
+      alt: "Sören Blocksdorf – Webdesigner Berlin"
     },
     trustBadges: [
       "Festpreise ab 499 € zzgl. Hosting",
@@ -216,22 +221,7 @@ export function renderWebdesignBerlinHub(req, res) {
       link: "http://www.zuraltenbackstube.de",
       image: "/images/review-bg.webp"
     }
-    // {
-    //   name: "Schneider & Co. · Kreuzberg",
-    //   summary: "Local-SEO-Relaunch für den Handwerksbetrieb mit klaren Angebotsseiten.",
-    //   bullets: ["+120 % qualifizierte Anfragen", "Top-5 Platzierung bei \"Webdesign Kreuzberg\"", "3x mehr Bewertungen im GBP"],
-    //   quote: "Wir sind in Berlin Kreuzberg endlich sichtbar und bekommen planbar neue Aufträge.",
-    //   link: "/cases/schneider-co",
-    //   image: "/images/webdesign-berlin-placeholder.svg"
-    // },
-    // {
-    //   name: "Praxis Dr. Meier · Charlottenburg",
-    //   summary: "Barrierefreier Relaunch mit Terminmodul für eine moderne Patientenreise.",
-    //   bullets: ["+60 % Online-Buchungen", "Absprungrate um 35 % gesenkt", "Automatische Erinnerungen reduzieren No-Shows"],
-    //   quote: "Unsere Praxis wirkt digital so persönlich wie vor Ort – das Feedback ist großartig.",
-    //   link: "/cases/praxis-dr-meier",
-    //   image: "/images/webdesign-berlin-placeholder.svg"
-    // }
+
   ];
 
   const processSteps = [
@@ -256,11 +246,6 @@ export function renderWebdesignBerlinHub(req, res) {
       name: "Wartung & Wachstum",
       description: "Jeden Monat stelle ich dir auf Wunsch einen Auswertung deiner Bersucherzahlen zur Verfügung. Damit können wir dann gemeinsam deine Website verbessern und SEO optimieren. Das Ziel ist es ja, dass du auf Google gefunden werden sollst. Keiner braucht nur eine schöne Website die niemand sieht. Wenn du etwas geändert oder hinzugefügt haben möchtest, stehe ich dir auch in der Zukunft gerne zur Seite."
     }
-    // "Analyse & Ziele",
-    // "Wireframe & Inhalte",
-    // "Design & Entwicklung",
-    // "Launch & Tracking",
-    // "Wartung & Wachstum"
   ];
 
   const districts = [
@@ -316,49 +301,52 @@ export function renderWebdesignBerlinHub(req, res) {
 
   const faqs = [
     {
-      question: "+ Was kostet eine Website in Berlin?",
+      question: "Was kostet eine Website in Berlin?",
       answer:
         "Je nach Umfang zwischen <strong>499 und 2.000 Euro</strong>. Wir arbeiten mit festen Paketpreisen – ohne versteckte Kosten."
     },
     {
-      question: "+ Wie lange dauert die Erstellung?",
+      question: "Wie lange dauert die Erstellung?",
       answer:
         "In der Regel <strong>vier bis sechs Wochen</strong> inklusive Feedback-Schleifen und Launch-Checkliste."
     },
     {
-      question: "+ Sind Inhalte oder Texte inklusive?",
+      question: "Sind Inhalte oder Texte inklusive?",
       answer:
         "Texte können nach Wunsch mit erstellt werden. Diese werden dann passen an Suchmaschinen ausgerichtet, dass du auf Google gefunden wirst."
     },
-    // {
-    //   question: "+ Arbeitet ihr mit WordPress?",
-    //   answer:
-    //     "Ja, zusätzlich mit Kirby oder Craft. Wir wählen das CMS, das am besten zu deinen Zielen passt."
-    // },
     {
-      question: "+ Wie sichert ihr meine Website?",
+      question: "Wie sichert ihr meine Website?",
       answer:
         "Hosting in Deutschland, tägliche Backups nach Wunsch, Monitoring und Sicherheitsupdates laufen automatisch."
     },
     {
-      question: "+ Brauche ich Hosting bei euch?",
+      question: "Brauche ich Hosting bei euch?",
       answer:
         "Empfehlung: ja – für Performance & Sicherheit. Auf Wunsch migrieren wir bestehendes Hosting."
     },
     {
-      question: "+ Optimiert ihr für Google Maps und Mobile?",
+      question: "Optimiert ihr für Google Maps und Mobile?",
       answer:
         "Local SEO und Mobile-First Design gehören zum Standardumfang jedes Projekts."
     },
     {
-      question: "+ Was passiert nach dem Launch?",
+      question: "Was passiert nach dem Launch?",
       answer:
         "Wir betreuen, pflegen und optimieren monatlich weiter – inklusive Reports und Handlungsempfehlungen."
     },
     {
-      question: "+ Wie läuft ein Erstgespräch ab?",
+      question: "Wie läuft ein Erstgespräch ab?",
       answer:
         "Kostenfrei & unverbindlich: Wir analysieren deine Website in 15 Minuten und geben konkrete Empfehlungen."
+    },
+    {
+      question: "Warum Webdesign vom Berliner Webdesigner?",
+      answer: "Ein lokaler Webdesigner versteht den Berliner Markt, kennt die Konkurrenz und optimiert deine Website gezielt für lokale Suchanfragen wie 'Webdesign Berlin' oder 'Website erstellen lassen Berlin'."
+    },
+    {
+      question: "Welche Berliner Bezirke betreut ihr?",
+      answer: "Wir betreuen Kunden in allen Berliner Bezirken: Mitte, Kreuzberg, Friedrichshain, Prenzlauer Berg, Charlottenburg, Lichtenberg und weitere. Persönliche Treffen sind überall in Berlin möglich."
     }
   ];
 
@@ -377,11 +365,6 @@ export function renderWebdesignBerlinHub(req, res) {
     { label: "Webdesign Checkliste für Selbstständige", href: "/blog/website-checkliste-für-selbstandige" }
   ];
 
-  const YOUTUBE_ID = "M_fYtNuPcGg"; // Beispiel-ID
-  const SITE_URL = "https://www.komplettwebdesign.de";
-  const DEFAULT_PACKAGE_IMAGE = SITE_URL + "/images/heroImageH.webp"; // Fallback
-  const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00"; // 02.11.2025 (Berlin)
-
   const schema = {
     breadcrumbList: {
       "@context": "https://schema.org",
@@ -394,18 +377,56 @@ export function renderWebdesignBerlinHub(req, res) {
     localBusiness: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-      name: "Komplett Webdesign Berlin",
-      url: WEBDESIGN_BERLIN_URL,
-      telephone: "+493012345678",
-      areaServed: "Berlin",
-      sameAs: [
-        "https://www.instagram.com/komplettwebdesign",
-        "https://www.linkedin.com/company/komplettwebdesign"
-      ],
-      address: {
+      "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness`,
+      "name": "Komplett Webdesign Berlin",
+      "description": "Webdesign in Berlin: Professionelle Website vom lokalen Webdesigner erstellen lassen. Persönliche Beratung, Local SEO & DSGVO-konform.",
+      "url": WEBDESIGN_BERLIN_URL,
+      "telephone": "+49 1551 1245048",
+      "email": "kontakt@komplettwebdesign.de",
+      "priceRange": "€€",
+      "image": `${SITE_URL}/images/heroBg.webp`,
+      "address": {
         "@type": "PostalAddress",
-        addressLocality: "Berlin",
-        addressCountry: "DE"
+        "streetAddress": "Möllendorffstr 26",
+        "postalCode": "10367",
+        "addressLocality": "Berlin",
+        "addressRegion": "Berlin",
+        "addressCountry": "DE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 52.5163,
+        "longitude": 13.4783
+      },
+      "areaServed": {
+        "@type": "City",
+        "name": "Berlin"
+      },
+      // Nur Google Maps CID - vollständige Social Links sind auf der Homepage
+      "sameAs": [
+        "https://www.google.com/maps?cid=8211653702753166064"
+      ],
+      // Verweis auf die Hauptorganisation (Homepage)
+      "parentOrganization": {
+        "@id": `${SITE_URL}/#organization`
+      }
+    },
+    webPage: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${WEBDESIGN_BERLIN_URL}#webpage`,
+      "name": "Webdesign Berlin – Website erstellen lassen vom Berliner Webdesigner",
+      "description": metaDescription,
+      "url": WEBDESIGN_BERLIN_URL,
+      "isPartOf": {
+        "@id": `${SITE_URL}/#website`
+      },
+      "about": {
+        "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness`
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/images/heroBg.webp`
       }
     },
     faqPage: {
@@ -417,9 +438,10 @@ export function renderWebdesignBerlinHub(req, res) {
         acceptedAnswer: { "@type": "Answer", text: answer.replace(/<strong>|<\/strong>/g, "") }
       }))
     },
-    offers: {
+    offerCatalog: {
       "@context": "https://schema.org",
-      "@type": "ItemList",
+      "@type": "OfferCatalog",
+      "name": "Webdesign Pakete Berlin",
       itemListElement: packages.map((pkg, index) => {
         const normalizedPrice = pkg.price
           .replace(/\./g, "")
@@ -435,13 +457,13 @@ export function renderWebdesignBerlinHub(req, res) {
 
 
         return {
-          "@type": "Product",
+          "@type": "Offer",
           name: `${pkg.name} Paket`,
           description: pkg.description.replace(/<[^>]*>/g, ""),
           image: imageUrl,                     // <-- WICHTIG: Pflichtfeld
           url: pkgUrl,                         // optional, aber sinnvoll
           offers: {
-            "@type": "Offer",
+            "@type": "Service",
             priceCurrency: "EUR",
             price: normalizedPrice || "0",
             availability: "https://schema.org/InStock",
@@ -461,19 +483,15 @@ export function renderWebdesignBerlinHub(req, res) {
     videoObject: {
       "@context": "https://schema.org",
       "@type": "VideoObject",
-      name: (typeof video !== "undefined" && video.name) || "Was dich im Erstgespräch erwartet",
-      description: (typeof video !== "undefined" && video.description) || "Kurz erklärt: Ablauf, Ergebnisse und was dich im Erstgespräch erwartet.",
-      thumbnailUrl: (typeof video !== "undefined" && video.thumbnailUrl) || `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`,
-      uploadDate: VIDEO_UPLOAD_ISO, // <-- hinzugefügt
-      embedUrl: `https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}`,
-      contentUrl: `https://www.youtube.com/watch?v=${YOUTUBE_ID}`,
-      publisher: {
-        "@type": "Organization",
-        name: "Komplett Webdesign",
-        logo: {
-          "@type": "ImageObject",
-          url: "https://www.komplettwebdesign.de/images/LogoTransparent.webp"
-        }
+      "name": "Was dich im Erstgespräch erwartet",
+      "description": "Kurz erklärt: Ablauf, Ergebnisse und was dich im Erstgespräch erwartet.",
+      "thumbnailUrl": `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`,
+      "uploadDate": VIDEO_UPLOAD_ISO,
+      "duration": "PT3M",
+      "embedUrl": `https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}`,
+      "contentUrl": `https://www.youtube.com/watch?v=${YOUTUBE_ID}`,
+      "publisher": {
+        "@id": `${SITE_URL}/#organization`
       }
     }
   };
@@ -485,7 +503,7 @@ export function renderWebdesignBerlinHub(req, res) {
     <meta property="og:title" content="${metaTitle}">
     <meta property="og:description" content="${metaDescription}">
     <meta property="og:url" content="${WEBDESIGN_BERLIN_URL}">
-    <meta property="og:image" content="https://www.komplettwebdesign.de/images/webdesign-berlin-hero.webp">
+    <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
   `;
 
   return res.render("bereiche/webdesign-berlin", {

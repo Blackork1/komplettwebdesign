@@ -52,7 +52,7 @@
 }
 
 h1 {
-  font-size: clamp(2rem, 1.1179rem + 3.619vw, 4.375rem);
+  font-size: clamp(2rem, 1.6656rem + 1.5287vw, 3.5rem);
 }
 
 h2 {
@@ -267,6 +267,9 @@ p > strong {
 }
 .heroCheckContainer figure:nth-child(3) {
   animation-delay: calc(var(--type-gap) + var(--type-dur) + 0.55s);
+}
+.heroCheckContainer figure:nth-child(4) {
+  animation-delay: calc(var(--type-gap) + var(--type-dur) + 0.7s);
 }
 
 .heroPriceInfo {

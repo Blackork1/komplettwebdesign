@@ -12,9 +12,17 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Website in Berlin erstellen lassen – Blog bis Shop',
-      description: 'Schnelle, SEO-optimierte Website in Berlin erstellen lassen: Konzept bis Hosting. Mit eigenen Blog und Onlineshop deinen Umsatz steigern.',
+      title: 'Website erstellen lassen – professionell, schnell, ab 499 € | Komplett Webdesign',
+      description: 'Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand. Landingpage ab 499 €.',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
+      seoExtra: `
+  <link rel="canonical" href="https://www.komplettwebdesign.de/">
+  <meta property="og:title" content="Website erstellen lassen – professionell, schnell, ab 499 € | Komplett Webdesign">
+  <meta property="og:site_name" content="Komplett Webdesign">
+  <meta property="og:description" content="Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand. Landingpage ab 499 €.">
+  <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
+  <meta property="og:url" content="https://www.komplettwebdesign.de/">
+  <meta property="og:type" content="website">`,
       users,
       packages,
       latestPost,

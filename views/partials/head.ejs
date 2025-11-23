@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
   <meta charset="UTF-8" />
   <title><%= title %></title>
@@ -10,10 +11,14 @@
   <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="/assets/css/fontawesome.min.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="/assets/css/fontawesome.min.css" /></noscript>
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/fontawesome.min.css" />
+  </noscript>
 
   <link rel="preload" href="/assets/css/solid.min.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="/assets/css/solid.min.css" /></noscript>
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/solid.min.css" />
+  </noscript>
 
   <link href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
   <link href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
@@ -27,14 +32,18 @@
   <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
 
   <link rel="preload" href="/extra.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="/extra.css" /></noscript>
+  <noscript>
+    <link rel="stylesheet" href="/extra.css" />
+  </noscript>
 
   <link rel="preload" href="/booking-widget.css" as="style" onload="this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="/booking-widget.css" /></noscript>
+  <noscript>
+    <link rel="stylesheet" href="/booking-widget.css" />
+  </noscript>
 
   <!-- Stripe lazy loader (wie bei dir) -->
   <script>
-    window.ensureStripe = function (pk) {
+    window.ensureStripe = function(pk) {
       return new Promise(resolve => {
         if (window.Stripe) return resolve(window.Stripe(pk));
         const s = document.createElement('script');
@@ -51,7 +60,9 @@
       e.preventDefault();
       const stripe = await window.ensureStripe("<%= process.env.STRIPE_PUBLISHABLE_KEY %>");
       // await stripe.redirectToCheckout({ sessionId: '...' });
-    }, { passive: false });
+    }, {
+      passive: false
+    });
   </script>
 
   <!-- Favicon / Manifest -->
@@ -62,7 +73,7 @@
   <link rel="manifest" href="/site.webmanifest" />
 
   <% if (locals.seoExtra) { %>
-    <%- typeof seoExtra === 'string' ? seoExtra : '' %>
+  <%- typeof seoExtra === 'string' ? seoExtra : '' %>
   <% } %>
 
   <!-- =========================================================
@@ -80,7 +91,10 @@
 
     // Consent Mode Defaults (alles denied)
     window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
 
     gtag('consent', 'default', {
       analytics_storage: 'denied',
@@ -100,18 +114,18 @@
       s.src = "https://www.googletagmanager.com/gtag/js?id=<%= process.env.GA_MEASUREMENT_ID %>";
       document.head.appendChild(s);
 
-      s.onload = function () {
+      s.onload = function() {
         gtag('js', new Date());
         gtag('config', "<%= process.env.GA_MEASUREMENT_ID %>", {
-          send_page_view: false,          // PV kommt erst per cookie-consent.js
-          allow_google_signals: false     // wird dort je nach marketing gesetzt
+          send_page_view: false, // PV kommt erst per cookie-consent.js
+          allow_google_signals: false // wird dort je nach marketing gesetzt
         });
       };
     }
 
     // Hook für dein Banner:
     // cookie-consent.js ruft bei Analytics-Einwilligung updateAnalyticsConsent(true) auf
-    window.updateAnalyticsConsent = function (granted) {
+    window.updateAnalyticsConsent = function(granted) {
       gtag('consent', 'update', {
         analytics_storage: granted ? 'granted' : 'denied'
       });
@@ -119,24 +133,30 @@
     };
 
     // --------- Clarity Loader (nur nach Consent) ---------
-    window.loadClarity = function () {
+    window.loadClarity = function() {
       var id = window.env && window.env.CLARITY_ID;
       if (!id) return;
       if (window.clarity) return;
       if (document.querySelector('script[src*="clarity.ms/tag/"]')) return;
 
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r); t.async=1; t.src="https://www.clarity.ms/tag/"+id;
-        y=l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t,y);
+      (function(c, l, a, r, i, t, y) {
+        c[a] = c[a] || function() {
+          (c[a].q = c[a].q || []).push(arguments)
+        };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = "https://www.clarity.ms/tag/" + id;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
       })(window, document, "clarity", "script");
 
       (function tryConsent() {
         if (typeof window.clarity === 'function') {
-          try { window.clarity('consent', true); } catch(e){}
+          try {
+            window.clarity('consent', true);
+          } catch (e) {}
         } else setTimeout(tryConsent, 200);
       })();
     };
   </script>
 </head>
-</html>
