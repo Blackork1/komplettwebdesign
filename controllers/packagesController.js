@@ -140,10 +140,12 @@ export async function showPackage(req, res) {
     console.error('❌ showPackage (schema):', err);
     jsonLd = [];
   }
+  const seoExtra = `<link rel="canonical" href="${resolveBaseUrl(req)}${req.originalUrl}">`;
 
   res.render('package_detail', {
     pack,
     slots,
+    seoExtra,
     title: `Paket: ${pack.name} - Komplett Webdesign`,
     description: `Details zu unserem Paket ${pack.name}.`,
     jsonLd,
