@@ -131,13 +131,18 @@ p > strong {
   align-items: center;
 }
 
+ol li,
+ul li {
+  color: var(--color-primary);
+}
+
 /* ===== H1 (animiert) ===== */
 .heroH1 {
   font-family: "Poppins", sans-serif;
   font-weight: bold;
   line-height: clamp(3.4375rem, 2.2768rem + 4.7619vw, 6.5625rem);
   color: #e94a1b;
-  letter-spacing: clamp(0.75rem, 0.6107rem + 0.5714vw, 1.125rem);
+  letter-spacing: clamp(0.1875rem, -0.0921rem + 1.1184vw, 1.25rem);
   margin-bottom: 14px;
   position: relative; /* nötig für ::before */
   z-index: 1;

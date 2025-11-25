@@ -50,7 +50,10 @@ function normalizeFieldValue(key, val) {
 
 function normalizeIndustryPayload(obj = {}) {
   const out = {};
-  for (const [k, v] of Object.entries(obj)) out[k] = normalizeFieldValue(k, v);
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === 'rebuild_embeddings') continue;   // 👈 Flag ignorieren
+    out[k] = normalizeFieldValue(k, v);
+  }
   if (!out.slug && out.name) out.slug = slugify(out.name);
   return out;
 }

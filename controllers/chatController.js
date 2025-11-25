@@ -1,6 +1,7 @@
 import { retrieveFaqs } from '../models/faqModel.js';
 import { retrievePages } from '../models/pageModel.js';
 import { saveMessage, getHistory } from '../models/chatModel.js';
+import { searchIndustryEmbeddings } from '../scripts/embeddingsService.js';
 import OpenAI from 'openai';
 
 
@@ -16,95 +17,78 @@ export async function history(req, res) {
 
 // POST  /chat/message  (und /faq/query als Alias)
 export async function message(req, res) {
-    const userQ = req.body.question;
-    if (!userQ) return res.status(400).json({ error: 'Frage fehlt' });
-    const sessionId = req.session.id;
+  const userQ = req.body.question;
+  if (!userQ) return res.status(400).json({ error: 'Frage fehlt' });
 
-    // 1) Speichere User-Frage
-    await saveMessage(sessionId, 'user', userQ);
+  const sessionId = req.session.id;
 
-    // 2) Baue Prompt mit FAQ + Pages
-    const faqs = await retrieveFaqs(userQ);
-    const pages = await retrievePages(userQ);
-    const faqCtx = faqs.map((f, i) =>
-        `FAQ${i + 1}: ${f.question}\nAntwort: ${f.answer}`
-    ).join('\n\n');
-    const pageCtx = pages.map((p, i) =>
-        `Page${i + 1}: Titel="${p.title}", Pfad="/${p.slug}"`
-    ).join('\n\n');
+  // 1) User-Frage speichern
+  await saveMessage(sessionId, 'user', userQ);
 
-    const system = `
-Du bist ein Webdesign-Chatbot. Nutze diese FAQ-Einträge:
+  // 2) Embedding-Retrieval: FAQs, Seiten, Branchen
+  const [faqs, pages, industries] = await Promise.all([
+    retrieveFaqs(userQ),
+    retrievePages(userQ),
+    searchIndustryEmbeddings(userQ, 5) // Anzahl Treffer nach Geschmack
+  ]);
+
+  // 3) Kontextstrings bauen
+  const faqCtx = faqs.map((f, i) =>
+    `FAQ${i + 1}${f.distance != null ? ` (Distanz ${f.distance.toFixed(3)})` : ''}:
+Frage: ${f.question}
+Antwort: ${f.answer}`
+  ).join('\n\n');
+
+  const pageCtx = pages.map((p, i) =>
+    `Seite${i + 1}${p.distance != null ? ` (Distanz ${p.distance.toFixed(3)})` : ''}:
+Titel: ${p.title}
+Pfad: "/${p.slug}"
+Beschreibung: ${p.description || ''}`
+  ).join('\n\n');
+
+  const industryCtx = industries.map((it, i) =>
+    `Branche${i + 1}${it.distance != null ? ` (Distanz ${it.distance.toFixed(3)})` : ''}:
+Name: ${it.name}
+Pfad: "/branchen/webdesign-${it.slug}"   // 👈 ggf. an dein Routing anpassen
+Quelle: ${it.source}
+Inhalt: ${it.content}`
+  ).join('\n\n');
+
+  const system = `
+Du bist der offizielle Chatbot von Komplett Webdesign.
+Du darfst nur auf Grundlage der folgenden Inhalte antworten.
 
 FAQ-Einträge:
-${faqCtx}
+${faqCtx || '(keine passenden FAQ-Treffer)'}
 
-Und diese Seiteninfos:
-${pageCtx}
+Seiteninfos:
+${pageCtx || '(keine passenden Seiten-Treffer)'}
 
-**Regeln für Links**  
-- Verwende ausschließlich relative Pfade aus den Seiteninfos (z. B. "/preise", "/contact").  
-- Baue Links so: <a href="https://www.komplettwebdesign.de/PFAD">Zur Seite</a>
+Branchenseiten:
+${industryCtx || '(keine passenden Branchen-Treffer)'}
 
-Gib dem Nutzer möglichst eine präzise FAQ-Antwort, 
-ansonsten nur einen Link zurück.
+REGELN:
+- Antworte auf Deutsch in der Du-Form.
+- Nutze nur Informationen aus den obigen Blöcken, erfinde nichts dazu.
+- Wenn du auf eine Seite oder Branche verlinkst, verwende ausschließlich Pfade, die oben vorkommen.
+  Beispiel: <a href="https://www.komplettwebdesign.de/PFAD">Zur Seite</a>
+- Wenn nichts wirklich passt, sag ehrlich, dass es dazu noch keine Inhalte auf der Website gibt und verweise auf das Kontaktformular.
 `;
 
-    // 3) Hol Antwort von OpenAI
-    const chatRes = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: userQ }
-        ]
-    });
-    const answer = chatRes.choices[0].message.content;
+  // 4) Antwort vom Modell holen
+  const chatRes = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: userQ }
+    ],
+    temperature: 0.2
+  });
 
-    // 4) Speichere Bot-Antwort
-    await saveMessage(sessionId, 'bot', answer);
+  const answer = chatRes.choices[0].message.content;
 
-    res.json({ answer });
+  // 5) Bot-Antwort speichern
+  await saveMessage(sessionId, 'bot', answer);
+
+  res.json({ answer });
 }
-
-
-// export async function chatFaq(req, res) {
-//   const userQ = req.body.question;
-//   if (!userQ) return res.status(400).json({ error: 'Frage fehlt' });
-
-//   const faqs  = await retrieveFaqs(userQ);
-//   const pages = await retrievePages(userQ);
-
-//   const faqCtx = faqs.map((f,i) =>
-//     `FAQ${i+1}: ${f.question}\nAntwort: ${f.answer}`
-//   ).join('\n\n');
-//   const pageCtx = pages.map((p,i) =>
-//     `Page${i+1}: Titel="${p.title}", Pfad="/${p.slug}"`
-//   ).join('\n\n');
-
-//   const system = `
-// Du bist ein Webdesign-Chatbot. Nutze diese FAQ-Einträge:
-
-// FAQ-Einträge:
-// ${faqCtx}
-
-// Und diese Seiteninfos:
-// ${pageCtx}
-
-// **Regeln für Links**
-// - Verwende **ausschließlich** relative Pfade aus den Seiteninfos (z. B. "/preise", "/contact").
-// - beggine die verlinkte Seite mit <a href="https://www.komplettwebdesign.de">Zur Seite</a> 
-
-// Gib dem Nutzer entweder eine wenn möglich präzise FAQ-Antwort, sonst durchsuche die FAQs und erstelle eine logsche Antwort
-// oder einen Link (z.B. "/contact") zurück.
-// `;
-
-//   const chatRes = await openai.chat.completions.create({
-//     model: 'gpt-4o-mini',
-//     messages: [
-//       { role: 'system', content: system },
-//       { role: 'user',   content: userQ }
-//     ]
-//   });
-
-//   res.json({ answer: chatRes.choices[0].message.content });
-// }

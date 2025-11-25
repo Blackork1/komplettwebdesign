@@ -1,9 +1,10 @@
 import pool from '../util/db.js';
+import { embedAsVector } from '../util/embeddings.js';
 
 // TODO: implementiere deine Embedding-Funktion (OpenAI, HF, o.ä.)
-async function computeEmbedding(text) {
-  // return Float32Array/number[] Länge 1536 o.ä.
-  throw new Error('computeEmbedding(text) noch implementieren');
+export async function computeEmbedding(text) {
+  // du kannst hier ggf. noch Kürzen/Normalisieren
+  return embedAsVector(text, 'text-embedding-3-small');
 }
 
 export async function rebuildIndustryEmbeddings(industry) {
@@ -73,12 +74,22 @@ export async function rebuildIndustryEmbeddings(industry) {
 
 export async function searchIndustryEmbeddings(query, topK = 8) {
   const emb = await computeEmbedding(query);
+
   const { rows } = await pool.query(
-    `SELECT industry_id, source, content, embedding <=> $1 AS distance
-     FROM industry_embeddings
-     ORDER BY embedding <=> $1
-     LIMIT $2`,
+    `SELECT
+        i.id       AS industry_id,
+        i.slug     AS slug,
+        i.name     AS name,
+        ie.source  AS source,
+        ie.content AS content,
+        ie.embedding <=> $1::vector AS distance
+       FROM industry_embeddings ie
+       JOIN industries i
+         ON i.id = ie.industry_id
+   ORDER BY ie.embedding <=> $1::vector
+      LIMIT $2`,
     [emb, topK]
   );
+
   return rows;
 }

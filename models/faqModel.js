@@ -34,15 +34,19 @@ export async function retrieveFaqs(question, topK = 5) {
   const vec = await embedAsVector(question);
 
   const { rows } = await pool.query(
-    `SELECT question, answer
+    `SELECT
+        id,
+        question,
+        answer,
+        embedding <=> $1::vector AS distance
        FROM faq_entries
-   ORDER BY embedding <#> $1::vector     -- Cast nicht vergessen
+      WHERE embedding IS NOT NULL
+   ORDER BY embedding <=> $1::vector
       LIMIT $2`,
     [vec, topK]
   );
   return rows;
 }
-
 export async function getPublishedFaqs(db) {
   const { rows } = await db.query(
     `SELECT id, category_id, question, answer
