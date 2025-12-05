@@ -45,7 +45,7 @@ function resolveBaseUrl(req) {
 // ────────────────────────────────────────────────────────────────────────────────
 export async function listPackages(req, res) {
   const pageMeta = {
-    title: 'Unsere Website Pakete - Premium Webdesign Pakete',
+    title: 'Unsere Website Pakete - professionelles & individuelles Webdesign',
     description: 'Professionelle Website Pakete für Selbstständige & KMU. Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt - deine Website ab 499€.'
   };
   try {
@@ -146,8 +146,8 @@ export async function showPackage(req, res) {
     pack,
     slots,
     seoExtra,
-    title: `Paket: ${pack.name} - Komplett Webdesign`,
-    description: `Details zu unserem Paket ${pack.name}.`,
+    title: pack.title,
+    description: pack.description,
     jsonLd,
     successMessage: null
   });

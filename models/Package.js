@@ -3,7 +3,7 @@ import pool from '../util/db.js';
 export default class Package {
   static async fetchAll() {
     const pkgRes = await pool.query(
-      `SELECT id,name,price_amount_cents,description,detailshero,stripe_price_id_once,display
+      `SELECT id,name,price_amount_cents,description,detailshero,stripe_price_id_once,display, slug
        FROM packages ORDER BY id`
     );
     const featRes = await pool.query(

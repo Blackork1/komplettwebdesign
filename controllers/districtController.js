@@ -10,7 +10,7 @@ export async function renderDistrictPage(req, res, next) {
     // Optional: Meta für Head-Partial (dein Hauptcontent enthält bereits JSON-LD)
     const metaTitle = `Webdesign ${district.name} | Professionelle Website erstellen lassen`;
     const metaDescription =
-      `Komplett Webdesign: Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. ` +
+      `Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. ` +
       `Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.`;
 
     res.locals.title = metaTitle;
@@ -37,14 +37,14 @@ const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Webdesign Berlin – Website erstellen lassen ab 499 € | Komplett Webdesign";
+  const metaTitle = "Webdesign Berlin ab 499€ - professionelle Website erstellen lassen";
   const metaDescription =
-    "Webdesign Berlin: Lass dir deine Website in Berlin professionell erstellen – schnell, suchmaschinenoptimiert und ab 499 €. In 4–6 Wochen online, inkl. rechtssicherer Inhalte, Local SEO & persönlichem Ansprechpartner.";
+    "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung, DSGVO-konforme Umsetzung & technisches Hosting für Berliner Unternehmen.";
 
   const hero = {
-    title: "Webdesign Berlin: Professionelle Website in Berlin erstellen lassen",
+    title: "Webdesign Berlin ab 499€ - professionelle Website erstellen lassen",
     description:
-      "Als Berliner Webdesign-Agentur erstellen wir Websites, mit denen du in Berlin gefunden wirst. Wenn du deine Website in Berlin erstellen lassen möchtest, kümmern wir uns um Design, Texte, SEO und Technik – damit aus Besuchern Kunden werden.",
+      "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung, DSGVO-konforme Umsetzung & technisches Hosting für Berliner Unternehmen.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },

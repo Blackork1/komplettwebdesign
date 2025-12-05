@@ -66,7 +66,7 @@ export async function createPost(req, res) {
       faq_json 
     });
 
-    res.redirect('/blog');
+    res.redirect('/admin/blog');
   } catch (err) {
     console.error('createPost-Fehler:', err);
     res.status(500).send('Fehler beim Erstellen');
@@ -110,7 +110,7 @@ export async function updatePost(req, res) {
       hero_public_id
     });
 
-    res.redirect('/blog');
+    res.redirect('/admin/blog');
   } catch (err) {
     console.error('updatePost-Fehler:', err);
     res.status(500).send('Fehler beim Aktualisieren');
@@ -128,7 +128,7 @@ export async function deletePost(req, res) {
       try { await cloudinary.uploader.destroy(deleted.hero_public_id); } catch { }
     }
 
-    res.redirect('/blog');
+    res.redirect('/admin/blog');
   } catch (err) {
     console.error('deletePost-Fehler:', err);
     res.status(500).send('Fehler beim Löschen');
