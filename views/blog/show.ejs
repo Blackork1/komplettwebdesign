@@ -31,6 +31,53 @@
       <div class="post-content">
         <%- renderedContent %>
       </div>
+
+      <section id="blog-comments" class="comment-section mt-5" data-post-slug="<%= post.slug %>" data-recaptcha-sitekey="<%= process.env.RECAPTCHA_SITEKEY || '' %>">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <p class="text-uppercase small text-muted mb-1">Engagiere dich</p>
+            <h2 class="h4 mb-0">Kommentare &amp; Feedback</h2>
+            <p class="text-muted mb-0">Stelle Fragen, teile Anregungen oder hinterlasse deine Meinung zu diesem Artikel.</p>
+          </div>
+          <div class="badge bg-light text-dark border">
+            Spam-geschützt mit reCAPTCHA
+          </div>
+        </div>
+
+        <div class="comment-card p-4 position-relative" data-comment-body>
+          <div class="comment-consent-overlay d-none" data-consent-overlay>
+            <div>
+              <p class="mb-1 fw-semibold">Kommentare deaktiviert</p>
+              <p class="mb-0 small">Zum Kommentieren und Liken müssen die Cookie Einstellungen akzeptiert werden.</p>
+            </div>
+          </div>
+
+          <form class="comment-form" data-comment-form novalidate>
+            <div class="row g-3 align-items-start">
+              <div class="col-12 col-md-4">
+                <label class="form-label">Name</label>
+                <input type="text" name="name" class="form-control" placeholder="Dein Name" maxlength="80" required />
+              </div>
+              <div class="col-12 col-md-8">
+                <label class="form-label">Kommentar</label>
+                <textarea name="comment" class="form-control" rows="3" placeholder="Teile deine Frage oder Meinung..." maxlength="1500" required></textarea>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                  <small class="text-muted">Klick ins Textfeld lädt reCAPTCHA.</small>
+                  <button type="submit" class="btn btn-primary" data-submit-btn>
+                    Kommentar senden
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="comment-feedback small" data-comment-feedback role="status"></div>
+        </div>
+
+        <div class="comment-list mt-3" data-comment-list>
+          <p class="text-muted" data-empty-state>Sei die erste Person, die einen Kommentar hinterlässt.</p>
+        </div>
+      </section>
     </main>
 
     <!-- Newsletter-Sidebar (Desktop) -->
@@ -50,5 +97,6 @@
     <%- include('../partials/newsletter_form') %>
   </section>
 </div>
+<script src="/js/blog-comments.js" defer></script>
 
 <%- include('../partials/footer') %>
