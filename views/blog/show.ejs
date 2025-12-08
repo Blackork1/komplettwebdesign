@@ -61,6 +61,7 @@
               <div class="col-12 col-md-8">
                 <label class="form-label">Kommentar</label>
                 <textarea name="comment" class="form-control" rows="3" placeholder="Teile deine Frage oder Meinung..." maxlength="1500" required></textarea>
+                <input type="hidden" name="parentId" value="" />
                 <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
                   <small class="text-muted">Klick ins Textfeld lädt reCAPTCHA.</small>
                   <button type="submit" class="btn btn-primary" data-submit-btn>
@@ -70,6 +71,13 @@
               </div>
             </div>
           </form>
+
+          <div class="comment-reply-indicator d-none" data-reply-indicator>
+            <div class="small text-muted">
+              Antwort auf <span class="fw-semibold" data-reply-target></span>
+            </div>
+            <button type="button" class="btn btn-link p-0 small" data-cancel-reply>Abbrechen</button>
+          </div>
 
           <div class="comment-feedback small" data-comment-feedback role="status"></div>
         </div>

@@ -69,6 +69,7 @@ function serializeComment(row) {
     content: row.content,
     likes: row.likes,
     dislikes: row.dislikes,
+    parent_id: row.parent_id,
     created_at: row.created_at
   };
 }
@@ -91,10 +92,18 @@ export async function addComment(req, res) {
 
   const name = sanitizeText(req.body.name, 80);
   const message = sanitizeText(req.body.comment, 1500);
+  const parentId = req.body.parentId ? Number(req.body.parentId) : null;
   const token = req.body.recaptchaToken;
 
   if (!name || !message) {
     return res.status(400).json({ message: 'Bitte Name und Kommentar ausfüllen.' });
+  }
+
+  if (parentId) {
+    const parent = await CommentModel.findById(parentId);
+    if (!parent || parent.post_id !== post.id) {
+      return res.status(400).json({ message: 'Ungültiger Bezugs-Kommentar.' });
+    }
   }
 
   const recaptchaOk = await verifyRecaptcha(token);
@@ -111,6 +120,7 @@ export async function addComment(req, res) {
     postId: post.id,
     authorName: name,
     content: message,
+    parentId: parentId || null,
     ipHash: hashIp(ip)
   });
 

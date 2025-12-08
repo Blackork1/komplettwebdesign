@@ -13,20 +13,36 @@ export default class CommentModel {
         content TEXT NOT NULL,
         likes INTEGER NOT NULL DEFAULT 0,
         dislikes INTEGER NOT NULL DEFAULT 0,
+        parent_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE,
         ip_hash TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
     `);
+    await this.ensureParentColumn();
     this.tableEnsured = true;
   }
 
-  static async create({ postId, authorName, content, ipHash = null }) {
+  static async ensureParentColumn() {
+    const { rows } = await pool.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_name = 'blog_comments' AND column_name = 'parent_id'`
+    );
+
+    if (!rows.length) {
+      await pool.query(
+        `ALTER TABLE blog_comments
+           ADD COLUMN parent_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE`
+      );
+    }
+  }
+
+  static async create({ postId, authorName, content, ipHash = null, parentId = null }) {
     await this.ensureTable();
     const { rows } = await pool.query(
-      `INSERT INTO blog_comments (post_id, author_name, content, ip_hash)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO blog_comments (post_id, author_name, content, ip_hash, parent_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [postId, authorName, content, ipHash]
+      [postId, authorName, content, ipHash, parentId]
     );
     return rows[0];
   }
@@ -36,7 +52,7 @@ export default class CommentModel {
     const { rows } = await pool.query(
       `SELECT * FROM blog_comments
        WHERE post_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at ASC`,
       [postId]
     );
     return rows;

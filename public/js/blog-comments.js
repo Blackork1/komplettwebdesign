@@ -11,9 +11,15 @@
   const consentOverlay = section.querySelector('[data-consent-overlay]');
   const commentBody = section.querySelector('[data-comment-body]');
   const submitBtn = section.querySelector('[data-submit-btn]');
+  const parentInput = form?.querySelector('input[name="parentId"]');
+  const replyIndicator = section.querySelector('[data-reply-indicator]');
+  const replyTarget = section.querySelector('[data-reply-target]');
+  const cancelReplyBtn = section.querySelector('[data-cancel-reply]');
 
   let grecaptchaPromise = null;
   let currentConsentGranted = false;
+  let currentReplyTarget = null;
+  const consentMessage = 'Zum Kommentieren und Liken müssen die Cookie Einstellungen akzeptiert werden.';
 
   function setFeedback(message, tone = 'muted') {
     if (!feedback) return;
@@ -87,6 +93,37 @@
     return window.grecaptcha.execute(siteKey, { action: 'blog_comment' });
   }
 
+  function showInlineConsentWarning(item) {
+    const inlineFeedback = item?.querySelector('[data-inline-feedback]');
+    if (inlineFeedback) {
+      inlineFeedback.textContent = consentMessage;
+    }
+  }
+
+  function beginReply(item) {
+    const id = item?.dataset.commentId;
+    if (!id || !parentInput) return;
+
+    currentReplyTarget = id;
+    parentInput.value = id;
+
+    const authorName = item.querySelector('strong')?.textContent?.trim() || 'diesem Kommentar';
+    if (replyIndicator && replyTarget) {
+      replyIndicator.classList.remove('d-none');
+      replyTarget.textContent = authorName;
+    }
+
+    commentBody?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    form?.querySelector('textarea')?.focus({ preventScroll: true });
+  }
+
+  function clearReplyTarget() {
+    currentReplyTarget = null;
+    if (parentInput) parentInput.value = '';
+    if (replyIndicator) replyIndicator.classList.add('d-none');
+    if (replyTarget) replyTarget.textContent = '';
+  }
+
   function renderComments(comments) {
     if (!list) return;
     list.innerHTML = '';
@@ -98,41 +135,83 @@
 
     if (emptyState) emptyState.classList.add('d-none');
 
+    const threads = buildThreads(comments);
+    threads.forEach(thread => list.appendChild(createCommentElement(thread)));
+  }
+
+  function buildThreads(comments = []) {
+    const map = new Map();
     comments.forEach(comment => {
-      const item = document.createElement('article');
-      item.className = 'comment-item';
-      item.dataset.commentId = comment.id;
-
-      const meta = document.createElement('div');
-      meta.className = 'comment-meta';
-      const nameEl = document.createElement('strong');
-      nameEl.textContent = comment.author_name;
-      const dateEl = document.createElement('span');
-      dateEl.className = 'text-muted';
-      dateEl.textContent = new Date(comment.created_at).toLocaleString('de-DE');
-      meta.appendChild(nameEl);
-      meta.appendChild(dateEl);
-
-      const body = document.createElement('p');
-      body.className = 'comment-content';
-      body.textContent = comment.content;
-
-      const actions = document.createElement('div');
-      actions.className = 'comment-actions';
-      actions.innerHTML = `
-        <button type="button" data-action="like">
-          👍 <span data-count="like">${comment.likes || 0}</span>
-        </button>
-        <button type="button" data-action="dislike">
-          👎 <span data-count="dislike">${comment.dislikes || 0}</span>
-        </button>
-      `;
-
-      item.appendChild(meta);
-      item.appendChild(body);
-      item.appendChild(actions);
-      list.appendChild(item);
+      map.set(comment.id, { ...comment, replies: [] });
     });
+
+    const roots = [];
+    map.forEach(comment => {
+      if (comment.parent_id && map.has(comment.parent_id)) {
+        map.get(comment.parent_id).replies.push(comment);
+      } else {
+        roots.push(comment);
+      }
+    });
+
+    const sortTree = (nodes) => {
+      nodes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      nodes.forEach(node => sortTree(node.replies));
+    };
+
+    sortTree(roots);
+    return roots;
+  }
+
+  function createCommentElement(comment, depth = 0) {
+    const item = document.createElement('article');
+    item.className = 'comment-item';
+    if (depth > 0) item.classList.add('comment-reply');
+    item.dataset.commentId = comment.id;
+
+    const meta = document.createElement('div');
+    meta.className = 'comment-meta';
+    const nameEl = document.createElement('strong');
+    nameEl.textContent = comment.author_name;
+    const dateEl = document.createElement('span');
+    dateEl.className = 'text-muted';
+    dateEl.textContent = new Date(comment.created_at).toLocaleString('de-DE');
+    meta.appendChild(nameEl);
+    meta.appendChild(dateEl);
+
+    const body = document.createElement('p');
+    body.className = 'comment-content';
+    body.textContent = comment.content;
+
+    const actions = document.createElement('div');
+    actions.className = 'comment-actions';
+    actions.innerHTML = `
+      <button type="button" data-action="like">
+        👍 <span data-count="like">${comment.likes || 0}</span>
+      </button>
+      <button type="button" data-action="dislike">
+        👎 <span data-count="dislike">${comment.dislikes || 0}</span>
+      </button>
+      <button type="button" data-action="reply">Antworten</button>
+    `;
+
+    const inlineFeedback = document.createElement('div');
+    inlineFeedback.className = 'comment-inline-feedback';
+    inlineFeedback.dataset.inlineFeedback = 'true';
+
+    item.appendChild(meta);
+    item.appendChild(body);
+    item.appendChild(actions);
+    item.appendChild(inlineFeedback);
+
+    if (comment.replies?.length) {
+      const childContainer = document.createElement('div');
+      childContainer.className = 'comment-children';
+      comment.replies.forEach(reply => childContainer.appendChild(createCommentElement(reply, depth + 1)));
+      item.appendChild(childContainer);
+    }
+
+    return item;
   }
 
   async function loadComments() {
@@ -150,7 +229,8 @@
     const formData = new FormData(form);
     return {
       name: (formData.get('name') || '').toString(),
-      comment: (formData.get('comment') || '').toString()
+      comment: (formData.get('comment') || '').toString(),
+      parentId: (formData.get('parentId') || '').toString()
     };
   }
 
@@ -159,7 +239,7 @@
     setFeedback('');
 
     if (!currentConsentGranted) {
-      setFeedback('Zum Kommentieren und Liken müssen die Cookie Einstellungen akzeptiert werden.', 'danger');
+      setFeedback(consentMessage, 'danger');
       return;
     }
 
@@ -183,6 +263,7 @@
       if (!response.ok) throw new Error(data.message || 'Kommentar konnte nicht gespeichert werden.');
 
       form.reset();
+      clearReplyTarget();
       setFeedback('Danke für deinen Kommentar! Er wurde gespeichert.', 'success');
       await loadComments();
     } catch (err) {
@@ -198,7 +279,8 @@
     if (!action || !item) return;
 
     if (!currentConsentGranted) {
-      setFeedback('Zum Kommentieren und Liken müssen die Cookie Einstellungen akzeptiert werden.', 'danger');
+      showInlineConsentWarning(item);
+      setFeedback(consentMessage, 'danger');
       return;
     }
 
@@ -217,6 +299,9 @@
       const dislikeCount = item.querySelector('[data-count="dislike"]');
       if (likeCount) likeCount.textContent = data.stats?.likes ?? 0;
       if (dislikeCount) dislikeCount.textContent = data.stats?.dislikes ?? 0;
+
+      const inlineFeedback = item.querySelector('[data-inline-feedback]');
+      if (inlineFeedback) inlineFeedback.textContent = '';
 
       item.querySelectorAll('[data-action]').forEach(btn => {
         btn.dataset.active = btn.dataset.action === action ? 'true' : 'false';
@@ -239,8 +324,25 @@
     if (list) {
       list.addEventListener('click', (event) => {
         const target = event.target.closest('[data-action]');
-        if (target) handleReaction(target);
+        if (!target) return;
+
+        const action = target.dataset.action;
+        if (action === 'like' || action === 'dislike') {
+          handleReaction(target);
+        } else if (action === 'reply') {
+          const commentEl = target.closest('[data-comment-id]');
+          if (!currentConsentGranted) {
+            showInlineConsentWarning(commentEl);
+            setFeedback(consentMessage, 'danger');
+            return;
+          }
+          beginReply(commentEl);
+        }
       });
+    }
+
+    if (cancelReplyBtn) {
+      cancelReplyBtn.addEventListener('click', clearReplyTarget);
     }
 
     document.addEventListener('cookieConsentUpdate', () => {

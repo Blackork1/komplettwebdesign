@@ -267,6 +267,35 @@
   color: #0ea5e9;
 }
 
+.comment-inline-feedback {
+  font-size: 0.85rem;
+  color: #b91c1c;
+  margin-top: 0.35rem;
+}
+
+.comment-children {
+  margin-left: 1.5rem;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.comment-item.comment-reply {
+  background: #f9fafb;
+}
+
+.comment-reply-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  margin-top: 0.75rem;
+  background: #f8fafc;
+}
+
 .comment-consent-overlay {
   position: absolute;
   inset: 0;
