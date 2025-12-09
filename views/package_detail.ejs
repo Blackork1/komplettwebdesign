@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="de">
+<%- include('partials/head') %>
+<%- include('partials/header') %>
 
 <style>
   .package-detail-page .hero-meta {
@@ -492,14 +492,7 @@
     }
   }
 </style>
-
-<head>
-  <%- include('partials/head') %>
-  <title><%= pack.name %>-Paket – Komplett Webdesign</title>
-</head>
-
 <body>
-  <%- include('partials/header') %>
   <main class="packages-page package-detail-page">
     <%
       function slugify(value) {
