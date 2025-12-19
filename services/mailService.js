@@ -38,9 +38,9 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
     const html = `
     <p>Hallo ${name}</p>
     <p>${type === "pending"
-            ? `vielen Dank für Ihre Terminanfrage. Wir prüfen den Termin und melden uns in spätestens 24 Stunden bei Ihnen zurück.`
+            ? `vielen Dank für Ihre Terminanfrage. Wir prüfen den Termin und melden uns in spätestens 24 Stunden zurück.`
             : type === "confirmed"
-                ? `Ihr Termin wurde bestätigt. Wir freuen uns auf das Gespräch!`
+                ? `Der Termin wurde bestätigt. Ich freuen mich auf unser Gespräch! Ich werde mich zum Termin telefonisch melden.`
                 : `Leider mussten wir den Termin stornieren. Bitte buchen Sie einen neuen Termin über unsere Website.`
         }</p>
     <p><strong>Termin:</strong> ${pretty}</p>
