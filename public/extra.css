@@ -1167,7 +1167,11 @@
   display: block;
 }
 .youtube-wrapper {
-  background: linear-gradient(135deg, rgba(16, 13, 9, 0.85), rgba(25, 19, 13, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(16, 13, 9, 0.85),
+    rgba(25, 19, 13, 0.9)
+  );
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 58px rgba(31, 27, 22, 0.3);
   padding: 0;
@@ -1933,6 +1937,16 @@ p.step-description {
   font-size: 0.95rem;
 }
 
+  .main-nav .dropdown-toggle-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--color-black);
+  }
+
 @media (max-width: 768px) {
   .webdesign-berlin-page .wd-hero h1 {
     font-size: 2.2rem;
@@ -1988,4 +2002,54 @@ p.step-description {
     display: flex;
     flex-direction: column-reverse;
   }
+}
+
+@media (max-width: 1180px) {
+  .main-nav ul {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .main-nav .dropdown-toggle-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--color-white);
+  }
+
+  .main-nav .dropdown-menu {
+    border: none;
+    box-shadow: none;
+    display: none;
+    left: auto;
+    margin-top: 0.25rem;
+    margin-right: 1rem;
+    min-width: 0;
+    opacity: 1;
+    position: static;
+    transition: all 0.2s ease;
+  }
+
+  .heroLinks a:not(.main-color) {
+    margin: 5px 20px 5px 5px;
+  }
+
+  .main-nav .dropdown:hover .dropdown-menu {
+    display: none;
+  }
+
+  .main-nav .dropdown.is-open .dropdown-menu {
+    display: flex;
+  }
+
+  .main-nav .dropdown-menu li a {
+    padding: 0.4rem 1rem;
+  }
+}
+
+.dropdown-toggle::after {
+  display: none;
 }
