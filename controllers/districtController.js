@@ -37,14 +37,14 @@ const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Webdesign Berlin ab 499€ - professionelle Website erstellen lassen";
+  const metaTitle = "Webdesign Berlin - professionelle Websiteerstellung";
   const metaDescription =
-    "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung, DSGVO-konforme Umsetzung & technisches Hosting für Berliner Unternehmen.";
+    "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung & technisches Hosting für Berliner Unternehmen.";
 
   const hero = {
-    title: "Webdesign Berlin ab 499€ - professionelle Website erstellen lassen",
+    title: "Webdesign Berlin - professionelle Websiteerstellung",
     description:
-      "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung, DSGVO-konforme Umsetzung & technisches Hosting für Berliner Unternehmen.",
+      "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung & technisches Hosting für Berliner Unternehmen.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
