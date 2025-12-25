@@ -58,11 +58,12 @@
       try {
         pendingPromise = Promise.resolve(window.grecaptcha.execute(siteKey, { action: actionName })).then(function (token) {
           tokenInput.value = token || '';
+          pendingPromise = null;
           return token;
-        })
-          .finally(function () {
-            pendingPromise = null;
-          });
+        }, function (err) {
+          pendingPromise = null;
+          throw err;
+        });
       } catch (err) {
         pendingPromise = null;
         return Promise.reject(err);
