@@ -1,5 +1,5 @@
 # apps/komplettwebdesign/Dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Arbeitsverzeichnis
 WORKDIR /usr/src/app
@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Abhängigkeiten installieren
-RUN npm install --production
+RUN npm install --omit=dev
 
 # Rest des Codes kopieren
 COPY . .
