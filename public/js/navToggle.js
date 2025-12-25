@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const navLinks = document.getElementById("nav-links");
   const navBar = document.getElementById("navigation");
 
- if (!menuIcon || !navLinks || !navBar) {
+  if (!menuIcon || !navLinks || !navBar) {
     return;
   }
 
@@ -31,47 +31,57 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  const toggleDropdown = (event, target, { allowNavigation = false } = {}) => {
+    if (!mobileQuery.matches) {
+      return;
+    }
+
+    const parent = target.closest(".dropdown");
+    if (!parent) {
+      return;
+    }
+
+    if (allowNavigation && parent.classList.contains("is-open")) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (parent.classList.contains("is-open")) {
+      parent.classList.remove("is-open");
+      return;
+    }
+    closeAllDropdowns(parent);
+    parent.classList.add("is-open");
+  };
+
   dropdownLinks.forEach((link) => {
     link.addEventListener("click", function (event) {
-      if (!mobileQuery.matches) {
-        return;
-      }
-
-      const parent = link.closest(".dropdown");
-      if (!parent) {
-        return;
-      }
-
-      if (!parent.classList.contains("is-open")) {
-        event.preventDefault();
-        closeAllDropdowns(parent);
-        parent.classList.add("is-open");
-      }
+      toggleDropdown(event, link, { allowNavigation: true });
     });
+
+    link.addEventListener(
+      "touchstart",
+      function (event) {
+        toggleDropdown(event, link, { allowNavigation: true });
+      },
+      { passive: false }
+    );
   });
 
   dropdownButtons.forEach((button) => {
     button.addEventListener("click", function (event) {
-      if (!mobileQuery.matches) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const parent = button.closest(".dropdown");
-      if (!parent) {
-        return;
-      }
-
-      if (parent.classList.contains("is-open")) {
-        parent.classList.remove("is-open");
-        return;
-      }
-
-      closeAllDropdowns(parent);
-      parent.classList.add("is-open");
+      toggleDropdown(event, button);
     });
+
+    button.addEventListener(
+      "touchstart",
+      function (event) {
+        toggleDropdown(event, button);
+      },
+      { passive: false }
+    );
   });
 
 
