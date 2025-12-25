@@ -56,11 +56,10 @@
       if (pendingPromise) return pendingPromise;
 
       try {
-        pendingPromise = window.grecaptcha.execute(siteKey, { action: actionName })
-          .then(function (token) {
-            tokenInput.value = token || '';
-            return token;
-          })
+        pendingPromise = Promise.resolve(window.grecaptcha.execute(siteKey, { action: actionName })).then(function (token) {
+          tokenInput.value = token || '';
+          return token;
+        })
           .finally(function () {
             pendingPromise = null;
           });
