@@ -68,12 +68,13 @@ dotenv.config();
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
 
-app.set('trust proxy', true);
+const isProd = process.env.NODE_ENV === 'production';
+app.set('trust proxy', isProd ? 1 : false);
 
-app.disable('x-powered-by');      // Header unterdrücken
+app.disable('x-powered-by');      
+// Header unterdrücken
 // 2) nur in Production aktivieren
-if (process.env.NODE_ENV === 'production') {
-  app.enable('trust proxy', 1);
+if (isProd) {
 
   const CANON_HOST = 'www.komplettwebdesign.de';
   const IGNORED_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0'];
