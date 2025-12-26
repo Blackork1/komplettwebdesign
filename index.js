@@ -127,7 +127,6 @@ app.use(express.static(path.join(__dirname, 'public'), staticOpts));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const isProd = process.env.NODE_ENV === 'production';
 
 // Session
 const PgSession = connectPg(session);
