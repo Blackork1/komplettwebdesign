@@ -1,14 +1,15 @@
 <%- include('../partials/head') %>
 <%- include('../partials/header') %>
 
-<main class="webdesign-berlin-page">
-  <nav class="wd-breadcrumbs" aria-label="breadcrumb">
-    <ol>
-      <li><a href="/">Startseite</a></li>
-      <li aria-current="page">Webdesign Berlin</li>
-    </ol>
-  </nav>
 
+<nav class="wd-breadcrumbs" aria-label="breadcrumb">
+  <ol>
+    <li><a href="/">Startseite /</a></li>
+    <li aria-current="page">Webdesign Berlin</li>
+  </ol>
+</nav>
+
+<main class="webdesign-berlin-page">
   <section class="wd-container wd-hero" aria-labelledby="wd-hero-title">
     <div class="wd-hero__content">
       <span class="wd-eyebrow">Komplett Webdesign · Berlin</span>
@@ -320,7 +321,7 @@
       <div class="wd-contact__intro">
         <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
         <p class="wd-lead">Wenn du eine Website möchtest, die Ergebnisse liefert, lass uns reden. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit und Anfragen.
-        <br>Du suchst allgemeine Informationen zur <a href="/">professionellen Websiteerstellung</a>? 
+          <br>Du suchst allgemeine Informationen zur <a href="/">professionellen Websiteerstellung</a>?
           Auf unserer Hauptseite findest du alle Leistungen im Überblick – auch für Kunden außerhalb von Berlin.
         </p>
         <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>

@@ -777,12 +777,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+  position: absolute;
+  top: 100px;
+  left: 50px;
+  z-index: 100;
 }
 
-.webdesign-berlin-page .wd-breadcrumbs a,
-.wd-breadcrumbs a {
-  color: var(--wd-accent-strong);
+.wd-breadcrumbs ol li a {
+  color: var(--color-accent);
   text-decoration: none;
+}
+.wd-breadcrumbs--absolute {
+  width: 100%;
+  padding: 1.25rem clamp(1.5rem, 5vw, 3rem) 0;
+  color: var(--wd-accent-strong);
+}
+
+.wd-breadcrumbs--absolute li {
+  color: var(--wd-accent-strong);
 }
 
 .webdesign-berlin-page .wd-hero {
@@ -1937,15 +1949,15 @@ p.step-description {
   font-size: 0.95rem;
 }
 
-  .main-nav .dropdown-toggle-btn {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    color: var(--color-black);
-  }
+.main-nav .dropdown-toggle-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-black);
+}
 
 @media (max-width: 768px) {
   .webdesign-berlin-page .wd-hero h1 {
