@@ -67,6 +67,10 @@ import Stripe from 'stripe';
 dotenv.config();
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
+// Healthcheck (für Docker/Monitoring)
+app.get('/health', (_req, res) => {
+  res.status(200).send('ok');
+});
 
 const isProd = process.env.NODE_ENV === 'production';
 app.set('trust proxy', isProd ? 1 : false);

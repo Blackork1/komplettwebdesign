@@ -48,8 +48,11 @@
                         <%= page.nav %>
                       </a></li>
                     <% }) %>
-                    <li><a href="/branchen/webdesign-cafe" class="main-color">Café</a></li>
-                    <li><a href="/branchen/webdesign-blumenladen" class="main-color">Blumenladen</a></li>
+                    <% (navIndustries || []).forEach(industry => { %>
+                    <% const slug = industry.slug || ''; %>
+                    <% const href = `/branchen/${slug.startsWith('webdesign-') ? slug : `webdesign-${slug}`}`; %>
+                    <li><a href="<%= href %>" class="main-color"><%= industry.name %></a></li>
+                    <% }) %>
                   </ul>
                 </li>
               </ul>
