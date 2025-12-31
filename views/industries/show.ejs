@@ -216,7 +216,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <li class="statCard <%= idx===0?'is-open':'' %> animate-on-scroll">
                   <button class="statHeader" aria-expanded="<%= idx===0 ? 'true' : 'false' %>">
                     <span class="itemIcon" aria-hidden="true"><%= c.icon || '📊' %></span>
-                    <h2 class="itemLabel"><%= c.label %></h2>
+                    <h2 class="itemLabel"><%- c.label %></h2>
                   </button>
                   <div class="statBody" aria-hidden="<%= idx===0 ? 'false' : 'true' %>">
                     <p><%- c.body %></p>
@@ -262,12 +262,12 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               </div>
               <% if (it.title) { %>
               <div class="upperSlideContainer">
-                <p><%= it.title %></p>
+                <p><%- it.title %></p>
               </div>
               <% } %>
               <% if (it.text) { %>
               <div class="lowerSlideContainer">
-                <p><%= it.text %></p>
+                <p><%- it.text %></p>
               </div>
               <% } %>
             </div>
@@ -315,8 +315,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                       <img src="<%= f.icon_url %>" alt="" />
                       <% } %>
                     </div>
-                    <h3><%= f.title %></h3>
-                    <p><%= f.text %></p>
+                    <h3><%- f.title %></h3>
+                    <p><%- f.text %></p>
                   </div>
                   <% }) %>
                 </div>
@@ -360,17 +360,17 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         <div class="pricing-grid marginPricingGrid">
           <% (packages||[]).forEach(pkg => { if (pkg.display) { %>
           <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
-            <h3 class="alignCenter"><%= pkg.name %></h3>
+            <h3 class="alignCenter"><%- pkg.name %></h3>
             <div class="p1rem alignCenter">
               <% if (pkg.description) { %>
-              <p class="package-description"><%= pkg.description %></p>
+              <p class="package-description"><%- pkg.description %></p>
               <% } %>
 
-              <p class="price alignCenter"><%= pkg.price %></p>
+              <p class="price alignCenter"><%- pkg.price %></p>
 
               <% if ((pkg.features||[]).length) { %>
               <ul class="features-list alignCenter">
-                <% pkg.features.forEach(feat => { %><li><%= feat %></li><% }) %>
+                <% pkg.features.forEach(feat => { %><li><%- feat %></li><% }) %>
               </ul>
               <% } %>
 
@@ -400,7 +400,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <% ((industry.vorteile && industry.vorteile.pros) ? industry.vorteile.pros : []).forEach(txt => { %>
                 <div class="greenContainer animate-on-scroll out">
                   <img src="/images/icons/checkgreen.svg" alt="check">
-                  <p class="mb-0"><%= txt %></p>
+                  <p class="mb-0"><%- txt %></p>
                 </div>
                 <% }) %>
               </div>
@@ -412,7 +412,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <% ((industry.vorteile && industry.vorteile.cons) ? industry.vorteile.cons : []).forEach(txt => { %>
                 <div class="redContainer animate-on-scroll">
                   <img src="/images/icons/uncheck.svg" alt="uncheck">
-                  <p class="mb-0"><%= txt %></p>
+                  <p class="mb-0"><%- txt %></p>
                 </div>
                 <% }) %>
               </div>
@@ -455,8 +455,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <img style="width: 100%;" src="<%= t.img_url %>" alt="<%= t.img_alt || '' %>" loading="lazy" fetchpriority="low">
                 <% } %>
               </div>
-              <% if (t.heading) { %><p class="headingTipps"><%= t.heading %></p><% } %>
-              <% if (t.text)    { %><p class="textTipps"><%= t.text %></p><% } %>
+              <% if (t.heading) { %><p class="headingTipps"><%- t.heading %></p><% } %>
+              <% if (t.text)    { %><p class="textTipps"><%- t.text %></p><% } %>
             </div>
             <% }) %>
           </div>
@@ -495,7 +495,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
 
           <% if (industry.cta_text) { %>
-          <p class="alignCenter ctaText animate-on-scroll"><%= industry.cta_text %></p>
+          <p class="alignCenter ctaText animate-on-scroll"><%- industry.cta_text %></p>
           <% } %>
 
           <div class="imageCTAContainer">
@@ -549,7 +549,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                   <% if (f.link_url) { %>
                   <p class="mb-0">
                     <a href="<%= f.link_url %>" class="btn btn-link p-0">
-                      <%= f.link_label || 'Mehr erfahren' %>
+                      <%- f.link_label || 'Mehr erfahren' %>
                     </a>
                   </p>
                   <% } %>

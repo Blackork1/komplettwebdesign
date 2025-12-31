@@ -12,12 +12,12 @@ export async function getIndex(req, res) {
     const review = await Review.fetchRandom();
 
     res.render('index', {
-      title: 'Professionelle Website erstellen lassen – Komplett Webdesign',
+      title: 'Komplett Webdesign | Webdesign, SEO, Relaunch & Betreuung',
       description: 'Website erstellen lassen: Modernes Webdesign, Google-Suche optimiert, responsive für alle Endgeräte, ab 499,-€. Kostenlose Beratungsgespräch sichern!',
       keywords: 'Webdesign,Webentwicklung,Online-Marketing',
       seoExtra: `
   <link rel="canonical" href="https://www.komplettwebdesign.de/">
-  <meta property="og:title" content="Professionelle Website erstellen lassen – Komplett Webdesign">
+  <meta property="og:title" content="Komplett Webdesign | Webdesign, SEO, Relaunch & Betreuung">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="Website erstellen lassen: Modernes Webdesign, Google-Suche optimiert & Hosting aus einer Hand. Landingpage ab 499 €.">
   <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">

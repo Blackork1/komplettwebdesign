@@ -37,14 +37,14 @@ const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Webdesign Berlin - professionelle Websiteerstellung";
+  const metaTitle = "Professionelle Webseitenerstellung und Webdesign in Berlin";
   const metaDescription =
-    "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung & technisches Hosting für Berliner Unternehmen.";
+    "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!";
 
   const hero = {
-    title: "Webdesign Berlin - professionelle Websiteerstellung",
+    title: "Professionelle Webseitenerstellung und Webdesign in Berlin",
     description:
-      "Dein Webdesigner in Berlin: Professionelle Website-Entwicklung, Responsive Design, SEO-Optimierung & technisches Hosting für Berliner Unternehmen.",
+      "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
@@ -365,26 +365,94 @@ export function renderWebdesignBerlinHub(req, res) {
     { label: "Webdesign Checkliste für Selbstständige", href: "/blog/website-checkliste-für-selbstandige" }
   ];
 
+  // ---------- helpers ----------
+  const stripHtml = (s = "") =>
+    String(s)
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const toAbsUrl = (url = "") => {
+    const u = String(url).trim();
+    if (!u) return "";
+    if (u.startsWith("http://") || u.startsWith("https://")) return u;
+    if (u.startsWith("//")) return `https:${u}`;
+    return `${SITE_URL}${u.startsWith("/") ? "" : "/"}${u}`;
+  };
+
+  const normalizePrice = (priceStr = "") => {
+    // "1.499 €" -> "1499"
+    const cleaned = String(priceStr)
+      .replace(/\./g, "")
+      .replace(/[^0-9,]/g, "")
+      .replace(",", ".");
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? String(num) : "";
+  };
+
+  // ---------- Offers (korrekt modelliert) ----------
+  const offerNodes = packages.map((pkg, index) => {
+    const pkgUrl = `${SITE_URL}/pakete/${pkg.anchor || pkg.slug || `pkg-${index + 1}`}`;
+    const price = normalizePrice(pkg.price);
+
+    return {
+      "@type": "Offer",
+      "@id": `${pkgUrl}#offer`,
+      "name": `${pkg.name} Paket`,
+      "url": pkgUrl,
+      "image": toAbsUrl(pkg.image || DEFAULT_PACKAGE_IMAGE),
+      "description": stripHtml(pkg.description),
+      "priceCurrency": "EUR",
+      ...(price ? { "price": price } : {}),
+      "availability": "https://schema.org/InStock",
+      "itemOffered": {
+        "@type": "Service",
+        "name": `${pkg.name} Webdesign`,
+        "serviceType": "Webdesign",
+        "areaServed": [{ "@type": "City", "name": "Berlin" }],
+        "provider": { "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness` }
+      }
+    };
+  });
+
+  // ---------- Schema Blocks ----------
   const schema = {
     breadcrumbList: {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Startseite", item: "https://www.komplettwebdesign.de/" },
-        { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: WEBDESIGN_BERLIN_URL }
+      "@id": `${WEBDESIGN_BERLIN_URL}#breadcrumbs`,
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Startseite",
+          "item": "https://www.komplettwebdesign.de/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Webdesign Berlin",
+          "item": WEBDESIGN_BERLIN_URL
+        }
       ]
     },
+
+    // Tipp: ProfessionalService ist für Webdesign sauberer als "LocalBusiness" (ist aber weiterhin LocalBusiness-Kontext)
     localBusiness: {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "ProfessionalService",
       "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness`,
       "name": "Komplett Webdesign Berlin",
-      "description": "Webdesign in Berlin: Professionelle Website vom lokalen Webdesigner erstellen lassen. Persönliche Beratung, Local SEO & DSGVO-konform.",
+      "description":
+        "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
       "url": WEBDESIGN_BERLIN_URL,
       "telephone": "+49 1551 1245048",
       "email": "kontakt@komplettwebdesign.de",
-      "priceRange": "€€",
-      "image": `${SITE_URL}/images/heroBg.webp`,
+
+      // bitte nur 1x priceRange – und konkret
+      "priceRange": "€499–€1499",
+
+      "image": toAbsUrl("/images/heroBg.webp"),
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Möllendorffstr 26",
@@ -398,19 +466,38 @@ export function renderWebdesignBerlinHub(req, res) {
         "latitude": 52.5163,
         "longitude": 13.4783
       },
-      "areaServed": {
-        "@type": "City",
-        "name": "Berlin"
-      },
-      // Nur Google Maps CID - vollständige Social Links sind auf der Homepage
+
+      // besser als Array (konsistent, erweiterbar)
+      "areaServed": [{ "@type": "City", "name": "Berlin" }],
+
+      "hasMap": "https://www.google.com/maps?cid=8211653702753166064",
       "sameAs": [
-        "https://www.google.com/maps?cid=8211653702753166064"
+        "https://www.google.com/maps?cid=8211653702753166064",
+        "https://www.linkedin.com/in/komplettwebdesign",
+        "https://instagram.com/komplettwebdesign",
+        "https://www.facebook.com/profile.php?id=61579580713573",
+        "https://www.youtube.com/@komplettwebdesign",
+        "https://www.tiktok.com/@komplett.webdesign"
       ],
-      // Verweis auf die Hauptorganisation (Homepage)
+
       "parentOrganization": {
         "@id": `${SITE_URL}/#organization`
-      }
+      },
+
+      "serviceType": [
+        "Webdesign",
+        "Website erstellen",
+        "Landingpages",
+        "Relaunch",
+        "SEO",
+        "Hosting",
+        "Wartung"
+      ],
+      
+      // Offers referenzieren (kein Duplicate Content im LocalBusiness)
+      "makesOffer": offerNodes.map((o) => ({ "@id": o["@id"] }))
     },
+
     webPage: {
       "@context": "https://schema.org",
       "@type": "WebPage",
@@ -418,71 +505,54 @@ export function renderWebdesignBerlinHub(req, res) {
       "name": "Webdesign Berlin – Website erstellen lassen vom Berliner Webdesigner",
       "description": metaDescription,
       "url": WEBDESIGN_BERLIN_URL,
-      "isPartOf": {
-        "@id": `${SITE_URL}/#website`
-      },
-      "about": {
-        "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness`
-      },
+
+      "isPartOf": { "@id": `${SITE_URL}/#website` },
+
+      // saubere Verknüpfung
+      "breadcrumb": { "@id": `${WEBDESIGN_BERLIN_URL}#breadcrumbs` },
+      "about": { "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness` },
+      "mainEntity": { "@id": `${WEBDESIGN_BERLIN_URL}#localbusiness` },
+
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": `${SITE_URL}/images/heroBg.webp`
+        "@id": `${WEBDESIGN_BERLIN_URL}#primaryimage`,
+        "url": toAbsUrl("/images/heroBg.webp")
       }
     },
+
     faqPage: {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: faqs.map(({ question, answer }) => ({
+      "@id": `${WEBDESIGN_BERLIN_URL}#faq`,
+      "url": WEBDESIGN_BERLIN_URL,
+      "mainEntity": faqs.map(({ question, answer }) => ({
         "@type": "Question",
-        name: question,
-        acceptedAnswer: { "@type": "Answer", text: answer.replace(/<strong>|<\/strong>/g, "") }
+        "name": stripHtml(question),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": stripHtml(answer)
+        }
       }))
     },
+
+    // OfferCatalog ersetzen wir durch ein sauberes ItemList + Offer Nodes
+    // (Google zeigt dafür nicht zwingend Rich Results, aber es ist korrektes, konsistentes Markup)
     offerCatalog: {
       "@context": "https://schema.org",
-      "@type": "OfferCatalog",
+      "@type": "ItemList",
+      "@id": `${WEBDESIGN_BERLIN_URL}#offerlist`,
       "name": "Webdesign Pakete Berlin",
-      itemListElement: packages.map((pkg, index) => {
-        const normalizedPrice = pkg.price
-          .replace(/\./g, "")
-          .replace(/[^0-9,]/g, "")
-          .replace(",", ".");
-
-        // Bildquelle priorisieren: pkg.image.src → pkg.image → Fallback
-        const imageUrl =
-          pkg.image ||
-          DEFAULT_PACKAGE_IMAGE;
-
-        const pkgUrl = SITE_URL + "/pakete/" + (pkg.anchor || (pkg.slug || ("pkg-" + (index + 1))));
-
-
-        return {
-          "@type": "Offer",
-          name: `${pkg.name} Paket`,
-          description: pkg.description.replace(/<[^>]*>/g, ""),
-          image: imageUrl,                     // <-- WICHTIG: Pflichtfeld
-          url: pkgUrl,                         // optional, aber sinnvoll
-          offers: {
-            "@type": "Service",
-            priceCurrency: "EUR",
-            price: normalizedPrice || "0",
-            availability: "https://schema.org/InStock",
-            url: pkgUrl,                       // optional
-            // Optional: Saubere Rückgaberichtlinie (für Dienstleistungen i. d. R. nicht möglich)
-            hasMerchantReturnPolicy: {
-              "@type": "MerchantReturnPolicy",
-              applicableCountry: "DE",
-              returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted"
-            }
-            // shippingDetails ist für physische Produkte gedacht → für Services weglassen
-          },
-          position: index + 1
-        };
-      })
+      "itemListElement": offerNodes.map((offer, idx) => ({
+        "@type": "ListItem",
+        "position": idx + 1,
+        "item": offer
+      }))
     },
+
     videoObject: {
       "@context": "https://schema.org",
       "@type": "VideoObject",
+      "@id": `${WEBDESIGN_BERLIN_URL}#video`,
       "name": "Was dich im Erstgespräch erwartet",
       "description": "Kurz erklärt: Ablauf, Ergebnisse und was dich im Erstgespräch erwartet.",
       "thumbnailUrl": `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`,
@@ -490,9 +560,8 @@ export function renderWebdesignBerlinHub(req, res) {
       "duration": "PT3M",
       "embedUrl": `https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}`,
       "contentUrl": `https://www.youtube.com/watch?v=${YOUTUBE_ID}`,
-      "publisher": {
-        "@id": `${SITE_URL}/#organization`
-      }
+      "publisher": { "@id": `${SITE_URL}/#organization` },
+      "isPartOf": { "@id": `${WEBDESIGN_BERLIN_URL}#webpage` }
     }
   };
 
