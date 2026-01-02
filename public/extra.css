@@ -128,6 +128,52 @@
   border-color: #c13a2b;
 }
 
+/* ---------- Footer Back-to-Top ---------- */
+.back-to-top {
+  align-items: center;
+  backdrop-filter: blur(6px);
+  background: rgba(87, 87, 87, 0.712);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  margin-left: 1rem;
+  transition: transform 0.2s ease, background 0.2s ease;
+  width: 44px;
+}
+
+.back-to-top svg {
+  fill: currentColor;
+  height: 20px;
+  width: 20px;
+}
+
+.back-to-top:hover {
+  background: rgba(0, 0, 0, 0.876);
+  transform: translateY(-2px);
+}
+
+.back-to-top--fixed {
+  bottom: 40px;
+  margin-left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 20px;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1040;
+}
+
+.back-to-top--fixed.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+‚
+
 /* ---------- Grafik-Container ---------- */
 .figure-speed {
   max-width: 640px;
@@ -779,7 +825,7 @@
   gap: 0.45rem;
   position: absolute;
   top: 100px;
-  left: 50px;
+  left: 60px;
   z-index: 100;
 }
 
@@ -809,8 +855,7 @@
     rgba(255, 233, 220, 0.88) 100%
   );
   border: 1px solid rgba(215, 91, 54, 0.18);
-  border-radius: 38px;
-  padding: clamp(2.2rem, 5vw, 3.5rem);
+  padding: clamp(60px, 5vw, 3.5rem) clamp(10px, 5vw, 3.5rem);
   box-shadow: 0 40px 90px rgba(31, 27, 22, 0.12);
   position: relative;
   overflow: hidden;
@@ -1277,6 +1322,11 @@
 @media (max-width: 640px) {
   .youtube-placeholder {
     padding: 1rem;
+  }
+  .webdesign-berlin-page .wd-breadcrumbs ol,
+  .wd-breadcrumbs ol {
+    top: 100px;
+    left: 10px;
   }
 }
 
@@ -2064,4 +2114,13 @@ p.step-description {
 
 .dropdown-toggle::after {
   display: none;
+}
+
+@media (min-width: 850px) {
+  .webdesign-berlin-page{
+    padding-top: 60px;
+  }
+  .webdesign-berlin-page .wd-hero{
+    border-radius: 32px;
+  }
 }

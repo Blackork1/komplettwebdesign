@@ -1701,6 +1701,10 @@ ul li {
 }
 
 @media (max-width: 520px) {
+
+#Hero {
+    margin-top: 80px;
+}
   .kwd-carousel {
     --card-w: 200px;
     --card-h: 130px;

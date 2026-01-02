@@ -85,9 +85,19 @@
           <a href="https://www.youtube.com/@komplettwebdesign" target="_blank" rel="noopener">YouTube</a>
           <a href="https://www.tiktok.com/@komplett.webdesign" target="_blank" rel="noopener">TikTok</a>
         </div>
+        <a class="back-to-top" href="#hero" aria-label="Zurück nach oben">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
+          </svg>
+        </a>
       </div>
     </footer>
   </div>
+  <a class="back-to-top back-to-top--fixed" href="#hero" aria-label="Zurück nach oben">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
+    </svg>
+  </a>
   <!-- Floating Chat-Button -->
   <button id="chat-toggle" class="btn btn-primary chat-button">Chat</button>
   <!-- Chat-Container -->
@@ -196,6 +206,23 @@
 
       forms.forEach(bindLazyLoader);
     });
+  })();
+</script>
+<script>
+  (function() {
+    var backToTop = document.querySelector('.back-to-top--fixed');
+    if (!backToTop) return;
+
+    function toggleBackToTop() {
+      var show = window.scrollY > window.innerHeight;
+      backToTop.classList.toggle('is-visible', show);
+    }
+
+    window.addEventListener('scroll', toggleBackToTop, {
+      passive: true
+    });
+    window.addEventListener('resize', toggleBackToTop);
+    toggleBackToTop();
   })();
 </script>
 <script src="/js/recaptcha-form.js" defer></script>
