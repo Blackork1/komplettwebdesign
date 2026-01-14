@@ -37,14 +37,14 @@ const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Professionelle Webseitenerstellung und Webdesign in Berlin";
+  const metaTitle = "Professionelles und moderenes Webdesign aus Berlin";
   const metaDescription =
-    "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!";
+    "Deine moderne Website mit schnellen Ladezeiten, Local SEO & Betreuung. Wir designen & entwickeln deine Webseite in Berlin. Festpreise ab 499 €.";
 
   const hero = {
-    title: "Professionelle Webseitenerstellung und Webdesign in Berlin",
+    title: "Professionelles und moderenes Webdesign aus Berlin",
     description:
-      "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
+      "Deine moderne Website mit schnellen Ladezeiten, Local SEO & Betreuung. Wir designen & entwickeln deine Webseite in Berlin. Festpreise ab 499 €.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
