@@ -13,7 +13,7 @@
   const hasOgImage = /property=["']og:image["']/i.test(seoExtraText);
   const hasOgType = /property=["']og:type["']/i.test(seoExtraText);
   const hasTwitterCard = /name=["']twitter:card["']/i.test(seoExtraText);
-  const siteBase = (canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
+  const siteBase = (canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const pageCanonical = canonicalUrl || `${siteBase}/`;
   const defaultOgImage = (typeof ogImage === 'string' && ogImage.trim())
     ? ogImage.trim()

@@ -6,6 +6,7 @@ import Package from '../models/Package.js';
 
 export async function getIndex(req, res) {
   try {
+    const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
     const users = await User.fetchAll();
     const packages = await Package.fetchAll();
     const latestPost = await Post.fetchLatest();
@@ -19,8 +20,8 @@ export async function getIndex(req, res) {
   <meta property="og:title" content="Webseite erstellen lassen in Berlin | Webdesign, SEO & Hosting">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="Webdesign in Berlin mit SEO, Hosting und persönlichem Support. Lass deine Website professionell erstellen und lokal besser gefunden werden.">
-  <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
-  <meta property="og:url" content="https://www.komplettwebdesign.de/">
+  <meta property="og:image" content="${base}/images/heroBg.webp">
+  <meta property="og:url" content="${base}/">
   <meta property="og:type" content="website">`,
       users,
       packages,

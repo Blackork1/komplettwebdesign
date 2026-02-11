@@ -1,0 +1,19 @@
+tier,target_type,example_domain_or_source,target_url,anchor_strategy,priority,status,owner,notes
+T1,local-citation,google_business_profile,/webdesign-berlin,brand+service,HIGH,active,founder,Keep NAP exactly consistent
+T1,local-citation,bing_places,/webdesign-berlin,brand,HIGH,planned,founder,Add UTM parameter on website field
+T1,local-citation,apple_business_connect,/webdesign-berlin,brand,HIGH,planned,founder,Profile completeness >90%
+T1,local-citation,yelp.de,/webdesign-berlin,brand+city,MEDIUM,planned,seo,Use same company data as GBP
+T1,local-citation,gelbeseiten.de,/webdesign-berlin,brand+city,MEDIUM,planned,seo,Local business listing
+T1,local-citation,dasoertliche.de,/webdesign-berlin,brand+city,MEDIUM,planned,seo,Local business listing
+T1,local-citation,11880.com,/webdesign-berlin,brand+city,MEDIUM,planned,seo,Local business listing
+T1,local-citation,meinestadt.de,/webdesign-berlin,brand+city,MEDIUM,planned,seo,Check profile options
+T2,local-relevance,berlin-business-networks,/webdesign-berlin,partial-match,HIGH,planned,outreach,Partner pages and city groups
+T2,local-relevance,berlin-startup-communities,/webdesign-berlin,partial-match,HIGH,planned,outreach,Guest post or interview
+T2,local-relevance,chamber-or-association-profiles,/webdesign-berlin,brand,MEDIUM,planned,outreach,Membership-based listing pages
+T2,local-relevance,local-event-sponsor-pages,/webdesign-berlin,brand+service,MEDIUM,planned,outreach,Sponsor small local events
+T3,topical-links,webdesign-marketing-blogs,/ratgeber,editorial,HIGH,planned,outreach,Pitch unique local SEO data
+T3,topical-links,freelancer-partner-websites,/pakete/business,partial-match,MEDIUM,planned,outreach,Mutual case studies
+T3,topical-links,saas-partner-directories,/webdesign-berlin,brand,MEDIUM,planned,outreach,Use official partner profiles
+T4,authority-links,digital-pr-campaign,/ratgeber,editorial,HIGH,planned,outreach,Linkable asset + outreach list
+T4,authority-links,university-or-education-guest-content,/ratgeber,brand+editorial,LOW,planned,outreach,Only relevant topics
+T4,authority-links,podcast-show-notes,/webdesign-berlin,brand,LOW,planned,outreach,Founder interviews

@@ -69,7 +69,7 @@ export async function renderFaqPage(req, res) {
 
     // Caching für Besucher (anpassen wenn du Login/Personalisierung nutzt)
     res.set('Cache-Control', 'public, max-age=300');
-    const canonical = `${(res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}/faq`;
+    const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/faq`;
 
     res.render('faq', {
       title: 'Häufige Fragen – KomplettWebdesign',

@@ -1,0 +1,26 @@
+cluster,keyword,intent,target_url,status,notes
+money,webdesign berlin,transactional,/webdesign-berlin,active,Main local commercial page
+money,website in berlin erstellen lassen,transactional,/webdesign-berlin,active,Local high-intent variant
+money,webseite erstellen lassen berlin,transactional,/webdesign-berlin,active,Primary conversion phrase
+money,webdesigner berlin,transactional,/webdesign-berlin,active,Service provider intent
+money,homepage erstellen lassen berlin,transactional,/webdesign-berlin,planned,Add dedicated section on hub page
+national+local,webseite erstellen lassen,transactional,/,active,Keep generic intent mainly on home page
+local,digitalagentur berlin website,transactional,/webdesign-berlin,planned,Use as semantic variant only
+district,webdesign berlin mitte,transactional,/webdesign-berlin/mitte,active,District page
+district,webdesign berlin kreuzberg,transactional,/webdesign-berlin/kreuzberg,active,District page
+district,webdesign berlin friedrichshain,transactional,/webdesign-berlin/friedrichshain,active,District page
+district,webdesign berlin charlottenburg,transactional,/webdesign-berlin/charlottenburg,active,District page
+district,webdesign berlin lichtenberg,transactional,/webdesign-berlin/lichtenberg,active,District page
+district,webdesign berlin prenzlauer berg,transactional,/webdesign-berlin/prenzlauer-berg,active,District page
+service,website kosten berlin,commercial,/webdesign-berlin/kosten-preise-pakete,verify,Ensure 200 status and unique content
+service,landingpage erstellen lassen berlin,commercial,/pakete/basis,planned,Support with dedicated paragraph and FAQ
+service,firmenwebsite erstellen berlin,commercial,/pakete/business,planned,Map to business package page
+service,website relaunch berlin,commercial,/webdesign-berlin/design-ux-ui,verify,Ensure service slug page indexed
+service,responsives webdesign berlin,commercial,/webdesign-berlin/responsives-design-mobile,verify,Ensure service slug page indexed
+service,local seo berlin unternehmen,commercial,/webdesign-berlin/seo-sichtbarkeit-einsteiger,verify,Ensure service slug page indexed
+service,webhosting fuer website berlin,commercial,/webdesign-berlin/domain-hosting-technik,verify,Ensure service slug page indexed
+trust,dsgvo website berlin,informational,/webdesign-berlin/rechtliches-sicherheit,verify,Trust + legal intent
+content,website texte erstellen lassen berlin,commercial,/webdesign-berlin/inhalte-texte-content,verify,Content service intent
+bottom-funnel,webdesign berlin kontakt,transactional,/kontakt,active,Strong conversion page
+supportive,was kostet eine website in berlin,informational,/webdesign-berlin/kosten-preise-pakete,planned,Create/update detailed pricing content
+supportive,website erstellen berlin dauer,informational,/ratgeber,planned,Publish article and link to money pages

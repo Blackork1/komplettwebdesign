@@ -76,13 +76,14 @@ const isProd = process.env.NODE_ENV === 'production';
 app.set('trust proxy', isProd ? 1 : false);
 app.locals.assetVersion = process.env.ASSET_VERSION || '2026-02-11';
 
-const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://www.komplettwebdesign.de' : '')).replace(/\/$/, '');
+const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://komplettwebdesign.de' : '')).replace(/\/$/, '');
+const configuredCanonicalHost = (process.env.CANON_HOST || '').trim().replace(/:\d+$/, '').toLowerCase();
 const noIndexPrefixes = ['/admin', '/auth', '/api/', '/webhook', '/login', '/logout'];
 
 function resolveRequestBaseUrl(req) {
   const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').toString().split(',')[0].trim();
   const host = (req.headers['x-forwarded-host'] || req.get('host') || '').toString().split(',')[0].trim();
-  if (!host) return configuredCanonicalBase || 'https://www.komplettwebdesign.de';
+  if (!host) return configuredCanonicalBase || 'https://komplettwebdesign.de';
   return `${proto}://${host}`.replace(/\/$/, '');
 }
 
@@ -90,8 +91,6 @@ app.disable('x-powered-by');
 // Header unterdrücken
 // 2) nur in Production aktivieren
 if (isProd) {
-
-  const CANON_HOST = 'www.komplettwebdesign.de';
   const IGNORED_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0'];
   const isPrivateLan = (h) =>
     /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(h);
@@ -106,16 +105,14 @@ if (isProd) {
       return next();
     }
 
-    // 2) prüfen, ob HTTPS & WWW
+    // 2) HTTPS erzwingen; Host nur erzwingen, wenn CANON_HOST gesetzt ist.
     const needsHttps = protoHdr !== 'https';
-    const needsWww = !hostname.startsWith('www.');
+    const needsCanonicalHost = configuredCanonicalHost && hostname.toLowerCase() !== configuredCanonicalHost;
 
-    if (needsHttps || needsWww) {
+    if (needsHttps || needsCanonicalHost) {
       // Pfad + Query aus req.originalUrl (inkl. "/kontakt" oder "?foo=bar")
       const suffix = req.originalUrl || '/';
-      console.log("Suffix:", suffix);
-      // neuer Host
-      const targetHost = CANON_HOST;
+      const targetHost = needsCanonicalHost ? configuredCanonicalHost : hostname;
       const redirectTo = `https://${targetHost}${suffix}`;
       return res.redirect(301, redirectTo);
     }

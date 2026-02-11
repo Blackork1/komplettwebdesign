@@ -268,7 +268,7 @@ const generalUpload = multer({ dest: "uploads/" });
 /* ---------- GET /kontakt --------------------------------------------- */
 export async function showForm(req, res) {
     const freieTermine = await Apt.getOpenSlotPerDay(3);
-    const canonical = `${(res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}/kontakt`;
+    const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/kontakt`;
     res.render("kontakt", {
         title: "Beratungsgespräch vereinbaren",
         description: "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
@@ -277,7 +277,7 @@ export async function showForm(req, res) {
           <meta property="og:title" content="Vereinbare deinen Beratungstermin – Komplett Webdesign">
           <meta property="og:site_name" content="Komplett Webdesign Kontakt">
           <meta property="og:description" content="Nutze unser Kontaktformular, um dein individuelles Webdesign-Projekt zu starten. Wähle Paket, Umfang und Termin für dein Beratungsgespräch.">
-          <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
+          <meta property="og:image" content="${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/images/heroBg.webp">
           <meta property="og:url" content="${canonical}">
         `,
         freieTermine,

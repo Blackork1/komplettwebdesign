@@ -9,8 +9,8 @@ function resolveBaseUrl(req) {
 
   const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
   const host = req.headers["x-forwarded-host"] || req.get("host");
-  const normalizedHost = String(host || "").replace(/^komplettwebdesign\.de$/i, "www.komplettwebdesign.de");
-  if (!normalizedHost) return "https://www.komplettwebdesign.de";
+  const normalizedHost = String(host || "").trim();
+  if (!normalizedHost) return "https://komplettwebdesign.de";
 
   return `${proto}://${normalizedHost}`;
 }

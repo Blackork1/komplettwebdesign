@@ -70,7 +70,7 @@ export async function showGuide(req, res) {
     desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
   }
 
-  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/ratgeber/${post.slug}` : `/ratgeber/${post.slug}`;
 
   // ---- SEO Head-Block als String (analog Blog) ----
