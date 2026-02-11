@@ -140,12 +140,9 @@ export async function showPackage(req, res) {
     console.error('❌ showPackage (schema):', err);
     jsonLd = [];
   }
-  const seoExtra = `<link rel="canonical" href="${resolveBaseUrl(req)}${req.originalUrl}">`;
-
   res.render('package_detail', {
     pack,
     slots,
-    seoExtra,
     title: pack.title,
     description: pack.description,
     jsonLd,

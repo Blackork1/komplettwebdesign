@@ -12,9 +12,17 @@ export async function renderDistrictPage(req, res, next) {
     const metaDescription =
       `Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. ` +
       `Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.`;
+    const canonicalUrl = `${SITE_URL}/webdesign-berlin/${slug}`;
 
     res.locals.title = metaTitle;
-    res.locals.metaDescription = metaDescription;
+    res.locals.description = metaDescription;
+    res.locals.seoExtra = `
+      <meta property="og:title" content="${metaTitle}">
+      <meta property="og:description" content="${metaDescription}">
+      <meta property="og:url" content="${canonicalUrl}">
+      <meta property="og:type" content="website">
+      <meta property="og:image" content="https://www.komplettwebdesign.de/images/heroBg.webp">
+    `;
 
     // Ordnerstruktur: /views/districts/webdesign-berlin-<slug>.ejs
     return res.render(`bereiche/webdesign-berlin-${slug}`, {
@@ -37,14 +45,14 @@ const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 
 
 export function renderWebdesignBerlinHub(req, res) {
-  const metaTitle = "Professionelles und moderenes Webdesign aus Berlin";
+  const metaTitle = "Webdesign in Berlin | Website erstellen lassen ab 499 €";
   const metaDescription =
-    "Deine moderne Website mit schnellen Ladezeiten, Local SEO & Betreuung. Wir designen & entwickeln deine Webseite in Berlin. Festpreise ab 499 €.";
+    "Website in Berlin erstellen lassen: modernes Webdesign, Local SEO, Hosting und Betreuung aus einer Hand. Für Selbstständige und KMU ab 499 €.";
 
   const hero = {
-    title: "Professionelles und moderenes Webdesign aus Berlin",
+    title: "Webdesign in Berlin: Website professionell erstellen lassen",
     description:
-      "Deine moderne Website mit schnellen Ladezeiten, Local SEO & Betreuung. Wir designen & entwickeln deine Webseite in Berlin. Festpreise ab 499 €.",
+      "Schnelles, modernes Webdesign in Berlin mit Local SEO, Hosting und persönlicher Betreuung. Festpreise ab 499 €.",
     ctaPrimary: { label: "Kostenloses Erstgespräch", href: "/kontakt" },
     ctaSecondary: { label: "Pakete ansehen", href: "/pakete" },
     rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
@@ -62,7 +70,7 @@ export function renderWebdesignBerlinHub(req, res) {
   const audience = {
     title: "Webdesign für Berliner Einzel- und Kleinunternehmer",
     description:
-      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen. Dazu optimieren wird deine Website mittels SEO für Google, damit du gefunden wirst. Einige Tipps zu <a href='blog/Lokale-SEO-Hacks-fuer-Berlin'>Local SEO in Berlin</a> findest du auch in unserem Blog. Wenn du deine Website in Berlin erstellen lassen möchtest, schauen wir nicht nur auf Design, sondern auch auf Local SEO, damit du bei Suchanfragen wie „Webdesign Berlin“ oder „Website erstellen lassen Berlin“ sichtbar wirst.",
+      "Viele Websites aus Berlin bleiben unsichtbar. Wir räumen typische Bremsen aus dem Weg und sorgen dafür, dass Marketing, Technik und Inhalte zusammenspielen. Dazu optimieren wir deine Website mittels SEO für Google, damit du gefunden wirst. Einige Tipps zu <a href='/blog'>Local SEO in Berlin</a> findest du auch in unserem Blog. Wenn du deine Website in Berlin erstellen lassen möchtest, schauen wir nicht nur auf Design, sondern auch auf Local SEO, damit du bei Suchanfragen wie „Webdesign Berlin“ oder „Website erstellen lassen Berlin“ sichtbar wirst.",
     painPoints: [
       "Du hast keine konstanten Leads aus Google oder Empfehlungen?",
       "Langsame Seiten & technische Fehler schrecken Besucher ab!",
@@ -568,7 +576,6 @@ export function renderWebdesignBerlinHub(req, res) {
   res.locals.title = metaTitle;
   res.locals.description = metaDescription;
   res.locals.seoExtra = `
-    <link rel="canonical" href="${WEBDESIGN_BERLIN_URL}">
     <meta property="og:title" content="${metaTitle}">
     <meta property="og:description" content="${metaDescription}">
     <meta property="og:url" content="${WEBDESIGN_BERLIN_URL}">

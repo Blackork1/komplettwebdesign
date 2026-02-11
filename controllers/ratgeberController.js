@@ -70,11 +70,12 @@ export async function showGuide(req, res) {
     desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
   }
 
-  const base = (process.env.BASE_URL || '').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/ratgeber/${post.slug}` : `/ratgeber/${post.slug}`;
 
   // ---- SEO Head-Block als String (analog Blog) ----
   const seoExtra = `
+  <link rel="canonical" href="${canonicalUrl}">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="${ejs.escapeXML(post.title)}">

@@ -3,5 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth/
 
-
 Sitemap: https://www.komplettwebdesign.de/sitemap.xml

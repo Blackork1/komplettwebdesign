@@ -3,7 +3,7 @@
 <!-- Head Partial -->
 <%- include('../partials/header') %>
 <!-- Header Partial -->
-<link rel="stylesheet" href="/blog.css?v=<%= Date.now() %>" />
+<link rel="stylesheet" href="/blog.css?v=<%= encodeURIComponent(assetVersion || '1') %>" />
 
 <!-- ────────── Hero mit Newsletter ────────── -->
 <section class="heroB d-flex align-items-center">

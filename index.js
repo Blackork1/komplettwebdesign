@@ -74,6 +74,17 @@ app.get('/health', (_req, res) => {
 
 const isProd = process.env.NODE_ENV === 'production';
 app.set('trust proxy', isProd ? 1 : false);
+app.locals.assetVersion = process.env.ASSET_VERSION || '2026-02-11';
+
+const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://www.komplettwebdesign.de' : '')).replace(/\/$/, '');
+const noIndexPrefixes = ['/admin', '/auth', '/api/', '/webhook', '/login', '/logout'];
+
+function resolveRequestBaseUrl(req) {
+  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').toString().split(',')[0].trim();
+  const host = (req.headers['x-forwarded-host'] || req.get('host') || '').toString().split(',')[0].trim();
+  if (!host) return configuredCanonicalBase || 'https://www.komplettwebdesign.de';
+  return `${proto}://${host}`.replace(/\/$/, '');
+}
 
 app.disable('x-powered-by');      
 // Header unterdrücken
@@ -114,6 +125,23 @@ if (isProd) {
 }
 
 app.use(compression());
+
+app.use((req, res, next) => {
+  const pathOnly = ((req.originalUrl || req.url || '/').split('?')[0] || '/').trim() || '/';
+  const base = configuredCanonicalBase || resolveRequestBaseUrl(req);
+  const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+  const canonicalUrl = `${base}${normalizedPath === '/' ? '/' : normalizedPath}`;
+  const shouldNoindex = noIndexPrefixes.some((prefix) => req.path === prefix || req.path.startsWith(prefix));
+
+  res.locals.assetVersion = app.locals.assetVersion;
+  res.locals.canonicalBaseUrl = base;
+  res.locals.canonicalUrl = canonicalUrl;
+  res.locals.robots = shouldNoindex
+    ? 'noindex,nofollow'
+    : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1';
+
+  next();
+});
 
 // EJS konfigurieren
 const __filename = fileURLToPath(import.meta.url);

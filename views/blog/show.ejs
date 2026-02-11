@@ -2,7 +2,7 @@
 <%- include('../partials/head') %>
 <%- include('../partials/header') %>
 
-<link rel="stylesheet" href="/blog.css?v=<%= Date.now() %>" />
+<link rel="stylesheet" href="/blog.css?v=<%= encodeURIComponent(assetVersion || '1') %>" />
 
 <div class="container my-5">
   <div class="row">

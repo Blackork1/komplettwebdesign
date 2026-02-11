@@ -69,10 +69,18 @@ export async function renderFaqPage(req, res) {
 
     // Caching für Besucher (anpassen wenn du Login/Personalisierung nutzt)
     res.set('Cache-Control', 'public, max-age=300');
+    const canonical = `${(res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}/faq`;
 
     res.render('faq', {
       title: 'Häufige Fragen – KomplettWebdesign',
       description: 'Hier findest du Antworten auf häufig gestellte Fragen zu Leistungen, Preisen, Ablauf, Technik & DSGVO.',
+      keywords: 'faq webdesign berlin, webseite erstellen lassen fragen, webdesign berlin kosten faq',
+      seoExtra: `
+        <meta property="og:title" content="Häufige Fragen zu Webdesign & Website-Erstellung">
+        <meta property="og:description" content="Antworten zu Preisen, Ablauf, SEO, Technik und Datenschutz bei Komplett Webdesign in Berlin.">
+        <meta property="og:url" content="${canonical}">
+        <meta property="og:type" content="website">
+      `,
       categories,
       selectedCategory,
       faqs,

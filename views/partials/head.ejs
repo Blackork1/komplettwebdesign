@@ -2,12 +2,60 @@
 <html lang="de">
 
 <head>
+  <%
+  const pageTitle = title || 'Komplett Webdesign | Website erstellen lassen in Berlin';
+  const pageDescription = description || 'Professionelles Webdesign in Berlin: Website erstellen lassen mit Fokus auf Sichtbarkeit, Performance und Anfragen.';
+  const seoExtraText = typeof seoExtra === 'string' ? seoExtra : '';
+  const hasCanonical = /rel=["']canonical["']/i.test(seoExtraText);
+  const hasOgTitle = /property=["']og:title["']/i.test(seoExtraText);
+  const hasOgDescription = /property=["']og:description["']/i.test(seoExtraText);
+  const hasOgUrl = /property=["']og:url["']/i.test(seoExtraText);
+  const hasOgImage = /property=["']og:image["']/i.test(seoExtraText);
+  const hasOgType = /property=["']og:type["']/i.test(seoExtraText);
+  const hasTwitterCard = /name=["']twitter:card["']/i.test(seoExtraText);
+  const siteBase = (canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
+  const pageCanonical = canonicalUrl || `${siteBase}/`;
+  const defaultOgImage = (typeof ogImage === 'string' && ogImage.trim())
+    ? ogImage.trim()
+    : `${siteBase}/images/heroBg.webp`;
+  const assetV = encodeURIComponent(assetVersion || '1');
+  const versionSuffix = `?v=${assetV}`;
+  %>
   <meta charset="UTF-8" />
-  <title><%= title %></title>
+  <title><%= pageTitle %></title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="<%= description %>" />
+  <meta name="description" content="<%= pageDescription %>" />
+  <meta name="robots" content="<%= robots || 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1' %>" />
+  <% if (typeof keywords === 'string' && keywords.trim()) { %>
+  <meta name="keywords" content="<%= keywords %>" />
+  <% } %>
+  <% if (!hasCanonical) { %>
+  <link rel="canonical" href="<%= pageCanonical %>" />
+  <% } %>
+  <% if (!hasOgType) { %>
+  <meta property="og:type" content="website" />
+  <% } %>
+  <% if (!hasOgTitle) { %>
+  <meta property="og:title" content="<%= pageTitle %>" />
+  <% } %>
+  <% if (!hasOgDescription) { %>
+  <meta property="og:description" content="<%= pageDescription %>" />
+  <% } %>
+  <% if (!hasOgUrl) { %>
+  <meta property="og:url" content="<%= pageCanonical %>" />
+  <% } %>
+  <% if (!hasOgImage) { %>
+  <meta property="og:image" content="<%= defaultOgImage %>" />
+  <% } %>
+  <% if (!hasTwitterCard) { %>
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="<%= pageTitle %>" />
+  <meta name="twitter:description" content="<%= pageDescription %>" />
+  <meta name="twitter:image" content="<%= defaultOgImage %>" />
+  <% } %>
 
   <!-- Fonts / CSS (wie bei dir) -->
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
   <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="/assets/css/fontawesome.min.css" as="style" onload="this.rel='stylesheet'" />
@@ -20,25 +68,25 @@
     <link rel="stylesheet" href="/assets/css/solid.min.css" />
   </noscript>
 
-  <link href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
-  <link href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <link href="/fonts/poppins-v23-latin-700.woff2" as="font" type="font/woff2" crossorigin />
-  <link href="/fonts/poppins-v23-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/poppins-v23-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/poppins-v23-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="/css/bootstrap.min.css" as="style" />
   <link rel="stylesheet" href="/css/bootstrap.min.css" />
 
-  <link rel="preload" href="/css/main.min.css?v=<%= Date.now() %>" as="style" />
-  <link rel="stylesheet" href="/css/main.min.css?v=<%= Date.now() %>" />
+  <link rel="preload" href="/css/main.min.css<%= versionSuffix %>" as="style" />
+  <link rel="stylesheet" href="/css/main.min.css<%= versionSuffix %>" />
 
-  <link rel="preload" href="/extra.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="/extra.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/extra.css" />
+    <link rel="stylesheet" href="/extra.css<%= versionSuffix %>" />
   </noscript>
 
-  <link rel="preload" href="/booking-widget.css" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="/booking-widget.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/booking-widget.css" />
+    <link rel="stylesheet" href="/booking-widget.css<%= versionSuffix %>" />
   </noscript>
 
   <!-- Stripe lazy loader (wie bei dir) -->

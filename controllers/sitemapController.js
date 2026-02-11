@@ -4,9 +4,15 @@ import { DISTRICTS } from "../models/districtModel.js";
 
 /** Absoluten Host ermitteln (funktioniert mit reverse proxy) */
 function resolveBaseUrl(req) {
-  const proto = req.headers["x-forwarded-proto"] || req.protocol;
-  const host  = req.headers["x-forwarded-host"]  || req.get("host");
-  return `${proto}://${host}`;
+  const configuredBase = (process.env.CANONICAL_BASE_URL || process.env.BASE_URL || "").trim().replace(/\/$/, "");
+  if (configuredBase) return configuredBase;
+
+  const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  const normalizedHost = String(host || "").replace(/^komplettwebdesign\.de$/i, "www.komplettwebdesign.de");
+  if (!normalizedHost) return "https://www.komplettwebdesign.de";
+
+  return `${proto}://${normalizedHost}`;
 }
 
 /** XML-Escape */
@@ -19,74 +25,96 @@ function xmlEscape(str = "") {
     .replace(/'/g, "&apos;");
 }
 
+function toIso(value, fallbackIso) {
+  const date = new Date(value || fallbackIso);
+  if (Number.isNaN(date.getTime())) return fallbackIso;
+  return date.toISOString();
+}
+
+async function querySafe(sql, params = [], label = "query") {
+  try {
+    const { rows } = await pool.query(sql, params);
+    return rows;
+  } catch (err) {
+    console.error(`⚠ sitemap ${label} fehlgeschlagen:`, err.message);
+    return [];
+  }
+}
+
 export async function sitemapXml(req, res, next) {
   try {
     const base = resolveBaseUrl(req);
     const nowIso = new Date().toISOString();
 
     // ---- DB: dynamische Inhalte ----
-    const { rows: posts } = await pool.query(
+    const posts = await querySafe(
       `SELECT slug,
-              COALESCE(hero_public_id,'') AS img,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM posts
-        WHERE published = true`
+        WHERE published = true`,
+      [],
+      "posts"
     );
 
-    const { rows: pages } = await pool.query(
+    const pages = await querySafe(
       `SELECT slug,
-              COALESCE(created_at, now()) AS updated_at
+              COALESCE(updated_at, created_at, now()) AS updated_at
          FROM pages
-        WHERE display = true`
+        WHERE display = true`,
+      [],
+      "pages"
     );
 
     // 👉 Neu: Industries für /webdesign-:slug
-    const { rows: industries } = await pool.query(
+    const industries = await querySafe(
       `SELECT slug,
-              COALESCE(og_image_url,'') AS og_image_url,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM industries
-        ORDER BY name`
+        ORDER BY name`,
+      [],
+      "industries"
     );
 
     // Leistungen für webdesign-berlin/:slug 
-    const { rows: leistungen_pages } = await pool.query(
+    const leistungenPages = await querySafe(
       `SELECT slug,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM leistungen_pages
         WHERE is_published = true
-        ORDER BY created_at DESC`
+        ORDER BY created_at DESC`,
+      [],
+      "leistungen_pages"
     );
 
     // 👉 NEU: Ratgeber für /ratgeber/:slug
-    const { rows: guides } = await pool.query(
+    const guides = await querySafe(
       `SELECT slug,
-              COALESCE(image_url,'') AS img,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM ratgeber
         WHERE published = true
-        ORDER BY created_at DESC`
+        ORDER BY created_at DESC`,
+      [],
+      "ratgeber"
     );
 
     // ---- Statische Routen ----
     const staticRoutes = [
-      { loc: `${base}/`,                changefreq: "weekly",  priority: 1.0 },
-      { loc: `${base}/kontakt`,         changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/pakete`,          changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/pakete/basis`,    changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/`, changefreq: "weekly", priority: 1.0 },
+      { loc: `${base}/kontakt`, changefreq: "monthly", priority: 0.8 },
+      { loc: `${base}/pakete`, changefreq: "monthly", priority: 0.8 },
+      { loc: `${base}/pakete/basis`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/pakete/business`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/pakete/premium`,  changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/about`,           changefreq: "monthly", priority: 0.5 },
-      { loc: `${base}/blog`,            changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/pakete/premium`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/about`, changefreq: "monthly", priority: 0.6 },
+      { loc: `${base}/blog`, changefreq: "weekly", priority: 0.8 },
       // 👉 NEU: Ratgeber-Übersicht
-      { loc: `${base}/ratgeber`,        changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/faq`,             changefreq: "yearly",  priority: 0.7 },
-      { loc: `${base}/datenschutz`,     changefreq: "yearly",  priority: 0.3 },
-      { loc: `${base}/impressum`,       changefreq: "yearly",  priority: 0.3 },
-      { loc: `${base}/webdesign-cafe/kosten`,         changefreq: "yearly",  priority: 0.3 },
-      { loc: `${base}/webdesign-blumenladen/kosten`,  changefreq: "yearly",  priority: 0.3 },
-      { loc: `${base}/webdesign-berlin`,   changefreq: "monthly",  priority: 1.0}
-
+      { loc: `${base}/ratgeber`, changefreq: "weekly", priority: 0.8 },
+      { loc: `${base}/faq`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/datenschutz`, changefreq: "yearly", priority: 0.2 },
+      { loc: `${base}/impressum`, changefreq: "yearly", priority: 0.2 },
+      { loc: `${base}/webdesign-cafe/kosten`, changefreq: "yearly", priority: 0.4 },
+      { loc: `${base}/webdesign-blumenladen/kosten`, changefreq: "yearly", priority: 0.4 },
+      { loc: `${base}/webdesign-berlin`, changefreq: "weekly", priority: 1.0 }
     ];
 
     // Bezirke
@@ -100,7 +128,7 @@ export async function sitemapXml(req, res, next) {
     // CMS Pages
     const pageRoutes = pages.map(p => ({
       loc: `${base}/${p.slug}`,
-      lastmod: new Date().toISOString(),
+      lastmod: toIso(p.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.8
     }));
@@ -108,7 +136,7 @@ export async function sitemapXml(req, res, next) {
     // Blogposts
     const postRoutes = posts.map(p => ({
       loc: `${base}/blog/${p.slug}`,
-      lastmod: new Date(p.updated_at).toISOString(),
+      lastmod: toIso(p.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.8
     }));
@@ -116,14 +144,14 @@ export async function sitemapXml(req, res, next) {
     // Industries
     const industryRoutes = industries.map(r => ({
       loc: `${base}/branchen/webdesign-${r.slug}`,
-      lastmod: new Date(r.updated_at).toISOString(),
+      lastmod: toIso(r.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.85
     }));
 
-    const serviceRoutes = leistungen_pages.map(s => ({
+    const serviceRoutes = leistungenPages.map(s => ({
       loc: `${base}/webdesign-berlin/${s.slug}`,
-      lastmod: new Date(s.updated_at).toISOString(),
+      lastmod: toIso(s.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.8
     }));
@@ -131,12 +159,12 @@ export async function sitemapXml(req, res, next) {
     // 👉 NEU: Ratgeber-Detailseiten
     const guideRoutes = guides.map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
-      lastmod: new Date(g.updated_at).toISOString(),
+      lastmod: toIso(g.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.8
     }));
 
-    const allUrls = [
+    const allUrlsRaw = [
       ...staticRoutes,
       ...districtRoutes,
       ...pageRoutes,
@@ -146,12 +174,19 @@ export async function sitemapXml(req, res, next) {
       ...guideRoutes   // 👉 NEU aufnehmen
     ];
 
+    const uniqueUrls = new Map();
+    allUrlsRaw.forEach((u) => {
+      if (!u?.loc) return;
+      if (!uniqueUrls.has(u.loc)) uniqueUrls.set(u.loc, u);
+    });
+    const allUrls = Array.from(uniqueUrls.values());
+
     // ---- XML bauen ----
     const urlset = allUrls.map(u => {
       const parts = [
         "  <url>",
         `    <loc>${xmlEscape(u.loc)}</loc>`,
-        `    <lastmod>${xmlEscape(u.lastmod || nowIso)}</lastmod>`
+        `    <lastmod>${xmlEscape(toIso(u.lastmod, nowIso))}</lastmod>`
       ];
       if (u.changefreq) parts.push(`    <changefreq>${u.changefreq}</changefreq>`);
       if (u.priority != null) parts.push(`    <priority>${Number(u.priority).toFixed(1)}</priority>`);

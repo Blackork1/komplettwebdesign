@@ -2,7 +2,7 @@
 <%- include('../partials/header') %>
 
 <!-- branchen.css lazy laden -->
-<link rel="preload" href="/branchen.css?v=<%= Date.now() %>" as="style" onload="this.rel='stylesheet'" />
+<link rel="preload" href="/branchen.css?v=<%= encodeURIComponent(assetVersion || '1') %>" as="style" onload="this.rel='stylesheet'" />
 <noscript>
   <link rel="stylesheet" href="/branchen.css" />
 </noscript>

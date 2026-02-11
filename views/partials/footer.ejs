@@ -46,6 +46,7 @@
           </nav>
           <nav class="footer-nav">
             <h3>Informationen</h3>
+            <a href="/webdesign-berlin">Webdesign Berlin</a>
             <a href="/kontakt">Kontakt</a>
             <a href="/faq">FAQ</a>
             <a href="/about">Über mich</a>
@@ -226,4 +227,4 @@
   })();
 </script>
 <script src="/js/recaptcha-form.js" defer></script>
-<script src="/js/youtube-consent.js?v=<%= Date.now() %>" defer></script>
+<script src="/js/youtube-consent.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
