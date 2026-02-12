@@ -107,6 +107,10 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/pakete/basis`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/pakete/business`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/pakete/premium`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/en/pakete`, changefreq: "monthly", priority: 0.8 },
+      { loc: `${base}/en/pakete/basis`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/en/pakete/business`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/en/pakete/premium`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/about`, changefreq: "monthly", priority: 0.6 },
       { loc: `${base}/blog`, changefreq: "weekly", priority: 0.8 },
       // 👉 NEU: Ratgeber-Übersicht
@@ -116,6 +120,8 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/impressum`, changefreq: "yearly", priority: 0.2 },
       { loc: `${base}/webdesign-cafe/kosten`, changefreq: "yearly", priority: 0.4 },
       { loc: `${base}/webdesign-blumenladen/kosten`, changefreq: "yearly", priority: 0.4 },
+      { loc: `${base}/ratgeber/website-kosten-zeitplan`, changefreq: "monthly", priority: 0.7 },
+      { loc: `${base}/ratgeber/kosten-einfache-website`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/webdesign-berlin`, changefreq: "weekly", priority: 1.0 },
       { loc: `${base}/en/webdesign-berlin`, changefreq: "weekly", priority: 0.9 }
     ];

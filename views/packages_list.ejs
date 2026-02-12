@@ -174,7 +174,7 @@
           <div class="package-visual">
             <div class="package-frame">
               <img src="<%= imagePath %>" alt="<%= isEn ? `${pkg.name} package` : `${pkg.name} Paket` %>" loading="lazy" />
-              <a class="package-overlay" href="/pakete/<%= slug %><%= isEn ? '?lng=en' : '' %>" aria-label="<%= isEn ? `Learn more about the ${pkg.name} package` : `Mehr erfahren über das ${pkg.name}-Paket` %>">
+              <a class="package-overlay" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>" aria-label="<%= isEn ? `Learn more about the ${pkg.name} package` : `Mehr erfahren über das ${pkg.name}-Paket` %>">
                 <span><%= isEn ? `View ${pkg.name} package` : `Zum ${pkg.name}-Paket` %></span>
               </a>
             </div>
@@ -201,7 +201,7 @@
               <span class="price-amount"><%= priceDisplay %></span>
             </div>
             <div class="package-actions">
-              <a class="btn btn-hero" href="/pakete/<%= slug %><%= isEn ? '?lng=en' : '' %>">
+              <a class="btn btn-hero" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>">
                 <%= isEn ? 'View details' : 'Details ansehen' %>
               </a>
               <a class="btn btn-soft-outline" href="/kontakt"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>

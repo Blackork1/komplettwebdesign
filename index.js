@@ -249,6 +249,7 @@ app.use(blogRoutes);
 app.use(adminBlogRoutes);
 app.use('/', starticPagesRoutes);
 app.use(packageRoutes);
+app.use('/en', packageRoutes);
 app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
 app.use("/en/kontakt", contactRoutes);

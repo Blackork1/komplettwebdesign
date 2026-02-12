@@ -142,7 +142,7 @@
           <% }) %>
         </ul>
         <div class="wd-package-card__actions">
-          <a class="wd-btn wd-btn-primary" href="/pakete/<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
+          <a class="wd-btn wd-btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
           <a class="wd-btn wd-btn-outline" href="<%= wdContact %>"><%= copy.packageBtnSecondary || 'Details anfragen' %></a>
         </div>
       </article>

@@ -118,7 +118,7 @@ export function buildPackageSchemas({ pack, url, baseUrl, lng = "de" }) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: isEn ? "Home" : "Startseite", item: `${baseUrl}/` },
-      { "@type": "ListItem", position: 2, name: isEn ? "Packages" : "Pakete", item: `${baseUrl}/pakete${isEn ? "?lng=en" : ""}` },
+      { "@type": "ListItem", position: 2, name: isEn ? "Packages" : "Pakete", item: `${baseUrl}${isEn ? "/en" : ""}/pakete` },
       { "@type": "ListItem", position: 3, name,              item: url }
     ]
   };

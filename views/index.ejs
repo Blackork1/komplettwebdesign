@@ -138,16 +138,16 @@
               </p>
               <div class="hero-ctas">
                 <a href="/kontakt" class="btn btn-primary hero-button"><%= copy.heroCtaPrimary %></a>
-                <a href="/pakete" class="btn btn-secondary"><%= copy.heroCtaSecondary %></a>
+                <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary"><%= copy.heroCtaSecondary %></a>
               </div>
               <p class="mt-2 mb-0 heroPriceInfo">
-                <a href="/pakete/basis">
+                <a href="<%= isEn ? '/en/pakete/basis' : '/pakete/basis' %>">
                   <span class="badge text-bg-success"><%= copy.heroBadge1 %></span>
                 </a>
-                <a href="/pakete/business">
+                <a href="<%= isEn ? '/en/pakete/business' : '/pakete/business' %>">
                   <span class="badge text-bg-success"><%= copy.heroBadge2 %></span>
                 </a>
-                <a href="/pakete/premium">
+                <a href="<%= isEn ? '/en/pakete/premium' : '/pakete/premium' %>">
                   <span class="badge text-bg-success"><%= copy.heroBadge3 %></span>
                 </a>
               </p>
@@ -652,7 +652,7 @@
                 We have a matching package for every need, whether you need
                 a simple website, a larger company presence, or
                 a custom solution. You can find more information
-                on the <a href="/pakete" class="linkColor">packages</a> page.
+                on the <a href="/en/pakete" class="linkColor">packages</a> page.
                 <% } else { %>
                 In nur vier Wochen kannst du mit deiner neuen Webseite online
                 sein und Kunden finden dich in Berlin: Wähle das passende Paket aus und starte dein Projekt!
@@ -712,7 +712,7 @@
                   </ul>
 
                   <!-- Button -->
-                  <a class="btn btn-primary" href="/pakete/<%=pkg.slug%>"><%= isEn ? 'View details' : 'Details' %></a>
+                  <a class="btn btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%=pkg.slug%>"><%= isEn ? 'View details' : 'Details' %></a>
                 </div>
               </div>
               <% }}); %>

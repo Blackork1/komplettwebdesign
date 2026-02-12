@@ -900,7 +900,7 @@
           </div>
           <div class="hero-actions">
             <a class="btn btn-hero" href="#kontaktformular"><%= isEnglish ? 'Book your consultation now' : 'Jetzt Beratung sichern' %></a>
-            <a class="btn btn-soft-outline" href="/pakete<%= isEnglish ? '?lng=en' : '' %>"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
+            <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en' : '' %>/pakete"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -1007,7 +1007,7 @@
           </ul>
         </div>
         <div class="contact-form-wrapper">
-          <form action="/pakete/<%= slug %>/kontakt<%= isEnglish ? '?lng=en' : '' %>" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
+          <form action="<%= isEnglish ? '/en' : '' %>/pakete/<%= slug %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
             <div class="form-group">
               <label for="inputName"><%= isEnglish ? 'Your name' : 'Ihr Name' %></label>
               <input type="text" id="inputName" name="name" placeholder="<%= isEnglish ? 'John Doe' : 'Max Mustermann' %>" required>
@@ -1062,7 +1062,7 @@
                 <span class="preview-current"><%= isEnglish ? 'Currently selected' : 'Aktuell ausgewählt' %></span>
                 <% } %>
               </div>
-              <a class="btn btn-soft-outline" href="/pakete/<%= preview.slug %><%= isEnglish ? '?lng=en' : '' %>"><%= isEnglish ? 'View preview' : 'Vorschau ansehen' %></a>
+              <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en' : '' %>/pakete/<%= preview.slug %>"><%= isEnglish ? 'View preview' : 'Vorschau ansehen' %></a>
             </div>
           </article>
           <% }) %>

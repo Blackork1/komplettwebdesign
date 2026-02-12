@@ -87,21 +87,21 @@ export async function renderDistrictPage(req, res, next) {
             price: "499,00 €",
             description: "A fast launch package with a focused one-page setup.",
             features: ["One-page website", "Responsive design", "GDPR-ready setup"],
-            href: "/pakete/Basis"
+            href: "/en/pakete/basis"
           },
           {
             name: "Business",
             price: "899,00 €",
             description: "For growing companies that need multiple pages and stronger visibility.",
             features: ["Multi-page website", "Custom layout", "SEO-optimized"],
-            href: "/pakete/Business"
+            href: "/en/pakete/business"
           },
           {
             name: "Premium",
             price: "1.499,00 €",
             description: "For ambitious projects with advanced features and full support.",
             features: ["Tailored solution", "E-commerce possible", "Advanced features"],
-            href: "/pakete/Premium"
+            href: "/en/pakete/premium"
           }
         ],
         processSteps: [
@@ -514,8 +514,8 @@ export function renderWebdesignBerlinHub(req, res) {
       packageBtnPrimary: "Choose package",
       packageBtnSecondary: "Request details",
       packageIncludedTitle: "What is actually included in a web design package?",
-      packageIncludedText1: "Already in the <a href='/pakete/basis'>Starter package from EUR 499</a>, you get a professionally designed website with mobile optimization, clear user flows, and core legal pages. Instead of template builders, we create a tailored design for your offer and target group.",
-      packageIncludedText2: "In the <a href='/pakete/business'>Business package from EUR 899</a>, the focus is on multiple service pages and stronger Google visibility. For larger projects with shop or booking features, the <a href='/pakete/premium'>Premium package from EUR 1,499</a> is the right fit.",
+      packageIncludedText1: "Already in the <a href='/en/pakete/basis'>Starter package from EUR 499</a>, you get a professionally designed website with mobile optimization, clear user flows, and core legal pages. Instead of template builders, we create a tailored design for your offer and target group.",
+      packageIncludedText2: "In the <a href='/en/pakete/business'>Business package from EUR 899</a>, the focus is on multiple service pages and stronger Google visibility. For larger projects with shop or booking features, the <a href='/en/pakete/premium'>Premium package from EUR 1,499</a> is the right fit.",
       casesTitle: "Results from Berlin - real numbers",
       caseLinkLabel: "View website",
       processTitle: "Website development in Berlin - how the process works",
@@ -611,7 +611,7 @@ export function renderWebdesignBerlinHub(req, res) {
     hero.description =
       "Want to be found more easily in Berlin? We build your website professionally, mobile-first, and focused on qualified inquiries. Including SEO basics, hosting, and support.";
     hero.ctaPrimary = { label: "Book a free initial consultation", href: contactPath };
-    hero.ctaSecondary = { label: "View web design packages", href: "/pakete" };
+    hero.ctaSecondary = { label: "View web design packages", href: "/en/pakete" };
     hero.rating.label = "★★★★★ 5.0/5 · 3 Google reviews";
     hero.image.alt = "Sören Blocksdorf - Web Designer Berlin";
     hero.trustBadges = [
@@ -775,7 +775,7 @@ export function renderWebdesignBerlinHub(req, res) {
     faqs.splice(0, faqs.length,
       {
         question: "How much does it cost to get a website built in Berlin?",
-        answer: "Depending on scope, a professional website usually ranges between <strong>EUR 499 and EUR 2,000</strong>. On our <a href='/pakete'>packages</a> page, you can find transparent fixed pricing without hidden costs."
+        answer: "Depending on scope, a professional website usually ranges between <strong>EUR 499 and EUR 2,000</strong>. On our <a href='/en/pakete'>packages</a> page, you can find transparent fixed pricing without hidden costs."
       },
       {
         question: "How long does website development in Berlin take?",

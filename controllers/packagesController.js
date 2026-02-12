@@ -40,8 +40,9 @@ function resolveBaseUrl(req) {
 }
 
 function resolvePackageLocale(req) {
+  if (req.baseUrl?.startsWith('/en')) return 'en';
+  if (req.originalUrl?.startsWith('/en/')) return 'en';
   if (req.query?.lng === 'en') return 'en';
-  if (req.baseUrl?.startsWith('/en/')) return 'en';
   const referer = String(req.get('referer') || '');
   if (referer.includes('/en/') || referer.endsWith('/en')) return 'en';
   return 'de';
@@ -130,8 +131,10 @@ function buildPackagesSeoExtra({ req, isEn, title, description, imagePath, pathO
   const baseUrl = resolveBaseUrl(req).replace(/\/$/, '');
   const rawPath = pathOverride || req.path;
   const pathname = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
-  const deUrl = `${baseUrl}${pathname}`;
-  const enUrl = `${baseUrl}${pathname}?lng=en`;
+  const dePath = pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+  const enPath = dePath === '/' ? '/en' : `/en${dePath}`;
+  const deUrl = `${baseUrl}${dePath}`;
+  const enUrl = `${baseUrl}${enPath}`;
   const canonical = isEn ? enUrl : deUrl;
   const ogLocale = isEn ? 'en_US' : 'de_DE';
   const ogLocaleAlt = isEn ? 'de_DE' : 'en_US';

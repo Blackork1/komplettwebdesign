@@ -6,13 +6,15 @@
     : '/'; %>
   <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
   <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
-  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin' }; %>
-  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin' }; %>
+  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete' }; %>
+  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete' }; %>
   <% const switchToEnPath = deToEnMap[normalizedCurrentPath]
     || (normalizedCurrentPath.startsWith('/webdesign-berlin/') ? `/en${normalizedCurrentPath}` : null)
+    || (normalizedCurrentPath.startsWith('/pakete/') ? `/en${normalizedCurrentPath}` : null)
     || (normalizedCurrentPath.startsWith('/en/') ? normalizedCurrentPath : '/en'); %>
   <% const switchToDePath = enToDeMap[normalizedCurrentPath]
     || (normalizedCurrentPath.startsWith('/en/webdesign-berlin/') ? normalizedCurrentPath.replace(/^\/en/, '') : null)
+    || (normalizedCurrentPath.startsWith('/en/pakete/') ? normalizedCurrentPath.replace(/^\/en/, '') : null)
     || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
   <% const switchToEnHref = `${switchToEnPath}${currentSearchPart}`; %>
   <% const switchToDeHref = `${switchToDePath}${currentSearchPart}`; %>
@@ -45,7 +47,7 @@
           <div class="links heroLinks" id="nav-links">
             <a href="<%= homeHref %>">Home</a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
-            <a href="<%= isEn ? '/pakete?lng=en' : '/pakete' %>"><%= isEn ? 'Pricing' : 'Preise' %></a>
+            <a href="<%= isEn ? '/en/pakete' : '/pakete' %>"><%= isEn ? 'Pricing' : 'Preise' %></a>
             <nav class="main-nav">
               <ul>
                 <li class="dropdown">
