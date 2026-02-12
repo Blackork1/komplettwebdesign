@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { generateToken } from "../util/bookingToken.js";
+import { normalizeLocale } from "../util/bookingLocale.js";
 
 
 const transporter = nodemailer.createTransport({
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
-    const isEn = locale === "en";
+    const isEn = normalizeLocale(locale) === "en";
     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
     const pretty = isEn
         ? format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'at' HH:mm", { locale: enUS })
@@ -65,7 +66,7 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
     <p>${type === "pending"
             ? `vielen Dank für Ihre Terminanfrage. Wir prüfen den Termin und melden uns in spätestens 24 Stunden zurück.`
             : type === "confirmed"
-                ? `Der Termin wurde bestätigt. Ich freuen mich auf unser Gespräch! Ich werde mich zum Termin telefonisch melden.`
+                ? `Der Termin wurde bestätigt. Ich freue mich auf unser Gespräch! Ich werde mich zum Termin telefonisch melden.`
                 : `Leider mussten wir den Termin stornieren. Bitte buchen Sie einen neuen Termin über unsere Website.`
         }</p>
     <p><strong>Termin:</strong> ${pretty}</p>

@@ -1,7 +1,25 @@
 import pool from '../util/db.js';
 import { sendBookingMail } from '../services/mailService.js';
 import { startOfMonth, addMonths, format } from 'date-fns';
+import { findLocaleMarker, normalizeLocale } from '../util/bookingLocale.js';
 
+async function resolveBookingLocale(booking) {
+  if (booking?.booking_locale) return normalizeLocale(booking.booking_locale);
+
+  const localeFromNote = findLocaleMarker(booking?.note);
+  if (localeFromNote) return localeFromNote;
+
+  const { rows } = await pool.query(
+    `SELECT additional_info
+       FROM contact_requests
+      WHERE booking_id = $1
+      ORDER BY id DESC
+      LIMIT 1`,
+    [booking.id]
+  );
+  const localeFromContactRequest = findLocaleMarker(rows[0]?.additional_info);
+  return localeFromContactRequest || 'de';
+}
 
 
 
@@ -162,6 +180,7 @@ export async function confirmBooking(req, res) {
 
   /* Kunde informieren */
   const booking = rows[0];
+  const locale = await resolveBookingLocale(booking);
   const { rows: aptRows } = await pool.query(
     'SELECT * FROM appointments WHERE id = $1',
     [booking.appointment_id]);
@@ -170,7 +189,8 @@ export async function confirmBooking(req, res) {
     name: booking.name,
     appointment: aptRows[0],
     type: 'confirmed',
-    bookingId: booking.id
+    bookingId: booking.id,
+    locale
   });
 
   res.redirect('/admin/bookings');
@@ -188,6 +208,7 @@ export async function cancelBooking(req, res) {
   if (!rows.length) return res.redirect('/admin/bookings');
 
   const booking = rows[0];
+  const locale = await resolveBookingLocale(booking);
 
   /* Slot wieder freigeben */
   await pool.query(
@@ -202,7 +223,8 @@ export async function cancelBooking(req, res) {
     to: booking.email,
     name: booking.name,
     appointment: aptRows[0],
-    type: 'cancelled'
+    type: 'cancelled',
+    locale
   });
 
   res.redirect('/admin/bookings');
@@ -214,4 +236,3 @@ export async function getTest(req, res) {
     description: 'Dies ist eine Testseite'
   });
 }
-

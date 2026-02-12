@@ -362,7 +362,8 @@ export const processForm = [
                     slotId,
                     req.body.name,
                     req.body.email,
-                    req.body.note || null
+                    req.body.note || null,
+                    lng
                 );
             }
 

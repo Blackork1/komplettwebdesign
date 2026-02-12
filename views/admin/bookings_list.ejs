@@ -5,7 +5,7 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Termin</th><th>Name</th><th>E-Mail</th><th>Status</th><th>Aktion</th>
+      <th>Termin</th><th>Name</th><th>E-Mail</th><th>Sprache</th><th>Status</th><th>Aktion</th>
     </tr>
   </thead>
   <tbody>
@@ -19,6 +19,7 @@
       </td>
       <td><%= b.name %></td>
       <td><%= b.email %></td>
+      <td><%= b.booking_locale || 'de' %></td>
       <td><%= b.status %></td>
       <td>
         <% if (b.status === 'pending') { %>

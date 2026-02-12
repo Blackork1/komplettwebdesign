@@ -6,6 +6,7 @@ import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import pool from '../util/db.js';
 import { verifyToken } from '../util/bookingToken.js';
+import { extractLocaleFromNote, normalizeLocale } from '../util/bookingLocale.js';
 
 // Schwelle für reCAPTCHA v3; optional per ENV übersteuerbar
 const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
@@ -90,7 +91,8 @@ export async function createBooking(req, res) {
       req.body.slotId,
       req.body.name,
       req.body.email,
-      req.body.note || null
+      req.body.note || null,
+      locale
     );
 
     /* 4) Buchungsbestätigung per E-Mail senden */
@@ -151,6 +153,9 @@ async function handleUserCancellation(req, res, action) {
     name: booking.name,
     appointment: apt,
     type: 'cancelled',
+    locale: booking.booking_locale
+      ? normalizeLocale(booking.booking_locale)
+      : extractLocaleFromNote(booking.note, 'de')
   });
 
   // FIX: hier war "slot" statt "apt"

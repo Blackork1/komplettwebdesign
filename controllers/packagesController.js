@@ -153,6 +153,7 @@ export async function showPackage(req, res) {
 export async function handleContact(req, res) {
   const slug = req.params.slug.toLowerCase();
   const { name, email, slot } = req.body;
+  const locale = 'de';
   let lockedSlot = null;
   let booking = null;
   const token = typeof req.body.token === 'string' ? req.body.token.trim() : '';
@@ -200,7 +201,7 @@ export async function handleContact(req, res) {
     if (slot) {
       lockedSlot = await lockSlot(Number(slot));
       if (!lockedSlot) return res.render('booking/slot_taken', { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." });
-      booking = await Book.create(lockedSlot.id, name, email);
+      booking = await Book.create(lockedSlot.id, name, email, null, locale);
     }
 
     const slots = await getNextOpenSlots(3);
@@ -213,7 +214,7 @@ export async function handleContact(req, res) {
       : null;
 
     if (lockedSlot) {
-      await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending' });
+      await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending', locale });
       await sendAdminBookingInfo({ booking, appointment: lockedSlot, type: 'new' });
     } else {
       const html = `
