@@ -2,8 +2,8 @@
     <%- include('../partials/header') %>
         <div class="section">
             <div class="container">
-                <h1 class="white">Termin vergeben</h1>
-                <p class="white">Leider war jemand schneller. Bitte wählen Sie einen anderen Termin.</p>
+                <h1 class="white"><%= title || ((lng === 'en') ? 'Slot unavailable' : 'Termin vergeben') %></h1>
+                <p class="white"><%= description || ((lng === 'en') ? 'Someone else booked this time first. Please choose another appointment.' : 'Leider war jemand schneller. Bitte wählen Sie einen anderen Termin.') %></p>
             </div>
         </div>
 

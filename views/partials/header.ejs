@@ -1,23 +1,52 @@
 <header>
+  <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+  <% const homeHref = isEn ? '/en' : '/'; %>
+  <% const currentPath = (typeof currentPathname !== 'undefined' && currentPathname)
+    ? currentPathname
+    : '/'; %>
+  <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
+  <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
+  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt' }; %>
+  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt' }; %>
+  <% const switchToEnPath = deToEnMap[normalizedCurrentPath] || (normalizedCurrentPath.startsWith('/en/') ? normalizedCurrentPath : '/en'); %>
+  <% const switchToDePath = enToDeMap[normalizedCurrentPath] || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
+  <% const switchToEnHref = `${switchToEnPath}${currentSearchPart}`; %>
+  <% const switchToDeHref = `${switchToDePath}${currentSearchPart}`; %>
+  <% const toEnLabel = (label) => {
+    const map = {
+      Restaurants: 'Restaurants',
+      Handwerksbetriebe: 'Trades',
+      'Kitas & Schulen': 'Daycares & Schools',
+      Kitas: 'Daycares',
+      Schulen: 'Schools',
+      Cafés: 'Cafes',
+      Cafe: 'Cafe',
+      Kontakt: 'Contact',
+      Preise: 'Pricing',
+      Ratgeber: 'Guides',
+      Branchen: 'Industries'
+    };
+    return map[label] || label;
+  }; %>
   <div class="topWhiteGradient">
     <div class="topWhiteGradients"></div>
 
     <div class="hero-nav">
       <div class="navigation" id="navigation" aria-label="Komplett Webdesign">
-        <a href="/" class="logo" aria-label="Zur Startseite">
-          <img src="/images/LogoTransparent.webp" alt="Icon um zur Startseite zu kommen" role="presentation" />
+        <a href="<%= homeHref %>" class="logo" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
+          <img src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" role="presentation" />
         </a>
         <div class="nav-right">
           <img src="/images/Nav-Bar-Icon.svg" alt="Menu Icon" class="menu-icon" id="menu-icon" />
           <div class="links heroLinks" id="nav-links">
-            <a href="/">Home</a>
-            <a href="/kontakt">Kontakt</a>
-            <a href="/pakete">Preise</a>
+            <a href="<%= homeHref %>">Home</a>
+            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
+            <a href="/pakete"><%= isEn ? 'Pricing' : 'Preise' %></a>
             <nav class="main-nav">
               <ul>
                 <li class="dropdown">
                   <div class="dropdown-toggle">
-                    <button class="dropdown-toggle-btn" type="button" aria-label="Webdesign Berlin Untermenü öffnen">
+                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open Webdesign Berlin submenu' : 'Webdesign Berlin Untermenü öffnen' %>">
                       ▾
                     </button>
                     <a href="/webdesign-berlin">Webdesign Berlin</a>
@@ -37,29 +66,30 @@
               <ul>
                 <li class="dropdown">
                   <div class="dropdown-toggle">
-                    <button class="dropdown-toggle-btn" type="button" aria-label="Branchen Untermenü öffnen">
+                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open industries submenu' : 'Branchen Untermenü öffnen' %>">
                       ▾
                     </button>
-                    <a href="/branchen">Branchen</a>
+                    <a href="/branchen"><%= isEn ? 'Industries' : 'Branchen' %></a>
                   </div>
                   <ul class="dropdown-menu">
                     <% navPages.forEach(page=> { %>
                     <li><a href="/<%= page.slug %>" class="main-color">
-                        <%= page.nav %>
+                        <%= isEn ? toEnLabel(page.nav) : page.nav %>
                       </a></li>
                     <% }) %>
                     <% (navIndustries || []).forEach(industry => { %>
                     <% const slug = industry.slug || ''; %>
                     <% const href = `/branchen/${slug.startsWith('webdesign-') ? slug : `webdesign-${slug}`}`; %>
-                    <li><a href="<%= href %>" class="main-color"><%= industry.name %></a></li>
+                    <li><a href="<%= href %>" class="main-color"><%= isEn ? toEnLabel(industry.name) : industry.name %></a></li>
                     <% }) %>
                   </ul>
                 </li>
               </ul>
             </nav>
-            <a href="/ratgeber">Ratgeber</a>
+            <a href="/ratgeber"><%= isEn ? 'Guides' : 'Ratgeber' %></a>
             <a href="/blog">Blog</a>
-            <a href="/kontakt" class="btn btn-tertiary">Termin buchen</a>
+            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-tertiary"><%= isEn ? 'Book a call' : 'Termin buchen' %></a>
+            <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>
             <!-- <a href="/reservation" class="reserve-button">Reservierung</a> -->
           </div>
         </div>

@@ -14,8 +14,9 @@ const RECAPTCHA_ACTION     = 'booking_submit';
 export const validate = [
   body('slotId').isInt().toInt(),
   body('name').trim().isLength({ min: 2 }).withMessage('Name muss länger als 2 Zeichen sein'),
-  body('email').isEmail().normalizeEmail().withMessage('Ungültige E-Mail-Adresse'),
+  body('email').trim().isEmail().withMessage('Ungültige E-Mail-Adresse'),
   body('note').optional().isLength({ max: 2000 }).withMessage('Notiz zu lang'),
+  body('locale').optional().isIn(['de', 'en']),
   // v3-Token heisst jetzt g-recaptcha-response
   body('g-recaptcha-response').isString().notEmpty().withMessage('reCAPTCHA fehlt'),
 ];
@@ -30,6 +31,8 @@ export async function listSlots(_req, res) {
 }
 
 export async function createBooking(req, res) {
+  const locale = req.body.locale === 'en' ? 'en' : 'de';
+
   /* 1) Google reCAPTCHA v3 validieren */
   try {
     const token  = req.body['g-recaptcha-response']; // <-- neuer Feldname
@@ -74,8 +77,11 @@ export async function createBooking(req, res) {
   const slot = await Apt.lockSlot(req.body.slotId);
   if (!slot) {
     return res.render('booking/slot_taken', {
-      title: 'Termin vergeben',
-      description: 'Leider war jemand schneller. Bitte wählen Sie einen anderen Termin.',
+      title: locale === 'en' ? 'Slot no longer available' : 'Termin vergeben',
+      description: locale === 'en'
+        ? 'Someone else booked this time first. Please choose another appointment.'
+        : 'Leider war jemand schneller. Bitte wählen Sie einen anderen Termin.',
+      lng: locale
     });
   }
 
@@ -93,15 +99,19 @@ export async function createBooking(req, res) {
       name: booking.name,
       appointment: slot,
       type: 'pending',
+      locale,
     });
     await sendAdminBookingInfo({ booking, appointment: slot, type: 'new' });
 
     /* 5) Danke-Seite */
     return res.render('booking/thankyou', {
-      title: 'Danke für Ihre Buchung',
+      title: locale === 'en' ? 'Thanks for your booking' : 'Danke für Ihre Buchung',
       booking,
       apt: slot,
-      description: 'Danke für Ihre Buchung. Wir haben Ihnen eine Bestätigung per E-Mail gesendet.',
+      description: locale === 'en'
+        ? 'Thanks for your booking. We have sent you a confirmation email.'
+        : 'Danke für Ihre Buchung. Wir haben Ihnen eine Bestätigung per E-Mail gesendet.',
+      lng: locale
     });
   } catch (err) {
     // Bei Fehler Slot wieder freigeben

@@ -1,120 +1,230 @@
-/* === Grundfarben ===================================================== */
 :root {
-  --accent: var(--color-accent, #e94a1b);
-  --accentLight: color-mix(in srgb, var(--accent) 30%, transparent);
-  --bgCard: #ffffff;
-  --border: #d7d7d7;
+  --kwd-primary: var(--color-primary, #0b2a46);
+  --kwd-accent: var(--color-accent, #e94a1b);
+  --kwd-bg: #f3f3f3;
+  --kwd-text: #0f2238;
+  --kwd-muted: #9b9b9b;
+  --kwd-surface: #ffffff;
 }
 
-/* === Container ======================================================= */
 .kwd-booking-widget {
-  font-family: var(--font-body, Arial, sans-serif);
-  margin: 2rem 0;
+  margin: 1.5rem 0 0;
 }
 
-/* === Slot-Karten (drei nebeneinander) ================================ */
-.kwd-slot-container {
+.kwd-booking-flow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  background: var(--kwd-bg);
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.kwd-cal-left {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.kwd-cal-header {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
 }
 
-.kwd-slot-card {
-  flex: 1 1 30%;
-  min-width: 200px;
-  max-width: 300px;
-  background: var(--accentLight);
-  border: 2px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 1.2rem;
+.kwd-month-label {
+  margin: 0;
+  color: var(--kwd-primary);
+  font-family: var(--font-heading, "Poppins", sans-serif);
+  font-size: 1.1rem;
+}
+
+.kwd-nav {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: #e6e6e6;
+  color: var(--kwd-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.kwd-weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
   text-align: center;
+  color: var(--kwd-muted);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.kwd-grid-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+}
+
+.kwd-day {
+  aspect-ratio: 1/1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  user-select: none;
+}
+
+.kwd-day.empty {
+  background: transparent;
+}
+
+.kwd-day.muted {
+  color: #d0d0d0;
+}
+
+.kwd-day.has-free {
+  background: #efefef;
+  color: #1b1b1b;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.15s ease, outline-color 0.15s ease;
 }
 
-.kwd-slot-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+.kwd-day.has-free:hover {
+  outline: 2px solid var(--kwd-accent);
+  transform: translateY(-1px);
 }
 
-/* Nicht gewählte Slot-Karten ausblenden */
-.kwd-slot-card.faded {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.8);
-  display: none;
-}
-
-/* Gewählte Karte vergrößern + volle Farbe */
-.kwd-slot-card.selected {
-  background: var(--accent);
+.kwd-day.selected {
+  background: var(--kwd-primary);
   color: #fff;
-  transform: scale(1.1);
 }
 
-/* === Pfeil „Zurück“ ================================================== */
-.kwd-back {
-  display: none;
-  margin: 0 0 1rem auto;
+.kwd-cal-right {
+  background: var(--kwd-primary);
+  color: #f8fbff;
+  border-radius: 14px;
+  padding: 1.15rem;
+}
+
+.kwd-step h4 {
+  margin: 0 0 0.55rem;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.kwd-hint {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.kwd-step-subline {
+  color: #dbe8f5;
+  margin: 0 0 0.8rem;
+}
+
+.kwd-back-btn {
+  background: transparent;
+  border: 0;
+  color: #f6c9bb;
   cursor: pointer;
-  color: var(--accent);
-  font-size: 0.9rem;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  font-weight: 700;
   text-decoration: underline;
 }
-.kwd-back.visible {
-  display: block;
+
+.kwd-back-btn:hover {
+  color: #ffd8cd;
 }
 
-/* === Formular (erscheint nach Wahl) ================================= */
+.kwd-time-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.kwd-time-btn {
+  border: 1px solid #9fb4ca;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #0f2b46;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.kwd-time-btn:hover,
+.kwd-time-btn.active {
+  background: var(--kwd-accent);
+  border-color: var(--kwd-accent);
+  color: #fff;
+}
+
 .kwd-booking-form {
-  margin-top: 1.5rem;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 600px;
+  display: grid;
+  gap: 0.75rem;
 }
 
-.kwd-booking-form label {
-  display: block;
-  margin: 0.5rem 0;
+.kwd-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.kwd-field span {
+  font-size: 0.88rem;
+  color: #eaf2fb;
 }
 
 .kwd-booking-form input,
 .kwd-booking-form textarea {
   width: 100%;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #f8fbff;
+  color: #111;
+  border-radius: 12px;
+  padding: 0.72rem 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.kwd-booking-form .btn {
-  background: var(--accent);
-  color: #fff;
-  border: 0;
-  padding: 0.5rem 1.2rem;
-  margin-top: 0.8rem;
-  cursor: pointer;
-  border-radius: 0.4rem;
+.kwd-booking-form input:focus,
+.kwd-booking-form textarea:focus {
+  border-color: var(--kwd-accent);
+  box-shadow: 0 0 0 3px rgba(233, 74, 27, 0.2);
 }
 
-.kwd-booking-form .err {
-  display: none;
-  color: #e94a1b;
-  font-size: 0.8rem;
+.kwd-submit {
+  margin-top: 0.25rem;
+  background: #ff6b3d !important;
+  color: #ffffff !important;
+  border: 1px solid #ff6b3d !important;
+  border-radius: 12px;
+  padding: 0.68rem 1rem;
+  font-weight: 700;
 }
 
-.kwd-booking-form.invalid .err {
-  display: inline;
+.kwd-submit:hover {
+  background: #ff7a52 !important;
+  border-color: #ff7a52 !important;
+  color: #ffffff !important;
 }
 
-/* Feedback-Meldung */
 .form-msg {
-  margin-top: 0.6rem;
+  margin: 0;
   font-size: 0.9rem;
+  color: #ffe4da;
 }
 
-/* === Responsive – Stapeln ab 600 px ================================== */
-@media (max-width: 600px) {
-  .kwd-slot-card {
-    flex: 1 1 100%;
+.form-msg.is-error {
+  color: #ffb8a0;
+}
+
+@media (max-width: 950px) {
+  .kwd-booking-flow {
+    grid-template-columns: 1fr;
   }
 }

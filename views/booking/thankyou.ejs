@@ -2,8 +2,8 @@
     <%- include('../partials/header') %>
         <div class="section">
             <div class="container">
-                <h1 class="white">Vielen Dank!</h1>
-                <p class="white">Wir haben Ihre Terminanfrage erhalten. Sie bekommen gleich eine E-Mail.</p>
+                <h1 class="white"><%= title || ((lng === 'en') ? 'Thank you!' : 'Vielen Dank!') %></h1>
+                <p class="white"><%= description || ((lng === 'en') ? 'We received your appointment request. You will receive an email confirmation shortly.' : 'Wir haben Ihre Terminanfrage erhalten. Sie bekommen gleich eine E-Mail.') %></p>
             </div>
         </div>
 

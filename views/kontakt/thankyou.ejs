@@ -1,10 +1,11 @@
 <%- include('../partials/head') %>
 <%- include('../partials/header') %>
+<% const isEn = lng === 'en'; %>
 <div class="section">
   <div class="container mt-5">
-    <h1 class="white">Vielen Dank!</h1>
-    <p class="white">Hallo <%= data.name || '' %>,</p>
-    <p class="white">vielen Dank für deine Anfrage über unser Kontaktformular. Wir haben die folgenden Angaben erhalten:</p>
+    <h1 class="white"><%= isEn ? 'Thank you!' : 'Vielen Dank!' %></h1>
+    <p class="white"><%= isEn ? 'Hello' : 'Hallo' %> <%= data.name || '' %>,</p>
+    <p class="white"><%= isEn ? 'Thank you for your request via our contact form. We received the following details:' : 'vielen Dank für deine Anfrage über unser Kontaktformular. Wir haben die folgenden Angaben erhalten:' %></p>
     <table class="table">
       <% const hasValue = (value) => {
         if (value === null || value === undefined) return false;
@@ -14,18 +15,18 @@
       };
 
       const rows = [
-        { label: 'Paket:', value: data.paket },
-        { label: 'Seitenumfang:', value: data.umfang },
-        { label: 'Texte:', value: data.texterstellung ? (data.texterstellung === 'erstellt' ? 'Texterstellung benötigt' : 'Eigene Texte vorhanden') : null },
-        { label: 'Bilder:', value: data.bilderstellung ? (data.bilderstellung === 'erstellt' ? 'Bildrecherche/-erstellung benötigt' : 'Eigene Bilder vorhanden') : null },
-        { label: 'Funktionen:', value: Array.isArray(data.inhalte) ? data.inhalte.join(', ') : (hasValue(data.inhalte) ? data.inhalte : null) },
-        { label: 'Weitere Wünsche:', value: data.weitereWuensche },
-        { label: 'Termin:', value: formattedAppointment },
-        { label: 'Name:', value: data.name },
+        { label: isEn ? 'Package:' : 'Paket:', value: data.paket },
+        { label: isEn ? 'Page scope:' : 'Seitenumfang:', value: data.umfang },
+        { label: isEn ? 'Texts:' : 'Texte:', value: data.texterstellung ? (data.texterstellung === 'erstellt' ? (isEn ? 'Text creation needed' : 'Texterstellung benötigt') : (isEn ? 'Own texts available' : 'Eigene Texte vorhanden')) : null },
+        { label: isEn ? 'Images:' : 'Bilder:', value: data.bilderstellung ? (data.bilderstellung === 'erstellt' ? (isEn ? 'Image creation/research needed' : 'Bildrecherche/-erstellung benötigt') : (isEn ? 'Own images available' : 'Eigene Bilder vorhanden')) : null },
+        { label: isEn ? 'Features:' : 'Funktionen:', value: Array.isArray(data.inhalte) ? data.inhalte.join(', ') : (hasValue(data.inhalte) ? data.inhalte : null) },
+        { label: isEn ? 'Additional wishes:' : 'Weitere Wünsche:', value: data.weitereWuensche },
+        { label: isEn ? 'Appointment:' : 'Termin:', value: formattedAppointment },
+        { label: isEn ? 'Name:' : 'Name:', value: data.name },
         { label: 'E-Mail:', value: data.email },
-        { label: 'Telefon:', value: data.telefon },
-        { label: 'Firma:', value: data.firma },
-        { label: 'Sonstige Infos:', value: data.sonstigeInfos }
+        { label: isEn ? 'Phone:' : 'Telefon:', value: data.telefon },
+        { label: isEn ? 'Company:' : 'Firma:', value: data.firma },
+        { label: isEn ? 'Additional info:' : 'Sonstige Infos:', value: data.sonstigeInfos }
       ];
       %>
       <% rows.forEach(row => { %>
@@ -38,10 +39,10 @@
       <% }); %>
     </table>
     <% if (appointment) { %>
-    <p><a href="/kontakt/ics/<%= appointment.id %>" class="btn btn-primary">Termin als ICS herunterladen</a></p>
+    <p><a href="<%= isEn ? '/en/kontakt/ics/' : '/kontakt/ics/' %><%= appointment.id %>" class="btn btn-primary"><%= isEn ? 'Download appointment as ICS' : 'Termin als ICS herunterladen' %></a></p>
     <% } %>
-    <p class="white">Wir werden uns in Kürze bei dir melden, um die Details zu besprechen.</p>
-    <p class="white">Mit freundlichen Grüßen<br>Dein KomplettWebdesign-Team</p>
+    <p class="white"><%= isEn ? 'We will get back to you shortly to discuss the details.' : 'Wir werden uns in Kürze bei dir melden, um die Details zu besprechen.' %></p>
+    <p class="white"><%= isEn ? 'Best regards' : 'Mit freundlichen Grüßen' %><br><%= isEn ? 'Your KomplettWebdesign team' : 'Dein KomplettWebdesign-Team' %></p>
   </div>
 </div>
 <%- include('../partials/footer') %>

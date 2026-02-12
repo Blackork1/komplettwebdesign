@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { generateICS } from "./icsService.js";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import { generateToken } from "../util/bookingToken.js";
 
 
@@ -12,16 +13,25 @@ const transporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
 
-export async function sendBookingMail({ to, name, appointment, type, bookingId = null }) {
+export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
+    const isEn = locale === "en";
     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
-    const pretty = format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
+    const pretty = isEn
+        ? format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'at' HH:mm", { locale: enUS })
+        : format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
 
     /*Betreff je nach Status */
-    const subject = {
-        pending: `Terminanfrage für ${pretty} ist eingegangen`,
-        confirmed: `Termin bestätigt: ${pretty}`,
-        cancelled: `Termin abgesagt: ${pretty}`
-    }[type];
+    const subject = isEn
+        ? {
+            pending: `Appointment request received for ${pretty}`,
+            confirmed: `Appointment confirmed: ${pretty}`,
+            cancelled: `Appointment cancelled: ${pretty}`
+        }[type]
+        : {
+            pending: `Terminanfrage für ${pretty} ist eingegangen`,
+            confirmed: `Termin bestätigt: ${pretty}`,
+            cancelled: `Termin abgesagt: ${pretty}`
+        }[type];
 
     /* Optionale Aktionslinks */
     let actionHtml = "";
@@ -30,12 +40,27 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
         const base = process.env.BASE_URL || "";
         const cancelUrl = `${base}/booking/${bookingId}/cancel/${token}`;
         const rescheduleUrl = `${base}/booking/${bookingId}/reschedule/${token}`;
-        actionHtml = `<p><a href="${cancelUrl}">Termin stornieren</a> oder <a href="${rescheduleUrl}">neuen Termin anfragen</a></p>`;
+        actionHtml = isEn
+            ? `<p><a href="${cancelUrl}">Cancel appointment</a> or <a href="${rescheduleUrl}">request a new appointment</a></p>`
+            : `<p><a href="${cancelUrl}">Termin stornieren</a> oder <a href="${rescheduleUrl}">neuen Termin anfragen</a></p>`;
     }
 
 
     /*Mail Body*/
-    const html = `
+    const html = isEn
+        ? `
+    <p>Hello ${name}</p>
+    <p>${type === "pending"
+            ? `Thank you for your appointment request. We will review it and get back to you within 24 hours.`
+            : type === "confirmed"
+                ? `Your appointment has been confirmed. I look forward to speaking with you. I will call you at the scheduled time.`
+                : `Unfortunately, we had to cancel this appointment. Please book a new time on our website.`
+        }</p>
+    <p><strong>Appointment:</strong> ${pretty}</p>
+    ${actionHtml}
+    <p>Best regards<br>Komplettwebdesign</p>
+    `
+        : `
     <p>Hallo ${name}</p>
     <p>${type === "pending"
             ? `vielen Dank für Ihre Terminanfrage. Wir prüfen den Termin und melden uns in spätestens 24 Stunden zurück.`

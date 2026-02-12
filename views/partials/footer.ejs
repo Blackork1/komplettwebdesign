@@ -23,6 +23,7 @@
     z-index: 990;
   }
 </style>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
 
 <section class="section" id="footer">
   <div class="footer-container">
@@ -30,7 +31,7 @@
       <div class="footer-main">
         <!-- LINKS: Logo -->
         <div class="footer-left">
-          <a href="/" class="footerLogo">
+          <a href="<%= isEn ? '/en' : '/' %>" class="footerLogo">
             <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo" loading="lazy" />
           </a>
         </div>
@@ -39,24 +40,24 @@
         <div class="footer-right">
           <!-- Link-Liste -->
           <nav class="footer-nav">
-            <h3>Rechtliches</h3>
-            <a href="/impressum">Impressum</a>
-            <a href="/datenschutz">Datenschutz</a>
+            <h3><%= isEn ? 'Legal' : 'Rechtliches' %></h3>
+            <a href="/impressum"><%= isEn ? 'Legal notice' : 'Impressum' %></a>
+            <a href="/datenschutz"><%= isEn ? 'Privacy policy' : 'Datenschutz' %></a>
             <!-- <a href="/agb">AGB</a> -->
           </nav>
           <nav class="footer-nav">
-            <h3>Informationen</h3>
+            <h3><%= isEn ? 'Information' : 'Informationen' %></h3>
             <a href="/webdesign-berlin">Webdesign Berlin</a>
-            <a href="/kontakt">Kontakt</a>
+            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
             <a href="/faq">FAQ</a>
-            <a href="/about">Über mich</a>
+            <a href="/about"><%= isEn ? 'About me' : 'Über mich' %></a>
           </nav>
 
           <!-- Newsletter-Sektion -->
           <div class="newsletter">
-            <h4>Zum Newsletter anmelden</h4>
+            <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
             <form action="/newsletter/signup" method="POST" class="newsletter-form">
-              <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="Deine E-Mail" required />
+              <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="<%= isEn ? 'Your email' : 'Deine E-Mail' %>" required />
               <button type="submit" aria-label="Subscribe">
                 <!-- Pfeil-Icon -->
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -67,9 +68,9 @@
             <div class="newsletter-consent">
               <label>
                 <input type="checkbox" name="consent" required />
-                Ich möchte mich für den Newsletter anmelden und akzeptiere die
+                <%= isEn ? 'I want to subscribe to the newsletter and accept the' : 'Ich moechte mich fuer den Newsletter anmelden und akzeptiere die' %>
                 <br />
-                <a href="/datenschutz">Datenschutz Richtlinien</a>.*
+                <a href="/datenschutz"><%= isEn ? 'privacy policy' : 'Datenschutz Richtlinien' %></a>.*
               </label>
             </div>
           </div>
@@ -86,7 +87,7 @@
           <a href="https://www.youtube.com/@komplettwebdesign" target="_blank" rel="noopener">YouTube</a>
           <a href="https://www.tiktok.com/@komplett.webdesign" target="_blank" rel="noopener">TikTok</a>
         </div>
-        <a class="back-to-top" href="#hero" aria-label="Zurück nach oben">
+        <a class="back-to-top" href="#hero" aria-label="<%= isEn ? 'Back to top' : 'Zurueck nach oben' %>">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
           </svg>
@@ -94,23 +95,23 @@
       </div>
     </footer>
   </div>
-  <a class="back-to-top back-to-top--fixed" href="#hero" aria-label="Zurück nach oben">
+  <a class="back-to-top back-to-top--fixed" href="#hero" aria-label="<%= isEn ? 'Back to top' : 'Zurueck nach oben' %>">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
     </svg>
   </a>
   <!-- Floating Chat-Button -->
-  <button id="chat-toggle" class="btn btn-primary chat-button">Chat</button>
+  <button id="chat-toggle" class="btn btn-primary chat-button"><%= isEn ? 'Chat' : 'Chat' %></button>
   <!-- Chat-Container -->
   <div id="chat-container" class="chat-container">
     <div class="chat-header d-flex justify-content-between align-items-center p-2 border-bottom">
       <strong>Chatbot</strong>
-      <button id="chat-close" type="button" class="btn-close" aria-label="Button zum schließen des Chatbots"></button>
+      <button id="chat-close" type="button" class="btn-close" aria-label="<%= isEn ? 'Close chatbot' : 'Button zum schliessen des Chatbots' %>"></button>
     </div>
     <div id="chat-window" class="chat-window"></div>
     <form id="chat-form" class="chat-form input-group">
-      <input id="chat-input" type="text" class="form-control" placeholder="Frage eingeben…" required />
-      <button class="btn btn-primary">Senden</button>
+      <input id="chat-input" type="text" class="form-control" placeholder="<%= isEn ? 'Enter question...' : 'Frage eingeben...' %>" required />
+      <button class="btn btn-primary"><%= isEn ? 'Send' : 'Senden' %></button>
     </form>
   </div>
 </section>

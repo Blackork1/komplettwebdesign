@@ -1,5 +1,6 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
+<% const isEn = lng === 'en'; %>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
 <style>
@@ -33,9 +34,10 @@
 </style>
 <div class="section">
   <div class="container mt-5">
-    <h1 style="text-align: center; color:#eaeae9">Kontaktiere uns</h1>
-    <form id="kontaktForm" action="/kontakt" method="POST" enctype="multipart/form-data">
+    <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Contact us' : 'Kontaktiere uns' %></h1>
+    <form id="kontaktForm" action="<%= contactAction || (isEn ? '/en/kontakt' : '/kontakt') %>" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
+      <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
 
       <!-- Bootstrap Carousel für die Slides -->
       <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
@@ -44,96 +46,92 @@
 
             <!-- ====================  Slide 1 – Paket  ==================== -->
             <div class="carousel-item active">
-              <h2>1. Was für ein Umfang soll dein Projekt haben?</h2>
+              <h2><%= isEn ? '1. What overall scope should your project have?' : '1. Was für ein Umfang soll dein Projekt haben?' %></h2>
               <!-- <p>Bitte wähle ein Paket:</p> -->
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <input class="option-radio" type="radio" id="paketBasis" name="paket" value="Basis" required>
-                <label class="option-label" for="paketBasis"><i class="bi bi-house-fill"></i> Kleines Projekt</label>
+                <label class="option-label" for="paketBasis"><i class="bi bi-house-fill"></i> <%= isEn ? 'Small project' : 'Kleines Projekt' %></label>
 
                 <input class="option-radio" type="radio" id="paketBusiness" name="paket" value="Business" required>
-                <label class="option-label" for="paketBusiness"><i class="bi bi-building-fill"></i>Mittleres Projekt</label>
+                <label class="option-label" for="paketBusiness"><i class="bi bi-building-fill"></i><%= isEn ? 'Medium project' : 'Mittleres Projekt' %></label>
 
                 <input class="option-radio" type="radio" id="paketPremium" name="paket" value="Premium" required>
-                <label class="option-label" for="paketPremium"><i class="bi bi-buildings-fill"></i>Großes Projekt</label>
+                <label class="option-label" for="paketPremium"><i class="bi bi-buildings-fill"></i><%= isEn ? 'Large project' : 'Grosses Projekt' %></label>
               </div>
             </div>
 
             <!-- ================  Slide 2 – Seiten-Umfang  ================= -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2>2. Wie viele Seiten soll deine Website haben?</h2>
-              <p>Wähle den ungefähren Seitenumfang:</p>
+              <h2><%= isEn ? '2. How many pages should your website have?' : '2. Wie viele Seiten soll deine Website haben?' %></h2>
+              <p><%= isEn ? 'Choose the approximate page scope:' : 'Wähle den ungefähren Seitenumfang:' %></p>
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <input class="option-radio" type="radio" id="umfang1" name="umfang" value="1 Seite" required>
-                <label class="option-label" for="umfang1"><i class="bi bi-book"></i>1 Seite</label>
+                <label class="option-label" for="umfang1"><i class="bi bi-book"></i><%= isEn ? '1 page' : '1 Seite' %></label>
 
                 <input class="option-radio" type="radio" id="umfang2-5" name="umfang" value="2-5 Seiten" required>
-                <label class="option-label" for="umfang2-5"><i class="bi bi-book-half"></i>2 - 5 Seiten</label>
+                <label class="option-label" for="umfang2-5"><i class="bi bi-book-half"></i><%= isEn ? '2 - 5 pages' : '2 - 5 Seiten' %></label>
 
                 <input class="option-radio" type="radio" id="umfang5plus" name="umfang" value=">5 Seiten" required>
-                <label class="option-label" for="umfang5plus"><i class="bi bi-book-fill"></i>&gt; 5 Seiten</label>
+                <label class="option-label" for="umfang5plus"><i class="bi bi-book-fill"></i><%= isEn ? '> 5 pages' : '> 5 Seiten' %></label>
               </div>
             </div>
 
             <!-- ================  Slide 3 – Texterstellung  ================= -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2>3. Texterstellung nötig?</h2>
-              <p>Sind Texte für die Seiten vorhanden, oder sollen wir sie erstellen?</p>
+              <h2><%= isEn ? '3. Do you need content writing?' : '3. Texterstellung nötig?' %></h2>
+              <p><%= isEn ? 'Are texts already available, or should we create them?' : 'Sind Texte für die Seiten vorhanden, oder sollen wir sie erstellen?' %></p>
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <input class="option-radio" type="radio" id="textErstellen" name="texterstellung" value="erstellt" required>
-                <label class="option-label" for="textErstellen"><i class="bi bi-pencil-square"></i>Texte erstellen</label>
+                <label class="option-label" for="textErstellen"><i class="bi bi-pencil-square"></i><%= isEn ? 'Create texts' : 'Texte erstellen' %></label>
 
                 <input class="option-radio" type="radio" id="textEigen" name="texterstellung" value="eigen" required>
-                <label class="option-label" for="textEigen"><i class="bi bi-folder-symlink-fill"></i>Texte vorhanden</label>
+                <label class="option-label" for="textEigen"><i class="bi bi-folder-symlink-fill"></i><%= isEn ? 'Texts available' : 'Texte vorhanden' %></label>
               </div>
             </div>
 
             <!-- ================  Slide 4 – Bilder  ================= -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2>4. Bilder vorhanden?</h2>
-              <p>Sind passende Bilder vorhanden, oder sollen wir Bilder
-                erstellen?
-              </p>
+              <h2><%= isEn ? '4. Do you already have images?' : '4. Bilder vorhanden?' %></h2>
+              <p><%= isEn ? 'Do you already have fitting images, or should we create/select them?' : 'Sind passende Bilder vorhanden, oder sollen wir Bilder erstellen?' %></p>
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <input class="option-radio" type="radio" id="bilderErstellen" name="bilderstellung" value="erstellt" required>
-                <label class="option-label" for="bilderErstellen"><i class="bi bi-camera-fill"></i>Bilder erstellen</label>
+                <label class="option-label" for="bilderErstellen"><i class="bi bi-camera-fill"></i><%= isEn ? 'Create/select images' : 'Bilder erstellen' %></label>
 
                 <input class="option-radio" type="radio" id="bilderEigen" name="bilderstellung" value="eigen" required>
-                <label class="option-label" for="bilderEigen"><i class="bi bi-folder-symlink-fill"></i>Bilder vorhanden</label>
+                <label class="option-label" for="bilderEigen"><i class="bi bi-folder-symlink-fill"></i><%= isEn ? 'Images available' : 'Bilder vorhanden' %></label>
               </div>
 
               <div id="uploadImagesField" class="mt-3" style="display:none">
-                <label>Du kannst hier deine Bilder hochladen (mehrfache Auswahl
-                  möglich):</label><br>
+                <label><%= isEn ? 'You can upload your images here (multiple files possible):' : 'Du kannst hier deine Bilder hochladen (mehrfache Auswahl möglich):' %></label><br>
                 <input type="file" name="images" id="imagesInput" multiple accept="image/*">
               </div>
             </div>
 
             <!-- ========================  Slide 5 – Inhalte/Funktionen  ======================== -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2 style="padding-top: 30px; margin-bottom: 0px;">5. Gewünschte Inhalte/Funktionen</h2>
-              <p style="margin-bottom: 5px;">(Mehrfach­auswahl möglich)
-              </p>
+              <h2 style="padding-top: 30px; margin-bottom: 0px;"><%= isEn ? '5. Desired content/features' : '5. Gewünschte Inhalte/Funktionen' %></h2>
+              <p style="margin-bottom: 5px;"><%= isEn ? '(multiple selection possible)' : '(Mehrfachauswahl möglich)' %></p>
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <div>
                   <input class="option-check" type="checkbox" id="featureBlog" name="inhalte" value="Blog">
-                  <label class="option-label small" for="featureBlog"><i class="bi bi-file-medical-fill"></i>Blog</label>
+                  <label class="option-label small" for="featureBlog"><i class="bi bi-file-medical-fill"></i><%= isEn ? 'Blog' : 'Blog' %></label>
                 </div>
                 <div>
                   <input class="option-check" type="checkbox" id="featureShop" name="inhalte" value="Onlineshop">
-                  <label class="option-label small" for="featureShop"><i class="bi bi-cart-dash-fill"></i>Onlineshop</label>
+                  <label class="option-label small" for="featureShop"><i class="bi bi-cart-dash-fill"></i><%= isEn ? 'Online shop' : 'Onlineshop' %></label>
                 </div>
                 <div>
                   <input class="option-check" type="checkbox" id="featureMaps" name="inhalte" value="Google Maps Einbindung">
@@ -141,16 +139,15 @@
                 </div>
                 <div>
                   <input class="option-check" type="checkbox" id="featureKontakt" name="inhalte" value="Kontaktformular">
-                  <label class="option-label small" for="featureKontakt"><i class="bi bi-menu-button-wide-fill"></i>Kontaktformular</label>
+                  <label class="option-label small" for="featureKontakt"><i class="bi bi-menu-button-wide-fill"></i><%= isEn ? 'Contact form' : 'Kontaktformular' %></label>
                 </div>
                 <div>
                   <input class="option-check" type="checkbox" id="featureTermin" name="inhalte" value="Terminbuchung">
-                  <label class="option-label small" for="featureTermin"><i class="bi bi-calendar-week-fill"></i>Online-Terminbuchung</label>
+                  <label class="option-label small" for="featureTermin"><i class="bi bi-calendar-week-fill"></i><%= isEn ? 'Online appointment booking' : 'Online-Terminbuchung' %></label>
                 </div>
                 <div>
                   <input class="option-check" type="checkbox" id="featureBusiness" name="inhalte" value="Google Business Eintrag">
-                  <label class="option-label small" for="featureBusiness"><i class="bi bi-google"></i>Google Business
-                    Eintrag</label>
+                  <label class="option-label small" for="featureBusiness"><i class="bi bi-google"></i><%= isEn ? 'Google Business profile' : 'Google Business Eintrag' %></label>
                 </div>
               </div>
 <!-- 
@@ -159,21 +156,21 @@
                 <textarea id="weitereWuensche" name="weitereWuensche" class="form-control" rows="2" placeholder="Weitere Funktionen, spezifische Anforderungen …"></textarea>
               </div> -->
 
-              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
             </div>
 
             <!-- ========================  Slide 6 – Terminwahl  ======================== -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2>6. Termin für ein Gespräch wählen</h2>
-              <p>Wähle einen freien Termin für ein Beratungsgespräch:</p>
+              <h2><%= isEn ? '6. Choose an appointment time' : '6. Termin für ein Gespräch wählen' %></h2>
+              <p><%= isEn ? 'Choose a free slot for a consultation call:' : 'Wähle einen freien Termin für ein Beratungsgespräch:' %></p>
 
               <% if (freieTermine && freieTermine.length> 0) { %>
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <% freieTermine.forEach(term=> {
                                                 const startTime = new Date(term.start_time)
-                                                .toLocaleDateString('de-DE',
+                                                .toLocaleDateString(isEn ? 'en-GB' : 'de-DE',
                                                 { weekday:'short', day:'2-digit', month:'short',
                                                 hour:'2-digit', minute:'2-digit' });
                                                 %>
@@ -182,68 +179,65 @@
                   <%= startTime %>
                 </label>
                 <% }) %>
-                <button type="button" class="btn btn-primary mt-3 next-btn">Anderer Termin</button>
+                <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Other date' : 'Anderer Termin' %></button>
               </div>
               <% } else { %>
-              <p><em>Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren
-                  dich
-                  zur
-                  Termin­vereinbarung.</em></p>
-              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+              <p><em><%= isEn ? 'Currently no free appointments are available. We will contact you for scheduling.' : 'Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren dich zur Terminvereinbarung.' %></em></p>
+              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
               <% } %>
             </div>
 
             <!-- ========================  Slide 7 – Kontaktdaten  ======================== -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2 class="pt-5">7. Deine Kontaktdaten</h2>
-              <p>Bitte gib deine Kontaktdaten ein, damit wir dich erreichen können:</p>
+              <h2 class="pt-5"><%= isEn ? '7. Your contact details' : '7. Deine Kontaktdaten' %></h2>
+              <p><%= isEn ? 'Please enter your contact details so we can reach you:' : 'Bitte gib deine Kontaktdaten ein, damit wir dich erreichen können:' %></p>
 
               <div class="mb-3 w-100" style="max-width:460px">
-                <label for="nameInput" class="form-label">Name *</label>
+                <label for="nameInput" class="form-label"><%= isEn ? 'Name *' : 'Name *' %></label>
                 <input type="text" id="nameInput" name="name" class="form-control" placeholder="Max Mustermann" required>
               </div>
               <div class="mb-3 w-100" style="max-width:460px">
-                <label for="emailInput" class="form-label">E-Mail *</label>
-                <input type="email" id="emailInput" name="email" class="form-control" placeholder="name@beispiel.de" required>
+                <label for="emailInput" class="form-label"><%= isEn ? 'Email *' : 'E-Mail *' %></label>
+                <input type="email" id="emailInput" name="email" class="form-control" placeholder="<%= isEn ? 'name@example.com' : 'name@beispiel.de' %>" required>
               </div>
               <div class="mb-3 w-100" style="max-width:460px">
-                <label for="telefonInput" class="form-label">Telefonnummer *</label>
+                <label for="telefonInput" class="form-label"><%= isEn ? 'Phone number *' : 'Telefonnummer *' %></label>
                 <input type="tel" id="telefonInput" name="telefon" class="form-control" placeholder="+49 …" required>
               </div>
               <div class="mb-3 w-100" style="max-width:460px">
-                <label for="firmaInput" class="form-label">Firma (optional)</label>
-                <input type="text" id="firmaInput" name="firma" class="form-control" placeholder="Dein Firmenname">
+                <label for="firmaInput" class="form-label"><%= isEn ? 'Company (optional)' : 'Firma (optional)' %></label>
+                <input type="text" id="firmaInput" name="firma" class="form-control" placeholder="<%= isEn ? 'Your company name' : 'Dein Firmenname' %>">
               </div>
 
-              <button type="button" class="btn btn-primary mt-2 next-btn">Weiter</button>
+              <button type="button" class="btn btn-primary mt-2 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
             </div>
 
             <!-- ========================  Slide 8 – Sonstige Infos  ======================== -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2 style="padding-top: 30px;">8. Weitere Informationen</h2>
-              <p>Gibt es sonst noch etwas, das du uns mitteilen möchtest?</p>
+              <h2 style="padding-top: 30px;"><%= isEn ? '8. Additional information' : '8. Weitere Informationen' %></h2>
+              <p><%= isEn ? 'Anything else you want to share with us?' : 'Gibt es sonst noch etwas, das du uns mitteilen möchtest?' %></p>
 
-              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="Weitere Anmerkungen, Wünsche oder Infos …"></textarea>
+              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="<%= isEn ? 'Additional notes, wishes, or information...' : 'Weitere Anmerkungen, Wünsche oder Infos ...' %>"></textarea>
 
-              <button type="button" class="btn btn-primary mt-3 next-btn">Weiter</button>
+              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
             </div>
 
             <!-- ========================  Slide 9 – Zusammenfassung & Absenden  ======================== -->
             <div class="carousel-item">
-              <button type="button" class="back-btn">← Zurück</button>
+              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
 
-              <h2 class="pt-5">Zusammenfassung deiner Angaben</h2>
+              <h2 class="pt-5"><%= isEn ? 'Summary of your information' : 'Zusammenfassung deiner Angaben' %></h2>
 
               <div id="summaryBox" class="table-responsive mb-4">
                 <!-- wird durch JS gefüllt -->
               </div>
 
-              <p>Wenn alles stimmt, klicke auf <strong>Absenden</strong>.</p>
-              <button type="submit" class="btn btn-success btn-lg">Absenden</button>
+              <p><%= isEn ? 'If everything looks good, click' : 'Wenn alles stimmt, klicke auf' %> <strong><%= isEn ? 'Submit' : 'Absenden' %></strong>.</p>
+              <button type="submit" class="btn btn-success btn-lg"><%= isEn ? 'Submit' : 'Absenden' %></button>
             </div>
 
           </div>
@@ -255,8 +249,7 @@
     <!-- Erfolgsmeldung anzeigen, falls per Query-Param 'erfolg=1' übergeben -->
     <% if (typeof query !=='undefined' && query.erfolg=='1' ) { %>
     <div class="alert alert-success mt-4">
-      Vielen Dank für deine Anfrage! Wir haben deine Angaben erhalten und melden uns bald bei
-      dir.
+      <%= isEn ? 'Thanks for your request! We received your details and will get back to you soon.' : 'Vielen Dank für deine Anfrage! Wir haben deine Angaben erhalten und melden uns bald bei dir.' %>
     </div>
     <% } %>
   </div>
@@ -264,6 +257,26 @@
 <%- include('partials/footer') %>
 <script>
   window.SITEKEY = "<%= process.env.RECAPTCHA_SITEKEY %>";
+  window.CONTACT_I18N = {
+    invalidRequired: "<%= isEn ? 'Please complete all required fields.' : 'Bitte alle Pflichtfelder ausfüllen.' %>",
+    recaptchaMissingKey: "<%= isEn ? 'No reCAPTCHA site key configured.' : 'Es wurde kein reCAPTCHA Sitekey konfiguriert.' %>",
+    recaptchaLoadError: "<%= isEn ? 'reCAPTCHA could not be loaded. Please try again.' : 'reCAPTCHA konnte nicht geladen werden. Bitte versuche es erneut.' %>",
+    summaryNone: "<%= isEn ? 'None' : 'Keine' %>",
+    summaryNotSet: "<%= isEn ? 'Not specified' : 'Nicht angegeben' %>",
+    labels: {
+      paket: "<%= isEn ? 'Package' : 'Paket' %>",
+      umfang: "<%= isEn ? 'Page scope' : 'Seitenumfang' %>",
+      texte: "<%= isEn ? 'Texts' : 'Texte' %>",
+      bilder: "<%= isEn ? 'Images' : 'Bilder' %>",
+      funktionen: "<%= isEn ? 'Features' : 'Funktionen' %>",
+      termin: "<%= isEn ? 'Appointment' : 'Termin' %>",
+      name: "<%= isEn ? 'Name' : 'Name' %>",
+      email: "<%= isEn ? 'Email' : 'E-Mail' %>",
+      telefon: "<%= isEn ? 'Phone' : 'Telefon' %>",
+      firma: "<%= isEn ? 'Company' : 'Firma' %>",
+      infos: "<%= isEn ? 'Additional info' : 'Sonstige Infos' %>"
+    }
+  };
 </script>
 
 <script src="/js/kontakt.js" defer></script> <!-- Kontakt-spezifisches JS -->

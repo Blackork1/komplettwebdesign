@@ -125,6 +125,11 @@ app.use(compression());
 
 app.use((req, res, next) => {
   const pathOnly = ((req.originalUrl || req.url || '/').split('?')[0] || '/').trim() || '/';
+  const queryString = (() => {
+    const raw = req.originalUrl || req.url || '';
+    const idx = raw.indexOf('?');
+    return idx >= 0 ? raw.slice(idx) : '';
+  })();
   const base = configuredCanonicalBase || resolveRequestBaseUrl(req);
   const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
   const canonicalUrl = `${base}${normalizedPath === '/' ? '/' : normalizedPath}`;
@@ -133,6 +138,8 @@ app.use((req, res, next) => {
   res.locals.assetVersion = app.locals.assetVersion;
   res.locals.canonicalBaseUrl = base;
   res.locals.canonicalUrl = canonicalUrl;
+  res.locals.currentPathname = normalizedPath;
+  res.locals.currentSearch = queryString;
   res.locals.robots = shouldNoindex
     ? 'noindex,nofollow'
     : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1';
@@ -244,6 +251,7 @@ app.use('/', starticPagesRoutes);
 app.use(packageRoutes);
 app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
+app.use("/en/kontakt", contactRoutes);
 app.use(chatRoutes);
 app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);

@@ -1,4 +1,5 @@
 <%- include('partials/head') %>
+<% const isEn = lng === 'en'; %>
 <style>
   .linkColor {
     color: #d75b36;
@@ -110,7 +111,7 @@
       <source media="(max-width: 768px)" srcset="/images/heroBGG.webp" type="image/webp" fetchpriority="low" loading="lazy" decoding="async">
 
       <!-- Fallback + Attribute -->
-      <img src="/images/heroBGG.webp" alt="Hero Bild: Begrüßungsbild von mir" fetchpriority="high" loading="eager" decoding="async" style="width:100%;height:100%;">
+      <img src="/images/heroBGG.webp" alt="<%= isEn ? 'Hero image of the website intro section' : 'Hero Bild: Begrüßungsbild von mir' %>" fetchpriority="high" loading="eager" decoding="async" style="width:100%;height:100%;">
     </picture>
 
     <section class="hero hero-main" id="hero">
@@ -119,35 +120,35 @@
           <div class="hero-flex">
             <div class="hero-content">
               <span class="hero-badge mb-3">
-                <i class="fas fa-bolt"></i> Deine neue Website in nur 30 Tagen
+                <i class="fas fa-bolt"></i> <%= copy.heroBadge %>
               </span>
               <h1 class="display-5 fw-bold mt-2">
-                Webseite in Berlin erstellen lassen <br> Konzept bis Hosting
+                <%= copy.heroTitle %> <br> <%= copy.heroTitle2 %>
               </h1>
-              <h2><span class="primaryColor"> schnell, modern, ab 499,- € </span></h2>
+              <h2><span class="primaryColor"> <%= copy.heroSubline %> </span></h2>
               <p>
                 <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                Optimiert für Handy, Tablet & Desktop
+                <%= copy.heroBullet1 %>
                 <br />
                 <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                Klarer Festpreis & fixer Zeitplan – 0 Technik-Stress
+                <%= copy.heroBullet2 %>
                 <br />
                 <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                SEO-Basis & schnelle Ladezeiten von Anfang an
+                <%= copy.heroBullet3 %>
               </p>
               <div class="hero-ctas">
-                <a href="/kontakt" class="btn btn-primary hero-button">Beratungstermin</a>
-                <a href="/pakete" class="btn btn-secondary">Pakete ansehen</a>
+                <a href="/kontakt" class="btn btn-primary hero-button"><%= copy.heroCtaPrimary %></a>
+                <a href="/pakete" class="btn btn-secondary"><%= copy.heroCtaSecondary %></a>
               </div>
               <p class="mt-2 mb-0 heroPriceInfo">
                 <a href="/pakete/basis">
-                  <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
+                  <span class="badge text-bg-success"><%= copy.heroBadge1 %></span>
                 </a>
                 <a href="/pakete/business">
-                  <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
+                  <span class="badge text-bg-success"><%= copy.heroBadge2 %></span>
                 </a>
                 <a href="/pakete/premium">
-                  <span class="badge text-bg-success">All-in ab 1499,99 €</span>
+                  <span class="badge text-bg-success"><%= copy.heroBadge3 %></span>
                 </a>
               </p>
             </div>
@@ -163,25 +164,41 @@
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left">
             <h2 class="animate-on-scroll ">
-              <strong>Website in Berlin erstellen lassen</strong> – professionelles Webdesign aus einer Hand bei <br><span class="brand">Komplett Webdesign</span>
+              <strong><%= copy.introTitleStrong %></strong> - <%= copy.introTitleRest %> <br><span class="brand">Komplett Webdesign</span>
             </h2>
             <div class="readable animate-on-scroll">
               <p>
+                <% if (isEn) { %>
+                In today's digital world, businesses need a modern, appealing, and mobile-friendly online presence.
+                Ideally with a clear budget, a fixed timeline, and real business impact.
+                With Komplettwebdesign.de, you can get your website built professionally - fast, reliable, and from one source.
+                As an experienced web designer, I support clients across Germany.
+                Looking specifically for a <a href="/webdesign-berlin" class="linkColor">web designer in Berlin</a>? Then check out our local offers.
+                <% } else { %>
                 In der digitalen Welt von heute benötigen Unternehmen eine
                 moderne, ansprechende und mobilfreundliche Online-Präsenz.
                 Und das am besten günstig, fix & mit echtem Umsatz-Impact.
                 Mit Komplettwebdesign.de kannst du dir deine Webseite professionell
-                erstellen lassen – schnell, zuverlässig und vollständig aus einer Hand.
+                erstellen lassen - schnell, zuverlässig und vollständig aus einer Hand.
                 Als erfahrener Webdesigner betreue ich Kunden deutschlandweit.
                 Du suchst speziell einen <a href="/webdesign-berlin" class="linkColor">Webdesigner in Berlin</a>? Dann schau dir unsere lokalen Angebote an.
+                <% } %>
               </p>
               <p>
+                <% if (isEn) { %>
+                I support clients from a wide range of industries. Our
+                focus includes websites for restaurants,
+                trades, cafes, real estate agents, as well as daycares and schools. Based on our
+                experience, we know each industry's specific requirements
+                and implement them in a targeted way so your new website performs well with your audience.
+                <% } else { %>
                 Ich betreue Kunden aus verschiedensten Branchen. Unser
                 Schwerpunkt liegt unter anderen auf Webseiten für Restaurants,
                 Handwerksbetriebe, Cafés, Markler sowie Kitas und Schulen. Durch unsere
                 Erfahrung kennen wir die spezifischen Anforderungen jeder
                 Branche und setzen diese gezielt um, damit deine neue Webseite
                 bei deiner Zielgruppe optimal ankommt.
+                <% } %>
               </p>
             </div>
           </div>
@@ -195,90 +212,90 @@
         <!-- Features Section -->
         <section class="outer-wrapper">
           <div class="inner-wrapper">
-            <h2 class="animate-on-scroll">Was biete ich dir für deine <strong>Websiteerstellung</strong>?</h2>
+            <h2 class="animate-on-scroll"><%= copy.featuresTitle %></h2>
             <div class="features-grid">
               <!-- 1 -->
               <div class="feature-item animate-on-scroll">
                 <!-- Icon: als SVG oder <img> -->
-                <img src="/images/icons/gift1.svg" alt="Wünsche integriert" class="feature-icon" loading="lazy" />
-                <h3>Wünsche integriert</h3>
+                <img src="/images/icons/gift1.svg" alt="<%= isEn ? 'Requirements included' : 'Wünsche integriert' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Requirements included' : 'Wünsche integriert' %></h3>
                 <p>
-                  Deine Ziele und deine Zielgruppe stehen im Mittelpunkt – wir bauen die Website passend zu deinem Business in Berlin.
+                  <%= isEn ? 'Your goals and target audience are central - we build the website to match your business in Berlin.' : 'Deine Ziele und deine Zielgruppe stehen im Mittelpunkt - wir bauen die Website passend zu deinem Business in Berlin.' %>
                 </p>
               </div>
               <!-- 2 -->
-              <div class="feature-item animate-on-scroll"><img src="/images/icons/delivery1.svg" alt="Schnelle Umsetzung" class="feature-icon" loading="lazy" />
-                <h3>Schnelle Umsetzung</h3>
+              <div class="feature-item animate-on-scroll"><img src="/images/icons/delivery1.svg" alt="<%= isEn ? 'Fast implementation' : 'Schnelle Umsetzung' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Fast implementation' : 'Schnelle Umsetzung' %></h3>
                 <p>
-                  Startseite in 4 Wochen live – mit klaren Feedback-Schleifen.
+                  <%= isEn ? 'Homepage live within 4 weeks - with clear feedback loops.' : 'Startseite in 4 Wochen live - mit klaren Feedback-Schleifen.' %>
                 </p>
               </div>
               <!-- 3 -->
               <div class="feature-item animate-on-scroll">
-                <img src="/images/icons/support1.svg" alt="Fortlaufender Support" class="feature-icon" loading="lazy" />
-                <h3>Fortlaufender Support</h3>
+                <img src="/images/icons/support1.svg" alt="<%= isEn ? 'Ongoing support' : 'Fortlaufender Support' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Ongoing support' : 'Fortlaufender Support' %></h3>
                 <p>
-                  Auch nach dem Launch bleiben wir an deiner Seite und unterstützen dich.
+                  <%= isEn ? 'Even after launch, we stay by your side and support you.' : 'Auch nach dem Launch bleiben wir an deiner Seite und unterstützen dich.' %>
                 </p>
               </div>
               <!-- 4 -->
               <div class="feature-item animate-on-scroll">
-                <img src="/images/icons/abstimmung1.svg" alt="Persönliche Abstimmung" class="feature-icon" loading="lazy" />
-                <h3>Persönliche Abstimmung</h3>
+                <img src="/images/icons/abstimmung1.svg" alt="<%= isEn ? 'Personal coordination' : 'Persönliche Abstimmung' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Personal coordination' : 'Persönliche Abstimmung' %></h3>
                 <p>
-                  Ein fester Ansprechpartner von Anfang bis Ende – kein Agentur-Pingpong.
+                  <%= isEn ? 'One fixed contact from start to finish - no agency ping-pong.' : 'Ein fester Ansprechpartner von Anfang bis Ende - kein Agentur-Pingpong.' %>
                 </p>
               </div>
               <!-- 5 -->
               <div class="feature-item animate-on-scroll">
-                <img src="/images/icons/austausch1.svg" alt="Dauerhafter Austausch" class="feature-icon" loading="lazy" />
-                <h3>Dauerhafter Austausch</h3>
+                <img src="/images/icons/austausch1.svg" alt="<%= isEn ? 'Continuous exchange' : 'Dauerhafter Austausch' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Continuous exchange' : 'Dauerhafter Austausch' %></h3>
                 <p>
-                  Kurze Wege, schnelle Antworten innerhalb von maximal 24 Stunden, klare To-dos.
+                  <%= isEn ? 'Short paths, quick responses within 24 hours, clear to-dos.' : 'Kurze Wege, schnelle Antworten innerhalb von maximal 24 Stunden, klare To-dos.' %>
                 </p>
               </div>
               <!-- 6 -->
               <div class="feature-item animate-on-scroll">
-                <img src="/images/icons/individual1.svg" alt="Individuelle Lösungen" class="feature-icon" loading="lazy" />
-                <h3>Individuelle Lösungen</h3>
+                <img src="/images/icons/individual1.svg" alt="<%= isEn ? 'Custom solutions' : 'Individuelle Lösungen' %>" class="feature-icon" loading="lazy" />
+                <h3><%= isEn ? 'Custom solutions' : 'Individuelle Lösungen' %></h3>
                 <p>
-                  Von Landingpage bis Shop: wir entwickeln, was du wirklich brauchst.
+                  <%= isEn ? 'From landing page to shop: we build what you really need.' : 'Von Landingpage bis Shop: wir entwickeln, was du wirklich brauchst.' %>
                 </p>
               </div>
             </div>
             <div class="text-center my-4">
-              <h2 class="animate-on-scroll ">Dein Zeitplan – heute starten, <span class="brand">in 30 Tagen live</span></h2>
-              <p class="text-muted animate-on-scroll">Für größere Websites verlängern sich die Zeiten entsprechend.</p>
+              <h2 class="animate-on-scroll "><%= copy.timelineTitle %></h2>
+              <p class="text-muted animate-on-scroll"><%= copy.timelineNote %></p>
             </div>
             <div class="row text-center timeline gx-4 scroll-snap-container">
               <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
-                  <p class="fw-bold">Tag 0</p><small>Kennenlernen (20 Min.)</small>
+                  <p class="fw-bold"><%= isEn ? 'Day 0' : 'Tag 0' %></p><small><%= isEn ? 'Intro call (20 min)' : 'Kennenlernen (20 Min.)' %></small>
                 </div>
               </div>
               <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
-                  <p class="fw-bold">Tag 7</p><small>Erstentwurf</small>
+                  <p class="fw-bold"><%= isEn ? 'Day 7' : 'Tag 7' %></p><small><%= isEn ? 'First draft' : 'Erstentwurf' %></small>
                 </div>
               </div>
               <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
-                  <p class="fw-bold">Tag 14</p><small>Fertiges Webdesign</small>
+                  <p class="fw-bold"><%= isEn ? 'Day 14' : 'Tag 14' %></p><small><%= isEn ? 'Final web design' : 'Fertiges Webdesign' %></small>
                 </div>
               </div>
               <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
-                  <p class="fw-bold">Tag 21</p><small>Live-Test</small>
+                  <p class="fw-bold"><%= isEn ? 'Day 21' : 'Tag 21' %></p><small><%= isEn ? 'Live test' : 'Live-Test' %></small>
                 </div>
               </div>
               <div class="col-6 col-md scroll-snap-align">
                 <div class="step">
                   <div class="dot"></div>
-                  <p class="fw-bold">Tag 30</p><small>Launch</small>
+                  <p class="fw-bold"><%= isEn ? 'Day 30' : 'Tag 30' %></p><small>Launch</small>
                 </div>
               </div>
             </div>
@@ -293,52 +310,79 @@
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left">
             <h2 class="animate-on-scroll">
-              Alles aus einer Hand – Wir erstellen deine professionelle Website in Berlin
+              <%= copy.servicesTitle %>
             </h2>
             <div class="readable animate-on-scroll">
               <p>
+                <% if (isEn) { %>
+                From planning and web design to SEO, maintenance, and
+                hosting, you get everything from one source.
+                You have one dedicated contact and do not need to
+                coordinate multiple providers - I handle everything
+                around your website. Our websites are optimized
+                technically and structurally for search engines.
+                <% } else { %>
                 Von der Planung über das Webdesign bis zu SEO, Wartung und
                 Hosting bekommst du bei mir alle Leistungen aus einer Hand.
                 Du hast einen festen Ansprechpartner und musst nicht
-                mehrere Dienstleister koordinieren – ich kümmere mich um alles
+                mehrere Dienstleister koordinieren - ich kümmere mich um alles
                 rund um deine Website. Unsere Websites sind technisch und
                 inhaltlich für Suchmaschinen optimiert.
+                <% } %>
               </p>
               <p>
+                <% if (isEn) { %>
+                Right from the start, I focus on clean
+                development, fast loading times, and SEO-friendly
+                content. This helps your site perform better on Google -
+                whether it is a website for <a href="/handwerker" class="linkColor">trades</a>, <a href="/branchen/webdesign-restaurant" class="linkColor">restaurants</a>, <a href="/branchen/webdesign-immobilienmakler" class="linkColor">real estate agents</a> or other local businesses.
+                For <a href="/webdesign-berlin" class="linkColor">web design in Berlin</a>, we also offer specialized local SEO services.
+                <% } else { %>
                 Schon bei der Erstellung achten ich auf saubere
                 Programmierung, schnelle Ladezeiten und SEO-freundliche
-                Inhalte. So wird deine Seite bei Google gut gefunden –
+                Inhalte. So wird deine Seite bei Google gut gefunden -
                 egal ob Webseite für <a href="/handwerker" class="linkColor">Handwerksbetriebe</a>, <a href="/branchen/webdesign-restaurant" class="linkColor">Restaurants</a>, <a href="/branchen/webdesign-immobilienmakler" class="linkColor">Markler</a> oder andere lokale Dienstleister.
                 Für <a href="/webdesign-berlin" class="linkColor">Webdesign in Berlin</a> haben wir außerdem spezialisierte Local-SEO-Angebote.
+                <% } %>
               </p>
             </div>
             <div class="service-list">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="Bild eines Designs" loading="lazy" />
-                    <p class="listText">Webdesign</p>
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="<%= isEn ? 'Image of web design layout' : 'Bild eines Designs' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Web design' : 'Webdesign' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Web design</strong> Modern custom layouts,
+                      optimized and adapted for all devices
+                      <% } else { %>
                       <strong>Webdesign</strong> Modernes und individuelles Layout,
                       ausgelegt und angepasst für alle Endgeräte
+                      <% } %>
                     </div>
                   </div>
-                  <img class="click" src="/images/icons/click.svg" alt="Clicken für die Card Rückseite" loading="lazy" />
+                  <img class="click" src="/images/icons/click.svg" alt="<%= isEn ? 'Click for card back side' : 'Klicken für die Card-Rückseite' %>" loading="lazy" />
                 </div>
               </div>
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/code.webp" alt="Bild von Code" loading="lazy" />
-                    <p class="listText">Coding</p>
+                    <img src="/images/code.webp" alt="<%= isEn ? 'Image of source code' : 'Bild von Code' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Development' : 'Coding' %></p>
 
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Development / coding</strong> Reliable
+                      implementation with clean, maintainable code
+                      <% } else { %>
                       <strong>Programmierung / Coding</strong> Zuverlässige
                       Entwicklung mit sauberem und leicht anpassbaren Code
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -346,14 +390,19 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/hosting.webp" alt="Bild eines Routers" loading="lazy" />
+                    <img src="/images/hosting.webp" alt="<%= isEn ? 'Image of hosting hardware' : 'Bild eines Routers' %>" loading="lazy" />
                     <p class="listText">Hosting</p>
 
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Hosting</strong> Secure, high-performance and
+                      reliable web hosting for your website
+                      <% } else { %>
                       <strong>Hosting</strong> Sicheres, leistungsstarkes und
                       zuverlässiges Webhosting für Ihre Homepage
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -361,14 +410,20 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/datenbank.webp" alt="Bild einer Datenbank" loading="lazy" />
-                    <p class="listText">Datenbanken</p>
+                    <img src="/images/datenbank.webp" alt="<%= isEn ? 'Image of a database server' : 'Bild einer Datenbank' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Databases' : 'Datenbanken' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Database management</strong> Efficient and
+                      secure maintenance of your website databases for
+                      optimal performance
+                      <% } else { %>
                       <strong>Verwaltung der Datenbanken</strong> Effiziente und
                       sichere Pflege Ihrer Website-Datenbanken für optimale
                       Performance
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -376,14 +431,20 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/seo.webp" alt="Bild der Googlesuche" loading="lazy" />
-                    <p class="listText">SEO-Optimierung</p>
+                    <img src="/images/seo.webp" alt="<%= isEn ? 'Image of search engine optimization' : 'Bild der Googlesuche' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'SEO optimization' : 'SEO-Optimierung' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>SEO optimization</strong> Search
+                      engine optimization for higher visibility and better
+                      discoverability on Google
+                      <% } else { %>
                       <strong>SEO-Optimierung</strong> Google
                       Suchmaschinenoptimierung für bessere Sichtbarkeit, schnelleres
                       Finden in Google
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -391,13 +452,18 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/wartung.webp" alt="Bild eines Technikers der etwas repariert" loading="lazy" />
-                    <p class="listText">Wartung</p>
+                    <img src="/images/wartung.webp" alt="<%= isEn ? 'Image of technical maintenance work' : 'Bild eines Technikers der etwas repariert' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Maintenance' : 'Wartung' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Maintenance & technical service</strong> Regular
+                      updates, security patches and personal support
+                      <% } else { %>
                       <strong>Wartung & technischer Service</strong> Regelmäßige
                       Updates, Sicherheitspatches und persönlicher Support
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -405,13 +471,18 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/texterstellung.webp" alt="Bild eines Buches mit Bleistift" loading="lazy" />
-                    <p class="listText">Texterstellung</p>
+                    <img src="/images/texterstellung.webp" alt="<%= isEn ? 'Image of content writing' : 'Bild eines Buches mit Bleistift' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Content writing' : 'Texterstellung' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Content writing</strong> Professional copy
+                      and SEO content for your website on request
+                      <% } else { %>
                       <strong>Texterstellung</strong> Auf Wunsch professionelle
                       Inhalte und Texte inkl. SEO-Texte für Ihre Webseite
+                      <% } %>
                     </div>
                   </div>
                 </div>
@@ -419,24 +490,37 @@
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp" alt="Bild eines Stockfotos am Laptop" loading="lazy" />
-                    <p class="listText">Stockfotos</p>
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp" alt="<%= isEn ? 'Image of stock photos' : 'Bild eines Stockfotos am Laptop' %>" loading="lazy" />
+                    <p class="listText"><%= isEn ? 'Stock photos' : 'Stockfotos' %></p>
                   </div>
                   <div class="card-back">
                     <div class="li">
+                      <% if (isEn) { %>
+                      <strong>Stock photos</strong> High-quality images from
+                      image databases or your own individual photos
+                      <% } else { %>
                       <strong>Stockfotos</strong> Hochwertiges Bildmaterial aus
                       Bilddatenbanken oder deine eigenen individuelle Fotos
+                      <% } %>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <p class="extra-text animate-on-scroll">
+              <% if (isEn) { %>
+              I do not deliver template-based web design, but
+              tailored solutions. Every industry has its own
+              requirements - a custom homepage for a restaurant
+              needs different functions than a website for a trade business.
+              I know exactly what matters in your field and implement it with focus.
+              <% } else { %>
               Ich liefer kein Webdesign von der Stange, sondern
               maßgeschneiderte Lösungen. Jede Branche hat besondere
-              Anforderungen – eine maßgeschneiderte Homepage für Restaurant
+              Anforderungen - eine maßgeschneiderte Homepage für Restaurant
               benötigt beispielsweise andere Funktionen als eine Website für ein Handwerksbetrieb.
               Ich weiß genau, worauf es in deinem Bereich ankommt, und setze dies gezielt um.
+              <% } %>
             </p>
           </div>
         </div>
@@ -449,27 +533,28 @@
         <section class="outer-wrapper">
           <div class="inner-wrapper">
             <h2 class="animate-on-scroll ">
-              Aktuelles zum Thema Webseiten und bisherige Kundenstimmen
+              <%= copy.blogSectionTitle %>
             </h2>
             <div class="home-grid">
               <!-- Links: Aktueller Blog-Post (2/3) -->
               <div class="latest-blog">
                 <article class="content-card animate-on-scroll">
-                  <h3>Aktueller Blog-Artikel</h3>
+                  <h3><%= copy.blogCardTitle %></h3>
                   <div class="p2rem">
+                    <% const latestPostHref = latestPost.slug ? `/blog/${latestPost.slug}` : '/blog'; %>
                     <!-- Titelbild -->
                     <div class="blog-image">
-                      <a href="/blog/<%= latestPost.slug %>">
-                        <img src="<%= latestPost.image_url %>" alt="Bild zum Artikel: <%= latestPost.title %>" loading="lazy" />
+                      <a href="<%= latestPostHref %>">
+                        <img src="<%= latestPost.image_url %>" alt="<%= isEn ? 'Image for article:' : 'Bild zum Artikel:' %> <%= latestPost.title %>" loading="lazy" />
                       </a>
                     </div>
 
                     <!-- Überschrift -->
                     <h4>
-                      <a href="/blog/<%= latestPost.slug %>">
+                      <a href="<%= latestPostHref %>">
                         <%= latestPost.title %>
                         <% if (latestPost.isDefault) { %>
-                        <small>(Demnächst mehr…)</small>
+                        <small><%= copy.blogSoon %></small>
                         <% } %>
                       </a>
                     </h4>
@@ -482,16 +567,20 @@
                     <!-- Datum -->
                     <% if (!latestPost.isDefault) { %>
                     <p class="date">
-                      vor <%= Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)) %>
-                      Tagen
+                      <% const daysAgo = Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)); %>
+                      <% if (lng === 'de') { %>
+                        vor <%= daysAgo %> <%= copy.blogDaysAgo %>
+                      <% } else { %>
+                        <%= daysAgo %> <%= copy.blogDaysAgo %> ago
+                      <% } %>
                     </p>
                     <% } %>
 
                     <!-- Link zum Artikel -->
-                    <a href="/blog/<%= latestPost.slug %>" class="btn btn-primary mb-2">
-                      Zum Artikel
+                    <a href="<%= latestPostHref %>" class="btn btn-primary mb-2">
+                      <%= copy.blogToArticle %>
                     </a>
-                    <a href="/blog" class="btn btn-tertiary mb-2">Zum Blog</a>
+                    <a href="/blog" class="btn btn-tertiary mb-2"><%= copy.blogToOverview %></a>
                   </div>
                 </article>
               </div>
@@ -499,11 +588,11 @@
               <!-- Rechts: Kunden-Rezension (1/3) -->
               <div class="testimonial">
                 <div class="content-card animate-on-scroll">
-                  <h3>Kundenstimme</h3>
+                  <h3><%= copy.reviewCardTitle %></h3>
                   <div class="review-card">
                     <div class="p2rem">
                       <!-- Avatar -->
-                      <img src="<%= review.avatar_url %>" alt="Avatar von <%= review.author %>" class="review-avatar" loading="lazy" />
+                      <img src="<%= review.avatar_url %>" alt="<%= isEn ? 'Avatar of' : 'Avatar von' %> <%= review.author %>" class="review-avatar" loading="lazy" />
 
                       <!-- Zitat -->
                       <blockquote>
@@ -521,12 +610,12 @@
                       <cite>
                         — <%= review.author %>
                         <% if (review.isDefault) { %>
-                        <small>(Demnächst echte Stimmen…)</small>
+                        <small><%= copy.reviewSoon %></small>
                         <% } %>
                       </cite>
                     </div>
                     <!-- <a class="image-review" href="https://www.zuraltenbackstube.de" aria-label="Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen." loading="lazy"></a> -->
-                    <a href="https://www.zuraltenbackstube.de" aria-label="Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen.">
+                    <a href="https://www.zuraltenbackstube.de" aria-label="<%= isEn ? 'Preview of the hero section from Zur Alten Backstube website.' : 'Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen.' %>">
                       <picture>
                         <!-- Desktop ab 801px -->
                         <source media="(min-width: 1050px)" srcset="/images/review-bg.webp" type="image/webp">
@@ -535,7 +624,7 @@
                         <source media="(max-width: 1049px)" srcset="/images/review-bg-mobile.webp" type="image/webp">
 
                         <!-- Fallback + Attribute -->
-                        <img src="/images/review-bg.webp" alt="Hero Bild: Begrüßungsbild von mir" fetchpriority="low" loading="lazy" decoding="async" style="width:100%;height:100%;max-height:300px;">
+                        <img src="/images/review-bg.webp" alt="<%= isEn ? 'Website preview image' : 'Hero Bild: Begrüßungsbild von mir' %>" fetchpriority="low" loading="lazy" decoding="async" style="width:100%;height:100%;max-height:300px;">
                       </picture>
                     </a>
                   </div>
@@ -553,10 +642,18 @@
         <section class="outer-wrapper">
           <div class="inner-wrapper">
             <h2 class="animate-on-scroll">
-              Bereit für eine professionelle Website?
+              <%= copy.pricingTitle %>
             </h2>
             <div class="readable pb2rem animate-on-scroll">
               <p>
+                <% if (isEn) { %>
+                In just four weeks, your new website can be live and
+                customers can find you in Berlin. Choose the package that fits and start your project.
+                We have a matching package for every need, whether you need
+                a simple website, a larger company presence, or
+                a custom solution. You can find more information
+                on the <a href="/pakete" class="linkColor">packages</a> page.
+                <% } else { %>
                 In nur vier Wochen kannst du mit deiner neuen Webseite online
                 sein und Kunden finden dich in Berlin: Wähle das passende Paket aus und starte dein Projekt!
                 Für jeden Wunsch haben ich ein passende Paket. Egal ob du eine
@@ -564,9 +661,19 @@
                 eine individuelle Lösung benötigst. Ich haben das Richtige für
                 dich. Nähere Informationen zu den verschiedenen Angeboten
                 findest du auf der Seite <a href="/pakete" class="linkColor">Pakete</a>.
+                <% } %>
                 <!-- <a href="/pricing"></a> -->
               </p>
               <p>
+                <% if (isEn) { %>
+                Our offers are designed to cover different
+                needs and help you get online quickly and easily.
+                Every package includes what you need to get started:
+                modern web design, responsive implementation,
+                SEO optimization, and ongoing support. This allows you
+                to focus on your core business while we take care of your
+                online presence.
+                <% } else { %>
                 Unsere Angebote sind so gestaltet, dass sie verschiedene
                 Bedürfnisse abdecken und dir helfen, schnell und unkompliziert
                 online zu gehen. Jedes Paket enthält alles, was du für den
@@ -574,6 +681,7 @@
                 SEO-Optimierung und fortlaufenden Support. So kannst du dich
                 auf dein Kerngeschäft konzentrieren, während wir uns um deine
                 Online-Präsenz kümmern.
+                <% } %>
               </p>
             </div>
             <div class="pricing-grid">
@@ -604,12 +712,12 @@
                   </ul>
 
                   <!-- Button -->
-                  <a class="btn btn-primary" href="/pakete/<%=pkg.slug%>">Details</a>
+                  <a class="btn btn-primary" href="/pakete/<%=pkg.slug%>"><%= isEn ? 'View details' : 'Details' %></a>
                 </div>
               </div>
               <% }}); %>
             </div>
-            <p class="text-center mt-3 text-muted small">„Günstige Website erstellen lassen“ heißt: smart geplant, modular umgesetzt, ohne versteckte Kosten.</p>
+            <p class="text-center mt-3 text-muted small"><%= copy.pricingTagline %></p>
           </div>
         </section>
       </div>
@@ -621,90 +729,104 @@
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left">
             <h2 class="animate-on-scroll">
-              Webseiten für Restaurants, Handwerksbetriebe, Cafés und
-              Bildungseinrichtungen in Berlin
+              <%= copy.industryTitle %>
             </h2>
             <div class="readable pb2rem animate-on-scroll">
-              <p><strong>Websiteerstellung</strong> für verschiedene Branchen –
+              <p>
+                <% if (isEn) { %>
+                <strong>Website development</strong> for different industries -
+                we offer tailored solutions for businesses across Germany.
+                Whether restaurant, trade business, cafe, or educational institution:
+                We have the right solution.
+                If you want to <a href="/webdesign-berlin" class="linkColor">have your website built in Berlin</a>,
+                we are the right partner for you.
+                <% } else { %>
+                <strong>Websiteerstellung</strong> für verschiedene Branchen -
                 wir bieten maßgeschneiderte Lösungen für Unternehmen deutschlandweit.
                 Ob Restaurant, Handwerk, Café oder Bildungseinrichtung:
                 Wir haben die passende Lösung.
                 Wenn du deine <a href="/webdesign-berlin" class="linkColor">Webseite in Berlin erstellen lassen</a>
-                </strong> möchtest, dann sind wir der richtige Partner für dich.
+                möchtest, dann sind wir der richtige Partner für dich.
+                <% } %>
                 <!-- <a href="/pricing"></a> -->
               </p>
               <p>
+                <% if (isEn) { %>
+                We understand the specific requirements of each industry and
+                implement them in a focused way. Our websites are not only
+                visually appealing, but also functional and user-friendly.
+                With your own professional website, you can reach your target audience
+                effectively and attract new customers. A strong first
+                impression helps people choose your business.
+                <% } else { %>
                 Wir verstehen die spezifischen Anforderungen jeder Branche und
                 setzen diese gezielt um. Unsere Webseiten sind nicht nur
                 optisch ansprechend, sondern auch funktional und benutzerfreundlich.
                 Mit deiner eigenen professionellen Webseite kannst du deine Zielgruppe
                 effektiv ansprechen und neue Kunden gewinnen. Mit einem positiven ersten
                 Eindruck, kommen die Kunden gerne in dein Geschäft.
+                <% } %>
               </p>
             </div>
             <div class="industry-grid">
               <div class="industry-item card-container animate-on-scroll">
                 <div class="card-inner">
                   <div class="card-front">
-                    <p class="header3"><a href="/branchen/webdesign-restaurant" class="primaryColor">Restaurants</a></p>
+                    <p class="header3"><a href="/branchen/webdesign-restaurant" class="primaryColor"><%= isEn ? 'Restaurants' : 'Restaurants' %></a></p>
                     <p>
-                      Wir präsentieren dein Lokal online von seiner besten
-                      Seite – mit appetitanregenden Fotos, digitaler
-                      Speisekarte und unkomplizierter Reservierungsfunktion.
+                      <%= isEn ? 'We present your venue online in the best possible way - with appetizing photos, digital menus, and easy reservation options.' : 'Wir präsentieren dein Lokal online von seiner besten Seite - mit appetitanregenden Fotos, digitaler Speisekarte und unkomplizierter Reservierungsfunktion.' %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp" alt="Bild eines Restaurants" loading="lazy" />
-                    <a href="/branchen/webdesign-restaurant" class="btn btn-tertiary">zur Restaurant Website</a>
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp" alt="<%= isEn ? 'Image of a restaurant' : 'Bild eines Restaurants' %>" loading="lazy" />
+                    <a href="/branchen/webdesign-restaurant" class="btn btn-tertiary"><%= isEn ? 'Restaurant website' : 'zur Restaurant Website' %></a>
                   </div>
                 </div>
-                <img class="click" src="/images/icons/click.svg" alt="hier clicken" loading="lazy" />
+                <img class="click" src="/images/icons/click.svg" alt="<%= isEn ? 'Click here' : 'hier clicken' %>" loading="lazy" />
               </div>
               <div class="industry-item card-container animate-on-scroll">
                 <div class="card-inner">
                   <div class="card-front">
-                    <p class="header3"><a href="/handwerker" class="primaryColor">Handwerksbetriebe</a></p>
+                    <p class="header3"><a href="/handwerker" class="primaryColor"><%= isEn ? 'Trades' : 'Handwerksbetriebe' %></a></p>
                     <p>
-                      Klare Struktur, aussagekräftige Bilder deiner Arbeit und
-                      gut sichtbare Kontaktinformationen überzeugen
-                      potenzielle Kunden.
+                      <%= isEn ? 'Clear structure, meaningful photos of your work, and visible contact information convince potential clients.' : 'Klare Struktur, aussagekräftige Bilder deiner Arbeit und gut sichtbare Kontaktinformationen überzeugen potenzielle Kunden.' %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/handwerker-min.webp" alt="Bild eines Handwerkers" loading="lazy" />
-                    <a href="/handwerker" class="btn btn-tertiary">zur Handwerker Website</a>
+                    <img src="/images/handwerker-min.webp" alt="<%= isEn ? 'Image of a tradesperson' : 'Bild eines Handwerkers' %>" loading="lazy" />
+                    <a href="/handwerker" class="btn btn-tertiary"><%= isEn ? 'Trades website' : 'zur Handwerker Website' %></a>
                   </div>
                 </div>
               </div>
               <div class="industry-item card-container animate-on-scroll">
                 <div class="card-inner">
                   <div class="card-front">
-                    <p class="header3"><a href="/branchen/webdesign-cafe" class="primaryColor">Cafés</a></p>
+                    <p class="header3"><a href="/branchen/webdesign-cafe" class="primaryColor"><%= isEn ? 'Cafes' : 'Cafés' %></a></p>
                     <p>
-                      Stimmungsvoller Stil, Präsentation deiner Spezialitäten,
-                      Öffnungszeiten und Karte mit Ihrem Standort – so finden
-                      neue Gäste den Weg zu Ihnen.
+                      <%= isEn ? 'A warm visual style, presentation of your specialties, opening hours, and map location help new guests find you.' : 'Stimmungsvoller Stil, Präsentation deiner Spezialitäten, Öffnungszeiten und Karte mit Ihrem Standort - so finden neue Gäste den Weg zu Ihnen.' %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/cafe-min.webp" alt="Bild eines Cafés" loading="lazy" />
-                    <a href="/branchen/webdesign-cafe" class="btn btn-tertiary">zur Café Website</a>
+                    <img src="/images/cafe-min.webp" alt="<%= isEn ? 'Image of a cafe' : 'Bild eines Cafés' %>" loading="lazy" />
+                    <a href="/branchen/webdesign-cafe" class="btn btn-tertiary"><%= isEn ? 'Cafe website' : 'zur Café Website' %></a>
                   </div>
                 </div>
               </div>
               <div class="industry-item card-container animate-on-scroll">
                 <div class="card-inner">
                   <div class="card-front">
-                    <p class="header3"><a href="/branchen/webdesign-kita" class="primaryColor">Kitas & Schulen</a></p>
+                    <p class="header3"><a href="/branchen/webdesign-kita" class="primaryColor"><%= isEn ? 'Daycares & schools' : 'Kitas & Schulen' %></a></p>
                     <p>
-                    <p>Vertrauenswürdiges <strong>Webdesign</strong>,
-                      übersichtliche Informationen zu Betreuungszeiten,
-                      Veranstaltungen und mehr für Eltern und Schüler.</p>
+                      <% if (isEn) { %>
+                      Trustworthy <strong>web design</strong>, clear information on care times, events, and more for parents and students.
+                      <% } else { %>
+                      Vertrauenswürdiges <strong>Webdesign</strong>, übersichtliche Informationen zu Betreuungszeiten, Veranstaltungen und mehr für Eltern und Schüler.
+                      <% } %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/kindergarten-min.webp" alt="Bild eines Kindergartens" loading="lazy" />
-                    <a href="/branchen/webdesign-kita" class="btn btn-tertiary">zur Kita Website</a>
+                    <img src="/images/kindergarten-min.webp" alt="<%= isEn ? 'Image of a daycare' : 'Bild eines Kindergartens' %>" loading="lazy" />
+                    <a href="/branchen/webdesign-kita" class="btn btn-tertiary"><%= isEn ? 'Daycare website' : 'zur Kita Website' %></a>
                   </div>
                 </div>
               </div>
@@ -734,32 +856,32 @@
       <div class="progress-line">
         <div class="progress-fill"></div>
         <div class="section-icons">
-          <a href="#hero" class="icon-link active" aria-label="Zum Startbereich">
+          <a href="#hero" class="icon-link active" aria-label="<%= isEn ? 'To start section' : 'Zum Startbereich' %>">
             <!-- Hero Section Icon -->
             <i class="fas fa-home"></i> <!-- Beispiel Font Awesome Icon -->
           </a>
-          <a href="#erklaerung" class="icon-link" aria-label="Zum Erklärungsbereich">
+          <a href="#erklaerung" class="icon-link" aria-label="<%= isEn ? 'To explanation section' : 'Zum Erklärungsbereich' %>">
             <i class="fas fa-star"></i>
           </a>
-          <a href="#features" class="icon-link" aria-label="Zum Features-Bereich">
+          <a href="#features" class="icon-link" aria-label="<%= isEn ? 'To features section' : 'Zum Features-Bereich' %>">
             <i class="fas fa-list"></i>
           </a>
-          <a href="#leistungen" class="icon-link" aria-label="Zu den Leistungen">
+          <a href="#leistungen" class="icon-link" aria-label="<%= isEn ? 'To services section' : 'Zu den Leistungen' %>">
             <i class="fas fa-info-circle"></i>
           </a>
-          <a href="#blog-reviews" class="icon-link" aria-label="Zum Blog- und Review-Bereich">
+          <a href="#blog-reviews" class="icon-link" aria-label="<%= isEn ? 'To blog and review section' : 'Zum Blog- und Review-Bereich' %>">
             <i class="fas fa-thumbs-up"></i>
           </a>
-          <a href="#preise" class="icon-link" aria-label="Zu den Preisen">
+          <a href="#preise" class="icon-link" aria-label="<%= isEn ? 'To pricing section' : 'Zu den Preisen' %>">
             <i class="fas fa-money-bill"></i>
           </a>
-          <a href="#branchen" class="icon-link" aria-label="Zu den Branchen">
+          <a href="#branchen" class="icon-link" aria-label="<%= isEn ? 'To industries section' : 'Zu den Branchen' %>">
             <i class="fas fa-layer-group"></i>
           </a>
-          <a href="#cta" class="icon-link" aria-label="Zum Call-to-Action-Bereich">
+          <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To call-to-action section' : 'Zum Call-to-Action-Bereich' %>">
             <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>
           </a>
-          <a href="#footer" class="icon-link" aria-label="Zum Footer-Bereich">
+          <a href="#footer" class="icon-link" aria-label="<%= isEn ? 'To footer section' : 'Zum Footer-Bereich' %>">
             <i class="fas fa-shoe-prints" style="transform: translateY(10px);"></i>
           </a>
         </div>

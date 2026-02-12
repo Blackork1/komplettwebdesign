@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<%= (typeof lng !== 'undefined' && lng === 'en') ? 'en' : 'de' %>">
 
 <head>
   <%
-  const pageTitle = title || 'Komplett Webdesign | Website erstellen lassen in Berlin';
-  const pageDescription = description || 'Professionelles Webdesign in Berlin: Website erstellen lassen mit Fokus auf Sichtbarkeit, Performance und Anfragen.';
-  const seoExtraText = typeof seoExtra === 'string' ? seoExtra : '';
+  const pageTitle = (typeof title !== 'undefined' && title) ? title : 'Komplett Webdesign | Website erstellen lassen in Berlin';
+  const pageDescription = (typeof description !== 'undefined' && description) ? description : 'Professionelles Webdesign in Berlin: Website erstellen lassen mit Fokus auf Sichtbarkeit, Performance und Anfragen.';
+  const seoExtraText = (typeof seoExtra !== 'undefined' && typeof seoExtra === 'string') ? seoExtra : '';
   const hasCanonical = /rel=["']canonical["']/i.test(seoExtraText);
   const hasOgTitle = /property=["']og:title["']/i.test(seoExtraText);
   const hasOgDescription = /property=["']og:description["']/i.test(seoExtraText);
@@ -15,7 +15,7 @@
   const hasTwitterCard = /name=["']twitter:card["']/i.test(seoExtraText);
   const siteBase = (canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const pageCanonical = canonicalUrl || `${siteBase}/`;
-  const defaultOgImage = (typeof ogImage === 'string' && ogImage.trim())
+  const defaultOgImage = (typeof ogImage !== 'undefined' && typeof ogImage === 'string' && ogImage.trim())
     ? ogImage.trim()
     : `${siteBase}/images/heroBg.webp`;
   const assetV = encodeURIComponent(assetVersion || '1');

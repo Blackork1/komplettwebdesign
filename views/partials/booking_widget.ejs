@@ -1,31 +1,60 @@
-<h2>Lass uns zusammen deine Website starten!</h2>
-<p>Hast du Lust bekommen und möchtest eine Website erstellen lassen? Dann lass uns quatschen!</p>
-<p>In einem unverbindlichen Gespräch finden wir heraus, wie ich dir am besten helfen kann. Und selbst
-  wenn du noch gar nicht genau weißt, was du brauchst – lass uns trotzdem reden und gemeinsam
-  herausfinden, welche Lösung für dich passt. Klingt gut? Dann nichts wie los – klick einfach auf den
-  Button und such dir einen passenden Zeitpunkt für ein Gespräch aus.</p>
-<div class="kwd-booking-widget" data-sitekey="<%= process.env.RECAPTCHA_SITEKEY %>">
-  <div class="kwd-slot-container"></div>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<h2><%= isEn ? 'Let us start your website together!' : 'Lass uns zusammen deine Website starten!' %></h2>
+<p><%= isEn ? 'Do you want to get your website built? Let us talk.' : 'Hast du Lust bekommen und moechtest eine Website erstellen lassen? Dann lass uns quatschen!' %></p>
+<p><%= isEn ? 'In a non-binding call, we find out how I can help you best. Even if you are not sure yet what you need, we can talk and find the right solution together. Sounds good? Then click the button and choose a time slot that works for you.' : 'In einem unverbindlichen Gespraech finden wir heraus, wie ich dir am besten helfen kann. Und selbst wenn du noch gar nicht genau weisst, was du brauchst - lass uns trotzdem reden und gemeinsam herausfinden, welche Loesung fuer dich passt. Klingt gut? Dann nichts wie los - klick einfach auf den Button und such dir einen passenden Zeitpunkt fuer ein Gespraech aus.' %></p>
+<div class="kwd-booking-widget" data-sitekey="<%= process.env.RECAPTCHA_SITEKEY %>" data-lng="<%= isEn ? 'en' : 'de' %>">
+  <div class="kwd-booking-flow">
+    <aside class="kwd-cal-left">
+      <div class="kwd-cal-header">
+        <button class="kwd-nav" type="button" data-dir="-1" aria-label="<%= isEn ? 'Previous month' : 'Vorheriger Monat' %>">‹</button>
+        <h3 class="kwd-month-label"></h3>
+        <button class="kwd-nav" type="button" data-dir="+1" aria-label="<%= isEn ? 'Next month' : 'Naechster Monat' %>">›</button>
+      </div>
+      <div class="kwd-weekday-row"></div>
+      <div class="kwd-grid-days"></div>
+    </aside>
 
-  <form class="kwd-booking-form" action="/booking" method="POST" hidden>
-    <input type="hidden" name="slotId">
-    <!-- v3 erwartet standardmäßig g-recaptcha-response -->
-    <input type="hidden" name="g-recaptcha-response" />
-    <label> Name
-      <input type="text" name="name" required>
-      <span class="err">Bitte Name eingeben</span>
-    </label>
-    <label> E-Mail
-      <input type="email" name="email" required>
-      <span class="err">Bitte gültige E-Mail</span>
-    </label>
-    <label> Bemerkung (optional)
-      <textarea name="note" rows="3"></textarea>
-    </label>
+    <section class="kwd-cal-right">
+      <div class="kwd-step kwd-step-day">
+        <p class="kwd-hint"><%= isEn ? 'Click a day in the calendar with available appointments.' : 'Klicke im Kalender einen Tag mit freien Terminen an.' %></p>
+      </div>
 
-    <button class="btn">Termin buchen</button>
-    <p class="form-msg"></p>
-  </form>
+      <div class="kwd-step kwd-step-times" hidden>
+        <button type="button" class="kwd-back-btn" data-back="days">← <%= isEn ? 'Back to calendar' : 'Zurueck zum Kalender' %></button>
+        <h4 class="kwd-selected-date"></h4>
+        <p class="kwd-step-subline"><%= isEn ? 'Choose a time:' : 'Waehle eine Uhrzeit:' %></p>
+        <div class="kwd-time-list"></div>
+      </div>
+
+      <div class="kwd-step kwd-step-form" hidden>
+        <button type="button" class="kwd-back-btn" data-back="times">← <%= isEn ? 'Back to times' : 'Zurueck zu den Uhrzeiten' %></button>
+        <h4 class="kwd-selected-summary"></h4>
+        <form class="kwd-booking-form" action="/booking" method="POST">
+          <input type="hidden" name="slotId">
+          <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
+          <input type="hidden" name="g-recaptcha-response" />
+
+          <label class="kwd-field">
+            <span><%= isEn ? 'Name' : 'Name' %></span>
+            <input type="text" name="name" required autocomplete="name">
+          </label>
+
+          <label class="kwd-field">
+            <span><%= isEn ? 'Email' : 'E-Mail' %></span>
+            <input type="email" name="email" required autocomplete="email">
+          </label>
+
+          <label class="kwd-field">
+            <span><%= isEn ? 'Note (optional)' : 'Bemerkung (optional)' %></span>
+            <textarea name="note" rows="3"></textarea>
+          </label>
+
+          <button class="btn kwd-submit" type="submit"><%= isEn ? 'Book appointment' : 'Termin vereinbaren' %></button>
+          <p class="form-msg"></p>
+        </form>
+      </div>
+    </section>
+  </div>
 </div>
 
 <script src="/js/booking-widget.js" defer></script>

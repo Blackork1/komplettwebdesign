@@ -265,23 +265,39 @@ const buildHtmlSummary = rows => `
 
 const generalUpload = multer({ dest: "uploads/" });
 
+function resolveContactLocale(req) {
+    if (req.body?.locale === "en") return "en";
+    if (req.baseUrl && req.baseUrl.startsWith("/en/")) return "en";
+    return "de";
+}
+
 /* ---------- GET /kontakt --------------------------------------------- */
 export async function showForm(req, res) {
+    const lng = resolveContactLocale(req);
     const freieTermine = await Apt.getOpenSlotPerDay(3);
-    const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/kontakt`;
+    const contactPath = lng === "en" ? "/en/kontakt" : "/kontakt";
+    const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}${contactPath}`;
     res.render("kontakt", {
-        title: "Beratungsgespräch vereinbaren",
-        description: "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
-        keywords: 'webseite erstellen lassen berlin, webdesign berlin kontakt, erstgespräch webdesign',
+        title: lng === "en" ? "Book a consultation call" : "Beratungsgespräch vereinbaren",
+        description: lng === "en"
+            ? "Tell us about your goals and book a consultation call. We look forward to your request."
+            : "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
+        keywords: lng === "en"
+            ? "web design berlin contact, consultation web design berlin, website project request"
+            : "webseite erstellen lassen berlin, webdesign berlin kontakt, erstgespräch webdesign",
         seoExtra: `
-          <meta property="og:title" content="Vereinbare deinen Beratungstermin – Komplett Webdesign">
+          <meta property="og:title" content="${lng === "en" ? "Book your consultation call - Komplett Webdesign" : "Vereinbare deinen Beratungstermin - Komplett Webdesign"}">
           <meta property="og:site_name" content="Komplett Webdesign Kontakt">
-          <meta property="og:description" content="Nutze unser Kontaktformular, um dein individuelles Webdesign-Projekt zu starten. Wähle Paket, Umfang und Termin für dein Beratungsgespräch.">
+          <meta property="og:description" content="${lng === "en"
+                ? "Use our contact form to start your custom web design project. Choose package, scope, and appointment."
+                : "Nutze unser Kontaktformular, um dein individuelles Webdesign-Projekt zu starten. Wähle Paket, Umfang und Termin für dein Beratungsgespräch."}">
           <meta property="og:image" content="${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/images/heroBg.webp">
           <meta property="og:url" content="${canonical}">
         `,
         freieTermine,
-        sitekey: process.env.RECAPTCHA_SITEKEY
+        sitekey: process.env.RECAPTCHA_SITEKEY,
+        lng,
+        contactAction: contactPath
     });
 }
 
@@ -300,6 +316,7 @@ export const processForm = [
     generalUpload.array("images"),
     validate,
     async (req, res) => {
+        const lng = resolveContactLocale(req);
 
         /* 0) reCAPTCHA v3 -------------------------------------------------- */
         try {
@@ -311,7 +328,7 @@ export const processForm = [
             );
             if (!resp.data.success) throw new Error("reCaptcha failed");
         } catch {
-            return res.status(400).send("reCaptcha-Validierung fehlgeschlagen");
+            return res.status(400).send(lng === "en" ? "reCAPTCHA validation failed" : "reCaptcha-Validierung fehlgeschlagen");
         }
 
         /* 1) Express-Validator -------------------------------------------- */
@@ -319,7 +336,7 @@ export const processForm = [
         if (!errors.isEmpty()) {
             return res
                 .status(422)
-                .send("Ungültige Eingaben: " + errors.array().map(e => e.msg).join(", "));
+                .send((lng === "en" ? "Invalid input: " : "Ungültige Eingaben: ") + errors.array().map(e => e.msg).join(", "));
         }
 
         const cloud = req.app.get("cloudinary");
@@ -331,7 +348,15 @@ export const processForm = [
             /* 2) Slot sperren + Buchung anlegen ------------------------------ */
             if (slotId) {
                 slot = await Apt.lockSlot(slotId);               // is_booked = TRUE
-                if (!slot) return res.render("booking/slot_taken", { title: "Termin vergeben", description: "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin." });
+                if (!slot) {
+                    return res.render("booking/slot_taken", {
+                        lng,
+                        title: lng === "en" ? "Slot unavailable" : "Termin vergeben",
+                        description: lng === "en"
+                            ? "Someone else booked this time first. Please choose another appointment."
+                            : "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin."
+                    });
+                }
 
                 booking = await Book.create(
                     slotId,
@@ -376,28 +401,42 @@ export const processForm = [
             /* 5) Bestätigungs-Mails ----------------------------------------- */
             // <tr><th>Weitere Wünsche:</th><td>${req.body.weitereWuensche || 'Keine'}</td></tr>
             const formattedAppointment = slot
-                ? `${format(new Date(slot.start_time), 'dd.MM.yyyy HH:mm')}-${format(new Date(slot.end_time), 'HH:mm')} Uhr`
+                ? `${new Date(slot.start_time).toLocaleString(lng === "en" ? "en-GB" : "de-DE", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                })} - ${new Date(slot.end_time).toLocaleTimeString(lng === "en" ? "en-GB" : "de-DE", {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                })}${lng === "en" ? "" : " Uhr"}`
                 : null;
 
 
             const summaryHtml = `
-                <p>Hallo <strong>${req.body.name}</strong>,</p>
-                <p>vielen Dank für deine Anfrage über unser Kontaktformular. Wir haben die folgenden Angaben erhalten:</p>
+                <p>${lng === "en" ? "Hello" : "Hallo"} <strong>${req.body.name}</strong>,</p>
+                <p>${lng === "en"
+                    ? "Thank you for your request via our contact form. We have received the following details:"
+                    : "vielen Dank für deine Anfrage über unser Kontaktformular. Wir haben die folgenden Angaben erhalten:"}</p>
                 <table>
-                    <tr><th>Paket:</th><td>${req.body.paket}</td></tr>
-                    <tr><th>Seitenumfang:</th><td>${req.body.umfang}</td></tr>
-                    <tr><th>Texte:</th><td>${req.body.texterstellung === 'erstellt' ? 'Texterstellung benötigt' : 'Eigene Texte vorhanden'}</td></tr>
-                    <tr><th>Bilder:</th><td>${req.body.bilderstellung === 'erstellt' ? 'Bildrecherche/-erstellung benötigt' : 'Eigene Bilder vorhanden'}</td></tr>
-                    <tr><th>Funktionen:</th><td>${Array.isArray(req.body.inhalte) ? req.body.inhalte.join(', ') : (req.body.inhalte || 'Keine')}</td></tr>
-                    ${formattedAppointment ? `<tr><th>Termin:</th><td>${formattedAppointment}</td></tr>` : ''}
-                    <tr><th>Name:</th><td>${req.body.name}</td></tr>
+                    <tr><th>${lng === "en" ? "Package" : "Paket"}:</th><td>${req.body.paket}</td></tr>
+                    <tr><th>${lng === "en" ? "Scope" : "Seitenumfang"}:</th><td>${req.body.umfang}</td></tr>
+                    <tr><th>${lng === "en" ? "Text" : "Texte"}:</th><td>${req.body.texterstellung === 'erstellt' ? (lng === "en" ? "Text creation needed" : "Texterstellung benötigt") : (lng === "en" ? "Own texts available" : "Eigene Texte vorhanden")}</td></tr>
+                    <tr><th>${lng === "en" ? "Images" : "Bilder"}:</th><td>${req.body.bilderstellung === 'erstellt' ? (lng === "en" ? "Image creation/research needed" : "Bildrecherche/-erstellung benötigt") : (lng === "en" ? "Own images available" : "Eigene Bilder vorhanden")}</td></tr>
+                    <tr><th>${lng === "en" ? "Features" : "Funktionen"}:</th><td>${Array.isArray(req.body.inhalte) ? req.body.inhalte.join(', ') : (req.body.inhalte || (lng === "en" ? "None" : "Keine"))}</td></tr>
+                    ${formattedAppointment ? `<tr><th>${lng === "en" ? "Appointment" : "Termin"}:</th><td>${formattedAppointment}</td></tr>` : ''}
+                    <tr><th>${lng === "en" ? "Name" : "Name"}:</th><td>${req.body.name}</td></tr>
                     <tr><th>E-Mail:</th><td>${req.body.email}</td></tr>
-                    <tr><th>Telefon:</th><td>${req.body.telefon}</td></tr>
-                    <tr><th>Firma:</th><td>${req.body.firma || 'Keine'}</td></tr>
-                    <tr><th>Sonstige Infos:</th><td>${req.body.sonstigeInfos || 'Keine'}</td></tr>
+                    <tr><th>${lng === "en" ? "Phone" : "Telefon"}:</th><td>${req.body.telefon}</td></tr>
+                    <tr><th>${lng === "en" ? "Company" : "Firma"}:</th><td>${req.body.firma || (lng === "en" ? "None" : "Keine")}</td></tr>
+                    <tr><th>${lng === "en" ? "Additional info" : "Sonstige Infos"}:</th><td>${req.body.sonstigeInfos || (lng === "en" ? "None" : "Keine")}</td></tr>
                 </table>
-                <p>Wir werden uns in Kürze bei dir melden, um die Details zu besprechen.</p>
-                <p>Mit freundlichen Grüßen<br>Dein KomplettWebdesign-Team</p>
+                <p>${lng === "en"
+                    ? "We will get back to you shortly to discuss the details."
+                    : "Wir werden uns in Kürze bei dir melden, um die Details zu besprechen."}</p>
+                <p>${lng === "en" ? "Best regards" : "Mit freundlichen Grüßen"}<br>${lng === "en" ? "Your KomplettWebdesign team" : "Dein KomplettWebdesign-Team"}</p>
             `;
 
             const attachments = [];
@@ -415,7 +454,7 @@ export const processForm = [
             await transporter.sendMail({
                 from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
                 to: req.body.email,
-                subject: 'Bestätigung deiner Kontaktanfrage',
+                subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
                 html: summaryHtml,
                 attachments
             });
@@ -430,11 +469,12 @@ export const processForm = [
             /* 6) Erfolg ------------------------------------------------------ */
 
             return res.render('kontakt/thankyou', {
-                title: 'Danke für deine Anfrage',
-                description: 'Bestätigung deiner Kontaktanfrage',
+                title: lng === "en" ? "Thanks for your request" : "Danke für deine Anfrage",
+                description: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
                 data: req.body,
                 appointment: slot,
                 formattedAppointment,
+                lng,
             });
         } catch (err) {
             console.error("❌ Fehler beim Kontakt-Workflow:", err);
@@ -445,7 +485,9 @@ export const processForm = [
 
             return res
                 .status(500)
-                .send("Es ist ein Fehler aufgetreten – bitte erneut versuchen.");
+                .send(lng === "en"
+                    ? "An error occurred. Please try again."
+                    : "Es ist ein Fehler aufgetreten - bitte erneut versuchen.");
         }
     }
 ];
