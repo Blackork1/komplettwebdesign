@@ -1,10 +1,13 @@
 <%- include('../partials/head') %>
 <%- include('../partials/header') %>
-
+<% const isEn = lng === 'en'; %>
+<% const wdBase = pagePath || (isEn ? '/en/webdesign-berlin' : '/webdesign-berlin'); %>
+<% const wdContact = contactPath || (isEn ? '/en/kontakt' : '/kontakt'); %>
+<% const copy = pageCopy || {}; %>
 
 <nav class="wd-breadcrumbs" aria-label="breadcrumb">
   <ol>
-    <li><a href="/">Startseite /</a></li>
+    <li><a href="<%= isEn ? '/en' : '/' %>"><%= copy.homeLabel || 'Startseite' %> /</a></li>
     <li aria-current="page">Webdesign Berlin</li>
   </ol>
 </nav>
@@ -21,7 +24,7 @@
       </div>
       <div class="wd-social-proof" role="note">
         <span><%= hero.rating.label %></span>
-        <a href="<%= hero.rating.href %>" target="_blank" rel="noopener">Google Profil</a>
+        <a href="<%= hero.rating.href %>" target="_blank" rel="noopener"><%= copy.googleProfile || 'Google Profil' %></a>
       </div>
     </div>
     <div class="wd-hero__visual">
@@ -63,34 +66,34 @@
   <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
     <div class="wd-container">
       <div class="wd-video">
-        <h2 id="wd-video-title">Was dich im Erstgespräch erwartet:</h2>
-        <p>In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.</p>
-        <div class="wd-video__wrap youtube-wrapper" data-youtube-id="M_fYtNuPcGg" data-youtube-title="Was dich im Erstgespräch erwartet – Komplett Webdesign">
-          <div class="youtube-placeholder" role="group" aria-label="YouTube Video Platzhalter">
+        <h2 id="wd-video-title"><%= copy.videoTitle || 'Was dich im Erstgespräch erwartet:' %></h2>
+        <p><%= copy.videoIntro || 'In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.' %></p>
+        <div class="wd-video__wrap youtube-wrapper" data-youtube-id="M_fYtNuPcGg" data-youtube-title="<%= copy.videoTitle || 'Was dich im Erstgespräch erwartet:' %> - Komplett Webdesign">
+          <div class="youtube-placeholder" role="group" aria-label="<%= copy.videoGroupLabel || 'YouTube Video Platzhalter' %>">
             <div class="youtube-thumb">
-              <img src="https://img.youtube.com/vi/M_fYtNuPcGg/hqdefault.jpg" alt="Vorschaubild: Was dich im Erstgespräch erwartet" loading="lazy" width="640" height="360" />
-              <button class="youtube-play-btn" type="button" aria-label="Video laden">
+              <img src="https://img.youtube.com/vi/M_fYtNuPcGg/hqdefault.jpg" alt="<%= copy.videoPreviewAlt || 'Vorschaubild: Was dich im Erstgespräch erwartet' %>" loading="lazy" width="640" height="360" />
+              <button class="youtube-play-btn" type="button" aria-label="<%= copy.videoLoadLabel || 'Video laden' %>">
                 ▶
               </button>
             </div>
             <p class="youtube-hint">
-              Beim Abspielen des Videos werden Daten an YouTube (Google) übertragen.
-              Mehr Informationen findest du in unserer <a href="/datenschutz">Datenschutzerklärung</a>.
+              <%= copy.videoHint || 'Beim Abspielen des Videos werden Daten an YouTube (Google) übertragen. Mehr Informationen findest du in unserer' %>
+              <a href="/datenschutz"><%= copy.videoPolicyLabel || 'Datenschutzerklärung' %></a>.
             </p>
             <button class="youtube-consent-btn wd-btn wd-btn-primary" type="button">
-              Video laden und abspielen
+              <%= copy.videoConsentBtn || 'Video laden und abspielen' %>
             </button>
           </div>
         </div>
         <noscript>
-          <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener">auf YouTube ansehen</a></p>
+          <p>Video: <a href="https://www.youtube.com/watch?v=M_fYtNuPcGg" target="_blank" rel="noopener"><%= copy.videoNoscript || 'auf YouTube ansehen' %></a></p>
         </noscript>
       </div>
     </div>
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-services-title">
-    <h2 id="wd-services-title">Was beinhaltet unser Webdesign in Berlin?</h2>
+    <h2 id="wd-services-title"><%= copy.servicesTitle || 'Was beinhaltet unser Webdesign in Berlin?' %></h2>
     <div class="wd-card-grid wd-card-grid--services">
       <% services.forEach(function(service) { %>
       <article class="wd-card wd-service-card">
@@ -116,13 +119,13 @@
 
   <section class="wd-container wd-section wd-section--packages" aria-labelledby="wd-packages-title">
     <div class="wd-packages__intro">
-      <span class="wd-packages__badge">Unsere Pakete</span>
-      <h2 id="wd-packages-title"><a href="/webdesign-berlin/kosten-preise-pakete" style='color:var(--wd-accent)'>Was kostet eine Website 2026 in Berlin?</a></h2>
+      <span class="wd-packages__badge"><%= copy.packagesBadge || 'Unsere Pakete' %></span>
+      <h2 id="wd-packages-title"><a href="<%= wdBase %>/kosten-preise-pakete" style='color:var(--wd-accent)'><%= copy.packagesTitle || 'Was kostet eine Website 2026 in Berlin?' %></a></h2>
       <div class="readable">
-        <p>Wenn du eine <strong>Webseite in Berlin erstellen lassen</strong> möchtest, hängen die Kosten vor allem von Umfang, Funktionen und Content ab. Ein klarer Onepager startet meist bei rund 500 €, umfangreichere Firmenwebsites mit mehreren Unterseiten liegen häufig im Bereich von 1.500 € bis 3.000 €.</p>
-        <p>Komplexe Projekte mit Shop, Buchungssystem, Mehrsprachigkeit oder individuellen Integrationen können deutlich darüber liegen. Wichtig ist: Eine Website sollte nicht nur gut aussehen, sondern messbar Anfragen erzeugen und für Google sauber aufgesetzt sein.</p>
+        <p><%- copy.packagesText1 || 'Wenn du eine <strong>Webseite in Berlin erstellen lassen</strong> möchtest, hängen die Kosten vor allem von Umfang, Funktionen und Content ab. Ein klarer Onepager startet meist bei rund 500 €, umfangreichere Firmenwebsites mit mehreren Unterseiten liegen häufig im Bereich von 1.500 € bis 3.000 €.' %></p>
+        <p><%- copy.packagesText2 || 'Komplexe Projekte mit Shop, Buchungssystem, Mehrsprachigkeit oder individuellen Integrationen können deutlich darüber liegen. Wichtig ist: Eine Website sollte nicht nur gut aussehen, sondern messbar Anfragen erzeugen und für Google sauber aufgesetzt sein.' %></p>
       </div>
-      <p><strong style="font-size: 18px">Wähle das Paket, das zu deiner Ausgangslage und deinem Ziel passt:</strong></p>
+      <p><strong style="font-size: 18px"><%= copy.packagesText3 || 'Wähle das Paket, das zu deiner Ausgangslage und deinem Ziel passt:' %></strong></p>
     </div>
     <div class="wd-packages-grid">
       <% packages.forEach(function(pkg) { %>
@@ -139,23 +142,23 @@
           <% }) %>
         </ul>
         <div class="wd-package-card__actions">
-          <a class="wd-btn wd-btn-primary" href="/pakete/<%= pkg.anchor %>">Paket wählen</a>
-          <a class="wd-btn wd-btn-outline" href="/kontakt">Details anfragen</a>
+          <a class="wd-btn wd-btn-primary" href="/pakete/<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
+          <a class="wd-btn wd-btn-outline" href="<%= wdContact %>"><%= copy.packageBtnSecondary || 'Details anfragen' %></a>
         </div>
       </article>
       <% }) %>
     </div>
     <div class="wd-packages__intro">
-      <h3>Was ist im Webdesign-Paket konkret enthalten?</h3>
+      <h3><%= copy.packageIncludedTitle || 'Was ist im Webdesign-Paket konkret enthalten?' %></h3>
       <div class="readable">
-        <p>Bereits im <a href="/pakete/basis">Basis-Paket ab 499 €</a> bekommst du eine professionell gestaltete Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und den wichtigsten rechtlichen Grundlagen. Statt Baukasten-Lösungen setzen wir auf ein individuelles Design, das zu deinem Angebot und deiner Zielgruppe passt.</p>
-        <p>Im <a href="/pakete/business">Business-Paket ab 899 €</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist das <a href="/pakete/premium">Premium-Paket ab 1.499 €</a> die richtige Wahl. So entsteht eine Website, die nicht nur modern aussieht, sondern dir in Berlin planbar Anfragen bringt.</p>
+        <p><%- copy.packageIncludedText1 || 'Bereits im <a href=\"/pakete/basis\">Basis-Paket ab 499 €</a> bekommst du eine professionell gestaltete Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und den wichtigsten rechtlichen Grundlagen. Statt Baukasten-Lösungen setzen wir auf ein individuelles Design, das zu deinem Angebot und deiner Zielgruppe passt.' %></p>
+        <p><%- copy.packageIncludedText2 || 'Im <a href=\"/pakete/business\">Business-Paket ab 899 €</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist das <a href=\"/pakete/premium\">Premium-Paket ab 1.499 €</a> die richtige Wahl. So entsteht eine Website, die nicht nur modern aussieht, sondern dir in Berlin planbar Anfragen bringt.' %></p>
       </div>
     </div>
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-cases-title">
-    <h2 id="wd-cases-title">Ergebnisse aus Berlin – echte Zahlen</h2>
+    <h2 id="wd-cases-title"><%= copy.casesTitle || 'Ergebnisse aus Berlin - echte Zahlen' %></h2>
     <div class="wd-case-grid">
       <% caseStudies.forEach(function(cs) { %>
       <article class="wd-case">
@@ -170,7 +173,7 @@
             <% }) %>
           </ul>
           <blockquote>„<%= cs.quote %>“</blockquote>
-          <p class="wd-case__link"><a href="<%= cs.link %>">Website ansehen</a></p>
+          <p class="wd-case__link"><a href="<%= cs.link %>"><%= copy.caseLinkLabel || 'Website ansehen' %></a></p>
         </div>
         <figure class="wd-case__visual">
           <img src="<%= cs.image %>" alt="Case Visual – <%= cs.name %>" width="400" height="300" loading="lazy">
@@ -182,7 +185,7 @@
 
   <section class="wd-container wd-section" aria-labelledby="wd-process-title" id="Ablauf">
     <div class="wd-process">
-      <h2 id="wd-process-title">Website in Berlin erstellen lassen – so läuft der Prozess ab</h2>
+      <h2 id="wd-process-title"><%= copy.processTitle || 'Website in Berlin erstellen lassen - so läuft der Prozess ab' %></h2>
       <ol class="wd-process__steps">
         <% processSteps.forEach(function(step, index) { %>
         <li>
@@ -193,45 +196,45 @@
         </li>
         <% }) %>
       </ol>
-      <p class="wd-lead" style="text-align: center;">Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen – mit klaren Feedbackschleifen und transparenten Milestones.</p>
+      <p class="wd-lead" style="text-align: center;"><%= copy.processLead || 'Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen - mit klaren Feedbackschleifen und transparenten Milestones.' %></p>
     </div>
   </section>
 
   <section class="wd-section wd-section--berlin" aria-labelledby="wd-berlin-title">
-    <h2 id="wd-berlin-title">Webdesign in Berlin und allen Bezirken</h2>
+    <h2 id="wd-berlin-title"><%= copy.berlinTitle || 'Webdesign in Berlin und allen Bezirken' %></h2>
     <div class="wd-container">
       <div class="wd-section__inner wd-section__inner--berlin">
         <div class="wd-section__content">
-          <p class="wd-lead">Wenn du eine Website in Berlin erstellen lassen willst, ist lokaler Bezug entscheidend. Wir arbeiten in allen Berliner Bezirken und optimieren Inhalte, Struktur und lokale Signale so, dass du dort sichtbar bist, wo deine Kunden tatsächlich suchen.</p>
-          <nav class="wd-district-nav" aria-label="Berliner Bezirke">
+          <p class="wd-lead"><%= copy.berlinLead || 'Wenn du eine Website in Berlin erstellen lassen willst, ist lokaler Bezug entscheidend. Wir arbeiten in allen Berliner Bezirken und optimieren Inhalte, Struktur und lokale Signale so, dass du dort sichtbar bist, wo deine Kunden tatsächlich suchen.' %></p>
+          <nav class="wd-district-nav" aria-label="<%= copy.districtsLabel || 'Berliner Bezirke' %>">
             <ul>
               <% districts.forEach(function(district) { %>
-              <li><a href="/webdesign-berlin/<%= district.toLowerCase().replace(/\s+/g, '-') %>">Webdesign <%= district %></a></li>
+              <li><a href="<%= wdBase %>/<%= district.toLowerCase().replace(/\s+/g, '-') %>">Webdesign <%= district %></a></li>
               <% }) %>
             </ul>
           </nav>
         </div>
         <figure class="wd-section__visual">
-          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847566/admin_gallery/ukiymhlne3z9yq1xcia7.webp" width="600" height="600" alt="Webdesign in allen Berliner Bezirken – Servicekarte" loading="lazy">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847566/admin_gallery/ukiymhlne3z9yq1xcia7.webp" width="600" height="600" alt="<%= isEn ? 'Web design service map across Berlin districts' : 'Webdesign in allen Berliner Bezirken - Servicekarte' %>" loading="lazy">
         </figure>
       </div>
     </div>
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-industries-title">
-    <h2 id="wd-industries-title">Webdesign Berlin für verschiedene Branchen</h2>
+    <h2 id="wd-industries-title"><%= copy.industriesTitle || 'Webdesign Berlin für verschiedene Branchen' %></h2>
     <div class="wd-industry-grid">
       <% industries.forEach(function(industry) { %>
       <article class="wd-industry-card">
         <figure class="wd-industry-card__media">
-          <img src="<%= industry.image %>" alt="Webdesign in Berlin für <%= industry.name %>" width="480" height="360" loading="lazy">
+          <img src="<%= industry.image %>" alt="<%= isEn ? `Web design in Berlin for ${industry.name}` : `Webdesign in Berlin für ${industry.name}` %>" width="480" height="360" loading="lazy">
         </figure>
         <div class="wd-industry-card__heading">
           <h3><%= industry.name %></h3>
         </div>
         <div class="wd-industry-card__body">
           <p><%= industry.description %></p>
-          <a class="wd-industry-card__link" href="<%= industry.link %>">Mehr erfahren</a>
+          <a class="wd-industry-card__link" href="<%= industry.link %>"><%= copy.industryMore || 'Mehr erfahren' %></a>
         </div>
       </article>
       <% }) %>
@@ -239,7 +242,7 @@
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-faq-title">
-    <h2 id="wd-faq-title">Häufige Fragen zu Webdesign in Berlin</h2>
+    <h2 id="wd-faq-title"><%= copy.faqTitle || 'Häufige Fragen zu Webdesign in Berlin' %></h2>
     <div class="wd-faq-grid">
       <% faqs.forEach(function(faq) { %>
       <details class="wd-faq">
@@ -253,8 +256,8 @@
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-trust-title">
-    <h2 id="wd-trust-title">Sicher, DSGVO-konform &amp; betreut</h2>
-    <p class="wd-lead" style="text-align: start;">Mit Komplett Webdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut – ohne Technikstress.</p>
+    <h2 id="wd-trust-title"><%= copy.trustTitle || 'Sicher, DSGVO-konform & betreut' %></h2>
+    <p class="wd-lead" style="text-align: start;"><%= copy.trustLead || 'Mit Komplett Webdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut - ohne Technikstress.' %></p>
     <ul class="wd-trust-list">
       <% trust.forEach(function(item) { %>
       <li>
@@ -266,7 +269,7 @@
   </section>
 
   <section class="wd-container wd-section wd-resources" aria-labelledby="wd-resources-title">
-    <h2 id="wd-resources-title">Weiterführende Ressourcen zu Webdesign und SEO in Berlin</h2>
+    <h2 id="wd-resources-title"><%= copy.resourcesTitle || 'Weiterführende Ressourcen zu Webdesign und SEO in Berlin' %></h2>
     <div class="wd-resource-grid">
       <% resources.forEach(function(resource) { %>
       <article class="wd-resource-card">
@@ -277,51 +280,48 @@
       </article>
       <% }) %>
     </div>
-    <p class="wd-lead">Diese Guides helfen dir, deinen digitalen Auftritt strategisch weiterzuentwickeln – statt nur zu verwalten.</p>
+    <p class="wd-lead"><%= copy.resourcesLead || 'Diese Guides helfen dir, deinen digitalen Auftritt strategisch weiterzuentwickeln - statt nur zu verwalten.' %></p>
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-contact-title">
     <div class="wd-contact">
 
-      <form action="/webdesign-berlin/kontakt" method="post" class="wd-contact__form" data-recaptcha="v3" data-recaptcha-action="webdesign_berlin_kontakt" enctype="multipart/form-data">
+      <form action="<%= wdBase %>/kontakt" method="post" class="wd-contact__form" data-recaptcha="v3" data-recaptcha-action="webdesign_berlin_kontakt" enctype="multipart/form-data">
         <div class="wd-form-row">
           <div>
-            <label for="contact-name">Name</label>
-            <input id="contact-name" name="name" type="text" autocomplete="name" placeholder="Max Mustermann" required>
+            <label for="contact-name"><%= copy.contactNameLabel || 'Name' %></label>
+            <input id="contact-name" name="name" type="text" autocomplete="name" placeholder="<%= copy.contactNamePlaceholder || 'Max Mustermann' %>" required>
           </div>
           <div>
-            <label for="contact-email">E-Mail</label>
-            <input id="contact-email" name="email" type="email" autocomplete="email" placeholder="hallo@unternehmen.de" required>
+            <label for="contact-email"><%= copy.contactEmailLabel || 'E-Mail' %></label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" placeholder="<%= copy.contactEmailPlaceholder || 'hallo@unternehmen.de' %>" required>
           </div>
         </div>
         <div class="wd-form-row">
           <div>
-            <label for="contact-goal">Projektziel</label>
-            <input id="contact-goal" name="goal" type="text" placeholder="z. B. Relaunch, Landingpage, SEO">
+            <label for="contact-goal"><%= copy.contactGoalLabel || 'Projektziel' %></label>
+            <input id="contact-goal" name="goal" type="text" placeholder="<%= copy.contactGoalPlaceholder || 'z. B. Relaunch, Landingpage, SEO' %>">
           </div>
           <div>
-            <label for="contact-timeline">Wunsch-Timing</label>
-            <input id="contact-timeline" name="timeline" type="text" placeholder="z. B. sofort, Q3 2025">
+            <label for="contact-timeline"><%= copy.contactTimelineLabel || 'Wunsch-Timing' %></label>
+            <input id="contact-timeline" name="timeline" type="text" placeholder="<%= copy.contactTimelinePlaceholder || 'z. B. sofort, Q3 2026' %>">
           </div>
         </div>
         <div>
-          <label for="contact-message">Was sollen wir wissen?</label>
-          <textarea id="contact-message" name="message" placeholder="Beschreibe kurz dein Projekt"></textarea>
+          <label for="contact-message"><%= copy.contactMessageLabel || 'Was sollen wir wissen?' %></label>
+          <textarea id="contact-message" name="message" placeholder="<%= copy.contactMessagePlaceholder || 'Beschreibe kurz dein Projekt' %>"></textarea>
         </div>
         <div>
-          <label for="contact-file">Dateien hochladen (optional)</label>
+          <label for="contact-file"><%= copy.contactFileLabel || 'Dateien hochladen (optional)' %></label>
           <input id="contact-file" name="attachments" type="file" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" multiple aria-describedby="contact-file-hint">
-          <p id="contact-file-hint" class="wd-form-hint">Du kannst bis zu 10 Dateien (max. 15&nbsp;MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.</p>
+          <p id="contact-file-hint" class="wd-form-hint"><%= copy.contactFileHint || 'Du kannst bis zu 10 Dateien (max. 15 MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.' %></p>
         </div>
-        <button type="submit" class="wd-btn wd-btn-primary">Kostenloses Erstgespräch sichern</button>
+        <button type="submit" class="wd-btn wd-btn-primary"><%= copy.contactSubmit || 'Kostenloses Erstgespräch sichern' %></button>
       </form>
       <div class="wd-contact__intro">
-        <h2 id="wd-contact-title">Bereit, loszulegen?</h2>
-        <p class="wd-lead">Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit, bessere Rankings und mehr Anfragen.
-          <br>Du suchst allgemeine Informationen zur <a href="/">professionellen Websiteerstellung</a>?
-          Auf unserer Hauptseite findest du alle Leistungen im Überblick – auch für Kunden außerhalb von Berlin.
-        </p>
-        <p class="wd-contact-meta">Oder direkt anrufen: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
+        <h2 id="wd-contact-title"><%= copy.contactTitle || 'Bereit, loszulegen?' %></h2>
+        <p class="wd-lead"><%- copy.contactLead || 'Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit, bessere Rankings und mehr Anfragen.<br>Du suchst allgemeine Informationen zur <a href=\"/\">professionellen Websiteerstellung</a>? Auf unserer Hauptseite findest du alle Leistungen im Überblick - auch für Kunden außerhalb von Berlin.' %></p>
+        <p class="wd-contact-meta"><%= copy.directCallLabel || 'Oder direkt anrufen' %>: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
         <figure class="wd-contact__visual">
           <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
         </figure>

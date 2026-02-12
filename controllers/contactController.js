@@ -495,6 +495,7 @@ export const processForm = [
 
 /* ---------- POST /webdesign-berlin/kontakt --------------------------- */
 export async function processWebdesignBerlinForm(req, res) {
+    const lng = resolveContactLocale(req);
     const token = toCleanString(req.body.token);
     if (token) {
         try {
@@ -506,7 +507,7 @@ export async function processWebdesignBerlinForm(req, res) {
             if (!resp.data.success) throw new Error("reCaptcha failed");
         } catch (err) {
             console.error("❌ reCaptcha-Validierung (Webdesign Berlin)", err);
-            const message = "reCaptcha-Validierung fehlgeschlagen";
+            const message = lng === "en" ? "reCAPTCHA validation failed" : "reCaptcha-Validierung fehlgeschlagen";
             if (expectsJson(req)) {
                 return res.status(400).json({ success: false, message });
             }
@@ -519,7 +520,9 @@ export async function processWebdesignBerlinForm(req, res) {
     const hasName = toCleanString(normalized.name);
     const attachments = Array.isArray(req.files) ? req.files : [];
     if (!hasName || !hasValidEmail) {
-        const message = "Bitte gib deinen Namen und eine gültige E-Mail-Adresse an.";
+        const message = lng === "en"
+            ? "Please provide your name and a valid email address."
+            : "Bitte gib deinen Namen und eine gültige E-Mail-Adresse an.";
         if (expectsJson(req)) {
             return res.status(422).json({ success: false, message });
         }
@@ -527,7 +530,9 @@ export async function processWebdesignBerlinForm(req, res) {
     }
 
     if (attachments.length > MAX_ATTACHMENTS) {
-        const message = `Du kannst maximal ${MAX_ATTACHMENTS} Dateien hochladen.`;
+        const message = lng === "en"
+            ? `You can upload a maximum of ${MAX_ATTACHMENTS} files.`
+            : `Du kannst maximal ${MAX_ATTACHMENTS} Dateien hochladen.`;
         if (expectsJson(req)) {
             return res.status(400).json({ success: false, message });
         }
@@ -536,7 +541,9 @@ export async function processWebdesignBerlinForm(req, res) {
 
     const totalAttachmentSize = attachments.reduce((sum, file) => sum + (file?.size || 0), 0);
     if (totalAttachmentSize > MAX_TOTAL_ATTACHMENT_SIZE) {
-        const message = "Die hochgeladenen Dateien überschreiten die maximale Gesamtgröße von 15 MB.";
+        const message = lng === "en"
+            ? "Uploaded files exceed the total maximum size of 15 MB."
+            : "Die hochgeladenen Dateien überschreiten die maximale Gesamtgröße von 15 MB.";
         if (expectsJson(req)) {
             return res.status(400).json({ success: false, message });
         }
@@ -553,26 +560,58 @@ export async function processWebdesignBerlinForm(req, res) {
         if (toCleanString(value)) rows.push([label, value]);
     };
 
+    const labels = lng === "en"
+        ? {
+            email: "Email",
+            phone: "Phone",
+            company: "Company",
+            district: "District",
+            project: "Project",
+            currentWebsite: "Current website",
+            services: "Services",
+            goals: "Goals",
+            budget: "Budget",
+            timeline: "Timeline",
+            message: "Message",
+            files: "Files",
+            utmCampaign: "UTM Campaign"
+        }
+        : {
+            email: "E-Mail",
+            phone: "Telefon",
+            company: "Firma",
+            district: "Bezirk",
+            project: "Projekt",
+            currentWebsite: "Bestehende Website",
+            services: "Leistungen",
+            goals: "Ziele",
+            budget: "Budget",
+            timeline: "Zeitplan",
+            message: "Nachricht",
+            files: "Dateien",
+            utmCampaign: "UTM Kampagne"
+        };
+
     const summaryRows = [];
     addRow(summaryRows, "Name", normalized.name);
-    addRow(summaryRows, "E-Mail", normalized.email);
-    addRow(summaryRows, "Telefon", normalized.phone);
-    addRow(summaryRows, "Firma", normalized.company);
-    addRow(summaryRows, "Bezirk", normalized.location);
-    addRow(summaryRows, "Projekt", normalized.projectType);
+    addRow(summaryRows, labels.email, normalized.email);
+    addRow(summaryRows, labels.phone, normalized.phone);
+    addRow(summaryRows, labels.company, normalized.company);
+    addRow(summaryRows, labels.district, normalized.location);
+    addRow(summaryRows, labels.project, normalized.projectType);
     addRow(summaryRows, "Website", normalized.website);
-    addRow(summaryRows, "Bestehende Website", normalized.currentWebsite);
-    addRow(summaryRows, "Leistungen", normalized.services);
-    addRow(summaryRows, "Ziele", normalized.goals);
-    addRow(summaryRows, "Budget", normalized.budget);
-    addRow(summaryRows, "Zeitplan", normalized.timeline);
-    addRow(summaryRows, "Nachricht", normalized.message);
+    addRow(summaryRows, labels.currentWebsite, normalized.currentWebsite);
+    addRow(summaryRows, labels.services, normalized.services);
+    addRow(summaryRows, labels.goals, normalized.goals);
+    addRow(summaryRows, labels.budget, normalized.budget);
+    addRow(summaryRows, labels.timeline, normalized.timeline);
+    addRow(summaryRows, labels.message, normalized.message);
     if (attachments.length) {
-        addRow(summaryRows, "Dateien", attachments.map(file => file.originalname));
+        addRow(summaryRows, labels.files, attachments.map(file => file.originalname));
     }
     addRow(summaryRows, "UTM Source", normalized.utmSource);
     addRow(summaryRows, "UTM Medium", normalized.utmMedium);
-    addRow(summaryRows, "UTM Kampagne", normalized.utmCampaign);
+    addRow(summaryRows, labels.utmCampaign, normalized.utmCampaign);
 
     normalized.extras.forEach(([key, value]) => addRow(summaryRows, formatLabel(key), value));
 
@@ -587,21 +626,21 @@ export async function processWebdesignBerlinForm(req, res) {
     const utmPlain = joinNonEmpty([
         normalized.utmSource && `UTM Source: ${normalized.utmSource}`,
         normalized.utmMedium && `UTM Medium: ${normalized.utmMedium}`,
-        normalized.utmCampaign && `UTM Kampagne: ${normalized.utmCampaign}`
+        normalized.utmCampaign && `${labels.utmCampaign}: ${normalized.utmCampaign}`
     ]);
 
     const featuresOther = joinNonEmpty([
         normalized.website && `Website: ${normalized.website}`,
-        normalized.currentWebsite && `Bestehende Website: ${normalized.currentWebsite}`,
-        normalized.location && `Bezirk: ${normalized.location}`,
+        normalized.currentWebsite && `${labels.currentWebsite}: ${normalized.currentWebsite}`,
+        normalized.location && `${labels.district}: ${normalized.location}`,
         extrasPlain,
         utmPlain
     ]);
     const additionalInfo = joinNonEmpty([
         normalized.message,
-        normalized.goals && `Ziele: ${normalized.goals}`,
-        normalized.budget && `Budget: ${normalized.budget}`,
-        normalized.timeline && `Zeitplan: ${normalized.timeline}`
+        normalized.goals && `${labels.goals}: ${normalized.goals}`,
+        normalized.budget && `${labels.budget}: ${normalized.budget}`,
+        normalized.timeline && `${labels.timeline}: ${normalized.timeline}`
     ]);
 
     try {
@@ -626,25 +665,32 @@ export async function processWebdesignBerlinForm(req, res) {
     }
 
     const transporter = createTransporter();
-    const greetingName = escapeHtml(normalized.name || "Interessent:in");
+    const greetingName = escapeHtml(normalized.name || (lng === "en" ? "interested visitor" : "Interessent:in"));
     const attachmentListHtml = attachments.length
-        ? `<p>Folgende Dateien hast du übermittelt:</p><ul>${attachments
+        ? `<p>${lng === "en" ? "You submitted the following files:" : "Folgende Dateien hast du übermittelt:"}</p><ul>${attachments
             .map(file => `<li>${escapeHtml(file.originalname)}</li>`)
             .join("")}</ul>`
         : "";
-    const uploadHintHtml = `<p style="color:#6c757d;font-size:14px;">Hinweis: Du kannst bis zu ${MAX_ATTACHMENTS} Dateien mit insgesamt 15 MB senden.</p>`;
+    const uploadHintHtml = `<p style="color:#6c757d;font-size:14px;">${lng === "en"
+        ? `Note: You can upload up to ${MAX_ATTACHMENTS} files with a total size of 15 MB.`
+        : `Hinweis: Du kannst bis zu ${MAX_ATTACHMENTS} Dateien mit insgesamt 15 MB senden.`}</p>`;
     const userHtml = `
-        <p>Hallo <strong>${greetingName}</strong>,</p>
-        <p>vielen Dank für deine Anfrage über unsere Seite Webdesign-Berlin. Wir haben die folgenden Angaben erhalten:</p>
+        <p>${lng === "en" ? "Hello" : "Hallo"} <strong>${greetingName}</strong>,</p>
+        <p>${lng === "en"
+            ? "thank you for your request via our Webdesign Berlin page. We have received the following details:"
+            : "vielen Dank für deine Anfrage über unsere Seite Webdesign-Berlin. Wir haben die folgenden Angaben erhalten:"}</p>
         ${summaryHtml}
         ${attachmentListHtml}
         ${uploadHintHtml}
-        <p>Wir melden uns in Kürze bei dir, um die nächsten Schritte zu besprechen.</p>
-        <p>Mit freundlichen Grüßen<br>Dein Komplett Webdesign-Team</p>
+        <p>${lng === "en"
+            ? "We will get back to you shortly to discuss the next steps."
+            : "Wir melden uns in Kürze bei dir, um die nächsten Schritte zu besprechen."}</p>
+        <p>${lng === "en" ? "Best regards" : "Mit freundlichen Grüßen"}<br>${lng === "en" ? "Your Komplett Webdesign team" : "Dein Komplett Webdesign-Team"}</p>
     `;
     const adminHtml = `
-        <p>Neue Anfrage über die Landingpage <strong>Webdesign Berlin</strong>.</p>
+        <p><strong>Neue Anfrage über webdesign-berlin auf (${lng})</strong></p>
         ${summaryHtml}
+        ${attachmentListHtml}
     `;
     const adminAttachments = attachments.map(file => ({
         filename: file.originalname,
@@ -658,7 +704,9 @@ export async function processWebdesignBerlinForm(req, res) {
             transporter.sendMail({
                 from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
                 to: normalized.email,
-                subject: "Bestätigung deiner Anfrage – Webdesign Berlin",
+                subject: lng === "en"
+                    ? "Confirmation of your request - Webdesign Berlin"
+                    : "Bestätigung deiner Anfrage - Webdesign Berlin",
                 html: userHtml
             }).catch(err => console.error("❌ Fehler beim Versand (Kunde Webdesign Berlin):", err))
         );
@@ -668,7 +716,7 @@ export async function processWebdesignBerlinForm(req, res) {
             from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
             to: 'kontakt@komplettwebdesign.de',
             replyTo: hasValidEmail ? normalized.email : undefined,
-            subject: `Neue Webdesign-Berlin-Anfrage von ${normalized.name}`,
+            subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,
             html: adminHtml,
             attachments: adminAttachments
         }).catch(err => console.error("❌ Fehler beim Versand (Admin Webdesign Berlin):", err))
@@ -677,7 +725,9 @@ export async function processWebdesignBerlinForm(req, res) {
 
     const successPayload = {
         success: true,
-        message: "Danke für deine Anfrage. Wir melden uns schnellstmöglich."
+        message: lng === "en"
+            ? "Thanks for your request. We will get back to you as soon as possible."
+            : "Danke für deine Anfrage. Wir melden uns schnellstmöglich."
     };
 
     if (expectsJson(req)) {
@@ -697,11 +747,12 @@ export async function processWebdesignBerlinForm(req, res) {
     };
 
     return res.render('kontakt/thankyou', {
-        title: 'Danke für deine Anfrage',
-        description: 'Bestätigung deiner Kontaktanfrage',
+        title: lng === "en" ? "Thanks for your request" : "Danke für deine Anfrage",
+        description: lng === "en" ? "Confirmation of your request" : "Bestätigung deiner Kontaktanfrage",
         data: thankYouData,
         appointment: null,
-        formattedAppointment: null
+        formattedAppointment: null,
+        lng
     });
 }
 

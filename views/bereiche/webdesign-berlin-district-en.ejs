@@ -1,0 +1,161 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<nav class="wd-breadcrumbs" aria-label="breadcrumb">
+  <ol>
+    <li><a href="/en">Home /</a></li>
+    <li><a href="<%= hubPath %>">Webdesign Berlin /</a></li>
+    <li aria-current="page"><%= district.name %></li>
+  </ol>
+</nav>
+
+<main id="content" class="container my-5" role="main">
+  <section class="row align-items-center g-4 mb-5">
+    <div class="col-12 col-lg-7">
+      <h1 class="display-5 fw-bold mb-3">Web Design in <%= district.name %> - Get a Professional Website Built</h1>
+      <p class="lead">
+        <%= districtCopy?.lead || `In ${district.name}, competition is high and first impressions happen online. A modern website is your digital storefront, sales assistant, and lead channel running 24/7.` %>
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="tel:+4915511245048" class="btn btn-primary btn-lg">Call now: +49 1551 1245048</a>
+        <a href="<%= contactPath %>" class="btn btn-outline-secondary btn-lg">Book a consultation</a>
+      </div>
+      <div class="mt-3 small text-muted">
+        <span class="badge bg-success me-1">Mobile-optimized</span>
+        <span class="badge bg-success me-1">SEO-ready</span>
+        <span class="badge bg-success me-1">GDPR-ready</span>
+        <span class="badge bg-success">Reply within 24h</span>
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <figure class="rounded shadow-sm bg-light overflow-hidden">
+        <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp" alt="Web design project in <%= district.name %>" class="img-fluid w-100" loading="eager" decoding="async" />
+        <figcaption class="p-3 small text-muted"><%= districtCopy?.caption || `Web design for local businesses in ${district.name}` %></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <div class="row g-4">
+      <div class="col-12 col-lg-8">
+        <h2 class="h3 mb-3">Why a professional website in <%= district.name %> matters</h2>
+        <p>
+          Users compare providers in seconds. If your website is slow, unclear, or outdated, potential customers
+          leave before contacting you. We combine design, performance, and local SEO so your website creates trust and
+          drives measurable inquiries.
+        </p>
+        <p class="mb-0">
+          The goal is simple: make your business easier to find, easier to understand, and easier to contact.
+        </p>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h3 class="h5">Your benefits</h3>
+            <ul class="mb-0">
+              <li class="mb-2"><strong>Local visibility:</strong> Better rankings for district-based searches.</li>
+              <li class="mb-2"><strong>More inquiries:</strong> Clear user flows and conversion-focused pages.</li>
+              <li class="mb-2"><strong>Professional image:</strong> Strong first impression on every device.</li>
+              <li class="mb-2"><strong>Reliable technology:</strong> Fast, secure, and easy to maintain.</li>
+              <li class="mb-0"><strong>Scalable setup:</strong> Built for growth, not just for launch day.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h3 mb-4">Process: How we build your website in <%= district.name %></h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+      <% processSteps.forEach((step) => { %>
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h3 class="h5"><%= step.title %></h3>
+            <p class="mb-0"><%= step.text %></p>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h3 mb-3">Packages at a glance</h2>
+    <div class="pricing-grid py-4" style="text-align: center;">
+      <% packageCards.forEach((pkg, idx) => { %>
+      <div class="pricing-card animate-on-scroll visible" id="pkg-en-<%= idx + 1 %>">
+        <h3><%= pkg.name %></h3>
+        <div class="p1rem">
+          <p class="package-description"><%= pkg.description %></p>
+          <p class="price"><%= pkg.price %></p>
+          <ul class="features-list">
+            <% pkg.features.forEach((f) => { %><li><%= f %></li><% }) %>
+          </ul>
+          <a class="btn btn-primary" href="<%= pkg.href %>">Details</a>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <p class="mb-0">Need help choosing? We recommend the best package based on your goals, timeline, and budget.</p>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h3 mb-3">Local SEO for <%= district.name %></h2>
+    <p>
+      Design alone is not enough. We build your website with a local SEO foundation: search intent, content hierarchy,
+      metadata, internal links, and technical performance.
+    </p>
+    <p><%= districtCopy?.localFocus || `We optimize for district-specific search intent in ${district.name}.` %></p>
+    <ul>
+      <li>District-specific keyword structure</li>
+      <li>Google Business Profile alignment</li>
+      <li>Optimized performance and mobile UX</li>
+      <li>Clear calls to action for higher conversion rates</li>
+    </ul>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h3 mb-3">Frequently asked questions</h2>
+    <div class="accordion" id="faqDistrictEn">
+      <% faqItems.forEach((faq, i) => { %>
+      <div class="accordion-item">
+        <h3 class="accordion-header" id="faq-h-<%= i %>">
+          <button class="accordion-button <%= i === 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#faq-c-<%= i %>" aria-expanded="<%= i === 0 ? 'true' : 'false' %>" aria-controls="faq-c-<%= i %>">
+            <%= faq.q %>
+          </button>
+        </h3>
+        <div id="faq-c-<%= i %>" class="accordion-collapse collapse <%= i === 0 ? 'show' : '' %>" aria-labelledby="faq-h-<%= i %>" data-bs-parent="#faqDistrictEn">
+          <div class="accordion-body"><%= faq.a %></div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="mb-5">
+    <div class="p-4 p-lg-5 bg-light rounded-4 border">
+      <h2 class="h3 mb-3">Ready to launch your website in <%= district.name %>?</h2>
+      <p class="mb-4">Book a free consultation and get a clear action plan for visibility, performance, and more leads.</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary btn-lg" href="<%= contactPath %>">Book a consultation</a>
+        <a class="btn btn-outline-secondary btn-lg" href="tel:+4915511245048">Call +49 1551 1245048</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+
+<script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://komplettwebdesign.de/en" },
+      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://komplettwebdesign.de${hubPath}` },
+      { "@type": "ListItem", position: 3, name: district.name, item: `https://komplettwebdesign.de${districtPath}` }
+    ]
+  }) %>
+</script>

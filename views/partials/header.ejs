@@ -6,10 +6,14 @@
     : '/'; %>
   <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
   <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
-  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt' }; %>
-  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt' }; %>
-  <% const switchToEnPath = deToEnMap[normalizedCurrentPath] || (normalizedCurrentPath.startsWith('/en/') ? normalizedCurrentPath : '/en'); %>
-  <% const switchToDePath = enToDeMap[normalizedCurrentPath] || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
+  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin' }; %>
+  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin' }; %>
+  <% const switchToEnPath = deToEnMap[normalizedCurrentPath]
+    || (normalizedCurrentPath.startsWith('/webdesign-berlin/') ? `/en${normalizedCurrentPath}` : null)
+    || (normalizedCurrentPath.startsWith('/en/') ? normalizedCurrentPath : '/en'); %>
+  <% const switchToDePath = enToDeMap[normalizedCurrentPath]
+    || (normalizedCurrentPath.startsWith('/en/webdesign-berlin/') ? normalizedCurrentPath.replace(/^\/en/, '') : null)
+    || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
   <% const switchToEnHref = `${switchToEnPath}${currentSearchPart}`; %>
   <% const switchToDeHref = `${switchToDePath}${currentSearchPart}`; %>
   <% const toEnLabel = (label) => {
@@ -49,15 +53,15 @@
                     <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open Webdesign Berlin submenu' : 'Webdesign Berlin Untermenü öffnen' %>">
                       ▾
                     </button>
-                    <a href="/webdesign-berlin">Webdesign Berlin</a>
+                    <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>">Webdesign Berlin</a>
                   </div>
                   <ul class="dropdown-menu">
-                    <li><a href="/webdesign-berlin/kreuzberg" class="main-color">Kreuzberg</a></li>
-                    <li><a href="/webdesign-berlin/friedrichshain" class="main-color">Friedrichshain</a></li>
-                    <li><a href="/webdesign-berlin/charlottenburg" class="main-color">Charlottenburg</a></li>
-                    <li><a href="/webdesign-berlin/lichtenberg" class="main-color">Lichtenberg</a></li>
-                    <li><a href="/webdesign-berlin/mitte" class="main-color">Mitte</a></li>
-                    <li><a href="/webdesign-berlin/prenzlauer-berg" class="main-color">Prenzlauer-Berg</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/kreuzberg' : '/webdesign-berlin/kreuzberg' %>" class="main-color">Kreuzberg</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/friedrichshain' : '/webdesign-berlin/friedrichshain' %>" class="main-color">Friedrichshain</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/charlottenburg' : '/webdesign-berlin/charlottenburg' %>" class="main-color">Charlottenburg</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/lichtenberg' : '/webdesign-berlin/lichtenberg' %>" class="main-color">Lichtenberg</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/mitte' : '/webdesign-berlin/mitte' %>" class="main-color">Mitte</a></li>
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin/prenzlauer-berg' : '/webdesign-berlin/prenzlauer-berg' %>" class="main-color">Prenzlauer-Berg</a></li>
                   </ul>
                 </li>
               </ul>

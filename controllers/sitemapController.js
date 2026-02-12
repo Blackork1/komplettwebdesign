@@ -100,7 +100,9 @@ export async function sitemapXml(req, res, next) {
     // ---- Statische Routen ----
     const staticRoutes = [
       { loc: `${base}/`, changefreq: "weekly", priority: 1.0 },
+      { loc: `${base}/en`, changefreq: "weekly", priority: 0.9 },
       { loc: `${base}/kontakt`, changefreq: "monthly", priority: 0.8 },
+      { loc: `${base}/en/kontakt`, changefreq: "monthly", priority: 0.8 },
       { loc: `${base}/pakete`, changefreq: "monthly", priority: 0.8 },
       { loc: `${base}/pakete/basis`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/pakete/business`, changefreq: "monthly", priority: 0.7 },
@@ -114,12 +116,19 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/impressum`, changefreq: "yearly", priority: 0.2 },
       { loc: `${base}/webdesign-cafe/kosten`, changefreq: "yearly", priority: 0.4 },
       { loc: `${base}/webdesign-blumenladen/kosten`, changefreq: "yearly", priority: 0.4 },
-      { loc: `${base}/webdesign-berlin`, changefreq: "weekly", priority: 1.0 }
+      { loc: `${base}/webdesign-berlin`, changefreq: "weekly", priority: 1.0 },
+      { loc: `${base}/en/webdesign-berlin`, changefreq: "weekly", priority: 0.9 }
     ];
 
     // Bezirke
-    const districtRoutes = DISTRICTS.map(d => ({
+    const districtRoutesDe = DISTRICTS.map(d => ({
       loc: `${base}/webdesign-berlin/${d.slug}`,
+      lastmod: nowIso,
+      changefreq: "weekly",
+      priority: 0.8
+    }));
+    const districtRoutesEn = DISTRICTS.map(d => ({
+      loc: `${base}/en/webdesign-berlin/${d.slug}`,
       lastmod: nowIso,
       changefreq: "weekly",
       priority: 0.8
@@ -166,7 +175,8 @@ export async function sitemapXml(req, res, next) {
 
     const allUrlsRaw = [
       ...staticRoutes,
-      ...districtRoutes,
+      ...districtRoutesDe,
+      ...districtRoutesEn,
       ...pageRoutes,
       ...postRoutes,
       ...industryRoutes,

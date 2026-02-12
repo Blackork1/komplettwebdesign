@@ -257,6 +257,7 @@ app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);
 app.use("/webdesign-berlin", districtRoutes);
+app.use("/en/webdesign-berlin", districtRoutes);
 app.use(adminLogs);
 app.use(industriesRoutes);
 app.use('/admin', adminIndustriesRoutes);
