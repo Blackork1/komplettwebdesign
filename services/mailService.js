@@ -16,6 +16,43 @@ const transporter = nodemailer.createTransport({
 
 export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
     const isEn = normalizeLocale(locale) === "en";
+    const isWithoutAppointment = !appointment || appointment.title === "Ohne Termin";
+
+    if (isWithoutAppointment) {
+        const subject = isEn
+            ? {
+                pending: "We received your request - Webdesign Berlin",
+                confirmed: "Confirmation of your request - Webdesign Berlin",
+                cancelled: "Update regarding your request - Webdesign Berlin"
+            }[type]
+            : {
+                pending: "Ihre Anfrage ist eingegangen - Webdesign Berlin",
+                confirmed: "Bestätigung Ihrer Anfrage - Webdesign Berlin",
+                cancelled: "Aktualisierung zu Ihrer Anfrage - Webdesign Berlin"
+            }[type];
+
+        const html = isEn
+            ? `
+      <p>Hello ${name}</p>
+      <p>Thank you for your interest. I would first like to confirm your request.</p>
+      <p>Please let me know when you are available for a non-binding conversation. We can also meet at your location, and then discuss everything else together.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+      `
+            : `
+      <p>Hallo ${name}</p>
+      <p>Vielen Dank für Ihr Interesse. Hiermit bestätige ich zunächst Ihre Anfrage.</p>
+      <p>Teilen Sie mir kurz mit, wann sie für ein unverbindliches Gespräche zur Verfügung stehen würden, gerne auch bei Ihnen vor Ort und dann besprechen wir alles weitere zusammen.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+      `;
+
+        return transporter.sendMail({
+            from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+            to,
+            subject,
+            html
+        });
+    }
+
     /* Datum hübsch formatiert (z.B. "Mo., 15.07.2025 um 14:00 Uhr") */
     const pretty = isEn
         ? format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'at' HH:mm", { locale: enUS })
@@ -59,7 +96,7 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
         }</p>
     <p><strong>Appointment:</strong> ${pretty}</p>
     ${actionHtml}
-    <p>Best regards<br>Komplettwebdesign</p>
+    <p>Best regards<br>Komplett Webdesign</p>
     `
         : `
     <p>Hallo ${name}</p>
@@ -71,12 +108,12 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
         }</p>
     <p><strong>Termin:</strong> ${pretty}</p>
     ${actionHtml}
-    <p>Beste Grüße<br>Komplettwebdesign</p>
+    <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
 
     /* Mail Objekt zusammenstellen */
     const mail = {
-        from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
         html,
@@ -100,10 +137,10 @@ export async function sendRequestMail({ to, name }) {
     const html = `
         <p>Hallo ${name}</p>
         <p>vielen Dank für die Anfrage. Wir melden uns in Kürze bei dir.</p>
-        <p>Beste Grüße<br>Komplettwebdesign</p>
+        <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
     const mail = {
-        from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
         html
@@ -134,7 +171,7 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
     `;
 
     const mail = {
-        from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: 'kontakt@komplettwebdesign.de',
         subject,
         html

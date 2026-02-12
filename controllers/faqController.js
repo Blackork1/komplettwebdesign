@@ -72,7 +72,7 @@ export async function renderFaqPage(req, res) {
     const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/faq`;
 
     res.render('faq', {
-      title: 'Häufige Fragen – KomplettWebdesign',
+      title: 'Häufige Fragen – Komplett Webdesign',
       description: 'Hier findest du Antworten auf häufig gestellte Fragen zu Leistungen, Preisen, Ablauf, Technik & DSGVO.',
       keywords: 'faq webdesign berlin, webseite erstellen lassen fragen, webdesign berlin kosten faq',
       seoExtra: `

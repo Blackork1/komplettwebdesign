@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<%= isEn ? 'en' : 'de' %>">
 
 <head>
   <%- include('partials/head') %>
   <!-- Annahme: Enthält Bootstrap CSS etc. -->
-  <title>Unsere Website Pakete - Premium Webdesign Pakete</title>
+  <title><%= isEn ? 'Our Website Packages - Premium Web Design Packages' : 'Unsere Website Pakete - Premium Webdesign Pakete' %></title>
 </head>
 
 <body>
@@ -14,28 +14,29 @@
     <section class="packages-hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <span class="hero-badge">Websitepakete für Selbstständige &amp; KMU</span>
-          <h1 class="hero-title">Was kostet eine Professionelle Website?</h1>
+          <span class="hero-badge"><%= isEn ? 'Website packages for freelancers &amp; SMEs' : 'Websitepakete für Selbstständige &amp; KMU' %></span>
+          <h1 class="hero-title"><%= isEn ? 'How much does a professional website cost?' : 'Was kostet eine Professionelle Website?' %></h1>
           <h2 class="hero-subtitle">
-            Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt –
-            wir begleiten Sie mit Design, Technik, Inhalt und Wartung. Finden Sie das
-            Paket, das zu Ihrem Unternehmen passt.
+            <%= isEn
+              ? 'From a fast landing page to a tailored premium presence - we support you with design, technology, content and maintenance. Find the package that fits your business.'
+              : 'Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt – wir begleiten Sie mit Design, Technik, Inhalt und Wartung. Finden Sie das Paket, das zu Ihrem Unternehmen passt.'
+            %>
           </h2>
           <ul class="hero-highlights">
-            <li>Responsive Designs mit individuellen Brand-Farben</li>
-            <li>Texte, SEO-Basics &amp; rechtliche Seiten inklusive</li>
-            <li>Optionaler Wartungsservice &amp; persönliche Beratung</li>
+            <li><%= isEn ? 'Responsive designs with custom brand colors' : 'Responsive Designs mit individuellen Brand-Farben' %></li>
+            <li><%= isEn ? 'Copywriting, SEO basics &amp; legal pages included' : 'Texte, SEO-Basics &amp; rechtliche Seiten inklusive' %></li>
+            <li><%= isEn ? 'Optional maintenance service &amp; personal consulting' : 'Optionaler Wartungsservice &amp; persönliche Beratung' %></li>
           </ul>
           <div class="hero-actions">
-            <a class="btn btn-hero" href="#paket-angebote">Pakete entdecken</a>
-            <a class="btn btn-soft-outline" href="/kontakt">Kostenlose Beratung</a>
+            <a class="btn btn-hero" href="#paket-angebote"><%= isEn ? 'Explore packages' : 'Pakete entdecken' %></a>
+            <a class="btn btn-soft-outline" href="/kontakt"><%= isEn ? 'Free consultation' : 'Kostenlose Beratung' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="hero-image-frame">
             <picture>
               <source srcset="/images/preiseHero.webp" type="image/webp" />
-              <img src="/images/preiseHero.webp" alt="Websitepakete Basis, Business, Premium" loading="lazy" />
+              <img src="/images/preiseHero.webp" alt="<%= isEn ? 'Website packages Basic, Business, Premium' : 'Websitepakete Basis, Business, Premium' %>" loading="lazy" />
             </picture>
           </div>
         </div>
@@ -45,25 +46,30 @@
     <section class="packages-intro">
       <div class="container intro-grid">
         <article class="intro-card">
-          <h2>Schnell online – ohne Kompromisse</h2>
+          <h2><%= isEn ? 'Go live fast - without compromises' : 'Schnell online – ohne Kompromisse' %></h2>
           <p>
-            Wir liefern komplette Websites inklusive Design, Texten, SEO-Basics und
-            Technik. Sie konzentrieren sich auf Ihr Business, wir auf Ihren digitalen
-            Auftritt.
+            <%= isEn
+              ? 'We deliver complete websites including design, copy, SEO basics and technology. You focus on your business, we focus on your digital presence.'
+              : 'Wir liefern komplette Websites inklusive Design, Texten, SEO-Basics und Technik. Sie konzentrieren sich auf Ihr Business, wir auf Ihren digitalen Auftritt.'
+            %>
           </p>
         </article>
         <article class="intro-card">
-          <h2>Transparente Paketpreise</h2>
+          <h2><%= isEn ? 'Transparent package pricing' : 'Transparente Paketpreise' %></h2>
           <p>
-            Einmalige Erstellungskosten plus optionale Wartung – klar kalkuliert und
-            ohne versteckte Gebühren. Jedes Paket enthält Hosting, Sicherheit und DSGVO.
+            <%= isEn
+              ? 'One-time setup costs plus optional maintenance - clearly calculated and without hidden fees. Every package includes hosting, security and GDPR basics.'
+              : 'Einmalige Erstellungskosten plus optionale Wartung – klar kalkuliert und ohne versteckte Gebühren. Jedes Paket enthält Hosting, Sicherheit und DSGVO.'
+            %>
           </p>
         </article>
         <article class="intro-card">
-          <h2>Mehr Leads &amp; Vertrauen</h2>
+          <h2><%= isEn ? 'More leads &amp; trust' : 'Mehr Leads &amp; Vertrauen' %></h2>
           <p>
-            Conversion-orientierte Strukturen, klare Botschaften und vertrauensbildende
-            Elemente sorgen dafür, dass Besucher zu Kunden werden.
+            <%= isEn
+              ? 'Conversion-focused structures, clear messaging and trust-building elements turn visitors into customers.'
+              : 'Conversion-orientierte Strukturen, klare Botschaften und vertrauensbildende Elemente sorgen dafür, dass Besucher zu Kunden werden.'
+            %>
           </p>
         </article>
       </div>
@@ -90,13 +96,13 @@
               if (pkg.price && typeof pkg.price === 'string') return pkg.price;
               if (pkg.price_formatted) return pkg.price_formatted;
               if (pkg.price_amount_cents != null) {
-                return (Number(pkg.price_amount_cents) / 100).toLocaleString('de-DE', {
+                return (Number(pkg.price_amount_cents) / 100).toLocaleString(isEn ? 'en-US' : 'de-DE', {
                   style: 'currency',
                   currency: 'EUR'
                 });
               }
               if (pkg.price_amount != null) {
-                return Number(pkg.price_amount).toLocaleString('de-DE', {
+                return Number(pkg.price_amount).toLocaleString(isEn ? 'en-US' : 'de-DE', {
                   style: 'currency',
                   currency: 'EUR'
                 });
@@ -104,7 +110,23 @@
               return '';
             }
 
-            const fallbackFeatures = {
+            const fallbackFeatures = isEn ? {
+              basis: [
+                'Custom one-page design with clear structure',
+                'All essential legal pages &amp; GDPR setup included',
+                'Contact form &amp; Google Analytics setup (consent-ready)'
+              ],
+              business: [
+                'Multi-page business website including SEO fundamentals',
+                'Copywriting for key pages &amp; conversion-focused CTAs',
+                'Integrations for calendar, blog or lead tools as needed'
+              ],
+              premium: [
+                'Strategic UX workshops &amp; custom conversion flows',
+                'Comprehensive content production (copy, visuals, animations)',
+                'Ongoing support with performance reports &amp; optimization'
+              ]
+            } : {
               basis: [
                 'Individuelles Onepager-Design mit klarer Struktur',
                 'Alle wichtigen rechtlichen Seiten &amp; DSGVO umgesetzt',
@@ -121,6 +143,12 @@
                 'Laufende Betreuung mit Performance-Reports &amp; Optimierungen'
               ]
             };
+
+            const translatedDescriptions = isEn ? {
+              basis: 'Fast start: modern one-page or small website including design, GDPR setup, basic SEO and hosting.',
+              business: 'More pages, more leads: conversion-focused structure, advanced SEO and tracking.',
+              premium: 'All-in solution: custom design, content creation, strong SEO, maintenance and support.'
+            } : {};
 
             const visiblePackages = (packages || []).filter(pkg => pkg && pkg.display !== false);
           %>
@@ -145,19 +173,19 @@
         <article class="package-row <%= index % 2 === 1 ? 'is-reversed' : '' %>">
           <div class="package-visual">
             <div class="package-frame">
-              <img src="<%= imagePath %>" alt="<%= pkg.name %> Paket" loading="lazy" />
-              <a class="package-overlay" href="/pakete/<%= slug %>" aria-label="Mehr erfahren über das <%= pkg.name %>-Paket">
-                <span>Zum <%= pkg.name %>-Paket</span>
+              <img src="<%= imagePath %>" alt="<%= isEn ? `${pkg.name} package` : `${pkg.name} Paket` %>" loading="lazy" />
+              <a class="package-overlay" href="/pakete/<%= slug %><%= isEn ? '?lng=en' : '' %>" aria-label="<%= isEn ? `Learn more about the ${pkg.name} package` : `Mehr erfahren über das ${pkg.name}-Paket` %>">
+                <span><%= isEn ? `View ${pkg.name} package` : `Zum ${pkg.name}-Paket` %></span>
               </a>
             </div>
           </div>
           <div class="package-content">
             <div class="package-header">
               <span class="package-index">0<%= index + 1 %></span>
-              <span class="package-eyebrow">Komplettpaket <%= pkg.name %></span>
+              <span class="package-eyebrow"><%= isEn ? `Complete package ${pkg.name}` : `Komplettpaket ${pkg.name}` %></span>
             </div>
-            <h2 class="package-title"><%= pkg.name %>-Paket</h2>
-            <p class="package-description"><%= pkg.description %></p>
+            <h2 class="package-title"><%= isEn ? `${pkg.name} package` : `${pkg.name}-Paket` %></h2>
+            <p class="package-description"><%= translatedDescriptions[normalizedKey] || pkg.description %></p>
             <% if (featureList.length) { %>
             <ul class="package-features">
               <% featureList.forEach(feature => { %>
@@ -169,21 +197,21 @@
             </ul>
             <% } %>
             <div class="package-meta">
-              <span class="price-label">Preis ab</span>
+              <span class="price-label"><%= isEn ? 'Starting at' : 'Preis ab' %></span>
               <span class="price-amount"><%= priceDisplay %></span>
             </div>
             <div class="package-actions">
-              <a class="btn btn-hero" href="/pakete/<%= slug %>">
-                Details ansehen
+              <a class="btn btn-hero" href="/pakete/<%= slug %><%= isEn ? '?lng=en' : '' %>">
+                <%= isEn ? 'View details' : 'Details ansehen' %>
               </a>
-              <a class="btn btn-soft-outline" href="/kontakt">Jetzt beraten lassen</a>
+              <a class="btn btn-soft-outline" href="/kontakt"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
             </div>
           </div>
         </article>
         <% }) %>
         <% } else { %>
         <div class="text-center py-5">
-          <p>Aktuell sind keine Pakete verfügbar. Bitte schauen Sie später noch einmal vorbei.</p>
+          <p><%= isEn ? 'No packages are currently available. Please check back later.' : 'Aktuell sind keine Pakete verfügbar. Bitte schauen Sie später noch einmal vorbei.' %></p>
         </div>
         <% } %>
       </div>
@@ -192,13 +220,15 @@
     <section class="packages-cta">
       <div class="container cta-inner">
         <div>
-          <h2>Bereit für Ihren neuen Webauftritt?</h2>
+          <h2><%= isEn ? 'Ready for your new website?' : 'Bereit für Ihren neuen Webauftritt?' %></h2>
           <p>
-            Wir kombinieren Design, Performance und Suchmaschinenoptimierung, damit
-            Ihr Unternehmen online sichtbar wird.
+            <%= isEn
+              ? 'We combine design, performance and search optimization so your business becomes visible online.'
+              : 'Wir kombinieren Design, Performance und Suchmaschinenoptimierung, damit Ihr Unternehmen online sichtbar wird.'
+            %>
           </p>
         </div>
-        <a class="btn btn-hero" href="/kontakt">Unverbindliches Erstgespräch sichern</a>
+        <a class="btn btn-hero" href="/kontakt"><%= isEn ? 'Book a free initial consultation' : 'Unverbindliches Erstgespräch sichern' %></a>
       </div>
     </section>
   </main>
@@ -210,13 +240,13 @@
       "itemListElement": [{
           "@type": "ListItem",
           "position": 1,
-          "name": "Startseite",
+          "name": "<%= isEn ? 'Home' : 'Startseite' %>",
           "item": "https://www.komplettwebdesign.de/"
         },
         {
           "@type": "ListItem",
           "position": 2,
-          "name": "Pakete",
+          "name": "<%= isEn ? 'Packages' : 'Pakete' %>",
           "item": "https://www.komplettwebdesign.de/pakete"
         }
       ]
@@ -227,10 +257,10 @@
     {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      "name": "Website-Pakete – Komplett Webdesign Berlin",
+      "name": "<%= isEn ? 'Website Packages - Komplett Webdesign Berlin' : 'Website-Pakete – Komplett Webdesign Berlin' %>",
       "url": "https://www.komplettwebdesign.de/pakete",
-      "description": "Website-Pakete für Berlin & Brandenburg: Basis, Business und Premium mit Design, Text, SEO, Hosting & Wartung.",
-      "inLanguage": "de",
+      "description": "<%= isEn ? 'Website packages for Berlin & Brandenburg: Basic, Business and Premium including design, copy, SEO, hosting and maintenance.' : 'Website-Pakete für Berlin & Brandenburg: Basis, Business und Premium mit Design, Text, SEO, Hosting & Wartung.' %>",
+      "inLanguage": "<%= isEn ? 'en' : 'de' %>",
       "isPartOf": {
         "@type": "WebSite",
         "name": "Komplett Webdesign",
@@ -248,11 +278,11 @@
           "@type": "ListItem",
           "position": 1,
           "url": "https://www.komplettwebdesign.de/pakete/basis",
-          "name": "Basis-Paket",
+          "name": "<%= isEn ? 'Basic package' : 'Basis-Paket' %>",
           "item": {
             "@type": "Product",
-            "name": "Basis-Paket",
-            "description": "Der schnelle Einstieg: moderne Onepager/kleine Seite inkl. Design, DSGVO, Basis-SEO & Hosting.",
+            "name": "<%= isEn ? 'Basic package' : 'Basis-Paket' %>",
+            "description": "<%= isEn ? 'Fast start: modern one-page or small website including design, GDPR setup, basic SEO and hosting.' : 'Der schnelle Einstieg: moderne Onepager/kleine Seite inkl. Design, DSGVO, Basis-SEO & Hosting.' %>",
             "brand": {
               "@type": "Brand",
               "name": "Komplett Webdesign"
@@ -276,11 +306,11 @@
           "@type": "ListItem",
           "position": 2,
           "url": "https://www.komplettwebdesign.de/pakete/business",
-          "name": "Business-Paket",
+          "name": "<%= isEn ? 'Business package' : 'Business-Paket' %>",
           "item": {
             "@type": "Product",
-            "name": "Business-Paket",
-            "description": "Mehr Seiten, mehr Leads: Conversion-optimierte Struktur, erweitertes SEO & Tracking.",
+            "name": "<%= isEn ? 'Business package' : 'Business-Paket' %>",
+            "description": "<%= isEn ? 'More pages, more leads: conversion-focused structure, advanced SEO and tracking.' : 'Mehr Seiten, mehr Leads: Conversion-optimierte Struktur, erweitertes SEO & Tracking.' %>",
             "brand": {
               "@type": "Brand",
               "name": "Komplett Webdesign"
@@ -304,11 +334,11 @@
           "@type": "ListItem",
           "position": 3,
           "url": "https://www.komplettwebdesign.de/pakete/premium",
-          "name": "Premium-Paket",
+          "name": "<%= isEn ? 'Premium package' : 'Premium-Paket' %>",
           "item": {
             "@type": "Product",
-            "name": "Premium-Paket",
-            "description": "Rundum-sorglos: individuelles Design, Content-Erstellung, starke SEO, Wartung & Support.",
+            "name": "<%= isEn ? 'Premium package' : 'Premium-Paket' %>",
+            "description": "<%= isEn ? 'All-in solution: custom design, content creation, strong SEO, maintenance and support.' : 'Rundum-sorglos: individuelles Design, Content-Erstellung, starke SEO, Wartung & Support.' %>",
             "brand": {
               "@type": "Brand",
               "name": "Komplett Webdesign"
@@ -350,42 +380,42 @@
       "@type": "FAQPage",
       "mainEntity": [{
           "@type": "Question",
-          "name": "Welches Paket passt zu mir?",
+          "name": "<%= isEn ? 'Which package fits my project?' : 'Welches Paket passt zu mir?' %>",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Für kleine Projekte reicht meist das Basis-Paket. Wächst das Projekt oder sind mehrere Unterseiten/Tracking nötig, ist Business ideal. Premium ist für individuelle Designs, Content und laufende Betreuung."
+            "text": "<%= isEn ? 'For small projects, the Basic package is usually enough. If your project grows or needs multiple pages and tracking, Business is ideal. Premium is the right choice for custom design, content and ongoing support.' : 'Für kleine Projekte reicht meist das Basis-Paket. Wächst das Projekt oder sind mehrere Unterseiten/Tracking nötig, ist Business ideal. Premium ist für individuelle Designs, Content und laufende Betreuung.' %>"
           }
         },
         {
           "@type": "Question",
-          "name": "Sind Hosting und Wartung inklusive?",
+          "name": "<%= isEn ? 'Are hosting and maintenance included?' : 'Sind Hosting und Wartung inklusive?' %>",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Ja, jedes Paket kann mit Hosting und Wartung gebucht werden. Im Premium-Paket ist die laufende Betreuung bereits enthalten."
+            "text": "<%= isEn ? 'Yes, every package can include hosting and maintenance. Ongoing support is already included in the Premium package.' : 'Ja, jedes Paket kann mit Hosting und Wartung gebucht werden. Im Premium-Paket ist die laufende Betreuung bereits enthalten.' %>"
           }
         },
         {
           "@type": "Question",
-          "name": "Wie schnell ist meine Website online?",
+          "name": "<%= isEn ? 'How quickly can my website go live?' : 'Wie schnell ist meine Website online?' %>",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Je nach Paket und Material (Texte/Bilder) zwischen 5 und 15 Werktagen. Express-Umsetzung ist nach Absprache möglich."
+            "text": "<%= isEn ? 'Depending on package and available content (copy/images), usually between 5 and 15 business days. Express delivery is possible on request.' : 'Je nach Paket und Material (Texte/Bilder) zwischen 5 und 15 Werktagen. Express-Umsetzung ist nach Absprache möglich.' %>"
           }
         },
         {
           "@type": "Question",
-          "name": "Gibt es feste Preise?",
+          "name": "<%= isEn ? 'Do you offer fixed prices?' : 'Gibt es feste Preise?' %>",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Ja. Basis 499 €, Business 899 €, Premium 1.499 €. Zusatzleistungen (z. B. Mehrsprachigkeit) werden transparent vorab angeboten."
+            "text": "<%= isEn ? 'Yes. Basic EUR 499, Business EUR 899, Premium EUR 1,499. Add-ons (e.g. multilingual setup) are quoted transparently in advance.' : 'Ja. Basis 499 €, Business 899 €, Premium 1.499 €. Zusatzleistungen (z. B. Mehrsprachigkeit) werden transparent vorab angeboten.' %>"
           }
         },
         {
           "@type": "Question",
-          "name": "Kann ich später upgraden?",
+          "name": "<%= isEn ? 'Can I upgrade later?' : 'Kann ich später upgraden?' %>",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Klar – du kannst jederzeit vom Basis- auf Business- oder Premium-Paket wechseln. Wir rechnen fair die Differenz an."
+            "text": "<%= isEn ? 'Absolutely. You can upgrade from Basic to Business or Premium at any time. We fairly apply the difference.' : 'Klar – du kannst jederzeit vom Basis- auf Business- oder Premium-Paket wechseln. Wir rechnen fair die Differenz an.' %>"
           }
         }
       ]

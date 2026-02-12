@@ -9,7 +9,7 @@ const router  = express.Router();
  */
 router.get('/impressum', (req, res) => {
   res.render('static/impressum', { 
-    title: 'Impressum | KomplettWebdesign',
+    title: 'Impressum | Komplett Webdesign',
     description: 'Hier finden Sie unser Impressum mit den rechtlichen Informationen zu unserem Unternehmen.'
   });
 });
@@ -20,7 +20,7 @@ router.get('/impressum', (req, res) => {
  */
 router.get('/datenschutz', (req, res) => {
   res.render('static/datenschutz', { 
-    title: 'Datenschutzerklärung | KomplettWebdesign',
+    title: 'Datenschutzerklärung | Komplett Webdesign',
     description: 'Hier finden Sie unsere Datenschutzerklärung, die erklärt, wie wir Ihre Daten schützen und verwenden.'
   });
 });

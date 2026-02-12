@@ -508,25 +508,27 @@
           .replace(/-+/g, '-');
       }
 
+      const isEnglish = typeof isEn !== 'undefined' && isEn;
+
       function formatPrice(pkg) {
         if (!pkg) return '';
         if (pkg.price && typeof pkg.price === 'string') {
           const priceValue = pkg.price.replace(/[^0-9.,]/g, '').replace(',', '.');
           const parsed = Number(priceValue);
           if (!Number.isNaN(parsed)) {
-            return parsed.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+            return parsed.toLocaleString(isEnglish ? 'en-US' : 'de-DE', { style: 'currency', currency: 'EUR' });
           }
           return pkg.price;
         }
         if (pkg.price_formatted) return pkg.price_formatted;
         if (pkg.price_amount_cents != null) {
-          return (Number(pkg.price_amount_cents) / 100).toLocaleString('de-DE', {
+          return (Number(pkg.price_amount_cents) / 100).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
             style: 'currency',
             currency: 'EUR'
           });
         }
         if (pkg.price_amount != null) {
-          return Number(pkg.price_amount).toLocaleString('de-DE', {
+          return Number(pkg.price_amount).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
             style: 'currency',
             currency: 'EUR'
           });
@@ -535,19 +537,64 @@
       }
 
       const slug = slugify(pack.slug || pack.name);
-      const priceDisplay = formatPrice(pack) || (pack.price ? `${pack.price} €` : 'Auf Anfrage');
-      const detailEntries = pack && pack.details && typeof pack.details === 'object'
-        ? Object.entries(pack.details).filter(([title, text]) => title && text)
-        : [];
+      const priceDisplay = formatPrice(pack) || (pack.price ? `${pack.price} €` : (isEnglish ? 'On request' : 'Auf Anfrage'));
+      const translatedDetailEntries = isEnglish ? {
+        basis: [
+          ['Design & Structure', 'Modern one-page website with strong visual hierarchy, smooth scrolling flow and responsive behavior for mobile devices.'],
+          ['Content & Legal', 'Core headline, service sections and about text, plus legal essentials such as imprint, privacy policy and cookie notices.'],
+          ['Technology & Support', 'Hosting, SSL certificate, load-time optimization and contact form integration including spam protection.']
+        ],
+        business: [
+          ['Multi-Page Concept', 'Structured page architecture for services, industries, team, references and optional campaign landing pages.'],
+          ['Content & SEO', 'Keyword-based copywriting, metadata, structured data and local SEO optimization for search visibility.'],
+          ['Integrations', 'Booking tools, newsletter systems, CRM connections or chat tools - setup included.']
+        ],
+        premium: [
+          ['Strategy & UX', 'Deep-dive kickoff, audience analysis, customer-journey mapping and wireframes for each page.'],
+          ['Content Production', 'Complete copy and visual production, optional photo shoots, plus animations and microinteractions.'],
+          ['Operations & Support', 'Monitoring, performance analysis, A/B testing, maintenance, security updates and priority support.']
+        ]
+      } : {};
+      const detailEntries = translatedDetailEntries[slug]
+        ? translatedDetailEntries[slug]
+        : (pack && pack.details && typeof pack.details === 'object'
+          ? Object.entries(pack.details).filter(([title, text]) => title && text)
+          : []);
 
-      const heroSubtitles = {
+      const heroSubtitles = isEnglish ? {
+        basis: 'Perfect for a fast and professional online presence - everything you need to get started.',
+        business: 'Built for ambitious businesses that want to generate leads and present multiple services clearly.',
+        premium: 'The all-in package including strategy, content production and ongoing support.',
+        default: 'Tailored to your business - design, technology, content and support from one source.'
+      } : {
         basis: 'Perfekt für den schnellen, professionellen Auftritt – alles drin, was du für den Start benötigst.',
         business: 'Für ambitionierte Unternehmen, die Leads generieren und mehrere Angebote klar strukturieren wollen.',
         premium: 'Das Rundum-sorglos-Paket inklusive Strategie, Content-Produktion und laufender Betreuung.',
         default: 'Individuell auf dein Unternehmen zugeschnitten – Design, Technik, Inhalte und Betreuung aus einer Hand.'
       };
 
-      const highlightMap = {
+      const highlightMap = isEnglish ? {
+        basis: [
+          'One-page website with a clear storyline for services, about and contact',
+          'Professional design including custom colors and typography',
+          'Legal pages, tracking setup and GDPR basics already prepared'
+        ],
+        business: [
+          'Multi-page website with dedicated landing pages for each offer',
+          'Conversion-focused copywriting including keyword research',
+          'Technical integrations such as booking tools or CRM connections'
+        ],
+        premium: [
+          'Strategic workshops and custom UX concepts',
+          'Content production included (copy, visuals, optional animations)',
+          'Ongoing optimization, support and prioritized response times'
+        ],
+        default: [
+          'Modern responsive web design focused on visibility',
+          'Clear conversion paths, strong messaging and SEO basics',
+          'Reliable technology, hosting and personal support'
+        ]
+      } : {
         basis: [
           'Onepager mit klarer Storyline für Leistungen, Über-uns und Kontakt',
           'Professionelles Design inklusive Farb- und Typografie-Anpassung',
@@ -570,7 +617,64 @@
         ]
       };
 
-      const deliverablesMap = {
+      const deliverablesMap = isEnglish ? {
+        basis: [
+          {
+            title: 'Design & Structure',
+            text: 'Modern one-page website with visual highlights, thoughtful scroll flow and responsive layout for mobile devices.'
+          },
+          {
+            title: 'Content & Legal',
+            text: 'Homepage headline, service blocks, about section, imprint, privacy policy and cookie notices.'
+          },
+          {
+            title: 'Technology & Support',
+            text: 'Hosting, SSL certificate, page-speed optimization and contact form setup including spam protection.'
+          }
+        ],
+        business: [
+          {
+            title: 'Multi-Page Concept',
+            text: 'Structured site architecture for services, industries, team, references and optional landing pages.'
+          },
+          {
+            title: 'Content & SEO',
+            text: 'Keyword-driven copywriting, metadata, structured data and optimization for local search.'
+          },
+          {
+            title: 'Integrations',
+            text: 'Booking, newsletter, CRM connections or chat tools - we handle the setup.'
+          }
+        ],
+        premium: [
+          {
+            title: 'Strategy & UX',
+            text: 'Intensive kickoff workshop, target audience analysis, customer journey maps and wireframes for each page.'
+          },
+          {
+            title: 'Content Production',
+            text: 'Complete copy and visual production, optional photo shoots, plus animations and microinteractions.'
+          },
+          {
+            title: 'Operations & Support',
+            text: 'Monitoring, performance analytics, A/B tests, maintenance, security updates and priority support.'
+          }
+        ],
+        default: [
+          {
+            title: 'Concept & Design',
+            text: 'We create a custom layout that strengthens your brand and performs across all devices.'
+          },
+          {
+            title: 'Content & SEO',
+            text: 'Includes copywriting, SEO fundamentals, metadata, snippets and structured data for better rankings.'
+          },
+          {
+            title: 'Technology & Support',
+            text: 'Hosting, security, maintenance and personal support keep operations smooth.'
+          }
+        ]
+      } : {
         basis: [
           {
             title: 'Design & Struktur',
@@ -629,7 +733,28 @@
         ]
       };
 
-      const processMap = {
+      const processMap = isEnglish ? {
+        basis: [
+          { label: 'Kickoff & Materials', description: 'We define your goals, collect assets and structure your one-page layout.' },
+          { label: 'Design & Build', description: 'Custom design, mobile optimization and complete technical setup.' },
+          { label: 'Launch & Handover', description: 'We test, publish and show you how to update content confidently.' }
+        ],
+        business: [
+          { label: 'Strategy Workshop', description: 'Analysis of target audiences, offers and conversion paths.' },
+          { label: 'Design & Content', description: 'We design multiple pages, write copy and integrate your tools.' },
+          { label: 'Launch & Optimization', description: 'Tracking setup, testing and handover training for your team.' }
+        ],
+        premium: [
+          { label: 'Discovery & Roadmap', description: 'Joint planning including UX research, brand guidelines and content roadmap.' },
+          { label: 'Production & Development', description: 'High-end design, custom components, automations and quality assurance.' },
+          { label: 'Go Live & Support', description: 'Continuous optimization, monitoring, growth sprints and support.' }
+        ],
+        default: [
+          { label: 'Analysis & Planning', description: 'We review goals, target audience and existing assets in detail.' },
+          { label: 'Design & Production', description: 'Concept, design, copy and technology delivered from one source.' },
+          { label: 'Launch & Support', description: 'After go-live, we support updates, SEO and future growth.' }
+        ]
+      } : {
         basis: [
           { label: 'Kick-off & Material', description: 'Wir besprechen Ziele, sammeln Inhalte und strukturieren den Onepager.' },
           { label: 'Design & Umsetzung', description: 'Individuelle Gestaltung, mobile Optimierung und technische Einrichtung.' },
@@ -652,7 +777,28 @@
         ]
       };
 
-      const addonsMap = {
+      const addonsMap = isEnglish ? {
+        basis: [
+          'Multilingual versions or additional sections can be added at any time.',
+          'Optional maintenance plans with content updates and security monitoring.',
+          'Hosting on German servers with daily backup and SSL certificate.'
+        ],
+        business: [
+          'Lead nurturing automations, CRM integrations and newsletter setup available.',
+          'Regular landing page optimization and conversion tracking on request.',
+          'Technical support including updates and prioritized response.'
+        ],
+        premium: [
+          'Marketing automations, ERP/CRM integrations and custom web app features.',
+          'Monthly performance workshops, KPI reporting and growth sprints.',
+          'Content refreshes, campaign landing pages and SLA-based support.'
+        ],
+        default: [
+          'Flexible add-ons such as blog, booking flow or member areas can be added anytime.',
+          'Maintenance, hosting and support are available modularly or as a flat package.',
+          'We advise on SEO, online marketing and conversion optimization.'
+        ]
+      } : {
         basis: [
           'Mehrsprachige Versionen oder zusätzliche Sektionen jederzeit erweiterbar.',
           'Optionale Wartungspakete inklusive Content-Updates und Sicherheitsmonitoring.',
@@ -675,7 +821,29 @@
         ]
       };
 
-      const previewPackages = [
+      const previewPackages = isEnglish ? [
+        {
+          slug: 'basis',
+          name: 'Basic',
+          description: 'Fast one-page launch - ideal for freelancers and early-stage projects.',
+          price: 'from EUR 499',
+          image: '/images/basis.webp'
+        },
+        {
+          slug: 'business',
+          name: 'Business',
+          description: 'Multi-page business presence focused on lead generation and growth.',
+          price: 'from EUR 899',
+          image: '/images/business.webp'
+        },
+        {
+          slug: 'premium',
+          name: 'Premium',
+          description: 'High-end presence including strategy, content production and support.',
+          price: 'from EUR 1,499',
+          image: '/images/premium.webp'
+        }
+      ] : [
         {
           slug: 'basis',
           name: 'Basis',
@@ -706,12 +874,15 @@
       const heroSubtitle = heroSubtitles[slug] || heroSubtitles.default;
       const isCurrent = preview => preview.slug === slug;
       const includesBaseFeatures = Boolean(pack.includes_base_features);
+      const packageLabel = isEnglish ? 'package' : 'Paket';
+      const packageNames = isEnglish ? { basis: 'Basic', business: 'Business', premium: 'Premium' } : { basis: 'Basis', business: 'Business', premium: 'Premium' };
+      const displayPackName = packageNames[slug] || pack.name;
     %>
     <section class="packages-hero package-detail-hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <span class="hero-badge">Komplettpaket <%= pack.name %></span>
-          <h1 class="hero-title"><%= pack.name %>-Paket</h1>
+          <span class="hero-badge"><%= isEnglish ? `Complete package ${displayPackName}` : `Komplettpaket ${displayPackName}` %></span>
+          <h1 class="hero-title"><%= isEnglish ? `${displayPackName} ${packageLabel}` : `${displayPackName}-${packageLabel}` %></h1>
           <p class="hero-subtitle"><%= heroSubtitle %></p>
           <ul class="hero-highlights">
             <% heroHighlights.forEach(item => { %>
@@ -720,21 +891,21 @@
           </ul>
           <div class="hero-meta">
             <div class="hero-price">
-              <span class="price-label">Investition ab</span>
+              <span class="price-label"><%= isEnglish ? 'Investment from' : 'Investition ab' %></span>
               <span class="price-amount"><%= priceDisplay %></span>
             </div>
             <% if (includesBaseFeatures) { %>
-            <p class="hero-note">✔ Enthält alle Leistungen des Basis-Pakets plus erweiterte Inhalte.</p>
+            <p class="hero-note"><%= isEnglish ? '✔ Includes all Basic package features plus extended deliverables.' : '✔ Enthält alle Leistungen des Basis-Pakets plus erweiterte Inhalte.' %></p>
             <% } %>
           </div>
           <div class="hero-actions">
-            <a class="btn btn-hero" href="#kontaktformular">Jetzt Beratung sichern</a>
-            <a class="btn btn-soft-outline" href="/pakete">Pakete vergleichen</a>
+            <a class="btn btn-hero" href="#kontaktformular"><%= isEnglish ? 'Book your consultation now' : 'Jetzt Beratung sichern' %></a>
+            <a class="btn btn-soft-outline" href="/pakete<%= isEnglish ? '?lng=en' : '' %>"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="hero-image-frame">
-            <img src="<%= pack.image && pack.image.startsWith('/') ? pack.image : `/images/${pack.image}` %>" alt="Vorschau des <%= pack.name %>-Pakets" loading="lazy" />
+            <img src="<%= pack.image && pack.image.startsWith('/') ? pack.image : `/images/${pack.image}` %>" alt="<%= isEnglish ? `Preview of the ${displayPackName} package` : `Vorschau des ${displayPackName}-Pakets` %>" loading="lazy" />
           </div>
         </div>
       </div>
@@ -743,11 +914,12 @@
     <section class="package-overview">
       <div class="container overview-grid">
         <div class="overview-intro">
-          <h2>Was das <%= pack.name %>-Paket einzigartig macht</h2>
+          <h2><%= isEnglish ? `What makes the ${displayPackName} package unique` : `Was das ${displayPackName}-Paket einzigartig macht` %></h2>
           <p>
-            Jede Umsetzung basiert auf einem klaren Plan: Wir analysieren deine Ziele, entwickeln ein schlüssiges
-            Storytelling und setzen das Design pixelgenau um. So entsteht eine Website, die Vertrauen schafft, Leads
-            generiert und langfristig wächst.
+            <%= isEnglish
+              ? 'Every project follows a clear plan: we analyze your goals, build coherent messaging and execute the design with precision. The result is a website that builds trust, generates leads and scales over time.'
+              : 'Jede Umsetzung basiert auf einem klaren Plan: Wir analysieren deine Ziele, entwickeln ein schlüssiges Storytelling und setzen das Design pixelgenau um. So entsteht eine Website, die Vertrauen schafft, Leads generiert und langfristig wächst.'
+            %>
           </p>
         </div>
         <div class="overview-cards">
@@ -764,7 +936,7 @@
     <% if (detailEntries.length) { %>
     <section class="package-detail-sections">
       <div class="container">
-        <h2>Leistungsumfang im Detail</h2>
+        <h2><%= isEnglish ? 'Detailed scope of services' : 'Leistungsumfang im Detail' %></h2>
         <div class="detail-grid">
           <% detailEntries.forEach(([title, text]) => { %>
           <article class="detail-card">
@@ -781,7 +953,7 @@
 
     <section class="package-process">
       <div class="container">
-        <h2>So läuft unsere Zusammenarbeit ab</h2>
+        <h2><%= isEnglish ? 'How our collaboration works' : 'So läuft unsere Zusammenarbeit ab' %></h2>
         <div class="process-timeline">
           <% processSteps.forEach((step, index) => { %>
           <div class="process-step">
@@ -799,10 +971,12 @@
     <section class="package-addons">
       <div class="container addons-grid">
         <div class="addons-intro">
-          <h2>Optionale Erweiterungen &amp; Services</h2>
+          <h2><%= isEnglish ? 'Optional extensions & services' : 'Optionale Erweiterungen & Services' %></h2>
           <p>
-            Ob Marketing-Automation, zusätzliche Landingpages oder laufende Wartung – wir schnüren genau das Paket,
-            das zu deinem Wachstum passt. Die wichtigsten Optionen auf einen Blick:
+            <%= isEnglish
+              ? 'Whether you need marketing automation, additional landing pages or ongoing maintenance - we tailor exactly what fits your growth. Key options at a glance:'
+              : 'Ob Marketing-Automation, zusätzliche Landingpages oder laufende Wartung – wir schnüren genau das Paket, das zu deinem Wachstum passt. Die wichtigsten Optionen auf einen Blick:'
+            %>
           </p>
         </div>
         <ul class="addons-list">
@@ -816,37 +990,39 @@
     <section class="package-contact" id="kontaktformular">
       <div class="container contact-inner">
         <div class="contact-copy">
-          <h2>Jetzt <%= pack.name %>-Paket anfragen</h2>
+          <h2><%= isEnglish ? `Request ${displayPackName} package now` : `Jetzt ${displayPackName}-Paket anfragen` %></h2>
           <p>
-            Wir melden uns innerhalb eines Werktags, klären offene Fragen und zeigen dir anhand einer Live-Vorschau,
-            wie deine neue Website aussehen kann. Das Beratungsgespräch ist kostenlos und unverbindlich.
+            <%= isEnglish
+              ? 'We get back to you within one business day, clarify open questions and show a live preview of what your new website can look like. The consultation is free and non-binding.'
+              : 'Wir melden uns innerhalb eines Werktags, klären offene Fragen und zeigen dir anhand einer Live-Vorschau, wie deine neue Website aussehen kann. Das Beratungsgespräch ist kostenlos und unverbindlich.'
+            %>
           </p>
           <% if (successMessage) { %>
           <div class="alert alert-success"><%= successMessage %></div>
           <% } %>
           <ul class="contact-highlights">
-            <li>Individueller Projektplan und transparente Kostenaufstellung</li>
-            <li>Optional: Termin für ein erstes Strategie-Gespräch wählen</li>
-            <li>Persönliche Ansprechpartner von Konzeption bis Launch</li>
+            <li><%= isEnglish ? 'Custom project roadmap with transparent pricing' : 'Individueller Projektplan und transparente Kostenaufstellung' %></li>
+            <li><%= isEnglish ? 'Optional: choose a slot for an initial strategy call' : 'Optional: Termin für ein erstes Strategie-Gespräch wählen' %></li>
+            <li><%= isEnglish ? 'Personal contact from concept to launch' : 'Persönliche Ansprechpartner von Konzeption bis Launch' %></li>
           </ul>
         </div>
         <div class="contact-form-wrapper">
-          <form action="/pakete/<%= slug %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
+          <form action="/pakete/<%= slug %>/kontakt<%= isEnglish ? '?lng=en' : '' %>" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
             <div class="form-group">
-              <label for="inputName">Ihr Name</label>
-              <input type="text" id="inputName" name="name" placeholder="Max Mustermann" required>
+              <label for="inputName"><%= isEnglish ? 'Your name' : 'Ihr Name' %></label>
+              <input type="text" id="inputName" name="name" placeholder="<%= isEnglish ? 'John Doe' : 'Max Mustermann' %>" required>
             </div>
             <div class="form-group">
-              <label for="inputEmail">Ihre E-Mail-Adresse</label>
-              <input type="email" id="inputEmail" name="email" placeholder="email@beispiel.de" required>
+              <label for="inputEmail"><%= isEnglish ? 'Your email address' : 'Ihre E-Mail-Adresse' %></label>
+              <input type="email" id="inputEmail" name="email" placeholder="<%= isEnglish ? 'email@example.com' : 'email@beispiel.de' %>" required>
             </div>
             <% if (slots && slots.length > 0) { %>
             <div class="form-group">
-              <label for="slot">Wunschtermin für Beratungsgespräch</label>
+              <label for="slot"><%= isEnglish ? 'Preferred consultation slot' : 'Wunschtermin für Beratungsgespräch' %></label>
               <select id="slot" name="slot">
                 <% slots.forEach(s => { %>
                 <option value="<%= s.id %>">
-                  <%= new Date(s.start_time).toLocaleString('de-DE', {
+                  <%= new Date(s.start_time).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
                     weekday: 'short', day: '2-digit', month: 'short',
                     hour: '2-digit', minute: '2-digit'
                   }) %>
@@ -855,38 +1031,38 @@
               </select>
             </div>
             <% } else { %>
-            <p class="no-slots">Zurzeit sind keine freien Termine buchbar. Wir melden uns zeitnah mit Terminvorschlägen.</p>
+            <p class="no-slots"><%= isEnglish ? 'No free appointment slots are currently available. We will contact you shortly with proposed times.' : 'Zurzeit sind keine freien Termine buchbar. Wir melden uns zeitnah mit Terminvorschlägen.' %></p>
             <% } %>
             <input type="hidden" name="token"><!-- reCAPTCHA -->
-            <input type="hidden" name="locale" value="de">
+            <input type="hidden" name="locale" value="<%= isEnglish ? 'en' : 'de' %>">
             <input type="hidden" name="package" value="<%= pack.name %>">
-            <button type="submit" class="btn btn-hero w-100">Unverbindliche Anfrage senden</button>
+            <button type="submit" class="btn btn-hero w-100"><%= isEnglish ? 'Send non-binding request' : 'Unverbindliche Anfrage senden' %></button>
           </form>
         </div>
       </div>
     </section>
 
-    <section class="package-previews" aria-label="Weitere Pakete im Überblick">
+    <section class="package-previews" aria-label="<%= isEnglish ? 'Additional package overview' : 'Weitere Pakete im Überblick' %>">
       <div class="container">
-        <h2>Alle Varianten im Vergleich</h2>
-        <p class="previews-subtitle">Hier siehst du die wichtigsten Unterschiede auf einen Blick – inklusive Vorschau für jede Variante.</p>
+        <h2><%= isEnglish ? 'Compare all options' : 'Alle Varianten im Vergleich' %></h2>
+        <p class="previews-subtitle"><%= isEnglish ? 'See the key differences at a glance, including a preview for each option.' : 'Hier siehst du die wichtigsten Unterschiede auf einen Blick – inklusive Vorschau für jede Variante.' %></p>
         <div class="previews-grid">
           <% previewPackages.forEach(preview => { %>
           <article class="preview-card <%= isCurrent(preview) ? 'is-current' : '' %>">
             <div class="preview-image">
-              <img src="<%= preview.image %>" alt="Design-Vorschau des <%= preview.name %>-Pakets" loading="lazy">
+              <img src="<%= preview.image %>" alt="<%= isEnglish ? `Design preview of the ${preview.name} package` : `Design-Vorschau des ${preview.name}-Pakets` %>" loading="lazy">
             </div>
             <div class="preview-body">
-              <span class="preview-label">Website-Paket</span>
+              <span class="preview-label"><%= isEnglish ? 'Website package' : 'Website-Paket' %></span>
               <h3><%= preview.name %></h3>
               <p><%= preview.description %></p>
               <div class="preview-meta">
                 <span class="preview-price"><%= preview.price %></span>
                 <% if (isCurrent(preview)) { %>
-                <span class="preview-current">Aktuell ausgewählt</span>
+                <span class="preview-current"><%= isEnglish ? 'Currently selected' : 'Aktuell ausgewählt' %></span>
                 <% } %>
               </div>
-              <a class="btn btn-soft-outline" href="/pakete/<%= preview.slug %>">Vorschau ansehen</a>
+              <a class="btn btn-soft-outline" href="/pakete/<%= preview.slug %><%= isEnglish ? '?lng=en' : '' %>"><%= isEnglish ? 'View preview' : 'Vorschau ansehen' %></a>
             </div>
           </article>
           <% }) %>

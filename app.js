@@ -212,7 +212,7 @@ app.get('/', async (req, res) => {
         res.render('index', {
             title: 'Willkommen auf meinen Seite KomplettWebdesign!',
             description: 'Hier findest du alles rund um Webdesign, Webentwicklung und Online-Marketing.',
-            keywords: 'Webdesign, Webentwicklung, Online-Marketing, Komplettwebdesign, Webseite erstellen lassen, Handwerker Website erstellen lassen',
+            keywords: 'Webdesign, Webentwicklung, Online-Marketing, Komplett Webdesign, Webseite erstellen lassen, Handwerker Website erstellen lassen',
             users: result.rows,
             latestPost,
             review,

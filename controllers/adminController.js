@@ -157,7 +157,7 @@ export async function deleteAppointment(req, res) {
 /* ------------------------------------------------------------------ */
 export async function listBookings(_req, res) {
   const { rows } = await pool.query(`
-    SELECT b.*, a.start_time, a.end_time
+    SELECT b.*, a.start_time, a.end_time, a.title AS appointment_title
       FROM bookings b
       JOIN appointments a ON a.id = b.appointment_id
     ORDER BY a.start_time`);
@@ -210,19 +210,23 @@ export async function cancelBooking(req, res) {
   const booking = rows[0];
   const locale = await resolveBookingLocale(booking);
 
-  /* Slot wieder freigeben */
-  await pool.query(
-    'UPDATE appointments SET is_booked = FALSE WHERE id = $1',
-    [booking.appointment_id]);
-
   /* Kunde informieren */
   const { rows: aptRows } = await pool.query(
     'SELECT * FROM appointments WHERE id = $1',
     [booking.appointment_id]);
+  const appointment = aptRows[0];
+
+  /* Slot wieder freigeben (außer Placeholder "Ohne Termin") */
+  if (appointment?.title !== 'Ohne Termin') {
+    await pool.query(
+      'UPDATE appointments SET is_booked = FALSE WHERE id = $1',
+      [booking.appointment_id]);
+  }
+
   await sendBookingMail({
     to: booking.email,
     name: booking.name,
-    appointment: aptRows[0],
+    appointment,
     type: 'cancelled',
     locale
   });

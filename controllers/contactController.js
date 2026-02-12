@@ -437,7 +437,7 @@ export const processForm = [
                 <p>${lng === "en"
                     ? "We will get back to you shortly to discuss the details."
                     : "Wir werden uns in Kürze bei dir melden, um die Details zu besprechen."}</p>
-                <p>${lng === "en" ? "Best regards" : "Mit freundlichen Grüßen"}<br>${lng === "en" ? "Your KomplettWebdesign team" : "Dein KomplettWebdesign-Team"}</p>
+                <p>${lng === "en" ? "Best regards" : "Mit freundlichen Grüßen"}<br>${lng === "en" ? "Your Komplett Webdesign team" : "Dein Komplett Webdesign-Team"}</p>
             `;
 
             const attachments = [];
@@ -453,14 +453,14 @@ export const processForm = [
 
 
             await transporter.sendMail({
-                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+                from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: req.body.email,
                 subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
                 html: summaryHtml,
                 attachments
             });
             await transporter.sendMail({
-                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+                from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: 'kontakt@komplettwebdesign.de',
                 subject: `Neue Kontaktanfrage von ${req.body.name}`,
                 html: summaryHtml,
@@ -496,6 +496,7 @@ export const processForm = [
 /* ---------- POST /webdesign-berlin/kontakt --------------------------- */
 export async function processWebdesignBerlinForm(req, res) {
     const lng = resolveContactLocale(req);
+    const db = req.app.get("db");
     const token = toCleanString(req.body.token);
     if (token) {
         try {
@@ -643,7 +644,30 @@ export async function processWebdesignBerlinForm(req, res) {
         normalized.timeline && `${labels.timeline}: ${normalized.timeline}`
     ]);
 
+    let booking = null;
     try {
+        if (db) {
+            const startTime = new Date();
+            const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+            const { rows: aptRows } = await db.query(
+                `INSERT INTO appointments (start_time, end_time, title, is_booked)
+                 VALUES ($1, $2, $3, TRUE)
+                 RETURNING id`,
+                [startTime.toISOString(), endTime.toISOString(), "Ohne Termin"]
+            );
+
+            const appointmentId = aptRows[0]?.id;
+            if (appointmentId) {
+                booking = await Book.create(
+                    appointmentId,
+                    normalized.name,
+                    normalized.email,
+                    lng === "en" ? "Without appointment slot (webdesign-berlin form)" : "Ohne Termin (webdesign-berlin Formular)",
+                    lng
+                );
+            }
+        }
+
         await CReq.create({
             paket: normalized.projectType || "Webdesign Berlin Anfrage",
             umfang: normalized.goals || null,
@@ -651,7 +675,7 @@ export async function processWebdesignBerlinForm(req, res) {
             bilderstellung: "n/a",
             features: normalized.services.length ? normalized.services.join(", ") : "",
             featuresOther: featuresOther || summaryPlain,
-            bookingId: null,
+            bookingId: booking?.id || null,
             name: normalized.name,
             email: normalized.email,
             phone: normalized.phone || "",
@@ -702,7 +726,7 @@ export async function processWebdesignBerlinForm(req, res) {
     if (hasValidEmail) {
         mailPromises.push(
             transporter.sendMail({
-                from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+                from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: normalized.email,
                 subject: lng === "en"
                     ? "Confirmation of your request - Webdesign Berlin"
@@ -713,7 +737,7 @@ export async function processWebdesignBerlinForm(req, res) {
     }
     mailPromises.push(
         transporter.sendMail({
-            from: '"KomplettWebdesign" <kontakt@komplettwebdesign.de>',
+            from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
             to: 'kontakt@komplettwebdesign.de',
             replyTo: hasValidEmail ? normalized.email : undefined,
             subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,

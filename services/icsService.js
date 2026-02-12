@@ -9,7 +9,7 @@ import ical from 'ical-generator';
 
 export function generateICS(apt, status ="pending"){
     const cal = ical ({
-        name: "KomplettWebdesign Termin",
+        name: "Komplett Webdesign Termin",
         domain: "komplettwebdesign.de",
         prodId: "//KomplettWebdesign//Booking 1.0//DE",
         timezone: "Europe/Berlin",
@@ -20,9 +20,9 @@ export function generateICS(apt, status ="pending"){
         start: new Date(apt.start_time),
         end: new Date(apt.end_time),
         summary: apt.title || "Beratungsgespräch",
-        description: "Termin über die Komplettwebdesign-Buchungsplattform",
+        description: "Termin über die Komplett Webdesign-Buchungsplattform",
         organizer:{
-            name: "KomplettWebdesign",
+            name: "Komplett Webdesign",
             email: "kontakt@komplettwebdesign.de"
         },
         status: status === "confirmed" ? "CONFIRMED" : "TENTATIVE",
