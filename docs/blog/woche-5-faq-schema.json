@@ -1,0 +1,94 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist wichtiger: UX oder UI Design?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beides ist unverzichtbar. UX sorgt fuer Nutzbarkeit und klare Struktur, UI macht diese Struktur sichtbar, verstaendlich und attraktiv. Erst das Zusammenspiel erzeugt ein starkes Nutzungserlebnis."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann eine Person sowohl UX als auch UI machen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Besonders in kleineren Teams uebernehmen viele Designer beide Bereiche. In groesseren Organisationen sind UX und UI haeufig als Spezialisierungen getrennt."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Brauche ich einen Psychologie-Hintergrund fuer UX Design?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. Du brauchst kein Psychologie-Studium, aber ein solides Verstaendnis fuer Wahrnehmung, Entscheidungsverhalten und kognitive Belastung hilft enorm und kann gezielt gelernt werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie viele Nutzer sollte ich fuer Usability-Tests rekrutieren?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Fuer qualitative Tests reichen oft schon etwa fuenf Personen pro Runde, wenn du iterativ arbeitest und zwischen den Runden verbesserst. Fuer A/B-Tests brauchst du deutlich groessere Stichproben."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen Wireframes und Mockups?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wireframes zeigen Struktur, Inhalte und Prioritaeten. Mockups zeigen das visuelle Endbild mit Farben, Typografie und UI-Details."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Muss ich coden koennen fuer UX/UI Design?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein, aber technisches Grundverstaendnis verbessert Entscheidungen, Realisierbarkeit und Kommunikation mit Entwicklern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie erstelle ich Personas, wenn ich keine User-Daten habe?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beginne mit Proto-Personas auf Basis von Marktforschung und Wettbewerbsanalyse. Validiere und verfeinere sie spaeter mit echten Interviews, Analytics und Nutzerfeedback."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen Prototypen und Wireframes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wireframes sind meist statisch. Prototypen sind klickbare, interaktive Ablaufe, mit denen du reale Nutzungsszenarien testen kannst."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie viel kostet professionelle UX Research?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Die Kosten reichen von nahezu kostenlos bis zu mehreren tausend Euro, je nach Methode. Schon mit kleinen Budgets sind jedoch wertvolle Tests moeglich."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich UX/UI selbst lernen oder brauche ich ein Studium?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Du kannst UX/UI sehr gut selbst lernen, wenn du strukturiert uebst, Feedback einholst und ein starkes Portfolio aufbaust."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie unterscheidet sich Mobile UX von Desktop UX?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mobile UX verlangt staerkere Priorisierung, groessere Touch-Ziele und schnellere Wege zum Ziel. Es ist kein verkleinertes Desktop-Layout, sondern ein eigener Nutzungskontext."
+      }
+    }
+  ]
+}
