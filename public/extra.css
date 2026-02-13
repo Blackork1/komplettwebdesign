@@ -172,6 +172,22 @@
   pointer-events: auto;
   transform: translateY(0);
 }
+
+@media (max-width: 1180px) {
+  .links.active a.btn.btn-secondary {
+    background: #0b2a46 !important;
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .links.active a.btn.btn-secondary:hover,
+  .links.active a.btn.btn-secondary:focus {
+    background: #163d63 !important;
+    color: #ffffff !important;
+  }
+}
 ‚
 
 /* ---------- Grafik-Container ---------- */

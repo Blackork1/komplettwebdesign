@@ -20,14 +20,14 @@
       </div>
 
       <div class="kwd-step kwd-step-times" hidden>
-        <button type="button" class="kwd-back-btn" data-back="days">← <%= isEn ? 'Back to calendar' : 'Zurueck zum Kalender' %></button>
+        <button type="button" class="kwd-back-btn" data-back="days">← <%= isEn ? 'Back to calendar' : 'Zurück zum Kalender' %></button>
         <h4 class="kwd-selected-date"></h4>
         <p class="kwd-step-subline"><%= isEn ? 'Choose a time:' : 'Waehle eine Uhrzeit:' %></p>
         <div class="kwd-time-list"></div>
       </div>
 
       <div class="kwd-step kwd-step-form" hidden>
-        <button type="button" class="kwd-back-btn" data-back="times">← <%= isEn ? 'Back to times' : 'Zurueck zu den Uhrzeiten' %></button>
+        <button type="button" class="kwd-back-btn" data-back="times">← <%= isEn ? 'Back to times' : 'Zurück zu den Uhrzeiten' %></button>
         <h4 class="kwd-selected-summary"></h4>
         <form class="kwd-booking-form" action="/booking" method="POST">
           <input type="hidden" name="slotId">
