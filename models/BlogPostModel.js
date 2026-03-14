@@ -19,7 +19,7 @@ export default class BlogPostModel {
     faq_json = []                       // optional, falls im Formular
   }) {
     if (!slug) {
-      const slug = slugify(title, { lower: true, strict: true });
+      slug = slugify(title, { lower: true, strict: true });
     }
     const { rows } = await pool.query(
       `INSERT INTO posts

@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was sind Mikrointeraktionen genau?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mikrointeraktionen sind kleine, gezielte Rückmeldungen auf Nutzeraktionen, etwa Hover-Effekte, Fokus-Hinweise oder Button-Bestätigungen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Verbessern Mikroanimationen die UX messbar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, wenn sie klare Rückmeldung geben und Interaktion verständlicher machen. Dann steigen oft Klickqualität und Bedienbarkeit."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sollte ich dafür große JS-Animationsbibliotheken einsetzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen Fällen nicht. Für Standardmuster reicht CSS meist aus, JavaScript sollte nur bei komplexeren Triggern ergänzt werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Effekte bringen den schnellsten Nutzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders effektiv sind Hover-Feedback, Scroll-Reveals bei Inhaltsblöcken und klare Button-Hinweise mit Active- und Focus-Zuständen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie verhindere ich, dass Motion überladen wirkt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Durch klare Priorisierung, kurze Dauer, konsistente Muster und den Verzicht auf gleichzeitige Effekte ohne funktionalen Mehrwert."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Rolle spielt Accessibility in diesem Thema?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Eine zentrale Rolle: Fokuszustände, Tastaturbedienbarkeit und reduced-motion-Unterstützung sind Pflicht für inklusive Motion-UX."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sind Scroll-Reveals auf jeder Seite sinnvoll?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. Sie sollten nur an relevanten Stellen eingesetzt werden, um Lesefluss und Orientierung zu verbessern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie messe ich den Erfolg von Mikrointeraktionen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mit Kennzahlen wie CTA-Klickrate, Formularabbrüchen, Interaktionsdauer und qualitativen UX-Feedbacks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Können Mikrointeraktionen die Performance spürbar verschlechtern?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Bei CSS-first Umsetzung meist kaum. Probleme entstehen eher durch übermäßiges JavaScript und unkontrollierte Effektketten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der beste Startpunkt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Starte mit den drei Kernmustern Hover-Feedback, Scroll-Reveal und Button-Hinweisen auf den wichtigsten Seiten."
+      }
+    }
+  ]
+}

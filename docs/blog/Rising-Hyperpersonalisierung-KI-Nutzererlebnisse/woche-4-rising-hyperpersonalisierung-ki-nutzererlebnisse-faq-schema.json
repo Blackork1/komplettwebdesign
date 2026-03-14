@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist Hyperpersonalisierung im Web genau?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hyperpersonalisierung passt Inhalte, CTAs, Empfehlungen und teilweise Layouts dynamisch an den aktuellen Kontext und das Verhalten eines Nutzers oder Segments an."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Worin unterscheidet sich das von normaler Personalisierung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Klassische Personalisierung arbeitet häufig mit einfachen, statischen Regeln. Hyperpersonalisierung kombiniert mehrere Signale in Echtzeit und optimiert kontinuierlich auf bessere Ergebnisse."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist Hyperpersonalisierung DSGVO-konform möglich?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, wenn Consent-Management, Datensparsamkeit, transparente Verarbeitung und klare Zweckbindung technisch und organisatorisch sauber umgesetzt werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Daten sind für den Start am wichtigsten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Für den Start reichen oft Verhaltensdaten wie Seitenaufrufe, Klickpfade, Scroll-Tiefe und Gerätetyp, solange sie konsistent und DSGVO-konform erhoben werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie schnell sind erste Ergebnisse sichtbar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen Projekten sind erste Effekte innerhalb weniger Wochen sichtbar, insbesondere bei CTA-Optimierung und segmentierten Hero-Inhalten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Braucht man dafür ein großes KI-Team?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. Ein kleines Team mit klarem Workflow, sauberem Tracking und priorisierten Use Cases kann bereits starke Ergebnisse erzielen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche KPI sind für den Business-Nutzen relevant?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders wichtig sind Absprungrate, Sitzungsdauer, CTA-Klickrate, Conversion-Rate und qualifizierte Leads oder Kaufabschlüsse pro Segment."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann man bestehende Websites nachrüsten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Die meisten Projekte starten mit einem Audit, definieren Kernsegmente und bauen Personalisierung schrittweise auf den wichtigsten Seiten ein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der häufigste Implementierungsfehler?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der häufigste Fehler ist zu frühe Komplexität: zu viele Segmente und Regeln ohne belastbare Daten und ohne klare Priorisierung auf Geschäftsziele."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Für welche Unternehmen ist das besonders sinnvoll?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders sinnvoll ist es für Unternehmen mit regelmäßigem Website-Traffic, klaren Conversion-Zielen und dem Anspruch, digitale Nutzererlebnisse kontinuierlich zu optimieren."
+      }
+    }
+  ]
+}

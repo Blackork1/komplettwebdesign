@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was bedeutet AI-Native Internet in einem Satz?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "AI-Native Internet bedeutet, dass Websites neben guter UX auch semantisch strukturierte Daten liefern, damit AI-Systeme Inhalte präzise verstehen, verknüpfen und korrekt wiedergeben können."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Reicht klassisches SEO heute noch aus?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Klassisches SEO bleibt wichtig, aber ohne semantische Struktur, klare Entitäten und strukturiertes Markup verlierst du Potenzial in AI-basierten Suchformaten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Schema-Typen sollte ich zuerst setzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Für Blog- und Wissensseiten sind BlogPosting oder Article, BreadcrumbList und FAQPage ein sinnvoller Start, solange sie exakt zum sichtbaren Inhalt passen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist FAQ-Markup auch dann sinnvoll, wenn kein Rich Result erscheint?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. FAQ-Markup verbessert die semantische Lesbarkeit. Auch ohne sichtbares Rich Result kann es Such- und AI-Systemen helfen, Fragen und Antworten klar zuzuordnen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie schreibe ich Content, der für Semantic Retrieval taugt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nutze klare Headings, beantworte die Kernfrage direkt, strukturiere Inhalte in eigenständige Abschnitte und benenne Entitäten sowie Bedingungen eindeutig."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sollte ich AI-Crawler komplett blockieren?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nur mit klarer Strategie. In vielen Fällen ist eine differenzierte Steuerung sinnvoller, damit Sichtbarkeit in Search-Formaten erhalten bleibt."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche KPI sind für AI-SEO zusätzlich relevant?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Neben Rankings und CTR sind die Validität strukturierter Daten, die semantische Vollständigkeit wichtiger Seiten und Quellennennungen in AI-Antworten wichtig."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der größte Fehler bei der Einführung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der häufigste Fehler ist, nur Markup einzubauen, ohne den sichtbaren Content semantisch zu strukturieren. Beides muss zusammenpassen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ein kleines Team das überhaupt umsetzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Mit einem klaren Template, einer festen QA-Liste und priorisierten Top-URLs lassen sich bereits in wenigen Wochen deutliche Verbesserungen erzielen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Woran erkenne ich, dass ich auf dem richtigen Weg bin?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wenn neue Inhalte konsistent strukturiert sind, Markup valide ist, interne Verlinkung thematisch funktioniert und Nutzer schneller zur gesuchten Antwort kommen, stimmt die Richtung."
+      }
+    }
+  ]
+}

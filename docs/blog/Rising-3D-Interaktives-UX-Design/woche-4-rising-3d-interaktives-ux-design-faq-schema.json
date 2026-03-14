@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Wann lohnt sich 3D in einer Website wirklich?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "3D lohnt sich besonders bei erklärungsbedürftigen Produkten, markenstarken Landingpages und interaktiven Demos mit klarem Nutzwert."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist WebGL immer die beste technische Lösung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nicht immer. WebGL ist stark für komplexe Szenen, aber je nach Ziel kann ein leichteres Canvas- oder CSS-Setup sinnvoller sein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum sind mobile Fallbacks so wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Weil sie sicherstellen, dass Inhalte auch auf leistungsschwächeren Geräten nutzbar bleiben und keine Experience-Ausfälle entstehen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie verhindere ich Performance-Probleme durch 3D?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mit klaren Budgets für Assetgrößen, kontrolliertem Lazy Loading, Framerate-Monitoring und automatisierten Build-Gates."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Rolle spielen Mikroanimationen in diesem Kontext?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mikroanimationen ergänzen 3D sinnvoll, indem sie Interaktionszustände klar kommunizieren und Nutzerführung präzisieren."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie berücksichtige ich Accessibility bei bewegungsreicher UX?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Durch Unterstützung von reduced-motion, klare Fokusführung und Verzicht auf übermäßige Dauerbewegung ohne Nutzerkontrolle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche KPI sind für immersive UX entscheidend?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders wichtig sind Interaktionsrate, Zeit bis zur Kernaktion, Framerate-Stabilität und Conversion-Entwicklung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich 3D-UX schrittweise in bestehende Projekte einbauen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, ein modularer Einstieg über einzelne hero- oder demo-nahe Bereiche ist meist der sicherste Weg."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Fehler passieren in 3D-Projekten am häufigsten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Häufige Fehler sind zu große Assets, fehlende Fallbacks, unklare Interaktionslogik und fehlende Performance-Überwachung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der wichtigste erste Schritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Starte mit einem klaren Pilot-Use-Case und definiere vor der Umsetzung feste Performance- und UX-Zielwerte."
+      }
+    }
+  ]
+}

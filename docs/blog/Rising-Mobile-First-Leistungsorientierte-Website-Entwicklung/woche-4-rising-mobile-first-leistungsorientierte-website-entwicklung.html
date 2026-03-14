@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Woche 4 Rising: Mobile-First und leistungsorientierte Website-Entwicklung</title>
+  <meta name="description" content="Woche 4 Rising: Mobile-First und leistungsorientierte Website-Entwicklung. Lerne, wie du Ladezeit, mobile UX und SEO mit Core Web Vitals, AVIF/WebP und Lighthouse-Audits systematisch optimierst.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+<article class="container my-5">
+  <div class="mx-auto" style="max-width: 900px;">
+
+    <!-- Header & Intro -->
+    <header class="mb-4">
+      <h1 class="display-5 fw-bold mb-3">
+        Woche 4 Rising: Mobile-First und leistungsorientierte Website-Entwicklung
+      </h1>
+
+      <h2 class="h4 fw-bold mb-3">
+        Wie du mobile Nutzerführung, Ladezeit und SEO in einem Prozess zusammenführst
+      </h2>
+
+      <p>
+        Mobile Nutzung ist längst Standard. Wer heute eine Website plant, muss davon ausgehen, dass ein großer Teil der Nutzerinnen und Nutzer zuerst über das Smartphone kommt. Genau deshalb rücken Suchanfragen wie „Webseiten Ladezeit verbessern“, „Mobile-First Websites“ und „Responsive Navigation“ immer stärker in den Fokus.
+      </p>
+
+      <p class="mb-3">
+        In der Praxis ist das Thema nicht nur technisch relevant, sondern geschäftskritisch: Wenn Seiten auf Mobilgeräten langsam laden, Navigationselemente schwer bedienbar sind oder Inhalte nicht klar priorisiert werden, sinken Sichtbarkeit, Interaktion und Conversion. Performance ist damit kein Nice-to-have, sondern eine grundlegende Qualitätsanforderung.
+      </p>
+
+      <p class="mb-3">
+        Dieser Beitrag zeigt dir einen umsetzbaren Ansatz für mobile-first und performanceorientierte Entwicklung: von priorisiertem Ressourcenladen über moderne Bildformate bis hin zu automatisierten Audits mit Lighthouse im Build-Prozess.
+      </p>
+
+      <p class="mb-2">
+        <strong>Am Ende dieses Artikels wirst du:</strong>
+      </p>
+      <ul class="mb-3">
+        <li>verstehen, warum Mobile-First und Performance zusammen gedacht werden müssen</li>
+        <li>Core Web Vitals praxisnah in Design- und Entwicklungsentscheidungen übersetzen können</li>
+        <li>responsive, fingerfreundliche Navigation systematisch planen können</li>
+        <li>AVIF/WebP, Lazy Loading und Priorisierung von Ressourcen sinnvoll einsetzen können</li>
+        <li>ein KPI- und CI/CD-Modell für kontinuierliche Performance-Qualität aufbauen können</li>
+      </ul>
+
+      <div class="d-flex flex-wrap gap-3 mb-4">
+        <span class="badge bg-secondary fs-6">Lesedauer: 20 Minuten</span>
+        <span class="badge bg-secondary fs-6">Umsetzungszeit: 60-90 Tage</span>
+        <span class="badge bg-secondary fs-6">Schwierigkeit: Mittelstufe bis Fortgeschritten</span>
+      </div>
+
+      <p class="fw-semibold mb-0">
+        Gute Performance ist die sichtbarste Form von Nutzerorientierung.
+      </p>
+    </header>
+
+    <hr class="my-5">
+
+    <!-- 1 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        1. Warum Mobile-First und Performance nicht trennbar sind
+      </h2>
+
+      <p>
+        Mobile-First bedeutet mehr als ein kleineres Layout. Es ist eine Priorisierungsstrategie: Was muss sofort sichtbar sein, was darf später geladen werden und welche Interaktionen müssen ohne Friktion funktionieren? Genau hier trifft UX direkt auf Performance.
+      </p>
+
+      <p>
+        Jede unnötige Datei, jedes übergroße Bild und jedes blockierende Skript wirkt auf Mobilgeräten stärker als auf Desktop. Deshalb ist eine mobile-first Denkweise die beste Basis für schnelle Seiten: Du entscheidest früher, was wirklich wichtig ist, und vermeidest Ballast im System.
+      </p>
+
+      <p>
+        Im deutschen Wettbewerb zählt das besonders. Viele Kundinnen und Kunden vergleichen Angebote schnell und wechseln ohne große Toleranz zur nächsten Seite, wenn die Erfahrung langsam oder unklar ist.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 2 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        2. Core Web Vitals als operative Leitplanken
+      </h2>
+
+      <p>
+        Core Web Vitals helfen, Performance nicht nur subjektiv zu bewerten, sondern messbar zu steuern. Die Kennzahlen zeigen, wie schnell Inhalte erscheinen, wie stabil das Layout bleibt und wie zuverlässig Interaktionen reagieren.
+      </p>
+
+      <p class="fw-semibold mb-2">Was die Werte im Projektalltag bedeuten:</p>
+      <ul class="mb-3">
+        <li><strong>LCP:</strong> Der wichtigste Inhaltsbereich muss schnell sichtbar werden.</li>
+        <li><strong>CLS:</strong> Layoutsprünge durch nachladende Elemente müssen minimiert werden.</li>
+        <li><strong>INP:</strong> Eingaben sollen ohne spürbare Verzögerung verarbeitet werden.</li>
+      </ul>
+
+      <p>
+        Diese Kennzahlen sind besonders wirksam, wenn sie früh im Sprint als Qualitätsziel definiert werden und nicht erst kurz vor Go-live in einem Einmalaudit auftauchen.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 3 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        3. Mobile UX: Fingerfreundliche Navigation als Basis
+      </h2>
+
+      <p>
+        Eine schnelle Seite bringt wenig, wenn Nutzerinnen und Nutzer nicht intuitiv navigieren können. Gerade auf Smartphones müssen Interaktionselemente groß genug, klar platziert und konsistent benannt sein.
+      </p>
+
+      <p class="fw-semibold mb-2">Wichtige Prinzipien:</p>
+      <ul class="mb-3">
+        <li>Touch-Ziele mit ausreichend Größe und Abstand</li>
+        <li>klarer visueller Fokus auf Hauptaktionen</li>
+        <li>reduzierte Menütiefe für kürzere Entscheidungswege</li>
+        <li>sichtbare aktive Zustände und eindeutige Rücksprunglogik</li>
+      </ul>
+
+      <p>
+        Besonders bei Navigation lohnt sich ein Mobile-First-Prototyp auf echten Geräten, weil Desktop-Simulationen typische Finger- und Kontextprobleme nur unvollständig zeigen.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 4 Mini-Grafik -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        4. Mini-Grafik: Prioritäten für mobile Performance
+      </h2>
+
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-3">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Priorität</th>
+              <th scope="col">Metrik</th>
+              <th scope="col">Strategie</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mobile UX</td>
+              <td>Fingerfreundliche Navigation</td>
+              <td>Responsives Layout</td>
+            </tr>
+            <tr>
+              <td>Geschwindigkeit</td>
+              <td>Core Web Vitals</td>
+              <td>Optimierte Assets</td>
+            </tr>
+            <tr>
+              <td>SEO</td>
+              <td>Lighthouse-Score</td>
+              <td>Automatisierte Audits</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Diese Matrix hilft, technische Maßnahmen direkt mit Business-Zielen zu verknüpfen.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 5 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        5. Sofortmaßnahmen mit hoher Wirkung
+      </h2>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">5.1 Ressourcen priorisiert laden</h3>
+      <p>
+        Lade nur das, was für den ersten sichtbaren Bereich wirklich notwendig ist. Nicht-kritische Skripte und sekundäre Medien sollten verzögert oder bedarfsgesteuert nachgeladen werden.
+      </p>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">5.2 Moderne Bildformate einsetzen</h3>
+      <p>
+        AVIF und WebP reduzieren Dateigrößen deutlich bei guter visueller Qualität. Zusammen mit responsiver Auslieferung sinkt die Last auf mobilen Verbindungen spürbar.
+      </p>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">5.3 Lazy Loading gezielt nutzen</h3>
+      <p>
+        Inhalte außerhalb des initialen Sichtbereichs sollten standardmäßig lazy geladen werden, damit der Start schneller reagiert und weniger Daten sofort übertragen werden.
+      </p>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">5.4 Skriptlast kontrollieren</h3>
+      <p>
+        Drittanbieter-Skripte sind häufig ein versteckter Performancekiller. Jede Integration braucht einen klaren Zweck, Monitoring und regelmäßige Bereinigung.
+      </p>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">5.5 Layoutstabilität absichern</h3>
+      <p>
+        Definiere feste Platzhaltergrößen für Medien und dynamische Blöcke, damit während des Ladens keine störenden Sprünge auftreten.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 6 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        6. Praktische Code-Bausteine
+      </h2>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Responsive Bilder mit AVIF/WebP</h3>
+      <pre class="bg-light p-3 rounded mb-3"><code>&lt;picture&gt;
+  &lt;source srcset="/img/hero.avif" type="image/avif"&gt;
+  &lt;source srcset="/img/hero.webp" type="image/webp"&gt;
+  &lt;img src="/img/hero.jpg" alt="Mobile-First Entwicklung" width="1200" height="675" loading="eager" decoding="async"&gt;
+&lt;/picture&gt;</code></pre>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Nicht-kritische Assets asynchron laden</h3>
+      <pre class="bg-light p-3 rounded mb-3"><code>&lt;link rel="preload" href="/css/main.min.css" as="style"&gt;
+&lt;link rel="stylesheet" href="/css/main.min.css"&gt;
+&lt;script src="/js/app.js" defer&gt;&lt;/script&gt;</code></pre>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Lazy Loading für Medien</h3>
+      <pre class="bg-light p-3 rounded mb-3"><code>&lt;img src="/img/feature.webp" alt="Feature" width="640" height="420" loading="lazy" decoding="async"&gt;
+&lt;iframe src="https://www.youtube.com/embed/..." loading="lazy" title="Produktvideo"&gt;&lt;/iframe&gt;</code></pre>
+
+      <p>
+        Solche Basistechniken sind schnell implementiert und liefern in vielen Projekten sofort bessere Messwerte.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 7 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        7. Performance-Budgets in CI/CD verankern
+      </h2>
+
+      <p>
+        Einzelne Audits nach Gefühl reichen nicht. Ein Performance-Budget definiert verbindliche Obergrenzen für Seitengröße, Skriptlast und Kennzahlen. So wird Performance zu einem festen Qualitätskriterium im Entwicklungsprozess.
+      </p>
+
+      <p class="fw-semibold mb-2">Typische Budget-Regeln:</p>
+      <ul class="mb-3">
+        <li>maximales Seitengewicht für zentrale Seitentypen</li>
+        <li>Mindestwerte für Lighthouse-Kategorien</li>
+        <li>Grenzwerte für LCP/INP/CLS in Build-Pipelines</li>
+        <li>Blockierung von Deployments bei klaren Verstößen</li>
+      </ul>
+
+      <p>
+        Damit wird Performance nicht zur optionalen Optimierung, sondern zum automatisierten Qualitäts-Gate.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 8 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        8. Performance-Reporting als Deliverable
+      </h2>
+
+      <p>
+        Viele Kundinnen und Kunden erwarten heute nachvollziehbare Ergebnisse statt rein technischer Aussagen. Ein strukturiertes Performance-Reporting macht Fortschritte sichtbar und stärkt die Zusammenarbeit.
+      </p>
+
+      <p class="fw-semibold mb-2">Ein gutes Reporting enthält:</p>
+      <ul class="mb-3">
+        <li>Vorher-Nachher-Vergleich der wichtigsten Seiten</li>
+        <li>Core-Web-Vitals-Entwicklung über mehrere Releases</li>
+        <li>Lighthouse-Scores mit Maßnahmenbezug</li>
+        <li>Auswirkungen auf Engagement- und Conversion-Kennzahlen</li>
+        <li>nächste Prioritäten für den Folgesprint</li>
+      </ul>
+
+      <p>
+        In Pitches ist das ein starker Differenzierungsfaktor, weil technische Qualität direkt in Geschäftsnutzen übersetzt wird.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 9 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        9. 90-Tage-Umsetzungsplan
+      </h2>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Phase 1 (Tag 1-30): Transparenz und Priorisierung</h3>
+      <ul class="mb-3">
+        <li>Bestandsaufnahme der wichtigsten Seitentypen und mobile Nutzungspfade</li>
+        <li>Baseline für Core Web Vitals und Lighthouse setzen</li>
+        <li>Top-Performancebremsen identifizieren (Bilder, Skripte, Layout)</li>
+        <li>erste Quick-Wins für Navigation und Ladezeit umsetzen</li>
+      </ul>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Phase 2 (Tag 31-60): Technische Stabilisierung</h3>
+      <ul class="mb-3">
+        <li>AVIF/WebP, Lazy Loading und Ressourcenpriorisierung standardisieren</li>
+        <li>fingerfreundliche Navigation auf allen Kernseiten konsolidieren</li>
+        <li>Performance-Budgets definieren und in CI/CD integrieren</li>
+        <li>automatisierte Audits in Build-Pipelines aktivieren</li>
+      </ul>
+
+      <h3 class="h4 fw-bold mt-4 mb-2">Phase 3 (Tag 61-90): Skalierung und Reporting</h3>
+      <ul class="mb-3">
+        <li>Maßnahmen auf weitere Seiten-Templates ausrollen</li>
+        <li>Performance-Dashboard für interne und externe Stakeholder einführen</li>
+        <li>regelmäßiges Monatsreporting als Deliverable etablieren</li>
+        <li>Optimierungs-Backlog für kontinuierliche Verbesserungen aufsetzen</li>
+      </ul>
+
+      <p>
+        Nach 90 Tagen sollte Performance fester Bestandteil deiner Delivery-Qualität sein und nicht mehr als Sonderprojekt laufen.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 10 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        10. Häufige Fehler in Mobile-First-Performance-Projekten
+      </h2>
+
+      <ul class="mb-3">
+        <li>Desktop-Design zuerst, Mobile nur nachträglich verkleinern</li>
+        <li>Performance nur einmalig vor Launch prüfen</li>
+        <li>zu viele Drittanbieter-Skripte ohne regelmäßige Kontrolle</li>
+        <li>keine verbindlichen Budgets oder Build-Gates definieren</li>
+        <li>fehlende Verknüpfung zwischen Technikmetriken und Conversion-Zielen</li>
+      </ul>
+
+      <p>
+        Wer diese Fehler vermeidet, erzielt meist schnell spürbare Verbesserungen für Nutzererlebnis und Sichtbarkeit.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- 11 -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        11. Fazit
+      </h2>
+
+      <p>
+        Mobile-First und performanceorientierte Website-Entwicklung sind im aktuellen Marktumfeld grundlegende Voraussetzungen für Sichtbarkeit, Vertrauen und Conversion. Besonders in Deutschland wird technische Qualität stark wahrgenommen und direkt mit Professionalität verbunden.
+      </p>
+
+      <p>
+        Der größte Hebel liegt in einem strukturierten Prozess: klare Prioritäten, moderne Auslieferungstechniken, automatisierte Qualitätsprüfungen und nachvollziehbares Reporting. So entsteht ein System, das nicht nur schnell startet, sondern dauerhaft stabil besser wird.
+      </p>
+
+      <p class="mb-0">
+        Wenn Performance messbar geführt wird, verbessert sich nicht nur der Code, sondern das gesamte digitale Ergebnis.
+      </p>
+    </section>
+
+    <hr class="my-5">
+
+    <!-- Sichtbare FAQ-Sektion -->
+    <section class="mb-5">
+      <h2 class="h3 fw-bold mb-3">
+        Häufig gestellte Fragen (FAQ)
+      </h2>
+
+      <div class="accordion" id="mobilePerfFaqAccordion">
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqOneHeading">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqOne" aria-expanded="true" aria-controls="mpFaqOne">
+              Was bedeutet mobile-first in der Entwicklung konkret?
+            </button>
+          </h3>
+          <div id="mpFaqOne" class="accordion-collapse collapse show" aria-labelledby="mpFaqOneHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Mobile-first bedeutet, Inhalte, Navigation und Performance zuerst für kleine Displays zu planen und danach für größere Geräte zu erweitern.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqTwoHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqTwo" aria-expanded="false" aria-controls="mpFaqTwo">
+              Warum sind Core Web Vitals so wichtig?
+            </button>
+          </h3>
+          <div id="mpFaqTwo" class="accordion-collapse collapse" aria-labelledby="mpFaqTwoHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Sie machen Lade- und Interaktionsqualität messbar und helfen, Performance-Entscheidungen objektiv statt nach Gefühl zu treffen.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqThreeHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqThree" aria-expanded="false" aria-controls="mpFaqThree">
+              Welche Maßnahmen bringen den schnellsten Effekt?
+            </button>
+          </h3>
+          <div id="mpFaqThree" class="accordion-collapse collapse" aria-labelledby="mpFaqThreeHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Häufig liefern optimierte Bilder, priorisiertes Laden kritischer Ressourcen und reduzierte Skriptlast die schnellsten Verbesserungen.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqFourHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqFour" aria-expanded="false" aria-controls="mpFaqFour">
+              Wie gestalte ich Navigation fingerfreundlich?
+            </button>
+          </h3>
+          <div id="mpFaqFour" class="accordion-collapse collapse" aria-labelledby="mpFaqFourHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Nutze ausreichend große Touch-Ziele, klare Abstände, einfache Hierarchien und gut sichtbare Hauptaktionen.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqFiveHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqFive" aria-expanded="false" aria-controls="mpFaqFive">
+              Sind AVIF und WebP heute Pflicht?
+            </button>
+          </h3>
+          <div id="mpFaqFive" class="accordion-collapse collapse" aria-labelledby="mpFaqFiveHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Für die meisten Projekte sind sie ein klarer Standard, weil sie bei guter Qualität deutlich kleinere Dateigrößen ermöglichen.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqSixHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqSix" aria-expanded="false" aria-controls="mpFaqSix">
+              Was ist ein Performance-Budget?
+            </button>
+          </h3>
+          <div id="mpFaqSix" class="accordion-collapse collapse" aria-labelledby="mpFaqSixHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Ein Performance-Budget definiert feste Grenzwerte für Kennzahlen und Seitengröße, die im Build-Prozess überwacht werden.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqSevenHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqSeven" aria-expanded="false" aria-controls="mpFaqSeven">
+              Wie integriere ich Lighthouse sinnvoll in CI/CD?
+            </button>
+          </h3>
+          <div id="mpFaqSeven" class="accordion-collapse collapse" aria-labelledby="mpFaqSevenHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Definiere Mindestwerte je Kategorie und stoppe Deployments automatisch, wenn kritische Grenzwerte unterschritten werden.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqEightHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqEight" aria-expanded="false" aria-controls="mpFaqEight">
+              Welche Rolle spielt Performance für SEO?
+            </button>
+          </h3>
+          <div id="mpFaqEight" class="accordion-collapse collapse" aria-labelledby="mpFaqEightHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Performance beeinflusst Crawling- und Nutzerqualitätssignale und trägt damit direkt zur organischen Sichtbarkeit bei.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqNineHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqNine" aria-expanded="false" aria-controls="mpFaqNine">
+              Lohnt sich Reporting als fester Projektbestandteil?
+            </button>
+          </h3>
+          <div id="mpFaqNine" class="accordion-collapse collapse" aria-labelledby="mpFaqNineHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Ja, weil Fortschritte transparent werden und Maßnahmen klar mit Sichtbarkeit, Engagement und Conversion verknüpft werden können.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h3 class="accordion-header" id="mpFaqTenHeading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mpFaqTen" aria-expanded="false" aria-controls="mpFaqTen">
+              Für welche Projekte ist das besonders wichtig?
+            </button>
+          </h3>
+          <div id="mpFaqTen" class="accordion-collapse collapse" aria-labelledby="mpFaqTenHeading" data-bs-parent="#mobilePerfFaqAccordion">
+            <div class="accordion-body">
+              Besonders relevant ist es für Websites mit hoher mobiler Nutzung, starkem Wettbewerb und klaren Conversion-Zielen.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</article>
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Was bedeutet mobile-first in der Entwicklung konkret?","acceptedAnswer":{"@type":"Answer","text":"Mobile-first bedeutet, Inhalte, Navigation und Performance zuerst für kleine Displays zu planen und danach für größere Geräte zu erweitern."}},{"@type":"Question","name":"Warum sind Core Web Vitals so wichtig?","acceptedAnswer":{"@type":"Answer","text":"Sie machen Lade- und Interaktionsqualität messbar und helfen, Performance-Entscheidungen objektiv statt nach Gefühl zu treffen."}},{"@type":"Question","name":"Welche Maßnahmen bringen den schnellsten Effekt?","acceptedAnswer":{"@type":"Answer","text":"Häufig liefern optimierte Bilder, priorisiertes Laden kritischer Ressourcen und reduzierte Skriptlast die schnellsten Verbesserungen."}},{"@type":"Question","name":"Wie gestalte ich Navigation fingerfreundlich?","acceptedAnswer":{"@type":"Answer","text":"Nutze ausreichend große Touch-Ziele, klare Abstände, einfache Hierarchien und gut sichtbare Hauptaktionen."}},{"@type":"Question","name":"Sind AVIF und WebP heute Pflicht?","acceptedAnswer":{"@type":"Answer","text":"Für die meisten Projekte sind sie ein klarer Standard, weil sie bei guter Qualität deutlich kleinere Dateigrößen ermöglichen."}},{"@type":"Question","name":"Was ist ein Performance-Budget?","acceptedAnswer":{"@type":"Answer","text":"Ein Performance-Budget definiert feste Grenzwerte für Kennzahlen und Seitengröße, die im Build-Prozess überwacht werden."}},{"@type":"Question","name":"Wie integriere ich Lighthouse sinnvoll in CI/CD?","acceptedAnswer":{"@type":"Answer","text":"Definiere Mindestwerte je Kategorie und stoppe Deployments automatisch, wenn kritische Grenzwerte unterschritten werden."}},{"@type":"Question","name":"Welche Rolle spielt Performance für SEO?","acceptedAnswer":{"@type":"Answer","text":"Performance beeinflusst Crawling- und Nutzerqualitätssignale und trägt damit direkt zur organischen Sichtbarkeit bei."}},{"@type":"Question","name":"Lohnt sich Reporting als fester Projektbestandteil?","acceptedAnswer":{"@type":"Answer","text":"Ja, weil Fortschritte transparent werden und Maßnahmen klar mit Sichtbarkeit, Engagement und Conversion verknüpft werden können."}},{"@type":"Question","name":"Für welche Projekte ist das besonders wichtig?","acceptedAnswer":{"@type":"Answer","text":"Besonders relevant ist es für Websites mit hoher mobiler Nutzung, starkem Wettbewerb und klaren Conversion-Zielen."}}]}</script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

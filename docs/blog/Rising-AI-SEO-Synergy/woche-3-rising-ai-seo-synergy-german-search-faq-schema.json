@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen AI-SEO und klassischem SEO?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "AI-SEO ergänzt klassisches SEO um KI-gestützte Analyse- und Strukturarbeit, ersetzt aber weder Strategie noch Qualitätssicherung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist AI-generierter Content allein ausreichend?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. Ohne redaktionelle Prüfung, semantische Struktur und fachliche Validierung bleibt die Qualität oft zu generisch."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum ist der deutsche Markt bei AI-SEO besonders sensibel?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Datenschutz, Transparenz und Qualitätsanspruch sind in vielen Projekten zentrale Entscheidungskriterien bei Tool- und Prozesswahl."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie starte ich mit semantischen Clustern?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Gruppiere Suchanfragen nach Nutzerintention, Entitäten und Seitentyp statt nach einzelnen Keywords."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was bedeutet Entity-optimierter Content praktisch?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Inhalte benennen Akteure, Probleme, Bedingungen und Lösungen klar und verbinden sie konsistent über das gesamte Themencluster."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Rolle spielen strukturierte Daten bei AI-SEO?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Strukturierte Daten helfen Such- und AI-Systemen, Inhalte präziser zu interpretieren, sofern sie den sichtbaren Content korrekt abbilden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie integriere ich Datenschutz sinnvoll in SEO-Workflows?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Plane Datensparsamkeit, Transparenz und klare Zweckbindung von Beginn an, statt Compliance erst am Projektende zu prüfen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche KPI sollte ich neben Rankings beobachten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Relevante KPI sind unter anderem qualifizierter organischer Traffic, Conversion-Rate, Sichtbarkeit pro Cluster und Content-Qualitätsindikatoren."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Können kleine Teams AI-SEO überhaupt umsetzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Mit klaren Templates, standardisierten Briefings und einem einfachen QA-Prozess lassen sich auch in kleinen Teams schnelle Fortschritte erzielen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Woran erkenne ich, dass unsere AI-SEO-Strategie funktioniert?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wenn Cluster-Sichtbarkeit steigt, Inhalte konsistenter werden, Prozesse schneller laufen und gleichzeitig Qualitäts- und Compliance-Standards eingehalten werden, ist die Strategie auf Kurs."
+      }
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was sind strukturierte Daten in einem Satz?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Strukturierte Daten sind maschinenlesbare Zusatzinformationen, die Suchsystemen helfen, Inhalte und deren Kontext eindeutig zu verstehen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum sind strukturierte Daten für KI-Suche wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Weil sie Bedeutung und Beziehungen explizit machen und damit die korrekte Einordnung in KI-gestützten Antwortsystemen unterstützen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Schema-Typen sind für Blogs besonders relevant?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen Fällen sind Article, FAQPage und BreadcrumbList die wichtigsten Startpunkte für redaktionelle Websites."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Reicht Markup allein für bessere Rankings?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. Strukturierte Daten verstärken guten Content, ersetzen aber weder Relevanz, Qualität noch eine saubere technische Website-Basis."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der häufigste Fehler bei FAQPage?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "FAQ-Markup wird oft auf Textblöcke angewendet, die keine echten Fragen und Antworten enthalten. Das schwächt die semantische Qualität."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie wichtig sind Entitäten für KI-optimierte Inhalte?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sehr wichtig, weil konsistente Entitäten die thematische Einordnung verbessern und interne Zusammenhänge für Suchsysteme klarer machen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sollte ich JSON-LD oder Mikrodata verwenden?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen Projekten ist JSON-LD am praktikabelsten, weil es übersichtlich bleibt und sich gut in bestehende Templates integrieren lässt."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie oft sollten strukturierte Daten geprüft werden?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Idealerweise bei jedem relevanten Release und zusätzlich in regelmäßigen Intervallen als Teil der technischen Content-QA."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Kennzahlen zeigen den Nutzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sinnvoll sind Markup-Abdeckung, Rich-Result-Entwicklung, Klickrate, Sichtbarkeit in Clustern und Interaktionswerte auf strukturierten Seiten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der wichtigste Startschritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der wichtigste Startschritt ist ein Audit der bestehenden Inhalte mit klarer Priorisierung, welche Seitentypen zuerst semantisch strukturiert werden."
+      }
+    }
+  ]
+}

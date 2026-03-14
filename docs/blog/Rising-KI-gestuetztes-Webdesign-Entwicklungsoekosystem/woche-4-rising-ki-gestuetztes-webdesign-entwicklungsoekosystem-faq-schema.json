@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist ein KI-gestütztes Webdesign- und Entwicklungsökosystem?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Es ist ein strukturierter Workflow, in dem KI Design-, Entwicklungs-, SEO- und QA-Aufgaben unterstützt und durch menschliche Qualitätssicherung ergänzt wird."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ersetzt KI in diesem Modell Designer und Entwickler?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. KI beschleunigt Teilaufgaben, während Menschen Strategie, Qualität, Markenfit und komplexe Entscheidungen verantworten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Mit welchen KI-Use-Cases sollte ich starten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Gute Einstiege sind Layout-Ideation, semantische SEO-Strukturierung und automatisierte Accessibility-Vorprüfungen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum ist der menschliche Review-Prozess so wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Weil erst der Review fachliche Präzision, Markenkonsistenz, technische Stabilität und rechtliche Sicherheit zuverlässig absichert."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie hilft KI konkret im SEO-Bereich?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "KI unterstützt bei semantischer Gliederung, Themenclustern, FAQ-Mustern und interner Verlinkung, die anschließend redaktionell verfeinert werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann KI Accessibility vollständig automatisieren?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. KI kann viele Vorprüfungen automatisieren, ein vollständiges Accessibility-Audit durch Expertinnen und Experten bleibt notwendig."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche KPI zeigen den Erfolg am besten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders relevant sind Zeit bis zur Freigabe, Revisionsaufwand, QA-Fehlerquote, Audit-Scores und Conversion-Entwicklung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist ein solches Ökosystem auch für kleine Teams sinnvoll?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, gerade kleinere Teams profitieren von klaren KI-Workflows, wenn sie fokussiert starten und Qualität konsequent absichern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie verhindere ich generische KI-Ergebnisse?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Durch präzise Briefings, klare Qualitätskriterien, iterative Verfeinerung und verbindliche manuelle Review-Schritte."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der wichtigste Startschritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der wichtigste Startschritt ist die Definition weniger klarer Use Cases mit messbaren Zielen statt breiter, unstrukturierter Tool-Einführung."
+      }
+    }
+  ]
+}

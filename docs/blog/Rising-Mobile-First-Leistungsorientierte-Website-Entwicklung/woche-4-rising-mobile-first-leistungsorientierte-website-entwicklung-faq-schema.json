@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was bedeutet mobile-first in der Entwicklung konkret?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mobile-first bedeutet, Inhalte, Navigation und Performance zuerst für kleine Displays zu planen und danach für größere Geräte zu erweitern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum sind Core Web Vitals so wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sie machen Lade- und Interaktionsqualität messbar und helfen, Performance-Entscheidungen objektiv statt nach Gefühl zu treffen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Maßnahmen bringen den schnellsten Effekt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Häufig liefern optimierte Bilder, priorisiertes Laden kritischer Ressourcen und reduzierte Skriptlast die schnellsten Verbesserungen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie gestalte ich Navigation fingerfreundlich?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nutze ausreichend große Touch-Ziele, klare Abstände, einfache Hierarchien und gut sichtbare Hauptaktionen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sind AVIF und WebP heute Pflicht?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Für die meisten Projekte sind sie ein klarer Standard, weil sie bei guter Qualität deutlich kleinere Dateigrößen ermöglichen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist ein Performance-Budget?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ein Performance-Budget definiert feste Grenzwerte für Kennzahlen und Seitengröße, die im Build-Prozess überwacht werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie integriere ich Lighthouse sinnvoll in CI/CD?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Definiere Mindestwerte je Kategorie und stoppe Deployments automatisch, wenn kritische Grenzwerte unterschritten werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Rolle spielt Performance für SEO?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Performance beeinflusst Crawling- und Nutzerqualitätssignale und trägt damit direkt zur organischen Sichtbarkeit bei."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Lohnt sich Reporting als fester Projektbestandteil?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, weil Fortschritte transparent werden und Maßnahmen klar mit Sichtbarkeit, Engagement und Conversion verknüpft werden können."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Für welche Projekte ist das besonders wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besonders relevant ist es für Websites mit hoher mobiler Nutzung, starkem Wettbewerb und klaren Conversion-Zielen."
+      }
+    }
+  ]
+}

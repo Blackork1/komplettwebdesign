@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was bedeutet nachhaltiges Webdesign konkret?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nachhaltiges Webdesign reduziert technische und energetische Last durch effiziente Architektur, schlanke Assets und barrierearme Nutzerführung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ist nachhaltige Webentwicklung teurer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Kurzfristig kann die Planung etwas aufwendiger sein, langfristig sinken durch effizientere Systeme oft Wartungs- und Betriebskosten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Maßnahme wirkt am schnellsten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen Projekten bringt die Optimierung von Bildern und Videos den schnellsten Effekt auf Ladezeit und Ressourceneffizienz."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie wichtig ist Öko-Hosting wirklich?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Öko-Hosting ist ein wichtiger Baustein, entfaltet aber seinen vollen Nutzen erst zusammen mit effizientem Frontend und sauberer Content-Auslieferung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum gehört Barrierefreiheit in dieses Thema?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Barrierearme Interfaces führen Nutzer schneller zum Ziel, reduzieren Fehlinteraktionen und verbessern damit Effizienz und Nutzerzufriedenheit."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Kennzahlen sollte ich tracken?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sinnvoll sind Seitengewicht, Ladezeit, Core Web Vitals, Interaktionswerte, Conversion sowie Audit-Ergebnisse für Barrierefreiheit."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich bestehende Websites nachhaltig nachrüsten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, durch ein strukturiertes Audit und priorisierte Maßnahmen lassen sich auch bestehende Websites schrittweise deutlich verbessern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie oft sollten Nachhaltigkeitsaudits stattfinden?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Idealerweise regelmäßig pro Release-Zyklus und zusätzlich quartalsweise als vertiefter Qualitätscheck."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie argumentiere ich das in Kundengesprächen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Am besten über Effizienz und ROI: schnellere Seiten, bessere UX, geringere Absprünge, stabilere Conversion und langfristig weniger technische Last."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der wichtigste erste Schritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der wichtigste erste Schritt ist ein datenbasiertes Audit der größten Lasttreiber in Medien, Code und Hosting."
+      }
+    }
+  ]
+}

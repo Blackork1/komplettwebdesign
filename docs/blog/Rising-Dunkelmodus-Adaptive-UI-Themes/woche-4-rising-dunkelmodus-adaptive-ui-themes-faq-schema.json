@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Ist Dunkelmodus heute wirklich Standard?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In vielen SaaS- und Corporate-UIs ja. Nutzer erwarten zunehmend die Wahl zwischen hellem und dunklem Modus."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche technische Basis ist am robustesten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ein tokenbasiertes CSS-Variablen-System mit data-theme-Attribut ist in den meisten Projekten die stabilste Grundlage."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie kombiniere ich Systempräferenz und Nutzerwahl?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nutze die OS-Präferenz als Standard und speichere manuelle Theme-Auswahl persistent, damit der Nutzer die Kontrolle behält."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Warum sind Kontrastprüfungen so wichtig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Weil Lesbarkeit und Barrierefreiheit nur mit systematischer Kontrastkontrolle in allen Modi zuverlässig gewährleistet sind."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sollte ich einen Auto-Modus anbieten?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, ein Auto-Modus auf Basis von prefers-color-scheme erhöht Komfort und reduziert Einstiegsaufwand für Nutzer."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sind Theme-Übergänge problematisch für Performance?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nicht zwingend. Kurze, gezielte CSS-Transitionen sind meist unkritisch, solange sie nicht übertrieben global eingesetzt werden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie sichtbar sollte der Theme-Toggle sein?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Er sollte gut auffindbar sein, idealerweise im Header oder in klar erreichbaren Einstellungen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich bestehende UIs nachträglich adaptiv machen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, über ein schrittweises Token-Audit und die Migration der Kernkomponenten lässt sich ein adaptives Theme oft ohne Relaunch einführen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Kennzahlen zeigen den Nutzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wichtig sind Theme-Nutzung, UX-Kennzahlen, Formularabbrüche, Supportfeedback und Accessibility-Audit-Ergebnisse."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der beste erste Schritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Starte mit einem Farb- und Komponenten-Audit und definiere anschließend semantische Tokens als verbindliche Basis."
+      }
+    }
+  ]
+}

@@ -60,6 +60,10 @@ function populateRatios(){
   const sel = document.getElementById('ratio');
   const list = orientation === 'portrait' ? PORTRAIT : LANDSCAPE;
   sel.innerHTML = '';
+  const original = document.createElement('option');
+  original.value = 'upload_original';
+  original.textContent = 'Identisch zum Upload';
+  sel.appendChild(original);
   list.forEach(r => {
     const opt = document.createElement('option');
     opt.value = r;

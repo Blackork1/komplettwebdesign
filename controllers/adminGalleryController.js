@@ -18,23 +18,37 @@ export async function uploadImage(req, res) {
     const db = req.app.get('db');
     const cloud = req.app.get('cloudinary');
     const { orientation, ratio, resolution, quality } = req.body;
-    const [rW, rH] = ratio.split(':').map(Number);
     const resVal = parseInt(resolution, 10);
     const qual   = parseInt(quality, 10) || 'auto';
-    let width, height;
-    if (orientation === 'landscape') {
-      width  = resVal;
-      height = Math.round(width * rH / rW);
+    const keepUploadRatio = ratio === 'upload_original';
+    let transformation;
+
+    if (keepUploadRatio) {
+      // Keep the original aspect ratio and only scale by the selected long side.
+      transformation = orientation === 'portrait'
+        ? [{ height: resVal, crop: 'scale', quality: qual }]
+        : [{ width: resVal, crop: 'scale', quality: qual }];
     } else {
-      height = resVal;
-      width  = Math.round(height * rW / rH);
+      const [rW, rH] = ratio.split(':').map(Number);
+      let width, height;
+      if (orientation === 'landscape') {
+        width  = resVal;
+        height = Math.round(width * rH / rW);
+      } else {
+        height = resVal;
+        width  = Math.round(height * rW / rH);
+      }
+      transformation = [{ width, height, crop: 'fill', quality: qual }];
     }
-    const result = await uploadBuffer(cloud, req.file.buffer, {
+
+    const uploadOptions = {
       folder: 'admin_gallery',
       format: 'webp',
       tags: ['admin_gallery', orientation],
-      transformation: [{ width, height, crop: 'fill', quality: qual }]
-    });
+      transformation
+    };
+
+    const result = await uploadBuffer(cloud, req.file.buffer, uploadOptions);
     const src = result.secure_url;
     const publicId = result.public_id;
     await db.query(

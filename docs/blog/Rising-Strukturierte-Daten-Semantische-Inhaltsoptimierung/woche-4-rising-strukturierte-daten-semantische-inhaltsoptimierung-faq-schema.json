@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen strukturierten Daten und semantischer Optimierung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Strukturierte Daten sind maschinenlesbare Markups wie JSON-LD. Semantische Optimierung umfasst zusätzlich die inhaltliche Struktur, Entitätslogik und klare Themenführung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche drei Schema-Typen sollte ich zuerst umsetzen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Für viele Websites sind BreadcrumbList, FAQPage und Article der beste Einstieg, weil sie Navigation, Antworten und redaktionellen Kontext klar abbilden."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Reicht JSON-LD aus, um besser zu ranken?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nein. JSON-LD verstärkt gute Inhalte, ersetzt aber keine Relevanz, keine Qualität und keine saubere Informationsarchitektur."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie oft sollte ich mein Markup prüfen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mindestens bei jedem relevanten Release und zusätzlich regelmäßig im Rahmen deiner technischen SEO-QA."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der häufigste Fehler bei FAQPage?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "FAQ-Markup wird häufig auf Abschnitte angewendet, die keine echten Fragen und Antworten enthalten. Das schwächt die semantische Qualität."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Rolle spielen Entitäten bei diesem Thema?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Entitäten sind zentral, weil sie Themenbeziehungen stabilisieren und Suchsystemen helfen, deine Inhalte kontextuell richtig einzuordnen."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Sollte ich strukturierte Daten manuell pflegen?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Besser ist eine templatebasierte Erzeugung im CMS oder Build-Prozess, damit Markup konsistent, skalierbar und wartbar bleibt."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie messe ich den Nutzen semantischer Optimierung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Über Markup-Abdeckung, Rich-Result-Entwicklung, Klickrate, qualifizierten Traffic und Interaktionssignale in den betroffenen Content-Clustern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Seiten sollte ich zuerst optimieren?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Starte mit Seiten, die bereits Traffic haben oder ein hohes Geschäftsinteresse bedienen, etwa zentrale Ratgeber, Kategorien und transaktionsnahe Landingpages."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der schnellste erste Schritt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Führe ein strukturiertes Seitenaudit durch und priorisiere anschließend die Einführung von BreadcrumbList, FAQPage und Article auf den wichtigsten Seitentypen."
+      }
+    }
+  ]
+}
