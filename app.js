@@ -18,6 +18,27 @@ import compression from 'compression';
 env.config();
 const app = express();
 app.use(compression());
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader(
+        'Content-Security-Policy',
+        "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    const forwardedProto = (req.get('x-forwarded-proto') || req.protocol || '')
+        .toString()
+        .split(',')[0]
+        .trim()
+        .toLowerCase();
+
+    if (forwardedProto === 'https') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+    }
+
+    next();
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

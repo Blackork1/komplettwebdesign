@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npm",
     "start": "node index.js",
-    "build:css": "postcss public/*.css --dir public/css --no-map -o public/css/bundle.min.css"
+    "build:css": "postcss public/*.css --dir public/css --no-map -o public/css/bundle.min.css",
+    "test": "node --test"
   },
   "repository": {
     "type": "git",

@@ -14,6 +14,29 @@ const transporter = nodemailer.createTransport({
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
 
+function wtLocale(locale = "de") {
+    return normalizeLocale(locale) === "en" ? "en" : "de";
+}
+
+function wtScoreLabel(scoreBand = "mittel", locale = "de") {
+    const labels = wtLocale(locale) === "en"
+        ? { gut: "Modern", mittel: "Needs work", kritisch: "Critical" }
+        : { gut: "Modern", mittel: "Ausbaufähig", kritisch: "Kritisch" };
+    return labels[scoreBand] || labels.mittel;
+}
+
+function wtPrettyDate(value, locale = "de") {
+    const asDate = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(asDate.getTime())) return "";
+    return asDate.toLocaleString(wtLocale(locale) === "en" ? "en-GB" : "de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
 export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
     const isEn = normalizeLocale(locale) === "en";
     const isWithoutAppointment = !appointment || appointment.title === "Ohne Termin";
@@ -145,6 +168,116 @@ export async function sendRequestMail({ to, name }) {
         subject,
         html
     };
+    return transporter.sendMail(mail);
+}
+
+export async function sendWebsiteTesterDoiMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    confirmUrl = "",
+    expiresAt = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+    const expiry = wtPrettyDate(expiresAt, lng);
+    const subject = lng === "en"
+        ? "Confirm your email for your website optimization PDF"
+        : "Bitte bestätige deine E-Mail für deinen Website-Optimierungsreport";
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>you requested the detailed optimization PDF for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>Please confirm your email address to receive the report:</p>
+      <p><a href="${confirmUrl}">Confirm email and send report</a></p>
+      ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>If you did not request this, you can ignore this email.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>du hast den ausführlichen Optimierungsreport für <strong>${domain || "deine Website"}</strong> (${label}) angefordert.</p>
+      <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den Report senden können:</p>
+      <p><a href="${confirmUrl}">E-Mail bestätigen und Report senden</a></p>
+      ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html
+    });
+}
+
+export async function sendWebsiteTesterReportMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    report
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+
+    const subject = lng === "en"
+        ? "Your detailed website optimization report (PDF)"
+        : "Dein ausführlicher Website-Optimierungsreport (PDF)";
+
+    const contactUrl = `${(process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "")}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${(process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "")}/booking`;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>here is your detailed optimization report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>The PDF is attached to this email.</p>
+      <p>If you want, we can review the report together and prioritize implementation:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>hier ist dein ausführlicher Optimierungsreport für <strong>${domain || "deine Website"}</strong> (${label}).</p>
+      <p>Das PDF findest du im Anhang.</p>
+      <p>Wenn du möchtest, priorisieren wir die Umsetzung gemeinsam in einem kurzen Beratungsgespräch:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html,
+        attachments: [
+            {
+                filename: report?.filename || "website-optimierungsreport.pdf",
+                content: report?.buffer,
+                contentType: "application/pdf"
+            }
+        ]
+    };
+
+    const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
+    if (adminNotify) {
+        mail.bcc = adminNotify;
+    }
+
     return transporter.sendMail(mail);
 }
 

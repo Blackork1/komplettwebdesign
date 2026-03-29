@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import * as admin from '../controllers/adminController.js';
 import { isAdmin } from '../middleware/auth.js';
 import * as autoCfg from '../controllers/autoConfigController.js';
+import * as websiteTesterAdmin from '../controllers/adminWebsiteTesterController.js';
 
 const router = express.Router();
 
@@ -41,5 +42,9 @@ router.post('/admin/auto-config', isAdmin, autoCfg.saveForm);
 router.post('/admin/appointments/auto/run', isAdmin, autoCfg.runAutoGenerate);
 
 router.get('/admin/test', isAdmin, admin.getTest);
+router.get('/admin/website-tester', isAdmin, websiteTesterAdmin.websiteTesterPage);
+router.post('/admin/website-tester/config', isAdmin, websiteTesterAdmin.saveWebsiteTesterConfig);
+router.post('/admin/website-tester/leads/:id/resend-doi', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadDoiAction);
+router.post('/admin/website-tester/leads/:id/resend-report', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadReportAction);
 
 export default router;

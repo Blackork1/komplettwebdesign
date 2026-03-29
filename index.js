@@ -23,7 +23,10 @@ import { navbarMiddleware } from './helpers/navHelper.js';
 import consentMiddleware from './middleware/consentMiddleware.js';
 import { accessLog } from './middleware/accessLog.js';
 import { ensureAutoSlots } from './services/autoAppointmentService.js';
-import { deleteExpiredUnbooked } from './services/cleanupService.js';
+import {
+  deleteExpiredUnbooked,
+  deleteExpiredWebsiteTesterPendingLeads
+} from './services/cleanupService.js';
 
 
 import mainRoutes from './routes/main.js';
@@ -122,6 +125,31 @@ if (isProd) {
 }
 
 app.use(compression());
+
+app.use((req, res, next) => {
+  // Security headers for browser hardening and external security checks.
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  const forwardedProto = (req.get('x-forwarded-proto') || req.protocol || '')
+    .toString()
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  const isHttpsRequest = forwardedProto === 'https';
+
+  // HSTS only when HTTPS is in use (mainly production behind proxy/CDN).
+  if (isProd && isHttpsRequest) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+
+  next();
+});
 
 app.use((req, res, next) => {
   const pathOnly = ((req.originalUrl || req.url || '/').split('?')[0] || '/').trim() || '/';
@@ -227,6 +255,7 @@ if (isProd) {
     try {
       await ensureAutoSlots();
       await deleteExpiredUnbooked();
+      await deleteExpiredWebsiteTesterPendingLeads(14);
     } catch (err) {
       console.error('Cron Fehler:', err);
     }

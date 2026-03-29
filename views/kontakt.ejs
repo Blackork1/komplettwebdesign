@@ -35,9 +35,27 @@
 <div class="section">
   <div class="container mt-5">
     <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Contact us' : 'Kontaktiere uns' %></h1>
+    <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
+      <div class="alert alert-info mt-3" role="status">
+        <strong><%= isEn ? 'Website Tester context detected:' : 'Website-Tester-Kontext erkannt:' %></strong>
+        <span>
+          <%= testerPrefill.domain || (isEn ? 'Website provided' : 'Website hinterlegt') %>
+          <% if (testerPrefill.scoreBand) { %>
+            - <%= isEn ? 'Score band' : 'Score-Band' %>: <%= testerPrefill.scoreBand %>
+          <% } %>
+        </span>
+      </div>
+    <% } %>
     <form id="kontaktForm" action="<%= contactAction || (isEn ? '/en/kontakt' : '/kontakt') %>" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
       <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
+      <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
+        <input type="hidden" name="source" value="website-tester">
+        <input type="hidden" name="auditId" value="<%= testerPrefill.auditId || '' %>">
+        <input type="hidden" name="domain" value="<%= testerPrefill.domain || '' %>">
+        <input type="hidden" name="scoreBand" value="<%= testerPrefill.scoreBand || '' %>">
+        <input type="hidden" name="topIssues" value="<%= testerPrefill.topIssues || '' %>">
+      <% } %>
 
       <!-- Bootstrap Carousel für die Slides -->
       <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
@@ -221,7 +239,7 @@
               <h2 style="padding-top: 30px;"><%= isEn ? '8. Additional information' : '8. Weitere Informationen' %></h2>
               <p><%= isEn ? 'Anything else you want to share with us?' : 'Gibt es sonst noch etwas, das du uns mitteilen möchtest?' %></p>
 
-              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="<%= isEn ? 'Additional notes, wishes, or information...' : 'Weitere Anmerkungen, Wünsche oder Infos ...' %>"></textarea>
+              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="<%= isEn ? 'Additional notes, wishes, or information...' : 'Weitere Anmerkungen, Wünsche oder Infos ...' %>"><%= (typeof testerPrefill !== 'undefined' && testerPrefill && testerPrefill.suggestedMessage) ? testerPrefill.suggestedMessage : '' %></textarea>
 
               <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
             </div>

@@ -75,6 +75,13 @@ const LABEL_OVERRIDES = {
     currentwebsite: "Bestehende Website",
     websitevorhanden: "Bestehende Website",
     bestandswebsite: "Bestehende Website",
+    source: "Quelle",
+    auditid: "Audit-ID",
+    auditId: "Audit-ID",
+    scoreband: "Score-Band",
+    scoreBand: "Score-Band",
+    topissues: "Top-Baustellen",
+    topIssues: "Top-Baustellen",
     utm_source: "UTM Source",
     utm_medium: "UTM Medium",
     utm_campaign: "UTM Kampagne"
@@ -271,6 +278,38 @@ function resolveContactLocale(req) {
     return "de";
 }
 
+function buildTesterPrefill(req, lng) {
+    const query = req.query || {};
+    if (String(query.source || "").trim() !== "website-tester") return null;
+
+    const clean = (value, limit = 180) => String(value || "").trim().slice(0, limit);
+    const domain = clean(query.domain, 180);
+    const scoreBandRaw = clean(query.scoreBand, 32).toLowerCase();
+    const scoreBand = ["gut", "mittel", "kritisch"].includes(scoreBandRaw) ? scoreBandRaw : "mittel";
+    const topIssues = clean(query.topIssues, 450);
+    const auditId = clean(query.auditId, 120);
+
+    const scoreLabel = lng === "en"
+        ? (scoreBand === "gut" ? "modern" : scoreBand === "mittel" ? "needs work" : "critical")
+        : (scoreBand === "gut" ? "modern" : scoreBand === "mittel" ? "ausbaufähig" : "kritisch");
+
+    const intro = lng === "en"
+        ? `Website Tester result for ${domain || "my website"} (${scoreLabel}).`
+        : `Website-Tester-Ergebnis für ${domain || "meine Website"} (${scoreLabel}).`;
+    const issuesLabel = lng === "en" ? "Top issues" : "Top-Baustellen";
+    const idLabel = lng === "en" ? "Audit ID" : "Audit-ID";
+    const suggestedMessage = `${intro}${topIssues ? ` ${issuesLabel}: ${topIssues}.` : ""}${auditId ? ` ${idLabel}: ${auditId}.` : ""}`;
+
+    return {
+        source: "website-tester",
+        auditId,
+        domain,
+        scoreBand,
+        topIssues,
+        suggestedMessage
+    };
+}
+
 /* ---------- GET /kontakt --------------------------------------------- */
 export async function showForm(req, res) {
     const lng = resolveContactLocale(req);
@@ -297,7 +336,8 @@ export async function showForm(req, res) {
         freieTermine,
         sitekey: process.env.RECAPTCHA_SITEKEY,
         lng,
-        contactAction: contactPath
+        contactAction: contactPath,
+        testerPrefill: buildTesterPrefill(req, lng)
     });
 }
 
