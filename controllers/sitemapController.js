@@ -113,8 +113,8 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/en/pakete/premium`, changefreq: "monthly", priority: 0.7 },
       { loc: `${base}/about`, changefreq: "monthly", priority: 0.6 },
       { loc: `${base}/blog`, changefreq: "weekly", priority: 0.8 },
-      { loc: `${base}/website-tester`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/en/website-tester`, changefreq: "weekly", priority: 0.8 },
+      { loc: `${base}/website-tester`, changefreq: "weekly", priority: 1.0 },
+      { loc: `${base}/en/website-tester`, changefreq: "weekly", priority: 0.95 },
       // 👉 NEU: Ratgeber-Übersicht
       { loc: `${base}/ratgeber`, changefreq: "weekly", priority: 0.8 },
       { loc: `${base}/faq`, changefreq: "monthly", priority: 0.7 },

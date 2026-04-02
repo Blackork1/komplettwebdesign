@@ -10,22 +10,60 @@ import {
 
 const PAGE_I18N = {
   de: {
-    title: 'Website Tester 2.3: SEO, GEO, Technik & Legal-Risiko kostenlos prüfen',
-    description: 'Deep-Audit für deine Website: SEO, Technik, Barrierefreiheit, Vertrauen und Modernität in einem klaren Ergebnis-Dashboard.',
-    keywords: 'Website Tester, Website Check, SEO Check Website, Website analysieren, Barrierefreiheit Website testen',
-    ogTitle: 'Website Tester 2.3 | Deep-Audit für moderne Websites',
-    ogDescription: 'Prüfe kostenlos, ob deine Website modern, schnell, sichtbar und conversionstark ist.',
-    schemaDescription: 'Kostenloser Deep-Audit für SEO, Technik, Barrierefreiheit und Conversion.',
-    pagePath: '/website-tester'
+    title: 'Website testen kostenlos: Ist meine Website noch aktuell? | Website-Tester',
+    description: 'Kostenloser Website-Tester für SEO, GEO, Technik & Vertrauen. Prüfe sofort: Ist meine Website noch aktuell, sichtbar und update-reif?',
+    keywords: 'website testen, website tester kostenlos, website kostenlos testen, ist meine website noch aktuell, muss ich meine website updaten, seo check website, geo check website',
+    ogTitle: 'Website testen kostenlos | Ist meine Website noch aktuell?',
+    ogDescription: 'Starte den kostenlosen Website-Check für SEO, GEO, Technik, Vertrauen und Conversion in wenigen Sekunden.',
+    schemaDescription: 'Kostenloser Website-Check für SEO, GEO, Technik, Barrierefreiheit, Vertrauen und Conversion-Signale.',
+    pagePath: '/website-tester',
+    altPath: '/en/website-tester',
+    localeCode: 'de-DE',
+    inLanguage: 'de',
+    pageName: 'Website testen kostenlos – Website-Tester',
+    breadcrumb: ['Startseite', 'Website-Tester'],
+    faq: [
+      {
+        q: 'Wie kann ich meine Website kostenlos testen?',
+        a: 'Mit dem Website-Tester gibst du deine URL ein und bekommst direkt einen Score für SEO, GEO, Technik, Barrierefreiheit und Vertrauen.'
+      },
+      {
+        q: 'Ist meine Website noch aktuell?',
+        a: 'Der Tester prüft Modernität, Ladezeit, Struktur, Meta-Daten, technische Signale und zeigt konkrete Hinweise, ob ein Update sinnvoll ist.'
+      },
+      {
+        q: 'Muss ich meine Website updaten?',
+        a: 'Wenn wichtige Signale wie Title, Description, Performance, mobile Nutzbarkeit oder Vertrauensfaktoren fehlen, solltest du priorisiert updaten.'
+      }
+    ]
   },
   en: {
-    title: 'Website Tester 2.3: free SEO, GEO, technical and legal-risk check',
-    description: 'Deep audit for your website: SEO, technical quality, accessibility, trust, and conversion readiness in one clear dashboard.',
-    keywords: 'website tester, website audit, seo check, accessibility check, technical website analysis',
-    ogTitle: 'Website Tester 2.3 | Deep audit for modern websites',
-    ogDescription: 'Check if your website is modern, fast, discoverable, and conversion-ready.',
-    schemaDescription: 'Free deep audit for SEO, technical quality, accessibility, and conversion signals.',
-    pagePath: '/en/website-tester'
+    title: 'Free Website Tester: Is my website outdated? | SEO & GEO Website Check',
+    description: 'Run a free website test for SEO, GEO, technical quality, and trust signals. Find out if your website is outdated and needs an update.',
+    keywords: 'free website tester, website test free, is my website outdated, does my website need an update, website seo check, geo website check, free website audit',
+    ogTitle: 'Free Website Tester | Is my website outdated?',
+    ogDescription: 'Run a free website check for SEO, GEO, technical quality, trust, and conversion readiness in seconds.',
+    schemaDescription: 'Free website check for SEO, GEO, technical quality, accessibility, trust, and conversion signals.',
+    pagePath: '/en/website-tester',
+    altPath: '/website-tester',
+    localeCode: 'en-US',
+    inLanguage: 'en',
+    pageName: 'Free Website Tester – SEO & GEO Website Check',
+    breadcrumb: ['Home', 'Website Tester'],
+    faq: [
+      {
+        q: 'How can I test my website for free?',
+        a: 'Enter your URL in the Website Tester and get an instant score for SEO, GEO, technical quality, accessibility, and trust signals.'
+      },
+      {
+        q: 'Is my website outdated?',
+        a: 'The tester checks structure, metadata, speed, modernity, and quality signals to show whether your website is still up to date.'
+      },
+      {
+        q: 'Does my website need an update?',
+        a: 'If key factors like titles, descriptions, performance, mobile UX, or trust elements are weak, an update should be prioritized.'
+      }
+    ]
   }
 };
 
@@ -33,9 +71,99 @@ function localeFromRequest(req) {
   return req.params?.lng === 'en' ? 'en' : 'de';
 }
 
+function jsonLd(scriptObject) {
+  return `<script type="application/ld+json">${JSON.stringify(scriptObject)}</script>`;
+}
+
 function buildSeoExtra(base, canonical, copy, locale) {
+  const alternateUrl = `${base}${copy.altPath}`;
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: copy.breadcrumb[0],
+        item: base
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: copy.breadcrumb[1],
+        item: canonical
+      }
+    ]
+  };
+
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Komplett Webdesign',
+    url: base,
+    inLanguage: copy.inLanguage,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${base}/?q={search_term_string}`,
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: copy.pageName,
+    description: copy.schemaDescription,
+    url: canonical,
+    inLanguage: copy.inLanguage,
+    isPartOf: {
+      '@type': 'WebSite',
+      url: base,
+      name: 'Komplett Webdesign'
+    },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbSchema.itemListElement
+    },
+    primaryImageOfPage: `${base}/images/heroBg.webp`
+  };
+
+  const appSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Komplett Webdesign Website Tester',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    inLanguage: copy.inLanguage,
+    url: canonical,
+    description: copy.schemaDescription,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'EUR'
+    }
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: copy.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a
+      }
+    }))
+  };
+
   return `
+    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
+    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
+    <link rel="alternate" hreflang="x-default" href="${base}/website-tester">
     <meta property="og:type" content="website">
+    <meta property="og:locale" content="${copy.localeCode}">
     <meta property="og:title" content="${copy.ogTitle}">
     <meta property="og:description" content="${copy.ogDescription}">
     <meta property="og:url" content="${canonical}">
@@ -43,23 +171,11 @@ function buildSeoExtra(base, canonical, copy, locale) {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${copy.ogTitle}">
     <meta name="twitter:description" content="${copy.ogDescription}">
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Komplett Webdesign Website Tester 2.0",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "inLanguage": "${locale === 'en' ? 'en' : 'de'}",
-        "url": "${canonical}",
-        "description": "${copy.schemaDescription}",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "EUR"
-        }
-      }
-    </script>
+    ${jsonLd(websiteSchema)}
+    ${jsonLd(webPageSchema)}
+    ${jsonLd(appSchema)}
+    ${jsonLd(breadcrumbSchema)}
+    ${jsonLd(faqSchema)}
   `;
 }
 

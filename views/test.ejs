@@ -6,6 +6,18 @@
   <main id="hero">
     <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
 
+
+    <section class="wt-section wt-section-compact">
+      <div class="wt-shell">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+            <li aria-current="page"><%= isEn ? 'Website Tester' : 'Website-Tester' %></li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
     <section class="wt-hero">
       <div class="wt-shell">
         <div class="wt-hero-grid">
@@ -101,9 +113,60 @@
         </div>
       </div>
     </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel">
+          <h2><%= isEn ? 'Free website test: Is your website still up to date?' : 'Website kostenlos testen: Ist deine Website noch aktuell?' %></h2>
+          <p><%= isEn
+            ? 'Many users search for terms like “free website tester”, “website test free”, “is my website outdated”, or “does my website need an update”. This page is built to answer exactly that intent with a practical, instant audit.'
+            : 'Viele Nutzer suchen nach Begriffen wie „Website testen“, „kostenloser Website Tester“, „Website kostenlos testen“, „Ist meine Website noch aktuell?“ oder „Muss ich meine Website updaten?“. Genau dafür ist dieser kostenlose Sofort-Check aufgebaut.' %></p>
+          <p><%= isEn
+            ? 'You get actionable priorities for SEO, GEO visibility, technical quality, trust, and conversion readiness—without registration.'
+            : 'Du erhältst klare Prioritäten für SEO, GEO-Sichtbarkeit, Technik, Vertrauen und Conversion-Reife – ohne Registrierung.' %></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel">
+          <h2><%= isEn ? 'FAQ: website tester & website update check' : 'FAQ: Website-Tester & Website-Update-Check' %></h2>
+          <div class="wt-faq">
+            <details>
+              <summary><%= isEn ? 'How can I test my website for free?' : 'Wie kann ich meine Website kostenlos testen?' %></summary>
+              <p><%= isEn ? 'Enter your URL and business context. You instantly get a score and concrete recommendations.' : 'Gib deine URL und den Geschäftskontext ein. Du bekommst sofort einen Score und konkrete Maßnahmen.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'How do I know if my website is outdated?' : 'Woran erkenne ich, ob meine Website veraltet ist?' %></summary>
+              <p><%= isEn ? 'Weak metadata, poor load speed, missing trust signals, and unclear structure are common indicators.' : 'Schwache Metadaten, langsame Ladezeit, fehlende Vertrauenssignale und unklare Struktur sind typische Hinweise.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Should I update my website now?' : 'Sollte ich meine Website jetzt updaten?' %></summary>
+              <p><%= isEn ? 'If your score is low or critical in SEO/GEO, technical quality, or trust, an update should be prioritized.' : 'Wenn dein Score bei SEO/GEO, Technik oder Vertrauen niedrig bzw. kritisch ist, sollte ein Update priorisiert werden.' %></p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <%- include('partials/footer') %>
+
+
+  <style>
+    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
+    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
+    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
+    .breadcrumbs a { color: #374151; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+    .wt-faq summary { cursor: pointer; font-weight: 600; }
+    .wt-faq p { margin: 10px 0 0; }
+  </style>
+
 
   <script>
     window.WEBSITE_TESTER_CONFIG = {

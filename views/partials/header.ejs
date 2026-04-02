@@ -6,8 +6,8 @@
     : '/'; %>
   <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
   <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
-  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete' }; %>
-  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete' }; %>
+  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete', '/website-tester': '/en/website-tester' }; %>
+  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete', '/en/website-tester': '/website-tester' }; %>
   <% const switchToEnPath = deToEnMap[normalizedCurrentPath]
     || (normalizedCurrentPath.startsWith('/webdesign-berlin/') ? `/en${normalizedCurrentPath}` : null)
     || (normalizedCurrentPath.startsWith('/pakete/') ? `/en${normalizedCurrentPath}` : null)
@@ -92,7 +92,7 @@
                 </li>
               </ul>
             </nav>
-            <a href="/ratgeber"><%= isEn ? 'Guides' : 'Ratgeber' %></a>
+            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>">Website Tester</a>
             <a href="/blog">Blog</a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-tertiary"><%= isEn ? 'Book a call' : 'Termin buchen' %></a>
             <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>
