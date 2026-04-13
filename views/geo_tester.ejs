@@ -1,0 +1,228 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+
+  <main id="hero">
+    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+
+    <section class="wt-section wt-section-compact">
+      <div class="wt-shell">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+            <li aria-current="page">GEO Tester</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card wt-cta-inline">
+          <h2><%= isEn ? 'Want expert support for your GEO roadmap?' : 'Du möchtest Unterstützung bei deiner GEO-Roadmap?' %></h2>
+          <p>
+            <%= isEn
+              ? 'We help you prioritize the highest-impact GEO measures for AI and classic search visibility.'
+              : 'Wir helfen dir, die wirkungsvollsten GEO-Maßnahmen für AI- und klassische Suchsichtbarkeit zu priorisieren.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <i class="fa-solid fa-comments"></i>
+              <%= isEn ? 'Request consultation' : 'Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking">
+              <i class="fa-solid fa-calendar-check"></i>
+              <%= isEn ? 'Book appointment' : 'Termin buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-hero">
+      <div class="wt-shell">
+        <div class="wt-hero-grid">
+          <div class="wt-hero-copy">
+            <span class="wt-eyebrow">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              GEO Tester
+            </span>
+            <h1><%= isEn ? 'Check your website for GEO readiness across subpages.' : 'Prüfe deine Website auf GEO-Readiness über Unterseiten.' %></h1>
+            <p class="wt-lead">
+              <%= isEn
+                ? 'Run a focused GEO audit and identify optimization potential for AI-generated search experiences. Detailed implementation guidance is unlocked after newsletter confirmation.'
+                : 'Starte einen fokussierten GEO-Audit und erkenne Optimierungspotenziale für KI-generierte Sucherlebnisse. Detaillierte Umsetzungshinweise werden nach Newsletter-Bestätigung freigeschaltet.' %>
+            </p>
+            <ul class="wt-pill-list">
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Subpage crawl with configurable depth (admin)' : 'Unterseiten-Crawl mit konfigurierbarer Tiefe (Admin)' %></li>
+              <li><i class="fa-solid fa-brain"></i> <%= isEn ? 'Entity + intent + snippet readiness checks' : 'Entity- + Intent- + Snippet-Readiness-Checks' %></li>
+              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Detailed GEO report via double opt-in' : 'Detaillierter GEO-Report via Double-Opt-in' %></li>
+            </ul>
+          </div>
+
+          <div class="wt-form-card">
+            <h2><%= isEn ? 'Start GEO audit' : 'GEO-Audit starten' %></h2>
+            <p><%= isEn ? 'Enter URL and business context for realistic GEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische GEO-Bewertung ein.' %></p>
+            <form data-geo-tester-form>
+              <div class="wt-context-grid">
+                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
+                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
+                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+              </div>
+              <label class="visually-hidden" for="geo-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+              <div class="wt-form-row">
+                <input id="geo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <button class="wt-button" type="submit">
+                  <i class="fa-solid fa-bolt"></i>
+                  <%= isEn ? 'Run GEO Audit' : 'GEO-Audit starten' %>
+                </button>
+              </div>
+            </form>
+            <p class="wt-form-note">
+              <%= isEn
+                ? 'You instantly see score and optimization potential. Detailed implementation is delivered by email after confirmation.'
+                : 'Du siehst sofort Score und Optimierungspotenzial. Detaillierte Umsetzung erhältst du nach E-Mail-Bestätigung.' %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel" data-geo-loading hidden>
+          <h3><%= isEn ? 'GEO audit in progress…' : 'GEO-Audit läuft…' %></h3>
+          <p><%= isEn ? 'We are crawling your website and evaluating GEO signals now.' : 'Wir crawlen deine Website und bewerten GEO-Signale.' %></p>
+          <ul class="wt-progress">
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate URL and website access' : 'URL validieren und Websitezugriff prüfen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Crawl homepage and subpages' : 'Startseite und Unterseiten crawlen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Evaluate GEO core signals' : 'GEO-Kernsignale auswerten' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Build score and potential summary' : 'Score und Potenzial-Zusammenfassung erstellen' %></span></li>
+          </ul>
+        </div>
+
+        <div class="wt-error" data-geo-error hidden></div>
+        <div id="geo-results" class="wt-results" data-geo-results hidden></div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel">
+          <h2><%= isEn ? 'Why GEO matters for discoverability' : 'Warum GEO für Auffindbarkeit wichtig ist' %></h2>
+          <p>
+            <%= isEn
+              ? 'GEO (Generative Engine Optimization) helps your content become easier to retrieve, summarize, and cite in AI-driven search flows.'
+              : 'GEO (Generative Engine Optimization) hilft dabei, dass Inhalte in KI-getriebenen Suchflüssen leichter gefunden, zusammengefasst und referenziert werden.' %>
+          </p>
+          <p>
+            <%= isEn
+              ? 'This tester focuses on semantic clarity, entity signals, intent coherence, and snippet readiness across key pages.'
+              : 'Dieser Tester fokussiert semantische Klarheit, Entity-Signale, Intent-Kohärenz und Snippet-Readiness über zentrale Seiten.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel">
+          <h2><%= isEn ? 'FAQ: GEO tester' : 'FAQ: GEO-Tester' %></h2>
+          <div class="wt-faq">
+            <details>
+              <summary><%= isEn ? 'Do I get a free GEO score immediately?' : 'Bekomme ich sofort einen kostenlosen GEO-Score?' %></summary>
+              <p><%= isEn ? 'Yes. You get a direct GEO score and optimization potential summary right after the scan.' : 'Ja. Du erhältst direkt nach dem Scan einen GEO-Score und eine Potenzial-Zusammenfassung.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Why is the detailed guidance locked?' : 'Warum ist die Detail-Anleitung gesperrt?' %></summary>
+              <p><%= isEn ? 'Detailed implementation guidance is sent by email after newsletter double opt-in confirmation.' : 'Die detaillierte Umsetzungsanleitung wird nach Newsletter-Double-Opt-in-Bestätigung per E-Mail versendet.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Does this replace a full expert audit?' : 'Ersetzt das einen vollständigen Experten-Audit?' %></summary>
+              <p><%= isEn ? 'No. It is a structured GEO signal analysis to quickly identify the most relevant opportunities.' : 'Nein. Es ist eine strukturierte GEO-Signalanalyse, um die wichtigsten Chancen schnell zu erkennen.' %></p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card">
+          <h2><%= isEn ? 'Ready to implement GEO improvements with expert support?' : 'Bereit, GEO-Verbesserungen mit Expertenhilfe umzusetzen?' %></h2>
+          <p>
+            <%= isEn
+              ? 'We help you turn GEO findings into a practical roadmap with measurable visibility impact.'
+              : 'Wir helfen dir, GEO-Befunde in eine praktische Roadmap mit messbarem Sichtbarkeits-Impact zu übersetzen.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <i class="fa-solid fa-paper-plane"></i>
+              <%= isEn ? 'Request GEO consultation' : 'GEO-Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking">
+              <i class="fa-solid fa-calendar-days"></i>
+              <%= isEn ? 'Book a call' : 'Call buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <style>
+    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
+    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
+    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
+    .breadcrumbs a { color: #374151; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .wt-cta-inline { padding: 1rem; }
+    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+    .wt-faq summary { cursor: pointer; font-weight: 600; }
+    .wt-faq p { margin: 10px 0 0; }
+  </style>
+
+  <script>
+    window.GEO_TESTER_CONFIG = {
+      locale: "<%= isEn ? 'en' : 'de' %>",
+      endpoint: "/api/geo-audit",
+      leadEndpoint: "/api/geo-audit/lead",
+      i18n: {
+        scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
+        geoAuditFor: "<%= isEn ? 'GEO audit for' : 'GEO-Analyse für' %>",
+        modeLabel: "<%= isEn ? 'Mode' : 'Modus' %>",
+        crawlLabel: "<%= isEn ? 'Crawl scope' : 'Crawl-Umfang' %>",
+        scannedPages: "<%= isEn ? 'Scanned pages' : 'Gescannten Seiten' %>",
+        partialResult: "<%= isEn ? 'Partial result' : 'Teil-Ergebnis' %>",
+        timeoutReached: "<%= isEn ? 'Timeout reached' : 'Zeitlimit erreicht' %>",
+        geoSignalsTitle: "<%= isEn ? 'GEO signals' : 'GEO-Signale' %>",
+        signalEntity: "<%= isEn ? 'Entity / schema' : 'Entity / Schema' %>",
+        signalIntent: "<%= isEn ? 'Intent coherence' : 'Intent-Kohärenz' %>",
+        signalSnippet: "<%= isEn ? 'FAQ / snippet readiness' : 'FAQ / Snippet-Readiness' %>",
+        signalTrust: "<%= isEn ? 'Trust / citations' : 'Trust / Citations' %>",
+        signalInternal: "<%= isEn ? 'Internal linking' : 'Interne Verlinkung' %>",
+        potentialTitle: "<%= isEn ? 'Optimization potential' : 'Optimierungspotenzial' %>",
+        topPotentials: "<%= isEn ? 'Top potential areas' : 'Top-Potenzialbereiche' %>",
+        lockedTitle: "<%= isEn ? 'Detailed GEO implementation report' : 'Detaillierter GEO-Umsetzungsreport' %>",
+        lockedText: "<%= isEn ? 'Get the detailed step-by-step report by confirming your newsletter subscription via email.' : 'Erhalte den detaillierten Schritt-für-Schritt-Report, indem du deine Newsletter-Anmeldung per E-Mail bestätigst.' %>",
+        leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
+        leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
+        leadConsent: "<%= isEn ? 'I agree to newsletter signup and want to receive the detailed GEO report by email.' : 'Ich stimme der Newsletter-Anmeldung zu und möchte den detaillierten GEO-Report per E-Mail erhalten.' %>",
+        leadSubmit: "<%= isEn ? 'Send confirmation link' : 'Bestätigungslink senden' %>",
+        leadLoading: "<%= isEn ? 'Sending…' : 'Wird gesendet…' %>",
+        leadSuccess: "<%= isEn ? 'Please check your inbox and confirm your email. We then send your detailed GEO report.' : 'Bitte prüfe dein Postfach und bestätige deine E-Mail. Danach senden wir deinen detaillierten GEO-Report.' %>",
+        leadError: "<%= isEn ? 'The GEO report request could not be processed.' : 'Die GEO-Report-Anfrage konnte nicht verarbeitet werden.' %>",
+        noPotentials: "<%= isEn ? 'No specific potential areas detected yet.' : 'Es wurden noch keine spezifischen Potenzialbereiche erkannt.' %>",
+        contextRequired: "<%= isEn ? 'Please provide business type, primary service, and target region.' : 'Bitte ergänze Branche, Hauptleistung und Zielregion.' %>",
+        errorFallback: "<%= isEn ? 'The GEO audit could not be completed.' : 'Das GEO-Audit konnte nicht durchgeführt werden.' %>"
+      }
+    };
+  </script>
+  <script src="/js/geo-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+</body>
+</html>

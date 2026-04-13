@@ -62,6 +62,44 @@
                 ? 'No signup required. You can see the full result directly and decide what to improve next.'
                 : 'Kein Login nötig. Du siehst das volle Ergebnis direkt und kannst danach gezielt entscheiden, was verbessert werden soll.' %>
             </p>
+            <div class="wt-panel" style="margin-top:0.9rem;">
+              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need only a link health check?' : 'Nur Link-Gesundheit prüfen?' %></h3>
+              <p style="margin:0 0 0.6rem;">
+                <%= isEn
+                  ? 'Use the dedicated Broken Links Tester for internal and external link checks with detailed issue list.'
+                  : 'Nutze den separaten Broken-Links-Tester für interne und externe Link-Checks mit detaillierter Fehlerliste.' %>
+              </p>
+              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>">
+                <i class="fa-solid fa-link-slash"></i>
+                <%= isEn ? 'Open Broken Links Tester' : 'Broken-Links-Tester öffnen' %>
+              </a>
+            </div>
+
+            <div class="wt-panel" style="margin-top:0.9rem;">
+              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need a dedicated GEO analysis?' : 'Du brauchst eine dedizierte GEO-Analyse?' %></h3>
+              <p style="margin:0 0 0.6rem;">
+                <%= isEn
+                  ? 'Use the GEO Tester for a focused generative-search visibility check with gated detailed report.'
+                  : 'Nutze den GEO-Tester für einen fokussierten Check der generativen Suchsichtbarkeit mit gated Detailreport.' %>
+              </p>
+              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <%= isEn ? 'Open GEO Tester' : 'GEO-Tester öffnen' %>
+              </a>
+            </div>
+
+            <div class="wt-panel" style="margin-top:0.9rem;">
+              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need a dedicated SEO audit?' : 'Du brauchst einen dedizierten SEO-Audit?' %></h3>
+              <p style="margin:0 0 0.6rem;">
+                <%= isEn
+                  ? 'Use the SEO Tester for a focused on-site SEO + technical check with gated detailed report.'
+                  : 'Nutze den SEO-Tester für einen fokussierten Onsite-SEO- und Technik-Check mit gated Detailreport.' %>
+              </p>
+              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <%= isEn ? 'Open SEO Tester' : 'SEO-Tester öffnen' %>
+              </a>
+            </div>
           </div>
         </div>
       </div>

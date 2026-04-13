@@ -115,6 +115,12 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/blog`, changefreq: "weekly", priority: 0.8 },
       { loc: `${base}/website-tester`, changefreq: "weekly", priority: 1.0 },
       { loc: `${base}/en/website-tester`, changefreq: "weekly", priority: 0.95 },
+      { loc: `${base}/website-tester/broken-links`, changefreq: "weekly", priority: 0.9 },
+      { loc: `${base}/en/website-tester/broken-links`, changefreq: "weekly", priority: 0.85 },
+      { loc: `${base}/website-tester/geo`, changefreq: "weekly", priority: 0.9 },
+      { loc: `${base}/en/website-tester/geo`, changefreq: "weekly", priority: 0.85 },
+      { loc: `${base}/website-tester/seo`, changefreq: "weekly", priority: 0.9 },
+      { loc: `${base}/en/website-tester/seo`, changefreq: "weekly", priority: 0.85 },
       // 👉 NEU: Ratgeber-Übersicht
       { loc: `${base}/ratgeber`, changefreq: "weekly", priority: 0.8 },
       { loc: `${base}/faq`, changefreq: "monthly", priority: 0.7 },

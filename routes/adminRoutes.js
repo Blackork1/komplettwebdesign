@@ -44,6 +44,9 @@ router.post('/admin/appointments/auto/run', isAdmin, autoCfg.runAutoGenerate);
 router.get('/admin/test', isAdmin, admin.getTest);
 router.get('/admin/website-tester', isAdmin, websiteTesterAdmin.websiteTesterPage);
 router.post('/admin/website-tester/config', isAdmin, websiteTesterAdmin.saveWebsiteTesterConfig);
+router.post('/admin/website-tester/broken-links/config', isAdmin, websiteTesterAdmin.saveBrokenLinksTesterConfig);
+router.post('/admin/website-tester/geo/config', isAdmin, websiteTesterAdmin.saveGeoTesterConfig);
+router.post('/admin/website-tester/seo/config', isAdmin, websiteTesterAdmin.saveSeoTesterConfig);
 router.post('/admin/website-tester/leads/:id/resend-doi', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadDoiAction);
 router.post('/admin/website-tester/leads/:id/resend-report', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadReportAction);
 

@@ -8,6 +8,21 @@
       Einstellungen gespeichert.
     </div>
   <% } %>
+  <% if (query && query.saved_broken === '1') { %>
+    <div class="alert alert-success" role="status">
+      Broken-Links-Einstellungen gespeichert.
+    </div>
+  <% } %>
+  <% if (query && query.saved_geo === '1') { %>
+    <div class="alert alert-success" role="status">
+      GEO-Tester-Einstellungen gespeichert.
+    </div>
+  <% } %>
+  <% if (query && query.saved_seo === '1') { %>
+    <div class="alert alert-success" role="status">
+      SEO-Tester-Einstellungen gespeichert.
+    </div>
+  <% } %>
 
   <% if (query && query.lead_action === 'doi_resent') { %>
     <div class="alert alert-success" role="status">
@@ -57,6 +72,123 @@
     </div>
   </div>
 
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">Broken-Links-Tester Einstellungen</h2>
+      <p class="text-muted mb-3">
+        Lege den Scan-Umfang für den Broken-Links-Tester fest. Startwert ist Modus <strong>maximal</strong>.
+      </p>
+      <form action="/admin/website-tester/broken-links/config" method="POST" class="row g-2 align-items-end">
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="broken_links_max_subpages">Unterseiten (1-20)</label>
+          <input
+            id="broken_links_max_subpages"
+            class="form-control"
+            type="number"
+            name="broken_links_max_subpages"
+            min="1"
+            max="20"
+            value="<%= config?.brokenLinksMaxSubpages ?? 5 %>"
+            required
+          >
+        </div>
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="broken_links_scan_mode">Scan-Modus</label>
+          <select id="broken_links_scan_mode" class="form-select" name="broken_links_scan_mode" required>
+            <option value="schnell" <%= config?.brokenLinksScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= config?.brokenLinksScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= !config?.brokenLinksScanMode || config?.brokenLinksScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+        <div class="col-sm-auto">
+          <button class="btn btn-primary" type="submit">Speichern</button>
+        </div>
+      </form>
+      <small class="text-muted d-block mt-2">
+        Aktueller Wert: <strong><%= config?.brokenLinksMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
+        Modus: <strong><%= config?.brokenLinksScanMode || 'maximal' %></strong>.
+      </small>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">GEO-Tester Einstellungen</h2>
+      <p class="text-muted mb-3">
+        Lege den Scan-Umfang für den GEO-Tester fest. Startwert ist Modus <strong>maximal</strong>.
+      </p>
+      <form action="/admin/website-tester/geo/config" method="POST" class="row g-2 align-items-end">
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="geo_max_subpages">Unterseiten (1-20)</label>
+          <input
+            id="geo_max_subpages"
+            class="form-control"
+            type="number"
+            name="geo_max_subpages"
+            min="1"
+            max="20"
+            value="<%= config?.geoMaxSubpages ?? 5 %>"
+            required
+          >
+        </div>
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="geo_scan_mode">Scan-Modus</label>
+          <select id="geo_scan_mode" class="form-select" name="geo_scan_mode" required>
+            <option value="schnell" <%= config?.geoScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= config?.geoScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= !config?.geoScanMode || config?.geoScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+        <div class="col-sm-auto">
+          <button class="btn btn-primary" type="submit">Speichern</button>
+        </div>
+      </form>
+      <small class="text-muted d-block mt-2">
+        Aktueller Wert: <strong><%= config?.geoMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
+        Modus: <strong><%= config?.geoScanMode || 'maximal' %></strong>.
+      </small>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">SEO-Tester Einstellungen</h2>
+      <p class="text-muted mb-3">
+        Lege den Scan-Umfang für den SEO-Tester fest. Startwert ist Modus <strong>maximal</strong>.
+      </p>
+      <form action="/admin/website-tester/seo/config" method="POST" class="row g-2 align-items-end">
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="seo_max_subpages">Unterseiten (1-20)</label>
+          <input
+            id="seo_max_subpages"
+            class="form-control"
+            type="number"
+            name="seo_max_subpages"
+            min="1"
+            max="20"
+            value="<%= config?.seoMaxSubpages ?? 5 %>"
+            required
+          >
+        </div>
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label" for="seo_scan_mode">Scan-Modus</label>
+          <select id="seo_scan_mode" class="form-select" name="seo_scan_mode" required>
+            <option value="schnell" <%= config?.seoScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= config?.seoScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= !config?.seoScanMode || config?.seoScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+        <div class="col-sm-auto">
+          <button class="btn btn-primary" type="submit">Speichern</button>
+        </div>
+      </form>
+      <small class="text-muted d-block mt-2">
+        Aktueller Wert: <strong><%= config?.seoMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
+        Modus: <strong><%= config?.seoScanMode || 'maximal' %></strong>.
+      </small>
+    </div>
+  </div>
+
   <% 
     const currentParams = new URLSearchParams();
     Object.entries(query || {}).forEach(([key, value]) => {
@@ -91,9 +223,16 @@
 
         <input type="hidden" name="lead_q" value="<%= filters?.leadQ || '' %>">
         <input type="hidden" name="lead_status" value="<%= filters?.leadStatus || '' %>">
+        <input type="hidden" name="lead_source" value="<%= filters?.leadSource || '' %>">
         <input type="hidden" name="lead_locale" value="<%= filters?.leadLocale || '' %>">
         <input type="hidden" name="lead_from" value="<%= filters?.leadFrom || '' %>">
         <input type="hidden" name="lead_to" value="<%= filters?.leadTo || '' %>">
+        <input type="hidden" name="bl_q" value="<%= filters?.brokenQ || '' %>">
+        <input type="hidden" name="bl_status" value="<%= filters?.brokenStatus || '' %>">
+        <input type="hidden" name="bl_mode" value="<%= filters?.brokenMode || '' %>">
+        <input type="hidden" name="geo_q" value="<%= filters?.geoQ || '' %>">
+        <input type="hidden" name="geo_status" value="<%= filters?.geoStatus || '' %>">
+        <input type="hidden" name="geo_mode" value="<%= filters?.geoMode || '' %>">
 
         <div class="col-md-auto">
           <button class="btn btn-outline-primary" type="submit">Filtern</button>
@@ -189,10 +328,19 @@
           if (filters?.status) params.set('status', filters.status);
           if (filters?.leadQ) params.set('lead_q', filters.leadQ);
           if (filters?.leadStatus) params.set('lead_status', filters.leadStatus);
+          if (filters?.leadSource) params.set('lead_source', filters.leadSource);
           if (filters?.leadLocale) params.set('lead_locale', filters.leadLocale);
           if (filters?.leadFrom) params.set('lead_from', filters.leadFrom);
           if (filters?.leadTo) params.set('lead_to', filters.leadTo);
+          if (filters?.brokenQ) params.set('bl_q', filters.brokenQ);
+          if (filters?.brokenStatus) params.set('bl_status', filters.brokenStatus);
+          if (filters?.brokenMode) params.set('bl_mode', filters.brokenMode);
+          if (filters?.geoQ) params.set('geo_q', filters.geoQ);
+          if (filters?.geoStatus) params.set('geo_status', filters.geoStatus);
+          if (filters?.geoMode) params.set('geo_mode', filters.geoMode);
           params.set('req_page', String(targetPage));
+          params.set('bl_page', String(brokenArchive?.page || 1));
+          params.set('geo_page', String(geoArchive?.page || 1));
           params.set('lead_page', String(leadArchive?.page || 1));
           return `/admin/website-tester?${params.toString()}`;
         };
@@ -205,6 +353,468 @@
         <div class="btn-group">
           <a class="btn btn-outline-secondary btn-sm <%= requestPage <= 1 ? 'disabled' : '' %>" href="<%= requestPage <= 1 ? '#' : buildRequestPageUrl(requestPage - 1) %>">Zurück</a>
           <a class="btn btn-outline-secondary btn-sm <%= requestPage >= requestTotalPages ? 'disabled' : '' %>" href="<%= requestPage >= requestTotalPages ? '#' : buildRequestPageUrl(requestPage + 1) %>">Weiter</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">Broken-Link-Scan Archiv</h2>
+
+      <form method="GET" action="/admin/website-tester" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <input
+            class="form-control"
+            type="text"
+            name="bl_q"
+            value="<%= filters?.brokenQ || '' %>"
+            placeholder="Suche nach URL oder Audit-ID"
+          >
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="bl_status">
+            <option value="" <%= !filters?.brokenStatus ? 'selected' : '' %>>Alle Status</option>
+            <option value="success" <%= filters?.brokenStatus === 'success' ? 'selected' : '' %>>Erfolg</option>
+            <option value="error" <%= filters?.brokenStatus === 'error' ? 'selected' : '' %>>Fehler</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="bl_mode">
+            <option value="" <%= !filters?.brokenMode ? 'selected' : '' %>>Alle Modi</option>
+            <option value="schnell" <%= filters?.brokenMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= filters?.brokenMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= filters?.brokenMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+
+        <input type="hidden" name="q" value="<%= filters?.q || '' %>">
+        <input type="hidden" name="status" value="<%= filters?.status || '' %>">
+        <input type="hidden" name="bl_q" value="<%= filters?.brokenQ || '' %>">
+        <input type="hidden" name="bl_status" value="<%= filters?.brokenStatus || '' %>">
+        <input type="hidden" name="bl_mode" value="<%= filters?.brokenMode || '' %>">
+        <input type="hidden" name="lead_q" value="<%= filters?.leadQ || '' %>">
+        <input type="hidden" name="lead_status" value="<%= filters?.leadStatus || '' %>">
+        <input type="hidden" name="lead_source" value="<%= filters?.leadSource || '' %>">
+        <input type="hidden" name="lead_locale" value="<%= filters?.leadLocale || '' %>">
+        <input type="hidden" name="lead_from" value="<%= filters?.leadFrom || '' %>">
+        <input type="hidden" name="lead_to" value="<%= filters?.leadTo || '' %>">
+        <input type="hidden" name="geo_q" value="<%= filters?.geoQ || '' %>">
+        <input type="hidden" name="geo_status" value="<%= filters?.geoStatus || '' %>">
+        <input type="hidden" name="geo_mode" value="<%= filters?.geoMode || '' %>">
+
+        <div class="col-md-auto">
+          <button class="btn btn-outline-primary" type="submit">Filtern</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Zeitpunkt</th>
+              <th>Status</th>
+              <th>URL</th>
+              <th>Modus</th>
+              <th>Crawl</th>
+              <th>Link-Stats</th>
+              <th>Audit-ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!brokenArchive?.rows?.length) { %>
+              <tr>
+                <td colspan="7" class="text-muted">Keine Broken-Link-Scans gefunden.</td>
+              </tr>
+            <% } %>
+            <% (brokenArchive?.rows || []).forEach((row) => { %>
+              <tr>
+                <td>
+                  <%= new Date(row.created_at).toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) %>
+                </td>
+                <td>
+                  <% if (row.status === 'success') { %>
+                    <span class="badge text-bg-success">Erfolg</span>
+                  <% } else { %>
+                    <span class="badge text-bg-danger">Fehler</span>
+                  <% } %>
+                  <% if (row.partial_result) { %>
+                    <div class="small text-warning mt-1">Teil-Scan</div>
+                  <% } %>
+                </td>
+                <td style="max-width: 360px;">
+                  <div class="small">
+                    <strong>Eingabe:</strong><br>
+                    <span class="text-break"><%= row.requested_url %></span>
+                  </div>
+                  <% if (row.final_url) { %>
+                    <div class="small mt-1">
+                      <strong>Final:</strong><br>
+                      <span class="text-break"><%= row.final_url %></span>
+                    </div>
+                  <% } %>
+                  <% if (row.error_message) { %>
+                    <div class="small text-danger mt-1 text-break"><%= row.error_message %></div>
+                  <% } %>
+                </td>
+                <td><span class="small"><%= row.scan_mode || '-' %></span></td>
+                <td>
+                  <span class="small">
+                    <%= row.crawl_visited_pages ?? '-' %>/<%= row.crawl_planned_pages ?? '-' %>
+                    <% if (row.crawl_failed_pages && row.crawl_failed_pages > 0) { %>
+                      <br><span class="text-danger">Fehler: <%= row.crawl_failed_pages %></span>
+                    <% } %>
+                  </span>
+                </td>
+                <td>
+                  <span class="small">
+                    Geprüft: <strong><%= row.link_total_checked ?? '-' %></strong><br>
+                    Broken: <strong><%= row.link_broken_count ?? '-' %></strong><br>
+                    Warnings: <strong><%= row.link_warning_count ?? '-' %></strong>
+                  </span>
+                </td>
+                <td><span class="small text-break"><%= row.audit_id || '-' %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <%
+        const brokenPage = brokenArchive?.page || 1;
+        const brokenTotalPages = brokenArchive?.totalPages || 1;
+        const buildBrokenPageUrl = (targetPage) => {
+          const params = new URLSearchParams();
+          if (filters?.q) params.set('q', filters.q);
+          if (filters?.status) params.set('status', filters.status);
+          if (filters?.brokenQ) params.set('bl_q', filters.brokenQ);
+          if (filters?.brokenStatus) params.set('bl_status', filters.brokenStatus);
+          if (filters?.brokenMode) params.set('bl_mode', filters.brokenMode);
+          if (filters?.leadQ) params.set('lead_q', filters.leadQ);
+          if (filters?.leadStatus) params.set('lead_status', filters.leadStatus);
+          if (filters?.leadSource) params.set('lead_source', filters.leadSource);
+          if (filters?.leadLocale) params.set('lead_locale', filters.leadLocale);
+          if (filters?.leadFrom) params.set('lead_from', filters.leadFrom);
+          if (filters?.leadTo) params.set('lead_to', filters.leadTo);
+          if (filters?.geoQ) params.set('geo_q', filters.geoQ);
+          if (filters?.geoStatus) params.set('geo_status', filters.geoStatus);
+          if (filters?.geoMode) params.set('geo_mode', filters.geoMode);
+          params.set('req_page', String(archive?.page || 1));
+          params.set('bl_page', String(targetPage));
+          params.set('geo_page', String(geoArchive?.page || 1));
+          params.set('lead_page', String(leadArchive?.page || 1));
+          return `/admin/website-tester?${params.toString()}`;
+        };
+      %>
+
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="small text-muted">
+          Seite <strong><%= brokenPage %></strong> von <strong><%= brokenTotalPages %></strong> - Gesamt: <strong><%= brokenArchive?.total || 0 %></strong>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-outline-secondary btn-sm <%= brokenPage <= 1 ? 'disabled' : '' %>" href="<%= brokenPage <= 1 ? '#' : buildBrokenPageUrl(brokenPage - 1) %>">Zurück</a>
+          <a class="btn btn-outline-secondary btn-sm <%= brokenPage >= brokenTotalPages ? 'disabled' : '' %>" href="<%= brokenPage >= brokenTotalPages ? '#' : buildBrokenPageUrl(brokenPage + 1) %>">Weiter</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">GEO-Scan Archiv</h2>
+
+      <form method="GET" action="/admin/website-tester" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <input
+            class="form-control"
+            type="text"
+            name="geo_q"
+            value="<%= filters?.geoQ || '' %>"
+            placeholder="Suche nach URL oder Audit-ID"
+          >
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="geo_status">
+            <option value="" <%= !filters?.geoStatus ? 'selected' : '' %>>Alle Status</option>
+            <option value="success" <%= filters?.geoStatus === 'success' ? 'selected' : '' %>>Erfolg</option>
+            <option value="error" <%= filters?.geoStatus === 'error' ? 'selected' : '' %>>Fehler</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="geo_mode">
+            <option value="" <%= !filters?.geoMode ? 'selected' : '' %>>Alle Modi</option>
+            <option value="schnell" <%= filters?.geoMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= filters?.geoMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= filters?.geoMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+
+        <input type="hidden" name="q" value="<%= filters?.q || '' %>">
+        <input type="hidden" name="status" value="<%= filters?.status || '' %>">
+        <input type="hidden" name="bl_q" value="<%= filters?.brokenQ || '' %>">
+        <input type="hidden" name="bl_status" value="<%= filters?.brokenStatus || '' %>">
+        <input type="hidden" name="bl_mode" value="<%= filters?.brokenMode || '' %>">
+        <input type="hidden" name="lead_q" value="<%= filters?.leadQ || '' %>">
+        <input type="hidden" name="lead_status" value="<%= filters?.leadStatus || '' %>">
+        <input type="hidden" name="lead_source" value="<%= filters?.leadSource || '' %>">
+        <input type="hidden" name="lead_locale" value="<%= filters?.leadLocale || '' %>">
+        <input type="hidden" name="lead_from" value="<%= filters?.leadFrom || '' %>">
+        <input type="hidden" name="lead_to" value="<%= filters?.leadTo || '' %>">
+
+        <div class="col-md-auto">
+          <button class="btn btn-outline-primary" type="submit">Filtern</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Zeitpunkt</th>
+              <th>Status</th>
+              <th>URL</th>
+              <th>Modus</th>
+              <th>Crawl</th>
+              <th>GEO-Score</th>
+              <th>Audit-ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!geoArchive?.rows?.length) { %>
+              <tr>
+                <td colspan="7" class="text-muted">Keine GEO-Scans gefunden.</td>
+              </tr>
+            <% } %>
+            <% (geoArchive?.rows || []).forEach((row) => { %>
+              <tr>
+                <td>
+                  <%= new Date(row.created_at).toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) %>
+                </td>
+                <td>
+                  <% if (row.status === 'success') { %>
+                    <span class="badge text-bg-success">Erfolg</span>
+                  <% } else { %>
+                    <span class="badge text-bg-danger">Fehler</span>
+                  <% } %>
+                  <% if (row.partial_result) { %>
+                    <div class="small text-warning mt-1">Teil-Scan</div>
+                  <% } %>
+                </td>
+                <td style="max-width: 360px;">
+                  <div class="small">
+                    <strong>Eingabe:</strong><br>
+                    <span class="text-break"><%= row.requested_url %></span>
+                  </div>
+                  <% if (row.final_url) { %>
+                    <div class="small mt-1">
+                      <strong>Final:</strong><br>
+                      <span class="text-break"><%= row.final_url %></span>
+                    </div>
+                  <% } %>
+                  <% if (row.error_message) { %>
+                    <div class="small text-danger mt-1 text-break"><%= row.error_message %></div>
+                  <% } %>
+                </td>
+                <td><span class="small"><%= row.scan_mode || '-' %></span></td>
+                <td>
+                  <span class="small">
+                    <%= row.crawl_visited_pages ?? '-' %>/<%= row.crawl_planned_pages ?? '-' %>
+                    <% if (row.crawl_failed_pages && row.crawl_failed_pages > 0) { %>
+                      <br><span class="text-danger">Fehler: <%= row.crawl_failed_pages %></span>
+                    <% } %>
+                  </span>
+                </td>
+                <td>
+                  <strong><%= row.geo_score ?? '-' %></strong>
+                  <div class="small text-muted"><%= row.geo_band || '-' %></div>
+                </td>
+                <td><span class="small text-break"><%= row.audit_id || '-' %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <%
+        const geoPage = geoArchive?.page || 1;
+        const geoTotalPages = geoArchive?.totalPages || 1;
+        const buildGeoPageUrl = (targetPage) => {
+          const params = new URLSearchParams();
+          if (filters?.q) params.set('q', filters.q);
+          if (filters?.status) params.set('status', filters.status);
+          if (filters?.brokenQ) params.set('bl_q', filters.brokenQ);
+          if (filters?.brokenStatus) params.set('bl_status', filters.brokenStatus);
+          if (filters?.brokenMode) params.set('bl_mode', filters.brokenMode);
+          if (filters?.geoQ) params.set('geo_q', filters.geoQ);
+          if (filters?.geoStatus) params.set('geo_status', filters.geoStatus);
+          if (filters?.geoMode) params.set('geo_mode', filters.geoMode);
+          if (filters?.leadQ) params.set('lead_q', filters.leadQ);
+          if (filters?.leadStatus) params.set('lead_status', filters.leadStatus);
+          if (filters?.leadSource) params.set('lead_source', filters.leadSource);
+          if (filters?.leadLocale) params.set('lead_locale', filters.leadLocale);
+          if (filters?.leadFrom) params.set('lead_from', filters.leadFrom);
+          if (filters?.leadTo) params.set('lead_to', filters.leadTo);
+          params.set('req_page', String(archive?.page || 1));
+          params.set('bl_page', String(brokenArchive?.page || 1));
+          params.set('geo_page', String(targetPage));
+          params.set('lead_page', String(leadArchive?.page || 1));
+          return `/admin/website-tester?${params.toString()}`;
+        };
+      %>
+
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="small text-muted">
+          Seite <strong><%= geoPage %></strong> von <strong><%= geoTotalPages %></strong> - Gesamt: <strong><%= geoArchive?.total || 0 %></strong>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-outline-secondary btn-sm <%= geoPage <= 1 ? 'disabled' : '' %>" href="<%= geoPage <= 1 ? '#' : buildGeoPageUrl(geoPage - 1) %>">Zurück</a>
+          <a class="btn btn-outline-secondary btn-sm <%= geoPage >= geoTotalPages ? 'disabled' : '' %>" href="<%= geoPage >= geoTotalPages ? '#' : buildGeoPageUrl(geoPage + 1) %>">Weiter</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-3">SEO-Scan Archiv</h2>
+
+      <form method="GET" action="/admin/website-tester" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <input
+            class="form-control"
+            type="text"
+            name="seo_q"
+            value="<%= filters?.seoQ || '' %>"
+            placeholder="Suche nach URL oder Audit-ID"
+          >
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="seo_status">
+            <option value="" <%= !filters?.seoStatus ? 'selected' : '' %>>Alle Status</option>
+            <option value="success" <%= filters?.seoStatus === 'success' ? 'selected' : '' %>>Erfolg</option>
+            <option value="error" <%= filters?.seoStatus === 'error' ? 'selected' : '' %>>Fehler</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="seo_mode">
+            <option value="" <%= !filters?.seoMode ? 'selected' : '' %>>Alle Modi</option>
+            <option value="schnell" <%= filters?.seoMode === 'schnell' ? 'selected' : '' %>>schnell</option>
+            <option value="balanced" <%= filters?.seoMode === 'balanced' ? 'selected' : '' %>>balanced</option>
+            <option value="maximal" <%= filters?.seoMode === 'maximal' ? 'selected' : '' %>>maximal</option>
+          </select>
+        </div>
+        <div class="col-md-auto">
+          <button class="btn btn-outline-primary" type="submit">Filtern</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Zeitpunkt</th>
+              <th>Status</th>
+              <th>URL</th>
+              <th>Modus</th>
+              <th>Crawl</th>
+              <th>SEO-Score</th>
+              <th>Audit-ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!seoArchive?.rows?.length) { %>
+              <tr>
+                <td colspan="7" class="text-muted">Keine SEO-Scans gefunden.</td>
+              </tr>
+            <% } %>
+            <% (seoArchive?.rows || []).forEach((row) => { %>
+              <tr>
+                <td>
+                  <%= new Date(row.created_at).toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) %>
+                </td>
+                <td>
+                  <% if (row.status === 'success') { %>
+                    <span class="badge text-bg-success">Erfolg</span>
+                  <% } else { %>
+                    <span class="badge text-bg-danger">Fehler</span>
+                  <% } %>
+                  <% if (row.partial_result) { %>
+                    <div class="small text-warning mt-1">Teil-Scan</div>
+                  <% } %>
+                </td>
+                <td style="max-width: 360px;">
+                  <div class="small">
+                    <strong>Eingabe:</strong><br>
+                    <span class="text-break"><%= row.requested_url %></span>
+                  </div>
+                  <% if (row.final_url) { %>
+                    <div class="small mt-1">
+                      <strong>Final:</strong><br>
+                      <span class="text-break"><%= row.final_url %></span>
+                    </div>
+                  <% } %>
+                  <% if (row.error_message) { %>
+                    <div class="small text-danger mt-1 text-break"><%= row.error_message %></div>
+                  <% } %>
+                </td>
+                <td><span class="small"><%= row.scan_mode || '-' %></span></td>
+                <td>
+                  <span class="small">
+                    <%= row.crawl_visited_pages ?? '-' %>/<%= row.crawl_planned_pages ?? '-' %>
+                    <% if (row.crawl_failed_pages && row.crawl_failed_pages > 0) { %>
+                      <br><span class="text-danger">Fehler: <%= row.crawl_failed_pages %></span>
+                    <% } %>
+                  </span>
+                </td>
+                <td>
+                  <strong><%= row.seo_score ?? '-' %></strong>
+                  <div class="small text-muted"><%= row.seo_band || '-' %></div>
+                </td>
+                <td><span class="small text-break"><%= row.audit_id || '-' %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <%
+        const seoPage = seoArchive?.page || 1;
+        const seoTotalPages = seoArchive?.totalPages || 1;
+        const buildSeoPageUrl = (targetPage) => {
+          const params = new URLSearchParams();
+          if (filters?.seoQ) params.set('seo_q', filters.seoQ);
+          if (filters?.seoStatus) params.set('seo_status', filters.seoStatus);
+          if (filters?.seoMode) params.set('seo_mode', filters.seoMode);
+          params.set('seo_page', String(targetPage));
+          return `/admin/website-tester?${params.toString()}`;
+        };
+      %>
+
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="small text-muted">
+          Seite <strong><%= seoPage %></strong> von <strong><%= seoTotalPages %></strong> - Gesamt: <strong><%= seoArchive?.total || 0 %></strong>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-outline-secondary btn-sm <%= seoPage <= 1 ? 'disabled' : '' %>" href="<%= seoPage <= 1 ? '#' : buildSeoPageUrl(seoPage - 1) %>">Zurück</a>
+          <a class="btn btn-outline-secondary btn-sm <%= seoPage >= seoTotalPages ? 'disabled' : '' %>" href="<%= seoPage >= seoTotalPages ? '#' : buildSeoPageUrl(seoPage + 1) %>">Weiter</a>
         </div>
       </div>
     </div>
@@ -228,21 +838,35 @@
           </select>
         </div>
         <div class="col-md-2">
+          <select class="form-select" name="lead_source">
+            <option value="" <%= !filters?.leadSource ? 'selected' : '' %>>Alle Quellen</option>
+            <option value="website" <%= filters?.leadSource === 'website' ? 'selected' : '' %>>Website</option>
+            <option value="geo" <%= filters?.leadSource === 'geo' ? 'selected' : '' %>>GEO</option>
+            <option value="seo" <%= filters?.leadSource === 'seo' ? 'selected' : '' %>>SEO</option>
+          </select>
+        </div>
+        <div class="col-md-2">
           <select class="form-select" name="lead_locale">
             <option value="" <%= !filters?.leadLocale ? 'selected' : '' %>>Alle Sprachen</option>
             <option value="de" <%= filters?.leadLocale === 'de' ? 'selected' : '' %>>DE</option>
             <option value="en" <%= filters?.leadLocale === 'en' ? 'selected' : '' %>>EN</option>
           </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
           <input class="form-control" type="date" name="lead_from" value="<%= filters?.leadFrom || '' %>">
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
           <input class="form-control" type="date" name="lead_to" value="<%= filters?.leadTo || '' %>">
         </div>
 
         <input type="hidden" name="q" value="<%= filters?.q || '' %>">
         <input type="hidden" name="status" value="<%= filters?.status || '' %>">
+        <input type="hidden" name="bl_q" value="<%= filters?.brokenQ || '' %>">
+        <input type="hidden" name="bl_status" value="<%= filters?.brokenStatus || '' %>">
+        <input type="hidden" name="bl_mode" value="<%= filters?.brokenMode || '' %>">
+        <input type="hidden" name="geo_q" value="<%= filters?.geoQ || '' %>">
+        <input type="hidden" name="geo_status" value="<%= filters?.geoStatus || '' %>">
+        <input type="hidden" name="geo_mode" value="<%= filters?.geoMode || '' %>">
 
         <div class="col-md-1 d-grid">
           <button class="btn btn-outline-primary" type="submit">Filter</button>
@@ -255,6 +879,7 @@
             <tr>
               <th>Zeitpunkt</th>
               <th>Status</th>
+              <th>Quelle</th>
               <th>Domain</th>
               <th>E-Mail</th>
               <th>Score</th>
@@ -266,7 +891,7 @@
           <tbody>
             <% if (!leadArchive?.rows?.length) { %>
               <tr>
-                <td colspan="8" class="text-muted">Keine Lead-Einträge gefunden.</td>
+                <td colspan="9" class="text-muted">Keine Lead-Einträge gefunden.</td>
               </tr>
             <% } %>
 
@@ -293,6 +918,7 @@
                   <% } %>
                   <div class="small text-muted mt-1"><%= row.locale || 'de' %></div>
                 </td>
+                <td><span class="small"><%= row.source || 'website' %></span></td>
                 <td style="max-width: 210px;"><span class="small text-break"><%= row.domain || '-' %></span></td>
                 <td style="max-width: 210px;"><span class="small text-break"><%= row.maskedEmail || '-' %></span></td>
                 <td>
@@ -333,10 +959,19 @@
           if (filters?.status) params.set('status', filters.status);
           if (filters?.leadQ) params.set('lead_q', filters.leadQ);
           if (filters?.leadStatus) params.set('lead_status', filters.leadStatus);
+          if (filters?.leadSource) params.set('lead_source', filters.leadSource);
           if (filters?.leadLocale) params.set('lead_locale', filters.leadLocale);
           if (filters?.leadFrom) params.set('lead_from', filters.leadFrom);
           if (filters?.leadTo) params.set('lead_to', filters.leadTo);
+          if (filters?.brokenQ) params.set('bl_q', filters.brokenQ);
+          if (filters?.brokenStatus) params.set('bl_status', filters.brokenStatus);
+          if (filters?.brokenMode) params.set('bl_mode', filters.brokenMode);
+          if (filters?.geoQ) params.set('geo_q', filters.geoQ);
+          if (filters?.geoStatus) params.set('geo_status', filters.geoStatus);
+          if (filters?.geoMode) params.set('geo_mode', filters.geoMode);
           params.set('req_page', String(archive?.page || 1));
+          params.set('bl_page', String(brokenArchive?.page || 1));
+          params.set('geo_page', String(geoArchive?.page || 1));
           params.set('lead_page', String(targetPage));
           return `/admin/website-tester?${params.toString()}`;
         };

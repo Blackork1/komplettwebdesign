@@ -281,6 +281,230 @@ export async function sendWebsiteTesterReportMail({
     return transporter.sendMail(mail);
 }
 
+export async function sendGeoTesterDoiMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    confirmUrl = "",
+    expiresAt = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+    const expiry = wtPrettyDate(expiresAt, lng);
+    const subject = lng === "en"
+        ? "Confirm your email for your detailed GEO report"
+        : "Bitte bestätige deine E-Mail für deinen detaillierten GEO-Report";
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>you requested the detailed GEO optimization report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>Please confirm your email address to unlock and receive the full report:</p>
+      <p><a href="${confirmUrl}">Confirm email and send GEO report</a></p>
+      ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>After confirmation, your address will be added to our newsletter so we can send future GEO updates and tips.</p>
+      <p>If you did not request this, you can ignore this email.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>du hast den detaillierten GEO-Optimierungsreport für <strong>${domain || "deine Website"}</strong> (${label}) angefordert.</p>
+      <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den vollständigen Report senden können:</p>
+      <p><a href="${confirmUrl}">E-Mail bestätigen und GEO-Report senden</a></p>
+      ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Nach der Bestätigung wird deine Adresse in unseren Newsletter aufgenommen, damit wir dir weitere GEO-Tipps senden können.</p>
+      <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html
+    });
+}
+
+export async function sendGeoTesterReportMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    report
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+
+    const subject = lng === "en"
+        ? "Your detailed GEO optimization report (PDF)"
+        : "Dein detaillierter GEO-Optimierungsreport (PDF)";
+
+    const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+    const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${base}/booking`;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>here is your detailed GEO optimization report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>The PDF is attached to this email.</p>
+      <p>If you want, we can prioritize implementation together in a short consultation:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>hier ist dein detaillierter GEO-Optimierungsreport für <strong>${domain || "deine Website"}</strong> (${label}).</p>
+      <p>Das PDF findest du im Anhang.</p>
+      <p>Wenn du möchtest, priorisieren wir die Umsetzung gemeinsam in einem kurzen Beratungsgespräch:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html,
+        attachments: [
+            {
+                filename: report?.filename || "geo-optimierungsreport.pdf",
+                content: report?.buffer,
+                contentType: "application/pdf"
+            }
+        ]
+    };
+
+    const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
+    if (adminNotify) {
+        mail.bcc = adminNotify;
+    }
+
+    return transporter.sendMail(mail);
+}
+
+export async function sendSeoTesterDoiMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    confirmUrl = "",
+    expiresAt = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+    const expiry = wtPrettyDate(expiresAt, lng);
+    const subject = lng === "en"
+        ? "Confirm your email for your detailed SEO report"
+        : "Bitte bestätige deine E-Mail für deinen detaillierten SEO-Report";
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>you requested the detailed SEO report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>Please confirm your email address to unlock and receive the full report:</p>
+      <p><a href="${confirmUrl}">Confirm email and send SEO report</a></p>
+      ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>If you did not request this, you can ignore this email.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>du hast den detaillierten SEO-Report für <strong>${domain || "deine Website"}</strong> (${label}) angefordert.</p>
+      <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den vollständigen Report senden können:</p>
+      <p><a href="${confirmUrl}">E-Mail bestätigen und SEO-Report senden</a></p>
+      ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html
+    });
+}
+
+export async function sendSeoTesterReportMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    report
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+
+    const subject = lng === "en"
+        ? "Your detailed SEO report (PDF)"
+        : "Dein detaillierter SEO-Report (PDF)";
+
+    const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+    const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${base}/booking`;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>here is your detailed SEO report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>The PDF is attached to this email.</p>
+      <p>If you want, we can prioritize implementation together in a short consultation:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>hier ist dein detaillierter SEO-Report für <strong>${domain || "deine Website"}</strong> (${label}).</p>
+      <p>Das PDF findest du im Anhang.</p>
+      <p>Wenn du möchtest, priorisieren wir die Umsetzung gemeinsam in einem kurzen Beratungsgespräch:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html,
+        attachments: [
+            {
+                filename: report?.filename || "seo-audit-report.pdf",
+                content: report?.buffer,
+                contentType: "application/pdf"
+            }
+        ]
+    };
+
+    const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
+    if (adminNotify) {
+        mail.bcc = adminNotify;
+    }
+
+    return transporter.sendMail(mail);
+}
+
 
 export async function sendAdminBookingInfo({ booking, appointment, type }) {
     const pretty = format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });

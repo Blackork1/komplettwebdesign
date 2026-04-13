@@ -1,0 +1,222 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+
+  <main id="hero">
+    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+
+    <section class="wt-section wt-section-compact">
+      <div class="wt-shell">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+            <li aria-current="page"><%= isEn ? 'Broken Links Tester' : 'Broken Links Tester' %></li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card wt-cta-inline">
+          <h2><%= isEn ? 'Want expert help improving your website results?' : 'Du möchtest deine Website-Ergebnisse professionell verbessern?' %></h2>
+          <p>
+            <%= isEn
+              ? 'Get a short, practical consultation: we prioritize your biggest SEO and UX blockers and define a clear action plan.'
+              : 'Hol dir eine kurze, praktische Beratung: Wir priorisieren deine größten SEO- und UX-Bremsen und erstellen einen klaren Maßnahmenplan.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <i class="fa-solid fa-comments"></i>
+              <%= isEn ? 'Get consultation' : 'Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking">
+              <i class="fa-solid fa-calendar-check"></i>
+              <%= isEn ? 'Book appointment' : 'Termin buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-hero">
+      <div class="wt-shell">
+        <div class="wt-hero-grid">
+          <div class="wt-hero-copy">
+            <span class="wt-eyebrow">
+              <i class="fa-solid fa-link-slash"></i>
+              <%= isEn ? 'Broken Links Tester' : 'Broken Links Tester' %>
+            </span>
+            <h1><%= isEn ? 'Find broken internal and external links on your website.' : 'Finde defekte interne und externe Links auf deiner Website.' %></h1>
+            <p class="wt-lead">
+              <%= isEn
+                ? 'Enter your website URL and scan for broken links across subpages. You get an instant summary plus a detailed list with source page and target URL.'
+                : 'Gib deine Website-URL ein und scanne Unterseiten auf defekte Links. Du erhältst sofort eine Zusammenfassung plus detaillierte Liste mit Quellseite und Ziel-URL.' %>
+            </p>
+            <ul class="wt-pill-list">
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Configurable crawl depth (admin)' : 'Konfigurierbare Crawl-Tiefe (Admin)' %></li>
+              <li><i class="fa-solid fa-link"></i> <%= isEn ? 'Checks internal + external links' : 'Prüft interne + externe Links' %></li>
+              <li><i class="fa-solid fa-triangle-exclamation"></i> <%= isEn ? 'Separates broken links and warnings' : 'Trennt Broken Links und Warnings' %></li>
+            </ul>
+          </div>
+
+          <div class="wt-form-card">
+            <h2><%= isEn ? 'Enter website URL' : 'Website-Adresse eingeben' %></h2>
+            <p><%= isEn ? 'No signup required. Start scan now.' : 'Kein Login nötig. Starte den Scan direkt.' %></p>
+            <form data-broken-links-form>
+              <label class="visually-hidden" for="broken-links-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+              <div class="wt-form-row">
+                <input id="broken-links-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <button class="wt-button" type="submit">
+                  <i class="fa-solid fa-bolt"></i>
+                  <%= isEn ? 'Run Scan' : 'Scan starten' %>
+                </button>
+              </div>
+            </form>
+            <p class="wt-form-note">
+              <%= isEn
+                ? 'Result includes scan scope, broken links, warnings, and source pages.'
+                : 'Das Ergebnis enthält Scan-Umfang, defekte Links, Warnungen und Quellseiten.' %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel" data-broken-links-loading hidden>
+          <h3><%= isEn ? 'Scan in progress…' : 'Scan läuft…' %></h3>
+          <p><%= isEn ? 'We are crawling pages and validating all discovered links.' : 'Wir crawlen Seiten und validieren alle gefundenen Links.' %></p>
+          <ul class="wt-progress">
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate target URL and crawl start page' : 'Ziel-URL validieren und Startseite laden' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Crawl internal pages' : 'Interne Seiten crawlen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Check link targets (HEAD/GET)' : 'Link-Ziele prüfen (HEAD/GET)' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Build summary and detail list' : 'Zusammenfassung und Detail-Liste erstellen' %></span></li>
+          </ul>
+        </div>
+
+        <div class="wt-error" data-broken-links-error hidden></div>
+        <div id="broken-links-results" class="wt-results" data-broken-links-results hidden></div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel">
+          <h2><%= isEn ? 'Broken links and SEO: why this matters for Google rankings' : 'Defekte Links und SEO: Warum das für Google-Rankings wichtig ist' %></h2>
+          <p>
+            <%= isEn
+              ? 'If users or crawlers repeatedly hit dead links, trust and crawl efficiency drop. A clean link structure helps search engines understand and index your pages better.'
+              : 'Wenn Nutzer oder Crawler wiederholt auf tote Links stoßen, sinken Vertrauen und Crawl-Effizienz. Eine saubere Linkstruktur hilft Suchmaschinen, deine Seiten besser zu verstehen und zu indexieren.' %>
+          </p>
+          <p>
+            <%= isEn
+              ? 'This Broken Links Tester checks internal and external targets, separates hard errors from warnings, and helps you focus fixes where they have the highest impact.'
+              : 'Dieser Broken-Links-Tester prüft interne und externe Ziele, trennt harte Fehler von Warnungen und hilft dir, Korrekturen dort zu priorisieren, wo sie den größten Effekt haben.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel">
+          <h2><%= isEn ? 'FAQ: Broken links checker' : 'FAQ: Broken-Links-Checker' %></h2>
+          <div class="wt-faq">
+            <details>
+              <summary><%= isEn ? 'How do I check broken links for free?' : 'Wie prüfe ich defekte Links kostenlos?' %></summary>
+              <p><%= isEn ? 'Enter your URL and start the scan. You get a clear result list with source page, target URL, and status code.' : 'Gib deine URL ein und starte den Scan. Du erhältst eine klare Ergebnisliste mit Quellseite, Ziel-URL und Statuscode.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Do broken links hurt SEO?' : 'Schaden defekte Links dem SEO?' %></summary>
+              <p><%= isEn ? 'Yes. They can weaken user signals and crawl quality. Fixing them supports better discoverability and trust.' : 'Ja. Sie können Nutzersignale und Crawl-Qualität schwächen. Das Beheben unterstützt bessere Auffindbarkeit und Vertrauen.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'What should I fix first?' : 'Was sollte ich zuerst beheben?' %></summary>
+              <p><%= isEn ? 'Start with high-traffic pages and critical navigation links, then clean up external references and redirects.' : 'Starte mit Seiten mit viel Traffic und kritischen Navigationslinks, danach bereinige externe Verweise und Weiterleitungen.' %></p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card">
+          <h2><%= isEn ? 'Ready to turn findings into measurable improvements?' : 'Bereit, Befunde in messbare Verbesserungen umzusetzen?' %></h2>
+          <p>
+            <%= isEn
+              ? 'We help you fix technical blockers, improve content structure, and increase search visibility step by step.'
+              : 'Wir helfen dir, technische Blocker zu beheben, Content-Struktur zu verbessern und die Suchsichtbarkeit Schritt für Schritt zu erhöhen.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-broken-links-cta="primary">
+              <i class="fa-solid fa-paper-plane"></i>
+              <%= isEn ? 'Request website consultation' : 'Website-Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking" data-broken-links-cta="secondary">
+              <i class="fa-solid fa-calendar-days"></i>
+              <%= isEn ? 'Book a call' : 'Call buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <style>
+    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
+    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
+    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
+    .breadcrumbs a { color: #374151; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .bl-table-wrap { overflow-x: auto; }
+    .bl-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .bl-table th, .bl-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.5rem; text-align: left; vertical-align: top; }
+    .bl-table th { font-weight: 600; color: #374151; }
+    .bl-table td small { color: #6b7280; display: block; }
+    .bl-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+    .wt-cta-inline { padding: 1rem; }
+    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+    .wt-faq summary { cursor: pointer; font-weight: 600; }
+    .wt-faq p { margin: 10px 0 0; }
+    @media (max-width: 780px) { .bl-meta-grid { grid-template-columns: 1fr; } }
+  </style>
+
+  <script>
+    window.BROKEN_LINK_TESTER_CONFIG = {
+      locale: "<%= isEn ? 'en' : 'de' %>",
+      endpoint: "/api/broken-link-audit",
+      i18n: {
+        scanFor: "<%= isEn ? 'Scan for' : 'Scan für' %>",
+        modeLabel: "<%= isEn ? 'Mode' : 'Modus' %>",
+        checkedLinks: "<%= isEn ? 'Checked links' : 'Geprüfte Links' %>",
+        brokenLinks: "<%= isEn ? 'Broken links' : 'Broken Links' %>",
+        warnings: "<%= isEn ? 'Warnings' : 'Warnings' %>",
+        okLinks: "<%= isEn ? 'OK links' : 'OK Links' %>",
+        scannedPages: "<%= isEn ? 'Scanned pages' : 'Gescannten Seiten' %>",
+        crawlFailed: "<%= isEn ? 'Crawl failures' : 'Crawl-Fehler' %>",
+        partialResult: "<%= isEn ? 'Partial result' : 'Teil-Ergebnis' %>",
+        brokenListTitle: "<%= isEn ? 'Broken links details' : 'Broken-Links Details' %>",
+        warningsListTitle: "<%= isEn ? 'Warnings details' : 'Warnings Details' %>",
+        sourcePage: "<%= isEn ? 'Source page' : 'Quellseite' %>",
+        targetUrl: "<%= isEn ? 'Target URL' : 'Ziel-URL' %>",
+        type: "<%= isEn ? 'Type' : 'Typ' %>",
+        status: "<%= isEn ? 'Status' : 'Status' %>",
+        error: "<%= isEn ? 'Error' : 'Fehler' %>",
+        noBroken: "<%= isEn ? 'No broken links found.' : 'Keine defekten Links gefunden.' %>",
+        noWarnings: "<%= isEn ? 'No warnings found.' : 'Keine Warnungen gefunden.' %>",
+        limitations: "<%= isEn ? 'Limitations' : 'Hinweise' %>",
+        errorFallback: "<%= isEn ? 'The scan could not be completed.' : 'Der Scan konnte nicht durchgeführt werden.' %>"
+      }
+    };
+  </script>
+  <script src="/js/broken-links-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+</body>
+</html>

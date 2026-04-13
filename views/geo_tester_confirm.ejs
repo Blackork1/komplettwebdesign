@@ -1,0 +1,84 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+
+  <main id="hero">
+    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+
+    <section class="wt-hero">
+      <div class="wt-shell">
+        <article class="wt-panel" style="padding:1.3rem; max-width:840px; margin:0 auto;">
+          <span class="wt-eyebrow">
+            <i class="fa-solid fa-envelope-open-text"></i>
+            GEO Tester Report
+          </span>
+
+          <% const status = confirmView?.status || 'invalid'; %>
+          <% const tone = status === 'success' ? 'gut' : (status === 'already_used' ? 'mittel' : 'kritisch'); %>
+
+          <h1 style="margin-top:0.8rem; font-size:clamp(1.6rem,3.8vw,2.2rem);">
+            <%= isEn
+              ? (status === 'success' ? 'Email confirmed. Your detailed GEO report is on its way.' : 'Email confirmation status')
+              : (status === 'success' ? 'E-Mail bestätigt. Dein detaillierter GEO-Report ist unterwegs.' : 'Status deiner E-Mail-Bestätigung') %>
+          </h1>
+
+          <p class="wt-lead" style="margin-top:0.7rem;"><%= confirmView?.message || '' %></p>
+
+          <div class="wt-result-meta" style="margin-top:0.6rem;">
+            <span class="wt-tag" data-tone="<%= tone %>"><%= status %></span>
+            <% if (confirmView?.lead?.domain) { %>
+              <span class="wt-tag" data-tone="mittel"><%= confirmView.lead.domain %></span>
+            <% } %>
+            <% if (confirmView?.lead?.score_band) { %>
+              <span class="wt-tag" data-tone="mittel"><%= isEn ? 'Score band' : 'Score-Band' %>: <%= confirmView.lead.score_band %></span>
+            <% } %>
+          </div>
+
+          <div class="wt-cta-actions" style="margin-top:1rem;">
+            <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/geo' : '/website-tester/geo') %>">
+              <i class="fa-solid fa-arrow-left"></i>
+              <%= isEn ? 'Back to GEO Tester' : 'Zurück zum GEO-Tester' %>
+            </a>
+            <a class="wt-button-secondary" href="<%= confirmView?.links?.contact || (isEn ? '/en/kontakt' : '/kontakt') %>">
+              <%= isEn ? 'Contact / Consultation' : 'Kontakt / Beratung' %>
+            </a>
+          </div>
+
+          <% if (status === 'expired' || status === 'invalid' || status === 'report_failed') { %>
+            <div class="wt-error" style="margin-top:1rem;" role="status">
+              <%= isEn
+                ? 'If needed, run a new GEO audit and request a new report link.'
+                : 'Falls nötig, starte bitte einen neuen GEO-Audit und fordere den Report-Link erneut an.' %>
+            </div>
+          <% } %>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <script>
+    (function () {
+      var analyticsEnabled = <%= consent && consent.analytics ? 'true' : 'false' %>;
+      if (!analyticsEnabled || typeof window.gtag !== 'function') return;
+
+      var status = "<%= confirmView?.status || 'unknown' %>";
+      var locale = "<%= isEn ? 'en' : 'de' %>";
+      var score = "<%= confirmView?.lead?.score_band || 'unknown' %>";
+
+      if (status === 'success') {
+        window.gtag('event', 'geo_tester_lead_confirmed', {
+          locale: locale,
+          score_bucket: score
+        });
+        window.gtag('event', 'geo_tester_report_sent', {
+          locale: locale,
+          score_bucket: score
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

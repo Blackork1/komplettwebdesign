@@ -6,8 +6,8 @@
     : '/'; %>
   <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
   <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
-  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete', '/website-tester': '/en/website-tester' }; %>
-  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete', '/en/website-tester': '/website-tester' }; %>
+  <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete', '/website-tester': '/en/website-tester', '/website-tester/broken-links': '/en/website-tester/broken-links', '/website-tester/geo': '/en/website-tester/geo', '/website-tester/seo': '/en/website-tester/seo', '/website-tester/report-confirm': '/en/website-tester/report-confirm', '/website-tester/geo/report-confirm': '/en/website-tester/geo/report-confirm', '/website-tester/seo/report-confirm': '/en/website-tester/seo/report-confirm' }; %>
+  <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete', '/en/website-tester': '/website-tester', '/en/website-tester/broken-links': '/website-tester/broken-links', '/en/website-tester/geo': '/website-tester/geo', '/en/website-tester/seo': '/website-tester/seo', '/en/website-tester/report-confirm': '/website-tester/report-confirm', '/en/website-tester/geo/report-confirm': '/website-tester/geo/report-confirm', '/en/website-tester/seo/report-confirm': '/website-tester/seo/report-confirm' }; %>
   <% const switchToEnPath = deToEnMap[normalizedCurrentPath]
     || (normalizedCurrentPath.startsWith('/webdesign-berlin/') ? `/en${normalizedCurrentPath}` : null)
     || (normalizedCurrentPath.startsWith('/pakete/') ? `/en${normalizedCurrentPath}` : null)
@@ -92,7 +92,24 @@
                 </li>
               </ul>
             </nav>
-            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>">Website Tester</a>
+            <nav class="main-nav">
+              <ul>
+                <li class="dropdown">
+                  <div class="dropdown-toggle">
+                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open website tester submenu' : 'Website-Tester Untermenü öffnen' %>">
+                      ▾
+                    </button>
+                    <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>">Website Tester</a>
+                  </div>
+                  <ul class="dropdown-menu">
+                    <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" class="main-color"><%= isEn ? 'Complete Test' : 'Komplett Test' %></a></li>
+                    <li><a href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>" class="main-color"><%= isEn ? 'Broken Links' : 'Fehlerhafte Links' %></a></li>
+                    <li><a href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>" class="main-color">GEO Tester</a></li>
+                    <li><a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>" class="main-color">SEO Tester</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </nav>
             <a href="/blog">Blog</a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-tertiary"><%= isEn ? 'Book a call' : 'Termin buchen' %></a>
             <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>

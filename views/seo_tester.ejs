@@ -1,0 +1,237 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+
+  <main id="hero">
+    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+
+    <section class="wt-section wt-section-compact">
+      <div class="wt-shell">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+            <li aria-current="page">SEO Tester</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card wt-cta-inline">
+          <h2><%= isEn ? 'Want expert support for your SEO roadmap?' : 'Du möchtest Unterstützung bei deiner SEO-Roadmap?' %></h2>
+          <p>
+            <%= isEn
+              ? 'We help you prioritize the highest-impact SEO fixes for better ranking, discoverability, and lead quality.'
+              : 'Wir helfen dir, die wirkungsvollsten SEO-Maßnahmen für bessere Rankings, Auffindbarkeit und Lead-Qualität zu priorisieren.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <i class="fa-solid fa-comments"></i>
+              <%= isEn ? 'Request consultation' : 'Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking">
+              <i class="fa-solid fa-calendar-check"></i>
+              <%= isEn ? 'Book appointment' : 'Termin buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-hero">
+      <div class="wt-shell">
+        <div class="wt-hero-grid">
+          <div class="wt-hero-copy">
+            <span class="wt-eyebrow">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              SEO Tester
+            </span>
+            <h1><%= isEn ? 'Audit your website SEO quality across subpages.' : 'Prüfe die SEO-Qualität deiner Website über Unterseiten.' %></h1>
+            <p class="wt-lead">
+              <%= isEn
+                ? 'Run a focused on-site SEO + technical audit and identify optimization potential for classic and AI-driven search discovery.'
+                : 'Starte einen fokussierten Onsite-SEO- und Technik-Audit und erkenne Optimierungspotenziale für klassische und AI-getriebene Suchauffindbarkeit.' %>
+            </p>
+            <ul class="wt-pill-list">
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Subpage crawl with configurable depth (admin)' : 'Unterseiten-Crawl mit konfigurierbarer Tiefe (Admin)' %></li>
+              <li><i class="fa-solid fa-wrench"></i> <%= isEn ? 'On-page, indexing, technical, and schema checks' : 'OnPage-, Indexierungs-, Technik- und Schema-Checks' %></li>
+              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Detailed report via double opt-in email flow' : 'Detaillierter Report via Double-Opt-in per E-Mail' %></li>
+            </ul>
+          </div>
+
+          <div class="wt-form-card">
+            <h2><%= isEn ? 'Start SEO audit' : 'SEO-Audit starten' %></h2>
+            <p><%= isEn ? 'Enter URL and business context for realistic SEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische SEO-Bewertung ein.' %></p>
+            <form data-seo-tester-form>
+              <div class="wt-context-grid">
+                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
+                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
+                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+              </div>
+              <label class="visually-hidden" for="seo-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+              <div class="wt-form-row">
+                <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <button class="wt-button" type="submit">
+                  <i class="fa-solid fa-bolt"></i>
+                  <%= isEn ? 'Run SEO Audit' : 'SEO-Audit starten' %>
+                </button>
+              </div>
+            </form>
+            <p class="wt-form-note">
+              <%= isEn
+                ? 'You instantly see score and optimization potential. Detailed implementation actions are delivered after email confirmation.'
+                : 'Du siehst sofort Score und Optimierungspotenzial. Detaillierte Umsetzungsmaßnahmen erhältst du nach E-Mail-Bestätigung.' %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel" data-seo-loading hidden>
+          <h3><%= isEn ? 'SEO audit in progress…' : 'SEO-Audit läuft…' %></h3>
+          <p><%= isEn ? 'We are crawling your website and evaluating SEO/technical signals now.' : 'Wir crawlen deine Website und bewerten SEO-/Technik-Signale.' %></p>
+          <ul class="wt-progress">
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate URL and website access' : 'URL validieren und Websitezugriff prüfen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Crawl homepage and subpages' : 'Startseite und Unterseiten crawlen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Evaluate on-page/indexing/technical signals' : 'OnPage-/Indexierungs-/Technik-Signale auswerten' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Build score and potential summary' : 'Score und Potenzial-Zusammenfassung erstellen' %></span></li>
+          </ul>
+        </div>
+
+        <div class="wt-error" data-seo-error hidden></div>
+        <div id="seo-results" class="wt-results" data-seo-results hidden></div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel">
+          <h2><%= isEn ? 'Why this SEO tester is optimized for modern search intent' : 'Warum dieser SEO-Tester auf moderne Suchintents optimiert ist' %></h2>
+          <p>
+            <%= isEn
+              ? 'Many users search for terms like “seo check website free”, “website seo test”, or “technical seo checker”. This page is designed to answer exactly that intent with instant, structured output.'
+              : 'Viele Nutzer suchen nach Begriffen wie „website seo testen“, „seo check website kostenlos“ oder „technical seo checker“. Diese Seite ist genau auf diesen Intent mit sofortigem, strukturiertem Ergebnis ausgerichtet.' %>
+          </p>
+          <p>
+            <%= isEn
+              ? 'The audit focuses on practical on-site SEO and technical quality signals that impact discoverability in classic search and AI-assisted retrieval flows.'
+              : 'Der Audit fokussiert praxisrelevante Onsite-SEO- und Technik-Signale, die die Auffindbarkeit in klassischer Suche und AI-assistierten Retrieval-Flows beeinflussen.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel">
+          <h2><%= isEn ? 'FAQ: SEO tester' : 'FAQ: SEO-Tester' %></h2>
+          <div class="wt-faq">
+            <details>
+              <summary><%= isEn ? 'Do I get a free SEO score immediately?' : 'Bekomme ich sofort einen kostenlosen SEO-Score?' %></summary>
+              <p><%= isEn ? 'Yes. You get an immediate SEO score and optimization potential summary after each scan.' : 'Ja. Du erhältst direkt nach jedem Scan einen SEO-Score und eine Potenzial-Zusammenfassung.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Why are detailed actions locked?' : 'Warum sind die Detailmaßnahmen gesperrt?' %></summary>
+              <p><%= isEn ? 'Detailed implementation actions are sent by email after double opt-in confirmation.' : 'Die detaillierten Umsetzungsmaßnahmen werden nach Double-Opt-in-Bestätigung per E-Mail versendet.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Does this include technical SEO too?' : 'Sind technische SEO-Themen enthalten?' %></summary>
+              <p><%= isEn ? 'Yes. The audit includes on-page, indexing, technical performance, internal linking, and schema signals.' : 'Ja. Der Audit umfasst OnPage, Indexierung, technische Performance, interne Verlinkung und Schema-Signale.' %></p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-cta-card">
+          <h2><%= isEn ? 'Ready to turn SEO findings into measurable results?' : 'Bereit, SEO-Befunde in messbare Ergebnisse umzusetzen?' %></h2>
+          <p>
+            <%= isEn
+              ? 'We help you turn SEO findings into a practical roadmap with measurable visibility impact.'
+              : 'Wir helfen dir, SEO-Befunde in eine praktische Roadmap mit messbarem Sichtbarkeits-Impact zu übersetzen.' %>
+          </p>
+          <div class="wt-result-meta">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <i class="fa-solid fa-paper-plane"></i>
+              <%= isEn ? 'Request SEO consultation' : 'SEO-Beratung anfragen' %>
+            </a>
+            <a class="wt-button-secondary" href="/booking">
+              <i class="fa-solid fa-calendar-days"></i>
+              <%= isEn ? 'Book a call' : 'Call buchen' %>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <style>
+    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
+    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
+    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
+    .breadcrumbs a { color: #374151; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .wt-cta-inline { padding: 1rem; }
+    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+    .wt-faq summary { cursor: pointer; font-weight: 600; }
+    .wt-faq p { margin: 10px 0 0; }
+  </style>
+
+  <script>
+    window.SEO_TESTER_CONFIG = {
+      locale: "<%= isEn ? 'en' : 'de' %>",
+      endpoint: "/api/seo-audit",
+      leadEndpoint: "/api/seo-audit/lead",
+      i18n: {
+        scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
+        seoAuditFor: "<%= isEn ? 'SEO audit for' : 'SEO-Analyse für' %>",
+        modeLabel: "<%= isEn ? 'Mode' : 'Modus' %>",
+        scannedPages: "<%= isEn ? 'Scanned pages' : 'Gescannten Seiten' %>",
+        partialResult: "<%= isEn ? 'Partial result' : 'Teil-Ergebnis' %>",
+        timeoutReached: "<%= isEn ? 'Timeout reached' : 'Zeitlimit erreicht' %>",
+        categoryScoresTitle: "<%= isEn ? 'SEO category scores' : 'SEO-Kategorien' %>",
+        potentialTitle: "<%= isEn ? 'Optimization potential' : 'Optimierungspotenzial' %>",
+        topPotentialAreasTitle: "<%= isEn ? 'Top potential areas' : 'Top-Potenzialbereiche' %>",
+        lockedTitle: "<%= isEn ? 'Detailed SEO implementation report' : 'Detaillierter SEO-Umsetzungsreport' %>",
+        lockedText: "<%= isEn ? 'Get the detailed step-by-step report by confirming your email address.' : 'Erhalte den detaillierten Schritt-für-Schritt-Report, indem du deine E-Mail-Adresse bestätigst.' %>",
+        leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
+        leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
+        leadConsent: "<%= isEn ? 'I want to receive the requested detailed SEO report by email.' : 'Ich möchte den angeforderten detaillierten SEO-Report per E-Mail erhalten.' %>",
+        leadSubmit: "<%= isEn ? 'Send confirmation link' : 'Bestätigungslink senden' %>",
+        leadLoading: "<%= isEn ? 'Sending…' : 'Wird gesendet…' %>",
+        leadSuccess: "<%= isEn ? 'Please check your inbox and confirm your email. We then send your detailed SEO report.' : 'Bitte prüfe dein Postfach und bestätige deine E-Mail. Danach senden wir deinen detaillierten SEO-Report.' %>",
+        leadError: "<%= isEn ? 'The SEO report request could not be processed.' : 'Die SEO-Report-Anfrage konnte nicht verarbeitet werden.' %>",
+        noPotentials: "<%= isEn ? 'No specific potential areas detected yet.' : 'Es wurden noch keine spezifischen Potenzialbereiche erkannt.' %>",
+        noCategories: "<%= isEn ? 'No category data available.' : 'Keine Kategoriedaten verfügbar.' %>",
+        contextRequired: "<%= isEn ? 'Please provide business type, primary service, and target region.' : 'Bitte ergänze Branche, Hauptleistung und Zielregion.' %>",
+        errorFallback: "<%= isEn ? 'The SEO audit could not be completed.' : 'Das SEO-Audit konnte nicht durchgeführt werden.' %>",
+        ctaTitle: "<%= isEn ? 'Turn findings into execution' : 'Befunde direkt umsetzen' %>",
+        ctaText: "<%= isEn ? 'Book a short consultation to prioritize implementation and impact.' : 'Buche eine kurze Beratung, um Umsetzung und Impact zu priorisieren.' %>",
+        ctaPrimary: "<%= isEn ? 'Request consultation' : 'Beratung anfragen' %>",
+        ctaSecondary: "<%= isEn ? 'Book appointment' : 'Termin buchen' %>",
+        contactHref: "<%= isEn ? '/en/kontakt' : '/kontakt' %>",
+        categoryLabels: {
+          onpage: "<%= isEn ? 'On-page structure' : 'OnPage-Struktur' %>",
+          indexing: "<%= isEn ? 'Indexing signals' : 'Indexierungs-Signale' %>",
+          technical: "<%= isEn ? 'Technical quality' : 'Technik-Qualität' %>",
+          content: "<%= isEn ? 'Content quality' : 'Content-Qualität' %>",
+          internal_linking: "<%= isEn ? 'Internal linking' : 'Interne Verlinkung' %>",
+          structured_data: "<%= isEn ? 'Structured data' : 'Strukturierte Daten' %>"
+        }
+      }
+    };
+  </script>
+  <script src="/js/seo-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+</body>
+</html>
+
