@@ -551,6 +551,16 @@ body.website-tester-page {
   margin-top: 0.16rem;
 }
 
+.wt-lead-legal-note {
+  font-size: 0.84rem;
+  color: var(--wt-muted);
+}
+
+.wt-lead-legal-note a {
+  color: var(--wt-text);
+  text-decoration: underline;
+}
+
 .wt-lead-state {
   margin: 0.15rem 0 0;
   font-size: 0.9rem;

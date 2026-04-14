@@ -403,6 +403,11 @@
                 <input type="checkbox" name="consent" required>
                 <span>${escapeHtml(i18n.reportConsentLabel || 'Ich möchte den angeforderten PDF-Report per E-Mail erhalten.')}</span>
               </label>
+              <small class="wt-lead-legal-note">
+                <a href="${escapeHtml(i18n.privacyHref || '/datenschutz')}" target="_blank" rel="noopener">
+                  ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
+                </a>
+              </small>
               <button class="wt-button" type="submit">${escapeHtml(i18n.reportSubmit || 'Bestätigungslink senden')}</button>
               <p class="wt-lead-state" data-tester-lead-state hidden></p>
             </form>

@@ -4,16 +4,23 @@ import {
   createWebsiteTesterLead,
   getWebsiteTesterLeadByConfirmHash,
   getWebsiteTesterLeadById,
+  markWebsiteTesterLeadFullGuideFailed,
+  markWebsiteTesterLeadFullGuideGenerated,
+  markWebsiteTesterLeadFullGuideSent,
   markWebsiteTesterLeadReportFailed,
   markWebsiteTesterLeadReportSent,
   refreshWebsiteTesterLeadConfirmToken
 } from '../models/websiteTesterAdminModel.js';
+import NewsletterSignupModel from '../models/NewsletterSignupModel.js';
 import { getCachedAuditResult } from './websiteAuditService.js';
 import {
   sendWebsiteTesterDoiMail,
+  sendTesterFullGuideMail,
   sendWebsiteTesterReportMail
 } from './mailService.js';
 import { buildWebsiteTesterReport } from './websiteTesterPdfService.js';
+import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
+import { buildTesterFullGuidePdf } from './testerFullGuidePdfService.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_HOURS = 24;
@@ -22,39 +29,45 @@ const I18N = {
   de: {
     errors: {
       emailRequired: 'Bitte gib eine gültige E-Mail-Adresse ein.',
-      consentRequired: 'Bitte bestätige den Hinweis zum PDF-Versand.',
+      consentRequired: 'Bitte bestätige die kombinierte Einwilligung für Report + Newsletter.',
       auditMissing: 'Das Audit wurde nicht gefunden oder ist abgelaufen. Bitte starte die Analyse erneut.',
       tokenMissing: 'Der Bestätigungslink ist ungültig.',
       tokenInvalid: 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.',
       tokenExpired: 'Der Bestätigungslink ist abgelaufen. Bitte fordere einen neuen Link an.',
       reportFailed: 'Der Report konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
+      newsletterFailed: 'Die Newsletter-Aktivierung ist fehlgeschlagen. Bitte versuche es erneut.',
+      fullGuideFailed: 'Die Vollanleitung konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
       leadState: 'Diese Aktion ist für den aktuellen Lead-Status nicht möglich.'
     },
     messages: {
-      verifyMail: 'Bitte bestätige deine E-Mail-Adresse. Danach senden wir den PDF-Report.',
+      verifyMail: 'Bitte bestätige deine E-Mail-Adresse (Double-Opt-in). Danach senden wir den PDF-Report und aktivieren die Newsletter-Anmeldung.',
       verifiedAndSent: 'Deine E-Mail wurde bestätigt. Der Optimierungsreport wurde soeben versendet.',
       alreadyUsed: 'Die E-Mail-Bestätigung wurde bereits abgeschlossen.',
       doiResent: 'Bestätigungslink wurde erneut versendet.',
-      reportResent: 'Der PDF-Report wurde erneut versendet.'
+      reportResent: 'Der PDF-Report wurde erneut versendet.',
+      fullGuideSent: 'Die vollständige Optimierungsanleitung wurde versendet.'
     }
   },
   en: {
     errors: {
       emailRequired: 'Please enter a valid email address.',
-      consentRequired: 'Please confirm the consent for PDF delivery.',
+      consentRequired: 'Please confirm the combined consent for report + newsletter.',
       auditMissing: 'The audit was not found or has expired. Please run the analysis again.',
       tokenMissing: 'The confirmation link is invalid.',
       tokenInvalid: 'The confirmation link is invalid or already used.',
       tokenExpired: 'The confirmation link has expired. Please request a new link.',
       reportFailed: 'The report could not be sent. Please contact us directly.',
+      newsletterFailed: 'Newsletter activation failed. Please try again.',
+      fullGuideFailed: 'The full guide could not be sent. Please contact us directly.',
       leadState: 'This action is not possible for the current lead status.'
     },
     messages: {
-      verifyMail: 'Please confirm your email address. We will send the PDF report immediately after confirmation.',
+      verifyMail: 'Please confirm your email address (double opt-in). We will then send the PDF report and activate your newsletter subscription.',
       verifiedAndSent: 'Your email is confirmed. The optimization report has been sent.',
       alreadyUsed: 'Email confirmation was already completed.',
       doiResent: 'Confirmation link has been sent again.',
-      reportResent: 'The PDF report has been sent again.'
+      reportResent: 'The PDF report has been sent again.',
+      fullGuideSent: 'The complete optimization guide has been sent.'
     }
   }
 };
@@ -160,6 +173,37 @@ function topIssuesFromResult(result = {}) {
     .slice(0, 3)
     .map((item) => item?.label || item?.text)
     .filter(Boolean);
+}
+
+async function ensureNewsletterUnsubscribeToken(email) {
+  const created = await NewsletterSignupModel.create(email);
+  if (created?.unsubscribe_token) return created.unsubscribe_token;
+  const fallback = await NewsletterSignupModel.findByEmail(email);
+  return fallback?.unsubscribe_token || '';
+}
+
+async function generateAndStoreFullGuide({ lead, result, profile = 'website', locale = 'de' }) {
+  try {
+    const fullGuide = generateTesterFullGuide({
+      result,
+      source: profile,
+      locale
+    });
+    const guideText = formatTesterFullGuideAsText(fullGuide);
+    const payload = {
+      ...fullGuide,
+      guideText
+    };
+    const updated = await markWebsiteTesterLeadFullGuideGenerated({
+      id: lead.id,
+      profile,
+      fullGuideJson: payload
+    });
+    return updated?.full_guide_json || payload;
+  } catch (error) {
+    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || 'full_guide_generation_failed');
+    return null;
+  }
 }
 
 export async function requestWebsiteTesterLead({
@@ -304,6 +348,13 @@ export async function confirmWebsiteTesterLeadToken({ token, locale }) {
   }
 
   try {
+    let unsubscribeToken = '';
+    try {
+      unsubscribeToken = await ensureNewsletterUnsubscribeToken(consumed.email);
+    } catch (newsletterError) {
+      throw createError(effectiveCopy.errors.newsletterFailed, 500);
+    }
+
     const report = buildWebsiteTesterReport({
       lead: consumed,
       result,
@@ -316,7 +367,15 @@ export async function confirmWebsiteTesterLeadToken({ token, locale }) {
       locale: effectiveLocale,
       domain: consumed.domain,
       scoreBand: consumed.score_band,
-      report
+      report,
+      unsubscribeToken
+    });
+
+    await generateAndStoreFullGuide({
+      lead: consumed,
+      result,
+      profile: 'website',
+      locale: effectiveLocale
     });
 
     const updated = await markWebsiteTesterLeadReportSent(consumed.id);
@@ -401,6 +460,13 @@ export async function resendWebsiteTesterLeadReport({ leadId }) {
   }
 
   try {
+    let unsubscribeToken = '';
+    try {
+      unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
+    } catch {
+      throw createError(copy.errors.newsletterFailed, 500);
+    }
+
     const report = buildWebsiteTesterReport({
       lead,
       result,
@@ -413,8 +479,18 @@ export async function resendWebsiteTesterLeadReport({ leadId }) {
       locale: lng,
       domain: lead.domain,
       scoreBand: lead.score_band,
-      report
+      report,
+      unsubscribeToken
     });
+
+    if (!lead.full_guide_json) {
+      await generateAndStoreFullGuide({
+        lead,
+        result,
+        profile: 'website',
+        locale: lng
+      });
+    }
 
     const updated = await markWebsiteTesterLeadReportSent(lead.id);
 
@@ -425,6 +501,67 @@ export async function resendWebsiteTesterLeadReport({ leadId }) {
   } catch (error) {
     await markWebsiteTesterLeadReportFailed(lead.id, error.message || copy.errors.reportFailed);
     throw createError(copy.errors.reportFailed, 500);
+  }
+}
+
+export async function sendWebsiteTesterLeadFullGuide({ leadId }) {
+  const lead = await getWebsiteTesterLeadById(leadId);
+  if (!lead) {
+    throw createError('Lead wurde nicht gefunden.', 404);
+  }
+
+  const lng = localeFrom(lead.locale);
+  const copy = copyFor(lng);
+  if (!['confirmed', 'report_failed', 'report_sent'].includes(lead.status)) {
+    throw createError(copy.errors.leadState, 400);
+  }
+
+  let fullGuide = lead.full_guide_json || null;
+  if (!fullGuide) {
+    const result = lead.audit_snapshot_json || getCachedAuditResult(lead.audit_id);
+    if (!result) {
+      throw createError(copy.errors.auditMissing, 400);
+    }
+    fullGuide = await generateAndStoreFullGuide({
+      lead,
+      result,
+      profile: 'website',
+      locale: lng
+    });
+  }
+
+  if (!fullGuide) {
+    throw createError(copy.errors.fullGuideFailed, 500);
+  }
+
+  try {
+    const unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
+    const guideText = fullGuide.guideText || formatTesterFullGuideAsText(fullGuide);
+    const guidePdf = buildTesterFullGuidePdf({
+      guideText,
+      sourceLabel: 'website',
+      domain: lead.domain || '',
+      locale: lng,
+      generatedAt: fullGuide.createdAt || new Date().toISOString()
+    });
+    await sendTesterFullGuideMail({
+      to: lead.email,
+      name: lead.name,
+      locale: lng,
+      domain: lead.domain,
+      sourceLabel: lng === 'en' ? 'Website' : 'Website',
+      guideText,
+      unsubscribeToken,
+      guidePdf
+    });
+    const updated = await markWebsiteTesterLeadFullGuideSent(lead.id);
+    return {
+      lead: updated || lead,
+      message: copy.messages.fullGuideSent
+    };
+  } catch (error) {
+    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || copy.errors.fullGuideFailed);
+    throw createError(copy.errors.fullGuideFailed, 500);
   }
 }
 

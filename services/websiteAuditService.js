@@ -2209,6 +2209,56 @@ function mergeFailedTargets(crawlFailures = [], forcedFailures = []) {
   return merged;
 }
 
+function clampGuideText(value = '', maxChars = 12000) {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  return cleaned.length > maxChars ? `${cleaned.slice(0, maxChars)}...` : cleaned;
+}
+
+function buildInternalGuideInput({ analyzedPages = [] } = {}) {
+  return {
+    pageAnalyses: analyzedPages.map((page) => ({
+      url: page.url,
+      status: page.status,
+      title: page.title || '',
+      metaDescription: page.metaDescription || '',
+      h1: page.h1First || '',
+      h1Count: page.h1Count || 0,
+      wordCount: page.wordCount || 0,
+      bodyText: clampGuideText(page.bodyText || ''),
+      hasSchema: !!page.hasSchema,
+      hasFaqSchema: !!page.hasFaqSchema,
+      hasOpenGraph: !!page.hasOpenGraph,
+      hasTwitterCard: !!page.hasTwitterCard,
+      hasContactLink: !!page.hasContactLink,
+      hasPhone: !!page.hasPhone,
+      hasEmail: !!page.hasEmail,
+      hasAddressSignal: !!page.hasAddressSignal,
+      hasMain: !!page.hasMain,
+      hasHeader: !!page.hasHeader,
+      hasFooter: !!page.hasFooter,
+      hasNav: !!page.hasNav,
+      images: page.images || 0,
+      imagesWithoutAlt: page.imagesWithoutAlt || 0,
+      labels: page.labels || 0,
+      inputs: page.inputs || 0,
+      buttons: page.buttons || 0,
+      scripts: page.scripts || 0,
+      stylesheets: page.stylesheets || 0,
+      loadTimeMs: page.loadTimeMs || 0
+    }))
+  };
+}
+
+export function toPublicAuditResult(result = {}) {
+  if (!result || typeof result !== 'object') return result;
+  const {
+    internalGuideInput,
+    ...publicResult
+  } = result;
+  return publicResult;
+}
+
 async function crawlWebsite(startUrl, locale, deadline, maxCrawlPages) {
   const pages = [];
   const queue = [];
@@ -2421,6 +2471,9 @@ export async function auditWebsite({ url, locale = 'de', mode = 'deep', maxSubpa
       domain,
       scoreBand,
       topIssues
+    }),
+    internalGuideInput: buildInternalGuideInput({
+      analyzedPages
     })
   };
 

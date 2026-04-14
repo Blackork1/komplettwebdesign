@@ -26,10 +26,16 @@ function extractDomain(lead = {}, result = {}) {
 }
 
 function normalizeGeoResult(rawResult = {}) {
-  if (rawResult?.sourceResult && typeof rawResult.sourceResult === 'object') {
-    return rawResult.sourceResult;
-  }
-  return rawResult;
+  const sourceResult = (rawResult?.sourceResult && typeof rawResult.sourceResult === 'object')
+    ? rawResult.sourceResult
+    : rawResult;
+
+  return {
+    ...sourceResult,
+    reportProfile: 'geo',
+    geoSignals: rawResult?.geoSignals || null,
+    geoPotentialSummary: rawResult?.potentialSummary || null
+  };
 }
 
 export function buildGeoTesterReport({ lead = {}, result = {}, locale = 'de' } = {}) {

@@ -26,10 +26,16 @@ function extractDomain(lead = {}, result = {}) {
 }
 
 function normalizeSeoResult(rawResult = {}) {
-  if (rawResult?.sourceResult && typeof rawResult.sourceResult === 'object') {
-    return rawResult.sourceResult;
-  }
-  return rawResult;
+  const sourceResult = (rawResult?.sourceResult && typeof rawResult.sourceResult === 'object')
+    ? rawResult.sourceResult
+    : rawResult;
+
+  return {
+    ...sourceResult,
+    reportProfile: 'seo',
+    seoCategoryScores: Array.isArray(rawResult?.categoryScores) ? rawResult.categoryScores : [],
+    seoPotentialSummary: rawResult?.potentialSummary || null
+  };
 }
 
 export function buildSeoTesterReport({ lead = {}, result = {}, locale = 'de' } = {}) {
@@ -55,4 +61,3 @@ export const __testables = {
   slugifyDomain,
   normalizeSeoResult
 };
-

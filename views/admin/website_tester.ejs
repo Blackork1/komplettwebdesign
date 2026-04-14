@@ -35,159 +35,17 @@
       PDF-Report wurde erneut versendet.
     </div>
   <% } %>
+  <% if (query && query.lead_action === 'full_guide_sent') { %>
+    <div class="alert alert-success" role="status">
+      Vollanleitung wurde versendet.
+    </div>
+  <% } %>
 
   <% if (query && query.lead_error) { %>
     <div class="alert alert-danger" role="alert">
       <%= query.lead_error %>
     </div>
   <% } %>
-
-  <div class="card mb-4">
-    <div class="card-body">
-      <h2 class="h5 mb-3">Crawler-Einstellung</h2>
-      <p class="text-muted mb-3">
-        Lege fest, wie viele Unterseiten beim Deep-Audit zusätzlich zur Startseite analysiert werden.
-      </p>
-      <form action="/admin/website-tester/config" method="POST" class="row g-2 align-items-end">
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="max_subpages">Unterseiten (1-20)</label>
-          <input
-            id="max_subpages"
-            class="form-control"
-            type="number"
-            name="max_subpages"
-            min="1"
-            max="20"
-            value="<%= config?.maxSubpages ?? 5 %>"
-            required
-          >
-        </div>
-        <div class="col-sm-auto">
-          <button class="btn btn-primary" type="submit">Speichern</button>
-        </div>
-      </form>
-      <small class="text-muted d-block mt-2">
-        Aktueller Wert: <strong><%= config?.maxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite.
-      </small>
-    </div>
-  </div>
-
-  <div class="card mb-4">
-    <div class="card-body">
-      <h2 class="h5 mb-3">Broken-Links-Tester Einstellungen</h2>
-      <p class="text-muted mb-3">
-        Lege den Scan-Umfang für den Broken-Links-Tester fest. Startwert ist Modus <strong>maximal</strong>.
-      </p>
-      <form action="/admin/website-tester/broken-links/config" method="POST" class="row g-2 align-items-end">
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="broken_links_max_subpages">Unterseiten (1-20)</label>
-          <input
-            id="broken_links_max_subpages"
-            class="form-control"
-            type="number"
-            name="broken_links_max_subpages"
-            min="1"
-            max="20"
-            value="<%= config?.brokenLinksMaxSubpages ?? 5 %>"
-            required
-          >
-        </div>
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="broken_links_scan_mode">Scan-Modus</label>
-          <select id="broken_links_scan_mode" class="form-select" name="broken_links_scan_mode" required>
-            <option value="schnell" <%= config?.brokenLinksScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
-            <option value="balanced" <%= config?.brokenLinksScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
-            <option value="maximal" <%= !config?.brokenLinksScanMode || config?.brokenLinksScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
-          </select>
-        </div>
-        <div class="col-sm-auto">
-          <button class="btn btn-primary" type="submit">Speichern</button>
-        </div>
-      </form>
-      <small class="text-muted d-block mt-2">
-        Aktueller Wert: <strong><%= config?.brokenLinksMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
-        Modus: <strong><%= config?.brokenLinksScanMode || 'maximal' %></strong>.
-      </small>
-    </div>
-  </div>
-
-  <div class="card mb-4">
-    <div class="card-body">
-      <h2 class="h5 mb-3">GEO-Tester Einstellungen</h2>
-      <p class="text-muted mb-3">
-        Lege den Scan-Umfang für den GEO-Tester fest. Startwert ist Modus <strong>maximal</strong>.
-      </p>
-      <form action="/admin/website-tester/geo/config" method="POST" class="row g-2 align-items-end">
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="geo_max_subpages">Unterseiten (1-20)</label>
-          <input
-            id="geo_max_subpages"
-            class="form-control"
-            type="number"
-            name="geo_max_subpages"
-            min="1"
-            max="20"
-            value="<%= config?.geoMaxSubpages ?? 5 %>"
-            required
-          >
-        </div>
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="geo_scan_mode">Scan-Modus</label>
-          <select id="geo_scan_mode" class="form-select" name="geo_scan_mode" required>
-            <option value="schnell" <%= config?.geoScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
-            <option value="balanced" <%= config?.geoScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
-            <option value="maximal" <%= !config?.geoScanMode || config?.geoScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
-          </select>
-        </div>
-        <div class="col-sm-auto">
-          <button class="btn btn-primary" type="submit">Speichern</button>
-        </div>
-      </form>
-      <small class="text-muted d-block mt-2">
-        Aktueller Wert: <strong><%= config?.geoMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
-        Modus: <strong><%= config?.geoScanMode || 'maximal' %></strong>.
-      </small>
-    </div>
-  </div>
-
-  <div class="card mb-4">
-    <div class="card-body">
-      <h2 class="h5 mb-3">SEO-Tester Einstellungen</h2>
-      <p class="text-muted mb-3">
-        Lege den Scan-Umfang für den SEO-Tester fest. Startwert ist Modus <strong>maximal</strong>.
-      </p>
-      <form action="/admin/website-tester/seo/config" method="POST" class="row g-2 align-items-end">
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="seo_max_subpages">Unterseiten (1-20)</label>
-          <input
-            id="seo_max_subpages"
-            class="form-control"
-            type="number"
-            name="seo_max_subpages"
-            min="1"
-            max="20"
-            value="<%= config?.seoMaxSubpages ?? 5 %>"
-            required
-          >
-        </div>
-        <div class="col-sm-4 col-md-3">
-          <label class="form-label" for="seo_scan_mode">Scan-Modus</label>
-          <select id="seo_scan_mode" class="form-select" name="seo_scan_mode" required>
-            <option value="schnell" <%= config?.seoScanMode === 'schnell' ? 'selected' : '' %>>schnell</option>
-            <option value="balanced" <%= config?.seoScanMode === 'balanced' ? 'selected' : '' %>>balanced</option>
-            <option value="maximal" <%= !config?.seoScanMode || config?.seoScanMode === 'maximal' ? 'selected' : '' %>>maximal</option>
-          </select>
-        </div>
-        <div class="col-sm-auto">
-          <button class="btn btn-primary" type="submit">Speichern</button>
-        </div>
-      </form>
-      <small class="text-muted d-block mt-2">
-        Aktueller Wert: <strong><%= config?.seoMaxSubpages ?? 5 %></strong> Unterseiten + 1 Startseite,
-        Modus: <strong><%= config?.seoScanMode || 'maximal' %></strong>.
-      </small>
-    </div>
-  </div>
 
   <% 
     const currentParams = new URLSearchParams();
@@ -198,6 +56,199 @@
     });
     const returnTo = `/admin/website-tester${currentParams.toString() ? `?${currentParams.toString()}` : ''}`;
   %>
+
+  <% if (query && query.preview_action === 'generated') { %>
+    <div class="alert alert-success" role="status">
+      Test-Vorschau wurde erstellt. Es wurden keine E-Mails versendet.
+    </div>
+  <% } %>
+
+  <% if (query && query.preview_error) { %>
+    <div class="alert alert-danger" role="alert">
+      <%= query.preview_error %>
+    </div>
+  <% } %>
+
+  <%
+    const settingsTesterRaw = String(query?.settings_tester || 'website');
+    const settingsCards = [
+      {
+        id: 'website',
+        title: 'Website-Tester',
+        hint: 'Deep-Audit über Startseite + Unterseiten.',
+        action: '/admin/website-tester/config',
+        fields: [
+          { type: 'number', name: 'max_subpages', label: 'Unterseiten (1-20)', min: 1, max: 20, value: config?.maxSubpages ?? 5 }
+        ],
+        summary: `Aktueller Wert: ${config?.maxSubpages ?? 5} Unterseiten + 1 Startseite.`
+      },
+      {
+        id: 'broken',
+        title: 'Broken-Links-Tester',
+        hint: 'Interne/externe Linkziele mit konfigurierbarem Scan-Modus.',
+        action: '/admin/website-tester/broken-links/config',
+        fields: [
+          { type: 'number', name: 'broken_links_max_subpages', label: 'Unterseiten (1-20)', min: 1, max: 20, value: config?.brokenLinksMaxSubpages ?? 5 },
+          { type: 'select', name: 'broken_links_scan_mode', label: 'Scan-Modus', value: config?.brokenLinksScanMode || 'maximal', options: ['schnell', 'balanced', 'maximal'] }
+        ],
+        summary: `Aktueller Wert: ${config?.brokenLinksMaxSubpages ?? 5} Unterseiten + 1 Startseite, Modus: ${config?.brokenLinksScanMode || 'maximal'}.`
+      },
+      {
+        id: 'geo',
+        title: 'GEO-Tester',
+        hint: 'Generative-Search/GEO-Audit mit konfigurierbarem Scan-Modus.',
+        action: '/admin/website-tester/geo/config',
+        fields: [
+          { type: 'number', name: 'geo_max_subpages', label: 'Unterseiten (1-20)', min: 1, max: 20, value: config?.geoMaxSubpages ?? 5 },
+          { type: 'select', name: 'geo_scan_mode', label: 'Scan-Modus', value: config?.geoScanMode || 'maximal', options: ['schnell', 'balanced', 'maximal'] }
+        ],
+        summary: `Aktueller Wert: ${config?.geoMaxSubpages ?? 5} Unterseiten + 1 Startseite, Modus: ${config?.geoScanMode || 'maximal'}.`
+      },
+      {
+        id: 'seo',
+        title: 'SEO-Tester',
+        hint: 'OnPage-/Technik-SEO-Audit mit konfigurierbarem Scan-Modus.',
+        action: '/admin/website-tester/seo/config',
+        fields: [
+          { type: 'number', name: 'seo_max_subpages', label: 'Unterseiten (1-20)', min: 1, max: 20, value: config?.seoMaxSubpages ?? 5 },
+          { type: 'select', name: 'seo_scan_mode', label: 'Scan-Modus', value: config?.seoScanMode || 'maximal', options: ['schnell', 'balanced', 'maximal'] }
+        ],
+        summary: `Aktueller Wert: ${config?.seoMaxSubpages ?? 5} Unterseiten + 1 Startseite, Modus: ${config?.seoScanMode || 'maximal'}.`
+      }
+    ];
+    const settingsTester = settingsCards.some((item) => item.id === settingsTesterRaw) ? settingsTesterRaw : 'website';
+  %>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-2">Tester-Einstellungen (kompakt)</h2>
+      <p class="text-muted mb-3">Wähle einen Tester aus, passe die Parameter an und speichere direkt im selben Block.</p>
+
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label" for="settingsTesterSelect">Tester auswählen</label>
+          <select id="settingsTesterSelect" class="form-select">
+            <% settingsCards.forEach((item) => { %>
+              <option value="<%= item.id %>" <%= settingsTester === item.id ? 'selected' : '' %>><%= item.title %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <% settingsCards.forEach((item) => { %>
+        <div data-settings-panel="<%= item.id %>" class="<%= settingsTester === item.id ? '' : 'd-none' %>">
+          <h3 class="h6 mb-1"><%= item.title %></h3>
+          <p class="text-muted mb-2"><%= item.hint %></p>
+          <form action="<%= item.action %>" method="POST" class="row g-2 align-items-end">
+            <% item.fields.forEach((field) => { %>
+              <div class="col-sm-4 col-md-3">
+                <label class="form-label" for="<%= field.name %>"><%= field.label %></label>
+                <% if (field.type === 'select') { %>
+                  <select id="<%= field.name %>" class="form-select" name="<%= field.name %>" required>
+                    <% field.options.forEach((option) => { %>
+                      <option value="<%= option %>" <%= field.value === option ? 'selected' : '' %>><%= option %></option>
+                    <% }) %>
+                  </select>
+                <% } else { %>
+                  <input
+                    id="<%= field.name %>"
+                    class="form-control"
+                    type="number"
+                    name="<%= field.name %>"
+                    min="<%= field.min %>"
+                    max="<%= field.max %>"
+                    value="<%= field.value %>"
+                    required
+                  >
+                <% } %>
+              </div>
+            <% }) %>
+            <div class="col-sm-auto">
+              <button class="btn btn-primary" type="submit">Speichern</button>
+            </div>
+          </form>
+          <small class="text-muted d-block mt-2"><%= item.summary %></small>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-2">Test Mail / Vorschau (ohne Versand)</h2>
+      <p class="text-muted mb-3">
+        Erzeuge eine Testvorschau für Kurzreport + Vollanleitung. Dabei wird nichts an Kunden versendet.
+      </p>
+      <%
+        const previewDefaults = preview || {};
+        const previewContextDefaults = previewDefaults.context || {};
+      %>
+      <form action="/admin/website-tester/preview" method="POST" class="row g-2 align-items-end">
+        <input type="hidden" name="return_to" value="<%= returnTo %>">
+        <div class="col-md-2">
+          <label class="form-label" for="preview_source">Tester</label>
+          <select id="preview_source" class="form-select" name="preview_source" required>
+            <option value="website" <%= (previewDefaults.source || 'website') === 'website' ? 'selected' : '' %>>Website</option>
+            <option value="seo" <%= previewDefaults.source === 'seo' ? 'selected' : '' %>>SEO</option>
+            <option value="geo" <%= previewDefaults.source === 'geo' ? 'selected' : '' %>>GEO</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="preview_locale">Sprache</label>
+          <select id="preview_locale" class="form-select" name="preview_locale" required>
+            <option value="de" <%= (previewDefaults.locale || 'de') === 'de' ? 'selected' : '' %>>de</option>
+            <option value="en" <%= previewDefaults.locale === 'en' ? 'selected' : '' %>>en</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="preview_url">URL</label>
+          <input id="preview_url" class="form-control" type="url" name="preview_url" placeholder="https://www.domain.de" value="<%= previewDefaults.requestedUrl || '' %>" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="preview_business_type">Branche</label>
+          <input id="preview_business_type" class="form-control" type="text" name="preview_business_type" placeholder="Webdesign" value="<%= previewContextDefaults.businessType || '' %>" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="preview_primary_service">Hauptleistung</label>
+          <input id="preview_primary_service" class="form-control" type="text" name="preview_primary_service" placeholder="Website erstellen" value="<%= previewContextDefaults.primaryService || '' %>" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="preview_target_region">Zielregion</label>
+          <input id="preview_target_region" class="form-control" type="text" name="preview_target_region" placeholder="Berlin" value="<%= previewContextDefaults.targetRegion || '' %>" required>
+        </div>
+        <div class="col-md-auto">
+          <button class="btn btn-outline-primary" type="submit">Vorschau erzeugen</button>
+        </div>
+      </form>
+
+      <% if (preview) { %>
+        <div class="border rounded p-3 mt-3">
+          <div class="small text-muted mb-2">
+            Vorschau-ID: <strong><%= preview.id %></strong> | erstellt: <strong><%= new Date(preview.createdAt).toLocaleString('de-DE') %></strong>
+          </div>
+          <div class="small mb-2">
+            Quelle: <strong><%= preview.source %></strong> | Sprache: <strong><%= preview.locale %></strong> | Domain: <strong><%= preview.domain %></strong>
+          </div>
+          <div class="small mb-3 text-break">
+            URL: <%= preview.requestedUrl %><br>
+            Kontext: Branche=<%= preview.context?.businessType || '-' %>, Leistung=<%= preview.context?.primaryService || '-' %>, Region=<%= preview.context?.targetRegion || '-' %>
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <a class="btn btn-sm btn-outline-primary" href="/admin/website-tester/preview/<%= preview.id %>/short.pdf">Kurzanleitung PDF laden</a>
+            <a class="btn btn-sm btn-outline-success" href="/admin/website-tester/preview/<%= preview.id %>/full.pdf">Vollanleitung PDF laden</a>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/website-tester/preview/<%= preview.id %>/full.txt">Vollanleitung TXT laden</a>
+          </div>
+          <div class="small text-muted">
+            Kurzreport: <%= preview.shortReport?.filename || '-' %> (<%= preview.shortReport?.pageCount || 0 %> Seiten) |
+            Vollanleitung: <%= preview.fullGuide?.filename || '-' %> (<%= preview.fullGuide?.pageCount || 0 %> Seiten)
+          </div>
+          <% if (preview.fullGuide?.summary) { %>
+            <p class="small mt-2 mb-0"><strong>Guide-Summary:</strong> <%= preview.fullGuide.summary %></p>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
 
   <div class="card mb-4">
     <div class="card-body">
@@ -884,6 +935,7 @@
               <th>E-Mail</th>
               <th>Score</th>
               <th>Top-Issues</th>
+              <th>Vollanleitung</th>
               <th>Audit-ID</th>
               <th>Aktionen</th>
             </tr>
@@ -891,7 +943,7 @@
           <tbody>
             <% if (!leadArchive?.rows?.length) { %>
               <tr>
-                <td colspan="9" class="text-muted">Keine Lead-Einträge gefunden.</td>
+                <td colspan="10" class="text-muted">Keine Lead-Einträge gefunden.</td>
               </tr>
             <% } %>
 
@@ -926,6 +978,20 @@
                   <div class="small text-muted"><%= row.score_band || '-' %></div>
                 </td>
                 <td style="max-width: 200px;"><span class="small text-break"><%= row.top_issues || '-' %></span></td>
+                <td>
+                  <% if (row.full_guide_status === 'sent') { %>
+                    <span class="badge text-bg-success">Sent</span>
+                  <% } else if (row.full_guide_status === 'generated') { %>
+                    <span class="badge text-bg-info">Generated</span>
+                  <% } else if (row.full_guide_status === 'failed') { %>
+                    <span class="badge text-bg-danger">Failed</span>
+                  <% } else { %>
+                    <span class="badge text-bg-secondary">Pending</span>
+                  <% } %>
+                  <% if (row.full_guide_profile) { %>
+                    <div class="small text-muted mt-1"><%= row.full_guide_profile %></div>
+                  <% } %>
+                </td>
                 <td style="max-width: 160px;"><span class="small text-break"><%= row.audit_id || '-' %></span></td>
                 <td>
                   <div class="d-grid gap-1" style="min-width: 150px;">
@@ -940,6 +1006,10 @@
                       <form method="POST" action="/admin/website-tester/leads/<%= row.id %>/resend-report">
                         <input type="hidden" name="return_to" value="<%= returnTo %>">
                         <button class="btn btn-outline-primary btn-sm" type="submit">Report erneut senden</button>
+                      </form>
+                      <form method="POST" action="/admin/website-tester/leads/<%= row.id %>/send-full-guide">
+                        <input type="hidden" name="return_to" value="<%= returnTo %>">
+                        <button class="btn btn-outline-success btn-sm" type="submit">Vollanleitung senden</button>
                       </form>
                     <% } %>
                   </div>
@@ -989,5 +1059,24 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    const select = document.getElementById('settingsTesterSelect');
+    if (!select) return;
+    const panels = Array.from(document.querySelectorAll('[data-settings-panel]'));
+    const showPanel = function (value) {
+      panels.forEach((panel) => {
+        panel.classList.toggle('d-none', panel.getAttribute('data-settings-panel') !== value);
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.set('settings_tester', value);
+      window.history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}`);
+    };
+    select.addEventListener('change', function () {
+      showPanel(select.value);
+    });
+  })();
+</script>
 
 <%- include('../partials/admin_footer') %>

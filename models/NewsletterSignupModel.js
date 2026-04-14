@@ -11,11 +11,23 @@ class NewsletterSignupModel {
       INSERT INTO newsletter_signups (email, active, unsubscribe_token)
       VALUES ($1, true, $2)
       ON CONFLICT (email)
-        DO UPDATE SET active = true
+        DO UPDATE SET
+          active = true,
+          unsubscribe_token = COALESCE(newsletter_signups.unsubscribe_token, EXCLUDED.unsubscribe_token)
       RETURNING *;
     `;
     const { rows } = await pool.query(query, [email, token]);
     return rows[0];
+  }
+
+  static async findByEmail(email) {
+    const { rows } = await pool.query(
+      `SELECT * FROM newsletter_signups
+       WHERE email = $1
+       LIMIT 1;`,
+      [String(email || '').trim().toLowerCase()]
+    );
+    return rows[0] ?? null;
   }
 
   /** Abmelden (active → false) via Token */

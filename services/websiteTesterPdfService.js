@@ -149,6 +149,13 @@ function localeFrom(raw) {
   return raw === 'en' ? 'en' : 'de';
 }
 
+function resolveReportProfile(raw = '') {
+  const value = String(raw || '').trim().toLowerCase();
+  if (value === 'seo') return 'seo';
+  if (value === 'geo') return 'geo';
+  return 'website';
+}
+
 function normalizeTypography(value = '') {
   return String(value || '')
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ' ')
@@ -258,10 +265,27 @@ function section(lines, title) {
   lines.push(line(title, 'section'));
 }
 
-function buildQuickWins({ locale, result }) {
+function buildQuickWins({ locale, result, profile = 'website' }) {
   const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
   const facts = result.siteFacts || {};
   const wins = [];
+
+  if (mode === 'seo') {
+    wins.push(lng === 'en'
+      ? 'Align title, meta description, and H1 to one primary intent on each core page.'
+      : 'Title, Meta-Description und H1 auf jeder Kernseite auf einen primären Intent ausrichten.');
+    wins.push(lng === 'en'
+      ? 'Add 2-3 internal links per core page with exact intent anchor text.'
+      : 'Pro Kernseite 2-3 interne Links mit intent-genauen Anchor-Texten ergänzen.');
+  } else if (mode === 'geo') {
+    wins.push(lng === 'en'
+      ? 'Add answer-first summary blocks at the top of homepage and key service pages.'
+      : 'Auf Startseite und Kernleistungsseiten answer-first Kurzantwortblöcke oberhalb des Folds ergänzen.');
+    wins.push(lng === 'en'
+      ? 'Publish at least 6 concise FAQs with direct, snippet-ready answers on top pages.'
+      : 'Auf Top-Seiten mindestens 6 prägnante FAQs mit direkten, snippet-tauglichen Antworten veröffentlichen.');
+  }
 
   if (!facts.usesHttps) {
     wins.push(lng === 'en'
@@ -292,8 +316,39 @@ function buildQuickWins({ locale, result }) {
   return wins.slice(0, 6);
 }
 
-function buildRoadmap({ locale }) {
+function buildRoadmap({ locale, profile = 'website' }) {
   const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
+  if (mode === 'seo') {
+    if (lng === 'en') {
+      return [
+        'Day 1-30: Fix on-page baselines (title/meta/H1), indexation hygiene, and internal link structure.',
+        'Day 31-60: Expand service-page depth, trust signals, and conversion-focused copy blocks.',
+        'Day 61-90: Scale topic clusters, schema refinement, and CTR-focused snippet testing.'
+      ];
+    }
+    return [
+      'Tag 1-30: OnPage-Basis (Title/Meta/H1), Indexierungs-Hygiene und interne Linkstruktur korrigieren.',
+      'Tag 31-60: Leistungstexte, Trust-Signale und conversion-orientierte Copy-Blöcke ausbauen.',
+      'Tag 61-90: Themencluster, Schema-Verfeinerung und CTR-orientierte Snippet-Tests skalieren.'
+    ];
+  }
+
+  if (mode === 'geo') {
+    if (lng === 'en') {
+      return [
+        'Day 1-30: Add answer-first blocks, entity clarity, and consistent contact/entity data.',
+        'Day 31-60: Build FAQ/snippet modules and strengthen citation-ready trust sections.',
+        'Day 61-90: Scale GEO content clusters and test retrieval visibility in AI answer flows.'
+      ];
+    }
+    return [
+      'Tag 1-30: Answer-first Blöcke, Entity-Klarheit und konsistente Kontakt-/Entity-Daten ergänzen.',
+      'Tag 31-60: FAQ-/Snippet-Module ausbauen und zitierfähige Trust-Bereiche stärken.',
+      'Tag 61-90: GEO-Content-Cluster skalieren und Retrieval-Sichtbarkeit in AI-Antwortflüssen testen.'
+    ];
+  }
+
   if (lng === 'en') {
     return [
       'Day 1-30: Remove blockers (indexing basics, metadata quality, legal visibility, consent setup).',
@@ -309,11 +364,25 @@ function buildRoadmap({ locale }) {
   ];
 }
 
-function templateTitleAndMeta({ locale, context, domain }) {
+function templateTitleAndMeta({ locale, context, domain, profile = 'website' }) {
   const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
   const service = normalizeTypography(context?.primaryService || '') || (lng === 'en' ? 'Primary service' : 'Hauptleistung');
   const region = normalizeTypography(context?.targetRegion || '') || (lng === 'en' ? 'Target region' : 'Zielregion');
   const host = normalizeTypography(domain || 'example.com');
+
+  if (mode === 'geo') {
+    if (lng === 'en') {
+      return {
+        title: `${service} in ${region} | Clear answers for AI search`,
+        meta: `${service} in ${region}: answer-first content, clear entities, FAQ snippets, and strong trust signals for higher LLM retrieval relevance.`
+      };
+    }
+    return {
+      title: `${service} in ${region} | Präzise Antworten für AI-Suche`,
+      meta: `${service} in ${region}: answer-first Inhalte, klare Entity-Signale, FAQ-Snippets und starke Trust-Faktoren für bessere LLM-Auffindbarkeit.`
+    };
+  }
 
   if (lng === 'en') {
     return {
@@ -323,9 +392,90 @@ function templateTitleAndMeta({ locale, context, domain }) {
   }
 
   return {
-    title: `${service} in ${region} | Webdesign, SEO & Hosting`,
-    meta: `${service} in ${region}: Website professionell erstellen lassen inkl. SEO, mobiloptimiertem Design, Hosting und Support. Jetzt kostenlosen Website-Check anfragen.`
+    title: mode === 'seo'
+      ? `${service} in ${region} | Webdesign, SEO & Hosting`
+      : `${service} in ${region} | Webdesign, SEO & Hosting`,
+    meta: mode === 'seo'
+      ? `${service} in ${region}: Website professionell erstellen lassen inkl. SEO, mobiloptimiertem Design, Hosting und Support. Jetzt kostenlosen Website-Check anfragen.`
+      : `${service} in ${region}: Website professionell erstellen lassen inkl. SEO, mobiloptimiertem Design, Hosting und Support. Jetzt kostenlosen Website-Check anfragen.`
   };
+}
+
+function profileSectionTitle(profile, locale = 'de') {
+  const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
+  if (mode === 'seo') return lng === 'en' ? 'SEO profile details' : 'SEO-Profil im Detail';
+  if (mode === 'geo') return lng === 'en' ? 'GEO profile details' : 'GEO-Profil im Detail';
+  return lng === 'en' ? 'Website profile details' : 'Website-Profil im Detail';
+}
+
+function blueprintSectionTitle(profile, locale = 'de') {
+  const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
+  if (mode === 'seo') return lng === 'en' ? 'SEO Blueprint (with templates)' : 'SEO Blueprint (mit Vorlagen)';
+  if (mode === 'geo') return lng === 'en' ? 'GEO Blueprint (with templates)' : 'GEO Blueprint (mit Vorlagen)';
+  return lng === 'en' ? 'Website blueprint (with templates)' : 'Website-Blueprint (mit Vorlagen)';
+}
+
+function buildProfileLines({ profile, locale, result }) {
+  const lng = localeFrom(locale);
+  const mode = resolveReportProfile(profile);
+  const lines = [];
+
+  if (mode === 'seo') {
+    const categoryScores = Array.isArray(result.seoCategoryScores) ? result.seoCategoryScores : [];
+    const potentials = result.seoPotentialSummary || {};
+    if (potentials.headline) lines.push(`- ${lng === 'en' ? 'Potential headline' : 'Potenzial-Headline'}: ${normalizeTypography(potentials.headline)}`);
+    if (potentials.text) lines.push(`- ${lng === 'en' ? 'Potential summary' : 'Potenzial-Text'}: ${normalizeTypography(potentials.text)}`);
+    if (categoryScores.length) {
+      lines.push(`- ${lng === 'en' ? 'SEO category priorities' : 'SEO-Kategorie-Prioritäten'}:`);
+      categoryScores
+        .slice()
+        .sort((a, b) => (a.score ?? 100) - (b.score ?? 100))
+        .slice(0, 6)
+        .forEach((entry) => {
+          lines.push(`- ${normalizeTypography(entry.id || 'seo')}: ${Number.isFinite(entry.score) ? entry.score : '-'}/100`);
+        });
+    }
+    const topAreas = Array.isArray(potentials.topPotentialAreas) ? potentials.topPotentialAreas : [];
+    if (topAreas.length) {
+      lines.push(`- ${lng === 'en' ? 'Top SEO potential areas' : 'Top-SEO-Potenzialbereiche'}:`);
+      topAreas.slice(0, 6).forEach((item) => lines.push(`- ${normalizeTypography(item)}`));
+    }
+    return lines;
+  }
+
+  if (mode === 'geo') {
+    const signals = result.geoSignals || {};
+    const potentials = result.geoPotentialSummary || {};
+    if (potentials.headline) lines.push(`- ${lng === 'en' ? 'Potential headline' : 'Potenzial-Headline'}: ${normalizeTypography(potentials.headline)}`);
+    if (potentials.text) lines.push(`- ${lng === 'en' ? 'Potential summary' : 'Potenzial-Text'}: ${normalizeTypography(potentials.text)}`);
+
+    const signalRows = [
+      ['Entity/Schema', signals.entitySchema],
+      [lng === 'en' ? 'Intent coherence' : 'Intent-Kohärenz', signals.intentCoherence],
+      [lng === 'en' ? 'FAQ/snippet readiness' : 'FAQ/Snippet-Readiness', signals.faqSnippetReadiness],
+      ['Trust/Citations', signals.trustCitations],
+      [lng === 'en' ? 'Internal linking' : 'Interne Verlinkung', signals.internalLinking]
+    ].filter(([, value]) => value && typeof value === 'object');
+
+    if (signalRows.length) {
+      lines.push(`- ${lng === 'en' ? 'GEO signal profile' : 'GEO-Signalprofil'}:`);
+      signalRows.forEach(([label, value]) => {
+        lines.push(`- ${label}: ${Number.isFinite(value.score) ? value.score : '-'}/100 (${normalizeTypography(value.quality || '-')})`);
+      });
+    }
+
+    const topPotentials = Array.isArray(potentials.topPotentials) ? potentials.topPotentials : [];
+    if (topPotentials.length) {
+      lines.push(`- ${lng === 'en' ? 'Top GEO potential areas' : 'Top-GEO-Potenzialbereiche'}:`);
+      topPotentials.slice(0, 6).forEach((item) => {
+        lines.push(`- ${normalizeTypography(item.category || '')}: ${normalizeTypography(item.label || '')}`);
+      });
+    }
+  }
+
+  return lines;
 }
 
 function buildImplementationSteps({ locale, actionText, categoryText }) {
@@ -397,6 +547,7 @@ function buildImpactText({ locale, categoryText }) {
 
 function buildDetailedLines({ locale, lead, result }) {
   const lng = localeFrom(locale);
+  const profile = resolveReportProfile(result?.reportProfile || result?.source || lead?.source);
   const copy = TEXT[lng];
   const domain = lead.domain || (() => {
     try {
@@ -440,6 +591,7 @@ function buildDetailedLines({ locale, lead, result }) {
   lines.push(line(`- ${lng === 'en' ? 'SEO/GEO relevance' : 'SEO/GEO-Relevanz'}: ${Number.isFinite(relevance.seoGeoScore) ? relevance.seoGeoScore : '-'} / 100`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'Value/modernity' : 'Mehrwert/Modernität'}: ${Number.isFinite(relevance.valueScore) ? relevance.valueScore : '-'} / 100`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'Intent match' : 'Intent-Match'}: ${Number.isFinite(relevance.intentMatchScore) ? relevance.intentMatchScore : '-'} / 100`, 'bullet'));
+  lines.push(line(`- ${lng === 'en' ? 'Report profile' : 'Report-Profil'}: ${profile.toUpperCase()}`, 'bullet'));
   lines.push(line(`- ${copy.legalRisk}: ${normalizeTypography(legalRisk.label || legalRisk.level || '-')}`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'Crawl scope' : 'Crawl-Umfang'}: ${facts.pagesCrawled || 0}/${facts.crawlTarget || 0}`, 'bullet'));
 
@@ -513,6 +665,12 @@ function buildDetailedLines({ locale, lead, result }) {
     });
   }
 
+  const profileLines = buildProfileLines({ profile, locale: lng, result });
+  if (profileLines.length) {
+    section(lines, profileSectionTitle(profile, lng));
+    profileLines.forEach((entry) => lines.push(line(entry, 'bullet')));
+  }
+
   section(lines, copy.sectionImplementation);
   const topActions = Array.isArray(result.topActions) ? result.topActions.slice(0, 6) : [];
   if (!topActions.length) {
@@ -535,13 +693,27 @@ function buildDetailedLines({ locale, lead, result }) {
   }
 
   section(lines, copy.sectionQuickWins);
-  buildQuickWins({ locale: lng, result }).forEach((entry) => lines.push(line(`- ${normalizeTypography(entry)}`, 'bullet')));
+  buildQuickWins({ locale: lng, result, profile }).forEach((entry) => lines.push(line(`- ${normalizeTypography(entry)}`, 'bullet')));
 
-  section(lines, copy.sectionSeoBlueprint);
-  const templates = templateTitleAndMeta({ locale: lng, context, domain });
+  section(lines, blueprintSectionTitle(profile, lng));
+  const templates = templateTitleAndMeta({ locale: lng, context, domain, profile });
   lines.push(line(`- ${lng === 'en' ? 'Title template' : 'Title-Vorlage'}: ${templates.title}`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'Meta template' : 'Meta-Vorlage'}: ${templates.meta}`, 'bullet'));
-  lines.push(line(`- ${lng === 'en' ? 'Checklist' : 'Checkliste'}: ${lng === 'en' ? 'One main intent per page, one clear H1, service + region in snippet, concrete benefit, clear CTA.' : 'Pro Seite ein Haupt-Intent, eine klare H1, Leistung + Region im Snippet, konkreter Nutzen, klarer CTA.'}`, 'bullet'));
+  lines.push(line(`- ${lng === 'en' ? 'Checklist' : 'Checkliste'}: ${(() => {
+    if (profile === 'geo') {
+      return lng === 'en'
+        ? 'One answer-first block per page, one clear H1, service + region in snippet, entity clarity, and clear CTA.'
+        : 'Pro Seite ein answer-first Block, eine klare H1, Leistung + Region im Snippet, klare Entity-Signale und ein klarer CTA.';
+    }
+    if (profile === 'seo') {
+      return lng === 'en'
+        ? 'One primary intent per page, one clear H1, service + region in snippet, concrete benefit, and clear CTA.'
+        : 'Pro Seite ein primärer Intent, eine klare H1, Leistung + Region im Snippet, konkreter Nutzen und klarer CTA.';
+    }
+    return lng === 'en'
+      ? 'One main intent per page, one clear H1, service + region in snippet, concrete benefit, clear CTA.'
+      : 'Pro Seite ein Haupt-Intent, eine klare H1, Leistung + Region im Snippet, konkreter Nutzen, klarer CTA.';
+  })()}`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'Entity signals' : 'Entity-Signale'}: ${lng === 'en' ? 'Use Organization/LocalBusiness schema with address, contact, opening hours, sameAs links.' : 'Organization/LocalBusiness-Schema mit Adresse, Kontakt, Öffnungszeiten und sameAs-Links nutzen.'}`, 'bullet'));
   lines.push(line(`- ${lng === 'en' ? 'GEO readiness' : 'GEO-Readiness'}: ${lng === 'en' ? 'Integrate FAQ blocks and concise answer snippets for LLM-friendly retrieval.' : 'FAQ-Blöcke und prägnante Antwort-Snippets für LLM-freundliche Auffindbarkeit integrieren.'}`, 'bullet'));
 
@@ -553,7 +725,7 @@ function buildDetailedLines({ locale, lead, result }) {
   lines.push(line(`- ${lng === 'en' ? 'Privacy policy should include legal basis, rights, recipients, storage period, and transfer safeguards.' : 'Datenschutzerklärung sollte Rechtsgrundlagen, Rechte, Empfänger, Speicherdauer und Drittland-Absicherung enthalten.'}`, 'bullet'));
 
   section(lines, copy.sectionRoadmap);
-  buildRoadmap({ locale: lng }).forEach((entry) => lines.push(line(`- ${normalizeTypography(entry)}`, 'bullet')));
+  buildRoadmap({ locale: lng, profile }).forEach((entry) => lines.push(line(`- ${normalizeTypography(entry)}`, 'bullet')));
 
   section(lines, copy.sectionNextSteps);
   lines.push(line(`- ${copy.contact}: ${normalizeTypography(contactUrl)}`, 'bullet'));

@@ -1,4 +1,4 @@
-import { auditWebsite, getCachedAuditResult } from '../services/websiteAuditService.js';
+import { auditWebsite, getCachedAuditResult, toPublicAuditResult } from '../services/websiteAuditService.js';
 import { auditBrokenLinks } from '../services/brokenLinkAuditService.js';
 import { auditGeoWebsite } from '../services/geoAuditService.js';
 import { auditSeoWebsite } from '../services/seoAuditService.js';
@@ -202,7 +202,7 @@ const GEO_PAGE_I18N = {
 const SEO_PAGE_I18N = {
   de: {
     title: 'SEO Tester kostenlos: Website auf SEO-Kriterien prüfen',
-    description: 'Kostenloser SEO-Tester für deine Website mit Unterseiten-Scan. Erhalte SEO-Score, Potenzial und den detaillierten Maßnahmenreport per DOI.',
+    description: 'Kostenloser SEO-Tester für deine Website mit Unterseiten-Scan. Erhalte SEO-Score, Potenzial und den detaillierten Maßnahmenreport per Newsletter-Double-Opt-in.',
     keywords: 'seo tester, website seo testen, seo check website, suchmaschinenoptimierung website prüfen, seo analyse kostenlos',
     ogTitle: 'SEO Tester kostenlos',
     ogDescription: 'Prüfe deine Website auf wichtige SEO- und Technik-Kriterien und erhalte einen detaillierten SEO-Report per E-Mail.',
@@ -220,7 +220,7 @@ const SEO_PAGE_I18N = {
       },
       {
         q: 'Warum sehe ich Detailmaßnahmen erst nach E-Mail-Bestätigung?',
-        a: 'Der öffentliche Bereich zeigt bewusst nur Summary und Potenzial. Der vollständige Umsetzungsreport wird nach DOI per E-Mail versendet.'
+        a: 'Der öffentliche Bereich zeigt bewusst nur Summary und Potenzial. Der vollständige Umsetzungsreport wird nach Newsletter-Double-Opt-in per E-Mail versendet.'
       },
       {
         q: 'Ist der SEO-Check auch für KI-Suche relevant?',
@@ -230,7 +230,7 @@ const SEO_PAGE_I18N = {
   },
   en: {
     title: 'Free SEO Tester: Audit your website SEO criteria',
-    description: 'Run a free SEO audit across your website and subpages. Get SEO score, optimization potential, and a detailed action report via email DOI.',
+    description: 'Run a free SEO audit across your website and subpages. Get SEO score, optimization potential, and a detailed action report via newsletter double opt-in.',
     keywords: 'seo tester, seo website audit, free seo check website, technical seo checker, onpage seo analysis',
     ogTitle: 'Free SEO Tester',
     ogDescription: 'Audit your website for key SEO and technical signals and receive a detailed SEO report by email.',
@@ -248,7 +248,7 @@ const SEO_PAGE_I18N = {
       },
       {
         q: 'Why are detailed actions locked before email confirmation?',
-        a: 'Public results intentionally show summary and potential only. The full implementation report is sent after DOI confirmation.'
+        a: 'Public results intentionally show summary and potential only. The full implementation report is sent after newsletter double opt-in confirmation.'
       },
       {
         q: 'Is this useful for AI-driven search discovery too?',
@@ -657,6 +657,13 @@ function extractClientIp(req) {
   return (forwarded || req.ip || req.connection?.remoteAddress || '').slice(0, 120);
 }
 
+function combinedTesterConsentText(locale = 'de') {
+  const lng = locale === 'en' ? 'en' : 'de';
+  return lng === 'en'
+    ? 'I agree to receive the requested report by email, subscribe to the newsletter, and I have read the privacy policy.'
+    : 'Ich stimme zu, den angeforderten Report per E-Mail zu erhalten, den Newsletter zu abonnieren und habe die Datenschutzerklärung zur Kenntnis genommen.';
+}
+
 function compactResultForArchive(result) {
   return {
     auditId: result.auditId,
@@ -881,7 +888,7 @@ export async function runBrokenLinkAudit(req, res) {
       console.error('Broken-Links-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
-    return res.json({ success: true, result });
+    return res.json({ success: true, result: toPublicAuditResult(result) });
   } catch (error) {
     const status = error.status || 500;
 
@@ -1093,16 +1100,14 @@ export async function getCachedWebsiteAudit(req, res) {
       message: 'Audit wurde nicht gefunden oder ist abgelaufen.'
     });
   }
-  return res.json({ success: true, result });
+  return res.json({ success: true, result: toPublicAuditResult(result) });
 }
 
 export async function runWebsiteAuditLead(req, res) {
   const { auditId, email, name, locale, consent } = req.body || {};
   const safeLocale = locale === 'en' ? 'en' : 'de';
   const safeConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
-  const consentText = safeLocale === 'en'
-    ? 'I agree to receive the requested optimization PDF by email.'
-    : 'Ich stimme zu, den angeforderten Optimierungsreport per E-Mail zu erhalten.';
+  const consentText = combinedTesterConsentText(safeLocale);
 
   try {
     const response = await requestWebsiteTesterLead({
@@ -1135,9 +1140,7 @@ export async function runGeoAuditLead(req, res) {
   const { auditId, email, name, locale, consent } = req.body || {};
   const safeLocale = locale === 'en' ? 'en' : 'de';
   const safeConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
-  const consentText = safeLocale === 'en'
-    ? 'I agree to newsletter signup and to receive the requested detailed GEO report by email.'
-    : 'Ich stimme der Newsletter-Anmeldung zu und möchte den detaillierten GEO-Report per E-Mail erhalten.';
+  const consentText = combinedTesterConsentText(safeLocale);
 
   try {
     const response = await requestGeoTesterLead({
@@ -1170,9 +1173,7 @@ export async function runSeoAuditLead(req, res) {
   const { auditId, email, name, locale, consent } = req.body || {};
   const safeLocale = locale === 'en' ? 'en' : 'de';
   const safeConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
-  const consentText = safeLocale === 'en'
-    ? 'I want to receive the requested detailed SEO report by email.'
-    : 'Ich möchte den angeforderten detaillierten SEO-Report per E-Mail erhalten.';
+  const consentText = combinedTesterConsentText(safeLocale);
 
   try {
     const response = await requestSeoTesterLead({

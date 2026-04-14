@@ -203,10 +203,12 @@
         potentialTitle: "<%= isEn ? 'Optimization potential' : 'Optimierungspotenzial' %>",
         topPotentialAreasTitle: "<%= isEn ? 'Top potential areas' : 'Top-Potenzialbereiche' %>",
         lockedTitle: "<%= isEn ? 'Detailed SEO implementation report' : 'Detaillierter SEO-Umsetzungsreport' %>",
-        lockedText: "<%= isEn ? 'Get the detailed step-by-step report by confirming your email address.' : 'Erhalte den detaillierten Schritt-für-Schritt-Report, indem du deine E-Mail-Adresse bestätigst.' %>",
+        lockedText: "<%= isEn ? 'Get the detailed step-by-step report by confirming your email (double opt-in). Newsletter signup is required for delivery.' : 'Erhalte den detaillierten Schritt-für-Schritt-Report per E-Mail-Bestätigung (Double-Opt-in). Für den Versand ist die Newsletter-Anmeldung erforderlich.' %>",
         leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
         leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
-        leadConsent: "<%= isEn ? 'I want to receive the requested detailed SEO report by email.' : 'Ich möchte den angeforderten detaillierten SEO-Report per E-Mail erhalten.' %>",
+        leadConsent: "<%= isEn ? 'I agree to newsletter signup, want to receive the requested detailed SEO report by email, and have read the privacy policy.' : 'Ich stimme der Newsletter-Anmeldung zu, möchte den angeforderten detaillierten SEO-Report per E-Mail erhalten und habe die Datenschutzerklärung gelesen.' %>",
+        privacyHref: "/datenschutz",
+        privacyLabel: "<%= isEn ? 'Privacy policy' : 'Datenschutzerklärung' %>",
         leadSubmit: "<%= isEn ? 'Send confirmation link' : 'Bestätigungslink senden' %>",
         leadLoading: "<%= isEn ? 'Sending…' : 'Wird gesendet…' %>",
         leadSuccess: "<%= isEn ? 'Please check your inbox and confirm your email. We then send your detailed SEO report.' : 'Bitte prüfe dein Postfach und bestätige deine E-Mail. Danach senden wir deinen detaillierten SEO-Report.' %>",
@@ -234,4 +236,3 @@
   <script src="/js/seo-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
 </body>
 </html>
-

@@ -246,6 +246,11 @@
             <input type="checkbox" name="consent" required>
             <span>${escapeHtml(i18n.leadConsent || '')}</span>
           </label>
+          <small class="wt-lead-legal-note">
+            <a href="${escapeHtml(i18n.privacyHref || '/datenschutz')}" target="_blank" rel="noopener">
+              ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
+            </a>
+          </small>
           <button class="wt-button" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
           <p class="wt-lead-state" data-seo-lead-state hidden></p>
         </form>
@@ -342,4 +347,3 @@
 
   form.addEventListener('submit', handleSubmit);
 })();
-

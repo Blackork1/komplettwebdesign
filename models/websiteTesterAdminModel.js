@@ -224,6 +224,12 @@ async function ensureTables() {
         confirmed_at TIMESTAMPTZ,
         report_sent_at TIMESTAMPTZ,
         report_error TEXT,
+        full_guide_status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        full_guide_profile VARCHAR(16),
+        full_guide_json JSONB,
+        full_guide_generated_at TIMESTAMPTZ,
+        full_guide_error TEXT,
+        full_guide_sent_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
@@ -231,6 +237,30 @@ async function ensureTables() {
     await pool.query(`
       ALTER TABLE website_tester_leads
       ADD COLUMN IF NOT EXISTS source VARCHAR(16) NOT NULL DEFAULT 'website'
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_status VARCHAR(24) NOT NULL DEFAULT 'pending'
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_profile VARCHAR(16)
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_json JSONB
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_generated_at TIMESTAMPTZ
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_error TEXT
+    `);
+    await pool.query(`
+      ALTER TABLE website_tester_leads
+      ADD COLUMN IF NOT EXISTS full_guide_sent_at TIMESTAMPTZ
     `);
 
     await pool.query(`
@@ -240,6 +270,10 @@ async function ensureTables() {
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_wt_leads_status
       ON website_tester_leads (status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_wt_leads_full_guide_status
+      ON website_tester_leads (full_guide_status)
     `);
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_wt_leads_locale
@@ -932,6 +966,55 @@ export async function markWebsiteTesterLeadReportFailed(id, errorMessage = '') {
     WHERE id = $1
     RETURNING *
   `, [parsed, String(errorMessage || '').slice(0, 3000) || null]);
+  return rows[0] || null;
+}
+
+export async function markWebsiteTesterLeadFullGuideGenerated({ id, profile, fullGuideJson }) {
+  await ensureTables();
+  const parsed = parseInt(id, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  const normalizedProfile = normalizeLeadSource(profile) || 'website';
+  const { rows } = await pool.query(`
+    UPDATE website_tester_leads
+    SET full_guide_status = 'generated',
+        full_guide_profile = $2,
+        full_guide_json = $3,
+        full_guide_generated_at = NOW(),
+        full_guide_error = NULL,
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `, [parsed, normalizedProfile, fullGuideJson || null]);
+  return rows[0] || null;
+}
+
+export async function markWebsiteTesterLeadFullGuideFailed(id, errorMessage = '') {
+  await ensureTables();
+  const parsed = parseInt(id, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  const { rows } = await pool.query(`
+    UPDATE website_tester_leads
+    SET full_guide_status = 'failed',
+        full_guide_error = $2,
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `, [parsed, String(errorMessage || '').slice(0, 5000) || null]);
+  return rows[0] || null;
+}
+
+export async function markWebsiteTesterLeadFullGuideSent(id) {
+  await ensureTables();
+  const parsed = parseInt(id, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  const { rows } = await pool.query(`
+    UPDATE website_tester_leads
+    SET full_guide_status = 'sent',
+        full_guide_sent_at = NOW(),
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `, [parsed]);
   return rows[0] || null;
 }
 

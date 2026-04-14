@@ -47,7 +47,12 @@ router.post('/admin/website-tester/config', isAdmin, websiteTesterAdmin.saveWebs
 router.post('/admin/website-tester/broken-links/config', isAdmin, websiteTesterAdmin.saveBrokenLinksTesterConfig);
 router.post('/admin/website-tester/geo/config', isAdmin, websiteTesterAdmin.saveGeoTesterConfig);
 router.post('/admin/website-tester/seo/config', isAdmin, websiteTesterAdmin.saveSeoTesterConfig);
+router.post('/admin/website-tester/preview', isAdmin, websiteTesterAdmin.runWebsiteTesterPreviewAction);
+router.get('/admin/website-tester/preview/:id/short.pdf', isAdmin, websiteTesterAdmin.downloadWebsiteTesterPreviewShortPdf);
+router.get('/admin/website-tester/preview/:id/full.pdf', isAdmin, websiteTesterAdmin.downloadWebsiteTesterPreviewFullPdf);
+router.get('/admin/website-tester/preview/:id/full.txt', isAdmin, websiteTesterAdmin.downloadWebsiteTesterPreviewFullText);
 router.post('/admin/website-tester/leads/:id/resend-doi', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadDoiAction);
 router.post('/admin/website-tester/leads/:id/resend-report', isAdmin, websiteTesterAdmin.resendWebsiteTesterLeadReportAction);
+router.post('/admin/website-tester/leads/:id/send-full-guide', isAdmin, websiteTesterAdmin.sendWebsiteTesterLeadFullGuideAction);
 
 export default router;

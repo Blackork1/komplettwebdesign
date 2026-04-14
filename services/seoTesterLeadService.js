@@ -1,9 +1,13 @@
 import { createHash, randomBytes, randomUUID } from 'crypto';
+import NewsletterSignupModel from '../models/NewsletterSignupModel.js';
 import {
   consumeWebsiteTesterLeadConfirmToken,
   createWebsiteTesterLead,
   getWebsiteTesterLeadByConfirmHash,
   getWebsiteTesterLeadById,
+  markWebsiteTesterLeadFullGuideFailed,
+  markWebsiteTesterLeadFullGuideGenerated,
+  markWebsiteTesterLeadFullGuideSent,
   markWebsiteTesterLeadReportFailed,
   markWebsiteTesterLeadReportSent,
   refreshWebsiteTesterLeadConfirmToken
@@ -11,9 +15,12 @@ import {
 import { getCachedSeoAuditResult } from './seoAuditService.js';
 import {
   sendSeoTesterDoiMail,
-  sendSeoTesterReportMail
+  sendSeoTesterReportMail,
+  sendTesterFullGuideMail
 } from './mailService.js';
 import { buildSeoTesterReport } from './seoTesterPdfService.js';
+import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
+import { buildTesterFullGuidePdf } from './testerFullGuidePdfService.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_HOURS = 24;
@@ -22,39 +29,43 @@ const I18N = {
   de: {
     errors: {
       emailRequired: 'Bitte gib eine gültige E-Mail-Adresse ein.',
-      consentRequired: 'Bitte bestätige den Hinweis zum PDF-Versand.',
+      consentRequired: 'Bitte bestätige die Newsletter-Einwilligung für den SEO-Report.',
       auditMissing: 'Das SEO-Audit wurde nicht gefunden oder ist abgelaufen. Bitte starte den Scan erneut.',
       tokenMissing: 'Der Bestätigungslink ist ungültig.',
       tokenInvalid: 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.',
       tokenExpired: 'Der Bestätigungslink ist abgelaufen. Bitte fordere einen neuen Link an.',
       reportFailed: 'Der SEO-Report konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
+      fullGuideFailed: 'Die vollständige SEO-Anleitung konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
       leadState: 'Diese Aktion ist für den aktuellen Lead-Status nicht möglich.'
     },
     messages: {
-      verifyMail: 'Bitte bestätige deine E-Mail-Adresse. Danach senden wir den detaillierten SEO-Report.',
+      verifyMail: 'Bitte bestätige deine E-Mail-Adresse (Double-Opt-in). Danach senden wir den detaillierten SEO-Report und aktivieren die Newsletter-Anmeldung.',
       verifiedAndSent: 'Deine E-Mail wurde bestätigt. Der detaillierte SEO-Report wurde versendet.',
       alreadyUsed: 'Die E-Mail-Bestätigung wurde bereits abgeschlossen.',
       doiResent: 'Bestätigungslink wurde erneut versendet.',
-      reportResent: 'Der SEO-Report wurde erneut versendet.'
+      reportResent: 'Der SEO-Report wurde erneut versendet.',
+      fullGuideSent: 'Die vollständige SEO-Anleitung wurde versendet.'
     }
   },
   en: {
     errors: {
       emailRequired: 'Please enter a valid email address.',
-      consentRequired: 'Please confirm consent for PDF delivery.',
+      consentRequired: 'Please confirm newsletter consent for the SEO report.',
       auditMissing: 'The SEO audit was not found or has expired. Please run the scan again.',
       tokenMissing: 'The confirmation link is invalid.',
       tokenInvalid: 'The confirmation link is invalid or already used.',
       tokenExpired: 'The confirmation link has expired. Please request a new link.',
       reportFailed: 'The SEO report could not be sent. Please contact us directly.',
+      fullGuideFailed: 'The complete SEO guide could not be sent. Please contact us directly.',
       leadState: 'This action is not possible for the current lead status.'
     },
     messages: {
-      verifyMail: 'Please confirm your email address. We will then send the detailed SEO report.',
+      verifyMail: 'Please confirm your email address (double opt-in). We will then send the detailed SEO report and activate your newsletter subscription.',
       verifiedAndSent: 'Your email is confirmed. The detailed SEO report has been sent.',
       alreadyUsed: 'Email confirmation was already completed.',
       doiResent: 'Confirmation link has been sent again.',
-      reportResent: 'The SEO report has been sent again.'
+      reportResent: 'The SEO report has been sent again.',
+      fullGuideSent: 'The complete SEO guide has been sent.'
     }
   }
 };
@@ -146,6 +157,37 @@ function topIssuesFromSeoResult(result = {}) {
     .slice(0, 3)
     .map((item) => item?.label || item?.text)
     .filter(Boolean);
+}
+
+async function ensureNewsletterUnsubscribeToken(email) {
+  const created = await NewsletterSignupModel.create(email);
+  if (created?.unsubscribe_token) return created.unsubscribe_token;
+  const fallback = await NewsletterSignupModel.findByEmail(email);
+  return fallback?.unsubscribe_token || '';
+}
+
+async function generateAndStoreFullGuide({ lead, result, profile = 'seo', locale = 'de' }) {
+  try {
+    const fullGuide = generateTesterFullGuide({
+      result,
+      source: profile,
+      locale
+    });
+    const guideText = formatTesterFullGuideAsText(fullGuide);
+    const payload = {
+      ...fullGuide,
+      guideText
+    };
+    const updated = await markWebsiteTesterLeadFullGuideGenerated({
+      id: lead.id,
+      profile,
+      fullGuideJson: payload
+    });
+    return updated?.full_guide_json || payload;
+  } catch (error) {
+    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || 'full_guide_generation_failed');
+    return null;
+  }
 }
 
 function buildConfirmViewModel({ locale, status, lead, message }) {
@@ -287,6 +329,7 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
   }
 
   try {
+    const unsubscribeToken = await ensureNewsletterUnsubscribeToken(consumed.email);
     const report = buildSeoTesterReport({
       lead: consumed,
       result,
@@ -299,7 +342,15 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
       locale: effectiveLocale,
       domain: consumed.domain,
       scoreBand: consumed.score_band,
-      report
+      report,
+      unsubscribeToken
+    });
+
+    await generateAndStoreFullGuide({
+      lead: consumed,
+      result,
+      profile: 'seo',
+      locale: effectiveLocale
     });
 
     const updated = await markWebsiteTesterLeadReportSent(consumed.id);
@@ -383,6 +434,7 @@ export async function resendSeoTesterLeadReport({ leadId }) {
   }
 
   try {
+    const unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
     const report = buildSeoTesterReport({
       lead,
       result,
@@ -395,8 +447,18 @@ export async function resendSeoTesterLeadReport({ leadId }) {
       locale: lng,
       domain: lead.domain,
       scoreBand: lead.score_band,
-      report
+      report,
+      unsubscribeToken
     });
+
+    if (!lead.full_guide_json) {
+      await generateAndStoreFullGuide({
+        lead,
+        result,
+        profile: 'seo',
+        locale: lng
+      });
+    }
 
     const updated = await markWebsiteTesterLeadReportSent(lead.id);
     return {
@@ -409,6 +471,67 @@ export async function resendSeoTesterLeadReport({ leadId }) {
   }
 }
 
+export async function sendSeoTesterLeadFullGuide({ leadId }) {
+  const lead = await getWebsiteTesterLeadById(leadId);
+  if (!lead || (lead.source || 'website') !== 'seo') {
+    throw createError('Lead wurde nicht gefunden.', 404);
+  }
+
+  const lng = localeFrom(lead.locale);
+  const copy = copyFor(lng);
+  if (!['confirmed', 'report_failed', 'report_sent'].includes(lead.status)) {
+    throw createError(copy.errors.leadState, 400);
+  }
+
+  let fullGuide = lead.full_guide_json || null;
+  if (!fullGuide) {
+    const result = lead.audit_snapshot_json || getCachedSeoAuditResult(lead.audit_id);
+    if (!result) {
+      throw createError(copy.errors.auditMissing, 400);
+    }
+    fullGuide = await generateAndStoreFullGuide({
+      lead,
+      result,
+      profile: 'seo',
+      locale: lng
+    });
+  }
+
+  if (!fullGuide) {
+    throw createError(copy.errors.fullGuideFailed, 500);
+  }
+
+  try {
+    const unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
+    const guideText = fullGuide.guideText || formatTesterFullGuideAsText(fullGuide);
+    const guidePdf = buildTesterFullGuidePdf({
+      guideText,
+      sourceLabel: 'seo',
+      domain: lead.domain || '',
+      locale: lng,
+      generatedAt: fullGuide.createdAt || new Date().toISOString()
+    });
+    await sendTesterFullGuideMail({
+      to: lead.email,
+      name: lead.name,
+      locale: lng,
+      domain: lead.domain,
+      sourceLabel: 'SEO',
+      guideText,
+      unsubscribeToken,
+      guidePdf
+    });
+    const updated = await markWebsiteTesterLeadFullGuideSent(lead.id);
+    return {
+      lead: updated || lead,
+      message: copy.messages.fullGuideSent
+    };
+  } catch (error) {
+    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || copy.errors.fullGuideFailed);
+    throw createError(copy.errors.fullGuideFailed, 500);
+  }
+}
+
 export const __testables = {
   localeFrom,
   cleanEmail,
@@ -417,4 +540,3 @@ export const __testables = {
   compactSeoAuditForLead,
   topIssuesFromSeoResult
 };
-

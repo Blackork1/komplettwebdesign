@@ -37,6 +37,38 @@ function wtPrettyDate(value, locale = "de") {
     });
 }
 
+function testerBaseUrl() {
+    return (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+}
+
+function safeHtml(value = "") {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function newsletterUnsubscribeUrl(unsubscribeToken = "") {
+    const token = String(unsubscribeToken || "").trim();
+    if (!token) return "";
+    return `${testerBaseUrl()}/newsletter/unsubscribe/${encodeURIComponent(token)}`;
+}
+
+function newsletterHintHtml({ locale = "de", unsubscribeToken = "" }) {
+    const url = newsletterUnsubscribeUrl(unsubscribeToken);
+    const lng = wtLocale(locale);
+    if (!url) {
+        return lng === "en"
+            ? `<p>You can unsubscribe from the newsletter at any time via the link in future emails.</p>`
+            : `<p>Du kannst den Newsletter jederzeit über den Link in künftigen E-Mails abbestellen.</p>`;
+    }
+    return lng === "en"
+        ? `<p>If you no longer want the newsletter, you can unsubscribe here at any time: <a href="${url}">Unsubscribe newsletter</a>.</p>`
+        : `<p>Wenn du den Newsletter nicht mehr erhalten möchtest, kannst du ihn jederzeit hier abbestellen: <a href="${url}">Newsletter abbestellen</a>.</p>`;
+}
+
 export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
     const isEn = normalizeLocale(locale) === "en";
     const isWithoutAppointment = !appointment || appointment.title === "Ohne Termin";
@@ -185,8 +217,8 @@ export async function sendWebsiteTesterDoiMail({
     const label = wtScoreLabel(scoreBand, lng);
     const expiry = wtPrettyDate(expiresAt, lng);
     const subject = lng === "en"
-        ? "Confirm your email for your website optimization PDF"
-        : "Bitte bestätige deine E-Mail für deinen Website-Optimierungsreport";
+        ? "Confirm your email for your detailed report + newsletter"
+        : "Bitte bestätige deine E-Mail für Report + Newsletter";
 
     const html = lng === "en"
         ? `
@@ -195,6 +227,7 @@ export async function sendWebsiteTesterDoiMail({
       <p>Please confirm your email address to receive the report:</p>
       <p><a href="${confirmUrl}">Confirm email and send report</a></p>
       ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>By confirming, you also activate your newsletter subscription so we can send the requested report and future optimization updates.</p>
       <p>If you did not request this, you can ignore this email.</p>
       <p>Best regards<br>Komplett Webdesign</p>
     `
@@ -204,6 +237,7 @@ export async function sendWebsiteTesterDoiMail({
       <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den Report senden können:</p>
       <p><a href="${confirmUrl}">E-Mail bestätigen und Report senden</a></p>
       ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Mit der Bestätigung aktivierst du gleichzeitig deine Newsletter-Anmeldung, damit wir dir den angeforderten Report und weitere Optimierungstipps senden können.</p>
       <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
       <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
@@ -222,7 +256,8 @@ export async function sendWebsiteTesterReportMail({
     locale = "de",
     domain = "",
     scoreBand = "mittel",
-    report
+    report,
+    unsubscribeToken = ""
 }) {
     const lng = wtLocale(locale);
     const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
@@ -232,8 +267,8 @@ export async function sendWebsiteTesterReportMail({
         ? "Your detailed website optimization report (PDF)"
         : "Dein ausführlicher Website-Optimierungsreport (PDF)";
 
-    const contactUrl = `${(process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "")}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
-    const bookingUrl = `${(process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "")}/booking`;
+    const contactUrl = `${testerBaseUrl()}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${testerBaseUrl()}/booking`;
 
     const html = lng === "en"
         ? `
@@ -245,6 +280,7 @@ export async function sendWebsiteTesterReportMail({
         <li><a href="${contactUrl}">Contact form</a></li>
         <li><a href="${bookingUrl}">Book a consultation call</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Best regards<br>Komplett Webdesign</p>
     `
         : `
@@ -256,6 +292,7 @@ export async function sendWebsiteTesterReportMail({
         <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
         <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
 
@@ -334,7 +371,8 @@ export async function sendGeoTesterReportMail({
     locale = "de",
     domain = "",
     scoreBand = "mittel",
-    report
+    report,
+    unsubscribeToken = ""
 }) {
     const lng = wtLocale(locale);
     const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
@@ -344,7 +382,7 @@ export async function sendGeoTesterReportMail({
         ? "Your detailed GEO optimization report (PDF)"
         : "Dein detaillierter GEO-Optimierungsreport (PDF)";
 
-    const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+    const base = testerBaseUrl();
     const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
     const bookingUrl = `${base}/booking`;
 
@@ -358,6 +396,7 @@ export async function sendGeoTesterReportMail({
         <li><a href="${contactUrl}">Contact form</a></li>
         <li><a href="${bookingUrl}">Book a consultation call</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Best regards<br>Komplett Webdesign</p>
     `
         : `
@@ -369,6 +408,7 @@ export async function sendGeoTesterReportMail({
         <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
         <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
 
@@ -408,8 +448,8 @@ export async function sendSeoTesterDoiMail({
     const label = wtScoreLabel(scoreBand, lng);
     const expiry = wtPrettyDate(expiresAt, lng);
     const subject = lng === "en"
-        ? "Confirm your email for your detailed SEO report"
-        : "Bitte bestätige deine E-Mail für deinen detaillierten SEO-Report";
+        ? "Confirm your email for your detailed SEO report + newsletter"
+        : "Bitte bestätige deine E-Mail für SEO-Report + Newsletter";
 
     const html = lng === "en"
         ? `
@@ -418,6 +458,7 @@ export async function sendSeoTesterDoiMail({
       <p>Please confirm your email address to unlock and receive the full report:</p>
       <p><a href="${confirmUrl}">Confirm email and send SEO report</a></p>
       ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>After confirmation, your address is added to our newsletter so we can send SEO updates and implementation tips.</p>
       <p>If you did not request this, you can ignore this email.</p>
       <p>Best regards<br>Komplett Webdesign</p>
     `
@@ -427,6 +468,7 @@ export async function sendSeoTesterDoiMail({
       <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den vollständigen Report senden können:</p>
       <p><a href="${confirmUrl}">E-Mail bestätigen und SEO-Report senden</a></p>
       ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Nach der Bestätigung wird deine Adresse in unseren Newsletter aufgenommen, damit wir dir weitere SEO-Tipps senden können.</p>
       <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
       <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
@@ -445,7 +487,8 @@ export async function sendSeoTesterReportMail({
     locale = "de",
     domain = "",
     scoreBand = "mittel",
-    report
+    report,
+    unsubscribeToken = ""
 }) {
     const lng = wtLocale(locale);
     const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
@@ -455,7 +498,7 @@ export async function sendSeoTesterReportMail({
         ? "Your detailed SEO report (PDF)"
         : "Dein detaillierter SEO-Report (PDF)";
 
-    const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+    const base = testerBaseUrl();
     const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
     const bookingUrl = `${base}/booking`;
 
@@ -469,6 +512,7 @@ export async function sendSeoTesterReportMail({
         <li><a href="${contactUrl}">Contact form</a></li>
         <li><a href="${bookingUrl}">Book a consultation call</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Best regards<br>Komplett Webdesign</p>
     `
         : `
@@ -480,6 +524,7 @@ export async function sendSeoTesterReportMail({
         <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
         <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
       </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
       <p>Beste Grüße<br>Komplett Webdesign</p>
     `;
 
@@ -500,6 +545,77 @@ export async function sendSeoTesterReportMail({
     const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
     if (adminNotify) {
         mail.bcc = adminNotify;
+    }
+
+    return transporter.sendMail(mail);
+}
+
+export async function sendTesterFullGuideMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    sourceLabel = "Website",
+    guideText = "",
+    unsubscribeToken = "",
+    guidePdf = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const source = safeHtml(sourceLabel || "Website");
+    const subject = lng === "en"
+        ? `Your complete ${sourceLabel || "Website"} optimization guide`
+        : `Deine vollständige ${sourceLabel || "Website"}-Optimierungsanleitung`;
+
+    const contactUrl = `${testerBaseUrl()}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${testerBaseUrl()}/booking`;
+    const formattedGuide = safeHtml(guideText || (lng === "en"
+        ? "No guide content available."
+        : "Kein Leitfadeninhalt verfügbar."));
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>as requested, here is your complete <strong>${source}</strong> optimization guide for <strong>${safeHtml(domain || "your website")}</strong>.</p>
+      <p>The guide is included below and is intended as an end-to-end implementation playbook.</p>
+      <pre style="white-space:pre-wrap;line-height:1.45;background:#f7f7f7;border:1px solid #e5e7eb;padding:12px;border-radius:8px;">${formattedGuide}</pre>
+      <p>If you want, we can prioritize implementation together and review open questions:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>wie gewünscht erhältst du hier deine vollständige <strong>${source}</strong>-Optimierungsanleitung für <strong>${safeHtml(domain || "deine Website")}</strong>.</p>
+      <p>Die Anleitung ist unten enthalten und als durchgängiger Umsetzungsleitfaden gedacht.</p>
+      <pre style="white-space:pre-wrap;line-height:1.45;background:#f7f7f7;border:1px solid #e5e7eb;padding:12px;border-radius:8px;">${formattedGuide}</pre>
+      <p>Wenn du möchtest, priorisieren wir die Umsetzung gemeinsam und klären offene Punkte:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html,
+        attachments: []
+    };
+
+    if (guidePdf?.buffer) {
+      const safeFileName = String(guidePdf.filename || `${sourceLabel || 'website'}-vollanleitung.pdf`).replace(/[\\r\\n]/g, ' ').slice(0, 180);
+      mail.attachments.push({
+        filename: safeFileName,
+        content: guidePdf.buffer,
+        contentType: "application/pdf"
+      });
     }
 
     return transporter.sendMail(mail);
