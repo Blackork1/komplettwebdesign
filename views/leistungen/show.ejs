@@ -1,5 +1,3 @@
-<%- include('../partials/head', { title, description, ogImage }) %>
-<%- include('../partials/header') %>
 <%
   // Basis-Variablen für Schema.org
   const baseUrl = (typeof canonicalBaseUrl !== 'undefined'
@@ -129,32 +127,17 @@
       "url": ogImage
     };
   }
+
+  const structuredDataBlocks = [
+    orgSchema,
+    websiteSchema,
+    breadcrumbSchema,
+    serviceSchema,
+    webPageSchema
+  ];
 %>
-
-<!-- Schema.org: Organization -->
-<script type="application/ld+json">
-  <%- JSON.stringify(orgSchema, null, 2) %>
-</script>
-
-<!-- Schema.org: WebSite -->
-<script type="application/ld+json">
-  <%- JSON.stringify(websiteSchema, null, 2) %>
-</script>
-
-<!-- Schema.org: BreadcrumbList -->
-<script type="application/ld+json">
-  <%- JSON.stringify(breadcrumbSchema, null, 2) %>
-</script>
-
-<!-- Schema.org: Service + Leistungen-Katalog -->
-<script type="application/ld+json">
-  <%- JSON.stringify(serviceSchema, null, 2) %>
-</script>
-
-<!-- Schema.org: WebPage -->
-<script type="application/ld+json">
-  <%- JSON.stringify(webPageSchema, null, 2) %>
-</script>
+<%- include('../partials/head', { title, description, ogImage, structuredDataBlocks }) %>
+<%- include('../partials/header') %>
 <style>
   * {
     margin: 0;

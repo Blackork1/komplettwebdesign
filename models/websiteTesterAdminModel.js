@@ -3,6 +3,9 @@ import pool from '../util/db.js';
 const DEFAULT_MAX_SUBPAGES = 5;
 const MIN_MAX_SUBPAGES = 1;
 const MAX_MAX_SUBPAGES = 20;
+const DEFAULT_FULL_GUIDE_MAX_PAGES = 10;
+const MIN_FULL_GUIDE_MAX_PAGES = 1;
+const MAX_FULL_GUIDE_MAX_PAGES = 50;
 const DEFAULT_BROKEN_LINKS_MAX_SUBPAGES = 5;
 const DEFAULT_BROKEN_LINKS_SCAN_MODE = 'maximal';
 const DEFAULT_GEO_MAX_SUBPAGES = 5;
@@ -14,7 +17,7 @@ const GEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const SEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const DEFAULT_PAGE_SIZE = 30;
 const LEAD_STATUSES = new Set(['pending', 'confirmed', 'report_sent', 'report_failed']);
-const LEAD_SOURCES = new Set(['website', 'geo', 'seo']);
+const LEAD_SOURCES = new Set(['website', 'geo', 'seo', 'meta']);
 
 let ensurePromise = null;
 
@@ -50,6 +53,12 @@ function clampSeoMaxSubpages(rawValue) {
   const parsed = parseInt(rawValue, 10);
   if (!Number.isFinite(parsed)) return DEFAULT_SEO_MAX_SUBPAGES;
   return Math.max(MIN_MAX_SUBPAGES, Math.min(MAX_MAX_SUBPAGES, parsed));
+}
+
+function clampFullGuideMaxPages(rawValue) {
+  const parsed = parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed)) return DEFAULT_FULL_GUIDE_MAX_PAGES;
+  return Math.max(MIN_FULL_GUIDE_MAX_PAGES, Math.min(MAX_FULL_GUIDE_MAX_PAGES, parsed));
 }
 
 function normalizeSeoScanMode(rawValue) {
@@ -111,6 +120,7 @@ async function ensureTables() {
         geo_scan_mode VARCHAR(16) NOT NULL DEFAULT '${DEFAULT_GEO_SCAN_MODE}',
         seo_max_subpages INT NOT NULL DEFAULT ${DEFAULT_SEO_MAX_SUBPAGES},
         seo_scan_mode VARCHAR(16) NOT NULL DEFAULT '${DEFAULT_SEO_SCAN_MODE}',
+        full_guide_max_pages INT NOT NULL DEFAULT ${DEFAULT_FULL_GUIDE_MAX_PAGES},
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
@@ -139,6 +149,10 @@ async function ensureTables() {
       ALTER TABLE website_tester_config
       ADD COLUMN IF NOT EXISTS seo_scan_mode VARCHAR(16) NOT NULL DEFAULT '${DEFAULT_SEO_SCAN_MODE}'
     `);
+    await pool.query(`
+      ALTER TABLE website_tester_config
+      ADD COLUMN IF NOT EXISTS full_guide_max_pages INT NOT NULL DEFAULT ${DEFAULT_FULL_GUIDE_MAX_PAGES}
+    `);
 
     await pool.query(`
       INSERT INTO website_tester_config (
@@ -150,6 +164,7 @@ async function ensureTables() {
         geo_scan_mode,
         seo_max_subpages,
         seo_scan_mode
+        ,full_guide_max_pages
       )
       VALUES (
         1,
@@ -159,7 +174,8 @@ async function ensureTables() {
         ${DEFAULT_GEO_MAX_SUBPAGES},
         '${DEFAULT_GEO_SCAN_MODE}',
         ${DEFAULT_SEO_MAX_SUBPAGES},
-        '${DEFAULT_SEO_SCAN_MODE}'
+        '${DEFAULT_SEO_SCAN_MODE}',
+        ${DEFAULT_FULL_GUIDE_MAX_PAGES}
       )
       ON CONFLICT (id) DO NOTHING
     `);
@@ -430,6 +446,7 @@ export async function getWebsiteTesterConfig() {
       geo_scan_mode,
       seo_max_subpages,
       seo_scan_mode,
+      full_guide_max_pages,
       updated_at
     FROM website_tester_config
     WHERE id = 1
@@ -444,13 +461,17 @@ export async function getWebsiteTesterConfig() {
     geoScanMode: normalizeGeoScanMode(row.geo_scan_mode),
     seoMaxSubpages: clampSeoMaxSubpages(row.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(row.seo_scan_mode),
+    fullGuideMaxPages: clampFullGuideMaxPages(row.full_guide_max_pages),
     updatedAt: row.updated_at || null
   };
 }
 
-export async function updateWebsiteTesterConfig({ maxSubpages }) {
+export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages }) {
   await ensureTables();
-  const clamped = clampMaxSubpages(maxSubpages);
+  const hasMaxSubpages = maxSubpages !== undefined && maxSubpages !== null && String(maxSubpages).trim() !== '';
+  const hasFullGuideMaxPages = fullGuideMaxPages !== undefined && fullGuideMaxPages !== null && String(fullGuideMaxPages).trim() !== '';
+  const clampedMaxSubpages = hasMaxSubpages ? clampMaxSubpages(maxSubpages) : null;
+  const clampedFullGuideMaxPages = hasFullGuideMaxPages ? clampFullGuideMaxPages(fullGuideMaxPages) : null;
   const { rows } = await pool.query(`
     INSERT INTO website_tester_config (
       id,
@@ -461,23 +482,26 @@ export async function updateWebsiteTesterConfig({ maxSubpages }) {
       geo_scan_mode,
       seo_max_subpages,
       seo_scan_mode,
+      full_guide_max_pages,
       updated_at
     ) VALUES (
       1,
-      $1,
+      COALESCE($1, ${DEFAULT_MAX_SUBPAGES}),
       ${DEFAULT_BROKEN_LINKS_MAX_SUBPAGES},
       '${DEFAULT_BROKEN_LINKS_SCAN_MODE}',
       ${DEFAULT_GEO_MAX_SUBPAGES},
       '${DEFAULT_GEO_SCAN_MODE}',
       ${DEFAULT_SEO_MAX_SUBPAGES},
       '${DEFAULT_SEO_SCAN_MODE}',
+      COALESCE($2, ${DEFAULT_FULL_GUIDE_MAX_PAGES}),
       NOW()
     )
     ON CONFLICT (id) DO UPDATE
-    SET max_subpages = EXCLUDED.max_subpages,
+    SET max_subpages = COALESCE($1, website_tester_config.max_subpages),
+        full_guide_max_pages = COALESCE($2, website_tester_config.full_guide_max_pages),
         updated_at = NOW()
-    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, updated_at
-  `, [clamped]);
+    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, updated_at
+  `, [clampedMaxSubpages, clampedFullGuideMaxPages]);
   return {
     maxSubpages: clampMaxSubpages(rows[0]?.max_subpages),
     brokenLinksMaxSubpages: clampBrokenLinksMaxSubpages(rows[0]?.broken_links_max_subpages),
@@ -486,6 +510,7 @@ export async function updateWebsiteTesterConfig({ maxSubpages }) {
     geoScanMode: normalizeGeoScanMode(rows[0]?.geo_scan_mode),
     seoMaxSubpages: clampSeoMaxSubpages(rows[0]?.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(rows[0]?.seo_scan_mode),
+    fullGuideMaxPages: clampFullGuideMaxPages(rows[0]?.full_guide_max_pages),
     updatedAt: rows[0]?.updated_at || null
   };
 }
@@ -521,7 +546,7 @@ export async function updateBrokenLinksTesterConfig({ brokenLinksMaxSubpages, br
     SET broken_links_max_subpages = EXCLUDED.broken_links_max_subpages,
         broken_links_scan_mode = EXCLUDED.broken_links_scan_mode,
         updated_at = NOW()
-    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, updated_at
+    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, updated_at
   `, [clampedSubpages, normalizedMode]);
 
   return {
@@ -532,6 +557,7 @@ export async function updateBrokenLinksTesterConfig({ brokenLinksMaxSubpages, br
     geoScanMode: normalizeGeoScanMode(rows[0]?.geo_scan_mode),
     seoMaxSubpages: clampSeoMaxSubpages(rows[0]?.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(rows[0]?.seo_scan_mode),
+    fullGuideMaxPages: clampFullGuideMaxPages(rows[0]?.full_guide_max_pages),
     updatedAt: rows[0]?.updated_at || null
   };
 }
@@ -567,7 +593,7 @@ export async function updateGeoTesterConfig({ geoMaxSubpages, geoScanMode }) {
     SET geo_max_subpages = EXCLUDED.geo_max_subpages,
         geo_scan_mode = EXCLUDED.geo_scan_mode,
         updated_at = NOW()
-    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, updated_at
+    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, updated_at
   `, [clampedSubpages, normalizedMode]);
 
   return {
@@ -578,6 +604,7 @@ export async function updateGeoTesterConfig({ geoMaxSubpages, geoScanMode }) {
     geoScanMode: normalizeGeoScanMode(rows[0]?.geo_scan_mode),
     seoMaxSubpages: clampSeoMaxSubpages(rows[0]?.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(rows[0]?.seo_scan_mode),
+    fullGuideMaxPages: clampFullGuideMaxPages(rows[0]?.full_guide_max_pages),
     updatedAt: rows[0]?.updated_at || null
   };
 }
@@ -613,7 +640,7 @@ export async function updateSeoTesterConfig({ seoMaxSubpages, seoScanMode }) {
     SET seo_max_subpages = EXCLUDED.seo_max_subpages,
         seo_scan_mode = EXCLUDED.seo_scan_mode,
         updated_at = NOW()
-    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, updated_at
+    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, updated_at
   `, [clampedSubpages, normalizedMode]);
 
   return {
@@ -624,6 +651,7 @@ export async function updateSeoTesterConfig({ seoMaxSubpages, seoScanMode }) {
     geoScanMode: normalizeGeoScanMode(rows[0]?.geo_scan_mode),
     seoMaxSubpages: clampSeoMaxSubpages(rows[0]?.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(rows[0]?.seo_scan_mode),
+    fullGuideMaxPages: clampFullGuideMaxPages(rows[0]?.full_guide_max_pages),
     updatedAt: rows[0]?.updated_at || null
   };
 }
@@ -1395,6 +1423,7 @@ export const __testables = {
   clampGeoMaxSubpages,
   normalizeGeoScanMode,
   clampSeoMaxSubpages,
+  clampFullGuideMaxPages,
   normalizeSeoScanMode,
   clampPage,
   clampPageSize,

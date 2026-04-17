@@ -124,6 +124,17 @@
   <%- typeof seoExtra === 'string' ? seoExtra : '' %>
   <% } %>
 
+  <% if (typeof structuredDataRaw === 'string' && structuredDataRaw.trim()) { %>
+  <%- structuredDataRaw %>
+  <% } %>
+
+  <% if (typeof structuredDataBlocks !== 'undefined' && structuredDataBlocks !== null) {
+    const blocks = Array.isArray(structuredDataBlocks) ? structuredDataBlocks : [structuredDataBlocks];
+    blocks.filter(Boolean).forEach(function(block) { %>
+  <script type="application/ld+json"><%- typeof block === 'string' ? block : JSON.stringify(block) %></script>
+  <% });
+  } %>
+
   <!-- =========================================================
        DSGVO-SICHER / BASIC CONSENT MODE
        - Default denied VOR jeglichem Google-Script

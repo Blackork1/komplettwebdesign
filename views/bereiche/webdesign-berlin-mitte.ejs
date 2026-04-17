@@ -1,4 +1,100 @@
-<%- include('../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Webdesign Mitte | Komplett Webdesign – Landingpages & Relaunch in Berlin",
+    "url": "https://www.komplettwebdesign.de/webdesign-berlin/mitte",
+    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194773/admin_gallery/s4bjmdaw4yrjdf8hs7o0.webp"],
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Startseite",
+          "item": "https://www.komplettwebdesign.de/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Webdesign Berlin",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Webdesign Mitte",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin/mitte"
+        }
+      ]
+    }
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de",
+    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+    "telephone": "+4915511245048",
+    "areaServed": [{
+        "@type": "AdministrativeArea",
+        "name": "Berlin"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Mitte"
+      }
+    ],
+    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
+    "description": "Komplett Webdesign: Webdesign in Mitte (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
+    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+        "@type": "Question",
+        "name": "Was kostet eine Website in Berlin Mitte?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Die Preise variieren je nach Umfang und Funktionen, starten aber meist bei ca. 1.500 €."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie lange dauert es, eine Website zu erstellen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "In der Regel dauert es 3–6 Wochen von der ersten Beratung bis zum fertigen Launch."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Bietet ihr auch SEO für Berlin Mitte an?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Jede von uns erstellte Website ist SEO-optimiert und speziell für lokale Suchanfragen vorbereitet."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Könnt ihr bestehende Websites überarbeiten?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Natürlich. Wir modernisieren alte Webseiten, verbessern Design, Ladezeiten und SEO."
+        }
+      }
+    ]
+  }
+</script>`;
+%>
+<%- include('../partials/head', { structuredDataRaw }) %>
 <!-- Head Partial -->
 <%- include('../partials/header') %>
 <!-- Header Partial -->
@@ -353,99 +449,5 @@
 <%- include('../partials/footer') %>
 <!-- Footer Partial -->
 <!-- JSON-LD: WebPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Webdesign Mitte | Komplett Webdesign – Landingpages & Relaunch in Berlin",
-    "url": "https://www.komplettwebdesign.de/webdesign-berlin/mitte",
-    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194773/admin_gallery/s4bjmdaw4yrjdf8hs7o0.webp"],
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [{
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Startseite",
-          "item": "https://www.komplettwebdesign.de/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Webdesign Berlin",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Webdesign Mitte",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin/mitte"
-        }
-      ]
-    }
-  }
-</script>
-
 <!-- JSON-LD: ProfessionalService -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de",
-    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-    "telephone": "+4915511245048",
-    "areaServed": [{
-        "@type": "AdministrativeArea",
-        "name": "Berlin"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Mitte"
-      }
-    ],
-    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
-    "description": "Komplett Webdesign: Webdesign in Mitte (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
-    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
-  }
-</script>
-
 <!-- JSON-LD: FAQPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": "Was kostet eine Website in Berlin Mitte?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Die Preise variieren je nach Umfang und Funktionen, starten aber meist bei ca. 1.500 €."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Wie lange dauert es, eine Website zu erstellen?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "In der Regel dauert es 3–6 Wochen von der ersten Beratung bis zum fertigen Launch."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Bietet ihr auch SEO für Berlin Mitte an?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja. Jede von uns erstellte Website ist SEO-optimiert und speziell für lokale Suchanfragen vorbereitet."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Könnt ihr bestehende Websites überarbeiten?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Natürlich. Wir modernisieren alte Webseiten, verbessern Design, Ladezeiten und SEO."
-        }
-      }
-    ]
-  }
-</script>

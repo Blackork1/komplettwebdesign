@@ -1,0 +1,21 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+  <main id="hero"><link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+    <section class="wt-hero"><div class="wt-shell"><article class="wt-panel" style="max-width:820px;margin:0 auto;">
+      <span class="wt-eyebrow"><i class="fa-solid fa-envelope-open-text"></i> Meta Tester Report</span>
+      <% const status = confirmView?.status || 'invalid'; %>
+      <h1><%= isEn ? 'Email confirmation status' : 'Status deiner E-Mail-Bestätigung' %></h1>
+      <p class="wt-lead"><%= confirmView?.message || '' %></p>
+      <div class="wt-result-meta">
+        <span class="wt-tag" data-tone="<%= status === 'success' ? 'gut' : (status === 'already_used' ? 'mittel' : 'kritisch') %>"><%= status %></span>
+      </div>
+      <div class="wt-cta-actions" style="margin-top:1rem;">
+        <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/meta' : '/website-tester/meta') %>"><%= isEn ? 'Back to Meta Tester' : 'Zurück zum Meta-Tester' %></a>
+      </div>
+    </article></div></section>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

@@ -3,6 +3,7 @@ import NewsletterSignupModel from '../models/NewsletterSignupModel.js';
 import {
   consumeWebsiteTesterLeadConfirmToken,
   createWebsiteTesterLead,
+  getWebsiteTesterConfig,
   getWebsiteTesterLeadByConfirmHash,
   getWebsiteTesterLeadById,
   markWebsiteTesterLeadFullGuideFailed,
@@ -24,6 +25,7 @@ import { buildTesterFullGuidePdf } from './testerFullGuidePdfService.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_HOURS = 24;
+const DEFAULT_FULL_GUIDE_MAX_PAGES = 10;
 
 const I18N = {
   de: {
@@ -166,12 +168,48 @@ async function ensureNewsletterUnsubscribeToken(email) {
   return fallback?.unsubscribe_token || '';
 }
 
-async function generateAndStoreFullGuide({ lead, result, profile = 'seo', locale = 'de' }) {
+function normalizeFullGuideMaxPages(rawValue) {
+  const parsed = parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed)) return DEFAULT_FULL_GUIDE_MAX_PAGES;
+  return Math.max(1, Math.min(50, parsed));
+}
+
+function extractGuidePageAnalysisCount(result = {}) {
+  const sourceResult = (result?.sourceResult && typeof result.sourceResult === 'object')
+    ? result.sourceResult
+    : result;
+  const pages = sourceResult?.internalGuideInput?.pageAnalyses;
+  return Array.isArray(pages) ? pages.length : 0;
+}
+
+function expectedGuidePageLimit(result = {}, configuredMaxPages = DEFAULT_FULL_GUIDE_MAX_PAGES) {
+  const available = extractGuidePageAnalysisCount(result);
+  if (!Number.isFinite(available) || available < 1) return null;
+  return Math.min(available, normalizeFullGuideMaxPages(configuredMaxPages));
+}
+
+function shouldRegenerateFullGuide(fullGuide = null, result = {}, configuredMaxPages = DEFAULT_FULL_GUIDE_MAX_PAGES) {
+  if (!fullGuide || typeof fullGuide !== 'object') return true;
+  const storedLimit = parseInt(fullGuide.pageLimitUsed, 10);
+  if (!Number.isFinite(storedLimit)) return true;
+  const expectedLimit = expectedGuidePageLimit(result, configuredMaxPages);
+  if (!Number.isFinite(expectedLimit)) return false;
+  return storedLimit !== expectedLimit;
+}
+
+async function generateAndStoreFullGuide({
+  lead,
+  result,
+  profile = 'seo',
+  locale = 'de',
+  maxPages = DEFAULT_FULL_GUIDE_MAX_PAGES
+}) {
   try {
     const fullGuide = generateTesterFullGuide({
       result,
       source: profile,
-      locale
+      locale,
+      maxPages: normalizeFullGuideMaxPages(maxPages)
     });
     const guideText = formatTesterFullGuideAsText(fullGuide);
     const payload = {
@@ -346,11 +384,13 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
       unsubscribeToken
     });
 
+    const config = await getWebsiteTesterConfig();
     await generateAndStoreFullGuide({
       lead: consumed,
       result,
       profile: 'seo',
-      locale: effectiveLocale
+      locale: effectiveLocale,
+      maxPages: config?.fullGuideMaxPages
     });
 
     const updated = await markWebsiteTesterLeadReportSent(consumed.id);
@@ -451,12 +491,15 @@ export async function resendSeoTesterLeadReport({ leadId }) {
       unsubscribeToken
     });
 
-    if (!lead.full_guide_json) {
+    const config = await getWebsiteTesterConfig();
+    const configuredMaxPages = normalizeFullGuideMaxPages(config?.fullGuideMaxPages);
+    if (shouldRegenerateFullGuide(lead.full_guide_json, result, configuredMaxPages)) {
       await generateAndStoreFullGuide({
         lead,
         result,
         profile: 'seo',
-        locale: lng
+        locale: lng,
+        maxPages: configuredMaxPages
       });
     }
 
@@ -483,9 +526,11 @@ export async function sendSeoTesterLeadFullGuide({ leadId }) {
     throw createError(copy.errors.leadState, 400);
   }
 
+  const config = await getWebsiteTesterConfig();
+  const configuredMaxPages = normalizeFullGuideMaxPages(config?.fullGuideMaxPages);
+  const result = lead.audit_snapshot_json || getCachedSeoAuditResult(lead.audit_id);
   let fullGuide = lead.full_guide_json || null;
-  if (!fullGuide) {
-    const result = lead.audit_snapshot_json || getCachedSeoAuditResult(lead.audit_id);
+  if (shouldRegenerateFullGuide(fullGuide, result, configuredMaxPages)) {
     if (!result) {
       throw createError(copy.errors.auditMissing, 400);
     }
@@ -493,7 +538,8 @@ export async function sendSeoTesterLeadFullGuide({ leadId }) {
       lead,
       result,
       profile: 'seo',
-      locale: lng
+      locale: lng,
+      maxPages: configuredMaxPages
     });
   }
 
@@ -538,5 +584,8 @@ export const __testables = {
   hashConfirmToken,
   buildConfirmUrl,
   compactSeoAuditForLead,
-  topIssuesFromSeoResult
+  topIssuesFromSeoResult,
+  normalizeFullGuideMaxPages,
+  expectedGuidePageLimit,
+  shouldRegenerateFullGuide
 };

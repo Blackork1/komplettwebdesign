@@ -1,4 +1,7 @@
-<%- include('partials/head') %>
+<%
+const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jsonLd)) ? jsonLd : [];
+%>
+<%- include('partials/head', { structuredDataBlocks }) %>
 <%- include('partials/header') %>
 
 <style>
@@ -1072,14 +1075,6 @@
   </main>
 
   <%- include('partials/footer') %>
-
-  <% if (typeof jsonLd !== 'undefined' && jsonLd && jsonLd.length) { %>
-  <% jsonLd.forEach(function (schema) { %>
-  <script type="application/ld+json">
-    <%- JSON.stringify(schema) %>
-  </script>
-  <% }) %>
-  <% } %>
 </body>
 
 </html>

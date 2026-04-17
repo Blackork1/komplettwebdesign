@@ -1,4 +1,100 @@
-<%- include('../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Webdesign Kreuzberg | Komplett Webdesign – Landingpages & Relaunch in Berlin",
+    "url": "https://www.komplettwebdesign.de/webdesign-berlin/kreuzberg",
+    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp"],
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Startseite",
+          "item": "https://www.komplettwebdesign.de/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Webdesign Berlin",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Webdesign Kreuzberg",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin/kreuzberg"
+        }
+      ]
+    }
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de",
+    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+    "telephone": "+4915511245048",
+    "areaServed": [{
+        "@type": "AdministrativeArea",
+        "name": "Berlin"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Kreuzberg"
+      }
+    ],
+    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
+    "description": "Komplett Webdesign: Webdesign in Kreuzberg (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
+    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+        "@type": "Question",
+        "name": "Was kostet eine Website?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Unsere Pakete beginnen bei 499 €. Für erweiterte Websites mit SEO und individuellen Funktionen bieten wir Pakete zu 899 € und 1.499 € an."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie lange dauert die Erstellung einer Website?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Zwischen 2 und 6 Wochen – je nach Umfang, Inhalten und Funktionen."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Bietet ihr auch SEO an?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja, alle unsere Websites sind SEO-optimiert. Zusätzlich bieten wir erweiterte SEO-Pakete an."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Könnt ihr bestehende Websites modernisieren?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Wir überarbeiten bestehende Webseiten, verbessern Design, Technik und Sichtbarkeit."
+        }
+      }
+    ]
+  }
+</script>`;
+%>
+<%- include('../partials/head', { structuredDataRaw }) %>
 <!-- Head Partial -->
 <%- include('../partials/header') %>
 <!-- Header Partial -->
@@ -395,99 +491,5 @@
 <%- include('../partials/footer') %>
 <!-- Footer Partial -->
 <!-- JSON-LD: WebPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Webdesign Kreuzberg | Komplett Webdesign – Landingpages & Relaunch in Berlin",
-    "url": "https://www.komplettwebdesign.de/webdesign-berlin/kreuzberg",
-    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp"],
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [{
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Startseite",
-          "item": "https://www.komplettwebdesign.de/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Webdesign Berlin",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Webdesign Kreuzberg",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin/kreuzberg"
-        }
-      ]
-    }
-  }
-</script>
-
 <!-- JSON-LD: ProfessionalService -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de",
-    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-    "telephone": "+4915511245048",
-    "areaServed": [{
-        "@type": "AdministrativeArea",
-        "name": "Berlin"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Kreuzberg"
-      }
-    ],
-    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
-    "description": "Komplett Webdesign: Webdesign in Kreuzberg (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
-    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
-  }
-</script>
-
 <!-- JSON-LD: FAQPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": "Was kostet eine Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Unsere Pakete beginnen bei 499 €. Für erweiterte Websites mit SEO und individuellen Funktionen bieten wir Pakete zu 899 € und 1.499 € an."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Wie lange dauert die Erstellung einer Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Zwischen 2 und 6 Wochen – je nach Umfang, Inhalten und Funktionen."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Bietet ihr auch SEO an?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja, alle unsere Websites sind SEO-optimiert. Zusätzlich bieten wir erweiterte SEO-Pakete an."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Könnt ihr bestehende Websites modernisieren?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja. Wir überarbeiten bestehende Webseiten, verbessern Design, Technik und Sichtbarkeit."
-        }
-      }
-    ]
-  }
-</script>

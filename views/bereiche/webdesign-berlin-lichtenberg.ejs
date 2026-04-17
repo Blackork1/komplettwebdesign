@@ -1,4 +1,100 @@
-<%- include('../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Webdesign Lichtenberg | Komplett Webdesign – Landingpages & Relaunch in Berlin",
+    "url": "https://www.komplettwebdesign.de/webdesign-berlin/lichtenberg",
+    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194716/admin_gallery/joe7dzz6f0lql4uigcn9.webp"],
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Startseite",
+          "item": "https://www.komplettwebdesign.de/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Webdesign Berlin",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Webdesign Lichtenberg",
+          "item": "https://www.komplettwebdesign.de/webdesign-berlin/lichtenberg"
+        }
+      ]
+    }
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de",
+    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+    "telephone": "+4915511245048",
+    "areaServed": [{
+        "@type": "AdministrativeArea",
+        "name": "Berlin"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Lichtenberg"
+      }
+    ],
+    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
+    "description": "Komplett Webdesign: Webdesign in Lichtenberg (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
+    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+        "@type": "Question",
+        "name": "Was kostet eine Website?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Unsere Preise starten bei 499 €. Erweiterte Pakete mit SEO und individuellen Funktionen liegen bei 899 € oder 1.499 €."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie lange dauert die Erstellung einer Website?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Je nach Umfang und Inhalten zwischen 2 und 6 Wochen."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Bietet ihr auch SEO an?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja, jede Website ist SEO-optimiert. Zudem bieten wir erweiterte SEO-Pakete für noch mehr Reichweite an."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Könnt ihr bestehende Websites modernisieren?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Wir überarbeiten bestehende Seiten, verbessern Technik, Design und SEO."
+        }
+      }
+    ]
+  }
+</script>`;
+%>
+<%- include('../partials/head', { structuredDataRaw }) %>
 <!-- Head Partial -->
 <%- include('../partials/header') %>
 <!-- Header Partial -->
@@ -289,99 +385,5 @@
 <%- include('../partials/footer') %>
 <!-- Footer Partial -->
 <!-- JSON-LD: WebPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Webdesign Lichtenberg | Komplett Webdesign – Landingpages & Relaunch in Berlin",
-    "url": "https://www.komplettwebdesign.de/webdesign-berlin/lichtenberg",
-    "image": ["https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194716/admin_gallery/joe7dzz6f0lql4uigcn9.webp"],
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [{
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Startseite",
-          "item": "https://www.komplettwebdesign.de/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Webdesign Berlin",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Webdesign Lichtenberg",
-          "item": "https://www.komplettwebdesign.de/webdesign-berlin/lichtenberg"
-        }
-      ]
-    }
-  }
-</script>
-
 <!-- JSON-LD: ProfessionalService -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de",
-    "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-    "telephone": "+4915511245048",
-    "areaServed": [{
-        "@type": "AdministrativeArea",
-        "name": "Berlin"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Lichtenberg"
-      }
-    ],
-    "serviceType": ["Landingpages", "Relaunch", "Webdesign", "SEO", "Hosting", "Wartung", "Chatbot-Integration"],
-    "description": "Komplett Webdesign: Webdesign in Lichtenberg (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.",
-    "sameAs": ["https://www.komplettwebdesign.de/kontakt"]
-  }
-</script>
-
 <!-- JSON-LD: FAQPage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": "Was kostet eine Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Unsere Preise starten bei 499 €. Erweiterte Pakete mit SEO und individuellen Funktionen liegen bei 899 € oder 1.499 €."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Wie lange dauert die Erstellung einer Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Je nach Umfang und Inhalten zwischen 2 und 6 Wochen."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Bietet ihr auch SEO an?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja, jede Website ist SEO-optimiert. Zudem bieten wir erweiterte SEO-Pakete für noch mehr Reichweite an."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Könnt ihr bestehende Websites modernisieren?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Ja. Wir überarbeiten bestehende Seiten, verbessern Technik, Design und SEO."
-        }
-      }
-    ]
-  }
-</script>

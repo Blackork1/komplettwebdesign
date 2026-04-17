@@ -18,6 +18,7 @@ import * as CReq from "../models/contactRequestModel.js";
 import nodemailer from "nodemailer";
 import { generateICS } from "../services/icsService.js";
 import { format } from "date-fns";
+import { renderBrandEmail } from "../services/emailTemplateService.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_ATTACHMENTS = 10;
@@ -496,14 +497,26 @@ export const processForm = [
                 from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: req.body.email,
                 subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
-                html: summaryHtml,
+                html: renderBrandEmail({
+                    locale: lng,
+                    subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
+                    headline: lng === "en" ? "Thank you for your request" : "Vielen Dank für deine Anfrage",
+                    preheader: lng === "en" ? "We received your contact details." : "Wir haben deine Angaben erhalten.",
+                    bodyHtml: summaryHtml
+                }),
                 attachments
             });
             await transporter.sendMail({
                 from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: 'kontakt@komplettwebdesign.de',
                 subject: `Neue Kontaktanfrage von ${req.body.name}`,
-                html: summaryHtml,
+                html: renderBrandEmail({
+                    locale: lng,
+                    subject: `Neue Kontaktanfrage von ${req.body.name}`,
+                    headline: "Neue Kontaktanfrage",
+                    preheader: "Neue Details über das Kontaktformular eingegangen.",
+                    bodyHtml: summaryHtml
+                }),
                 attachments
             });
 
@@ -771,7 +784,15 @@ export async function processWebdesignBerlinForm(req, res) {
                 subject: lng === "en"
                     ? "Confirmation of your request - Webdesign Berlin"
                     : "Bestätigung deiner Anfrage - Webdesign Berlin",
-                html: userHtml
+                html: renderBrandEmail({
+                    locale: lng,
+                    subject: lng === "en"
+                        ? "Confirmation of your request - Webdesign Berlin"
+                        : "Bestätigung deiner Anfrage - Webdesign Berlin",
+                    headline: lng === "en" ? "Thank you for your request" : "Vielen Dank für deine Anfrage",
+                    preheader: lng === "en" ? "We received your Webdesign Berlin request." : "Wir haben deine Webdesign-Berlin-Anfrage erhalten.",
+                    bodyHtml: userHtml
+                })
             }).catch(err => console.error("❌ Fehler beim Versand (Kunde Webdesign Berlin):", err))
         );
     }
@@ -781,7 +802,13 @@ export async function processWebdesignBerlinForm(req, res) {
             to: 'kontakt@komplettwebdesign.de',
             replyTo: hasValidEmail ? normalized.email : undefined,
             subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,
-            html: adminHtml,
+            html: renderBrandEmail({
+                locale: lng,
+                subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,
+                headline: "Neue Webdesign-Berlin-Anfrage",
+                preheader: "Es wurde eine neue Anfrage mit Details eingereicht.",
+                bodyHtml: adminHtml
+            }),
             attachments: adminAttachments
         }).catch(err => console.error("❌ Fehler beim Versand (Admin Webdesign Berlin):", err))
     );

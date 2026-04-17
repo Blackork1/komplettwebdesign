@@ -1,4 +1,194 @@
-<%- include('partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+        "@type": "Question",
+        "name": "Wie schnell bin ich sichtbar?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Deine Landingpage kann in 30 Tagen live gehen. Erste lokale Rankings und Anfragen sind oft innerhalb weniger Wochen möglich – abhängig von Wettbewerb und Inhalten."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Was kostet eine Website?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Welche Leistungen sind im Preis enthalten?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Alle Pakete beinhalten: Individuelles Webdesign, responsive Umsetzung, SEO-Grundoptimierung, DSGVO-konforme Rechtstexte, SSL-Zertifikat und persönlichen Support."
+        }
+      }
+    ]
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["ProfessionalService", "LocalBusiness"],
+    "@id": "https://www.komplettwebdesign.de/#organization",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de/",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+      "width": 400,
+      "height": 400
+    },
+    "image": [
+      "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+      "https://www.komplettwebdesign.de/images/heroBg.webp"
+    ],
+    "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand. Landingpage ab 499 €. Kostenlose Beratung vereinbaren!",
+    "areaServed": {
+      "@type": "City",
+      "name": "Berlin"
+    },
+    "priceRange": "€€",
+    "email": "kontakt@komplettwebdesign.de",
+    "telephone": "+49 1551 1245048",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Möllendorffstr 26",
+      "postalCode": "10367",
+      "addressLocality": "Berlin",
+      "addressCountry": "DE"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 52.5163,
+      "longitude": 13.4783
+    },
+    "sameAs": [
+      "https://www.instagram.com/KomplettWebdesign",
+      "https://www.facebook.com/profile.php?id=61579580713573",
+      "https://www.youtube.com/@KomplettWebdesign",
+      "https://www.threads.com/@komplettwebdesign",
+      "https://www.tiktok.com/@komplett.webdesign",
+      "https://www.linkedin.com/in/komplettwebdesign",
+      "https://www.google.com/maps?cid=8211653702753166064"
+    ],
+    "openingHoursSpecification": [{
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Tuesday", "Thursday"],
+        "opens": "16:00",
+        "closes": "21:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Saturday", "Sunday"],
+        "opens": "10:00",
+        "closes": "18:00"
+      }
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+49 1551 1245048",
+      "email": "kontakt@komplettwebdesign.de",
+      "contactType": "customer support",
+      "availableLanguage": ["de", "en"]
+    },
+    "serviceType": [
+      "Webdesign",
+      "Website erstellen",
+      "Landingpages",
+      "Relaunch",
+      "SEO",
+      "Hosting",
+      "Wartung"
+    ],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Webdesign Pakete",
+      "itemListElement": [{
+          "@type": "Offer",
+          "name": "Basis – Landingpage",
+          "description": "Professionelle Landingpage mit allen rechtlichen Seiten",
+          "price": "499.99",
+          "priceCurrency": "EUR",
+          "url": "https://www.komplettwebdesign.de/pakete/basis"
+        },
+        {
+          "@type": "Offer",
+          "name": "Business – Mehrseitige Website",
+          "description": "Bis zu 5 Seiten, Kontaktformular, Blog oder Galerie",
+          "price": "899.99",
+          "priceCurrency": "EUR",
+          "url": "https://www.komplettwebdesign.de/pakete/business"
+        },
+        {
+          "@type": "Offer",
+          "name": "Premium – Komplettlösung",
+          "description": "Bis 25 Seiten, Shop, Blog, CMS, Buchungssystem",
+          "price": "1499.99",
+          "priceCurrency": "EUR",
+          "url": "https://www.komplettwebdesign.de/pakete/premium"
+        }
+      ]
+    }
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://www.komplettwebdesign.de/#website",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de/",
+    "description": "Professionelle Websites erstellen lassen – Webdesign, SEO & Hosting aus einer Hand",
+    "publisher": {
+      "@id": "https://www.komplettwebdesign.de/#organization"
+    },
+    "inLanguage": "de-DE"
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": "https://www.komplettwebdesign.de/#webpage",
+    "name": "Website erstellen lassen – professionell, schnell, ab 499 €",
+    "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand.",
+    "url": "https://www.komplettwebdesign.de/",
+    "isPartOf": {
+      "@id": "https://www.komplettwebdesign.de/#website"
+    },
+    "about": {
+      "@id": "https://www.komplettwebdesign.de/#organization"
+    },
+    "primaryImageOfPage": {
+      "@type": "ImageObject",
+      "url": "https://www.komplettwebdesign.de/images/heroBg.webp"
+    },
+    "relatedLink": [
+      "https://www.komplettwebdesign.de/webdesign-berlin",
+      "https://www.komplettwebdesign.de/pakete",
+      "https://www.komplettwebdesign.de/branchen"
+    ],
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Startseite",
+        "item": "https://www.komplettwebdesign.de/"
+      }]
+    }
+  }
+</script>`;
+%>
+<%- include('partials/head', { structuredDataRaw }) %>
 <% const isEn = lng === 'en'; %>
 <style>
   .linkColor {
@@ -923,198 +1113,9 @@
 
 <!-- JSON-LD: ProfessionalService (online-first, ohne Adresse) -->
 <!-- FAQ -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": "Wie schnell bin ich sichtbar?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Deine Landingpage kann in 30 Tagen live gehen. Erste lokale Rankings und Anfragen sind oft innerhalb weniger Wochen möglich – abhängig von Wettbewerb und Inhalten."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Was kostet eine Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Welche Leistungen sind im Preis enthalten?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Alle Pakete beinhalten: Individuelles Webdesign, responsive Umsetzung, SEO-Grundoptimierung, DSGVO-konforme Rechtstexte, SSL-Zertifikat und persönlichen Support."
-        }
-      }
-    ]
-  }
-</script>
-
 <!-- Organisation -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": ["ProfessionalService", "LocalBusiness"],
-    "@id": "https://www.komplettwebdesign.de/#organization",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de/",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-      "width": 400,
-      "height": 400
-    },
-    "image": [
-      "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
-      "https://www.komplettwebdesign.de/images/heroBg.webp"
-    ],
-    "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand. Landingpage ab 499 €. Kostenlose Beratung vereinbaren!",
-    "areaServed": {
-      "@type": "City",
-      "name": "Berlin"
-    },
-    "priceRange": "€€",
-    "email": "kontakt@komplettwebdesign.de",
-    "telephone": "+49 1551 1245048",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Möllendorffstr 26",
-      "postalCode": "10367",
-      "addressLocality": "Berlin",
-      "addressCountry": "DE"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 52.5163,
-      "longitude": 13.4783
-    },
-    "sameAs": [
-      "https://www.instagram.com/KomplettWebdesign",
-      "https://www.facebook.com/profile.php?id=61579580713573",
-      "https://www.youtube.com/@KomplettWebdesign",
-      "https://www.threads.com/@komplettwebdesign",
-      "https://www.tiktok.com/@komplett.webdesign",
-      "https://www.linkedin.com/in/komplettwebdesign",
-      "https://www.google.com/maps?cid=8211653702753166064"
-    ],
-    "openingHoursSpecification": [{
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Tuesday", "Thursday"],
-        "opens": "16:00",
-        "closes": "21:00"
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Saturday", "Sunday"],
-        "opens": "10:00",
-        "closes": "18:00"
-      }
-    ],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": "+49 1551 1245048",
-      "email": "kontakt@komplettwebdesign.de",
-      "contactType": "customer support",
-      "availableLanguage": ["de", "en"]
-    },
-    "serviceType": [
-      "Webdesign",
-      "Website erstellen",
-      "Landingpages",
-      "Relaunch",
-      "SEO",
-      "Hosting",
-      "Wartung"
-    ],
-    "hasOfferCatalog": {
-      "@type": "OfferCatalog",
-      "name": "Webdesign Pakete",
-      "itemListElement": [{
-          "@type": "Offer",
-          "name": "Basis – Landingpage",
-          "description": "Professionelle Landingpage mit allen rechtlichen Seiten",
-          "price": "499.99",
-          "priceCurrency": "EUR",
-          "url": "https://www.komplettwebdesign.de/pakete/basis"
-        },
-        {
-          "@type": "Offer",
-          "name": "Business – Mehrseitige Website",
-          "description": "Bis zu 5 Seiten, Kontaktformular, Blog oder Galerie",
-          "price": "899.99",
-          "priceCurrency": "EUR",
-          "url": "https://www.komplettwebdesign.de/pakete/business"
-        },
-        {
-          "@type": "Offer",
-          "name": "Premium – Komplettlösung",
-          "description": "Bis 25 Seiten, Shop, Blog, CMS, Buchungssystem",
-          "price": "1499.99",
-          "priceCurrency": "EUR",
-          "url": "https://www.komplettwebdesign.de/pakete/premium"
-        }
-      ]
-    }
-  }
-</script>
-
 <!-- Website -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": "https://www.komplettwebdesign.de/#website",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de/",
-    "description": "Professionelle Websites erstellen lassen – Webdesign, SEO & Hosting aus einer Hand",
-    "publisher": {
-      "@id": "https://www.komplettwebdesign.de/#organization"
-    },
-    "inLanguage": "de-DE"
-  }
-</script>
-
 <!-- Webpage -->
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "@id": "https://www.komplettwebdesign.de/#webpage",
-    "name": "Website erstellen lassen – professionell, schnell, ab 499 €",
-    "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand.",
-    "url": "https://www.komplettwebdesign.de/",
-    "isPartOf": {
-      "@id": "https://www.komplettwebdesign.de/#website"
-    },
-    "about": {
-      "@id": "https://www.komplettwebdesign.de/#organization"
-    },
-    "primaryImageOfPage": {
-      "@type": "ImageObject",
-      "url": "https://www.komplettwebdesign.de/images/heroBg.webp"
-    },
-    "relatedLink": [
-      "https://www.komplettwebdesign.de/webdesign-berlin",
-      "https://www.komplettwebdesign.de/pakete",
-      "https://www.komplettwebdesign.de/branchen"
-    ],
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [{
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Startseite",
-        "item": "https://www.komplettwebdesign.de/"
-      }]
-    }
-  }
-</script>
-
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="..."> -->
 
 </html>

@@ -1,4 +1,18 @@
-<%- include('../partials/head') %>
+<%
+const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
+  ? [
+      schema.organization,
+      schema.website,
+      schema.localBusiness,
+      schema.webPage,
+      schema.breadcrumbList,
+      schema.faqPage,
+      schema.offerCatalog,
+      schema.videoObject
+    ].filter(Boolean)
+  : [];
+%>
+<%- include('../partials/head', { structuredDataBlocks }) %>
 <%- include('../partials/header') %>
 <% const isEn = lng === 'en'; %>
 <% const wdBase = pagePath || (isEn ? '/en/webdesign-berlin' : '/webdesign-berlin'); %>
@@ -331,28 +345,3 @@
 </main>
 
 <%- include('../partials/footer') %>
-
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.organization) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.website) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.localBusiness) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.webPage) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.breadcrumbList) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.faqPage) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.offerCatalog) %>
-</script>
-<script type="application/ld+json">
-  <%- JSON.stringify(schema.videoObject) %>
-</script>

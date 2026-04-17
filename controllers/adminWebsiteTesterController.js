@@ -27,12 +27,19 @@ import {
   resendSeoTesterLeadDoi,
   resendSeoTesterLeadReport
 } from '../services/seoTesterLeadService.js';
+import {
+  sendMetaTesterLeadFullGuide,
+  resendMetaTesterLeadDoi,
+  resendMetaTesterLeadReport
+} from '../services/metaTesterLeadService.js';
 import { auditWebsite } from '../services/websiteAuditService.js';
 import { auditGeoWebsite, getCachedGeoAuditResult } from '../services/geoAuditService.js';
 import { auditSeoWebsite, getCachedSeoAuditResult } from '../services/seoAuditService.js';
+import { auditMetaWebsite, getCachedMetaAuditResult } from '../services/metaAuditService.js';
 import { buildWebsiteTesterReport } from '../services/websiteTesterPdfService.js';
 import { buildGeoTesterReport } from '../services/geoTesterPdfService.js';
 import { buildSeoTesterReport } from '../services/seoTesterPdfService.js';
+import { buildMetaTesterReport } from '../services/metaTesterPdfService.js';
 import { formatTesterFullGuideAsText, generateTesterFullGuide } from '../services/testerFullGuideService.js';
 import { buildTesterFullGuidePdf } from '../services/testerFullGuidePdfService.js';
 
@@ -40,6 +47,10 @@ function parsePositiveInt(value, fallback = 1) {
   const parsed = parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 1) return fallback;
   return parsed;
+}
+
+function hasFormValue(value) {
+  return value !== undefined && value !== null && String(value).trim() !== '';
 }
 
 function safeReturnTo(rawValue) {
@@ -76,6 +87,7 @@ function normalizePreviewSource(raw = 'website') {
   const source = String(raw || '').trim().toLowerCase();
   if (source === 'geo') return 'geo';
   if (source === 'seo') return 'seo';
+  if (source === 'meta') return 'meta';
   return 'website';
 }
 
@@ -144,6 +156,16 @@ async function runPreviewAudit({ source, url, locale, context, config }) {
       detailedResult
     };
   }
+  if (source === 'meta') {
+    const publicResult = await auditMetaWebsite({
+      url,
+      locale,
+      maxSubpages: 5,
+      context
+    });
+    const detailedResult = getCachedMetaAuditResult(publicResult.auditId) || publicResult;
+    return { publicResult, detailedResult };
+  }
 
   const detailedResult = await auditWebsite({
     url,
@@ -168,6 +190,13 @@ function buildPreviewShortReport({ source, lead, detailedResult, locale }) {
   }
   if (source === 'seo') {
     return buildSeoTesterReport({
+      lead,
+      result: detailedResult,
+      locale
+    });
+  }
+  if (source === 'meta') {
+    return buildMetaTesterReport({
       lead,
       result: detailedResult,
       locale
@@ -309,9 +338,24 @@ export async function websiteTesterPage(req, res) {
 }
 
 export async function saveWebsiteTesterConfig(req, res) {
-  const maxSubpages = parsePositiveInt(req.body.max_subpages, 5);
-  await updateWebsiteTesterConfig({ maxSubpages });
-  res.redirect('/admin/website-tester?saved=1&settings_tester=website');
+  const currentConfig = await getWebsiteTesterConfig();
+  const hasMaxSubpages = hasFormValue(req.body.max_subpages);
+  const hasFullGuideMaxPages = hasFormValue(req.body.full_guide_max_pages);
+
+  const maxSubpages = hasMaxSubpages
+    ? parsePositiveInt(req.body.max_subpages, currentConfig?.maxSubpages ?? 5)
+    : (currentConfig?.maxSubpages ?? 5);
+  const fullGuideMaxPages = hasFullGuideMaxPages
+    ? parsePositiveInt(req.body.full_guide_max_pages, currentConfig?.fullGuideMaxPages ?? 10)
+    : (currentConfig?.fullGuideMaxPages ?? 10);
+
+  await updateWebsiteTesterConfig({
+    maxSubpages,
+    fullGuideMaxPages
+  });
+
+  const settingsTester = hasFullGuideMaxPages && !hasMaxSubpages ? 'full_guide' : 'website';
+  res.redirect(`/admin/website-tester?saved=1&settings_tester=${settingsTester}`);
 }
 
 export async function saveBrokenLinksTesterConfig(req, res) {
@@ -363,6 +407,8 @@ export async function resendWebsiteTesterLeadDoiAction(req, res) {
       await resendGeoTesterLeadDoi({ leadId: req.params.id });
     } else if (source === 'seo') {
       await resendSeoTesterLeadDoi({ leadId: req.params.id });
+    } else if (source === 'meta') {
+      await resendMetaTesterLeadDoi({ leadId: req.params.id });
     } else {
       await resendWebsiteTesterLeadDoi({ leadId: req.params.id });
     }
@@ -380,6 +426,8 @@ export async function resendWebsiteTesterLeadReportAction(req, res) {
       await resendGeoTesterLeadReport({ leadId: req.params.id });
     } else if (source === 'seo') {
       await resendSeoTesterLeadReport({ leadId: req.params.id });
+    } else if (source === 'meta') {
+      await resendMetaTesterLeadReport({ leadId: req.params.id });
     } else {
       await resendWebsiteTesterLeadReport({ leadId: req.params.id });
     }
@@ -397,6 +445,8 @@ export async function sendWebsiteTesterLeadFullGuideAction(req, res) {
       await sendGeoTesterLeadFullGuide({ leadId: req.params.id });
     } else if (source === 'seo') {
       await sendSeoTesterLeadFullGuide({ leadId: req.params.id });
+    } else if (source === 'meta') {
+      await sendMetaTesterLeadFullGuide({ leadId: req.params.id });
     } else {
       await sendWebsiteTesterLeadFullGuide({ leadId: req.params.id });
     }
@@ -471,7 +521,8 @@ export async function runWebsiteTesterPreviewAction(req, res) {
     const fullGuide = generateTesterFullGuide({
       result: detailedResult,
       source,
-      locale
+      locale,
+      maxPages: config?.fullGuideMaxPages ?? 10
     });
     const guideText = formatTesterFullGuideAsText(fullGuide);
     const guidePdf = buildTesterFullGuidePdf({

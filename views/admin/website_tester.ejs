@@ -83,6 +83,16 @@
         summary: `Aktueller Wert: ${config?.maxSubpages ?? 5} Unterseiten + 1 Startseite.`
       },
       {
+        id: 'full_guide',
+        title: 'Vollanleitung (global)',
+        hint: 'Gilt für Website-, SEO-, GEO- und Meta-Vollanleitungen.',
+        action: '/admin/website-tester/config',
+        fields: [
+          { type: 'number', name: 'full_guide_max_pages', label: 'Vollanleitung Seiten (1-50)', min: 1, max: 50, value: config?.fullGuideMaxPages ?? 10 }
+        ],
+        summary: `Aktueller Wert: ${config?.fullGuideMaxPages ?? 10} Website-Seiten pro Vollanleitung (eine PDF).`
+      },
+      {
         id: 'broken',
         title: 'Broken-Links-Tester',
         hint: 'Interne/externe Linkziele mit konfigurierbarem Scan-Modus.',
@@ -191,6 +201,7 @@
             <option value="website" <%= (previewDefaults.source || 'website') === 'website' ? 'selected' : '' %>>Website</option>
             <option value="seo" <%= previewDefaults.source === 'seo' ? 'selected' : '' %>>SEO</option>
             <option value="geo" <%= previewDefaults.source === 'geo' ? 'selected' : '' %>>GEO</option>
+            <option value="meta" <%= previewDefaults.source === 'meta' ? 'selected' : '' %>>Meta</option>
           </select>
         </div>
         <div class="col-md-2">
@@ -894,6 +905,7 @@
             <option value="website" <%= filters?.leadSource === 'website' ? 'selected' : '' %>>Website</option>
             <option value="geo" <%= filters?.leadSource === 'geo' ? 'selected' : '' %>>GEO</option>
             <option value="seo" <%= filters?.leadSource === 'seo' ? 'selected' : '' %>>SEO</option>
+            <option value="meta" <%= filters?.leadSource === 'meta' ? 'selected' : '' %>>Meta</option>
           </select>
         </div>
         <div class="col-md-2">

@@ -1,0 +1,227 @@
+<%- include('partials/head') %>
+<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<body class="website-tester-page">
+  <%- include('partials/header') %>
+
+  <main id="hero">
+    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+
+    <section class="wt-section wt-section-compact">
+      <div class="wt-shell">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+            <li aria-current="page">Meta Tester</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <section class="wt-hero">
+      <div class="wt-shell">
+        <div class="wt-hero-grid">
+          <div class="wt-hero-copy">
+            <span class="wt-eyebrow">
+              <i class="fa-solid fa-code"></i>
+              Meta Tester
+            </span>
+            <h1><%= isEn ? 'Find header meta problems on your website in minutes.' : 'Finde Header-Meta-Probleme auf deiner Website in wenigen Minuten.' %></h1>
+            <p class="wt-lead">
+              <%= isEn
+                ? 'Run a complete website header checker for title, meta description, H1, canonical, robots, Open Graph, Twitter cards, icons, and technical head tags.'
+                : 'Starte einen vollständigen Header-Meta-Check für Title, Meta-Description, H1, Canonical, Robots, Open Graph, Twitter Cards, Icons und technische Head-Tags.' %>
+            </p>
+            <ul class="wt-pill-list">
+              <li><i class="fa-solid fa-house"></i> <%= isEn ? 'Public result: full homepage analysis (root domain only)' : 'Öffentliches Ergebnis: vollständige Startseitenanalyse (nur Root-Domain)' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Short report after opt-in: up to 5 crawled subpages' : 'Kurzreport nach Opt-in: bis zu 5 gecrawlte Unterseiten' %></li>
+              <li><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Admin full guide: up to 50 pages with per-page instructions' : 'Admin-Vollanleitung: bis zu 50 Seiten mit Anleitung pro Seite' %></li>
+            </ul>
+          </div>
+
+          <div class="wt-form-card">
+            <h2><%= isEn ? 'Start Header Meta Test' : 'Header-Meta-Test starten' %></h2>
+            <p><%= isEn ? 'Add website URL and market context so we can check title/description relevance for your industry and region.' : 'Gib URL und Marktkontext an, damit wir Title/Description auf Branchen- und Regions-Fit prüfen können.' %></p>
+
+            <form data-meta-tester-form>
+              <div class="wt-context-grid">
+                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. dental clinic)' : 'Branche (z. B. Zahnarztpraxis)' %>" required>
+                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. dental implants)' : 'Hauptleistung (z. B. Zahnimplantate)' %>" required>
+                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+              </div>
+              <label class="visually-hidden" for="meta-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+              <div class="wt-form-row">
+                <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <button class="wt-button" type="submit">
+                  <i class="fa-solid fa-bolt"></i>
+                  <%= isEn ? 'Run Meta Audit' : 'Meta-Audit starten' %>
+                </button>
+              </div>
+            </form>
+
+            <p class="wt-form-note">
+              <%= isEn
+                ? 'Length checks use practical SERP targets: title around 55-60 chars (max around 600px), description 120-155 chars, and concise H1 below 80 chars.'
+                : 'Die Längenprüfung nutzt praxisnahe SERP-Ziele: Title ideal 55-60 Zeichen (max. ca. 600px), Description 120-155 Zeichen und prägnante H1 unter 80 Zeichen.' %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel" data-meta-loading hidden>
+          <h3><%= isEn ? 'Meta audit in progress…' : 'Meta-Audit läuft…' %></h3>
+          <p><%= isEn ? 'We are scanning your homepage head-tags and evaluating SEO/social readiness now.' : 'Wir analysieren jetzt die Head-Tags deiner Startseite und bewerten SEO-/Social-Readiness.' %></p>
+          <ul class="wt-progress">
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate domain and load homepage only' : 'Domain validieren und ausschließlich Startseite laden' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Analyze title, description, H1 and pixel width' : 'Title, Description, H1 und Pixelbreite prüfen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Check canonical, robots, OG, Twitter and icons' : 'Canonical, Robots, OG, Twitter und Icons prüfen' %></span></li>
+            <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Evaluate industry/region relevance and build action list' : 'Branchen-/Regions-Fit auswerten und Maßnahmenliste erstellen' %></span></li>
+          </ul>
+        </div>
+
+        <div class="wt-error" data-meta-error hidden></div>
+        <div id="meta-results" class="wt-results" data-meta-results hidden></div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-check-grid">
+          <article class="wt-check-card">
+            <i class="fa-solid fa-heading"></i>
+            <h3><%= isEn ? 'SERP Snippet Fit' : 'SERP-Snippet-Fit' %></h3>
+            <p><%= isEn ? 'Checks title/meta/H1 length and pixel-width so snippets are less likely to be truncated.' : 'Prüft Title/Meta/H1 auf Zeichen- und Pixelgrenzen, damit Snippets seltener abgeschnitten werden.' %></p>
+          </article>
+          <article class="wt-check-card">
+            <i class="fa-solid fa-share-nodes"></i>
+            <h3><%= isEn ? 'Social Preview Tags' : 'Social-Preview-Tags' %></h3>
+            <p><%= isEn ? 'Validates Open Graph and Twitter Card tags for stable link previews across platforms.' : 'Validiert Open-Graph- und Twitter-Card-Tags für stabile Link-Vorschauen auf Plattformen.' %></p>
+          </article>
+          <article class="wt-check-card">
+            <i class="fa-solid fa-image"></i>
+            <h3><%= isEn ? 'Icons & Assets' : 'Icons & Assets' %></h3>
+            <p><%= isEn ? 'Verifies favicon, apple-touch-icon, manifest, and key technical head assets.' : 'Prüft Favicon, Apple-Touch-Icon, Manifest und wichtige technische Head-Assets.' %></p>
+          </article>
+          <article class="wt-check-card">
+            <i class="fa-solid fa-location-dot"></i>
+            <h3><%= isEn ? 'Industry/Region Fit' : 'Branchen-/Regions-Fit' %></h3>
+            <p><%= isEn ? 'Evaluates whether title/description/H1 match your business type, service, and target region.' : 'Bewertet, ob Title/Description/H1 zu Branche, Leistung und Zielregion passen.' %></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel">
+          <h2><%= isEn ? 'SEO intent focus for this Meta Tester page' : 'SEO-Intent-Fokus dieser Meta-Tester-Seite' %></h2>
+          <p>
+            <%= isEn
+              ? 'This page is optimized for common search intents such as “meta tag checker”, “website header checker”, “title description checker”, “website tester”, and “find problems on my website”.'
+              : 'Diese Seite ist auf häufige Suchintents wie „Meta Tags prüfen“, „Header Meta Test“, „Website Meta Checker“, „Website Tester“ und „Finde Probleme auf meiner Website“ optimiert.' %>
+          </p>
+          <p>
+            <%= isEn
+              ? 'The tool returns practical, implementation-ready findings instead of generic scores so users can directly improve technical metadata quality.'
+              : 'Das Tool liefert umsetzbare, konkrete Befunde statt nur generischer Scores, damit Nutzer die technische Meta-Qualität direkt verbessern können.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <div class="wt-panel">
+          <h2><%= isEn ? 'FAQ: Header Meta Test' : 'FAQ: Header-Meta-Test' %></h2>
+          <div class="wt-faq">
+            <details>
+              <summary><%= isEn ? 'Do you analyze all pages publicly?' : 'Werden öffentlich alle Seiten analysiert?' %></summary>
+              <p><%= isEn ? 'No. Public output always shows the homepage audit in detail. Extended subpage analysis is delivered after opt-in and admin full-guide release.' : 'Nein. Öffentlich wird immer die Startseite detailliert angezeigt. Die erweiterte Unterseitenanalyse erfolgt nach Opt-in und Admin-Freigabe der Vollanleitung.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'How many pages are included in the short report?' : 'Wie viele Seiten sind im Kurzreport enthalten?' %></summary>
+              <p><%= isEn ? 'The short report includes up to 5 crawled subpages. The admin full guide can extend this to up to 50 pages.' : 'Der Kurzreport enthält bis zu 5 gecrawlte Unterseiten. Die Admin-Vollanleitung kann auf bis zu 50 Seiten erweitert werden.' %></p>
+            </details>
+            <details>
+              <summary><%= isEn ? 'Why do you ask for business type and region?' : 'Warum werden Branche und Region abgefragt?' %></summary>
+              <p><%= isEn ? 'Because title and description quality depends on intent-fit. We score whether your snippets reflect your market context.' : 'Weil die Qualität von Title und Description vom Intent-Fit abhängt. Wir bewerten, ob deine Snippets deinen Marktkontext widerspiegeln.' %></p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <style>
+    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
+    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
+    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
+    .breadcrumbs a { color: #374151; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+    .wt-faq summary { cursor: pointer; font-weight: 600; }
+    .wt-faq p { margin: 10px 0 0; }
+  </style>
+
+  <script>
+    window.META_TESTER_CONFIG = {
+      locale: "<%= isEn ? 'en' : 'de' %>",
+      endpoint: "/api/meta-audit",
+      leadEndpoint: "/api/meta-audit/lead",
+      i18n: {
+        scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
+        metaAuditFor: "<%= isEn ? 'Meta audit for' : 'Meta-Analyse für' %>",
+        modeLabel: "<%= isEn ? 'Scope' : 'Umfang' %>",
+        scannedPages: "<%= isEn ? 'Scanned pages' : 'Gescannten Seiten' %>",
+        checkOverview: "<%= isEn ? 'Head checks (homepage)' : 'Head-Checks (Startseite)' %>",
+        categoryScoresTitle: "<%= isEn ? 'Meta categories' : 'Meta-Kategorien' %>",
+        recommendationsTitle: "<%= isEn ? 'Priority actions' : 'Priorisierte Maßnahmen' %>",
+        findingsTitle: "<%= isEn ? 'Findings' : 'Befunde' %>",
+        contextFitTitle: "<%= isEn ? 'Industry/region relevance' : 'Branchen-/Regions-Relevanz' %>",
+        contextFitDetails: "<%= isEn ? 'Title, description, and H1 fit your context' : 'Title, Description und H1 passen zu deinem Kontext' %>",
+        lockedTitle: "<%= isEn ? 'Get short report (up to 5 pages)' : 'Kurzreport erhalten (bis zu 5 Seiten)' %>",
+        lockedText: "<%= isEn ? 'Confirm your email to receive the short report (up to 5 pages). The complete full-guide delivery (up to 50 pages) is managed manually via admin backend.' : 'Bestätige deine E-Mail, um den Kurzreport (bis zu 5 Seiten) zu erhalten. Die vollständige Vollanleitung (bis zu 50 Seiten) wird anschließend manuell über das Admin-Backend versendet.' %>",
+        leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
+        leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
+        leadConsent: "<%= isEn ? 'I agree to newsletter signup, want to receive the requested meta report by email, and have read the privacy policy.' : 'Ich stimme der Newsletter-Anmeldung zu, möchte den angeforderten Meta-Report per E-Mail erhalten und habe die Datenschutzerklärung gelesen.' %>",
+        privacyHref: "/datenschutz",
+        privacyLabel: "<%= isEn ? 'Privacy policy' : 'Datenschutzerklärung' %>",
+        leadSubmit: "<%= isEn ? 'Send confirmation link' : 'Bestätigungslink senden' %>",
+        leadLoading: "<%= isEn ? 'Sending…' : 'Wird gesendet…' %>",
+        leadSuccess: "<%= isEn ? 'Please check your inbox and confirm your email. We then send your detailed meta report.' : 'Bitte prüfe dein Postfach und bestätige deine E-Mail. Danach senden wir deinen detaillierten Meta-Report.' %>",
+        leadError: "<%= isEn ? 'The meta report request could not be processed.' : 'Die Meta-Report-Anfrage konnte nicht verarbeitet werden.' %>",
+        contextRequired: "<%= isEn ? 'Please provide business type, primary service, and target region.' : 'Bitte ergänze Branche, Hauptleistung und Zielregion.' %>",
+        errorFallback: "<%= isEn ? 'The meta audit could not be completed.' : 'Der Meta-Audit konnte nicht durchgeführt werden.' %>",
+        noData: "<%= isEn ? 'No data available.' : 'Keine Daten verfügbar.' %>",
+        ctaTitle: "<%= isEn ? 'Need support with implementation?' : 'Du brauchst Unterstützung bei der Umsetzung?' %>",
+        ctaText: "<%= isEn ? 'Book a short consulting call to prioritize your highest-impact metadata fixes.' : 'Buche ein kurzes Beratungsgespräch, um die wichtigsten Meta-Maßnahmen zu priorisieren.' %>",
+        ctaPrimary: "<%= isEn ? 'Request consultation' : 'Beratung anfragen' %>",
+        ctaSecondary: "<%= isEn ? 'Book appointment' : 'Termin buchen' %>",
+        contactHref: "<%= isEn ? '/en/kontakt' : '/kontakt' %>",
+        checkLabelMap: {
+          title_length: "<%= isEn ? 'Title length' : 'Title-Länge' %>",
+          title_pixels: "<%= isEn ? 'Title pixel width' : 'Title-Pixelbreite' %>",
+          meta_description: "<%= isEn ? 'Meta description' : 'Meta-Description' %>",
+          description_pixels: "<%= isEn ? 'Description pixel width' : 'Description-Pixelbreite' %>",
+          h1: "H1",
+          directives: "<%= isEn ? 'Directives & canonical' : 'Direktiven & Canonical' %>",
+          open_graph: "Open Graph",
+          twitter: "Twitter",
+          icons: "<%= isEn ? 'Icons & manifest' : 'Icons & Manifest' %>",
+          structured_data: "<%= isEn ? 'Structured data' : 'Strukturierte Daten' %>",
+          hreflang: "hreflang",
+          intent_fit: "<%= isEn ? 'Industry/region fit' : 'Branchen-/Regions-Fit' %>",
+          head_tech: "<%= isEn ? 'Head technical completeness' : 'Head technische Vollständigkeit' %>"
+        }
+      }
+    };
+  </script>
+  <script src="/js/meta-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+</body>
+</html>

@@ -1,4 +1,45 @@
-<%- include('../partials/head', { title, description, ogImage }) %>
+<%
+const industryServiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": `Webdesign für ${industry.name}`,
+  "serviceType": `Website-Erstellung & SEO für ${industry.name}`,
+  "provider": {
+    "@type": "Organization",
+    "name": "Komplett Webdesign",
+    "url": "https://www.komplettwebdesign.de"
+  },
+  "areaServed": {
+    "@type": "City",
+    "name": "Berlin"
+  },
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Basis",
+      "price": "499.00",
+      "priceCurrency": "EUR",
+      "url": "https://www.komplettwebdesign.de/pakete/basis"
+    },
+    {
+      "@type": "Offer",
+      "name": "Business",
+      "price": "899.00",
+      "priceCurrency": "EUR",
+      "url": "https://www.komplettwebdesign.de/pakete/business"
+    },
+    {
+      "@type": "Offer",
+      "name": "Premium",
+      "price": "1499.00",
+      "priceCurrency": "EUR",
+      "url": "https://www.komplettwebdesign.de/pakete/premium"
+    }
+  ]
+};
+const structuredDataBlocks = [industryServiceSchema].concat(Array.isArray(jsonLd) ? jsonLd : []);
+%>
+<%- include('../partials/head', { title, description, ogImage, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
 
 <!-- branchen.css lazy laden -->
@@ -571,53 +612,5 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="/js/carousel.js" defer></script>
 <script src="/js/openField.js" defer></script>
 <script src="/js/ga-events.js" defer></script>
-
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "name": "Webdesign für <%= industry.name %>",
-    "serviceType": "Website-Erstellung & SEO für <%= industry.name %>",
-    "provider": {
-      "@type": "Organization",
-      "name": "Komplett Webdesign",
-      "url": "https://www.komplettwebdesign.de"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Berlin"
-    },
-    "offers": [{
-        "@type": "Offer",
-        "name": "Basis",
-        "price": "499.00",
-        "priceCurrency": "EUR",
-        "url": "https://www.komplettwebdesign.de/pakete/basis"
-      },
-      {
-        "@type": "Offer",
-        "name": "Business",
-        "price": "899.00",
-        "priceCurrency": "EUR",
-        "url": "https://www.komplettwebdesign.de/pakete/business"
-      },
-      {
-        "@type": "Offer",
-        "name": "Premium",
-        "price": "1499.00",
-        "priceCurrency": "EUR",
-        "url": "https://www.komplettwebdesign.de/pakete/premium"
-      }
-    ]
-  }
-</script>
-
-
-<!-- JSON-LD -->
-<% (jsonLd||[]).forEach(block => { %>
-<script type="application/ld+json">
-  <%- JSON.stringify(block) %>
-</script>
-<% }) %>
 
 <%- include('../partials/footer') %>

@@ -153,6 +153,7 @@ function resolveReportProfile(raw = '') {
   const value = String(raw || '').trim().toLowerCase();
   if (value === 'seo') return 'seo';
   if (value === 'geo') return 'geo';
+  if (value === 'meta') return 'meta';
   return 'website';
 }
 
@@ -285,6 +286,16 @@ function buildQuickWins({ locale, result, profile = 'website' }) {
     wins.push(lng === 'en'
       ? 'Publish at least 6 concise FAQs with direct, snippet-ready answers on top pages.'
       : 'Auf Top-Seiten mindestens 6 prägnante FAQs mit direkten, snippet-tauglichen Antworten veröffentlichen.');
+  } else if (mode === 'meta') {
+    wins.push(lng === 'en'
+      ? 'Keep title tags between 55-60 chars (about 600px) on core pages.'
+      : 'Title-Tags auf Kernseiten in den Bereich 55-60 Zeichen (ca. 600px) bringen.');
+    wins.push(lng === 'en'
+      ? 'Adjust meta descriptions to 120-155 chars and align value proposition + CTA.'
+      : 'Meta-Descriptions auf 120-155 Zeichen anpassen und Nutzenversprechen + CTA ausrichten.');
+    wins.push(lng === 'en'
+      ? 'Complete OG + Twitter tags and provide stable og:image dimensions.'
+      : 'OG- und Twitter-Tags vollständig ergänzen und stabile og:image-Abmessungen hinterlegen.');
   }
 
   if (!facts.usesHttps) {
@@ -349,6 +360,21 @@ function buildRoadmap({ locale, profile = 'website' }) {
     ];
   }
 
+  if (mode === 'meta') {
+    if (lng === 'en') {
+      return [
+        'Day 1-30: Fix title/description/H1 length and intent-fit on homepage and top pages.',
+        'Day 31-60: Standardize canonical/robots/viewport and complete OG/Twitter/icon coverage.',
+        'Day 61-90: Roll out metadata QA workflow across all crawlable pages and monitor CTR impact.'
+      ];
+    }
+    return [
+      'Tag 1-30: Title-/Description-/H1-Längen und Intent-Fit auf Startseite und Top-Seiten korrigieren.',
+      'Tag 31-60: Canonical/Robots/Viewports standardisieren und OG-/Twitter-/Icon-Abdeckung vervollständigen.',
+      'Tag 61-90: Meta-QA-Workflow auf alle crawlbaren Seiten ausrollen und CTR-Impact überwachen.'
+    ];
+  }
+
   if (lng === 'en') {
     return [
       'Day 1-30: Remove blockers (indexing basics, metadata quality, legal visibility, consent setup).',
@@ -384,6 +410,19 @@ function templateTitleAndMeta({ locale, context, domain, profile = 'website' }) 
     };
   }
 
+  if (mode === 'meta') {
+    if (lng === 'en') {
+      return {
+        title: `${service} in ${region} | ${host}`.slice(0, 60),
+        meta: `${service} in ${region}: clear value proposition, social-ready metadata, and conversion-focused snippet copy (120-155 chars target).`
+      };
+    }
+    return {
+      title: `${service} in ${region} | ${host}`.slice(0, 60),
+      meta: `${service} in ${region}: klares Nutzenversprechen, social-fähige Metadaten und conversion-orientierte Snippet-Copy (Ziel: 120-155 Zeichen).`
+    };
+  }
+
   if (lng === 'en') {
     return {
       title: `${service} in ${region} | Web Design, SEO & Hosting`,
@@ -406,6 +445,7 @@ function profileSectionTitle(profile, locale = 'de') {
   const mode = resolveReportProfile(profile);
   if (mode === 'seo') return lng === 'en' ? 'SEO profile details' : 'SEO-Profil im Detail';
   if (mode === 'geo') return lng === 'en' ? 'GEO profile details' : 'GEO-Profil im Detail';
+  if (mode === 'meta') return lng === 'en' ? 'Meta profile details' : 'Meta-Profil im Detail';
   return lng === 'en' ? 'Website profile details' : 'Website-Profil im Detail';
 }
 
@@ -414,6 +454,7 @@ function blueprintSectionTitle(profile, locale = 'de') {
   const mode = resolveReportProfile(profile);
   if (mode === 'seo') return lng === 'en' ? 'SEO Blueprint (with templates)' : 'SEO Blueprint (mit Vorlagen)';
   if (mode === 'geo') return lng === 'en' ? 'GEO Blueprint (with templates)' : 'GEO Blueprint (mit Vorlagen)';
+  if (mode === 'meta') return lng === 'en' ? 'Meta Blueprint (with templates)' : 'Meta Blueprint (mit Vorlagen)';
   return lng === 'en' ? 'Website blueprint (with templates)' : 'Website-Blueprint (mit Vorlagen)';
 }
 
@@ -472,6 +513,33 @@ function buildProfileLines({ profile, locale, result }) {
       topPotentials.slice(0, 6).forEach((item) => {
         lines.push(`- ${normalizeTypography(item.category || '')}: ${normalizeTypography(item.label || '')}`);
       });
+    }
+    return lines;
+  }
+
+  if (mode === 'meta') {
+    const categories = Array.isArray(result.categories) ? result.categories : [];
+    const checks = Array.isArray(result.homepage?.checks) ? result.homepage.checks : [];
+
+    if (checks.length) {
+      lines.push(`- ${lng === 'en' ? 'Homepage head checks (priority)' : 'Head-Checks Startseite (Priorität)'}:`);
+      checks
+        .filter((entry) => entry.status !== 'good')
+        .slice(0, 8)
+        .forEach((entry) => {
+          lines.push(`- ${normalizeTypography(entry.label || entry.id || 'check')}: ${normalizeTypography(entry.detail || '-')}`);
+        });
+    }
+
+    if (categories.length) {
+      lines.push(`- ${lng === 'en' ? 'Meta category scores' : 'Meta-Kategorie-Scores'}:`);
+      categories
+        .slice()
+        .sort((a, b) => (a.score ?? 100) - (b.score ?? 100))
+        .slice(0, 6)
+        .forEach((entry) => {
+          lines.push(`- ${normalizeTypography(entry.title || entry.id || 'meta')}: ${Number.isFinite(entry.score) ? entry.score : '-'}/100`);
+        });
     }
   }
 
@@ -709,6 +777,11 @@ function buildDetailedLines({ locale, lead, result }) {
       return lng === 'en'
         ? 'One primary intent per page, one clear H1, service + region in snippet, concrete benefit, and clear CTA.'
         : 'Pro Seite ein primärer Intent, eine klare H1, Leistung + Region im Snippet, konkreter Nutzen und klarer CTA.';
+    }
+    if (profile === 'meta') {
+      return lng === 'en'
+        ? 'Title around 55-60 chars (~600px), description 120-155 chars, one H1 under 80 chars, complete OG/Twitter/icon tags.'
+        : 'Title ca. 55-60 Zeichen (~600px), Description 120-155 Zeichen, eine H1 unter 80 Zeichen, vollständige OG-/Twitter-/Icon-Tags.';
     }
     return lng === 'en'
       ? 'One main intent per page, one clear H1, service + region in snippet, concrete benefit, clear CTA.'

@@ -2,6 +2,7 @@ import { auditWebsite, getCachedAuditResult, toPublicAuditResult } from '../serv
 import { auditBrokenLinks } from '../services/brokenLinkAuditService.js';
 import { auditGeoWebsite } from '../services/geoAuditService.js';
 import { auditSeoWebsite } from '../services/seoAuditService.js';
+import { auditMetaWebsite } from '../services/metaAuditService.js';
 import {
   archiveGeoAuditRequest,
   archiveSeoAuditRequest,
@@ -21,6 +22,10 @@ import {
   confirmSeoTesterLeadToken,
   requestSeoTesterLead
 } from '../services/seoTesterLeadService.js';
+import {
+  confirmMetaTesterLeadToken,
+  requestMetaTesterLead
+} from '../services/metaTesterLeadService.js';
 
 const PAGE_I18N = {
   de: {
@@ -253,6 +258,65 @@ const SEO_PAGE_I18N = {
       {
         q: 'Is this useful for AI-driven search discovery too?',
         a: 'Yes. The audited signals support both classic search rankings and AI-retrieval-driven discoverability.'
+      }
+    ]
+  }
+};
+
+const META_PAGE_I18N = {
+  de: {
+    title: 'Meta Tester kostenlos: Header, Title, Description, OG & Icons prüfen',
+    description: 'Header-Meta-Tester für Website-Probleme: Prüfe Title, Description, H1, Open Graph, Twitter Cards, Canonical, Icons & weitere Head-Tags.',
+    keywords: 'meta tester, header meta test, website meta checker, meta tags prüfen, title description prüfen, finde probleme auf meiner website, website tester, website head prüfen, og tags testen, twitter cards testen, favicon prüfen',
+    ogTitle: 'Meta Tester kostenlos: Header und Meta-Tags prüfen',
+    ogDescription: 'Teste alle wichtigen Head-Signale deiner Website: Title, Description, H1, Canonical, Social Tags, Icons und Strukturdaten.',
+    schemaDescription: 'Kostenloser Header-Meta-Tester mit Branchen- und Regions-Fit-Check für Title, Description, H1, Canonical, Open Graph, Twitter Cards, Icons und Head-Assets.',
+    pagePath: '/website-tester/meta',
+    altPath: '/en/website-tester/meta',
+    localeCode: 'de-DE',
+    inLanguage: 'de',
+    pageName: 'Meta Tester – Header Meta Daten prüfen',
+    breadcrumb: ['Startseite', 'Meta Tester'],
+    faq: [
+      {
+        q: 'Was prüft der Meta-Tester genau?',
+        a: 'Der Meta-Tester analysiert alle zentralen Head-Signale: Title, Meta-Description, H1, Canonical, Robots, OG-Tags, Twitter Cards, Icons, Manifest, Viewport und strukturierte Daten.'
+      },
+      {
+        q: 'Welche Längen gelten für Title, Description und H1?',
+        a: 'Für starke SERP-Snippets sollten Title-Tags ideal bei 55-60 Zeichen (max. ca. 600px), Descriptions bei 120-155 Zeichen und H1-Überschriften prägnant unter 80 Zeichen liegen.'
+      },
+      {
+        q: 'Warum sehe ich öffentlich nur die Startseite im Detail?',
+        a: 'Die Oberfläche zeigt bewusst die vollständige Startseitenanalyse. Erweiterte Unterseiten-Optimierung wird nach Opt-in als Kurzreport und anschließend als Vollanleitung über das Admin-Backend bereitgestellt.'
+      }
+    ]
+  },
+  en: {
+    title: 'Free Meta Tester: Check Header Tags, Title, Description, OG & Icons',
+    description: 'Website header meta checker to find problems on your website: title, meta description, H1, canonical, Open Graph, Twitter cards, icons, and head tags.',
+    keywords: 'free meta tester, website header checker, meta tag checker, title description checker, find problems on my website, website tester, open graph checker, twitter card checker, favicon checker',
+    ogTitle: 'Free Meta Tester: Website Header Metadata Audit',
+    ogDescription: 'Check complete website head metadata including title, description, H1, social tags, icons, and technical head signals.',
+    schemaDescription: 'Free header metadata tester with industry/region relevance checks for title, description, H1, canonical, Open Graph, Twitter cards, icons, and technical head assets.',
+    pagePath: '/en/website-tester/meta',
+    altPath: '/website-tester/meta',
+    localeCode: 'en-US',
+    inLanguage: 'en',
+    pageName: 'Meta Tester – Header Metadata Audit',
+    breadcrumb: ['Home', 'Meta Tester'],
+    faq: [
+      {
+        q: 'What does the Meta Tester audit?',
+        a: 'It audits all key head signals: title, meta description, H1, canonical, robots, Open Graph, Twitter cards, icons, manifest, viewport, and structured data.'
+      },
+      {
+        q: 'What lengths should I target for title, description, and H1?',
+        a: 'For better SERP visibility, keep titles around 55-60 chars (max around 600px), descriptions around 120-155 chars, and H1 headings concise below 80 chars.'
+      },
+      {
+        q: 'Why do I only see full homepage details in the on-page result?',
+        a: 'Public output focuses on a full homepage audit. Extended subpage optimization is delivered after opt-in as a short report and can be expanded via admin full-guide delivery.'
       }
     ]
   }
@@ -652,6 +716,100 @@ function buildSeoTesterSeoExtra(base, canonical, copy, locale) {
   `;
 }
 
+function buildMetaTesterSeoExtra(base, canonical, copy, locale) {
+  const alternateUrl = `${base}${copy.altPath}`;
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: copy.breadcrumb[0],
+        item: base
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: copy.breadcrumb[1],
+        item: canonical
+      }
+    ]
+  };
+
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Komplett Webdesign',
+    url: base,
+    inLanguage: copy.inLanguage
+  };
+
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: copy.pageName,
+    description: copy.schemaDescription,
+    url: canonical,
+    inLanguage: copy.inLanguage,
+    isPartOf: {
+      '@type': 'WebSite',
+      url: base,
+      name: 'Komplett Webdesign'
+    }
+  };
+
+  const appSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Komplett Webdesign Meta Tester',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    inLanguage: copy.inLanguage,
+    url: canonical,
+    description: copy.schemaDescription,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'EUR'
+    }
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: (copy.faq || []).map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a
+      }
+    }))
+  };
+
+  return `
+    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
+    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
+    <link rel="alternate" hreflang="x-default" href="${base}/website-tester/meta">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="${copy.localeCode}">
+    <meta property="og:title" content="${copy.ogTitle}">
+    <meta property="og:description" content="${copy.ogDescription}">
+    <meta property="og:url" content="${canonical}">
+    <meta property="og:image" content="${base}/images/heroBg.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${copy.ogTitle}">
+    <meta name="twitter:description" content="${copy.ogDescription}">
+    ${jsonLd(websiteSchema)}
+    ${jsonLd(webPageSchema)}
+    ${jsonLd(appSchema)}
+    ${jsonLd(breadcrumbSchema)}
+    ${jsonLd(faqSchema)}
+  `;
+}
+
 function extractClientIp(req) {
   const forwarded = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
   return (forwarded || req.ip || req.connection?.remoteAddress || '').slice(0, 120);
@@ -752,6 +910,22 @@ export async function seoTestPage(req, res) {
     keywords: copy.keywords,
     canonicalUrl: canonical,
     seoExtra: buildSeoTesterSeoExtra(base, canonical, copy, locale)
+  });
+}
+
+export async function metaTestPage(req, res) {
+  const locale = localeFromRequest(req);
+  const copy = META_PAGE_I18N[locale];
+  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const canonical = `${base}${copy.pagePath}`;
+
+  res.render('meta_tester', {
+    lng: locale,
+    title: copy.title,
+    description: copy.description,
+    keywords: copy.keywords,
+    canonicalUrl: canonical,
+    seoExtra: buildMetaTesterSeoExtra(base, canonical, copy, locale)
   });
 }
 
@@ -1091,6 +1265,32 @@ export async function runSeoAudit(req, res) {
   }
 }
 
+export async function runMetaAudit(req, res) {
+  const { url, locale, context } = req.body || {};
+  const requestedUrl = String(url || '').trim();
+  const safeLocale = locale === 'en' ? 'en' : 'de';
+  const safeContext = {
+    businessType: String(context?.businessType || '').trim(),
+    primaryService: String(context?.primaryService || '').trim(),
+    targetRegion: String(context?.targetRegion || '').trim()
+  };
+
+  try {
+    const result = await auditMetaWebsite({
+      url: requestedUrl,
+      locale: safeLocale,
+      maxSubpages: 5,
+      context: safeContext
+    });
+    return res.json({ success: true, result });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      success: false,
+      message: error.message || (safeLocale === 'en' ? 'The meta audit could not be completed.' : 'Der Meta-Audit konnte nicht durchgeführt werden.')
+    });
+  }
+}
+
 export async function getCachedWebsiteAudit(req, res) {
   const { auditId } = req.params || {};
   const result = getCachedAuditResult(auditId);
@@ -1202,6 +1402,39 @@ export async function runSeoAuditLead(req, res) {
   }
 }
 
+export async function runMetaAuditLead(req, res) {
+  const { auditId, email, name, locale, consent } = req.body || {};
+  const safeLocale = locale === 'en' ? 'en' : 'de';
+  const safeConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
+  const consentText = combinedTesterConsentText(safeLocale);
+
+  try {
+    const response = await requestMetaTesterLead({
+      auditId: String(auditId || '').trim(),
+      email,
+      name,
+      locale: safeLocale,
+      consent: safeConsent,
+      sourceIp: extractClientIp(req),
+      consentText
+    });
+
+    return res.json({
+      success: true,
+      verificationRequired: true,
+      message: response.message
+    });
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message || (safeLocale === 'en'
+        ? 'The meta report request could not be processed.'
+        : 'Die Meta-Report-Anfrage konnte nicht verarbeitet werden.')
+    });
+  }
+}
+
 export async function confirmWebsiteAuditLead(req, res) {
   const requestedLocale = req.params?.lng === 'en' ? 'en' : 'de';
   const token = String(req.query?.token || '').trim();
@@ -1293,6 +1526,33 @@ export async function confirmSeoAuditLead(req, res) {
       <meta property="og:type" content="website">
       <meta property="og:title" content="${isEn ? 'SEO Tester report confirmation' : 'SEO-Tester Report-Bestätigung'}">
       <meta property="og:description" content="${isEn ? 'Email confirmation for your detailed SEO PDF report.' : 'E-Mail-Bestätigung für deinen detaillierten SEO-Report.'}">
+      <meta property="og:url" content="${canonical}">
+    `
+  });
+}
+
+export async function confirmMetaAuditLead(req, res) {
+  const requestedLocale = req.params?.lng === 'en' ? 'en' : 'de';
+  const token = String(req.query?.token || '').trim();
+  const viewModel = await confirmMetaTesterLeadToken({ token, locale: requestedLocale });
+  const isEn = viewModel.locale === 'en';
+  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const pagePath = isEn ? '/en/website-tester/meta/report-confirm' : '/website-tester/meta/report-confirm';
+  const canonical = `${base}${pagePath}`;
+
+  res.render('meta_tester_confirm', {
+    lng: viewModel.locale,
+    title: isEn ? 'Meta Tester report confirmation' : 'Meta-Tester Report-Bestätigung',
+    description: isEn
+      ? 'Confirm your email and receive your detailed header meta report.'
+      : 'Bestätige deine E-Mail und erhalte deinen detaillierten Header-Meta-Report.',
+    canonicalUrl: canonical,
+    robots: 'noindex,nofollow',
+    confirmView: viewModel,
+    seoExtra: `
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="${isEn ? 'Meta Tester report confirmation' : 'Meta-Tester Report-Bestätigung'}">
+      <meta property="og:description" content="${isEn ? 'Email confirmation for your detailed header/meta PDF report.' : 'E-Mail-Bestätigung für deinen detaillierten Header-/Meta-Report.'}">
       <meta property="og:url" content="${canonical}">
     `
   });

@@ -5,6 +5,7 @@ import { de } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { generateToken } from "../util/bookingToken.js";
 import { normalizeLocale } from "../util/bookingLocale.js";
+import { renderBrandEmail } from "./emailTemplateService.js";
 
 
 const transporter = nodemailer.createTransport({
@@ -104,7 +105,13 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
             from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
             to,
             subject,
-            html
+            html: renderBrandEmail({
+                locale,
+                subject,
+                headline: isEn ? "Request received" : "Anfrage eingegangen",
+                preheader: isEn ? "We received your request and will reply shortly." : "Wir haben Ihre Anfrage erhalten und melden uns zeitnah.",
+                bodyHtml: html
+            })
         });
     }
 
@@ -171,7 +178,15 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale,
+            subject,
+            headline: isEn ? "Appointment update" : "Termin-Update",
+            preheader: isEn ? "Your booking status has changed." : "Der Status Ihrer Buchung wurde aktualisiert.",
+            bodyHtml: html,
+            ctaLabel: type === "confirmed" ? (isEn ? "Manage appointment" : "Termin verwalten") : "",
+            ctaUrl: type === "confirmed" && bookingId ? `${process.env.BASE_URL || ""}/booking/${bookingId}/reschedule/${generateToken(bookingId)}` : ""
+        }),
         attachments: []
     };
 
@@ -189,11 +204,16 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
 }
 export async function sendRequestMail({ to, name }) {
     const subject = 'Deine Anfrage ist eingegangen';
-    const html = `
+    const html = renderBrandEmail({
+        locale: "de",
+        subject,
+        headline: "Vielen Dank für deine Anfrage",
+        preheader: "Wir haben deine Nachricht erhalten.",
+        bodyHtml: `
         <p>Hallo ${name}</p>
         <p>vielen Dank für die Anfrage. Wir melden uns in Kürze bei dir.</p>
-        <p>Beste Grüße<br>Komplett Webdesign</p>
-    `;
+      `
+    });
     const mail = {
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
@@ -246,7 +266,13 @@ export async function sendWebsiteTesterDoiMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Please confirm your email" : "Bitte bestätige deine E-Mail",
+            preheader: lng === "en" ? "One click to receive your report." : "Ein Klick, damit wir dir den Report senden können.",
+            bodyHtml: html
+        })
     });
 }
 
@@ -300,7 +326,15 @@ export async function sendWebsiteTesterReportMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your report is ready" : "Dein Report ist bereit",
+            preheader: lng === "en" ? "Your PDF is attached to this email." : "Dein PDF findest du im Anhang.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
         attachments: [
             {
                 filename: report?.filename || "website-optimierungsreport.pdf",
@@ -361,7 +395,13 @@ export async function sendGeoTesterDoiMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Please confirm your email" : "Bitte bestätige deine E-Mail",
+            preheader: lng === "en" ? "One click to receive your GEO report." : "Ein Klick, damit wir dir den GEO-Report senden können.",
+            bodyHtml: html
+        })
     });
 }
 
@@ -416,7 +456,15 @@ export async function sendGeoTesterReportMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your GEO report is ready" : "Dein GEO-Report ist bereit",
+            preheader: lng === "en" ? "Your PDF is attached to this email." : "Dein PDF findest du im Anhang.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
         attachments: [
             {
                 filename: report?.filename || "geo-optimierungsreport.pdf",
@@ -477,7 +525,13 @@ export async function sendSeoTesterDoiMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Please confirm your email" : "Bitte bestätige deine E-Mail",
+            preheader: lng === "en" ? "One click to receive your SEO report." : "Ein Klick, damit wir dir den SEO-Report senden können.",
+            bodyHtml: html
+        })
     });
 }
 
@@ -532,10 +586,133 @@ export async function sendSeoTesterReportMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your SEO report is ready" : "Dein SEO-Report ist bereit",
+            preheader: lng === "en" ? "Your PDF is attached to this email." : "Dein PDF findest du im Anhang.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
         attachments: [
             {
                 filename: report?.filename || "seo-audit-report.pdf",
+                content: report?.buffer,
+                contentType: "application/pdf"
+            }
+        ]
+    };
+
+    const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
+    if (adminNotify) {
+        mail.bcc = adminNotify;
+    }
+
+    return transporter.sendMail(mail);
+}
+
+export async function sendMetaTesterDoiMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    confirmUrl = "",
+    expiresAt = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+    const expiry = wtPrettyDate(expiresAt, lng);
+    const subject = lng === "en"
+        ? "Confirm your email for your detailed meta report + newsletter"
+        : "Bitte bestätige deine E-Mail für Meta-Report + Newsletter";
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>you requested the detailed header/meta report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>Please confirm your email address to unlock and receive the report:</p>
+      <p><a href="${confirmUrl}">Confirm email and send meta report</a></p>
+      ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>After confirmation, your address is added to our newsletter so we can send optimization updates.</p>
+      <p>If you did not request this, you can ignore this email.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>du hast den detaillierten Header-/Meta-Report für <strong>${domain || "deine Website"}</strong> (${label}) angefordert.</p>
+      <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir den Report senden können:</p>
+      <p><a href="${confirmUrl}">E-Mail bestätigen und Meta-Report senden</a></p>
+      ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Nach der Bestätigung wird deine Adresse in unseren Newsletter aufgenommen, damit wir dir weitere Optimierungstipps senden können.</p>
+      <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html
+    });
+}
+
+export async function sendMetaTesterReportMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    scoreBand = "mittel",
+    report,
+    unsubscribeToken = ""
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const label = wtScoreLabel(scoreBand, lng);
+    const subject = lng === "en"
+        ? "Your detailed header/meta report (PDF)"
+        : "Dein detaillierter Header-/Meta-Report (PDF)";
+
+    const base = testerBaseUrl();
+    const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${base}/booking`;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>here is your detailed header/meta report for <strong>${domain || "your website"}</strong> (${label}).</p>
+      <p>The PDF is attached to this email.</p>
+      <p>If you want, we can prioritize implementation together in a short consultation:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>hier ist dein detaillierter Header-/Meta-Report für <strong>${domain || "deine Website"}</strong> (${label}).</p>
+      <p>Das PDF findest du im Anhang.</p>
+      <p>Wenn du möchtest, priorisieren wir die Umsetzung gemeinsam in einem kurzen Beratungsgespräch:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html,
+        attachments: [
+            {
+                filename: report?.filename || "meta-audit-report.pdf",
                 content: report?.buffer,
                 contentType: "application/pdf"
             }
@@ -605,7 +782,15 @@ export async function sendTesterFullGuideMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your complete guide" : "Deine vollständige Anleitung",
+            preheader: lng === "en" ? "Your full optimization playbook is inside." : "Dein vollständiger Umsetzungsleitfaden ist enthalten.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
         attachments: []
     };
 
@@ -647,7 +832,13 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: 'kontakt@komplettwebdesign.de',
         subject,
-        html
+        html: renderBrandEmail({
+            locale: "de",
+            subject,
+            headline: "Neue Buchungsinformation",
+            preheader: "Eine Buchung wurde aktualisiert.",
+            bodyHtml: html
+        })
     };
     return transporter.sendMail(mail);
 }

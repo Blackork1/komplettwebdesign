@@ -71,7 +71,7 @@ function sampleResult() {
   };
 }
 
-test('chooseTopPages is stable and returns top 3 pages', () => {
+test('chooseTopPages is stable and supports configurable limits', () => {
   const input = sampleResult();
   const pages = input.sourceResult.internalGuideInput.pageAnalyses;
   const context = input.sourceResult.context;
@@ -79,20 +79,30 @@ test('chooseTopPages is stable and returns top 3 pages', () => {
 
   const first = __testables.chooseTopPages(pages, context, homepage);
   const second = __testables.chooseTopPages(pages, context, homepage);
+  const limited = __testables.chooseTopPages(pages, context, homepage, 2);
 
   assert.equal(first.length, 3);
   assert.equal(second.length, 3);
+  assert.equal(limited.length, 2);
   assert.deepEqual(first.map((item) => item.url), second.map((item) => item.url));
   assert.equal(first[0]?.url, 'https://www.example.com');
+  assert.equal(limited[0]?.url, 'https://www.example.com');
+});
+
+test('resolveProfile supports meta guides', () => {
+  assert.equal(__testables.resolveProfile('meta'), 'meta');
 });
 
 test('generateTesterFullGuide differentiates SEO and GEO output', () => {
   const base = sampleResult();
+  const websiteGuide = generateTesterFullGuide({ result: base, source: 'website', locale: 'de' });
   const seoGuide = generateTesterFullGuide({ result: base, source: 'seo', locale: 'de' });
   const geoGuide = generateTesterFullGuide({ result: base, source: 'geo', locale: 'de' });
 
+  assert.equal(websiteGuide.profile, 'website');
   assert.equal(seoGuide.profile, 'seo');
   assert.equal(geoGuide.profile, 'geo');
+  assert.equal(websiteGuide.topPages.length, 3);
   assert.equal(seoGuide.topPages.length, 3);
   assert.equal(geoGuide.topPages.length, 3);
 
@@ -100,6 +110,21 @@ test('generateTesterFullGuide differentiates SEO and GEO output', () => {
     seoGuide.topPages[0]?.target?.sectionBlueprint?.[0]?.profileHint,
     geoGuide.topPages[0]?.target?.sectionBlueprint?.[0]?.profileHint
   );
+  assert.notEqual(websiteGuide.summary, seoGuide.summary);
+  assert.notEqual(seoGuide.summary, geoGuide.summary);
+  assert.notEqual(websiteGuide.roadmap[0], seoGuide.roadmap[0]);
+});
+
+test('generateTesterFullGuide uses maxPages and exposes pageLimitUsed', () => {
+  const guide = generateTesterFullGuide({
+    result: sampleResult(),
+    source: 'seo',
+    locale: 'de',
+    maxPages: 2
+  });
+
+  assert.equal(guide.topPages.length, 2);
+  assert.equal(guide.pageLimitUsed, 2);
 });
 
 test('geo guide keeps contact intent on contact pages', () => {

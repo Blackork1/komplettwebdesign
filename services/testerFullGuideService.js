@@ -1,4 +1,10 @@
-const MAX_PAGE_COUNT = 3;
+const DEFAULT_MAX_PAGE_COUNT = 3;
+
+function clampGuideMaxPages(rawValue, fallback = DEFAULT_MAX_PAGE_COUNT) {
+  const parsed = parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(1, parsed);
+}
 
 function localeFrom(rawLocale) {
   return rawLocale === 'en' ? 'en' : 'de';
@@ -35,6 +41,7 @@ function resolveProfile(rawSource = '') {
   const source = String(rawSource || '').trim().toLowerCase();
   if (source === 'geo') return 'geo';
   if (source === 'seo') return 'seo';
+  if (source === 'meta') return 'meta';
   return 'website';
 }
 
@@ -195,7 +202,8 @@ function scorePagePriority(page = {}, context = {}, homepageUrl = '') {
   };
 }
 
-function chooseTopPages(pageAnalyses = [], context = {}, homepageUrl = '') {
+function chooseTopPages(pageAnalyses = [], context = {}, homepageUrl = '', maxPages = DEFAULT_MAX_PAGE_COUNT) {
+  const limit = clampGuideMaxPages(maxPages);
   const normalized = Array.isArray(pageAnalyses) ? pageAnalyses : [];
   const scored = normalized
     .map((page) => {
@@ -213,10 +221,10 @@ function chooseTopPages(pageAnalyses = [], context = {}, homepageUrl = '') {
     });
 
   const homepage = scored.find((page) => page.pageType === 'homepage');
-  if (!homepage) return scored.slice(0, MAX_PAGE_COUNT);
+  if (!homepage) return scored.slice(0, limit);
 
   const otherPages = scored.filter((page) => page.url !== homepage.url);
-  return [homepage, ...otherPages.slice(0, Math.max(0, MAX_PAGE_COUNT - 1))];
+  return [homepage, ...otherPages.slice(0, Math.max(0, limit - 1))];
 }
 
 function pageGoalByType(pageType = 'landing', locale = 'de') {
@@ -442,9 +450,17 @@ function sectionBlueprintByType({ pageType, profile, context, locale = 'de' }) {
     ? (lng === 'en'
       ? 'Add one concise answer-first summary and ensure entity/contact consistency in this section.'
       : 'In diesem Abschnitt eine prägnante answer-first Zusammenfassung ergänzen und Entity-/Kontaktdaten konsistent halten.')
-    : (lng === 'en'
-      ? 'Place primary intent terms naturally in heading and first paragraph, then support with internal links.'
-      : 'Primäre Intent-Begriffe natürlich in Überschrift und ersten Absatz einbauen, danach mit internen Links stützen.');
+    : profile === 'seo'
+      ? (lng === 'en'
+        ? 'Use one clear primary keyword cluster per section, strengthen internal links, and avoid duplicated intent blocks.'
+        : 'Je Abschnitt einen klaren Keyword-Cluster führen, interne Links stärken und doppelte Intent-Blöcke vermeiden.')
+      : profile === 'meta'
+        ? (lng === 'en'
+          ? 'Ensure every section supports title/description/H1 intent and keeps social/meta-message consistency.'
+          : 'Jeder Abschnitt soll Title/Description/H1-Intent unterstützen und die Meta-/Social-Botschaft konsistent halten.')
+        : (lng === 'en'
+          ? 'Place primary intent terms naturally in heading and first paragraph, then support with internal links.'
+          : 'Primäre Intent-Begriffe natürlich in Überschrift und ersten Absatz einbauen, danach mit internen Links stützen.');
 
   if (lng === 'en') {
     if (pageType === 'contact') {
@@ -521,9 +537,17 @@ function fullCopyDraft({ pageType, profile, context, metadata, locale = 'de' }) 
     ? (lng === 'en'
       ? 'The copy is tailored for human users and AI-assisted discovery through clear answers, consistent facts, and concise structure.'
       : 'Die Texte sind auf Nutzer und AI-gestützte Auffindbarkeit ausgerichtet: klare Antworten, konsistente Fakten, präzise Struktur.')
-    : (lng === 'en'
-      ? 'The page is optimized for ranking and conversion through clear intent mapping, structured copy, and internal linking.'
-      : 'Die Seite ist für Ranking und Conversion optimiert: durch klare Intent-Zuordnung, strukturierte Texte und interne Verlinkung.');
+    : profile === 'seo'
+      ? (lng === 'en'
+        ? 'The copy is SEO-focused: clear keyword-intent mapping, crawl-friendly structure, and measurable snippet relevance.'
+        : 'Die Texte sind SEO-fokussiert: klare Keyword-Intent-Zuordnung, crawl-freundliche Struktur und messbare Snippet-Relevanz.')
+      : profile === 'meta'
+        ? (lng === 'en'
+          ? 'The copy aligns with strong metadata: title/description intent, social snippet coherence, and head-level consistency.'
+          : 'Die Texte sind auf starke Metadaten ausgerichtet: Title/Description-Intent, Social-Snippet-Kohärenz und Head-Konsistenz.')
+        : (lng === 'en'
+          ? 'The page is optimized for ranking and conversion through clear intent mapping, structured copy, and internal linking.'
+          : 'Die Seite ist für Ranking und Conversion optimiert: durch klare Intent-Zuordnung, strukturierte Texte und interne Verlinkung.');
 
   if (lng === 'en') {
     if (pageType === 'contact') {
@@ -797,6 +821,24 @@ function schemaRecommendations({ pageType, profile, locale = 'de' }) {
     });
   }
 
+  if (profile === 'seo') {
+    base.push({
+      type: 'SEO crawlability rule',
+      requiredFields: [lng === 'en'
+        ? 'Indexable pages include unique title/meta pairs, canonical, and descriptive internal anchors'
+        : 'Indexierbare Seiten haben eindeutige Title/Meta-Paare, Canonical und sprechende interne Anchors']
+    });
+  }
+
+  if (profile === 'meta') {
+    base.push({
+      type: 'Meta consistency rule',
+      requiredFields: [lng === 'en'
+        ? 'Title 55-60 chars (~600px), description 120-155 chars, one concise H1'
+        : 'Title 55-60 Zeichen (~600px), Description 120-155 Zeichen, eine prägnante H1']
+    });
+  }
+
   return base;
 }
 
@@ -805,14 +847,14 @@ function acceptanceCriteria({ pageType, profile, locale = 'de' }) {
   const base = lng === 'en'
     ? [
       'Exactly one H1 and a logical H2/H3 hierarchy.',
-      'Title (45-65 chars) and meta description (130-165 chars) match the page intent.',
+      'Title (ideal 55-60 chars, max around 600px) and meta description (120-155 chars) match the page intent.',
       'Primary CTA visible above the fold and once again after FAQ.',
       'At least three internal links with descriptive anchors.',
       'Contact details are consistent in content, footer, and schema.'
     ]
     : [
       'Genau eine H1 und logisch strukturierte H2/H3-Hierarchie.',
-      'Title (45-65 Zeichen) und Meta-Description (130-165 Zeichen) passen zum Seitenintent.',
+      'Title (ideal 55-60 Zeichen, max. ca. 600px) und Meta-Description (120-155 Zeichen) passen zum Seitenintent.',
       'Primärer CTA above the fold und erneut nach dem FAQ-Block sichtbar.',
       'Mindestens drei interne Links mit sprechenden Anchors.',
       'Kontaktdaten in Inhalt, Footer und Schema konsistent.'
@@ -828,6 +870,21 @@ function acceptanceCriteria({ pageType, profile, locale = 'de' }) {
     base.push(lng === 'en'
       ? 'Answer-first summary block included in first viewport area.'
       : 'Answer-first Kurzantwortblock im oberen Seitenbereich integriert.');
+  }
+
+  if (profile === 'seo') {
+    base.push(lng === 'en'
+      ? 'Primary keyword cluster appears in title, H1, intro, and one internal anchor.'
+      : 'Primärer Keyword-Cluster erscheint in Title, H1, Intro und mindestens einem internen Anchor.');
+  }
+
+  if (profile === 'meta') {
+    base.push(lng === 'en'
+      ? 'Open Graph and Twitter tags include title, description, image, and URL references.'
+      : 'Open-Graph- und Twitter-Tags enthalten Title, Description, Bild und URL-Referenz.');
+    base.push(lng === 'en'
+      ? 'Favicon, apple-touch-icon, and manifest are available in <head>.'
+      : 'Favicon, Apple-Touch-Icon und Manifest sind im <head> vorhanden.');
   }
 
   return base;
@@ -1008,17 +1065,181 @@ function sourceLabel(profile, locale = 'de') {
   if (lng === 'en') {
     if (profile === 'geo') return 'GEO';
     if (profile === 'seo') return 'SEO';
+    if (profile === 'meta') return 'Meta';
     return 'Website';
   }
   if (profile === 'geo') return 'GEO';
   if (profile === 'seo') return 'SEO';
+  if (profile === 'meta') return 'Meta';
   return 'Website';
+}
+
+function buildGuideSummary({ profile, label, pageCount, locale = 'de' }) {
+  const lng = localeFrom(locale);
+  if (lng === 'en') {
+    if (profile === 'seo') {
+      return `Comprehensive ${label} implementation guide with SEO-first rewrite drafts and structural optimization plans for ${pageCount} high-impact pages.`;
+    }
+    if (profile === 'geo') {
+      return `Comprehensive ${label} implementation guide with AI-search-ready page rewrites and entity-consistency plans for ${pageCount} high-impact pages.`;
+    }
+    if (profile === 'meta') {
+      return `Comprehensive ${label} implementation guide with head/meta optimization drafts and page-level snippet consistency plans for ${pageCount} high-impact pages.`;
+    }
+    return `Comprehensive ${label} implementation guide with full rewrite drafts and page-structure plans for ${pageCount} high-impact pages.`;
+  }
+
+  if (profile === 'seo') {
+    return `Umfassende ${label}-Umsetzungsanleitung mit SEO-spezifischen Rewrite-Entwürfen und Strukturplänen für ${pageCount} Seiten mit höchstem Hebel.`;
+  }
+  if (profile === 'geo') {
+    return `Umfassende ${label}-Umsetzungsanleitung mit AI-Search-fokussierten Rewrite-Entwürfen und Entity-Konsistenzplänen für ${pageCount} Seiten mit höchstem Hebel.`;
+  }
+  if (profile === 'meta') {
+    return `Umfassende ${label}-Umsetzungsanleitung mit Head-/Meta-Optimierungsentwürfen und Snippet-Konsistenzplänen für ${pageCount} Seiten mit höchstem Hebel.`;
+  }
+  return `Umfassende ${label}-Umsetzungsanleitung mit vollständigen Rewrite-Entwürfen und Seitenstrukturplänen für ${pageCount} Seiten mit höchstem Hebel.`;
+}
+
+function buildGuideRoadmap({ profile, locale = 'de' }) {
+  const lng = localeFrom(locale);
+  if (lng === 'en') {
+    if (profile === 'seo') {
+      return [
+        'Week 1-2: Fix crawl-critical metadata, indexability signals, and heading consistency on top pages.',
+        'Week 3-4: Roll out keyword-intent rewrites, internal linking clusters, and snippet-focused FAQ blocks.',
+        'Week 5-6: Validate ranking/CTR impact and scale proven SEO patterns to additional pages.'
+      ];
+    }
+    if (profile === 'geo') {
+      return [
+        'Week 1-2: Add answer-first blocks, entity consistency, and trust context on top pages.',
+        'Week 3-4: Expand GEO-ready FAQ modules and citation-oriented trust sections.',
+        'Week 5-6: Validate AI-surface visibility and scale GEO content clusters across relevant pages.'
+      ];
+    }
+    if (profile === 'meta') {
+      return [
+        'Week 1-2: Correct title/description/H1 baselines and social-card metadata on key pages.',
+        'Week 3-4: Standardize head assets (canonical, robots, icons, manifest, OG/Twitter) across templates.',
+        'Week 5-6: Validate SERP/snippet rendering and scale consistent meta patterns to all indexable pages.'
+      ];
+    }
+    return [
+      'Week 1-2: Fix intent-critical metadata + heading structure on top pages and align CTA paths.',
+      'Week 3-4: Implement full copy rewrites, trust modules, and conversion blocks per page blueprint.',
+      'Week 5-6: Roll out FAQ/schema/internal-linking enhancements and validate impact with KPI tracking.'
+    ];
+  }
+
+  if (profile === 'seo') {
+    return [
+      'Woche 1-2: Crawl-kritische Metadaten, Indexierungs-Signale und Überschriftenkonsistenz auf Top-Seiten korrigieren.',
+      'Woche 3-4: Keyword-Intent-Rewrites, interne Link-Cluster und snippet-fokussierte FAQ-Blöcke ausrollen.',
+      'Woche 5-6: Ranking-/CTR-Effekt validieren und funktionierende SEO-Muster auf weitere Seiten skalieren.'
+    ];
+  }
+  if (profile === 'geo') {
+    return [
+      'Woche 1-2: Answer-first Blöcke, Entity-Konsistenz und Trust-Kontext auf Top-Seiten ergänzen.',
+      'Woche 3-4: GEO-geeignete FAQ-Module und zitierfähige Trust-Bereiche ausbauen.',
+      'Woche 5-6: Sichtbarkeit in AI-Antwortflächen prüfen und GEO-Cluster auf relevante Seiten skalieren.'
+    ];
+  }
+  if (profile === 'meta') {
+    return [
+      'Woche 1-2: Title/Description/H1-Basis und Social-Card-Metadaten auf Kernseiten korrigieren.',
+      'Woche 3-4: Head-Assets (Canonical, Robots, Icons, Manifest, OG/Twitter) template-weit standardisieren.',
+      'Woche 5-6: SERP-/Snippet-Darstellung validieren und konsistente Meta-Muster auf alle indexierbaren Seiten ausrollen.'
+    ];
+  }
+  return [
+    'Woche 1-2: Intent-kritische Metadaten + Überschriftenstruktur auf Top-Seiten korrigieren und CTA-Pfade ausrichten.',
+    'Woche 3-4: Volltexte, Trust-Module und Conversion-Blöcke je Seiten-Blueprint umsetzen.',
+    'Woche 5-6: FAQ/Schema/interne Verlinkung ausrollen und Wirkung über KPI-Tracking validieren.'
+  ];
+}
+
+function buildGuideKpis({ profile, locale = 'de' }) {
+  const lng = localeFrom(locale);
+  if (lng === 'en') {
+    if (profile === 'seo') {
+      return [
+        'Impressions and CTR for primary keyword clusters',
+        'Ranking movement for service + region combinations',
+        'Index coverage and crawl-health consistency across top pages',
+        'Organic landing-page conversion rate and qualified lead rate',
+        'Snippet coverage for FAQ and structured on-page answers'
+      ];
+    }
+    if (profile === 'geo') {
+      return [
+        'Visibility of answer-first pages in AI-assisted search flows',
+        'Entity consistency score across copy, footer, and schema',
+        'Citation/trust coverage on high-intent pages',
+        'Qualified lead conversion from GEO-prioritized pages',
+        'FAQ and short-answer retrieval performance'
+      ];
+    }
+    if (profile === 'meta') {
+      return [
+        'Share of pages with compliant title/description/H1 lengths',
+        'SERP snippet consistency (title/description truncation rate)',
+        'Open Graph/Twitter card completeness across top pages',
+        'Head asset completeness (icons, manifest, canonical, robots)',
+        'CTR change after metadata and snippet updates'
+      ];
+    }
+    return [
+      'Organic impressions and CTR on top intent pages',
+      'Qualified lead rate and conversion rate by landing page',
+      'Average ranking movement for main service + region terms',
+      'Contact form completion rate and response-qualified inquiries',
+      'FAQ/snippet visibility in search and AI answer surfaces'
+    ];
+  }
+
+  if (profile === 'seo') {
+    return [
+      'Impressionen und CTR für primäre Keyword-Cluster',
+      'Ranking-Entwicklung für Leistung + Region Kombinationen',
+      'Indexabdeckung und Crawl-Konsistenz auf Top-Seiten',
+      'Organische Landingpage-Conversion und qualifizierte Lead-Rate',
+      'Snippet-Abdeckung für FAQ und strukturierte Kurzantworten'
+    ];
+  }
+  if (profile === 'geo') {
+    return [
+      'Sichtbarkeit answer-first Seiten in AI-gestützten Suchflüssen',
+      'Entity-Konsistenz über Copy, Footer und Schema',
+      'Citation-/Trust-Abdeckung auf High-Intent-Seiten',
+      'Qualifizierte Lead-Conversion auf GEO-priorisierten Seiten',
+      'Retrieval-Performance für FAQ- und Kurzantwortblöcke'
+    ];
+  }
+  if (profile === 'meta') {
+    return [
+      'Anteil Seiten mit konformer Title/Description/H1-Länge',
+      'SERP-Snippet-Konsistenz (Trunkierungsquote Title/Description)',
+      'Open-Graph-/Twitter-Card-Vollständigkeit auf Top-Seiten',
+      'Head-Asset-Vollständigkeit (Icons, Manifest, Canonical, Robots)',
+      'CTR-Entwicklung nach Meta-/Snippet-Optimierung'
+    ];
+  }
+  return [
+    'Organische Impressionen und CTR auf Top-Intent-Seiten',
+    'Qualifizierte Lead-Rate und Conversion-Rate je Landingpage',
+    'Ranking-Entwicklung für Hauptleistung + Regionsbegriffe',
+    'Kontaktformular-Abschlussrate und qualifizierte Anfragen',
+    'FAQ-/Snippet-Sichtbarkeit in Suche und AI-Antwortflächen'
+  ];
 }
 
 export function generateTesterFullGuide({
   result = {},
   source = '',
-  locale = 'de'
+  locale = 'de',
+  maxPages = DEFAULT_MAX_PAGE_COUNT
 } = {}) {
   const sourceResult = resolveSourceResult(result);
   const lng = localeFrom(locale || sourceResult?.locale || result?.locale);
@@ -1026,7 +1247,8 @@ export function generateTesterFullGuide({
   const context = sourceResult?.context || {};
   const homepageUrl = sourceResult?.finalUrl || '';
   const pageAnalyses = sourceResult?.internalGuideInput?.pageAnalyses || [];
-  const scoredPages = chooseTopPages(pageAnalyses, context, homepageUrl);
+  const requestedPageLimit = clampGuideMaxPages(maxPages, DEFAULT_MAX_PAGE_COUNT);
+  const scoredPages = chooseTopPages(pageAnalyses, context, homepageUrl, requestedPageLimit);
   const brand = inferBrandName(sourceResult, pageAnalyses, context);
   const pageGuides = scoredPages.map((page) => buildPageGuide({
     profile,
@@ -1045,41 +1267,21 @@ export function generateTesterFullGuide({
     label,
     locale: lng,
     createdAt,
-    summary: lng === 'en'
-      ? `Comprehensive ${label} implementation guide with full rewrite drafts and page-structure plans for ${pageGuides.length} high-impact pages.`
-      : `Umfassende ${label}-Umsetzungsanleitung mit vollständigen Rewrite-Entwürfen und Seitenstrukturplänen für ${pageGuides.length} Seiten mit höchstem Hebel.`,
+    pageLimitUsed: pageGuides.length,
+    summary: buildGuideSummary({
+      profile,
+      label,
+      pageCount: pageGuides.length,
+      locale: lng
+    }),
     context: {
       brand,
       businessType: normalizeText(context.businessType || ''),
       primaryService: normalizeText(context.primaryService || ''),
       targetRegion: normalizeText(context.targetRegion || '')
     },
-    roadmap: lng === 'en'
-      ? [
-        'Week 1-2: Fix intent-critical metadata + heading structure on top pages and align CTA paths.',
-        'Week 3-4: Implement full copy rewrites, trust modules, and conversion blocks per page blueprint.',
-        'Week 5-6: Roll out FAQ/schema/internal-linking enhancements and validate impact with KPI tracking.'
-      ]
-      : [
-        'Woche 1-2: Intent-kritische Metadaten + Überschriftenstruktur auf Top-Seiten korrigieren und CTA-Pfade ausrichten.',
-        'Woche 3-4: Volltexte, Trust-Module und Conversion-Blöcke je Seiten-Blueprint umsetzen.',
-        'Woche 5-6: FAQ/Schema/interne Verlinkung ausrollen und Wirkung über KPI-Tracking validieren.'
-      ],
-    kpis: lng === 'en'
-      ? [
-        'Organic impressions and CTR on top intent pages',
-        'Qualified lead rate and conversion rate by landing page',
-        'Average ranking movement for main service + region terms',
-        'Contact form completion rate and response-qualified inquiries',
-        'FAQ/snippet visibility in search and AI answer surfaces'
-      ]
-      : [
-        'Organische Impressionen und CTR auf Top-Intent-Seiten',
-        'Qualifizierte Lead-Rate und Conversion-Rate je Landingpage',
-        'Ranking-Entwicklung für Hauptleistung + Regionsbegriffe',
-        'Kontaktformular-Abschlussrate und qualifizierte Anfragen',
-        'FAQ-/Snippet-Sichtbarkeit in Suche und AI-Antwortflächen'
-      ],
+    roadmap: buildGuideRoadmap({ profile, locale: lng }),
+    kpis: buildGuideKpis({ profile, locale: lng }),
     topPages: pageGuides
   };
 }
@@ -1197,6 +1399,7 @@ export function formatTesterFullGuideAsText(guide = {}) {
 
 export const __testables = {
   localeFrom,
+  clampGuideMaxPages,
   resolveProfile,
   pageTypeFromUrl,
   scorePagePriority,

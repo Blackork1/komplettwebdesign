@@ -1,4 +1,29 @@
-<%- include('../../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+      {"@type":"ListItem","position":2,"name":"Ratgeber","item":"https://www.komplettwebdesign.de/ratgeber"},
+      {"@type":"ListItem","position":3,"name":"Website-Kosten & Zeitplan"}
+    ]
+  }
+  </script>
+
+<script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"Was kostet eine einfache Website?","acceptedAnswer":{"@type":"Answer","text":"Meist 500–1.500 € – je nach Seitenanzahl und Extras."}},
+      {"@type":"Question","name":"Wie lange dauert die Erstellung?","acceptedAnswer":{"@type":"Answer","text":"Typisch 2–8 Wochen. Je schneller Inhalte & Freigaben kommen, desto schneller sind wir online."}},
+      {"@type":"Question","name":"Was ist im Preis enthalten?","acceptedAnswer":{"@type":"Answer","text":"Design, Umsetzung, Grund-SEO, technische Einrichtung – plus Beratung."}}
+    ]
+  }
+  </script>`;
+%>
+<%- include('../../partials/head', { structuredDataRaw }) %>
 <%- include('../../partials/header') %>
   <meta charset="utf-8" />
   <title>Website-Kosten 2025 & realistischer Zeitplan – einfach erklärt</title>
@@ -231,27 +256,5 @@
 <%- include('../../partials/footer') %>
 
   <!-- JSON-LD Breadcrumbs + FAQ -->
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"BreadcrumbList",
-    "itemListElement":[
-      {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
-      {"@type":"ListItem","position":2,"name":"Ratgeber","item":"https://www.komplettwebdesign.de/ratgeber"},
-      {"@type":"ListItem","position":3,"name":"Website-Kosten & Zeitplan"}
-    ]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"FAQPage",
-    "mainEntity":[
-      {"@type":"Question","name":"Was kostet eine einfache Website?","acceptedAnswer":{"@type":"Answer","text":"Meist 500–1.500 € – je nach Seitenanzahl und Extras."}},
-      {"@type":"Question","name":"Wie lange dauert die Erstellung?","acceptedAnswer":{"@type":"Answer","text":"Typisch 2–8 Wochen. Je schneller Inhalte & Freigaben kommen, desto schneller sind wir online."}},
-      {"@type":"Question","name":"Was ist im Preis enthalten?","acceptedAnswer":{"@type":"Answer","text":"Design, Umsetzung, Grund-SEO, technische Einrichtung – plus Beratung."}}
-    ]
-  }
-  </script>
-</body>
+  </body>
 </html>

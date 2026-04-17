@@ -2,14 +2,18 @@ import express from 'express';
 import {
   brokenLinksTestPage,
   confirmGeoAuditLead,
+  confirmMetaAuditLead,
   confirmSeoAuditLead,
   confirmWebsiteAuditLead,
   geoTestPage,
+  metaTestPage,
   seoTestPage,
   getCachedWebsiteAudit,
   runBrokenLinkAudit,
   runGeoAudit,
   runGeoAuditLead,
+  runMetaAudit,
+  runMetaAuditLead,
   runSeoAudit,
   runSeoAuditLead,
   runWebsiteAudit,
@@ -25,6 +29,8 @@ const GEO_RATE_LIMIT_MAX = 5;
 const GEO_LEAD_RATE_LIMIT_MAX = 5;
 const SEO_RATE_LIMIT_MAX = 5;
 const SEO_LEAD_RATE_LIMIT_MAX = 5;
+const META_RATE_LIMIT_MAX = 5;
+const META_LEAD_RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const auditRateLimitMap = new Map();
 const leadRateLimitMap = new Map();
@@ -33,6 +39,8 @@ const geoRateLimitMap = new Map();
 const geoLeadRateLimitMap = new Map();
 const seoRateLimitMap = new Map();
 const seoLeadRateLimitMap = new Map();
+const metaRateLimitMap = new Map();
+const metaLeadRateLimitMap = new Map();
 
 function getClientIp(req) {
   const forwarded = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
@@ -74,6 +82,12 @@ function pruneRateLimit(now = Date.now()) {
     if (!entry || entry.expiresAt <= now) {
       seoLeadRateLimitMap.delete(key);
     }
+  }
+  for (const [key, entry] of metaRateLimitMap.entries()) {
+    if (!entry || entry.expiresAt <= now) metaRateLimitMap.delete(key);
+  }
+  for (const [key, entry] of metaLeadRateLimitMap.entries()) {
+    if (!entry || entry.expiresAt <= now) metaLeadRateLimitMap.delete(key);
   }
 }
 
@@ -259,6 +273,44 @@ function seoAuditLeadRateLimit(req, res, next) {
   return next();
 }
 
+function metaAuditRateLimit(req, res, next) {
+  const now = Date.now();
+  pruneRateLimit(now);
+  const key = getClientIp(req);
+  const record = metaRateLimitMap.get(key) || { count: 0, expiresAt: now + RATE_LIMIT_WINDOW_MS };
+  if (record.expiresAt <= now) {
+    record.count = 0;
+    record.expiresAt = now + RATE_LIMIT_WINDOW_MS;
+  }
+  if (record.count >= META_RATE_LIMIT_MAX) {
+    const retryAfterSec = Math.max(1, Math.ceil((record.expiresAt - now) / 1000));
+    res.setHeader('Retry-After', String(retryAfterSec));
+    return res.status(429).json({ success: false, message: 'Zu viele Meta-Scans in kurzer Zeit. Bitte versuche es in einigen Minuten erneut.' });
+  }
+  record.count += 1;
+  metaRateLimitMap.set(key, record);
+  return next();
+}
+
+function metaAuditLeadRateLimit(req, res, next) {
+  const now = Date.now();
+  pruneRateLimit(now);
+  const key = getClientIp(req);
+  const record = metaLeadRateLimitMap.get(key) || { count: 0, expiresAt: now + RATE_LIMIT_WINDOW_MS };
+  if (record.expiresAt <= now) {
+    record.count = 0;
+    record.expiresAt = now + RATE_LIMIT_WINDOW_MS;
+  }
+  if (record.count >= META_LEAD_RATE_LIMIT_MAX) {
+    const retryAfterSec = Math.max(1, Math.ceil((record.expiresAt - now) / 1000));
+    res.setHeader('Retry-After', String(retryAfterSec));
+    return res.status(429).json({ success: false, message: 'Zu viele Meta-Report-Anfragen in kurzer Zeit. Bitte versuche es in einigen Minuten erneut.' });
+  }
+  record.count += 1;
+  metaLeadRateLimitMap.set(key, record);
+  return next();
+}
+
 router.get('/test', (_req, res) => res.redirect(302, '/website-tester'));
 router.get('/en/test', (_req, res) => res.redirect(302, '/en/website-tester'));
 router.get('/website-tester', (req, res) => {
@@ -289,6 +341,14 @@ router.get('/website-tester/seo', (req, res) => {
   req.params.lng = 'de';
   return seoTestPage(req, res);
 });
+router.get('/website-tester/meta', (req, res) => {
+  req.params.lng = 'de';
+  return metaTestPage(req, res);
+});
+router.get('/en/website-tester/meta', (req, res) => {
+  req.params.lng = 'en';
+  return metaTestPage(req, res);
+});
 router.get('/en/website-tester/seo', (req, res) => {
   req.params.lng = 'en';
   return seoTestPage(req, res);
@@ -300,6 +360,8 @@ router.post('/api/geo-audit', geoAuditRateLimit, runGeoAudit);
 router.post('/api/geo-audit/lead', geoAuditLeadRateLimit, runGeoAuditLead);
 router.post('/api/seo-audit', seoAuditRateLimit, runSeoAudit);
 router.post('/api/seo-audit/lead', seoAuditLeadRateLimit, runSeoAuditLead);
+router.post('/api/meta-audit', metaAuditRateLimit, runMetaAudit);
+router.post('/api/meta-audit/lead', metaAuditLeadRateLimit, runMetaAuditLead);
 router.get('/api/website-audit/:auditId', getCachedWebsiteAudit);
 router.get('/website-tester/report-confirm', (req, res) => {
   req.params.lng = 'de';
@@ -324,6 +386,14 @@ router.get('/website-tester/seo/report-confirm', (req, res) => {
 router.get('/en/website-tester/seo/report-confirm', (req, res) => {
   req.params.lng = 'en';
   return confirmSeoAuditLead(req, res);
+});
+router.get('/website-tester/meta/report-confirm', (req, res) => {
+  req.params.lng = 'de';
+  return confirmMetaAuditLead(req, res);
+});
+router.get('/en/website-tester/meta/report-confirm', (req, res) => {
+  req.params.lng = 'en';
+  return confirmMetaAuditLead(req, res);
 });
 
 export default router;

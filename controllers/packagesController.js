@@ -11,6 +11,7 @@ import {
 } from '../models/appointmentModel.js';
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
+import { renderBrandEmail } from '../services/emailTemplateService.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
 import { mockPackages } from '../data/mockPackages.js';
 
@@ -401,7 +402,13 @@ export async function handleContact(req, res) {
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: email,
         subject: isEn ? `Your request - ${pack.name} package` : `Ihre Anfrage – ${pack.name}-Paket`,
-        html
+        html: renderBrandEmail({
+          locale,
+          subject: isEn ? `Your request - ${pack.name} package` : `Ihre Anfrage – ${pack.name}-Paket`,
+          headline: isEn ? "Package request received" : "Paketanfrage eingegangen",
+          preheader: isEn ? "Thank you for your package request." : "Vielen Dank für Ihre Paketanfrage.",
+          bodyHtml: html
+        })
       });
     }
 

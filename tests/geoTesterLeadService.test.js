@@ -34,3 +34,17 @@ test('topIssuesFromGeoResult extracts top labels', () => {
 
   assert.deepEqual(list, ['Intent mismatch', 'Improve FAQ structure', 'Strengthen entity signals']);
 });
+
+test('geo full guide helpers compare effective limit', () => {
+  const result = {
+    sourceResult: {
+      internalGuideInput: {
+        pageAnalyses: [{}, {}]
+      }
+    }
+  };
+
+  assert.equal(__testables.expectedGuidePageLimit(result, 5), 2);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 2 }, result, 5), false);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 1 }, result, 5), true);
+});

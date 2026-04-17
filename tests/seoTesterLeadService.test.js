@@ -35,3 +35,16 @@ test('topIssuesFromSeoResult extracts top labels', () => {
   assert.deepEqual(list, ['Fix title quality', 'Improve internal links', 'Improve schema coverage']);
 });
 
+test('seo full guide helpers compare effective limit', () => {
+  const result = {
+    sourceResult: {
+      internalGuideInput: {
+        pageAnalyses: [{}, {}, {}, {}]
+      }
+    }
+  };
+
+  assert.equal(__testables.expectedGuidePageLimit(result, 2), 2);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 2 }, result, 2), false);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 3 }, result, 2), true);
+});

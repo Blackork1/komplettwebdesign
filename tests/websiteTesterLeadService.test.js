@@ -32,3 +32,19 @@ test('buildConfirmUrl uses localized path', () => {
   assert.match(de, /\/website-tester\/report-confirm\?token=abc/);
   assert.match(en, /\/en\/website-tester\/report-confirm\?token=abc/);
 });
+
+test('full guide helpers respect configured page limits', () => {
+  const result = {
+    sourceResult: {
+      internalGuideInput: {
+        pageAnalyses: [{ url: 'https://example.com' }, { url: 'https://example.com/a' }, { url: 'https://example.com/b' }]
+      }
+    }
+  };
+
+  assert.equal(__testables.normalizeFullGuideMaxPages('0'), 1);
+  assert.equal(__testables.normalizeFullGuideMaxPages('999'), 50);
+  assert.equal(__testables.expectedGuidePageLimit(result, 10), 3);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 3 }, result, 10), false);
+  assert.equal(__testables.shouldRegenerateFullGuide({ pageLimitUsed: 2 }, result, 10), true);
+});

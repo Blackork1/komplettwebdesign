@@ -1,4 +1,21 @@
-<%- include('../../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
+    {"@type":"ListItem","position":3,"name":"Blumenladen-Website"}
+  ]}
+  </script>
+
+<script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Brauche ich direkt einen kompletten Shop?","acceptedAnswer":{"@type":"Answer","text":"Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen."}},
+    {"@type":"Question","name":"Wie pflege ich mein Sortiment?","acceptedAnswer":{"@type":"Answer","text":"Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren."}},
+    {"@type":"Question","name":"Wie mache ich Saison-Angebote sichtbar?","acceptedAnswer":{"@type":"Answer","text":"Saison-Box auf der Startseite und kurze Landingpages, die du schnell ein- und ausblendest."}}
+  ]}
+  </script>`;
+%>
+<%- include('../../partials/head', { structuredDataRaw }) %>
 <%- include('../../partials/header') %>
   <style>
     /* Nur Farben & Schriften übernehmen; Layout via Bootstrap */
@@ -153,19 +170,5 @@
 
 
   <!-- JSON-LD -->
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
-    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
-    {"@type":"ListItem","position":3,"name":"Blumenladen-Website"}
-  ]}
-  </script>
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-    {"@type":"Question","name":"Brauche ich direkt einen kompletten Shop?","acceptedAnswer":{"@type":"Answer","text":"Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen."}},
-    {"@type":"Question","name":"Wie pflege ich mein Sortiment?","acceptedAnswer":{"@type":"Answer","text":"Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren."}},
-    {"@type":"Question","name":"Wie mache ich Saison-Angebote sichtbar?","acceptedAnswer":{"@type":"Answer","text":"Saison-Box auf der Startseite und kurze Landingpages, die du schnell ein- und ausblendest."}}
-  ]}
-  </script>
-</body>
+  </body>
 </html>

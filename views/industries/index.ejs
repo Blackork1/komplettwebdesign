@@ -1,5 +1,17 @@
 <!-- views/industries/index.ejs -->
-<%- include('../partials/head', { title, description }) %>
+<%
+const structuredDataBlocks = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Startseite", item: `${baseUrl || ''}/` },
+      { "@type": "ListItem", position: 2, name: "Branchen", item: `${baseUrl || ''}/branchen` }
+    ]
+  }
+];
+%>
+<%- include('../partials/head', { title, description, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
 
 <!-- Blog-Styles für die Cards wiederverwenden -->
@@ -91,17 +103,5 @@
     </div>
   </div>
 </div>
-
-<!-- JSON-LD: Breadcrumbs für die Übersicht -->
-<script type="application/ld+json">
-  <%- JSON.stringify({
-  "@context":"https://schema.org",
-  "@type":"BreadcrumbList",
-  "itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Startseite","item": (baseUrl || '') + "/"},
-    {"@type":"ListItem","position":2,"name":"Branchen","item": (baseUrl || '') + "/branchen"}
-  ]
-}) %>
-</script>
 
 <%- include('../partials/footer') %>

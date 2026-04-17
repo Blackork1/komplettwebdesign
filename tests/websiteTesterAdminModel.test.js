@@ -22,6 +22,11 @@ test('clampMaxSubpages clamps into allowed range', () => {
   assert.equal(__testables.clampSeoMaxSubpages('0'), 1);
   assert.equal(__testables.clampSeoMaxSubpages('999'), 20);
   assert.equal(__testables.clampSeoMaxSubpages('abc'), 5);
+
+  assert.equal(__testables.clampFullGuideMaxPages('10'), 10);
+  assert.equal(__testables.clampFullGuideMaxPages('0'), 1);
+  assert.equal(__testables.clampFullGuideMaxPages('999'), 50);
+  assert.equal(__testables.clampFullGuideMaxPages('abc'), 10);
 });
 
 test('clampPage and clampPageSize use safe defaults', () => {

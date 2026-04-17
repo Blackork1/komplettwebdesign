@@ -1,4 +1,29 @@
-<%- include('../../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+      {"@type":"ListItem","position":2,"name":"Ratgeber","item":"https://www.komplettwebdesign.de/ratgeber"},
+      {"@type":"ListItem","position":3,"name":"Kosten einfache Website"}
+    ]
+  }
+  </script>
+
+<script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"Brauche ich eine FAQ-Seite?","acceptedAnswer":{"@type":"Answer","text":"Kurz beantwortete Fragen erhöhen Vertrauen und werden oft in Google angezeigt."}},
+      {"@type":"Question","name":"Kann ich später erweitern?","acceptedAnswer":{"@type":"Answer","text":"Ja – wir starten schlank und erweitern bei Bedarf."}},
+      {"@type":"Question","name":"Übernimmst du Hosting & Wartung?","acceptedAnswer":{"@type":"Answer","text":"Ja – damit du dich nicht um Technik kümmern musst."}}
+    ]
+  }
+  </script>`;
+%>
+<%- include('../../partials/head', { structuredDataRaw }) %>
 <%- include('../../partials/header') %>
   <meta charset="utf-8" />
   <title>Kosten einer einfachen Website – Beispiele & Checkliste</title>
@@ -174,27 +199,5 @@
 <%- include('../../partials/footer') %>
 
   <!-- JSON-LD Breadcrumbs + FAQ -->
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"BreadcrumbList",
-    "itemListElement":[
-      {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
-      {"@type":"ListItem","position":2,"name":"Ratgeber","item":"https://www.komplettwebdesign.de/ratgeber"},
-      {"@type":"ListItem","position":3,"name":"Kosten einfache Website"}
-    ]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"FAQPage",
-    "mainEntity":[
-      {"@type":"Question","name":"Brauche ich eine FAQ-Seite?","acceptedAnswer":{"@type":"Answer","text":"Kurz beantwortete Fragen erhöhen Vertrauen und werden oft in Google angezeigt."}},
-      {"@type":"Question","name":"Kann ich später erweitern?","acceptedAnswer":{"@type":"Answer","text":"Ja – wir starten schlank und erweitern bei Bedarf."}},
-      {"@type":"Question","name":"Übernimmst du Hosting & Wartung?","acceptedAnswer":{"@type":"Answer","text":"Ja – damit du dich nicht um Technik kümmern musst."}}
-    ]
-  }
-  </script>
-</body>
+  </body>
 </html>

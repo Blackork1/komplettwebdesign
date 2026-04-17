@@ -1,4 +1,21 @@
-<%- include('../../partials/head') %>
+<%
+const structuredDataRaw = `<script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
+    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
+    {"@type":"ListItem","position":3,"name":"Café-Website"}
+  ]}
+  </script>
+
+<script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Wie pflege ich die Speisekarte selbst?","acceptedAnswer":{"@type":"Answer","text":"Du bekommst einen einfachen Editor. Änderungen sind in wenigen Minuten online."}},
+    {"@type":"Question","name":"Brauche ich eine Reservierungs-App?","acceptedAnswer":{"@type":"Answer","text":"Nicht zwingend. Für den Start reicht oft ein Anfrage-Formular mit Uhrzeit/Personenzahl."}},
+    {"@type":"Question","name":"Müssen wir neue Fotos machen?","acceptedAnswer":{"@type":"Answer","text":"Schöne, helle Fotos lohnen sich sehr. Gern organisiere ich das – oder wir nutzen zunächst deine besten Bilder."}}
+  ]}
+  </script>`;
+%>
+<%- include('../../partials/head', { structuredDataRaw }) %>
 <%- include('../../partials/header') %>
   <style>
     :root { --brand: var(--color-primary, #0b2a46); --accent: var(--color-accent, #e94a1b); }
@@ -152,19 +169,5 @@
 <%- include('../../partials/footer') %>
 
   <!-- JSON-LD -->
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
-    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
-    {"@type":"ListItem","position":3,"name":"Café-Website"}
-  ]}
-  </script>
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-    {"@type":"Question","name":"Wie pflege ich die Speisekarte selbst?","acceptedAnswer":{"@type":"Answer","text":"Du bekommst einen einfachen Editor. Änderungen sind in wenigen Minuten online."}},
-    {"@type":"Question","name":"Brauche ich eine Reservierungs-App?","acceptedAnswer":{"@type":"Answer","text":"Nicht zwingend. Für den Start reicht oft ein Anfrage-Formular mit Uhrzeit/Personenzahl."}},
-    {"@type":"Question","name":"Müssen wir neue Fotos machen?","acceptedAnswer":{"@type":"Answer","text":"Schöne, helle Fotos lohnen sich sehr. Gern organisiere ich das – oder wir nutzen zunächst deine besten Bilder."}}
-  ]}
-  </script>
-</body>
+  </body>
 </html>
