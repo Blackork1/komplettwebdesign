@@ -1,5 +1,34 @@
 <%- include('partials/head') %>
 <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<%
+  function pkgForBand(band, en) {
+    const b = String(band || '').toLowerCase();
+    if (b === 'kritisch' || b === 'critical') {
+      return { title: en ? 'Relaunch recommended' : 'Relaunch empfohlen',
+        text: en ? 'Your site has fundamental issues. A focused relaunch will get you ahead the fastest.'
+                 : 'Deine Website hat grundlegende Probleme. Ein fokussierter Relaunch bringt dich am schnellsten weiter.',
+        href: en ? '/en/pakete' : '/pakete',
+        label: en ? 'View website packages' : 'Zu den Webdesign-Paketen' };
+    }
+    if (b === 'mittel' || b === 'medium') {
+      return { title: en ? 'Targeted optimization' : 'Gezielte Optimierung',
+        text: en ? 'A structured optimization sprint closes the biggest gaps without a full rebuild.'
+                 : 'Ein strukturierter Optimierungs-Sprint schließt die größten Lücken ohne kompletten Neuaufbau.',
+        href: en ? '/en/leistungen' : '/leistungen',
+        label: en ? 'View optimization services' : 'Zu den Optimierungs-Leistungen' };
+    }
+    return { title: en ? 'Fine-tuning & growth' : 'Feinschliff & Wachstum',
+      text: en ? 'Your base is strong. We help you polish details and pull ahead of competitors.'
+               : 'Deine Basis ist stark. Wir helfen dir, Details zu polieren und Wettbewerbern davonzuziehen.',
+      href: en ? '/en/leistungen' : '/leistungen',
+      label: en ? 'See how we can help' : 'Beratungsleistungen ansehen' };
+  }
+  const bookingBase = confirmView?.links?.booking || (isEn ? '/en/booking' : '/booking');
+  const bookingParams = ['src=website-tester'];
+  if (confirmView?.lead?.domain) bookingParams.push('domain=' + encodeURIComponent(confirmView.lead.domain));
+  if (confirmView?.lead?.score_band) bookingParams.push('score=' + encodeURIComponent(confirmView.lead.score_band));
+  const bookingHref = bookingBase + (bookingBase.includes('?') ? '&' : '?') + bookingParams.join('&');
+%>
 <body class="website-tester-page">
   <%- include('partials/header') %>
 
@@ -51,6 +80,34 @@
                 ? 'If needed, run a new quick audit and request a new report link.'
                 : 'Falls nötig, starte bitte einen neuen Schnelltest und fordere den Report-Link erneut an.' %>
             </div>
+          <% } %>
+
+          <% if (status === 'success') { %>
+            <% const pkg = pkgForBand(confirmView?.lead?.score_band, isEn); %>
+            <section class="wt-cta-card wt-next-step-card" style="margin-top:1.4rem;">
+              <h2><i class="fa-solid fa-rocket"></i> <%= isEn ? 'Your next step' : 'Dein nächster Schritt' %></h2>
+              <p><%= isEn
+                  ? 'Ready to turn the report into a concrete plan? Book a free 30‑min consultation — we plan the next sprint with you.'
+                  : 'Bereit, den Report in einen konkreten Plan umzusetzen? Buch dir ein kostenloses 30‑Min.-Gespräch – wir planen den nächsten Sprint mit dir.' %></p>
+              <div class="wt-cta-actions">
+                <a class="wt-button" href="<%= bookingHref %>"><%= isEn ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen' %></a>
+                <a class="wt-button-ghost" href="<%= pkg.href %>"><%= pkg.label %></a>
+              </div>
+              <div class="wt-next-step-package">
+                <strong><%= pkg.title %></strong>
+                <p><%= pkg.text %></p>
+              </div>
+            </section>
+
+            <section class="wt-sitefacts" style="margin-top:1rem;">
+              <h3><i class="fa-solid fa-layer-group"></i> <%= isEn ? 'Keep going with our other free testers' : 'Mach weiter mit unseren anderen kostenlosen Testern' %></h3>
+              <div class="wt-cta-actions" style="margin-top:0.6rem;">
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>"><%= isEn ? 'SEO Tester' : 'SEO-Tester' %></a>
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>"><%= isEn ? 'GEO Tester' : 'GEO-Tester' %></a>
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>"><%= isEn ? 'Meta Tester' : 'Meta-Tester' %></a>
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken-Links Tester' : 'Broken-Links-Tester' %></a>
+              </div>
+            </section>
           <% } %>
         </article>
       </div>

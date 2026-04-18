@@ -314,7 +314,8 @@ function buildConfirmViewModel({ locale, status, lead, message }) {
     lead,
     links: {
       tester: lng === 'en' ? '/en/website-tester' : '/website-tester',
-      contact: lng === 'en' ? '/en/kontakt' : '/kontakt'
+      contact: lng === 'en' ? '/en/kontakt' : '/kontakt',
+      booking: lng === 'en' ? '/en/booking' : '/booking'
     }
   };
 }
@@ -364,13 +365,18 @@ export async function confirmWebsiteTesterLeadToken({ token, locale }) {
     });
   }
 
+  // The atomic consume is the single source of truth: UPDATE ... WHERE status='pending'
+  // AND confirm_expires_at > NOW() RETURNING * — if it returns null, some other
+  // request (a second DOI-link click, most likely) already confirmed this lead.
+  // In that case we want the already_used UX, not the generic "invalid token"
+  // error, because the token *was* valid a moment ago.
   const consumed = await consumeWebsiteTesterLeadConfirmToken(tokenHash);
   if (!consumed) {
     return buildConfirmViewModel({
       locale: effectiveLocale,
-      status: 'invalid',
+      status: 'already_used',
       lead: existing,
-      message: effectiveCopy.errors.tokenInvalid
+      message: effectiveCopy.messages.alreadyUsed
     });
   }
 

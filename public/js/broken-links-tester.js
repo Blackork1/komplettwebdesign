@@ -2,6 +2,7 @@
   const config = window.BROKEN_LINK_TESTER_CONFIG || {};
   const locale = config.locale === 'en' ? 'en' : 'de';
   const endpoint = config.endpoint || '/api/broken-link-audit';
+  const leadEndpoint = config.leadEndpoint || '/api/broken-link-audit/lead';
   const i18n = config.i18n || {};
 
   const form = document.querySelector('[data-broken-links-form]');
@@ -23,6 +24,12 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function trackEvent(name, data) {
+    try {
+      if (typeof window.gtag === 'function') window.gtag('event', name, data || {});
+    } catch (_e) { /* ignore */ }
   }
 
   function setProgress(step) {
@@ -56,42 +63,87 @@
     return 'kritisch';
   }
 
-  function renderTableRows(items) {
-    return items.map((item) => `
-      <tr>
-        <td><span class="text-break">${escapeHtml(item.sourceUrl || '-')}</span></td>
-        <td><span class="text-break">${escapeHtml(item.targetUrl || '-')}</span></td>
-        <td>${escapeHtml(item.targetType || '-')}</td>
-        <td>${escapeHtml(Number.isFinite(item.status) ? item.status : '-')}</td>
-        <td>${escapeHtml(item.error || '-')}</td>
-      </tr>
-    `).join('');
-  }
+  function renderNextStepCard(result) {
+    const utils = window.TesterUtils || {};
+    const stats = result.linkStats || {};
+    // Score approximation: 100 if clean, reduce by broken & warnings
+    const broken = Number(stats.brokenCount) || 0;
+    const warns = Number(stats.warningCount) || 0;
+    const total = Number(stats.totalChecked) || 0;
+    let score = null;
+    if (total > 0) {
+      const ratio = Math.min(1, (broken * 3 + warns) / Math.max(1, total));
+      score = Math.max(0, Math.round(100 - ratio * 100));
+    }
+    const domain = typeof utils.extractDomain === 'function' ? utils.extractDomain(result || '') : '';
+    const bookingBase = (i18n.bookingHref || (locale === 'en' ? '/en/booking' : '/booking'));
+    const contactBase = (i18n.contactHref || (locale === 'en' ? '/en/kontakt' : '/kontakt'));
+    const bookingUrl = typeof utils.buildBookingUrl === 'function'
+      ? utils.buildBookingUrl(bookingBase, { src: 'broken-links-tester', domain, score }) : bookingBase;
+    const contactUrl = typeof utils.buildContactUrl === 'function'
+      ? utils.buildContactUrl(contactBase, { src: 'broken-links-tester', domain, score }) : contactBase;
+    const pkg = typeof utils.buildPackageSuggestion === 'function' ? utils.buildPackageSuggestion(score, locale) : null;
 
-  function renderDetailsTable(title, items, emptyText) {
-    const rows = Array.isArray(items) && items.length
-      ? renderTableRows(items)
-      : `<tr><td colspan="5">${escapeHtml(emptyText)}</td></tr>`;
+    const headline = i18n.nextStepTitle || (locale === 'en' ? 'Your next step' : 'Dein nächster Schritt');
+    const intro = i18n.nextStepIntro || (locale === 'en'
+      ? 'Want every broken link fixed and your site truly reliable? We plan it with you.'
+      : 'Willst du, dass alle defekten Links behoben werden und deine Website zuverlässig läuft? Wir planen es mit dir.');
+    const bookingLabel = i18n.bookingCtaLabel || (locale === 'en' ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen');
+    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+
+    let pkgBlock = '';
+    if (pkg && pkg.title) {
+      pkgBlock = `
+        <div class="wt-next-step-package">
+          <strong>${escapeHtml(pkg.title)}</strong>
+          <p>${escapeHtml(pkg.text || '')}</p>
+          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkg.href || '/leistungen')}" data-tester-cta="broken" data-tester-action="package" data-bl-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+        </div>`;
+    }
 
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
-        <h3><i class="fa-solid fa-table-list"></i> ${escapeHtml(title)}</h3>
-        <div class="bl-table-wrap">
-          <table class="bl-table">
-            <thead>
-              <tr>
-                <th>${escapeHtml(i18n.sourcePage || 'Quellseite')}</th>
-                <th>${escapeHtml(i18n.targetUrl || 'Ziel-URL')}</th>
-                <th>${escapeHtml(i18n.type || 'Typ')}</th>
-                <th>${escapeHtml(i18n.status || 'Status')}</th>
-                <th>${escapeHtml(i18n.error || 'Fehler')}</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+      <section class="wt-cta-card wt-next-step-card" style="margin-top:0.9rem;">
+        <h2><i class="fa-solid fa-rocket"></i> ${escapeHtml(headline)}</h2>
+        <p>${escapeHtml(intro)}</p>
+        <div class="wt-cta-actions">
+          <a class="wt-button" href="${escapeHtml(bookingUrl)}" data-tester-cta="broken" data-tester-action="booking" data-bl-cta="booking">${escapeHtml(bookingLabel)}</a>
+          <a class="wt-button wt-button-ghost" href="${escapeHtml(contactUrl)}" data-tester-cta="broken" data-tester-action="contact" data-bl-cta="contact">${escapeHtml(contactLabel)}</a>
         </div>
-      </section>
-    `;
+        ${pkgBlock}
+      </section>`;
+  }
+
+  /**
+   * Public summary only — renders the broken/warning counts and up to the top
+   * 3 affected source pages. The full broken-links and warnings lists are
+   * intentionally NOT rendered here; those are gated behind the lead form
+   * and delivered via the confirmed PDF report.
+   */
+  function renderTopPagesSummary(result) {
+    const items = Array.isArray(result.topAffectedPages) ? result.topAffectedPages : [];
+    const title = i18n.topPagesTitle || (locale === 'en' ? 'Top 3 affected source pages' : 'Top 3 betroffene Quellseiten');
+    const empty = i18n.topPagesEmpty || (locale === 'en' ? 'No affected pages detected.' : 'Keine betroffenen Seiten gefunden.');
+    if (!items.length) {
+      return `
+        <section class="wt-sitefacts" style="margin-top:0.8rem;">
+          <h3><i class="fa-solid fa-list-check"></i> ${escapeHtml(title)}</h3>
+          <p>${escapeHtml(empty)}</p>
+        </section>`;
+    }
+    const rows = items.map((item) => `
+      <li>
+        <a href="${escapeHtml(item.sourceUrl || '#')}" target="_blank" rel="noopener nofollow">${escapeHtml(item.sourceUrl || '')}</a>
+        <div class="wt-result-meta">
+          <span class="wt-tag" data-tone="${toneForCount(Number(item.brokenCount) || 0)}">${escapeHtml(i18n.brokenLinks || 'Broken Links')}: ${escapeHtml(item.brokenCount ?? 0)}</span>
+          <span class="wt-tag" data-tone="${toneForCount(Number(item.warningCount) || 0)}">${escapeHtml(i18n.warnings || 'Warnings')}: ${escapeHtml(item.warningCount ?? 0)}</span>
+        </div>
+      </li>
+    `).join('');
+    return `
+      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+        <h3><i class="fa-solid fa-list-check"></i> ${escapeHtml(title)}</h3>
+        <ul class="wt-priority-list">${rows}</ul>
+      </section>`;
   }
 
   function renderLimitations(limitations) {
@@ -104,38 +156,122 @@
     `;
   }
 
-  function renderScannedPages(result) {
-    const pages = Array.isArray(result.scannedPages) ? result.scannedPages : [];
-    const failures = Array.isArray(result.failedScanTargets) ? result.failedScanTargets : [];
-
-    const pageItems = pages.length
-      ? pages.map((item) => `
-          <li>
-            <a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener nofollow">${escapeHtml(item.url || '')}</a>
-            <div class="wt-result-meta">
-              <span class="wt-tag" data-tone="mittel">HTTP ${escapeHtml(item.status ?? '-')}</span>
-              <span class="wt-tag" data-tone="mittel">${escapeHtml(item.loadTimeMs ?? '-')} ms</span>
-            </div>
-          </li>
-        `).join('')
-      : '<li>-</li>';
-
-    const failureItems = failures.length
-      ? `
-        <h4 style="margin-top:0.9rem;">${escapeHtml(i18n.crawlFailed || 'Crawl-Fehler')}</h4>
-        <ul class="wt-priority-list">
-          ${failures.map((entry) => `<li><strong>${escapeHtml(entry.url || '')}</strong>: ${escapeHtml(entry.message || '')}</li>`).join('')}
-        </ul>
-      `
-      : '';
-
+  function renderLeadGate() {
+    const title = i18n.lockedTitle || (locale === 'en' ? 'Detailed broken-links report (PDF)' : 'Detaillierter Broken-Links-Report (PDF)');
+    const text = i18n.lockedText || '';
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
-        <h3><i class="fa-solid fa-route"></i> ${escapeHtml(i18n.scannedPages || 'Gescannten Seiten')}</h3>
-        <ul class="wt-priority-list">${pageItems}</ul>
-        ${failureItems}
+      <section class="wt-cta-card" style="margin-top:0.9rem;">
+        <h2>${escapeHtml(title)}</h2>
+        <p>${escapeHtml(text)}</p>
+        <form class="wt-lead-form" data-broken-links-lead-form>
+          <input type="text" name="name" placeholder="${escapeHtml(i18n.leadName || 'Name (optional)')}" autocomplete="name">
+          <input type="email" name="email" placeholder="${escapeHtml(i18n.leadEmail || 'E-Mail-Adresse')}" autocomplete="email" required>
+          <label class="wt-lead-consent">
+            <input type="checkbox" name="consent" required>
+            <span>${escapeHtml(i18n.leadConsent || '')}</span>
+          </label>
+          <small class="wt-lead-legal-note">
+            <a href="${escapeHtml(i18n.privacyHref || '/datenschutz')}" target="_blank" rel="noopener">
+              ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
+            </a>
+          </small>
+          <button class="wt-button" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
+          <p class="wt-lead-state" data-broken-links-lead-state hidden></p>
+        </form>
       </section>
     `;
+  }
+
+  function bindLeadForm(result) {
+    const leadForm = resultsPanel.querySelector('[data-broken-links-lead-form]');
+    if (!leadForm) return;
+
+    const submitBtn = leadForm.querySelector('button[type="submit"]');
+    const stateBox = leadForm.querySelector('[data-broken-links-lead-state]');
+
+    leadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (stateBox) {
+        stateBox.hidden = true;
+        stateBox.textContent = '';
+        stateBox.classList.remove('is-error', 'is-success');
+      }
+
+      const payload = {
+        auditId: result.auditId,
+        email: String(leadForm.email?.value || '').trim(),
+        name: String(leadForm.name?.value || '').trim(),
+        locale,
+        consent: !!leadForm.consent?.checked
+      };
+
+      if (!payload.consent) {
+        if (stateBox) {
+          stateBox.hidden = false;
+          stateBox.classList.add('is-error');
+          stateBox.textContent = i18n.leadError || 'Die Broken-Links-Report-Anfrage konnte nicht verarbeitet werden.';
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.label = submitBtn.textContent;
+        submitBtn.textContent = i18n.leadLoading || 'Wird gesendet...';
+      }
+
+      try {
+        const response = await fetch(leadEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || i18n.leadError || 'Die Broken-Links-Report-Anfrage konnte nicht verarbeitet werden.');
+        }
+
+        if (stateBox) {
+          stateBox.hidden = false;
+          stateBox.classList.add('is-success');
+          stateBox.textContent = data.message || i18n.leadSuccess || '';
+        }
+
+        trackEvent('broken_links_tester_lead_requested', { locale });
+        leadForm.reset();
+      } catch (error) {
+        if (stateBox) {
+          stateBox.hidden = false;
+          stateBox.classList.add('is-error');
+          stateBox.textContent = error.message || i18n.leadError || 'Die Broken-Links-Report-Anfrage konnte nicht verarbeitet werden.';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.label || (i18n.leadSubmit || 'Bestätigungslink senden');
+        }
+      }
+    });
+  }
+
+  function bindCtaTracking() {
+    const links = resultsPanel.querySelectorAll('[data-tester-cta], [data-bl-cta]');
+    links.forEach((anchor) => {
+      anchor.addEventListener('click', function onClick() {
+        trackEvent('broken_links_tester_cta_clicked', {
+          locale,
+          tester: anchor.getAttribute('data-tester-cta') || 'broken',
+          cta_type: anchor.getAttribute('data-tester-action')
+            || anchor.getAttribute('data-bl-cta')
+            || 'unknown'
+        });
+      }, { once: true });
+    });
   }
 
   function renderResult(result) {
@@ -175,13 +311,17 @@
         </section>
       </div>
 
-      ${renderScannedPages(result)}
+      ${renderTopPagesSummary(result)}
       ${renderLimitations(result.limitations)}
-      ${renderDetailsTable(i18n.brokenListTitle || 'Broken-Links Details', result.brokenLinks || [], i18n.noBroken || 'Keine defekten Links gefunden.')}
-      ${renderDetailsTable(i18n.warningsListTitle || 'Warnings Details', result.warnings || [], i18n.noWarnings || 'Keine Warnungen gefunden.')}
+
+      ${renderLeadGate()}
+
+      ${renderNextStepCard(result)}
     `;
 
     resultsPanel.hidden = false;
+    bindLeadForm(result);
+    bindCtaTracking();
     resultAnchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

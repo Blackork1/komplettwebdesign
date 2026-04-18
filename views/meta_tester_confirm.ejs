@@ -1,19 +1,96 @@
 <%- include('partials/head') %>
 <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<%
+  function pkgForBand(band, en) {
+    const b = String(band || '').toLowerCase();
+    if (b === 'kritisch' || b === 'critical') {
+      return { title: en ? 'Relaunch recommended' : 'Relaunch empfohlen',
+        text: en ? 'Your meta/social base needs fundamental work. Let us plan a relaunch with you.'
+                 : 'Deine Meta-/Social-Basis braucht grundlegende Arbeit. Wir planen einen Relaunch mit dir.',
+        href: en ? '/en/pakete' : '/pakete',
+        label: en ? 'View website packages' : 'Zu den Webdesign-Paketen' };
+    }
+    if (b === 'mittel' || b === 'medium') {
+      return { title: en ? 'Targeted optimization' : 'Gezielte Optimierung',
+        text: en ? 'A structured meta/SEO sprint lifts your snippets and social shares.'
+                 : 'Ein strukturierter Meta-/SEO-Sprint hebt deine Snippets und Social-Shares.',
+        href: en ? '/en/leistungen' : '/leistungen',
+        label: en ? 'View optimization services' : 'Zu den Optimierungs-Leistungen' };
+    }
+    return { title: en ? 'Fine-tuning & growth' : 'Feinschliff & Wachstum',
+      text: en ? 'Your base is strong. We help you polish details and pull ahead of competitors.'
+               : 'Deine Basis ist stark. Wir helfen dir, Details zu polieren und Wettbewerbern davonzuziehen.',
+      href: en ? '/en/leistungen' : '/leistungen',
+      label: en ? 'See how we can help' : 'Beratungsleistungen ansehen' };
+  }
+  const bookingBase = confirmView?.links?.booking || (isEn ? '/en/booking' : '/booking');
+  const bookingParams = ['src=meta-tester'];
+  if (confirmView?.lead?.domain) bookingParams.push('domain=' + encodeURIComponent(confirmView.lead.domain));
+  if (confirmView?.lead?.score_band) bookingParams.push('score=' + encodeURIComponent(confirmView.lead.score_band));
+  const bookingHref = bookingBase + (bookingBase.includes('?') ? '&' : '?') + bookingParams.join('&');
+%>
 <body class="website-tester-page">
   <%- include('partials/header') %>
   <main id="hero"><link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
-    <section class="wt-hero"><div class="wt-shell"><article class="wt-panel" style="max-width:820px;margin:0 auto;">
+    <section class="wt-hero"><div class="wt-shell"><article class="wt-panel" style="max-width:820px;margin:0 auto; padding:1.3rem;">
       <span class="wt-eyebrow"><i class="fa-solid fa-envelope-open-text"></i> Meta Tester Report</span>
       <% const status = confirmView?.status || 'invalid'; %>
-      <h1><%= isEn ? 'Email confirmation status' : 'Status deiner E-Mail-Bestätigung' %></h1>
-      <p class="wt-lead"><%= confirmView?.message || '' %></p>
-      <div class="wt-result-meta">
-        <span class="wt-tag" data-tone="<%= status === 'success' ? 'gut' : (status === 'already_used' ? 'mittel' : 'kritisch') %>"><%= status %></span>
+      <% const tone = status === 'success' ? 'gut' : (status === 'already_used' ? 'mittel' : 'kritisch'); %>
+      <h1 style="margin-top:0.8rem; font-size:clamp(1.6rem,3.8vw,2.2rem);">
+        <%= isEn
+          ? (status === 'success' ? 'Email confirmed. Your detailed meta report is on its way.' : 'Email confirmation status')
+          : (status === 'success' ? 'E-Mail bestätigt. Dein detaillierter Meta-Report ist unterwegs.' : 'Status deiner E-Mail-Bestätigung') %>
+      </h1>
+      <p class="wt-lead" style="margin-top:0.7rem;"><%= confirmView?.message || '' %></p>
+      <div class="wt-result-meta" style="margin-top:0.6rem;">
+        <span class="wt-tag" data-tone="<%= tone %>"><%= status %></span>
+        <% if (confirmView?.lead?.domain) { %><span class="wt-tag" data-tone="mittel"><%= confirmView.lead.domain %></span><% } %>
+        <% if (confirmView?.lead?.score_band) { %><span class="wt-tag" data-tone="mittel"><%= isEn ? 'Score band' : 'Score-Band' %>: <%= confirmView.lead.score_band %></span><% } %>
       </div>
       <div class="wt-cta-actions" style="margin-top:1rem;">
-        <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/meta' : '/website-tester/meta') %>"><%= isEn ? 'Back to Meta Tester' : 'Zurück zum Meta-Tester' %></a>
+        <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/meta' : '/website-tester/meta') %>">
+          <i class="fa-solid fa-arrow-left"></i> <%= isEn ? 'Back to Meta Tester' : 'Zurück zum Meta-Tester' %>
+        </a>
+        <a class="wt-button-secondary" href="<%= confirmView?.links?.contact || (isEn ? '/en/kontakt' : '/kontakt') %>">
+          <%= isEn ? 'Contact / Consultation' : 'Kontakt / Beratung' %>
+        </a>
       </div>
+
+      <% if (status === 'expired' || status === 'invalid' || status === 'report_failed') { %>
+        <div class="wt-error" style="margin-top:1rem;" role="status">
+          <%= isEn
+            ? 'If needed, run a new meta audit and request a new report link.'
+            : 'Falls nötig, starte bitte einen neuen Meta-Audit und fordere den Report-Link erneut an.' %>
+        </div>
+      <% } %>
+
+      <% if (status === 'success') { %>
+        <% const pkg = pkgForBand(confirmView?.lead?.score_band, isEn); %>
+        <section class="wt-cta-card wt-next-step-card" style="margin-top:1.4rem;">
+          <h2><i class="fa-solid fa-rocket"></i> <%= isEn ? 'Your next step' : 'Dein nächster Schritt' %></h2>
+          <p><%= isEn
+              ? 'Want every snippet and social share to convert? Book a free 30‑min consultation — we plan it with you.'
+              : 'Sollen alle Snippets und Social-Shares konvertieren? Buch dir ein kostenloses 30‑Min.-Gespräch – wir planen es mit dir.' %></p>
+          <div class="wt-cta-actions">
+            <a class="wt-button" href="<%= bookingHref %>"><%= isEn ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen' %></a>
+            <a class="wt-button-ghost" href="<%= pkg.href %>"><%= pkg.label %></a>
+          </div>
+          <div class="wt-next-step-package">
+            <strong><%= pkg.title %></strong>
+            <p><%= pkg.text %></p>
+          </div>
+        </section>
+
+        <section class="wt-sitefacts" style="margin-top:1rem;">
+          <h3><i class="fa-solid fa-layer-group"></i> <%= isEn ? 'Keep going with our other free testers' : 'Mach weiter mit unseren anderen kostenlosen Testern' %></h3>
+          <div class="wt-cta-actions" style="margin-top:0.6rem;">
+            <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a>
+            <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>"><%= isEn ? 'SEO Tester' : 'SEO-Tester' %></a>
+            <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>"><%= isEn ? 'GEO Tester' : 'GEO-Tester' %></a>
+            <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken-Links Tester' : 'Broken-Links-Tester' %></a>
+          </div>
+        </section>
+      <% } %>
     </article></div></section>
   </main>
   <%- include('partials/footer') %>

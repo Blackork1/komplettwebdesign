@@ -164,7 +164,8 @@ function buildConfirmViewModel({ locale, status, lead, message }) {
     lead,
     links: {
       tester: lng === 'en' ? '/en/website-tester/meta' : '/website-tester/meta',
-      contact: lng === 'en' ? '/en/kontakt' : '/kontakt'
+      contact: lng === 'en' ? '/en/kontakt' : '/kontakt',
+      booking: lng === 'en' ? '/en/booking' : '/booking'
     }
   };
 }
@@ -239,9 +240,10 @@ export async function confirmMetaTesterLeadToken({ token, locale }) {
     return buildConfirmViewModel({ locale: existing.locale, status: 'expired', lead: existing, message: copy.errors.tokenExpired });
   }
 
+  // Atomic consume: null return after pre-check passed = another click won the race.
   const consumed = await consumeWebsiteTesterLeadConfirmToken(tokenHash);
   if (!consumed) {
-    return buildConfirmViewModel({ locale: existing.locale, status: 'invalid', lead: existing, message: copy.errors.tokenInvalid });
+    return buildConfirmViewModel({ locale: existing.locale, status: 'already_used', lead: existing, message: copy.messages.alreadyUsed });
   }
 
   const result = getCachedMetaAuditResult(consumed.audit_id) || consumed.audit_snapshot_json || null;

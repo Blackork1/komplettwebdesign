@@ -1,4 +1,6 @@
 import { auditWebsite } from './websiteAuditService.js';
+import { createAuditCache } from '../util/testerAuditCache.js';
+import { runGeoSpecificChecks } from './geoSpecificChecks.js';
 
 const DEFAULT_MAX_SUBPAGES = 5;
 const MIN_MAX_SUBPAGES = 1;
@@ -59,7 +61,7 @@ const I18N = {
   }
 };
 
-const geoAuditCache = new Map();
+const geoAuditCache = createAuditCache({ ttlMs: CACHE_TTL_MS, label: 'geo' });
 
 function localeFrom(rawLocale) {
   return rawLocale === 'en' ? 'en' : 'de';
@@ -84,26 +86,11 @@ function modeProfile(mode) {
   };
 }
 
-function cleanupGeoAuditCache(now = Date.now()) {
-  for (const [key, value] of geoAuditCache.entries()) {
-    if (!value || value.expiresAt <= now) {
-      geoAuditCache.delete(key);
-    }
-  }
-}
-
 function setCachedGeoAudit(auditId, publicResult, detailedResult) {
-  cleanupGeoAuditCache();
-  geoAuditCache.set(auditId, {
-    publicResult,
-    detailedResult,
-    expiresAt: Date.now() + CACHE_TTL_MS
-  });
+  geoAuditCache.set(auditId, { publicResult, detailedResult });
 }
 
 export function getCachedGeoAuditResult(auditId) {
-  if (!auditId) return null;
-  cleanupGeoAuditCache();
   const cached = geoAuditCache.get(auditId);
   return cached?.detailedResult || null;
 }
@@ -139,7 +126,7 @@ function normalizeAreaKey(value = '') {
     .replace(/^_|_$/g, '');
 }
 
-function buildGeoSignals(result, locale = 'de') {
+function buildGeoSignals(result, locale = 'de', geoExtras = null) {
   const relevance = result.relevance || {};
   const facts = result.siteFacts || {};
   const crawlStats = result.crawlStats || {};
@@ -156,7 +143,7 @@ function buildGeoSignals(result, locale = 'de') {
   const trustCitationScore = clampPercent(categoryScore(result, 'trust'));
   const internalLinkingScore = ratioPercent(crawlStats.visitedPages || 0, crawlStats.plannedPages || 0);
 
-  return {
+  const signals = {
     entitySchema: {
       score: entitySchemaScore,
       quality: signalQualityLabel(entitySchemaScore, locale)
@@ -178,6 +165,42 @@ function buildGeoSignals(result, locale = 'de') {
       quality: signalQualityLabel(internalLinkingScore, locale)
     }
   };
+
+  // GEO-native signals derived from geoSpecificChecks. These replace what was
+  // previously pure SEO-signal rebranding with actual AI-crawler / LLM-answer
+  // readiness measurements.
+  if (geoExtras) {
+    // LLM access readiness — mix of llms.txt presence and how many of the tracked
+    // LLM user agents are explicitly allowed (or not disallowed) by robots.txt.
+    const llmAgents = geoExtras.llmAgents || {};
+    const totalTracked = llmAgents.totalTracked || 1;
+    const disallowed = llmAgents.disallowed || 0;
+    const disallowRatio = Math.min(1, disallowed / totalTracked);
+    const llmAccessBase = geoExtras.llmsTxt?.present ? 55 : 35;
+    const llmAccessScore = clampPercent(Math.round(llmAccessBase + (1 - disallowRatio) * 45));
+    signals.llmAccess = {
+      score: llmAccessScore,
+      quality: signalQualityLabel(llmAccessScore, locale),
+      llmsTxtPresent: !!geoExtras.llmsTxt?.present,
+      disallowedAgents: llmAgents.disallowedAgents || []
+    };
+
+    // Structured Q&A / Organization coverage across crawled pages — direct input
+    // for how easily an LLM can cite or quote the site verbatim.
+    const pages = Math.max(1, geoExtras.pagesAnalyzed || 0);
+    const faqCoverage = Math.min(1, (geoExtras.perPageFaqCount || 0) / pages);
+    const orgCoverage = Math.min(1, (geoExtras.orgSchemaCount || 0) / pages);
+    const structuredQaScore = clampPercent(Math.round((faqCoverage * 60) + (orgCoverage * 40)));
+    signals.structuredQa = {
+      score: structuredQaScore,
+      quality: signalQualityLabel(structuredQaScore, locale),
+      faqPages: geoExtras.perPageFaqCount || 0,
+      orgSchemaPages: geoExtras.orgSchemaCount || 0,
+      totalPages: geoExtras.pagesAnalyzed || 0
+    };
+  }
+
+  return signals;
 }
 
 function buildPotentialSummary(result, locale = 'de') {
@@ -240,7 +263,7 @@ function buildPotentialSummary(result, locale = 'de') {
   };
 }
 
-function buildPublicGeoResult({ sourceResult, locale, scanMode, requestedMaxSubpages, effectiveMaxSubpages }) {
+function buildPublicGeoResult({ sourceResult, locale, scanMode, requestedMaxSubpages, effectiveMaxSubpages, geoExtras = null }) {
   const crawl = sourceResult.crawlStats || {};
   const partial = !!crawl.timeoutReached
     || (Number.isFinite(crawl.failedPages) && crawl.failedPages > 0)
@@ -267,10 +290,19 @@ function buildPublicGeoResult({ sourceResult, locale, scanMode, requestedMaxSubp
       band: sourceResult.scoreBand,
       badge: sourceResult.overallBadge
     },
-    geoSignals: buildGeoSignals(sourceResult, locale),
+    geoSignals: buildGeoSignals(sourceResult, locale, geoExtras),
     potentialSummary: buildPotentialSummary(sourceResult, locale),
     limitations: (sourceResult.limitations || []).slice(0, 6),
     lockedDetailedReport: true,
+    geoExtras: geoExtras
+      ? {
+          llmsTxt: geoExtras.llmsTxt || { present: false },
+          llmAgents: geoExtras.llmAgents || null,
+          perPageFaqCount: geoExtras.perPageFaqCount || 0,
+          orgSchemaCount: geoExtras.orgSchemaCount || 0,
+          pagesAnalyzed: geoExtras.pagesAnalyzed || 0
+        }
+      : null,
     config: {
       requestedMaxSubpages,
       effectiveMaxSubpages
@@ -298,12 +330,32 @@ export async function auditGeoWebsite({
     context
   });
 
+  // GEO-native checks: llms.txt presence + robots.txt LLM-UA parsing + per-page
+  // FAQ / Organization schema coverage. Runs after the main audit so it can reuse
+  // the already-fetched robots.txt body and analyzed-pages list. Failure here is
+  // non-fatal — we fall back to the base SEO-style signals.
+  let geoExtras = null;
+  try {
+    const analyzedPages = Array.isArray(sourceResult?.internalGuideInput?.pageAnalyses)
+      ? sourceResult.internalGuideInput.pageAnalyses
+      : [];
+    geoExtras = await runGeoSpecificChecks({
+      origin: sourceResult.finalOrigin || null,
+      robotsText: sourceResult.rawRobotsText || null,
+      analyzedPages
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[geoAudit] specific checks failed, falling back', err?.message);
+  }
+
   const publicResult = buildPublicGeoResult({
     sourceResult,
     locale: lng,
     scanMode: mode,
     requestedMaxSubpages,
-    effectiveMaxSubpages
+    effectiveMaxSubpages,
+    geoExtras
   });
 
   const detailedResult = {

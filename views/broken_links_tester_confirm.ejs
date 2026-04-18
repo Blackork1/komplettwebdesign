@@ -1,40 +1,10 @@
 <%- include('partials/head') %>
 <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
 <%
-  // Server-seitiger Paket-Vorschlag basierend auf Score-Band
-  function pkgForBand(band, en) {
-    const b = String(band || '').toLowerCase();
-    if (b === 'kritisch' || b === 'critical') {
-      return {
-        title: en ? 'Relaunch recommended' : 'Relaunch empfohlen',
-        text: en ? 'Your site has fundamental issues. A focused relaunch will get you ahead the fastest.'
-                 : 'Deine Website hat grundlegende Probleme. Ein fokussierter Relaunch bringt dich am schnellsten weiter.',
-        href: en ? '/en/pakete' : '/pakete',
-        label: en ? 'View website packages' : 'Zu den Webdesign-Paketen'
-      };
-    }
-    if (b === 'mittel' || b === 'medium') {
-      return {
-        title: en ? 'Targeted optimization' : 'Gezielte Optimierung',
-        text: en ? 'A structured SEO optimization sprint closes the biggest gaps without a full rebuild.'
-                 : 'Ein strukturierter SEO-Optimierungs-Sprint schließt die größten Lücken ohne kompletten Neuaufbau.',
-        href: en ? '/en/leistungen' : '/leistungen',
-        label: en ? 'View optimization services' : 'Zu den Optimierungs-Leistungen'
-      };
-    }
-    return {
-      title: en ? 'Fine-tuning & growth' : 'Feinschliff & Wachstum',
-      text: en ? 'Your base is strong. We help you polish details and pull ahead of competitors.'
-               : 'Deine Basis ist stark. Wir helfen dir, Details zu polieren und Wettbewerbern davonzuziehen.',
-      href: en ? '/en/leistungen' : '/leistungen',
-      label: en ? 'See how we can help' : 'Beratungsleistungen ansehen'
-    };
-  }
   const bookingBase = confirmView?.links?.booking || (isEn ? '/en/booking' : '/booking');
   const bookingParams = [];
-  bookingParams.push('src=seo-tester');
+  bookingParams.push('src=broken-links-tester');
   if (confirmView?.lead?.domain) bookingParams.push('domain=' + encodeURIComponent(confirmView.lead.domain));
-  if (confirmView?.lead?.score_band) bookingParams.push('score=' + encodeURIComponent(confirmView.lead.score_band));
   const bookingHref = bookingBase + (bookingBase.includes('?') ? '&' : '?') + bookingParams.join('&');
 %>
 <body class="website-tester-page">
@@ -48,7 +18,7 @@
         <article class="wt-panel" style="padding:1.3rem; max-width:840px; margin:0 auto;">
           <span class="wt-eyebrow">
             <i class="fa-solid fa-envelope-open-text"></i>
-            SEO Tester Report
+            <%= isEn ? 'Broken-Links Tester Report' : 'Broken-Links-Tester Report' %>
           </span>
 
           <% const status = confirmView?.status || 'invalid'; %>
@@ -56,8 +26,8 @@
 
           <h1 style="margin-top:0.8rem; font-size:clamp(1.6rem,3.8vw,2.2rem);">
             <%= isEn
-              ? (status === 'success' ? 'Email confirmed. Your detailed SEO report is on its way.' : 'Email confirmation status')
-              : (status === 'success' ? 'E-Mail bestätigt. Dein detaillierter SEO-Report ist unterwegs.' : 'Status deiner E-Mail-Bestätigung') %>
+              ? (status === 'success' ? 'Email confirmed. Your detailed broken-links report is on its way.' : 'Email confirmation status')
+              : (status === 'success' ? 'E-Mail bestätigt. Dein detaillierter Broken-Links-Report ist unterwegs.' : 'Status deiner E-Mail-Bestätigung') %>
           </h1>
 
           <p class="wt-lead" style="margin-top:0.7rem;"><%= confirmView?.message || '' %></p>
@@ -67,15 +37,12 @@
             <% if (confirmView?.lead?.domain) { %>
               <span class="wt-tag" data-tone="mittel"><%= confirmView.lead.domain %></span>
             <% } %>
-            <% if (confirmView?.lead?.score_band) { %>
-              <span class="wt-tag" data-tone="mittel"><%= isEn ? 'Score band' : 'Score-Band' %>: <%= confirmView.lead.score_band %></span>
-            <% } %>
           </div>
 
           <div class="wt-cta-actions" style="margin-top:1rem;">
-            <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/seo' : '/website-tester/seo') %>">
+            <a class="wt-button" href="<%= confirmView?.links?.tester || (isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links') %>">
               <i class="fa-solid fa-arrow-left"></i>
-              <%= isEn ? 'Back to SEO Tester' : 'Zurück zum SEO-Tester' %>
+              <%= isEn ? 'Back to Broken-Links Tester' : 'Zurück zum Broken-Links-Tester' %>
             </a>
             <a class="wt-button-secondary" href="<%= confirmView?.links?.contact || (isEn ? '/en/kontakt' : '/kontakt') %>">
               <%= isEn ? 'Contact / Consultation' : 'Kontakt / Beratung' %>
@@ -85,27 +52,24 @@
           <% if (status === 'expired' || status === 'invalid' || status === 'report_failed') { %>
             <div class="wt-error" style="margin-top:1rem;" role="status">
               <%= isEn
-                ? 'If needed, run a new SEO audit and request a new report link.'
-                : 'Falls nötig, starte bitte einen neuen SEO-Audit und fordere den Report-Link erneut an.' %>
+                ? 'If needed, run a new broken-links scan and request a new report link.'
+                : 'Falls nötig, starte bitte einen neuen Broken-Links-Scan und fordere den Report-Link erneut an.' %>
             </div>
           <% } %>
 
           <% if (status === 'success') { %>
-            <% const pkg = pkgForBand(confirmView?.lead?.score_band, isEn); %>
             <section class="wt-cta-card wt-next-step-card" style="margin-top:1.4rem;">
               <h2><i class="fa-solid fa-rocket"></i> <%= isEn ? 'Your next step' : 'Dein nächster Schritt' %></h2>
               <p><%= isEn
-                  ? 'Want to turn the report into measurable SEO growth? Book a free 30‑min consultation — we plan the next three months with you.'
-                  : 'Willst du aus dem Report planbares SEO-Wachstum machen? Buch dir ein kostenloses 30‑Min.-Gespräch – wir planen die nächsten drei Monate mit dir.' %></p>
+                  ? 'Want every broken link fixed fast and a process to keep your site clean long-term? We prioritize it with you.'
+                  : 'Willst du alle defekten Links schnell beheben und einen Prozess, der deine Website langfristig sauber hält? Wir priorisieren es gemeinsam mit dir.' %></p>
               <div class="wt-cta-actions">
                 <a class="wt-button" href="<%= bookingHref %>">
                   <%= isEn ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen' %>
                 </a>
-                <a class="wt-button-ghost" href="<%= pkg.href %>"><%= pkg.label %></a>
-              </div>
-              <div class="wt-next-step-package">
-                <strong><%= pkg.title %></strong>
-                <p><%= pkg.text %></p>
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/leistungen' : '/leistungen' %>">
+                  <%= isEn ? 'View optimization services' : 'Zu den Optimierungs-Leistungen' %>
+                </a>
               </div>
             </section>
 
@@ -113,9 +77,9 @@
               <h3><i class="fa-solid fa-layer-group"></i> <%= isEn ? 'Keep going with our other free testers' : 'Mach weiter mit unseren anderen kostenlosen Testern' %></h3>
               <div class="wt-cta-actions" style="margin-top:0.6rem;">
                 <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a>
+                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>"><%= isEn ? 'SEO Tester' : 'SEO-Tester' %></a>
                 <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>"><%= isEn ? 'GEO Tester' : 'GEO-Tester' %></a>
                 <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>"><%= isEn ? 'Meta Tester' : 'Meta-Tester' %></a>
-                <a class="wt-button-ghost" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken-Links Tester' : 'Broken-Links-Tester' %></a>
               </div>
             </section>
           <% } %>
@@ -133,20 +97,12 @@
 
       var status = "<%= confirmView?.status || 'unknown' %>";
       var locale = "<%= isEn ? 'en' : 'de' %>";
-      var score = "<%= confirmView?.lead?.score_band || 'unknown' %>";
 
       if (status === 'success') {
-        window.gtag('event', 'seo_tester_lead_confirmed', {
-          locale: locale,
-          score_bucket: score
-        });
-        window.gtag('event', 'seo_tester_report_sent', {
-          locale: locale,
-          score_bucket: score
-        });
+        window.gtag('event', 'broken_links_tester_lead_confirmed', { locale: locale });
+        window.gtag('event', 'broken_links_tester_report_sent', { locale: locale });
       }
     })();
   </script>
 </body>
 </html>
-

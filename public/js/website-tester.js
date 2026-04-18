@@ -39,6 +39,35 @@
     }
   }
 
+  function buildCtxUrl(href, result) {
+    const utils = window.TesterUtils || {};
+    const domain = typeof utils.extractDomain === 'function' ? utils.extractDomain(result || '') : '';
+    const score = typeof utils.pickScore === 'function' ? utils.pickScore(result) : null;
+    const ctx = { src: 'website-tester', domain, score };
+    const targetHref = href || '/kontakt';
+    if (/\/booking/i.test(targetHref) && typeof utils.buildBookingUrl === 'function') {
+      return utils.buildBookingUrl(targetHref, ctx);
+    }
+    if (typeof utils.buildContactUrl === 'function') {
+      return utils.buildContactUrl(targetHref, ctx);
+    }
+    return targetHref;
+  }
+
+  function renderPackageTeaser(result) {
+    const utils = window.TesterUtils || {};
+    if (typeof utils.buildPackageSuggestion !== 'function' || typeof utils.pickScore !== 'function') return '';
+    const score = utils.pickScore(result);
+    const pkg = utils.buildPackageSuggestion(score, locale);
+    if (!pkg || !pkg.title) return '';
+    return `
+      <div class="wt-next-step-package" style="margin-top:0.65rem;">
+        <strong>${escapeHtml(pkg.title)}</strong>
+        <p>${escapeHtml(pkg.text || '')}</p>
+        <a class="wt-button wt-button-secondary" data-tester-cta="website" data-tester-action="package" href="${escapeHtml(pkg.href || '/leistungen')}">${escapeHtml(pkg.label || (locale === 'en' ? 'View packages' : 'Pakete ansehen'))}</a>
+      </div>`;
+  }
+
   function setProgress(step) {
     progressItems.forEach((item, index) => {
       item.classList.toggle('is-active', index === step);
@@ -228,10 +257,17 @@
     const anchors = resultsPanel.querySelectorAll('[data-tester-cta]');
     anchors.forEach((anchor) => {
       anchor.addEventListener('click', () => {
+        // Unified CTA schema: data-tester-cta = tester name (website|seo|geo|
+        // meta|broken), data-tester-action = action (booking|contact|package|…).
+        // For back-compat with older analytics that keyed on cta_type = action,
+        // we keep emitting cta_type too.
+        const testerName = anchor.getAttribute('data-tester-cta') || 'website';
+        const action = anchor.getAttribute('data-tester-action') || testerName;
         trackEvent('tester_cta_clicked', {
           locale,
           score_bucket: result.scoreBand || 'unknown',
-          cta_type: anchor.getAttribute('data-tester-cta') || 'unknown'
+          tester: testerName,
+          cta_type: action
         });
       }, { once: true });
     });
@@ -388,9 +424,10 @@
           <article class="wt-next-card">
             <h3>${escapeHtml(i18n.consultationTitle || 'Ergebnis gemeinsam priorisieren')}</h3>
             <p>${escapeHtml(i18n.consultationText || '')}</p>
-            <a class="wt-button" data-tester-cta="primary" href="${escapeHtml(result.cta?.primaryHref || '/kontakt')}">
+            <a class="wt-button" data-tester-cta="website" data-tester-action="primary" href="${escapeHtml(buildCtxUrl(result.cta?.primaryHref || '/kontakt', result))}">
               ${escapeHtml(result.cta?.primaryLabel || i18n.consultationButton || 'Beratung buchen')}
             </a>
+            ${renderPackageTeaser(result)}
           </article>
 
           <article class="wt-next-card">

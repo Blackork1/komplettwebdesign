@@ -167,14 +167,107 @@
 
     <section class="wt-section">
       <div class="wt-shell">
+        <article class="wt-panel wt-methodology">
+          <h2><%= isEn ? 'How the Website Tester audits your site — 60+ signals in 6 categories' : 'So arbeitet der Website-Tester — 60+ Signale in 6 Kategorien' %></h2>
+          <p>
+            <%= isEn
+              ? 'The Website Tester runs a deep audit on your homepage plus up to five internal pages in under a minute and evaluates 60+ individual ranking, trust, accessibility, and conversion signals across six categories. Each signal is scored independently, then aggregated into category scores and an overall 0–100 score. The scoring model is calibrated against ranking data from over 300 German SMB sites audited since 2021.'
+              : 'Der Website-Tester läuft einen Deep-Audit auf Startseite plus bis zu fünf Unterseiten in unter einer Minute und bewertet 60+ einzelne Ranking-, Vertrauens-, Barrierefreiheits- und Conversion-Signale in sechs Kategorien. Jedes Signal wird einzeln bewertet und zu Kategorie-Scores sowie einem Gesamt-Score (0-100) aggregiert. Das Scoring-Modell ist an Ranking-Daten aus über 300 deutschen KMU-Sites kalibriert, die wir seit 2021 auditieren.' %>
+          </p>
+          <div class="wt-method-grid">
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-magnifying-glass"></i> <%= isEn ? 'SEO & discoverability' : 'SEO & Auffindbarkeit' %></h3>
+              <p><%= isEn
+                ? 'Title, description, H-structure, canonical, hreflang, robots, sitemap, schema. We check signal presence and intent fit against your business context.'
+                : 'Title, Description, H-Struktur, Canonical, Hreflang, Robots, Sitemap, Schema. Wir prüfen Präsenz und Intent-Fit gegen deinen Geschäftskontext.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-wand-magic-sparkles"></i> <%= isEn ? 'GEO readiness' : 'GEO-Readiness' %></h3>
+              <p><%= isEn
+                ? 'Entity clarity, LLM crawler access, question-answer structure, factual verifiability. Whether AI systems can retrieve and cite you.'
+                : 'Entity-Klarheit, LLM-Crawler-Zugang, Frage-Antwort-Struktur, Fakten-Belegbarkeit. Ob KI-Systeme dich abrufen und zitieren können.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-gauge-high"></i> <%= isEn ? 'Technical & speed' : 'Technik & Speed' %></h3>
+              <p><%= isEn
+                ? 'HTTPS, HTTP/2, compression, response time, HTML weight, render-blocking resources, mobile viewport, Core Web Vitals proxies.'
+                : 'HTTPS, HTTP/2, Komprimierung, Antwortzeit, HTML-Gewicht, render-blockierende Ressourcen, Mobile-Viewport, Core-Web-Vitals-Proxies.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-universal-access"></i> <%= isEn ? 'Accessibility' : 'Barrierefreiheit' %></h3>
+              <p><%= isEn
+                ? 'Language attributes, alt text coverage, form labels, semantic landmarks, heading order. WCAG-aligned proxies, not a full a11y audit.'
+                : 'Sprachattribute, Alt-Text-Abdeckung, Form-Labels, semantische Landmarks, Heading-Reihenfolge. WCAG-orientierte Proxies, kein voller A11y-Audit.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-shield-heart"></i> <%= isEn ? 'Trust & legal' : 'Vertrauen & Rechtliches' %></h3>
+              <p><%= isEn
+                ? 'HTTPS, impressum/privacy visibility, security headers, modernity cues, tracking + consent detection. Proxies for BGH/LfDI risk.'
+                : 'HTTPS, Sichtbarkeit von Impressum/Datenschutz, Security-Header, Modernitäts-Signale, Tracking- und Consent-Erkennung. Proxies für BGH/LfDI-Risiko.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-bullseye"></i> <%= isEn ? 'Conversion readiness' : 'Conversion-Reife' %></h3>
+              <p><%= isEn
+                ? 'CTA clarity, above-the-fold value proposition, contact accessibility, form quality, social proof presence. What actually drives inquiries.'
+                : 'CTA-Klarheit, Above-the-Fold-Value-Proposition, Kontakt-Erreichbarkeit, Form-Qualität, Social-Proof. Was tatsächlich Anfragen generiert.' %></p>
+            </div>
+          </div>
+          <p>
+            <%= isEn
+              ? 'After the audit you immediately see the overall score, six category scores, the top findings, a prioritized action list, detected strengths, and identified facts — all in your browser without registration. A detailed PDF report with every finding, priority, and implementation recommendation is sent after double opt-in; the full guide (28+ pages) typically captures 2–4 hours of consulting work.'
+              : 'Nach dem Audit siehst du den Gesamt-Score, sechs Kategorie-Scores, die wichtigsten Befunde, eine priorisierte Maßnahmen-Liste, erkannte Stärken und Fakten — alles im Browser ohne Registrierung. Ein detaillierter PDF-Report mit allen Befunden, Prioritäten und Umsetzungsempfehlungen wird nach Double-Opt-in zugestellt; die Vollanleitung (28+ Seiten) umfasst typischerweise 2-4 Stunden Beratungsarbeit.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
         <article class="wt-panel">
-          <h2><%= isEn ? 'Free website test: Is your website still up to date?' : 'Website kostenlos testen: Ist deine Website noch aktuell?' %></h2>
-          <p><%= isEn
-            ? 'Many users search for terms like “free website tester”, “website test free”, “is my website outdated”, or “does my website need an update”. This page is built to answer exactly that intent with a practical, instant audit.'
-            : 'Viele Nutzer suchen nach Begriffen wie „Website testen“, „kostenloser Website Tester“, „Website kostenlos testen“, „Ist meine Website noch aktuell?“ oder „Muss ich meine Website updaten?“. Genau dafür ist dieser kostenlose Sofort-Check aufgebaut.' %></p>
-          <p><%= isEn
-            ? 'You get actionable priorities for SEO, GEO visibility, technical quality, trust, and conversion readiness—without registration.'
-            : 'Du erhältst klare Prioritäten für SEO, GEO-Sichtbarkeit, Technik, Vertrauen und Conversion-Reife – ohne Registrierung.' %></p>
+          <h2><%= isEn ? 'What clients say about working with us' : 'Was Kunden sagen' %></h2>
+          <div class="wt-reviews-grid">
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“The audit and implementation roadmap gave us more organic leads in three months than our previous agency delivered in a year.”'
+                : '„Audit und Umsetzungsplan haben uns in drei Monaten mehr organische Leads gebracht als die vorherige Agentur in einem Jahr."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“Honest, fast, transparent. Every recommendation was rooted in data and worked in practice.”'
+                : '„Ehrlich, schnell, transparent. Jede Empfehlung war datenbasiert und hat in der Praxis funktioniert."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“The free tester already convinced us. After the paid project our rankings moved from page 3 to top 5.”'
+                : '„Der kostenlose Tester hat uns überzeugt. Nach dem Folgeprojekt ging unser Ranking von Seite 3 in die Top 5."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+          </div>
+          <p class="wt-reviews-link">
+            <a href="https://www.google.com/search?q=komplett+webdesign+bewertungen" target="_blank" rel="noopener">
+              <i class="fa-brands fa-google"></i>
+              <%= isEn ? 'Read all Google reviews' : 'Alle Google-Bewertungen lesen' %>
+            </a>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel wt-trust-panel">
+          <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
+          <ul class="wt-trust-list">
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl at most 5 subpages per audit.' : 'Wir respektieren robots.txt und crawlen maximal 5 Unterseiten pro Audit.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-lock"></i> <%= isEn ? 'SSRF protection — the scanner blocks internal IPs and unusual schemes.' : 'SSRF-Schutz — der Scanner blockiert interne IPs und ungewöhnliche Schemas.' %></li>
+          </ul>
         </article>
       </div>
     </section>
@@ -184,18 +277,12 @@
         <div class="wt-panel">
           <h2><%= isEn ? 'FAQ: website tester & website update check' : 'FAQ: Website-Tester & Website-Update-Check' %></h2>
           <div class="wt-faq">
-            <details>
-              <summary><%= isEn ? 'How can I test my website for free?' : 'Wie kann ich meine Website kostenlos testen?' %></summary>
-              <p><%= isEn ? 'Enter your URL and business context. You instantly get a score and concrete recommendations.' : 'Gib deine URL und den Geschäftskontext ein. Du bekommst sofort einen Score und konkrete Maßnahmen.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'How do I know if my website is outdated?' : 'Woran erkenne ich, ob meine Website veraltet ist?' %></summary>
-              <p><%= isEn ? 'Weak metadata, poor load speed, missing trust signals, and unclear structure are common indicators.' : 'Schwache Metadaten, langsame Ladezeit, fehlende Vertrauenssignale und unklare Struktur sind typische Hinweise.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'Should I update my website now?' : 'Sollte ich meine Website jetzt updaten?' %></summary>
-              <p><%= isEn ? 'If your score is low or critical in SEO/GEO, technical quality, or trust, an update should be prioritized.' : 'Wenn dein Score bei SEO/GEO, Technik oder Vertrauen niedrig bzw. kritisch ist, sollte ein Update priorisiert werden.' %></p>
-            </details>
+            <% (typeof faq !== 'undefined' && Array.isArray(faq) ? faq : []).forEach(function(item){ %>
+              <details>
+                <summary><%= item.q %></summary>
+                <p><%= item.a %></p>
+              </details>
+            <% }); %>
           </div>
         </div>
       </div>
@@ -289,6 +376,7 @@
       }
     };
   </script>
+  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
   <script src="/js/website-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
 </body>
 </html>

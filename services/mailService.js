@@ -655,7 +655,13 @@ export async function sendMetaTesterDoiMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Please confirm your email" : "Bitte bestätige deine E-Mail",
+            preheader: lng === "en" ? "One click to receive your meta report." : "Ein Klick, damit wir dir den Meta-Report senden können.",
+            bodyHtml: html
+        })
     });
 }
 
@@ -709,10 +715,153 @@ export async function sendMetaTesterReportMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
         subject,
-        html,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your meta report is ready" : "Dein Meta-Report ist bereit",
+            preheader: lng === "en" ? "Your PDF is attached to this email." : "Dein PDF findest du im Anhang.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
         attachments: [
             {
                 filename: report?.filename || "meta-audit-report.pdf",
+                content: report?.buffer,
+                contentType: "application/pdf"
+            }
+        ]
+    };
+
+    const adminNotify = String(process.env.WEBSITE_TESTER_ADMIN_NOTIFY || "").trim();
+    if (adminNotify) {
+        mail.bcc = adminNotify;
+    }
+
+    return transporter.sendMail(mail);
+}
+
+export async function sendBrokenLinksTesterDoiMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    brokenCount = 0,
+    confirmUrl = "",
+    expiresAt = null
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const expiry = wtPrettyDate(expiresAt, lng);
+    const subject = lng === "en"
+        ? "Confirm your email for your detailed broken-links report + newsletter"
+        : "Bitte bestätige deine E-Mail für Broken-Links-Report + Newsletter";
+
+    const countLabel = Number.isFinite(Number(brokenCount)) ? Number(brokenCount) : 0;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>you requested the detailed broken-links report for <strong>${domain || "your website"}</strong> (${countLabel} broken link(s) detected).</p>
+      <p>Please confirm your email address to unlock and receive the full list (source page, target URL, HTTP status, fix hint):</p>
+      <p><a href="${confirmUrl}">Confirm email and send broken-links report</a></p>
+      ${expiry ? `<p>This link is valid until <strong>${expiry}</strong>.</p>` : ""}
+      <p>After confirmation, your address is added to our newsletter so we can share practical website-quality tips.</p>
+      <p>If you did not request this, you can ignore this email.</p>
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>du hast den detaillierten Broken-Links-Report für <strong>${domain || "deine Website"}</strong> (${countLabel} defekte Links erkannt) angefordert.</p>
+      <p>Bitte bestätige deine E-Mail-Adresse, damit wir dir die vollständige Liste senden können (Quellseite, Ziel-URL, HTTP-Status, Fix-Hinweis):</p>
+      <p><a href="${confirmUrl}">E-Mail bestätigen und Broken-Links-Report senden</a></p>
+      ${expiry ? `<p>Der Link ist gültig bis <strong>${expiry}</strong>.</p>` : ""}
+      <p>Nach der Bestätigung wird deine Adresse in unseren Newsletter aufgenommen, damit wir dir weitere praktische Website-Qualitäts-Tipps senden können.</p>
+      <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail einfach.</p>
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Please confirm your email" : "Bitte bestätige deine E-Mail",
+            preheader: lng === "en" ? "One click to receive your broken-links report." : "Ein Klick, damit wir dir den Broken-Links-Report senden können.",
+            bodyHtml: html
+        })
+    });
+}
+
+export async function sendBrokenLinksTesterReportMail({
+    to,
+    name,
+    locale = "de",
+    domain = "",
+    brokenCount = 0,
+    warningCount = 0,
+    report,
+    unsubscribeToken = ""
+}) {
+    const lng = wtLocale(locale);
+    const person = String(name || "").trim() || (lng === "en" ? "there" : "dir");
+    const broken = Number.isFinite(Number(brokenCount)) ? Number(brokenCount) : 0;
+    const warnings = Number.isFinite(Number(warningCount)) ? Number(warningCount) : 0;
+
+    const subject = lng === "en"
+        ? "Your detailed broken-links report (PDF)"
+        : "Dein detaillierter Broken-Links-Report (PDF)";
+
+    const base = testerBaseUrl();
+    const contactUrl = `${base}${lng === "en" ? "/en/kontakt" : "/kontakt"}`;
+    const bookingUrl = `${base}/booking`;
+
+    const html = lng === "en"
+        ? `
+      <p>Hello ${person},</p>
+      <p>here is your detailed broken-links report for <strong>${domain || "your website"}</strong>.</p>
+      <p>Summary: <strong>${broken}</strong> broken link(s), <strong>${warnings}</strong> warning(s).</p>
+      <p>The PDF attached to this email lists every finding with source page, target URL, HTTP status, and a fix hint.</p>
+      <p>If you want, we can prioritize the fixes with you in a short consultation:</p>
+      <ul>
+        <li><a href="${contactUrl}">Contact form</a></li>
+        <li><a href="${bookingUrl}">Book a consultation call</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Best regards<br>Komplett Webdesign</p>
+    `
+        : `
+      <p>Hallo ${person},</p>
+      <p>hier ist dein detaillierter Broken-Links-Report für <strong>${domain || "deine Website"}</strong>.</p>
+      <p>Zusammenfassung: <strong>${broken}</strong> defekte Links, <strong>${warnings}</strong> Warnungen.</p>
+      <p>Im PDF im Anhang findest du jeden Fund mit Quellseite, Ziel-URL, HTTP-Status und Fix-Hinweis.</p>
+      <p>Wenn du möchtest, priorisieren wir die Behebung gemeinsam in einem kurzen Beratungsgespräch:</p>
+      <ul>
+        <li><a href="${contactUrl}">Zum Kontaktformular</a></li>
+        <li><a href="${bookingUrl}">Beratungstermin buchen</a></li>
+      </ul>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: lng === "en" ? "Your broken-links report is ready" : "Dein Broken-Links-Report ist bereit",
+            preheader: lng === "en" ? "Your PDF is attached to this email." : "Dein PDF findest du im Anhang.",
+            bodyHtml: html,
+            ctaLabel: lng === "en" ? "Book consultation" : "Beratung buchen",
+            ctaUrl: bookingUrl
+        }),
+        attachments: [
+            {
+                filename: report?.filename || "broken-links-report.pdf",
                 content: report?.buffer,
                 contentType: "application/pdf"
             }
@@ -841,4 +990,135 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
         })
     };
     return transporter.sendMail(mail);
+}
+
+/* ------------------------------------------------------------------
+ * Tester-Drip Mails (+48h Vollanleitung + Termin, +7d Case-Study + CTA)
+ * Ein Template je Phase, dynamisch über source/domain/scoreBand.
+ * ------------------------------------------------------------------ */
+
+function sourceLabel(source, locale = "de") {
+    const isEn = wtLocale(locale) === "en";
+    const map = isEn
+        ? { website: "Website Tester", seo: "SEO Tester", geo: "GEO Tester", meta: "Meta Tester", "broken-links": "Broken-Links Tester" }
+        : { website: "Website-Tester", seo: "SEO-Tester", geo: "GEO-Tester", meta: "Meta-Tester", "broken-links": "Broken-Links-Tester" };
+    return map[String(source || "").toLowerCase()] || (isEn ? "Website Tester" : "Website-Tester");
+}
+
+/**
+ * +48h Follow-up: Vollanleitung-Teaser + Termin-Link mit Kontext.
+ */
+export async function sendTesterDrip48hMail({
+    to,
+    name,
+    locale = "de",
+    source = "website",
+    domain = "",
+    scoreBand = "mittel",
+    unsubscribeToken = ""
+} = {}) {
+    const lng = wtLocale(locale);
+    const isEn = lng === "en";
+    const person = String(name || "").trim() || (isEn ? "there" : "dir");
+    const srcLabel = sourceLabel(source, lng);
+    const base = testerBaseUrl();
+    const bookingUrl = `${base}${isEn ? "/en/booking" : "/booking"}?src=${encodeURIComponent(source)}-tester${domain ? `&domain=${encodeURIComponent(domain)}` : ""}${scoreBand ? `&score=${encodeURIComponent(scoreBand)}` : ""}`;
+    const servicesUrl = `${base}${isEn ? "/en/leistungen" : "/leistungen"}`;
+    const subject = isEn
+        ? `Ready for the full playbook for ${domain || "your website"}?`
+        : `Bereit für die volle Anleitung zu ${domain || "deiner Website"}?`;
+
+    const bodyHtml = isEn ? `
+      <p>Hello ${person},</p>
+      <p>two days ago you received your free ${srcLabel} report${domain ? ` for <strong>${safeHtml(domain)}</strong>` : ""}. Did you get a chance to look through it?</p>
+      <p>If you'd like the <strong>full implementation playbook</strong> — including exact priorities, owners and a 90-day sequence — I'm happy to prepare it for you as a personalised PDF.</p>
+      <p>Alternatively, we can cut straight to the point in a <strong>free 30-minute call</strong>. Pick a slot that works for you:</p>
+      <p><a href="${bookingUrl}">Book a free consultation</a></p>
+      <p>Or browse our services: <a href="${servicesUrl}">${servicesUrl}</a></p>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Best regards<br>Komplett Webdesign</p>
+    ` : `
+      <p>Hallo ${person},</p>
+      <p>vor zwei Tagen hast du deinen kostenlosen ${srcLabel}-Report${domain ? ` für <strong>${safeHtml(domain)}</strong>` : ""} erhalten. Konntest du schon reinschauen?</p>
+      <p>Falls du die <strong>vollständige Umsetzungs-Anleitung</strong> haben möchtest – inklusive konkreter Prioritäten, Verantwortlichkeiten und einem 90-Tage-Plan – stelle ich dir gerne eine personalisierte PDF zusammen.</p>
+      <p>Alternativ sprechen wir in einem <strong>kostenlosen 30-Min.-Gespräch</strong> direkt Klartext. Such dir einfach einen passenden Slot:</p>
+      <p><a href="${bookingUrl}">Kostenloses Erstgespräch buchen</a></p>
+      <p>Oder stöbere direkt in den Leistungen: <a href="${servicesUrl}">${servicesUrl}</a></p>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: isEn ? "Ready for the next step?" : "Bereit für den nächsten Schritt?",
+            preheader: isEn
+                ? "Full playbook + a free 30-min call with a clear plan."
+                : "Volle Anleitung + ein kostenloses 30-Min.-Gespräch mit klarem Plan.",
+            bodyHtml
+        })
+    });
+}
+
+/**
+ * +7d Case-Study + Erinnerungs-CTA.
+ */
+export async function sendTesterDrip7dMail({
+    to,
+    name,
+    locale = "de",
+    source = "website",
+    domain = "",
+    scoreBand = "mittel",
+    unsubscribeToken = ""
+} = {}) {
+    const lng = wtLocale(locale);
+    const isEn = lng === "en";
+    const person = String(name || "").trim() || (isEn ? "there" : "dir");
+    const srcLabel = sourceLabel(source, lng);
+    const base = testerBaseUrl();
+    const bookingUrl = `${base}${isEn ? "/en/booking" : "/booking"}?src=${encodeURIComponent(source)}-tester${domain ? `&domain=${encodeURIComponent(domain)}` : ""}${scoreBand ? `&score=${encodeURIComponent(scoreBand)}` : ""}`;
+    const ratgeberUrl = `${base}${isEn ? "/en/ratgeber" : "/ratgeber"}`;
+    const subject = isEn
+        ? `A quick case study + your next step for ${domain || "your site"}`
+        : `Kurze Case-Study + dein nächster Schritt für ${domain || "deine Website"}`;
+
+    const bodyHtml = isEn ? `
+      <p>Hello ${person},</p>
+      <p>a quick update a week after your ${srcLabel} report:</p>
+      <p>Clients who acted on the top three priorities from a tester report typically saw <strong>measurable changes within 4–8 weeks</strong> — more qualified visitors, better snippets, fewer wasted clicks.</p>
+      <p>If you'd like to plan the same path for ${domain ? `<strong>${safeHtml(domain)}</strong>` : "your site"}, let's talk in a free 30-min call:</p>
+      <p><a href="${bookingUrl}">Book a free consultation</a></p>
+      <p>More stories, tips and checklists: <a href="${ratgeberUrl}">${ratgeberUrl}</a></p>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Best regards<br>Komplett Webdesign</p>
+    ` : `
+      <p>Hallo ${person},</p>
+      <p>eine Woche nach deinem ${srcLabel}-Report kurz ein Blick in die Praxis:</p>
+      <p>Kundinnen und Kunden, die die Top-3-Prioritäten aus einem Tester-Report umgesetzt haben, berichten typischerweise von <strong>messbaren Effekten innerhalb von 4–8 Wochen</strong> – mehr qualifizierte Besuchende, bessere Snippets, weniger verlorene Klicks.</p>
+      <p>Falls du denselben Weg für ${domain ? `<strong>${safeHtml(domain)}</strong>` : "deine Website"} gehen willst, lass uns in einem kostenlosen 30-Min.-Gespräch planen:</p>
+      <p><a href="${bookingUrl}">Kostenloses Erstgespräch buchen</a></p>
+      <p>Mehr Stories, Tipps und Checklisten: <a href="${ratgeberUrl}">${ratgeberUrl}</a></p>
+      ${newsletterHintHtml({ locale: lng, unsubscribeToken })}
+      <p>Beste Grüße<br>Komplett Webdesign</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html: renderBrandEmail({
+            locale: lng,
+            subject,
+            headline: isEn ? "Your next step — made simple" : "Dein nächster Schritt – einfach gemacht",
+            preheader: isEn
+                ? "A short case study and a 30-min call that moves the needle."
+                : "Eine kurze Case-Study und ein 30-Min.-Gespräch, das etwas bewegt.",
+            bodyHtml
+        })
+    });
 }

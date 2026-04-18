@@ -98,6 +98,56 @@
     return items.map((entry) => `<li>${escapeHtml(entry)}</li>`).join('');
   }
 
+  function renderNextStepCard(result) {
+    const utils = window.TesterUtils || {};
+    const domain = typeof utils.extractDomain === 'function' ? utils.extractDomain(result?.finalUrl || '') : '';
+    const scoreValue = typeof utils.pickScore === 'function'
+      ? utils.pickScore(result)
+      : (Number.isFinite(result?.seoScore?.overall) ? result.seoScore.overall : null);
+    const score = Number.isFinite(scoreValue) ? scoreValue : null;
+    const bookingBase = (i18n.bookingHref || '/booking');
+    const contactBase = (i18n.contactHref || '/kontakt');
+    const bookingUrl = typeof utils.buildBookingUrl === 'function'
+      ? utils.buildBookingUrl(bookingBase, { src: 'seo-tester', domain, score })
+      : bookingBase;
+    const contactUrl = typeof utils.buildContactUrl === 'function'
+      ? utils.buildContactUrl(contactBase, { src: 'seo-tester', domain, score })
+      : contactBase;
+    const pkg = typeof utils.buildPackageSuggestion === 'function'
+      ? utils.buildPackageSuggestion(score, locale)
+      : null;
+
+    const headline = i18n.nextStepTitle || (locale === 'en' ? 'Your next step' : 'Dein nächster Schritt');
+    const intro = i18n.nextStepIntro || (locale === 'en'
+      ? 'Ready to turn these insights into measurable SEO growth? Let’s plan it together.'
+      : 'Lust, aus diesen Erkenntnissen planbares SEO-Wachstum zu machen? Wir planen es gemeinsam.');
+    const bookingLabel = i18n.bookingCtaLabel || (locale === 'en' ? 'Book a free SEO consultation' : 'Kostenloses SEO-Erstgespräch buchen');
+    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+
+    let pkgBlock = '';
+    if (pkg && pkg.title) {
+      const pkgHref = pkg.href || '/leistungen';
+      pkgBlock = `
+        <div class="wt-next-step-package">
+          <strong>${escapeHtml(pkg.title)}</strong>
+          <p>${escapeHtml(pkg.text || '')}</p>
+          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkgHref)}" data-tester-cta="seo" data-tester-action="package" data-seo-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+        </div>`;
+    }
+
+    return `
+      <section class="wt-cta-card wt-next-step-card">
+        <h2><i class="fa-solid fa-rocket"></i> ${escapeHtml(headline)}</h2>
+        <p>${escapeHtml(intro)}</p>
+        <div class="wt-cta-actions">
+          <a class="wt-button" href="${escapeHtml(bookingUrl)}" data-tester-cta="seo" data-tester-action="booking" data-seo-cta="booking">${escapeHtml(bookingLabel)}</a>
+          <a class="wt-button wt-button-ghost" href="${escapeHtml(contactUrl)}" data-tester-cta="seo" data-tester-action="contact" data-seo-cta="contact">${escapeHtml(contactLabel)}</a>
+        </div>
+        ${pkgBlock}
+      </section>
+    `;
+  }
+
   function bindLeadForm(result) {
     const leadForm = resultsPanel.querySelector('[data-seo-lead-form]');
     if (!leadForm) return;
@@ -179,13 +229,18 @@
   }
 
   function bindCtaTracking(result) {
-    const links = resultsPanel.querySelectorAll('[data-seo-cta]');
+    // Query by the unified attribute (data-tester-cta) with a fallback to the
+    // legacy per-tester attribute for any CTAs rendered from older code paths.
+    const links = resultsPanel.querySelectorAll('[data-tester-cta], [data-seo-cta]');
     links.forEach((anchor) => {
       anchor.addEventListener('click', function onClick() {
         trackEvent('seo_tester_cta_clicked', {
           locale,
           score_bucket: result?.seoScore?.band || 'unknown',
-          cta_type: anchor.getAttribute('data-seo-cta') || 'unknown'
+          tester: anchor.getAttribute('data-tester-cta') || 'seo',
+          cta_type: anchor.getAttribute('data-tester-action')
+            || anchor.getAttribute('data-seo-cta')
+            || 'unknown'
         });
       }, { once: true });
     });
@@ -256,14 +311,7 @@
         </form>
       </section>
 
-      <section class="wt-cta-card" style="margin-top:0.9rem;">
-        <h2>${escapeHtml(i18n.ctaTitle || 'SEO-Befunde direkt in Ergebnisse verwandeln')}</h2>
-        <p>${escapeHtml(i18n.ctaText || '')}</p>
-        <div class="wt-result-meta">
-          <a class="wt-button" href="${escapeHtml(i18n.contactHref || '/kontakt')}" data-seo-cta="primary">${escapeHtml(i18n.ctaPrimary || 'Beratung anfragen')}</a>
-          <a class="wt-button-secondary" href="/booking" data-seo-cta="secondary">${escapeHtml(i18n.ctaSecondary || 'Termin buchen')}</a>
-        </div>
-      </section>
+      ${renderNextStepCard(result)}
     `;
 
     resultsPanel.hidden = false;

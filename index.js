@@ -27,6 +27,7 @@ import {
   deleteExpiredUnbooked,
   deleteExpiredWebsiteTesterPendingLeads
 } from './services/cleanupService.js';
+import { runTesterDripOnce } from './services/testerDripService.js';
 
 
 import mainRoutes from './routes/main.js';
@@ -258,6 +259,18 @@ if (isProd) {
       await deleteExpiredWebsiteTesterPendingLeads(14);
     } catch (err) {
       console.error('Cron Fehler:', err);
+    }
+  });
+
+  /* Tester-Drip (+48h / +7d) stündlich verarbeiten */
+  cron.schedule('7 * * * *', async () => {
+    try {
+      const summary = await runTesterDripOnce({ batch48h: 50, batch7d: 50 });
+      if (summary.processed48h || summary.processed7d || summary.errors.length) {
+        console.log('[tester-drip]', JSON.stringify(summary));
+      }
+    } catch (err) {
+      console.error('Tester-Drip Cron Fehler:', err);
     }
   });
 }

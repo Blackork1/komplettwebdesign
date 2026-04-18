@@ -22,12 +22,48 @@ export const validate = [
   body('g-recaptcha-response').isString().notEmpty().withMessage('reCAPTCHA fehlt'),
 ];
 
-export async function listSlots(_req, res) {
+export async function listSlots(req, res) {
   const slots = await Apt.getOpenSlots();
+
+  // Locale kann per Route-Param (/en/booking) oder Query (?lng=en) kommen.
+  const lng = (req.params?.lng === 'en' || req.query?.lng === 'en' || req.path.startsWith('/en/')) ? 'en' : 'de';
+  const isEn = lng === 'en';
+
+  // Audit-Kontext aus Query-Parametern für Booking-Banner.
+  // Wird von den Tester-CTAs mitgegeben, z.B.:
+  //   /booking?src=seo-tester&domain=example.com&score=47
+  const rawSrc = String(req.query?.src || '').slice(0, 40);
+  const rawDomain = String(req.query?.domain || '').slice(0, 180);
+  const rawScore = String(req.query?.score || '').slice(0, 5);
+  const scoreNum = Number.parseInt(rawScore, 10);
+  const cleanDomain = /^[a-z0-9.\-:/_]+$/i.test(rawDomain) ? rawDomain : '';
+  const srcLabels = isEn ? {
+    'website-tester': 'Website Tester',
+    'seo-tester': 'SEO Tester',
+    'geo-tester': 'GEO Tester',
+    'meta-tester': 'Meta Tester',
+    'broken-links-tester': 'Broken-Links Tester'
+  } : {
+    'website-tester': 'Website-Tester',
+    'seo-tester': 'SEO-Tester',
+    'geo-tester': 'GEO-Tester',
+    'meta-tester': 'Meta-Tester',
+    'broken-links-tester': 'Broken-Links-Tester'
+  };
+  const booking_context = (rawSrc || cleanDomain || Number.isFinite(scoreNum)) ? {
+    src: srcLabels[rawSrc] || (rawSrc ? rawSrc.replace(/[^a-z0-9\- ]/gi, '').slice(0, 40) : ''),
+    domain: cleanDomain,
+    score: Number.isFinite(scoreNum) && scoreNum >= 0 && scoreNum <= 100 ? scoreNum : null
+  } : null;
+
   res.render('booking', {
-    title: 'Termin buchen',
+    lng,
+    title: isEn ? 'Book a consultation' : 'Termin buchen',
     slots,
-    description: 'Wählen Sie einen Termin für Ihre Buchung aus.',
+    description: isEn
+      ? 'Pick a free consultation slot that works for you.'
+      : 'Wählen Sie einen Termin für Ihre Buchung aus.',
+    booking_context
   });
 }
 

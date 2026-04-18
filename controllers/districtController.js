@@ -968,9 +968,9 @@ export function renderWebdesignBerlinHub(req, res) {
       // besser als Array (konsistent, erweiterbar)
       "areaServed": [{ "@type": "City", "name": "Berlin" }],
 
-      "hasMap": "https://www.google.com/maps?cid=8211653702753166064",
+      "hasMap": "https://www.google.com/maps?cid=8211853018206635760",
       "sameAs": [
-        "https://www.google.com/maps?cid=8211653702753166064",
+        "https://www.google.com/maps?cid=8211853018206635760",
         "https://www.linkedin.com/in/komplettwebdesign",
         "https://instagram.com/komplettwebdesign",
         "https://www.facebook.com/profile.php?id=61579580713573",

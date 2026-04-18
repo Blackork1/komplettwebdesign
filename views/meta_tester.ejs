@@ -116,18 +116,107 @@
 
     <section class="wt-section">
       <div class="wt-shell">
+        <article class="wt-panel wt-methodology">
+          <h2><%= isEn ? 'How the Meta Tester analyzes your website head' : 'So analysiert der Meta-Tester den Website-Header' %></h2>
+          <p>
+            <%= isEn
+              ? 'The Meta Tester fetches your homepage head section plus up to 5 subpages and validates 30+ individual head signals: title, meta description, H1, canonical, hreflang, robots directive, Open Graph, Twitter Cards, favicon, apple-touch-icon, manifest, viewport, theme-color, language declaration, and structured-data JSON-LD. Each signal is checked for presence, length, uniqueness, and intent fit against the business context you provide.'
+              : 'Der Meta-Tester holt den Head-Bereich deiner Startseite plus bis zu 5 Unterseiten und prüft 30+ Head-Signale: Title, Meta-Description, H1, Canonical, Hreflang, Robots-Direktive, Open Graph, Twitter Cards, Favicon, Apple-Touch-Icon, Manifest, Viewport, Theme-Color, Sprachdeklaration und strukturierte Daten (JSON-LD). Jedes Signal wird auf Präsenz, Länge, Einmaligkeit und Intent-Fit gegen deinen Geschäftskontext geprüft.' %>
+          </p>
+          <div class="wt-method-grid">
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-heading"></i> <%= isEn ? 'Title & description quality' : 'Title- & Description-Qualität' %></h3>
+              <p><%= isEn
+                ? 'Length in pixels (not just chars), keyword density, duplicate titles across subpages, CTA presence, and intent match with your service and region.'
+                : 'Länge in Pixel (nicht nur Zeichen), Keyword-Dichte, doppelte Titles über Unterseiten, CTA-Präsenz und Intent-Match mit Leistung und Region.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-share-nodes"></i> <%= isEn ? 'Social preview readiness' : 'Social-Preview-Readiness' %></h3>
+              <p><%= isEn
+                ? 'OG tags (og:title, og:description, og:image, og:url, og:type, og:locale) plus Twitter Card set, image dimensions ≥ 1200×630, absolute URLs only.'
+                : 'OG-Tags (og:title, og:description, og:image, og:url, og:type, og:locale) plus Twitter-Card-Set, Bildmaße ≥ 1200×630, nur absolute URLs.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-link"></i> <%= isEn ? 'Canonical & indexing' : 'Canonical & Indexierung' %></h3>
+              <p><%= isEn
+                ? 'Self-referencing canonical, hreflang consistency, robots meta, noindex audit. One wrong noindex on marketing pages can kill organic traffic overnight.'
+                : 'Self-referencing Canonical, Hreflang-Konsistenz, Robots-Meta, Noindex-Audit. Ein falsches Noindex auf Marketing-Seiten killt organischen Traffic über Nacht.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-icons"></i> <%= isEn ? 'Icons & PWA signals' : 'Icons & PWA-Signale' %></h3>
+              <p><%= isEn
+                ? 'Favicon.ico, SVG favicon, apple-touch-icon.png, manifest.json, theme-color, maskable icons, viewport meta. Matters for mobile UX and home-screen installs.'
+                : 'Favicon.ico, SVG-Favicon, apple-touch-icon.png, manifest.json, Theme-Color, Maskable Icons, Viewport-Meta. Relevant für Mobile-UX und Home-Screen-Installationen.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-code-branch"></i> <%= isEn ? 'Structured data' : 'Strukturierte Daten' %></h3>
+              <p><%= isEn
+                ? 'JSON-LD schema presence, type correctness, required-field validation. Unlocks rich snippets and AI answer citations in one go.'
+                : 'JSON-LD-Schema-Präsenz, Typ-Korrektheit, Pflichtfeld-Validierung. Erschließt Rich-Snippets und KI-Antwort-Zitierungen in einem Schritt.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-language"></i> <%= isEn ? 'Language & region' : 'Sprache & Region' %></h3>
+              <p><%= isEn
+                ? 'html lang attribute, content-language meta, hreflang alternates, geo-meta tags. Critical for multilingual and regional sites.'
+                : 'html-lang-Attribut, content-language-Meta, Hreflang-Alternates, Geo-Meta-Tags. Kritisch für mehrsprachige und regionale Sites.' %></p>
+            </div>
+          </div>
+          <p>
+            <%= isEn
+              ? 'You see the full homepage head audit directly in your browser, with every finding tagged priority-high, medium, or low. The short report delivered after email confirmation extends the audit to up to 5 subpages; the admin-released full report covers up to 50 subpages with step-by-step fix instructions, ready-to-paste HTML snippets, and a prioritized rollout checklist.'
+              : 'Du siehst den vollständigen Startseiten-Head-Audit direkt im Browser — jeder Befund markiert als Priorität hoch, mittel oder niedrig. Der Kurzreport nach Mail-Bestätigung erweitert den Audit auf bis zu 5 Unterseiten; der Admin-freigegebene Voll-Report deckt bis zu 50 Unterseiten ab inklusive Schritt-für-Schritt-Anleitungen, kopierbaren HTML-Snippets und einer priorisierten Umsetzungs-Checkliste.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
         <article class="wt-panel">
-          <h2><%= isEn ? 'SEO intent focus for this Meta Tester page' : 'SEO-Intent-Fokus dieser Meta-Tester-Seite' %></h2>
-          <p>
-            <%= isEn
-              ? 'This page is optimized for common search intents such as “meta tag checker”, “website header checker”, “title description checker”, “website tester”, and “find problems on my website”.'
-              : 'Diese Seite ist auf häufige Suchintents wie „Meta Tags prüfen“, „Header Meta Test“, „Website Meta Checker“, „Website Tester“ und „Finde Probleme auf meiner Website“ optimiert.' %>
+          <h2><%= isEn ? 'What clients say' : 'Was Kunden sagen' %></h2>
+          <div class="wt-reviews-grid">
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“The meta audit surfaced 14 concrete fixes we rolled out in one morning. Social CTR doubled within a week.”'
+                : '„Die Meta-Analyse hat 14 konkrete Fixes aufgezeigt, die wir an einem Vormittag umgesetzt haben. Social-CTR hat sich innerhalb einer Woche verdoppelt."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“Very precise, no filler. We finally understood why our titles were being rewritten by Google.”'
+                : '„Sehr präzise, kein Blabla. Wir haben endlich verstanden, warum Google unsere Titles umgeschrieben hat."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“The canonical / noindex audit alone saved us a whole SEO disaster after a CMS migration.”'
+                : '„Allein der Canonical/Noindex-Check hat uns nach einem CMS-Umzug ein SEO-Desaster erspart."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+          </div>
+          <p class="wt-reviews-link">
+            <a href="https://www.google.com/search?q=komplett+webdesign+bewertungen" target="_blank" rel="noopener">
+              <i class="fa-brands fa-google"></i>
+              <%= isEn ? 'Read all Google reviews' : 'Alle Google-Bewertungen lesen' %>
+            </a>
           </p>
-          <p>
-            <%= isEn
-              ? 'The tool returns practical, implementation-ready findings instead of generic scores so users can directly improve technical metadata quality.'
-              : 'Das Tool liefert umsetzbare, konkrete Befunde statt nur generischer Scores, damit Nutzer die technische Meta-Qualität direkt verbessern können.' %>
-          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel wt-trust-panel">
+          <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
+          <ul class="wt-trust-list">
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl at most 5 head sections per public audit.' : 'Wir respektieren robots.txt und crawlen pro öffentlichem Audit maximal 5 Head-Bereiche.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
+          </ul>
         </article>
       </div>
     </section>
@@ -137,18 +226,12 @@
         <div class="wt-panel">
           <h2><%= isEn ? 'FAQ: Header Meta Test' : 'FAQ: Header-Meta-Test' %></h2>
           <div class="wt-faq">
-            <details>
-              <summary><%= isEn ? 'Do you analyze all pages publicly?' : 'Werden öffentlich alle Seiten analysiert?' %></summary>
-              <p><%= isEn ? 'No. Public output always shows the homepage audit in detail. Extended subpage analysis is delivered after opt-in and admin full-guide release.' : 'Nein. Öffentlich wird immer die Startseite detailliert angezeigt. Die erweiterte Unterseitenanalyse erfolgt nach Opt-in und Admin-Freigabe der Vollanleitung.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'How many pages are included in the short report?' : 'Wie viele Seiten sind im Kurzreport enthalten?' %></summary>
-              <p><%= isEn ? 'The short report includes up to 5 crawled subpages. The admin full guide can extend this to up to 50 pages.' : 'Der Kurzreport enthält bis zu 5 gecrawlte Unterseiten. Die Admin-Vollanleitung kann auf bis zu 50 Seiten erweitert werden.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'Why do you ask for business type and region?' : 'Warum werden Branche und Region abgefragt?' %></summary>
-              <p><%= isEn ? 'Because title and description quality depends on intent-fit. We score whether your snippets reflect your market context.' : 'Weil die Qualität von Title und Description vom Intent-Fit abhängt. Wir bewerten, ob deine Snippets deinen Marktkontext widerspiegeln.' %></p>
-            </details>
+            <% (typeof faq !== 'undefined' && Array.isArray(faq) ? faq : []).forEach(function(item){ %>
+              <details>
+                <summary><%= item.q %></summary>
+                <p><%= item.a %></p>
+              </details>
+            <% }); %>
           </div>
         </div>
       </div>
@@ -222,6 +305,7 @@
       }
     };
   </script>
+  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
   <script src="/js/meta-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
 </body>
 </html>

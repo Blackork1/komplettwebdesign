@@ -1,34 +1,54 @@
 <%
+// Avatar-Helfer: deterministische Initialen + Farbe aus dem Namen.
+// DSGVO-sicher (kein externer Service), generiert pro Person ein unverwechselbares Bild.
+//
+// hasAvatar(): prüft, ob eine Avatar-URL als "echt" gilt.
+// - leerer String, Whitespace, relative Default-Pfade (/images/avatar*.*, /images/default*.*,
+//   /images/user*.*, /uploads/default*.*) werden als fehlend behandelt
+// - nur http(s)-URLs oder /uploads/-Pfade mit konkretem Dateinamen zählen als echter Avatar
+function hasAvatar(url) {
+  if (!url || typeof url !== 'string') return false;
+  const u = url.trim();
+  if (!u) return false;
+  // Absolute URLs (http/https) gelten als echt
+  if (/^https?:\/\//i.test(u)) return true;
+  // Relative Pfade mit bekannten Platzhalter-Namen → ignorieren
+  if (/\/(default|placeholder|avatar[-_]?default|user[-_]?default|no[-_]?avatar)/i.test(u)) return false;
+  // Alles andere akzeptieren (/uploads/max.webp etc.)
+  return true;
+}
+function avatarInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().replace(/[^\p{L}\p{N}\s&.-]/gu, '').split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase().slice(0, 2);
+}
+function avatarColor(name) {
+  const palette = [
+    '#1e3a8a', '#0f766e', '#b45309', '#9f1239', '#047857',
+    '#c2410c', '#0e7490', '#6b21a8', '#475569', '#be185d'
+  ];
+  let sum = 0;
+  for (const ch of (name || '')) sum = (sum + ch.charCodeAt(0)) % 9973;
+  return palette[sum % palette.length];
+}
+
+// FAQ-Schema wird aus dem gleichen Datenobjekt erzeugt, das auch sichtbar auf der Seite gerendert wird –
+// Google fordert für FAQPage-Rich-Results, dass die Fragen on-page sichtbar sind.
+const faqEntries = (typeof faq !== 'undefined' && Array.isArray(faq)) ? faq : [];
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqEntries.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a }
+  }))
+};
 const structuredDataRaw = `<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": "Wie schnell bin ich sichtbar?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Deine Landingpage kann in 30 Tagen live gehen. Erste lokale Rankings und Anfragen sind oft innerhalb weniger Wochen möglich – abhängig von Wettbewerb und Inhalten."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Was kostet eine Website?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Welche Leistungen sind im Preis enthalten?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Alle Pakete beinhalten: Individuelles Webdesign, responsive Umsetzung, SEO-Grundoptimierung, DSGVO-konforme Rechtstexte, SSL-Zertifikat und persönlichen Support."
-        }
-      }
-    ]
-  }
+  ${JSON.stringify(faqSchema)}
 </script>
 
 <script type="application/ld+json">
@@ -75,7 +95,7 @@ const structuredDataRaw = `<script type="application/ld+json">
       "https://www.threads.com/@komplettwebdesign",
       "https://www.tiktok.com/@komplett.webdesign",
       "https://www.linkedin.com/in/komplettwebdesign",
-      "https://www.google.com/maps?cid=8211653702753166064"
+      "https://www.google.com/maps?cid=8211853018206635760"
     ],
     "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
@@ -188,7 +208,7 @@ const structuredDataRaw = `<script type="application/ld+json">
   }
 </script>`;
 %>
-<%- include('partials/head', { structuredDataRaw }) %>
+<%- include('partials/head', { structuredDataRaw, alternateUrls: (typeof alternateUrls !== 'undefined' ? alternateUrls : null) }) %>
 <% const isEn = lng === 'en'; %>
 <style>
   .linkColor {
@@ -284,6 +304,242 @@ const structuredDataRaw = `<script type="application/ld+json">
       grid-template-columns: 1fr;
     }
   }
+
+  /* ---------- Trust-Sektion ---------- */
+  .trust-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+  }
+
+  .trust-summary-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .trust-score-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+  }
+
+  .trust-score-stars i,
+  .trust-review-stars i {
+    color: #f5b301;
+    margin-right: 1px;
+  }
+
+  .trust-summary-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.95rem;
+  }
+
+  .trust-reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .trust-review-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .trust-review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .trust-review-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .trust-review-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .trust-review-avatar--initials,
+  .review-avatar--initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-family: "Poppins", "Inter", system-ui, -apple-system, sans-serif;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .trust-review-avatar--initials {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .review-avatar--initials {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .trust-review-author {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .trust-review-stars {
+    font-size: 0.85rem;
+  }
+
+  .trust-review-source {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .trust-review-content {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #333;
+    border-left: 3px solid var(--color-primary);
+    padding-left: 0.85rem;
+  }
+
+  .trust-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+  }
+
+  .trust-empty {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px dashed rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .trust-empty h3 {
+    margin-top: 0;
+  }
+
+  /* ---------- FAQ-Sektion ---------- */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+
+  .faq-item {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 0 1.25rem;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .faq-item[open] {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    font-weight: 600;
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    color: #222;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq-question::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-chevron {
+    transition: transform 0.2s ease;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .faq-item[open] .faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    padding: 0 0 1rem;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .faq-answer p {
+    margin: 0;
+  }
+
+  .faq-more-help {
+    margin-top: 1.5rem;
+    color: #555;
+  }
+
+  @media (max-width: 600px) {
+    .trust-summary {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .trust-summary-score {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .trust-review-content {
+      font-size: 0.9rem;
+    }
+
+    .faq-question {
+      font-size: 0.98rem;
+    }
+  }
 </style>
 
 <body>
@@ -354,7 +610,7 @@ const structuredDataRaw = `<script type="application/ld+json">
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left">
             <h2 class="animate-on-scroll ">
-              <strong><%= copy.introTitleStrong %></strong> - <%= copy.introTitleRest %> <br><span class="brand">Komplett Webdesign</span>
+              <strong><%= copy.introTitleStrong %></strong> <%= copy.introTitleRest %> <br><span class="brand">Komplett Webdesign</span>
             </h2>
             <div class="readable animate-on-scroll">
               <p>
@@ -376,17 +632,18 @@ const structuredDataRaw = `<script type="application/ld+json">
               </p>
               <p>
                 <% if (isEn) { %>
-                I support clients from a wide range of industries. Our
-                focus includes websites for restaurants,
-                trades, cafes, real estate agents, as well as daycares and schools. Based on our
-                experience, we know each industry's specific requirements
-                and implement them in a targeted way so your new website performs well with your audience.
+                I support clients across a wide range of industries. My
+                focus includes websites for restaurants, trades,
+                cafés, real estate agents as well as daycares and schools. Thanks to my
+                experience I know the specific requirements of each
+                industry and implement them in a targeted way – so your new website
+                reaches your audience effectively.
                 <% } else { %>
-                Ich betreue Kunden aus verschiedensten Branchen. Unser
-                Schwerpunkt liegt unter anderen auf Webseiten für Restaurants,
-                Handwerksbetriebe, Cafés, Markler sowie Kitas und Schulen. Durch unsere
-                Erfahrung kennen wir die spezifischen Anforderungen jeder
-                Branche und setzen diese gezielt um, damit deine neue Webseite
+                Ich betreue Kunden aus verschiedensten Branchen. Mein
+                Schwerpunkt liegt unter anderem auf Webseiten für Restaurants,
+                Handwerksbetriebe, Cafés, Immobilienmakler sowie Kitas und Schulen. Durch meine
+                Erfahrung kenne ich die spezifischen Anforderungen jeder
+                Branche und setze sie gezielt um, damit deine neue Webseite
                 bei deiner Zielgruppe optimal ankommt.
                 <% } %>
               </p>
@@ -506,33 +763,33 @@ const structuredDataRaw = `<script type="application/ld+json">
               <p>
                 <% if (isEn) { %>
                 From planning and web design to SEO, maintenance, and
-                hosting, you get everything from one source.
+                hosting you get everything from one source.
                 You have one dedicated contact and do not need to
-                coordinate multiple providers - I handle everything
-                around your website. Our websites are optimized
-                technically and structurally for search engines.
+                coordinate multiple providers – I handle everything
+                around your website. My sites are optimized for
+                search engines both technically and content-wise.
                 <% } else { %>
                 Von der Planung über das Webdesign bis zu SEO, Wartung und
                 Hosting bekommst du bei mir alle Leistungen aus einer Hand.
                 Du hast einen festen Ansprechpartner und musst nicht
-                mehrere Dienstleister koordinieren - ich kümmere mich um alles
-                rund um deine Website. Unsere Websites sind technisch und
+                mehrere Dienstleister koordinieren – ich kümmere mich um alles
+                rund um deine Website. Meine Websites sind technisch und
                 inhaltlich für Suchmaschinen optimiert.
                 <% } %>
               </p>
               <p>
                 <% if (isEn) { %>
-                Right from the start, I focus on clean
+                From the very first line of code I focus on clean
                 development, fast loading times, and SEO-friendly
-                content. This helps your site perform better on Google -
+                content. This helps your site perform on Google –
                 whether it is a website for <a href="/handwerker" class="linkColor">trades</a>, <a href="/branchen/webdesign-restaurant" class="linkColor">restaurants</a>, <a href="/branchen/webdesign-immobilienmakler" class="linkColor">real estate agents</a> or other local businesses.
-                For <a href="/webdesign-berlin" class="linkColor">web design in Berlin</a>, we also offer specialized local SEO services.
+                For <a href="/webdesign-berlin" class="linkColor">web design in Berlin</a> I also offer specialized local SEO services.
                 <% } else { %>
-                Schon bei der Erstellung achten ich auf saubere
+                Schon bei der Erstellung achte ich auf saubere
                 Programmierung, schnelle Ladezeiten und SEO-freundliche
-                Inhalte. So wird deine Seite bei Google gut gefunden -
-                egal ob Webseite für <a href="/handwerker" class="linkColor">Handwerksbetriebe</a>, <a href="/branchen/webdesign-restaurant" class="linkColor">Restaurants</a>, <a href="/branchen/webdesign-immobilienmakler" class="linkColor">Markler</a> oder andere lokale Dienstleister.
-                Für <a href="/webdesign-berlin" class="linkColor">Webdesign in Berlin</a> haben wir außerdem spezialisierte Local-SEO-Angebote.
+                Inhalte. So wird deine Seite bei Google gut gefunden –
+                egal ob Webseite für <a href="/handwerker" class="linkColor">Handwerksbetriebe</a>, <a href="/branchen/webdesign-restaurant" class="linkColor">Restaurants</a>, <a href="/branchen/webdesign-immobilienmakler" class="linkColor">Immobilienmakler</a> oder andere lokale Dienstleister.
+                Für <a href="/webdesign-berlin" class="linkColor">Webdesign in Berlin</a> biete ich außerdem spezialisierte Local-SEO-Angebote.
                 <% } %>
               </p>
             </div>
@@ -540,7 +797,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="<%= isEn ? 'Image of web design layout' : 'Bild eines Designs' %>" loading="lazy" />
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="<%= isEn ? 'Sample layout of a responsive website design by Komplett Webdesign Berlin' : 'Beispiel-Layout einer responsiven Website aus Berlin von Komplett Webdesign' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Web design' : 'Webdesign' %></p>
                   </div>
                   <div class="card-back">
@@ -560,7 +817,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/code.webp" alt="<%= isEn ? 'Image of source code' : 'Bild von Code' %>" loading="lazy" />
+                    <img src="/images/code.webp" alt="<%= isEn ? 'Clean, SEO-friendly HTML source code on a developer screen' : 'Sauberer, SEO-freundlicher HTML-Quellcode auf einem Entwickler-Bildschirm' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Development' : 'Coding' %></p>
 
                   </div>
@@ -580,7 +837,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/hosting.webp" alt="<%= isEn ? 'Image of hosting hardware' : 'Bild eines Routers' %>" loading="lazy" />
+                    <img src="/images/hosting.webp" alt="<%= isEn ? 'Secure German web hosting server with fast performance for websites' : 'Sicherer deutscher Webhosting-Server für schnelle Website-Performance' %>" loading="lazy" />
                     <p class="listText">Hosting</p>
 
                   </div>
@@ -591,7 +848,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                       reliable web hosting for your website
                       <% } else { %>
                       <strong>Hosting</strong> Sicheres, leistungsstarkes und
-                      zuverlässiges Webhosting für Ihre Homepage
+                      zuverlässiges Webhosting für deine Homepage
                       <% } %>
                     </div>
                   </div>
@@ -600,7 +857,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/datenbank.webp" alt="<%= isEn ? 'Image of a database server' : 'Bild einer Datenbank' %>" loading="lazy" />
+                    <img src="/images/datenbank.webp" alt="<%= isEn ? 'Database server for efficient website data management' : 'Datenbankserver für effiziente Verwaltung von Website-Daten' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Databases' : 'Datenbanken' %></p>
                   </div>
                   <div class="card-back">
@@ -611,7 +868,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                       optimal performance
                       <% } else { %>
                       <strong>Verwaltung der Datenbanken</strong> Effiziente und
-                      sichere Pflege Ihrer Website-Datenbanken für optimale
+                      sichere Pflege deiner Website-Datenbanken für optimale
                       Performance
                       <% } %>
                     </div>
@@ -621,7 +878,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/seo.webp" alt="<%= isEn ? 'Image of search engine optimization' : 'Bild der Googlesuche' %>" loading="lazy" />
+                    <img src="/images/seo.webp" alt="<%= isEn ? 'Google search results showing higher rankings through SEO' : 'Google-Suchergebnisse mit besserer Platzierung durch SEO-Optimierung' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'SEO optimization' : 'SEO-Optimierung' %></p>
                   </div>
                   <div class="card-back">
@@ -642,7 +899,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/wartung.webp" alt="<%= isEn ? 'Image of technical maintenance work' : 'Bild eines Technikers der etwas repariert' %>" loading="lazy" />
+                    <img src="/images/wartung.webp" alt="<%= isEn ? 'Website maintenance and security updates by a technician' : 'Website-Wartung und Sicherheitsupdates durch einen Techniker' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Maintenance' : 'Wartung' %></p>
                   </div>
                   <div class="card-back">
@@ -661,7 +918,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="/images/texterstellung.webp" alt="<%= isEn ? 'Image of content writing' : 'Bild eines Buches mit Bleistift' %>" loading="lazy" />
+                    <img src="/images/texterstellung.webp" alt="<%= isEn ? 'Professional SEO copywriting for websites – notebook with pencil' : 'Professionelle SEO-Texterstellung für Webseiten – Notizbuch mit Bleistift' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Content writing' : 'Texterstellung' %></p>
                   </div>
                   <div class="card-back">
@@ -671,7 +928,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                       and SEO content for your website on request
                       <% } else { %>
                       <strong>Texterstellung</strong> Auf Wunsch professionelle
-                      Inhalte und Texte inkl. SEO-Texte für Ihre Webseite
+                      Inhalte und Texte inkl. SEO-Texte für deine Webseite
                       <% } %>
                     </div>
                   </div>
@@ -680,7 +937,7 @@ const structuredDataRaw = `<script type="application/ld+json">
               <div class="card-container">
                 <div class="card-inner">
                   <div class="card-front card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp" alt="<%= isEn ? 'Image of stock photos' : 'Bild eines Stockfotos am Laptop' %>" loading="lazy" />
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413403/admin_gallery/nc2sf5lrblvhvcsipcfz.webp" alt="<%= isEn ? 'Stock photos and custom imagery for business websites' : 'Hochwertige Stockfotos und individuelle Bildwelten für Unternehmenswebsites' %>" loading="lazy" />
                     <p class="listText"><%= isEn ? 'Stock photos' : 'Stockfotos' %></p>
                   </div>
                   <div class="card-back">
@@ -699,17 +956,17 @@ const structuredDataRaw = `<script type="application/ld+json">
             </div>
             <p class="extra-text animate-on-scroll">
               <% if (isEn) { %>
-              I do not deliver template-based web design, but
+              I do not deliver template-based web design but
               tailored solutions. Every industry has its own
-              requirements - a custom homepage for a restaurant
-              needs different functions than a website for a trade business.
+              requirements – a homepage for a restaurant needs
+              different functions than a website for a trade business.
               I know exactly what matters in your field and implement it with focus.
               <% } else { %>
-              Ich liefer kein Webdesign von der Stange, sondern
+              Ich liefere kein Webdesign von der Stange, sondern
               maßgeschneiderte Lösungen. Jede Branche hat besondere
-              Anforderungen - eine maßgeschneiderte Homepage für Restaurant
-              benötigt beispielsweise andere Funktionen als eine Website für ein Handwerksbetrieb.
-              Ich weiß genau, worauf es in deinem Bereich ankommt, und setze dies gezielt um.
+              Anforderungen – eine Homepage für ein Restaurant benötigt
+              andere Funktionen als eine Website für einen Handwerksbetrieb.
+              Ich weiß genau, worauf es in deinem Bereich ankommt, und setze das gezielt um.
               <% } %>
             </p>
           </div>
@@ -717,7 +974,10 @@ const structuredDataRaw = `<script type="application/ld+json">
       </div>
     </section>
 
-    <!-- 5) Blog + Review Section -->
+    <!-- 5) Blog + Review Section (wird nur gerendert, wenn echter Inhalt vorliegt) -->
+    <% const showBlogCard   = latestPost && !latestPost.isDefault && latestPost.slug; %>
+    <% const showReviewCard = review && !review.isDefault; %>
+    <% if (showBlogCard || showReviewCard) { %>
     <section class="section" id="blog-reviews">
       <div class="container animate-on-scroll">
         <section class="outer-wrapper">
@@ -726,36 +986,29 @@ const structuredDataRaw = `<script type="application/ld+json">
               <%= copy.blogSectionTitle %>
             </h2>
             <div class="home-grid">
+              <% if (showBlogCard) { %>
               <!-- Links: Aktueller Blog-Post (2/3) -->
               <div class="latest-blog">
                 <article class="content-card animate-on-scroll">
                   <h3><%= copy.blogCardTitle %></h3>
                   <div class="p2rem">
-                    <% const latestPostHref = latestPost.slug ? `/blog/${latestPost.slug}` : '/blog'; %>
+                    <% const latestPostHref = `/blog/${latestPost.slug}`; %>
                     <!-- Titelbild -->
                     <div class="blog-image">
                       <a href="<%= latestPostHref %>">
-                        <img src="<%= latestPost.image_url %>" alt="<%= isEn ? 'Image for article:' : 'Bild zum Artikel:' %> <%= latestPost.title %>" loading="lazy" />
+                        <img src="<%= latestPost.image_url %>" alt="<%= isEn ? 'Cover image for article:' : 'Titelbild zum Artikel:' %> <%= latestPost.title %>" loading="lazy" />
                       </a>
                     </div>
 
                     <!-- Überschrift -->
                     <h4>
-                      <a href="<%= latestPostHref %>">
-                        <%= latestPost.title %>
-                        <% if (latestPost.isDefault) { %>
-                        <small><%= copy.blogSoon %></small>
-                        <% } %>
-                      </a>
+                      <a href="<%= latestPostHref %>"><%= latestPost.title %></a>
                     </h4>
 
                     <!-- Auszug -->
-                    <p class="excerpt">
-                      <%= latestPost.excerpt %>
-                    </p>
+                    <p class="excerpt"><%= latestPost.excerpt %></p>
 
                     <!-- Datum -->
-                    <% if (!latestPost.isDefault) { %>
                     <p class="date">
                       <% const daysAgo = Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)); %>
                       <% if (lng === 'de') { %>
@@ -764,7 +1017,6 @@ const structuredDataRaw = `<script type="application/ld+json">
                         <%= daysAgo %> <%= copy.blogDaysAgo %> ago
                       <% } %>
                     </p>
-                    <% } %>
 
                     <!-- Link zum Artikel -->
                     <a href="<%= latestPostHref %>" class="btn btn-primary mb-2">
@@ -774,55 +1026,153 @@ const structuredDataRaw = `<script type="application/ld+json">
                   </div>
                 </article>
               </div>
+              <% } %>
 
+              <% if (showReviewCard) { %>
               <!-- Rechts: Kunden-Rezension (1/3) -->
               <div class="testimonial">
                 <div class="content-card animate-on-scroll">
                   <h3><%= copy.reviewCardTitle %></h3>
                   <div class="review-card">
                     <div class="p2rem">
-                      <!-- Avatar -->
-                      <img src="<%= review.avatar_url %>" alt="<%= isEn ? 'Avatar of' : 'Avatar von' %> <%= review.author %>" class="review-avatar" loading="lazy" />
+                      <!-- Avatar (mit Initialen-Fallback, wenn keine avatar_url hinterlegt ist) -->
+                      <% if (hasAvatar(review.avatar_url)) { %>
+                      <img src="<%= review.avatar_url %>" alt="<%= isEn ? 'Portrait of client' : 'Portrait des Kunden' %> <%= review.author %>" class="review-avatar" loading="lazy" />
+                      <% } else { %>
+                      <div class="review-avatar review-avatar--initials" style="background-color: <%= avatarColor(review.author) %>;" role="img" aria-label="<%= isEn ? 'Initials avatar of' : 'Initialen-Avatar von' %> <%= review.author %>">
+                        <%= avatarInitials(review.author) %>
+                      </div>
+                      <% } %>
 
                       <!-- Zitat -->
                       <blockquote>
                         <%- review.content.replace( /https?:\/\/[^\s]+/gi, match=> {
-                              // ↓ Linktext hübsch machen (https:// & www. entfernen)
                               const display = match.replace(/^https?:\/\/(www\.)?/i, '');
                               return `<a href="${match}" target="_blank" rel="noopener">${display}</a>`;
                               }
                               )
                               %>
-
                       </blockquote>
 
                       <!-- Autor -->
-                      <cite>
-                        — <%= review.author %>
-                        <% if (review.isDefault) { %>
-                        <small><%= copy.reviewSoon %></small>
-                        <% } %>
-                      </cite>
+                      <cite>— <%= review.author %></cite>
                     </div>
-                    <!-- <a class="image-review" href="https://www.zuraltenbackstube.de" aria-label="Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen." loading="lazy"></a> -->
-                    <a href="https://www.zuraltenbackstube.de" aria-label="<%= isEn ? 'Preview of the hero section from Zur Alten Backstube website.' : 'Hier ist der Hero-Bereich der Website ZurAltenBackstube zu erkennen.' %>">
+                    <a href="https://www.zuraltenbackstube.de" aria-label="<%= isEn ? 'Preview of the hero section on zuraltenbackstube.de – a reference website built by Komplett Webdesign.' : 'Vorschau des Hero-Bereichs der Website zuraltenbackstube.de – eine von Komplett Webdesign umgesetzte Referenz.' %>">
                       <picture>
-                        <!-- Desktop ab 801px -->
                         <source media="(min-width: 1050px)" srcset="/images/review-bg.webp" type="image/webp">
-
-                        <!-- Mobile bis 800px -->
                         <source media="(max-width: 1049px)" srcset="/images/review-bg-mobile.webp" type="image/webp">
-
-                        <!-- Fallback + Attribute -->
-                        <img src="/images/review-bg.webp" alt="<%= isEn ? 'Website preview image' : 'Hero Bild: Begrüßungsbild von mir' %>" fetchpriority="low" loading="lazy" decoding="async" style="width:100%;height:100%;max-height:300px;">
+                        <img src="/images/review-bg.webp" alt="<%= isEn ? 'Hero section screenshot of the zuraltenbackstube.de reference website' : 'Screenshot des Hero-Bereichs der Referenz-Website zuraltenbackstube.de' %>" fetchpriority="low" loading="lazy" decoding="async" style="width:100%;height:100%;max-height:300px;">
                       </picture>
                     </a>
                   </div>
                 </div>
               </div>
+              <% } %>
             </div>
           </div>
         </section>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- 5b) Trust-Sektion: Google-Bewertungen -->
+    <section class="section" id="trust">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <h2 class="animate-on-scroll">
+              <%= copy.trustTitle %>
+            </h2>
+            <p class="text-muted animate-on-scroll"><%= copy.trustSubline %></p>
+
+            <% const hasTrustReviews = Array.isArray(trustReviews) && trustReviews.length > 0; %>
+
+            <% if (reviewAggregate && reviewAggregate.count) { %>
+            <div class="trust-summary animate-on-scroll">
+              <div class="trust-summary-score">
+                <span class="trust-score-value"><%= reviewAggregate.avg.toFixed(1) %></span>
+                <span class="trust-score-stars" aria-hidden="true">
+                  <% const full = Math.round(reviewAggregate.avg); %>
+                  <% for (let i = 1; i <= 5; i++) { %>
+                    <i class="fas fa-star<%= i <= full ? '' : '-half-alt' %>"></i>
+                  <% } %>
+                </span>
+              </div>
+              <div class="trust-summary-meta">
+                <div><strong><%= copy.trustAverageLabel %></strong></div>
+                <div><%= reviewAggregate.count %> <%= copy.trustCountLabel %></div>
+                <div>
+                  <a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="linkColor">
+                    <%= copy.trustCtaAll %>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <% } %>
+
+            <% if (hasTrustReviews) { %>
+            <div class="trust-reviews-grid">
+              <% trustReviews.forEach((r) => { %>
+              <article class="trust-review-card animate-on-scroll" itemscope itemtype="https://schema.org/Review">
+                <meta itemprop="itemReviewed" content="Komplett Webdesign" />
+                <div class="trust-review-header">
+                  <% if (hasAvatar(r.avatar_url)) { %>
+                  <img src="<%= r.avatar_url %>"
+                       alt="<%= isEn ? 'Portrait of client' : 'Portrait des Kunden' %> <%= r.author %>"
+                       class="trust-review-avatar"
+                       loading="lazy"
+                       width="48" height="48" />
+                  <% } else { %>
+                  <div class="trust-review-avatar trust-review-avatar--initials" style="background-color: <%= avatarColor(r.author) %>;" role="img" aria-label="<%= isEn ? 'Initials avatar of' : 'Initialen-Avatar von' %> <%= r.author %>">
+                    <%= avatarInitials(r.author) %>
+                  </div>
+                  <% } %>
+                  <div>
+                    <div class="trust-review-author" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                      <span itemprop="name"><%= r.author %></span>
+                    </div>
+                    <div class="trust-review-stars" aria-label="<%= r.rating %> von 5 Sternen">
+                      <% for (let i = 1; i <= 5; i++) { %>
+                        <i class="fas fa-star<%= i <= r.rating ? '' : '-o' %>" aria-hidden="true"></i>
+                      <% } %>
+                    </div>
+                  </div>
+                  <img src="/images/icons/google-g.svg"
+                       alt="<%= isEn ? 'Google review source' : 'Quelle: Google-Bewertung' %>"
+                       class="trust-review-source"
+                       loading="lazy"
+                       width="24" height="24"
+                       onerror="this.style.display='none'" />
+                </div>
+                <blockquote class="trust-review-content" itemprop="reviewBody">
+                  <%- r.content.replace(/https?:\/\/[^\s]+/gi, (m) => `<a href="${m}" target="_blank" rel="noopener">${m.replace(/^https?:\/\/(www\.)?/i,'')}</a>`) %>
+                </blockquote>
+              </article>
+              <% }); %>
+            </div>
+            <div class="trust-actions animate-on-scroll">
+              <a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="btn btn-primary">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                <%= copy.trustCtaAll %>
+              </a>
+              <a href="<%= googleReviewUrl %>" target="_blank" rel="noopener" class="btn btn-tertiary">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+                <%= copy.trustCtaWrite %>
+              </a>
+            </div>
+            <% } else { %>
+            <!-- Noch keine Bewertungen in der DB – Platzhalter mit Link zum Google-Profil -->
+            <div class="trust-empty animate-on-scroll">
+              <h3><%= copy.trustNoReviewsHeadline %></h3>
+              <p><%= copy.trustNoReviewsLead %></p>
+              <a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="btn btn-primary">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                <%= copy.trustCtaAll %>
+              </a>
+            </div>
+            <% } %>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -837,40 +1187,39 @@ const structuredDataRaw = `<script type="application/ld+json">
             <div class="readable pb2rem animate-on-scroll">
               <p>
                 <% if (isEn) { %>
-                In just four weeks, your new website can be live and
+                In just four weeks your new website can be live and
                 customers can find you in Berlin. Choose the package that fits and start your project.
-                We have a matching package for every need, whether you need
-                a simple website, a larger company presence, or
-                a custom solution. You can find more information
-                on the <a href="/en/pakete" class="linkColor">packages</a> page.
+                I have a matching package for every need – whether you want
+                a simple website, a larger company presence or a
+                custom solution. You can find more information on the
+                <a href="/en/pakete" class="linkColor">packages</a> page.
                 <% } else { %>
                 In nur vier Wochen kannst du mit deiner neuen Webseite online
-                sein und Kunden finden dich in Berlin: Wähle das passende Paket aus und starte dein Projekt!
-                Für jeden Wunsch haben ich ein passende Paket. Egal ob du eine
+                sein und Kunden finden dich in Berlin: Wähle das passende Paket aus und starte dein Projekt.
+                Für jeden Bedarf habe ich ein passendes Paket. Egal ob du eine
                 einfache Webseite, eine umfangreiche Unternehmenspräsenz oder
-                eine individuelle Lösung benötigst. Ich haben das Richtige für
+                eine individuelle Lösung benötigst – ich habe das Richtige für
                 dich. Nähere Informationen zu den verschiedenen Angeboten
                 findest du auf der Seite <a href="/pakete" class="linkColor">Pakete</a>.
                 <% } %>
-                <!-- <a href="/pricing"></a> -->
               </p>
               <p>
                 <% if (isEn) { %>
-                Our offers are designed to cover different
+                My offers are designed to cover different
                 needs and help you get online quickly and easily.
                 Every package includes what you need to get started:
                 modern web design, responsive implementation,
-                SEO optimization, and ongoing support. This allows you
-                to focus on your core business while we take care of your
+                SEO optimization, and ongoing support. That way you
+                can focus on your core business while I take care of your
                 online presence.
                 <% } else { %>
-                Unsere Angebote sind so gestaltet, dass sie verschiedene
+                Meine Angebote sind so gestaltet, dass sie verschiedene
                 Bedürfnisse abdecken und dir helfen, schnell und unkompliziert
                 online zu gehen. Jedes Paket enthält alles, was du für den
                 Start benötigst: modernes Webdesign, responsive Umsetzung,
                 SEO-Optimierung und fortlaufenden Support. So kannst du dich
-                auf dein Kerngeschäft konzentrieren, während wir uns um deine
-                Online-Präsenz kümmern.
+                auf dein Kerngeschäft konzentrieren, während ich mich um
+                deine Online-Präsenz kümmere.
                 <% } %>
               </p>
             </div>
@@ -924,37 +1273,36 @@ const structuredDataRaw = `<script type="application/ld+json">
             <div class="readable pb2rem animate-on-scroll">
               <p>
                 <% if (isEn) { %>
-                <strong>Website development</strong> for different industries -
-                we offer tailored solutions for businesses across Germany.
-                Whether restaurant, trade business, cafe, or educational institution:
-                We have the right solution.
+                <strong>Website development</strong> for different industries –
+                I offer tailored solutions for businesses across Germany.
+                Whether restaurant, trade business, café or educational institution:
+                I have the right solution.
                 If you want to <a href="/webdesign-berlin" class="linkColor">have your website built in Berlin</a>,
-                we are the right partner for you.
+                I am the right partner for you.
                 <% } else { %>
-                <strong>Websiteerstellung</strong> für verschiedene Branchen -
-                wir bieten maßgeschneiderte Lösungen für Unternehmen deutschlandweit.
+                <strong>Websiteerstellung</strong> für verschiedene Branchen –
+                ich biete maßgeschneiderte Lösungen für Unternehmen deutschlandweit.
                 Ob Restaurant, Handwerk, Café oder Bildungseinrichtung:
-                Wir haben die passende Lösung.
+                Ich habe die passende Lösung.
                 Wenn du deine <a href="/webdesign-berlin" class="linkColor">Webseite in Berlin erstellen lassen</a>
-                möchtest, dann sind wir der richtige Partner für dich.
+                möchtest, bin ich der richtige Partner für dich.
                 <% } %>
-                <!-- <a href="/pricing"></a> -->
               </p>
               <p>
                 <% if (isEn) { %>
-                We understand the specific requirements of each industry and
-                implement them in a focused way. Our websites are not only
-                visually appealing, but also functional and user-friendly.
-                With your own professional website, you can reach your target audience
+                I understand the specific requirements of each industry and
+                implement them with focus. My websites are not only
+                visually appealing but also functional and user-friendly.
+                With your own professional website you reach your target audience
                 effectively and attract new customers. A strong first
                 impression helps people choose your business.
                 <% } else { %>
-                Wir verstehen die spezifischen Anforderungen jeder Branche und
-                setzen diese gezielt um. Unsere Webseiten sind nicht nur
+                Ich verstehe die spezifischen Anforderungen jeder Branche und
+                setze diese gezielt um. Meine Webseiten sind nicht nur
                 optisch ansprechend, sondern auch funktional und benutzerfreundlich.
-                Mit deiner eigenen professionellen Webseite kannst du deine Zielgruppe
-                effektiv ansprechen und neue Kunden gewinnen. Mit einem positiven ersten
-                Eindruck, kommen die Kunden gerne in dein Geschäft.
+                Mit deiner eigenen professionellen Webseite sprichst du deine Zielgruppe
+                effektiv an und gewinnst neue Kunden. Ein positiver erster
+                Eindruck sorgt dafür, dass Kunden gerne in dein Geschäft kommen.
                 <% } %>
               </p>
             </div>
@@ -964,11 +1312,11 @@ const structuredDataRaw = `<script type="application/ld+json">
                   <div class="card-front">
                     <p class="header3"><a href="/branchen/webdesign-restaurant" class="primaryColor"><%= isEn ? 'Restaurants' : 'Restaurants' %></a></p>
                     <p>
-                      <%= isEn ? 'We present your venue online in the best possible way - with appetizing photos, digital menus, and easy reservation options.' : 'Wir präsentieren dein Lokal online von seiner besten Seite - mit appetitanregenden Fotos, digitaler Speisekarte und unkomplizierter Reservierungsfunktion.' %>
+                      <%= isEn ? 'I present your venue online in the best possible way – with appetising photos, digital menus, and easy reservation options.' : 'Ich präsentiere dein Lokal online von seiner besten Seite – mit appetitanregenden Fotos, digitaler Speisekarte und unkomplizierter Reservierungsfunktion.' %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp" alt="<%= isEn ? 'Image of a restaurant' : 'Bild eines Restaurants' %>" loading="lazy" />
+                    <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413302/admin_gallery/mdikghhav7yyygsahmkh.webp" alt="<%= isEn ? 'Modern restaurant interior – example industry for a Berlin restaurant website' : 'Modernes Restaurant-Interieur – Beispielbranche für Webdesign Restaurant Berlin' %>" loading="lazy" />
                     <a href="/branchen/webdesign-restaurant" class="btn btn-tertiary"><%= isEn ? 'Restaurant website' : 'zur Restaurant Website' %></a>
                   </div>
                 </div>
@@ -983,7 +1331,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/handwerker-min.webp" alt="<%= isEn ? 'Image of a tradesperson' : 'Bild eines Handwerkers' %>" loading="lazy" />
+                    <img src="/images/handwerker-min.webp" alt="<%= isEn ? 'Tradesperson at work – example industry for trades websites from Berlin' : 'Handwerker bei der Arbeit – Beispielbranche für Handwerker-Websites aus Berlin' %>" loading="lazy" />
                     <a href="/handwerker" class="btn btn-tertiary"><%= isEn ? 'Trades website' : 'zur Handwerker Website' %></a>
                   </div>
                 </div>
@@ -997,7 +1345,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/cafe-min.webp" alt="<%= isEn ? 'Image of a cafe' : 'Bild eines Cafés' %>" loading="lazy" />
+                    <img src="/images/cafe-min.webp" alt="<%= isEn ? 'Cosy café interior – example industry for Berlin café websites' : 'Gemütliches Café-Interieur – Beispielbranche für Café-Websites in Berlin' %>" loading="lazy" />
                     <a href="/branchen/webdesign-cafe" class="btn btn-tertiary"><%= isEn ? 'Cafe website' : 'zur Café Website' %></a>
                   </div>
                 </div>
@@ -1015,7 +1363,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                     </p>
                   </div>
                   <div class="card-back card-back-image">
-                    <img src="/images/kindergarten-min.webp" alt="<%= isEn ? 'Image of a daycare' : 'Bild eines Kindergartens' %>" loading="lazy" />
+                    <img src="/images/kindergarten-min.webp" alt="<%= isEn ? 'Daycare environment – example industry for websites for kindergartens and schools' : 'Kindergarten-Umgebung – Beispielbranche für Webseiten von Kitas und Schulen' %>" loading="lazy" />
                     <a href="/branchen/webdesign-kita" class="btn btn-tertiary"><%= isEn ? 'Daycare website' : 'zur Kita Website' %></a>
                   </div>
                 </div>
@@ -1025,6 +1373,44 @@ const structuredDataRaw = `<script type="application/ld+json">
         </div>
       </div>
     </section>
+
+    <!-- 7b) FAQ -->
+    <% if (faqEntries.length) { %>
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <h2 id="faq-title" class="animate-on-scroll">
+              <%= copy.faqTitle %>
+            </h2>
+            <p class="text-muted animate-on-scroll"><%= copy.faqSubline %></p>
+
+            <div class="faq-list animate-on-scroll">
+              <% faqEntries.forEach((item, idx) => { %>
+              <details class="faq-item"<%= idx === 0 ? ' open' : '' %>>
+                <summary class="faq-question">
+                  <span><%= item.q %></span>
+                  <i class="fas fa-chevron-down faq-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer">
+                  <p><%= item.a %></p>
+                </div>
+              </details>
+              <% }); %>
+            </div>
+
+            <p class="faq-more-help text-center animate-on-scroll mt-3">
+              <% if (isEn) { %>
+                Your question is not listed? <a href="/kontakt" class="linkColor">Get in touch</a> – I usually reply within 24 hours.
+              <% } else { %>
+                Deine Frage ist nicht dabei? <a href="/kontakt" class="linkColor">Schreib mir</a> – ich antworte in der Regel innerhalb von 24 Stunden.
+              <% } %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <% } %>
 
     <!-- 8) Call-to-Action -->
     <section class="section" id="cta">
@@ -1062,11 +1448,17 @@ const structuredDataRaw = `<script type="application/ld+json">
           <a href="#blog-reviews" class="icon-link" aria-label="<%= isEn ? 'To blog and review section' : 'Zum Blog- und Review-Bereich' %>">
             <i class="fas fa-thumbs-up"></i>
           </a>
+          <a href="#trust" class="icon-link" aria-label="<%= isEn ? 'To client reviews section' : 'Zu den Kundenbewertungen' %>">
+            <i class="fas fa-star"></i>
+          </a>
           <a href="#preise" class="icon-link" aria-label="<%= isEn ? 'To pricing section' : 'Zu den Preisen' %>">
             <i class="fas fa-money-bill"></i>
           </a>
           <a href="#branchen" class="icon-link" aria-label="<%= isEn ? 'To industries section' : 'Zu den Branchen' %>">
             <i class="fas fa-layer-group"></i>
+          </a>
+          <a href="#faq" class="icon-link" aria-label="<%= isEn ? 'To FAQ section' : 'Zum FAQ-Bereich' %>">
+            <i class="fas fa-question-circle"></i>
           </a>
           <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To call-to-action section' : 'Zum Call-to-Action-Bereich' %>">
             <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>

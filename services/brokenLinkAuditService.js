@@ -2,6 +2,14 @@ import axios from 'axios';
 import { randomUUID } from 'crypto';
 import dns from 'dns/promises';
 import ipaddr from 'ipaddr.js';
+import { createAuditCache } from '../util/testerAuditCache.js';
+
+// TTL must outlast the DOI confirmation window so the detailed result is still
+// available when the user clicks the confirm link. The seoAuditService uses a
+// similar 30 minute envelope. For broken-links reports (which are large list
+// payloads), we keep the same TTL and add a strict LRU cap via createAuditCache.
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const PUBLIC_TOP_PAGES = 3;
 
 const USER_AGENT = 'KomplettWebdesign Broken Links Tester/1.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
@@ -113,6 +121,82 @@ function localeFrom(rawLocale) {
 
 function copyFor(locale) {
   return I18N[localeFrom(locale)];
+}
+
+const brokenLinkAuditCache = createAuditCache({ ttlMs: CACHE_TTL_MS, label: 'broken-links' });
+
+function setCachedBrokenLinkAudit(auditId, publicResult, detailedResult) {
+  if (!auditId) return;
+  brokenLinkAuditCache.set(auditId, { publicResult, detailedResult });
+}
+
+/**
+ * Detailed result accessor used by the lead-gate DOI flow. Public `/api/broken-link-audit`
+ * responses never include the full broken-link list — only a count + top-pages summary —
+ * so the full list must be pulled from this cache at confirm time.
+ */
+export function getCachedBrokenLinkAuditResult(auditId) {
+  const cached = brokenLinkAuditCache.get(auditId);
+  return cached?.detailedResult || null;
+}
+
+/**
+ * Aggregates broken/warning links by source page and returns the top N pages
+ * by affected-link count. We also return the plain count per page and per class
+ * so the view can render "Top 3 affected pages" without exposing target URLs.
+ */
+function summarizeAffectedPages(brokenLinks = [], warnings = [], limit = PUBLIC_TOP_PAGES) {
+  const counts = new Map();
+  for (const entry of brokenLinks) {
+    const key = entry?.sourceUrl || '';
+    if (!key) continue;
+    const bucket = counts.get(key) || { sourceUrl: key, brokenCount: 0, warningCount: 0 };
+    bucket.brokenCount += 1;
+    counts.set(key, bucket);
+  }
+  for (const entry of warnings) {
+    const key = entry?.sourceUrl || '';
+    if (!key) continue;
+    const bucket = counts.get(key) || { sourceUrl: key, brokenCount: 0, warningCount: 0 };
+    bucket.warningCount += 1;
+    counts.set(key, bucket);
+  }
+  return Array.from(counts.values())
+    .sort((a, b) => {
+      const byBroken = b.brokenCount - a.brokenCount;
+      if (byBroken !== 0) return byBroken;
+      return b.warningCount - a.warningCount;
+    })
+    .slice(0, Math.max(0, limit));
+}
+
+/**
+ * Public result: counts + top affected source pages only. The full broken-links
+ * and warnings arrays are stripped so the unguarded `/api/broken-link-audit`
+ * JSON response cannot be abused to scrape the detailed report.
+ */
+export function toPublicBrokenLinkResult(result = {}) {
+  if (!result || typeof result !== 'object') return result;
+  const brokenLinks = Array.isArray(result.brokenLinks) ? result.brokenLinks : [];
+  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+  const topAffectedPages = summarizeAffectedPages(brokenLinks, warnings, PUBLIC_TOP_PAGES);
+  return {
+    auditId: result.auditId,
+    locale: result.locale,
+    inputUrl: result.inputUrl,
+    normalizedUrl: result.normalizedUrl,
+    finalUrl: result.finalUrl,
+    fetchedAt: result.fetchedAt,
+    scanMode: result.scanMode,
+    crawlStats: result.crawlStats,
+    linkStats: result.linkStats,
+    limitations: result.limitations,
+    config: result.config,
+    topAffectedPages,
+    // Explicit flag so the frontend can distinguish "gated" vs "full" payloads
+    // without having to probe for the absence of fields.
+    gated: true
+  };
 }
 
 function clampMaxSubpages(rawValue) {
@@ -747,6 +831,11 @@ export async function auditBrokenLinks({ url, locale = 'de', maxSubpages = DEFAU
     }
   };
 
+  // Cache both the detailed result (for the DOI-confirm path) and a compact
+  // public projection (for quick lookups by id). toPublicBrokenLinkResult
+  // strips broken-link/warning lists; the detailed result keeps everything.
+  setCachedBrokenLinkAudit(result.auditId, toPublicBrokenLinkResult(result), result);
+
   return result;
 }
 
@@ -756,5 +845,6 @@ export const __testables = {
   clampScanMode,
   classifyLinkResult,
   extractLinksFromHtml,
-  isLikelyHtmlTarget
+  isLikelyHtmlTarget,
+  summarizeAffectedPages
 };

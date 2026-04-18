@@ -1,4 +1,5 @@
 import { auditWebsite } from './websiteAuditService.js';
+import { createAuditCache } from '../util/testerAuditCache.js';
 
 const DEFAULT_MAX_SUBPAGES = 5;
 const MIN_MAX_SUBPAGES = 1;
@@ -60,7 +61,7 @@ const I18N = {
   }
 };
 
-const seoAuditCache = new Map();
+const seoAuditCache = createAuditCache({ ttlMs: CACHE_TTL_MS, label: 'seo' });
 
 function localeFrom(rawLocale) {
   return rawLocale === 'en' ? 'en' : 'de';
@@ -85,26 +86,11 @@ function modeProfile(mode) {
   };
 }
 
-function cleanupSeoAuditCache(now = Date.now()) {
-  for (const [key, value] of seoAuditCache.entries()) {
-    if (!value || value.expiresAt <= now) {
-      seoAuditCache.delete(key);
-    }
-  }
-}
-
 function setCachedSeoAudit(auditId, publicResult, detailedResult) {
-  cleanupSeoAuditCache();
-  seoAuditCache.set(auditId, {
-    publicResult,
-    detailedResult,
-    expiresAt: Date.now() + CACHE_TTL_MS
-  });
+  seoAuditCache.set(auditId, { publicResult, detailedResult });
 }
 
 export function getCachedSeoAuditResult(auditId) {
-  if (!auditId) return null;
-  cleanupSeoAuditCache();
   const cached = seoAuditCache.get(auditId);
   return cached?.detailedResult || null;
 }
@@ -131,8 +117,31 @@ function scoreFromDetailQuality(details = [], predicate) {
   return average(selected);
 }
 
+// Prefer structured categoryHints emitted by createDetail over brittle label-regex
+// matching. A detail may carry multiple hints (a PSI score informs both onpage and
+// technical). Falls back to null when no hinted details match so the caller can
+// decide whether to retry via regex or use the category fallback.
+function scoreFromCategoryHint(allDetails = [], hint) {
+  const selected = allDetails
+    .filter((item) => Array.isArray(item?.categoryHints) && item.categoryHints.includes(hint))
+    .map((item) => {
+      if (Number.isFinite(item?.qualityScore)) return clampPercent(item.qualityScore * 100);
+      return item?.passed ? 100 : 0;
+    });
+  return average(selected);
+}
+
 function categoryById(result = {}, id) {
   return (result.categories || []).find((item) => item.id === id);
+}
+
+function collectAllDetails(sourceResult = {}) {
+  const categories = Array.isArray(sourceResult.categories) ? sourceResult.categories : [];
+  const out = [];
+  for (const cat of categories) {
+    if (Array.isArray(cat?.details)) out.push(...cat.details);
+  }
+  return out;
 }
 
 function buildCategoryScores(sourceResult = {}) {
@@ -143,31 +152,27 @@ function buildCategoryScores(sourceResult = {}) {
   const seoDetails = Array.isArray(seoCategory?.details) ? seoCategory.details : [];
   const technicalDetails = Array.isArray(technicalCategory?.details) ? technicalCategory.details : [];
   const valueDetails = Array.isArray(valueCategory?.details) ? valueCategory.details : [];
+  const allDetails = collectAllDetails(sourceResult);
 
-  const onpageScore = scoreFromDetailQuality(
-    seoDetails,
-    (label) => /title|meta|h1|canonical/.test(label)
-  );
+  // Resolution order: categoryHint → legacy regex → category rollup → overall score.
+  // Hints are preferred because they survive label renames / localization; regex is
+  // kept as fallback for any detail that hasn't been tagged with hints yet.
+  const onpageScore = scoreFromCategoryHint(allDetails, 'seo.onpage')
+    ?? scoreFromDetailQuality(seoDetails, (label) => /title|meta|h1|canonical/.test(label));
 
-  const indexingScore = scoreFromDetailQuality(
-    seoDetails,
-    (label) => /robots|sitemap|index|statuscode|status code/.test(label)
-  );
+  const indexingScore = scoreFromCategoryHint(allDetails, 'seo.indexing')
+    ?? scoreFromDetailQuality(seoDetails, (label) => /robots|sitemap|index|statuscode|status code/.test(label));
 
-  const structuredDataScore = scoreFromDetailQuality(
-    seoDetails,
-    (label) => /schema|faq|snippet|structured/.test(label)
-  );
+  const structuredDataScore = scoreFromCategoryHint(allDetails, 'seo.structuredData')
+    ?? scoreFromDetailQuality(seoDetails, (label) => /schema|faq|snippet|structured/.test(label));
 
-  const internalLinkingScore = scoreFromDetailQuality(
-    technicalDetails,
-    (label) => /internal linking|interne verlinkung|crawl depth|crawl-tiefe|crawl depth/.test(label)
-  );
+  const technicalHintedScore = scoreFromCategoryHint(allDetails, 'seo.technical');
 
-  const contentScore = scoreFromDetailQuality(
-    valueDetails,
-    (label) => /content|service clarity|leistung|benefit|nutzen|intent/.test(label)
-  );
+  const internalLinkingScore = scoreFromCategoryHint(allDetails, 'seo.internalLinking')
+    ?? scoreFromDetailQuality(technicalDetails, (label) => /internal linking|interne verlinkung|crawl depth|crawl-tiefe/.test(label));
+
+  const contentScore = scoreFromCategoryHint(allDetails, 'seo.content')
+    ?? scoreFromDetailQuality(valueDetails, (label) => /content|service clarity|leistung|benefit|nutzen|intent/.test(label));
 
   const crawlCoverage = Number.isFinite(crawl.visitedPages) && Number.isFinite(crawl.plannedPages) && crawl.plannedPages > 0
     ? clampPercent((crawl.visitedPages / crawl.plannedPages) * 100)
@@ -176,7 +181,7 @@ function buildCategoryScores(sourceResult = {}) {
   return [
     { id: 'onpage', score: clampPercent(onpageScore ?? seoCategory?.score ?? sourceResult.overallScore) },
     { id: 'indexing', score: clampPercent(indexingScore ?? sourceResult.relevance?.seoGeoScore ?? seoCategory?.score) },
-    { id: 'technical', score: clampPercent(technicalCategory?.score ?? sourceResult.overallScore) },
+    { id: 'technical', score: clampPercent(technicalHintedScore ?? technicalCategory?.score ?? sourceResult.overallScore) },
     { id: 'content', score: clampPercent(contentScore ?? valueCategory?.score ?? sourceResult.overallScore) },
     { id: 'internal_linking', score: clampPercent(internalLinkingScore ?? crawlCoverage ?? technicalCategory?.score ?? sourceResult.overallScore) },
     { id: 'structured_data', score: clampPercent(structuredDataScore ?? sourceResult.relevance?.seoGeoScore ?? seoCategory?.score ?? sourceResult.overallScore) }
@@ -298,6 +303,8 @@ export const __testables = {
   clampSeoScanMode,
   modeProfile,
   buildCategoryScores,
-  buildPotentialSummary
+  buildPotentialSummary,
+  scoreFromCategoryHint,
+  collectAllDetails
 };
 

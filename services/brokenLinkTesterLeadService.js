@@ -3,71 +3,69 @@ import NewsletterSignupModel from '../models/NewsletterSignupModel.js';
 import {
   consumeWebsiteTesterLeadConfirmToken,
   createWebsiteTesterLead,
-  getWebsiteTesterConfig,
   getWebsiteTesterLeadByConfirmHash,
   getWebsiteTesterLeadById,
-  markWebsiteTesterLeadFullGuideFailed,
-  markWebsiteTesterLeadFullGuideGenerated,
-  markWebsiteTesterLeadFullGuideSent,
   markWebsiteTesterLeadReportFailed,
   markWebsiteTesterLeadReportSent,
   refreshWebsiteTesterLeadConfirmToken
 } from '../models/websiteTesterAdminModel.js';
-import { getCachedSeoAuditResult } from './seoAuditService.js';
+import { getCachedBrokenLinkAuditResult } from './brokenLinkAuditService.js';
 import {
-  sendSeoTesterDoiMail,
-  sendSeoTesterReportMail,
-  sendTesterFullGuideMail
+  sendBrokenLinksTesterDoiMail,
+  sendBrokenLinksTesterReportMail
 } from './mailService.js';
-import { buildSeoTesterReport } from './seoTesterPdfService.js';
-import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
-import { buildTesterFullGuidePdf } from './testerFullGuidePdfService.js';
+import { buildBrokenLinksTesterReport } from './brokenLinksTesterPdfService.js';
+
+// Broken-Links-Tester lead-gate. Mirrors the structure of seoTesterLeadService
+// but intentionally omits the "full guide" PDF flow: a broken-links report is
+// already a concrete list of fixes, not a narrative guide. We keep three
+// exported lifecycle functions:
+//
+//   - requestBrokenLinkTesterLead: create pending lead + send DOI mail
+//   - confirmBrokenLinkTesterLeadToken: atomic consume + send PDF
+//   - resendBrokenLinkTesterLeadDoi / ...LeadReport: operational re-sends
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_HOURS = 24;
-const DEFAULT_FULL_GUIDE_MAX_PAGES = 10;
+const LEAD_SOURCE = 'broken-links';
 
 const I18N = {
   de: {
     errors: {
       emailRequired: 'Bitte gib eine gültige E-Mail-Adresse ein.',
-      consentRequired: 'Bitte bestätige die Newsletter-Einwilligung für den SEO-Report.',
-      auditMissing: 'Das SEO-Audit wurde nicht gefunden oder ist abgelaufen. Bitte starte den Scan erneut.',
+      consentRequired: 'Bitte bestätige die Newsletter-Einwilligung für den Broken-Links-Report.',
+      auditMissing: 'Das Broken-Link-Audit wurde nicht gefunden oder ist abgelaufen. Bitte starte den Scan erneut.',
       tokenMissing: 'Der Bestätigungslink ist ungültig.',
       tokenInvalid: 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.',
       tokenExpired: 'Der Bestätigungslink ist abgelaufen. Bitte fordere einen neuen Link an.',
-      reportFailed: 'Der SEO-Report konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
-      fullGuideFailed: 'Die vollständige SEO-Anleitung konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
+      reportFailed: 'Der Broken-Links-Report konnte nicht versendet werden. Bitte kontaktiere uns direkt.',
       leadState: 'Diese Aktion ist für den aktuellen Lead-Status nicht möglich.'
     },
     messages: {
-      verifyMail: 'Bitte bestätige deine E-Mail-Adresse (Double-Opt-in). Danach senden wir den detaillierten SEO-Report und aktivieren die Newsletter-Anmeldung.',
-      verifiedAndSent: 'Deine E-Mail wurde bestätigt. Der detaillierte SEO-Report wurde versendet.',
+      verifyMail: 'Bitte bestätige deine E-Mail-Adresse (Double-Opt-in). Danach senden wir den detaillierten Broken-Links-Report und aktivieren die Newsletter-Anmeldung.',
+      verifiedAndSent: 'Deine E-Mail wurde bestätigt. Der detaillierte Broken-Links-Report wurde versendet.',
       alreadyUsed: 'Die E-Mail-Bestätigung wurde bereits abgeschlossen.',
       doiResent: 'Bestätigungslink wurde erneut versendet.',
-      reportResent: 'Der SEO-Report wurde erneut versendet.',
-      fullGuideSent: 'Die vollständige SEO-Anleitung wurde versendet.'
+      reportResent: 'Der Broken-Links-Report wurde erneut versendet.'
     }
   },
   en: {
     errors: {
       emailRequired: 'Please enter a valid email address.',
-      consentRequired: 'Please confirm newsletter consent for the SEO report.',
-      auditMissing: 'The SEO audit was not found or has expired. Please run the scan again.',
+      consentRequired: 'Please confirm newsletter consent for the broken-links report.',
+      auditMissing: 'The broken-links audit was not found or has expired. Please run the scan again.',
       tokenMissing: 'The confirmation link is invalid.',
       tokenInvalid: 'The confirmation link is invalid or already used.',
       tokenExpired: 'The confirmation link has expired. Please request a new link.',
-      reportFailed: 'The SEO report could not be sent. Please contact us directly.',
-      fullGuideFailed: 'The complete SEO guide could not be sent. Please contact us directly.',
+      reportFailed: 'The broken-links report could not be sent. Please contact us directly.',
       leadState: 'This action is not possible for the current lead status.'
     },
     messages: {
-      verifyMail: 'Please confirm your email address (double opt-in). We will then send the detailed SEO report and activate your newsletter subscription.',
-      verifiedAndSent: 'Your email is confirmed. The detailed SEO report has been sent.',
+      verifyMail: 'Please confirm your email address (double opt-in). We will then send the detailed broken-links report and activate your newsletter subscription.',
+      verifiedAndSent: 'Your email is confirmed. The detailed broken-links report has been sent.',
       alreadyUsed: 'Email confirmation was already completed.',
       doiResent: 'Confirmation link has been sent again.',
-      reportResent: 'The SEO report has been sent again.',
-      fullGuideSent: 'The complete SEO guide has been sent.'
+      reportResent: 'The broken-links report has been sent again.'
     }
   }
 };
@@ -113,13 +111,14 @@ function baseUrl() {
 
 function buildConfirmUrl(rawToken, locale) {
   const lng = localeFrom(locale);
-  const path = lng === 'en' ? '/en/website-tester/seo/report-confirm' : '/website-tester/seo/report-confirm';
+  const path = lng === 'en'
+    ? '/en/website-tester/broken-links/report-confirm'
+    : '/website-tester/broken-links/report-confirm';
   return `${baseUrl()}${path}?token=${encodeURIComponent(rawToken)}`;
 }
 
 function extractDomain(result = {}) {
-  const source = result?.sourceResult || {};
-  const candidate = source.finalUrl || source.normalizedUrl || result?.finalUrl || '';
+  const candidate = result?.finalUrl || result?.normalizedUrl || result?.inputUrl || '';
   try {
     return new URL(candidate).hostname;
   } catch {
@@ -140,25 +139,43 @@ function validateLeadInput({ email, consent, locale }) {
   return { normalizedEmail };
 }
 
-function compactSeoAuditForLead(result = {}) {
+/**
+ * Shrinks the audit result before we persist it in audit_snapshot_json. The
+ * raw result can contain hundreds of broken-link entries (~1 KB each); we want
+ * to keep the full dataset for the PDF re-send path, but we cap to a
+ * reasonable size to avoid blowing up the DB column.
+ */
+function compactBrokenLinkAuditForLead(result = {}) {
+  const brokenLinks = Array.isArray(result?.brokenLinks) ? result.brokenLinks.slice(0, 500) : [];
+  const warnings = Array.isArray(result?.warnings) ? result.warnings.slice(0, 500) : [];
   return {
-    source: 'seo',
+    source: LEAD_SOURCE,
+    auditId: result.auditId,
+    locale: result.locale,
+    inputUrl: result.inputUrl,
+    normalizedUrl: result.normalizedUrl,
+    finalUrl: result.finalUrl,
+    fetchedAt: result.fetchedAt,
     scanMode: result.scanMode,
-    requestedMaxSubpages: result.requestedMaxSubpages,
-    effectiveMaxSubpages: result.effectiveMaxSubpages,
-    categoryScores: result.categoryScores || [],
-    seoScore: result.seoScore || {},
-    potentialSummary: result.potentialSummary || {},
-    sourceResult: result.sourceResult || null
+    crawlStats: result.crawlStats,
+    linkStats: result.linkStats,
+    scannedPages: Array.isArray(result.scannedPages) ? result.scannedPages.slice(0, 50) : [],
+    failedScanTargets: Array.isArray(result.failedScanTargets) ? result.failedScanTargets.slice(0, 50) : [],
+    brokenLinks,
+    warnings,
+    limitations: result.limitations,
+    config: result.config
   };
 }
 
-function topIssuesFromSeoResult(result = {}) {
-  const source = result?.sourceResult || {};
-  return (source.topActions || [])
-    .slice(0, 3)
-    .map((item) => item?.label || item?.text)
-    .filter(Boolean);
+function topIssuesFromBrokenLinks(result = {}) {
+  const items = Array.isArray(result?.brokenLinks) ? result.brokenLinks : [];
+  return items.slice(0, 3).map((entry) => {
+    const source = entry?.sourceUrl || '';
+    const target = entry?.targetUrl || '';
+    const status = entry?.status ?? '';
+    return [source, target, status].filter(Boolean).join(' → ').slice(0, 300);
+  }).filter(Boolean);
 }
 
 async function ensureNewsletterUnsubscribeToken(email) {
@@ -166,66 +183,6 @@ async function ensureNewsletterUnsubscribeToken(email) {
   if (created?.unsubscribe_token) return created.unsubscribe_token;
   const fallback = await NewsletterSignupModel.findByEmail(email);
   return fallback?.unsubscribe_token || '';
-}
-
-function normalizeFullGuideMaxPages(rawValue) {
-  const parsed = parseInt(rawValue, 10);
-  if (!Number.isFinite(parsed)) return DEFAULT_FULL_GUIDE_MAX_PAGES;
-  return Math.max(1, Math.min(50, parsed));
-}
-
-function extractGuidePageAnalysisCount(result = {}) {
-  const sourceResult = (result?.sourceResult && typeof result.sourceResult === 'object')
-    ? result.sourceResult
-    : result;
-  const pages = sourceResult?.internalGuideInput?.pageAnalyses;
-  return Array.isArray(pages) ? pages.length : 0;
-}
-
-function expectedGuidePageLimit(result = {}, configuredMaxPages = DEFAULT_FULL_GUIDE_MAX_PAGES) {
-  const available = extractGuidePageAnalysisCount(result);
-  if (!Number.isFinite(available) || available < 1) return null;
-  return Math.min(available, normalizeFullGuideMaxPages(configuredMaxPages));
-}
-
-function shouldRegenerateFullGuide(fullGuide = null, result = {}, configuredMaxPages = DEFAULT_FULL_GUIDE_MAX_PAGES) {
-  if (!fullGuide || typeof fullGuide !== 'object') return true;
-  const storedLimit = parseInt(fullGuide.pageLimitUsed, 10);
-  if (!Number.isFinite(storedLimit)) return true;
-  const expectedLimit = expectedGuidePageLimit(result, configuredMaxPages);
-  if (!Number.isFinite(expectedLimit)) return false;
-  return storedLimit !== expectedLimit;
-}
-
-async function generateAndStoreFullGuide({
-  lead,
-  result,
-  profile = 'seo',
-  locale = 'de',
-  maxPages = DEFAULT_FULL_GUIDE_MAX_PAGES
-}) {
-  try {
-    const fullGuide = generateTesterFullGuide({
-      result,
-      source: profile,
-      locale,
-      maxPages: normalizeFullGuideMaxPages(maxPages)
-    });
-    const guideText = formatTesterFullGuideAsText(fullGuide);
-    const payload = {
-      ...fullGuide,
-      guideText
-    };
-    const updated = await markWebsiteTesterLeadFullGuideGenerated({
-      id: lead.id,
-      profile,
-      fullGuideJson: payload
-    });
-    return updated?.full_guide_json || payload;
-  } catch (error) {
-    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || 'full_guide_generation_failed');
-    return null;
-  }
 }
 
 function buildConfirmViewModel({ locale, status, lead, message }) {
@@ -237,14 +194,14 @@ function buildConfirmViewModel({ locale, status, lead, message }) {
     message,
     lead,
     links: {
-      tester: lng === 'en' ? '/en/website-tester/seo' : '/website-tester/seo',
+      tester: lng === 'en' ? '/en/website-tester/broken-links' : '/website-tester/broken-links',
       contact: lng === 'en' ? '/en/kontakt' : '/kontakt',
       booking: lng === 'en' ? '/en/booking' : '/booking'
     }
   };
 }
 
-export async function requestSeoTesterLead({
+export async function requestBrokenLinkTesterLead({
   auditId,
   email,
   name,
@@ -257,27 +214,29 @@ export async function requestSeoTesterLead({
   const copy = copyFor(lng);
 
   const { normalizedEmail } = validateLeadInput({ email, consent, locale: lng });
-  const seoResult = getCachedSeoAuditResult(auditId);
-  if (!seoResult) {
+  const auditResult = getCachedBrokenLinkAuditResult(auditId);
+  if (!auditResult) {
     throw createError(copy.errors.auditMissing, 400);
   }
 
   const rawToken = generateRawToken();
   const tokenHash = hashConfirmToken(rawToken);
   const expiresAt = getTokenExpiryDate();
-  const domain = extractDomain(seoResult);
-
+  const domain = extractDomain(auditResult);
+  const brokenCount = auditResult?.linkStats?.brokenCount ?? 0;
+  // Broken-links audits don't produce a 0..100 score, so we leave overall/band
+  // empty on the lead row — the admin dashboard uses them for display only.
   const lead = await createWebsiteTesterLead({
-    source: 'seo',
-    auditId: seoResult.sourceResult?.auditId || String(auditId || '').trim(),
+    source: LEAD_SOURCE,
+    auditId: auditResult.auditId || String(auditId || '').trim(),
     domain,
     email: normalizedEmail,
     name: cleanName(name),
     locale: lng,
-    overallScore: seoResult.seoScore?.overall,
-    scoreBand: seoResult.seoScore?.band,
-    topIssues: topIssuesFromSeoResult(seoResult),
-    auditSnapshotJson: compactSeoAuditForLead(seoResult),
+    overallScore: null,
+    scoreBand: null,
+    topIssues: topIssuesFromBrokenLinks(auditResult),
+    auditSnapshotJson: compactBrokenLinkAuditForLead(auditResult),
     sourceIp,
     consentText,
     confirmTokenHash: tokenHash,
@@ -285,12 +244,12 @@ export async function requestSeoTesterLead({
   });
 
   const confirmUrl = buildConfirmUrl(rawToken, lng);
-  await sendSeoTesterDoiMail({
+  await sendBrokenLinksTesterDoiMail({
     to: lead.email,
     name: lead.name,
     locale: lng,
     domain,
-    scoreBand: lead.score_band,
+    brokenCount,
     confirmUrl,
     expiresAt
   });
@@ -302,7 +261,7 @@ export async function requestSeoTesterLead({
   };
 }
 
-export async function confirmSeoTesterLeadToken({ token, locale }) {
+export async function confirmBrokenLinkTesterLeadToken({ token, locale }) {
   const lng = localeFrom(locale);
   const copy = copyFor(lng);
 
@@ -317,7 +276,7 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
 
   const tokenHash = hashConfirmToken(rawToken);
   const existing = await getWebsiteTesterLeadByConfirmHash(tokenHash);
-  if (!existing || (existing.source || 'website') !== 'seo') {
+  if (!existing || (existing.source || 'website') !== LEAD_SOURCE) {
     return buildConfirmViewModel({
       locale: lng,
       status: 'invalid',
@@ -346,8 +305,7 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
     });
   }
 
-  // Atomic consume: if UPDATE ... RETURNING returns null after our pre-check
-  // passed, another click won the race. Show already_used, not invalid.
+  // Atomic consume to prevent race on duplicate clicks.
   const consumed = await consumeWebsiteTesterLeadConfirmToken(tokenHash);
   if (!consumed) {
     return buildConfirmViewModel({
@@ -358,7 +316,7 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
     });
   }
 
-  const result = consumed.audit_snapshot_json || getCachedSeoAuditResult(consumed.audit_id);
+  const result = consumed.audit_snapshot_json || getCachedBrokenLinkAuditResult(consumed.audit_id);
   if (!result) {
     await markWebsiteTesterLeadReportFailed(consumed.id, effectiveCopy.errors.auditMissing);
     return buildConfirmViewModel({
@@ -371,33 +329,24 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
 
   try {
     const unsubscribeToken = await ensureNewsletterUnsubscribeToken(consumed.email);
-    const report = buildSeoTesterReport({
+    const report = buildBrokenLinksTesterReport({
       lead: consumed,
       result,
       locale: effectiveLocale
     });
 
-    await sendSeoTesterReportMail({
+    await sendBrokenLinksTesterReportMail({
       to: consumed.email,
       name: consumed.name,
       locale: effectiveLocale,
       domain: consumed.domain,
-      scoreBand: consumed.score_band,
+      brokenCount: result?.linkStats?.brokenCount ?? 0,
+      warningCount: result?.linkStats?.warningCount ?? 0,
       report,
       unsubscribeToken
     });
 
-    const config = await getWebsiteTesterConfig();
-    await generateAndStoreFullGuide({
-      lead: consumed,
-      result,
-      profile: 'seo',
-      locale: effectiveLocale,
-      maxPages: config?.fullGuideMaxPages
-    });
-
     const updated = await markWebsiteTesterLeadReportSent(consumed.id);
-
     return buildConfirmViewModel({
       locale: effectiveLocale,
       status: 'success',
@@ -415,15 +364,14 @@ export async function confirmSeoTesterLeadToken({ token, locale }) {
   }
 }
 
-export async function resendSeoTesterLeadDoi({ leadId }) {
+export async function resendBrokenLinkTesterLeadDoi({ leadId }) {
   const lead = await getWebsiteTesterLeadById(leadId);
-  if (!lead || (lead.source || 'website') !== 'seo') {
+  if (!lead || (lead.source || 'website') !== LEAD_SOURCE) {
     throw createError('Lead wurde nicht gefunden.', 404);
   }
 
   const lng = localeFrom(lead.locale);
   const copy = copyFor(lng);
-
   if (lead.status !== 'pending') {
     throw createError(copy.errors.leadState, 400);
   }
@@ -431,7 +379,6 @@ export async function resendSeoTesterLeadDoi({ leadId }) {
   const rawToken = generateRawToken();
   const tokenHash = hashConfirmToken(rawToken);
   const expiresAt = getTokenExpiryDate();
-
   const updated = await refreshWebsiteTesterLeadConfirmToken({
     id: lead.id,
     confirmTokenHash: tokenHash,
@@ -441,13 +388,14 @@ export async function resendSeoTesterLeadDoi({ leadId }) {
     throw createError(copy.errors.leadState, 400);
   }
 
+  const brokenCount = updated.audit_snapshot_json?.linkStats?.brokenCount ?? 0;
   const confirmUrl = buildConfirmUrl(rawToken, lng);
-  await sendSeoTesterDoiMail({
+  await sendBrokenLinksTesterDoiMail({
     to: updated.email,
     name: updated.name,
     locale: lng,
     domain: updated.domain,
-    scoreBand: updated.score_band,
+    brokenCount,
     confirmUrl,
     expiresAt
   });
@@ -458,53 +406,41 @@ export async function resendSeoTesterLeadDoi({ leadId }) {
   };
 }
 
-export async function resendSeoTesterLeadReport({ leadId }) {
+export async function resendBrokenLinkTesterLeadReport({ leadId }) {
   const lead = await getWebsiteTesterLeadById(leadId);
-  if (!lead || (lead.source || 'website') !== 'seo') {
+  if (!lead || (lead.source || 'website') !== LEAD_SOURCE) {
     throw createError('Lead wurde nicht gefunden.', 404);
   }
 
   const lng = localeFrom(lead.locale);
   const copy = copyFor(lng);
-
   if (!['confirmed', 'report_failed', 'report_sent'].includes(lead.status)) {
     throw createError(copy.errors.leadState, 400);
   }
 
-  const result = lead.audit_snapshot_json || getCachedSeoAuditResult(lead.audit_id);
+  const result = lead.audit_snapshot_json || getCachedBrokenLinkAuditResult(lead.audit_id);
   if (!result) {
     throw createError(copy.errors.auditMissing, 400);
   }
 
   try {
     const unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
-    const report = buildSeoTesterReport({
+    const report = buildBrokenLinksTesterReport({
       lead,
       result,
       locale: lng
     });
 
-    await sendSeoTesterReportMail({
+    await sendBrokenLinksTesterReportMail({
       to: lead.email,
       name: lead.name,
       locale: lng,
       domain: lead.domain,
-      scoreBand: lead.score_band,
+      brokenCount: result?.linkStats?.brokenCount ?? 0,
+      warningCount: result?.linkStats?.warningCount ?? 0,
       report,
       unsubscribeToken
     });
-
-    const config = await getWebsiteTesterConfig();
-    const configuredMaxPages = normalizeFullGuideMaxPages(config?.fullGuideMaxPages);
-    if (shouldRegenerateFullGuide(lead.full_guide_json, result, configuredMaxPages)) {
-      await generateAndStoreFullGuide({
-        lead,
-        result,
-        profile: 'seo',
-        locale: lng,
-        maxPages: configuredMaxPages
-      });
-    }
 
     const updated = await markWebsiteTesterLeadReportSent(lead.id);
     return {
@@ -517,78 +453,11 @@ export async function resendSeoTesterLeadReport({ leadId }) {
   }
 }
 
-export async function sendSeoTesterLeadFullGuide({ leadId }) {
-  const lead = await getWebsiteTesterLeadById(leadId);
-  if (!lead || (lead.source || 'website') !== 'seo') {
-    throw createError('Lead wurde nicht gefunden.', 404);
-  }
-
-  const lng = localeFrom(lead.locale);
-  const copy = copyFor(lng);
-  if (!['confirmed', 'report_failed', 'report_sent'].includes(lead.status)) {
-    throw createError(copy.errors.leadState, 400);
-  }
-
-  const config = await getWebsiteTesterConfig();
-  const configuredMaxPages = normalizeFullGuideMaxPages(config?.fullGuideMaxPages);
-  const result = lead.audit_snapshot_json || getCachedSeoAuditResult(lead.audit_id);
-  let fullGuide = lead.full_guide_json || null;
-  if (shouldRegenerateFullGuide(fullGuide, result, configuredMaxPages)) {
-    if (!result) {
-      throw createError(copy.errors.auditMissing, 400);
-    }
-    fullGuide = await generateAndStoreFullGuide({
-      lead,
-      result,
-      profile: 'seo',
-      locale: lng,
-      maxPages: configuredMaxPages
-    });
-  }
-
-  if (!fullGuide) {
-    throw createError(copy.errors.fullGuideFailed, 500);
-  }
-
-  try {
-    const unsubscribeToken = await ensureNewsletterUnsubscribeToken(lead.email);
-    const guideText = fullGuide.guideText || formatTesterFullGuideAsText(fullGuide);
-    const guidePdf = buildTesterFullGuidePdf({
-      guideText,
-      sourceLabel: 'seo',
-      domain: lead.domain || '',
-      locale: lng,
-      generatedAt: fullGuide.createdAt || new Date().toISOString()
-    });
-    await sendTesterFullGuideMail({
-      to: lead.email,
-      name: lead.name,
-      locale: lng,
-      domain: lead.domain,
-      sourceLabel: 'SEO',
-      guideText,
-      unsubscribeToken,
-      guidePdf
-    });
-    const updated = await markWebsiteTesterLeadFullGuideSent(lead.id);
-    return {
-      lead: updated || lead,
-      message: copy.messages.fullGuideSent
-    };
-  } catch (error) {
-    await markWebsiteTesterLeadFullGuideFailed(lead.id, error.message || copy.errors.fullGuideFailed);
-    throw createError(copy.errors.fullGuideFailed, 500);
-  }
-}
-
 export const __testables = {
   localeFrom,
   cleanEmail,
   hashConfirmToken,
   buildConfirmUrl,
-  compactSeoAuditForLead,
-  topIssuesFromSeoResult,
-  normalizeFullGuideMaxPages,
-  expectedGuidePageLimit,
-  shouldRegenerateFullGuide
+  compactBrokenLinkAuditForLead,
+  topIssuesFromBrokenLinks
 };

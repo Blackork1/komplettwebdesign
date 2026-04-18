@@ -32,6 +32,23 @@
   <% if (!hasCanonical) { %>
   <link rel="canonical" href="<%= pageCanonical %>" />
   <% } %>
+  <%
+    // hreflang-Tags: Controller kann ein Objekt übergeben, z.B.
+    //   alternateUrls = { de: '...', en: '...', xDefault: '...' }
+    // Fallback: keine Tags ausgeben (dann ignoriert Google die Sprachsignale, wie bisher).
+    const hasHreflangInExtra = /rel=["']alternate["'][^>]*hreflang=/i.test(seoExtraText);
+    if (!hasHreflangInExtra && typeof alternateUrls === 'object' && alternateUrls) {
+  %>
+  <% if (alternateUrls.de) { %>
+  <link rel="alternate" hreflang="de-DE" href="<%= alternateUrls.de %>" />
+  <% } %>
+  <% if (alternateUrls.en) { %>
+  <link rel="alternate" hreflang="en" href="<%= alternateUrls.en %>" />
+  <% } %>
+  <% if (alternateUrls.xDefault) { %>
+  <link rel="alternate" hreflang="x-default" href="<%= alternateUrls.xDefault %>" />
+  <% } %>
+  <% } %>
   <% if (!hasOgType) { %>
   <meta property="og:type" content="website" />
   <% } %>

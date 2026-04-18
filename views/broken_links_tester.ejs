@@ -105,18 +105,107 @@
 
     <section class="wt-section">
       <div class="wt-shell">
+        <article class="wt-panel wt-methodology">
+          <h2><%= isEn ? 'How the Broken Links Tester scans your website' : 'So scannt der Broken-Links-Tester deine Website' %></h2>
+          <p>
+            <%= isEn
+              ? 'The scanner starts at your URL, extracts every internal and external link on the page, and for larger sites crawls the internal graph up to a configurable depth. Each discovered link is requested via HEAD (falling back to GET) and classified by HTTP status. The result separates hard errors (4xx/5xx) from warnings (3xx chains, slow responses, protocol mismatches) so you can focus fixes where they matter.'
+              : 'Der Scanner startet an deiner URL, extrahiert jeden internen und externen Link und crawlt bei größeren Sites den internen Graphen bis zu einer konfigurierbaren Tiefe. Jeder gefundene Link wird via HEAD (Fallback GET) angefragt und nach HTTP-Status klassifiziert. Das Ergebnis trennt harte Fehler (4xx/5xx) von Warnungen (3xx-Ketten, langsame Antworten, Protokoll-Mismatches), damit du Korrekturen dort priorisieren kannst, wo sie zählen.' %>
+          </p>
+          <div class="wt-method-grid">
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-triangle-exclamation"></i> <%= isEn ? 'Hard errors (4xx)' : 'Harte Fehler (4xx)' %></h3>
+              <p><%= isEn
+                ? '404 Not Found, 410 Gone, 403 Forbidden, 401 Unauthorized — immediately visible to users and crawlers. Highest priority for fixing.'
+                : '404 Not Found, 410 Gone, 403 Forbidden, 401 Unauthorized — für Nutzer und Crawler sofort sichtbar. Höchste Priorität beim Beheben.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-server"></i> <%= isEn ? 'Server errors (5xx)' : 'Serverfehler (5xx)' %></h3>
+              <p><%= isEn
+                ? '500 Internal Server Error, 502/503/504 gateway errors, connection timeouts. Often intermittent, always hurt crawl budget and UX.'
+                : '500 Internal Server Error, 502/503/504 Gateway-Fehler, Connection-Timeouts. Oft intermittierend, schaden immer Crawl-Budget und UX.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-arrow-turn-down"></i> <%= isEn ? 'Redirect chains' : 'Weiterleitungsketten' %></h3>
+              <p><%= isEn
+                ? '301/302 redirects are fine — unless they chain. 3+ hops cost crawl budget and link equity. The scanner flags chains and their length.'
+                : '301/302-Weiterleitungen sind okay — außer sie verketten sich. 3+ Hops kosten Crawl-Budget und Link-Equity. Der Scanner markiert Ketten und ihre Länge.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-globe"></i> <%= isEn ? 'External link health' : 'Externe Link-Gesundheit' %></h3>
+              <p><%= isEn
+                ? 'Outbound references to third-party resources that disappeared, moved, or are now parked. Erodes credibility on long-lived content.'
+                : 'Ausgehende Verweise auf Drittseiten, die verschwunden, verschoben oder geparkt sind. Untergräbt Glaubwürdigkeit auf langlebigen Inhalten.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-lock"></i> <%= isEn ? 'Mixed-content warnings' : 'Mixed-Content-Warnungen' %></h3>
+              <p><%= isEn
+                ? 'HTTP links on HTTPS pages trigger browser warnings and break SSL trust signals. The scanner flags every HTTP link.'
+                : 'HTTP-Links auf HTTPS-Seiten lösen Browser-Warnungen aus und beschädigen SSL-Vertrauen. Der Scanner markiert jeden HTTP-Link.' %></p>
+            </div>
+            <div class="wt-method-card">
+              <h3><i class="fa-solid fa-stopwatch"></i> <%= isEn ? 'Slow targets' : 'Langsame Ziele' %></h3>
+              <p><%= isEn
+                ? 'Destinations that take > 3s to respond. Frustrates users, bleeds ad-click value, and weakens perceived site quality for Google.'
+                : 'Ziele, die > 3s zum Antworten brauchen. Frustriert Nutzer, verschwendet Ad-Click-Wert und schwächt die Seitenqualität-Wahrnehmung bei Google.' %></p>
+            </div>
+          </div>
+          <p>
+            <%= isEn
+              ? 'The public result shows broken-link count, warning count, and the top 3 affected source pages so you know immediately if your site has a problem. The detailed PDF report delivered after double opt-in lists every broken link with source page, anchor text, HTTP status, and a concrete fix recommendation — typically 50–200 entries on a mid-sized site, ordered by traffic impact.'
+              : 'Das öffentliche Ergebnis zeigt die Anzahl defekter Links, die Zahl der Warnungen und die drei am stärksten betroffenen Quellseiten — damit weißt du sofort, ob deine Seite ein Problem hat. Der detaillierte PDF-Report nach Double-Opt-in listet jeden Broken Link mit Quellseite, Anchor-Text, HTTP-Status und konkreter Fix-Empfehlung — typischerweise 50-200 Einträge auf einer mittelgroßen Site, sortiert nach Traffic-Impact.' %>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
         <article class="wt-panel">
-          <h2><%= isEn ? 'Broken links and SEO: why this matters for Google rankings' : 'Defekte Links und SEO: Warum das für Google-Rankings wichtig ist' %></h2>
-          <p>
-            <%= isEn
-              ? 'If users or crawlers repeatedly hit dead links, trust and crawl efficiency drop. A clean link structure helps search engines understand and index your pages better.'
-              : 'Wenn Nutzer oder Crawler wiederholt auf tote Links stoßen, sinken Vertrauen und Crawl-Effizienz. Eine saubere Linkstruktur hilft Suchmaschinen, deine Seiten besser zu verstehen und zu indexieren.' %>
+          <h2><%= isEn ? 'What clients say' : 'Was Kunden sagen' %></h2>
+          <div class="wt-reviews-grid">
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“The broken links scan surfaced 38 dead outbound references we had no idea about. Cleaning them up noticeably improved organic trust signals.”'
+                : '„Der Broken-Links-Scan hat 38 tote externe Verweise gefunden, von denen wir nichts wussten. Das Aufräumen hat die organischen Trust-Signale spürbar verbessert."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“Very thorough scan, clear priorities. Our content team actually uses the PDF as a working backlog.”'
+                : '„Sehr gründlicher Scan, klare Prioritäten. Unser Content-Team nutzt das PDF tatsächlich als Arbeits-Backlog."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+            <figure class="wt-review">
+              <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+              <blockquote><%= isEn
+                ? '“Fast and precise — a full SaaS-tool replacement for free. Very recommended.”'
+                : '„Schnell und präzise — ersetzt bei uns ein kostenpflichtiges SaaS-Tool. Sehr empfehlenswert."' %></blockquote>
+              <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
+            </figure>
+          </div>
+          <p class="wt-reviews-link">
+            <a href="https://www.google.com/search?q=komplett+webdesign+bewertungen" target="_blank" rel="noopener">
+              <i class="fa-brands fa-google"></i>
+              <%= isEn ? 'Read all Google reviews' : 'Alle Google-Bewertungen lesen' %>
+            </a>
           </p>
-          <p>
-            <%= isEn
-              ? 'This Broken Links Tester checks internal and external targets, separates hard errors from warnings, and helps you focus fixes where they have the highest impact.'
-              : 'Dieser Broken-Links-Tester prüft interne und externe Ziele, trennt harte Fehler von Warnungen und hilft dir, Korrekturen dort zu priorisieren, wo sie den größten Effekt haben.' %>
-          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel wt-trust-panel">
+          <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
+          <ul class="wt-trust-list">
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl only link targets within the scan scope.' : 'Wir respektieren robots.txt und crawlen nur Link-Ziele im Scan-Umfang.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds with a maximum of 5 redirects per link.' : 'Scan-Timeout 45 Sekunden mit maximal 5 Weiterleitungen pro Link.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
+          </ul>
         </article>
       </div>
     </section>
@@ -126,18 +215,12 @@
         <div class="wt-panel">
           <h2><%= isEn ? 'FAQ: Broken links checker' : 'FAQ: Broken-Links-Checker' %></h2>
           <div class="wt-faq">
-            <details>
-              <summary><%= isEn ? 'How do I check broken links for free?' : 'Wie prüfe ich defekte Links kostenlos?' %></summary>
-              <p><%= isEn ? 'Enter your URL and start the scan. You get a clear result list with source page, target URL, and status code.' : 'Gib deine URL ein und starte den Scan. Du erhältst eine klare Ergebnisliste mit Quellseite, Ziel-URL und Statuscode.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'Do broken links hurt SEO?' : 'Schaden defekte Links dem SEO?' %></summary>
-              <p><%= isEn ? 'Yes. They can weaken user signals and crawl quality. Fixing them supports better discoverability and trust.' : 'Ja. Sie können Nutzersignale und Crawl-Qualität schwächen. Das Beheben unterstützt bessere Auffindbarkeit und Vertrauen.' %></p>
-            </details>
-            <details>
-              <summary><%= isEn ? 'What should I fix first?' : 'Was sollte ich zuerst beheben?' %></summary>
-              <p><%= isEn ? 'Start with high-traffic pages and critical navigation links, then clean up external references and redirects.' : 'Starte mit Seiten mit viel Traffic und kritischen Navigationslinks, danach bereinige externe Verweise und Weiterleitungen.' %></p>
-            </details>
+            <% (typeof faq !== 'undefined' && Array.isArray(faq) ? faq : []).forEach(function(item){ %>
+              <details>
+                <summary><%= item.q %></summary>
+                <p><%= item.a %></p>
+              </details>
+            <% }); %>
           </div>
         </div>
       </div>
@@ -153,11 +236,11 @@
               : 'Wir helfen dir, technische Blocker zu beheben, Content-Struktur zu verbessern und die Suchsichtbarkeit Schritt für Schritt zu erhöhen.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-broken-links-cta="primary">
+            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-tester-cta="broken" data-tester-action="contact" data-broken-links-cta="primary">
               <i class="fa-solid fa-paper-plane"></i>
               <%= isEn ? 'Request website consultation' : 'Website-Beratung anfragen' %>
             </a>
-            <a class="wt-button-secondary" href="/booking" data-broken-links-cta="secondary">
+            <a class="wt-button-secondary" href="/booking" data-tester-cta="broken" data-tester-action="booking" data-broken-links-cta="secondary">
               <i class="fa-solid fa-calendar-days"></i>
               <%= isEn ? 'Book a call' : 'Call buchen' %>
             </a>
@@ -193,6 +276,7 @@
     window.BROKEN_LINK_TESTER_CONFIG = {
       locale: "<%= isEn ? 'en' : 'de' %>",
       endpoint: "/api/broken-link-audit",
+      leadEndpoint: "/api/broken-link-audit/lead",
       i18n: {
         scanFor: "<%= isEn ? 'Scan for' : 'Scan für' %>",
         modeLabel: "<%= isEn ? 'Mode' : 'Modus' %>",
@@ -203,6 +287,8 @@
         scannedPages: "<%= isEn ? 'Scanned pages' : 'Gescannten Seiten' %>",
         crawlFailed: "<%= isEn ? 'Crawl failures' : 'Crawl-Fehler' %>",
         partialResult: "<%= isEn ? 'Partial result' : 'Teil-Ergebnis' %>",
+        topPagesTitle: "<%= isEn ? 'Top 3 affected source pages' : 'Top 3 betroffene Quellseiten' %>",
+        topPagesEmpty: "<%= isEn ? 'No affected pages detected.' : 'Keine betroffenen Seiten gefunden.' %>",
         brokenListTitle: "<%= isEn ? 'Broken links details' : 'Broken-Links Details' %>",
         warningsListTitle: "<%= isEn ? 'Warnings details' : 'Warnings Details' %>",
         sourcePage: "<%= isEn ? 'Source page' : 'Quellseite' %>",
@@ -213,10 +299,22 @@
         noBroken: "<%= isEn ? 'No broken links found.' : 'Keine defekten Links gefunden.' %>",
         noWarnings: "<%= isEn ? 'No warnings found.' : 'Keine Warnungen gefunden.' %>",
         limitations: "<%= isEn ? 'Limitations' : 'Hinweise' %>",
-        errorFallback: "<%= isEn ? 'The scan could not be completed.' : 'Der Scan konnte nicht durchgeführt werden.' %>"
+        errorFallback: "<%= isEn ? 'The scan could not be completed.' : 'Der Scan konnte nicht durchgeführt werden.' %>",
+        lockedTitle: "<%= isEn ? 'Detailed broken-links report (PDF)' : 'Detaillierter Broken-Links-Report (PDF)' %>",
+        lockedText: "<%= isEn ? 'Enter your email to receive the full list with source page, target URL, HTTP status, and fix hint — every broken link and warning, not only the summary.' : 'Trage deine E-Mail ein, um die vollständige Liste mit Quellseite, Ziel-URL, HTTP-Status und Fix-Hinweis zu erhalten — jeden defekten Link und jede Warnung, nicht nur die Kurzübersicht.' %>",
+        leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
+        leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
+        leadConsent: "<%= isEn ? 'I want to receive the detailed broken-links report by email and agree to be added to the Komplett Webdesign newsletter (weekly practical website-quality tips, one-click unsubscribe).' : 'Ich möchte den detaillierten Broken-Links-Report per E-Mail erhalten und stimme zu, in den Komplett-Webdesign-Newsletter aufgenommen zu werden (wöchentlich praktische Website-Qualitäts-Tipps, Abmeldung mit einem Klick).' %>",
+        leadSubmit: "<%= isEn ? 'Send confirmation link' : 'Bestätigungslink senden' %>",
+        leadLoading: "<%= isEn ? 'Sending...' : 'Wird gesendet...' %>",
+        leadSuccess: "<%= isEn ? 'Check your inbox and confirm your email address to receive the detailed broken-links report.' : 'Bitte prüfe dein Postfach und bestätige deine E-Mail-Adresse, um den detaillierten Broken-Links-Report zu erhalten.' %>",
+        leadError: "<%= isEn ? 'The broken-links report request could not be processed.' : 'Die Broken-Links-Report-Anfrage konnte nicht verarbeitet werden.' %>",
+        privacyHref: "<%= isEn ? '/en/datenschutz' : '/datenschutz' %>",
+        privacyLabel: "<%= isEn ? 'Privacy policy' : 'Datenschutzerklärung' %>"
       }
     };
   </script>
+  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
   <script src="/js/broken-links-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
 </body>
 </html>

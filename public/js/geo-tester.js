@@ -72,6 +72,47 @@
     return items.map((item) => `<li><strong>${escapeHtml(item.category || '')}</strong>: ${escapeHtml(item.label || '')}</li>`).join('');
   }
 
+  function renderNextStepCard(result) {
+    const utils = window.TesterUtils || {};
+    const domain = typeof utils.extractDomain === 'function' ? utils.extractDomain(result || '') : '';
+    const score = typeof utils.pickScore === 'function' ? utils.pickScore(result) : null;
+    const bookingBase = (i18n.bookingHref || (locale === 'en' ? '/en/booking' : '/booking'));
+    const contactBase = (i18n.contactHref || (locale === 'en' ? '/en/kontakt' : '/kontakt'));
+    const bookingUrl = typeof utils.buildBookingUrl === 'function'
+      ? utils.buildBookingUrl(bookingBase, { src: 'geo-tester', domain, score }) : bookingBase;
+    const contactUrl = typeof utils.buildContactUrl === 'function'
+      ? utils.buildContactUrl(contactBase, { src: 'geo-tester', domain, score }) : contactBase;
+    const pkg = typeof utils.buildPackageSuggestion === 'function' ? utils.buildPackageSuggestion(score, locale) : null;
+
+    const headline = i18n.nextStepTitle || (locale === 'en' ? 'Your next step' : 'Dein nächster Schritt');
+    const intro = i18n.nextStepIntro || (locale === 'en'
+      ? 'Turn these AI-visibility insights into a clear roadmap — we plan it with you.'
+      : 'Mach aus diesen KI-Sichtbarkeits-Erkenntnissen eine klare Roadmap – wir planen sie mit dir.');
+    const bookingLabel = i18n.bookingCtaLabel || (locale === 'en' ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen');
+    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+
+    let pkgBlock = '';
+    if (pkg && pkg.title) {
+      pkgBlock = `
+        <div class="wt-next-step-package">
+          <strong>${escapeHtml(pkg.title)}</strong>
+          <p>${escapeHtml(pkg.text || '')}</p>
+          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkg.href || '/leistungen')}" data-tester-cta="geo" data-tester-action="package" data-geo-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+        </div>`;
+    }
+
+    return `
+      <section class="wt-cta-card wt-next-step-card">
+        <h2><i class="fa-solid fa-rocket"></i> ${escapeHtml(headline)}</h2>
+        <p>${escapeHtml(intro)}</p>
+        <div class="wt-cta-actions">
+          <a class="wt-button" href="${escapeHtml(bookingUrl)}" data-tester-cta="geo" data-tester-action="booking" data-geo-cta="booking">${escapeHtml(bookingLabel)}</a>
+          <a class="wt-button wt-button-ghost" href="${escapeHtml(contactUrl)}" data-tester-cta="geo" data-tester-action="contact" data-geo-cta="contact">${escapeHtml(contactLabel)}</a>
+        </div>
+        ${pkgBlock}
+      </section>`;
+  }
+
   function bindLeadForm(result) {
     const leadForm = resultsPanel.querySelector('[data-geo-lead-form]');
     if (!leadForm) return;
@@ -216,6 +257,8 @@
           <p class="wt-lead-state" data-geo-lead-state hidden></p>
         </form>
       </section>
+
+      ${renderNextStepCard(result)}
     `;
 
     resultsPanel.hidden = false;

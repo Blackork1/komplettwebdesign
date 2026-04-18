@@ -131,15 +131,49 @@
         </form>
       </section>
 
-      <section class="wt-cta-card" style="margin-top:0.9rem;">
-        <h2>${esc(i18n.ctaTitle || '')}</h2>
-        <p>${esc(i18n.ctaText || '')}</p>
-        <div class="wt-result-meta">
-          <a class="wt-button" href="${esc(i18n.contactHref || '/kontakt')}">${esc(i18n.ctaPrimary || '')}</a>
-          <a class="wt-button-secondary" href="/booking">${esc(i18n.ctaSecondary || '')}</a>
-        </div>
-      </section>
+      ${renderNextStepCard(result)}
     `;
+  }
+
+  function renderNextStepCard(result) {
+    const utils = window.TesterUtils || {};
+    const domain = typeof utils.extractDomain === 'function' ? utils.extractDomain(result || '') : '';
+    const score = typeof utils.pickScore === 'function' ? utils.pickScore(result) : null;
+    const bookingBase = (i18n.bookingHref || (locale === 'en' ? '/en/booking' : '/booking'));
+    const contactBase = (i18n.contactHref || (locale === 'en' ? '/en/kontakt' : '/kontakt'));
+    const bookingUrl = typeof utils.buildBookingUrl === 'function'
+      ? utils.buildBookingUrl(bookingBase, { src: 'meta-tester', domain, score }) : bookingBase;
+    const contactUrl = typeof utils.buildContactUrl === 'function'
+      ? utils.buildContactUrl(contactBase, { src: 'meta-tester', domain, score }) : contactBase;
+    const pkg = typeof utils.buildPackageSuggestion === 'function' ? utils.buildPackageSuggestion(score, locale) : null;
+
+    const headline = i18n.nextStepTitle || (locale === 'en' ? 'Your next step' : 'Dein nächster Schritt');
+    const intro = i18n.ctaText || (locale === 'en'
+      ? 'Want every social share and search snippet to convert? Let’s plan it together.'
+      : 'Sollen alle Snippets und Social-Shares konvertieren? Wir planen es gemeinsam.');
+    const bookingLabel = i18n.ctaSecondary || (locale === 'en' ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen');
+    const contactLabel = i18n.ctaPrimary || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+
+    let pkgBlock = '';
+    if (pkg && pkg.title) {
+      pkgBlock = `
+        <div class="wt-next-step-package">
+          <strong>${esc(pkg.title)}</strong>
+          <p>${esc(pkg.text || '')}</p>
+          <a class="wt-button wt-button-secondary" href="${esc(pkg.href || '/leistungen')}" data-tester-cta="meta" data-tester-action="package" data-meta-cta="package">${esc(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+        </div>`;
+    }
+
+    return `
+      <section class="wt-cta-card wt-next-step-card" style="margin-top:0.9rem;">
+        <h2><i class="fa-solid fa-rocket"></i> ${esc(i18n.ctaTitle || headline)}</h2>
+        <p>${esc(intro)}</p>
+        <div class="wt-cta-actions">
+          <a class="wt-button" href="${esc(bookingUrl)}" data-tester-cta="meta" data-tester-action="booking" data-meta-cta="booking">${esc(bookingLabel)}</a>
+          <a class="wt-button wt-button-ghost" href="${esc(contactUrl)}" data-tester-cta="meta" data-tester-action="contact" data-meta-cta="contact">${esc(contactLabel)}</a>
+        </div>
+        ${pkgBlock}
+      </section>`;
   }
 
   function bindLeadForm(result) {

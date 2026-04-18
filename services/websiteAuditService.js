@@ -2,6 +2,7 @@ import axios from 'axios';
 import { randomUUID } from 'crypto';
 import dns from 'dns/promises';
 import ipaddr from 'ipaddr.js';
+import { createAuditCache } from '../util/testerAuditCache.js';
 
 const USER_AGENT = 'KomplettWebdesign Website Tester/2.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
@@ -12,7 +13,7 @@ const MAX_RESPONSE_BYTES = 1_500_000;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUEST_TIMEOUT_CAP_MS = 12_000;
 
-const auditCache = new Map();
+const auditCache = createAuditCache({ ttlMs: CACHE_TTL_MS, label: 'website' });
 
 const I18N = {
   de: {
@@ -324,27 +325,12 @@ function validateAuditContext(rawContext = {}, locale = 'de') {
   return context;
 }
 
-function pruneAuditCache(now = Date.now()) {
-  for (const [key, value] of auditCache.entries()) {
-    if (!value || value.expiresAt <= now) {
-      auditCache.delete(key);
-    }
-  }
-}
-
 function setCachedResult(result) {
-  pruneAuditCache();
-  auditCache.set(result.auditId, {
-    expiresAt: Date.now() + CACHE_TTL_MS,
-    result
-  });
+  auditCache.set(result.auditId, result);
 }
 
 export function getCachedAuditResult(auditId) {
-  if (!auditId) return null;
-  pruneAuditCache();
-  const cached = auditCache.get(auditId);
-  return cached ? cached.result : null;
+  return auditCache.get(auditId);
 }
 
 function decodeHtml(value = '') {
@@ -837,11 +823,29 @@ function parsePageSignals(page) {
     return attr ? decodeHtml(attr[2]) : '';
   });
   const imagesWithoutAlt = imageAltValues.filter((value) => !value).length;
+  // Core Web Vitals proxies — CLS correlates with <img> without explicit width/height,
+  // LCP/INP with over-eager eager-loading of offscreen images. We don't render the page,
+  // so this is necessarily an approximation — but these attributes are strongly advised
+  // by web.dev for the respective metrics and are cheap to measure from raw HTML.
+  const imagesWithDimensions = images.filter((tag) => /\bwidth\s*=/i.test(tag) && /\bheight\s*=/i.test(tag)).length;
+  const imagesWithLazyLoading = images.filter((tag) => /\bloading\s*=\s*["']?lazy["']?/i.test(tag)).length;
 
   const labels = countMatches(html, /<label\b[^>]*>/gi);
   const inputs = countMatches(html, /<(input|textarea|select)\b/gi);
   const buttons = countMatches(html, /<button\b/gi);
-  const scripts = countMatches(html, /<script\b/gi);
+  const scriptTags = [...html.matchAll(/<script\b[^>]*>/gi)].map((m) => m[0]);
+  const scripts = scriptTags.length;
+  // Render-blocking-script proxy: external <script src="..."> tags in <head> without
+  // async OR defer will block the HTML parser. We approximate the "in head" locator
+  // by extracting the <head>...</head> slice — a few false negatives (scripts injected
+  // via JS after load) are acceptable since we're measuring initial-render hazards only.
+  const headHtml = firstMatch(html, /<head[^>]*>([\s\S]*?)<\/head>/i) || '';
+  const headScripts = [...headHtml.matchAll(/<script\b[^>]*>/gi)].map((m) => m[0]);
+  const scriptsWithAsync = scriptTags.filter((tag) => /\basync\b/i.test(tag)).length;
+  const scriptsWithDefer = scriptTags.filter((tag) => /\bdefer\b/i.test(tag)).length;
+  const renderBlockingScripts = headScripts.filter((tag) => (
+    /\bsrc\s*=/i.test(tag) && !/\basync\b/i.test(tag) && !/\bdefer\b/i.test(tag) && !/\btype\s*=\s*["']?module["']?/i.test(tag)
+  )).length;
   const stylesheets = countMatches(html, /<link[^>]+rel=["']stylesheet["'][^>]*>/gi);
   const scriptSources = [...html.matchAll(/<script\b[^>]*src=["']([^"']+)["'][^>]*>/gi)]
     .map((m) => decodeHtml(m[1] || ''))
@@ -915,10 +919,15 @@ function parsePageSignals(page) {
     lastModified: page.headers['last-modified'] || '',
     images: images.length,
     imagesWithoutAlt,
+    imagesWithDimensions,
+    imagesWithLazyLoading,
     labels,
     inputs,
     buttons,
     scripts,
+    scriptsWithAsync,
+    scriptsWithDefer,
+    renderBlockingScripts,
     stylesheets,
     hasMain,
     hasHeader,
@@ -957,7 +966,7 @@ function ratio(value, total) {
   return value / total;
 }
 
-function createDetail({ label, passed, explanation, value = '', action = '', severity = 2, qualityScore = null, critical = false }) {
+function createDetail({ label, passed, explanation, value = '', action = '', severity = 2, qualityScore = null, critical = false, categoryHints = [] }) {
   const normalizedQuality = Number.isFinite(qualityScore)
     ? Math.max(0, Math.min(1, Number(qualityScore)))
     : (passed ? 1 : 0);
@@ -971,7 +980,13 @@ function createDetail({ label, passed, explanation, value = '', action = '', sev
     severity,
     qualityScore: normalizedQuality,
     passed: !!effectivePassed,
-    critical: !!critical
+    critical: !!critical,
+    // categoryHints lets downstream consumers (e.g. seoAuditService.buildCategoryScores)
+    // route a detail to one or more SEO categories without brittle label-regex matching.
+    // Accepted values: 'seo.onpage', 'seo.indexing', 'seo.technical', 'seo.content',
+    // 'seo.internalLinking', 'seo.structuredData'. Back-compat: regex fallback still
+    // applies when hints are empty.
+    categoryHints: Array.isArray(categoryHints) ? categoryHints.filter(Boolean) : []
   };
 }
 
@@ -1288,6 +1303,24 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
   const avgScripts = Math.round(analyzedPages.reduce((sum, p) => sum + toSafeNumber(p.scripts), 0) / pageCount);
   const avgStylesheets = Math.round(analyzedPages.reduce((sum, p) => sum + toSafeNumber(p.stylesheets), 0) / pageCount);
 
+  // Core Web Vitals proxy aggregates. We only render HTML so this is a correlated
+  // heuristic, not a Lighthouse measurement — but the attributes we count here are
+  // exactly what web.dev recommends as first-pass audits for CLS/LCP/render-blocking.
+  const totalImagesWithDimensions = analyzedPages.reduce((sum, p) => sum + toSafeNumber(p.imagesWithDimensions), 0);
+  const totalImagesWithLazyLoading = analyzedPages.reduce((sum, p) => sum + toSafeNumber(p.imagesWithLazyLoading), 0);
+  const totalRenderBlockingScripts = analyzedPages.reduce((sum, p) => sum + toSafeNumber(p.renderBlockingScripts), 0);
+  // Note: per-page `scriptsWithAsync` / `scriptsWithDefer` are emitted on the
+  // analyzedPages objects and therefore available to downstream consumers, but not
+  // aggregated here — the render-blocking-scripts metric already captures the
+  // actionable signal.
+  const dimensionsCoverage = totalImages ? totalImagesWithDimensions / totalImages : 1;
+  // Lazy-loading "above-the-fold" hazard: LCP best-practice is that the *hero* image
+  // should NOT be lazy-loaded. We can't identify the hero without rendering, so we
+  // target the opposite: pages with many images where ~zero use lazy loading. That
+  // points to a missing perf optimization without the above-the-fold false positive.
+  const lazyLoadingAdoption = totalImages ? totalImagesWithLazyLoading / totalImages : 0;
+  const avgRenderBlockingScripts = Math.round(totalRenderBlockingScripts / pageCount);
+
   const robotsOk = !!robotsResponse && robotsResponse.status < 400;
   const sitemapOk = !!sitemapResponse && sitemapResponse.status < 400;
   const usesHttps = new URL(homepage.url).protocol === 'https:';
@@ -1360,7 +1393,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
         { score: homepageTitleIntentCoverage, weight: 0.45 },
         { score: titleLooksGeneric ? 0 : 1, weight: 0.10 }
       ]),
-      critical: true
+      critical: true,
+      categoryHints: ['seo.onpage']
     }),
     createDetail({
       label: locale === 'en' ? 'Title coverage across pages' : 'Title-Abdeckung über alle Seiten',
@@ -1371,7 +1405,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${pagesWithTitle}/${pageCount}`,
       action: locale === 'en' ? 'Add unique page titles to uncovered pages.' : 'Ergänze fehlende Seitentitel auf allen relevanten Seiten.',
       severity: 2,
-      qualityScore: ratio(pagesWithTitle, pageCount)
+      qualityScore: ratio(pagesWithTitle, pageCount),
+      categoryHints: ['seo.onpage']
     }),
     createDetail({
       label: locale === 'en' ? 'Meta description quality' : 'Meta-Description-Qualität',
@@ -1392,7 +1427,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
         { score: boolScore(hasBenefitSignal), weight: 0.20 },
         { score: boolScore(hasCtaSignal), weight: 0.15 }
       ]),
-      critical: true
+      critical: true,
+      categoryHints: ['seo.onpage']
     }),
     createDetail({
       label: locale === 'en' ? 'H1 structure + topic fit' : 'H1-Struktur + Themenfit',
@@ -1406,7 +1442,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       qualityScore: weightedScore([
         { score: ratio(pagesWithSingleH1, pageCount), weight: 0.55 },
         { score: homepageH1IntentCoverage, weight: 0.45 }
-      ])
+      ]),
+      categoryHints: ['seo.onpage']
     }),
     createDetail({
       label: locale === 'en' ? 'Canonical coverage' : 'Canonical-Abdeckung',
@@ -1417,7 +1454,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${pagesWithCanonical}/${pageCount}`,
       action: locale === 'en' ? 'Set canonical tags on indexable pages.' : 'Setze Canonical-Tags auf indexierbaren Seiten.',
       severity: 2,
-      qualityScore: ratio(pagesWithCanonical, pageCount)
+      qualityScore: ratio(pagesWithCanonical, pageCount),
+      categoryHints: ['seo.onpage']
     }),
     createDetail({
       label: locale === 'en' ? 'Schema quality (business + contact)' : 'Schema-Qualität (Unternehmen + Kontakt)',
@@ -1428,7 +1466,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${qualityLabel(locale, schemaQualityScore)} (${Math.round(schemaQualityScore * 100)}/100)`,
       action: locale === 'en' ? 'Implement Organization/LocalBusiness schema with address and contact fields.' : 'Implementiere Organization/LocalBusiness-Schema mit Adresse und Kontaktfeldern.',
       severity: 2,
-      qualityScore: schemaQualityScore
+      qualityScore: schemaQualityScore,
+      categoryHints: ['seo.structuredData']
     }),
     createDetail({
       label: locale === 'en' ? 'Local relevance' : 'Lokale Relevanz',
@@ -1442,7 +1481,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
         : `Verankere "${context.targetRegion}" und "${context.primaryService}" konsistent auf Kernseiten.`,
       severity: 3,
       qualityScore: localRelevanceScore,
-      critical: true
+      critical: true,
+      categoryHints: ['seo.content']
     }),
     createDetail({
       label: locale === 'en' ? 'Intent coherence (title/meta/h1/body)' : 'Intent-Kohärenz (Title/Meta/H1/Body)',
@@ -1456,7 +1496,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
         : 'Richte Title, Meta, H1 und Hauptinhalt auf einen primären Leistungs-Intent aus.',
       severity: 3,
       qualityScore: intentMatchScore,
-      critical: true
+      critical: true,
+      categoryHints: ['seo.content']
     }),
     createDetail({
       label: locale === 'en' ? 'GEO readiness (entity + FAQ/snippets)' : 'GEO-Readiness (Entity + FAQ/Snippets)',
@@ -1467,7 +1508,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${qualityLabel(locale, geoReadinessScore)} (${Math.round(geoReadinessScore * 100)}/100)`,
       action: locale === 'en' ? 'Add FAQ blocks and strengthen entity signals with structured data.' : 'Ergänze FAQ-Blöcke und stärke Entity-Signale mit strukturierten Daten.',
       severity: 2,
-      qualityScore: geoReadinessScore
+      qualityScore: geoReadinessScore,
+      categoryHints: ['seo.structuredData']
     }),
     createDetail({
       label: locale === 'en' ? 'robots.txt reachable' : 'robots.txt erreichbar',
@@ -1478,7 +1520,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: robotsOk ? copy.labels.yes : copy.labels.no,
       action: locale === 'en' ? 'Provide a valid robots.txt with crawl directives.' : 'Hinterlege eine gültige robots.txt mit Crawl-Regeln.',
       severity: 1,
-      qualityScore: boolScore(robotsOk)
+      qualityScore: boolScore(robotsOk),
+      categoryHints: ['seo.indexing']
     }),
     createDetail({
       label: locale === 'en' ? 'sitemap.xml reachable' : 'sitemap.xml erreichbar',
@@ -1489,7 +1532,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: sitemapOk ? copy.labels.yes : copy.labels.no,
       action: locale === 'en' ? 'Generate and submit a sitemap in Search Console.' : 'Erzeuge eine Sitemap und reiche sie in der Search Console ein.',
       severity: 1,
-      qualityScore: boolScore(sitemapOk)
+      qualityScore: boolScore(sitemapOk),
+      categoryHints: ['seo.indexing']
     })
   ];
 
@@ -1503,7 +1547,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${psi.scores.seo}/100`,
       action: locale === 'en' ? 'Improve Lighthouse SEO opportunities and rerun.' : 'Setze Lighthouse-SEO-Hinweise um und prüfe erneut.',
       severity: 1,
-      qualityScore: Math.max(0, Math.min(1, psi.scores.seo / 100))
+      qualityScore: Math.max(0, Math.min(1, psi.scores.seo / 100)),
+      categoryHints: ['seo.technical']
     }));
   }
 
@@ -1518,7 +1563,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       action: locale === 'en' ? 'Expand service pages with concrete use cases, benefits, and examples.' : 'Erweitere Leistungsseiten um konkrete Use-Cases, Nutzen und Beispiele.',
       severity: 3,
       qualityScore: rangeScore(totalWords, 700, 4500, 250),
-      critical: totalWords < 320
+      critical: totalWords < 320,
+      categoryHints: ['seo.content']
     }),
     createDetail({
       label: locale === 'en' ? 'Service clarity' : 'Leistungsklarheit',
@@ -1532,7 +1578,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
         : `Nenne "${context.primaryService}" klar auf Kernseiten und in Überschriften.`,
       severity: 3,
       qualityScore: ratio(pagesWithServiceSignal, pageCount),
-      critical: ratio(pagesWithServiceSignal, pageCount) < 0.3
+      critical: ratio(pagesWithServiceSignal, pageCount) < 0.3,
+      categoryHints: ['seo.content']
     }),
     createDetail({
       label: locale === 'en' ? 'Benefit communication' : 'Nutzenkommunikation',
@@ -1543,7 +1590,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: hasBenefitSignal ? copy.labels.yes : copy.labels.no,
       action: locale === 'en' ? 'Add concrete value statements (time, cost, quality, outcomes).' : 'Ergänze konkrete Nutzenaussagen (Zeit, Kosten, Qualität, Ergebnis).',
       severity: 2,
-      qualityScore: boolScore(hasBenefitSignal)
+      qualityScore: boolScore(hasBenefitSignal),
+      categoryHints: ['seo.content']
     }),
     createDetail({
       label: locale === 'en' ? 'Clear next step / CTA' : 'Klarer nächster Schritt / CTA',
@@ -1658,7 +1706,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${homepage.loadTimeMs} ms`,
       action: locale === 'en' ? 'Reduce blocking resources and server latency.' : 'Reduziere blockierende Ressourcen und Server-Latenz.',
       severity: 3,
-      qualityScore: rangeScore(homepage.loadTimeMs, 0, 3000, 1200)
+      qualityScore: rangeScore(homepage.loadTimeMs, 0, 3000, 1200),
+      categoryHints: ['seo.technical']
     }),
     createDetail({
       label: locale === 'en' ? 'Average load time under 3.5s' : 'Ø Ladezeit unter 3,5 Sekunden',
@@ -1669,7 +1718,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${avgLoadTime} ms`,
       action: locale === 'en' ? 'Optimize media, caching, and script loading.' : 'Optimiere Medien, Caching und Script-Ladevorgang.',
       severity: 2,
-      qualityScore: rangeScore(avgLoadTime, 0, 3500, 1400)
+      qualityScore: rangeScore(avgLoadTime, 0, 3500, 1400),
+      categoryHints: ['seo.technical']
     }),
     createDetail({
       label: locale === 'en' ? 'Average HTML size under 350 KB' : 'Ø HTML-Größe unter 350 KB',
@@ -1680,7 +1730,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${avgHtmlSizeKb} KB`,
       action: locale === 'en' ? 'Reduce excessive markup and inline payload.' : 'Reduziere überflüssiges Markup und Inline-Last.',
       severity: 1,
-      qualityScore: rangeScore(avgHtmlSizeKb, 0, 350, 180)
+      qualityScore: rangeScore(avgHtmlSizeKb, 0, 350, 180),
+      categoryHints: ['seo.technical']
     }),
     createDetail({
       label: locale === 'en' ? 'Script load complexity' : 'Script-Komplexität',
@@ -1691,7 +1742,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${avgScripts} avg`,
       action: locale === 'en' ? 'Defer non-critical scripts and remove unused JS.' : 'Lade nicht-kritische Scripts verzögert und entferne ungenutztes JS.',
       severity: 2,
-      qualityScore: rangeScore(avgScripts, 0, 15, 8)
+      qualityScore: rangeScore(avgScripts, 0, 15, 8),
+      categoryHints: ['seo.technical']
     }),
     createDetail({
       label: locale === 'en' ? 'Stylesheet count' : 'Stylesheet-Anzahl',
@@ -1702,7 +1754,75 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${avgStylesheets} avg`,
       action: locale === 'en' ? 'Bundle and trim CSS where possible.' : 'Bündle und verschlanke CSS, wo möglich.',
       severity: 1,
-      qualityScore: rangeScore(avgStylesheets, 0, 8, 6)
+      qualityScore: rangeScore(avgStylesheets, 0, 8, 6),
+      categoryHints: ['seo.technical']
+    }),
+    // --- Core Web Vitals proxies (P2-2) ----------------------------------
+    // We approximate CLS/LCP/render-blocking from static HTML signals because the
+    // audit cannot run a real browser. Numeric thresholds chosen to flag issues
+    // *likely* to move CWV metrics without generating noise on well-optimized sites.
+    createDetail({
+      label: locale === 'en' ? 'Image dimensions set (CLS proxy)' : 'Bildmaße gesetzt (CLS-Proxy)',
+      // web.dev: explicit width/height on <img> prevents layout shift. We want >=80%
+      // of images to carry both attributes; responsive images with aspect-ratio CSS
+      // are still fine under this rule since they also set width/height on the tag.
+      passed: dimensionsCoverage >= 0.8 || totalImages === 0,
+      explanation: locale === 'en'
+        ? 'Setting width and height on images reduces Cumulative Layout Shift (CLS).'
+        : 'Explizite Breite und Höhe auf <img>-Tags reduziert Layout-Verschiebungen (CLS).',
+      value: totalImages === 0
+        ? (locale === 'en' ? 'no images' : 'keine Bilder')
+        : `${Math.round(dimensionsCoverage * 100)}%`,
+      action: locale === 'en'
+        ? 'Add explicit width/height (or aspect-ratio) to <img> tags, especially above the fold.'
+        : 'Ergänze width/height (oder aspect-ratio) auf <img>-Tags, besonders above-the-fold.',
+      severity: 2,
+      qualityScore: totalImages === 0 ? 1 : Math.max(0, Math.min(1, dimensionsCoverage)),
+      categoryHints: ['seo.technical']
+    }),
+    createDetail({
+      label: locale === 'en' ? 'Lazy-loading adopted for below-fold images' : 'Lazy-Loading für Bilder unterhalb des Faltbereichs',
+      // If there are 5+ images total and 0 are lazy-loaded, there's near-certain
+      // wasted bandwidth for offscreen images. Threshold is intentionally lenient:
+      // 1 lazy image out of many is already enough to signal awareness.
+      passed: totalImages < 5 || totalImagesWithLazyLoading >= 1,
+      explanation: locale === 'en'
+        ? 'loading="lazy" on below-the-fold images improves LCP and saves bandwidth.'
+        : 'loading="lazy" auf Bildern unterhalb des Faltbereichs verbessert LCP und spart Bandbreite.',
+      value: totalImages === 0
+        ? (locale === 'en' ? 'no images' : 'keine Bilder')
+        : `${Math.round(lazyLoadingAdoption * 100)}% lazy`,
+      action: locale === 'en'
+        ? 'Add loading="lazy" to <img> tags that are not in the initial viewport.'
+        : 'Setze loading="lazy" auf <img>-Tags, die nicht im Startbildschirm sichtbar sind.',
+      severity: 1,
+      // The scoring curve is asymmetric: 0% adoption caps at 0.3 when there are 5+
+      // images, but once any adoption exists we reward it strongly (0.6 minimum).
+      qualityScore: totalImages < 5
+        ? 1
+        : (totalImagesWithLazyLoading === 0
+          ? 0.3
+          : Math.max(0.6, Math.min(1, lazyLoadingAdoption + 0.5))),
+      categoryHints: ['seo.technical']
+    }),
+    createDetail({
+      label: locale === 'en' ? 'Render-blocking scripts in <head>' : 'Render-blockierende Scripts im <head>',
+      // In-head external <script> without async/defer/type=module blocks HTML parsing.
+      // Under 2 avg per page is acceptable (main app script + analytics); 4+ is a red flag.
+      passed: avgRenderBlockingScripts <= 2,
+      explanation: locale === 'en'
+        ? 'External <script> tags in <head> without async/defer block HTML parsing and delay LCP.'
+        : 'Externe <script>-Tags im <head> ohne async/defer blockieren das HTML-Parsing und verzögern LCP.',
+      value: `${avgRenderBlockingScripts} avg`,
+      action: locale === 'en'
+        ? 'Add defer (or async) to non-critical scripts, or move them to the end of <body>.'
+        : 'Ergänze defer (oder async) an nicht-kritischen Scripts oder verschiebe sie ans Ende des <body>.',
+      severity: 2,
+      // 0-2 blocking scripts: full score. 3-5 scripts: linear decay. 6+: near zero.
+      qualityScore: avgRenderBlockingScripts <= 2
+        ? 1
+        : Math.max(0, 1 - ((avgRenderBlockingScripts - 2) / 4)),
+      categoryHints: ['seo.technical']
     }),
     createDetail({
       label: locale === 'en' ? 'Crawl depth reached' : 'Crawl-Tiefe erreicht',
@@ -1713,7 +1833,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${crawlMeta.visitedPages}/${crawlMeta.plannedPages}`,
       action: locale === 'en' ? 'Strengthen internal links from the homepage.' : 'Stärke die interne Verlinkung von der Startseite aus.',
       severity: 1,
-      qualityScore: ratio(crawlMeta.visitedPages, Math.max(1, crawlMeta.plannedPages))
+      qualityScore: ratio(crawlMeta.visitedPages, Math.max(1, crawlMeta.plannedPages)),
+      categoryHints: ['seo.internalLinking']
     })
   ];
 
@@ -1727,7 +1848,8 @@ function buildCategoryResults({ locale, context, homepage, analyzedPages, robots
       value: `${psi.scores.performance}/100`,
       action: locale === 'en' ? 'Address LCP/CLS opportunities highlighted by Lighthouse.' : 'Setze LCP/CLS-Optimierungen aus Lighthouse um.',
       severity: 3,
-      qualityScore: Math.max(0, Math.min(1, psi.scores.performance / 100))
+      qualityScore: Math.max(0, Math.min(1, psi.scores.performance / 100)),
+      categoryHints: ['seo.technical']
     }));
   }
 
@@ -2228,6 +2350,8 @@ function buildInternalGuideInput({ analyzedPages = [] } = {}) {
       bodyText: clampGuideText(page.bodyText || ''),
       hasSchema: !!page.hasSchema,
       hasFaqSchema: !!page.hasFaqSchema,
+      hasOrganizationSchema: !!page.hasOrganizationSchema,
+      hasLocalBusinessSchema: !!page.hasLocalBusinessSchema,
       hasOpenGraph: !!page.hasOpenGraph,
       hasTwitterCard: !!page.hasTwitterCard,
       hasContactLink: !!page.hasContactLink,
@@ -2474,7 +2598,12 @@ export async function auditWebsite({ url, locale = 'de', mode = 'deep', maxSubpa
     }),
     internalGuideInput: buildInternalGuideInput({
       analyzedPages
-    })
+    }),
+    // Raw robots.txt body, surfaced for downstream tester-specific checks
+    // (e.g. GEO tester parses it for LLM user-agent directives). null when
+    // the file was unreachable.
+    rawRobotsText: typeof robotsResponse?.data === 'string' ? robotsResponse.data : null,
+    finalOrigin
   };
 
   setCachedResult(result);

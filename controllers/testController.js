@@ -1,5 +1,5 @@
 import { auditWebsite, getCachedAuditResult, toPublicAuditResult } from '../services/websiteAuditService.js';
-import { auditBrokenLinks } from '../services/brokenLinkAuditService.js';
+import { auditBrokenLinks, toPublicBrokenLinkResult } from '../services/brokenLinkAuditService.js';
 import { auditGeoWebsite } from '../services/geoAuditService.js';
 import { auditSeoWebsite } from '../services/seoAuditService.js';
 import { auditMetaWebsite } from '../services/metaAuditService.js';
@@ -26,6 +26,11 @@ import {
   confirmMetaTesterLeadToken,
   requestMetaTesterLead
 } from '../services/metaTesterLeadService.js';
+import {
+  confirmBrokenLinkTesterLeadToken,
+  requestBrokenLinkTesterLead
+} from '../services/brokenLinkTesterLeadService.js';
+import { t as tError } from '../util/testerI18n.js';
 
 const PAGE_I18N = {
   de: {
@@ -53,6 +58,30 @@ const PAGE_I18N = {
       {
         q: 'Muss ich meine Website updaten?',
         a: 'Wenn wichtige Signale wie Title, Description, Performance, mobile Nutzbarkeit oder Vertrauensfaktoren fehlen, solltest du priorisiert updaten.'
+      },
+      {
+        q: 'Was bedeutet der Gesamt-Score?',
+        a: 'Der Gesamt-Score (0–100) gewichtet SEO, GEO, Technik, UX, Vertrauen und Conversion. Werte ab 75 sind gut, 45–74 sind ausbaufähig, unter 45 sind kritisch.'
+      },
+      {
+        q: 'Wie lange dauert der Test?',
+        a: 'In der Regel zwischen 15 und 45 Sekunden. Bei großen Websites mit vielen Unterseiten kann der Scan bis zu einer Minute dauern.'
+      },
+      {
+        q: 'Werden meine Daten gespeichert?',
+        a: 'Wir speichern nur anonyme Audit-Daten für bis zu 14 Tage zur Qualitätssicherung. Persönliche Daten erfassen wir nur, wenn du aktiv den Report anforderst.'
+      },
+      {
+        q: 'Kann ich den Report weiterverwenden?',
+        a: 'Ja. Nach der Double-Opt-in-Bestätigung erhältst du den PDF-Report per E-Mail – inklusive klarer Prioritäten und Umsetzungsempfehlungen.'
+      },
+      {
+        q: 'Funktioniert der Tester auch für Landingpages?',
+        a: 'Ja. Der Tester analysiert jede öffentlich erreichbare URL inklusive Einzelseiten, Landingpages und Shop-Produktseiten.'
+      },
+      {
+        q: 'Was kostet das Erstgespräch?',
+        a: 'Das 30-Minuten-Erstgespräch ist kostenlos und unverbindlich. Ziel ist, gemeinsam zu klären, ob und wie wir dir am besten helfen können.'
       }
     ]
   },
@@ -81,6 +110,30 @@ const PAGE_I18N = {
       {
         q: 'Does my website need an update?',
         a: 'If key factors like titles, descriptions, performance, mobile UX, or trust elements are weak, an update should be prioritized.'
+      },
+      {
+        q: 'What does the overall score mean?',
+        a: 'The 0–100 score aggregates SEO, GEO, technical quality, UX, trust, and conversion signals. 75+ is strong, 45–74 has room to grow, below 45 is critical.'
+      },
+      {
+        q: 'How long does the test take?',
+        a: 'Usually between 15 and 45 seconds. Large sites with many subpages may take up to a minute for the full scan.'
+      },
+      {
+        q: 'Is my data stored?',
+        a: 'Anonymous audit data is kept for up to 14 days for quality assurance. Personal data is only stored if you actively request the report.'
+      },
+      {
+        q: 'Can I reuse the report?',
+        a: 'Yes. After double opt-in, you will receive the PDF report by email including clear priorities and implementation recommendations.'
+      },
+      {
+        q: 'Does the tester work for landing pages?',
+        a: 'Yes. The tester works on any publicly reachable URL including individual landing pages and product pages.'
+      },
+      {
+        q: 'What does the first consultation cost?',
+        a: 'The 30-minute introductory consultation is free and non-binding. Its goal is to clarify together how we can help best.'
       }
     ]
   }
@@ -112,6 +165,30 @@ const BROKEN_LINK_PAGE_I18N = {
       {
         q: 'Was sollte ich zuerst nach dem Scan tun?',
         a: 'Priorisiere Seiten mit vielen Broken Links, ersetze tote Ziele, entferne irrelevante Verweise und setze saubere Weiterleitungen.'
+      },
+      {
+        q: 'Wie tief crawlt der Broken-Links-Tester?',
+        a: 'Der Scanner folgt internen Links innerhalb der Domain bis zu einer definierten Tiefe und prüft jede externe Referenz einmal auf HTTP-Status.'
+      },
+      {
+        q: 'Welche HTTP-Statuscodes werden als Fehler gewertet?',
+        a: '4xx-Codes (z. B. 404, 410) gelten als defekt, 5xx-Codes als Serverfehler. 3xx-Weiterleitungen werden als Warnung markiert, wenn sie Ketten bilden.'
+      },
+      {
+        q: 'Wie oft sollte ich defekte Links prüfen?',
+        a: 'Für aktive Websites empfiehlt sich eine monatliche Prüfung. Nach größeren Content-Änderungen oder Migrationen zusätzlich ad-hoc.'
+      },
+      {
+        q: 'Schadet jeder Broken Link meinem SEO?',
+        a: 'Vor allem interne Broken Links und Links auf wichtigen Seiten wirken negativ. Einzelne tote externe Links auf Nischenseiten sind weniger kritisch.'
+      },
+      {
+        q: 'Werden 301-Weiterleitungen erkannt?',
+        a: 'Ja. Kurze 301-Weiterleitungen werden als OK gewertet. Lange Weiterleitungsketten werden als Warnung markiert und sollten verkürzt werden.'
+      },
+      {
+        q: 'Bekomme ich den Report als Datei?',
+        a: 'Ja. Nach Newsletter-Bestätigung erhältst du einen PDF-Report mit priorisierter Link-Liste, Quellseiten und Empfehlungen zur Behebung.'
       }
     ]
   },
@@ -140,6 +217,30 @@ const BROKEN_LINK_PAGE_I18N = {
       {
         q: 'What should I fix first after the scan?',
         a: 'Start with high-traffic pages, remove dead targets, replace broken references, and add clean redirects where needed.'
+      },
+      {
+        q: 'How deep does the Broken Links Tester crawl?',
+        a: 'It follows internal links within the domain up to a defined depth and checks every external reference once via HTTP status.'
+      },
+      {
+        q: 'Which HTTP status codes are treated as errors?',
+        a: '4xx codes (e.g. 404, 410) are treated as broken, 5xx as server errors. 3xx redirects are flagged as warnings when they form chains.'
+      },
+      {
+        q: 'How often should I check for broken links?',
+        a: 'Monthly is a good cadence for active sites. After major content changes or migrations, also run an ad-hoc check.'
+      },
+      {
+        q: 'Does every broken link hurt my SEO?',
+        a: 'Internal broken links and links on important pages matter most. Isolated dead external links on niche pages are less critical.'
+      },
+      {
+        q: 'Are 301 redirects detected?',
+        a: 'Yes. Short 301 redirects pass as OK, while long redirect chains are flagged as warnings and should be shortened.'
+      },
+      {
+        q: 'Do I get the report as a file?',
+        a: 'Yes. After newsletter confirmation you receive a PDF report with a prioritized link list, source pages, and fix recommendations.'
       }
     ]
   }
@@ -171,6 +272,30 @@ const GEO_PAGE_I18N = {
       {
         q: 'Ist das Ergebnis nur für Google sinnvoll?',
         a: 'Nein, die Signale helfen sowohl klassischer Suche als auch generativen Suchoberflächen und KI-Antwortsystemen.'
+      },
+      {
+        q: 'Was ist GEO (Generative Engine Optimization)?',
+        a: 'GEO ist die Optimierung für generative Suche und KI-Antworten (ChatGPT, Gemini, Perplexity, Google AI Overviews). Ziel ist, als Quelle zitiert und in AI-Antworten eingebunden zu werden.'
+      },
+      {
+        q: 'Unterscheidet sich GEO grundsätzlich von klassischem SEO?',
+        a: 'GEO baut auf klassischem SEO auf, legt aber zusätzlich Gewicht auf semantische Klarheit, Entity-Konsistenz, Fakten-Belegbarkeit und strukturierte Kontextsignale.'
+      },
+      {
+        q: 'Welche Rolle spielen llms.txt und ai.txt?',
+        a: 'Diese Dateien steuern, wie KI-Crawler deine Inhalte verarbeiten dürfen. Der GEO-Tester prüft, ob passende Direktiven vorhanden und konsistent sind.'
+      },
+      {
+        q: 'Brauche ich JSON-LD auf jeder Seite?',
+        a: 'Nicht auf jeder, aber auf Seiten mit klarer Intent-Zuordnung: Home (Organization), Services (Service), Artikel (Article), FAQ-Bereiche (FAQPage). Mehr hilft bei Disambiguierung.'
+      },
+      {
+        q: 'Wie messe ich, ob GEO wirkt?',
+        a: 'Typische Signale: Zitations-Erwähnungen in AI-Antworten, Referral-Traffic aus AI-Oberflächen, Impressionen in SGE/AI-Overviews, Brand-Suchvolumen nach Sichtbarkeits-Kampagnen.'
+      },
+      {
+        q: 'Wie lange dauert ein GEO-Effekt?',
+        a: 'Technische Fixes (Schema, Meta) wirken innerhalb weniger Tage bis Wochen. Inhaltliche/autoritäre Signale brauchen meist 6-12 Wochen, um in AI-Antworten durchzuschlagen.'
       }
     ]
   },
@@ -199,6 +324,30 @@ const GEO_PAGE_I18N = {
       {
         q: 'Is GEO relevant only for Google?',
         a: 'No. These signals support both classic search and generative search/AI answer interfaces.'
+      },
+      {
+        q: 'What is GEO (Generative Engine Optimization)?',
+        a: 'GEO is optimization for generative search and AI answers (ChatGPT, Gemini, Perplexity, Google AI Overviews). The goal is to be cited as a source in AI responses.'
+      },
+      {
+        q: 'Is GEO fundamentally different from classic SEO?',
+        a: 'GEO builds on classic SEO but adds emphasis on semantic clarity, entity consistency, factual verifiability, and structured context signals.'
+      },
+      {
+        q: 'What role do llms.txt and ai.txt play?',
+        a: 'These files control how AI crawlers may process your content. The GEO tester checks whether suitable directives are present and consistent.'
+      },
+      {
+        q: 'Do I need JSON-LD on every page?',
+        a: 'Not on every page, but on intent-clear pages: Home (Organization), Services (Service), Articles (Article), FAQ sections (FAQPage). More helps with disambiguation.'
+      },
+      {
+        q: 'How do I measure GEO impact?',
+        a: 'Typical signals: citation mentions in AI answers, referral traffic from AI interfaces, impressions in SGE/AI Overviews, and brand search volume after visibility campaigns.'
+      },
+      {
+        q: 'How long does GEO take to show results?',
+        a: 'Technical fixes (schema, metadata) show results within days to weeks. Content and authority signals typically take 6–12 weeks to propagate through AI answers.'
       }
     ]
   }
@@ -230,6 +379,30 @@ const SEO_PAGE_I18N = {
       {
         q: 'Ist der SEO-Check auch für KI-Suche relevant?',
         a: 'Ja. Die geprüften Signale verbessern sowohl klassische Suchergebnisse als auch AI-retrieval-getriebene Auffindbarkeit.'
+      },
+      {
+        q: 'Welche OnPage-Signale sind am wichtigsten?',
+        a: 'Title, Meta-Description, saubere H1-Hierarchie, interne Verlinkung, Canonical-URL, Bild-Alt-Texte und thematisch klare URLs. Diese Basis wirkt überdurchschnittlich stark auf Rankings.'
+      },
+      {
+        q: 'Wie viele Unterseiten werden analysiert?',
+        a: 'Der öffentliche Scan analysiert die Startseite plus bis zu 25 Unterseiten. Der Voll-Report nach Bestätigung kann auf Wunsch bis zu 250 Seiten tief gehen.'
+      },
+      {
+        q: 'Was ist Core Web Vitals und warum prüft ihr es?',
+        a: 'Core Web Vitals (LCP, INP, CLS) sind Performance- und UX-Metriken von Google. Schwache Werte schaden Rankings insbesondere auf Mobile und werden im Report priorisiert.'
+      },
+      {
+        q: 'Wie wichtig sind strukturierte Daten (Schema.org)?',
+        a: 'Strukturierte Daten helfen Google und KI-Systemen, Inhalte korrekt einzuordnen. Für Unternehmensseiten sind Organization, LocalBusiness, Service und FAQPage besonders wirksam.'
+      },
+      {
+        q: 'Lohnt sich SEO noch in 2026?',
+        a: 'Ja. Auch mit KI-Antworten bleibt organische Suche ein zentraler Traffic-Kanal. Zusätzlich werden SEO-starke Seiten überdurchschnittlich häufig als Quelle in AI-Overviews zitiert.'
+      },
+      {
+        q: 'Wie lange dauert es, bis SEO-Maßnahmen wirken?',
+        a: 'Technische Fixes wirken oft innerhalb 2-4 Wochen. Content- und Autoritätsmaßnahmen typischerweise 3-6 Monate, bis sie stabil in Rankings und Traffic sichtbar sind.'
       }
     ]
   },
@@ -258,6 +431,30 @@ const SEO_PAGE_I18N = {
       {
         q: 'Is this useful for AI-driven search discovery too?',
         a: 'Yes. The audited signals support both classic search rankings and AI-retrieval-driven discoverability.'
+      },
+      {
+        q: 'Which on-page signals matter most?',
+        a: 'Title, meta description, clean H1 hierarchy, internal linking, canonical URL, image alt text, and topic-clear URLs. These fundamentals have outsized ranking impact.'
+      },
+      {
+        q: 'How many subpages are analyzed?',
+        a: 'The public scan covers the homepage plus up to 25 subpages. The full post-confirmation report can go up to 250 pages deep on request.'
+      },
+      {
+        q: 'What are Core Web Vitals and why do you test them?',
+        a: 'Core Web Vitals (LCP, INP, CLS) are Google performance/UX metrics. Weak values hurt rankings especially on mobile and are prioritized in the report.'
+      },
+      {
+        q: 'How important is structured data (Schema.org)?',
+        a: 'Structured data helps Google and AI systems classify content correctly. For business sites, Organization, LocalBusiness, Service, and FAQPage are especially effective.'
+      },
+      {
+        q: 'Is SEO still worth it in 2026?',
+        a: 'Yes. Even with AI answers, organic search remains a core traffic channel. SEO-strong pages are also cited more often as sources in AI Overviews.'
+      },
+      {
+        q: 'How long until SEO efforts show results?',
+        a: 'Technical fixes often pay off within 2–4 weeks. Content and authority work typically takes 3–6 months to appear stably in rankings and traffic.'
       }
     ]
   }
@@ -289,6 +486,30 @@ const META_PAGE_I18N = {
       {
         q: 'Warum sehe ich öffentlich nur die Startseite im Detail?',
         a: 'Die Oberfläche zeigt bewusst die vollständige Startseitenanalyse. Erweiterte Unterseiten-Optimierung wird nach Opt-in als Kurzreport und anschließend als Vollanleitung über das Admin-Backend bereitgestellt.'
+      },
+      {
+        q: 'Was ist der Unterschied zwischen OG-Tags und Twitter Cards?',
+        a: 'Open-Graph-Tags (og:title, og:image etc.) steuern Link-Vorschauen auf Facebook, LinkedIn und WhatsApp. Twitter-Cards steuern die Darstellung auf X/Twitter. Beide sollten vorhanden und konsistent sein.'
+      },
+      {
+        q: 'Welche Favicon- und Icon-Formate sind 2026 Pflicht?',
+        a: 'Empfohlen: favicon.ico (32x32), apple-touch-icon.png (180x180), SVG-Favicon für scharfe Darstellung, manifest.json mit PWA-Icons und Theme-Color-Meta für mobile Browser-UI.'
+      },
+      {
+        q: 'Warum ist der Canonical-Tag so wichtig?',
+        a: 'Der Canonical-Tag signalisiert Google die Haupt-URL einer Seite und verhindert Duplicate-Content-Probleme bei Query-Parametern, Tracking-IDs oder URL-Varianten.'
+      },
+      {
+        q: 'Was passiert, wenn mein Robots-Meta "noindex" ist?',
+        a: 'Die Seite wird nicht in den Google-Index aufgenommen. Das ist für Admin-Bereiche gewollt, auf Marketing-Seiten jedoch ein kritischer Fehler, der oft zu Traffic-Totalausfall führt.'
+      },
+      {
+        q: 'Brauche ich ein Web-App-Manifest, wenn ich keine PWA bin?',
+        a: 'Das Manifest ist nicht verpflichtend, aber ein minimaler manifest.json mit Name, Icons und Theme-Color verbessert die mobile UX beim "Zum Startbildschirm hinzufügen".'
+      },
+      {
+        q: 'Wie häufig sollten Meta-Daten überprüft werden?',
+        a: 'Bei jedem größeren Release und vor SEO-Relaunches. Ein monatlicher Kurz-Check deckt typische Regressionen wie fehlende Canonicals oder geändertes Robots-Meta auf.'
       }
     ]
   },
@@ -317,6 +538,30 @@ const META_PAGE_I18N = {
       {
         q: 'Why do I only see full homepage details in the on-page result?',
         a: 'Public output focuses on a full homepage audit. Extended subpage optimization is delivered after opt-in as a short report and can be expanded via admin full-guide delivery.'
+      },
+      {
+        q: 'What is the difference between OG tags and Twitter Cards?',
+        a: 'Open Graph tags (og:title, og:image, etc.) drive link previews on Facebook, LinkedIn, and WhatsApp. Twitter Cards drive rendering on X/Twitter. Both should be present and consistent.'
+      },
+      {
+        q: 'Which favicon and icon formats are required in 2026?',
+        a: 'Recommended: favicon.ico (32x32), apple-touch-icon.png (180x180), an SVG favicon for crisp rendering, manifest.json with PWA icons, and a theme-color meta for mobile browser UI.'
+      },
+      {
+        q: 'Why is the canonical tag so important?',
+        a: 'The canonical tag tells Google which URL is the primary version of a page and prevents duplicate content issues from query params, tracking IDs, or URL variants.'
+      },
+      {
+        q: 'What happens if my robots meta is set to "noindex"?',
+        a: 'The page is removed from the Google index. That is intentional on admin areas, but on marketing pages it is a critical mistake that often causes total traffic loss.'
+      },
+      {
+        q: 'Do I need a web app manifest if I am not a PWA?',
+        a: 'A manifest is not required, but a minimal manifest.json with name, icons, and theme-color improves mobile UX when users add the site to their home screen.'
+      },
+      {
+        q: 'How often should I verify my meta data?',
+        a: 'After every major release and before SEO relaunches. A monthly quick check catches regressions such as missing canonicals or altered robots meta.'
       }
     ]
   }
@@ -330,7 +575,33 @@ function jsonLd(scriptObject) {
   return `<script type="application/ld+json">${JSON.stringify(scriptObject)}</script>`;
 }
 
-function buildSeoExtra(base, canonical, copy, locale) {
+/**
+ * Builds the full SEO/OG/Twitter/JSON-LD head extra block for any tester page.
+ *
+ * Consolidates what used to be five near-identical helpers (website / broken-links
+ * / geo / seo / meta). Per-tester differences are encoded via the `options` arg:
+ *
+ * @param {string} base       - canonical origin, e.g. "https://komplettwebdesign.de"
+ * @param {string} canonical  - full canonical URL for this page
+ * @param {object} copy       - i18n copy bundle (must include breadcrumb[], faq[],
+ *                              altPath, localeCode, inLanguage, pageName,
+ *                              schemaDescription, ogTitle, ogDescription)
+ * @param {'de'|'en'} locale
+ * @param {object} options
+ * @param {string} options.appName        - WebApplication schema name
+ * @param {string} options.xDefaultPath   - path used for hreflang="x-default"
+ * @param {boolean} [options.includeSearchAction]   - attach SearchAction to WebSite
+ * @param {boolean} [options.includePrimaryImage]   - attach primaryImageOfPage +
+ *                                                     embed breadcrumb in WebPage
+ */
+function buildTesterSeoExtra(base, canonical, copy, locale, options) {
+  const {
+    appName,
+    xDefaultPath,
+    includeSearchAction = false,
+    includePrimaryImage = false
+  } = options || {};
+
   const alternateUrl = `${base}${copy.altPath}`;
 
   const breadcrumbSchema = {
@@ -357,13 +628,15 @@ function buildSeoExtra(base, canonical, copy, locale) {
     '@type': 'WebSite',
     name: 'Komplett Webdesign',
     url: base,
-    inLanguage: copy.inLanguage,
-    potentialAction: {
+    inLanguage: copy.inLanguage
+  };
+  if (includeSearchAction) {
+    websiteSchema.potentialAction = {
       '@type': 'SearchAction',
       target: `${base}/?q={search_term_string}`,
       'query-input': 'required name=search_term_string'
-    }
-  };
+    };
+  }
 
   const webPageSchema = {
     '@context': 'https://schema.org',
@@ -376,112 +649,20 @@ function buildSeoExtra(base, canonical, copy, locale) {
       '@type': 'WebSite',
       url: base,
       name: 'Komplett Webdesign'
-    },
-    breadcrumb: {
+    }
+  };
+  if (includePrimaryImage) {
+    webPageSchema.breadcrumb = {
       '@type': 'BreadcrumbList',
       itemListElement: breadcrumbSchema.itemListElement
-    },
-    primaryImageOfPage: `${base}/images/heroBg.webp`
-  };
+    };
+    webPageSchema.primaryImageOfPage = `${base}/images/heroBg.webp`;
+  }
 
   const appSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'Komplett Webdesign Website Tester',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    inLanguage: copy.inLanguage,
-    url: canonical,
-    description: copy.schemaDescription,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'EUR'
-    }
-  };
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: copy.faq.map((item) => ({
-      '@type': 'Question',
-      name: item.q,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.a
-      }
-    }))
-  };
-
-  return `
-    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
-    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
-    <link rel="alternate" hreflang="x-default" href="${base}/website-tester">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="${copy.localeCode}">
-    <meta property="og:title" content="${copy.ogTitle}">
-    <meta property="og:description" content="${copy.ogDescription}">
-    <meta property="og:url" content="${canonical}">
-    <meta property="og:image" content="${base}/images/heroBg.webp">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${copy.ogTitle}">
-    <meta name="twitter:description" content="${copy.ogDescription}">
-    ${jsonLd(websiteSchema)}
-    ${jsonLd(webPageSchema)}
-    ${jsonLd(appSchema)}
-    ${jsonLd(breadcrumbSchema)}
-    ${jsonLd(faqSchema)}
-  `;
-}
-
-function buildBrokenLinksSeoExtra(base, canonical, copy, locale) {
-  const alternateUrl = `${base}${copy.altPath}`;
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: copy.breadcrumb[0],
-        item: base
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: copy.breadcrumb[1],
-        item: canonical
-      }
-    ]
-  };
-
-  const webPageSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: copy.pageName,
-    description: copy.schemaDescription,
-    url: canonical,
-    inLanguage: copy.inLanguage,
-    isPartOf: {
-      '@type': 'WebSite',
-      url: base,
-      name: 'Komplett Webdesign'
-    }
-  };
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Komplett Webdesign',
-    url: base,
-    inLanguage: copy.inLanguage
-  };
-
-  const appSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'Komplett Webdesign Broken Links Tester',
+    name: appName,
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     inLanguage: copy.inLanguage,
@@ -510,7 +691,7 @@ function buildBrokenLinksSeoExtra(base, canonical, copy, locale) {
   return `
     <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
     <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
-    <link rel="alternate" hreflang="x-default" href="${base}/website-tester/broken-links">
+    <link rel="alternate" hreflang="x-default" href="${base}${xDefaultPath}">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="${copy.localeCode}">
     <meta property="og:title" content="${copy.ogTitle}">
@@ -528,287 +709,32 @@ function buildBrokenLinksSeoExtra(base, canonical, copy, locale) {
   `;
 }
 
-function buildGeoSeoExtra(base, canonical, copy, locale) {
-  const alternateUrl = `${base}${copy.altPath}`;
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: copy.breadcrumb[0],
-        item: base
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: copy.breadcrumb[1],
-        item: canonical
-      }
-    ]
-  };
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Komplett Webdesign',
-    url: base,
-    inLanguage: copy.inLanguage
-  };
-
-  const webPageSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: copy.pageName,
-    description: copy.schemaDescription,
-    url: canonical,
-    inLanguage: copy.inLanguage,
-    isPartOf: {
-      '@type': 'WebSite',
-      url: base,
-      name: 'Komplett Webdesign'
-    }
-  };
-
-  const appSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'Komplett Webdesign GEO Tester',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    inLanguage: copy.inLanguage,
-    url: canonical,
-    description: copy.schemaDescription,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'EUR'
-    }
-  };
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: (copy.faq || []).map((item) => ({
-      '@type': 'Question',
-      name: item.q,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.a
-      }
-    }))
-  };
-
-  return `
-    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
-    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
-    <link rel="alternate" hreflang="x-default" href="${base}/website-tester/geo">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="${copy.localeCode}">
-    <meta property="og:title" content="${copy.ogTitle}">
-    <meta property="og:description" content="${copy.ogDescription}">
-    <meta property="og:url" content="${canonical}">
-    <meta property="og:image" content="${base}/images/heroBg.webp">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${copy.ogTitle}">
-    <meta name="twitter:description" content="${copy.ogDescription}">
-    ${jsonLd(websiteSchema)}
-    ${jsonLd(webPageSchema)}
-    ${jsonLd(appSchema)}
-    ${jsonLd(breadcrumbSchema)}
-    ${jsonLd(faqSchema)}
-  `;
-}
-
-function buildSeoTesterSeoExtra(base, canonical, copy, locale) {
-  const alternateUrl = `${base}${copy.altPath}`;
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: copy.breadcrumb[0],
-        item: base
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: copy.breadcrumb[1],
-        item: canonical
-      }
-    ]
-  };
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Komplett Webdesign',
-    url: base,
-    inLanguage: copy.inLanguage
-  };
-
-  const webPageSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: copy.pageName,
-    description: copy.schemaDescription,
-    url: canonical,
-    inLanguage: copy.inLanguage,
-    isPartOf: {
-      '@type': 'WebSite',
-      url: base,
-      name: 'Komplett Webdesign'
-    }
-  };
-
-  const appSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'Komplett Webdesign SEO Tester',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    inLanguage: copy.inLanguage,
-    url: canonical,
-    description: copy.schemaDescription,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'EUR'
-    }
-  };
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: (copy.faq || []).map((item) => ({
-      '@type': 'Question',
-      name: item.q,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.a
-      }
-    }))
-  };
-
-  return `
-    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
-    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
-    <link rel="alternate" hreflang="x-default" href="${base}/website-tester/seo">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="${copy.localeCode}">
-    <meta property="og:title" content="${copy.ogTitle}">
-    <meta property="og:description" content="${copy.ogDescription}">
-    <meta property="og:url" content="${canonical}">
-    <meta property="og:image" content="${base}/images/heroBg.webp">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${copy.ogTitle}">
-    <meta name="twitter:description" content="${copy.ogDescription}">
-    ${jsonLd(websiteSchema)}
-    ${jsonLd(webPageSchema)}
-    ${jsonLd(appSchema)}
-    ${jsonLd(breadcrumbSchema)}
-    ${jsonLd(faqSchema)}
-  `;
-}
-
-function buildMetaTesterSeoExtra(base, canonical, copy, locale) {
-  const alternateUrl = `${base}${copy.altPath}`;
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: copy.breadcrumb[0],
-        item: base
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: copy.breadcrumb[1],
-        item: canonical
-      }
-    ]
-  };
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'Komplett Webdesign',
-    url: base,
-    inLanguage: copy.inLanguage
-  };
-
-  const webPageSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: copy.pageName,
-    description: copy.schemaDescription,
-    url: canonical,
-    inLanguage: copy.inLanguage,
-    isPartOf: {
-      '@type': 'WebSite',
-      url: base,
-      name: 'Komplett Webdesign'
-    }
-  };
-
-  const appSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'Komplett Webdesign Meta Tester',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    inLanguage: copy.inLanguage,
-    url: canonical,
-    description: copy.schemaDescription,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'EUR'
-    }
-  };
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: (copy.faq || []).map((item) => ({
-      '@type': 'Question',
-      name: item.q,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.a
-      }
-    }))
-  };
-
-  return `
-    <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">
-    <link rel="alternate" hreflang="${locale === 'en' ? 'de-DE' : 'en-US'}" href="${alternateUrl}">
-    <link rel="alternate" hreflang="x-default" href="${base}/website-tester/meta">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="${copy.localeCode}">
-    <meta property="og:title" content="${copy.ogTitle}">
-    <meta property="og:description" content="${copy.ogDescription}">
-    <meta property="og:url" content="${canonical}">
-    <meta property="og:image" content="${base}/images/heroBg.webp">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${copy.ogTitle}">
-    <meta name="twitter:description" content="${copy.ogDescription}">
-    ${jsonLd(websiteSchema)}
-    ${jsonLd(webPageSchema)}
-    ${jsonLd(appSchema)}
-    ${jsonLd(breadcrumbSchema)}
-    ${jsonLd(faqSchema)}
-  `;
-}
+// Per-tester config consumed by the render handlers below. Kept adjacent to the
+// factory so the relationship between tester type and schema output is obvious.
+const TESTER_SEO_CONFIG = {
+  website: {
+    appName: 'Komplett Webdesign Website Tester',
+    xDefaultPath: '/website-tester',
+    includeSearchAction: true,
+    includePrimaryImage: true
+  },
+  brokenLinks: {
+    appName: 'Komplett Webdesign Broken Links Tester',
+    xDefaultPath: '/website-tester/broken-links'
+  },
+  geo: {
+    appName: 'Komplett Webdesign GEO Tester',
+    xDefaultPath: '/website-tester/geo'
+  },
+  seo: {
+    appName: 'Komplett Webdesign SEO Tester',
+    xDefaultPath: '/website-tester/seo'
+  },
+  meta: {
+    appName: 'Komplett Webdesign Meta Tester',
+    xDefaultPath: '/website-tester/meta'
+  }
+};
 
 function extractClientIp(req) {
   const forwarded = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
@@ -861,7 +787,8 @@ export async function testPage(req, res) {
     description: copy.description,
     keywords: copy.keywords,
     canonicalUrl: canonical,
-    seoExtra: buildSeoExtra(base, canonical, copy, locale)
+    faq: copy.faq || [],
+    seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.website)
   });
 }
 
@@ -877,7 +804,8 @@ export async function brokenLinksTestPage(req, res) {
     description: copy.description,
     keywords: copy.keywords,
     canonicalUrl: canonical,
-    seoExtra: buildBrokenLinksSeoExtra(base, canonical, copy, locale)
+    faq: copy.faq || [],
+    seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.brokenLinks)
   });
 }
 
@@ -893,7 +821,8 @@ export async function geoTestPage(req, res) {
     description: copy.description,
     keywords: copy.keywords,
     canonicalUrl: canonical,
-    seoExtra: buildGeoSeoExtra(base, canonical, copy, locale)
+    faq: copy.faq || [],
+    seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.geo)
   });
 }
 
@@ -909,7 +838,8 @@ export async function seoTestPage(req, res) {
     description: copy.description,
     keywords: copy.keywords,
     canonicalUrl: canonical,
-    seoExtra: buildSeoTesterSeoExtra(base, canonical, copy, locale)
+    faq: copy.faq || [],
+    seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.seo)
   });
 }
 
@@ -925,7 +855,8 @@ export async function metaTestPage(req, res) {
     description: copy.description,
     keywords: copy.keywords,
     canonicalUrl: canonical,
-    seoExtra: buildMetaTesterSeoExtra(base, canonical, copy, locale)
+    faq: copy.faq || [],
+    seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.meta)
   });
 }
 
@@ -1000,7 +931,7 @@ export async function runWebsiteAudit(req, res) {
 
     res.status(status).json({
       success: false,
-      message: error.message || 'Die Analyse konnte nicht durchgeführt werden.'
+      message: error.message || tError('audit.website.failed', safeLocale)
     });
   }
 }
@@ -1062,7 +993,7 @@ export async function runBrokenLinkAudit(req, res) {
       console.error('Broken-Links-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
-    return res.json({ success: true, result: toPublicAuditResult(result) });
+    return res.json({ success: true, result: toPublicBrokenLinkResult(result) });
   } catch (error) {
     const status = error.status || 500;
 
@@ -1082,9 +1013,7 @@ export async function runBrokenLinkAudit(req, res) {
 
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The broken-link scan could not be completed.'
-        : 'Der Broken-Link-Scan konnte nicht durchgeführt werden.')
+      message: error.message || tError('audit.brokenLinks.failed', safeLocale)
     });
   }
 }
@@ -1170,9 +1099,7 @@ export async function runGeoAudit(req, res) {
 
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The GEO audit could not be completed.'
-        : 'Das GEO-Audit konnte nicht durchgeführt werden.')
+      message: error.message || tError('audit.geo.failed', safeLocale)
     });
   }
 }
@@ -1258,9 +1185,7 @@ export async function runSeoAudit(req, res) {
 
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The SEO audit could not be completed.'
-        : 'Das SEO-Audit konnte nicht durchgeführt werden.')
+      message: error.message || tError('audit.seo.failed', safeLocale)
     });
   }
 }
@@ -1286,7 +1211,7 @@ export async function runMetaAudit(req, res) {
   } catch (error) {
     return res.status(error.status || 500).json({
       success: false,
-      message: error.message || (safeLocale === 'en' ? 'The meta audit could not be completed.' : 'Der Meta-Audit konnte nicht durchgeführt werden.')
+      message: error.message || tError('audit.meta.failed', safeLocale)
     });
   }
 }
@@ -1329,9 +1254,7 @@ export async function runWebsiteAuditLead(req, res) {
     const status = error.status || 500;
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The report request could not be processed.'
-        : 'Die Report-Anfrage konnte nicht verarbeitet werden.')
+      message: error.message || tError('report.request.failed', safeLocale)
     });
   }
 }
@@ -1362,9 +1285,7 @@ export async function runGeoAuditLead(req, res) {
     const status = error.status || 500;
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The GEO report request could not be processed.'
-        : 'Die GEO-Report-Anfrage konnte nicht verarbeitet werden.')
+      message: error.message || tError('report.geo.request.failed', safeLocale)
     });
   }
 }
@@ -1395,9 +1316,7 @@ export async function runSeoAuditLead(req, res) {
     const status = error.status || 500;
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The SEO report request could not be processed.'
-        : 'Die SEO-Report-Anfrage konnte nicht verarbeitet werden.')
+      message: error.message || tError('report.seo.request.failed', safeLocale)
     });
   }
 }
@@ -1428,9 +1347,38 @@ export async function runMetaAuditLead(req, res) {
     const status = error.status || 500;
     return res.status(status).json({
       success: false,
-      message: error.message || (safeLocale === 'en'
-        ? 'The meta report request could not be processed.'
-        : 'Die Meta-Report-Anfrage konnte nicht verarbeitet werden.')
+      message: error.message || tError('report.meta.request.failed', safeLocale)
+    });
+  }
+}
+
+export async function runBrokenLinkAuditLead(req, res) {
+  const { auditId, email, name, locale, consent } = req.body || {};
+  const safeLocale = locale === 'en' ? 'en' : 'de';
+  const safeConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
+  const consentText = combinedTesterConsentText(safeLocale);
+
+  try {
+    const response = await requestBrokenLinkTesterLead({
+      auditId: String(auditId || '').trim(),
+      email,
+      name,
+      locale: safeLocale,
+      consent: safeConsent,
+      sourceIp: extractClientIp(req),
+      consentText
+    });
+
+    return res.json({
+      success: true,
+      verificationRequired: true,
+      message: response.message
+    });
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message || tError('report.brokenLinks.request.failed', safeLocale)
     });
   }
 }
@@ -1553,6 +1501,35 @@ export async function confirmMetaAuditLead(req, res) {
       <meta property="og:type" content="website">
       <meta property="og:title" content="${isEn ? 'Meta Tester report confirmation' : 'Meta-Tester Report-Bestätigung'}">
       <meta property="og:description" content="${isEn ? 'Email confirmation for your detailed header/meta PDF report.' : 'E-Mail-Bestätigung für deinen detaillierten Header-/Meta-Report.'}">
+      <meta property="og:url" content="${canonical}">
+    `
+  });
+}
+
+export async function confirmBrokenLinkAuditLead(req, res) {
+  const requestedLocale = req.params?.lng === 'en' ? 'en' : 'de';
+  const token = String(req.query?.token || '').trim();
+  const viewModel = await confirmBrokenLinkTesterLeadToken({ token, locale: requestedLocale });
+  const isEn = viewModel.locale === 'en';
+  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const pagePath = isEn
+    ? '/en/website-tester/broken-links/report-confirm'
+    : '/website-tester/broken-links/report-confirm';
+  const canonical = `${base}${pagePath}`;
+
+  res.render('broken_links_tester_confirm', {
+    lng: viewModel.locale,
+    title: isEn ? 'Broken-Links Tester report confirmation' : 'Broken-Links-Tester Report-Bestätigung',
+    description: isEn
+      ? 'Confirm your email and receive your detailed broken-links report.'
+      : 'Bestätige deine E-Mail und erhalte deinen detaillierten Broken-Links-Report.',
+    canonicalUrl: canonical,
+    robots: 'noindex,nofollow',
+    confirmView: viewModel,
+    seoExtra: `
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="${isEn ? 'Broken-Links Tester report confirmation' : 'Broken-Links-Tester Report-Bestätigung'}">
+      <meta property="og:description" content="${isEn ? 'Email confirmation for your detailed broken-links PDF report.' : 'E-Mail-Bestätigung für deinen detaillierten Broken-Links-Report.'}">
       <meta property="og:url" content="${canonical}">
     `
   });

@@ -236,7 +236,8 @@ function buildConfirmViewModel({ locale, status, lead, message }) {
     lead,
     links: {
       tester: lng === 'en' ? '/en/website-tester/geo' : '/website-tester/geo',
-      contact: lng === 'en' ? '/en/kontakt' : '/kontakt'
+      contact: lng === 'en' ? '/en/kontakt' : '/kontakt',
+      booking: lng === 'en' ? '/en/booking' : '/booking'
     }
   };
 }
@@ -343,13 +344,15 @@ export async function confirmGeoTesterLeadToken({ token, locale }) {
     });
   }
 
+  // Atomic consume: if UPDATE ... RETURNING returns null after our pre-check
+  // passed, another click won the race. Show already_used, not invalid.
   const consumed = await consumeWebsiteTesterLeadConfirmToken(tokenHash);
   if (!consumed) {
     return buildConfirmViewModel({
       locale: effectiveLocale,
-      status: 'invalid',
+      status: 'already_used',
       lead: existing,
-      message: effectiveCopy.errors.tokenInvalid
+      message: effectiveCopy.messages.alreadyUsed
     });
   }
 

@@ -17,7 +17,7 @@ const GEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const SEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const DEFAULT_PAGE_SIZE = 30;
 const LEAD_STATUSES = new Set(['pending', 'confirmed', 'report_sent', 'report_failed']);
-const LEAD_SOURCES = new Set(['website', 'geo', 'seo', 'meta']);
+const LEAD_SOURCES = new Set(['website', 'geo', 'seo', 'meta', 'broken-links']);
 
 let ensurePromise = null;
 
