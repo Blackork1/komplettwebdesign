@@ -12,7 +12,8 @@ import {
 import { getCachedBrokenLinkAuditResult } from './brokenLinkAuditService.js';
 import {
   sendBrokenLinksTesterDoiMail,
-  sendBrokenLinksTesterReportMail
+  sendBrokenLinksTesterReportMail,
+  sendAdminTesterLeadNotification
 } from './mailService.js';
 import { buildBrokenLinksTesterReport } from './brokenLinksTesterPdfService.js';
 
@@ -253,6 +254,20 @@ export async function requestBrokenLinkTesterLead({
     confirmUrl,
     expiresAt
   });
+
+  try {
+    await sendAdminTesterLeadNotification({
+      source: 'broken-links',
+      email: lead.email,
+      name: lead.name,
+      domain,
+      scoreBand: lead.score_band || '',
+      overallScore: brokenCount,
+      locale: lng
+    });
+  } catch (e) {
+    console.warn('Admin notification (broken-links tester) failed:', e?.message || e);
+  }
 
   return {
     lead,

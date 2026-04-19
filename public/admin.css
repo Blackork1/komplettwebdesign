@@ -1,16 +1,929 @@
-/* --------------------------------------------------------
-   admin.css: Styling für das eigene CSS-Klassen-Dropdown
-   -------------------------------------------------------- */
+/* ==========================================================
+   admin.css — Admin-Backend Styling
+   - Schöne, übersichtliche Nav-Bar mit Icons + Dropdowns
+   - Elegante Login-Seite
+   - Legacy-Styles für bestehende Dropdowns bleiben erhalten
+   ========================================================== */
 
-/* 1) Der Container, in dem Input + Dropdown liegen */
+:root {
+  --admin-primary: #0b2a46;
+  --admin-primary-2: #173f63;
+  --admin-accent: #e94a1b;
+  --admin-accent-2: #ff7a4d;
+  --admin-bg: #f3f5f8;
+  --admin-card: #ffffff;
+  --admin-border: #e5e7eb;
+  --admin-text: #111827;
+  --admin-muted: #6b7280;
+  --admin-shadow: 0 4px 18px rgba(11, 42, 70, 0.08);
+  --admin-radius: 14px;
+}
+
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ----------------------------------------------------------
+   Admin-Topbar
+   ---------------------------------------------------------- */
+.admin-topbar {
+  background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-2) 100%);
+  color: #fff;
+  box-shadow: var(--admin-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.admin-topbar__inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 60px;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-size: 1.05rem;
+}
+
+.admin-brand:hover { color: #fff; text-decoration: none; }
+
+.admin-brand__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2) 100%);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(233, 74, 27, 0.35);
+}
+
+.admin-brand__label small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #ffd6c9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: auto;
+}
+
+.admin-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 0.93rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.admin-nav a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  text-decoration: none;
+}
+
+.admin-nav a.is-active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.admin-nav a .ico {
+  width: 1rem;
+  height: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.admin-nav .admin-nav__logout {
+  background: rgba(233, 74, 27, 0.9);
+  color: #fff;
+  margin-left: 0.5rem;
+}
+
+.admin-nav .admin-nav__logout:hover {
+  background: rgba(233, 74, 27, 1);
+  transform: translateY(-1px);
+}
+
+/* Dropdown inside admin nav */
+.admin-nav .admin-dropdown {
+  position: relative;
+}
+
+.admin-nav .admin-dropdown__toggle {
+  cursor: pointer;
+}
+
+.admin-nav .admin-dropdown__toggle::after {
+  content: "▾";
+  font-size: 0.7rem;
+  margin-left: 0.15rem;
+  opacity: 0.7;
+}
+
+.admin-nav .admin-dropdown__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 220px;
+  background: #fff;
+  color: var(--admin-text);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(11, 42, 70, 0.18);
+  padding: 0.35rem;
+  display: none;
+  z-index: 1050;
+  /* Transparente Brücke oberhalb des Menüs, damit der Hover beim
+     Wechsel vom Toggle zum Menü nicht verloren geht. */
+  margin-top: 0;
+}
+
+.admin-nav .admin-dropdown__menu::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: transparent;
+}
+
+.admin-nav .admin-dropdown.is-open .admin-dropdown__menu,
+.admin-nav .admin-dropdown:hover .admin-dropdown__menu {
+  display: block;
+}
+
+.admin-nav .admin-dropdown__menu a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--admin-text);
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+.admin-nav .admin-dropdown__menu a:hover {
+  background: var(--admin-bg);
+  color: var(--admin-primary);
+}
+
+.admin-burger {
+  display: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.35rem 0.6rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+@media (max-width: 960px) {
+  .admin-topbar__inner {
+    flex-wrap: wrap;
+  }
+  .admin-burger { display: inline-flex; align-items: center; }
+  .admin-nav {
+    order: 3;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.2rem;
+    padding: 0.6rem 0 0.8rem;
+    display: none;
+  }
+  .admin-nav.is-open { display: flex; }
+  .admin-nav a {
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .admin-nav .admin-dropdown__menu {
+    position: static;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 0.25rem 0.25rem 0.25rem 1rem;
+    margin-top: 0.25rem;
+  }
+  .admin-nav .admin-dropdown__menu a {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .admin-nav .admin-dropdown__menu a:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+  .admin-nav .admin-nav__logout { margin-left: 0; }
+}
+
+/* ----------------------------------------------------------
+   Admin-Content Wrapper
+   ---------------------------------------------------------- */
+.admin-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.admin-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 1.5rem;
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--admin-primary);
+}
+
+/* ----------------------------------------------------------
+   Admin-Footer
+   ---------------------------------------------------------- */
+.admin-footer {
+  max-width: 1400px;
+  margin: 2rem auto 1.5rem;
+  padding: 0 1.25rem;
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* ----------------------------------------------------------
+   Login-Seite
+   ---------------------------------------------------------- */
+.admin-login-body {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(233, 74, 27, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(23, 63, 99, 0.35) 0%, transparent 45%),
+    linear-gradient(135deg, #0b2a46 0%, #173f63 100%);
+  padding: 1.5rem;
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 2.25rem 2rem 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.admin-login-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.admin-login-card__brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2) 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 14px rgba(233, 74, 27, 0.35);
+}
+
+.admin-login-card__brand-text {
+  font-weight: 700;
+  color: var(--admin-primary);
+  line-height: 1.1;
+}
+
+.admin-login-card__brand-text small {
+  display: block;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.admin-login-card h1 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.55rem;
+  color: var(--admin-primary);
+}
+
+.admin-login-card p.lead {
+  color: var(--admin-muted);
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.admin-login-form .field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.admin-login-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--admin-primary);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.admin-login-form input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-login-form input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 4px rgba(233, 74, 27, 0.15);
+}
+
+.admin-login-form .submit-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  box-shadow: 0 6px 18px rgba(233, 74, 27, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.admin-login-form .submit-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 10px 22px rgba(233, 74, 27, 0.42);
+}
+
+.admin-login-error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(233, 74, 27, 0.1);
+  border: 1px solid rgba(233, 74, 27, 0.3);
+  color: #b2340f;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.admin-login-hint {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--admin-muted);
+}
+
+.admin-login-hint a {
+  color: var(--admin-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------
+   Mailversand-Form Styles
+   ---------------------------------------------------------- */
+.mailversand-form .form-row {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.mailversand-form label {
+  display: block;
+  font-weight: 600;
+  color: var(--admin-primary);
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.mailversand-form input[type="text"],
+.mailversand-form input[type="email"],
+.mailversand-form input[type="url"],
+.mailversand-form select,
+.mailversand-form textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--admin-text);
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mailversand-form textarea {
+  min-height: 180px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.mailversand-form input:focus,
+.mailversand-form select:focus,
+.mailversand-form textarea:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(233, 74, 27, 0.15);
+}
+
+.mailversand-form .submit-bar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.mailversand-form .submit-bar button {
+  padding: 0.7rem 1.25rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.mailversand-form .btn-primary {
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(233, 74, 27, 0.28);
+}
+
+.mailversand-form .btn-ghost {
+  background: #f3f5f8;
+  color: var(--admin-primary);
+  border: 1px solid var(--admin-border);
+}
+
+.mailversand-form .submit-bar button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.mailversand-form .hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+}
+
+.mailversand-alert {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+}
+.mailversand-alert--success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #046c4e;
+}
+.mailversand-alert--error {
+  background: rgba(233, 74, 27, 0.12);
+  border: 1px solid rgba(233, 74, 27, 0.35);
+  color: #b2340f;
+}
+
+.mailversand-preview {
+  border: 1px dashed var(--admin-border);
+  padding: 0.5rem;
+  border-radius: 12px;
+  background: #fafbfc;
+  margin-top: 1rem;
+}
+
+.mailversand-preview iframe {
+  width: 100%;
+  min-height: 420px;
+  border: 0;
+  background: #fff;
+  border-radius: 8px;
+}
+
+/* ----------------------------------------------------------
+   Mailversand – Grid-Layouts für Formzeilen
+   ---------------------------------------------------------- */
+.mailversand-form .mv-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.mailversand-form .mv-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.9rem;
+}
+
+@media (max-width: 820px) {
+  .mailversand-form .mv-grid-2,
+  .mailversand-form .mv-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------------------------
+   Mailversand – Dateianhänge
+   ---------------------------------------------------------- */
+.mailversand-form input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px dashed var(--admin-border);
+  border-radius: 10px;
+  background: #fafbfc;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.mailversand-form input[type="file"]:hover {
+  border-color: var(--admin-accent);
+  background: #fff;
+}
+
+.mv-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.6rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mv-file-list li {
+  background: #f3f5f8;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.88rem;
+  color: var(--admin-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mv-file-list li i {
+  color: var(--admin-primary);
+}
+
+.mv-file-size {
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  margin-left: auto;
+}
+
+.mv-file-sum {
+  background: rgba(11, 42, 70, 0.06) !important;
+  border-color: rgba(11, 42, 70, 0.2) !important;
+  font-weight: 600;
+  color: var(--admin-primary);
+  justify-content: flex-end;
+}
+
+.mv-attachments-note {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #8a6100;
+}
+
+.mv-attachments-note ul {
+  margin: 0.35rem 0 0 0;
+  padding-left: 1.2rem;
+}
+
+.mv-attachments-note li {
+  list-style: none;
+  margin: 0.15rem 0;
+}
+
+/* ----------------------------------------------------------
+   Mailversand – Einfacher Text-Editor (Overlay links)
+   ---------------------------------------------------------- */
+.mailversand-form .mv-editor-row {
+  margin-bottom: 1.25rem;
+}
+
+.mv-editor {
+  display: grid;
+  grid-template-columns: 0fr 1fr;
+  gap: 0;
+  align-items: stretch;
+  transition: grid-template-columns 0.25s ease, gap 0.25s ease;
+}
+
+.mv-editor__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  max-width: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    max-width 0.25s ease,
+    padding 0.25s ease,
+    opacity 0.2s ease,
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.mv-editor__toolbar.is-active {
+  max-width: 220px;
+  min-width: 200px;
+  padding: 0.75rem;
+  border-color: var(--admin-border);
+  opacity: 1;
+  transform: translateX(0);
+  box-shadow: 0 4px 12px rgba(11, 42, 70, 0.06);
+}
+
+.mv-editor.is-active,
+.mv-editor:has(.mv-editor__toolbar.is-active) {
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+}
+
+.mv-editor__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mv-editor__btn {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.7rem;
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.mv-editor__btn i {
+  width: 1rem;
+  text-align: center;
+  color: var(--admin-primary);
+}
+
+.mv-editor__btn:hover {
+  background: #f3f5f8;
+  border-color: var(--admin-primary);
+}
+
+.mv-editor__btn:active {
+  transform: translateY(1px);
+}
+
+.mv-editor__btn.is-active {
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2, #f27a3a) 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(233, 74, 27, 0.25);
+}
+
+.mv-editor__btn.is-active i {
+  color: #fff;
+}
+
+.mv-editor__panel {
+  margin-top: 0.5rem;
+  padding: 0.65rem;
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  animation: mvPanelIn 0.18s ease;
+}
+
+@keyframes mvPanelIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mv-editor__panel[hidden] {
+  display: none;
+}
+
+.mv-editor__panel-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--admin-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mv-editor__panel-label[hidden] {
+  display: none;
+}
+
+.mv-editor__input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--admin-text);
+  box-sizing: border-box;
+}
+
+.mv-editor__input[hidden] {
+  display: none;
+}
+
+.mv-editor__input:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(233, 74, 27, 0.15);
+}
+
+.mv-editor__panel-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.mv-editor__apply,
+.mv-editor__cancel {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.mv-editor__apply {
+  background: linear-gradient(135deg, var(--admin-accent) 0%, var(--admin-accent-2, #f27a3a) 100%);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(233, 74, 27, 0.22);
+}
+
+.mv-editor__apply:hover {
+  filter: brightness(1.05);
+}
+
+.mv-editor__cancel {
+  background: #f3f5f8;
+  color: var(--admin-primary);
+  border-color: var(--admin-border);
+}
+
+.mv-editor__cancel:hover {
+  background: #e8ebf0;
+}
+
+.mv-editor__apply:active,
+.mv-editor__cancel:active {
+  transform: translateY(1px);
+}
+
+.mv-editor__textarea-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mv-editor__textarea-wrap textarea {
+  flex: 1;
+}
+
+/* Mobile: Toolbar oberhalb statt seitlich */
+@media (max-width: 820px) {
+  .mv-editor,
+  .mv-editor.is-active,
+  .mv-editor:has(.mv-editor__toolbar.is-active) {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .mv-editor__toolbar {
+    max-height: 0;
+    max-width: none;
+    min-width: 0;
+    transform: translateY(-6px);
+  }
+
+  .mv-editor__toolbar.is-active {
+    max-height: 600px;
+    max-width: none;
+    min-width: 0;
+    margin-bottom: 0.6rem;
+    transform: translateY(0);
+  }
+
+  .mv-editor__btn {
+    font-size: 0.85rem;
+  }
+}
+
+/* ==========================================================
+   Legacy-Styles – nicht entfernen (wird in bestehenden
+   Admin-Templates für das CSS-Klassen-Dropdown verwendet)
+   ========================================================== */
+
 .classes-container {
   position: relative;
   width: 100%;
-  max-width: 400px;   /* nach Bedarf anpassen */
-  margin-top: 4px;    /* optional, damit etwas Abstand entsteht */
+  max-width: 400px;
+  margin-top: 4px;
 }
 
-/* 2) Das Input-Feld selbst */
 .classes-input {
   width: 100%;
   padding: 6px 10px;
@@ -21,35 +934,31 @@
   outline: none;
 }
 
-/* 3) Das Dropdown-Element, standardmäßig unsichtbar */
 .cls-dropdown {
-  display: none;               /* Start: ausgeblendet */
-  position: absolute;          /* Absolut im .classes-container */
-  top: 100%;                   /* Direkt unter dem Input */
+  display: none;
+  position: absolute;
+  top: 100%;
   left: 0;
   right: 0;
   background: #fff;
   border: 1px solid #ccc;
-  border-top: none;            /* Verbindet sich mit Input-Rahmen */
-  max-height: 200px;           /* Scrollbar, wenn zu lang */
+  border-top: none;
+  max-height: 200px;
   overflow-y: auto;
-  z-index: 1000;               /* Immer im Vordergrund */
+  z-index: 1000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* 4) Jedes Vorschlags-Item im Dropdown */
 .cls-dropdown .item {
   padding: 6px 10px;
   cursor: pointer;
   font-size: 0.95rem;
 }
 
-/* 5) Hover-Effekt, wenn Maus über einem Item ist */
 .cls-dropdown .item:hover {
   background-color: #f0f0f0;
 }
 
-/* admin.css */
 .css-selection {
   margin-bottom: 1.5rem;
   padding: 0.5rem;

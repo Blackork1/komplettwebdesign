@@ -108,7 +108,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
 
   .package-detail-page .package-detail-sections {
     padding: clamp(3rem, 6vw, 5rem) 0;
-    background: rgba(255, 255, 255, 0.6);
+    background: transparent;
   }
 
   .package-detail-page .package-detail-sections h2,
@@ -205,7 +205,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
 
   .package-detail-page .package-addons {
     padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: rgba(253, 236, 226, 0.6);
+    background: transparent;
   }
 
   .package-detail-page .addons-grid {
@@ -348,7 +348,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
 
   .package-detail-page .package-previews {
     padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: rgba(255, 255, 255, 0.75);
+    background: transparent;
   }
 
   .package-detail-page .package-previews .previews-subtitle {
@@ -494,6 +494,334 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       justify-content: center;
     }
   }
+
+  /* Who-for */
+  .package-detail-page .package-who-for {
+    padding: clamp(3rem, 6vw, 4.5rem) 0;
+  }
+
+  .package-detail-page .package-who-for h2 {
+    font-size: clamp(1.9rem, 3vw, 2.4rem);
+    color: var(--packages-ink);
+    margin: 0 auto 1rem;
+    max-width: 46rem;
+    text-align: center;
+  }
+
+  .package-detail-page .package-who-intro {
+    max-width: 52rem;
+    margin: 0 auto 2rem;
+    text-align: center;
+    color: var(--packages-text);
+    line-height: 1.7;
+  }
+
+  .package-detail-page .who-for-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    max-width: 52rem;
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .package-detail-page .who-for-list li {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.1rem 1.3rem;
+    border: 1px solid rgba(228, 93, 63, 0.16);
+    box-shadow: 0 14px 30px rgba(150, 62, 34, 0.07);
+    color: var(--packages-text);
+    line-height: 1.55;
+    position: relative;
+    padding-left: 2.4rem;
+  }
+
+  .package-detail-page .who-for-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 1rem;
+    top: 1.05rem;
+    color: var(--packages-accent);
+    font-weight: 700;
+  }
+
+  /* Outcomes */
+  .package-detail-page .package-outcomes {
+    padding: clamp(3rem, 6vw, 4.5rem) 0;
+    background: transparent;
+  }
+
+  .package-detail-page .package-outcomes h2 {
+    font-size: clamp(1.9rem, 3vw, 2.4rem);
+    color: var(--packages-ink);
+    text-align: center;
+    margin: 0 0 2rem;
+  }
+
+  .package-detail-page .outcomes-grid {
+    display: grid;
+    gap: 1.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .package-detail-page .outcome-card {
+    background: #ffffff;
+    border-radius: 22px;
+    padding: 1.7rem;
+    border: 1px solid rgba(228, 93, 63, 0.18);
+    box-shadow: 0 18px 40px rgba(150, 62, 34, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .package-detail-page .outcome-card h3 {
+    font-family: "Poppins", "Inter", sans-serif;
+    color: var(--packages-ink);
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.3;
+  }
+
+  .package-detail-page .outcome-card p {
+    margin: 0;
+    color: var(--packages-text);
+    line-height: 1.65;
+  }
+
+  /* Mid-page CTA */
+  .package-detail-page .package-mid-cta {
+    padding: clamp(2.5rem, 5vw, 4rem) 0;
+    background: transparent;
+  }
+
+  .package-detail-page .mid-cta-inner {
+    background: linear-gradient(135deg, var(--packages-accent) 0%, var(--packages-accent-dark) 100%);
+    color: #ffffff;
+    border-radius: 26px;
+    padding: clamp(2rem, 4vw, 3rem);
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+    align-items: center;
+    box-shadow: 0 30px 60px rgba(150, 62, 34, 0.2);
+    text-align: center;
+  }
+
+  @media (min-width: 820px) {
+    .package-detail-page .mid-cta-inner {
+      grid-template-columns: 1.3fr 1fr;
+      text-align: left;
+    }
+  }
+
+  .package-detail-page .mid-cta-copy h2 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+    color: #ffffff;
+    font-family: "Poppins", "Inter", sans-serif;
+    line-height: 1.25;
+  }
+
+  .package-detail-page .mid-cta-copy p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .package-detail-page .mid-cta-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    justify-self: center;
+  }
+
+  @media (min-width: 820px) {
+    .package-detail-page .mid-cta-actions {
+      justify-self: end;
+    }
+  }
+
+  .package-detail-page .mid-cta-actions .btn {
+    min-width: 220px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .package-detail-page .mid-cta-actions .btn-white {
+    background: #ffffff;
+    color: var(--packages-accent-dark);
+    border: 1px solid #ffffff;
+    padding: 0.9rem 1.3rem;
+    border-radius: 999px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .package-detail-page .mid-cta-actions .btn-white:hover,
+  .package-detail-page .mid-cta-actions .btn-white:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+  }
+
+  .package-detail-page .mid-cta-actions .btn-ghost {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    padding: 0.9rem 1.3rem;
+    border-radius: 999px;
+    font-weight: 600;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .package-detail-page .mid-cta-actions .btn-ghost:hover,
+  .package-detail-page .mid-cta-actions .btn-ghost:focus {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  /* Timeline */
+  .package-detail-page .package-timeline-detail {
+    padding: clamp(3rem, 6vw, 4.5rem) 0;
+  }
+
+  .package-detail-page .package-timeline-detail h2 {
+    font-size: clamp(1.9rem, 3vw, 2.4rem);
+    color: var(--packages-ink);
+    text-align: center;
+    margin: 0 0 1rem;
+  }
+
+  .package-detail-page .timeline-lead {
+    max-width: 52rem;
+    margin: 0 auto 2rem;
+    text-align: center;
+    color: var(--packages-muted);
+    line-height: 1.7;
+  }
+
+  .package-detail-page .timeline-phases {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    counter-reset: phase;
+  }
+
+  .package-detail-page .timeline-phases li {
+    background: #ffffff;
+    border-radius: 22px;
+    padding: 1.6rem;
+    border: 1px solid rgba(228, 93, 63, 0.16);
+    box-shadow: 0 16px 34px rgba(150, 62, 34, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .package-detail-page .timeline-index {
+    font-family: "Poppins", "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--packages-accent);
+  }
+
+  .package-detail-page .timeline-content h3 {
+    font-family: "Poppins", "Inter", sans-serif;
+    color: var(--packages-ink);
+    margin: 0 0 0.35rem;
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+
+  .package-detail-page .timeline-content p {
+    margin: 0;
+    color: var(--packages-text);
+    line-height: 1.6;
+  }
+
+  /* FAQ detail */
+  .package-detail-page .package-faq-detail {
+    padding: clamp(3rem, 6vw, 4.5rem) 0;
+    background: transparent;
+  }
+
+  .package-detail-page .package-faq-detail h2 {
+    font-size: clamp(1.9rem, 3vw, 2.4rem);
+    color: var(--packages-ink);
+    text-align: center;
+    margin: 0 0 1rem;
+  }
+
+  .package-detail-page .faq-detail-lead {
+    max-width: 52rem;
+    margin: 0 auto 2rem;
+    text-align: center;
+    color: var(--packages-muted);
+    line-height: 1.7;
+  }
+
+  .package-detail-page .faq-detail-list {
+    max-width: 52rem;
+    margin: 0 auto;
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .package-detail-page .faq-detail-item {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 1.1rem 1.4rem;
+    border: 1px solid rgba(228, 93, 63, 0.16);
+    box-shadow: 0 12px 28px rgba(150, 62, 34, 0.06);
+    transition: box-shadow 200ms ease;
+  }
+
+  .package-detail-page .faq-detail-item[open] {
+    box-shadow: 0 20px 38px rgba(150, 62, 34, 0.11);
+    border-color: rgba(228, 93, 63, 0.3);
+  }
+
+  .package-detail-page .faq-detail-item summary {
+    cursor: pointer;
+    font-family: "Poppins", "Inter", sans-serif;
+    font-weight: 600;
+    color: var(--packages-ink);
+    list-style: none;
+    position: relative;
+    padding-right: 1.8rem;
+    line-height: 1.4;
+  }
+
+  .package-detail-page .faq-detail-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .package-detail-page .faq-detail-item summary::after {
+    content: "+";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--packages-accent);
+    font-size: 1.4rem;
+    font-weight: 700;
+    transition: transform 200ms ease;
+  }
+
+  .package-detail-page .faq-detail-item[open] summary::after {
+    content: "–";
+  }
+
+  .package-detail-page .faq-detail-item p {
+    margin: 0.8rem 0 0;
+    color: var(--packages-text);
+    line-height: 1.65;
+  }
 </style>
 <body>
   <main class="packages-page package-detail-page">
@@ -543,21 +871,55 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       const priceDisplay = formatPrice(pack) || (pack.price ? `${pack.price} €` : (isEnglish ? 'On request' : 'Auf Anfrage'));
       const translatedDetailEntries = isEnglish ? {
         basis: [
-          ['Design & Structure', 'Modern one-page website with strong visual hierarchy, smooth scrolling flow and responsive behavior for mobile devices.'],
+          ['How many pages are included?', '1 home page with all legally required pages (imprint, privacy policy, cookie notice).'],
+          ['Design & Structure', 'Modern one-page website with strong visual hierarchy, smooth scrolling flow and responsive behaviour for mobile devices.'],
           ['Content & Legal', 'Core headline, service sections and about text, plus legal essentials such as imprint, privacy policy and cookie notices.'],
-          ['Technology & Support', 'Hosting, SSL certificate, load-time optimization and contact form integration including spam protection.']
+          ['Technology & Support', 'Hosting, SSL certificate, load-time optimisation and contact form integration including spam protection.'],
+          ['SEO & GEO Basics', 'Clean metadata, structured headings, schema.org markup and answer-first content blocks for Google and AI answer engines.'],
+          ['Timeline & Handover', 'Go-live within 1-2 weeks including a handover call so you can edit content confidently.']
         ],
         business: [
+          ['How many pages are included?', '4 to 8 pages: home, services, about, references, contact plus individual landing pages on request.'],
           ['Multi-Page Concept', 'Structured page architecture for services, industries, team, references and optional campaign landing pages.'],
-          ['Content & SEO', 'Keyword-based copywriting, metadata, structured data and local SEO optimization for search visibility.'],
-          ['Integrations', 'Booking tools, newsletter systems, CRM connections or chat tools - setup included.']
+          ['Content & SEO', 'Keyword-based copywriting, metadata, structured data and local SEO optimisation for search visibility.'],
+          ['Integrations', 'Booking tools, newsletter systems, CRM connections or chat tools - setup included.'],
+          ['Tracking & Analytics', 'GDPR-compliant Google Analytics 4, Consent Mode v2, cookie banner and conversion events for forms, calls and bookings.'],
+          ['Support & Launch', '2 revision rounds, launch training for your team and a 30-day post-launch support window.']
         ],
         premium: [
+          ['How many pages are included?', 'Scoped individually - typically 8 to 20 pages including topic clusters, service hubs and campaign landing pages.'],
           ['Strategy & UX', 'Deep-dive kickoff, audience analysis, customer-journey mapping and wireframes for each page.'],
           ['Content Production', 'Complete copy and visual production, optional photo shoots, plus animations and microinteractions.'],
-          ['Operations & Support', 'Monitoring, performance analysis, A/B testing, maintenance, security updates and priority support.']
+          ['Operations & Support', 'Monitoring, performance analysis, A/B testing, maintenance, security updates and priority support.'],
+          ['Advanced SEO & GEO', 'Entity research, topic clusters, advanced schema markup (Service, FAQ, HowTo, Article) and Core Web Vitals tuning.'],
+          ['Custom Integrations', 'Bespoke features such as booking flows, portals, calculators or ERP/CRM integrations tailored to your business model.']
         ]
-      } : {};
+      } : {
+        basis: [
+          ['Wieviele Seiten sind enthalten?', '1 Seite Startseite mit allen rechtlichen seiten'],
+          ['Design & Struktur', 'Moderner Onepager mit visuellen Highlights, sinnvollem Scroll-Verlauf und responsivem Layout für Mobilgeräte.'],
+          ['Inhalte & Rechtliches', 'Startseiten-Headline, Leistungsblöcke, Über-uns-Text sowie Impressum, Datenschutzerklärung und Cookie-Hinweise.'],
+          ['Technik & Support', 'Hosting, SSL-Zertifikat, Ladezeiten-Optimierung und Einbindung des Kontaktformulars inklusive Spam-Schutz.'],
+          ['SEO- & GEO-Grundlagen', 'Saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke für Google und KI-Antwortmaschinen.'],
+          ['Zeitplan & Übergabe', 'Livegang innerhalb von 1-2 Wochen inklusive Übergabe-Call, damit du Inhalte selbstständig pflegen kannst.']
+        ],
+        business: [
+          ['Wieviele Seiten sind enthalten?', '4 bis 8 Seiten: Startseite, Leistungen, Über uns, Referenzen, Kontakt sowie individuelle Landingpages auf Wunsch.'],
+          ['Mehrseitiges Konzept', 'Strukturierte Seitenarchitektur für Leistungen, Branchen, Team, Referenzen und optionale Landingpages.'],
+          ['Content & SEO', 'Keyword-basierte Textproduktion, Metadaten, strukturierte Daten sowie Optimierung für lokale Suchanfragen.'],
+          ['Integrationen', 'Terminbuchung, Newsletter, CRM-Schnittstellen oder Chat-Tools – wir übernehmen die Einrichtung.'],
+          ['Tracking & Analytics', 'DSGVO-konformes Google Analytics 4, Consent Mode v2, Cookie-Banner und Conversion-Events für Formulare, Anrufe und Buchungen.'],
+          ['Support & Launch', '2 Korrekturschleifen, Launch-Schulung für dein Team und ein 30-Tage-Support-Fenster nach Livegang.']
+        ],
+        premium: [
+          ['Wieviele Seiten sind enthalten?', 'Individuell kalkuliert - typischerweise 8 bis 20 Seiten inklusive Themencluster, Leistungs-Hubs und Kampagnen-Landingpages.'],
+          ['Strategie & UX', 'Intensiver Kick-off-Workshop, Zielgruppenanalyse, Customer-Journey-Maps und Wireframes für jede Seite.'],
+          ['Content-Produktion', 'Ausarbeitung von Texten, Visuals, optional Fotoshootings sowie Animationen oder Microinteractions.'],
+          ['Operations & Betreuung', 'Monitoring, Performance-Analysen, A/B-Tests, Wartung, Sicherheitsupdates und priorisierter Support.'],
+          ['Advanced SEO & GEO', 'Entity-Recherche, Themencluster, erweitertes Schema-Markup (Service, FAQ, HowTo, Article) und Core-Web-Vitals-Tuning.'],
+          ['Individuelle Integrationen', 'Custom-Features wie Buchungsstrecken, Portale, Rechner oder ERP/CRM-Integrationen passend zu deinem Geschäftsmodell.']
+        ]
+      };
       const detailEntries = translatedDetailEntries[slug]
         ? translatedDetailEntries[slug]
         : (pack && pack.details && typeof pack.details === 'object'
@@ -632,7 +994,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
           },
           {
             title: 'Technology & Support',
-            text: 'Hosting, SSL certificate, page-speed optimization and contact form setup including spam protection.'
+            text: 'Hosting, SSL certificate, page-speed optimisation and contact form setup including spam protection.'
           }
         ],
         business: [
@@ -642,7 +1004,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
           },
           {
             title: 'Content & SEO',
-            text: 'Keyword-driven copywriting, metadata, structured data and optimization for local search.'
+            text: 'Keyword-driven copywriting, metadata, structured data and optimisation for local search.'
           },
           {
             title: 'Integrations',
@@ -824,6 +1186,329 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
         ]
       };
 
+      const whoForMap = isEnglish ? {
+        basis: {
+          headline: 'Who is the Basic package in Berlin for?',
+          intro: 'The Basic package is built for freelancers, small teams, tradespeople and newly founded companies in Berlin who need a credible, fast-loading website without a complex multi-page architecture. You get an answer-first one-pager that presents your offer clearly and makes phone, email or form inquiries easy.',
+          items: [
+            'Freelancers, coaches and consultants who need their first professional website in Berlin.',
+            'Craft and service businesses that want to be found locally for their core service.',
+            'Newly founded startups that need a trustworthy web presence before ramping up marketing.',
+            'Side projects and portfolios that should look premium without ongoing editorial work.',
+            'Solo professionals who want inquiries by phone, email or form without technical overhead.',
+            'Associations, clubs and initiatives in Berlin that need a clean digital business card.'
+          ]
+        },
+        business: {
+          headline: 'Who is the Business package in Berlin for?',
+          intro: 'The Business package is designed for established companies, agencies and SMEs in Berlin that offer multiple services, work with several target audiences or run more than one location. You get a structured multi-page site with conversion-focused copywriting and tracking so you can measure actual inquiries, not just traffic.',
+          items: [
+            'SMEs with 3 to 20 employees that need clear pages per service, industry or region.',
+            'Agencies and B2B service providers who want to showcase references and case studies.',
+            'Companies planning paid campaigns that require tracked landing pages.',
+            'Organizations that want to generate qualified leads in Berlin and Brandenburg.',
+            'Growing brands that need a scalable CMS with space for service and industry pages.',
+            'Consulting firms and specialists who want conversion-optimised copywriting per offer.'
+          ]
+        },
+        premium: {
+          headline: 'Who is the Premium package in Berlin for?',
+          intro: 'The Premium package fits ambitious brands, B2B companies and high-intent service providers in Berlin who want a strategic web presence that grows over time. Strategy, UX, content production and SEO are handled from one source, so you get a website that is visible in Google and in AI-driven answer engines (GEO).',
+          items: [
+            'Ambitious brands that need a differentiated design and coherent messaging.',
+            'B2B companies whose sales cycle depends on trust, case studies and content depth.',
+            'Service providers that want to build authority through content clusters and SEO.',
+            'Companies with a dedicated marketing lead who values structured reporting and KPIs.',
+            'Scale-ups that need a long-term growth platform instead of a one-off website.',
+            'Enterprises with custom integrations (CRM, ERP, portals) and multi-stakeholder sign-off.'
+          ]
+        },
+        default: {
+          headline: 'Who is this package for?',
+          intro: 'We tailor each project to your company size and goals - from the first professional website to a scalable growth platform.',
+          items: [
+            'Companies in Berlin and Brandenburg that need a reliable web partner.',
+            'Teams that value transparent pricing, clear scope and a predictable timeline.',
+            'Brands that want to be visible in Google search and in AI-driven answer engines.',
+            'Businesses that prefer one contact for design, development, content and SEO.',
+            'Founders who need a sparring partner for strategy, UX and conversion topics.',
+            'Local service providers that want to dominate Berlin-specific search terms.'
+          ]
+        }
+      } : {
+        basis: {
+          headline: 'Für wen eignet sich das Basis-Paket in Berlin?',
+          intro: 'Das Basis-Paket richtet sich an Selbstständige, kleine Teams, Handwerksbetriebe und neu gegründete Unternehmen in Berlin, die eine glaubwürdige, schnelle Website ohne komplexe Mehrseitenstruktur brauchen. Du erhältst einen Answer-First-Onepager, der dein Angebot klar präsentiert und Anfragen per Telefon, E-Mail oder Formular einfach macht.',
+          items: [
+            'Selbstständige, Coaches und Berater, die ihre erste professionelle Website in Berlin benötigen.',
+            'Handwerks- und Dienstleistungsbetriebe, die lokal für ihre Kernleistung gefunden werden wollen.',
+            'Neu gegründete Startups, die einen vertrauenswürdigen Webauftritt vor dem Marketing-Ramp-up brauchen.',
+            'Nebenprojekte und Portfolios, die hochwertig wirken sollen, ohne laufenden Redaktionsaufwand.',
+            'Solo-Unternehmer, die Anfragen per Telefon, E-Mail oder Formular ohne technischen Aufwand erhalten wollen.',
+            'Vereine, Initiativen und lokale Einrichtungen in Berlin, die eine saubere digitale Visitenkarte brauchen.'
+          ]
+        },
+        business: {
+          headline: 'Für wen eignet sich das Business-Paket in Berlin?',
+          intro: 'Das Business-Paket richtet sich an etablierte Unternehmen, Agenturen und KMU in Berlin mit mehreren Leistungen, Zielgruppen oder Standorten. Du erhältst eine strukturierte mehrseitige Website mit Conversion-Texten und Tracking - damit du echte Anfragen misst, nicht nur Traffic.',
+          items: [
+            'KMU mit 3 bis 20 Mitarbeitenden, die klare Seiten pro Leistung, Branche oder Region benötigen.',
+            'Agenturen und B2B-Dienstleister, die Referenzen und Case Studies präsentieren wollen.',
+            'Unternehmen, die bezahlte Kampagnen planen und getrackte Landingpages brauchen.',
+            'Organisationen, die qualifizierte Leads in Berlin und Brandenburg gewinnen wollen.',
+            'Wachsende Marken, die ein skalierbares CMS mit Platz für Leistungs- und Branchenseiten brauchen.',
+            'Beratungen und Fachbetriebe, die pro Angebot conversion-optimierte Texte wünschen.'
+          ]
+        },
+        premium: {
+          headline: 'Für wen eignet sich das Premium-Paket in Berlin?',
+          intro: 'Das Premium-Paket passt zu ambitionierten Marken, B2B-Unternehmen und hochwertigen Dienstleistern in Berlin, die einen strategischen Webauftritt aufbauen wollen, der langfristig wächst. Strategie, UX, Content-Produktion und SEO kommen aus einer Hand - für Sichtbarkeit in der klassischen Google-Suche und in KI-Antworten (GEO).',
+          items: [
+            'Ambitionierte Marken, die ein differenziertes Design und konsistentes Storytelling benötigen.',
+            'B2B-Unternehmen mit langen Vertriebszyklen, bei denen Vertrauen, Case Studies und Content-Tiefe zählen.',
+            'Dienstleister, die über Content-Cluster und SEO Thought-Leadership aufbauen möchten.',
+            'Unternehmen mit Marketing-Verantwortlichen, die strukturierte Reports und KPIs schätzen.',
+            'Scale-ups, die eine langfristige Wachstumsplattform statt einer einmaligen Website benötigen.',
+            'Konzerne mit individuellen Integrationen (CRM, ERP, Portale) und mehreren Entscheidungsträgern.'
+          ]
+        },
+        default: {
+          headline: 'Für wen eignet sich dieses Paket?',
+          intro: 'Wir passen jedes Projekt an Größe und Ziele deines Unternehmens an - von der ersten professionellen Website bis zur skalierbaren Wachstumsplattform.',
+          items: [
+            'Unternehmen in Berlin und Brandenburg, die einen verlässlichen Web-Partner suchen.',
+            'Teams, die Wert auf transparente Preise, klaren Umfang und planbaren Zeitrahmen legen.',
+            'Marken, die in der Google-Suche und in KI-Antworten sichtbar sein wollen.',
+            'Betriebe, die Design, Entwicklung, Inhalte und SEO aus einer Hand bevorzugen.',
+            'Gründer, die einen Sparringspartner für Strategie, UX und Conversion brauchen.',
+            'Lokale Dienstleister, die gezielt Berliner Suchbegriffe dominieren wollen.'
+          ]
+        }
+      };
+
+      const outcomesMap = isEnglish ? {
+        basis: [
+          {
+            title: 'Professional presence in 1 to 2 weeks',
+            text: 'You go live with a fast, professional one-pager that answers the most important questions of visitors directly on the first screen.'
+          },
+          {
+            title: 'Findable in Google search and AI answers',
+            text: 'Clean metadata, structured headings, schema.org markup and answer-first content blocks make the site visible in Google and in AI-driven answer engines (GEO).'
+          },
+          {
+            title: 'Solid foundation for future growth',
+            text: 'The page architecture is built modularly, so upgrades to Business or Premium are possible later without a full relaunch.'
+          }
+        ],
+        business: [
+          {
+            title: 'Structured lead generation',
+            text: 'Service pages, conversion-focused copy and clear CTAs move visitors from information to request - measurable via tracked events.'
+          },
+          {
+            title: 'Stronger Google and GEO visibility',
+            text: 'Keyword research, semantic content structure and rich schema markup position you for relevant local searches and AI answer engines.'
+          },
+          {
+            title: 'Data-based decisions',
+            text: 'With GDPR-compliant analytics and conversion tracking you see which pages and channels actually generate inquiries - and where to optimize.'
+          }
+        ],
+        premium: [
+          {
+            title: 'Strategic growth platform',
+            text: 'A website built around your business model: strategy, UX and content production work together so the site supports long-term growth.'
+          },
+          {
+            title: 'Top visibility in Google and AI search',
+            text: 'Topic clusters, entity optimization, extensive schema markup and Core Web Vitals tuning position the brand prominently in Google and answer engines.'
+          },
+          {
+            title: 'Continuous optimization',
+            text: 'Ongoing monitoring, A/B tests, content refreshes and priority support ensure that performance and conversions keep improving after launch.'
+          }
+        ],
+        default: [
+          {
+            title: 'Measurable results',
+            text: 'Clear KPIs, transparent reporting and a web presence that actually generates inquiries.'
+          },
+          {
+            title: 'Visibility in search and AI answers',
+            text: 'SEO and GEO-ready structure so the site is findable where customers actually ask.'
+          },
+          {
+            title: 'Reliable partner in Berlin',
+            text: 'A single contact for design, development, content and growth - based in Berlin.'
+          }
+        ]
+      } : {
+        basis: [
+          {
+            title: 'Professioneller Auftritt in 1 bis 2 Wochen',
+            text: 'Du gehst mit einem schnellen, professionellen Onepager online, der die wichtigsten Fragen der Besucher direkt auf dem ersten Bildschirm beantwortet.'
+          },
+          {
+            title: 'Sichtbar in Google-Suche und KI-Antworten',
+            text: 'Saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke sorgen für Sichtbarkeit in Google und in KI-Antwortmaschinen (GEO).'
+          },
+          {
+            title: 'Solides Fundament für späteres Wachstum',
+            text: 'Die Seitenarchitektur ist modular aufgebaut, sodass Upgrades auf Business oder Premium später ohne vollständigen Relaunch möglich sind.'
+          }
+        ],
+        business: [
+          {
+            title: 'Strukturierte Leadgenerierung',
+            text: 'Leistungsseiten, Conversion-orientierte Texte und klare CTAs führen Besucher gezielt von Information zu Anfrage - messbar über getrackte Events.'
+          },
+          {
+            title: 'Stärkere Google- und GEO-Sichtbarkeit',
+            text: 'Keyword-Recherche, semantische Content-Struktur und umfangreiches Schema-Markup positionieren dich für relevante lokale Suchanfragen und KI-Antwortmaschinen.'
+          },
+          {
+            title: 'Datenbasierte Entscheidungen',
+            text: 'Mit DSGVO-konformem Tracking und Conversion-Events siehst du, welche Seiten und Kanäle tatsächlich Anfragen bringen - und wo sich Optimierung lohnt.'
+          }
+        ],
+        premium: [
+          {
+            title: 'Strategische Wachstumsplattform',
+            text: 'Eine Website, die rund um dein Geschäftsmodell gebaut ist: Strategie, UX und Content-Produktion greifen ineinander und stützen langfristiges Wachstum.'
+          },
+          {
+            title: 'Top-Sichtbarkeit in Google und KI-Suche',
+            text: 'Themencluster, Entity-Optimierung, umfangreiches Schema-Markup und Core-Web-Vitals-Tuning positionieren die Marke prominent in Google und Antwortmaschinen.'
+          },
+          {
+            title: 'Laufende Optimierung',
+            text: 'Kontinuierliches Monitoring, A/B-Tests, Content-Refreshes und priorisierter Support sorgen dafür, dass Performance und Conversion nach dem Launch weiter wachsen.'
+          }
+        ],
+        default: [
+          {
+            title: 'Messbare Ergebnisse',
+            text: 'Klare KPIs, transparente Reports und ein Webauftritt, der tatsächlich Anfragen bringt.'
+          },
+          {
+            title: 'Sichtbar in Suche und KI-Antworten',
+            text: 'SEO- und GEO-fähige Strukturen, damit die Seite dort auffindbar ist, wo Kunden wirklich fragen.'
+          },
+          {
+            title: 'Verlässlicher Partner in Berlin',
+            text: 'Ein Ansprechpartner für Design, Entwicklung, Content und Wachstum - direkt aus Berlin.'
+          }
+        ]
+      };
+
+      const timelineMap = isEnglish ? {
+        basis: [
+          { label: 'Day 1 - 2: Kickoff', text: 'Short briefing, goal alignment and content check. We collect your logo, brand colors and existing copy.' },
+          { label: 'Day 3 - 7: Design & build', text: 'We design the one-pager, build it responsively and integrate legal pages, contact form and tracking.' },
+          { label: 'Day 8 - 10: Review & QA', text: 'You review in a live preview, we collect feedback, run technical QA and SEO checks.' },
+          { label: 'Day 11 - 14: Go-live', text: 'Domain, hosting and SSL are configured. The site goes live including a short handover call.' }
+        ],
+        business: [
+          { label: 'Week 1: Strategy workshop', text: 'Target audience analysis, goals, service prioritization and sitemap planning for 4 to 8 pages.' },
+          { label: 'Week 2: Content & design', text: 'Conversion-focused copywriting, wireframes and the visual design system for all pages.' },
+          { label: 'Week 3: Development & integrations', text: 'Responsive build, CMS, tracking, booking or CRM integrations and SEO fundamentals.' },
+          { label: 'Week 4: QA, launch & training', text: 'Cross-device QA, performance tuning, live-go and a structured handover training for your team.' }
+        ],
+        premium: [
+          { label: 'Week 1 - 2: Discovery & strategy', text: 'Business model interviews, competitor analysis, customer journey mapping and a content and SEO roadmap.' },
+          { label: 'Week 3 - 5: UX & design', text: 'Wireframes, prototype, custom design system, component library and initial content production.' },
+          { label: 'Week 6 - 7: Development & content', text: 'Responsive build, integrations, full content production, structured data, performance and accessibility tuning.' },
+          { label: 'Week 8: Launch & optimization plan', text: 'QA, staged rollout, training and a 90-day optimization plan with KPIs, reporting and A/B tests.' }
+        ],
+        default: [
+          { label: 'Phase 1: Kickoff & plan', text: 'We align on goals, audience and the scope that delivers the most value first.' },
+          { label: 'Phase 2: Design & build', text: 'Design, content and technical implementation run in parallel milestones.' },
+          { label: 'Phase 3: Launch & support', text: 'After go-live we continue with optimization, monitoring and content updates.' }
+        ]
+      } : {
+        basis: [
+          { label: 'Tag 1 - 2: Kickoff', text: 'Kurzes Briefing, Zielabgleich und Content-Check. Wir sammeln Logo, Markenfarben und vorhandene Texte.' },
+          { label: 'Tag 3 - 7: Design & Umsetzung', text: 'Wir gestalten den Onepager, bauen ihn responsiv und integrieren rechtliche Seiten, Kontaktformular und Tracking.' },
+          { label: 'Tag 8 - 10: Review & QA', text: 'Du prüfst an einer Live-Vorschau, wir sammeln Feedback und führen technische QA- und SEO-Checks durch.' },
+          { label: 'Tag 11 - 14: Livegang', text: 'Domain, Hosting und SSL werden konfiguriert. Die Seite geht live, inklusive kurzer Übergabe.' }
+        ],
+        business: [
+          { label: 'Woche 1: Strategie-Workshop', text: 'Zielgruppenanalyse, Ziele, Leistungspriorisierung und Sitemap-Planung für 4 bis 8 Seiten.' },
+          { label: 'Woche 2: Content & Design', text: 'Conversion-orientierte Textproduktion, Wireframes und das visuelle Designsystem für alle Seiten.' },
+          { label: 'Woche 3: Entwicklung & Integrationen', text: 'Responsive Umsetzung, CMS, Tracking, Termin- oder CRM-Integrationen sowie SEO-Grundlagen.' },
+          { label: 'Woche 4: QA, Launch & Schulung', text: 'Cross-Device-QA, Performance-Tuning, Livegang und eine strukturierte Übergabeschulung für dein Team.' }
+        ],
+        premium: [
+          { label: 'Woche 1 - 2: Discovery & Strategie', text: 'Geschäftsmodell-Interviews, Wettbewerbsanalyse, Customer-Journey-Maps und eine Content- und SEO-Roadmap.' },
+          { label: 'Woche 3 - 5: UX & Design', text: 'Wireframes, Prototyp, individuelles Designsystem, Komponentenbibliothek und erste Content-Produktion.' },
+          { label: 'Woche 6 - 7: Entwicklung & Content', text: 'Responsive Umsetzung, Integrationen, vollständige Content-Produktion, strukturierte Daten, Performance- und Accessibility-Tuning.' },
+          { label: 'Woche 8: Launch & Optimierungsplan', text: 'QA, gestaffelter Rollout, Schulung und ein 90-Tage-Optimierungsplan mit KPIs, Reports und A/B-Tests.' }
+        ],
+        default: [
+          { label: 'Phase 1: Kickoff & Plan', text: 'Wir klären Ziele, Zielgruppe und den Umfang, der zuerst den größten Mehrwert liefert.' },
+          { label: 'Phase 2: Design & Umsetzung', text: 'Design, Content und technische Umsetzung laufen in parallelen Meilensteinen.' },
+          { label: 'Phase 3: Launch & Betreuung', text: 'Nach dem Livegang folgt Optimierung, Monitoring und Content-Pflege.' }
+        ]
+      };
+
+      const faqMap = isEnglish ? {
+        basis: [
+          { q: 'How long does the Basic website project take in Berlin?', a: 'Typically 1 to 2 weeks from kickoff to go-live, depending on how fast content and feedback come in. Express delivery is available on request.' },
+          { q: 'What is included in the Basic package?', a: 'A custom one-pager (or up to 3 subpages), responsive design, legal pages, GDPR basics, on-page SEO, a contact form with spam protection, SSL and hosting, plus one revision round.' },
+          { q: 'Is SEO and GEO included?', a: 'Yes. You get clean metadata, structured headings, schema.org markup and answer-first content blocks so the site is findable in Google and in AI-driven answer engines.' },
+          { q: 'Can I reuse my existing logo and images?', a: 'Yes. We reuse what works and professionally rework weak content. If you lack assets, we advise on stock options or simple photo production.' },
+          { q: 'Can I upgrade to Business or Premium later?', a: 'Yes. The site is built modularly, so upgrades are possible at any time without a full relaunch. We fairly apply the package difference.' },
+          { q: 'What does the Basic package cost in Berlin?', a: 'The Basic package starts at EUR 499 one-time. Optional add-ons like maintenance or multilingual setup are quoted transparently in advance.' }
+        ],
+        business: [
+          { q: 'How long does the Business project take in Berlin?', a: 'Typically 2 to 4 weeks depending on scope and content readiness. Strategy, design, development and QA run as clear milestones with fixed review points.' },
+          { q: 'What is included in the Business package?', a: '4 to 8 pages including service and case pages, conversion copywriting, extended on-page SEO, analytics and tracking setup, integrations like booking, newsletter or CRM, plus two revision rounds.' },
+          { q: 'Is local SEO for Berlin included?', a: 'Yes. We set up local SEO signals (address, service area, schema markup for Organization and Service) and optimize for relevant Berlin search queries.' },
+          { q: 'Do you set up GDPR-compliant tracking?', a: 'Yes. Google Analytics 4 (or a privacy-friendly alternative) is configured with Consent Mode v2, a cookie banner and conversion events for forms, calls and bookings.' },
+          { q: 'Can the site be extended with landing pages later?', a: 'Yes. The CMS structure is prepared for additional service pages, landing pages or campaign pages - ideal for growing SEO or paid efforts over time.' },
+          { q: 'What does the Business package cost in Berlin?', a: 'The Business package starts at EUR 899 one-time. Maintenance and additional services like SEO expansion or content production are transparently priced as add-ons.' }
+        ],
+        premium: [
+          { q: 'How long does the Premium project take in Berlin?', a: 'Typically 4 to 8 weeks, depending on strategy depth, content production and the number of pages. The timeline is structured in discovery, design, development and launch phases.' },
+          { q: 'What is included in the Premium package?', a: 'UX workshops, custom design, full content production (copy, visuals, optional video), strategic SEO including topic clusters, structured data, performance tuning and ongoing support.' },
+          { q: 'Which SEO and GEO services are included?', a: 'Keyword and entity research, topical clusters, answer-first structures, extensive schema markup (Organization, Service, FAQ, HowTo, Article), technical SEO audits, Core Web Vitals optimization and regular reporting.' },
+          { q: 'How does ongoing support work after launch?', a: 'After go-live we follow a fixed support cadence with monitoring, performance analytics, A/B testing, maintenance, security updates, content refreshes and priority response times.' },
+          { q: 'Do you offer custom integrations or web apps?', a: 'Yes. Custom features such as booking flows, portals, calculators, portals or ERP/CRM integrations can be added as part of the project or as a follow-up phase.' },
+          { q: 'What does the Premium package cost in Berlin?', a: 'The Premium package starts at EUR 1,499 and is always scoped individually. You receive a binding offer after the initial strategy call, including timeline, budget and KPIs.' }
+        ]
+      } : {
+        basis: [
+          { q: 'Wie lange dauert das Basis-Projekt in Berlin?', a: 'Typischerweise 1 bis 2 Wochen vom Kickoff bis zum Livegang - abhängig davon, wie schnell Inhalte und Feedback kommen. Express-Umsetzung ist nach Absprache möglich.' },
+          { q: 'Was ist im Basis-Paket enthalten?', a: 'Individueller Onepager (oder bis zu 3 Unterseiten), responsives Design, rechtliche Seiten, DSGVO-Grundlagen, OnPage-SEO, Kontaktformular mit Spam-Schutz, SSL und Hosting sowie eine Korrekturschleife.' },
+          { q: 'Sind SEO und GEO direkt enthalten?', a: 'Ja. Du erhältst saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke, damit die Seite in Google und in KI-Antwortmaschinen auffindbar ist.' },
+          { q: 'Kann ich bestehendes Logo und Bildmaterial weiter nutzen?', a: 'Ja. Wir übernehmen, was funktioniert, und überarbeiten schwache Inhalte professionell. Fehlt dir Material, beraten wir zu Stock-Optionen oder einfacher Foto-Produktion.' },
+          { q: 'Kann ich später auf Business oder Premium upgraden?', a: 'Ja. Die Seite ist modular aufgebaut, ein Upgrade ist jederzeit ohne vollständigen Relaunch möglich. Wir rechnen die Paketdifferenz fair an.' },
+          { q: 'Was kostet das Basis-Paket in Berlin?', a: 'Das Basis-Paket startet bei 499 EUR einmalig. Optionale Add-ons wie Wartung oder Mehrsprachigkeit werden transparent vorab angeboten.' }
+        ],
+        business: [
+          { q: 'Wie lange dauert das Business-Projekt in Berlin?', a: 'Typischerweise 2 bis 4 Wochen - abhängig vom Umfang und von der Verfügbarkeit der Inhalte. Strategie, Design, Entwicklung und QA laufen als klare Meilensteine mit festen Review-Punkten.' },
+          { q: 'Was ist im Business-Paket enthalten?', a: '4 bis 8 Seiten inklusive Leistungs- und Referenzseiten, Conversion-Texte, erweitertes OnPage-SEO, Analytics- und Tracking-Setup, Integrationen wie Terminbuchung, Newsletter oder CRM sowie zwei Korrekturschleifen.' },
+          { q: 'Ist lokale SEO für Berlin enthalten?', a: 'Ja. Wir konfigurieren lokale SEO-Signale (Adresse, Einzugsgebiet, Schema-Markup für Organization und Service) und optimieren für relevante Berliner Suchanfragen.' },
+          { q: 'Richtet ihr DSGVO-konformes Tracking ein?', a: 'Ja. Google Analytics 4 (oder eine datenschutzfreundliche Alternative) wird mit Consent Mode v2, Cookie-Banner und Conversion-Events für Formulare, Anrufe und Buchungen eingerichtet.' },
+          { q: 'Kann die Seite später um Landingpages erweitert werden?', a: 'Ja. Die CMS-Struktur ist auf weitere Leistungs-, Landing- oder Kampagnenseiten vorbereitet - ideal, um SEO- oder Paid-Aktivitäten schrittweise auszubauen.' },
+          { q: 'Was kostet das Business-Paket in Berlin?', a: 'Das Business-Paket startet bei 899 EUR einmalig. Wartung und weitere Leistungen wie SEO-Ausbau oder Content-Produktion werden transparent als Add-ons kalkuliert.' }
+        ],
+        premium: [
+          { q: 'Wie lange dauert das Premium-Projekt in Berlin?', a: 'Typischerweise 4 bis 8 Wochen, abhängig von Strategie-Tiefe, Content-Produktion und Seitenzahl. Der Zeitplan gliedert sich in Discovery, Design, Entwicklung und Launch.' },
+          { q: 'Was ist im Premium-Paket enthalten?', a: 'UX-Workshops, individuelles Design, vollständige Content-Produktion (Text, Visuals, optional Video), strategisches SEO inkl. Themencluster, strukturierte Daten, Performance-Tuning und laufende Betreuung.' },
+          { q: 'Welche SEO- und GEO-Leistungen sind enthalten?', a: 'Keyword- und Entity-Recherche, topische Cluster, Answer-First-Strukturen, umfangreiches Schema-Markup (Organization, Service, FAQ, HowTo, Article), technische SEO-Audits, Core-Web-Vitals-Optimierung und regelmäßige Reports.' },
+          { q: 'Wie läuft die Betreuung nach dem Launch?', a: 'Nach dem Livegang folgt ein fester Betreuungsrhythmus mit Monitoring, Performance-Analysen, A/B-Tests, Wartung, Sicherheitsupdates, Content-Refreshes und priorisierten Antwortzeiten.' },
+          { q: 'Bietet ihr individuelle Integrationen oder Web-Apps?', a: 'Ja. Individuelle Funktionen wie Buchungsstrecken, Portale, Rechner oder ERP/CRM-Integrationen können im Projekt oder als Folgephase umgesetzt werden.' },
+          { q: 'Was kostet das Premium-Paket in Berlin?', a: 'Das Premium-Paket startet bei 1.499 EUR und wird immer individuell kalkuliert. Nach dem Strategie-Gespräch erhältst du ein verbindliches Angebot inklusive Zeit- und Budgetrahmen sowie KPIs.' }
+        ]
+      };
+
+      const whoFor = whoForMap[slug] || whoForMap.default;
+      const outcomes = outcomesMap[slug] || outcomesMap.default;
+      const timeline = timelineMap[slug] || timelineMap.default;
+      const faqs = faqMap[slug] || [];
+
       const previewPackages = isEnglish ? [
         {
           slug: 'basis',
@@ -902,8 +1587,8 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
             <% } %>
           </div>
           <div class="hero-actions">
-            <a class="btn btn-hero" href="#kontaktformular"><%= isEnglish ? 'Book your consultation now' : 'Jetzt Beratung sichern' %></a>
-            <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en' : '' %>/pakete"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
+            <a class="btn btn-hero" href="#kontaktformular"><%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en/booking' : '/booking' %>"><%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -989,6 +1674,106 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
         </ul>
       </div>
     </section>
+
+    <section class="package-who-for">
+      <div class="container">
+        <h2><%= whoFor.headline %></h2>
+        <p class="package-who-intro"><%= whoFor.intro %></p>
+        <ul class="who-for-list">
+          <% whoFor.items.forEach(item => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </section>
+
+    <section class="package-outcomes">
+      <div class="container">
+        <h2><%= isEnglish ? `What you achieve with the ${displayPackName} package` : `Was du mit dem ${displayPackName}-Paket erreichst` %></h2>
+        <div class="outcomes-grid">
+          <% outcomes.forEach(outcome => { %>
+          <article class="outcome-card">
+            <h3><%= outcome.title %></h3>
+            <p><%= outcome.text %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="package-mid-cta" aria-label="<%= isEnglish ? 'Mid-page call to action' : 'Call-to-Action in der Seitenmitte' %>">
+      <div class="container">
+        <div class="mid-cta-inner">
+          <div class="mid-cta-copy">
+            <h2>
+              <%= isEnglish
+                ? `Ready to launch your ${displayPackName} website in Berlin?`
+                : `Bereit für deine ${displayPackName}-Website in Berlin?`
+              %>
+            </h2>
+            <p>
+              <%= isEnglish
+                ? 'Request a non-binding consultation or book a project call directly - we reply within one business day and prepare a transparent roadmap with timeline and fixed price.'
+                : 'Fordere eine unverbindliche Beratung an oder buche direkt ein Projektgespräch - wir melden uns innerhalb eines Werktags und erstellen eine transparente Roadmap mit Zeitplan und Festpreis.'
+              %>
+            </p>
+          </div>
+          <div class="mid-cta-actions">
+            <a class="btn btn-white" href="<%= isEnglish ? '/en/kontakt' : '/kontakt' %>">
+              <%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %>
+            </a>
+            <a class="btn btn-ghost" href="<%= isEnglish ? '/en/booking' : '/booking' %>">
+              <%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="package-timeline-detail">
+      <div class="container">
+        <h2><%= isEnglish ? `Realistic timeline for the ${displayPackName} package` : `Realistischer Zeitplan für das ${displayPackName}-Paket` %></h2>
+        <p class="timeline-lead">
+          <%= isEnglish
+            ? 'Every phase has a clear goal, a defined deliverable and an expected duration. You know at any point what we are working on, what we need from you and when the next milestone is due.'
+            : 'Jede Phase hat ein klares Ziel, eine definierte Lieferung und eine erwartete Dauer. Du weißt jederzeit, woran wir arbeiten, was wir von dir benötigen und wann der nächste Meilenstein ansteht.'
+          %>
+        </p>
+        <ol class="timeline-phases">
+          <% timeline.forEach((step, index) => { %>
+          <li>
+            <span class="timeline-index"><%= String(index + 1).padStart(2, '0') %></span>
+            <div class="timeline-content">
+              <h3><%= step.label %></h3>
+              <p><%= step.text %></p>
+            </div>
+          </li>
+          <% }) %>
+        </ol>
+      </div>
+    </section>
+
+    <% if (faqs && faqs.length) { %>
+    <section class="package-faq-detail" id="faq">
+      <div class="container">
+        <h2><%= isEnglish ? `FAQ about the ${displayPackName} package` : `Häufige Fragen zum ${displayPackName}-Paket` %></h2>
+        <p class="faq-detail-lead">
+          <%= isEnglish
+            ? 'Precise answers to the most common questions about scope, timeline, SEO, GEO visibility and pricing - so you can request your offer with confidence.'
+            : 'Präzise Antworten auf die wichtigsten Fragen zu Umfang, Zeitplan, SEO, GEO-Sichtbarkeit und Preisen - damit du dein Angebot mit Klarheit anfragen kannst.'
+          %>
+        </p>
+        <div class="faq-detail-list">
+          <% faqs.forEach((item, idx) => { %>
+          <details class="faq-detail-item" <%= idx === 0 ? 'open' : '' %>>
+            <summary><%= item.q %></summary>
+            <p><%= item.a %></p>
+          </details>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+    <% } %>
 
     <section class="package-contact" id="kontaktformular">
       <div class="container contact-inner">

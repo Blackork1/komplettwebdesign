@@ -17,7 +17,8 @@ import { getCachedAuditResult } from './websiteAuditService.js';
 import {
   sendWebsiteTesterDoiMail,
   sendTesterFullGuideMail,
-  sendWebsiteTesterReportMail
+  sendWebsiteTesterReportMail,
+  sendAdminTesterLeadNotification
 } from './mailService.js';
 import { buildWebsiteTesterReport } from './websiteTesterPdfService.js';
 import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
@@ -295,6 +296,21 @@ export async function requestWebsiteTesterLead({
     confirmUrl,
     expiresAt
   });
+
+  // Admin-Benachrichtigung: neuer potenzieller Kunde
+  try {
+    await sendAdminTesterLeadNotification({
+      source: 'website',
+      email: lead.email,
+      name: lead.name,
+      domain,
+      scoreBand: lead.score_band,
+      overallScore: auditResult.overallScore,
+      locale: lng
+    });
+  } catch (e) {
+    console.warn('Admin notification (website tester) failed:', e?.message || e);
+  }
 
   return {
     lead,

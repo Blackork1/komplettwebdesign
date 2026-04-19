@@ -48,14 +48,18 @@
           <nav class="footer-nav">
             <h3><%= isEn ? 'Information' : 'Informationen' %></h3>
             <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>">Webdesign Berlin</a>
-            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>">Website Tester</a>
-            <a href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken Links Tester' : 'Broken Links Tester' %></a>
-            <a href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">GEO Tester</a>
-            <a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">SEO Tester</a>
             <a href="/ratgeber"><%= isEn ? 'Guides' : 'Ratgeber' %></a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
             <a href="/faq">FAQ</a>
             <a href="/about"><%= isEn ? 'About me' : 'Über mich' %></a>
+          </nav>
+          <nav class="footer-nav">
+            <h3>Website-Tester</h3>
+            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Overview' : 'Übersicht' %></a>
+            <a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">SEO-Tester</a>
+            <a href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">GEO-Tester</a>
+            <a href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">Meta-Tester</a>
+            <a href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken Links Tester' : 'Broken-Links-Tester' %></a>
           </nav>
 
           <!-- Newsletter-Sektion -->

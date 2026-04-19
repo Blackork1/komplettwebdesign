@@ -64,7 +64,7 @@
       <div class="wt-next-step-package" style="margin-top:0.65rem;">
         <strong>${escapeHtml(pkg.title)}</strong>
         <p>${escapeHtml(pkg.text || '')}</p>
-        <a class="wt-button wt-button-secondary" data-tester-cta="website" data-tester-action="package" href="${escapeHtml(pkg.href || '/leistungen')}">${escapeHtml(pkg.label || (locale === 'en' ? 'View packages' : 'Pakete ansehen'))}</a>
+        <a class="wt-button wt-button-secondary" data-tester-cta="website" data-tester-action="package" href="${escapeHtml(pkg.href || '/webdesign-berlin')}">${escapeHtml(pkg.label || (locale === 'en' ? 'View packages' : 'Pakete ansehen'))}</a>
       </div>`;
   }
 

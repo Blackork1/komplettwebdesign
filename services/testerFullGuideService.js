@@ -771,7 +771,7 @@ function linkingRecommendations({ pageType, context, locale = 'de' }) {
   if (lng === 'en') {
     if (pageType === 'contact') {
       return [
-        { anchor: 'Services and outcomes', target: '/leistungen', reason: 'Users often want scope details before submitting contact form.' },
+        { anchor: 'Services and outcomes', target: '/webdesign-berlin', reason: 'Users often want scope details before submitting contact form.' },
         { anchor: 'Packages and pricing', target: '/pakete', reason: 'Pre-qualifies budget expectations and increases lead quality.' },
         { anchor: `${service} FAQ`, target: '/faq', reason: 'Removes hesitation and supports self-qualification.' }
       ];
@@ -785,7 +785,7 @@ function linkingRecommendations({ pageType, context, locale = 'de' }) {
 
   if (pageType === 'contact') {
     return [
-      { anchor: 'Leistungen und Ergebnisse', target: '/leistungen', reason: 'Nutzer prüfen vor Anfrage oft den genauen Leistungsumfang.' },
+      { anchor: 'Leistungen und Ergebnisse', target: '/webdesign-berlin', reason: 'Nutzer prüfen vor Anfrage oft den genauen Leistungsumfang.' },
       { anchor: 'Pakete und Preise', target: '/pakete', reason: 'Klären Budgeterwartung und erhöhen Lead-Qualität.' },
       { anchor: `${service}-FAQ`, target: '/faq', reason: 'Baut letzte Unsicherheiten vor Absenden des Formulars ab.' }
     ];

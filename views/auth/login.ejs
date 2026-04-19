@@ -1,17 +1,50 @@
-<% include ('../partials/header') %>
-<h1>Admin-Login</h1>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin-Login – Komplett Webdesign</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin-login-body">
+  <main class="admin-login-card" aria-labelledby="adminLoginTitle">
+    <div class="admin-login-card__brand">
+      <span class="admin-login-card__brand-badge">K</span>
+      <span class="admin-login-card__brand-text">
+        Komplett Webdesign
+        <small>Admin Backend</small>
+      </span>
+    </div>
+    <h1 id="adminLoginTitle">Willkommen zurück</h1>
+    <p class="lead">Bitte melde dich an, um auf das Admin-Backend zuzugreifen.</p>
 
-<form action="/login" method="post" class="login-form">
-    <label for="username">Benutzer:
-        <input name="username" required>
-    </label><br>
-    <label for="password">Passwort:
-        <input type="password" name="password" required>
-    </label><br>
-    <% if (error) { %>
-        <p style="color:#e94a1b"><%= error %></p>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="admin-login-error" role="alert">
+        <i class="fa-solid fa-triangle-exclamation"></i> <%= error %>
+      </div>
     <% } %>
-    <button class="btn">Einloggen</button>
-</form>
 
-<% include ('../partials/footer') %>
+    <form action="/login" method="post" class="admin-login-form" autocomplete="off">
+      <div class="field">
+        <label for="username">Benutzername</label>
+        <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Passwort</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="submit-btn">
+        <i class="fa-solid fa-right-to-bracket"></i> Einloggen
+      </button>
+    </form>
+
+    <p class="admin-login-hint">
+      <a href="/"><i class="fa-solid fa-arrow-left"></i> Zurück zur Website</a>
+    </p>
+  </main>
+</body>
+</html>

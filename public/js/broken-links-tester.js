@@ -89,7 +89,7 @@
       ? 'Want every broken link fixed and your site truly reliable? We plan it with you.'
       : 'Willst du, dass alle defekten Links behoben werden und deine Website zuverlässig läuft? Wir planen es mit dir.');
     const bookingLabel = i18n.bookingCtaLabel || (locale === 'en' ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen');
-    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Go to contact form' : 'Zum Kontaktformular');
 
     let pkgBlock = '';
     if (pkg && pkg.title) {
@@ -97,7 +97,7 @@
         <div class="wt-next-step-package">
           <strong>${escapeHtml(pkg.title)}</strong>
           <p>${escapeHtml(pkg.text || '')}</p>
-          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkg.href || '/leistungen')}" data-tester-cta="broken" data-tester-action="package" data-bl-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkg.href || '/webdesign-berlin')}" data-tester-cta="broken" data-tester-action="package" data-bl-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
         </div>`;
     }
 

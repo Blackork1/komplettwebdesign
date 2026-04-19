@@ -69,10 +69,18 @@ const structuredDataRaw = `<script type="application/ld+json">
       "https://www.komplettwebdesign.de/images/heroBg.webp"
     ],
     "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand. Landingpage ab 499 €. Kostenlose Beratung vereinbaren!",
-    "areaServed": {
-      "@type": "City",
-      "name": "Berlin"
-    },
+    "areaServed": [
+      {
+        "@type": "Country",
+        "name": "Deutschland",
+        "sameAs": "https://www.wikidata.org/wiki/Q183"
+      },
+      {
+        "@type": "City",
+        "name": "Berlin",
+        "sameAs": "https://www.wikidata.org/wiki/Q64"
+      }
+    ],
     "priceRange": "€€",
     "email": "kontakt@komplettwebdesign.de",
     "telephone": "+49 1551 1245048",
@@ -161,6 +169,37 @@ const structuredDataRaw = `<script type="application/ld+json">
 <script type="application/ld+json">
   {
     "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://www.komplettwebdesign.de/#person",
+    "name": "Sören Blocksdorf",
+    "jobTitle": "Webdesigner & Webentwickler",
+    "description": "Freiberuflicher Webdesigner und Entwickler aus Berlin mit Schwerpunkt auf professionellen Websites, SEO und Hosting für lokale Unternehmen.",
+    "url": "https://www.komplettwebdesign.de/",
+    "email": "kontakt@komplettwebdesign.de",
+    "telephone": "+49 1551 1245048",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Berlin",
+      "addressRegion": "Berlin",
+      "postalCode": "10367",
+      "addressCountry": "DE"
+    },
+    "worksFor": {
+      "@id": "https://www.komplettwebdesign.de/#organization"
+    },
+    "knowsAbout": ["Webdesign", "SEO", "Webentwicklung", "Hosting", "Local SEO", "DSGVO", "E-Commerce"],
+    "knowsLanguage": ["de", "en"],
+    "sameAs": [
+      "https://www.linkedin.com/in/komplettwebdesign",
+      "https://www.instagram.com/KomplettWebdesign",
+      "https://www.youtube.com/@KomplettWebdesign"
+    ]
+  }
+</script>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": "https://www.komplettwebdesign.de/#website",
     "name": "Komplett Webdesign",
@@ -181,15 +220,27 @@ const structuredDataRaw = `<script type="application/ld+json">
     "name": "Website erstellen lassen – professionell, schnell, ab 499 €",
     "description": "Professionelle Website erstellen lassen: Modernes Webdesign, SEO-Optimierung & Hosting aus einer Hand.",
     "url": "https://www.komplettwebdesign.de/",
+    "inLanguage": "${lng === 'en' ? 'en-US' : 'de-DE'}",
+    "datePublished": "2024-01-01",
+    "dateModified": "${new Date().toISOString().split('T')[0]}",
     "isPartOf": {
       "@id": "https://www.komplettwebdesign.de/#website"
     },
     "about": {
       "@id": "https://www.komplettwebdesign.de/#organization"
     },
+    "author": {
+      "@id": "https://www.komplettwebdesign.de/#person"
+    },
     "primaryImageOfPage": {
       "@type": "ImageObject",
-      "url": "https://www.komplettwebdesign.de/images/heroBg.webp"
+      "url": "https://www.komplettwebdesign.de/images/heroBg.webp",
+      "width": 1200,
+      "height": 630
+    },
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": ["#erklaerung", "#features", "#leistungen", "#faq"]
     },
     "relatedLink": [
       "https://www.komplettwebdesign.de/webdesign-berlin",
@@ -667,7 +718,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <img src="/images/icons/gift1.svg" alt="<%= isEn ? 'Requirements included' : 'Wünsche integriert' %>" class="feature-icon" loading="lazy" />
                 <h3><%= isEn ? 'Requirements included' : 'Wünsche integriert' %></h3>
                 <p>
-                  <%= isEn ? 'Your goals and target audience are central - we build the website to match your business in Berlin.' : 'Deine Ziele und deine Zielgruppe stehen im Mittelpunkt - wir bauen die Website passend zu deinem Business in Berlin.' %>
+                  <%= isEn ? 'Your goals and target audience are central - I build the website to match your business in Berlin.' : 'Deine Ziele und deine Zielgruppe stehen im Mittelpunkt - ich baue die Website passend zu deinem Business in Berlin.' %>
                 </p>
               </div>
               <!-- 2 -->
@@ -682,7 +733,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <img src="/images/icons/support1.svg" alt="<%= isEn ? 'Ongoing support' : 'Fortlaufender Support' %>" class="feature-icon" loading="lazy" />
                 <h3><%= isEn ? 'Ongoing support' : 'Fortlaufender Support' %></h3>
                 <p>
-                  <%= isEn ? 'Even after launch, we stay by your side and support you.' : 'Auch nach dem Launch bleiben wir an deiner Seite und unterstützen dich.' %>
+                  <%= isEn ? 'Even after launch, I stay by your side and support you.' : 'Auch nach dem Launch bleibe ich an deiner Seite und unterstütze dich.' %>
                 </p>
               </div>
               <!-- 4 -->
@@ -706,7 +757,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <img src="/images/icons/individual1.svg" alt="<%= isEn ? 'Custom solutions' : 'Individuelle Lösungen' %>" class="feature-icon" loading="lazy" />
                 <h3><%= isEn ? 'Custom solutions' : 'Individuelle Lösungen' %></h3>
                 <p>
-                  <%= isEn ? 'From landing page to shop: we build what you really need.' : 'Von Landingpage bis Shop: wir entwickeln, was du wirklich brauchst.' %>
+                  <%= isEn ? 'From landing page to shop: I build what you really need.' : 'Von Landingpage bis Shop: ich entwickle, was du wirklich brauchst.' %>
                 </p>
               </div>
             </div>
@@ -1115,6 +1166,14 @@ const structuredDataRaw = `<script type="application/ld+json">
               <% trustReviews.forEach((r) => { %>
               <article class="trust-review-card animate-on-scroll" itemscope itemtype="https://schema.org/Review">
                 <meta itemprop="itemReviewed" content="Komplett Webdesign" />
+                <div itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating" style="display:none">
+                  <meta itemprop="ratingValue" content="<%= r.rating %>" />
+                  <meta itemprop="bestRating" content="5" />
+                  <meta itemprop="worstRating" content="1" />
+                </div>
+                <% if (r.created_at) { %>
+                <meta itemprop="datePublished" content="<%= new Date(r.created_at).toISOString().split('T')[0] %>" />
+                <% } %>
                 <div class="trust-review-header">
                   <% if (hasAvatar(r.avatar_url)) { %>
                   <img src="<%= r.avatar_url %>"

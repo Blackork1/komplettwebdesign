@@ -1,0 +1,376 @@
+<%- include('../partials/admin_header') %>
+
+<div class="admin-card mailversand-form">
+  <h1 class="admin-page-title">
+    <i class="fa-solid fa-paper-plane"></i>
+    Mailversand
+  </h1>
+  <p style="margin-top:-0.5rem; color:#6b7280;">
+    Sende eine einzelne Nachricht im einheitlichen Marken-Template (Header, Footer, Signatur bleiben automatisch erhalten).
+    Gib nur Betreff und Inhalt ein – optional eine Call-to-Action oder Anhänge.
+  </p>
+
+  <% if (status) { %>
+    <div class="mailversand-alert mailversand-alert--<%= status.type === 'success' ? 'success' : 'error' %>">
+      <% if (status.type === 'success') { %>
+        <i class="fa-solid fa-circle-check"></i>
+      <% } else { %>
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      <% } %>
+      <%= status.message %>
+    </div>
+  <% } %>
+
+  <form method="POST" action="/admin/mailversand" id="mailversandForm" enctype="multipart/form-data">
+    <div class="form-row">
+      <label for="mv-to">Empfänger (mehrere durch Komma / Zeilenumbruch trennen)</label>
+      <input type="text" id="mv-to" name="to" required value="<%= form.to %>" placeholder="kunde@example.de, weiterer@example.de">
+    </div>
+
+    <div class="form-row mv-grid-2">
+      <div>
+        <label for="mv-subject">Betreff</label>
+        <input type="text" id="mv-subject" name="subject" required value="<%= form.subject %>" maxlength="160" placeholder="Kurz, aussagekräftig">
+      </div>
+      <div>
+        <label for="mv-locale">Sprache</label>
+        <select id="mv-locale" name="locale">
+          <option value="de" <%= form.locale === 'de' ? 'selected' : '' %>>Deutsch</option>
+          <option value="en" <%= form.locale === 'en' ? 'selected' : '' %>>Englisch</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row mv-grid-2">
+      <div>
+        <label for="mv-headline">Headline (optional – sonst wird Betreff genutzt)</label>
+        <input type="text" id="mv-headline" name="headline" value="<%= form.headline %>" maxlength="160" placeholder="z. B. Update zu deinem Projekt">
+      </div>
+      <div>
+        <label for="mv-preheader">Preheader (Vorschautext im Posteingang)</label>
+        <input type="text" id="mv-preheader" name="preheader" value="<%= form.preheader %>" maxlength="160" placeholder="Kurz zusammengefasst …">
+      </div>
+    </div>
+
+    <div class="form-row mv-editor-row">
+      <label for="mv-body">Nachrichtentext</label>
+      <div class="mv-editor">
+        <aside class="mv-editor__toolbar" id="mvEditorToolbar" aria-hidden="true">
+          <p class="mv-editor__title">Formatierung</p>
+          <button type="button" class="mv-editor__btn" data-fmt="bold" title="Fett (Strg+B)">
+            <i class="fa-solid fa-bold"></i> <span>Fett</span>
+          </button>
+          <button type="button" class="mv-editor__btn" data-fmt="italic" title="Kursiv (Strg+I)">
+            <i class="fa-solid fa-italic"></i> <span>Kursiv</span>
+          </button>
+          <button type="button" class="mv-editor__btn" data-fmt="underline" title="Unterstrichen (Strg+U)">
+            <i class="fa-solid fa-underline"></i> <span>Unterstrichen</span>
+          </button>
+          <button type="button" class="mv-editor__btn" data-fmt="link" title="Link einfügen">
+            <i class="fa-solid fa-link"></i> <span>Link einfügen</span>
+          </button>
+          <button type="button" class="mv-editor__btn" data-fmt="br" title="Zeilenumbruch">
+            <i class="fa-solid fa-arrow-turn-down"></i> <span>Umbruch</span>
+          </button>
+
+          <div class="mv-editor__panel" id="mvEditorPanel" hidden>
+            <label class="mv-editor__panel-label" id="mvEditorPanelLabel">Text</label>
+            <input type="text" class="mv-editor__input" id="mvEditorInput" placeholder="">
+            <label class="mv-editor__panel-label" id="mvEditorUrlLabel" hidden>URL</label>
+            <input type="url" class="mv-editor__input" id="mvEditorUrl" placeholder="https://…" hidden>
+            <div class="mv-editor__panel-actions">
+              <button type="button" class="mv-editor__apply" id="mvEditorApply">
+                <i class="fa-solid fa-check"></i> Einfügen
+              </button>
+              <button type="button" class="mv-editor__cancel" id="mvEditorCancel">Abbrechen</button>
+            </div>
+          </div>
+        </aside>
+
+        <div class="mv-editor__textarea-wrap">
+          <textarea id="mv-body" name="body" required placeholder="Hallo, …&#10;&#10;Absätze einfach mit einer Leerzeile trennen. Klicke in das Textfeld, damit links die Formatierungsleiste erscheint."><%= form.body %></textarea>
+          <span class="hint">Tipp: Doppelter Zeilenumbruch = neuer Absatz. HTML (z. B. &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;) ist erlaubt. Nutze am einfachsten die Formatierungsleiste links.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row mv-grid-3">
+      <div>
+        <label for="mv-cta-label">Button-Label (optional)</label>
+        <input type="text" id="mv-cta-label" name="ctaLabel" value="<%= form.ctaLabel %>" maxlength="80" placeholder="z. B. Termin buchen">
+      </div>
+      <div>
+        <label for="mv-cta-url">Button-URL (optional)</label>
+        <input type="url" id="mv-cta-url" name="ctaUrl" value="<%= form.ctaUrl %>" placeholder="https://…">
+      </div>
+      <div>
+        <label for="mv-reply-to">Antwort-an (optional)</label>
+        <input type="email" id="mv-reply-to" name="replyTo" value="<%= form.replyTo %>" placeholder="name@komplettwebdesign.de">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="mv-attachments">
+        <i class="fa-solid fa-paperclip"></i> Anhänge (Bilder, PDFs, Dokumente – max. 10 Dateien, 15 MB pro Datei, insgesamt 25 MB)
+      </label>
+      <input type="file" id="mv-attachments" name="attachments" multiple
+             accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip">
+      <% if (form.attachments && form.attachments.length) { %>
+        <div class="mv-attachments-note">
+          <strong>Hinweis:</strong> Aus Sicherheitsgründen müssen Anhänge nach einem Fehler erneut ausgewählt werden.
+          Vorherige Auswahl:
+          <ul>
+            <% form.attachments.forEach(a => { %>
+              <li><i class="fa-regular fa-file"></i> <%= a.name %> (<%= a.size %>)</li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+      <ul class="mv-file-list" id="mvFileList" aria-live="polite"></ul>
+    </div>
+
+    <div class="submit-bar">
+      <button type="submit" class="btn-primary">
+        <i class="fa-solid fa-paper-plane"></i> Mail versenden
+      </button>
+      <button type="button" class="btn-ghost" id="mv-preview-btn">
+        <i class="fa-solid fa-eye"></i> Vorschau anzeigen
+      </button>
+    </div>
+  </form>
+
+  <div class="mailversand-preview" id="mv-preview-box" style="display:none;">
+    <iframe id="mv-preview-frame" title="Mailvorschau"></iframe>
+  </div>
+</div>
+
+<script>
+  (function () {
+    /* ---------------- Live-Vorschau ---------------- */
+    var previewBtn = document.getElementById('mv-preview-btn');
+    var previewBox = document.getElementById('mv-preview-box');
+    var previewFrame = document.getElementById('mv-preview-frame');
+    var form = document.getElementById('mailversandForm');
+
+    if (previewBtn && previewBox && previewFrame && form) {
+      previewBtn.addEventListener('click', async function () {
+        var fd = new FormData(form);
+        // Anhänge nicht in die Vorschau schicken
+        fd.delete('attachments');
+        try {
+          var res = await fetch('/admin/mailversand/preview', {
+            method: 'POST',
+            body: new URLSearchParams(fd)
+          });
+          var html = await res.text();
+          previewBox.style.display = 'block';
+          var doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+          doc.open(); doc.write(html); doc.close();
+          previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (err) {
+          alert('Vorschau konnte nicht geladen werden: ' + err.message);
+        }
+      });
+    }
+
+    /* ---------------- Datei-Liste beim Auswählen ---------------- */
+    var fileInput = document.getElementById('mv-attachments');
+    var fileList = document.getElementById('mvFileList');
+    function formatBytes(bytes) {
+      if (!bytes) return '0 B';
+      var units = ['B','KB','MB','GB'];
+      var v = bytes, i = 0;
+      while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+      return v.toFixed(v >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
+    }
+    if (fileInput && fileList) {
+      fileInput.addEventListener('change', function () {
+        fileList.innerHTML = '';
+        var total = 0;
+        Array.prototype.forEach.call(fileInput.files, function (f) {
+          total += f.size;
+          var li = document.createElement('li');
+          li.innerHTML = '<i class="fa-regular fa-file"></i> '
+            + escapeHtml(f.name) + ' <span class="mv-file-size">(' + formatBytes(f.size) + ')</span>';
+          fileList.appendChild(li);
+        });
+        if (fileInput.files.length) {
+          var sum = document.createElement('li');
+          sum.className = 'mv-file-sum';
+          sum.textContent = 'Gesamt: ' + formatBytes(total);
+          fileList.appendChild(sum);
+        }
+      });
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    /* ---------------- Einfacher Text-Editor ---------------- */
+    var textarea = document.getElementById('mv-body');
+    var toolbar = document.getElementById('mvEditorToolbar');
+    var panel = document.getElementById('mvEditorPanel');
+    var panelLabel = document.getElementById('mvEditorPanelLabel');
+    var input = document.getElementById('mvEditorInput');
+    var urlLabel = document.getElementById('mvEditorUrlLabel');
+    var urlInput = document.getElementById('mvEditorUrl');
+    var applyBtn = document.getElementById('mvEditorApply');
+    var cancelBtn = document.getElementById('mvEditorCancel');
+    if (!textarea || !toolbar) return;
+
+    var lastSelection = { start: 0, end: 0 };
+    var activeFormat = null;
+
+    function showToolbar() {
+      toolbar.classList.add('is-active');
+      toolbar.setAttribute('aria-hidden', 'false');
+    }
+    function hideToolbar() {
+      toolbar.classList.remove('is-active');
+      toolbar.setAttribute('aria-hidden', 'true');
+      hidePanel();
+    }
+    function rememberSelection() {
+      lastSelection.start = textarea.selectionStart;
+      lastSelection.end = textarea.selectionEnd;
+    }
+
+    textarea.addEventListener('focus', showToolbar);
+    textarea.addEventListener('click', function () { showToolbar(); rememberSelection(); });
+    textarea.addEventListener('keyup', rememberSelection);
+    textarea.addEventListener('select', rememberSelection);
+
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.mv-editor')) hideToolbar();
+    });
+
+    function hidePanel() {
+      panel.hidden = true;
+      urlLabel.hidden = true;
+      urlInput.hidden = true;
+      input.value = '';
+      urlInput.value = '';
+      activeFormat = null;
+      toolbar.querySelectorAll('.mv-editor__btn').forEach(function (b) {
+        b.classList.remove('is-active');
+      });
+    }
+
+    function openPanel(fmt, btn) {
+      activeFormat = fmt;
+      toolbar.querySelectorAll('.mv-editor__btn').forEach(function (b) {
+        b.classList.remove('is-active');
+      });
+      if (btn) btn.classList.add('is-active');
+      panel.hidden = false;
+
+      // Selektierten Text vorbefüllen
+      var selectedText = textarea.value.slice(lastSelection.start, lastSelection.end);
+
+      if (fmt === 'link') {
+        panelLabel.textContent = 'Link-Text';
+        input.placeholder = 'z. B. Hier klicken';
+        urlLabel.hidden = false;
+        urlInput.hidden = false;
+      } else if (fmt === 'br') {
+        panelLabel.textContent = 'Zeilenumbruch einfügen?';
+        input.placeholder = '';
+        input.value = '';
+        urlLabel.hidden = true;
+        urlInput.hidden = true;
+      } else {
+        var labels = { bold: 'Fett-Text', italic: 'Kursiv-Text', underline: 'Unterstrichener Text' };
+        panelLabel.textContent = labels[fmt] || 'Text';
+        input.placeholder = 'Text, der eingefügt werden soll';
+        urlLabel.hidden = true;
+        urlInput.hidden = true;
+      }
+
+      if (fmt !== 'br') {
+        input.value = selectedText;
+        setTimeout(function () { input.focus(); input.select(); }, 0);
+      } else {
+        setTimeout(function () { applyBtn.focus(); }, 0);
+      }
+    }
+
+    function escapeHtmlForInsert(s) {
+      return String(s).replace(/[&<>]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c];
+      });
+    }
+
+    function insertAtSelection(htmlSnippet) {
+      var before = textarea.value.slice(0, lastSelection.start);
+      var after = textarea.value.slice(lastSelection.end);
+      textarea.value = before + htmlSnippet + after;
+      var newPos = (before + htmlSnippet).length;
+      textarea.focus();
+      textarea.setSelectionRange(newPos, newPos);
+      lastSelection.start = newPos;
+      lastSelection.end = newPos;
+    }
+
+    toolbar.querySelectorAll('.mv-editor__btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        rememberSelection();
+        var fmt = btn.getAttribute('data-fmt');
+        openPanel(fmt, btn);
+      });
+    });
+
+    cancelBtn.addEventListener('click', hidePanel);
+
+    applyBtn.addEventListener('click', function () {
+      if (!activeFormat) return;
+      var text = input.value || '';
+      var html = '';
+
+      if (activeFormat === 'bold') {
+        if (!text.trim()) return alertFocus('Bitte gib einen Text ein.');
+        html = '<strong>' + escapeHtmlForInsert(text) + '</strong>';
+      } else if (activeFormat === 'italic') {
+        if (!text.trim()) return alertFocus('Bitte gib einen Text ein.');
+        html = '<em>' + escapeHtmlForInsert(text) + '</em>';
+      } else if (activeFormat === 'underline') {
+        if (!text.trim()) return alertFocus('Bitte gib einen Text ein.');
+        html = '<u>' + escapeHtmlForInsert(text) + '</u>';
+      } else if (activeFormat === 'link') {
+        var url = (urlInput.value || '').trim();
+        var label = (text || '').trim();
+        if (!url) return alertFocus('Bitte gib eine URL ein.', urlInput);
+        if (!/^https?:\/\//i.test(url) && !url.startsWith('mailto:') && !url.startsWith('/')) {
+          url = 'https://' + url;
+        }
+        if (!label) label = url;
+        html = '<a href="' + escapeHtmlForInsert(url) + '">' + escapeHtmlForInsert(label) + '</a>';
+      } else if (activeFormat === 'br') {
+        html = '<br>';
+      }
+
+      insertAtSelection(html);
+      hidePanel();
+    });
+
+    function alertFocus(msg, el) {
+      alert(msg);
+      (el || input).focus();
+    }
+
+    // Tastenkürzel: Strg/Cmd + B/I/U
+    textarea.addEventListener('keydown', function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      var map = { 'b': 'bold', 'i': 'italic', 'u': 'underline' };
+      var fmt = map[e.key.toLowerCase()];
+      if (!fmt) return;
+      e.preventDefault();
+      rememberSelection();
+      var btn = toolbar.querySelector('.mv-editor__btn[data-fmt="' + fmt + '"]');
+      openPanel(fmt, btn);
+    });
+  })();
+</script>
+
+<%- include('../partials/admin_footer') %>

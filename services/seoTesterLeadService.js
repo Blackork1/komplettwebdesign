@@ -17,7 +17,8 @@ import { getCachedSeoAuditResult } from './seoAuditService.js';
 import {
   sendSeoTesterDoiMail,
   sendSeoTesterReportMail,
-  sendTesterFullGuideMail
+  sendTesterFullGuideMail,
+  sendAdminTesterLeadNotification
 } from './mailService.js';
 import { buildSeoTesterReport } from './seoTesterPdfService.js';
 import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
@@ -294,6 +295,20 @@ export async function requestSeoTesterLead({
     confirmUrl,
     expiresAt
   });
+
+  try {
+    await sendAdminTesterLeadNotification({
+      source: 'seo',
+      email: lead.email,
+      name: lead.name,
+      domain,
+      scoreBand: lead.score_band,
+      overallScore: seoResult?.seoScore?.overall,
+      locale: lng
+    });
+  } catch (e) {
+    console.warn('Admin notification (seo tester) failed:', e?.message || e);
+  }
 
   return {
     lead,

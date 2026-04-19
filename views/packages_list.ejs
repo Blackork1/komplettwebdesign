@@ -148,52 +148,62 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": isEn ? "Which package fits my project?" : "Welches Paket passt zu mir?",
+          "name": isEn ? "How long does a website project in Berlin take?" : "Wie lange dauert ein Website erstellen-Projekt in Berlin?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": isEn
-              ? "For small projects, the Basic package is usually enough. If your project grows or needs multiple pages and tracking, Business is ideal. Premium is the right choice for custom design, content and ongoing support."
-              : "Für kleine Projekte reicht meist das Basis-Paket. Wächst das Projekt oder sind mehrere Unterseiten/Tracking nötig, ist Business ideal. Premium ist für individuelle Designs, Content und laufende Betreuung."
+              ? "Depending on scope, a focused launch can go live within a few weeks. We work along clear milestones for strategy, content, design, development and QA so the timeline stays predictable."
+              : "Je nach Umfang kann ein fokussierter Launch in wenigen Wochen live gehen. Wir arbeiten mit klaren Meilensteinen für Strategie, Inhalte, Design, Umsetzung und QA, damit der Zeitrahmen planbar bleibt."
           }
         },
         {
           "@type": "Question",
-          "name": isEn ? "Are hosting and maintenance included?" : "Sind Hosting und Wartung inklusive?",
+          "name": isEn ? "Which package fits my company?" : "Welches Paket passt zu meinem Unternehmen?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": isEn
-              ? "Yes, every package can include hosting and maintenance. Ongoing support is already included in the Premium package."
-              : "Ja, jedes Paket kann mit Hosting und Wartung gebucht werden. Im Premium-Paket ist die laufende Betreuung bereits enthalten."
+              ? "It depends on your goal, sales process and existing material. We recommend the smallest sensible scope that delivers measurable value quickly and show the growth path from there."
+              : "Das hängt von Ziel, Vertriebsprozess und vorhandenem Material ab. Wir empfehlen dir den kleinsten sinnvollen Umfang, der schnell messbaren Nutzen liefert, und zeigen den Ausbaupfad danach."
           }
         },
         {
           "@type": "Question",
-          "name": isEn ? "How quickly can my website go live?" : "Wie schnell ist meine Website online?",
+          "name": isEn ? "Are SEO and GEO included?" : "Sind SEO und GEO direkt enthalten?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": isEn
-              ? "Depending on package and available content (copy/images), usually between 5 and 15 business days. Express delivery is possible on request."
-              : "Je nach Paket und Material (Texte/Bilder) zwischen 5 und 15 Werktagen. Express-Umsetzung ist nach Absprache möglich."
+              ? "Yes. Depending on the package we integrate on-page SEO and GEO-friendly structural blocks like answer-first elements, FAQ modules and clear entity signals so the site is visible in both search and AI answers."
+              : "Ja, je nach Paket integrieren wir OnPage-SEO und GEO-freundliche Strukturblöcke wie answer-first Elemente, FAQ-Module und klare Entity-Signale, damit die Seite in Suche und KI-Antworten sichtbar wird."
           }
         },
         {
           "@type": "Question",
-          "name": isEn ? "Do you offer fixed prices?" : "Gibt es feste Preise?",
+          "name": isEn ? "Can existing content be reused?" : "Kann bestehender Content weiter genutzt werden?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": isEn
-              ? "Yes. Basic EUR 499, Business EUR 899, Premium EUR 1,499. Add-ons (e.g. multilingual setup) are quoted transparently in advance."
-              : "Ja. Basis 499 €, Business 899 €, Premium 1.499 €. Zusatzleistungen (z. B. Mehrsprachigkeit) werden transparent vorab angeboten."
+              ? "In many cases yes. We keep content that works and rewrite weak passages for better clarity, findability and conversion without unnecessary rework of what is already performing."
+              : "In vielen Fällen ja. Wir übernehmen funktionierende Inhalte und überarbeiten schwache Abschnitte für bessere Klarheit, Auffindbarkeit und Conversion, ohne Unnötiges neu zu schreiben."
           }
         },
         {
           "@type": "Question",
-          "name": isEn ? "Can I upgrade later?" : "Kann ich später upgraden?",
+          "name": isEn ? "How transparent are the costs?" : "Wie transparent sind die Kosten?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": isEn
-              ? "Absolutely. You can upgrade from Basic to Business or Premium at any time. We fairly apply the difference."
-              : "Klar – du kannst jederzeit vom Basis- auf Business- oder Premium-Paket wechseln. Wir rechnen fair die Differenz an."
+              ? "You get transparent package prices plus optional add-ons. That gives you a planning-safe total and still lets you expand step by step as the business grows."
+              : "Du erhältst transparente Paketpreise plus optionale Add-ons. So hast du eine planbare Gesamtgröße und kannst trotzdem schrittweise ausbauen, wenn das Geschäft wächst."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": isEn ? "Who owns the website and content after launch?" : "Wem gehören Website und Inhalte nach dem Launch?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": isEn
+              ? "You own the website and the content. After launch we continue with monitoring, optimization and prioritization of further measures so the site keeps delivering results sustainably."
+              : "Dir gehören Website und Inhalte. Nach dem Livegang begleiten wir Monitoring, Optimierung und Priorisierung weiterer Maßnahmen, damit die Seite dauerhaft Ergebnisse liefert."
           }
         }
       ]
@@ -205,7 +215,7 @@
 <head>
   <%- include('partials/head', { structuredDataBlocks }) %>
   <!-- Annahme: Enthält Bootstrap CSS etc. -->
-  <title><%= isEn ? 'Our Website Packages - Premium Web Design Packages' : 'Unsere Website Pakete - Premium Webdesign Pakete' %></title>
+  <title><%= isEn ? 'Website Pricing in Berlin | Packages, Scope & Timeline' : 'Preise für Website erstellen in Berlin | Pakete und Umfang' %></title>
 </head>
 
 <body>
@@ -215,22 +225,22 @@
     <section class="packages-hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <span class="hero-badge"><%= isEn ? 'Website packages for freelancers &amp; SMEs' : 'Websitepakete für Selbstständige &amp; KMU' %></span>
-          <h1 class="hero-title"><%= isEn ? 'How much does a professional website cost?' : 'Was kostet eine Professionelle Website?' %></h1>
+          <span class="hero-badge"><%= isEn ? 'Create a website in Berlin - transparent packages' : 'Website erstellen in Berlin – transparente Pakete' %></span>
+          <h1 class="hero-title"><%= isEn ? 'Create a website: packages, services and pricing in Berlin' : 'Website erstellen: Pakete, Leistungen und Kosten in Berlin' %></h1>
           <h2 class="hero-subtitle">
             <%= isEn
-              ? 'From a fast landing page to a tailored premium presence - we support you with design, technology, content and maintenance. Find the package that fits your business.'
-              : 'Von der schnellen Landingpage bis zum maßgeschneiderten Premium-Auftritt – wir begleiten Sie mit Design, Technik, Inhalt und Wartung. Finden Sie das Paket, das zu Ihrem Unternehmen passt.'
+              ? 'Create a website in Berlin with transparent package logic, clear deliverables and a predictable pricing structure - from a focused launch to a scalable presence.'
+              : 'Website erstellen in Berlin mit transparenter Paketlogik, klaren Leistungen und nachvollziehbarer Preisstruktur – vom fokussierten Launch bis zum skalierbaren Auftritt.'
             %>
           </h2>
           <ul class="hero-highlights">
-            <li><%= isEn ? 'Responsive designs with custom brand colors' : 'Responsive Designs mit individuellen Brand-Farben' %></li>
-            <li><%= isEn ? 'Copywriting, SEO basics &amp; legal pages included' : 'Texte, SEO-Basics &amp; rechtliche Seiten inklusive' %></li>
-            <li><%= isEn ? 'Optional maintenance service &amp; personal consulting' : 'Optionaler Wartungsservice &amp; persönliche Beratung' %></li>
+            <li><%= isEn ? 'Clear scope, fixed timeline and revision count per package' : 'Klarer Leistungsumfang, fester Zeitrahmen und Revisionen je Paket' %></li>
+            <li><%= isEn ? 'On-page SEO, GEO-friendly structure and legal pages included' : 'OnPage-SEO, GEO-freundliche Struktur & rechtliche Seiten inklusive' %></li>
+            <li><%= isEn ? 'Transparent package prices plus optional add-ons without lock-in' : 'Transparente Paketpreise plus optionale Add-ons ohne Lock-in' %></li>
           </ul>
           <div class="hero-actions">
-            <a class="btn btn-hero" href="#paket-angebote"><%= isEn ? 'Explore packages' : 'Pakete entdecken' %></a>
-            <a class="btn btn-soft-outline" href="/kontakt"><%= isEn ? 'Free consultation' : 'Kostenlose Beratung' %></a>
+            <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -245,31 +255,39 @@
     </section>
 
     <section class="packages-intro">
+      <div class="container">
+        <p class="packages-intro-lead">
+          <%= isEn
+            ? 'A package page should enable quick decisions: which package fits, what is included, where the limits are and what happens next. This page is built as a clear decision basis - not a vague feature list - and the structure supports consistent metadata, head tags and social snippets.'
+            : 'Eine Paketseite muss schnelle Entscheidungen ermöglichen: Welches Paket passt, was ist enthalten, welche Grenzen gibt es und was passiert danach? Der Inhalt ist als klare Entscheidungsgrundlage aufgebaut – keine unklare Featureliste – und auf konsistente Metadaten, Head-Tags und Social-Snippets ausgerichtet.'
+          %>
+        </p>
+      </div>
       <div class="container intro-grid">
         <article class="intro-card">
-          <h2><%= isEn ? 'Go live fast - without compromises' : 'Schnell online – ohne Kompromisse' %></h2>
+          <h2><%= isEn ? 'Choose by business phase' : 'Auswahl nach Unternehmensphase' %></h2>
           <p>
             <%= isEn
-              ? 'We deliver complete websites including design, copy, SEO basics and technology. You focus on your business, we focus on your digital presence.'
-              : 'Wir liefern komplette Websites inklusive Design, Texten, SEO-Basics und Technik. Sie konzentrieren sich auf Ihr Business, wir auf Ihren digitalen Auftritt.'
+              ? 'Every package is mapped to a clear situation - entry, growth or scale. You see in seconds where you belong and which outcome is realistic.'
+              : 'Jedes Paket ist einer Situation zugeordnet – Einstieg, Wachstum oder Ausbau. Du erkennst in Sekunden, wo du stehst und welches Ergebnis realistisch ist.'
             %>
           </p>
         </article>
         <article class="intro-card">
-          <h2><%= isEn ? 'Transparent package pricing' : 'Transparente Paketpreise' %></h2>
+          <h2><%= isEn ? 'Clear limits, fair prices' : 'Klare Grenzen, faire Preise' %></h2>
           <p>
             <%= isEn
-              ? 'One-time setup costs plus optional maintenance - clearly calculated and without hidden fees. Every package includes hosting, security and GDPR basics.'
-              : 'Einmalige Erstellungskosten plus optionale Wartung – klar kalkuliert und ohne versteckte Gebühren. Jedes Paket enthält Hosting, Sicherheit und DSGVO.'
+              ? 'Scope, revisions and support are named transparently. Fixed package prices plus optional add-ons - no hidden fees, no surprises after kickoff.'
+              : 'Umfang, Revisionen und Support sind transparent benannt. Feste Paketpreise plus optionale Add-ons – keine versteckten Gebühren, keine Überraschungen nach Projektstart.'
             %>
           </p>
         </article>
         <article class="intro-card">
-          <h2><%= isEn ? 'More leads &amp; trust' : 'Mehr Leads &amp; Vertrauen' %></h2>
+          <h2><%= isEn ? 'Planned launch, not guesswork' : 'Planbarer Launch statt Blindflug' %></h2>
           <p>
             <%= isEn
-              ? 'Conversion-focused structures, clear messaging and trust-building elements turn visitors into customers.'
-              : 'Conversion-orientierte Strukturen, klare Botschaften und vertrauensbildende Elemente sorgen dafür, dass Besucher zu Kunden werden.'
+              ? 'From kickoff to go-live, the process runs along defined milestones with realistic time windows - so website pricing turns into a plannable project start.'
+              : 'Vom Kickoff bis zum Livegang läuft das Projekt entlang klarer Meilensteine mit realistischer Zeitplanung – aus Preisvergleich wird ein planbarer Projektstart.'
             %>
           </p>
         </article>
@@ -405,7 +423,7 @@
               <a class="btn btn-hero" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>">
                 <%= isEn ? 'View details' : 'Details ansehen' %>
               </a>
-              <a class="btn btn-soft-outline" href="/kontakt"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
+              <a class="btn btn-soft-outline" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
             </div>
           </div>
         </article>
@@ -418,18 +436,258 @@
       </div>
     </section>
 
+    <!-- 1. Für wen welches Paket passt -->
+    <section id="paketwahl" class="packages-section packages-fit">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Self-selection' : 'Selbstselektion' %></span>
+          <h2><%= isEn ? 'Which package fits which business phase?' : 'Für wen welches Paket passt' %></h2>
+          <p class="section-lead">
+            <%= isEn
+              ? 'Sort your project by goal and business phase: entry, growth or scale. Each package is matched to a realistic outcome so you decide based on value - not just price.'
+              : 'Ordne dein Projekt nach Ziel und Unternehmensphase ein: Einstieg, Wachstum oder Ausbau. Jedes Paket ist einem realistischen Ergebnis zugeordnet, damit die Entscheidung nicht allein über den Preis, sondern über den Nutzen fällt.'
+            %>
+          </p>
+        </header>
+        <div class="fit-grid">
+          <article class="fit-card">
+            <span class="fit-phase"><%= isEn ? 'Entry' : 'Einstieg' %></span>
+            <h3><%= isEn ? 'Basic package - fast professional launch' : 'Basis-Paket – schneller professioneller Start' %></h3>
+            <p>
+              <%= isEn
+                ? 'For freelancers, small teams or brand-new businesses that need a credible web presence quickly. Typical outcome: a focused one-pager or compact site that makes your offer visible and reachable in Berlin search.'
+                : 'Für Selbstständige, kleine Teams oder frisch gestartete Unternehmen, die schnell einen glaubwürdigen Webauftritt brauchen. Typisches Ergebnis: ein fokussierter Onepager oder eine kompakte Seite, die dein Angebot in Berlin sichtbar und erreichbar macht.'
+              %>
+            </p>
+          </article>
+          <article class="fit-card is-highlighted">
+            <span class="fit-phase"><%= isEn ? 'Growth' : 'Wachstum' %></span>
+            <h3><%= isEn ? 'Business package - more pages, more requests' : 'Business-Paket – mehr Seiten, mehr Anfragen' %></h3>
+            <p>
+              <%= isEn
+                ? 'For companies with an established offer that want structured lead generation. Typical outcome: a multi-page website with service and location pages, strong CTAs and improved organic visibility.'
+                : 'Für Unternehmen mit etabliertem Angebot, die strukturierte Leadgewinnung aufbauen wollen. Typisches Ergebnis: eine mehrseitige Website mit Leistungs- und Standortseiten, starken CTAs und spürbarer organischer Sichtbarkeit.'
+              %>
+            </p>
+          </article>
+          <article class="fit-card">
+            <span class="fit-phase"><%= isEn ? 'Scale' : 'Ausbau' %></span>
+            <h3><%= isEn ? 'Premium package - strategy, content, support' : 'Premium-Paket – Strategie, Content, Betreuung' %></h3>
+            <p>
+              <%= isEn
+                ? 'For brands that want to scale content, SEO and conversion over time. Typical outcome: a strategically built website with custom UX, content production and ongoing optimization as a growth foundation.'
+                : 'Für Marken, die Content, SEO und Conversion langfristig skalieren wollen. Typisches Ergebnis: eine strategisch aufgebaute Website mit individuellem UX, Content-Produktion und laufender Optimierung als Wachstumsfundament.'
+              %>
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Paketvergleich mit Leistungsgrenzen -->
+    <section id="vergleich" class="packages-section packages-compare">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Package comparison' : 'Paketvergleich' %></span>
+          <h2><%= isEn ? 'Scope, timeline and support at a glance' : 'Vergleich mit klaren Leistungsgrenzen' %></h2>
+          <p class="section-lead">
+            <%= isEn
+              ? 'Deliverables, timeline, revisions and support per package - including honest limits. Clear boundaries build trust and reduce coordination effort once the project starts.'
+              : 'Lieferumfang, Zeitrahmen, Revisionen und Support je Paket – inklusive ehrlicher Grenzen. Klare Leistungsgrenzen schaffen Vertrauen und senken späteren Abstimmungsaufwand.'
+            %>
+          </p>
+        </header>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col"><%= isEn ? 'Criterion' : 'Kriterium' %></th>
+                <th scope="col"><%= isEn ? 'Basic' : 'Basis' %></th>
+                <th scope="col"><%= isEn ? 'Business' : 'Business' %></th>
+                <th scope="col"><%= isEn ? 'Premium' : 'Premium' %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><%= isEn ? 'Scope of pages' : 'Seitenumfang' %></th>
+                <td><%= isEn ? 'Onepager or up to 3 pages' : 'Onepager oder bis zu 3 Seiten' %></td>
+                <td><%= isEn ? '4 - 8 pages incl. service pages' : '4 – 8 Seiten inkl. Leistungsseiten' %></td>
+                <td><%= isEn ? '8+ pages, individually structured' : '8+ Seiten, individuell strukturiert' %></td>
+              </tr>
+              <tr>
+                <th scope="row"><%= isEn ? 'SEO basics' : 'SEO-Basis' %></th>
+                <td><%= isEn ? 'On-page basics & indexing' : 'OnPage-Basics & Indexierung' %></td>
+                <td><%= isEn ? 'Extended on-page SEO & tracking' : 'Erweitertes OnPage-SEO & Tracking' %></td>
+                <td><%= isEn ? 'Strategic SEO & content planning' : 'Strategisches SEO & Content-Planung' %></td>
+              </tr>
+              <tr>
+                <th scope="row"><%= isEn ? 'Revisions included' : 'Revisionen inklusive' %></th>
+                <td><%= isEn ? '1 revision round' : '1 Korrekturschleife' %></td>
+                <td><%= isEn ? '2 revision rounds' : '2 Korrekturschleifen' %></td>
+                <td><%= isEn ? 'Iterative loops until launch' : 'Iterative Schleifen bis Launch' %></td>
+              </tr>
+              <tr>
+                <th scope="row"><%= isEn ? 'Timeline to go-live' : 'Zeitrahmen bis Livegang' %></th>
+                <td><%= isEn ? 'approx. 1 - 2 weeks' : 'ca. 1 – 2 Wochen' %></td>
+                <td><%= isEn ? 'approx. 2 - 4 weeks' : 'ca. 2 – 4 Wochen' %></td>
+                <td><%= isEn ? 'approx. 4 - 8 weeks' : 'ca. 4 – 8 Wochen' %></td>
+              </tr>
+              <tr>
+                <th scope="row"><%= isEn ? 'Post-launch support' : 'Support nach Launch' %></th>
+                <td><%= isEn ? '30 days launch support' : '30 Tage Launch-Support' %></td>
+                <td><%= isEn ? '60 days plus optional care' : '60 Tage plus optionale Wartung' %></td>
+                <td><%= isEn ? 'Ongoing support & monitoring' : 'Laufende Betreuung & Monitoring' %></td>
+              </tr>
+              <tr>
+                <th scope="row"><%= isEn ? 'Handover' : 'Übergabe' %></th>
+                <td><%= isEn ? 'Guided go-live, short briefing' : 'Begleiteter Livegang, kurzes Briefing' %></td>
+                <td><%= isEn ? 'Go-live, training & documentation' : 'Livegang, Einweisung & Dokumentation' %></td>
+                <td><%= isEn ? 'Full onboarding & playbook' : 'Vollständiges Onboarding & Playbook' %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Ablauf und Zeitplanung -->
+    <section id="ablauf" class="packages-section packages-process">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Timeline' : 'Ablauf' %></span>
+          <h2><%= isEn ? 'From kickoff to launch - in clear milestones' : 'Ablauf und Zeitplanung je Paket' %></h2>
+          <p class="section-lead">
+            <%= isEn
+              ? 'The project runs along defined milestones: kickoff, structure and content, design and development, QA and go-live. You know at every step which information we need from you - so website pricing becomes a plannable project start.'
+              : 'Der Projektablauf läuft in klaren Meilensteinen: Kickoff, Struktur und Inhalte, Design und Entwicklung, QA und Livegang. Du weißt in jeder Phase, welche Informationen wir von dir brauchen – so wird aus Preisvergleich ein planbarer Projektstart.'
+            %>
+          </p>
+        </header>
+        <ol class="process-steps">
+          <li>
+            <span class="step-number">01</span>
+            <h3><%= isEn ? 'Kickoff & goals (day 1 - 3)' : 'Kickoff & Ziele (Tag 1 – 3)' %></h3>
+            <p><%= isEn ? 'We align goals, target audience, content inventory and success metrics - so the scope matches your real business outcome.' : 'Wir stimmen Ziele, Zielgruppe, Content-Bestand und Erfolgskriterien ab – damit der Umfang zum tatsächlichen Geschäftsziel passt.' %></p>
+          </li>
+          <li>
+            <span class="step-number">02</span>
+            <h3><%= isEn ? 'Structure & content (week 1 - 2)' : 'Struktur & Inhalte (Woche 1 – 2)' %></h3>
+            <p><%= isEn ? 'Sitemap, page structure and core copy are drafted. You provide existing texts and brand assets; we fill the gaps.' : 'Sitemap, Seitenstruktur und Kerntexte werden erstellt. Du lieferst vorhandene Inhalte und Markenassets, wir schließen die Lücken.' %></p>
+          </li>
+          <li>
+            <span class="step-number">03</span>
+            <h3><%= isEn ? 'Design & development (week 2 - 5)' : 'Design & Entwicklung (Woche 2 – 5)' %></h3>
+            <p><%= isEn ? 'Responsive design, component build and CMS integration. You review in real previews, not long PDFs.' : 'Responsive Design, Komponentenaufbau und CMS-Integration. Du prüfst an echten Vorschauen – nicht an langen PDFs.' %></p>
+          </li>
+          <li>
+            <span class="step-number">04</span>
+            <h3><%= isEn ? 'QA & launch (final week)' : 'QA & Launch (letzte Woche)' %></h3>
+            <p><%= isEn ? 'Technical QA, performance and SEO checks, legal pages review - then guided go-live with rollback plan.' : 'Technische QA, Performance- und SEO-Check, Prüfung rechtlicher Seiten – anschließend begleiteter Livegang mit Rückfallplan.' %></p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 4. Add-ons und Ausbaupfad -->
+    <section id="addons" class="packages-section packages-addons">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Add-ons' : 'Add-ons' %></span>
+          <h2><%= isEn ? 'Add-ons and a scalable growth path' : 'Add-ons und skalierbarer Ausbaupfad' %></h2>
+          <p class="section-lead">
+            <%= isEn
+              ? 'Optional modules like SEO expansion, content updates and maintenance are kept separate from the core package. So the base stays easy to understand, and you can grow the website without a relaunch.'
+              : 'Optionale Module wie SEO-Ausbau, Content-Erweiterung und Wartung bleiben klar vom Kernpaket getrennt. So bleibt das Basispaket verständlich – und du kannst ohne Relaunch skalieren.'
+            %>
+          </p>
+        </header>
+        <div class="addons-grid">
+          <article class="addon-card">
+            <h3><%= isEn ? 'SEO expansion' : 'SEO-Ausbau' %></h3>
+            <p><%= isEn ? 'Additional service and location pages, topic clusters and structured data for stronger organic reach in Berlin and beyond.' : 'Zusätzliche Leistungs- und Standortseiten, Themencluster und strukturierte Daten für stärkere organische Reichweite in Berlin und darüber hinaus.' %></p>
+          </article>
+          <article class="addon-card">
+            <h3><%= isEn ? 'Content production' : 'Content-Produktion' %></h3>
+            <p><%= isEn ? 'Copywriting for new service pages, case studies or a blog section - including research, structure and on-page SEO.' : 'Texte für weitere Leistungsseiten, Referenzen oder einen Blogbereich – inklusive Recherche, Struktur und OnPage-SEO.' %></p>
+          </article>
+          <article class="addon-card">
+            <h3><%= isEn ? 'Maintenance & monitoring' : 'Wartung & Monitoring' %></h3>
+            <p><%= isEn ? 'Updates, backups, security hardening and performance monitoring as a monthly service - keeps the website stable and fast.' : 'Updates, Backups, Security-Härtung und Performance-Monitoring als Monatspaket – hält die Website stabil und schnell.' %></p>
+          </article>
+          <article class="addon-card">
+            <h3><%= isEn ? 'Conversion optimization' : 'Conversion-Optimierung' %></h3>
+            <p><%= isEn ? 'A/B tests, form tuning and structural improvements based on real analytics - scaling request quality, not just traffic.' : 'A/B-Tests, Formular-Tuning und strukturelle Verbesserungen auf Basis echter Analytics – mehr Anfragequalität, nicht nur Traffic.' %></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. FAQ zu Kosten und Entscheidung -->
+    <section id="faq" class="packages-section packages-faq">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'FAQ' : 'FAQ' %></span>
+          <h2><%= isEn ? 'FAQ on pricing, changes and ownership' : 'FAQ zu Kosten, Änderungen und Besitzrechten' %></h2>
+          <p class="section-lead">
+            <%= isEn
+              ? 'Precise answers to the most important decision questions - so you can request an offer with confidence instead of lingering doubts.'
+              : 'Präzise Antworten auf die wichtigsten Entscheidungsfragen – damit du mit Klarheit anfragen kannst, statt mit Restzweifeln.'
+            %>
+          </p>
+        </header>
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary><%= isEn ? 'How long does a website project in Berlin take?' : 'Wie lange dauert ein Website erstellen-Projekt in Berlin?' %></summary>
+            <p><%= isEn ? 'Depending on scope, a focused launch can go live within a few weeks. We work along clear milestones for strategy, content, design, development and QA - so the timeline is predictable.' : 'Je nach Umfang kann ein fokussierter Launch in wenigen Wochen live gehen. Wir arbeiten mit klaren Meilensteinen für Strategie, Inhalte, Design, Umsetzung und QA – damit der Zeitrahmen planbar bleibt.' %></p>
+          </details>
+          <details class="faq-item">
+            <summary><%= isEn ? 'Which package fits my company?' : 'Welches Paket passt zu meinem Unternehmen?' %></summary>
+            <p><%= isEn ? 'That depends on your goal, sales process and existing material. We recommend the smallest sensible scope that delivers measurable value quickly - and show the growth path from there.' : 'Das hängt von Ziel, Vertriebsprozess und vorhandenem Material ab. Wir empfehlen dir den kleinsten sinnvollen Umfang, der schnell messbaren Nutzen liefert – und zeigen den Ausbaupfad danach.' %></p>
+          </details>
+          <details class="faq-item">
+            <summary><%= isEn ? 'Are SEO and GEO included?' : 'Sind SEO und GEO direkt enthalten?' %></summary>
+            <p><%= isEn ? 'Yes. Depending on the package we integrate on-page SEO and GEO-friendly structural blocks like answer-first elements, FAQ modules and clear entity signals - so the site is visible in both search and AI answers.' : 'Ja, je nach Paket integrieren wir OnPage-SEO und GEO-freundliche Strukturblöcke wie answer-first Elemente, FAQ-Module und klare Entity-Signale – damit die Seite in Suche und KI-Antworten sichtbar wird.' %></p>
+          </details>
+          <details class="faq-item">
+            <summary><%= isEn ? 'Can existing content be reused?' : 'Kann bestehender Content weiter genutzt werden?' %></summary>
+            <p><%= isEn ? 'In many cases yes. We keep content that works and rewrite weak passages for better clarity, findability and conversion - without unnecessary rework of what is already performing.' : 'In vielen Fällen ja. Wir übernehmen funktionierende Inhalte und überarbeiten schwache Abschnitte für bessere Klarheit, Auffindbarkeit und Conversion – ohne Unnötiges neu zu schreiben.' %></p>
+          </details>
+          <details class="faq-item">
+            <summary><%= isEn ? 'How transparent are the costs?' : 'Wie transparent sind die Kosten?' %></summary>
+            <p><%= isEn ? 'You get transparent package prices plus optional add-ons. That gives you a planning-safe total and still lets you expand step by step as the business grows.' : 'Du erhältst transparente Paketpreise plus optionale Add-ons. So hast du eine planbare Gesamtgröße und kannst trotzdem schrittweise ausbauen, wenn das Geschäft wächst.' %></p>
+          </details>
+          <details class="faq-item">
+            <summary><%= isEn ? 'Who owns the website and content after launch?' : 'Wem gehören Website und Inhalte nach dem Launch?' %></summary>
+            <p><%= isEn ? 'You own the website and the content. After launch we continue with monitoring, optimization and prioritization of further measures - so the site keeps delivering results, not just going online once.' : 'Dir gehören Website und Inhalte. Nach dem Livegang begleiten wir Monitoring, Optimierung und Priorisierung weiterer Maßnahmen – damit die Seite dauerhaft Ergebnisse liefert, nicht nur einmal online geht.' %></p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Angebots-CTA -->
     <section class="packages-cta">
       <div class="container cta-inner">
         <div>
-          <h2><%= isEn ? 'Ready for your new website?' : 'Bereit für Ihren neuen Webauftritt?' %></h2>
+          <h2><%= isEn ? 'Request a tailored website offer' : 'Individuelles Website-Angebot anfragen' %></h2>
           <p>
             <%= isEn
-              ? 'We combine design, performance and search optimization so your business becomes visible online.'
-              : 'Wir kombinieren Design, Performance und Suchmaschinenoptimierung, damit Ihr Unternehmen online sichtbar wird.'
+              ? 'Send a short message about your project. Within one working day you receive a short assessment, a recommended package option and a realistic time and budget range - no obligation, no sales pressure.'
+              : 'Schick uns eine kurze Nachricht zu deinem Projekt. Innerhalb eines Werktages erhältst du eine kurze Einordnung, eine empfohlene Paketoption sowie einen realistischen Zeit- und Budgetrahmen – unverbindlich und ohne Verkaufsdruck.'
             %>
           </p>
         </div>
-        <a class="btn btn-hero" href="/kontakt"><%= isEn ? 'Book a free initial consultation' : 'Unverbindliches Erstgespräch sichern' %></a>
+        <div class="cta-actions">
+          <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+          <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+        </div>
+      </div>
+      <div class="container cta-internal-links">
+        <p class="cta-links-lead"><%= isEn ? 'Continue on these pages:' : 'Weitere passende Seiten:' %></p>
+        <ul>
+          <li><a href="<%= isEn ? '/en' : '' %>/kontakt"><%= isEn ? 'Contact & initial meeting' : 'Kontakt und Erstgespräch' %></a></li>
+          <li><a href="#paket-angebote"><%= isEn ? 'Packages & price overview' : 'Pakete und Preisübersicht' %></a></li>
+          <li><a href="<%= isEn ? '/en' : '' %>/faq"><%= isEn ? 'Frequent questions' : 'Häufige Fragen' %></a></li>
+        </ul>
       </div>
     </section>
   </main>

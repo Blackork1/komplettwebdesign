@@ -993,6 +993,101 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
 }
 
 /* ------------------------------------------------------------------
+ * Admin-Benachrichtigung bei neuer Tester-Lead Anfrage
+ * ------------------------------------------------------------------ */
+export async function sendAdminTesterLeadNotification({
+    source = "website",
+    email = "",
+    name = "",
+    domain = "",
+    scoreBand = "",
+    overallScore = null,
+    locale = "de"
+} = {}) {
+    const srcLabel = sourceLabel(source, "de");
+    const scoreLabel = scoreBand ? wtScoreLabel(scoreBand, "de") : "";
+    const displayName = String(name || "").trim();
+    const domainSafe = safeHtml(String(domain || "").trim());
+    const emailSafe = safeHtml(String(email || "").trim());
+    const subject = `Neue Tester-Anfrage: ${srcLabel}${domain ? " · " + domain : ""}`;
+
+    const lines = [
+        `<p>Soeben hat jemand den <strong>${srcLabel}</strong> ausgefüllt und seine E-Mail hinterlassen.</p>`,
+        `<p>`,
+        displayName ? `<strong>Name:</strong> ${safeHtml(displayName)}<br>` : "",
+        `<strong>E-Mail:</strong> <a href="mailto:${emailSafe}">${emailSafe}</a><br>`,
+        domain ? `<strong>Domain:</strong> ${domainSafe}<br>` : "",
+        scoreLabel ? `<strong>Score-Band:</strong> ${safeHtml(scoreLabel)} (${safeHtml(String(scoreBand))})<br>` : "",
+        (overallScore || overallScore === 0) ? `<strong>Score:</strong> ${safeHtml(String(overallScore))}<br>` : "",
+        `<strong>Sprache:</strong> ${safeHtml(wtLocale(locale))}<br>`,
+        `<strong>Quelle:</strong> ${safeHtml(srcLabel)} (${safeHtml(String(source))})`,
+        `</p>`,
+        `<p>Sobald die E-Mail über den Double-Opt-in bestätigt wurde, erhält der Lead automatisch den Report. Diese Nachricht dient lediglich als Hinweis, damit du den potenziellen Kunden im Blick behalten und später ggf. die Vollanleitung nachreichen kannst.</p>`
+    ].filter(Boolean).join("\n");
+
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to: 'kontakt@komplettwebdesign.de',
+        subject,
+        html: renderBrandEmail({
+            locale: "de",
+            subject,
+            headline: "Neue Tester-Anfrage",
+            preheader: `Neuer Lead über ${srcLabel}${domain ? " · " + domain : ""}`,
+            bodyHtml: lines
+        })
+    };
+    try {
+        return await transporter.sendMail(mail);
+    } catch (err) {
+        console.warn("sendAdminTesterLeadNotification failed:", err?.message || err);
+        return null;
+    }
+}
+
+/* ------------------------------------------------------------------
+ * Freeform-Mail für den Admin (Mailversand-Funktion im Backend)
+ * ------------------------------------------------------------------ */
+export async function sendAdminComposedMail({
+    to = "",
+    subject = "",
+    bodyHtml = "",
+    headline = "",
+    preheader = "",
+    ctaLabel = "",
+    ctaUrl = "",
+    locale = "de",
+    replyTo = "",
+    attachments = []
+} = {}) {
+    const lng = wtLocale(locale);
+    const cleanSubject = String(subject || "").trim()
+        || (lng === "en" ? "A message from Komplett Webdesign" : "Nachricht von Komplett Webdesign");
+    const cleanHeadline = String(headline || "").trim() || cleanSubject;
+    const cleanPreheader = String(preheader || "").trim()
+        || (lng === "en" ? "A quick note from Komplett Webdesign." : "Kurze Nachricht von Komplett Webdesign.");
+    const mail = {
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject: cleanSubject,
+        html: renderBrandEmail({
+            locale: lng,
+            subject: cleanSubject,
+            headline: cleanHeadline,
+            preheader: cleanPreheader,
+            bodyHtml,
+            ctaLabel,
+            ctaUrl
+        })
+    };
+    if (replyTo) mail.replyTo = replyTo;
+    if (Array.isArray(attachments) && attachments.length > 0) {
+        mail.attachments = attachments;
+    }
+    return transporter.sendMail(mail);
+}
+
+/* ------------------------------------------------------------------
  * Tester-Drip Mails (+48h Vollanleitung + Termin, +7d Case-Study + CTA)
  * Ein Template je Phase, dynamisch über source/domain/scoreBand.
  * ------------------------------------------------------------------ */
@@ -1023,7 +1118,7 @@ export async function sendTesterDrip48hMail({
     const srcLabel = sourceLabel(source, lng);
     const base = testerBaseUrl();
     const bookingUrl = `${base}${isEn ? "/en/booking" : "/booking"}?src=${encodeURIComponent(source)}-tester${domain ? `&domain=${encodeURIComponent(domain)}` : ""}${scoreBand ? `&score=${encodeURIComponent(scoreBand)}` : ""}`;
-    const servicesUrl = `${base}${isEn ? "/en/leistungen" : "/leistungen"}`;
+    const servicesUrl = `${base}${isEn ? "/en/webdesign-berlin" : "/webdesign-berlin"}`;
     const subject = isEn
         ? `Ready for the full playbook for ${domain || "your website"}?`
         : `Bereit für die volle Anleitung zu ${domain || "deiner Website"}?`;

@@ -64,14 +64,14 @@ function normalizePackSlug(pack, fallbackSlug = '') {
 function buildPackagesListMeta({ isEn }) {
   return isEn
     ? {
-      title: 'Web Design Packages Berlin | Basic, Business, Premium',
-      description: 'Compare transparent web design packages in Berlin: Basic, Business and Premium. Includes design, SEO basics, hosting and support from EUR 499.',
-      keywords: 'web design packages berlin, website package pricing, basic business premium website, webdesigner berlin prices, website costs berlin'
+      title: 'Website Pricing in Berlin | Packages, Scope & Timeline',
+      description: 'Compare website packages in Berlin: scope of services, timeline, add-ons and expected outcomes. Request your tailored offer directly.',
+      keywords: 'website pricing berlin, create website berlin, web design packages, website costs berlin, basic business premium website, komplett webdesign'
     }
     : {
-      title: 'Webdesign Pakete Berlin | Basis, Business, Premium Preise',
-      description: 'Vergleiche transparente Webdesign-Pakete in Berlin: Basis, Business und Premium. Inklusive Design, SEO-Basis, Hosting und Support ab 499 EUR.',
-      keywords: 'webdesign pakete berlin, website paket preise, basis business premium website, webdesigner berlin kosten, website kosten berlin'
+      title: 'Preise für Website erstellen in Berlin | Pakete und Umfang',
+      description: 'Vergleiche Website erstellen-Pakete in Berlin: Leistungsumfang, Zeitrahmen, Add-ons und erwartete Ergebnisse. Angebot direkt anfragen.',
+      keywords: 'website erstellen berlin preise, webdesign pakete berlin, website paket kosten, leistungsumfang website, basis business premium, komplett webdesign'
     };
 }
 
@@ -79,40 +79,41 @@ function buildPackageDetailMeta({ slug, isEn, fallbackName, fallbackDescription 
   const map = {
     basis: isEn
       ? {
-        title: 'Basic Website Package Berlin | Fast Professional Start',
-        description: 'Basic package for a fast professional website launch in Berlin. One-page design, legal pages, SEO basics and hosting from EUR 499.'
+        title: 'Basic Website Package Berlin | Onepager from EUR 499',
+        description: 'Basic website package for Berlin: onepager design, legal pages, on-page SEO, hosting and launch support - go live in 1 to 2 weeks from EUR 499.',
+        keywords: 'basic website package berlin, onepager berlin, website erstellen 499, small business website berlin, webdesign starter berlin, komplett webdesign basic'
       }
       : {
-        title: 'Basis Paket Berlin | Professionelle Website ab 499 EUR',
-        description: 'Basis-Paket für den schnellen professionellen Website-Start in Berlin. Onepager, rechtliche Seiten, SEO-Basis und Hosting ab 499 EUR.'
+        title: 'Basis-Paket Berlin | Onepager-Website ab 499 EUR',
+        description: 'Basis-Paket für Berlin: Onepager-Design, rechtliche Seiten, OnPage-SEO, Hosting und Launch-Support - in 1 bis 2 Wochen online ab 499 EUR.',
+        keywords: 'basis paket berlin, onepager berlin, website erstellen 499 euro, kleinunternehmen website berlin, webdesign starter berlin, komplett webdesign basis'
       },
     business: isEn
       ? {
-        title: 'Business Website Package Berlin | More Leads, More Pages',
-        description: 'Business package for growing companies in Berlin. Multi-page website, conversion-focused copy, SEO and integrations from EUR 899.'
+        title: 'Business Website Package Berlin | Multi-Page from EUR 899',
+        description: 'Business website package for Berlin: up to 8 pages, conversion copy, extended on-page SEO, tracking and integrations - plannable launch in 2 to 4 weeks.',
+        keywords: 'business website package berlin, multi page website berlin, webdesign business berlin, lead generation website berlin, website kosten 899, komplett webdesign business'
       }
       : {
-        title: 'Business Paket Berlin | Mehr Seiten, mehr Anfragen',
-        description: 'Business-Paket für wachsende Unternehmen in Berlin. Mehrseitige Website, conversion-orientierte Inhalte, SEO und Integrationen ab 899 EUR.'
+        title: 'Business-Paket Berlin | Mehrseitige Website ab 899 EUR',
+        description: 'Business-Paket für Berlin: bis zu 8 Seiten, Conversion-Texte, erweitertes OnPage-SEO, Tracking und Integrationen - planbarer Launch in 2 bis 4 Wochen.',
+        keywords: 'business paket berlin, mehrseitige website berlin, webdesign business berlin, leadgenerierung website berlin, website kosten 899, komplett webdesign business'
       },
     premium: isEn
       ? {
-        title: 'Premium Website Package Berlin | Strategy, Content, Support',
-        description: 'Premium package for ambitious brands in Berlin. Strategy, custom UX, content production and ongoing support from EUR 1,499.'
+        title: 'Premium Website Package Berlin | Strategy & Content from EUR 1,499',
+        description: 'Premium website package for Berlin: strategy, custom UX, content production, strong SEO and ongoing optimization - scalable website from EUR 1,499.',
+        keywords: 'premium website package berlin, strategic webdesign berlin, custom website berlin, seo website berlin, content production berlin, komplett webdesign premium'
       }
       : {
-        title: 'Premium Paket Berlin | Strategie, Content und Betreuung',
-        description: 'Premium-Paket für ambitionierte Marken in Berlin. Strategie, individuelles UX-Design, Content-Produktion und laufende Betreuung ab 1.499 EUR.'
+        title: 'Premium-Paket Berlin | Strategie & Content ab 1.499 EUR',
+        description: 'Premium-Paket für Berlin: Strategie, individuelles UX, Content-Produktion, starkes SEO und laufende Optimierung - skalierbare Website ab 1.499 EUR.',
+        keywords: 'premium paket berlin, strategisches webdesign berlin, individuelle website berlin, seo website berlin, content produktion berlin, komplett webdesign premium'
       }
   };
 
   if (map[slug]) {
-    return {
-      ...map[slug],
-      keywords: isEn
-        ? `web design ${slug} package berlin, ${slug} website package, website pricing berlin, komplett webdesign`
-        : `webdesign ${slug} paket berlin, ${slug} website paket, website preise berlin, komplett webdesign`
-    };
+    return map[slug];
   }
 
   return {

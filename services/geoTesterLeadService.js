@@ -17,7 +17,8 @@ import { getCachedGeoAuditResult } from './geoAuditService.js';
 import {
   sendGeoTesterDoiMail,
   sendGeoTesterReportMail,
-  sendTesterFullGuideMail
+  sendTesterFullGuideMail,
+  sendAdminTesterLeadNotification
 } from './mailService.js';
 import { buildGeoTesterReport } from './geoTesterPdfService.js';
 import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
@@ -292,6 +293,20 @@ export async function requestGeoTesterLead({
     confirmUrl,
     expiresAt
   });
+
+  try {
+    await sendAdminTesterLeadNotification({
+      source: 'geo',
+      email: lead.email,
+      name: lead.name,
+      domain,
+      scoreBand: lead.score_band,
+      overallScore: geoResult?.geoScore?.overall,
+      locale: lng
+    });
+  } catch (e) {
+    console.warn('Admin notification (geo tester) failed:', e?.message || e);
+  }
 
   return {
     lead,

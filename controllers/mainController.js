@@ -50,7 +50,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Wie läuft die Zusammenarbeit konkret ab?',
-      a: 'In einem 20-minütigen Kennenlernen klären wir Ziele und Budget. Danach erstelle ich ein Konzept und einen Entwurf, den wir gemeinsam anpassen. Nach Freigabe erfolgen Umsetzung, Live-Test und Launch. Du hast immer einen festen Ansprechpartner und schnelle Antworten innerhalb von 24 Stunden.'
+      a: 'In einem 20-minütigen Kennenlerngespräch kläre ich mit dir Ziele und Budget. Danach erstelle ich ein Konzept und einen Entwurf, den du mit mir gemeinsam anpasst. Nach Freigabe erfolgen Umsetzung, Live-Test und Launch. Du hast immer einen festen Ansprechpartner und schnelle Antworten innerhalb von 24 Stunden.'
     }
   ],
   en: [
@@ -339,8 +339,13 @@ export async function getIndex(req, res) {
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="${copy.ogDescription}">
   <meta property="og:image" content="${base}/images/heroBg.webp">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${lng === 'en' ? 'Komplett Webdesign – professional websites from Berlin' : 'Komplett Webdesign – professionelle Websites aus Berlin'}">
   <meta property="og:url" content="${base}${pagePath}">
   <meta property="og:type" content="website">
+  <meta property="og:locale" content="${lng === 'en' ? 'en_US' : 'de_DE'}">
+  <meta property="og:locale:alternate" content="${lng === 'en' ? 'de_DE' : 'en_US'}">
   ${aggregateRatingJsonLd}`,
       alternateUrls,
       users,

@@ -1,68 +1,108 @@
 <%- include('../partials/admin_header') %>
 
-<div class="container my-5">
-  <h1 class="mb-4">Admin-Dashboard</h1>
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-gauge-high"></i> Admin-Dashboard
+</h1>
 
-  <div class="row mb-5">
-    <div class="col-md-4">
-      <div class="list-group">
-        <a href="/admin/appointments" class="list-group-item list-group-item-action">Termine verwalten</a>
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="admin-card h-100">
+      <h5 class="mb-3"><i class="fa-solid fa-calendar-days"></i> Termine</h5>
+      <div class="list-group list-group-flush">
+        <a href="/admin/appointments" class="list-group-item list-group-item-action">Termin-Kalender</a>
         <a href="/admin/bookings" class="list-group-item list-group-item-action">Buchungen verwalten</a>
-        <a href="/admin/website-tester" class="list-group-item list-group-item-action">Website-Tester Archiv</a>
-        <a href="/admin/blog" class="list-group-item list-group-item-action">Blog</a>
-        <a href="/admin/pages" class="list-group-item list-group-item-action">Seitenerstellung</a>
+        <a href="/admin/auto-config" class="list-group-item list-group-item-action">Termin-Automatik</a>
       </div>
     </div>
   </div>
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="admin-card h-100">
+      <h5 class="mb-3"><i class="fa-solid fa-file-lines"></i> Inhalte</h5>
+      <div class="list-group list-group-flush">
+        <a href="/admin/blog" class="list-group-item list-group-item-action">Blog</a>
+        <a href="/admin/ratgeber" class="list-group-item list-group-item-action">Ratgeber</a>
+        <a href="/admin/pages" class="list-group-item list-group-item-action">Seitenerstellung</a>
+        <a href="/admin/gallery" class="list-group-item list-group-item-action">Galerie</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="admin-card h-100">
+      <h5 class="mb-3"><i class="fa-solid fa-bullhorn"></i> Tools</h5>
+      <div class="list-group list-group-flush">
+        <a href="/admin/website-tester" class="list-group-item list-group-item-action">Website-Tester Archiv</a>
+        <a href="/admin/mailversand" class="list-group-item list-group-item-action">Mailversand</a>
+        <a href="/admin/newsletter" class="list-group-item list-group-item-action">Newsletter-Anmeldungen</a>
+        <a href="/admin/industries" class="list-group-item list-group-item-action">Branchen</a>
+        <a href="/admin/logs" class="list-group-item list-group-item-action">Logs</a>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <h2 class="mt-4">Offene Terminreservierungen</h2>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Termin</th>
-        <th>Name</th>
-        <th>E-Mail</th>
-        <th>Aktion</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% pending.forEach(b => { %>
-        <tr>
-          <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
-          <td><%= b.name %></td>
-          <td><%= b.email %></td>
-          <td>
-            <form method="POST" action="/admin/bookings/<%= b.id %>/confirm" class="d-inline">
-              <button class="btn btn-sm btn-success">Bestätigen</button>
-            </form>
-            <form method="POST" action="/admin/bookings/<%= b.id %>/cancel" class="d-inline">
-              <button class="btn btn-sm btn-danger">Stornieren</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+<div class="admin-card mb-4">
+  <h2 class="h5 mb-3"><i class="fa-solid fa-hourglass-half"></i> Offene Terminreservierungen</h2>
+  <% if (!pending || pending.length === 0) { %>
+    <p class="text-muted mb-0">Keine offenen Reservierungen.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-striped mb-0">
+        <thead>
+          <tr>
+            <th>Termin</th>
+            <th>Name</th>
+            <th>E-Mail</th>
+            <th>Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% pending.forEach(b => { %>
+            <tr>
+              <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+              <td><%= b.name %></td>
+              <td><%= b.email %></td>
+              <td>
+                <form method="POST" action="/admin/bookings/<%= b.id %>/confirm" class="d-inline">
+                  <button class="btn btn-sm btn-success">Bestätigen</button>
+                </form>
+                <form method="POST" action="/admin/bookings/<%= b.id %>/cancel" class="d-inline">
+                  <button class="btn btn-sm btn-danger">Stornieren</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
 
-  <h2 class="mt-5">Akzeptierte Termine</h2>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Termin</th>
-        <th>Name</th>
-        <th>E-Mail</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% confirmed.forEach(b => { %>
-        <tr>
-          <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
-          <td><%= b.name %></td>
-          <td><%= b.email %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+<div class="admin-card">
+  <h2 class="h5 mb-3"><i class="fa-solid fa-circle-check"></i> Akzeptierte Termine</h2>
+  <% if (!confirmed || confirmed.length === 0) { %>
+    <p class="text-muted mb-0">Keine bestätigten Termine.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-striped mb-0">
+        <thead>
+          <tr>
+            <th>Termin</th>
+            <th>Name</th>
+            <th>E-Mail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% confirmed.forEach(b => { %>
+            <tr>
+              <td><%= new Date(b.start_time).toLocaleString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+              <td><%= b.name %></td>
+              <td><%= b.email %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
 </div>
 
 <%- include('../partials/admin_footer') %>

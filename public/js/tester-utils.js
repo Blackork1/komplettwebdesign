@@ -114,7 +114,7 @@
         text: isEn
           ? 'A structured SEO/GEO optimization sprint closes the biggest gaps without a full rebuild.'
           : 'Ein strukturierter SEO/GEO-Optimierungs-Sprint schließt die größten Lücken ohne kompletten Neuaufbau.',
-        href: isEn ? '/en/leistungen' : '/leistungen',
+        href: isEn ? '/en/webdesign-berlin' : '/webdesign-berlin',
         label: isEn ? 'View optimization services' : 'Zu den Optimierungs-Leistungen'
       };
     }
@@ -123,7 +123,7 @@
       text: isEn
         ? 'Your base is strong. We help you polish details and pull ahead of competitors.'
         : 'Deine Basis ist stark. Wir helfen dir, Details zu polieren und Wettbewerbern davon­zuziehen.',
-      href: isEn ? '/en/leistungen' : '/leistungen',
+      href: isEn ? '/en/webdesign-berlin' : '/webdesign-berlin',
       label: isEn ? 'See how we can help' : 'Beratungsleistungen ansehen'
     };
   }

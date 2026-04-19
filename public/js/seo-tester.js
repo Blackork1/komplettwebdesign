@@ -122,11 +122,11 @@
       ? 'Ready to turn these insights into measurable SEO growth? Let’s plan it together.'
       : 'Lust, aus diesen Erkenntnissen planbares SEO-Wachstum zu machen? Wir planen es gemeinsam.');
     const bookingLabel = i18n.bookingCtaLabel || (locale === 'en' ? 'Book a free SEO consultation' : 'Kostenloses SEO-Erstgespräch buchen');
-    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+    const contactLabel = i18n.contactCtaLabel || (locale === 'en' ? 'Go to contact form' : 'Zum Kontaktformular');
 
     let pkgBlock = '';
     if (pkg && pkg.title) {
-      const pkgHref = pkg.href || '/leistungen';
+      const pkgHref = pkg.href || '/webdesign-berlin';
       pkgBlock = `
         <div class="wt-next-step-package">
           <strong>${escapeHtml(pkg.title)}</strong>

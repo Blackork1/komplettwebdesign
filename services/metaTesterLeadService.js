@@ -17,7 +17,8 @@ import { auditMetaWebsite, getCachedMetaAuditResult } from './metaAuditService.j
 import {
   sendMetaTesterDoiMail,
   sendMetaTesterReportMail,
-  sendTesterFullGuideMail
+  sendTesterFullGuideMail,
+  sendAdminTesterLeadNotification
 } from './mailService.js';
 import { buildMetaTesterReport } from './metaTesterPdfService.js';
 import { formatTesterFullGuideAsText, generateTesterFullGuide } from './testerFullGuideService.js';
@@ -212,6 +213,20 @@ export async function requestMetaTesterLead({ auditId, email, name, locale, cons
     confirmUrl: buildConfirmUrl(rawToken, lng),
     expiresAt
   });
+
+  try {
+    await sendAdminTesterLeadNotification({
+      source: 'meta',
+      email: lead.email,
+      name: lead.name,
+      domain,
+      scoreBand: lead.score_band,
+      overallScore: result?.metaScore?.overall,
+      locale: lng
+    });
+  } catch (e) {
+    console.warn('Admin notification (meta tester) failed:', e?.message || e);
+  }
 
   return { lead, verificationRequired: true, message: copy.messages.verifyMail };
 }

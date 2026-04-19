@@ -152,7 +152,7 @@
       ? 'Want every social share and search snippet to convert? Let’s plan it together.'
       : 'Sollen alle Snippets und Social-Shares konvertieren? Wir planen es gemeinsam.');
     const bookingLabel = i18n.ctaSecondary || (locale === 'en' ? 'Book a free consultation' : 'Kostenloses Erstgespräch buchen');
-    const contactLabel = i18n.ctaPrimary || (locale === 'en' ? 'Ask a question by email' : 'Frage per Nachricht stellen');
+    const contactLabel = i18n.ctaPrimary || (locale === 'en' ? 'Go to contact form' : 'Zum Kontaktformular');
 
     let pkgBlock = '';
     if (pkg && pkg.title) {
@@ -160,7 +160,7 @@
         <div class="wt-next-step-package">
           <strong>${esc(pkg.title)}</strong>
           <p>${esc(pkg.text || '')}</p>
-          <a class="wt-button wt-button-secondary" href="${esc(pkg.href || '/leistungen')}" data-tester-cta="meta" data-tester-action="package" data-meta-cta="package">${esc(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+          <a class="wt-button wt-button-secondary" href="${esc(pkg.href || '/webdesign-berlin')}" data-tester-cta="meta" data-tester-action="package" data-meta-cta="package">${esc(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
         </div>`;
     }
 

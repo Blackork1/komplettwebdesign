@@ -1,0 +1,378 @@
+<%- include('../partials/admin_header') %>
+
+<style>
+  /* ── Stats-Kacheln ───────────────────────────────────────── */
+  .nl-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .nl-stat {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .nl-stat__label { font-size: .8rem; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .nl-stat__value { font-size: 2rem; font-weight: 700; line-height: 1; color: #111; }
+  .nl-stat--active  .nl-stat__value { color: #16a34a; }
+  .nl-stat--inactive .nl-stat__value { color: #dc2626; }
+
+  /* ── Toolbar ─────────────────────────────────────────────── */
+  .nl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .nl-filter-tabs {
+    display: flex;
+    gap: .25rem;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: .25rem;
+  }
+  .nl-filter-tabs a {
+    padding: .35rem .85rem;
+    border-radius: 6px;
+    font-size: .85rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: #374151;
+    transition: background .15s, color .15s;
+  }
+  .nl-filter-tabs a.active,
+  .nl-filter-tabs a:hover { background: #fff; color: #111; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .nl-search {
+    display: flex;
+    gap: .5rem;
+    flex: 1;
+    min-width: 200px;
+    max-width: 360px;
+  }
+  .nl-search input {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: .4rem .75rem;
+    font-size: .875rem;
+  }
+  .nl-search button {
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 7px;
+    padding: .4rem .85rem;
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .nl-count { margin-left: auto; font-size: .85rem; color: #6b7280; }
+
+  /* ── Tabelle ─────────────────────────────────────────────── */
+  .nl-table-wrap { overflow-x: auto; }
+  .nl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+  }
+  .nl-table th {
+    background: #f9fafb;
+    text-align: left;
+    padding: .6rem .9rem;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .nl-table td {
+    padding: .65rem .9rem;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  .nl-table tr:last-child td { border-bottom: none; }
+  .nl-table tr:hover td { background: #fafafa; }
+
+  /* ── Status-Badge ────────────────────────────────────────── */
+  .badge-aktiv    { background: #dcfce7; color: #15803d; border-radius: 20px; padding: .2rem .65rem; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+  .badge-inaktiv  { background: #fee2e2; color: #b91c1c; border-radius: 20px; padding: .2rem .65rem; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+
+  /* ── Mail-Badges ─────────────────────────────────────────── */
+  .mail-badges { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .mail-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .18rem .55rem;
+    border-radius: 6px;
+    font-size: .75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .mail-badge--sent    { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .mail-badge--pending { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .mail-badge--overdue { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .mail-badge--optout  { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+  /* ── Aktions-Buttons ─────────────────────────────────────── */
+  .nl-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
+  .nl-btn {
+    border: none;
+    border-radius: 6px;
+    padding: .3rem .65rem;
+    font-size: .78rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    text-decoration: none;
+  }
+  .nl-btn--deactivate { background: #fef3c7; color: #92400e; }
+  .nl-btn--activate   { background: #d1fae5; color: #065f46; }
+  .nl-btn--delete     { background: #fee2e2; color: #991b1b; }
+  .nl-btn:hover { opacity: .82; }
+
+  /* ── Alert ───────────────────────────────────────────────── */
+  .nl-alert {
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .nl-alert--success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .nl-alert--error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+  /* ── Leer-Zustand ────────────────────────────────────────── */
+  .nl-empty { text-align: center; padding: 3rem 1rem; color: #6b7280; }
+  .nl-empty i { font-size: 2.5rem; margin-bottom: .75rem; display: block; opacity: .4; }
+
+  /* ── Datum klein ─────────────────────────────────────────── */
+  .nl-date { font-size: .78rem; color: #9ca3af; }
+  .nl-email { font-weight: 500; color: #111; word-break: break-all; }
+</style>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-envelope-circle-check"></i> Newsletter
+</h1>
+
+<%
+  const actionMessages = {
+    deactivated: { type: 'success', text: 'Abonnent wurde abgemeldet.' },
+    reactivated:  { type: 'success', text: 'Abonnent wurde wieder aktiviert.' },
+    deleted:      { type: 'success', text: 'Abonnent wurde gelöscht.' },
+  };
+  const actionMsg = query && query.action ? actionMessages[query.action] : null;
+%>
+
+<% if (actionMsg) { %>
+<div class="nl-alert nl-alert--<%= actionMsg.type %>">
+  <i class="fa-solid fa-circle-<%= actionMsg.type === 'success' ? 'check' : 'xmark' %>"></i>
+  <%= actionMsg.text %>
+</div>
+<% } %>
+<% if (query && query.error) { %>
+<div class="nl-alert nl-alert--error">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  Ein Fehler ist aufgetreten. Bitte versuche es erneut.
+</div>
+<% } %>
+
+<!-- ── Stats ──────────────────────────────────────────────────── -->
+<div class="nl-stats">
+  <div class="nl-stat">
+    <span class="nl-stat__label"><i class="fa-solid fa-users"></i> Gesamt</span>
+    <span class="nl-stat__value"><%= stats.total %></span>
+  </div>
+  <div class="nl-stat nl-stat--active">
+    <span class="nl-stat__label"><i class="fa-solid fa-circle-check"></i> Aktiv</span>
+    <span class="nl-stat__value"><%= stats.active %></span>
+  </div>
+  <div class="nl-stat nl-stat--inactive">
+    <span class="nl-stat__label"><i class="fa-solid fa-circle-xmark"></i> Abgemeldet</span>
+    <span class="nl-stat__value"><%= stats.inactive %></span>
+  </div>
+  <div class="nl-stat">
+    <span class="nl-stat__label"><i class="fa-solid fa-paper-plane"></i> Mit Drip-Sequenz</span>
+    <span class="nl-stat__value"><%= subscribers.filter(s => s.confirmed_at).length %></span>
+  </div>
+</div>
+
+<!-- ── Toolbar ────────────────────────────────────────────────── -->
+<div class="admin-card">
+
+  <div class="nl-toolbar">
+    <div class="nl-filter-tabs">
+      <a href="/admin/newsletter<%= search ? '?search=' + encodeURIComponent(search) : '' %>"
+         class="<%= filter === 'all' ? 'active' : '' %>">Alle</a>
+      <a href="/admin/newsletter?filter=active<%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+         class="<%= filter === 'active' ? 'active' : '' %>">Aktiv</a>
+      <a href="/admin/newsletter?filter=inactive<%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+         class="<%= filter === 'inactive' ? 'active' : '' %>">Abgemeldet</a>
+    </div>
+
+    <form method="GET" action="/admin/newsletter" class="nl-search">
+      <% if (filter && filter !== 'all') { %>
+        <input type="hidden" name="filter" value="<%= filter %>">
+      <% } %>
+      <input type="text" name="search" value="<%= search %>" placeholder="E-Mail suchen …" />
+      <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </form>
+
+    <span class="nl-count"><%= subscribers.length %> Eintrag<%= subscribers.length !== 1 ? 'e' : '' %></span>
+  </div>
+
+  <!-- ── Tabelle ──────────────────────────────────────────────── -->
+  <% if (subscribers.length === 0) { %>
+  <div class="nl-empty">
+    <i class="fa-solid fa-inbox"></i>
+    <p>Keine Einträge gefunden.</p>
+  </div>
+  <% } else { %>
+  <div class="nl-table-wrap">
+    <table class="nl-table">
+      <thead>
+        <tr>
+          <th>E-Mail</th>
+          <th>Status</th>
+          <th>Angemeldet</th>
+          <th>Quelle</th>
+          <th>Versandt</th>
+          <th>Ausstehend</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% subscribers.forEach(function(s) { %>
+        <tr>
+          <!-- E-Mail -->
+          <td>
+            <span class="nl-email"><%= s.email %></span>
+            <% if (s.lead_name) { %>
+              <br><span class="nl-date"><%= s.lead_name %></span>
+            <% } %>
+          </td>
+
+          <!-- Status -->
+          <td>
+            <% if (s.active) { %>
+              <span class="badge-aktiv"><i class="fa-solid fa-circle-check"></i> Aktiv</span>
+            <% } else { %>
+              <span class="badge-inaktiv"><i class="fa-solid fa-circle-xmark"></i> Abgemeldet</span>
+            <% } %>
+          </td>
+
+          <!-- Datum -->
+          <td class="nl-date">
+            <% if (s.created_at) { %>
+              <%= new Date(s.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+              <br><%= new Date(s.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %> Uhr
+            <% } else { %>
+              —
+            <% } %>
+          </td>
+
+          <!-- Quelle -->
+          <td class="nl-date">
+            <%= s.source || 'blog' %>
+            <% if (s.lead_domain) { %><br><%= s.lead_domain %><% } %>
+          </td>
+
+          <!-- Versandte Mails -->
+          <td>
+            <div class="mail-badges">
+              <% s.sent.forEach(function(m) { %>
+                <span class="mail-badge mail-badge--sent"
+                      title="<%= m.at ? new Date(m.at).toLocaleString('de-DE') : 'Zeitpunkt unbekannt' %>">
+                  <i class="fa-solid <%= m.icon %>"></i>
+                  <%= m.label %>
+                  <% if (m.at) { %>
+                    <span style="opacity:.7; font-size:.7rem">
+                      <%= new Date(m.at).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit' }) %>
+                    </span>
+                  <% } %>
+                </span>
+              <% }); %>
+              <% if (s.drip_opt_out_at) { %>
+                <span class="mail-badge mail-badge--optout" title="Opt-out am <%= new Date(s.drip_opt_out_at).toLocaleString('de-DE') %>">
+                  <i class="fa-solid fa-ban"></i> Drip Opt-out
+                </span>
+              <% } %>
+            </div>
+          </td>
+
+          <!-- Ausstehende Mails -->
+          <td>
+            <div class="mail-badges">
+              <% if (!s.confirmed_at && s.pending.length === 0) { %>
+                <span class="nl-date">— kein Drip</span>
+              <% } %>
+              <% s.pending.forEach(function(m) { %>
+                <span class="mail-badge <%= m.overdue ? 'mail-badge--overdue' : 'mail-badge--pending' %>"
+                      title="Fällig: <%= m.dueAt ? m.dueAt.toLocaleString('de-DE') : 'bald' %>">
+                  <i class="fa-solid <%= m.overdue ? 'fa-triangle-exclamation' : 'fa-clock' %>"></i>
+                  <%= m.label %>
+                  <% if (m.dueAt && !m.overdue) { %>
+                    <span style="opacity:.7; font-size:.7rem">
+                      am <%= m.dueAt.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit' }) %>
+                    </span>
+                  <% } else if (m.overdue) { %>
+                    <span style="opacity:.8; font-size:.7rem">überfällig</span>
+                  <% } %>
+                </span>
+              <% }); %>
+              <% if (s.pending.length === 0 && s.confirmed_at && !s.drip_opt_out_at) { %>
+                <span class="nl-date">✓ Sequenz abgeschlossen</span>
+              <% } %>
+            </div>
+          </td>
+
+          <!-- Aktionen -->
+          <td>
+            <div class="nl-actions">
+              <% if (s.active) { %>
+                <form method="POST" action="/admin/newsletter/<%= s.id %>/deactivate">
+                  <button class="nl-btn nl-btn--deactivate" type="submit"
+                          onclick="return confirm('Abonnent abmelden?')">
+                    <i class="fa-solid fa-user-minus"></i> Abmelden
+                  </button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/admin/newsletter/<%= s.id %>/reactivate">
+                  <button class="nl-btn nl-btn--activate" type="submit">
+                    <i class="fa-solid fa-user-plus"></i> Reaktivieren
+                  </button>
+                </form>
+              <% } %>
+              <form method="POST" action="/admin/newsletter/<%= s.id %>/delete">
+                <button class="nl-btn nl-btn--delete" type="submit"
+                        onclick="return confirm('Abonnent endgültig löschen?')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- ── Legende ─────────────────────────────────────────────────── -->
+<div class="admin-card" style="margin-top:1rem; font-size:.82rem; color:#6b7280;">
+  <strong>Legende Drip-Sequenz:</strong>
+  <span class="mail-badge mail-badge--sent" style="margin-left:.5rem"><i class="fa-solid fa-envelope-open-text"></i> Versandt</span>
+  <span class="mail-badge mail-badge--pending" style="margin-left:.3rem"><i class="fa-solid fa-clock"></i> Geplant</span>
+  <span class="mail-badge mail-badge--overdue" style="margin-left:.3rem"><i class="fa-solid fa-triangle-exclamation"></i> Überfällig</span>
+  <span class="mail-badge mail-badge--optout" style="margin-left:.3rem"><i class="fa-solid fa-ban"></i> Opt-out</span>
+  <span style="margin-left:.75rem">· Drip-Sequenzen nur sichtbar, wenn die Person auch den Website-Tester genutzt hat.</span>
+</div>
