@@ -4,15 +4,15 @@ export const mockPackages = [
         name: 'Basis',
         slug: 'basis',
         description:
-            'Ideal für den schnellen Start: ein moderner Onepager mit klarer Struktur, Kontaktmöglichkeiten und optimierten Ladezeiten.',
+            'Für kleine Unternehmen, Selbstständige und lokale Dienstleister, die eine professionelle digitale Visitenkarte brauchen: 1 Seite inklusive Texten und SEO-Grundoptimierung.',
         image: 'basis.webp',
         price_amount_cents: 49900,
         price: null,
         display: true,
         features: [
-            'Responsive Onepager mit Start, Leistungen, Über uns & Kontakt',
-            'Integration von Kontaktformular & DSGVO-konformen Rechtstexten',
-            'Technische Einrichtung inkl. Hosting, SSL & Performance-Optimierung'
+            '1 professionelle Seite mit klarem Angebot, Texten und Kontaktmöglichkeit',
+            'Responsive Webdesign für Handy, Tablet und Desktop',
+            'SEO-Grundoptimierung, technische Basis und rechtliche Seiten'
         ]
     },
     {
@@ -20,15 +20,15 @@ export const mockPackages = [
         name: 'Business',
         slug: 'business',
         description:
-            'Für Unternehmen, die wachsen möchten: Mehrseiten-Auftritt mit Content-Strategie, klaren Conversion-Strecken und SEO-Basics.',
+            'Für kleine Unternehmen, die mehr als eine digitale Visitenkarte brauchen: bis zu 5 Seiten mit Kontaktformular, Leistungsseiten, Über-uns-/Team-Seite und On-Page-SEO.',
         image: 'business.webp',
         price_amount_cents: 89900,
         price: null,
         display: true,
         features: [
-            'Mehrseitige Unternehmens-Website mit individuellen Landingpages',
-            'Conversion-orientierte Texte, Keyword-Research & OnPage-SEO',
-            'Optionaler Blog-/Newsbereich, Terminbuchung oder Schnittstellen'
+            'Bis zu 5 Seiten inklusive Startseite, Leistungen, Über uns/Team und Kontakt',
+            'Kontaktformular, klare Anfrageführung und On-Page-SEO',
+            'Blog oder weitere Inhalte optional als Erweiterung möglich'
         ]
     },
     {
@@ -36,15 +36,15 @@ export const mockPackages = [
         name: 'Premium',
         slug: 'premium',
         description:
-            'Das Rundum-sorglos-Paket mit Strategie-Workshops, hochwertigem Content, Automationen und laufender Betreuung.',
+            'Für umfangreichere Online-Angebote in Berlin: bis zu 20 Seiten inklusive Texten, Strategie, SEO und Buchungssystem. Shop-Funktionen sind optional nach Umfang möglich.',
         image: 'premium.webp',
         price_amount_cents: 149900,
         price: null,
         display: true,
         features: [
-            'UX- und Markenworkshop, Zielgruppenanalyse & Customer-Journey-Mapping',
-            'Hochwertige Content-Produktion (Texte, Visuals, Animationen, ggf. Fotos)',
-            'Fortlaufende Betreuung mit A/B-Tests, Tracking & Performance-Optimierung'
+            'Bis zu 20 Seiten mit Strategie, Texten und SEO-Struktur',
+            'Buchungssystem enthalten, Shop optional nach Umfang',
+            'Ideal für kleine Shops, lokale Händler und Unternehmen mit größerem Angebot'
         ]
     }
 ];

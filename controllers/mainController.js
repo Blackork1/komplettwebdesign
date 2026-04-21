@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Review from '../models/Review.js';
 import Package from '../models/Package.js';
+import { mockPackages } from '../data/mockPackages.js';
 
 // Öffentliches Google-Profil (aus sameAs im JSON-LD) – zentral hier gepflegt,
 // damit Trust-Sektion und "Alle Bewertungen"-Button konsistent bleiben.
@@ -14,11 +15,11 @@ const HOMEPAGE_FAQ = {
   de: [
     {
       q: 'Was kostet es, eine Website erstellen zu lassen?',
-      a: 'Bei mir gibt es transparente Festpreise: Landingpage ab 499,99 €, mehrseitige Website ab 899,99 €, Komplettlösung (bis 25 Seiten, Shop, Buchung) ab 1499,99 €. Laufende Kosten wie Hosting und Wartung rechne ich separat und nach Verbrauch ab – keine versteckten Kosten.'
+      a: 'Bei mir gibt es transparente Festpreise: Basis ab 499 €, Business ab 899 € und Premium ab 1.499 €. Domain und Mail starten ab 10 € pro Monat, Hosting kostet 10 € pro Monat und Wartung 5 € pro Monat. So bleibt klar, was einmalig ist und was laufend dazukommt.'
     },
     {
       q: 'Wie lange dauert es, bis meine Website online ist?',
-      a: 'Eine Landingpage geht typischerweise in 30 Tagen live. Bereits nach 7 Tagen steht der erste Entwurf, nach 14 Tagen das finale Design, Tag 21 ist Live-Test, Tag 30 Launch. Bei größeren Projekten plane ich den Zeitrahmen individuell.'
+      a: 'Das Basis-Paket dauert typischerweise 2 bis 4 Wochen, das Business-Paket 4 bis 6 Wochen und das Premium-Paket 6 bis 8 Wochen. Der genaue Zeitrahmen hängt davon ab, wie schnell Inhalte, Feedback und technische Zugänge vorliegen.'
     },
     {
       q: 'Welche Leistungen sind im Preis enthalten?',
@@ -38,7 +39,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Für welche Branchen erstellst du Websites?',
-      a: 'Schwerpunkte sind Restaurants und Cafés, Handwerksbetriebe, Immobilienmakler, Kitas und Schulen sowie Selbstständige und kleine Dienstleister. Ich kenne die Anforderungen dieser Branchen – z. B. digitale Speisekarten, Referenzgalerien, Exposés, Betreuungszeiten – und setze sie gezielt um.'
+      a: 'Schwerpunkte sind lokale Dienstleister, Restaurants und Cafés, Handwerksbetriebe, Immobilienmakler, Beauty- und Wellness-Angebote, Praxen sowie kleine Shops und lokale Händler. Ich kenne die Anforderungen dieser Branchen und setze sie gezielt für Sichtbarkeit und Anfragen in Berlin um.'
     },
     {
       q: 'Arbeitest du nur mit Kunden aus Berlin?',
@@ -56,7 +57,7 @@ const HOMEPAGE_FAQ = {
   en: [
     {
       q: 'How much does it cost to have a website built?',
-      a: 'Transparent fixed prices: landing page from €499.99, multi-page website from €899.99, all-in solution (up to 25 pages, shop, booking) from €1,499.99. Hosting and maintenance are billed separately and based on usage – no hidden costs.'
+      a: 'Transparent fixed prices: Basic from EUR 499, Business from EUR 899 and Premium from EUR 1,499. Domain and email start from EUR 10 per month, hosting is EUR 10 per month and maintenance is EUR 5 per month. One-time project costs and monthly services stay clearly separated.'
     },
     {
       q: 'How long until my website goes live?',
@@ -99,28 +100,28 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Website erstellen lassen Berlin – ab 499 € · in 30 Tagen live | Komplett Webdesign',
-    seoDescription: 'Website erstellen lassen in Berlin: modernes Webdesign, SEO-Optimierung, Hosting und Support aus einer Hand. Festpreis ab 499 €, live in 30 Tagen.',
+    seoTitle: 'Website erstellen lassen Berlin – ab 499 € | Komplett Webdesign',
+    seoDescription: 'Website erstellen lassen in Berlin: persönliches Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand. Festpreis-Pakete ab 499 €.',
     seoKeywords: 'webseite erstellen lassen, webdesign in berlin, website in berlin erstellen lassen, webdesigner berlin, lokale seo berlin',
-    ogTitle: 'Website erstellen lassen in Berlin – ab 499 €, live in 30 Tagen',
-    ogDescription: 'Webdesign, SEO, Hosting und Support aus einer Hand. Ich erstelle deine professionelle Website in Berlin – mit Festpreis und klarem Zeitplan.',
-    heroBadge: 'Deine neue Website in nur 30 Tagen',
-    heroTitle: 'Webseite in Berlin erstellen lassen',
-    heroTitle2: 'Konzept bis Hosting',
-    heroSubline: 'schnell, modern, ab 499,- EUR',
-    heroBullet1: 'Optimiert für Handy, Tablet & Desktop',
-    heroBullet2: 'Klarer Festpreis & fixer Zeitplan – 0 Technik-Stress',
-    heroBullet3: 'SEO-Basis & schnelle Ladezeiten von Anfang an',
-    heroCtaPrimary: 'Beratungstermin',
+    ogTitle: 'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand',
+    ogDescription: 'Webdesign, Texte, SEO, Hosting und Wartung für kleine Unternehmen in Berlin. Faire Festpreis-Pakete ab 499 €.',
+    heroBadge: 'Komplett Webdesign aus Berlin',
+    heroTitle: 'Website erstellen lassen in Berlin',
+    heroTitle2: 'persönlich, SEO-freundlich und aus einer Hand',
+    heroSubline: 'Design, Texte, SEO, Hosting und Wartung für kleine Unternehmen',
+    heroBullet1: 'Persönliche Betreuung vom ersten Gespräch bis zum Livegang',
+    heroBullet2: 'Faire Festpreis-Pakete ab 499 EUR ohne versteckte Projektkosten',
+    heroBullet3: 'SEO-Grundlage, schnelle Ladezeiten und klare Anfragewege von Anfang an',
+    heroCtaPrimary: 'Beratungsgespräch anfragen',
     heroCtaSecondary: 'Pakete ansehen',
-    heroBadge1: 'Landingpage ab 499,99 EUR',
-    heroBadge2: 'Mehrseiter ab 899,99 EUR',
-    heroBadge3: 'All-in ab 1499,99 EUR',
+    heroBadge1: 'Basis ab 499 EUR',
+    heroBadge2: 'Business ab 899 EUR',
+    heroBadge3: 'Premium ab 1.499 EUR',
     introTitleStrong: 'Deine professionelle Website aus Berlin',
     introTitleRest: 'aus einer Hand bei',
     featuresTitle: 'Was biete ich dir für deine Websiteerstellung?',
-    timelineTitle: 'Dein Zeitplan – heute starten, in 30 Tagen live',
-    timelineNote: 'Für größere Websites verlängern sich die Zeiten entsprechend.',
+    timelineTitle: 'Dein Zeitplan – klar geplant vom Erstgespräch bis zum Livegang',
+    timelineNote: 'Basis: 2 bis 4 Wochen, Business: 4 bis 6 Wochen, Premium: 6 bis 8 Wochen.',
     servicesTitle: 'Alles aus einer Hand – ich erstelle deine professionelle Website in Berlin',
     blogSectionTitle: 'Aktuelles zum Thema Webseiten und bisherige Kundenstimmen',
     blogCardTitle: 'Aktueller Blog-Artikel',
@@ -131,8 +132,8 @@ const HOMEPAGE_I18N = {
     reviewCardTitle: 'Kundenstimme',
     reviewSoon: '(Demnächst echte Stimmen...)',
     pricingTitle: 'Bereit für eine professionelle Website?',
-    pricingTagline: '„Günstige Website erstellen lassen" heißt: smart geplant, modular umgesetzt, ohne versteckte Kosten.',
-    industryTitle: 'Webseiten für Restaurants, Handwerksbetriebe, Cafés und Bildungseinrichtungen in Berlin',
+    pricingTagline: '„Günstige Website erstellen lassen" heißt: sinnvoller Umfang, klare Leistungen und transparente laufende Kosten.',
+    industryTitle: 'Webseiten für lokale Dienstleister, Restaurants, Handwerk und kleine Händler in Berlin',
     trustTitle: 'Das sagen meine Kunden',
     trustSubline: 'Echte Bewertungen von Projekten, die ich für Kunden in Berlin umgesetzt habe.',
     trustCtaAll: 'Alle Bewertungen bei Google ansehen',
@@ -150,23 +151,23 @@ const HOMEPAGE_I18N = {
     seoKeywords: 'website development berlin, web design berlin, berlin web designer, local seo berlin, website creation berlin',
     ogTitle: 'Website Development in Berlin – from €499, live in 30 days',
     ogDescription: 'Web design, SEO, hosting, and support from one source. I build your professional website in Berlin with a fixed price and clear timeline.',
-    heroBadge: 'Your new website in just 30 days',
+    heroBadge: 'Komplett Webdesign from Berlin',
     heroTitle: 'Get a website built in Berlin',
-    heroTitle2: 'from concept to hosting',
-    heroSubline: 'fast, modern, from 499 EUR',
-    heroBullet1: 'Optimized for mobile, tablet and desktop',
-    heroBullet2: 'Clear fixed pricing and timeline – zero technical stress',
-    heroBullet3: 'SEO basics and fast loading times from day one',
-    heroCtaPrimary: 'Book a consultation',
+    heroTitle2: 'personal, SEO-friendly and from one source',
+    heroSubline: 'design, copy, SEO, hosting and maintenance for small businesses',
+    heroBullet1: 'Personal support from first call to launch',
+    heroBullet2: 'Fair fixed-price packages from EUR 499 with clear scope',
+    heroBullet3: 'SEO foundation, fast loading and clear inquiry paths from day one',
+    heroCtaPrimary: 'Request consultation',
     heroCtaSecondary: 'View packages',
-    heroBadge1: 'Landing page from 499.99 EUR',
-    heroBadge2: 'Multi-page website from 899.99 EUR',
-    heroBadge3: 'All-in from 1499.99 EUR',
+    heroBadge1: 'Basic from EUR 499',
+    heroBadge2: 'Business from EUR 899',
+    heroBadge3: 'Premium from EUR 1,499',
     introTitleStrong: 'Your professional website from Berlin',
     introTitleRest: 'from one source at',
     featuresTitle: 'What do I offer for your website project?',
-    timelineTitle: 'Your timeline – start today, go live in 30 days',
-    timelineNote: 'For larger websites, timelines are adjusted accordingly.',
+    timelineTitle: 'Your timeline - clearly planned from first call to launch',
+    timelineNote: 'Basic: 2 to 4 weeks, Business: 4 to 6 weeks, Premium: 6 to 8 weeks.',
     servicesTitle: 'Everything from one source – I build your professional website in Berlin',
     blogSectionTitle: 'Latest website topics and client feedback',
     blogCardTitle: 'Latest blog post',
@@ -178,7 +179,7 @@ const HOMEPAGE_I18N = {
     reviewSoon: '(Real feedback coming soon...)',
     pricingTitle: 'Ready for a professional website?',
     pricingTagline: '"Affordable website development" means: smart planning, modular implementation, no hidden costs.',
-    industryTitle: 'Websites for restaurants, trades, cafes, and educational institutions in Berlin',
+    industryTitle: 'Websites for local service providers, restaurants, trades and small retailers in Berlin',
     trustTitle: 'What my clients say',
     trustSubline: 'Real reviews from projects I have delivered for Berlin-based clients.',
     trustCtaAll: 'See all reviews on Google',
@@ -197,40 +198,55 @@ function resolveHomeLanguage(req) {
 }
 
 function localizeHomepagePackages(packages, lng) {
-  if (lng !== 'en') return packages;
+  const isEn = lng === 'en';
+  const packageDefaults = new Map(
+    (mockPackages || []).map((pkg) => [String(pkg.slug || '').toLowerCase(), pkg])
+  );
 
-  const nameMap = {
-    Basis: 'Starter',
-    Business: 'Business',
-    Premium: 'Premium'
+  const nameMap = isEn
+    ? { Basis: 'Basic', Business: 'Business', Premium: 'Premium' }
+    : { Basis: 'Basis', Business: 'Business', Premium: 'Premium' };
+
+  const englishDescriptions = {
+    basis: 'For small businesses and local service providers that need a professional digital business card: 1 page including copy and basic SEO.',
+    business: 'For small businesses that need more than a business card: up to 5 pages with contact form, service pages, about/team page and on-page SEO.',
+    premium: 'For larger online offers in Berlin: up to 20 pages including copy, strategy, SEO and booking system. Shop features are optional depending on scope.'
   };
 
-  const descriptionBySlug = {
-    basis: 'Starter website package for self-employed professionals: modern one-pager including design, legal pages, hosting, and GDPR support. Professional website in Berlin from 499 EUR.',
-    business: 'For growing businesses: multi-page website with landing pages, SEO content, and booking flow. Business website in Berlin from 899 EUR.',
-    premium: 'All-in solution for ambitious brands: strategy workshops, UX concept, content production, and ongoing support. Premium website in Berlin from 1,499 EUR.'
-  };
-
-  const featureMap = {
-    'Onepage Website': 'One-page website',
-    'Responsives Design': 'Responsive design',
-    'DSGVO konform': 'GDPR compliant',
-    'Mehrseitige Website': 'Multi-page website',
-    'Individuelles Layout': 'Custom layout',
-    'SEO-optimiert': 'SEO optimized',
-    'Maßgeschneiderte Lösung': 'Tailored solution',
-    'Online-Shop möglich': 'Online shop possible',
-    'Erweiterte Funktionen': 'Advanced features'
+  const englishFeatures = {
+    basis: [
+      '1 professional page with clear offer, copy and contact option',
+      'Responsive web design for mobile, tablet and desktop',
+      'Basic SEO, technical foundation and legal pages'
+    ],
+    business: [
+      'Up to 5 pages including homepage, services, about/team and contact',
+      'Contact form, clear inquiry flow and on-page SEO',
+      'Blog or additional content available as optional extension'
+    ],
+    premium: [
+      'Up to 20 pages with strategy, copy and SEO structure',
+      'Booking system included, shop optional depending on scope',
+      'Ideal for small shops, local retailers and companies with larger offers'
+    ]
   };
 
   return packages.map((pkg) => {
     const amount = Number(pkg.price_amount_cents || 0) / 100;
+    const slug = String(pkg.slug || pkg.name || '').toLowerCase();
+    const defaults = packageDefaults.get(slug);
     return {
       ...pkg,
       name: nameMap[pkg.name] || pkg.name,
-      description: descriptionBySlug[pkg.slug] || pkg.description,
-      features: (pkg.features || []).map((feat) => featureMap[feat] || feat),
-      price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount)
+      description: isEn
+        ? (englishDescriptions[slug] || pkg.description)
+        : (defaults?.description || pkg.description),
+      features: isEn
+        ? (englishFeatures[slug] || pkg.features || [])
+        : (defaults?.features || pkg.features || []),
+      price: isEn
+        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount)
+        : pkg.price
     };
   });
 }

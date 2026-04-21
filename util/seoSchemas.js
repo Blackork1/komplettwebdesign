@@ -10,7 +10,24 @@ const ORG = {
   "@type": "Organization",
   name: "Komplett Webdesign",
   url: "https://www.komplettwebdesign.de/",
-  telephone: "+49 1551 1245048",
+  email: "kontakt@komplettwebdesign.de",
+  telephone: "+49 1551 245048",
+  logo: "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Möllendorffstr 26",
+    postalCode: "10367",
+    addressLocality: "Berlin",
+    addressCountry: "DE"
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    telephone: "+49 1551 245048",
+    email: "kontakt@komplettwebdesign.de",
+    areaServed: "DE",
+    availableLanguage: ["de-DE", "en"]
+  },
   areaServed: [
     { "@type": "City", name: "Berlin" },
     { "@type": "State", name: "Brandenburg" },
@@ -24,11 +41,11 @@ const ORG = {
 const COMMON_FAQ_DE = [
   {
     name: "Wie schnell ist meine Website online?",
-    answer: "Je nach Paket und vorhandenem Material zwischen 1 und 8 Wochen. Der Basis-Onepager geht meist innerhalb von 1 bis 2 Wochen live, das Business-Paket in 2 bis 4 Wochen, Premium-Projekte werden typischerweise in 4 bis 8 Wochen realisiert. Express-Umsetzung ist nach Absprache möglich."
+    answer: "Je nach Paket und vorhandenem Material zwischen 2 und 8 Wochen. Das Basis-Paket dauert meist 2 bis 4 Wochen, das Business-Paket 4 bis 6 Wochen und Premium-Projekte werden typischerweise in 6 bis 8 Wochen realisiert."
   },
   {
-    name: "Sind Hosting, SSL und DSGVO inklusive?",
-    answer: "Ja. Hosting auf deutschen Servern, SSL-Zertifikat, DSGVO-konforme Einbindung sowie Impressum, Datenschutzerklärung und Cookie-Hinweise sind in jedem Paket berücksichtigt. Laufende Wartung ist im Premium-Paket enthalten und in Basis und Business optional zubuchbar."
+    name: "Sind Hosting, SSL und DSGVO enthalten?",
+    answer: "Die technische Grundlage, SSL-Konfiguration, DSGVO-konforme Einbindung sowie Impressum, Datenschutzerklärung und Cookie-Hinweise werden im Projekt berücksichtigt. Hosting, Domain, E-Mail und Wartung bleiben transparente Monatsleistungen."
   },
   {
     name: "Wie transparent sind die Kosten?",
@@ -43,11 +60,11 @@ const COMMON_FAQ_DE = [
 const COMMON_FAQ_EN = [
   {
     name: "How quickly can my website go live?",
-    answer: "Depending on the package and existing material, between 1 and 8 weeks. The Basic one-pager usually goes live within 1 to 2 weeks, the Business package in 2 to 4 weeks, and Premium projects are typically delivered in 4 to 8 weeks. Express delivery is available on request."
+    answer: "Depending on the package and existing material, between 2 and 8 weeks. Basic usually takes 2 to 4 weeks, Business 4 to 6 weeks and Premium projects are typically delivered in 6 to 8 weeks."
   },
   {
     name: "Are hosting, SSL and GDPR setup included?",
-    answer: "Yes. Hosting on German servers, an SSL certificate, GDPR-compliant integrations and legal pages like imprint, privacy policy and cookie notices are handled in every package. Ongoing maintenance is included in Premium and optionally available for Basic and Business."
+    answer: "The technical foundation, SSL configuration, GDPR-compliant integrations and legal pages like imprint, privacy policy and cookie notices are handled in the project. Hosting, domain, email and maintenance remain transparent monthly services."
   },
   {
     name: "How transparent are the costs?",
@@ -70,7 +87,7 @@ function defaultFaq(slug, lng = "de") {
       },
       {
         name: "Was ist im Basis-Paket konkret enthalten?",
-        answer: "Individueller Onepager bzw. bis zu 3 Unterseiten, responsives Design, rechtliche Seiten, DSGVO-Grundlagen, OnPage-SEO, Kontaktformular mit Spam-Schutz, SSL und Hosting sowie eine Korrekturschleife."
+        answer: "1 professionelle Seite, responsives Design, Texte, rechtliche Seiten, DSGVO-Grundlagen, SEO-Grundoptimierung, technische Basis und eine Korrekturschleife."
       },
       {
         name: "Ist das Basis-Paket SEO-tauglich?",
@@ -88,7 +105,7 @@ function defaultFaq(slug, lng = "de") {
       },
       {
         name: "Was ist im Business-Paket enthalten?",
-        answer: "4 bis 8 Seiten inklusive Leistungs- und Referenzseiten, Conversion-orientierte Textproduktion, erweitertes OnPage-SEO, Google-Analytics- und Tracking-Setup, Integrationen wie Terminbuchung, Newsletter oder CRM sowie zwei Korrekturschleifen."
+        answer: "Bis zu 5 Seiten inklusive Leistungsseiten, Über-uns-/Team-Seite, Kontaktseite, Conversion-orientierte Texte, On-Page-SEO, Kontaktformular und zwei Korrekturschleifen. Blog, Buchungssystem oder weitere Integrationen sind optional."
       },
       {
         name: "Wie verbessert das Business-Paket meine Google-Sichtbarkeit?",
@@ -114,7 +131,7 @@ function defaultFaq(slug, lng = "de") {
       },
       {
         name: "Wie läuft die Betreuung nach dem Launch ab?",
-        answer: "Nach dem Livegang folgt ein fester Betreuungsrhythmus mit Monitoring, Performance-Analysen, A/B-Tests, Wartung, Sicherheitsupdates, Content-Refreshes und priorisiertem Support - damit die Website kontinuierlich Ergebnisse liefert."
+        answer: "Nach dem Livegang können Wartung, Monitoring, Content-Refreshes und technischer Support als Monatsleistung gebucht werden, damit die Website dauerhaft stabil bleibt und weiter verbessert werden kann."
       }
     ]
   };
@@ -145,7 +162,7 @@ function defaultFaq(slug, lng = "de") {
       },
       {
         name: "What is included in the Business package?",
-        answer: "4 to 8 pages including service and case pages, conversion-focused copywriting, extended on-page SEO, Google Analytics and tracking setup, integrations like booking, newsletter or CRM, plus two revision rounds."
+        answer: "Up to 5 pages including service pages, about/team page, contact page, conversion-focused copy, on-page SEO, contact form and two revision rounds. Blog, booking system or further integrations are optional."
       },
       {
         name: "How does the Business package improve my Google visibility?",
@@ -200,14 +217,14 @@ function buildServiceSchema({ pack, url, baseUrl, lng, price, currency }) {
 
   const serviceDescMap = {
     basis: isEn
-      ? "Fast professional website launch in Berlin: onepager design, legal pages, on-page SEO, hosting and launch support."
-      : "Schneller professioneller Website-Start in Berlin: Onepager-Design, rechtliche Seiten, OnPage-SEO, Hosting und Launch-Support.",
+      ? "Fast professional website launch in Berlin: onepager design, copy, legal pages, basic SEO and launch support."
+      : "Schneller professioneller Website-Start in Berlin: Onepager-Design, Texte, rechtliche Seiten, SEO-Grundoptimierung und Launch-Support.",
     business: isEn
-      ? "Multi-page website in Berlin with conversion copy, extended on-page SEO, tracking and integrations for lead generation."
-      : "Mehrseitige Website in Berlin mit Conversion-Texten, erweitertem OnPage-SEO, Tracking und Integrationen zur Lead-Gewinnung.",
+      ? "Multi-page website in Berlin with up to 5 pages, contact form, conversion copy and on-page SEO."
+      : "Mehrseitige Website in Berlin mit bis zu 5 Seiten, Kontaktformular, Conversion-Texten und On-Page-SEO.",
     premium: isEn
-      ? "Strategic website in Berlin with UX workshops, full content production, strong SEO and ongoing optimization."
-      : "Strategische Website in Berlin mit UX-Workshops, kompletter Content-Produktion, starkem SEO und laufender Optimierung."
+      ? "Strategic website in Berlin with up to 20 pages, copy, SEO and booking system; shop optional by scope."
+      : "Strategische Website in Berlin mit bis zu 20 Seiten, Texten, SEO und Buchungssystem; Shop optional nach Umfang."
   };
 
   return {
@@ -224,7 +241,7 @@ function buildServiceSchema({ pack, url, baseUrl, lng, price, currency }) {
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: url,
-      servicePhone: "+49 1551 1245048",
+      servicePhone: "+49 1551 245048",
       availableLanguage: ["de-DE", "en"]
     },
     offers: {

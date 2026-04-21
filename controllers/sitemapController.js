@@ -100,6 +100,8 @@ export async function sitemapXml(req, res, next) {
     // ---- Statische Routen ----
     const staticRoutes = [
       { loc: `${base}/`, changefreq: "weekly", priority: 1.0 },
+      { loc: `${base}/llms.txt`, changefreq: "weekly", priority: 0.6 },
+      { loc: `${base}/pricing.md`, changefreq: "monthly", priority: 0.6 },
       { loc: `${base}/en`, changefreq: "weekly", priority: 0.9 },
       { loc: `${base}/kontakt`, changefreq: "monthly", priority: 0.8 },
       { loc: `${base}/en/kontakt`, changefreq: "monthly", priority: 0.8 },
