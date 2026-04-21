@@ -46,3 +46,59 @@
   </div>
 </div>
 <%- include('../partials/footer') %>
+<script>
+  (function() {
+    var leadEventId = <%- JSON.stringify(leadEventId || '') %>;
+    var storageKey = leadEventId ? 'kwd_contact_generate_lead_' + leadEventId : '';
+    var sent = false;
+
+    function analyticsTrackingAllowed() {
+      var consentState = window.cookieConsentState || {};
+      var measurementId = window.env && window.env.GA_MEASUREMENT_ID;
+      return consentState.analytics === true &&
+        typeof window.gtag === 'function' &&
+        !(measurementId && window['ga-disable-' + measurementId]);
+    }
+
+    function alreadySent() {
+      if (!storageKey || !window.sessionStorage) return false;
+      try {
+        return window.sessionStorage.getItem(storageKey) === '1';
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function markSent() {
+      if (!storageKey || !window.sessionStorage) return;
+      try {
+        window.sessionStorage.setItem(storageKey, '1');
+      } catch (err) {}
+    }
+
+    function sendLeadEvent() {
+      if (sent || alreadySent() || !analyticsTrackingAllowed()) return;
+
+      var payload = {
+        event_category: 'lead',
+        form_name: 'contact_form',
+        form_id: 'kontaktForm',
+        method: 'contact_form',
+        transport_type: 'beacon'
+      };
+
+      if (leadEventId) {
+        payload.lead_event_id = leadEventId;
+      }
+
+      window.gtag('event', 'generate_lead', payload);
+      sent = true;
+      markSent();
+    }
+
+    document.addEventListener('cookieConsentUpdate', function(e) {
+      if (e.detail && e.detail.analytics === true) window.setTimeout(sendLeadEvent, 0);
+    });
+    window.setTimeout(sendLeadEvent, 0);
+  })();
+</script>

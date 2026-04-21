@@ -212,28 +212,46 @@ function buildPreviewShortReport({ source, lead, detailedResult, locale }) {
 export async function websiteTesterPage(req, res) {
   const previewId = String(req.query.preview_id || '').trim();
   const previewRecord = previewId ? getPreview(previewId) : null;
+  const ARCHIVE_TABS = new Set(['website', 'broken', 'geo', 'seo', 'leads']);
+  const archiveTab = ARCHIVE_TABS.has(String(req.query.archive_tab || '').trim()) ? String(req.query.archive_tab).trim() : 'website';
+
   const requestPage = parsePositiveInt(req.query.req_page, 1);
   const brokenPage = parsePositiveInt(req.query.bl_page, 1);
   const geoPage = parsePositiveInt(req.query.geo_page, 1);
   const seoPage = parsePositiveInt(req.query.seo_page, 1);
   const leadPage = parsePositiveInt(req.query.lead_page, 1);
+
   const q = String(req.query.q || '').trim();
   const status = String(req.query.status || '').trim();
+  const reqSort = String(req.query.req_sort || '').trim();
+  const reqDir = String(req.query.req_dir || '').trim();
+
   const brokenQ = String(req.query.bl_q || '').trim();
   const brokenStatus = String(req.query.bl_status || '').trim();
   const brokenMode = String(req.query.bl_mode || '').trim();
+  const blSort = String(req.query.bl_sort || '').trim();
+  const blDir = String(req.query.bl_dir || '').trim();
+
   const geoQ = String(req.query.geo_q || '').trim();
   const geoStatus = String(req.query.geo_status || '').trim();
   const geoMode = String(req.query.geo_mode || '').trim();
+  const geoSort = String(req.query.geo_sort || '').trim();
+  const geoDir = String(req.query.geo_dir || '').trim();
+
   const seoQ = String(req.query.seo_q || '').trim();
   const seoStatus = String(req.query.seo_status || '').trim();
   const seoMode = String(req.query.seo_mode || '').trim();
+  const seoSort = String(req.query.seo_sort || '').trim();
+  const seoDir = String(req.query.seo_dir || '').trim();
+
   const leadQ = String(req.query.lead_q || '').trim();
   const leadStatus = String(req.query.lead_status || '').trim();
   const leadSource = String(req.query.lead_source || '').trim();
   const leadLocale = String(req.query.lead_locale || '').trim();
   const leadFrom = String(req.query.lead_from || '').trim();
   const leadTo = String(req.query.lead_to || '').trim();
+  const leadSort = String(req.query.lead_sort || '').trim();
+  const leadDir = String(req.query.lead_dir || '').trim();
   const leadToEndOfDay = /^\d{4}-\d{2}-\d{2}$/.test(leadTo) ? `${leadTo}T23:59:59.999Z` : leadTo;
 
   const [config, archive, brokenArchive, geoArchive, seoArchive, leadArchive] = await Promise.all([
@@ -242,28 +260,36 @@ export async function websiteTesterPage(req, res) {
       page: requestPage,
       pageSize: 30,
       q,
-      status
+      status,
+      sortBy: reqSort,
+      sortDir: reqDir
     }),
     listBrokenLinkAuditRequests({
       page: brokenPage,
       pageSize: 30,
       q: brokenQ,
       status: brokenStatus,
-      mode: brokenMode
+      mode: brokenMode,
+      sortBy: blSort,
+      sortDir: blDir
     }),
     listGeoAuditRequests({
       page: geoPage,
       pageSize: 30,
       q: geoQ,
       status: geoStatus,
-      mode: geoMode
+      mode: geoMode,
+      sortBy: geoSort,
+      sortDir: geoDir
     }),
     listSeoAuditRequests({
       page: seoPage,
       pageSize: 30,
       q: seoQ,
       status: seoStatus,
-      mode: seoMode
+      mode: seoMode,
+      sortBy: seoSort,
+      sortDir: seoDir
     }),
     listWebsiteTesterLeads({
       page: leadPage,
@@ -273,7 +299,9 @@ export async function websiteTesterPage(req, res) {
       source: leadSource,
       locale: leadLocale,
       dateFrom: leadFrom,
-      dateTo: leadToEndOfDay
+      dateTo: leadToEndOfDay,
+      sortBy: leadSort,
+      sortDir: leadDir
     })
   ]);
 
@@ -315,23 +343,34 @@ export async function websiteTesterPage(req, res) {
       rows: leadRows
     },
     filters: {
+      archiveTab,
       q,
       status,
+      reqSort,
+      reqDir,
       brokenQ,
       brokenStatus,
       brokenMode,
+      blSort,
+      blDir,
       geoQ,
       geoStatus,
       geoMode,
+      geoSort,
+      geoDir,
       seoQ,
       seoStatus,
       seoMode,
+      seoSort,
+      seoDir,
       leadQ,
       leadStatus,
       leadSource,
       leadLocale,
       leadFrom,
-      leadTo
+      leadTo,
+      leadSort,
+      leadDir
     },
     query: req.query || {}
   });

@@ -119,6 +119,60 @@ if (!carouselEl) {
   const carousel = new bootstrap.Carousel(carouselEl, { interval: false, wrap: false });
   const next = () => carousel.next();
   const prev = () => carousel.prev();
+  const kontaktForm = document.getElementById("kontaktForm");
+  const contactFormSteps = [
+    { eventName: "contact_step_01_scope", stepName: "project_scope" },
+    { eventName: "contact_step_02_pages", stepName: "page_scope" },
+    { eventName: "contact_step_03_texts", stepName: "content_writing" },
+    { eventName: "contact_step_04_images", stepName: "images" },
+    { eventName: "contact_step_05_features", stepName: "features" },
+    { eventName: "contact_step_06_appointment", stepName: "appointment" },
+    { eventName: "contact_step_07_contact", stepName: "contact_details" },
+    { eventName: "contact_step_08_details", stepName: "additional_info" },
+    { eventName: "contact_step_09_summary", stepName: "summary" }
+  ];
+  const trackedStepIndexes = new Set();
+
+  function analyticsTrackingAllowed() {
+    const consentState = window.cookieConsentState || {};
+    const measurementId = window.env && window.env.GA_MEASUREMENT_ID;
+    return consentState.analytics === true
+      && typeof window.gtag === "function"
+      && !(measurementId && window["ga-disable-" + measurementId]);
+  }
+
+  function readFormValue(name, fallback) {
+    const input = kontaktForm && kontaktForm.querySelector(`[name="${name}"]`);
+    return input && input.value ? input.value : fallback;
+  }
+
+  function trackContactStep(stepIndex) {
+    const step = contactFormSteps[stepIndex];
+    if (!step || trackedStepIndexes.has(stepIndex) || !analyticsTrackingAllowed()) return;
+
+    try {
+      window.gtag("event", step.eventName, {
+        event_category: "lead_form",
+        form_name: "contact_form",
+        form_id: "kontaktForm",
+        form_source: readFormValue("source", "contact_page"),
+        locale: readFormValue("locale", document.documentElement.lang || "de"),
+        step_number: stepIndex + 1,
+        step_total: contactFormSteps.length,
+        step_name: step.stepName,
+        step_progress_percent: Math.round(((stepIndex + 1) / contactFormSteps.length) * 100)
+      });
+      trackedStepIndexes.add(stepIndex);
+    } catch (err) {
+      console.warn("[Analytics] Contact form step tracking failed:", err);
+    }
+  }
+
+  function trackActiveContactStep() {
+    const slides = Array.from(carouselEl.querySelectorAll(".carousel-item"));
+    const activeIndex = slides.findIndex((slide) => slide.classList.contains("active"));
+    trackContactStep(activeIndex >= 0 ? activeIndex : 0);
+  }
 
   ["paket", "umfang", "texterstellung", "bilderstellung", "slotId"].forEach((name) => {
     document.querySelectorAll(`input[name="${name}"]`).forEach((inp) => {
@@ -183,7 +237,15 @@ if (!carouselEl) {
     if (e.to === 8) updateSummary();
   });
 
-  const kontaktForm = document.getElementById("kontaktForm");
+  carouselEl.addEventListener("slid.bs.carousel", (e) => {
+    trackContactStep(e.to);
+  });
+
+  document.addEventListener("cookieConsentUpdate", (e) => {
+    if (e.detail && e.detail.analytics === true) window.setTimeout(trackActiveContactStep, 0);
+  });
+  trackActiveContactStep();
+
   if (kontaktForm) {
     bindRecaptchaPrefetch(kontaktForm);
 

@@ -127,7 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!id) return;
 
     // Google Signals je nach Marketing erlauben/unterbinden
-    window.gtag('config', id, { allow_google_signals: !!marketing });
+    window.gtag('config', id, {
+      allow_google_signals: !!marketing,
+      send_page_view: false
+    });
 
     if (analytics && !firstPageviewSent) {
       // GA ist bereits im <head> geladen (send_page_view:false) → manueller PV

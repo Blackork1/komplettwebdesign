@@ -344,12 +344,12 @@ export async function showForm(req, res) {
 
 /* ---------- Validierung ---------------------------------------------- */
 export const validate = [
-    body("slotId").optional().isInt().toInt(),
-    body("token").notEmpty(),
-    body("paket").notEmpty(),
-    body("umfang").notEmpty(),
-    body("name").isLength({ min: 2 }),
-    body("email").isEmail()
+    body("slotId").optional({ checkFalsy: true }).isInt().withMessage("Termin ist ungültig.").toInt(),
+    body("token").notEmpty().withMessage("reCAPTCHA-Token fehlt."),
+    body("paket").notEmpty().withMessage("Bitte Projektumfang auswählen."),
+    body("umfang").notEmpty().withMessage("Bitte Seitenumfang auswählen."),
+    body("name").isLength({ min: 2 }).withMessage("Bitte Namen mit mindestens 2 Zeichen eingeben."),
+    body("email").isEmail().withMessage("Bitte gültige E-Mail-Adresse eingeben.")
 ];
 
 /* ---------- POST /kontakt -------------------------------------------- */
@@ -420,7 +420,7 @@ export const processForm = [
             }
 
             /* 4) Contact-Request speichern ---------------------------------- */
-            await CReq.create({
+            const contactRequest = await CReq.create({
                 paket: req.body.paket,
                 umfang: req.body.umfang,
                 texterstellung: req.body.texterstellung,
@@ -528,6 +528,7 @@ export const processForm = [
                 data: req.body,
                 appointment: slot,
                 formattedAppointment,
+                leadEventId: contactRequest?.id ? `contact-${contactRequest.id}` : null,
                 lng,
             });
         } catch (err) {
@@ -698,6 +699,7 @@ export async function processWebdesignBerlinForm(req, res) {
     ]);
 
     let booking = null;
+    let contactRequest = null;
     try {
         if (db) {
             const startTime = new Date();
@@ -721,7 +723,7 @@ export async function processWebdesignBerlinForm(req, res) {
             }
         }
 
-        await CReq.create({
+        contactRequest = await CReq.create({
             paket: normalized.projectType || "Webdesign Berlin Anfrage",
             umfang: normalized.goals || null,
             texterstellung: "n/a",
@@ -843,6 +845,7 @@ export async function processWebdesignBerlinForm(req, res) {
         data: thankYouData,
         appointment: null,
         formattedAppointment: null,
+        leadEventId: contactRequest?.id ? `contact-${contactRequest.id}` : null,
         lng
     });
 }

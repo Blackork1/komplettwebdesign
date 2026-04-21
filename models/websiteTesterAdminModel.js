@@ -19,6 +19,12 @@ const DEFAULT_PAGE_SIZE = 30;
 const LEAD_STATUSES = new Set(['pending', 'confirmed', 'report_sent', 'report_failed']);
 const LEAD_SOURCES = new Set(['website', 'geo', 'seo', 'meta', 'broken-links']);
 
+const WEBSITE_REQUEST_SORT_COLS = new Set(['created_at', 'status', 'overall_score', 'crawl_visited_pages']);
+const BROKEN_LINK_REQUEST_SORT_COLS = new Set(['created_at', 'status', 'scan_mode', 'link_broken_count', 'crawl_visited_pages']);
+const GEO_REQUEST_SORT_COLS = new Set(['created_at', 'status', 'scan_mode', 'geo_score']);
+const SEO_REQUEST_SORT_COLS = new Set(['created_at', 'status', 'scan_mode', 'seo_score']);
+const LEAD_SORT_COLS = new Set(['created_at', 'status', 'source', 'domain', 'overall_score']);
+
 let ensurePromise = null;
 
 function clampMaxSubpages(rawValue) {
@@ -1053,6 +1059,9 @@ export async function listWebsiteTesterRequests(options = {}) {
   const pageSize = clampPageSize(options.pageSize);
   const offset = (page - 1) * pageSize;
 
+  const sortBy = WEBSITE_REQUEST_SORT_COLS.has(String(options.sortBy || '')) ? String(options.sortBy) : 'created_at';
+  const sortDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
+
   const status = String(options.status || '').trim();
   const q = String(options.q || '').trim();
 
@@ -1087,7 +1096,7 @@ export async function listWebsiteTesterRequests(options = {}) {
     SELECT *
     FROM website_tester_requests
     ${whereSql}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
     LIMIT $${listValues.length - 1}
     OFFSET $${listValues.length}
   `;
@@ -1115,6 +1124,9 @@ export async function listBrokenLinkAuditRequests(options = {}) {
   const page = clampPage(options.page);
   const pageSize = clampPageSize(options.pageSize);
   const offset = (page - 1) * pageSize;
+
+  const sortBy = BROKEN_LINK_REQUEST_SORT_COLS.has(String(options.sortBy || '')) ? String(options.sortBy) : 'created_at';
+  const sortDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
 
   const status = String(options.status || '').trim();
   const modeRaw = String(options.mode || '').trim().toLowerCase();
@@ -1161,7 +1173,7 @@ export async function listBrokenLinkAuditRequests(options = {}) {
     SELECT *
     FROM website_tester_broken_link_requests
     ${whereSql}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
     LIMIT $${listValues.length - 1}
     OFFSET $${listValues.length}
   `;
@@ -1189,6 +1201,9 @@ export async function listGeoAuditRequests(options = {}) {
   const page = clampPage(options.page);
   const pageSize = clampPageSize(options.pageSize);
   const offset = (page - 1) * pageSize;
+
+  const sortBy = GEO_REQUEST_SORT_COLS.has(String(options.sortBy || '')) ? String(options.sortBy) : 'created_at';
+  const sortDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
 
   const status = String(options.status || '').trim();
   const modeRaw = String(options.mode || '').trim().toLowerCase();
@@ -1235,7 +1250,7 @@ export async function listGeoAuditRequests(options = {}) {
     SELECT *
     FROM website_tester_geo_requests
     ${whereSql}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
     LIMIT $${listValues.length - 1}
     OFFSET $${listValues.length}
   `;
@@ -1263,6 +1278,9 @@ export async function listSeoAuditRequests(options = {}) {
   const page = clampPage(options.page);
   const pageSize = clampPageSize(options.pageSize);
   const offset = (page - 1) * pageSize;
+
+  const sortBy = SEO_REQUEST_SORT_COLS.has(String(options.sortBy || '')) ? String(options.sortBy) : 'created_at';
+  const sortDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
 
   const status = String(options.status || '').trim();
   const modeRaw = String(options.mode || '').trim().toLowerCase();
@@ -1309,7 +1327,7 @@ export async function listSeoAuditRequests(options = {}) {
     SELECT *
     FROM website_tester_seo_requests
     ${whereSql}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
     LIMIT $${listValues.length - 1}
     OFFSET $${listValues.length}
   `;
@@ -1337,6 +1355,9 @@ export async function listWebsiteTesterLeads(options = {}) {
   const page = clampPage(options.page);
   const pageSize = clampPageSize(options.pageSize);
   const offset = (page - 1) * pageSize;
+
+  const sortBy = LEAD_SORT_COLS.has(String(options.sortBy || '')) ? String(options.sortBy) : 'created_at';
+  const sortDir = options.sortDir === 'asc' ? 'ASC' : 'DESC';
 
   const status = normalizeLeadStatus(options.status);
   const locale = String(options.locale || '').trim() === 'en' ? 'en' : (String(options.locale || '').trim() === 'de' ? 'de' : '');
@@ -1383,7 +1404,7 @@ export async function listWebsiteTesterLeads(options = {}) {
     SELECT *
     FROM website_tester_leads
     ${whereSql}
-    ORDER BY created_at DESC, id DESC
+    ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
     LIMIT $${listValues.length - 1}
     OFFSET $${listValues.length}
   `;
