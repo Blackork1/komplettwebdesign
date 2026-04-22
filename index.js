@@ -16,7 +16,13 @@ import cron from 'node-cron';
 import pool from './util/db.js';
 import cloudinary from './util/cloudinary.js';
 
-import { getAvailableCssFiles, getCssClasses } from './helpers/cssHelper.js';
+import {
+  createCssAssetResolver,
+  getAvailableCssFiles,
+  getCssClasses,
+  loadCssAssetManifest,
+  validateCssAssetManifest
+} from './helpers/cssHelper.js';
 import { FIELD_CONFIG } from './helpers/componentConfig.js';
 import { navbarMiddleware } from './helpers/navHelper.js';
 // import sessionMiddleware                          from './middleware/session.js';
@@ -79,6 +85,21 @@ app.get('/health', (_req, res) => {
 const isProd = process.env.NODE_ENV === 'production';
 app.set('trust proxy', isProd ? 1 : false);
 app.locals.assetVersion = process.env.ASSET_VERSION || '2026-02-11';
+const cssAssetManifest = loadCssAssetManifest();
+validateCssAssetManifest(cssAssetManifest, [
+  'about.css',
+  'admin-appointments.css',
+  'admin.css',
+  'blog.css',
+  'booking-widget.css',
+  'branchen.css',
+  'css/main.css',
+  'extra.css',
+  'faq.css',
+  'styles.css',
+  'website-tester.css'
+]);
+app.locals.cssAsset = createCssAssetResolver(cssAssetManifest);
 
 const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://komplettwebdesign.de' : '')).replace(/\/$/, '');
 const configuredCanonicalHost = (process.env.CANON_HOST || '').trim().replace(/:\d+$/, '').toLowerCase();

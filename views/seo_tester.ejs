@@ -4,7 +4,7 @@
   <%- include('partials/header') %>
 
   <main id="hero">
-    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+    <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
     <section class="wt-section wt-section-compact">
       <div class="wt-shell">
@@ -56,7 +56,7 @@
                 : 'Starte einen fokussierten Onsite-SEO- und Technik-Audit und erkenne Optimierungspotenziale für klassische und AI-getriebene Suchauffindbarkeit.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Subpage crawl with configurable depth (admin)' : 'Unterseiten-Crawl mit konfigurierbarer Tiefe (Admin)' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Crawls homepage and relevant subpages' : 'Crawlt Startseite und relevante Unterseiten' %></li>
               <li><i class="fa-solid fa-wrench"></i> <%= isEn ? 'On-page, indexing, technical, and schema checks' : 'OnPage-, Indexierungs-, Technik- und Schema-Checks' %></li>
               <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Detailed report via double opt-in email flow' : 'Detaillierter Report via Double-Opt-in per E-Mail' %></li>
             </ul>

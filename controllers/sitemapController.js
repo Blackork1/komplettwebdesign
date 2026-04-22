@@ -1,6 +1,7 @@
 // controllers/sitemapController.js
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
+import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 
 /** Absoluten Host ermitteln (funktioniert mit reverse proxy) */
 function resolveBaseUrl(req) {
@@ -29,6 +30,15 @@ function toIso(value, fallbackIso) {
   const date = new Date(value || fallbackIso);
   if (Number.isNaN(date.getTime())) return fallbackIso;
   return date.toISOString();
+}
+
+function isExcludedIndustry(row = {}) {
+  const text = [row.slug, row.name, row.title, row.description]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return ["kita", "kitas", "schule", "schulen", "school", "schools", "daycare", "daycares", "kindergarten"]
+    .some((needle) => text.includes(needle));
 }
 
 async function querySafe(sql, params = [], label = "query") {
@@ -68,6 +78,9 @@ export async function sitemapXml(req, res, next) {
     // 👉 Neu: Industries für /webdesign-:slug
     const industries = await querySafe(
       `SELECT slug,
+              name,
+              title,
+              description,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM industries
         ORDER BY name`,
@@ -123,6 +136,8 @@ export async function sitemapXml(req, res, next) {
       { loc: `${base}/en/website-tester/geo`, changefreq: "weekly", priority: 0.85 },
       { loc: `${base}/website-tester/seo`, changefreq: "weekly", priority: 0.9 },
       { loc: `${base}/en/website-tester/seo`, changefreq: "weekly", priority: 0.85 },
+      { loc: `${base}/website-tester/meta`, changefreq: "weekly", priority: 0.9 },
+      { loc: `${base}/en/website-tester/meta`, changefreq: "weekly", priority: 0.85 },
       // 👉 NEU: Ratgeber-Übersicht
       { loc: `${base}/ratgeber`, changefreq: "weekly", priority: 0.8 },
       { loc: `${base}/faq`, changefreq: "monthly", priority: 0.7 },
@@ -167,7 +182,7 @@ export async function sitemapXml(req, res, next) {
     }));
 
     // Industries
-    const industryRoutes = industries.map(r => ({
+    const industryRoutes = industries.filter((r) => !isExcludedIndustry(r)).map(r => ({
       loc: `${base}/branchen/webdesign-${r.slug}`,
       lastmod: toIso(r.updated_at, nowIso),
       changefreq: "weekly",
@@ -189,6 +204,13 @@ export async function sitemapXml(req, res, next) {
       priority: 0.8
     }));
 
+    const staticGuideRoutes = SEO_GUIDE_CLUSTER.map(g => ({
+      loc: `${base}/ratgeber/${g.slug}`,
+      lastmod: toIso(g.updated_at, nowIso),
+      changefreq: "monthly",
+      priority: g.featured ? 0.8 : 0.7
+    }));
+
     const allUrlsRaw = [
       ...staticRoutes,
       ...districtRoutesDe,
@@ -197,6 +219,7 @@ export async function sitemapXml(req, res, next) {
       ...postRoutes,
       ...industryRoutes,
       ...serviceRoutes,
+      ...staticGuideRoutes,
       ...guideRoutes   // 👉 NEU aufnehmen
     ];
 

@@ -15,10 +15,10 @@ const structuredDataBlocks = [
 <%- include('../partials/header') %>
 
 <!-- Blog-Styles für die Cards wiederverwenden -->
-<link rel="stylesheet" href="/blog.css?v=<%= encodeURIComponent(assetVersion || '1') %>" />
-<link rel="preload" href="/branchen.css?v=<%= encodeURIComponent(assetVersion || '1') %>" as="style" onload="this.rel='stylesheet'">
+<link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
+<link rel="preload" href="<%= cssAsset('branchen.css') %>" as="style" onload="this.rel='stylesheet'">
 <noscript>
-  <link rel="stylesheet" href="/branchen.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+  <link rel="stylesheet" href="<%= cssAsset('branchen.css') %>">
 </noscript>
 
 <nav class="wd-breadcrumbs" aria-label="breadcrumb">

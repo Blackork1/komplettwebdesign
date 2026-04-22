@@ -4,7 +4,7 @@
   <%- include('partials/header') %>
 
   <main id="hero">
-    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+    <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
     <section class="wt-section wt-section-compact">
       <div class="wt-shell">
@@ -56,7 +56,7 @@
                 : 'Gib deine Website-URL ein und scanne Unterseiten auf defekte Links. Du erhältst sofort eine Zusammenfassung plus detaillierte Liste mit Quellseite und Ziel-URL.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Configurable crawl depth (admin)' : 'Konfigurierbare Crawl-Tiefe (Admin)' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Crawls internal pages within a clear scan scope' : 'Crawlt interne Seiten in einem klaren Scan-Umfang' %></li>
               <li><i class="fa-solid fa-link"></i> <%= isEn ? 'Checks internal + external links' : 'Prüft interne + externe Links' %></li>
               <li><i class="fa-solid fa-triangle-exclamation"></i> <%= isEn ? 'Separates broken links and warnings' : 'Trennt Broken Links und Warnings' %></li>
             </ul>
@@ -109,8 +109,8 @@
           <h2><%= isEn ? 'How the Broken Links Tester scans your website' : 'So scannt der Broken-Links-Tester deine Website' %></h2>
           <p>
             <%= isEn
-              ? 'The scanner starts at your URL, extracts every internal and external link on the page, and for larger sites crawls the internal graph up to a configurable depth. Each discovered link is requested via HEAD (falling back to GET) and classified by HTTP status. The result separates hard errors (4xx/5xx) from warnings (3xx chains, slow responses, protocol mismatches) so you can focus fixes where they matter.'
-              : 'Der Scanner startet an deiner URL, extrahiert jeden internen und externen Link und crawlt bei größeren Sites den internen Graphen bis zu einer konfigurierbaren Tiefe. Jeder gefundene Link wird via HEAD (Fallback GET) angefragt und nach HTTP-Status klassifiziert. Das Ergebnis trennt harte Fehler (4xx/5xx) von Warnungen (3xx-Ketten, langsame Antworten, Protokoll-Mismatches), damit du Korrekturen dort priorisieren kannst, wo sie zählen.' %>
+              ? 'The scanner starts at your URL, extracts every internal and external link on the page, and for larger sites follows the internal page graph within a defined scan scope. Each discovered link is requested via HEAD (falling back to GET) and classified by HTTP status. The result separates hard errors (4xx/5xx) from warnings (3xx chains, slow responses, protocol mismatches) so you can focus fixes where they matter.'
+              : 'Der Scanner startet an deiner URL, extrahiert jeden internen und externen Link und folgt bei größeren Websites dem internen Seitenverlauf innerhalb eines definierten Scan-Umfangs. Jeder gefundene Link wird via HEAD (Fallback GET) angefragt und nach HTTP-Status klassifiziert. Das Ergebnis trennt harte Fehler (4xx/5xx) von Warnungen (3xx-Ketten, langsame Antworten, Protokoll-Mismatches), damit du Korrekturen dort priorisieren kannst, wo sie zählen.' %>
           </p>
           <div class="wt-method-grid">
             <div class="wt-method-card">

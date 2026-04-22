@@ -20,6 +20,19 @@
     text-align: end;
   }
 
+  .option-title {
+    display: block;
+    font-weight: 700;
+  }
+
+  .option-hint {
+    color: #526173;
+    display: block;
+    font-size: .82rem;
+    line-height: 1.35;
+    margin-top: .15rem;
+  }
+
   .termin {
     text-align: center;
     padding: 1rem;
@@ -31,10 +44,80 @@
   .carousel-item{
     padding: 4rem 1rem 2rem 1rem;
   }
+
+  .contact-intro {
+    color: #eaeae9;
+    margin: .75rem auto 0;
+    max-width: 720px;
+    text-align: center;
+  }
+
+  .contact-benefits {
+    color: #eaeae9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: center;
+    margin: 1rem auto 1.25rem;
+    max-width: 780px;
+  }
+
+  .contact-benefits span {
+    border: 1px solid rgba(234, 234, 233, .35);
+    border-radius: 999px;
+    padding: .35rem .7rem;
+  }
+
+  .contact-progress {
+    background: rgba(255, 255, 255, .92);
+    border-radius: .5rem;
+    margin: 0 auto 1rem;
+    max-width: 760px;
+    padding: .85rem 1rem;
+  }
+
+  .contact-progress__meta {
+    color: #0C2A46;
+    display: flex;
+    font-size: .92rem;
+    font-weight: 700;
+    justify-content: space-between;
+    margin-bottom: .5rem;
+  }
+
+  .contact-progress__bar {
+    background: #dfe8f2;
+    border-radius: 999px;
+    height: .55rem;
+    overflow: hidden;
+  }
+
+  .contact-progress__fill {
+    background: #0C2A46;
+    display: block;
+    height: 100%;
+    transition: width .25s ease;
+    width: 11%;
+  }
+
+  .contact-field-help {
+    color: #526173;
+  }
 </style>
 <div class="section">
   <div class="container mt-5">
-    <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Contact us' : 'Kontaktiere uns' %></h1>
+    <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Request your website project' : 'Website-Projekt anfragen' %></h1>
+    <p class="contact-intro">
+      <%= isEn
+        ? 'Describe your website project in about two minutes. You receive a first assessment, a fitting package recommendation and the next steps.'
+        : 'Beschreibe dein Website-Projekt in ca. 2 Minuten. Du erhältst eine erste Einschätzung, eine passende Paketempfehlung und die nächsten Schritte.'
+      %>
+    </p>
+    <div class="contact-benefits" aria-label="<%= isEn ? 'Project request benefits' : 'Vorteile der Projektanfrage' %>">
+      <span><%= isEn ? 'Free and non-binding' : 'Kostenfrei und unverbindlich' %></span>
+      <span><%= isEn ? 'Usually replies within 24 hours' : 'Antwort meist innerhalb von 24 Stunden' %></span>
+      <span><%= isEn ? 'Fixed-price packages from EUR 499' : 'Festpreis-Pakete ab 499 EUR' %></span>
+    </div>
     <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
       <div class="alert alert-info mt-3" role="status">
         <strong><%= isEn ? 'Website Tester context detected:' : 'Website-Tester-Kontext erkannt:' %></strong>
@@ -59,6 +142,15 @@
 
       <!-- Bootstrap Carousel für die Slides -->
       <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
+        <div class="contact-progress" aria-label="<%= isEn ? 'Form progress' : 'Formularfortschritt' %>">
+          <div class="contact-progress__meta">
+            <span id="contactProgressText"><%= isEn ? 'Step 1 of 9' : 'Schritt 1 von 9' %></span>
+            <span><%= isEn ? 'about 2 minutes' : 'ca. 2 Minuten' %></span>
+          </div>
+          <div class="contact-progress__bar" aria-hidden="true">
+            <span id="contactProgressFill" class="contact-progress__fill"></span>
+          </div>
+        </div>
         <div class="carousel-inner">
           <div class="white-container">
 
@@ -69,13 +161,13 @@
 
               <div class="w-100 option-wrapper" style="max-width:340px">
                 <input class="option-radio" type="radio" id="paketBasis" name="paket" value="Basis" required>
-                <label class="option-label" for="paketBasis"><i class="bi bi-house-fill"></i> <%= isEn ? 'Small project' : 'Kleines Projekt' %></label>
+                <label class="option-label" for="paketBasis"><i class="bi bi-house-fill"></i><span class="option-title"><%= isEn ? 'Basic - EUR 499' : 'Basis - 499 EUR' %></span><span class="option-hint"><%= isEn ? '1 page, copy and SEO foundation' : '1 Seite, Texte und SEO-Grundlage' %></span></label>
 
                 <input class="option-radio" type="radio" id="paketBusiness" name="paket" value="Business" required>
-                <label class="option-label" for="paketBusiness"><i class="bi bi-building-fill"></i><%= isEn ? 'Medium project' : 'Mittleres Projekt' %></label>
+                <label class="option-label" for="paketBusiness"><i class="bi bi-building-fill"></i><span class="option-title">Business - <%= isEn ? 'EUR 899' : '899 EUR' %></span><span class="option-hint"><%= isEn ? 'Up to 5 pages, contact form and on-page SEO' : 'Bis 5 Seiten, Kontaktformular und On-Page-SEO' %></span></label>
 
                 <input class="option-radio" type="radio" id="paketPremium" name="paket" value="Premium" required>
-                <label class="option-label" for="paketPremium"><i class="bi bi-buildings-fill"></i><%= isEn ? 'Large project' : 'Grosses Projekt' %></label>
+                <label class="option-label" for="paketPremium"><i class="bi bi-buildings-fill"></i><span class="option-title">Premium - <%= isEn ? 'EUR 1,499' : '1.499 EUR' %></span><span class="option-hint"><%= isEn ? 'Up to 20 pages, strategy, SEO and booking system' : 'Bis 20 Seiten, Strategie, SEO und Buchungssystem' %></span></label>
               </div>
             </div>
 
@@ -221,8 +313,9 @@
                 <input type="email" id="emailInput" name="email" class="form-control" placeholder="<%= isEn ? 'name@example.com' : 'name@beispiel.de' %>" required>
               </div>
               <div class="mb-3 w-100" style="max-width:460px">
-                <label for="telefonInput" class="form-label"><%= isEn ? 'Phone number *' : 'Telefonnummer *' %></label>
-                <input type="tel" id="telefonInput" name="telefon" class="form-control" placeholder="+49 …" required>
+                <label for="telefonInput" class="form-label"><%= isEn ? 'Phone number (optional)' : 'Telefonnummer (optional)' %></label>
+                <input type="tel" id="telefonInput" name="telefon" class="form-control" placeholder="+49 …">
+                <div class="form-text contact-field-help"><%= isEn ? 'Helpful if you want a callback. Email is enough for the request.' : 'Hilft, wenn du einen Rückruf möchtest. E-Mail reicht für die Anfrage.' %></div>
               </div>
               <div class="mb-3 w-100" style="max-width:460px">
                 <label for="firmaInput" class="form-label"><%= isEn ? 'Company (optional)' : 'Firma (optional)' %></label>
@@ -254,8 +347,8 @@
                 <!-- wird durch JS gefüllt -->
               </div>
 
-              <p><%= isEn ? 'If everything looks good, click' : 'Wenn alles stimmt, klicke auf' %> <strong><%= isEn ? 'Submit' : 'Absenden' %></strong>.</p>
-              <button type="submit" class="btn btn-success btn-lg"><%= isEn ? 'Submit' : 'Absenden' %></button>
+              <p><%= isEn ? 'If everything looks good, send your request.' : 'Wenn alles stimmt, sende deine Anfrage ab.' %></p>
+              <button type="submit" class="btn btn-success btn-lg"><%= isEn ? 'Send request' : 'Anfrage senden' %></button>
             </div>
 
           </div>
@@ -281,6 +374,7 @@
     recaptchaLoadError: "<%= isEn ? 'reCAPTCHA could not be loaded. Please try again.' : 'reCAPTCHA konnte nicht geladen werden. Bitte versuche es erneut.' %>",
     summaryNone: "<%= isEn ? 'None' : 'Keine' %>",
     summaryNotSet: "<%= isEn ? 'Not specified' : 'Nicht angegeben' %>",
+    progressLabel: "<%= isEn ? 'Step {current} of {total}' : 'Schritt {current} von {total}' %>",
     labels: {
       paket: "<%= isEn ? 'Package' : 'Paket' %>",
       umfang: "<%= isEn ? 'Page scope' : 'Seitenumfang' %>",

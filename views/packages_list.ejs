@@ -239,8 +239,8 @@
             <li><%= isEn ? 'Domain, email, hosting and maintenance available as clear monthly services' : 'Domain, E-Mail, Hosting und Wartung als klare Monatsleistungen wählbar' %></li>
           </ul>
           <div class="hero-actions">
-            <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
-            <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+            <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_hero_contact" data-cta-location="packages_hero"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_hero_booking" data-cta-location="packages_hero"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -420,10 +420,10 @@
               <span class="price-amount"><%= priceDisplay %></span>
             </div>
             <div class="package-actions">
-              <a class="btn btn-hero" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>">
+              <a class="btn btn-hero" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>" data-track="cta" data-cta-name="packages_details_<%= slug %>" data-cta-location="packages_list">
                 <%= isEn ? 'View details' : 'Details ansehen' %>
               </a>
-              <a class="btn btn-soft-outline" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
+              <a class="btn btn-soft-outline" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_consult_<%= slug %>" data-cta-location="packages_list"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
             </div>
           </div>
         </article>
@@ -677,8 +677,8 @@
           </p>
         </div>
         <div class="cta-actions">
-          <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
-          <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+          <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_final_contact" data-cta-location="packages_final_cta"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+          <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_final_booking" data-cta-location="packages_final_cta"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
         </div>
       </div>
       <div class="container cta-internal-links">

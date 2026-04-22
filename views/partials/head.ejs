@@ -93,17 +93,17 @@
   <link rel="preload" href="/css/bootstrap.min.css" as="style" />
   <link rel="stylesheet" href="/css/bootstrap.min.css" />
 
-  <link rel="preload" href="/css/main.min.css<%= versionSuffix %>" as="style" />
-  <link rel="stylesheet" href="/css/main.min.css<%= versionSuffix %>" />
+  <link rel="preload" href="<%= cssAsset('css/main.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset('css/main.css') %>" />
 
-  <link rel="preload" href="/extra.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="<%= cssAsset('extra.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/extra.css<%= versionSuffix %>" />
+    <link rel="stylesheet" href="<%= cssAsset('extra.css') %>" />
   </noscript>
 
-  <link rel="preload" href="/booking-widget.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="<%= cssAsset('booking-widget.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/booking-widget.css<%= versionSuffix %>" />
+    <link rel="stylesheet" href="<%= cssAsset('booking-widget.css') %>" />
   </noscript>
 
   <!-- Stripe lazy loader (wie bei dir) -->

@@ -22,5 +22,9 @@ service,webhosting fuer website berlin,commercial,/webdesign-berlin/domain-hosti
 trust,dsgvo website berlin,informational,/webdesign-berlin/rechtliches-sicherheit,verify,Trust + legal intent
 content,website texte erstellen lassen berlin,commercial,/webdesign-berlin/inhalte-texte-content,verify,Content service intent
 bottom-funnel,webdesign berlin kontakt,transactional,/kontakt,active,Strong conversion page
-supportive,was kostet eine website in berlin,informational,/webdesign-berlin/kosten-preise-pakete,planned,Create/update detailed pricing content
-supportive,website erstellen berlin dauer,informational,/ratgeber,planned,Publish article and link to money pages
+supportive,was kostet eine website in berlin,informational,/ratgeber/website-kosten-berlin,active,Static guide with links to packages and website tester
+supportive,website erstellen berlin dauer,informational,/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten,active,Process guide linked from hub and district pages
+supportive,website relaunch berlin,informational,/ratgeber/website-relaunch-berlin,active,Relaunch guide for SEO-safe rebuild decisions
+supportive,baukasten vs professionelle website,informational,/ratgeber/baukasten-vs-professionelle-website,active,Decision guide with package CTA
+industry,website fuer handwerker berlin,commercial,/ratgeber/website-fuer-handwerker-berlin,active,Industry guide without public-sector focus
+industry,website fuer restaurants cafes berlin,commercial,/ratgeber/website-fuer-restaurants-cafes-berlin,active,Hospitality guide with reservation and local SEO CTAs

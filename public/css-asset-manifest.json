@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "assets": {
+    "about.css": {
+      "source": "about.css",
+      "output": "about.min.css",
+      "href": "/about.min.css?v=5551c75c63a1",
+      "hash": "5551c75c63a1",
+      "bytes": 3632
+    },
+    "admin-appointments.css": {
+      "source": "admin-appointments.css",
+      "output": "admin-appointments.min.css",
+      "href": "/admin-appointments.min.css?v=1c1f327c8918",
+      "hash": "1c1f327c8918",
+      "bytes": 2006
+    },
+    "admin.css": {
+      "source": "admin.css",
+      "output": "admin.min.css",
+      "href": "/admin.min.css?v=d73892a7bac1",
+      "hash": "d73892a7bac1",
+      "bytes": 15427
+    },
+    "assets/css/bundle.css": {
+      "source": "assets/css/bundle.css",
+      "output": "assets/css/bundle.min.css",
+      "href": "/assets/css/bundle.min.css?v=cb7eda64851a",
+      "hash": "cb7eda64851a",
+      "bytes": 34888
+    },
+    "blog.css": {
+      "source": "blog.css",
+      "output": "blog.min.css",
+      "href": "/blog.min.css?v=c4d7cff10731",
+      "hash": "c4d7cff10731",
+      "bytes": 4058
+    },
+    "booking-widget.css": {
+      "source": "booking-widget.css",
+      "output": "booking-widget.min.css",
+      "href": "/booking-widget.min.css?v=30b161618697",
+      "hash": "30b161618697",
+      "bytes": 3620
+    },
+    "booking.css": {
+      "source": "booking.css",
+      "output": "booking.min.css",
+      "href": "/booking.min.css?v=776179cc9c07",
+      "hash": "776179cc9c07",
+      "bytes": 269
+    },
+    "branchen.css": {
+      "source": "branchen.css",
+      "output": "branchen.min.css",
+      "href": "/branchen.min.css?v=83a6a60d3a1b",
+      "hash": "83a6a60d3a1b",
+      "bytes": 25751
+    },
+    "chat.css": {
+      "source": "chat.css",
+      "output": "chat.min.css",
+      "href": "/chat.min.css?v=c18272db7506",
+      "hash": "c18272db7506",
+      "bytes": 741
+    },
+    "css/combined.css": {
+      "source": "css/combined.css",
+      "output": "css/combined.min.css",
+      "href": "/css/combined.min.css?v=f5ca7bc62e2d",
+      "hash": "f5ca7bc62e2d",
+      "bytes": 34955
+    },
+    "css/critical.css": {
+      "source": "css/critical.css",
+      "output": "css/critical.min.css",
+      "href": "/css/critical.min.css?v=422b72dee781",
+      "hash": "422b72dee781",
+      "bytes": 4940
+    },
+    "css/main.css": {
+      "source": "css/main.css",
+      "output": "css/main.min.css",
+      "href": "/css/main.min.css?v=1cfd2a4ee4d3",
+      "hash": "1cfd2a4ee4d3",
+      "bytes": 21650
+    },
+    "demo/cq-compare/styles.css": {
+      "source": "demo/cq-compare/styles.css",
+      "output": "demo/cq-compare/styles.min.css",
+      "href": "/demo/cq-compare/styles.min.css?v=0082c76be9d6",
+      "hash": "0082c76be9d6",
+      "bytes": 2579
+    },
+    "extra.css": {
+      "source": "extra.css",
+      "output": "extra.min.css",
+      "href": "/extra.min.css?v=a825b802c165",
+      "hash": "a825b802c165",
+      "bytes": 42831
+    },
+    "faq.css": {
+      "source": "faq.css",
+      "output": "faq.min.css",
+      "href": "/faq.min.css?v=5b66f4bd4132",
+      "hash": "5b66f4bd4132",
+      "bytes": 1389
+    },
+    "fonts/fonts.css": {
+      "source": "fonts/fonts.css",
+      "output": "fonts/fonts.min.css",
+      "href": "/fonts/fonts.min.css?v=7a725cead4ad",
+      "hash": "7a725cead4ad",
+      "bytes": 555
+    },
+    "footer.css": {
+      "source": "footer.css",
+      "output": "footer.min.css",
+      "href": "/footer.min.css?v=dad6e728af54",
+      "hash": "dad6e728af54",
+      "bytes": 2889
+    },
+    "handwerker.css": {
+      "source": "handwerker.css",
+      "output": "handwerker.min.css",
+      "href": "/handwerker.min.css?v=e8e3b0fb5a67",
+      "hash": "e8e3b0fb5a67",
+      "bytes": 4368
+    },
+    "heroMainpageStyle.css": {
+      "source": "heroMainpageStyle.css",
+      "output": "heroMainpageStyle.min.css",
+      "href": "/heroMainpageStyle.min.css?v=45b837b9983d",
+      "hash": "45b837b9983d",
+      "bytes": 4680
+    },
+    "kontakt.css": {
+      "source": "kontakt.css",
+      "output": "kontakt.min.css",
+      "href": "/kontakt.min.css?v=6ddd7b6f3a5b",
+      "hash": "6ddd7b6f3a5b",
+      "bytes": 1324
+    },
+    "styles.css": {
+      "source": "styles.css",
+      "output": "styles.min.css",
+      "href": "/styles.min.css?v=db2917e4bbf0",
+      "hash": "db2917e4bbf0",
+      "bytes": 16751
+    },
+    "website-tester.css": {
+      "source": "website-tester.css",
+      "output": "website-tester.min.css",
+      "href": "/website-tester.min.css?v=23e361b9ceed",
+      "hash": "23e361b9ceed",
+      "bytes": 12183
+    }
+  }
+}

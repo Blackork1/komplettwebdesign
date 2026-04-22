@@ -3,7 +3,7 @@
 <%- include('../partials/header') %>
 
 <!-- Blog-/Ratgeber-Styles -->
-<link rel="stylesheet" href="/blog.css?v=<%= encodeURIComponent(assetVersion || '1') %>" />
+<link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 
 <!-- ────────── Hero mit Newsletter ────────── -->
 <section class="heroB d-flex align-items-center">
@@ -18,6 +18,30 @@
 </section>
 
 <div class="container my-5">
+  <section class="mb-5 p-4 p-md-5 rounded-3 border bg-light" aria-labelledby="seo-cluster-title">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <h2 id="seo-cluster-title" class="h3 mb-3">SEO-Ratgeber für Berliner Unternehmen</h2>
+        <p class="mb-3">
+          Starte mit den wichtigsten Themen für lokale Sichtbarkeit: Kosten, Ablauf, Relaunch, Baukasten-Vergleich und branchenspezifische Website-Strukturen.
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn btn-accent" href="/ratgeber/website-kosten-berlin">Website-Kosten lesen</a>
+          <a class="btn btn-outline-primary" href="/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten">Ablauf verstehen</a>
+          <a class="btn btn-outline-primary" href="/website-tester">Website kostenlos testen</a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <ul class="mb-0">
+          <li><a href="/ratgeber/website-relaunch-berlin">Website-Relaunch Berlin</a></li>
+          <li><a href="/ratgeber/baukasten-vs-professionelle-website">Baukasten vs. professionelle Website</a></li>
+          <li><a href="/ratgeber/website-fuer-handwerker-berlin">Website für Handwerker in Berlin</a></li>
+          <li><a href="/ratgeber/website-fuer-restaurants-cafes-berlin">Website für Restaurants und Cafés in Berlin</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <div class="row">
     <!-- Hauptliste der Ratgeber -->
     <div class="col-md-8">

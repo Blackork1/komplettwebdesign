@@ -22,9 +22,6 @@
     const map = {
       Restaurants: 'Restaurants',
       Handwerksbetriebe: 'Trades',
-      'Kitas & Schulen': 'Daycares & Schools',
-      Kitas: 'Daycares',
-      Schulen: 'Schools',
       Cafés: 'Cafes',
       Cafe: 'Cafe',
       Kontakt: 'Contact',
@@ -34,6 +31,12 @@
     };
     return map[label] || label;
   }; %>
+  <% const isExcludedIndustryNavItem = (item = {}) => {
+    const text = [item.nav, item.name, item.slug].filter(Boolean).join(' ').toLowerCase();
+    return ['kita', 'kitas', 'schule', 'schulen', 'school', 'schools', 'daycare', 'daycares', 'kindergarten'].some((needle) => text.includes(needle));
+  }; %>
+  <% const visibleNavPages = ((typeof navPages !== 'undefined' && navPages) ? navPages : []).filter((page) => !isExcludedIndustryNavItem(page)); %>
+  <% const visibleNavIndustries = ((typeof navIndustries !== 'undefined' && navIndustries) ? navIndustries : []).filter((industry) => !isExcludedIndustryNavItem(industry)); %>
   <div class="topWhiteGradient">
     <div class="topWhiteGradients"></div>
 
@@ -78,12 +81,12 @@
                     </button>
                   </div>
                   <ul class="dropdown-menu">
-                    <% navPages.forEach(page=> { %>
+                    <% visibleNavPages.forEach(page=> { %>
                     <li><a href="/<%= page.slug %>" class="main-color">
                         <%= isEn ? toEnLabel(page.nav) : page.nav %>
                       </a></li>
                     <% }) %>
-                    <% (navIndustries || []).forEach(industry => { %>
+                    <% visibleNavIndustries.forEach(industry => { %>
                     <% const slug = industry.slug || ''; %>
                     <% const href = `/branchen/${slug.startsWith('webdesign-') ? slug : `webdesign-${slug}`}`; %>
                     <li><a href="<%= href %>" class="main-color"><%= isEn ? toEnLabel(industry.name) : industry.name %></a></li>

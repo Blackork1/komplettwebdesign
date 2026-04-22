@@ -83,7 +83,7 @@ const structuredDataRaw = `<script type="application/ld+json">
     ],
     "priceRange": "€€",
     "email": "kontakt@komplettwebdesign.de",
-    "telephone": "+49 1551 1245048",
+    "telephone": "+49 1551 245048",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Möllendorffstr 26",
@@ -120,7 +120,7 @@ const structuredDataRaw = `<script type="application/ld+json">
     ],
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+49 1551 1245048",
+      "telephone": "+49 1551 245048",
       "email": "kontakt@komplettwebdesign.de",
       "contactType": "customer support",
       "availableLanguage": ["de", "en"]
@@ -176,7 +176,7 @@ const structuredDataRaw = `<script type="application/ld+json">
     "description": "Freiberuflicher Webdesigner und Entwickler aus Berlin mit Schwerpunkt auf professionellen Websites, SEO und Hosting für lokale Unternehmen.",
     "url": "https://www.komplettwebdesign.de/",
     "email": "kontakt@komplettwebdesign.de",
-    "telephone": "+49 1551 1245048",
+    "telephone": "+49 1551 245048",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Berlin",
@@ -634,8 +634,8 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <%= copy.heroBullet3 %>
               </p>
               <div class="hero-ctas">
-                <a href="/kontakt" class="btn btn-primary hero-button"><%= copy.heroCtaPrimary %></a>
-                <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary"><%= copy.heroCtaSecondary %></a>
+                <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-primary hero-button" data-track="cta" data-cta-name="home_hero_contact" data-cta-location="home_hero"><%= copy.heroCtaPrimary %></a>
+                <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary" data-track="cta" data-cta-name="home_hero_packages" data-cta-location="home_hero"><%= copy.heroCtaSecondary %></a>
               </div>
               <p class="mt-2 mb-0 heroPriceInfo">
                 <a href="<%= isEn ? '/en/pakete/basis' : '/pakete/basis' %>">
@@ -681,7 +681,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <% if (isEn) { %>
                 I support clients across a wide range of industries. My
                 focus includes websites for restaurants, trades,
-                cafés, real estate agents as well as daycares and schools. Thanks to my
+                cafés, real estate agents, beauty and wellness providers, practices, and local shops. Thanks to my
                 experience I know the specific requirements of each
                 industry and implement them in a targeted way – so your new website
                 reaches your audience effectively.
@@ -992,7 +992,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                       image databases or your own individual photos
                       <% } else { %>
                       <strong>Stockfotos</strong> Hochwertiges Bildmaterial aus
-                      Bilddatenbanken oder deine eigenen individuelle Fotos
+                      Bilddatenbanken oder deine eigenen individuellen Fotos
                       <% } %>
                     </div>
                   </div>
@@ -1159,7 +1159,19 @@ const structuredDataRaw = `<script type="application/ld+json">
             <div class="trust-reviews-grid">
               <% trustReviews.forEach((r) => { %>
               <article class="trust-review-card animate-on-scroll" itemscope itemtype="https://schema.org/Review">
-                <meta itemprop="itemReviewed" content="Komplett Webdesign" />
+                <span itemprop="itemReviewed" itemscope itemtype="https://schema.org/LocalBusiness">
+                  <meta itemprop="name" content="Komplett Webdesign" />
+                  <meta itemprop="image" content="https://www.komplettwebdesign.de/images/LogoTransparent.webp" />
+                  <meta itemprop="telephone" content="+49 1551 245048" />
+                  <meta itemprop="priceRange" content="€€" />
+                  <meta itemprop="url" content="https://www.komplettwebdesign.de/" />
+                  <span itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+                    <meta itemprop="streetAddress" content="Möllendorffstr 26" />
+                    <meta itemprop="postalCode" content="10367" />
+                    <meta itemprop="addressLocality" content="Berlin" />
+                    <meta itemprop="addressCountry" content="DE" />
+                  </span>
+                </span>
                 <div itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating" style="display:none">
                   <meta itemprop="ratingValue" content="<%= r.rating %>" />
                   <meta itemprop="bestRating" content="5" />
@@ -1297,7 +1309,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                   </ul>
 
                   <!-- Button -->
-                  <a class="btn btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%=pkg.slug%>"><%= isEn ? 'View details' : 'Details' %></a>
+                  <a class="btn btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%=pkg.slug%>" data-track="cta" data-cta-name="home_package_details_<%= pkg.slug %>" data-cta-location="home_pricing"><%= isEn ? 'View details' : 'Details' %></a>
                 </div>
               </div>
               <% }}); %>
@@ -1305,6 +1317,28 @@ const structuredDataRaw = `<script type="application/ld+json">
             <p class="text-center mt-3 text-muted small"><%= copy.pricingTagline %></p>
           </div>
         </section>
+      </div>
+    </section>
+
+    <!-- Kostenloser Website-Check -->
+    <section class="section" id="website-check">
+      <div class="container animate-on-scroll">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left">
+            <span class="hero-badge"><%= isEn ? 'Free website check' : 'Kostenloser Website-Check' %></span>
+            <h2 class="animate-on-scroll"><%= isEn ? 'Check first, then rebuild with a clear plan' : 'Erst prüfen, dann mit klarem Plan neu bauen' %></h2>
+            <p>
+              <%= isEn
+                ? 'Use the website tester to check SEO basics, GEO signals, metadata and broken links before you request a project. The result helps us choose the right package and prioritize the most important improvements.'
+                : 'Nutze den Website-Tester, um SEO-Grundlagen, GEO-Signale, Metadaten und kaputte Links zu prüfen, bevor du dein Projekt anfragst. Das Ergebnis hilft uns, das passende Paket zu wählen und die wichtigsten Verbesserungen zu priorisieren.'
+              %>
+            </p>
+            <div class="hero-ctas">
+              <a class="btn btn-primary" href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" data-track="cta" data-cta-name="home_free_website_check" data-cta-location="home_website_check"><%= isEn ? 'Start free website check' : 'Kostenlosen Website-Check starten' %></a>
+              <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="home_check_to_contact" data-cta-location="home_website_check"><%= isEn ? 'Discuss the result' : 'Ergebnis besprechen' %></a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1387,7 +1421,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                   <div class="card-front">
                     <p class="header3"><a href="/branchen/webdesign-cafe" class="primaryColor"><%= isEn ? 'Cafes' : 'Cafés' %></a></p>
                     <p>
-                      <%= isEn ? 'A warm visual style, presentation of your specialties, opening hours, and map location help new guests find you.' : 'Stimmungsvoller Stil, Präsentation deiner Spezialitäten, Öffnungszeiten und Karte mit Ihrem Standort - so finden neue Gäste den Weg zu Ihnen.' %>
+                      <%= isEn ? 'A warm visual style, presentation of your specialties, opening hours, and map location help new guests find you.' : 'Stimmungsvoller Stil, Präsentation deiner Spezialitäten, Öffnungszeiten und Karte mit deinem Standort - so finden neue Gäste den Weg zu dir.' %>
                     </p>
                   </div>
                   <div class="card-back card-back-image">
@@ -1447,9 +1481,9 @@ const structuredDataRaw = `<script type="application/ld+json">
 
             <p class="faq-more-help text-center animate-on-scroll mt-3">
               <% if (isEn) { %>
-                Your question is not listed? <a href="/kontakt" class="linkColor">Get in touch</a> – I usually reply within 24 hours.
+                Your question is not listed? <a href="/en/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Get in touch</a> – I usually reply within 24 hours.
               <% } else { %>
-                Deine Frage ist nicht dabei? <a href="/kontakt" class="linkColor">Schreib mir</a> – ich antworte in der Regel innerhalb von 24 Stunden.
+                Deine Frage ist nicht dabei? <a href="/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Schreib mir</a> – ich antworte in der Regel innerhalb von 24 Stunden.
               <% } %>
             </p>
           </div>

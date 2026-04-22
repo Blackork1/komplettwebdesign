@@ -61,7 +61,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'How long until my website goes live?',
-      a: 'A landing page typically launches within 30 days. First draft after 7 days, final design after 14, live test on day 21, launch on day 30. Larger projects are scheduled individually.'
+      a: 'The Basic package usually takes 2 to 4 weeks, the Business package 4 to 6 weeks and the Premium package 6 to 8 weeks. The exact timeline depends on how quickly content, feedback and technical access are available.'
     },
     {
       q: 'What is included in the price?',
@@ -81,7 +81,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Which industries do you build websites for?',
-      a: 'Focus areas are restaurants and cafés, trades, real estate agents, daycares and schools, as well as self-employed professionals and small service providers. I know the specifics of these industries – digital menus, project galleries, listings, opening hours – and implement them with focus.'
+      a: 'Focus areas are local service providers, restaurants and cafés, trades, real estate agents, beauty and wellness providers, practices, small shops and local retailers. I know the practical needs of these industries - menus, project galleries, listings, opening hours and clear inquiry paths - and implement them with focus.'
     },
     {
       q: 'Do you only work with clients in Berlin?',
@@ -330,21 +330,9 @@ export async function getIndex(req, res) {
       created_at: r.created_at || null
     }));
 
-    // AggregateRating nur ausliefern, wenn wirklich Bewertungen existieren -
-    // Fake-Sterne in der SERP verstoßen gegen Googles Richtlinien.
-    const aggregateRatingJsonLd = reviewAggregate
-      ? `<script type="application/ld+json">
-  ${JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'AggregateRating',
-    itemReviewed: { '@id': 'https://www.komplettwebdesign.de/#organization' },
-    ratingValue: reviewAggregate.avg,
-    reviewCount: reviewAggregate.count,
-    bestRating: 5,
-    worstRating: 1
-  })}
-</script>`
-      : '';
+    // Bewertungen bleiben sichtbar im Seiteninhalt. AggregateRating-Markup wird
+    // bewusst nicht ausgegeben, weil selbst kontrollierte LocalBusiness-Reviews
+    // laut Google nicht für Review-Sterne geeignet sind.
 
     res.render('index', {
       title: copy.seoTitle,
@@ -361,8 +349,7 @@ export async function getIndex(req, res) {
   <meta property="og:url" content="${base}${pagePath}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="${lng === 'en' ? 'en_US' : 'de_DE'}">
-  <meta property="og:locale:alternate" content="${lng === 'en' ? 'de_DE' : 'en_US'}">
-  ${aggregateRatingJsonLd}`,
+  <meta property="og:locale:alternate" content="${lng === 'en' ? 'de_DE' : 'en_US'}">`,
       alternateUrls,
       users,
       packages,

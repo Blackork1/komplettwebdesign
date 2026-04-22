@@ -1,0 +1,34 @@
+<%
+  const localDistrictName = typeof districtName !== 'undefined' ? districtName : 'Berlin';
+  const localFocusText = typeof focusText !== 'undefined'
+    ? focusText
+    : 'lokale Dienstleister, kleine Unternehmen und Selbstständige';
+  const localExampleText = typeof exampleText !== 'undefined'
+    ? exampleText
+    : 'Leistungsseiten, klare Kontaktwege, lokale Vertrauenssignale und messbare Anfragen';
+%>
+<section class="mb-5" aria-labelledby="district-seo-funnel-<%= localDistrictName.toLowerCase().replace(/\s+/g, '-') %>">
+  <div class="p-4 p-md-5 rounded-3 border bg-light">
+    <div class="row g-4 align-items-center">
+      <div class="col-12 col-lg-7">
+        <p class="text-uppercase fw-semibold text-muted mb-2">Lokale SEO-Strategie</p>
+        <h2 class="h3 mb-3" id="district-seo-funnel-<%= localDistrictName.toLowerCase().replace(/\s+/g, '-') %>">
+          Mehr qualifizierte Anfragen in <%= localDistrictName %>
+        </h2>
+        <p class="mb-3">
+          Für <%= localFocusText %> reicht eine schöne Website allein nicht aus. Entscheidend sind eindeutige Leistungen, lokale Suchbegriffe, schnelle Ladezeiten und Kontaktwege, die auch mobil sofort funktionieren.
+        </p>
+        <p class="mb-0">
+          In <%= localDistrictName %> setzen wir deshalb auf <%= localExampleText %>. So entsteht keine austauschbare Bezirksseite, sondern eine Website, die echten Nutzern hilft und Google klare Signale gibt.
+        </p>
+      </div>
+      <div class="col-12 col-lg-5">
+        <div class="d-grid gap-2">
+          <a href="/website-tester" class="btn btn-primary" data-track="district_website_tester_cta">Website kostenlos testen</a>
+          <a href="/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" class="btn btn-outline-secondary">Ablauf, Dauer und Kosten lesen</a>
+          <a href="/kontakt" class="btn btn-outline-secondary" data-track="district_contact_cta">Projekt besprechen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

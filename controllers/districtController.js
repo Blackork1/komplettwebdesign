@@ -1,5 +1,6 @@
 // controllers/districtController.js
 import { getDistrictBySlug } from "../models/districtModel.js";
+import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 
 export async function renderDistrictPage(req, res, next) {
   try {
@@ -15,8 +16,8 @@ export async function renderDistrictPage(req, res, next) {
       : `Webdesign ${district.name} | Professionelle Website erstellen lassen`;
     const metaDescription =
       isEn
-        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting, maintenance, and chatbot support. Call now: +49 1551 1245048.`
-        : `Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 1245048.`;
+        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting, maintenance, and chatbot support. Call now: +49 1551 245048.`
+        : `Webdesign in ${district.name} (Berlin) – Landingpages & Relaunch für Freelancer & KMU. Eigenes CMS, SEO, Hosting, Wartung & Chatbot. Melde dich jetzt: +49 1551 245048.`;
     const pagePrefix = req.baseUrl?.startsWith("/en/") ? "/en/webdesign-berlin" : "/webdesign-berlin";
     const canonicalUrl = `${SITE_URL}${pagePrefix}/${slug}`;
 
@@ -75,8 +76,8 @@ export async function renderDistrictPage(req, res, next) {
         lng,
         district,
         company: "Komplett Webdesign",
-        phone: "+4915511245048",
-        phoneDisplay: "01551 1245048",
+        phone: "+491551245048",
+        phoneDisplay: "01551 245048",
         hubPath: "/en/webdesign-berlin",
         districtPath: `/en/webdesign-berlin/${slug}`,
         contactPath: "/en/kontakt",
@@ -143,7 +144,7 @@ export async function renderDistrictPage(req, res, next) {
       title: metaTitle,
       description: metaDescription,
       company: "Komplett Webdesign",
-      phone: "+4915511245048",
+      phone: "+491551245048",
       lng
     });
   } catch (err) {
@@ -164,23 +165,23 @@ export function renderWebdesignBerlinHub(req, res) {
   const webdesignBerlinUrl = `${SITE_URL}${pagePath}`;
   const contactPath = isEn ? "/en/kontakt" : "/kontakt";
 
-  let metaTitle = "Webdesign Berlin: Webseite erstellen lassen | Komplett Webdesign";
+  let metaTitle = "Website erstellen lassen Berlin | Webdesign ab 499 EUR";
   let metaDescription =
-    "Webseite erstellen lassen in Berlin: modernes Webdesign, Local SEO, Hosting und laufende Betreuung. Für Selbstständige und KMU ab 499 €.";
+    "Komplett Webdesign erstellt Websites in Berlin ab 499 EUR: persönliches Webdesign, SEO, Hosting, Wartung, Buchungssysteme und Shops aus einer Hand.";
 
   const hero = {
-    title: "Webdesign in Berlin: Webseite erstellen lassen, die Kunden gewinnt",
+    title: "Website erstellen lassen in Berlin - persönlich, SEO-freundlich und aus einer Hand",
     description:
-      "Du willst in Berlin besser gefunden werden? Wir erstellen deine Website professionell, mobil optimiert und auf Anfragen ausgerichtet. Inklusive SEO-Basis, Hosting und Support.",
+      "Komplett Webdesign erstellt Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Mit klarem Design, verständlichen Texten, sauberer SEO-Basis und Technik, die auch nach dem Launch betreut wird.",
     ctaPrimary: { label: "Kostenloses Erstgespräch sichern", href: "/kontakt" },
     ctaSecondary: { label: "Webdesign-Pakete ansehen", href: "/pakete" },
-    rating: { label: "★★★★★ 5,0/5 · 3 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
+    rating: { label: "★★★★★ 5,0/5 · 4 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
     image: {
       src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
       alt: "Sören Blocksdorf – Webdesigner Berlin"
     },
     trustBadges: [
-      "Webseite erstellen lassen in Berlin ab 499 €",
+      "Website erstellen lassen in Berlin ab 499 €",
       "Individuelles Design statt Baukasten-Template",
       "Antwort innerhalb von 24 Stunden"
     ]
@@ -296,13 +297,13 @@ export function renderWebdesignBerlinHub(req, res) {
       anchor: "basis",
       tagline: "Schnell startklar",
       image: "/images/basis.webp",
-      description: "Ideal für Solo-Selbstständige, die schnell mit einer professionellen Website starten wollen.",
+      description: "Ideal für kleine Unternehmen, die eine professionelle digitale Visitenkarte mit klarer Botschaft brauchen.",
       features: [
-        "Onepager mit klarer Story und Call-to-Action",
-        "<strong>Mobile-First</strong> Layout inkl. Performance-Check",
-        "Kontaktformular und DSGVO-Grundseiten",
-        "Google Search Console und Tracking-Basis",
-        "Hosting-, SSL- und Launch-Setup"
+        "Eine Seite mit klarer Story und Call-to-Action",
+        "Texte enthalten und mobiloptimiert aufbereitet",
+        "SEO-Basis für Title, H1, Meta Description und Struktur",
+        "DSGVO-Grundseiten und technische Launch-Prüfung",
+        "Lieferzeit: ca. 2 bis 4 Wochen"
       ]
     },
     {
@@ -312,13 +313,13 @@ export function renderWebdesignBerlinHub(req, res) {
       tagline: "Beliebt bei KMU",
       image: "/images/business.webp",
       popular: true,
-      description: "Für Unternehmen mit mehreren Leistungen und klarem Local-SEO-Fokus.",
+      description: "Für kleine Unternehmen, die mehrere Leistungen erklären und den Start in die Berufswelt professionell abbilden wollen.",
       features: [
-        "Mehrere Leistungsseiten mit Keyword-Strategie",
-        "<strong>Blog/News</strong> zur Content-Erweiterung",
-        "<strong>Local SEO</strong> und Google-Business-Optimierung",
-        "Conversion-optimierte Kontaktstrecken",
-        "Optional: laufende Wartung und SEO-Reporting"
+        "Bis zu 5 Seiten inklusive Leistungen und Über-uns-/Team-Seite",
+        "Kontaktformular für qualifizierte Anfragen enthalten",
+        "<strong>OnPage-SEO</strong> für Struktur, interne Links und Meta-Daten",
+        "Blog optional gegen Mehrkosten möglich",
+        "Lieferzeit: ca. 4 bis 6 Wochen"
       ]
     },
     {
@@ -327,13 +328,13 @@ export function renderWebdesignBerlinHub(req, res) {
       anchor: "premium",
       tagline: "Alles drin",
       image: "/images/premium.webp",
-      description: "Für Relaunches oder komplexe Projekte mit individueller UX und Content-Produktion.",
+      description: "Für umfangreiche Onlineangebote, kleine Shops und Unternehmen in Berlin mit mehr Funktionen.",
       features: [
-        "Strategie-Workshop & Customer-Journey-Mapping",
-        "Individuelle Design-Systeme & Animationen",
-        "<strong>Content-Produktion</strong> (Text, Foto, Video) nach Bedarf",
-        "E-Commerce- und Buchungssysteme integriert",
-        "Laufende Optimierung mit KPI-Reporting"
+        "Bis zu 20 Seiten inklusive Texte, SEO und Strategie",
+        "Buchungssystem im Paket enthalten",
+        "Shop optional gegen Mehrkosten je nach Umfang",
+        "Erweiterte Seitenstruktur für lokale Sichtbarkeit",
+        "Lieferzeit: ca. 6 bis 8 Wochen"
       ]
     }
   ];
@@ -487,10 +488,17 @@ export function renderWebdesignBerlinHub(req, res) {
   ];
 
   const resources = [
-    { label: "Professionelles-Webdesign-vs-Baukasten", href: "/ratgeber/professionellen-website-vs-baukasten" },
-    { label: "SEO-Grundlagen für Berlin", href: "/ratgeber/seo-zielgruppen-content-marketing" },
-    { label: "Webdesign Checkliste für Selbstständige", href: "/blog/website-checkliste-für-selbstandige" }
+    { label: "Was kostet eine Website in Berlin?", href: "/ratgeber/website-kosten-berlin" },
+    { label: "Ablauf, Dauer und Kosten", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
+    { label: "Baukasten vs. professionelle Website", href: "/ratgeber/baukasten-vs-professionelle-website" }
   ];
+
+  const seoGuides = SEO_GUIDE_CLUSTER.map((guide) => ({
+    title: guide.title,
+    excerpt: guide.excerpt,
+    slug: guide.slug,
+    href: `/ratgeber/${guide.slug}`
+  }));
 
   const pageCopy = isEn
     ? {
@@ -825,9 +833,9 @@ export function renderWebdesignBerlinHub(req, res) {
     );
 
     resources.splice(0, resources.length,
-      { label: "Professional web design vs. website builders", href: "/ratgeber/professionellen-website-vs-baukasten" },
-      { label: "SEO fundamentals for Berlin", href: "/ratgeber/seo-zielgruppen-content-marketing" },
-      { label: "Web design checklist for self-employed professionals", href: "/blog/website-checkliste-für-selbstandige" }
+      { label: "Website costs in Berlin", href: "/ratgeber/website-kosten-berlin" },
+      { label: "Process, timeline, and costs", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
+      { label: "Website builder vs. professional website", href: "/ratgeber/baukasten-vs-professionelle-website" }
     );
   }
 
@@ -944,7 +952,7 @@ export function renderWebdesignBerlinHub(req, res) {
           : "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
       "url": webdesignBerlinUrl,
       "inLanguage": isEn ? "en-US" : "de-DE",
-      "telephone": "+49 1551 1245048",
+      "telephone": "+49 1551 245048",
       "email": "kontakt@komplettwebdesign.de",
 
       // bitte nur 1x priceRange – und konkret
@@ -1086,13 +1094,14 @@ export function renderWebdesignBerlinHub(req, res) {
     faqs,
     trust,
     resources,
+    seoGuides,
     schema,
     metaTitle,
     metaDescription,
     canonical: webdesignBerlinUrl,
     contact: {
-      phone: "+4915511245048",
-      phoneDisplay: "01551 1245048",
+      phone: "+491551245048",
+      phoneDisplay: "01551 245048",
       email: "kontakt@komplettwebdesign.de"
     }
   });

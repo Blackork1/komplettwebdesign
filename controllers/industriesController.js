@@ -36,6 +36,15 @@ function buildIndustrySchemas({ industry, url, baseUrl }) {
   return { breadcrumbs, faq };
 }
 
+function isExcludedIndustry(industry = {}) {
+  const text = [industry.slug, industry.name, industry.title, industry.description]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return ['kita', 'kitas', 'schule', 'schulen', 'school', 'schools', 'daycare', 'daycares', 'kindergarten']
+    .some((needle) => text.includes(needle));
+}
+
 /* --- NEU: Branchen-Übersicht (/branchen) --- */
 export async function listIndustries(req, res) {
   try {
@@ -50,8 +59,9 @@ export async function listIndustries(req, res) {
       ORDER BY featured DESC, name ASC
     `);
 
-    const featured = rows.filter(r => r.featured);
-    const others   = rows.filter(r => !r.featured);
+    const visibleRows = rows.filter((r) => !isExcludedIndustry(r));
+    const featured = visibleRows.filter(r => r.featured);
+    const others   = visibleRows.filter(r => !r.featured);
 
     const baseUrl = resolveBaseUrl(req);
 

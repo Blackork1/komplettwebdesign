@@ -4,7 +4,7 @@
   <%- include('partials/header') %>
 
   <main id="hero">
-    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+    <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
 
     <section class="wt-section wt-section-compact">
@@ -62,58 +62,74 @@
                 ? 'No signup required. You can see the full result directly and decide what to improve next.'
                 : 'Kein Login nötig. Du siehst das volle Ergebnis direkt und kannst danach gezielt entscheiden, was verbessert werden soll.' %>
             </p>
-            <div class="wt-panel" style="margin-top:0.9rem;">
-              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need only a link health check?' : 'Nur Link-Gesundheit prüfen?' %></h3>
-              <p style="margin:0 0 0.6rem;">
-                <%= isEn
-                  ? 'Use the dedicated Broken Links Tester for internal and external link checks with detailed issue list.'
-                  : 'Nutze den separaten Broken-Links-Tester für interne und externe Link-Checks mit detaillierter Fehlerliste.' %>
-              </p>
-              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>">
-                <i class="fa-solid fa-link-slash"></i>
-                <%= isEn ? 'Open Broken Links Tester' : 'Broken-Links-Tester öffnen' %>
-              </a>
-            </div>
-
-            <div class="wt-panel" style="margin-top:0.9rem;">
-              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need a dedicated GEO analysis?' : 'Du brauchst eine dedizierte GEO-Analyse?' %></h3>
-              <p style="margin:0 0 0.6rem;">
-                <%= isEn
-                  ? 'Use the GEO Tester for a focused generative-search visibility check with gated detailed report.'
-                  : 'Nutze den GEO-Tester für einen fokussierten Check der generativen Suchsichtbarkeit mit gated Detailreport.' %>
-              </p>
-              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <%= isEn ? 'Open GEO Tester' : 'GEO-Tester öffnen' %>
-              </a>
-            </div>
-
-            <div class="wt-panel" style="margin-top:0.9rem;">
-              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need a dedicated SEO audit?' : 'Du brauchst einen dedizierten SEO-Audit?' %></h3>
-              <p style="margin:0 0 0.6rem;">
-                <%= isEn
-                  ? 'Use the SEO Tester for a focused on-site SEO + technical check with gated detailed report.'
-                  : 'Nutze den SEO-Tester für einen fokussierten Onsite-SEO- und Technik-Check mit gated Detailreport.' %>
-              </p>
-              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
-                <i class="fa-solid fa-magnifying-glass-chart"></i>
-                <%= isEn ? 'Open SEO Tester' : 'SEO-Tester öffnen' %>
-              </a>
-            </div>
-
-            <div class="wt-panel" style="margin-top:0.9rem;">
-              <h3 style="margin:0 0 0.35rem;"><%= isEn ? 'Need a dedicated header/meta check?' : 'Du brauchst einen dedizierten Header-/Meta-Check?' %></h3>
-              <p style="margin:0 0 0.6rem;">
-                <%= isEn
-                  ? 'Use the Meta Tester for title, description, H1, canonical, social tags, and icon checks.'
-                  : 'Nutze den Meta-Tester für Title-, Description-, H1-, Canonical-, Social-Tag- und Icon-Checks.' %>
-              </p>
-              <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">
-                <i class="fa-solid fa-code"></i>
-                <%= isEn ? 'Open Meta Tester' : 'Meta-Tester öffnen' %>
-              </a>
-            </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wt-section wt-tool-overview" aria-labelledby="specialized-testers-title">
+      <div class="wt-shell">
+        <div class="wt-section-heading">
+          <span class="wt-eyebrow">
+            <i class="fa-solid fa-toolbox"></i>
+            <%= isEn ? 'Specialized checks' : 'Spezialisierte Checks' %>
+          </span>
+          <h2 id="specialized-testers-title"><%= isEn ? 'Choose a focused tester if you already know what to check' : 'Wähle einen fokussierten Tester, wenn du gezielt prüfen möchtest' %></h2>
+          <p>
+            <%= isEn
+              ? 'The complete Website Tester is the broad audit. These tools go deeper into one specific area and are easier to use when you already know the problem category.'
+              : 'Der komplette Website-Tester ist der breite Audit. Diese Tools prüfen jeweils einen konkreten Bereich und sind sinnvoll, wenn du schon weißt, was du genauer analysieren möchtest.' %>
+          </p>
+        </div>
+        <div class="wt-tool-grid">
+          <article class="wt-tool-card">
+            <div class="wt-tool-icon"><i class="fa-solid fa-link-slash"></i></div>
+            <h3><%= isEn ? 'Broken-Links-Tester' : 'Broken-Links-Tester' %></h3>
+            <p>
+              <%= isEn
+                ? 'Check internal and external links and find broken targets, redirects, warnings and affected source pages.'
+                : 'Prüft interne und externe Links und findet defekte Ziele, Weiterleitungen, Warnungen und betroffene Quellseiten.' %>
+            </p>
+            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>">
+              <%= isEn ? 'Open tester' : 'Tester öffnen' %>
+            </a>
+          </article>
+          <article class="wt-tool-card">
+            <div class="wt-tool-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h3><%= isEn ? 'GEO-Tester' : 'GEO-Tester' %></h3>
+            <p>
+              <%= isEn
+                ? 'Analyze AI visibility signals such as entities, snippets, FAQ structure and crawler access.'
+                : 'Analysiert KI-Sichtbarkeitssignale wie Entitäten, Snippets, FAQ-Struktur und Crawler-Zugriff.' %>
+            </p>
+            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">
+              <%= isEn ? 'Open tester' : 'Tester öffnen' %>
+            </a>
+          </article>
+          <article class="wt-tool-card">
+            <div class="wt-tool-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+            <h3><%= isEn ? 'SEO-Tester' : 'SEO-Tester' %></h3>
+            <p>
+              <%= isEn
+                ? 'Audit on-page SEO, indexing, technical quality, content, internal linking and structured data.'
+                : 'Prüft OnPage-SEO, Indexierung, Technik, Content, interne Verlinkung und strukturierte Daten.' %>
+            </p>
+            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
+              <%= isEn ? 'Open tester' : 'Tester öffnen' %>
+            </a>
+          </article>
+          <article class="wt-tool-card">
+            <div class="wt-tool-icon"><i class="fa-solid fa-code"></i></div>
+            <h3><%= isEn ? 'Meta-Tester' : 'Meta-Tester' %></h3>
+            <p>
+              <%= isEn
+                ? 'Check title, description, H1, canonical, Open Graph, social tags, icons and head signals.'
+                : 'Prüft Title, Description, H1, Canonical, Open Graph, Social-Tags, Icons und Head-Signale.' %>
+            </p>
+            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">
+              <%= isEn ? 'Open tester' : 'Tester öffnen' %>
+            </a>
+          </article>
         </div>
       </div>
     </section>

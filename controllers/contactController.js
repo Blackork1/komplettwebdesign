@@ -318,19 +318,19 @@ export async function showForm(req, res) {
     const contactPath = lng === "en" ? "/en/kontakt" : "/kontakt";
     const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}${contactPath}`;
     res.render("kontakt", {
-        title: lng === "en" ? "Book a consultation call" : "Beratungsgespräch vereinbaren",
+        title: lng === "en" ? "Request your website project | Komplett Webdesign" : "Website-Projekt anfragen | Komplett Webdesign",
         description: lng === "en"
-            ? "Tell us about your goals and book a consultation call. We look forward to your request."
-            : "Beschreibe uns deine Wünsche, teile uns deine Vorstellungen mit und vereinbare einen Termin für ein Beratungsgespräch. Wir freuen uns auf deine Anfrage!",
+            ? "Describe your website project in about two minutes and receive a first assessment with package recommendation."
+            : "Beschreibe dein Website-Projekt in ca. 2 Minuten und erhalte eine erste Einschätzung mit Paketempfehlung.",
         keywords: lng === "en"
             ? "web design berlin contact, consultation web design berlin, website project request"
             : "webseite erstellen lassen berlin, webdesign berlin kontakt, erstgespräch webdesign",
         seoExtra: `
-          <meta property="og:title" content="${lng === "en" ? "Book your consultation call - Komplett Webdesign" : "Vereinbare deinen Beratungstermin - Komplett Webdesign"}">
+          <meta property="og:title" content="${lng === "en" ? "Request your website project - Komplett Webdesign" : "Website-Projekt anfragen - Komplett Webdesign"}">
           <meta property="og:site_name" content="Komplett Webdesign Kontakt">
           <meta property="og:description" content="${lng === "en"
-                ? "Use our contact form to start your custom web design project. Choose package, scope, and appointment."
-                : "Nutze unser Kontaktformular, um dein individuelles Webdesign-Projekt zu starten. Wähle Paket, Umfang und Termin für dein Beratungsgespräch."}">
+                ? "Use the contact form to describe package, scope, content, appointment and next steps for your website project."
+                : "Nutze das Kontaktformular, um Paket, Umfang, Inhalte, Termin und nächste Schritte für dein Website-Projekt zu klären."}">
           <meta property="og:image" content="${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/images/heroBg.webp">
           <meta property="og:url" content="${canonical}">
         `,

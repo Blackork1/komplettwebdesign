@@ -43,9 +43,9 @@ const structuredDataBlocks = [industryServiceSchema].concat(Array.isArray(jsonLd
 <%- include('../partials/header') %>
 
 <!-- branchen.css lazy laden -->
-<link rel="preload" href="/branchen.css?v=<%= encodeURIComponent(assetVersion || '1') %>" as="style" onload="this.rel='stylesheet'" />
+<link rel="preload" href="<%= cssAsset('branchen.css') %>" as="style" onload="this.rel='stylesheet'" />
 <noscript>
-  <link rel="stylesheet" href="/branchen.css" />
+  <link rel="stylesheet" href="<%= cssAsset('branchen.css') %>" />
 </noscript>
 
 <%

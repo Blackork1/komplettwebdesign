@@ -89,7 +89,7 @@ p {
 }
 .container {
   border-radius: 10px;
-  margin: 100px auto;
+  margin: 50px auto;
 }
 .inner-wrapper {
   max-width: 1200px;
@@ -102,7 +102,7 @@ p {
 }
 .outer-wrapper {
   background-color: var(--color-bg);
-  padding: 4rem 2rem;
+  padding: 3rem 2rem;
   border-radius: 10px;
   border: solid 2px var(--color-accent);
 }
@@ -385,7 +385,7 @@ a.logo {
   display: none;
   position: absolute;
   top: 100%;
-  left: 0;
+  left: -30px;
   background: #fff;
   border: 1px solid #ccc;
   min-width: 160px;
@@ -393,6 +393,10 @@ a.logo {
   opacity: 0;
   transition: opacity 0.5s ease;
   border-radius: 8px;
+}
+
+nav.main-nav {
+  padding: 10px 0;
 }
 
 /* Die einzelnen Einträge */
@@ -431,7 +435,7 @@ a.logo {
   border-radius: var(--radius);
   font-weight: 600;
   box-shadow: var(--shadow);
-  transition: opacity 0.2s;
+  transition: all 0.5s;
   cursor: pointer;
 }
 .btn:hover {
@@ -455,6 +459,10 @@ a.logo {
   color: var(--color-primary);
   border: 2px solid transparent;
   transition: all 0.5s ease;
+}
+
+.bgWhite {
+  background: var(--color-bg) !important;
 }
 
 .btn-secondary:hover {
@@ -482,8 +490,8 @@ a.logo {
   /* background-color: var(--color-primary); */
   color: var(--color-white);
   background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0) 1%),
-    linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-    url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395811/admin_gallery/wfrpglprlohl9ntdaegt.webp) center / cover no-repeat;
+    linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%);
+  height: 900px;
 }
 .hero-section {
   padding: 0 150px;
@@ -491,7 +499,7 @@ a.logo {
 }
 
 .hero-content {
-  flex: 1;
+  flex: 0 1 720px;
   background: rgba(11, 42, 70, 0.28);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -504,6 +512,7 @@ a.logo {
   font-size: 3rem;
   margin-bottom: 1rem;
   color: var(--color-white);
+  flex: 0 1 600px;
 }
 .hero-content p {
   font-size: 1.125rem;
@@ -741,7 +750,8 @@ Agentur-Einleitung
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 260px;
+  min-width: 240px;
+  max-width: 400px;
 }
 .pricing-card h3 {
   font-family: var(--font-heading);
@@ -800,7 +810,8 @@ div#pkg-3 {
   gap: 1rem 2rem;
   margin-bottom: 1rem;
 }
-.service-list li {
+.service-list li,
+.service-list .li {
   background: linear-gradient(
     to bottom,
     /* erste Farbe */ var(--color-primary) 40%,
@@ -826,7 +837,8 @@ div#pkg-3 {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.service-list li:hover {
+.service-list li:hover,
+.service-list .li:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
@@ -836,7 +848,8 @@ div#pkg-3 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.service-list li strong {
+.service-list li strong,
+.service-list .li strong {
   display: flex;
   font-size: 1.1rem;
   color: var(--color-bg);
@@ -1049,6 +1062,10 @@ div#pkg-3 {
   transform: translateX(0);
 }
 
+.header3 {
+  font-size: 1.5rem !important;
+}
+
 /* Wenn gerade verlassen (Viewport nach oben verlassen): nach rechts versetzen und ausblenden */
 .animate-on-scroll.out {
   opacity: 0;
@@ -1103,7 +1120,7 @@ table.table.table-sm {
     grid-template-columns: repeat(2, 1fr);
   }
   .industry-item p {
-    padding-bottom: 1rem;
+    padding-bottom: 0rem;
   }
   .menu-icon {
     display: block;
@@ -1146,12 +1163,10 @@ table.table.table-sm {
     padding: 0 40px;
   }
   .hero {
-    flex-direction: column;
     text-align: center;
     padding: 2rem 1rem;
   }
   .hero-flex {
-    flex-direction: column;
     align-items: center;
   }
   .hero-image img {
@@ -1182,8 +1197,8 @@ table.table.table-sm {
         #ffffff 0%,
         rgba(255, 255, 255, 0) 5%
       ),
-      linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%),
-      url(https://res.cloudinary.com/dvd2cd2be/image/upload/v1754395672/admin_gallery/sycvtjxrsitda5nljqmk.webp) center / cover no-repeat;
+      linear-gradient(to top, #0b2a46 0%, rgba(11, 42, 70, 0) 20%);
+    height: 1200px;
   }
 
   .section {
@@ -1202,7 +1217,6 @@ table.table.table-sm {
   .hero-content,
   .hero-image {
     max-width: 100%;
-    min-height: 50vh;
     padding: 10px;
   }
   .readable p {
@@ -1210,7 +1224,7 @@ table.table.table-sm {
   }
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    gap: 0rem;
   }
   .pricing-grid {
     grid-template-columns: 1fr;
@@ -1219,7 +1233,8 @@ table.table.table-sm {
     grid-template-columns: 1fr;
     padding-left: 0;
   }
-  .service-list li {
+  .service-list li,
+  .service-list .li {
     padding-left: 15px;
     padding-right: 15px;
   }

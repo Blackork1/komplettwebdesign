@@ -5,11 +5,12 @@
 const SITEKEY = window.SITEKEY;
 const CONTACT_I18N = window.CONTACT_I18N || {};
 const I18N = {
-  invalidRequired: CONTACT_I18N.invalidRequired || "Bitte alle Pflichtfelder ausfuellen.",
+  invalidRequired: CONTACT_I18N.invalidRequired || "Bitte alle Pflichtfelder ausfüllen.",
   recaptchaMissingKey: CONTACT_I18N.recaptchaMissingKey || "Es wurde kein reCAPTCHA Sitekey konfiguriert.",
   recaptchaLoadError: CONTACT_I18N.recaptchaLoadError || "reCAPTCHA konnte nicht geladen werden. Bitte versuche es erneut.",
   summaryNone: CONTACT_I18N.summaryNone || "Keine",
   summaryNotSet: CONTACT_I18N.summaryNotSet || "Nicht angegeben",
+  progressLabel: CONTACT_I18N.progressLabel || "Schritt {current} von {total}",
   labels: CONTACT_I18N.labels || {
     paket: "Paket",
     umfang: "Seitenumfang",
@@ -26,6 +27,15 @@ const I18N = {
 };
 
 let recaptchaPromise = null;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function waitForGrecaptchaReady() {
   return new Promise((resolve) => {
@@ -120,6 +130,8 @@ if (!carouselEl) {
   const next = () => carousel.next();
   const prev = () => carousel.prev();
   const kontaktForm = document.getElementById("kontaktForm");
+  const progressText = document.getElementById("contactProgressText");
+  const progressFill = document.getElementById("contactProgressFill");
   const contactFormSteps = [
     { eventName: "contact_step_01_scope", stepName: "project_scope" },
     { eventName: "contact_step_02_pages", stepName: "page_scope" },
@@ -132,6 +144,19 @@ if (!carouselEl) {
     { eventName: "contact_step_09_summary", stepName: "summary" }
   ];
   const trackedStepIndexes = new Set();
+
+  function updateContactProgress(stepIndex) {
+    const current = Math.min(Math.max((Number(stepIndex) || 0) + 1, 1), contactFormSteps.length);
+    const total = contactFormSteps.length;
+    if (progressText) {
+      progressText.textContent = I18N.progressLabel
+        .replace("{current}", String(current))
+        .replace("{total}", String(total));
+    }
+    if (progressFill) {
+      progressFill.style.width = Math.round((current / total) * 100) + "%";
+    }
+  }
 
   function analyticsTrackingAllowed() {
     const consentState = window.cookieConsentState || {};
@@ -171,7 +196,9 @@ if (!carouselEl) {
   function trackActiveContactStep() {
     const slides = Array.from(carouselEl.querySelectorAll(".carousel-item"));
     const activeIndex = slides.findIndex((slide) => slide.classList.contains("active"));
-    trackContactStep(activeIndex >= 0 ? activeIndex : 0);
+    const resolvedIndex = activeIndex >= 0 ? activeIndex : 0;
+    updateContactProgress(resolvedIndex);
+    trackContactStep(resolvedIndex);
   }
 
   ["paket", "umfang", "texterstellung", "bilderstellung", "slotId"].forEach((name) => {
@@ -206,16 +233,26 @@ if (!carouselEl) {
 
   document.querySelectorAll(".back-btn").forEach((b) => b.addEventListener("click", prev));
 
-  const row = (l, v) => `<tr><th style="white-space:nowrap">${l}</th><td>${v || I18N.summaryNotSet}</td></tr>`;
+  const row = (l, v) => `<tr><th style="white-space:nowrap">${escapeHtml(l)}</th><td>${escapeHtml(v || I18N.summaryNotSet)}</td></tr>`;
   const labelText = (n) => {
     const i = document.querySelector(`input[name="${n}"]:checked`);
-    return i ? i.nextElementSibling.textContent.trim() : I18N.summaryNotSet;
+    if (!i) return I18N.summaryNotSet;
+    const label = i.nextElementSibling;
+    if (!label) return i.value || I18N.summaryNotSet;
+    const title = label.querySelector(".option-title");
+    return (title || label).textContent.trim();
   };
 
   function updateSummary() {
     const box = document.getElementById("summaryBox");
+    if (!box) return;
     const features = [...document.querySelectorAll('input[name="inhalte"]:checked')]
-      .map((c) => c.nextElementSibling.textContent.trim())
+      .map((c) => {
+        const label = c.nextElementSibling;
+        if (!label) return c.value;
+        const title = label.querySelector(".option-title");
+        return (title || label).textContent.trim();
+      })
       .join(", ") || I18N.summaryNone;
     box.innerHTML = `
       <table class="table table-sm"><tbody>
@@ -238,6 +275,7 @@ if (!carouselEl) {
   });
 
   carouselEl.addEventListener("slid.bs.carousel", (e) => {
+    updateContactProgress(e.to);
     trackContactStep(e.to);
   });
 

@@ -30,11 +30,11 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   <section class="wd-container wd-hero" aria-labelledby="wd-hero-title">
     <div class="wd-hero__content">
       <span class="wd-eyebrow">Komplett Webdesign · Berlin</span>
-      <h1 id="wd-hero-title animate-on-scroll"><%= hero.title %></h1>
+      <h1 id="wd-hero-title" class="animate-on-scroll"><%= hero.title %></h1>
       <p class="wd-lead animate-on-scroll"><%= hero.description %></p>
       <div class="wd-hero-ctas animate-on-scroll">
-        <a class="wd-btn wd-btn-primary" href="<%= hero.ctaPrimary.href %>"><%= hero.ctaPrimary.label %></a>
-        <a class="wd-btn wd-btn-outline" href="<%= hero.ctaSecondary.href %>"><%= hero.ctaSecondary.label %></a>
+        <a class="wd-btn wd-btn-primary" href="<%= hero.ctaPrimary.href %>" data-track="webdesign_berlin_hero_contact"><%= hero.ctaPrimary.label %></a>
+        <a class="wd-btn wd-btn-outline" href="<%= hero.ctaSecondary.href %>" data-track="webdesign_berlin_hero_packages"><%= hero.ctaSecondary.label %></a>
       </div>
       <div class="wd-social-proof animate-on-scroll" role="note">
         <span><%= hero.rating.label %></span>
@@ -66,7 +66,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
         </figure>
       </div>
       <div class="wd-section__content wd-audience__content">
-        <h2 id="wd-audience-title animate-on-scroll"><%= audience.title %></h2>
+        <h2 id="wd-audience-title" class="animate-on-scroll"><%= audience.title %></h2>
         <p class="wd-lead animate-on-scroll"><%- audience.description %></p>
         <ul class="wd-list">
           <% audience.painPoints.forEach(function (point) { %>
@@ -77,10 +77,32 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
     </div>
   </section>
 
+  <section class="wd-container wd-section" aria-labelledby="wd-website-check-title">
+    <div class="wd-case animate-on-scroll">
+      <div class="wd-case__body">
+        <header>
+          <h2 id="wd-website-check-title"><%= isEn ? 'Start with a free website check' : 'Starte mit einem kostenlosen Website-Check' %></h2>
+          <p><%= isEn ? 'Before we talk about a relaunch or new website, you can check SEO basics, GEO visibility, meta data, broken links, and technical issues.' : 'Bevor wir über Relaunch oder neue Website sprechen, kannst du SEO-Basis, GEO-Sichtbarkeit, Meta-Daten, fehlerhafte Links und technische Themen prüfen.' %></p>
+        </header>
+        <ul class="wd-case__list">
+          <li><%= isEn ? 'Clear next steps for better visibility' : 'Klare nächste Schritte für bessere Sichtbarkeit' %></li>
+          <li><%= isEn ? 'Useful input for the first consultation' : 'Hilfreiche Grundlage für das Erstgespräch' %></li>
+          <li><%= isEn ? 'Good fit for existing websites and planned relaunches' : 'Sinnvoll für bestehende Websites und geplante Relaunches' %></li>
+        </ul>
+        <p class="wd-case__link">
+          <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" data-track="webdesign_berlin_website_tester_cta"><%= isEn ? 'Open website tester' : 'Website-Tester öffnen' %></a>
+        </p>
+      </div>
+      <figure class="wd-case__visual">
+        <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1760634492/admin_gallery/psckvurmyqzchazrx3ec.webp" alt="<%= isEn ? 'Website tester preview' : 'Website-Tester Vorschau' %>" width="400" height="300" loading="lazy">
+      </figure>
+    </div>
+  </section>
+
   <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
     <div class="wd-container">
       <div class="wd-video">
-        <h2 id="wd-video-title animate-on-scroll"><%= copy.videoTitle || 'Was dich im Erstgespräch erwartet:' %></h2>
+        <h2 id="wd-video-title" class="animate-on-scroll"><%= copy.videoTitle || 'Was dich im Erstgespräch erwartet:' %></h2>
         <p class="animate-on-scroll"><%= copy.videoIntro || 'In diesem Video erkläre ich in wenigen Minuten, wie wir gemeinsam deine Website auf Sichtbarkeit, Performance und Anfragen trimmen.' %></p>
         <div class="wd-video__wrap youtube-wrapper animate-on-scroll" data-youtube-id="M_fYtNuPcGg" data-youtube-title="<%= copy.videoTitle || 'Was dich im Erstgespräch erwartet:' %> - Komplett Webdesign">
           <div class="youtube-placeholder" role="group" aria-label="<%= copy.videoGroupLabel || 'YouTube Video Platzhalter' %>">
@@ -107,7 +129,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-services-title">
-    <h2 id="wd-services-title animate-on-scroll"><%= copy.servicesTitle || 'Was beinhaltet unser Webdesign in Berlin?' %></h2>
+    <h2 id="wd-services-title" class="animate-on-scroll"><%= copy.servicesTitle || 'Was beinhaltet unser Webdesign in Berlin?' %></h2>
     <div class="wd-card-grid wd-card-grid--services">
       <% services.forEach(function(service) { %>
       <article class="wd-card wd-service-card animate-on-scroll">
@@ -156,8 +178,8 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
           <% }) %>
         </ul>
         <div class="wd-package-card__actions">
-          <a class="wd-btn wd-btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
-          <a class="wd-btn wd-btn-outline" href="<%= wdContact %>"><%= copy.packageBtnSecondary || 'Details anfragen' %></a>
+          <a class="wd-btn wd-btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%= pkg.anchor %>" data-track="webdesign_berlin_package_<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
+          <a class="wd-btn wd-btn-outline" href="<%= wdContact %>" data-track="webdesign_berlin_package_contact"><%= copy.packageBtnSecondary || 'Details anfragen' %></a>
         </div>
       </article>
       <% }) %>
@@ -198,7 +220,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-process-title" id="Ablauf">
-    <h2 id="wd-process-title animate-on-scroll"><%= copy.processTitle || 'Website in Berlin erstellen lassen - so läuft der Prozess ab' %></h2>
+    <h2 id="wd-process-title" class="animate-on-scroll"><%= copy.processTitle || 'Website in Berlin erstellen lassen - so läuft der Prozess ab' %></h2>
     <div class="wd-process">
       <ol class="wd-process__steps">
         <% processSteps.forEach(function(step, index) { %>
@@ -215,7 +237,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-section wd-section--berlin" aria-labelledby="wd-berlin-title">
-    <h2 id="wd-berlin-title animate-on-scroll"><%= copy.berlinTitle || 'Webdesign in Berlin und allen Bezirken' %></h2>
+    <h2 id="wd-berlin-title" class="animate-on-scroll"><%= copy.berlinTitle || 'Webdesign in Berlin und allen Bezirken' %></h2>
     <div class="wd-container">
       <div class="wd-section__inner wd-section__inner--berlin">
         <div class="wd-section__content">
@@ -236,7 +258,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-industries-title">
-    <h2 id="wd-industries-title animate-on-scroll"><%= copy.industriesTitle || 'Webdesign Berlin für verschiedene Branchen' %></h2>
+    <h2 id="wd-industries-title" class="animate-on-scroll"><%= copy.industriesTitle || 'Webdesign Berlin für verschiedene Branchen' %></h2>
     <div class="wd-industry-grid">
       <% industries.forEach(function(industry) { %>
       <article class="wd-industry-card animate-on-scroll">
@@ -255,8 +277,28 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
     </div>
   </section>
 
+  <% if (typeof seoGuides !== 'undefined' && seoGuides && seoGuides.length) { %>
+  <section class="wd-container wd-section" aria-labelledby="wd-seo-guides-title">
+    <h2 id="wd-seo-guides-title" class="animate-on-scroll"><%= isEn ? 'Guides for your Berlin website project' : 'Ratgeber für dein Website-Projekt in Berlin' %></h2>
+    <p class="wd-lead animate-on-scroll"><%= isEn ? 'Use these guides to understand costs, process, relaunch planning, and industry-specific website requirements before your first consultation.' : 'Nutze diese Ratgeber, um Kosten, Ablauf, Relaunch-Planung und branchenspezifische Anforderungen vor dem Erstgespräch besser einzuordnen.' %></p>
+    <div class="wd-card-grid wd-card-grid--services">
+      <% seoGuides.slice(0, 6).forEach(function(guide) { %>
+      <article class="wd-card animate-on-scroll">
+        <header class="wd-card__header">
+          <div class="wd-card__icon" aria-hidden="true">↗</div>
+          <div>
+            <h3><a href="<%= guide.href %>"><%= guide.title %></a></h3>
+            <p><%= guide.excerpt %></p>
+          </div>
+        </header>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
   <section class="wd-container wd-section" aria-labelledby="wd-faq-title">
-    <h2 id="wd-faq-title animate-on-scroll"><%= copy.faqTitle || 'Häufige Fragen zu Webdesign in Berlin' %></h2>
+    <h2 id="wd-faq-title" class="animate-on-scroll"><%= copy.faqTitle || 'Häufige Fragen zu Webdesign in Berlin' %></h2>
     <div class="wd-faq-grid">
       <% faqs.forEach(function(faq) { %>
       <details class="wd-faq animate-on-scroll">
@@ -270,7 +312,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-container wd-section" aria-labelledby="wd-trust-title">
-    <h2 id="wd-trust-title animate-on-scroll"><%= copy.trustTitle || 'Sicher, DSGVO-konform & betreut' %></h2>
+    <h2 id="wd-trust-title" class="animate-on-scroll"><%= copy.trustTitle || 'Sicher, DSGVO-konform & betreut' %></h2>
     <p class="wd-lead animate-on-scroll" style="text-align: start;"><%= copy.trustLead || 'Mit Komplett Webdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut - ohne Technikstress.' %></p>
     <ul class="wd-trust-list">
       <% trust.forEach(function(item) { %>
@@ -283,7 +325,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
   </section>
 
   <section class="wd-container wd-section wd-resources" aria-labelledby="wd-resources-title">
-    <h2 id="wd-resources-title animate-on-scroll"><%= copy.resourcesTitle || 'Weiterführende Ressourcen zu Webdesign und SEO in Berlin' %></h2>
+    <h2 id="wd-resources-title" class="animate-on-scroll"><%= copy.resourcesTitle || 'Weiterführende Ressourcen zu Webdesign und SEO in Berlin' %></h2>
     <div class="wd-resource-grid">
       <% resources.forEach(function(resource) { %>
       <article class="wd-resource-card animate-on-scroll">
@@ -333,7 +375,7 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
         <button type="submit" class="wd-btn wd-btn-primary"><%= copy.contactSubmit || 'Kostenloses Erstgespräch sichern' %></button>
       </form>
       <div class="wd-contact__intro">
-        <h2 id="wd-contact-title animate-on-scroll"><%= copy.contactTitle || 'Bereit, loszulegen?' %></h2>
+        <h2 id="wd-contact-title" class="animate-on-scroll"><%= copy.contactTitle || 'Bereit, loszulegen?' %></h2>
         <p class="wd-lead animate-on-scroll"><%- copy.contactLead || 'Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit, bessere Rankings und mehr Anfragen.<br>Du suchst allgemeine Informationen zur <a href=\"/\">professionellen Websiteerstellung</a>? Auf unserer Hauptseite findest du alle Leistungen im Überblick - auch für Kunden außerhalb von Berlin.' %></p>
         <p class="wd-contact-meta animate-on-scroll"><%= copy.directCallLabel || 'Oder direkt anrufen' %>: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
         <figure class="wd-contact__visual">

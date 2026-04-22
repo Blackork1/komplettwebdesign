@@ -11,7 +11,7 @@
   <!-- Öffentliches CSS einbinden (vom Entwickler gestaltetes Stylesheet) -->
   <% if (page.css_files && page.css_files.length) { %>
   <% (page.css_files||[]).forEach(f=> { %>
-    <link rel="stylesheet" href="/<%= f %>">
+    <link rel="stylesheet" href="<%= cssAsset(f) %>">
     <% }) }%>
 </head>
 

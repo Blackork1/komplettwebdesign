@@ -8,7 +8,7 @@
     <% if (component) { %>Komponente bearbeiten<% } else { %>Neue Komponente hinzufügen<% } %>
     <% if (page) { %> – <small>Seite: "<%= page.title %>"</small><% } %>
   </title>
-  <link rel="stylesheet" href="/admin.css">
+  <link rel="stylesheet" href="<%= cssAsset('admin.css') %>">
 </head>
 <body>
   <h1>

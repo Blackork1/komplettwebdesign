@@ -4,7 +4,7 @@
   <%- include('partials/header') %>
 
   <main id="hero">
-    <link rel="stylesheet" href="/website-tester.css?v=<%= encodeURIComponent(assetVersion || '1') %>">
+    <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
     <section class="wt-section wt-section-compact">
       <div class="wt-shell">
@@ -35,7 +35,7 @@
             <ul class="wt-pill-list">
               <li><i class="fa-solid fa-house"></i> <%= isEn ? 'Public result: full homepage analysis (root domain only)' : 'Öffentliches Ergebnis: vollständige Startseitenanalyse (nur Root-Domain)' %></li>
               <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Short report after opt-in: up to 5 crawled subpages' : 'Kurzreport nach Opt-in: bis zu 5 gecrawlte Unterseiten' %></li>
-              <li><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Admin full guide: up to 50 pages with per-page instructions' : 'Admin-Vollanleitung: bis zu 50 Seiten mit Anleitung pro Seite' %></li>
+              <li><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Full guide: detailed fixes and per-page instructions' : 'Vollanleitung mit konkreten Fixes und Anleitung pro Seite' %></li>
             </ul>
           </div>
 
@@ -163,8 +163,8 @@
           </div>
           <p>
             <%= isEn
-              ? 'You see the full homepage head audit directly in your browser, with every finding tagged priority-high, medium, or low. The short report delivered after email confirmation extends the audit to up to 5 subpages; the admin-released full report covers up to 50 subpages with step-by-step fix instructions, ready-to-paste HTML snippets, and a prioritized rollout checklist.'
-              : 'Du siehst den vollständigen Startseiten-Head-Audit direkt im Browser — jeder Befund markiert als Priorität hoch, mittel oder niedrig. Der Kurzreport nach Mail-Bestätigung erweitert den Audit auf bis zu 5 Unterseiten; der Admin-freigegebene Voll-Report deckt bis zu 50 Unterseiten ab inklusive Schritt-für-Schritt-Anleitungen, kopierbaren HTML-Snippets und einer priorisierten Umsetzungs-Checkliste.' %>
+              ? 'You see the full homepage head audit directly in your browser, with every finding tagged priority-high, medium, or low. The short report delivered after email confirmation extends the audit to up to 5 subpages; the full guide can cover larger page sets with step-by-step fix instructions, ready-to-paste HTML snippets, and a prioritized rollout checklist.'
+              : 'Du siehst den vollständigen Startseiten-Head-Audit direkt im Browser — jeder Befund ist als hohe, mittlere oder niedrige Priorität markiert. Der Kurzreport nach Mail-Bestätigung erweitert den Audit auf bis zu 5 Unterseiten; die Vollanleitung kann größere Seitensets abdecken und enthält Schritt-für-Schritt-Anleitungen, kopierbare HTML-Snippets und eine priorisierte Umsetzungs-Checkliste.' %>
           </p>
         </article>
       </div>
@@ -269,7 +269,7 @@
         contextFitTitle: "<%= isEn ? 'Industry/region relevance' : 'Branchen-/Regions-Relevanz' %>",
         contextFitDetails: "<%= isEn ? 'Title, description, and H1 fit your context' : 'Title, Description und H1 passen zu deinem Kontext' %>",
         lockedTitle: "<%= isEn ? 'Get short report (up to 5 pages)' : 'Kurzreport erhalten (bis zu 5 Seiten)' %>",
-        lockedText: "<%= isEn ? 'Confirm your email to receive the short report (up to 5 pages). The complete full-guide delivery (up to 50 pages) is managed manually via admin backend.' : 'Bestätige deine E-Mail, um den Kurzreport (bis zu 5 Seiten) zu erhalten. Die vollständige Vollanleitung (bis zu 50 Seiten) wird anschließend manuell über das Admin-Backend versendet.' %>",
+        lockedText: "<%= isEn ? 'Confirm your email to receive the short report with additional page checks. The complete full guide can be sent separately after review.' : 'Bestätige deine E-Mail, um den Kurzreport mit zusätzlichen Seitenchecks zu erhalten. Die vollständige Vollanleitung kann nach Prüfung separat zugestellt werden.' %>",
         leadName: "<%= isEn ? 'Name (optional)' : 'Name (optional)' %>",
         leadEmail: "<%= isEn ? 'Email address' : 'E-Mail-Adresse' %>",
         leadConsent: "<%= isEn ? 'I agree to newsletter signup, want to receive the requested meta report by email, and have read the privacy policy.' : 'Ich stimme der Newsletter-Anmeldung zu, möchte den angeforderten Meta-Report per E-Mail erhalten und habe die Datenschutzerklärung gelesen.' %>",

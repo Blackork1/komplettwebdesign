@@ -2,6 +2,7 @@
 import ejs from 'ejs';
 import RatgeberModel from '../models/RatgeberModel.js';
 import { isoOffset, isoAtNoon } from '../util/date.js';
+import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
 function renderDbEjs(template, locals = {}) {
@@ -21,10 +22,58 @@ function stripHtml(html) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function guideTime(post) {
+  const date = new Date(post?.updated_at || post?.created_at || 0);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function mergeGuides(dbGuides = [], staticGuides = SEO_GUIDE_CLUSTER) {
+  const merged = new Map();
+  staticGuides.forEach((guide) => {
+    if (guide?.slug) merged.set(guide.slug, guide);
+  });
+  dbGuides.forEach((guide) => {
+    if (guide?.slug) merged.set(guide.slug, guide);
+  });
+  return Array.from(merged.values()).sort((a, b) => guideTime(b) - guideTime(a));
+}
+
+async function findAllGuidesSafe() {
+  try {
+    return await RatgeberModel.findAll();
+  } catch (err) {
+    console.error('Ratgeber-DB konnte nicht gelesen werden:', err.message);
+    return [];
+  }
+}
+
+async function findFeaturedGuidesSafe(limit = 5) {
+  try {
+    return await RatgeberModel.findFeatured(limit);
+  } catch (err) {
+    console.error('Featured-Ratgeber konnten nicht gelesen werden:', err.message);
+    return [];
+  }
+}
+
+async function findGuideBySlugSafe(slug) {
+  try {
+    return await RatgeberModel.findBySlug(slug);
+  } catch (err) {
+    console.error(`Ratgeber "${slug}" konnte nicht aus der DB gelesen werden:`, err.message);
+    return null;
+  }
+}
+
 /* ---------- GET /ratgeber ---------- */
 export async function listGuides(req, res) {
-  const posts = await RatgeberModel.findAll();
-  const featuredPosts = await RatgeberModel.findFeatured(5);
+  const dbPosts = await findAllGuidesSafe();
+  const dbFeaturedPosts = await findFeaturedGuidesSafe(5);
+  const posts = mergeGuides(dbPosts);
+  const featuredPosts = mergeGuides(
+    dbFeaturedPosts,
+    SEO_GUIDE_CLUSTER.filter((guide) => guide.featured)
+  ).slice(0, 5);
 
   res.render('ratgeber/index', {
     title: 'Ratgeber – Webdesign, SEO, Kosten & Zeitpläne',
@@ -36,7 +85,8 @@ export async function listGuides(req, res) {
 
 /* ---------- GET /ratgeber/:slug ---------- */
 export async function showGuide(req, res) {
-  const post = await RatgeberModel.findBySlug(req.params.slug);
+  let post = await findGuideBySlugSafe(req.params.slug);
+  if (!post) post = getSeoGuideBySlug(req.params.slug);
   if (!post) return res.status(404).send('Ratgeber nicht gefunden');
 
   // ISO-Timestamps mit Offset
@@ -139,6 +189,8 @@ export async function showGuide(req, res) {
   </script>
   `;
 
+  const others = mergeGuides(await findAllGuidesSafe()).filter((guide) => guide.slug !== post.slug);
+
   res.render('ratgeber/show', {
     // SEO/OG Variablen
     title: post.title,
@@ -152,6 +204,7 @@ export async function showGuide(req, res) {
     publishedISO,
     modifiedISO,
     renderedContent,
+    others,
 
     // Head-Injektion
     seoExtra

@@ -485,7 +485,7 @@ const META_PAGE_I18N = {
       },
       {
         q: 'Warum sehe ich öffentlich nur die Startseite im Detail?',
-        a: 'Die Oberfläche zeigt bewusst die vollständige Startseitenanalyse. Erweiterte Unterseiten-Optimierung wird nach Opt-in als Kurzreport und anschließend als Vollanleitung über das Admin-Backend bereitgestellt.'
+        a: 'Die Oberfläche zeigt bewusst die vollständige Startseitenanalyse. Erweiterte Unterseiten-Optimierung wird nach Opt-in als Kurzreport und anschließend als Vollanleitung separat bereitgestellt.'
       },
       {
         q: 'Was ist der Unterschied zwischen OG-Tags und Twitter Cards?',
@@ -501,7 +501,7 @@ const META_PAGE_I18N = {
       },
       {
         q: 'Was passiert, wenn mein Robots-Meta "noindex" ist?',
-        a: 'Die Seite wird nicht in den Google-Index aufgenommen. Das ist für Admin-Bereiche gewollt, auf Marketing-Seiten jedoch ein kritischer Fehler, der oft zu Traffic-Totalausfall führt.'
+        a: 'Die Seite wird nicht in den Google-Index aufgenommen. Das kann für interne Bereiche gewollt sein, auf Marketing-Seiten ist es jedoch ein kritischer Fehler, der oft zu Traffic-Totalausfall führt.'
       },
       {
         q: 'Brauche ich ein Web-App-Manifest, wenn ich keine PWA bin?',
@@ -537,7 +537,7 @@ const META_PAGE_I18N = {
       },
       {
         q: 'Why do I only see full homepage details in the on-page result?',
-        a: 'Public output focuses on a full homepage audit. Extended subpage optimization is delivered after opt-in as a short report and can be expanded via admin full-guide delivery.'
+        a: 'Public output focuses on a full homepage audit. Extended subpage optimization is delivered after opt-in as a short report and can be expanded with a separate full guide.'
       },
       {
         q: 'What is the difference between OG tags and Twitter Cards?',
@@ -553,7 +553,7 @@ const META_PAGE_I18N = {
       },
       {
         q: 'What happens if my robots meta is set to "noindex"?',
-        a: 'The page is removed from the Google index. That is intentional on admin areas, but on marketing pages it is a critical mistake that often causes total traffic loss.'
+        a: 'The page is removed from the Google index. That can be intentional for internal areas, but on marketing pages it is a critical mistake that often causes total traffic loss.'
       },
       {
         q: 'Do I need a web app manifest if I am not a PWA?',
