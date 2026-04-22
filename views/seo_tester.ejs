@@ -49,21 +49,21 @@
               <i class="fa-solid fa-magnifying-glass-chart"></i>
               SEO Tester
             </span>
-            <h1><%= isEn ? 'Audit your website SEO quality across subpages.' : 'Prüfe die SEO-Qualität deiner Website über Unterseiten.' %></h1>
+            <h1><%= isEn ? 'Check whether your website can be found well on Google.' : 'Prüfe, ob deine Website bei Google gut gefunden werden kann.' %></h1>
             <p class="wt-lead">
               <%= isEn
-                ? 'Run a focused on-site SEO + technical audit and identify optimization potential for classic and AI-driven search discovery.'
-                : 'Starte einen fokussierten Onsite-SEO- und Technik-Audit und erkenne Optimierungspotenziale für klassische und AI-getriebene Suchauffindbarkeit.' %>
+                ? 'The SEO check shows which pages, content and technical basics should be improved first so more suitable visitors can find you.'
+                : 'Der SEO-Check zeigt dir, welche Seiten, Inhalte und technischen Grundlagen zuerst verbessert werden sollten, damit passende Besucher dich leichter finden.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Crawls homepage and relevant subpages' : 'Crawlt Startseite und relevante Unterseiten' %></li>
-              <li><i class="fa-solid fa-wrench"></i> <%= isEn ? 'On-page, indexing, technical, and schema checks' : 'OnPage-, Indexierungs-, Technik- und Schema-Checks' %></li>
-              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Detailed report via double opt-in email flow' : 'Detaillierter Report via Double-Opt-in per E-Mail' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Looks at homepage and relevant subpages' : 'Betrachtet Startseite und relevante Unterseiten' %></li>
+              <li><i class="fa-solid fa-wrench"></i> <%= isEn ? 'Checks content, findability and technical basics' : 'Prüft Inhalte, Auffindbarkeit und technische Grundlagen' %></li>
+              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Clear next steps after the result' : 'Klare nächste Schritte nach dem Ergebnis' %></li>
             </ul>
           </div>
 
           <div class="wt-form-card">
-            <h2><%= isEn ? 'Start SEO audit' : 'SEO-Audit starten' %></h2>
+            <h2><%= isEn ? 'Start SEO check' : 'SEO-Check starten' %></h2>
             <p><%= isEn ? 'Enter URL and business context for realistic SEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische SEO-Bewertung ein.' %></p>
             <form data-seo-tester-form>
               <div class="wt-context-grid">
@@ -76,7 +76,7 @@
                 <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
-                  <%= isEn ? 'Run SEO Audit' : 'SEO-Audit starten' %>
+                  <%= isEn ? 'Start SEO check' : 'SEO-Check starten' %>
                 </button>
               </div>
             </form>
@@ -93,7 +93,7 @@
     <section class="wt-section">
       <div class="wt-shell">
         <div class="wt-panel" data-seo-loading hidden>
-          <h3><%= isEn ? 'SEO audit in progress…' : 'SEO-Audit läuft…' %></h3>
+          <h3><%= isEn ? 'SEO check in progress…' : 'SEO-Check läuft…' %></h3>
           <p><%= isEn ? 'We are crawling your website and evaluating SEO/technical signals now.' : 'Wir crawlen deine Website und bewerten SEO-/Technik-Signale.' %></p>
           <ul class="wt-progress">
             <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate URL and website access' : 'URL validieren und Websitezugriff prüfen' %></span></li>
@@ -115,7 +115,7 @@
           <p>
             <%= isEn
               ? 'The SEO tester crawls your homepage plus up to 25 subpages in under a minute and evaluates 24 individual ranking signals across six categories: on-page structure, indexing, technical quality, content, internal linking, and structured data. Each signal is scored independently, then aggregated into category scores and an overall 0–100 SEO score. The scoring logic is based on Google Search Central guidelines and real-world ranking data from German SMB sites we have audited since 2021.'
-              : 'Der SEO-Tester crawlt Startseite plus bis zu 25 Unterseiten in unter einer Minute und bewertet 24 einzelne Ranking-Signale in sechs Kategorien: OnPage-Struktur, Indexierung, Technik, Content, interne Verlinkung und strukturierte Daten. Jedes Signal wird einzeln bewertet und zu Kategorie-Scores sowie einem Gesamt-SEO-Score von 0–100 aggregiert. Die Scoring-Logik basiert auf den Google-Search-Central-Guidelines und realen Ranking-Daten aus deutschen KMU-Audits, die wir seit 2021 durchführen.' %>
+              : 'Der SEO-Tester betrachtet deine Startseite und wichtige Unterseiten. Er prüft, ob Inhalte, Struktur, Indexierung, interne Verlinkung und technische Grundlagen dabei helfen, dass passende Besucher dich über Google finden.' %>
           </p>
           <div class="wt-method-grid">
             <div class="wt-method-card">
@@ -158,7 +158,7 @@
           <p>
             <%= isEn
               ? 'After the audit, you see the score, the six category scores, and the top three optimization areas directly in your browser. A detailed PDF report with every finding, its priority, the concrete implementation steps, and before/after examples is delivered via email after double opt-in — that report has an average of 28 pages and is typically worth 2–4 hours of consulting work.'
-              : 'Nach dem Audit siehst du Score, die sechs Kategorie-Scores und die drei wichtigsten Potenzialbereiche sofort im Browser. Der detaillierte PDF-Report mit allen Befunden, Prioritäten, konkreten Umsetzungsschritten und Vorher/Nachher-Beispielen wird nach Double-Opt-in per Mail zugestellt — durchschnittlich 28 Seiten, typischerweise 2–4 Stunden Beratungsarbeit wert.' %>
+              : 'Nach dem Check siehst du Score, Potenziale und die wichtigsten nächsten Schritte sofort im Browser. So erkennst du schneller, welche SEO-Maßnahmen wirklich Priorität haben.' %>
           </p>
         </article>
       </div>
@@ -206,9 +206,9 @@
         <article class="wt-panel wt-trust-panel">
           <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
           <ul class="wt-trust-list">
-            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl a maximum of 25 subpages per audit.' : 'Wir respektieren robots.txt und crawlen maximal 25 Unterseiten pro Audit.' %></li>
-            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
-            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'The check only uses publicly visible website information.' : 'Der Check nutzt nur öffentlich sichtbare Website-Informationen.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'You receive a compact result quickly.' : 'Du erhältst schnell ein kompaktes Ergebnis.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous check data is used only for quality assurance.' : 'Anonyme Check-Daten werden nur zur Qualitätssicherung genutzt.' %></li>
             <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
           </ul>
         </article>

@@ -56,9 +56,9 @@
                 : 'Gib deine Website-URL ein und scanne Unterseiten auf defekte Links. Du erhältst sofort eine Zusammenfassung plus detaillierte Liste mit Quellseite und Ziel-URL.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Crawls internal pages within a clear scan scope' : 'Crawlt interne Seiten in einem klaren Scan-Umfang' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Looks at important internal pages' : 'Betrachtet wichtige interne Seiten' %></li>
               <li><i class="fa-solid fa-link"></i> <%= isEn ? 'Checks internal + external links' : 'Prüft interne + externe Links' %></li>
-              <li><i class="fa-solid fa-triangle-exclamation"></i> <%= isEn ? 'Separates broken links and warnings' : 'Trennt Broken Links und Warnings' %></li>
+              <li><i class="fa-solid fa-triangle-exclamation"></i> <%= isEn ? 'Shows where visitors may hit dead ends' : 'Zeigt, wo Besucher ins Leere laufen können' %></li>
             </ul>
           </div>
 
@@ -78,7 +78,7 @@
             <p class="wt-form-note">
               <%= isEn
                 ? 'Result includes scan scope, broken links, warnings, and source pages.'
-                : 'Das Ergebnis enthält Scan-Umfang, defekte Links, Warnungen und Quellseiten.' %>
+                : 'Das Ergebnis zeigt defekte Links, Warnungen und die betroffenen Quellseiten.' %>
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@
           <p>
             <%= isEn
               ? 'The scanner starts at your URL, extracts every internal and external link on the page, and for larger sites follows the internal page graph within a defined scan scope. Each discovered link is requested via HEAD (falling back to GET) and classified by HTTP status. The result separates hard errors (4xx/5xx) from warnings (3xx chains, slow responses, protocol mismatches) so you can focus fixes where they matter.'
-              : 'Der Scanner startet an deiner URL, extrahiert jeden internen und externen Link und folgt bei größeren Websites dem internen Seitenverlauf innerhalb eines definierten Scan-Umfangs. Jeder gefundene Link wird via HEAD (Fallback GET) angefragt und nach HTTP-Status klassifiziert. Das Ergebnis trennt harte Fehler (4xx/5xx) von Warnungen (3xx-Ketten, langsame Antworten, Protokoll-Mismatches), damit du Korrekturen dort priorisieren kannst, wo sie zählen.' %>
+              : 'Der Link-Check startet an deiner Website und prüft wichtige interne und externe Links. Du siehst, welche Links nicht erreichbar sind, wo Weiterleitungen auffallen und auf welchen Seiten die Korrektur zuerst Sinn ergibt.' %>
           </p>
           <div class="wt-method-grid">
             <div class="wt-method-card">
@@ -201,9 +201,9 @@
         <article class="wt-panel wt-trust-panel">
           <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
           <ul class="wt-trust-list">
-            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl only link targets within the scan scope.' : 'Wir respektieren robots.txt und crawlen nur Link-Ziele im Scan-Umfang.' %></li>
-            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds with a maximum of 5 redirects per link.' : 'Scan-Timeout 45 Sekunden mit maximal 5 Weiterleitungen pro Link.' %></li>
-            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'The check only uses publicly visible website information.' : 'Der Check nutzt nur öffentlich sichtbare Website-Informationen.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'You receive a compact result quickly.' : 'Du erhältst schnell ein kompaktes Ergebnis.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous check data is used only for quality assurance.' : 'Anonyme Check-Daten werden nur zur Qualitätssicherung genutzt.' %></li>
             <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
           </ul>
         </article>

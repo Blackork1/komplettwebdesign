@@ -103,8 +103,42 @@
   .contact-field-help {
     color: #526173;
   }
+
+  .contact-page-section .contact-progress__fill {
+    background: #e94a1b;
+  }
+
+  .contact-page-section .white-container {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, .16);
+  }
+
+  .contact-page-section .option-label {
+    border-radius: 12px;
+  }
+
+  .contact-page-section .option-radio:checked + .option-label,
+  .contact-page-section .option-check:checked + .option-label {
+    background: #0C2A46;
+    border-color: rgba(255, 255, 255, .55);
+    color: #ffffff;
+  }
+
+  .contact-page-section .option-radio:checked + .option-label .option-hint,
+  .contact-page-section .option-check:checked + .option-label .option-hint {
+    color: rgba(255, 255, 255, .82);
+  }
+
+  .contact-page-section button[type="submit"] {
+    background: #e94a1b;
+    border-radius: 12px;
+    font-weight: 800;
+  }
+
+  .contact-page-section button[type="submit"]:hover {
+    background: #b93618;
+  }
 </style>
-<div class="section">
+<div class="section contact-page-section">
   <div class="container mt-5">
     <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Request your website project' : 'Website-Projekt anfragen' %></h1>
     <p class="contact-intro">

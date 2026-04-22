@@ -49,21 +49,21 @@
               <i class="fa-solid fa-wand-magic-sparkles"></i>
               GEO Tester
             </span>
-            <h1><%= isEn ? 'Check your website for GEO readiness across subpages.' : 'Prüfe deine Website auf GEO-Readiness über Unterseiten.' %></h1>
+            <h1><%= isEn ? 'Check whether AI search systems can understand your website.' : 'Prüfe, ob KI-Suchsysteme deine Website verstehen können.' %></h1>
             <p class="wt-lead">
               <%= isEn
-                ? 'Run a focused GEO audit and identify optimization potential for AI-generated search experiences. Detailed implementation guidance is unlocked after newsletter confirmation.'
-                : 'Starte einen fokussierten GEO-Audit und erkenne Optimierungspotenziale für KI-generierte Sucherlebnisse. Detaillierte Umsetzungshinweise werden nach Newsletter-Bestätigung freigeschaltet.' %>
+                ? 'The AI visibility check shows whether your offer, region, services and answers are clear enough to be cited in modern search experiences.'
+                : 'Der KI-Sichtbarkeits-Check zeigt dir, ob Angebot, Region, Leistungen und Antworten klar genug sind, um in modernen Sucherlebnissen genannt zu werden.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Crawls homepage and relevant subpages' : 'Crawlt Startseite und relevante Unterseiten' %></li>
-              <li><i class="fa-solid fa-brain"></i> <%= isEn ? 'Entity + intent + snippet readiness checks' : 'Entity- + Intent- + Snippet-Readiness-Checks' %></li>
-              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Detailed GEO report via double opt-in' : 'Detaillierter GEO-Report via Double-Opt-in' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Looks at homepage and important content pages' : 'Betrachtet Startseite und wichtige Inhaltsseiten' %></li>
+              <li><i class="fa-solid fa-brain"></i> <%= isEn ? 'Checks offer clarity, questions and answer structure' : 'Prüft Angebotsklarheit, Fragen und Antwortstruktur' %></li>
+              <li><i class="fa-solid fa-envelope-open-text"></i> <%= isEn ? 'Clear recommendations for AI visibility' : 'Klare Empfehlungen für KI-Sichtbarkeit' %></li>
             </ul>
           </div>
 
           <div class="wt-form-card">
-            <h2><%= isEn ? 'Start GEO audit' : 'GEO-Audit starten' %></h2>
+            <h2><%= isEn ? 'Start AI visibility check' : 'KI-Sichtbarkeits-Check starten' %></h2>
             <p><%= isEn ? 'Enter URL and business context for realistic GEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische GEO-Bewertung ein.' %></p>
             <form data-geo-tester-form>
               <div class="wt-context-grid">
@@ -76,7 +76,7 @@
                 <input id="geo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
-                  <%= isEn ? 'Run GEO Audit' : 'GEO-Audit starten' %>
+                  <%= isEn ? 'Start AI check' : 'KI-Check starten' %>
                 </button>
               </div>
             </form>
@@ -93,7 +93,7 @@
     <section class="wt-section">
       <div class="wt-shell">
         <div class="wt-panel" data-geo-loading hidden>
-          <h3><%= isEn ? 'GEO audit in progress…' : 'GEO-Audit läuft…' %></h3>
+          <h3><%= isEn ? 'AI visibility check in progress…' : 'KI-Sichtbarkeits-Check läuft…' %></h3>
           <p><%= isEn ? 'We are crawling your website and evaluating GEO signals now.' : 'Wir crawlen deine Website und bewerten GEO-Signale.' %></p>
           <ul class="wt-progress">
             <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate URL and website access' : 'URL validieren und Websitezugriff prüfen' %></span></li>
@@ -111,11 +111,11 @@
     <section class="wt-section">
       <div class="wt-shell">
         <article class="wt-panel wt-methodology">
-          <h2><%= isEn ? 'How the GEO tester evaluates generative-search readiness' : 'So bewertet der GEO-Tester die Generative-Search-Readiness' %></h2>
+          <h2><%= isEn ? 'How the AI visibility check evaluates your website' : 'So bewertet der KI-Sichtbarkeits-Check deine Website' %></h2>
           <p>
             <%= isEn
               ? 'The GEO tester analyzes whether your website is ready to be cited and summarized by generative search engines and AI answer systems like ChatGPT, Gemini, Perplexity, and Google AI Overviews. It crawls homepage plus up to 25 subpages and evaluates six signal groups that determine whether your content is retrievable and quotable by LLMs.'
-              : 'Der GEO-Tester analysiert, ob deine Website bereit ist, von generativen Suchmaschinen und KI-Antwortsystemen wie ChatGPT, Gemini, Perplexity und Google AI Overviews zitiert und zusammengefasst zu werden. Er crawlt Startseite plus bis zu 25 Unterseiten und bewertet sechs Signalgruppen, die bestimmen, ob deine Inhalte für LLMs abrufbar und zitierbar sind.' %>
+              : 'Der KI-Sichtbarkeits-Check prüft, ob dein Angebot, deine Leistungen, deine Region und deine Antworten klar genug beschrieben sind, damit moderne Suchsysteme deine Website besser verstehen und einordnen können.' %>
           </p>
           <div class="wt-method-grid">
             <div class="wt-method-card">
@@ -206,9 +206,9 @@
         <article class="wt-panel wt-trust-panel">
           <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
           <ul class="wt-trust-list">
-            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl at most 25 subpages per audit.' : 'Wir respektieren robots.txt und crawlen maximal 25 Unterseiten pro Audit.' %></li>
-            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
-            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'The check only uses publicly visible website information.' : 'Der Check nutzt nur öffentlich sichtbare Website-Informationen.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'You receive a compact result quickly.' : 'Du erhältst schnell ein kompaktes Ergebnis.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous check data is used only for quality assurance.' : 'Anonyme Check-Daten werden nur zur Qualitätssicherung genutzt.' %></li>
             <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
           </ul>
         </article>

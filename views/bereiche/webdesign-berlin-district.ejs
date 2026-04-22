@@ -1,0 +1,263 @@
+<%
+const districtUrl = `https://komplettwebdesign.de${districtPath}`;
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: (faqItems || []).map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.a
+    }
+  }))
+};
+const structuredDataBlocks = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Startseite", item: "https://komplettwebdesign.de/" },
+      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://komplettwebdesign.de${hubPath}` },
+      { "@type": "ListItem", position: 3, name: district.name, item: districtUrl }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "@id": `${districtUrl}#service`,
+    name: `Komplett Webdesign ${district.name}`,
+    url: districtUrl,
+    telephone: "+49 1551 245048",
+    email: "kontakt@komplettwebdesign.de",
+    image: districtPage.heroImage,
+    priceRange: "499 EUR bis 1499 EUR",
+    areaServed: [
+      { "@type": "City", name: "Berlin" },
+      { "@type": "AdministrativeArea", name: district.name }
+    ],
+    serviceType: ["Webdesign", "Website erstellen", "Local SEO", "Hosting", "Wartung", "Buchungssysteme"]
+  },
+  faqSchema
+];
+%>
+<%- include('../partials/head', { structuredDataBlocks }) %>
+<%- include('../partials/header') %>
+
+<main class="district-page" id="content">
+  <nav class="district-breadcrumb" aria-label="Breadcrumb">
+    <a href="/">Startseite</a>
+    <span>/</span>
+    <a href="<%= hubPath %>">Webdesign Berlin</a>
+    <span>/</span>
+    <span><%= district.name %></span>
+  </nav>
+
+  <section class="district-hero" aria-labelledby="district-hero-title">
+    <div class="district-hero__copy">
+      <p class="district-kicker"><span></span><%= districtPage.label %></p>
+      <h1 id="district-hero-title"><%= districtPage.headline %></h1>
+      <p class="district-lead"><%= districtPage.lead %></p>
+      <div class="district-hero__actions">
+        <a class="district-btn district-btn--primary" href="<%= contactPath %>" data-track="district_hero_contact">
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          <span>Kostenloses Erstgespräch</span>
+        </a>
+        <a class="district-btn district-btn--ghost" href="/website-tester" data-track="district_hero_tester">
+          <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+          <span>Website testen</span>
+        </a>
+      </div>
+    </div>
+    <div class="district-hero__media">
+      <img src="<%= districtPage.heroImage %>" alt="<%= districtPage.imageAlt %>" width="760" height="620" loading="eager" decoding="async">
+      <div class="district-hero__stamp" aria-label="Komplett Webdesign Berlin">
+        <strong><%= district.name %></strong>
+        <span>Design · SEO · Technik</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="district-metrics" aria-label="Projekt-Eckdaten">
+    <div>
+      <span>ab</span>
+      <strong>499 EUR</strong>
+      <p>transparente Pakete</p>
+    </div>
+    <div>
+      <span>Start</span>
+      <strong>2-4 Wochen</strong>
+      <p>für kompakte Websites</p>
+    </div>
+    <div>
+      <span>Google</span>
+      <strong>5,0 Sterne</strong>
+      <p>4 Bewertungen</p>
+    </div>
+    <div>
+      <span>Support</span>
+      <strong>24 Stunden</strong>
+      <p>Antwortziel</p>
+    </div>
+  </section>
+
+  <section class="district-section district-section--split" aria-labelledby="district-fit-title">
+    <div>
+      <p class="district-eyebrow">Lokaler Fokus</p>
+      <h2 id="district-fit-title">Was deine Website in <%= district.name %> leisten muss</h2>
+      <p><%= districtPage.proof %></p>
+    </div>
+    <div class="district-checkgrid">
+      <% districtPage.localExamples.forEach((item, index) => { %>
+      <article class="district-mini-tile">
+        <span>0<%= index + 1 %></span>
+        <h3><%= item %></h3>
+        <p>Wird so eingebunden, dass Besucher schneller verstehen, warum dein Angebot passt.</p>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-section" aria-labelledby="district-map-title">
+    <div class="district-section__headline">
+      <p class="district-eyebrow">Bezirkssignale</p>
+      <h2 id="district-map-title">Lokale Relevanz statt austauschbarer SEO-Texte</h2>
+      <p>Jede Bezirksseite bekommt klare lokale Anker. So wirken Inhalte natürlicher, hilfreicher und besser anschlussfähig für interne Links, Google Business Profile und spätere Ratgeber.</p>
+    </div>
+    <div class="district-neighborhoods">
+      <% districtPage.neighborhoods.forEach((area) => { %>
+      <span><%= area %></span>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-section district-section--dark" aria-labelledby="district-audience-title">
+    <div class="district-section__headline">
+      <p class="district-eyebrow">Branchen</p>
+      <h2 id="district-audience-title">Für wen wir in <%= district.name %> bauen</h2>
+      <p>Der Schwerpunkt bleibt auf kleinen Unternehmen, lokalen Dienstleistern und privaten Projekten mit realistischem Anfragepotenzial.</p>
+    </div>
+    <div class="district-audience-grid">
+      <% districtPage.audiences.forEach((audience) => { %>
+      <article>
+        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+        <h3><%= audience %></h3>
+        <p>Mit passenden Leistungsseiten, Vertrauenselementen und klaren Kontaktwegen.</p>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-section" aria-labelledby="district-packages-title">
+    <div class="district-section__headline district-section__headline--row">
+      <div>
+        <p class="district-eyebrow">Pakete</p>
+        <h2 id="district-packages-title">Website erstellen lassen in <%= district.name %></h2>
+      </div>
+      <a href="/ratgeber/website-kosten-berlin">Kosten im Detail lesen</a>
+    </div>
+    <div class="district-package-grid">
+      <% packageCards.forEach((pkg) => { %>
+      <article class="district-package<%= pkg.featured ? ' district-package--featured' : '' %>">
+        <p><%= pkg.name %></p>
+        <h3><%= pkg.price %></h3>
+        <span><%= pkg.short %></span>
+        <ul>
+          <% pkg.features.forEach((feature) => { %>
+          <li><%= feature %></li>
+          <% }) %>
+        </ul>
+        <a href="<%= pkg.href %>">
+          <span>Paket ansehen</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </article>
+      <% }) %>
+    </div>
+    <p class="district-note">Hosting, Domain, E-Mail und Wartung sind bei allen Paketen optional und werden passend zur Auswahl ergänzt.</p>
+  </section>
+
+  <section class="district-section district-section--process" aria-labelledby="district-process-title">
+    <p class="district-eyebrow">Ablauf</p>
+    <h2 id="district-process-title">Vom ersten Gespräch bis zur sichtbaren Website</h2>
+    <div class="district-process">
+      <% processSteps.forEach((step) => { %>
+      <article>
+        <strong><%= step.title %></strong>
+        <p><%= step.text %></p>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-tester-band" aria-labelledby="district-tester-title">
+    <div>
+      <p class="district-eyebrow">Website-Tester</p>
+      <h2 id="district-tester-title">Schon eine Website? Erst prüfen, dann sinnvoll umbauen.</h2>
+      <p>Der Tester zeigt technische, SEO- und Meta-Probleme. Das macht das Erstgespräch konkreter und verhindert, dass nur nach Gefühl optimiert wird.</p>
+    </div>
+    <a class="district-btn district-btn--primary" href="/website-tester" data-track="district_tester_band">
+      <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+      <span>Website-Check starten</span>
+    </a>
+  </section>
+
+  <section class="district-section" aria-labelledby="district-guides-title">
+    <div class="district-section__headline">
+      <p class="district-eyebrow">Ratgeber</p>
+      <h2 id="district-guides-title">Nächste Schritte für dein Website-Projekt</h2>
+    </div>
+    <div class="district-guide-grid">
+      <% seoGuides.slice(0, 4).forEach((guide) => { %>
+      <a href="<%= guide.href %>">
+        <strong><%= guide.title %></strong>
+        <span><%= guide.excerpt %></span>
+      </a>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-section district-section--faq" aria-labelledby="district-faq-title">
+    <div class="district-section__headline">
+      <p class="district-eyebrow">FAQ</p>
+      <h2 id="district-faq-title">Häufige Fragen zu Webdesign in <%= district.name %></h2>
+    </div>
+    <div class="district-faq">
+      <% faqItems.forEach((faq, index) => { %>
+      <details <%= index === 0 ? 'open' : '' %>>
+        <summary><%= faq.q %></summary>
+        <p><%= faq.a %></p>
+      </details>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="district-final" aria-labelledby="district-final-title">
+    <p class="district-eyebrow">Website erstellen lassen in <%= district.name %></p>
+    <h2 id="district-final-title">Bereit für eine Website, die lokal gefunden wird und mehr qualifizierte Anfragen bringt?</h2>
+    <p class="district-final__lead">
+      Komplett Webdesign übernimmt Design, Texte, OnPage-SEO, Technik, Hosting und Wartung für dein Website-Projekt in Berlin. Im kostenlosen Erstgespräch klären wir, welches Paket zu deinem Umfang passt und welche Seiten für <%= district.name %> wirklich wichtig sind.
+    </p>
+    <ul class="district-final__proof" aria-label="Vorteile von Komplett Webdesign">
+      <li>Klare Webdesign-Pakete ab 499 EUR</li>
+      <li>Lokale SEO-Basis für Berlin und <%= district.name %></li>
+      <li>Persönliche Betreuung statt anonymer Baukasten-Lösung</li>
+    </ul>
+    <div class="district-final__actions">
+      <a class="district-btn district-btn--primary" href="<%= contactPath %>" data-track="district_final_contact">
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        <span>Kostenloses Erstgespräch vereinbaren</span>
+      </a>
+      <a class="district-btn district-btn--ghost" href="/website-tester" data-track="district_final_tester">
+        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+        <span>Website vorher testen</span>
+      </a>
+      <a class="district-btn district-btn--ghost" href="tel:<%= phone %>">
+        <i class="fa-solid fa-phone" aria-hidden="true"></i>
+        <span><%= phoneDisplay %></span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

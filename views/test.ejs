@@ -24,24 +24,24 @@
           <div class="wt-hero-copy">
             <span class="wt-eyebrow">
               <i class="fa-solid fa-magnifying-glass-chart"></i>
-              <%= isEn ? 'Website Tester 2.3' : 'Website Tester 2.3' %>
+              <%= isEn ? 'Free website check' : 'Kostenloser Website-Check' %>
             </span>
-            <h1><%= isEn ? 'Check if your website is still modern, visible, and trustworthy.' : 'Prüfe, ob deine Website noch modern, sichtbar und vertrauenswürdig ist.' %></h1>
+            <h1><%= isEn ? 'Find out why your website is not generating enough requests.' : 'Finde heraus, warum deine Website zu wenig Anfragen bringt.' %></h1>
             <p class="wt-lead">
               <%= isEn
-                ? 'Run a deep audit for SEO, technical quality, accessibility signals, trust, and conversion readiness. You get a clear score and actionable priorities in seconds.'
-                : 'Starte einen Deep-Audit für SEO, Technik, Barrierefreiheits-Signale, Vertrauen und Conversion-Reife. Du erhältst in Sekunden einen klaren Score und konkrete Prioritäten.' %>
+                ? 'Get a clear, easy-to-understand assessment of visibility, trust, usability and contact paths. The result shows what should be improved first.'
+                : 'Du erhältst eine verständliche Einschätzung zu Sichtbarkeit, Vertrauen, Nutzerführung und Kontaktwegen. Das Ergebnis zeigt dir, was zuerst verbessert werden sollte.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-list-check"></i> <%= isEn ? '6 pages max (homepage + 5 internal pages)' : 'Bis zu 6 Seiten (Startseite + 5 Unterseiten)' %></li>
-              <li><i class="fa-solid fa-shield"></i> <%= isEn ? 'Security-safe analysis (SSRF protection)' : 'Sicherheitsgeprüfte Analyse (SSRF-Schutz)' %></li>
-              <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Time boxed to 45 seconds' : 'Zeitbudget: max. 45 Sekunden' %></li>
+              <li><i class="fa-solid fa-list-check"></i> <%= isEn ? 'Clear recommendations instead of a technical checklist' : 'Klare Empfehlungen statt Technikliste' %></li>
+              <li><i class="fa-solid fa-shield"></i> <%= isEn ? 'Useful before a relaunch or optimization' : 'Sinnvoll vor Relaunch oder Optimierung' %></li>
+              <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Result directly in the browser' : 'Ergebnis direkt im Browser' %></li>
             </ul>
           </div>
 
           <div class="wt-form-card">
-            <h2><%= isEn ? 'Enter website URL' : 'Website-Adresse eingeben' %></h2>
-            <p><%= isEn ? 'Add URL + business context for realistic SEO/GEO scoring.' : 'Ergänze URL + Geschäftskontext für eine realistische SEO/GEO-Bewertung.' %></p>
+            <h2><%= isEn ? 'Check your website briefly' : 'Website kurz prüfen lassen' %></h2>
+            <p><%= isEn ? 'Business type, service and region help us assess the site in the right context.' : 'Branche, Leistung und Region helfen dabei, den Check realistisch einzuordnen.' %></p>
             <form data-website-tester-form>
               <div class="wt-context-grid">
                 <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. medical practice)' : 'Branche (z. B. Arztpraxis)' %>" required>
@@ -53,7 +53,7 @@
                 <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
-                  <%= isEn ? 'Run Audit' : 'Audit starten' %>
+                  <%= isEn ? 'Start check' : 'Check starten' %>
                 </button>
               </div>
             </form>
@@ -74,11 +74,11 @@
             <i class="fa-solid fa-toolbox"></i>
             <%= isEn ? 'Specialized checks' : 'Spezialisierte Checks' %>
           </span>
-          <h2 id="specialized-testers-title"><%= isEn ? 'Choose a focused tester if you already know what to check' : 'Wähle einen fokussierten Tester, wenn du gezielt prüfen möchtest' %></h2>
+          <h2 id="specialized-testers-title"><%= isEn ? 'Choose a focused check if you already know the topic' : 'Wähle einen fokussierten Check, wenn du das Thema schon kennst' %></h2>
           <p>
             <%= isEn
-              ? 'The complete Website Tester is the broad audit. These tools go deeper into one specific area and are easier to use when you already know the problem category.'
-              : 'Der komplette Website-Tester ist der breite Audit. Diese Tools prüfen jeweils einen konkreten Bereich und sind sinnvoll, wenn du schon weißt, was du genauer analysieren möchtest.' %>
+              ? 'The full website check gives you the overview. These checks focus on one area when you want to look deeper into links, SEO, AI visibility or meta data.'
+              : 'Der komplette Website-Check gibt dir den Überblick. Diese Checks schauen gezielt auf Links, SEO, KI-Sichtbarkeit oder Meta-Daten.' %>
           </p>
         </div>
         <div class="wt-tool-grid">
@@ -112,7 +112,7 @@
             <p>
               <%= isEn
                 ? 'Audit on-page SEO, indexing, technical quality, content, internal linking and structured data.'
-                : 'Prüft OnPage-SEO, Indexierung, Technik, Content, interne Verlinkung und strukturierte Daten.' %>
+                : 'Prüft Inhalte, Auffindbarkeit, Seitenstruktur, interne Verlinkung und wichtige Google-Signale.' %>
             </p>
             <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
               <%= isEn ? 'Open tester' : 'Tester öffnen' %>
@@ -184,11 +184,11 @@
     <section class="wt-section">
       <div class="wt-shell">
         <article class="wt-panel wt-methodology">
-          <h2><%= isEn ? 'How the Website Tester audits your site — 60+ signals in 6 categories' : 'So arbeitet der Website-Tester — 60+ Signale in 6 Kategorien' %></h2>
+          <h2><%= isEn ? 'How the Website Tester evaluates your site' : 'So bewertet der Website-Tester deine Seite' %></h2>
           <p>
             <%= isEn
-              ? 'The Website Tester runs a deep audit on your homepage plus up to five internal pages in under a minute and evaluates 60+ individual ranking, trust, accessibility, and conversion signals across six categories. Each signal is scored independently, then aggregated into category scores and an overall 0–100 score. The scoring model is calibrated against ranking data from over 300 German SMB sites audited since 2021.'
-              : 'Der Website-Tester läuft einen Deep-Audit auf Startseite plus bis zu fünf Unterseiten in unter einer Minute und bewertet 60+ einzelne Ranking-, Vertrauens-, Barrierefreiheits- und Conversion-Signale in sechs Kategorien. Jedes Signal wird einzeln bewertet und zu Kategorie-Scores sowie einem Gesamt-Score (0-100) aggregiert. Das Scoring-Modell ist an Ranking-Daten aus über 300 deutschen KMU-Sites kalibriert, die wir seit 2021 auditieren.' %>
+              ? 'The Website Tester looks at your homepage and important public signals for visibility, trust, usability and requests. The result is translated into clear priorities so you can decide what matters next.'
+              : 'Der Website-Tester betrachtet deine Startseite und wichtige öffentliche Signale für Sichtbarkeit, Vertrauen, Nutzerführung und Anfragen. Das Ergebnis wird in klare Prioritäten übersetzt, damit du schnell erkennst, was als Nächstes zählt.' %>
           </p>
           <div class="wt-method-grid">
             <div class="wt-method-card">
@@ -198,7 +198,7 @@
                 : 'Title, Description, H-Struktur, Canonical, Hreflang, Robots, Sitemap, Schema. Wir prüfen Präsenz und Intent-Fit gegen deinen Geschäftskontext.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-wand-magic-sparkles"></i> <%= isEn ? 'GEO readiness' : 'GEO-Readiness' %></h3>
+              <h3><i class="fa-solid fa-wand-magic-sparkles"></i> <%= isEn ? 'AI visibility' : 'KI-Sichtbarkeit' %></h3>
               <p><%= isEn
                 ? 'Entity clarity, LLM crawler access, question-answer structure, factual verifiability. Whether AI systems can retrieve and cite you.'
                 : 'Entity-Klarheit, LLM-Crawler-Zugang, Frage-Antwort-Struktur, Fakten-Belegbarkeit. Ob KI-Systeme dich abrufen und zitieren können.' %></p>
@@ -212,8 +212,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-universal-access"></i> <%= isEn ? 'Accessibility' : 'Barrierefreiheit' %></h3>
               <p><%= isEn
-                ? 'Language attributes, alt text coverage, form labels, semantic landmarks, heading order. WCAG-aligned proxies, not a full a11y audit.'
-                : 'Sprachattribute, Alt-Text-Abdeckung, Form-Labels, semantische Landmarks, Heading-Reihenfolge. WCAG-orientierte Proxies, kein voller A11y-Audit.' %></p>
+                ? 'Whether images, forms, headings and page structure are easy to understand for people and search systems.'
+                : 'Ob Bilder, Formulare, Überschriften und Seitenstruktur für Menschen und Suchsysteme verständlich sind.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-shield-heart"></i> <%= isEn ? 'Trust & legal' : 'Vertrauen & Rechtliches' %></h3>
@@ -231,7 +231,7 @@
           <p>
             <%= isEn
               ? 'After the audit you immediately see the overall score, six category scores, the top findings, a prioritized action list, detected strengths, and identified facts — all in your browser without registration. A detailed PDF report with every finding, priority, and implementation recommendation is sent after double opt-in; the full guide (28+ pages) typically captures 2–4 hours of consulting work.'
-              : 'Nach dem Audit siehst du den Gesamt-Score, sechs Kategorie-Scores, die wichtigsten Befunde, eine priorisierte Maßnahmen-Liste, erkannte Stärken und Fakten — alles im Browser ohne Registrierung. Ein detaillierter PDF-Report mit allen Befunden, Prioritäten und Umsetzungsempfehlungen wird nach Double-Opt-in zugestellt; die Vollanleitung (28+ Seiten) umfasst typischerweise 2-4 Stunden Beratungsarbeit.' %>
+              : 'Nach dem Check siehst du den Gesamt-Score, die wichtigsten Befunde, erkannte Stärken und eine priorisierte Maßnahmen-Liste direkt im Browser. Danach kannst du entscheiden, ob du die Punkte selbst angehst oder ein Erstgespräch vereinbarst.' %>
           </p>
         </article>
       </div>
@@ -246,7 +246,7 @@
               <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
               <blockquote><%= isEn
                 ? '“The audit and implementation roadmap gave us more organic leads in three months than our previous agency delivered in a year.”'
-                : '„Audit und Umsetzungsplan haben uns in drei Monaten mehr organische Leads gebracht als die vorherige Agentur in einem Jahr."' %></blockquote>
+                : '„Der Website-Check und der Umsetzungsplan haben uns in drei Monaten mehr organische Leads gebracht als die vorherige Agentur in einem Jahr."' %></blockquote>
               <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
             </figure>
             <figure class="wt-review">
@@ -279,10 +279,10 @@
         <article class="wt-panel wt-trust-panel">
           <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
           <ul class="wt-trust-list">
-            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl at most 5 subpages per audit.' : 'Wir respektieren robots.txt und crawlen maximal 5 Unterseiten pro Audit.' %></li>
-            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
-            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
-            <li><i class="fa-solid fa-lock"></i> <%= isEn ? 'SSRF protection — the scanner blocks internal IPs and unusual schemes.' : 'SSRF-Schutz — der Scanner blockiert interne IPs und ungewöhnliche Schemas.' %></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'The check only looks at publicly visible website signals.' : 'Der Check betrachtet nur öffentlich sichtbare Website-Signale.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'You receive a compact result quickly, without a long waiting process.' : 'Du erhältst schnell ein kompaktes Ergebnis, ohne langen Warteprozess.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous check data is used only for quality assurance.' : 'Anonyme Check-Daten werden nur zur Qualitätssicherung genutzt.' %></li>
+            <li><i class="fa-solid fa-lock"></i> <%= isEn ? 'No login required and no changes are made to your website.' : 'Kein Login nötig und an deiner Website wird nichts verändert.' %></li>
           </ul>
         </article>
       </div>

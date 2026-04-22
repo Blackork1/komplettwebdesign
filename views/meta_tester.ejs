@@ -33,14 +33,14 @@
                 : 'Starte einen vollständigen Header-Meta-Check für Title, Meta-Description, H1, Canonical, Robots, Open Graph, Twitter Cards, Icons und technische Head-Tags.' %>
             </p>
             <ul class="wt-pill-list">
-              <li><i class="fa-solid fa-house"></i> <%= isEn ? 'Public result: full homepage analysis (root domain only)' : 'Öffentliches Ergebnis: vollständige Startseitenanalyse (nur Root-Domain)' %></li>
-              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Short report after opt-in: up to 5 crawled subpages' : 'Kurzreport nach Opt-in: bis zu 5 gecrawlte Unterseiten' %></li>
-              <li><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Full guide: detailed fixes and per-page instructions' : 'Vollanleitung mit konkreten Fixes und Anleitung pro Seite' %></li>
+              <li><i class="fa-solid fa-house"></i> <%= isEn ? 'Homepage titles and descriptions at a glance' : 'Title und Description der Startseite auf einen Blick' %></li>
+              <li><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Shows whether your search snippet fits your offer' : 'Zeigt, ob dein Suchergebnis zu deinem Angebot passt' %></li>
+              <li><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Clear fixes for stronger click-through rates' : 'Klare Verbesserungen für stärkere Klickraten' %></li>
             </ul>
           </div>
 
           <div class="wt-form-card">
-            <h2><%= isEn ? 'Start Header Meta Test' : 'Header-Meta-Test starten' %></h2>
+            <h2><%= isEn ? 'Start meta check' : 'Meta-Check starten' %></h2>
             <p><%= isEn ? 'Add website URL and market context so we can check title/description relevance for your industry and region.' : 'Gib URL und Marktkontext an, damit wir Title/Description auf Branchen- und Regions-Fit prüfen können.' %></p>
 
             <form data-meta-tester-form>
@@ -54,7 +54,7 @@
                 <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
-                  <%= isEn ? 'Run Meta Audit' : 'Meta-Audit starten' %>
+                  <%= isEn ? 'Start meta check' : 'Meta-Check starten' %>
                 </button>
               </div>
             </form>
@@ -72,7 +72,7 @@
     <section class="wt-section">
       <div class="wt-shell">
         <div class="wt-panel" data-meta-loading hidden>
-          <h3><%= isEn ? 'Meta audit in progress…' : 'Meta-Audit läuft…' %></h3>
+          <h3><%= isEn ? 'Meta check in progress…' : 'Meta-Check läuft…' %></h3>
           <p><%= isEn ? 'We are scanning your homepage head-tags and evaluating SEO/social readiness now.' : 'Wir analysieren jetzt die Head-Tags deiner Startseite und bewerten SEO-/Social-Readiness.' %></p>
           <ul class="wt-progress">
             <li data-progress-item><i class="fa-regular fa-circle"></i><span><%= isEn ? 'Validate domain and load homepage only' : 'Domain validieren und ausschließlich Startseite laden' %></span></li>
@@ -164,7 +164,7 @@
           <p>
             <%= isEn
               ? 'You see the full homepage head audit directly in your browser, with every finding tagged priority-high, medium, or low. The short report delivered after email confirmation extends the audit to up to 5 subpages; the full guide can cover larger page sets with step-by-step fix instructions, ready-to-paste HTML snippets, and a prioritized rollout checklist.'
-              : 'Du siehst den vollständigen Startseiten-Head-Audit direkt im Browser — jeder Befund ist als hohe, mittlere oder niedrige Priorität markiert. Der Kurzreport nach Mail-Bestätigung erweitert den Audit auf bis zu 5 Unterseiten; die Vollanleitung kann größere Seitensets abdecken und enthält Schritt-für-Schritt-Anleitungen, kopierbare HTML-Snippets und eine priorisierte Umsetzungs-Checkliste.' %>
+              : 'Du siehst direkt im Browser, ob Title, Description, H1 und wichtige Vorschau-Daten klar genug sind. Die Empfehlungen zeigen, welche Anpassungen mehr Klicks aus Google und Social-Vorschauen bringen können.' %>
           </p>
         </article>
       </div>
@@ -212,9 +212,9 @@
         <article class="wt-panel wt-trust-panel">
           <h3><%= isEn ? 'Transparent and privacy-friendly' : 'Transparent und datenschutzfreundlich' %></h3>
           <ul class="wt-trust-list">
-            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'We respect robots.txt and crawl at most 5 head sections per public audit.' : 'Wir respektieren robots.txt und crawlen pro öffentlichem Audit maximal 5 Head-Bereiche.' %></li>
-            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Scan timeout 45 seconds — no long background load on your server.' : 'Scan-Timeout 45 Sekunden — keine lange Hintergrundlast auf deinem Server.' %></li>
-            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous audit data is kept for up to 14 days for quality assurance only.' : 'Anonyme Audit-Daten werden ausschließlich für bis zu 14 Tage zur Qualitätssicherung gespeichert.' %></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'The check only uses publicly visible website information.' : 'Der Check nutzt nur öffentlich sichtbare Website-Informationen.' %></li>
+            <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'You receive a compact result quickly.' : 'Du erhältst schnell ein kompaktes Ergebnis.' %></li>
+            <li><i class="fa-solid fa-database"></i> <%= isEn ? 'Anonymous check data is used only for quality assurance.' : 'Anonyme Check-Daten werden nur zur Qualitätssicherung genutzt.' %></li>
             <li><i class="fa-solid fa-envelope-open"></i> <%= isEn ? 'We use double opt-in for email delivery. Unsubscribe in one click any time.' : 'Wir nutzen Double-Opt-in für Mail-Versand. Abmeldung jederzeit mit einem Klick.' %></li>
           </ul>
         </article>
