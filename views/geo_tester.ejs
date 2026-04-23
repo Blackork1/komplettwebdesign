@@ -46,7 +46,7 @@
         <div class="wt-hero-grid">
           <div class="wt-hero-copy">
             <span class="wt-eyebrow">
-              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <i class="fa-solid fa-robot"></i>
               GEO Tester
             </span>
             <h1><%= isEn ? 'Check whether AI search systems can understand your website.' : 'Prüfe, ob KI-Suchsysteme deine Website verstehen können.' %></h1>
@@ -67,13 +67,25 @@
             <p><%= isEn ? 'Enter URL and business context for realistic GEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische GEO-Bewertung ein.' %></p>
             <form data-geo-tester-form>
               <div class="wt-context-grid">
-                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
-                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
-                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                  <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-bullseye" aria-hidden="true"></i>
+                  <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                </div>
               </div>
               <label class="visually-hidden" for="geo-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
               <div class="wt-form-row">
-                <input id="geo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <div class="wt-input-shell wt-input-shell--url">
+                  <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                  <input id="geo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                </div>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start AI check' : 'KI-Check starten' %>
@@ -131,7 +143,7 @@
                 : 'Organization-Schema, konsistenter Markenname, NAP-Übereinstimmung über Seiten, klare Über-uns/Kontakt-Infos. LLMs brauchen diese zur Identifikation.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-comments-question"></i> <%= isEn ? 'Question-answer structure' : 'Frage-Antwort-Struktur' %></h3>
+              <h3><i class="fa-solid fa-comments"></i> <%= isEn ? 'Question-answer structure' : 'Frage-Antwort-Struktur' %></h3>
               <p><%= isEn
                 ? 'FAQPage schema, Q-style headings, short paragraphs answering one question each. Quotable snippets are the single strongest lever for AI citations.'
                 : 'FAQPage-Schema, Frage-förmige Headings, kurze Absätze mit einer Antwort pro Absatz. Zitierbare Snippets sind der stärkste Hebel für KI-Zitierungen.' %></p>

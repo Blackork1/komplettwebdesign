@@ -32,9 +32,15 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
       <span class="wd-eyebrow">Komplett Webdesign · Berlin</span>
       <h1 id="wd-hero-title" class="animate-on-scroll"><%= hero.title %></h1>
       <p class="wd-lead animate-on-scroll"><%= hero.description %></p>
+      <% if (hero.answerBlock) { %>
+      <p class="wd-lead animate-on-scroll"><%= hero.answerBlock %></p>
+      <% } %>
       <div class="wd-hero-ctas animate-on-scroll">
         <a class="wd-btn wd-btn-primary" href="<%= hero.ctaPrimary.href %>" data-track="webdesign_berlin_hero_contact"><%= hero.ctaPrimary.label %></a>
         <a class="wd-btn wd-btn-outline" href="<%= hero.ctaSecondary.href %>" data-track="webdesign_berlin_hero_packages"><%= hero.ctaSecondary.label %></a>
+        <% if (hero.ctaTertiary) { %>
+        <a class="wd-btn wd-btn-outline" href="<%= hero.ctaTertiary.href %>" data-track="webdesign_berlin_hero_tester"><%= hero.ctaTertiary.label %></a>
+        <% } %>
       </div>
       <div class="wd-social-proof animate-on-scroll" role="note">
         <span><%= hero.rating.label %></span>

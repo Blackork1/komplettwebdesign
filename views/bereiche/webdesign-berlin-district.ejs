@@ -58,6 +58,9 @@ const structuredDataBlocks = [
       <p class="district-kicker"><span></span><%= districtPage.label %></p>
       <h1 id="district-hero-title"><%= districtPage.headline %></h1>
       <p class="district-lead"><%= districtPage.lead %></p>
+      <% if (districtPage.answerBlock) { %>
+      <p class="district-lead"><%= districtPage.answerBlock %></p>
+      <% } %>
       <div class="district-hero__actions">
         <a class="district-btn district-btn--primary" href="<%= contactPath %>" data-track="district_hero_contact">
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
@@ -66,6 +69,10 @@ const structuredDataBlocks = [
         <a class="district-btn district-btn--ghost" href="/website-tester" data-track="district_hero_tester">
           <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
           <span>Website testen</span>
+        </a>
+        <a class="district-btn district-btn--ghost" href="/pakete/business" data-track="district_hero_package">
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+          <span>Business-Paket ansehen</span>
         </a>
       </div>
     </div>
@@ -115,6 +122,40 @@ const structuredDataBlocks = [
         <p>Wird so eingebunden, dass Besucher schneller verstehen, warum dein Angebot passt.</p>
       </article>
       <% }) %>
+    </div>
+  </section>
+
+  <section class="district-section district-section--split" aria-labelledby="district-social-proof-title">
+    <div>
+      <p class="district-eyebrow">Google-Bewertungen</p>
+      <h2 id="district-social-proof-title"><%= districtPage.trustSectionTitle || "Vertrauen durch echte Google-Bewertungen" %></h2>
+      <p><%= districtPage.trustBlock %></p>
+      <% if (districtPage.googleRating && districtPage.googleRating.href) { %>
+      <a class="district-review-link" href="<%= districtPage.googleRating.href %>" target="_blank" rel="noopener">
+        <span><%= districtPage.googleRating.label || "★★★★★ 5,0/5 · 4 Google-Rezensionen" %></span>
+        <strong><%= districtPage.googleRating.cta || "Google-Bewertungen ansehen" %></strong>
+      </a>
+      <% } %>
+    </div>
+    <div>
+      <p class="district-eyebrow">Referenzen</p>
+      <h2 id="district-proof-title"><%= districtPage.proofSectionTitle || "Echte Projekte statt leere Versprechen" %></h2>
+      <p><%= districtPage.proofBlock %></p>
+      <% if (districtPage.proofProjects && districtPage.proofProjects.length) { %>
+      <ul class="district-proof-projects" aria-label="Aktuelle Webdesign-Projekte">
+        <% districtPage.proofProjects.forEach((project) => { %>
+        <li>
+          <a href="<%= project.url %>" target="_blank" rel="noopener">
+            <strong><%= project.name %></strong>
+            <span><%= project.label %></span>
+          </a>
+          <% if (project.summary) { %>
+          <p><%= project.summary %></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
     </div>
   </section>
 
@@ -189,6 +230,23 @@ const structuredDataBlocks = [
       <% }) %>
     </div>
   </section>
+
+  <% if (districtServiceLinks && districtServiceLinks.length) { %>
+  <section class="district-section" aria-labelledby="district-links-title">
+    <div class="district-section__headline">
+      <p class="district-eyebrow">Nächste Schritte</p>
+      <h2 id="district-links-title">Passende Inhalte für dein Projekt in <%= district.name %></h2>
+    </div>
+    <div class="district-guide-grid">
+      <% districtServiceLinks.forEach((item) => { %>
+      <a href="<%= item.href %>">
+        <strong><%= item.label %></strong>
+        <span>Direkt zur passenden Unterseite für Planung, Umsetzung oder Paketentscheidung.</span>
+      </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
 
   <section class="district-tester-band" aria-labelledby="district-tester-title">
     <div>

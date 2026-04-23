@@ -364,6 +364,64 @@
   color: var(--district-muted);
 }
 
+.district-proof-projects {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.district-proof-projects li {
+  border: 1px solid var(--district-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
+  padding: 14px 16px;
+}
+
+.district-proof-projects a {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--district-ink);
+  text-decoration: none;
+}
+
+.district-proof-projects a:hover {
+  color: var(--district-accent);
+}
+
+.district-proof-projects span {
+  color: var(--district-muted);
+  font-size: 0.95rem;
+}
+
+.district-proof-projects li > p {
+  margin: 10px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.62;
+}
+
+.district-review-link {
+  margin-top: 18px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--district-ink);
+  border: 1px solid var(--district-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
+  padding: 14px 16px;
+}
+
+.district-review-link:hover {
+  color: var(--district-accent);
+  border-color: var(--district-accent);
+}
+
 .district-checkgrid,
 .district-package-grid,
 .district-audience-grid,

@@ -46,7 +46,7 @@
         <div class="wt-hero-grid">
           <div class="wt-hero-copy">
             <span class="wt-eyebrow">
-              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              <i class="fa-solid fa-magnifying-glass"></i>
               SEO Tester
             </span>
             <h1><%= isEn ? 'Check whether your website can be found well on Google.' : 'Prüfe, ob deine Website bei Google gut gefunden werden kann.' %></h1>
@@ -67,13 +67,25 @@
             <p><%= isEn ? 'Enter URL and business context for realistic SEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische SEO-Bewertung ein.' %></p>
             <form data-seo-tester-form>
               <div class="wt-context-grid">
-                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
-                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
-                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                  <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. law firm)' : 'Branche (z. B. Kanzlei)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-bullseye" aria-hidden="true"></i>
+                  <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. family law)' : 'Hauptleistung (z. B. Familienrecht)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                </div>
               </div>
               <label class="visually-hidden" for="seo-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
               <div class="wt-form-row">
-                <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <div class="wt-input-shell wt-input-shell--url">
+                  <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                  <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                </div>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start SEO check' : 'SEO-Check starten' %>
@@ -131,7 +143,7 @@
                 : 'Robots.txt-Direktiven, Sitemap.xml-Präsenz und -Erreichbarkeit, Canonical-Tags, Noindex-Flags, Hreflang-Konsistenz. Ein falsches Noindex hat in unseren Audits schon sechsstelligen monatlichen Traffic gekostet.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-gauge-high"></i> <%= isEn ? 'Technical quality' : 'Technik-Qualität' %></h3>
+              <h3><i class="fa-solid fa-bolt"></i> <%= isEn ? 'Technical quality' : 'Technik-Qualität' %></h3>
               <p><%= isEn
                 ? 'HTTPS, HTTP/2, compression, response times, image weight, render-blocking resources, mobile viewport, and Core Web Vitals proxies. Weighted heavily because Google uses them as ranking factors directly.'
                 : 'HTTPS, HTTP/2, Komprimierung, Antwortzeiten, Bild-Gewicht, render-blockierende Ressourcen, Mobile-Viewport und Core-Web-Vitals-Proxies. Stark gewichtet, weil Google sie direkt als Ranking-Faktoren nutzt.' %></p>
@@ -149,7 +161,7 @@
                 : 'Link-Tiefe ab Startseite, Anchor-Text-Varianz, Orphan Pages, Link-Equity-Verteilung und Navigations-Klarheit. Oft der schnellste Hebel, um Rankings ohne neuen Content anzuheben.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-diagram-next"></i> <%= isEn ? 'Structured data' : 'Strukturierte Daten' %></h3>
+              <h3><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Structured data' : 'Strukturierte Daten' %></h3>
               <p><%= isEn
                 ? 'Organization, LocalBusiness, Service, FAQPage, BreadcrumbList, and Product schemas in JSON-LD. Correctly implemented, this unlocks rich snippets and AI answer citations.'
                 : 'Organization, LocalBusiness, Service, FAQPage, BreadcrumbList und Product-Schemas als JSON-LD. Korrekt umgesetzt, erschließt das Rich-Snippets und KI-Antwort-Zitierungen.' %></p>

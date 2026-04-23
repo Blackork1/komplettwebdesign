@@ -1,30 +1,20 @@
-cluster,keyword,intent,target_url,status,notes
-money,webdesign berlin,transactional,/webdesign-berlin,active,Main local commercial page
-money,website in berlin erstellen lassen,transactional,/webdesign-berlin,active,Local high-intent variant
-money,webseite erstellen lassen berlin,transactional,/webdesign-berlin,active,Primary conversion phrase
-money,webdesigner berlin,transactional,/webdesign-berlin,active,Service provider intent
-money,homepage erstellen lassen berlin,transactional,/webdesign-berlin,planned,Add dedicated section on hub page
-national+local,webseite erstellen lassen,transactional,/,active,Keep generic intent mainly on home page
-local,digitalagentur berlin website,transactional,/webdesign-berlin,planned,Use as semantic variant only
-district,webdesign berlin mitte,transactional,/webdesign-berlin/mitte,active,District page
-district,webdesign berlin kreuzberg,transactional,/webdesign-berlin/kreuzberg,active,District page
-district,webdesign berlin friedrichshain,transactional,/webdesign-berlin/friedrichshain,active,District page
-district,webdesign berlin charlottenburg,transactional,/webdesign-berlin/charlottenburg,active,District page
-district,webdesign berlin lichtenberg,transactional,/webdesign-berlin/lichtenberg,active,District page
-district,webdesign berlin prenzlauer berg,transactional,/webdesign-berlin/prenzlauer-berg,active,District page
-service,website kosten berlin,commercial,/webdesign-berlin/kosten-preise-pakete,verify,Ensure 200 status and unique content
-service,landingpage erstellen lassen berlin,commercial,/pakete/basis,planned,Support with dedicated paragraph and FAQ
-service,firmenwebsite erstellen berlin,commercial,/pakete/business,planned,Map to business package page
-service,website relaunch berlin,commercial,/webdesign-berlin/design-ux-ui,verify,Ensure service slug page indexed
-service,responsives webdesign berlin,commercial,/webdesign-berlin/responsives-design-mobile,verify,Ensure service slug page indexed
-service,local seo berlin unternehmen,commercial,/webdesign-berlin/seo-sichtbarkeit-einsteiger,verify,Ensure service slug page indexed
-service,webhosting fuer website berlin,commercial,/webdesign-berlin/domain-hosting-technik,verify,Ensure service slug page indexed
-trust,dsgvo website berlin,informational,/webdesign-berlin/rechtliches-sicherheit,verify,Trust + legal intent
-content,website texte erstellen lassen berlin,commercial,/webdesign-berlin/inhalte-texte-content,verify,Content service intent
-bottom-funnel,webdesign berlin kontakt,transactional,/kontakt,active,Strong conversion page
-supportive,was kostet eine website in berlin,informational,/ratgeber/website-kosten-berlin,active,Static guide with links to packages and website tester
-supportive,website erstellen berlin dauer,informational,/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten,active,Process guide linked from hub and district pages
-supportive,website relaunch berlin,informational,/ratgeber/website-relaunch-berlin,active,Relaunch guide for SEO-safe rebuild decisions
-supportive,baukasten vs professionelle website,informational,/ratgeber/baukasten-vs-professionelle-website,active,Decision guide with package CTA
-industry,website fuer handwerker berlin,commercial,/ratgeber/website-fuer-handwerker-berlin,active,Industry guide without public-sector focus
-industry,website fuer restaurants cafes berlin,commercial,/ratgeber/website-fuer-restaurants-cafes-berlin,active,Hospitality guide with reservation and local SEO CTAs
+cluster,keyword_primary,keyword_secondary_1,keyword_secondary_2,intent,target_url,status,notes
+money,webdesign berlin,website erstellen lassen berlin,webdesigner berlin,transactional,/webdesign-berlin,active,Main local commercial hub
+district,webdesign berlin mitte,website erstellen lassen mitte,webdesigner mitte berlin,transactional,/webdesign-berlin/mitte,active,District page
+district,webdesign berlin kreuzberg,website erstellen lassen kreuzberg,webdesigner kreuzberg berlin,transactional,/webdesign-berlin/kreuzberg,active,District page
+district,webdesign berlin friedrichshain,website erstellen lassen friedrichshain,webdesigner friedrichshain berlin,transactional,/webdesign-berlin/friedrichshain,active,District page
+district,webdesign berlin charlottenburg,website erstellen lassen charlottenburg,webdesigner charlottenburg berlin,transactional,/webdesign-berlin/charlottenburg,active,District page
+district,webdesign berlin lichtenberg,website erstellen lassen lichtenberg,webdesigner lichtenberg berlin,transactional,/webdesign-berlin/lichtenberg,active,District page
+district,webdesign berlin prenzlauer berg,website erstellen lassen prenzlauer berg,webdesigner prenzlauer berg berlin,transactional,/webdesign-berlin/prenzlauer-berg,active,District page
+service,website relaunch berlin,webdesign ux berlin,website benutzerführung berlin,commercial,/webdesign-berlin/design-ux-ui,active,Service page
+service,local seo berlin unternehmen,seo sichtbarkeit berlin,webseite gefunden werden berlin,commercial,/webdesign-berlin/seo-sichtbarkeit-einsteiger,active,Service page
+service,responsives webdesign berlin,mobile website berlin,mobile optimierung webdesign,commercial,/webdesign-berlin/responsives-design-mobile,active,Service page
+service,webhosting fuer website berlin,website hosting berlin,domain und technik website,commercial,/webdesign-berlin/domain-hosting-technik,active,Service page
+service,website texte erstellen lassen berlin,webseitentexte berlin,content webdesign berlin,commercial,/webdesign-berlin/inhalte-texte-content,active,Service page
+service,dsgvo website berlin,rechtssichere website berlin,website sicherheit berlin,informational,/webdesign-berlin/rechtliches-sicherheit,active,Service page
+service,website kosten berlin,webdesign preise berlin,website erstellen lassen berlin kosten,commercial,/webdesign-berlin/kosten-preise-pakete,active,Service page
+bottom-funnel,webdesign berlin kontakt,webdesigner berlin kontakt,website projekt anfrage berlin,transactional,/kontakt,active,Strong conversion page
+supportive,was kostet eine website in berlin,webseite berlin kosten,website budget berlin,informational,/ratgeber/website-kosten-berlin,active,Linked from hub and service pages
+supportive,website erstellen berlin dauer,website projekt dauer berlin,website launch berlin ablauf,informational,/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten,active,Linked from hub and service pages
+supportive,website relaunch berlin tipps,website neu gestalten berlin,relaunch checkliste website,informational,/ratgeber/website-relaunch-berlin,active,Linked from service pages
+supportive,baukasten vs professionelle website,website agentur oder baukasten,website selber machen oder erstellen lassen,informational,/ratgeber/baukasten-vs-professionelle-website,active,Decision guide

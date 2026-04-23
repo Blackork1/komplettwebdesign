@@ -23,7 +23,7 @@
         <div class="wt-hero-grid">
           <div class="wt-hero-copy">
             <span class="wt-eyebrow">
-              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              <i class="fa-solid fa-magnifying-glass"></i>
               <%= isEn ? 'Free website check' : 'Kostenloser Website-Check' %>
             </span>
             <h1><%= isEn ? 'Find out why your website is not generating enough requests.' : 'Finde heraus, warum deine Website zu wenig Anfragen bringt.' %></h1>
@@ -34,7 +34,7 @@
             </p>
             <ul class="wt-pill-list">
               <li><i class="fa-solid fa-list-check"></i> <%= isEn ? 'Clear recommendations instead of a technical checklist' : 'Klare Empfehlungen statt Technikliste' %></li>
-              <li><i class="fa-solid fa-shield"></i> <%= isEn ? 'Useful before a relaunch or optimization' : 'Sinnvoll vor Relaunch oder Optimierung' %></li>
+              <li><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'Useful before a relaunch or optimization' : 'Sinnvoll vor Relaunch oder Optimierung' %></li>
               <li><i class="fa-solid fa-clock"></i> <%= isEn ? 'Result directly in the browser' : 'Ergebnis direkt im Browser' %></li>
             </ul>
           </div>
@@ -44,13 +44,25 @@
             <p><%= isEn ? 'Business type, service and region help us assess the site in the right context.' : 'Branche, Leistung und Region helfen dabei, den Check realistisch einzuordnen.' %></p>
             <form data-website-tester-form>
               <div class="wt-context-grid">
-                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. medical practice)' : 'Branche (z. B. Arztpraxis)' %>" required>
-                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. dental implants)' : 'Hauptleistung (z. B. Zahnimplantate)' %>" required>
-                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                  <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. medical practice)' : 'Branche (z. B. Arztpraxis)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-bullseye" aria-hidden="true"></i>
+                  <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. dental implants)' : 'Hauptleistung (z. B. Zahnimplantate)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                </div>
               </div>
               <label class="visually-hidden" for="website-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
               <div class="wt-form-row">
-                <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <div class="wt-input-shell wt-input-shell--url">
+                  <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                  <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                </div>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start check' : 'Check starten' %>
@@ -95,7 +107,7 @@
             </a>
           </article>
           <article class="wt-tool-card">
-            <div class="wt-tool-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="wt-tool-icon"><i class="fa-solid fa-robot"></i></div>
             <h3><%= isEn ? 'GEO-Tester' : 'GEO-Tester' %></h3>
             <p>
               <%= isEn
@@ -107,7 +119,7 @@
             </a>
           </article>
           <article class="wt-tool-card">
-            <div class="wt-tool-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+            <div class="wt-tool-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
             <h3><%= isEn ? 'SEO-Tester' : 'SEO-Tester' %></h3>
             <p>
               <%= isEn
@@ -156,33 +168,6 @@
 
     <section class="wt-section">
       <div class="wt-shell">
-        <div class="wt-check-grid">
-          <article class="wt-check-card">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <h3><%= isEn ? 'SEO & Discoverability' : 'SEO & Auffindbarkeit' %></h3>
-            <p><%= isEn ? 'Titles, descriptions, H1 structure, canonical tags, robots, sitemap, schema.' : 'Title, Description, H1-Struktur, Canonical, Robots, Sitemap, Schema.' %></p>
-          </article>
-          <article class="wt-check-card">
-            <i class="fa-solid fa-universal-access"></i>
-            <h3><%= isEn ? 'Accessibility Signals' : 'Barrierefreiheits-Signale' %></h3>
-            <p><%= isEn ? 'Language attributes, alt texts, form labels, semantic landmarks, usable controls.' : 'Sprachattribute, ALT-Texte, Form-Labels, semantische Bereiche, nutzbare Controls.' %></p>
-          </article>
-          <article class="wt-check-card">
-            <i class="fa-solid fa-gauge-high"></i>
-            <h3><%= isEn ? 'Technical & Speed' : 'Technik & Geschwindigkeit' %></h3>
-            <p><%= isEn ? 'Load times, HTML size, script complexity, stylesheet count, optional PSI signal.' : 'Ladezeiten, HTML-Größe, Script-Komplexität, Stylesheets, optionales PSI-Signal.' %></p>
-          </article>
-          <article class="wt-check-card">
-            <i class="fa-solid fa-shield-heart"></i>
-            <h3><%= isEn ? 'Trust & Conversion' : 'Vertrauen & Conversion' %></h3>
-            <p><%= isEn ? 'HTTPS, legal/contact visibility, security headers, modernity and CTA clarity.' : 'HTTPS, sichtbare Rechtstexte/Kontakt, Security-Header, Modernität und CTA-Klarheit.' %></p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="wt-section">
-      <div class="wt-shell">
         <article class="wt-panel wt-methodology">
           <h2><%= isEn ? 'How the Website Tester evaluates your site' : 'So bewertet der Website-Tester deine Seite' %></h2>
           <p>
@@ -198,13 +183,13 @@
                 : 'Title, Description, H-Struktur, Canonical, Hreflang, Robots, Sitemap, Schema. Wir prüfen Präsenz und Intent-Fit gegen deinen Geschäftskontext.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-wand-magic-sparkles"></i> <%= isEn ? 'AI visibility' : 'KI-Sichtbarkeit' %></h3>
+              <h3><i class="fa-solid fa-robot"></i> <%= isEn ? 'AI visibility' : 'KI-Sichtbarkeit' %></h3>
               <p><%= isEn
                 ? 'Entity clarity, LLM crawler access, question-answer structure, factual verifiability. Whether AI systems can retrieve and cite you.'
                 : 'Entity-Klarheit, LLM-Crawler-Zugang, Frage-Antwort-Struktur, Fakten-Belegbarkeit. Ob KI-Systeme dich abrufen und zitieren können.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-gauge-high"></i> <%= isEn ? 'Technical & speed' : 'Technik & Speed' %></h3>
+              <h3><i class="fa-solid fa-bolt"></i> <%= isEn ? 'Technical & speed' : 'Technik & Speed' %></h3>
               <p><%= isEn
                 ? 'HTTPS, HTTP/2, compression, response time, HTML weight, render-blocking resources, mobile viewport, Core Web Vitals proxies.'
                 : 'HTTPS, HTTP/2, Komprimierung, Antwortzeit, HTML-Gewicht, render-blockierende Ressourcen, Mobile-Viewport, Core-Web-Vitals-Proxies.' %></p>
@@ -216,7 +201,7 @@
                 : 'Ob Bilder, Formulare, Überschriften und Seitenstruktur für Menschen und Suchsysteme verständlich sind.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-shield-heart"></i> <%= isEn ? 'Trust & legal' : 'Vertrauen & Rechtliches' %></h3>
+              <h3><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'Trust & legal' : 'Vertrauen & Rechtliches' %></h3>
               <p><%= isEn
                 ? 'HTTPS, impressum/privacy visibility, security headers, modernity cues, tracking + consent detection. Proxies for BGH/LfDI risk.'
                 : 'HTTPS, Sichtbarkeit von Impressum/Datenschutz, Security-Header, Modernitäts-Signale, Tracking- und Consent-Erkennung. Proxies für BGH/LfDI-Risiko.' %></p>

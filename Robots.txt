@@ -3,12 +3,48 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth/
 
+# Discovery-Bots / Search-Bots explizit erlaubt
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
+# Google-Extended (Training/Grounding-Steuerung, kein klassischer Ranking-Hebel)
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: Claude-User
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
 User-agent: Claude-SearchBot
 Allow: /
 Disallow: /admin/

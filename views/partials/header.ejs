@@ -6,15 +6,23 @@
     : '/'; %>
   <% const currentSearchPart = (typeof currentSearch !== 'undefined' && currentSearch) ? currentSearch : ''; %>
   <% const normalizedCurrentPath = currentPath.replace(/\/+$/, '') || '/'; %>
+  <% const districtPathPattern = /^\/webdesign-berlin\/(friedrichshain|prenzlauer-berg|kreuzberg|charlottenburg|lichtenberg|mitte)$/; %>
+  <% const enDistrictPathPattern = /^\/en\/webdesign-berlin\/(friedrichshain|prenzlauer-berg|kreuzberg|charlottenburg|lichtenberg|mitte)$/; %>
+  <% const isDeDistrictPath = districtPathPattern.test(normalizedCurrentPath); %>
+  <% const isEnDistrictPath = enDistrictPathPattern.test(normalizedCurrentPath); %>
+  <% const isDeServicePath = normalizedCurrentPath.startsWith('/webdesign-berlin/') && !isDeDistrictPath; %>
+  <% const isEnServicePath = normalizedCurrentPath.startsWith('/en/webdesign-berlin/') && !isEnDistrictPath; %>
   <% const deToEnMap = { '/': '/en', '/kontakt': '/en/kontakt', '/webdesign-berlin': '/en/webdesign-berlin', '/pakete': '/en/pakete', '/website-tester': '/en/website-tester', '/website-tester/broken-links': '/en/website-tester/broken-links', '/website-tester/geo': '/en/website-tester/geo', '/website-tester/seo': '/en/website-tester/seo', '/website-tester/meta': '/en/website-tester/meta', '/website-tester/report-confirm': '/en/website-tester/report-confirm', '/website-tester/geo/report-confirm': '/en/website-tester/geo/report-confirm', '/website-tester/seo/report-confirm': '/en/website-tester/seo/report-confirm', '/website-tester/meta/report-confirm': '/en/website-tester/meta/report-confirm' }; %>
   <% const enToDeMap = { '/en': '/', '/en/kontakt': '/kontakt', '/en/webdesign-berlin': '/webdesign-berlin', '/en/pakete': '/pakete', '/en/website-tester': '/website-tester', '/en/website-tester/broken-links': '/website-tester/broken-links', '/en/website-tester/geo': '/website-tester/geo', '/en/website-tester/seo': '/website-tester/seo', '/en/website-tester/meta': '/website-tester/meta', '/en/website-tester/report-confirm': '/website-tester/report-confirm', '/en/website-tester/geo/report-confirm': '/website-tester/geo/report-confirm', '/en/website-tester/seo/report-confirm': '/website-tester/seo/report-confirm', '/en/website-tester/meta/report-confirm': '/website-tester/meta/report-confirm' }; %>
   <% const switchToEnPath = deToEnMap[normalizedCurrentPath]
-    || (normalizedCurrentPath.startsWith('/webdesign-berlin/') ? `/en${normalizedCurrentPath}` : null)
+    || (isDeDistrictPath ? `/en${normalizedCurrentPath}` : null)
     || (normalizedCurrentPath.startsWith('/pakete/') ? `/en${normalizedCurrentPath}` : null)
+    || (isDeServicePath ? normalizedCurrentPath : null)
     || (normalizedCurrentPath.startsWith('/en/') ? normalizedCurrentPath : '/en'); %>
   <% const switchToDePath = enToDeMap[normalizedCurrentPath]
-    || (normalizedCurrentPath.startsWith('/en/webdesign-berlin/') ? normalizedCurrentPath.replace(/^\/en/, '') : null)
+    || (isEnDistrictPath ? normalizedCurrentPath.replace(/^\/en/, '') : null)
     || (normalizedCurrentPath.startsWith('/en/pakete/') ? normalizedCurrentPath.replace(/^\/en/, '') : null)
+    || (isEnServicePath ? normalizedCurrentPath.replace(/^\/en/, '') : null)
     || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
   <% const switchToEnHref = `${switchToEnPath}${currentSearchPart}`; %>
   <% const switchToDeHref = `${switchToDePath}${currentSearchPart}`; %>

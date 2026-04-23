@@ -68,7 +68,10 @@
             <form data-broken-links-form>
               <label class="visually-hidden" for="broken-links-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
               <div class="wt-form-row">
-                <input id="broken-links-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <div class="wt-input-shell wt-input-shell--url">
+                  <i class="fa-solid fa-link" aria-hidden="true"></i>
+                  <input id="broken-links-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                </div>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Run Scan' : 'Scan starten' %>
@@ -126,7 +129,7 @@
                 : '500 Internal Server Error, 502/503/504 Gateway-Fehler, Connection-Timeouts. Oft intermittierend, schaden immer Crawl-Budget und UX.' %></p>
             </div>
             <div class="wt-method-card">
-              <h3><i class="fa-solid fa-arrow-turn-down"></i> <%= isEn ? 'Redirect chains' : 'Weiterleitungsketten' %></h3>
+              <h3><i class="fa-solid fa-link"></i> <%= isEn ? 'Redirect chains' : 'Weiterleitungsketten' %></h3>
               <p><%= isEn
                 ? '301/302 redirects are fine — unless they chain. 3+ hops cost crawl budget and link equity. The scanner flags chains and their length.'
                 : '301/302-Weiterleitungen sind okay — außer sie verketten sich. 3+ Hops kosten Crawl-Budget und Link-Equity. Der Scanner markiert Ketten und ihre Länge.' %></p>

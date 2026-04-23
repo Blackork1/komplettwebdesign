@@ -95,9 +95,9 @@
     "district-berlin.css": {
       "source": "district-berlin.css",
       "output": "district-berlin.min.css",
-      "href": "/district-berlin.min.css?v=53be3deba333",
-      "hash": "53be3deba333",
-      "bytes": 41121
+      "href": "/district-berlin.min.css?v=b3bd8d75b9be",
+      "hash": "b3bd8d75b9be",
+      "bytes": 42115
     },
     "extra.css": {
       "source": "extra.css",
@@ -148,6 +148,13 @@
       "hash": "6ddd7b6f3a5b",
       "bytes": 1324
     },
+    "ratgeber.css": {
+      "source": "ratgeber.css",
+      "output": "ratgeber.min.css",
+      "href": "/ratgeber.min.css?v=dac35662313d",
+      "hash": "dac35662313d",
+      "bytes": 14977
+    },
     "styles.css": {
       "source": "styles.css",
       "output": "styles.min.css",
@@ -158,9 +165,9 @@
     "website-tester.css": {
       "source": "website-tester.css",
       "output": "website-tester.min.css",
-      "href": "/website-tester.min.css?v=c1844278c111",
-      "hash": "c1844278c111",
-      "bytes": 15270
+      "href": "/website-tester.min.css?v=0f759b6f0b74",
+      "hash": "0f759b6f0b74",
+      "bytes": 15647
     }
   }
 }

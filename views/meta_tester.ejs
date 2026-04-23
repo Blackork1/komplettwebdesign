@@ -45,13 +45,25 @@
 
             <form data-meta-tester-form>
               <div class="wt-context-grid">
-                <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. dental clinic)' : 'Branche (z. B. Zahnarztpraxis)' %>" required>
-                <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. dental implants)' : 'Hauptleistung (z. B. Zahnimplantate)' %>" required>
-                <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                  <input name="businessType" type="text" placeholder="<%= isEn ? 'Business type (e.g. dental clinic)' : 'Branche (z. B. Zahnarztpraxis)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-bullseye" aria-hidden="true"></i>
+                  <input name="primaryService" type="text" placeholder="<%= isEn ? 'Primary service (e.g. dental implants)' : 'Hauptleistung (z. B. Zahnimplantate)' %>" required>
+                </div>
+                <div class="wt-input-shell">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <input name="targetRegion" type="text" placeholder="<%= isEn ? 'Target region (e.g. Berlin)' : 'Zielregion (z. B. Berlin)' %>" required>
+                </div>
               </div>
               <label class="visually-hidden" for="meta-url"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
               <div class="wt-form-row">
-                <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                <div class="wt-input-shell wt-input-shell--url">
+                  <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                  <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                </div>
                 <button class="wt-button" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start meta check' : 'Meta-Check starten' %>

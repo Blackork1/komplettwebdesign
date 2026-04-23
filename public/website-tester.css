@@ -166,6 +166,31 @@ body.website-tester-page {
   border-color: rgba(196, 78, 47, 0.6);
 }
 
+.wt-input-shell {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.wt-input-shell i {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--wt-accent);
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.wt-input-shell input {
+  padding-left: 2.75rem;
+}
+
+.wt-input-shell:focus-within i {
+  color: var(--wt-accent-strong);
+}
+
 .wt-button,
 .wt-button-secondary,
 .wt-tag {
@@ -950,6 +975,10 @@ body.website-tester-page {
 .website-tester-page .wt-context-grid input {
   border-color: var(--wt-border);
   border-radius: 8px;
+}
+
+.website-tester-page .wt-input-shell input {
+  padding-left: 2.8rem;
 }
 
 .website-tester-page .wt-form-row input:focus,

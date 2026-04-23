@@ -7,8 +7,9 @@
 
   const pageSlug = page.slug || '';
   const pageUrl = `${baseUrl}/webdesign-berlin/${pageSlug}`;
-  const pageName = page.title || (page.hero && page.hero.title) || title || 'Leistung';
+  const pageName = (page.hero && page.hero.title) || page.title || title || 'Leistung';
   const pageDesc = description || page.meta_description || (page.hero && page.hero.subtitle) || '';
+  const updatedIso = page.updatedAt ? new Date(page.updatedAt).toISOString() : null;
   const orgName = typeof schemaOrgName !== 'undefined' ? schemaOrgName : 'Komplett Webdesign';
   const orgLogo = typeof schemaOrgLogo !== 'undefined' ? schemaOrgLogo : `${baseUrl}/images/LogoWhite.svg`;
   const orgSameAs = (typeof schemaOrgSameAs !== 'undefined' && Array.isArray(schemaOrgSameAs))
@@ -127,14 +128,37 @@
       "url": ogImage
     };
   }
+  if (updatedIso) {
+    webPageSchema.dateModified = updatedIso;
+    webPageSchema.datePublished = updatedIso;
+  }
+
+  const faqSchema = (page.faqItems && page.faqItems.length)
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": pageUrl + "#faq",
+        "mainEntity": page.faqItems.map(function(item) {
+          return {
+            "@type": "Question",
+            "name": item.q,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": item.a
+            }
+          };
+        })
+      }
+    : null;
 
   const structuredDataBlocks = [
     orgSchema,
     websiteSchema,
     breadcrumbSchema,
     serviceSchema,
-    webPageSchema
-  ];
+    webPageSchema,
+    faqSchema
+  ].filter(Boolean);
 %>
 <%- include('../partials/head', { title, description, ogImage, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
@@ -263,9 +287,64 @@
   .hero-subtitle {
     font-size: 1.3em;
     opacity: 0.96;
-    max-width: 800px;
-    margin: 0 auto 30px;
+    max-width: 860px;
+    margin: 0 auto 18px;
     line-height: 1.6;
+  }
+
+  .hero-answer {
+    max-width: 860px;
+    margin: 0 auto 18px;
+    font-size: 1.06em;
+    line-height: 1.75;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 16px 18px;
+    border-radius: 12px;
+  }
+
+  .hero-cta-variants {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .hero-cta-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 12px 20px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .hero-cta-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .hero-cta-button--primary {
+    background: #ffffff;
+    color: var(--wd-accent-strong);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  }
+
+  .hero-cta-button--primary:hover {
+    background: #fdf8f4;
+  }
+
+  .hero-cta-button--secondary {
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.46);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .hero-cta-button--secondary:hover {
+    background: rgba(255, 255, 255, 0.18);
   }
 
   .hero-icons {
@@ -553,6 +632,104 @@
     color: var(--wd-muted) !important;
   }
 
+  .proof-trust-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  .proof-card,
+  .trust-card {
+    background: #ffffff;
+    border-radius: 15px;
+    border: 1px solid var(--wd-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    padding: 32px;
+  }
+
+  .proof-card h2,
+  .trust-card h2 {
+    font-size: 1.65em;
+    margin-bottom: 12px;
+  }
+
+  .proof-card p,
+  .trust-card p {
+    color: var(--wd-muted);
+  }
+
+  .context-links {
+    background: #ffffff;
+    border-radius: 15px;
+    border: 1px solid var(--wd-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    padding: 28px;
+    margin-bottom: 40px;
+  }
+
+  .context-links h2 {
+    font-size: 1.55em;
+    margin-bottom: 14px;
+  }
+
+  .context-links ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .context-links a {
+    display: inline-flex;
+    text-decoration: none;
+    border: 1px solid rgba(215, 91, 54, 0.22);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--wd-accent-strong);
+    font-weight: 500;
+    background: #fff9f5;
+  }
+
+  .context-links a:hover {
+    background: #fff2e9;
+  }
+
+  .service-faq {
+    margin-bottom: 40px;
+    background: #ffffff;
+    border-radius: 15px;
+    border: 1px solid var(--wd-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    padding: 26px;
+  }
+
+  .service-faq h2 {
+    margin-bottom: 14px;
+    font-size: 1.6em;
+  }
+
+  .service-faq details {
+    border: 1px solid rgba(215, 91, 54, 0.16);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: #fff9f5;
+  }
+
+  .service-faq summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--wd-ink);
+  }
+
+  .service-faq p {
+    margin-top: 9px;
+    color: var(--wd-muted);
+  }
+
   /* CTA Section */
   .cta-section {
     background: linear-gradient(135deg,
@@ -613,6 +790,14 @@
       grid-template-columns: 1fr;
     }
 
+    .proof-trust-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .context-links ul {
+      grid-template-columns: 1fr;
+    }
+
     .hero-icons {
       gap: 20px;
     }
@@ -659,7 +844,18 @@
 
         <% if (page.hero.subtitle) { %>
         <p class="hero-subtitle"><%= page.hero.subtitle %></p>
-        <% } %> <% if (page.hero.icons && page.hero.icons.length) { %>
+        <% } %>
+        <% if (page.answerBlock) { %>
+        <p class="hero-answer"><%= page.answerBlock %></p>
+        <% } %>
+        <% if (page.ctaVariants && page.ctaVariants.length) { %>
+        <div class="hero-cta-variants" aria-label="Call-to-Action Varianten">
+          <% page.ctaVariants.forEach(function(item, index) { %>
+          <a href="<%= item.href %>" class="hero-cta-button <%= index === 0 ? 'hero-cta-button--primary' : 'hero-cta-button--secondary' %>"><%= item.label %></a>
+          <% }) %>
+        </div>
+        <% } %>
+        <% if (page.hero.icons && page.hero.icons.length) { %>
         <div class="hero-icons">
           <% page.hero.icons.forEach(function(icon){ %>
           <div class="hero-icon-item">
@@ -671,6 +867,23 @@
         <% } %>
       </div>
     </section>
+
+    <% if (page.proofBlock || page.trustBlock) { %>
+    <section class="proof-trust-grid">
+      <% if (page.proofBlock) { %>
+      <article class="proof-card">
+        <h2><%= page.proofBlock.title %></h2>
+        <p><%= page.proofBlock.text %></p>
+      </article>
+      <% } %>
+      <% if (page.trustBlock) { %>
+      <article class="trust-card">
+        <h2><%= page.trustBlock.title %></h2>
+        <p><%= page.trustBlock.text %></p>
+      </article>
+      <% } %>
+    </section>
+    <% } %>
 
     <!-- Problem & Solution Cards -->
     <% if ( (page.intro.problem && (page.intro.problem.title ||
@@ -787,6 +1000,29 @@
         </p>
         <% }) %> <% } %>
       </div>
+    </section>
+    <% } %>
+
+    <% if (page.internalLinks && page.internalLinks.length) { %>
+    <section class="context-links" aria-labelledby="context-links-title">
+      <h2 id="context-links-title">Passende nächste Schritte</h2>
+      <ul>
+        <% page.internalLinks.forEach(function(linkItem) { %>
+        <li><a href="<%= linkItem.href %>"><%= linkItem.label %></a></li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <% if (page.faqItems && page.faqItems.length) { %>
+    <section class="service-faq" aria-labelledby="service-faq-title">
+      <h2 id="service-faq-title">Häufige Fragen</h2>
+      <% page.faqItems.forEach(function(item, index) { %>
+      <details <%= index === 0 ? 'open' : '' %>>
+        <summary><%= item.q %></summary>
+        <p><%= item.a %></p>
+      </details>
+      <% }) %>
     </section>
     <% } %>
 

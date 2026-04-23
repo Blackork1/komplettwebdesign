@@ -1,117 +1,114 @@
-<!-- views/ratgeber/show.ejs -->
 <%- include('../partials/head') %>
 <%- include('../partials/header') %>
 
-<style>
-  .hero-content {
-    width: 100%;
-    flex: auto;
-  }
+<link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 
-  @media (max-width: 600px) {
-    .d-flex {
-      flex-direction: column;
-    }
-  }
-  
-</style>
+<main class="rg-page rg-detail-page" id="hero">
+  <section class="rg-detail-hero" aria-labelledby="rg-detail-title">
+    <div class="rg-detail-backdrop" style="background-image: url('<%= post.image_url || '/images/default-blog.webp' %>');"></div>
+    <div class="rg-detail-overlay" aria-hidden="true"></div>
 
-<!-- Hero: nutzt Beitragsbild -->
-<section class="heroB d-flex align-items-end" style="background-image: url('<%= post.image_url%>');">
-  <div class="hero-content">
-    <nav aria-label="breadcrumb" class="mb-2">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/">Startseite</a></li>
-        <li class="breadcrumb-item"><a href="/ratgeber">Ratgeber</a></li>
-        <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
-      </ol>
-    </nav>
+    <div class="container rg-detail-hero-inner">
+      <nav aria-label="breadcrumb" class="rg-breadcrumb-wrap">
+        <ol class="breadcrumb rg-breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Startseite</a></li>
+          <li class="breadcrumb-item"><a href="/ratgeber">Ratgeber</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
+        </ol>
+      </nav>
 
-    <h1 class="display-5 fw-bold mb-2"><%= post.title %></h1>
-    <p class="lead mt-2 text-white"><%= post.description %></p>
-    <div class="mt-3 d-flex gap-2">
-      <a href="/pakete" class="btn btn-accent btn-lg">Pakete vergleichen</a>
-      <a href="/kontakt" class="btn btn-outline-light btn-lg">Kurzberatung</a>
-    </div>
-    <p class="mb-0">
-      <small>
-        Veröffentlicht am <time datetime="<%= publishedISO %>"><%= new Date(publishedISO).toLocaleDateString('de-DE') %></time>
+      <% if (post.category) { %>
+      <p class="rg-detail-category"><%= post.category %></p>
+      <% } %>
+
+      <h1 id="rg-detail-title"><%= post.title %></h1>
+      <p class="rg-detail-lead"><%= post.description %></p>
+
+      <div class="rg-detail-meta">
+        <span>
+          Veröffentlicht am
+          <time datetime="<%= publishedISO %>"><%= new Date(publishedISO).toLocaleDateString('de-DE') %></time>
+        </span>
         <% if (modifiedISO && modifiedISO !== publishedISO) { %>
-        · Aktualisiert am <time datetime="<%= modifiedISO %>"><%= new Date(modifiedISO).toLocaleDateString('de-DE') %></time>
+        <span>
+          Aktualisiert am
+          <time datetime="<%= modifiedISO %>"><%= new Date(modifiedISO).toLocaleDateString('de-DE') %></time>
+        </span>
         <% } %>
-      </small>
-    </p>
-  </div>
-</section>
+      </div>
 
-<div class="container my-5">
-  <div class="row">
-    <!-- Artikel-Content -->
-    <article class="col-lg-8">
-      <!-- DB-Content (bereits serverseitig gerendert) -->
-      <div class="mb-4">
+      <div class="rg-detail-actions">
+        <a href="/pakete" class="btn btn-accent btn-lg">Pakete vergleichen</a>
+        <a href="/kontakt" class="btn btn-outline-light btn-lg">Kurzberatung</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="container rg-detail-layout">
+    <article class="rg-article" aria-label="Ratgeber Inhalt">
+      <div class="rg-article-body">
         <%- renderedContent %>
       </div>
 
-      <section class="p-4 p-md-5 rounded-3 border bg-light mb-5" aria-labelledby="website-check-ratgeber-title">
-        <h2 id="website-check-ratgeber-title" class="h4 mb-3">Kostenlosen Website-Check vor der Anfrage starten</h2>
-        <p class="mb-3">
-          Prüfe Technik, SEO, GEO-Sichtbarkeit, Meta-Daten und fehlerhafte Links. Danach ist im Erstgespräch sofort klarer, welche Optimierungen wirklich Priorität haben.
+      <section class="rg-inline-cta" aria-labelledby="website-check-ratgeber-title">
+        <p class="rg-cta-kicker">Kostenloser Audit</p>
+        <h2 id="website-check-ratgeber-title">Website-Check vor der Anfrage starten</h2>
+        <p>
+          Prüfe Technik, SEO, GEO-Sichtbarkeit, Meta-Daten und fehlerhafte Links.
+          Danach ist im Erstgespräch sofort klar, welche Optimierungen Priorität haben.
         </p>
-        <div class="d-flex gap-2">
+        <div class="rg-inline-cta-actions">
           <a href="/website-tester" class="btn btn-accent" data-track="ratgeber_website_tester_cta">Website-Check starten</a>
           <a href="/kontakt" class="btn btn-outline-primary" data-track="ratgeber_contact_cta">Ergebnis besprechen</a>
         </div>
       </section>
 
-      <!-- FAQ (falls vorhanden) -->
       <% if (post.faq_json && post.faq_json.length) { %>
-      <h2 class="h4 mt-5 mb-3">Häufige Fragen</h2>
-      <div class="accordion" id="faqRatgeber">
-        <% post.faq_json.forEach(function(faq, idx){ %>
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="hfaq<%= idx %>">
-            <button class="accordion-button <%= idx ? 'collapsed' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#cfag<%= idx %>" aria-expanded="<%= idx ? 'false' : 'true' %>" aria-controls="cfag<%= idx %>">
-              <%= faq.name || (faq.question || 'Frage') %>
-            </button>
-          </h2>
-          <div id="cfag<%= idx %>" class="accordion-collapse collapse <%= idx ? '' : 'show' %>" aria-labelledby="hfaq<%= idx %>" data-bs-parent="#faqRatgeber">
-            <div class="accordion-body">
-              <%= (faq.acceptedAnswer && faq.acceptedAnswer.text) || faq.answer || '' %>
-            </div>
-          </div>
+      <section class="rg-faq-block" aria-labelledby="rg-faq-title">
+        <p class="rg-section-kicker">FAQ</p>
+        <h2 id="rg-faq-title">Häufige Fragen</h2>
+
+        <div class="rg-faq-list">
+          <% post.faq_json.forEach(function(faq, idx){ %>
+          <details class="rg-faq-item" <%= idx === 0 ? 'open' : '' %>>
+            <summary><%= faq.name || (faq.question || 'Frage') %></summary>
+            <p><%= (faq.acceptedAnswer && faq.acceptedAnswer.text) || faq.answer || '' %></p>
+          </details>
+          <% }); %>
         </div>
-        <% }); %>
-      </div>
+      </section>
       <% } %>
     </article>
 
-    <!-- Sidebar: Newsletter / weitere Ratgeber -->
-    <aside class="col-lg-4">
-      <div class="newsletter-sidebar mb-4">
-        <h3 class="h5">Newsletter</h3>
-        <p class="small mb-3">Neue Ratgeber zu Webdesign, Performance & SEO.</p>
-        <%- include('../partials/newsletter_form') %>
-      </div>
+    <aside class="rg-detail-side" aria-label="Weitere Inhalte und Newsletter">
+      <div class="rg-sticky-wrap">
+        <section class="rg-newsletter-card">
+          <p class="rg-panel-eyebrow">Newsletter</p>
+          <h3>Neue Ratgeber direkt ins Postfach</h3>
+          <p>Webdesign, Performance und SEO mit Fokus auf lokale Sichtbarkeit.</p>
+          <div class="rg-newsletter-form">
+            <%- include('../partials/newsletter_form') %>
+          </div>
+        </section>
 
-      <!-- Optional: weitere Ratgeber (zeige 4 neueste außer aktuellem) -->
-      <% if (typeof others !== 'undefined' && others && others.length) { %>
-      <div class="mb-4">
-        <h3 class="h6 mb-3">Weitere Ratgeber</h3>
-        <% others.slice(0,4).forEach(function(o){ if (o.slug === post.slug) return; %>
-        <div class="d-flex align-items-center mb-3">
-          <a href="/ratgeber/<%= o.slug %>" class="d-flex text-decoration-none">
-            <div class="ms-2">
-              <div class="fw-semibold small"><%= o.title %></div>
-              <% if (o.excerpt) { %><div class="text-muted small"><%= o.excerpt %></div><% } %>
-            </div>
-          </a>
-        </div>
-        <% }); %>
+        <% if (typeof others !== 'undefined' && others && others.length) { %>
+        <section class="rg-other-guides" aria-labelledby="rg-others-title">
+          <h3 id="rg-others-title">Weitere Ratgeber</h3>
+          <div class="rg-other-list">
+            <% others.slice(0, 4).forEach(function(o) { if (o.slug === post.slug) return; %>
+            <a href="/ratgeber/<%= o.slug %>" class="rg-other-item" aria-label="<%= o.title %>">
+              <strong><%= o.title %></strong>
+              <% if (o.excerpt) { %>
+              <p><%= o.excerpt %></p>
+              <% } %>
+            </a>
+            <% }); %>
+          </div>
+        </section>
+        <% } %>
       </div>
-      <% } %>
     </aside>
   </div>
-</div>
+</main>
 
 <%- include('../partials/footer') %>

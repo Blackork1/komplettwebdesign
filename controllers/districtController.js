@@ -160,6 +160,8 @@ export async function renderDistrictPage(req, res, next) {
       packageCards: DISTRICT_PACKAGE_CARDS,
       processSteps: buildGermanProcessSteps(district.name),
       faqItems: buildGermanDistrictFaq(district.name),
+      districtServiceLinks: buildDistrictServiceLinks(slug),
+      districtLastUpdatedIso: CONTENT_LAST_UPDATED_ISO,
       seoGuides: SEO_GUIDE_CLUSTER.slice(0, 6).map((guide) => ({
         title: guide.title,
         excerpt: guide.excerpt,
@@ -175,6 +177,7 @@ const SITE_URL = (process.env.CANONICAL_BASE_URL || process.env.BASE_URL || "htt
 const DEFAULT_PACKAGE_IMAGE = SITE_URL + "/images/heroImageH.webp";
 const YOUTUBE_ID = "M_fYtNuPcGg";
 const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
+const CONTENT_LAST_UPDATED_ISO = "2026-04-23";
 
 const DISTRICT_PACKAGE_CARDS = [
   {
@@ -291,6 +294,30 @@ function buildGermanDistrictPage(slug, district) {
     metaDescription: `Komplett Webdesign erstellt Websites für ${district.name}: Design, SEO, Texte, Hosting und Wartung für kleine Unternehmen in Berlin.`,
     heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
     imageAlt: `Webdesign für Unternehmen in ${district.name}`,
+    answerBlock: `Webdesign in ${district.name} funktioniert am besten mit klarer Leistungsstruktur, lokal passender Sprache und direkter Kontaktführung. Genau darauf ist diese Seite ausgerichtet: Suchintention treffen, Vertrauen aufbauen und den nächsten Schritt einfach machen – vom ersten Besuch bis zur qualifizierten Anfrage.`,
+    proofBlock: `Du willst nicht nur Texte lesen, sondern echte Ergebnisse sehen. Deshalb zeigen wir dir hier zwei live Kundenprojekte aus Berlin. Beide Websites sind auf klare Leistungsdarstellung, mobile Nutzung und schnelle Kontaktaufnahme ausgerichtet.`,
+    trustBlock: `Bevor du anfragst, kannst du dir unser öffentliches Google-Profil ansehen. Dort findest du echte Bewertungen zur Zusammenarbeit, Kommunikation und Umsetzung - transparent und direkt nachvollziehbar.`,
+    proofSectionTitle: "Live-Referenzen aus echten Berliner Projekten",
+    trustSectionTitle: "Echte Google-Bewertungen zur Zusammenarbeit",
+    proofProjects: [
+      {
+        name: "Zur Alten Backstube",
+        url: "https://www.zuraltenbackstube.de",
+        label: "www.zuraltenbackstube.de",
+        summary: "Klare Angebotsstruktur, lokaler Bezug und ein direkter Weg zur Kontaktaufnahme."
+      },
+      {
+        name: "Sauber Mehr",
+        url: "https://www.sauber-mehr.de",
+        label: "www.sauber-mehr.de",
+        summary: "Servicefokussierte Seitenführung, damit Interessenten ohne Umwege anfragen können."
+      }
+    ],
+    googleRating: {
+      label: "★★★★★ 5,0/5 · 4 Google-Rezensionen",
+      href: "https://share.google/6NAPsubZRs6yeSOrg",
+      cta: "Bewertungen auf Google lesen"
+    },
     neighborhoods: [district.name, "Berlin"],
     audiences: ["lokale Dienstleister", "kleine Unternehmen", "Selbstständige"],
     proof: "Wichtig sind klare Leistungen, lokale Suchbegriffe, schnelle mobile Nutzung und direkte Kontaktwege.",
@@ -332,8 +359,55 @@ function buildGermanDistrictFaq(name) {
     {
       q: "Kann ein Buchungssystem oder Shop integriert werden?",
       a: "Ja. Ein Buchungssystem ist im Premium-Paket enthalten. Shops sind optional möglich und hängen vom Umfang ab."
+    },
+    {
+      q: `Welche Seiten sind für ${name} besonders wichtig?`,
+      a: "In der Regel Startseite, klare Leistungsseiten, ein vertrauensstarker Über-uns-Bereich und eine direkte Kontakt- oder Buchungsstrecke. Diese Struktur sorgt dafür, dass Besucher schneller zu qualifizierten Anfragen werden."
     }
   ];
+}
+
+function buildDistrictServiceLinks(slug) {
+  const defaults = [
+    { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
+    { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
+    { label: "Business-Paket ansehen", href: "/pakete/business" }
+  ];
+
+  const byDistrict = {
+    mitte: [
+      { label: "Design & Benutzerführung (UX/UI)", href: "/webdesign-berlin/design-ux-ui" },
+      { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
+      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+    ],
+    friedrichshain: [
+      { label: "Inhalte & Texte (Content)", href: "/webdesign-berlin/inhalte-texte-content" },
+      { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
+      { label: "Business-Paket ansehen", href: "/pakete/business" }
+    ],
+    "prenzlauer-berg": [
+      { label: "Design & Benutzerführung (UX/UI)", href: "/webdesign-berlin/design-ux-ui" },
+      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/webdesign-berlin/rechtliches-sicherheit" },
+      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+    ],
+    kreuzberg: [
+      { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
+      { label: "Inhalte & Texte (Content)", href: "/webdesign-berlin/inhalte-texte-content" },
+      { label: "Basis-Paket ansehen", href: "/pakete/basis" }
+    ],
+    charlottenburg: [
+      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/webdesign-berlin/rechtliches-sicherheit" },
+      { label: "Domain, Hosting & Technik", href: "/webdesign-berlin/domain-hosting-technik" },
+      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+    ],
+    lichtenberg: [
+      { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
+      { label: "Kosten, Preise & Pakete", href: "/webdesign-berlin/kosten-preise-pakete" },
+      { label: "Business-Paket ansehen", href: "/pakete/business" }
+    ]
+  };
+
+  return byDistrict[slug] || defaults;
 }
 
 
@@ -344,16 +418,19 @@ export function renderWebdesignBerlinHub(req, res) {
   const webdesignBerlinUrl = `${SITE_URL}${pagePath}`;
   const contactPath = isEn ? "/en/kontakt" : "/kontakt";
 
-  let metaTitle = "Website erstellen lassen Berlin | Webdesign ab 499 EUR";
+  let metaTitle = "Webdesign Berlin: Website erstellen lassen ab 499 EUR";
   let metaDescription =
-    "Komplett Webdesign erstellt Websites in Berlin ab 499 EUR: persönliches Webdesign, SEO, Hosting, Wartung, Buchungssysteme und Shops aus einer Hand.";
+    "Webdesign Berlin mit klarem Lead-Fokus: Website erstellen lassen ab 499 EUR inkl. Design, SEO-Basis, Hosting-Optionen und persönlicher Betreuung für lokale Unternehmen.";
 
   const hero = {
-    title: "Website erstellen lassen in Berlin - persönlich, SEO-freundlich und aus einer Hand",
+    title: "Webdesign Berlin: Website erstellen lassen, die lokal sichtbar wird und Anfragen bringt",
     description:
-      "Komplett Webdesign erstellt Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Mit klarem Design, verständlichen Texten, sauberer SEO-Basis und Technik, die auch nach dem Launch betreut wird.",
+      "Komplett Webdesign erstellt Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Mit klarer Nutzerführung, conversion-orientierten Texten und technischer SEO-Basis entsteht ein Auftritt, der professionell wirkt und messbar Kontaktanfragen unterstützt.",
+    answerBlock:
+      "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
     ctaPrimary: { label: "Kostenloses Erstgespräch sichern", href: "/kontakt" },
     ctaSecondary: { label: "Webdesign-Pakete ansehen", href: "/pakete" },
+    ctaTertiary: { label: "Website-Tester starten", href: "/website-tester" },
     rating: { label: "★★★★★ 5,0/5 · 4 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
     image: {
       src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
@@ -797,8 +874,11 @@ export function renderWebdesignBerlinHub(req, res) {
     hero.title = "Web Design in Berlin: Get a website that wins customers";
     hero.description =
       "Want to be found more easily in Berlin? We build your website professionally, mobile-first, and focused on qualified inquiries. Including SEO basics, hosting, and support.";
+    hero.answerBlock =
+      "If you want stronger local visibility in Berlin, your website needs more than visual polish. We combine structure, search intent, and conversion copy so visitors quickly understand your offer and move into consultation, contact, or a technical website check.";
     hero.ctaPrimary = { label: "Book a free initial consultation", href: contactPath };
     hero.ctaSecondary = { label: "View web design packages", href: "/en/pakete" };
+    hero.ctaTertiary = { label: "Run website tester", href: "/en/website-tester" };
     hero.rating.label = "★★★★★ 5.0/5 · 3 Google reviews";
     hero.image.alt = "Sören Blocksdorf - Web Designer Berlin";
     hero.trustBadges = [
@@ -1265,6 +1345,7 @@ export function renderWebdesignBerlinHub(req, res) {
     pagePath,
     contactPath,
     hero,
+    contentLastUpdatedIso: CONTENT_LAST_UPDATED_ISO,
     audience,
     services,
     packages,
