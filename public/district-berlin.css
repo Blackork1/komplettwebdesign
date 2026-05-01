@@ -2214,6 +2214,7 @@
   display: grid;
   grid-template-rows: minmax(260px, auto) auto;
   gap: 14px;
+  align-content: space-evenly;
 }
 
 .webdesign-berlin-page .wd-hero__frame {

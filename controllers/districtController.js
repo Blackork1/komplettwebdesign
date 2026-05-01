@@ -426,9 +426,9 @@ export function renderWebdesignBerlinHub(req, res) {
     title: "Webdesign Berlin: Website erstellen lassen, die lokal sichtbar wird und Anfragen bringt",
     description:
       "Komplett Webdesign erstellt Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Mit klarer Nutzerführung, conversion-orientierten Texten und technischer SEO-Basis entsteht ein Auftritt, der professionell wirkt und messbar Kontaktanfragen unterstützt.",
-    answerBlock:
-      "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
-    ctaPrimary: { label: "Kostenloses Erstgespräch sichern", href: "/kontakt" },
+    // answerBlock:
+    //   "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
+     ctaPrimary: { label: "Kostenloses Erstgespräch sichern", href: "/kontakt" },
     ctaSecondary: { label: "Webdesign-Pakete ansehen", href: "/pakete" },
     ctaTertiary: { label: "Website-Tester starten", href: "/website-tester" },
     rating: { label: "★★★★★ 5,0/5 · 4 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
@@ -874,9 +874,9 @@ export function renderWebdesignBerlinHub(req, res) {
     hero.title = "Web Design in Berlin: Get a website that wins customers";
     hero.description =
       "Want to be found more easily in Berlin? We build your website professionally, mobile-first, and focused on qualified inquiries. Including SEO basics, hosting, and support.";
-    hero.answerBlock =
-      "If you want stronger local visibility in Berlin, your website needs more than visual polish. We combine structure, search intent, and conversion copy so visitors quickly understand your offer and move into consultation, contact, or a technical website check.";
-    hero.ctaPrimary = { label: "Book a free initial consultation", href: contactPath };
+    // hero.answerBlock =
+    //   "If you want stronger local visibility in Berlin, your website needs more than visual polish. We combine structure, search intent, and conversion copy so visitors quickly understand your offer and move into consultation, contact, or a technical website check.";
+     hero.ctaPrimary = { label: "Book a free initial consultation", href: contactPath };
     hero.ctaSecondary = { label: "View web design packages", href: "/en/pakete" };
     hero.ctaTertiary = { label: "Run website tester", href: "/en/website-tester" };
     hero.rating.label = "★★★★★ 5.0/5 · 3 Google reviews";
