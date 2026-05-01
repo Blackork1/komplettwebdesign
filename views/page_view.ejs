@@ -2,12 +2,31 @@
 <html>
 
 <head>
+  <%
+    const pageTitle = page.title || 'Komplett Webdesign';
+    const pageDescription = page.description || '';
+    const pageUrl = canonicalUrl;
+    const pageImage = page.og_image_url || page.image_url || `${canonicalBaseUrl}/images/LogoTransparent.webp`;
+    const dataBlocks = Array.isArray(structuredDataBlocks) ? structuredDataBlocks : [];
+  %>
   <meta charset="UTF-8" />
-  <title>
-    <%= page.title %>
-  </title>
+  <title><%= pageTitle %></title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="<%= page.description %>" />
+  <meta name="description" content="<%= pageDescription %>" />
+  <meta name="robots" content="<%= robots %>" />
+  <link rel="canonical" href="<%= canonicalUrl %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="<%= pageTitle %>" />
+  <meta property="og:description" content="<%= pageDescription %>" />
+  <meta property="og:url" content="<%= pageUrl %>" />
+  <meta property="og:image" content="<%= pageImage %>" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="<%= pageTitle %>" />
+  <meta name="twitter:description" content="<%= pageDescription %>" />
+  <meta name="twitter:image" content="<%= pageImage %>" />
+  <% dataBlocks.forEach(block => { %>
+    <script type="application/ld+json"><%- JSON.stringify(block) %></script>
+  <% }) %>
   <!-- Öffentliches CSS einbinden (vom Entwickler gestaltetes Stylesheet) -->
   <% if (page.css_files && page.css_files.length) { %>
   <% (page.css_files||[]).forEach(f=> { %>

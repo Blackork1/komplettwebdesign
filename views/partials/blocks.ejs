@@ -14,14 +14,14 @@ const list = (Array.isArray(blocks) ? blocks : []).filter(b => b && b.position =
 
 <% list.forEach(function(block){ %>
 <% if (block.type === 'richtext' && block.html) { %>
-<div id="ContainerMarginSetup section-richtext">
+<div id="ContainerMarginSetup" class="section-richtext">
   <div id="ContainerCenterWidthSetup">
     <%- block.html %>
   </div>
 </div>
 <% } else if (block.type === 'gallery' && Array.isArray(block.items)) { %>
-<div id="ContainerMarginSetup section-gallery">
-  <div id="ContainerCenterWidthSetup grid grid-3">
+<div id="ContainerMarginSetup" class="section-gallery">
+  <div id="ContainerCenterWidthSetup" class="grid grid-3">
     <% block.items.forEach(function(it){ %>
     <figure class="gallery-item">
       <img src="<%= it.img_url %>" alt="<%= it.img_alt || '' %>">
@@ -32,8 +32,8 @@ const list = (Array.isArray(blocks) ? blocks : []).filter(b => b && b.position =
 </div>
 
 <% } else if (block.type === 'cta') { %>
-<div id="ContainerMarginSetup section-cta"">
-  <div id=" ContainerCenterWidthSetup grid grid-3">
+<div id="ContainerMarginSetup" class="section-cta">
+  <div id="ContainerCenterWidthSetup" class="grid grid-3">
   <% if (block.headline) { %><h2><%= block.headline %></h2><% } %>
   <% if (block.subline)  { %><p><%= block.subline %></p><% } %>
   <% if (block.button && block.button.url && block.button.label) { %>

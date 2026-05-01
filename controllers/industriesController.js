@@ -2,6 +2,7 @@
 import pool from '../util/db.js';
 import { getIndustryBySlug } from '../models/industryModel.js'; // vorhanden bei dir
 import Package from '../models/Package.js';
+import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
@@ -10,30 +11,6 @@ function resolveBaseUrl(req) {
     : (req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http'));
   const host = req.headers['x-forwarded-host'] || req.get('host');
   return `${proto}://${host}`;
-}
-
-function buildIndustrySchemas({ industry, url, baseUrl }) {
-  const breadcrumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Startseite", "item": baseUrl + "/" },
-      { "@type": "ListItem", "position": 2, "name": "Branchen",   "item": baseUrl + "/branchen" },
-      { "@type": "ListItem", "position": 3, "name": industry.name, "item": url }
-    ]
-  };
-  const faq = Array.isArray(industry.faq_items) && industry.faq_items.length
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": industry.faq_items.map(({ q, a }) => ({
-          "@type": "Question",
-          "name": q,
-          "acceptedAnswer": { "@type": "Answer", "text": a }
-        }))
-      }
-    : null;
-  return { breadcrumbs, faq };
 }
 
 function isExcludedIndustry(industry = {}) {
@@ -100,7 +77,7 @@ export async function showIndustryPage(req, res) {
 
     const baseUrl = resolveBaseUrl(req);
     const url = `${baseUrl}${req.originalUrl}`;
-    const { breadcrumbs, faq } = buildIndustrySchemas({ industry, url, baseUrl });
+    const jsonLd = buildIndustrySchemas({ industry, url, baseUrl });
 
     const packages = await Package.fetchAll();
 
@@ -110,7 +87,7 @@ export async function showIndustryPage(req, res) {
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
       packages,
-      jsonLd: [breadcrumbs, faq].filter(Boolean)
+      jsonLd
     });
   } catch (err) {
     console.error('❌ showIndustryPage:', err);

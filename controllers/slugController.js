@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { buildHandwerkerPageSchemas } from '../helpers/pageSchema.js';
 
 export async function getPageBySlug(req, res, next) {
   const slug = req.params.slug;
@@ -37,10 +38,22 @@ export async function getPageBySlug(req, res, next) {
       c.children.sort((a, b) => a.order_index - b.order_index);
     });
 
+    const structuredDataBlocks =
+      page.slug === 'handwerker'
+        ? [
+            buildHandwerkerPageSchemas({
+              page,
+              url: res.locals.canonicalUrl,
+              baseUrl: res.locals.canonicalBaseUrl
+            })
+          ]
+        : [];
+
     // Rendern der Public-Seite mit Komponenten
     res.render('page_view', {
       page,
-      components: roots
+      components: roots,
+      structuredDataBlocks
     });
   } catch (err) {
     console.error('Fehler beim Slug-Routing:', err);

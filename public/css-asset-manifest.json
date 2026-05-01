@@ -53,9 +53,9 @@
     "branchen.css": {
       "source": "branchen.css",
       "output": "branchen.min.css",
-      "href": "/branchen.min.css?v=83a6a60d3a1b",
-      "hash": "83a6a60d3a1b",
-      "bytes": 25751
+      "href": "/branchen.min.css?v=f91573238145",
+      "hash": "f91573238145",
+      "bytes": 28501
     },
     "chat.css": {
       "source": "chat.css",
@@ -151,9 +151,9 @@
     "ratgeber.css": {
       "source": "ratgeber.css",
       "output": "ratgeber.min.css",
-      "href": "/ratgeber.min.css?v=dac35662313d",
-      "hash": "dac35662313d",
-      "bytes": 14977
+      "href": "/ratgeber.min.css?v=cae5c46f83ad",
+      "hash": "cae5c46f83ad",
+      "bytes": 15041
     },
     "styles.css": {
       "source": "styles.css",

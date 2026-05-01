@@ -1,43 +1,5 @@
 <%
-const industryServiceSchema = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": `Webdesign für ${industry.name}`,
-  "serviceType": `Website-Erstellung & SEO für ${industry.name}`,
-  "provider": {
-    "@type": "Organization",
-    "name": "Komplett Webdesign",
-    "url": "https://www.komplettwebdesign.de"
-  },
-  "areaServed": {
-    "@type": "City",
-    "name": "Berlin"
-  },
-  "offers": [
-    {
-      "@type": "Offer",
-      "name": "Basis",
-      "price": "499.00",
-      "priceCurrency": "EUR",
-      "url": "https://www.komplettwebdesign.de/pakete/basis"
-    },
-    {
-      "@type": "Offer",
-      "name": "Business",
-      "price": "899.00",
-      "priceCurrency": "EUR",
-      "url": "https://www.komplettwebdesign.de/pakete/business"
-    },
-    {
-      "@type": "Offer",
-      "name": "Premium",
-      "price": "1499.00",
-      "priceCurrency": "EUR",
-      "url": "https://www.komplettwebdesign.de/pakete/premium"
-    }
-  ]
-};
-const structuredDataBlocks = [industryServiceSchema].concat(Array.isArray(jsonLd) ? jsonLd : []);
+const structuredDataBlocks = Array.isArray(jsonLd) ? jsonLd : [];
 %>
 <%- include('../partials/head', { title, description, ogImage, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
@@ -61,6 +23,11 @@ function asObject(v) {
   if (typeof v === 'string') { try { const p = JSON.parse(v); return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {}; } catch { return {}; } }
   return {};
 }
+function renderHtmlBlock(v) {
+  const html = String(v || '').trim();
+  if (!html) return '';
+  return /<(p|div|section|ul|ol|h[1-6]|blockquote)\b/i.test(html) ? html : `<p>${html}</p>`;
+}
 
 // Alle JSON-Felder normalisieren
 const carouselItems   = asArray(industry.carousel_items);
@@ -70,6 +37,7 @@ const funktionenItems = asArray(industry.funktionen_items);
 const tippsItems      = asArray(industry.tipps_items);
 const faqItems        = asArray(industry.faq_items);
 const vorteile        = asObject(industry.vorteile);
+const pageYear        = new Date().getFullYear();
 
 // für das Carousel die Positionen
 const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--far-right"];
@@ -164,14 +132,14 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <% if (industry.warum_upper) { %>
           <div class="upperText animate-on-scroll">
             <!-- Upper darf HTML enthalten -->
-            <p><%- industry.warum_upper %></p>
+            <%- renderHtmlBlock(industry.warum_upper) %>
           </div>
           <% } %>
 
           <% if (industry.warum_lower) { %>
           <div class="lowerText animate-on-scroll">
             <!-- Lower darf HTML enthalten -->
-            <p><%- industry.warum_lower %></p>
+            <%- renderHtmlBlock(industry.warum_lower) %>
           </div>
           <% } %>
         </div>
@@ -257,10 +225,10 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <li class="statCard <%= idx===0?'is-open':'' %> animate-on-scroll">
                   <button class="statHeader" aria-expanded="<%= idx===0 ? 'true' : 'false' %>">
                     <span class="itemIcon" aria-hidden="true"><%= c.icon || '📊' %></span>
-                    <h2 class="itemLabel"><%- c.label %></h2>
+                    <h3 class="itemLabel"><%- c.label %></h3>
                   </button>
                   <div class="statBody" aria-hidden="<%= idx===0 ? 'false' : 'true' %>">
-                    <p><%- c.body %></p>
+                    <%- renderHtmlBlock(c.body) %>
                   </div>
                 </li>
                 <% }) %>
@@ -343,7 +311,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               <div class="alignEnd marginRight100px">
                 <h2 class="animate-on-scroll">Wichtige Funktionen einer <%= industry.name %>-Website</h2>
                 <% if (industry.funktionen_items && industry.funktionen_items.length) { %>
-                <p class="animate-on-scroll">Eine erfolgreiche Website ist mehr als eine Startseite mit Adresse. Sie muss die Bedürfnisse der Gäste erfüllen:</p>
+                <p class="animate-on-scroll">Eine erfolgreiche Website ist mehr als eine Startseite mit Adresse. Sie muss Besucher, Interessenten und Suchmaschinen schnell zum richtigen nächsten Schritt führen:</p>
                 <% } %>
               </div>
 
@@ -390,12 +358,10 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
       <!-- ===================== PREISE (Pakete aus DB) ===================== -->
       <section id="Preise">
-        <h2 class="alignCenter animate-on-scroll">Was kostet eine professionelle <%= industry.name %> Website 2025?</h2>
-        <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Was kostet eine vollständige Website 2025? Lohnt sich das überhaupt und kann ich mir das leisten?“</strong></p>
-        <p class="alignCenter animate-on-scroll">Eine Website erhälst du bei uns innerhalb von 14 Tagen bereits ab 499 €. Wir bieten dir dazu Ratenzahlungen zu 0% an,
-          damit kannst du sofort starten und die Kosten bequem verteilen. Investiere in deine Online-Präsenz und profitiere von den <a href="/ratgeber/professionellen-website-vs-baukasten">Vorteilen einer professionellen Website!</a>
-          Schau dir gerne die folgende Pakete genauer an. Ich bereate dich gerne individual1 zu deinen Wünschen, selbstverständlich kostenlos. <br>
-          <a href="/kontakt" class="primaryColor">Hier geht's zum Kontaktformular.</a>
+        <h2 class="alignCenter animate-on-scroll">Was kostet eine professionelle <%= industry.name %>-Website <%= pageYear %>?</h2>
+        <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Welches Website-Paket passt zu meinem Umfang, meinen Inhalten und meinen Anfragezielen?“</strong></p>
+        <p class="alignCenter animate-on-scroll">Eine professionelle Website startet bei uns ab 499&nbsp;€. Je nach Umfang planen wir Onepager, mehrseitige Business-Websites oder größere Projekte mit SEO-Struktur, Lead-Formularen, Buchungssystem oder Shop. So bleibt dein Budget planbar und du bekommst eine Website, die zu Branche, Zielgruppe und lokaler Suche passt. <br>
+          <a href="/kontakt" class="primaryColor" data-track="cta" data-cta-name="pricing_contact">Kostenlose Einschätzung anfragen</a>
         </p>
 
         <div class="pricing-grid marginPricingGrid">
@@ -422,7 +388,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </div>
 
         <p class="alignCenter underLindeText animate-on-scroll">
-          Ein zusätzliches Stammkunden-Paar pro Woche kann die Investition bereits decken.
+          Schon wenige zusätzliche qualifizierte Anfragen können die Investition schnell tragfähig machen.
         </p>
       </section>
 
@@ -485,7 +451,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
       <!-- ===================== TIPPS (HORIZONTAL SLIDER) ===================== -->
       <section id="Tipps">
-        <h2 class="alignEnd">Tipps für erfolgreiche Website</h2>
+        <h2 class="alignEnd">Tipps für eine erfolgreiche <%= industry.name %>-Website</h2>
 
         <div class="tippsWrap" data-tips>
           <div class="tippsContainer horizontalSliderTips">
@@ -520,7 +486,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </div>
 
         <p class="alignCenter">
-          So machen wir deine Website schnell sichtbar – für echte Anfragen und Reservierungen.
+          So machen wir deine Website sichtbar, verständlich und anfrageorientiert.
         </p>
       </section>
 
@@ -529,11 +495,11 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       <!-- ===================== CTA ===================== -->
       <section id="CTA">
         <div class="ctaContainer">
-          <div style="z-index: 2; position: relative;">
-            <h2 class="alignCenter ctaH2 animate-on-scroll">
-              Benötigst du eine Website mit professionellen Webdesign als<br><strong class="orange"> <%= industry.name %>?</strong>
-            </h2>
-          </div>
+              <div style="z-index: 2; position: relative;">
+                <h2 class="alignCenter ctaH2 animate-on-scroll">
+                  <%- industry.cta_headline || `Benötigst du eine professionelle Website als ${industry.name}?` %>
+                </h2>
+              </div>
 
           <% if (industry.cta_text) { %>
           <p class="alignCenter ctaText animate-on-scroll"><%- industry.cta_text %></p>
@@ -586,7 +552,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               </h3>
               <div id="<%= cid %>" class="accordion-collapse collapse <%= open ? 'show' : '' %>" aria-labelledby="<%= hid %>" data-bs-parent="#paketDetails">
                 <div class="accordion-body">
-                  <p><%- f.a %></p>
+                  <%- renderHtmlBlock(f.a) %>
                   <% if (f.link_url) { %>
                   <p class="mb-0">
                     <a href="<%= f.link_url %>" class="btn btn-link p-0">

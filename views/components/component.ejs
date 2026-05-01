@@ -1,4 +1,7 @@
 <% /* views/component.ejs – universelles Partial für alle Komponenten */ %>
+<%
+const isTrustedBlockHtml = (value) => /^\s*<(div|section|article|aside|header|footer|main|nav|ul|ol|h[1-6]|p|table|figure)\b/i.test(String(value || ''));
+%>
 
 <% if (component.type === 'form') { %>
   <form
@@ -143,7 +146,13 @@
   </div>
 
 <% } else if (component.type === 'p') { %>
-  <p class="<%- component.classes %>"><%- component.content %></p>
+  <% if (isTrustedBlockHtml(component.content)) { %>
+    <div class="<%- component.classes %>"><%- component.content %></div>
+  <% } else { %>
+    <p class="<%- component.classes %>">
+      <%- component.content %>
+    </p>
+  <% } %>
 
 <% } else if (['h1','h2','h3','h4','h5','h6'].includes(component.type)) { %>
   <<%- component.type %> class="<%- component.classes %>">

@@ -653,6 +653,8 @@
   font-family: "Poppins", "Inter", sans-serif;
   font-size: clamp(2rem, 4.8vw, 3.7rem);
   line-height: 1.06;
+  color: var(--rg-accent);
+  text-shadow: 0 8px 24px rgba(5, 16, 44, 0.48);
 }
 
 .rg-detail-lead {
