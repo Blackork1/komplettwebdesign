@@ -28,6 +28,7 @@ import { navbarMiddleware } from './helpers/navHelper.js';
 // import sessionMiddleware                          from './middleware/session.js';
 import consentMiddleware from './middleware/consentMiddleware.js';
 import { accessLog } from './middleware/accessLog.js';
+import { attachCsrfToken } from './middleware/csrf.js';
 import { ensureAutoSlots } from './services/autoAppointmentService.js';
 import {
   deleteExpiredUnbooked,
@@ -69,6 +70,15 @@ import adminRatgeberRoutes from './routes/adminRatgeberRoutes.js';
 import testRouter from './routes/testRouter.js';
 import adminLeistungenRoutes from './routes/adminLeistungenRoutes.js';
 import leistungenRoutes from './routes/leistungenRoutes.js';
+import {
+  escapeHtml,
+  escapeJsonForHtml,
+  safeComponentTag,
+  safeFormMethod,
+  safeInputType,
+  safeUrl,
+  sanitizeHtml
+} from './util/security.js';
 
 
 import Stripe from 'stripe';
@@ -77,6 +87,15 @@ import Stripe from 'stripe';
 dotenv.config();
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
+Object.assign(app.locals, {
+  escapeHtml,
+  escapeJsonForHtml,
+  safeComponentTag,
+  safeFormMethod,
+  safeInputType,
+  safeUrl,
+  sanitizeHtml
+});
 // Healthcheck (für Docker/Monitoring)
 app.get('/health', (_req, res) => {
   res.status(200).send('ok');
@@ -210,6 +229,7 @@ app.use(express.static(path.join(__dirname, 'public'), staticOpts));
 // app.get('/sitemap.xml', (_req, res) => {
 //   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 // });
+app.use('/webhook', webhookRoutes);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -224,6 +244,7 @@ app.use(session({
   cookie: { secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 } // 7 Tage
 }));
 
+app.use(attachCsrfToken);
 app.use(consentMiddleware);               // setzt req/session/locals
 
 
@@ -299,7 +320,6 @@ if (isProd) {
 app.use('/', mainRoutes);
 app.use('/pricing', pricingRoutes);
 app.use('/create-checkout-session', checkoutRoutes);
-app.use('/webhook', webhookRoutes);
 app.use('/admin/pages', adminPageRoutes);
 app.use(adminComponentRoutes);
 app.use(slugRoutes);

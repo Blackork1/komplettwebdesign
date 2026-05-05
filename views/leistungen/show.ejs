@@ -15,6 +15,10 @@
   const orgSameAs = (typeof schemaOrgSameAs !== 'undefined' && Array.isArray(schemaOrgSameAs))
     ? schemaOrgSameAs
     : [];
+  const escapeFallback = (value) => String(value || '').replace(/[&<>"']/g, function(ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+  });
+  const safeHtml = typeof sanitizeHtml === 'function' ? sanitizeHtml : escapeFallback;
 
   // Organization
   const orgSchema = {
@@ -834,7 +838,7 @@
       <ol>
         <li><a href="/">Startseite</a></li>
         <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
-        <li aria-current="page"><%- page.title %></li>
+        <li aria-current="page"><%- safeHtml(page.title) %></li>
       </ol>
     </nav>
     <!-- Hero Section -->

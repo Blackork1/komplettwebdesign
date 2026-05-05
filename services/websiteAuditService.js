@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import dns from 'dns/promises';
 import ipaddr from 'ipaddr.js';
 import { createAuditCache } from '../util/testerAuditCache.js';
+import { safeAxiosRequest } from '../util/safeHttpClient.js';
 
 const USER_AGENT = 'KomplettWebdesign Website Tester/2.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
@@ -483,9 +484,9 @@ async function fetchPage(url, deadline, locale) {
   let redirectCount = 0;
   while (redirectCount <= 5) {
     await assertSafeTarget(currentUrl, locale);
-    const response = await axios.get(currentUrl, {
+    const response = await safeAxiosRequest(currentUrl, {
+      method: 'GET',
       timeout: deadline.requestTimeoutMs(),
-      maxRedirects: 0,
       responseType: 'arraybuffer',
       maxContentLength: MAX_RESPONSE_BYTES,
       maxBodyLength: MAX_RESPONSE_BYTES,
@@ -505,7 +506,7 @@ async function fetchPage(url, deadline, locale) {
     }
 
     const contentType = response.headers?.['content-type'] || '';
-    const finalUrl = response.config?.url || currentUrl;
+    const finalUrl = response.finalUrl || response.config?.url || currentUrl;
     const buffer = Buffer.isBuffer(response.data)
       ? response.data
       : Buffer.from(response.data || '', 'utf8');
@@ -538,11 +539,12 @@ async function fetchOptionalText(url, deadline, locale) {
     let redirects = 0;
     while (redirects <= 2) {
       await assertSafeTarget(currentUrl, locale);
-      const response = await axios.get(currentUrl, {
+      const response = await safeAxiosRequest(currentUrl, {
+        method: 'GET',
         timeout: deadline.requestTimeoutMs(),
-        maxRedirects: 0,
         responseType: 'text',
         maxContentLength: 200_000,
+        maxBodyLength: 200_000,
         validateStatus: () => true,
         headers: { 'User-Agent': USER_AGENT }
       });

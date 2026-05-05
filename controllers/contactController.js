@@ -23,6 +23,13 @@ import { renderBrandEmail } from "../services/emailTemplateService.js";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_ATTACHMENTS = 10;
 const MAX_TOTAL_ATTACHMENT_SIZE = 15 * 1024 * 1024; // 15 MB
+const MAX_GENERAL_UPLOAD_FILE_SIZE = 5 * 1024 * 1024; // 5 MB per image
+const ALLOWED_GENERAL_UPLOAD_TYPES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif"
+]);
 
 const LABEL_OVERRIDES = {
     name: "Name",
@@ -271,7 +278,44 @@ const buildHtmlSummary = rows => `
 `;
 
 
-const generalUpload = multer({ dest: "uploads/" });
+const generalUpload = multer({
+    dest: "uploads/",
+    limits: {
+        files: MAX_ATTACHMENTS,
+        fileSize: MAX_GENERAL_UPLOAD_FILE_SIZE
+    },
+    fileFilter: (_req, file, cb) => {
+        if (ALLOWED_GENERAL_UPLOAD_TYPES.has(file.mimetype)) return cb(null, true);
+        return cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", file.fieldname));
+    }
+});
+
+function handleGeneralUpload(req, res, next) {
+    generalUpload.array("images", MAX_ATTACHMENTS)(req, res, err => {
+        if (!err) return next();
+        const lng = resolveContactLocale(req);
+        let message = lng === "en"
+            ? "The uploaded images could not be accepted."
+            : "Die hochgeladenen Bilder konnten nicht angenommen werden.";
+        if (err instanceof multer.MulterError) {
+            if (err.code === "LIMIT_FILE_SIZE") {
+                message = lng === "en"
+                    ? "Each image may be at most 5 MB."
+                    : "Jedes Bild darf maximal 5 MB groß sein.";
+            } else if (err.code === "LIMIT_FILE_COUNT") {
+                message = lng === "en"
+                    ? `You can upload a maximum of ${MAX_ATTACHMENTS} images.`
+                    : `Du kannst maximal ${MAX_ATTACHMENTS} Bilder hochladen.`;
+            } else if (err.code === "LIMIT_UNEXPECTED_FILE") {
+                message = lng === "en"
+                    ? "Only JPG, PNG, WebP or GIF images are allowed."
+                    : "Es sind nur JPG-, PNG-, WebP- oder GIF-Bilder erlaubt.";
+            }
+        }
+        if (expectsJson(req)) return res.status(400).json({ success: false, message });
+        return res.status(400).send(message);
+    });
+}
 
 function resolveContactLocale(req) {
     if (req.body?.locale === "en") return "en";
@@ -354,7 +398,7 @@ export const validate = [
 
 /* ---------- POST /kontakt -------------------------------------------- */
 export const processForm = [
-    generalUpload.array("images"),
+    handleGeneralUpload,
     validate,
     async (req, res) => {
         const lng = resolveContactLocale(req);

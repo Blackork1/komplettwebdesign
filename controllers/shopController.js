@@ -13,7 +13,13 @@ export async function listPackages(req, res) {
 export async function createCheckoutSession(req, res) {
     const db = req.app.get('db');
     const stripe = req.app.get('stripe');
-    const baseUrl = resolveBaseUrl(req);
+    let baseUrl;
+    try {
+        baseUrl = resolveBaseUrl(req);
+    } catch (error) {
+        console.error('Checkout base URL error:', error.message);
+        return res.status(500).send('BASE_URL fehlt oder ist ungültig (muss in Produktion gesetzt sein).');
+    }
 
     if (!/^https?:\/\//i.test(baseUrl)) {
         return res.status(500).send('BASE_URL fehlt oder ist ungültig (muss mit http/https beginnen).');

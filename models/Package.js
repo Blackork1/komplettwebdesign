@@ -25,7 +25,7 @@ export default class Package {
   }
 
   static async findById(id) {
-    const { rows } = await pool.query('SELECT * FROM packages WHERE id=$1', [id]);
+    const { rows } = await pool.query('SELECT * FROM packages WHERE id=$1 AND COALESCE(display, TRUE) = TRUE', [id]);
     return rows[0];
   }
 }

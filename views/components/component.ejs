@@ -1,170 +1,185 @@
 <% /* views/component.ejs – universelles Partial für alle Komponenten */ %>
 <%
-const isTrustedBlockHtml = (value) => /^\s*<(div|section|article|aside|header|footer|main|nav|ul|ol|h[1-6]|p|table|figure)\b/i.test(String(value || ''));
+const c = component || {};
+const children = Array.isArray(c.children) ? c.children : [];
+const escapeFallback = (value) => String(value || '').replace(/[&<>"']/g, function(ch) {
+  return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+});
+const h = typeof sanitizeHtml === 'function'
+  ? sanitizeHtml
+  : escapeFallback;
+const url = typeof safeUrl === 'function'
+  ? safeUrl
+  : (value) => String(value || '#');
+const componentType = typeof safeComponentTag === 'function'
+  ? safeComponentTag(c.type)
+  : String(c.type || 'div').toLowerCase();
+const inputType = typeof safeInputType === 'function'
+  ? safeInputType(c.input_type || 'text')
+  : String(c.input_type || 'text').toLowerCase();
+const formMethod = typeof safeFormMethod === 'function'
+  ? safeFormMethod(c.method || 'post')
+  : String(c.method || 'post').toLowerCase();
 %>
 
-<% if (component.type === 'form') { %>
+<% if (componentType === 'form') { %>
   <form
-    action="<%- component.action %>"
-    method="<%- component.method || 'post' %>"
-    class="<%- component.classes %>"
+    action="<%= url(c.action || '#') %>"
+    method="<%= formMethod %>"
+    class="<%= c.classes || '' %>"
   >
-    <% component.children.forEach(child => { %>
+    <% children.forEach(child => { %>
       <%- include('component', { component: child }) %>
     <% }) %>
   </form>
 
-<% } else if (component.type === 'input') { %>
+<% } else if (componentType === 'input') { %>
   <input
-    type="<%- component.input_type || 'text' %>"
-    name="<%- component.name %>"
-    value="<%- component.value || '' %>"
-    placeholder="<%- component.placeholder || '' %>"
-    <%- component.required ? 'required' : '' %>
-    <%- component.pattern  ? 'pattern="' + component.pattern + '"' : '' %>
-    <%- component.minlength ? 'minlength="' + component.minlength + '"' : '' %>
-    class="<%- component.classes %>"
+    type="<%= inputType %>"
+    name="<%= c.name || '' %>"
+    value="<%= c.value || '' %>"
+    placeholder="<%= c.placeholder || '' %>"
+    <% if (c.required) { %> required <% } %>
+    <% if (c.pattern) { %> pattern="<%= c.pattern %>" <% } %>
+    <% if (c.minlength) { %> minlength="<%= c.minlength %>" <% } %>
+    class="<%= c.classes || '' %>"
   />
 
-<% } else if (component.type === 'textarea') { %>
+<% } else if (componentType === 'textarea') { %>
   <textarea
-    name="<%- component.name %>"
-    placeholder="<%- component.placeholder || '' %>"
-    <%- component.required ? 'required' : '' %>
-    <%- component.pattern  ? 'pattern="' + component.pattern + '"' : '' %>
-    <%- component.minlength ? 'minlength="' + component.minlength + '"' : '' %>
-    class="<%- component.classes %>"
-  ><%- component.value || '' %></textarea>
+    name="<%= c.name || '' %>"
+    placeholder="<%= c.placeholder || '' %>"
+    <% if (c.required) { %> required <% } %>
+    <% if (c.pattern) { %> pattern="<%= c.pattern %>" <% } %>
+    <% if (c.minlength) { %> minlength="<%= c.minlength %>" <% } %>
+    class="<%= c.classes || '' %>"
+  ><%= c.value || '' %></textarea>
 
-<% } else if (component.type === 'select') {
-     const opts = (component.options||'').split('|'); %>
+<% } else if (componentType === 'select') {
+     const opts = (c.options||'').split('|'); %>
   <select
-    name="<%- component.name %>"
-    class="<%- component.classes %>"
-    <%- component.required ? 'required' : '' %>
+    name="<%= c.name || '' %>"
+    class="<%= c.classes || '' %>"
+    <% if (c.required) { %> required <% } %>
   >
     <% opts.forEach(o => {
          const t = o.trim();
          if (!t) return;
     %>
-      <option value="<%- t %>"><%- t %></option>
+      <option value="<%= t %>"><%= t %></option>
     <% }) %>
   </select>
 
-<% } else if (component.type === 'radio') {
-     const opts = (component.options||'').split('|'); %>
-  <div class="<%- component.classes %>">
+<% } else if (componentType === 'radio') {
+     const opts = (c.options||'').split('|'); %>
+  <div class="<%= c.classes || '' %>">
     <% opts.forEach((o,i) => {
          const t = o.trim();
          if (!t) return;
-         const id = 'r' + component.id + '_' + i;
+         const id = 'r' + c.id + '_' + i;
     %>
-      <label for="<%- id %>">
+      <label for="<%= id %>">
         <input
-          id="<%- id %>"
+          id="<%= id %>"
           type="radio"
-          name="<%- component.name %>"
-          value="<%- t %>"
-          <%- component.required ? 'required' : '' %>
+          name="<%= c.name || '' %>"
+          value="<%= t %>"
+          <% if (c.required) { %> required <% } %>
         />
-        <%- t %>
+        <%= t %>
       </label>
     <% }) %>
   </div>
 
-<% } else if (component.type === 'checkbox') { %>
-  <label class="<%- component.classes %>">
+<% } else if (componentType === 'checkbox') { %>
+  <label class="<%= c.classes || '' %>">
     <input
       type="checkbox"
-      name="<%- component.name %>"
-      value="<%- component.value || 'on' %>"
-      <%- component.required ? 'required' : '' %>
+      name="<%= c.name || '' %>"
+      value="<%= c.value || 'on' %>"
+      <% if (c.required) { %> required <% } %>
     />
-    <%- component.value && isNaN(component.value) ? component.value : '' %>
+    <%= c.value && isNaN(c.value) ? c.value : '' %>
   </label>
 
-<% } else if (component.type === 'submit' || component.type === 'button') { %>
+<% } else if (componentType === 'submit' || componentType === 'button') { %>
   <button
-    type="<%- component.type === 'submit' ? 'submit' : 'button' %>"
-    class="<%- component.classes %>"
+    type="<%= componentType === 'submit' ? 'submit' : 'button' %>"
+    class="<%= c.classes || '' %>"
   >
-    <%- component.value || 'Button' %>
+    <%= c.value || 'Button' %>
   </button>
 
-<% } else if (component.type === 'img') { %>
+<% } else if (componentType === 'img') { %>
   <img
-    src="<%- component.src %>"
-    alt="<%- component.alt %>"
-    class="<%- component.classes %>"
+    src="<%= url(c.src || '#') %>"
+    alt="<%= c.alt || '' %>"
+    class="<%= c.classes || '' %>"
   />
 
-<% } else if (component.type === 'iframe') { %>
+<% } else if (componentType === 'iframe') { %>
   <iframe
-    src="<%- component.src %>"
-    class="<%- component.classes %>"
-    <% if (component.width)  { %> width="<%- component.width %>"  <% } %>
-    <% if (component.height) { %> height="<%- component.height %>" <% } %>
+    src="<%= url(c.src || 'about:blank', { allowedProtocols: ['http:', 'https:'], allowRelative: false, fallback: 'about:blank' }) %>"
+    class="<%= c.classes || '' %>"
+    <% if (c.width)  { %> width="<%= c.width %>"  <% } %>
+    <% if (c.height) { %> height="<%= c.height %>" <% } %>
   ></iframe>
 
-<% } else if (['br','hr'].includes(component.type)) { %>
-  <<%- component.type %> class="<%- component.classes %>" />
+<% } else if (['br','hr'].includes(componentType)) { %>
+  <<%- componentType %> class="<%= c.classes || '' %>" />
 
-<% } else if (component.type === 'a') { %>
-  <a href="<%- component.href %>" class="<%- component.classes %>">
-    <% if (component.children && component.children.length) { %>
-      <% component.children.forEach(child => { %>
+<% } else if (componentType === 'a') { %>
+  <a href="<%= url(c.href || '#') %>" class="<%= c.classes || '' %>">
+    <% if (children.length) { %>
+      <% children.forEach(child => { %>
         <%- include('component', { component: child }) %>
       <% }) %>
     <% } else { %>
-      <%- component.content %>
+      <%- h(c.content) %>
     <% } %>
   </a>
 
-<% } else if (component.type === 'ul' || component.type === 'ol') { %>
-  <<%- component.type %> class="<%- component.classes %>">
-    <% component.children.forEach(child => { %>
+<% } else if (componentType === 'ul' || componentType === 'ol') { %>
+  <<%- componentType %> class="<%= c.classes || '' %>">
+    <% children.forEach(child => { %>
       <%- include('component', { component: child }) %>
     <% }) %>
-  </<%- component.type %>>
+  </<%- componentType %>>
 
-<% } else if (component.type === 'li') { %>
-  <li class="<%- component.classes %>">
-    <% if (component.children && component.children.length) { %>
-      <% component.children.forEach(child => { %>
+<% } else if (componentType === 'li') { %>
+  <li class="<%= c.classes || '' %>">
+    <% if (children.length) { %>
+      <% children.forEach(child => { %>
         <%- include('component', { component: child }) %>
       <% }) %>
     <% } else { %>
-      <%- component.content %>
+      <%- h(c.content) %>
     <% } %>
   </li>
 
-<% } else if (component.type === 'div') { %>
-  <div class="<%- component.classes %>">
-    <% component.children.forEach(child => { %>
+<% } else if (componentType === 'div') { %>
+  <div class="<%= c.classes || '' %>">
+    <% children.forEach(child => { %>
+      <%- include('component', { component: child }) %>
+    <% }) %>
+    <% if (!children.length && c.content) { %><%- h(c.content) %><% } %>
+  </div>
+
+<% } else if (componentType === 'p') { %>
+  <p class="<%= c.classes || '' %>">
+    <%- h(c.content) %>
+  </p>
+
+<% } else if (['h1','h2','h3','h4','h5','h6'].includes(componentType)) { %>
+  <<%- componentType %> class="<%= c.classes || '' %>">
+    <%- h(c.content) %>
+  </<%- componentType %>>
+
+<% } else { %>
+  <div class="<%= c.classes || '' %>">
+    <% if (c.content) { %><%- h(c.content) %><% } %>
+    <% children.forEach(child => { %>
       <%- include('component', { component: child }) %>
     <% }) %>
   </div>
-
-<% } else if (component.type === 'p') { %>
-  <% if (isTrustedBlockHtml(component.content)) { %>
-    <div class="<%- component.classes %>"><%- component.content %></div>
-  <% } else { %>
-    <p class="<%- component.classes %>">
-      <%- component.content %>
-    </p>
-  <% } %>
-
-<% } else if (['h1','h2','h3','h4','h5','h6'].includes(component.type)) { %>
-  <<%- component.type %> class="<%- component.classes %>">
-    <%- component.content %>
-  </<%- component.type %>>
-
-<% } else { %>
-  <!-- Fallback -->
-  <<%- component.type %> class="<%- component.classes %>">
-    <% if (component.content) { %><%- component.content %><% } %>
-    <% component.children.forEach(child => { %>
-      <%- include('component', { component: child }) %>
-    <% }) %>
-  </<%- component.type %>>
 <% } %>

@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { createAuditCache } from '../util/testerAuditCache.js';
+import { safeAxiosRequest } from '../util/safeHttpClient.js';
 
 const USER_AGENT = 'KomplettWebdesign Meta Tester/2.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
@@ -333,21 +333,22 @@ function extractLinks(html = '', pageUrl = '', rootUrl = '') {
 }
 
 async function fetchHtml(url) {
-  const response = await axios.get(url, {
+  const response = await safeAxiosRequest(url, {
     timeout: 12000,
-    maxRedirects: 5,
     responseType: 'text',
+    maxContentLength: 1_500_000,
+    maxBodyLength: 1_500_000,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml'
     },
     validateStatus: (status) => status >= 200 && status < 400
-  });
+  }, { maxRedirects: 5 });
 
   const html = typeof response.data === 'string' ? response.data : '';
   return {
     html,
-    finalUrl: response.request?.res?.responseUrl || url,
+    finalUrl: response.finalUrl || response.request?.res?.responseUrl || url,
     status: response.status
   };
 }
@@ -889,6 +890,7 @@ function buildPublicResult({
   const lng = localeFrom(locale);
   const copy = copyFor(lng);
   const scoreBand = toScoreBand(homepage.score);
+  const { pageGuideInput: _pageGuideInput, ...publicHomepage } = homepage || {};
   return {
     auditId,
     locale: lng,
@@ -901,10 +903,10 @@ function buildPublicResult({
       tone: copy.labels[scoreBand] || scoreBand,
       badge: scoreBand === 'good' ? copy.badges.strong : scoreBand === 'medium' ? copy.badges.medium : copy.badges.critical
     },
-    homepage,
-    categories: homepage.categories || [],
-    topFindings: homepage.topFindings || [],
-    topActions: homepage.topActions || [],
+    homepage: publicHomepage,
+    categories: publicHomepage.categories || [],
+    topFindings: publicHomepage.topFindings || [],
+    topActions: publicHomepage.topActions || [],
     crawlStats: {
       requestedPages: maxSubpages,
       visitedPages: crawl.visitedPages,
@@ -1110,5 +1112,6 @@ export const __testables = {
   textLengthInfo,
   estimatePixels,
   evaluateTextIntentFit,
-  parseHeadSignals
+  parseHeadSignals,
+  buildPublicResult
 };

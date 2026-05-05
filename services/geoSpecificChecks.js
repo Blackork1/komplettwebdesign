@@ -1,6 +1,6 @@
-import axios from 'axios';
 import dns from 'dns/promises';
 import ipaddr from 'ipaddr.js';
+import { safeAxiosRequest } from '../util/safeHttpClient.js';
 
 /**
  * GEO-specific checks that go beyond the base Website-Audit.
@@ -85,14 +85,15 @@ async function assertPublicTarget(targetUrl) {
 async function fetchText(url) {
   try {
     await assertPublicTarget(url);
-    const response = await axios.get(url, {
+    const response = await safeAxiosRequest(url, {
+      method: 'GET',
       timeout: FETCH_TIMEOUT_MS,
-      maxRedirects: 3,
       responseType: 'text',
       maxContentLength: MAX_RESPONSE_BYTES,
+      maxBodyLength: MAX_RESPONSE_BYTES,
       validateStatus: () => true,
       headers: { 'User-Agent': USER_AGENT }
-    });
+    }, { maxRedirects: 3 });
     return response;
   } catch {
     return null;

@@ -23,8 +23,13 @@ function asObject(v) {
   if (typeof v === 'string') { try { const p = JSON.parse(v); return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {}; } catch { return {}; } }
   return {};
 }
+const escapeFallback = (value) => String(value || '').replace(/[&<>"']/g, function(ch) {
+  return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+});
+const safeHtml = typeof sanitizeHtml === 'function' ? sanitizeHtml : escapeFallback;
+const cleanUrl = typeof safeUrl === 'function' ? safeUrl : (value) => String(value || '#');
 function renderHtmlBlock(v) {
-  const html = String(v || '').trim();
+  const html = safeHtml(v).trim();
   if (!html) return '';
   return /<(p|div|section|ul|ol|h[1-6]|blockquote)\b/i.test(html) ? html : `<p>${html}</p>`;
 }
@@ -70,11 +75,11 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <div class="upperHero">
             <div class="heroLeft">
               <h1 class="heroH1" data-text="<%= industry.hero_h1 %>">
-                <span class="heroH1-text"><%- industry.hero_h1 %></span>
+                <span class="heroH1-text"><%- safeHtml(industry.hero_h1) %></span>
               </h1>
 
               <% if (industry.hero_h2) { %>
-              <h2 class="heroH1-cursive"><%- industry.hero_h2 %></h2>
+              <h2 class="heroH1-cursive"><%- safeHtml(industry.hero_h2) %></h2>
               <% } %>
 
               <% if ((industry.hero_checks||[]).length) { %>
@@ -171,7 +176,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         </h2>
 
         <% if (industry.unverzichtbar_intro) { %>
-        <p class="col10W smCol12W animate-on-scroll"><%- industry.unverzichtbar_intro %></p>
+        <p class="col10W smCol12W animate-on-scroll"><%- safeHtml(industry.unverzichtbar_intro) %></p>
         <% } %>
 
         <% if (industry.unverzichtbar_h3) { %>
@@ -225,7 +230,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <li class="statCard <%= idx===0?'is-open':'' %> animate-on-scroll">
                   <button class="statHeader" aria-expanded="<%= idx===0 ? 'true' : 'false' %>">
                     <span class="itemIcon" aria-hidden="true"><%= c.icon || '📊' %></span>
-                    <h3 class="itemLabel"><%- c.label %></h3>
+                    <h3 class="itemLabel"><%- safeHtml(c.label) %></h3>
                   </button>
                   <div class="statBody" aria-hidden="<%= idx===0 ? 'false' : 'true' %>">
                     <%- renderHtmlBlock(c.body) %>
@@ -271,12 +276,12 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               </div>
               <% if (it.title) { %>
               <div class="upperSlideContainer">
-                <p><%- it.title %></p>
+                <p><%- safeHtml(it.title) %></p>
               </div>
               <% } %>
               <% if (it.text) { %>
               <div class="lowerSlideContainer">
-                <p><%- it.text %></p>
+                <p><%- safeHtml(it.text) %></p>
               </div>
               <% } %>
             </div>
@@ -324,8 +329,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                       <img src="<%= f.icon_url %>" alt="" />
                       <% } %>
                     </div>
-                    <h3><%- f.title %></h3>
-                    <p><%- f.text %></p>
+                    <h3><%- safeHtml(f.title) %></h3>
+                    <p><%- safeHtml(f.text) %></p>
                   </div>
                   <% }) %>
                 </div>
@@ -367,17 +372,17 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         <div class="pricing-grid marginPricingGrid">
           <% (packages||[]).forEach(pkg => { if (pkg.display) { %>
           <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
-            <h3 class="alignCenter"><%- pkg.name %></h3>
+            <h3 class="alignCenter"><%- safeHtml(pkg.name) %></h3>
             <div class="p1rem alignCenter">
               <% if (pkg.description) { %>
-              <p class="package-description"><%- pkg.description %></p>
+              <p class="package-description"><%- safeHtml(pkg.description) %></p>
               <% } %>
 
-              <p class="price alignCenter"><%- pkg.price %></p>
+              <p class="price alignCenter"><%- safeHtml(pkg.price) %></p>
 
               <% if ((pkg.features||[]).length) { %>
               <ul class="features-list alignCenter">
-                <% pkg.features.forEach(feat => { %><li><%- feat %></li><% }) %>
+                <% pkg.features.forEach(feat => { %><li><%- safeHtml(feat) %></li><% }) %>
               </ul>
               <% } %>
 
@@ -407,7 +412,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <% ((industry.vorteile && industry.vorteile.pros) ? industry.vorteile.pros : []).forEach(txt => { %>
                 <div class="greenContainer animate-on-scroll out">
                   <img src="/images/icons/checkgreen.svg" alt="check">
-                  <p class="mb-0"><%- txt %></p>
+                  <p class="mb-0"><%- safeHtml(txt) %></p>
                 </div>
                 <% }) %>
               </div>
@@ -419,7 +424,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <% ((industry.vorteile && industry.vorteile.cons) ? industry.vorteile.cons : []).forEach(txt => { %>
                 <div class="redContainer animate-on-scroll">
                   <img src="/images/icons/uncheck.svg" alt="uncheck">
-                  <p class="mb-0"><%- txt %></p>
+                  <p class="mb-0"><%- safeHtml(txt) %></p>
                 </div>
                 <% }) %>
               </div>
@@ -462,8 +467,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <img style="width: 100%;" src="<%= t.img_url %>" alt="<%= t.img_alt || '' %>" loading="lazy" fetchpriority="low">
                 <% } %>
               </div>
-              <% if (t.heading) { %><p class="headingTipps"><%- t.heading %></p><% } %>
-              <% if (t.text)    { %><p class="textTipps"><%- t.text %></p><% } %>
+              <% if (t.heading) { %><p class="headingTipps"><%- safeHtml(t.heading) %></p><% } %>
+              <% if (t.text)    { %><p class="textTipps"><%- safeHtml(t.text) %></p><% } %>
             </div>
             <% }) %>
           </div>
@@ -497,12 +502,12 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         <div class="ctaContainer">
               <div style="z-index: 2; position: relative;">
                 <h2 class="alignCenter ctaH2 animate-on-scroll">
-                  <%- industry.cta_headline || `Benötigst du eine professionelle Website als ${industry.name}?` %>
+                  <%- safeHtml(industry.cta_headline || `Benötigst du eine professionelle Website als ${industry.name}?`) %>
                 </h2>
               </div>
 
           <% if (industry.cta_text) { %>
-          <p class="alignCenter ctaText animate-on-scroll"><%- industry.cta_text %></p>
+          <p class="alignCenter ctaText animate-on-scroll"><%- safeHtml(industry.cta_text) %></p>
           <% } %>
 
           <div class="imageCTAContainer">
@@ -555,8 +560,8 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                   <%- renderHtmlBlock(f.a) %>
                   <% if (f.link_url) { %>
                   <p class="mb-0">
-                    <a href="<%= f.link_url %>" class="btn btn-link p-0">
-                      <%- f.link_label || 'Mehr erfahren' %>
+                    <a href="<%= cleanUrl(f.link_url) %>" class="btn btn-link p-0">
+                      <%- safeHtml(f.link_label || 'Mehr erfahren') %>
                     </a>
                   </p>
                   <% } %>

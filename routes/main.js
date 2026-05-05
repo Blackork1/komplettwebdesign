@@ -1,5 +1,6 @@
 import express from 'express';
 import * as mainCtrl from '../controllers/mainController.js';
+import { isAdmin } from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/', mainCtrl.getIndex);
@@ -12,8 +13,8 @@ router.get('/en', (req, res) => {
   return mainCtrl.getIndex(req, res);
 });
 router.get('/cancel', mainCtrl.redirectIndex);
-router.post('/add', mainCtrl.postAddUser);
-router.post('/delete', mainCtrl.postDeleteUser);
+router.post('/add', isAdmin, mainCtrl.postAddUser);
+router.post('/delete', isAdmin, mainCtrl.postDeleteUser);
 router.get('/about', mainCtrl.getAbout);
 router.get('/return_policy', mainCtrl.getPolicy);
 router.get("/branchen-websites-erstellen-lassen", mainCtrl.getBranchen);

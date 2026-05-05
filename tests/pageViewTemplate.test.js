@@ -14,9 +14,9 @@ test('page_view exposes canonical, robots, social, and JSON-LD metadata', () => 
   assert.match(template, /application\/ld\+json/);
 });
 
-test('component template renders trusted block HTML without wrapping it in a paragraph', () => {
-  assert.match(componentTemplate, /isTrustedBlockHtml/);
-  assert.match(componentTemplate, /<%- component\.content %>/);
+test('component template sanitizes stored component HTML before rendering', () => {
+  assert.match(componentTemplate, /sanitizeHtml/);
+  assert.match(componentTemplate, /<%- h\(c\.content\) %>/);
   assert.doesNotMatch(
     componentTemplate,
     /<p class="<%- component\.classes %>"><%- component\.content %><\/p>/

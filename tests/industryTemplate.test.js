@@ -12,7 +12,7 @@ test('industry template uses dynamic, page-specific CTA and current-year pricing
 });
 
 test('industry template keeps stat card labels below the section heading level', () => {
-  assert.match(template, /<h3 class="itemLabel"><%- c\.label %><\/h3>/);
+  assert.match(template, /<h3 class="itemLabel"><%- safeHtml\(c\.label\) %><\/h3>/);
   assert.doesNotMatch(template, /<h2 class="itemLabel"><%- c\.label %><\/h2>/);
 });
 

@@ -29,6 +29,7 @@ export async function getPackageById(db, id) {
       stripe_price_id_recurring
     FROM packages
     WHERE id = $2
+      AND COALESCE(display, TRUE) = TRUE
   `, [process.env.CURRENCY || 'eur', id]);
   return rows[0] || null;
 }

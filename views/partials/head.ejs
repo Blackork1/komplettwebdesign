@@ -147,8 +147,15 @@
 
   <% if (typeof structuredDataBlocks !== 'undefined' && structuredDataBlocks !== null) {
     const blocks = Array.isArray(structuredDataBlocks) ? structuredDataBlocks : [structuredDataBlocks];
+    const renderJsonLd = typeof escapeJsonForHtml === 'function'
+      ? escapeJsonForHtml
+      : function(value) { return JSON.stringify(value ?? null).replace(/[<>&\u2028\u2029]/g, function(ch) {
+        return ch === '<' ? '\\u003C' : ch === '>' ? '\\u003E' : ch === '&' ? '\\u0026' : ch === '\u2028' ? '\\u2028' : '\\u2029';
+      }); };
     blocks.filter(Boolean).forEach(function(block) { %>
-  <script type="application/ld+json"><%- typeof block === 'string' ? block : JSON.stringify(block) %></script>
+  <script type="application/ld+json"><%- typeof block === 'string' ? block.replace(/[<>&\u2028\u2029]/g, function(ch) {
+    return ch === '<' ? '\\u003C' : ch === '>' ? '\\u003E' : ch === '&' ? '\\u0026' : ch === '\u2028' ? '\\u2028' : '\\u2029';
+  }) : renderJsonLd(block) %></script>
   <% });
   } %>
 

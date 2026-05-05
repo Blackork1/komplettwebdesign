@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
 import * as Admin from '../controllers/adminIndustriesController.js';
+import { isAdmin } from '../middleware/auth.js';
 
 const r = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+
+r.use(isAdmin);
 
 // 1) Statische Pfade VOR :id
 r.get('/industries/import', Admin.importForm);

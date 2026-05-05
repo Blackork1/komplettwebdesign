@@ -32,8 +32,10 @@
           </td>
           <td>
             <a href="/admin/pages/<%= page.id %>/edit">Bearbeiten</a>
-            <a href="/admin/pages/<%= page.id %>/delete"
-              onclick="return confirm('Seite wirklich löschen?');">Löschen</a>
+            <form action="/admin/pages/<%= page.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('Seite wirklich löschen?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+              <button type="submit" class="link-button" style="background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;">Löschen</button>
+            </form>
           </td>
         </tr>
         <% }) %>

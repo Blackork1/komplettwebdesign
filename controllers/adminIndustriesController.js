@@ -16,6 +16,36 @@ const JSONB_COLS = new Set([
 
 // text[]-Felder
 const TEXT_ARRAY_COLS = new Set(['hero_checks']);
+const ALLOWED_COLS = new Set([
+  'slug',
+  'name',
+  'title',
+  'description',
+  'og_image_url',
+  'hero_h1',
+  'hero_h2',
+  'hero_image_url',
+  'hero_image_alt',
+  'hero_checks',
+  'warum_upper',
+  'warum_lower',
+  'warum_image_url',
+  'warum_image_alt',
+  'unverzichtbar_intro',
+  'unverzichtbar_h3',
+  'carousel_items',
+  'stats_cards',
+  'seo_items',
+  'funktionen_items',
+  'vorteile',
+  'tipps_items',
+  'faq_items',
+  'cta_headline',
+  'cta_text',
+  'cta_left_image',
+  'cta_right_image',
+  'blocks'
+]);
 
 function slugify(str = '') {
   return String(str)
@@ -52,6 +82,10 @@ function normalizeIndustryPayload(obj = {}) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
     if (k === 'rebuild_embeddings') continue;   // 👈 Flag ignorieren
+    if (k === 'id') continue;
+    if (!ALLOWED_COLS.has(k)) {
+      throw new Error(`Unbekanntes Feld "${k}" im Branchen-Import.`);
+    }
     out[k] = normalizeFieldValue(k, v);
   }
   if (!out.slug && out.name) out.slug = slugify(out.name);
@@ -345,3 +379,9 @@ export async function remove(req, res) {
   await pool.query(`DELETE FROM industries WHERE id = $1`, [id]);
   res.redirect('/admin/industries');
 }
+
+export const __testables = {
+  ALLOWED_COLS,
+  normalizeIndustryPayload,
+  slugify
+};

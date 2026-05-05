@@ -10,13 +10,18 @@
  *  - cta:      { type, position, headline?, subline?, button?:{label,url} }
  */
 const list = (Array.isArray(blocks) ? blocks : []).filter(b => b && b.position === position);
+const escapeFallback = (value) => String(value || '').replace(/[&<>"']/g, function(ch) {
+  return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+});
+const safeHtml = typeof sanitizeHtml === 'function' ? sanitizeHtml : escapeFallback;
+const cleanUrl = typeof safeUrl === 'function' ? safeUrl : (value) => String(value || '#');
 %>
 
 <% list.forEach(function(block){ %>
 <% if (block.type === 'richtext' && block.html) { %>
 <div id="ContainerMarginSetup" class="section-richtext">
   <div id="ContainerCenterWidthSetup">
-    <%- block.html %>
+    <%- safeHtml(block.html) %>
   </div>
 </div>
 <% } else if (block.type === 'gallery' && Array.isArray(block.items)) { %>
@@ -37,7 +42,7 @@ const list = (Array.isArray(blocks) ? blocks : []).filter(b => b && b.position =
   <% if (block.headline) { %><h2><%= block.headline %></h2><% } %>
   <% if (block.subline)  { %><p><%= block.subline %></p><% } %>
   <% if (block.button && block.button.url && block.button.label) { %>
-  <a class="btn btn-primary" href="<%= block.button.url %>"><%= block.button.label %></a>
+  <a class="btn btn-primary" href="<%= cleanUrl(block.button.url) %>"><%= block.button.label %></a>
   <% } %>
 </div>
 </div>
