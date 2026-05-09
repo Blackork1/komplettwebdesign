@@ -1,23 +1,11 @@
-const DEFAULT_OFFERS = [
-  {
-    name: 'Basis',
-    price: '499.00',
-    url: '/pakete/basis',
-    description: 'Onepager mit Design, Texten und SEO-Grundoptimierung.'
-  },
-  {
-    name: 'Business',
-    price: '899.00',
-    url: '/pakete/business',
-    description: 'Mehrseitige Unternehmenswebsite mit Kontaktformular und On-Page-SEO.'
-  },
-  {
-    name: 'Premium',
-    price: '1499.00',
-    url: '/pakete/premium',
-    description: 'Umfangreiche Website mit Strategie, SEO und optionalen Funktionen.'
-  }
-];
+import { SITE_FACTS } from './siteFacts.js';
+
+const DEFAULT_OFFERS = SITE_FACTS.packages.map((pkg) => ({
+  name: pkg.name,
+  price: pkg.schemaPrice,
+  url: `/pakete/${pkg.slug}`,
+  description: pkg.description
+}));
 
 function normalizeBaseUrl(baseUrl) {
   return String(baseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');

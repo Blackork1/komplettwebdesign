@@ -1,0 +1,210 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<link rel="stylesheet" href="<%= cssAsset('references.css') %>" />
+
+<main class="references-page references-page--detail" id="hero">
+  <article>
+    <header class="reference-detail-hero unified-hero">
+      <div class="references-container reference-detail-hero__grid unified-hero__grid">
+        <div class="reference-detail-hero__copy unified-hero__copy">
+          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              <li><a href="/">Startseite</a></li>
+              <li><a href="/referenzen">Referenzen</a></li>
+              <li aria-current="page"><%= project.name %></li>
+            </ol>
+          </nav>
+          <h1><%= project.title %></h1>
+          <p class="references-lead unified-hero__lead"><%= project.summary %></p>
+          <div class="references-actions unified-hero__actions">
+            <% if (project.liveUrl) { %>
+            <a class="references-button references-button--primary unified-hero__button unified-hero__button--primary" href="<%= project.liveUrl %>" target="_blank" rel="noopener">Live ansehen</a>
+            <% } %>
+            <% if (project.relaunchUrl) { %>
+            <a class="references-button references-button--primary unified-hero__button unified-hero__button--primary" href="<%= project.relaunchUrl %>">Mehr zum Relaunch</a>
+            <% } %>
+            <a class="references-button references-button--secondary unified-hero__button unified-hero__button--secondary" href="/kontakt">Ähnliches Projekt anfragen</a>
+          </div>
+        </div>
+        <figure class="reference-detail-hero__image unified-hero__media-frame">
+          <img src="<%= project.image %>" alt="Referenzbild <%= project.name %>" />
+        </figure>
+      </div>
+    </header>
+
+    <section class="references-container reference-proof-grid" aria-label="Projektüberblick">
+      <div class="reference-proof-card">
+        <p class="references-eyebrow">Ausgangslage</p>
+        <h2>Problem</h2>
+        <p><%= project.problem %></p>
+      </div>
+      <div class="reference-proof-card">
+        <p class="references-eyebrow">Ziel</p>
+        <h2>Was die Website leisten sollte</h2>
+        <p><%= project.goal %></p>
+      </div>
+    </section>
+
+    <section class="references-container reference-section reference-section--split" aria-labelledby="reference-implementation-title">
+      <div class="reference-section__copy">
+        <p class="references-eyebrow">Umsetzung</p>
+        <h2 id="reference-implementation-title">So wurde das Projekt aufgebaut</h2>
+        <p>Der Fokus lag auf einer Website, die den Betrieb erkennbar macht und Besucher schnell zu den richtigen Informationen führt.</p>
+      </div>
+      <ul class="reference-check-list">
+        <% project.implementation.forEach(function(item) { %>
+        <li><%= item %></li>
+        <% }); %>
+      </ul>
+    </section>
+
+    <% if ((project.beforeAfterComparisons || []).length) { %>
+    <section class="references-container reference-section reference-before-after" aria-labelledby="reference-before-after-title">
+      <div class="references-section-head">
+        <p class="references-eyebrow">Vorher und Nachher</p>
+        <h2 id="reference-before-after-title">Was der Relaunch sichtbar verändert hat</h2>
+        <p>
+          Der Fokus lag nicht auf einem komplett anderen Auftritt um jeden Preis, sondern auf klarerer Führung:
+          Leistungen, Vertrauen und Kontaktwege sollten schneller erfassbar werden.
+          Mehr zur Herangehensweise findest du auf der Seite
+          <a href="<%= project.relaunchUrl || '/website-relaunch-berlin' %>">Website Relaunch Berlin</a>.
+        </p>
+      </div>
+
+      <div class="reference-before-after__grid">
+        <% project.beforeAfterComparisons.forEach(function(comparison, comparisonIndex) { %>
+        <article class="reference-comparison-card">
+          <div class="reference-comparison-card__head">
+            <h3><%= comparison.title %></h3>
+            <p><%= comparison.text %></p>
+          </div>
+          <div class="reference-comparison-card__images">
+            <% [comparison.before, comparison.after].forEach(function(item) { %>
+            <button
+              class="reference-comparison-shot"
+              type="button"
+              data-reference-lightbox-trigger
+              data-reference-lightbox-group="<%= project.slug %>-comparison-<%= comparisonIndex %>"
+              data-reference-lightbox-image="<%= item.fullImage %>"
+              data-reference-lightbox-title="<%= comparison.title %>"
+              data-reference-lightbox-label="<%= item.label %>"
+              data-reference-lightbox-alt="<%= item.alt %>"
+            >
+              <span><%= item.label %></span>
+              <img src="<%= item.previewImage %>" alt="<%= item.alt %>" loading="lazy" />
+            </button>
+            <% }); %>
+          </div>
+        </article>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if ((project.additionalScreens || []).length) { %>
+    <section class="references-container reference-section reference-added-screens" aria-labelledby="reference-added-screens-title">
+      <div class="references-section-head">
+        <p class="references-eyebrow">Ergänzung</p>
+        <h2 id="reference-added-screens-title">Zusätzliche Seiten im Relaunch</h2>
+      </div>
+      <div class="reference-added-screens__grid">
+        <% project.additionalScreens.forEach(function(screen) { %>
+        <article class="reference-added-screen">
+          <figure>
+            <img src="<%= screen.image %>" alt="<%= screen.title %> für <%= project.name %>" loading="lazy" />
+          </figure>
+          <div>
+            <h3><%= screen.title %></h3>
+            <p><%= screen.text %></p>
+          </div>
+        </article>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="references-container reference-section reference-section--split" aria-labelledby="reference-result-title">
+      <div class="reference-section__copy">
+        <p class="references-eyebrow">Ergebnis</p>
+        <h2 id="reference-result-title">Was sich verbessert hat</h2>
+        <p>Die Ergebnisse sind bewusst qualitativ beschrieben, weil für dieses Projekt keine freigegebenen Kennzahlen veröffentlicht werden.</p>
+      </div>
+      <ul class="reference-result-list">
+        <% project.result.forEach(function(item) { %>
+        <li><%= item %></li>
+        <% }); %>
+      </ul>
+    </section>
+
+    <section class="references-container reference-section reference-testimonial" aria-labelledby="reference-quote-title">
+      <p class="references-eyebrow">Kundenstimme</p>
+      <h2 id="reference-quote-title">Feedback zum Projekt</h2>
+      <% if (project.quote) { %>
+      <blockquote>
+        <p><%= project.quote %></p>
+        <% if (project.quoteAuthor) { %>
+        <cite><%= project.quoteAuthor %></cite>
+        <% } %>
+      </blockquote>
+      <% } else { %>
+      <p class="reference-testimonial__fallback">
+        Für diese Referenz ist aktuell keine öffentliche Kundenstimme freigegeben. Die Projektseite zeigt deshalb nur freigegebene Inhalte und qualitative Ergebnisse.
+      </p>
+      <% } %>
+    </section>
+
+    <section class="references-container references-cta" aria-labelledby="reference-cta-title">
+      <div>
+        <p class="references-eyebrow">Nächster Schritt</p>
+        <h2 id="reference-cta-title">Soll deine Website genauso klar werden?</h2>
+        <p>Schick kurz deine Ausgangslage. Danach klären wir, welche Struktur, Inhalte und nächsten Schritte sinnvoll sind.</p>
+      </div>
+      <a class="references-button references-button--primary" href="/kontakt">Projekt besprechen</a>
+    </section>
+
+    <% if ((otherProjects || []).length) { %>
+    <section class="references-container reference-more" aria-labelledby="reference-more-title">
+      <div class="references-section-head">
+        <p class="references-eyebrow">Weitere Referenz</p>
+        <h2 id="reference-more-title">Auch interessant</h2>
+      </div>
+      <div class="references-grid">
+        <% otherProjects.forEach(function(item) { %>
+        <article class="reference-card">
+          <a class="reference-card__media" href="/referenzen/<%= item.slug %>" aria-label="<%= item.name %> ansehen">
+            <img src="<%= item.image %>" alt="Referenzbild <%= item.name %>" loading="lazy" />
+          </a>
+          <div class="reference-card__body">
+            <p class="reference-card__industry"><%= item.industry %></p>
+            <h3><a href="/referenzen/<%= item.slug %>"><%= item.name %></a></h3>
+            <p><%= item.summary %></p>
+            <a class="reference-card__link" href="/referenzen/<%= item.slug %>">Projekt ansehen</a>
+          </div>
+        </article>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+  </article>
+</main>
+
+<% if ((project.beforeAfterComparisons || []).length) { %>
+<div class="reference-image-lightbox" data-reference-lightbox hidden aria-hidden="true">
+  <div class="reference-image-lightbox__dialog" role="dialog" aria-modal="true" aria-labelledby="reference-lightbox-title">
+    <button class="reference-image-lightbox__close" type="button" data-reference-lightbox-close aria-label="Bild schließen">&times;</button>
+    <button class="reference-image-lightbox__nav reference-image-lightbox__nav--prev" type="button" data-reference-lightbox-prev aria-label="Vorheriges Bild anzeigen">&lsaquo;</button>
+    <figure class="reference-image-lightbox__figure">
+      <img data-reference-lightbox-image src="" alt="" />
+      <figcaption>
+        <span data-reference-lightbox-label></span>
+        <strong id="reference-lightbox-title" data-reference-lightbox-title></strong>
+      </figcaption>
+    </figure>
+    <button class="reference-image-lightbox__nav reference-image-lightbox__nav--next" type="button" data-reference-lightbox-next aria-label="Nächstes Bild anzeigen">&rsaquo;</button>
+  </div>
+</div>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/reference-lightbox.js') : '/js/reference-lightbox.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<% } %>
+
+<%- include('../partials/footer') %>

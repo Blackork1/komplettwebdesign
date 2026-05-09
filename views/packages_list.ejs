@@ -222,12 +222,17 @@
   <%- include('partials/header') %>
 
   <main class="packages-page">
-    <section class="packages-hero">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <span class="hero-badge"><%= isEn ? 'Website packages in Berlin - clear scope' : 'Website-Pakete in Berlin – klarer Umfang' %></span>
+    <section class="packages-hero unified-hero">
+      <div class="container hero-grid unified-hero__grid">
+        <div class="hero-copy unified-hero__copy">
+          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+              <li aria-current="page"><%= isEn ? 'Packages' : 'Pakete' %></li>
+            </ol>
+          </nav>
           <h1 class="hero-title"><%= isEn ? 'Create a website in Berlin: packages from EUR 499' : 'Website erstellen lassen in Berlin: Pakete ab 499 EUR' %></h1>
-          <h2 class="hero-subtitle">
+          <h2 class="hero-subtitle unified-hero__lead">
             <%= isEn
               ? 'Choose the right scope for your business: Basic for a digital business card, Business for a structured multi-page site and Premium for a larger online offer with booking system.'
               : 'Wähle den passenden Umfang für dein Unternehmen: Basis als digitale Visitenkarte, Business für eine strukturierte mehrseitige Website und Premium für ein größeres Online-Angebot mit Buchungssystem.'
@@ -238,13 +243,13 @@
             <li><%= isEn ? 'Copy and SEO included in every package' : 'Texte und SEO in jedem Paket enthalten' %></li>
             <li><%= isEn ? 'Domain, email, hosting and maintenance available as clear monthly services' : 'Domain, E-Mail, Hosting und Wartung als klare Monatsleistungen wählbar' %></li>
           </ul>
-          <div class="hero-actions">
-            <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_hero_contact" data-cta-location="packages_hero"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
-            <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_hero_booking" data-cta-location="packages_hero"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+          <div class="hero-actions unified-hero__actions">
+            <a class="btn btn-hero unified-hero__button unified-hero__button--primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_hero_contact" data-cta-location="packages_hero"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-soft-outline unified-hero__button unified-hero__button--secondary" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_hero_booking" data-cta-location="packages_hero"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
-          <div class="hero-image-frame">
+          <div class="hero-image-frame unified-hero__media-frame">
             <picture>
               <source srcset="/images/preiseHero.webp" type="image/webp" />
               <img src="/images/preiseHero.webp" alt="<%= isEn ? 'Website packages Basic, Business, Premium' : 'Websitepakete Basis, Business, Premium' %>" loading="lazy" />

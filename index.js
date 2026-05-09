@@ -18,6 +18,7 @@ import cloudinary from './util/cloudinary.js';
 
 import {
   createCssAssetResolver,
+  createPublicAssetResolver,
   getAvailableCssFiles,
   getCssClasses,
   loadCssAssetManifest,
@@ -56,6 +57,8 @@ import starticPagesRoutes from './routes/staticPages.js';
 import packageRoutes from './routes/packages.js';
 import faqRoutes from './routes/faq.js';
 import contactRoutes from "./routes/contactRoutes.js";
+import seoLandingRoutes from './routes/seoLandingRoutes.js';
+import referenceRoutes from './routes/referenceRoutes.js';
 import chatRoutes from './routes/chat.js';
 import adminGalleryRoutes from './routes/adminGalleryRoutes.js';
 import consentRoutes from './routes/consent.js';
@@ -85,6 +88,8 @@ import Stripe from 'stripe';
 
 // Umgebungsvariablen laden
 dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
 Object.assign(app.locals, {
@@ -102,9 +107,13 @@ app.get('/health', (_req, res) => {
 });
 
 const isProd = process.env.NODE_ENV === 'production';
+const publicDir = path.join(__dirname, 'public');
+const assetAliases = {
+  'assets/js/axios.min.js': path.join(__dirname, 'node_modules/axios/dist/axios.min.js')
+};
 app.set('trust proxy', isProd ? 1 : false);
-app.locals.assetVersion = process.env.ASSET_VERSION || '2026-02-11';
-const cssAssetManifest = loadCssAssetManifest();
+app.locals.assetVersion = process.env.ASSET_VERSION || '1';
+const cssAssetManifest = loadCssAssetManifest(path.join(publicDir, 'css-asset-manifest.json'));
 validateCssAssetManifest(cssAssetManifest, [
   'about.css',
   'admin-appointments.css',
@@ -113,12 +122,27 @@ validateCssAssetManifest(cssAssetManifest, [
   'booking-widget.css',
   'branchen.css',
   'css/main.css',
+  'district-berlin.css',
   'extra.css',
   'faq.css',
+  'interaction-polish.css',
+  'references.css',
+  'seo-landing.css',
   'styles.css',
+  'unified-hero.css',
   'website-tester.css'
 ]);
-app.locals.cssAsset = createCssAssetResolver(cssAssetManifest);
+app.locals.asset = createPublicAssetResolver({
+  publicDir,
+  extraFiles: assetAliases,
+  fallbackVersion: app.locals.assetVersion
+});
+app.locals.jsAsset = app.locals.asset;
+app.locals.cssAsset = createCssAssetResolver(cssAssetManifest, {
+  publicDir,
+  preferSource: !isProd,
+  fallbackVersion: app.locals.assetVersion
+});
 
 const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://komplettwebdesign.de' : '')).replace(/\/$/, '');
 const configuredCanonicalHost = (process.env.CANON_HOST || '').trim().replace(/:\d+$/, '').toLowerCase();
@@ -205,6 +229,9 @@ app.use((req, res, next) => {
   const shouldNoindex = noIndexPrefixes.some((prefix) => req.path === prefix || req.path.startsWith(prefix));
 
   res.locals.assetVersion = app.locals.assetVersion;
+  res.locals.asset = app.locals.asset;
+  res.locals.jsAsset = app.locals.jsAsset;
+  res.locals.cssAsset = app.locals.cssAsset;
   res.locals.canonicalBaseUrl = base;
   res.locals.canonicalUrl = canonicalUrl;
   res.locals.currentPathname = normalizedPath;
@@ -217,15 +244,17 @@ app.use((req, res, next) => {
 });
 
 // EJS konfigurieren
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Static und Body-Parser
-const staticOpts = process.env.NODE_ENV === 'development'
-  ? { maxAge: 0 } : { immutable: true, maxAge: '365d' };
-app.use(express.static(path.join(__dirname, 'public'), staticOpts));
+const staticOpts = isProd
+  ? { immutable: true, maxAge: '365d' }
+  : { maxAge: 0 };
+app.use(express.static(publicDir, staticOpts));
+app.get('/assets/js/axios.min.js', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/axios/dist/axios.min.js'));
+});
 // app.get('/sitemap.xml', (_req, res) => {
 //   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 // });
@@ -322,6 +351,8 @@ app.use('/pricing', pricingRoutes);
 app.use('/create-checkout-session', checkoutRoutes);
 app.use('/admin/pages', adminPageRoutes);
 app.use(adminComponentRoutes);
+app.use(referenceRoutes);
+app.use(seoLandingRoutes);
 app.use(slugRoutes);
 app.use(authRoutes);
 app.use(bookingRoutes);

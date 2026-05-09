@@ -201,18 +201,23 @@ if (!carouselEl) {
     trackContactStep(resolvedIndex);
   }
 
+  function advanceFromOptionInput(input) {
+    if (!input || !input.checked) return;
+
+    if (input.name === "bilderstellung") {
+      const fld = document.getElementById("uploadImagesField");
+      const imagesInput = document.getElementById("imagesInput");
+      if (fld) fld.style.display = input.value === "eigen" ? "block" : "none";
+      if (input.value !== "eigen" && imagesInput) imagesInput.value = "";
+    }
+
+    next();
+  }
+
   ["paket", "umfang", "texterstellung", "bilderstellung", "slotId"].forEach((name) => {
     document.querySelectorAll(`input[name="${name}"]`).forEach((inp) => {
-      inp.addEventListener("change", (e) => {
-        if (name === "bilderstellung") {
-          const fld = document.getElementById("uploadImagesField");
-          if (e.target.value === "eigen") fld.style.display = "block";
-          else {
-            fld.style.display = "none";
-            document.getElementById("imagesInput").value = "";
-          }
-        }
-        next();
+      inp.addEventListener("click", (e) => {
+        advanceFromOptionInput(e.currentTarget);
       });
     });
   });

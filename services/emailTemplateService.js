@@ -1,3 +1,5 @@
+const BRAND_ORANGE = "#e94a1b";
+
 function normalizeLocale(locale = "de") {
   return String(locale).toLowerCase().startsWith("en") ? "en" : "de";
 }
@@ -56,7 +58,7 @@ export function renderBrandEmail({
     `;
 
   const ctaHtml = ctaLabel && ctaUrl
-    ? `<p style="margin:24px 0 0 0;"><a href="${ctaUrl}" style="display:inline-block;padding:12px 18px;background:#e94a1b;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;">${ctaLabel}</a></p>`
+    ? `<p style="margin:24px 0 0 0;"><a href="${ctaUrl}" style="display:inline-block;padding:12px 18px;background:${BRAND_ORANGE};color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;">${ctaLabel}</a></p>`
     : "";
 
   return `<!doctype html>
@@ -75,7 +77,7 @@ export function renderBrandEmail({
             <tr>
               <td style="background:linear-gradient(135deg,#0b2a46 0%,#173f63 100%);padding:26px 28px;">
                 <p style="margin:0 0 8px 0;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:#ffd6c9;font-weight:700;">Komplett Webdesign</p>
-                <h1 style="margin:0;font-size:26px;line-height:1.25;color:#ffffff;">${safeHeadline}</h1>
+                <h1 style="margin:0;font-size:26px;line-height:1.25;color:${BRAND_ORANGE} !important;-webkit-text-fill-color:${BRAND_ORANGE};">${safeHeadline}</h1>
               </td>
             </tr>
             <tr>

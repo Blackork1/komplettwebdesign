@@ -1,5 +1,5 @@
 body.website-tester-page {
-  --wt-bg: var(--color-bg, #eaeae9);
+  --wt-bg: #f4f7fb;
   --wt-surface: #ffffff;
   --wt-surface-soft: #f8f7f3;
   --wt-text: var(--color-primary, #0b2a46);
@@ -9,16 +9,65 @@ body.website-tester-page {
   --wt-border: rgba(11, 42, 70, 0.14);
   --wt-shadow: 0 12px 28px rgba(11, 42, 70, 0.08);
 
-  background:
-    radial-gradient(rgba(233, 74, 27, 0.12) 1px, transparent 1px),
-    var(--wt-bg);
-  background-size: 76px 76px;
+  background: var(--wt-bg);
   color: var(--wt-text);
 }
 
 .website-tester-page main,
 .website-tester-page main * {
   box-sizing: border-box;
+}
+
+.website-tester-page :is(
+  .wt-shell,
+  .wt-hero-grid,
+  .wt-hero-copy,
+  .wt-form-card,
+  .wt-form-row,
+  .wt-panel,
+  .wt-tool-card,
+  .wt-check-card,
+  .wt-category-card,
+  .wt-priorities,
+  .wt-sitefacts,
+  .wt-cta-card,
+  .wt-result-header,
+  .wt-next-card,
+  .wt-next-step-card,
+  .wt-review,
+  .wt-method-card
+) {
+  min-width: 0;
+}
+
+.website-tester-page :is(
+  .wt-hero-grid,
+  .wt-hero-copy,
+  .wt-form-card,
+  .wt-form-row,
+  .wt-panel,
+  .wt-tool-card,
+  .wt-check-card,
+  .wt-category-card,
+  .wt-priorities,
+  .wt-sitefacts,
+  .wt-cta-card,
+  .wt-result-header,
+  .wt-next-card,
+  .wt-next-step-card,
+  .wt-review,
+  .wt-method-card
+) {
+  max-width: 100%;
+}
+
+/* Website tester text overflow safety */
+.website-tester-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, label, button, dt, dd, blockquote, figcaption) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
 .wt-shell {
@@ -28,7 +77,7 @@ body.website-tester-page {
 }
 
 .wt-hero {
-  padding: clamp(2rem, 5vw, 3.6rem) 0 1.2rem;
+  padding: clamp(30px, 5vw, 60px) 0 clamp(72px, 10vw, 132px);
 }
 
 .wt-hero-grid {
@@ -902,7 +951,7 @@ body.website-tester-page {
 
 /* End-user tester refresh */
 .website-tester-page .wt-hero {
-  padding-top: 2.8rem;
+  padding: clamp(30px, 5vw, 60px) 0 clamp(72px, 10vw, 132px);
 }
 
 .website-tester-page .wt-hero-grid {

@@ -4,20 +4,25 @@
 <link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 
 <main class="rg-page rg-index-page" id="hero">
-  <section class="rg-hero" aria-labelledby="rg-hero-title">
+  <section class="rg-hero unified-hero" aria-labelledby="rg-hero-title">
     <div class="rg-hero-noise" aria-hidden="true"></div>
-    <div class="container rg-hero-grid">
-      <div class="rg-hero-copy">
-        <p class="rg-eyebrow">Komplett Webdesign Ratgeber</p>
+    <div class="container rg-hero-grid unified-hero__grid">
+      <div class="rg-hero-copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li aria-current="page">Ratgeber</li>
+          </ol>
+        </nav>
         <h1 id="rg-hero-title">Website-Wissen für kleine Unternehmen in Berlin.</h1>
-        <p class="rg-lead">
+        <p class="rg-lead unified-hero__lead">
           Klare Antworten zu Kosten, Ablauf, Relaunch, SEO und Branchen-Websites.
           Für alle, die professionell online gehen wollen, ohne sich durch Technik-Blabla zu kämpfen.
         </p>
 
-        <div class="rg-hero-actions">
-          <a class="btn btn-accent" href="/website-tester">Website kostenlos prüfen</a>
-          <a class="btn btn-outline-light" href="/pakete">Pakete ansehen</a>
+        <div class="rg-hero-actions unified-hero__actions">
+          <a class="btn btn-accent unified-hero__button unified-hero__button--primary" href="/website-tester">Website kostenlos prüfen</a>
+          <a class="btn btn-outline-light unified-hero__button unified-hero__button--secondary" href="/pakete">Pakete ansehen</a>
         </div>
 
         <div class="rg-kpi-row" aria-label="Ratgeber Überblick">
@@ -36,7 +41,7 @@
         </div>
       </div>
 
-      <aside class="rg-hero-panel" aria-label="Newsletter Anmeldung">
+      <aside class="rg-hero-panel unified-hero__panel" aria-label="Newsletter Anmeldung">
         <p class="rg-panel-eyebrow">Newsletter</p>
         <h2>Website-Tipps, die du wirklich umsetzen kannst.</h2>
         <p>
@@ -121,7 +126,7 @@
           </div>
         </section>
 
-        <section class="rg-cta-box" aria-label="Beratungs CTA">
+        <section class="rg-cta-box" aria-label="Beratungsbereich">
           <p class="rg-cta-kicker">Nächster Schritt</p>
           <h3>Du willst wissen, wo deine Website gerade steht?</h3>
           <p>

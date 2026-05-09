@@ -1,54 +1,69 @@
 <!-- views/blog/show.ejs -->
-<%- include('../partials/head') %>
+<%- include('../partials/head', { title, description, seoExtra }) %>
 <%- include('../partials/header') %>
 
+<link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 <link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 
-<div class="container my-5">
-  <div class="row">
-    <!-- Artikel -->
-    <main class="col-md-8">
-      <h1 class="mb-3"><%= post.title %></h1>
-      <p class="text-muted">
-        <%= post.category %> ·
-        <%= new Date(post.created_at).toLocaleDateString('de-DE') %>
-      </p>
+<main class="rg-page blog-page blog-detail-page" id="hero">
+  <section class="rg-detail-hero blog-detail-hero unified-hero" aria-labelledby="blog-detail-title">
+    <div class="container rg-detail-hero-inner unified-hero__grid">
+      <div class="rg-detail-copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li aria-current="page"><%= post.title %></li>
+          </ol>
+        </nav>
 
-      <!-- Aufmacherbild -->
-      <figure class="post-hero-image mb-4 text-center">
-        <img src="<%= post.image_url %>" alt="" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+        <h1 id="blog-detail-title"><%= post.title %></h1>
+        <% if (post.excerpt || post.description) { %>
+        <p class="rg-detail-lead unified-hero__lead"><%= post.excerpt || post.description %></p>
+        <% } %>
+
+        <div class="rg-detail-meta blog-detail-meta">
+          <span>
+            Veröffentlicht am
+            <time datetime="<%= new Date(post.created_at).toISOString() %>"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></time>
+          </span>
+        </div>
+
+        <div class="rg-detail-actions unified-hero__actions">
+          <a href="/blog" class="btn btn-accent btn-lg unified-hero__button unified-hero__button--primary">Alle Artikel</a>
+          <a href="/website-tester" class="btn btn-outline-light btn-lg unified-hero__button unified-hero__button--secondary">Website prüfen</a>
+        </div>
+      </div>
+
+      <figure class="rg-detail-media blog-hero__media unified-hero__media-frame">
+        <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="eager" fetchpriority="high">
       </figure>
+    </div>
+  </section>
 
-      <nav class="container pt-3" aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="/">Startseite</a></li>
-          <li class="breadcrumb-item"><a href="/blog">Blog</a></li>
-          <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
-        </ol>
-      </nav>
-
-      <!-- Inhalt (HTML) -->
-      <div class="post-content">
+  <div class="container rg-detail-layout">
+    <article class="rg-article" aria-label="Blogartikel Inhalt">
+      <div class="rg-article-body">
         <%- renderedContent %>
       </div>
 
-      <section id="blog-comments" class="comment-section mt-5" data-post-slug="<%= post.slug %>" data-recaptcha-sitekey="<%= process.env.RECAPTCHA_SITEKEY || '' %>">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <section id="blog-comments" class="comment-section" data-post-slug="<%= post.slug %>" data-recaptcha-sitekey="<%= process.env.RECAPTCHA_SITEKEY || '' %>">
+        <div class="comment-section-head">
           <div>
-            <p class="text-uppercase small text-muted mb-1">Engagiere dich</p>
-            <h2 class="h4 mb-0">Kommentare &amp; Feedback</h2>
-            <p class="text-muted mb-0">Stelle Fragen, teile Anregungen oder hinterlasse deine Meinung zu diesem Artikel.</p>
+            <p class="rg-section-kicker">Feedback</p>
+            <h2>Kommentare &amp; Fragen</h2>
+            <p>Stelle Fragen, teile Anregungen oder hinterlasse deine Meinung zu diesem Artikel.</p>
           </div>
-          <div class="badge bg-light text-dark border">
+          <div class="comment-security-badge">
             Spam-geschützt mit reCAPTCHA
           </div>
         </div>
 
-        <div class="comment-card p-4 position-relative" data-comment-body>
+        <div class="comment-card position-relative" data-comment-body>
           <div class="comment-consent-overlay d-none" data-consent-overlay>
             <div>
               <p class="mb-1 fw-semibold">Kommentare deaktiviert</p>
-              <p class="mb-0 small">Zum Kommentieren und Liken müssen die Cookie Einstellungen akzeptiert werden.</p>
+              <p class="mb-0 small">Zum Kommentieren und Liken müssen die Cookie-Einstellungen akzeptiert werden.</p>
             </div>
           </div>
 
@@ -62,9 +77,9 @@
                 <label class="form-label">Kommentar</label>
                 <textarea name="comment" class="form-control" rows="3" placeholder="Teile deine Frage oder Meinung..." maxlength="1500" required></textarea>
                 <input type="hidden" name="parentId" value="" />
-                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-                  <small class="text-muted">Klick ins Textfeld lädt reCAPTCHA.</small>
-                  <button type="submit" class="btn btn-primary" data-submit-btn>
+                <div class="comment-form-actions">
+                  <small>Klick ins Textfeld lädt reCAPTCHA.</small>
+                  <button type="submit" class="btn btn-accent" data-submit-btn>
                     Kommentar senden
                   </button>
                 </div>
@@ -82,29 +97,40 @@
           <div class="comment-feedback small" data-comment-feedback role="status"></div>
         </div>
 
-        <div class="comment-list mt-3" data-comment-list>
+        <div class="comment-list" data-comment-list>
           <p class="text-muted" data-empty-state>Sei die erste Person, die einen Kommentar hinterlässt.</p>
         </div>
       </section>
-    </main>
+    </article>
 
-    <!-- Newsletter-Sidebar (Desktop) -->
-    <aside class="col-md-4 d-none d-md-block">
-      <div class="newsletter-sidebar">
-        <h4 class="mb-2">Newsletter</h4>
-        <p>Bleib auf dem Laufenden – jetzt anmelden:</p>
-        <%- include('../partials/newsletter_form') %>
+    <aside class="rg-detail-side" aria-label="Newsletter und nächste Schritte">
+      <div class="rg-sticky-wrap">
+        <section class="rg-newsletter-card">
+          <p class="rg-panel-eyebrow">Newsletter</p>
+          <h3>Neue Blogartikel direkt ins Postfach</h3>
+          <p>Kurze Tipps zu Webdesign, Performance und SEO mit Fokus auf kleine Unternehmen in Berlin.</p>
+          <div class="rg-newsletter-form">
+            <%- include('../partials/newsletter_form') %>
+          </div>
+        </section>
+
+        <section class="rg-other-guides" aria-labelledby="blog-next-title">
+          <h3 id="blog-next-title">Weiterlesen</h3>
+          <div class="rg-other-list">
+            <a href="/ratgeber" class="rg-other-item">
+              <strong>Ratgeber</strong>
+              <p>Strukturierte Grundlagen zu Kosten, Ablauf, Relaunch und lokaler Sichtbarkeit.</p>
+            </a>
+            <a href="/webdesign-berlin" class="rg-other-item">
+              <strong>Webdesign Berlin</strong>
+              <p>Die wichtigste Seite für dein Website-Projekt mit Komplett Webdesign.</p>
+            </a>
+          </div>
+        </section>
       </div>
     </aside>
   </div>
-
-  <!-- Newsletter-Box (Mobil) -->
-  <section class="d-block d-md-none my-5">
-    <h4 class="mb-2">Newsletter</h4>
-    <p>Bleib auf dem Laufenden – jetzt anmelden:</p>
-    <%- include('../partials/newsletter_form') %>
-  </section>
-</div>
-<script src="/js/blog-comments.js" defer></script>
+</main>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/blog-comments.js') : '/js/blog-comments.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/footer') %>

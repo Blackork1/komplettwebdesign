@@ -2,6 +2,8 @@ import ejs from 'ejs';
 import BlogPostModel from '../models/BlogPostModel.js';
 import { isoOffset, isoAtNoon } from '../util/date.js';
 
+const BLOG_PAGE_SIZE = 10;
+
 
 function renderDbEjs(template, locals = {}) {
   try {
@@ -19,10 +21,65 @@ function stripHtml(html) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function parseNonNegativeInteger(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
+}
+
+function renderPostCard(res, post, idx) {
+  return new Promise((resolve, reject) => {
+    res.render('blog/partials/post-card', { post, idx }, (err, html) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(html);
+    });
+  });
+}
+
 export async function listPosts(req, res) {
-  const posts = await BlogPostModel.findAll();
-  const featuredPosts = await BlogPostModel.findFeatured(5);
-  res.render('blog/index', { title: "Aktuelles und News aus dem Technikbereich sowie Rabattaktionen", description: "Neue Informationen zu KI, Websiten, Wissenswertes sowie Angebote und Rabattaktionen.", posts, featuredPosts });
+  const [posts, totalPosts, featuredPosts] = await Promise.all([
+    BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset: 0 }),
+    BlogPostModel.countPublished(),
+    BlogPostModel.findFeatured(5)
+  ]);
+  res.render('blog/index', {
+    title: "Aktuelles und News aus dem Technikbereich sowie Rabattaktionen",
+    description: "Neue Informationen zu KI, Websiten, Wissenswertes sowie Angebote und Rabattaktionen.",
+    posts,
+    featuredPosts,
+    totalPosts,
+    pageSize: BLOG_PAGE_SIZE
+  });
+}
+
+export async function listPostsPage(req, res) {
+  try {
+    const offset = parseNonNegativeInteger(req.query.offset, 0);
+    const requestedLimit = parseNonNegativeInteger(req.query.limit, BLOG_PAGE_SIZE);
+    const limit = Math.min(Math.max(requestedLimit, 1), BLOG_PAGE_SIZE);
+    const [posts, totalPosts] = await Promise.all([
+      BlogPostModel.findPage({ limit, offset }),
+      BlogPostModel.countPublished()
+    ]);
+    const html = (await Promise.all(
+      posts.map((post, idx) => renderPostCard(res, post, offset + idx))
+    )).join('');
+    const nextOffset = offset + posts.length;
+
+    res.json({
+      html,
+      count: posts.length,
+      nextOffset,
+      hasMore: nextOffset < totalPosts,
+      totalPosts
+    });
+  } catch (err) {
+    console.error('Blog-Artikel konnten nicht nachgeladen werden:', err);
+    res.status(500).json({ error: 'Artikel konnten nicht geladen werden.' });
+  }
 }
 
 export async function showPost(req, res) {

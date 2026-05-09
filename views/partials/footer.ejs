@@ -48,6 +48,12 @@
           <nav class="footer-nav">
             <h3><%= isEn ? 'Information' : 'Informationen' %></h3>
             <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>">Webdesign Berlin</a>
+            <% if (!isEn) { %>
+            <a href="/website-erstellen-lassen-berlin">Website erstellen lassen Berlin</a>
+            <a href="/website-relaunch-berlin">Website Relaunch Berlin</a>
+            <a href="/ablauf">Ablauf Webdesign Berlin</a>
+            <% } %>
+            <a href="/referenzen"><%= isEn ? 'References' : 'Referenzen' %></a>
             <a href="/ratgeber"><%= isEn ? 'Guides' : 'Ratgeber' %></a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
             <a href="/faq">FAQ</a>
@@ -121,13 +127,25 @@
 </section>
 <%- include('cookie-banner') %>
 
-<script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+<%
+  const scriptAsset = (typeof jsAsset === 'function')
+    ? jsAsset
+    : (file) => {
+        const normalized = String(file || '').replace(/^\/+/, '');
+        return `/${normalized}?v=${encodeURIComponent(assetVersion || '1')}`;
+      };
+%>
 
-<script src="/js/navToggle.js" defer></script>
-<script src="/js/slideOnScroll.js" defer></script>
-<script src="/js/ga-events.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+<script src="<%= scriptAsset('assets/js/bootstrap.bundle.min.js') %>" defer></script>
 
-<script src="/js/chat.js" defer></script>
+<script src="<%= scriptAsset('js/navToggle.js') %>" defer></script>
+<script src="<%= scriptAsset('js/slideOnScroll.js') %>" defer></script>
+<% if (typeof disableInteractionPolish === 'undefined' || !disableInteractionPolish) { %>
+<script src="<%= scriptAsset('js/interaction-polish.js') %>" defer></script>
+<% } %>
+<script src="<%= scriptAsset('js/ga-events.js') %>" defer></script>
+
+<script src="<%= scriptAsset('js/chat.js') %>" defer></script>
 <script>
   (function() {
     var siteKey = "<%= process.env.RECAPTCHA_SITEKEY || '' %>";
@@ -232,5 +250,5 @@
     toggleBackToTop();
   })();
 </script>
-<script src="/js/recaptcha-form.js" defer></script>
-<script src="/js/youtube-consent.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+<script src="<%= scriptAsset('js/recaptcha-form.js') %>" defer></script>
+<script src="<%= scriptAsset('js/youtube-consent.js') %>" defer></script>

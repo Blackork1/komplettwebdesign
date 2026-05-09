@@ -1,4 +1,4 @@
-<%- include('partials/head') %>
+<%- include('partials/head', { disableInteractionPolish: true }) %>
 <%- include('partials/header') %>
 
 <link rel="preload" href="<%= cssAsset('branchen.css') %>" as="style" onload="this.rel='stylesheet'" />
@@ -689,10 +689,10 @@
 
 </style>
 
-<script src="../js/sliderAnimation.js" defer></script>
-<script src="../js/carousel.js" defer></script>
-<script src="../js/openField.js" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/sliderAnimation.js') : '/js/sliderAnimation.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/carousel.js') : '/js/carousel.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/openField.js') : '/js/openField.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 
 
-<%- include('partials/footer') %>
+<%- include('partials/footer', { disableInteractionPolish: true }) %>

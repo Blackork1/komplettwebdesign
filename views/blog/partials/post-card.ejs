@@ -1,0 +1,21 @@
+<%
+const cardTitle = post.title || 'Blogartikel';
+const cardText = post.excerpt || post.description || '';
+const cardImage = post.image_url || '/images/default-blog.webp';
+const cardCategory = post.category || 'Blog';
+%>
+<article class="rg-guide-card" data-blog-post-card>
+  <a href="/blog/<%= post.slug %>" class="rg-guide-link" aria-label="<%= cardTitle %>">
+    <div class="rg-guide-image-wrap">
+      <img src="<%= cardImage %>" alt="<%= cardTitle %>" loading="lazy" />
+      <span class="rg-chip"><%= cardCategory %></span>
+    </div>
+    <div class="rg-guide-content">
+      <h3><%= cardTitle %></h3>
+      <% if (cardText) { %>
+      <p><%= cardText %></p>
+      <% } %>
+      <span class="rg-readmore">Artikel lesen</span>
+    </div>
+  </a>
+</article>

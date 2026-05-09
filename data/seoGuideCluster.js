@@ -137,7 +137,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       <h2>Was macht den Prozess schneller?</h2>
       <p>Schneller wird das Projekt, wenn Angebot, Leistungen, Preise, Ansprechpartner, Logo und vorhandene Bilder früh klar sind. Wenn Texte fehlen, kann Komplett Webdesign sie erstellen und direkt auf Zielgruppe, lokale Suche und Anfrageziele ausrichten.</p>
       <h2>Wie wird der Erfolg messbar?</h2>
-      <p>Vor dem Livegang sollten Kontaktformular, Telefonklicks, Buchungssystem, Website-Tester-Klicks und wichtige CTA-Klicks als Ereignisse geplant werden. So erkennst du später, welche Seiten Anfragen, Reservierungen oder Buchungen auslösen.</p>
+      <p>Vor dem Livegang sollten Kontaktformular, Telefonklicks, Buchungssystem, Website-Tester-Klicks und wichtige Anfrage-Klicks als Ereignisse geplant werden. So erkennst du später, welche Seiten Anfragen, Reservierungen oder Buchungen auslösen.</p>
       <h2>Was solltest du vor dem Erstgespräch vorbereiten?</h2>
       <p>Hilfreich sind 3 bis 5 Wettbewerber, eine grobe Liste deiner Leistungen, vorhandene Bilder, Wunschfunktionen und eine ehrliche Einschätzung, was deine aktuelle Website nicht leistet. Das spart Abstimmung und macht das Angebot genauer.</p>
       <h2>Was kostet die Website-Erstellung?</h2>
@@ -172,7 +172,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
         <li>Besucher verstehen nicht schnell genug, welche Leistungen du anbietest.</li>
         <li>Die mobile Version ist schwer zu bedienen oder lädt zu langsam.</li>
         <li>Wichtige Berliner Suchanfragen werden von der Seitenstruktur nicht abgedeckt.</li>
-        <li>Kontaktformular, Telefon-CTA oder Buchungssystem sind nicht klar genug sichtbar.</li>
+        <li>Kontaktformular, Telefonbutton oder Buchungssystem sind nicht klar genug sichtbar.</li>
         <li>Tracking fehlt, sodass du nicht siehst, welche Seiten Anfragen bringen.</li>
       </ul>
       <h2>SEO beim Relaunch schützen</h2>
@@ -182,11 +182,11 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
         <li>Bestehende URLs exportieren und bewerten.</li>
         <li>Wichtige Seiten, Rankings und Backlinks sichern.</li>
         <li>Neue Seitenstruktur und Weiterleitungen planen.</li>
-        <li>Kontaktwege, CTAs und Conversion-Tracking festlegen.</li>
+        <li>Kontaktwege, Anfrageelemente und Conversion-Tracking festlegen.</li>
         <li>Mobile Darstellung, Ladezeit, Formular und Sitemap vor Launch testen.</li>
       </ul>
       <h2>Relaunch oder Optimierung?</h2>
-      <p>Nicht jede Website muss komplett neu gebaut werden. Wenn Technik, Struktur und Design grundsätzlich funktionieren, reichen oft bessere Texte, interne Links, klare CTAs und lokale SEO-Optimierung. Wenn Design, Technik und Inhalte gleichzeitig schwach sind, ist ein Relaunch meist sauberer.</p>
+      <p>Nicht jede Website muss komplett neu gebaut werden. Wenn Technik, Struktur und Design grundsätzlich funktionieren, reichen oft bessere Texte, interne Links, klare Anfragewege und lokale SEO-Optimierung. Wenn Design, Technik und Inhalte gleichzeitig schwach sind, ist ein Relaunch meist sauberer.</p>
       <div class="table-responsive">
         <table class="table">
           <thead>
@@ -197,7 +197,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
           </thead>
           <tbody>
             <tr>
-              <td>Design wirkt okay, aber Texte und CTAs sind schwach</td>
+              <td>Design wirkt okay, aber Texte und Anfragewege sind schwach</td>
               <td>Optimierung</td>
             </tr>
             <tr>
@@ -221,7 +221,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
     `,
     faq_json: [
       faq('Verliert man beim Relaunch Google-Rankings?', 'Nicht automatisch. Mit URL-Mapping, Weiterleitungen, sauberer Seitenstruktur, internen Links und Search-Console-Prüfung lassen sich Ranking-Risiken deutlich reduzieren.'),
-      faq('Wann reicht eine Optimierung statt Relaunch?', 'Eine Optimierung reicht oft, wenn Design, Technik und Grundstruktur noch funktionieren. Dann können Texte, CTAs, interne Links, Ladezeit und lokale SEO gezielt verbessert werden.'),
+      faq('Wann reicht eine Optimierung statt Relaunch?', 'Eine Optimierung reicht oft, wenn Design, Technik und Grundstruktur noch funktionieren. Dann können Texte, Anfragewege, interne Links, Ladezeit und lokale SEO gezielt verbessert werden.'),
       faq('Wie lange dauert ein Website-Relaunch?', 'Je nach Umfang dauert ein Relaunch meist 4 bis 8 Wochen. Kleinere Websites können schneller umgesetzt werden, wenn Inhalte, Seitenstruktur und Feedback zügig geklärt sind.'),
       faq('Was ist vor einem Relaunch besonders wichtig?', 'Vor einem Relaunch sollten bestehende URLs, Rankings, Backlinks, Weiterleitungen, Tracking und die neue Seitenstruktur geplant werden.')
     ]
@@ -252,7 +252,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
         <li>Du willst nicht jedes technische Problem selbst lösen.</li>
       </ul>
       <h2>Der wichtigste Unterschied</h2>
-      <p>Eine professionelle Website wird nicht nur gestaltet, sondern geplant: Zielgruppe, Einwände, lokale Keywords, Seitenstruktur, CTAs, Tracking und spätere Erweiterbarkeit gehören direkt zum Projekt. Genau dieser Strategieanteil fehlt bei vielen Baukasten-Websites.</p>
+      <p>Eine professionelle Website wird nicht nur gestaltet, sondern geplant: Zielgruppe, Einwände, lokale Keywords, Seitenstruktur, Anfragewege, Tracking und spätere Erweiterbarkeit gehören direkt zum Projekt. Genau dieser Strategieanteil fehlt bei vielen Baukasten-Websites.</p>
       <h2>Vergleich: Baukasten oder professionelle Website?</h2>
       <div class="table-responsive">
         <table class="table">

@@ -14,29 +14,38 @@ const structuredDataBlocks = [
 <%- include('../partials/head', { title, description, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
 
-<!-- Blog-Styles für die Cards wiederverwenden -->
-<link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 <link rel="preload" href="<%= cssAsset('branchen.css') %>" as="style" onload="this.rel='stylesheet'">
 <noscript>
   <link rel="stylesheet" href="<%= cssAsset('branchen.css') %>">
 </noscript>
 
-<nav class="wd-breadcrumbs" aria-label="breadcrumb">
-  <ol>
-    <li><a href="/">Startseite /</a></li>
-    <li aria-current="page">Branchen</li>
-  </ol>
-</nav>
-
+<main class="industries-index-page" id="hero">
 <!-- ────────── Hero ────────── -->
-<section class="heroB d-flex align-items-center">
-  <div class="hero-content">
-    <h1 class="display-5 fw-bold mb-3">Branchen-Übersicht</h1>
-    <p class="lead mb-4">
-      Finde deine Branche – mit Beispielen, Funktionen, SEO-Tipps und Preisen.
-    </p>
-  </div>
-</section>
+  <section class="heroB industries-hero unified-hero d-flex align-items-center" aria-labelledby="industries-hero-title">
+    <div class="unified-hero__container unified-hero__grid">
+      <div class="hero-content unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li aria-current="page">Branchen</li>
+          </ol>
+        </nav>
+        <h1 id="industries-hero-title" class="display-5 fw-bold mb-3">Webdesign für Berliner Branchen.</h1>
+        <p class="lead mb-4 unified-hero__lead">
+          Finde deine Branche mit Beispielen, Funktionen, SEO-Tipps und passenden Paketempfehlungen.
+        </p>
+      </div>
+
+      <aside class="industries-hero__panel unified-hero__panel">
+        <figure class="industries-hero__media unified-hero__media-frame">
+          <img src="/images/branchen/features.webp" alt="Website-Funktionen für Branchen-Websites" loading="eager" fetchpriority="high">
+        </figure>
+        <p>
+          Priorisiert werden Branchen, bei denen klare Leistungen, lokale Sichtbarkeit und schnelle Kontaktwege besonders wichtig sind.
+        </p>
+      </aside>
+    </div>
+  </section>
 
 <div class="container my-5">
   <div class="row">
@@ -103,5 +112,7 @@ const structuredDataBlocks = [
     </div>
   </div>
 </div>
+
+</main>
 
 <%- include('../partials/footer') %>

@@ -6,28 +6,18 @@
   <main id="hero">
     <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
-
-    <section class="wt-section wt-section-compact">
+    <section class="wt-hero unified-hero">
       <div class="wt-shell">
-        <nav class="breadcrumbs" aria-label="breadcrumb">
-          <ol>
-            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
-            <li aria-current="page"><%= isEn ? 'Website Tester' : 'Website-Tester' %></li>
-          </ol>
-        </nav>
-      </div>
-    </section>
-
-    <section class="wt-hero">
-      <div class="wt-shell">
-        <div class="wt-hero-grid">
-          <div class="wt-hero-copy">
-            <span class="wt-eyebrow">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <%= isEn ? 'Free website check' : 'Kostenloser Website-Check' %>
-            </span>
+        <div class="wt-hero-grid unified-hero__grid">
+          <div class="wt-hero-copy unified-hero__copy">
+            <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+              <ol>
+                <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+                <li aria-current="page"><%= isEn ? 'Website Tester' : 'Website-Tester' %></li>
+              </ol>
+            </nav>
             <h1><%= isEn ? 'Find out why your website is not generating enough requests.' : 'Finde heraus, warum deine Website zu wenig Anfragen bringt.' %></h1>
-            <p class="wt-lead">
+            <p class="wt-lead unified-hero__lead">
               <%= isEn
                 ? 'Get a clear, easy-to-understand assessment of visibility, trust, usability and contact paths. The result shows what should be improved first.'
                 : 'Du erhältst eine verständliche Einschätzung zu Sichtbarkeit, Vertrauen, Nutzerführung und Kontaktwegen. Das Ergebnis zeigt dir, was zuerst verbessert werden sollte.' %>
@@ -39,7 +29,7 @@
             </ul>
           </div>
 
-          <div class="wt-form-card">
+          <div class="wt-form-card unified-hero__panel">
             <h2><%= isEn ? 'Check your website briefly' : 'Website kurz prüfen lassen' %></h2>
             <p><%= isEn ? 'Business type, service and region help us assess the site in the right context.' : 'Branche, Leistung und Region helfen dabei, den Check realistisch einzuordnen.' %></p>
             <form data-website-tester-form>
@@ -209,8 +199,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-bullseye"></i> <%= isEn ? 'Conversion readiness' : 'Conversion-Reife' %></h3>
               <p><%= isEn
-                ? 'CTA clarity, above-the-fold value proposition, contact accessibility, form quality, social proof presence. What actually drives inquiries.'
-                : 'CTA-Klarheit, Above-the-Fold-Value-Proposition, Kontakt-Erreichbarkeit, Form-Qualität, Social-Proof. Was tatsächlich Anfragen generiert.' %></p>
+                ? 'Inquiry path clarity, above-the-fold value proposition, contact accessibility, form quality, social proof presence. What actually drives inquiries.'
+                : 'Klarheit der Anfragewege, Above-the-Fold-Value-Proposition, Kontakt-Erreichbarkeit, Form-Qualität, Social-Proof. Was tatsächlich Anfragen generiert.' %></p>
             </div>
           </div>
           <p>
@@ -377,7 +367,7 @@
       }
     };
   </script>
-  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
-  <script src="/js/website-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/website-tester.js') : '/js/website-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

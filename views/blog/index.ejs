@@ -1,87 +1,179 @@
 <!-- views/blog/index.ejs -->
-<%- include('../partials/head') %>
-<!-- Head Partial -->
+<%- include('../partials/head', { title, description }) %>
 <%- include('../partials/header') %>
-<!-- Header Partial -->
+
+<link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 <link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 
-<!-- ────────── Hero mit Newsletter ────────── -->
-<section class="heroB d-flex align-items-center">
-  <div class="hero-content">
-    <h1 class="display-5 fw-bold mb-3">Komplett Webdesign - Blog</h1>
-    <p class="lead mb-4">
-      Aktuelle Insights zu Web-Design, KI, Performance & SEO.<br />
-      Jetzt Newsletter abonnieren und nichts verpassen!
-    </p>
-    <%- include('../partials/newsletter_form') %>
-  </div>
-</section>
+<%
+const renderedPosts = Array.isArray(posts) ? posts : [];
+const renderedTotalPosts = Number.isFinite(Number(totalPosts)) ? Number(totalPosts) : renderedPosts.length;
+const renderedPageSize = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 10;
+const hasMorePosts = renderedTotalPosts > renderedPosts.length;
+%>
 
-<div class="container my-5">
-  <div class="row">
-    <!-- Hauptliste der Blogposts (linke Spalte) -->
-    <div class="col-md-8">
-      <h2 class="mb-4">Aktuelle Artikel</h2>
-      <div class="post-list">
-        <!-- <<< Neuer Wrapper -->
-        <% posts.forEach(function(post) { %>
-        <div class="post-card mb-4">
-          <!-- Verlinkter Artikel -->
-          <a href="/blog/<%= post.slug %>" class="post-card-link">
-            <!-- Hintergrundbild + Overlay -->
-            <div class="post-card-bg" style="background-image: url('<%= post.image_url%>');">
-              <div class="post-card-content">
-                <div class="post-card-overlay">
-                  <h2 class="post-card-title">
-                    <%= post.title %>
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </a>
+<main class="rg-page blog-page blog-index-page" id="hero">
+  <section class="rg-hero blog-hero unified-hero" aria-labelledby="blog-hero-title">
+    <div class="rg-hero-noise" aria-hidden="true"></div>
+    <div class="container rg-hero-grid unified-hero__grid">
+      <div class="rg-hero-copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li aria-current="page">Blog</li>
+          </ol>
+        </nav>
+
+        <h1 id="blog-hero-title">Impulse zu Webdesign, SEO und Sichtbarkeit.</h1>
+        <p class="rg-lead unified-hero__lead">
+          Aktuelle Einschätzungen zu Webdesign, KI, Performance und SEO für kleine Unternehmen.
+          Verständlich geschrieben und mit Fokus auf bessere Anfragen.
+        </p>
+
+        <div class="rg-hero-actions unified-hero__actions">
+          <a class="btn btn-accent unified-hero__button unified-hero__button--primary" href="/website-tester">Website kostenlos prüfen</a>
+          <a class="btn btn-outline-light unified-hero__button unified-hero__button--secondary" href="/ratgeber">Ratgeber ansehen</a>
         </div>
+
+        <div class="rg-kpi-row" aria-label="Blog Überblick">
+          <article class="rg-kpi-card">
+            <span><%= renderedTotalPosts %></span>
+            <small>Artikel</small>
+          </article>
+          <article class="rg-kpi-card">
+            <span><%= (featuredPosts || []).length %></span>
+            <small>Empfohlen</small>
+          </article>
+          <article class="rg-kpi-card">
+            <span>100%</span>
+            <small>Praxisnah</small>
+          </article>
+        </div>
+      </div>
+
+      <aside class="rg-hero-panel blog-hero-panel unified-hero__panel" aria-label="Newsletter Anmeldung">
+        <figure class="blog-hero-image unified-hero__media-frame">
+          <img src="/images/blogW.webp" alt="Blog und Website-Wissen von Komplett Webdesign" loading="eager" fetchpriority="high">
+        </figure>
+        <div>
+          <p class="rg-panel-eyebrow">Newsletter</p>
+          <h2>Website-Tipps direkt ins Postfach.</h2>
+          <p>
+            Kurze Impulse zu Sichtbarkeit, Struktur und Technik. Kein Buzzword-Feuerwerk, sondern klare Hinweise für bessere Websites.
+          </p>
+          <div class="rg-newsletter-form">
+            <%- include('../partials/newsletter_form') %>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="container rg-cluster" aria-labelledby="blog-cluster-title">
+    <div class="rg-cluster-copy">
+      <p class="rg-section-kicker">Schneller Einstieg</p>
+      <h2 id="blog-cluster-title">Blogthemen für bessere Websites</h2>
+      <p>
+        Starte mit den Themen, die bei kleinen Unternehmen besonders oft entscheiden:
+        klare Struktur, verständliche Inhalte, saubere Technik und lokale Sichtbarkeit.
+      </p>
+      <div class="rg-cluster-actions">
+        <a href="/website-tester">Website prüfen</a>
+        <a href="/ratgeber">Ratgeber lesen</a>
+        <a href="/webdesign-berlin/kosten-preise-pakete">Preise verstehen</a>
+      </div>
+    </div>
+    <div class="rg-cluster-list-wrap">
+      <p class="rg-cluster-list-title">Wichtige Seiten</p>
+      <ul class="rg-cluster-list">
+        <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
+        <li><a href="/website-erstellen-lassen-berlin">Website erstellen lassen Berlin</a></li>
+        <li><a href="/referenzen">Referenzen ansehen</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="container rg-content-grid" aria-labelledby="blog-list-heading">
+    <div class="rg-main-column">
+      <div class="rg-section-head">
+        <p class="rg-section-kicker">Neu im Blog</p>
+        <h2 id="blog-list-heading">Aktuelle Artikel</h2>
+      </div>
+
+      <div class="rg-card-grid" data-blog-grid>
+        <% renderedPosts.forEach(function(post, idx) { %>
+          <%- include('./partials/post-card', { post, idx }) %>
         <% }); %>
       </div>
+
+      <div class="blog-load-more" data-blog-pagination>
+        <button
+          type="button"
+          class="btn btn-accent blog-load-more__button"
+          data-blog-load-more
+          data-endpoint="/blog/posts"
+          data-offset="<%= renderedPosts.length %>"
+          data-limit="<%= renderedPageSize %>"
+          <% if (!hasMorePosts) { %>hidden<% } %>
+        >
+          Weitere 10 Artikel laden
+        </button>
+        <p class="blog-load-more__status" data-blog-load-status aria-live="polite">
+          <%= hasMorePosts ? (renderedPosts.length + ' von ' + renderedTotalPosts + ' Artikeln angezeigt.') : ('Alle ' + renderedTotalPosts + ' Artikel angezeigt.') %>
+        </p>
+      </div>
     </div>
 
-    <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
-    <div class="col-md-4 d-none d-md-block">
-      <h3>Empfohlene Artikel</h3>
-      <% featuredPosts.forEach(function(post) { %>
-      <div class="featured-post-card mb-3">
-        <a href="/blog/<%= post.slug %>" class="d-flex">
-          <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img" />
-          <div class="featured-post-info">
-            <h5 class="featured-post-title">
-              <%= post.title %>
-            </h5>
-            <p class="featured-post-excerpt">
-              <%= (post.excerpt) %>
-            </p>
+    <aside class="rg-side-column">
+      <div class="rg-sticky-wrap">
+        <section class="rg-featured-box" aria-labelledby="blog-featured-heading">
+          <h3 id="blog-featured-heading">Empfohlene Artikel</h3>
+          <div class="rg-featured-list">
+            <% (featuredPosts || []).forEach(function(post) { %>
+            <a href="/blog/<%= post.slug %>" class="rg-featured-item" aria-label="<%= post.title %>">
+              <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="lazy" />
+              <div>
+                <strong><%= post.title %></strong>
+                <% if (post.excerpt) { %>
+                <p><%= post.excerpt %></p>
+                <% } %>
+              </div>
+            </a>
+            <% }); %>
           </div>
-        </a>
-      </div>
-      <% }); %>
-    </div>
-  </div>
+        </section>
 
-  <!-- Featured Posts horizontal (mobil sichtbar) -->
-  <div class="d-block d-md-none mt-4">
-    <h4>Empfohlene Artikel</h4>
-    <div class="featured-mobile-scroll d-flex">
-      <% featuredPosts.forEach(function(post) { %>
-      <div class="featured-post-card-mobile me-3">
-        <a href="/blog/<%= post.slug %>">
-          <img src="<%= post.image_url %>" alt="<%= post.title %>" class="featured-post-img-mobile" />
-          <h5 class="featured-post-title-mobile">
-            <%= post.title %>
-          </h5>
-        </a>
+        <section class="rg-cta-box" aria-label="Nächster Schritt">
+          <p class="rg-cta-kicker">Website-Check</p>
+          <h3>Du willst wissen, wo deine Website gerade steht?</h3>
+          <p>
+            Starte mit dem kostenlosen Website-Check und erkenne, welche Technik-, SEO- und Inhaltsprobleme aktuell bremsen.
+          </p>
+          <a class="btn btn-accent" href="/website-tester">Website-Check starten</a>
+        </section>
       </div>
+    </aside>
+  </section>
+
+  <section class="container rg-featured-mobile" aria-labelledby="blog-featured-mobile-heading">
+    <div class="rg-section-head">
+      <p class="rg-section-kicker">Kuratiert</p>
+      <h2 id="blog-featured-mobile-heading">Empfohlene Artikel</h2>
+    </div>
+    <div class="rg-featured-scroll">
+      <% (featuredPosts || []).forEach(function(post) { %>
+      <article class="rg-featured-mobile-card">
+        <a href="/blog/<%= post.slug %>" aria-label="<%= post.title %>">
+          <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="lazy" />
+          <h3><%= post.title %></h3>
+        </a>
+      </article>
       <% }); %>
     </div>
-  </div>
-</div>
+  </section>
+</main>
+
+<script src="<%= (typeof asset === 'function' ? asset('assets/js/axios.min.js') : '/assets/js/axios.min.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/blog-load-more.js') : '/js/blog-load-more.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/footer') %>
-<!-- Footer Partial -->

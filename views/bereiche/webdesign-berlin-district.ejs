@@ -45,12 +45,12 @@ const structuredDataBlocks = [
 <%- include('../partials/header') %>
 
 <main class="district-page" id="content">
-  <nav class="district-breadcrumb" aria-label="Breadcrumb">
-    <a href="/">Startseite</a>
-    <span>/</span>
-    <a href="<%= hubPath %>">Webdesign Berlin</a>
-    <span>/</span>
-    <span><%= district.name %></span>
+  <nav class="district-breadcrumb unified-hero__breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="<%= hubPath %>">Webdesign Berlin</a></li>
+      <li aria-current="page"><%= district.name %></li>
+    </ol>
   </nav>
 
   <section class="district-hero" aria-labelledby="district-hero-title">

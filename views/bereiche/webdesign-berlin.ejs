@@ -19,39 +19,37 @@ const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
 <% const wdContact = contactPath || (isEn ? '/en/kontakt' : '/kontakt'); %>
 <% const copy = pageCopy || {}; %>
 
-<nav class="wd-breadcrumbs" aria-label="breadcrumb">
-  <ol>
-    <li><a href="<%= isEn ? '/en' : '/' %>"><%= copy.homeLabel || 'Startseite' %> /</a></li>
-    <li aria-current="page">Webdesign Berlin</li>
-  </ol>
-</nav>
-
 <main class="webdesign-berlin-page">
-  <section class="wd-container wd-hero" aria-labelledby="wd-hero-title">
-    <div class="wd-hero__content">
-      <span class="wd-eyebrow">Komplett Webdesign · Berlin</span>
-      <h1 id="wd-hero-title" class="animate-on-scroll"><%= hero.title %></h1>
-      <p class="wd-lead animate-on-scroll"><%= hero.description %></p>
+  <section class="wd-container wd-hero unified-hero" aria-labelledby="wd-hero-title">
+    <div class="wd-hero__content unified-hero__copy">
+      <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="<%= isEn ? '/en' : '/' %>"><%= copy.homeLabel || 'Startseite' %></a></li>
+          <li aria-current="page">Webdesign Berlin</li>
+        </ol>
+      </nav>
+      <h1 id="wd-hero-title"><%= hero.title %></h1>
+      <p class="wd-lead unified-hero__lead"><%= hero.description %></p>
       <% if (hero.answerBlock) { %>
-      <p class="wd-lead animate-on-scroll"><%= hero.answerBlock %></p>
+      <p class="wd-lead unified-hero__lead"><%= hero.answerBlock %></p>
       <% } %>
-      <div class="wd-hero-ctas animate-on-scroll">
-        <a class="wd-btn wd-btn-primary" href="<%= hero.ctaPrimary.href %>" data-track="webdesign_berlin_hero_contact"><%= hero.ctaPrimary.label %></a>
-        <a class="wd-btn wd-btn-outline" href="<%= hero.ctaSecondary.href %>" data-track="webdesign_berlin_hero_packages"><%= hero.ctaSecondary.label %></a>
+      <div class="wd-hero-ctas unified-hero__actions">
+        <a class="wd-btn wd-btn-primary unified-hero__button unified-hero__button--primary" href="<%= hero.ctaPrimary.href %>" data-track="webdesign_berlin_hero_contact"><%= hero.ctaPrimary.label %></a>
+        <a class="wd-btn wd-btn-outline unified-hero__button unified-hero__button--secondary" href="<%= hero.ctaSecondary.href %>" data-track="webdesign_berlin_hero_packages"><%= hero.ctaSecondary.label %></a>
       </div>
-      <div class="wd-social-proof animate-on-scroll" role="note">
+      <div class="wd-social-proof" role="note">
         <span><%= hero.rating.label %></span>
         <a href="<%= hero.rating.href %>" target="_blank" rel="noopener"><%= copy.googleProfile || 'Google Profil' %></a>
       </div>
     </div>
     <div class="wd-hero__visual">
-      <figure class="wd-hero__frame animate-on-scroll">
+      <figure class="wd-hero__frame unified-hero__media-frame">
         <img src="<%= hero.image.src %>" alt="<%= hero.image.alt %>" width="960" height="960" loading="eager" fetchpriority="high">
       </figure>
       <% if (hero.trustBadges?.length) { %>
       <ul class="wd-trust-badges" aria-label="Trust Badges">
         <% hero.trustBadges.forEach(function (badge) { %>
-        <li class="animate-on-scroll">
+        <li>
           <span aria-hidden="true">✓</span>
           <span><%= badge %></span>
         </li>

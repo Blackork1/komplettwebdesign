@@ -2503,7 +2503,7 @@ p.step-description {
 
 @media (min-width: 850px) {
   .webdesign-berlin-page{
-    padding-top: 60px;
+    padding: 0;
   }
   .webdesign-berlin-page .wd-hero{
     border-radius: 32px;
@@ -2519,6 +2519,7 @@ p.step-description {
   --wd-accent: var(--color-accent, #e94a1b);
   --wd-accent-strong: #b93618;
   --wd-border: rgba(11, 42, 70, 0.14);
+  padding: 0;
   background:
     linear-gradient(180deg, var(--wd-bg) 0%, #ffffff 44%, var(--wd-bg) 100%);
 }
@@ -2658,6 +2659,54 @@ p.step-description {
   margin-top: auto;
 }
 
+.webdesign-berlin-page :is(
+  .wd-container,
+  .wd-hero__content,
+  .wd-hero__visual,
+  .wd-section__inner,
+  .wd-section__content,
+  .wd-card,
+  .wd-case,
+  .wd-package-card,
+  .wd-industry-card,
+  .wd-resource-card,
+  .wd-contact,
+  .wd-contact__intro,
+  .wd-contact__form,
+  .wd-faq,
+  .wd-trust-list li
+) {
+  min-width: 0;
+}
+
+.webdesign-berlin-page :is(
+  .wd-hero__content,
+  .wd-hero__visual,
+  .wd-section__inner,
+  .wd-section__content,
+  .wd-card,
+  .wd-case,
+  .wd-package-card,
+  .wd-industry-card,
+  .wd-resource-card,
+  .wd-contact,
+  .wd-contact__intro,
+  .wd-contact__form,
+  .wd-faq,
+  .wd-trust-list li
+) {
+  max-width: 100%;
+}
+
+/* Webdesign Berlin text overflow safety */
+.webdesign-berlin-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, label, button) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
 @media (max-width: 900px) {
   .webdesign-berlin-page .wd-hero {
     grid-template-columns: 1fr;
@@ -2683,15 +2732,24 @@ p.step-description {
   --packages-ink: var(--color-primary, #0b2a46);
   --packages-text: #2f3f4f;
   --packages-muted: #5d6872;
+  --packages-shadow-buffer: clamp(1rem, 2vw, 1.5rem);
   background:
     linear-gradient(180deg, var(--packages-cream) 0%, #ffffff 45%, var(--packages-cream) 100%);
   color: var(--packages-text);
+}
+
+.packages-page .container {
+  margin-left: auto;
+  margin-right: auto;
+  overflow: visible;
+  width: min(calc(100% - clamp(1.5rem, 4vw, 3rem)), 1140px);
 }
 
 .packages-page .packages-hero {
   background:
     linear-gradient(180deg, var(--packages-cream) 0%, #ffffff 100%);
   color: var(--packages-text);
+  overflow: visible;
   padding: 3.8rem 0 3.4rem;
 }
 
@@ -2820,6 +2878,8 @@ p.step-description {
   align-items: stretch;
   gap: 2rem;
   margin-bottom: 3.5rem;
+  overflow: visible;
+  padding: var(--packages-shadow-buffer) 0;
 }
 
 .packages-page .package-content,
@@ -2832,6 +2892,8 @@ p.step-description {
   border-color: rgba(11, 42, 70, 0.12);
   border-radius: 8px;
   box-shadow: 0 12px 28px rgba(11, 42, 70, 0.06);
+  position: relative;
+  z-index: 0;
 }
 
 .packages-page .intro-card,
@@ -2909,6 +2971,8 @@ p.step-description {
   background: #ffffff;
   border: 1px solid rgba(11, 42, 70, 0.12);
   box-shadow: 0 14px 32px rgba(11, 42, 70, 0.08);
+  position: relative;
+  z-index: 0;
 }
 
 .packages-page .package-frame:hover,
@@ -2944,6 +3008,16 @@ p.step-description {
   border: 0;
   border-radius: 8px;
   box-shadow: 0 18px 42px rgba(11, 42, 70, 0.16);
+  flex-direction: column;
+  justify-content: center;
+  margin: var(--packages-shadow-buffer) auto;
+  position: relative;
+  text-align: center;
+  z-index: 0;
+}
+
+.packages-page .cta-inner > div:first-child {
+  max-width: 42rem;
 }
 
 .packages-page .cta-inner h2,
@@ -2953,6 +3027,65 @@ p.step-description {
 
 .packages-page .cta-inner p {
   color: rgba(255, 255, 255, 0.78);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.packages-page .packages-cta .cta-actions {
+  justify-content: center;
+}
+
+.packages-page .packages-intro,
+.packages-page .package-collection,
+.packages-page .packages-section,
+.packages-page .packages-cta,
+.packages-page .package-visual,
+.packages-page .package-actions,
+.packages-page .package-meta {
+  overflow: visible;
+}
+
+.packages-page .intro-grid,
+.packages-page .fit-grid,
+.packages-page .process-steps,
+.packages-page .addons-grid,
+.packages-page .faq-list {
+  overflow: visible;
+  padding: var(--packages-shadow-buffer);
+}
+
+.packages-page .compare-table-wrap {
+  margin: var(--packages-shadow-buffer) 0;
+}
+
+.packages-page :is(
+  .hero-copy,
+  .hero-visual,
+  .package-content,
+  .package-visual,
+  .package-header,
+  .package-meta,
+  .package-actions,
+  .intro-card,
+  .fit-card,
+  .addon-card,
+  .faq-item,
+  .process-steps li,
+  .cta-inner,
+  .section-header,
+  .compare-table-wrap
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Package text overflow safety */
+.packages-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, td, th, button) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
 @media (max-width: 992px) {
@@ -2968,5 +3101,25 @@ p.step-description {
 
   .packages-page .packages-hero {
     padding: 2.8rem 0 2.5rem;
+  }
+}
+
+/* Webdesign Berlin mobile hero containment */
+@media (max-width: 900px) {
+  .webdesign-berlin-page .wd-hero,
+  .webdesign-berlin-page .wd-hero.unified-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .webdesign-berlin-page .wd-hero__content,
+  .webdesign-berlin-page .wd-hero__visual,
+  .webdesign-berlin-page .wd-hero.unified-hero > .wd-hero__content,
+  .webdesign-berlin-page .wd-hero.unified-hero > .wd-hero__visual {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .webdesign-berlin-page .wd-hero h1 {
+    max-width: none;
   }
 }

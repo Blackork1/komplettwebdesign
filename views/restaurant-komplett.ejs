@@ -268,5 +268,5 @@
     </footer>
   </body>
 </html>
-<script src="/js/navToggle.js"></script>
-<script src="/js/stripe.js"></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/navToggle.js') : '/js/navToggle.js?v=' + encodeURIComponent(assetVersion || '1')) %>"></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/stripe.js') : '/js/stripe.js?v=' + encodeURIComponent(assetVersion || '1')) %>"></script>

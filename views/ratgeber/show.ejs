@@ -4,43 +4,42 @@
 <link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 
 <main class="rg-page rg-detail-page" id="hero">
-  <section class="rg-detail-hero" aria-labelledby="rg-detail-title">
-    <div class="rg-detail-backdrop" style="background-image: url('<%= post.image_url || '/images/default-blog.webp' %>');"></div>
-    <div class="rg-detail-overlay" aria-hidden="true"></div>
+  <section class="rg-detail-hero unified-hero" aria-labelledby="rg-detail-title">
+    <div class="container rg-detail-hero-inner unified-hero__grid">
+      <div class="rg-detail-copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/ratgeber">Ratgeber</a></li>
+            <li aria-current="page"><%= post.title %></li>
+          </ol>
+        </nav>
 
-    <div class="container rg-detail-hero-inner">
-      <nav aria-label="breadcrumb" class="rg-breadcrumb-wrap">
-        <ol class="breadcrumb rg-breadcrumb">
-          <li class="breadcrumb-item"><a href="/">Startseite</a></li>
-          <li class="breadcrumb-item"><a href="/ratgeber">Ratgeber</a></li>
-          <li class="breadcrumb-item active" aria-current="page"><%= post.title %></li>
-        </ol>
-      </nav>
+        <h1 id="rg-detail-title"><%= post.title %></h1>
+        <p class="rg-detail-lead unified-hero__lead"><%= post.description %></p>
 
-      <% if (post.category) { %>
-      <p class="rg-detail-category"><%= post.category %></p>
-      <% } %>
+        <div class="rg-detail-meta">
+          <span>
+            Veröffentlicht am
+            <time datetime="<%= publishedISO %>"><%= new Date(publishedISO).toLocaleDateString('de-DE') %></time>
+          </span>
+          <% if (modifiedISO && modifiedISO !== publishedISO) { %>
+          <span>
+            Aktualisiert am
+            <time datetime="<%= modifiedISO %>"><%= new Date(modifiedISO).toLocaleDateString('de-DE') %></time>
+          </span>
+          <% } %>
+        </div>
 
-      <h1 id="rg-detail-title"><%= post.title %></h1>
-      <p class="rg-detail-lead"><%= post.description %></p>
-
-      <div class="rg-detail-meta">
-        <span>
-          Veröffentlicht am
-          <time datetime="<%= publishedISO %>"><%= new Date(publishedISO).toLocaleDateString('de-DE') %></time>
-        </span>
-        <% if (modifiedISO && modifiedISO !== publishedISO) { %>
-        <span>
-          Aktualisiert am
-          <time datetime="<%= modifiedISO %>"><%= new Date(modifiedISO).toLocaleDateString('de-DE') %></time>
-        </span>
-        <% } %>
+        <div class="rg-detail-actions unified-hero__actions">
+          <a href="/pakete" class="btn btn-accent btn-lg unified-hero__button unified-hero__button--primary">Pakete vergleichen</a>
+          <a href="/kontakt" class="btn btn-outline-light btn-lg unified-hero__button unified-hero__button--secondary">Projekt kurz besprechen</a>
+        </div>
       </div>
 
-      <div class="rg-detail-actions">
-        <a href="/pakete" class="btn btn-accent btn-lg">Pakete vergleichen</a>
-        <a href="/kontakt" class="btn btn-outline-light btn-lg">Projekt kurz besprechen</a>
-      </div>
+      <figure class="rg-detail-media unified-hero__media-frame">
+        <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="eager" fetchpriority="high">
+      </figure>
     </div>
   </section>
 

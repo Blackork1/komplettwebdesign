@@ -355,6 +355,29 @@ const SERVICE_PAGE_OVERRIDES = {
       title: 'Lokaler Vertrauensfaktor Berlin',
       text: 'Wir kalkulieren Website-Projekte für Berliner Unternehmen transparent und verständlich, damit du Aufwand, Nutzen und nächste Schritte sofort einordnen kannst.'
     },
+    exampleCalculations: [
+      {
+        title: 'Beispiel 1: Selbstständiger Onepager',
+        setup: 'Basis-Paket',
+        oneTime: '499 EUR einmalig',
+        recurring: 'optional: Domain/Mail ab 10 EUR, Hosting 10 EUR, Wartung 5 EUR pro Monat',
+        note: 'Geeignet, wenn du eine kompakte Website mit klarer Vorstellung, Leistungsbeschreibung und Kontaktmöglichkeit brauchst.'
+      },
+      {
+        title: 'Beispiel 2: Kleines Unternehmen mit 5 Seiten',
+        setup: 'Business-Paket',
+        oneTime: '899 EUR einmalig',
+        recurring: 'optional: Domain/Mail ab 10 EUR, Hosting 10 EUR, Wartung 5 EUR pro Monat',
+        note: 'Geeignet für Unternehmen, die mehrere Leistungen, Referenzen und lokale Sichtbarkeit strukturiert darstellen möchten.'
+      },
+      {
+        title: 'Beispiel 3: Restaurant oder Café mit Reservierung',
+        setup: 'Premium-Paket oder individuelles Angebot',
+        oneTime: 'ab 1.499 EUR einmalig',
+        recurring: 'optional: Domain/Mail ab 10 EUR, Hosting 10 EUR, Wartung 5 EUR pro Monat',
+        note: 'Geeignet, wenn neben den Kernseiten Funktionen wie Reservierung, Speisekarte oder besondere Inhaltsbereiche geplant sind.'
+      }
+    ],
     faqItems: [
       {
         q: 'Was kostet eine professionelle Website in Berlin?',
@@ -430,6 +453,7 @@ export async function showLeistungPage(req, res, next) {
       ctaVariants: override.ctaVariants || DEFAULT_CTA_VARIANTS,
       proofBlock: override.proofBlock || null,
       trustBlock: override.trustBlock || null,
+      exampleCalculations: override.exampleCalculations || [],
       faqItems: override.faqItems || [],
       internalLinks: override.internalLinks || [],
 

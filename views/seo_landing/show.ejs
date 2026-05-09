@@ -1,0 +1,105 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<link rel="stylesheet" href="<%= cssAsset('seo-landing.css') %>" />
+
+<main class="seo-landing" id="hero">
+  <article>
+    <header class="seo-landing__hero unified-hero">
+      <div class="seo-landing__container seo-landing__hero-grid unified-hero__grid">
+        <div class="seo-landing__hero-copy unified-hero__copy">
+          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              <% (breadcrumbs || []).forEach(function(item) { %>
+              <% if (item.current) { %>
+              <li aria-current="page"><%= item.label %></li>
+              <% } else { %>
+              <li><a href="<%= item.href %>"><%= item.label %></a></li>
+              <% } %>
+              <% }); %>
+            </ol>
+          </nav>
+          <h1><%= page.h1 %></h1>
+          <p class="seo-landing__lead unified-hero__lead"><%= page.intro %></p>
+          <div class="seo-landing__actions unified-hero__actions" aria-label="Projektaktionen">
+            <a class="seo-landing__button seo-landing__button--primary unified-hero__button unified-hero__button--primary" href="<%= page.cta.href %>"><%= page.cta.label %></a>
+            <a class="seo-landing__button seo-landing__button--secondary unified-hero__button unified-hero__button--secondary" href="<%= page.secondaryCta.href %>"><%= page.secondaryCta.label %></a>
+          </div>
+        </div>
+        <aside class="seo-landing__hero-panel unified-hero__panel" aria-label="Projektfokus">
+          <p class="seo-landing__panel-label">Fokus</p>
+          <ul>
+            <% page.sections.slice(0, 3).forEach(function(section) { %>
+            <li><%= section.heading %></li>
+            <% }); %>
+          </ul>
+        </aside>
+      </div>
+    </header>
+
+    <section class="seo-landing__container seo-landing__section-list" aria-label="Leistungsdetails">
+      <% page.sections.forEach(function(section, index) { %>
+      <section class="seo-landing__section" aria-labelledby="seo-landing-section-<%= index %>">
+        <div class="seo-landing__section-copy">
+          <% if (section.eyebrow) { %>
+          <p class="seo-landing__eyebrow"><%= section.eyebrow %></p>
+          <% } %>
+          <h2 id="seo-landing-section-<%= index %>"><%= section.heading %></h2>
+          <p><%= section.body %></p>
+        </div>
+        <% if (Array.isArray(section.points) && section.points.length) { %>
+        <ul class="seo-landing__check-list">
+          <% section.points.forEach(function(point) { %>
+          <li><%= point %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <% }); %>
+    </section>
+
+    <section class="seo-landing__container seo-landing__links" aria-labelledby="seo-landing-links-title">
+      <div class="seo-landing__section-head">
+        <p class="seo-landing__eyebrow">Weiterlesen</p>
+        <h2 id="seo-landing-links-title">Passende nächste Seiten</h2>
+      </div>
+      <div class="seo-landing__link-grid">
+        <% page.internalLinks.forEach(function(link) { %>
+        <a class="seo-landing__link-card" href="<%= link.href %>">
+          <span><%= link.label %></span>
+          <small><%= link.text %></small>
+        </a>
+        <% }); %>
+      </div>
+    </section>
+
+    <section class="seo-landing__container seo-landing__faq" aria-labelledby="seo-landing-faq-title">
+      <div class="seo-landing__section-head">
+        <p class="seo-landing__eyebrow">FAQ</p>
+        <h2 id="seo-landing-faq-title">Häufige Fragen</h2>
+      </div>
+      <div class="seo-landing__faq-list">
+        <% page.faq.forEach(function(item) { %>
+        <details>
+          <summary><%= item.question %></summary>
+          <p><%= item.answer %></p>
+        </details>
+        <% }); %>
+      </div>
+    </section>
+
+    <section class="seo-landing__container seo-landing__cta" aria-labelledby="seo-landing-cta-title">
+      <div>
+        <p class="seo-landing__eyebrow">Nächster Schritt</p>
+        <h2 id="seo-landing-cta-title"><%= page.cta.label %></h2>
+        <p><%= page.cta.text %></p>
+      </div>
+      <div class="seo-landing__actions">
+        <a class="seo-landing__button seo-landing__button--primary" href="<%= page.cta.href %>"><%= page.cta.label %></a>
+        <a class="seo-landing__button seo-landing__button--secondary" href="<%= page.secondaryCta.href %>"><%= page.secondaryCta.label %></a>
+      </div>
+    </section>
+  </article>
+</main>
+
+<%- include('../partials/footer') %>

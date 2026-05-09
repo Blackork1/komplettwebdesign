@@ -5,6 +5,100 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
 <%- include('partials/header') %>
 
 <style>
+  .package-detail-page {
+    --packages-shadow-buffer: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .package-detail-page .container,
+  .package-detail-page .package-overview,
+  .package-detail-page .package-detail-sections,
+  .package-detail-page .package-process,
+  .package-detail-page .package-addons,
+  .package-detail-page .package-who-for,
+  .package-detail-page .package-outcomes,
+  .package-detail-page .package-mid-cta,
+  .package-detail-page .package-timeline-detail,
+  .package-detail-page .package-faq-detail,
+  .package-detail-page .package-contact,
+  .package-detail-page .package-previews {
+    overflow: visible;
+  }
+
+  .package-detail-page .overview-cards,
+  .package-detail-page .detail-grid,
+  .package-detail-page .process-timeline,
+  .package-detail-page .addons-grid,
+  .package-detail-page .who-for-list,
+  .package-detail-page .outcomes-grid,
+  .package-detail-page .timeline-phases,
+  .package-detail-page .faq-detail-list,
+  .package-detail-page .previews-grid {
+    overflow: visible;
+    padding: var(--packages-shadow-buffer);
+  }
+
+  .package-detail-page .hero-price,
+  .package-detail-page .overview-card,
+  .package-detail-page .detail-card,
+  .package-detail-page .process-step,
+  .package-detail-page .addons-list li,
+  .package-detail-page .contact-inner,
+  .package-detail-page .preview-card,
+  .package-detail-page .who-for-list li,
+  .package-detail-page .outcome-card,
+  .package-detail-page .mid-cta-inner,
+  .package-detail-page .timeline-phases li,
+  .package-detail-page .faq-detail-item {
+    position: relative;
+    z-index: 0;
+  }
+
+  .package-detail-page .contact-inner,
+  .package-detail-page .mid-cta-inner,
+  .package-detail-page .hero-price {
+    margin-block: var(--packages-shadow-buffer);
+  }
+
+  .package-detail-page .package-detail-hero .hero-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .package-detail-page .package-detail-hero .hero-image-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 2 / 3;
+    width: min(100%, 360px);
+    max-width: min(100%, 360px);
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    line-height: 0;
+  }
+
+  .package-detail-page .package-detail-hero .hero-image-frame img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
+    border-radius: inherit;
+  }
+
+  @media (max-width: 900px) {
+    .package-detail-page .package-detail-hero .hero-image-frame {
+      width: min(100%, 320px);
+      max-width: min(100%, 320px);
+      margin-inline: auto;
+    }
+  }
+
   .package-detail-page .hero-meta {
     display: flex;
     flex-direction: column;
@@ -822,6 +916,105 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
     color: var(--packages-text);
     line-height: 1.65;
   }
+
+  /* Final shadow safety: keep this after all package detail card rules. */
+  .package-detail-page :is(
+    .container,
+    .package-overview,
+    .package-detail-sections,
+    .package-process,
+    .package-addons,
+    .package-who-for,
+    .package-outcomes,
+    .package-mid-cta,
+    .package-timeline-detail,
+    .package-faq-detail,
+    .package-contact,
+    .package-previews,
+    .overview-grid,
+    .overview-cards,
+    .detail-grid,
+    .process-timeline,
+    .addons-grid,
+    .addons-list,
+    .who-for-list,
+    .outcomes-grid,
+    .timeline-phases,
+    .faq-detail-list,
+    .previews-grid
+  ) {
+    overflow: visible;
+  }
+
+  .package-detail-page :is(
+    .overview-cards,
+    .detail-grid,
+    .process-timeline,
+    .addons-grid,
+    .addons-list,
+    .who-for-list,
+    .outcomes-grid,
+    .timeline-phases,
+    .faq-detail-list,
+    .previews-grid
+  ) {
+    padding: var(--packages-shadow-buffer);
+  }
+
+  .package-detail-page :is(
+    .hero-price,
+    .overview-card,
+    .detail-card,
+    .process-step,
+    .addons-list li,
+    .contact-inner,
+    .preview-card,
+    .who-for-list li,
+    .outcome-card,
+    .mid-cta-inner,
+    .timeline-phases li,
+    .faq-detail-item
+  ) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .package-detail-page :is(.contact-inner, .mid-cta-inner, .hero-price) {
+    margin-block: var(--packages-shadow-buffer);
+  }
+
+  .package-detail-page :is(
+    .hero-copy,
+    .hero-visual,
+    .hero-meta,
+    .overview-intro,
+    .overview-card,
+    .detail-card,
+    .process-content,
+    .addons-intro,
+    .addons-list li,
+    .contact-copy,
+    .contact-form-wrapper,
+    .preview-body,
+    .who-for-list li,
+    .outcome-card,
+    .mid-cta-copy,
+    .mid-cta-actions,
+    .timeline-content,
+    .faq-detail-item
+  ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Final text overflow safety */
+  .package-detail-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, label, button) {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+  }
 </style>
 <body>
   <main class="packages-page package-detail-page">
@@ -1304,7 +1497,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
         business: [
           {
             title: 'Structured lead generation',
-            text: 'Service pages, conversion-focused copy and clear CTAs move visitors from information to request - measurable via tracked events.'
+            text: 'Service pages, conversion-focused copy and clear request paths move visitors from information to request - measurable via tracked events.'
           },
           {
             title: 'Stronger Google and GEO visibility',
@@ -1361,7 +1554,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
         business: [
           {
             title: 'Strukturierte Leadgenerierung',
-            text: 'Leistungsseiten, Conversion-orientierte Texte und klare CTAs führen Besucher gezielt von Information zu Anfrage - messbar über getrackte Events.'
+            text: 'Leistungsseiten, Conversion-orientierte Texte und klare Anfragewege führen Besucher gezielt von Information zu Anfrage - messbar über getrackte Events.'
           },
           {
             title: 'Stärkere Google- und GEO-Sichtbarkeit',
@@ -1566,12 +1759,18 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       const packageNames = isEnglish ? { basis: 'Basic', business: 'Business', premium: 'Premium' } : { basis: 'Basis', business: 'Business', premium: 'Premium' };
       const displayPackName = packageNames[slug] || pack.name;
     %>
-    <section class="packages-hero package-detail-hero">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <span class="hero-badge"><%= isEnglish ? `Complete package ${displayPackName}` : `Komplettpaket ${displayPackName}` %></span>
+    <section class="packages-hero package-detail-hero unified-hero">
+      <div class="container hero-grid unified-hero__grid">
+        <div class="hero-copy unified-hero__copy">
+          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              <li><a href="<%= isEnglish ? '/en' : '/' %>"><%= isEnglish ? 'Home' : 'Startseite' %></a></li>
+              <li><a href="<%= isEnglish ? '/en/pakete' : '/pakete' %>"><%= isEnglish ? 'Packages' : 'Pakete' %></a></li>
+              <li aria-current="page"><%= isEnglish ? `${displayPackName} ${packageLabel}` : `${displayPackName}-${packageLabel}` %></li>
+            </ol>
+          </nav>
           <h1 class="hero-title"><%= isEnglish ? `${displayPackName} ${packageLabel}` : `${displayPackName}-${packageLabel}` %></h1>
-          <p class="hero-subtitle"><%= heroSubtitle %></p>
+          <p class="hero-subtitle unified-hero__lead"><%= heroSubtitle %></p>
           <ul class="hero-highlights">
             <% heroHighlights.forEach(item => { %>
             <li><%= item %></li>
@@ -1586,13 +1785,13 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
             <p class="hero-note"><%= isEnglish ? '✔ Includes all Basic package features plus extended deliverables.' : '✔ Enthält alle Leistungen des Basis-Pakets plus erweiterte Inhalte.' %></p>
             <% } %>
           </div>
-          <div class="hero-actions">
-            <a class="btn btn-hero" href="#kontaktformular"><%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %></a>
-            <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en/booking' : '/booking' %>"><%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+          <div class="hero-actions unified-hero__actions">
+            <a class="btn btn-hero unified-hero__button unified-hero__button--primary" href="#kontaktformular"><%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-soft-outline unified-hero__button unified-hero__button--secondary" href="<%= isEnglish ? '/en/booking' : '/booking' %>"><%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
-          <div class="hero-image-frame">
+          <div class="hero-image-frame unified-hero__media-frame">
             <img src="<%= pack.image && pack.image.startsWith('/') ? pack.image : `/images/${pack.image}` %>" alt="<%= isEnglish ? `Preview of the ${displayPackName} package` : `Vorschau des ${displayPackName}-Pakets` %>" loading="lazy" />
           </div>
         </div>
@@ -1701,7 +1900,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       </div>
     </section>
 
-    <section class="package-mid-cta" aria-label="<%= isEnglish ? 'Mid-page call to action' : 'Call-to-Action in der Seitenmitte' %>">
+    <section class="package-mid-cta" aria-label="<%= isEnglish ? 'Mid-page inquiry section' : 'Anfragebereich in der Seitenmitte' %>">
       <div class="container">
         <div class="mid-cta-inner">
           <div class="mid-cta-copy">

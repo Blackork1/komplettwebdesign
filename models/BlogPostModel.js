@@ -52,6 +52,27 @@ export default class BlogPostModel {
     return rows;
   }
 
+  static async findPage({ limit = 10, offset = 0 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT * FROM posts
+       WHERE published = true
+       ORDER BY created_at DESC
+       LIMIT $1
+       OFFSET $2`,
+      [limit, offset]
+    );
+    return rows;
+  }
+
+  static async countPublished() {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM posts
+       WHERE published = true`
+    );
+    return Number(rows[0]?.count || 0);
+  }
+
   static async findFeatured(limit = 5) {
     const { rows } = await pool.query(
       `SELECT * FROM posts

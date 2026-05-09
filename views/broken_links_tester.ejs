@@ -317,7 +317,7 @@
       }
     };
   </script>
-  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
-  <script src="/js/broken-links-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/broken-links-tester.js') : '/js/broken-links-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

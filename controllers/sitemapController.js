@@ -2,6 +2,12 @@
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import {
+  INDEXABLE_STATIC_ROUTES,
+  normalizeIndustrySlug,
+  shouldIncludeDistrictInSitemap,
+  shouldIncludeIndustryInSitemap
+} from "../helpers/seoPagePolicy.js";
 
 /** Absoluten Host ermitteln (funktioniert mit reverse proxy) */
 function resolveBaseUrl(req) {
@@ -32,15 +38,6 @@ function toIso(value, fallbackIso) {
   return date.toISOString();
 }
 
-function isExcludedIndustry(row = {}) {
-  const text = [row.slug, row.name, row.title, row.description]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return ["kita", "kitas", "schule", "schulen", "school", "schools", "daycare", "daycares", "kindergarten"]
-    .some((needle) => text.includes(needle));
-}
-
 async function querySafe(sql, params = [], label = "query") {
   try {
     const { rows } = await pool.query(sql, params);
@@ -68,7 +65,7 @@ export async function sitemapXml(req, res, next) {
 
     const pages = await querySafe(
       `SELECT slug,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(created_at, now()) AS updated_at
          FROM pages
         WHERE display = true`,
       [],
@@ -111,54 +108,20 @@ export async function sitemapXml(req, res, next) {
     );
 
     // ---- Statische Routen ----
-    const staticRoutes = [
-      { loc: `${base}/`, changefreq: "weekly", priority: 1.0 },
-      { loc: `${base}/llms.txt`, changefreq: "weekly", priority: 0.6 },
-      { loc: `${base}/pricing.md`, changefreq: "monthly", priority: 0.6 },
-      { loc: `${base}/en`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/kontakt`, changefreq: "monthly", priority: 0.8 },
-      { loc: `${base}/en/kontakt`, changefreq: "monthly", priority: 0.8 },
-      { loc: `${base}/pakete`, changefreq: "monthly", priority: 0.8 },
-      { loc: `${base}/pakete/basis`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/pakete/business`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/pakete/premium`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/en/pakete`, changefreq: "monthly", priority: 0.8 },
-      { loc: `${base}/en/pakete/basis`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/en/pakete/business`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/en/pakete/premium`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/about`, changefreq: "monthly", priority: 0.6 },
-      { loc: `${base}/blog`, changefreq: "weekly", priority: 0.8 },
-      { loc: `${base}/website-tester`, changefreq: "weekly", priority: 1.0 },
-      { loc: `${base}/en/website-tester`, changefreq: "weekly", priority: 0.95 },
-      { loc: `${base}/website-tester/broken-links`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/en/website-tester/broken-links`, changefreq: "weekly", priority: 0.85 },
-      { loc: `${base}/website-tester/geo`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/en/website-tester/geo`, changefreq: "weekly", priority: 0.85 },
-      { loc: `${base}/website-tester/seo`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/en/website-tester/seo`, changefreq: "weekly", priority: 0.85 },
-      { loc: `${base}/website-tester/meta`, changefreq: "weekly", priority: 0.9 },
-      { loc: `${base}/en/website-tester/meta`, changefreq: "weekly", priority: 0.85 },
-      // 👉 NEU: Ratgeber-Übersicht
-      { loc: `${base}/ratgeber`, changefreq: "weekly", priority: 0.8 },
-      { loc: `${base}/faq`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/datenschutz`, changefreq: "yearly", priority: 0.2 },
-      { loc: `${base}/impressum`, changefreq: "yearly", priority: 0.2 },
-      { loc: `${base}/webdesign-cafe/kosten`, changefreq: "yearly", priority: 0.4 },
-      { loc: `${base}/webdesign-blumenladen/kosten`, changefreq: "yearly", priority: 0.4 },
-      { loc: `${base}/ratgeber/website-kosten-zeitplan`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/ratgeber/kosten-einfache-website`, changefreq: "monthly", priority: 0.7 },
-      { loc: `${base}/webdesign-berlin`, changefreq: "weekly", priority: 1.0 },
-      { loc: `${base}/en/webdesign-berlin`, changefreq: "weekly", priority: 0.9 }
-    ];
+    // Policy contains `${base}/website-erstellen-lassen-berlin`, `${base}/website-relaunch-berlin`, `${base}/webdesign-kleine-unternehmen-berlin`, `${base}/ablauf`.
+    const staticRoutes = INDEXABLE_STATIC_ROUTES.map((route) => ({
+      ...route,
+      loc: `${base}${route.path === "/" ? "/" : route.path}`
+    }));
 
     // Bezirke
-    const districtRoutesDe = DISTRICTS.map(d => ({
+    const districtRoutesDe = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
       loc: `${base}/webdesign-berlin/${d.slug}`,
       lastmod: nowIso,
       changefreq: "weekly",
       priority: 0.8
     }));
-    const districtRoutesEn = DISTRICTS.map(d => ({
+    const districtRoutesEn = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
       loc: `${base}/en/webdesign-berlin/${d.slug}`,
       lastmod: nowIso,
       changefreq: "weekly",
@@ -182,8 +145,8 @@ export async function sitemapXml(req, res, next) {
     }));
 
     // Industries
-    const industryRoutes = industries.filter((r) => !isExcludedIndustry(r)).map(r => ({
-      loc: `${base}/branchen/webdesign-${r.slug}`,
+    const industryRoutes = industries.filter(shouldIncludeIndustryInSitemap).map(r => ({
+      loc: `${base}/branchen/webdesign-${normalizeIndustrySlug(r.slug)}`,
       lastmod: toIso(r.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.85

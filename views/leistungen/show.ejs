@@ -175,13 +175,13 @@
 
   /* Farb- & Typo-Setup für Leistungsseiten */
   .leistungen-page {
-    --wd-bg: #f3f0eb;
-    --wd-sand: #faf6f0;
-    --wd-ink: #3d3b3b;
-    --wd-muted: #5e5346;
-    --wd-accent: #d75b36;
-    --wd-accent-strong: #b24322;
-    --wd-border: rgba(215, 91, 54, 0.22);
+    --wd-bg: #f4f7fb;
+    --wd-sand: #f8fbff;
+    --wd-ink: #0b2a46;
+    --wd-muted: #526173;
+    --wd-accent: #e94a1b;
+    --wd-accent-strong: #b93618;
+    --wd-border: rgba(11, 42, 70, 0.14);
 
     font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
     line-height: 1.7;
@@ -606,7 +606,7 @@
     background: #ffffff;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid rgba(215, 91, 54, 0.16);
+    border: 1px solid rgba(233, 74, 27, 0.16);
     transition: transform 0.3s ease, box-shadow 0.3s ease,
       border-color 0.3s ease;
     color: var(--wd-muted);
@@ -663,6 +663,68 @@
     color: var(--wd-muted);
   }
 
+  .leistungen-examples {
+    background: #ffffff;
+    border: 1px solid var(--wd-border);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    margin-bottom: 40px;
+    padding: 32px;
+  }
+
+  .leistungen-examples h2 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+  }
+
+  .leistungen-examples>p {
+    color: var(--wd-muted);
+    margin-bottom: 22px;
+    max-width: 780px;
+  }
+
+  .leistungen-example-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .leistungen-example {
+    background: #fff9f5;
+    border: 1px solid rgba(233, 74, 27, 0.18);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .leistungen-example h3 {
+    font-size: 1.1em;
+    line-height: 1.35;
+    margin-bottom: 14px;
+  }
+
+  .leistungen-example dl {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .leistungen-example dt {
+    color: var(--wd-muted);
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .leistungen-example dd {
+    color: var(--wd-ink);
+    font-weight: 600;
+  }
+
+  .leistungen-example p {
+    color: var(--wd-muted);
+    font-size: 0.95em;
+  }
+
   .context-links {
     background: #ffffff;
     border-radius: 15px;
@@ -689,7 +751,7 @@
   .context-links a {
     display: inline-flex;
     text-decoration: none;
-    border: 1px solid rgba(215, 91, 54, 0.22);
+    border: 1px solid rgba(233, 74, 27, 0.22);
     border-radius: 10px;
     padding: 10px 12px;
     color: var(--wd-accent-strong);
@@ -716,7 +778,7 @@
   }
 
   .service-faq details {
-    border: 1px solid rgba(215, 91, 54, 0.16);
+    border: 1px solid rgba(233, 74, 27, 0.16);
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 10px;
@@ -798,6 +860,14 @@
       grid-template-columns: 1fr;
     }
 
+    .leistungen-example-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .leistungen-examples {
+      padding: 24px;
+    }
+
     .context-links ul {
       grid-template-columns: 1fr;
     }
@@ -834,28 +904,28 @@
 
 <main class="leistungen-page">
   <div class="container">
-    <nav class="breadcrumbs" aria-label="breadcrumb">
-      <ol>
-        <li><a href="/">Startseite</a></li>
-        <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
-        <li aria-current="page"><%- safeHtml(page.title) %></li>
-      </ol>
-    </nav>
     <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-content">
+    <section class="hero unified-hero">
+      <div class="hero-content unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
+            <li aria-current="page"><%- safeHtml(page.title) %></li>
+          </ol>
+        </nav>
         <h1><%= page.hero.title %></h1>
 
         <% if (page.hero.subtitle) { %>
-        <p class="hero-subtitle"><%= page.hero.subtitle %></p>
+        <p class="hero-subtitle unified-hero__lead"><%= page.hero.subtitle %></p>
         <% } %>
         <% if (page.answerBlock) { %>
-        <p class="hero-answer"><%= page.answerBlock %></p>
+        <p class="hero-answer unified-hero__lead"><%= page.answerBlock %></p>
         <% } %>
         <% if (page.ctaVariants && page.ctaVariants.length) { %>
-        <div class="hero-cta-variants" aria-label="Call-to-Action Varianten">
+        <div class="hero-cta-variants unified-hero__actions" aria-label="Anfrageoptionen">
           <% page.ctaVariants.forEach(function(item, index) { %>
-          <a href="<%= item.href %>" class="hero-cta-button <%= index === 0 ? 'hero-cta-button--primary' : 'hero-cta-button--secondary' %>"><%= item.label %></a>
+          <a href="<%= item.href %>" class="hero-cta-button unified-hero__button <%= index === 0 ? 'hero-cta-button--primary unified-hero__button--primary' : 'hero-cta-button--secondary unified-hero__button--secondary' %>"><%= item.label %></a>
           <% }) %>
         </div>
         <% } %>
@@ -886,6 +956,37 @@
         <p><%= page.trustBlock.text %></p>
       </article>
       <% } %>
+    </section>
+    <% } %>
+
+    <% if (page.exampleCalculations && page.exampleCalculations.length) { %>
+    <section class="leistungen-examples" aria-labelledby="leistungen-examples-title">
+      <h2 id="leistungen-examples-title">Beispielrechnungen für typische Website-Projekte</h2>
+      <p>Diese Beispiele zeigen, wie sich einmalige Erstellungskosten und laufende Kosten 2026 realistisch einordnen lassen.</p>
+      <div class="leistungen-example-grid">
+        <% page.exampleCalculations.forEach(function(example) { %>
+        <article class="leistungen-example">
+          <h3><%= example.title %></h3>
+          <dl>
+            <div>
+              <dt>Setup</dt>
+              <dd><%= example.setup %></dd>
+            </div>
+            <div>
+              <dt>Einmalig</dt>
+              <dd><%= example.oneTime %></dd>
+            </div>
+            <div>
+              <dt>Laufend</dt>
+              <dd><%= example.recurring %></dd>
+            </div>
+          </dl>
+          <% if (example.note) { %>
+          <p><%= example.note %></p>
+          <% } %>
+        </article>
+        <% }) %>
+      </div>
     </section>
     <% } %>
 

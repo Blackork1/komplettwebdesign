@@ -35,5 +35,5 @@
   </section>
 </div>
 
-<script type="module" src="/js/admin-appointments.js"></script>
+<script type="module" src="<%= (typeof jsAsset === 'function' ? jsAsset('js/admin-appointments.js') : '/js/admin-appointments.js?v=' + encodeURIComponent(assetVersion || '1')) %>"></script>
 <%- include('../partials/admin_footer') %>

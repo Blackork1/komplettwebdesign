@@ -139,8 +139,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-heading"></i> <%= isEn ? 'Title & description quality' : 'Title- & Description-Qualität' %></h3>
               <p><%= isEn
-                ? 'Length in pixels (not just chars), keyword density, duplicate titles across subpages, CTA presence, and intent match with your service and region.'
-                : 'Länge in Pixel (nicht nur Zeichen), Keyword-Dichte, doppelte Titles über Unterseiten, CTA-Präsenz und Intent-Match mit Leistung und Region.' %></p>
+                ? 'Length in pixels (not just chars), keyword density, duplicate titles across subpages, request prompt visibility, and intent match with your service and region.'
+                : 'Länge in Pixel (nicht nur Zeichen), Keyword-Dichte, doppelte Titles über Unterseiten, Sichtbarkeit von Anfrageelementen und Intent-Match mit Leistung und Region.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-share-nodes"></i> <%= isEn ? 'Social preview readiness' : 'Social-Preview-Readiness' %></h3>
@@ -317,7 +317,7 @@
       }
     };
   </script>
-  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
-  <script src="/js/meta-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/meta-tester.js') : '/js/meta-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

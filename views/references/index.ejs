@@ -1,0 +1,66 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<link rel="stylesheet" href="<%= cssAsset('references.css') %>" />
+
+<main class="references-page references-page--index" id="hero">
+  <section class="references-hero unified-hero" aria-labelledby="references-title">
+    <div class="references-container references-hero__grid unified-hero__grid">
+      <div class="references-hero__copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li aria-current="page">Referenzen</li>
+          </ol>
+        </nav>
+        <h1 id="references-title">Websites, die im echten Betrieb funktionieren.</h1>
+        <p class="references-lead unified-hero__lead">
+          Zwei aktuelle Projekte mit klarer Ausgangslage, konkreter Umsetzung und nachvollziehbarem Ergebnis.
+          Ohne erfundene Kennzahlen, sondern mit Blick auf Struktur, Vertrauen und Nutzbarkeit.
+        </p>
+        <div class="references-actions unified-hero__actions">
+          <a class="references-button references-button--primary unified-hero__button unified-hero__button--primary" href="/kontakt">Projekt anfragen</a>
+          <a class="references-button references-button--secondary unified-hero__button unified-hero__button--secondary" href="/pakete">Pakete ansehen</a>
+        </div>
+      </div>
+      <div class="references-hero__panel unified-hero__panel" aria-label="Arbeitsweise">
+        <span>Proof statt Versprechen</span>
+        <strong>Ausgangslage, Ziel, Umsetzung und Ergebnis werden pro Projekt transparent gezeigt.</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="references-container references-list" aria-labelledby="references-list-title">
+    <div class="references-section-head">
+      <p class="references-eyebrow">Ausgewählte Projekte</p>
+      <h2 id="references-list-title">Aktuelle Referenzen</h2>
+    </div>
+
+    <div class="references-grid">
+      <% (projects || []).forEach(function(project) { %>
+      <article class="reference-card">
+        <a class="reference-card__media" href="/referenzen/<%= project.slug %>" aria-label="<%= project.name %> ansehen">
+          <img src="<%= project.image %>" alt="Referenzbild <%= project.name %>" loading="lazy" />
+        </a>
+        <div class="reference-card__body">
+          <p class="reference-card__industry"><%= project.industry %></p>
+          <h3><a href="/referenzen/<%= project.slug %>"><%= project.name %></a></h3>
+          <p><%= project.summary %></p>
+          <a class="reference-card__link" href="/referenzen/<%= project.slug %>">Projekt ansehen</a>
+        </div>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+
+  <section class="references-container references-cta" aria-labelledby="references-cta-title">
+    <div>
+      <p class="references-eyebrow">Nächster Schritt</p>
+      <h2 id="references-cta-title">Du brauchst eine Website mit klarer Struktur?</h2>
+      <p>Dann lass uns kurz klären, welche Ausgangslage, Ziele und Inhalte für dein Projekt wichtig sind.</p>
+    </div>
+    <a class="references-button references-button--primary" href="/kontakt">Kontakt aufnehmen</a>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

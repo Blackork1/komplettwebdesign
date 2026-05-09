@@ -1,6 +1,7 @@
 // controllers/districtController.js
 import { getDistrictBySlug } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import { SITE_FACTS, formatGoogleRating } from "../helpers/siteFacts.js";
 
 export async function renderDistrictPage(req, res, next) {
   try {
@@ -21,6 +22,7 @@ export async function renderDistrictPage(req, res, next) {
         : districtPage.metaDescription;
     const pagePrefix = req.baseUrl?.startsWith("/en/") ? "/en/webdesign-berlin" : "/webdesign-berlin";
     const canonicalUrl = `${SITE_URL}${pagePrefix}/${slug}`;
+    const districtCssHref = req.app.locals.cssAsset("district-berlin.css");
 
     res.locals.title = metaTitle;
     res.locals.description = metaDescription;
@@ -29,8 +31,8 @@ export async function renderDistrictPage(req, res, next) {
       <link rel="alternate" hreflang="de-DE" href="${SITE_URL}/webdesign-berlin/${slug}">
       <link rel="alternate" hreflang="en" href="${SITE_URL}/en/webdesign-berlin/${slug}">
       <link rel="alternate" hreflang="x-default" href="${SITE_URL}/webdesign-berlin/${slug}">
-      <link rel="preload" href="/district-berlin.css?v=2026-04-22-hero-district-fix" as="style">
-      <link rel="stylesheet" href="/district-berlin.css?v=2026-04-22-hero-district-fix">
+      <link rel="preload" href="${districtCssHref}" as="style">
+      <link rel="stylesheet" href="${districtCssHref}">
       <meta property="og:title" content="${metaTitle}">
       <meta property="og:description" content="${metaDescription}">
       <meta property="og:url" content="${canonicalUrl}">
@@ -135,7 +137,7 @@ export async function renderDistrictPage(req, res, next) {
           },
           {
             q: "Can you also write content?",
-            a: "Yes. We provide copywriting support for service pages, homepage messaging, and conversion-focused CTAs."
+            a: "Yes. We provide copywriting support for service pages, homepage messaging, and conversion-focused request paths."
           },
           {
             q: "Do you also work outside this district?",
@@ -228,8 +230,8 @@ const DISTRICT_PAGE_COPY = {
     imageAlt: "Webdesign und lokale Sichtbarkeit für Unternehmen in Friedrichshain",
     neighborhoods: ["Boxhagener Platz", "Warschauer Straße", "Ostkreuz", "Samariterviertel"],
     audiences: ["Restaurants und Cafés", "Kreativbetriebe", "lokale Shops", "Dienstleister"],
-    proof: "Hier zählen schnelle Orientierung, sichtbare Öffnungszeiten, echte Bilder und CTAs für Reservierung, Anfrage oder Beratung.",
-    localExamples: ["Speisekarte als HTML", "Reservierungs-CTA", "Event- und Angebotsseiten"]
+    proof: "Hier zählen schnelle Orientierung, sichtbare Öffnungszeiten, echte Bilder und klare Wege zu Reservierung, Anfrage oder Beratung.",
+    localExamples: ["Speisekarte als HTML", "Reservierungsbutton", "Event- und Angebotsseiten"]
   },
   "prenzlauer-berg": {
     label: "Vertrauen und Qualität",
@@ -255,7 +257,7 @@ const DISTRICT_PAGE_COPY = {
     neighborhoods: ["Bergmannkiez", "Graefekiez", "Kottbusser Tor", "Wrangelkiez"],
     audiences: ["Gastronomie", "Handwerk", "Beratung", "lokale Dienstleister"],
     proof: "In Kreuzberg helfen ein klarer erster Bildschirm, kurze Formulare und eine starke mobile Darstellung besonders stark.",
-    localExamples: ["Telefon-CTA", "Buchungsflow", "Leistungsübersicht ohne Umwege"]
+    localExamples: ["Telefonbutton", "Buchungsflow", "Leistungsübersicht ohne Umwege"]
   },
   mitte: {
     label: "Zentral und anspruchsvoll",
@@ -335,7 +337,7 @@ function buildGermanDistrictPage(slug, district) {
 function buildGermanProcessSteps(name) {
   return [
     { title: "01 Analyse", text: `Wir klären Angebot, Zielgruppe, Wettbewerb und lokale Suchintention in ${name}.` },
-    { title: "02 Struktur", text: "Wir planen Seiten, Texte, CTAs, interne Links und die passende Paketlogik." },
+    { title: "02 Struktur", text: "Wir planen Seiten, Texte, Anfragewege, interne Links und die passende Paketlogik." },
     { title: "03 Design", text: "Du bekommst eine moderne Oberfläche, die zum Bezirk, zur Branche und zu deiner Zielgruppe passt." },
     { title: "04 Umsetzung", text: "Wir bauen die Website mobiloptimiert, schnell, DSGVO-bewusst und mit sauberer SEO-Basis." },
     { title: "05 Launch", text: "Nach dem Test gehen Domain, Tracking, Sitemap und Search Console sauber live." }
@@ -418,27 +420,27 @@ export function renderWebdesignBerlinHub(req, res) {
   const webdesignBerlinUrl = `${SITE_URL}${pagePath}`;
   const contactPath = isEn ? "/en/kontakt" : "/kontakt";
 
-  let metaTitle = "Webdesign Berlin: Website erstellen lassen ab 499 EUR";
+  let metaTitle = "Webdesign Berlin für kleine Unternehmen | Komplett Webdesign";
   let metaDescription =
-    "Webdesign Berlin mit klarem Lead-Fokus: Website erstellen lassen ab 499 EUR inkl. Design, SEO-Basis, Hosting-Optionen und persönlicher Betreuung für lokale Unternehmen.";
+    "Webdesign Berlin für kleine Unternehmen, Selbstständige und lokale Dienstleister: persönliche Websites ab 499 EUR mit SEO-Basis, mobiler Optimierung und klaren Anfragewegen.";
 
   const hero = {
-    title: "Webdesign Berlin: Website erstellen lassen, die lokal sichtbar wird und Anfragen bringt",
+    title: "Webdesign Berlin für kleine Unternehmen, die online Anfragen gewinnen wollen",
     description:
-      "Komplett Webdesign erstellt Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Mit klarer Nutzerführung, conversion-orientierten Texten und technischer SEO-Basis entsteht ein Auftritt, der professionell wirkt und messbar Kontaktanfragen unterstützt.",
+      "Persönliches Webdesign ab 499 EUR, inklusive SEO-Grundlage, mobiler Optimierung und klarer Anfrageführung. Ideal für lokale Dienstleister, Handwerker, Cafés, Restaurants, Praxen und Selbstständige in Berlin.",
     // answerBlock:
     //   "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
-     ctaPrimary: { label: "Kostenloses Erstgespräch sichern", href: "/kontakt" },
-    ctaSecondary: { label: "Webdesign-Pakete ansehen", href: "/pakete" },
+     ctaPrimary: { label: "Kostenlose Ersteinschätzung anfragen", href: "/kontakt" },
+    ctaSecondary: { label: "Preise und Pakete ansehen", href: "/webdesign-berlin/kosten-preise-pakete" },
     ctaTertiary: { label: "Website-Tester starten", href: "/website-tester" },
-    rating: { label: "★★★★★ 5,0/5 · 4 Google-Rezensionen", href: "https://share.google/6NAPsubZRs6yeSOrg" },
+    rating: { label: formatGoogleRating(lng), href: SITE_FACTS.googleProfileUrl },
     image: {
       src: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
       alt: "Sören Blocksdorf – Webdesigner Berlin"
     },
     trustBadges: [
-      "Website erstellen lassen in Berlin ab 499 €",
-      "Individuelles Design statt Baukasten-Template",
+      "Persönliche Betreuung statt Agentur-Ping-Pong",
+      "Festpreise ab 499 EUR",
       "Antwort innerhalb von 24 Stunden"
     ]
   };
@@ -555,7 +557,7 @@ export function renderWebdesignBerlinHub(req, res) {
       image: "/images/basis.webp",
       description: "Ideal für kleine Unternehmen, die eine professionelle digitale Visitenkarte mit klarer Botschaft brauchen.",
       features: [
-        "Eine Seite mit klarer Story und Call-to-Action",
+        "Eine Seite mit klarer Story und Anfrageweg",
         "Texte enthalten und mobiloptimiert aufbereitet",
         "SEO-Basis für Title, H1, Meta Description und Struktur",
         "DSGVO-Grundseiten und technische Launch-Prüfung",
@@ -599,11 +601,28 @@ export function renderWebdesignBerlinHub(req, res) {
     {
       name: "Zur alten Backstube · Café in Rosenthal",
       summary:
-        "Neues Design, Online-Reservierung und ultraschnelle Ladezeiten führten zu signifikant mehr Gästen.",
-      bullets: ["+70 % Reservierungen in 3 Monaten", "1,4 s Largest Contentful Paint", "50% mehr Buchungen von Feiern und Events"],
-      quote: "Wir bekommen täglich neue Gäste über unsere Website. Endlich professionell und modern.",
-      link: "http://www.zuraltenbackstube.de",
+        "Eine warme Referenz-Website für ein lokales Café mit klarer Angebotsstruktur, stimmiger Bildsprache und einfachen Kontaktwegen.",
+      bullets: [
+        "Ruhige Seitenstruktur für Angebot, Atmosphäre und Kontakt",
+        "Bildsprache und Texte auf die lokale Positionierung abgestimmt",
+        "Besuchsinformationen und Anfragewege sichtbar eingebunden"
+      ],
+      quote: "Das Ergebnis sieht einfach super aus. Es ist jetzt viel einfacher Tische zu reservieren.",
+      link: "/referenzen/zur-alten-backstube",
       image: "/images/review-bg.webp"
+    },
+    {
+      name: "TM Sauber & Mehr · lokaler Dienstleister",
+      summary:
+        "Ein sachlicher Webauftritt für einen lokalen Dienstleister mit klar geordneten Leistungen und direktem Anfrageweg.",
+      bullets: [
+        "Leistungsbereiche verständlich und übersichtlich geordnet",
+        "Vertrauenssignale an wichtigen Stellen platziert",
+        "Anfragewege prominent in den Seitenfluss eingebunden"
+      ],
+      quote: "Super Service und top Preis-Leistung. Alle unsere Wünsche wurden schnell, professionell und unkompliziert umgesetzt.",
+      link: "/referenzen/tm-sauber-mehr",
+      image: "/images/default-blog.webp"
     }
 
   ];
@@ -615,7 +634,7 @@ export function renderWebdesignBerlinHub(req, res) {
     },
     {
       name: "Wireframe & Inhalte",
-      description: "Wir planen Seitenstruktur, Texte, Call-to-Actions und Designrichtung. So entsteht ein belastbares Konzept statt einer austauschbaren Standardseite."
+      description: "Wir planen Seitenstruktur, Texte, Anfragewege und Designrichtung. So entsteht ein belastbares Konzept statt einer austauschbaren Standardseite."
     },
     {
       name: "Design & Entwicklung",
@@ -744,6 +763,9 @@ export function renderWebdesignBerlinHub(req, res) {
   ];
 
   const resources = [
+    { label: "Website erstellen lassen Berlin", href: "/website-erstellen-lassen-berlin" },
+    { label: "Website Relaunch Berlin", href: "/website-relaunch-berlin" },
+    { label: "Ablauf Webdesign Berlin", href: "/ablauf" },
     { label: "Was kostet eine Website in Berlin?", href: "/ratgeber/website-kosten-berlin" },
     { label: "Ablauf, Dauer und Kosten", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
     { label: "Baukasten vs. professionelle Website", href: "/ratgeber/baukasten-vs-professionelle-website" }
@@ -780,8 +802,8 @@ export function renderWebdesignBerlinHub(req, res) {
       packageIncludedTitle: "What is actually included in a web design package?",
       packageIncludedText1: "Already in the <a href='/en/pakete/basis'>Starter package from EUR 499</a>, you get a professionally designed website with mobile optimization, clear user flows, and core legal pages. Instead of template builders, we create a tailored design for your offer and target group.",
       packageIncludedText2: "In the <a href='/en/pakete/business'>Business package from EUR 899</a>, the focus is on multiple service pages and stronger Google visibility. For larger projects with shop or booking features, the <a href='/en/pakete/premium'>Premium package from EUR 1,499</a> is the right fit.",
-      casesTitle: "Results from Berlin - real numbers",
-      caseLinkLabel: "View website",
+      casesTitle: "Berlin web design references",
+      caseLinkLabel: "View reference",
       processTitle: "Website development in Berlin - how the process works",
       processLead: "From briefing to launch, most projects take just 4 to 6 weeks - with clear feedback loops and transparent milestones.",
       berlinTitle: "Web design across all Berlin districts",
@@ -834,8 +856,8 @@ export function renderWebdesignBerlinHub(req, res) {
       packageIncludedTitle: "Was ist im Webdesign-Paket konkret enthalten?",
       packageIncludedText1: "Bereits im <a href='/pakete/basis'>Basis-Paket ab 499 €</a> bekommst du eine professionell gestaltete Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und den wichtigsten rechtlichen Grundlagen. Statt Baukasten-Lösungen setzen wir auf ein individuelles Design, das zu deinem Angebot und deiner Zielgruppe passt.",
       packageIncludedText2: "Im <a href='/pakete/business'>Business-Paket ab 899 €</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist das <a href='/pakete/premium'>Premium-Paket ab 1.499 €</a> die richtige Wahl. So entsteht eine Website, die nicht nur modern aussieht, sondern dir in Berlin planbar Anfragen bringt.",
-      casesTitle: "Ergebnisse aus Berlin - echte Zahlen",
-      caseLinkLabel: "Website ansehen",
+      casesTitle: "Erste echte Webdesign-Projekte aus Berlin",
+      caseLinkLabel: "Referenz ansehen",
       processTitle: "Website in Berlin erstellen lassen - so läuft der Prozess ab",
       processLead: "Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen - mit klaren Feedbackschleifen und transparenten Milestones.",
       berlinTitle: "Webdesign in Berlin und allen Bezirken",
@@ -879,7 +901,7 @@ export function renderWebdesignBerlinHub(req, res) {
      hero.ctaPrimary = { label: "Book a free initial consultation", href: contactPath };
     hero.ctaSecondary = { label: "View web design packages", href: "/en/pakete" };
     hero.ctaTertiary = { label: "Run website tester", href: "/en/website-tester" };
-    hero.rating.label = "★★★★★ 5.0/5 · 3 Google reviews";
+    hero.rating.label = formatGoogleRating(lng);
     hero.image.alt = "Sören Blocksdorf - Web Designer Berlin";
     hero.trustBadges = [
       "Professional website in Berlin from EUR 499",
@@ -974,7 +996,7 @@ export function renderWebdesignBerlinHub(req, res) {
         image: "/images/basis.webp",
         description: "Ideal for solo professionals who want to launch quickly with a professional website.",
         features: [
-          "One-page site with clear story and call-to-action",
+          "One-page site with a clear story and request path",
           "<strong>Mobile-first</strong> layout including performance checks",
           "Contact form and GDPR core pages",
           "Google Search Console and basic tracking",
@@ -1014,13 +1036,32 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     );
 
-    caseStudies[0] = {
-      ...caseStudies[0],
-      name: "Zur alten Backstube · Cafe in Rosenthal",
-      summary: "A new design, online reservations, and faster load times led to significantly more guests.",
-      bullets: ["+70% reservations in 3 months", "1.4 s Largest Contentful Paint", "50% more bookings for events and private groups"],
-      quote: "We now get new guests through our website every day. Finally modern and professional."
-    };
+    caseStudies.splice(0, caseStudies.length,
+      {
+        name: "Zur alten Backstube · cafe in Rosenthal",
+        summary: "A warm reference website for a local cafe with clear offer structure, fitting imagery, and simple contact paths.",
+        bullets: [
+          "Calm page structure for offer, atmosphere, and contact",
+          "Imagery and copy aligned with the local positioning",
+          "Visit information and inquiry paths placed clearly"
+        ],
+        quote: "The result looks great. It is now much easier to reserve tables.",
+        link: "/referenzen/zur-alten-backstube",
+        image: "/images/review-bg.webp"
+      },
+      {
+        name: "TM Sauber & Mehr · local service provider",
+        summary: "A clear website for a local service provider with well-structured services and a direct inquiry path.",
+        bullets: [
+          "Service areas organized clearly and understandably",
+          "Trust signals placed at important decision points",
+          "Inquiry paths integrated prominently into the page flow"
+        ],
+        quote: "Great service and excellent value for money. All our requests were implemented quickly, professionally, and without complications.",
+        link: "/referenzen/tm-sauber-mehr",
+        image: "/images/default-blog.webp"
+      }
+    );
 
     processSteps.splice(0, processSteps.length,
       { name: "Analysis & Goals", description: "We analyze your offer, target audience, and local competition in Berlin. This creates a clear SEO and content strategy for your website." },
@@ -1211,8 +1252,8 @@ export function renderWebdesignBerlinHub(req, res) {
           : "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
       "url": webdesignBerlinUrl,
       "inLanguage": isEn ? "en-US" : "de-DE",
-      "telephone": "+49 1551 245048",
-      "email": "kontakt@komplettwebdesign.de",
+      "telephone": SITE_FACTS.phone,
+      "email": SITE_FACTS.email,
 
       // bitte nur 1x priceRange – und konkret
       "priceRange": "€499–€1499",
@@ -1220,11 +1261,11 @@ export function renderWebdesignBerlinHub(req, res) {
       "image": toAbsUrl("/images/heroBg.webp"),
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "Möllendorffstr 26",
-        "postalCode": "10367",
-        "addressLocality": "Berlin",
-        "addressRegion": "Berlin",
-        "addressCountry": "DE"
+        "streetAddress": SITE_FACTS.address.streetAddress,
+        "postalCode": SITE_FACTS.address.postalCode,
+        "addressLocality": SITE_FACTS.address.addressLocality,
+        "addressRegion": SITE_FACTS.address.addressRegion,
+        "addressCountry": SITE_FACTS.address.addressCountry
       },
       "geo": {
         "@type": "GeoCoordinates",
@@ -1235,9 +1276,9 @@ export function renderWebdesignBerlinHub(req, res) {
       // besser als Array (konsistent, erweiterbar)
       "areaServed": [{ "@type": "City", "name": "Berlin" }],
 
-      "hasMap": "https://www.google.com/maps?cid=8211853018206635760",
+      "hasMap": SITE_FACTS.googleProfileUrl,
       "sameAs": [
-        "https://www.google.com/maps?cid=8211853018206635760",
+        SITE_FACTS.googleProfileUrl,
         "https://www.linkedin.com/in/komplettwebdesign",
         "https://instagram.com/komplettwebdesign",
         "https://www.facebook.com/profile.php?id=61579580713573",
@@ -1330,9 +1371,10 @@ export function renderWebdesignBerlinHub(req, res) {
 
   res.locals.title = metaTitle;
   res.locals.description = metaDescription;
+  const districtCssHref = req.app.locals.cssAsset("district-berlin.css");
   res.locals.seoExtra = `
-    <link rel="preload" href="/district-berlin.css?v=2026-04-22-hero-district-fix" as="style">
-    <link rel="stylesheet" href="/district-berlin.css?v=2026-04-22-hero-district-fix">
+    <link rel="preload" href="${districtCssHref}" as="style">
+    <link rel="stylesheet" href="${districtCssHref}">
     <meta property="og:title" content="${metaTitle}">
     <meta property="og:description" content="${metaDescription}">
     <meta property="og:url" content="${webdesignBerlinUrl}">
@@ -1362,9 +1404,9 @@ export function renderWebdesignBerlinHub(req, res) {
     metaDescription,
     canonical: webdesignBerlinUrl,
     contact: {
-      phone: "+491551245048",
-      phoneDisplay: "01551 245048",
-      email: "kontakt@komplettwebdesign.de"
+      phone: SITE_FACTS.phone,
+      phoneDisplay: SITE_FACTS.phoneDisplay,
+      email: SITE_FACTS.email
     }
   });
 }

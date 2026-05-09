@@ -1,44 +1,56 @@
-<%- include('partials/head') %>
+<%
+const aboutHeadExtra = `
+  <link rel="stylesheet" href="${cssAsset('about.css')}" />
+  <style>
+    .hero-section:not(.unified-hero) .hero-content,
+    .hero-section:not(.unified-hero) .hero-image {
+      min-height: 1px;
+      margin: 2rem 0;
+    }
 
-<link rel="stylesheet" href="<%= cssAsset('about.css') %>" />
+    .hero-section:not(.unified-hero) .hero-content {
+      backdrop-filter: none;
+      background: none;
+      box-shadow: none;
+      flex: 1 1 130px;
+    }
 
-<style>
-  .hero-content,
-  .hero-image {
-    min-height: 1px;
-    margin: 2rem 0;
-  }
+    .cta-section {
+      border-radius: 0;
+    }
+  </style>
+`;
+%>
+<%- include('partials/head', { seoExtra: aboutHeadExtra }) %>
 
-  .hero-content {
-    backdrop-filter: none;
-    background: none;
-    box-shadow: none;
-    flex: 1 1 130px;
-  }
-  .cta-section{
-    border-radius: 0px;
-  }
-</style>
-
-<body>
+<body class="about-page">
   <!-- Header / Navigation (falls eine Header-Partial existiert) -->
   <%- include('partials/header') %>
 
-  <section id="about-hero" class="hero-section circleBg">
-    <div class="hero-content">
+  <section id="about-hero" class="hero-section circleBg unified-hero">
+    <div class="hero-content unified-hero__copy">
+      <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Startseite</a></li>
+          <li aria-current="page">Über mich</li>
+        </ol>
+      </nav>
       <h1>Hallo, ich bin Sören <span class="wave">👋</span></h1>
-      <p class="subtitle">
-        Webdesigner aus Berlin, 29 Jahre jung, mit Leidenschaft für großartige
-        Websites.
+      <p class="subtitle unified-hero__lead">
+        Persönlicher Webdesigner aus Berlin für kleine Unternehmen, Selbstständige
+        und lokale Anbieter, die eine klare, schnelle und bezahlbare Website brauchen.
       </p>
     </div>
-    <div class="hero-image">
+    <div class="about-portrait-card">
       <img
         src="/images/meinAvatar.webp"
         alt="Sören Blocksdorf Portrait"
         class="profile-pic"
       />
-      <!-- Alternativ: Hier könnte eine Illustration oder ein Foto von Sören eingefügt werden -->
+      <div class="about-portrait-card__copy">
+        <strong>Sören Blocksdorf</strong>
+        <span>Direkter Ansprechpartner von der ersten Idee bis zum Launch.</span>
+      </div>
     </div>
   </section>
 
@@ -57,10 +69,11 @@
       </p>
       <p>
         Stell dir vor, du hast eine großartige Idee für eine Website, weißt aber
-        nicht, wo du anfangen sollst. **Genau da komme ich ins Spiel.** Mit
+        nicht, wo du anfangen sollst. <strong>Genau da komme ich ins Spiel.</strong> Mit
         mittlerweile über 10 Jahren Erfahrung in Webdesign und Webentwicklung
-        und Dutzenden realisierten Projekten habe ich gelernt, Projekte
-        effizient und zuverlässig umzusetzen. Schon als Jugendlicher habe ich
+        habe ich gelernt, Projekte effizient und zuverlässig umzusetzen.
+        Komplett Webdesign ist noch keine große Agentur mit hunderten Referenzen. Genau deshalb arbeite ich persönlich, fokussiert und nah am Projekt. Du bekommst keinen Standardprozess aus der Massenabfertigung, sondern direkte Betreuung vom ersten Gespräch bis zum Launch.
+        Schon als Jugendlicher habe ich
         meine erste eigene kleine Website gebastelt – eine Fan-Seite zu meinem
         damaligen Lieblingsspiel – und seitdem lässt mich die Faszination fürs
         Web nicht mehr los.
@@ -75,13 +88,11 @@
         Ob du als Existenzgründer:in gerade durchstartest, ein etabliertes
         kleines Unternehmen leitest oder als Privatperson einfach eine tolle
         Website möchtest – ich arbeite mit jedem gern zusammen, der eine
-        professionelle Web-Präsenz mit persönlicher Note sucht. Meine Kundschaft
-        ist so vielfältig wie Berlin selbst: vom Familiencafé um die Ecke über
-        Künstler und Berater bis hin zum Tech-Startup war schon alles dabei. Und
-        falls du nicht aus Berlin kommst – keine Sorge: Dank Video-Calls und
-        Online-Tools können wir problemlos zusammenarbeiten, egal wo du gerade
-        bist. Mir ist vor allem wichtig, dass du dich gut aufgehoben fühlst –
-        unabhängig von Branche, Budget oder Vorkenntnissen.
+        professionelle Web-Präsenz mit persönlicher Note sucht. Falls du nicht
+        aus Berlin kommst – keine Sorge: Dank Video-Calls und Online-Tools
+        können wir problemlos zusammenarbeiten, egal wo du gerade bist. Mir ist
+        vor allem wichtig, dass du dich gut aufgehoben fühlst – unabhängig von
+        Branche, Budget oder Vorkenntnissen.
       </p>
     </div>
     <div class="column">
@@ -123,6 +134,54 @@
         Inspiration – die Vielfalt und Dynamik der Stadt spiegeln sich auch in
         meinen Projekten wider.
       </p>
+    </div>
+  </section>
+
+  <section id="decision-fit" class="about-section two-column">
+    <h2>Passt das zu deinem Projekt?</h2>
+    <div class="column">
+      <h3>Für wen ich der richtige Ansprechpartner bin</h3>
+      <ul class="services-list">
+        <li>
+          Kleine Unternehmen, Selbstständige und lokale Anbieter, die eine
+          professionelle Website ohne Agenturapparat möchten.
+        </li>
+        <li>
+          Gründer:innen und Betriebe, die klare Beratung, verständliche
+          Entscheidungen und direkte Abstimmung mit der umsetzenden Person
+          schätzen.
+        </li>
+        <li>
+          Projekte, bei denen Design, Technik, Texte, SEO-Grundlagen und Launch
+          aus einer Hand kommen sollen.
+        </li>
+        <li>
+          Bestehende Websites, die strukturierter, schneller, klarer oder
+          vertrauenswürdiger werden sollen.
+        </li>
+      </ul>
+    </div>
+    <div class="column">
+      <h3>Für wen ich nicht der richtige Anbieter bin</h3>
+      <ul class="services-list">
+        <li>
+          Unternehmen, die ein großes Team mit Account Management,
+          Strategieabteilung und dauerhaftem Kampagnenbetrieb erwarten.
+        </li>
+        <li>
+          Projekte, bei denen garantierte Google-Rankings, garantierte Leads
+          oder sofortige Umsatzergebnisse versprochen werden sollen.
+        </li>
+        <li>
+          Sehr umfangreiche Plattformen, komplexe Marktplätze oder
+          Enterprise-Systeme mit mehreren spezialisierten Entwicklungsteams.
+        </li>
+        <li>
+          Aufträge, bei denen möglichst billig und möglichst schnell wichtiger
+          ist als saubere Grundlage, ehrliche Beratung und verlässliche
+          Umsetzung.
+        </li>
+      </ul>
     </div>
   </section>
 
@@ -239,8 +298,8 @@
         Funktion Hand in Hand gehen: Die Nutzer erleben eine stimmige,
         gemütliche Atmosphäre, während im Hintergrund moderne Web-Technik läuft
         (inklusive SEO-Optimierung, damit das Café bei Google gefunden wird).
-        **Die Rückmeldungen der Betreiber waren durchweg positiv – sie haben nun
-        mehr Reservierungsanfragen über die Website als zuvor.** Schau gern mal
+        Die Rückmeldungen der Betreiber waren positiv, und die Website gibt dem
+        Café heute eine deutlich klarere digitale Anlaufstelle. Schau gern mal
         vorbei – vielleicht bekommst du ja Lust auf Kaffee und Kuchen
         <span class="emoji">😉</span>.
       </p>

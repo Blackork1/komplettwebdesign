@@ -1,5 +1,5 @@
-/* Grundlegendes Styling (Farben an komplettwebdesign.de angelehnt) */
-body {
+/* Grundlegendes Styling: alte About-Farbwelt, nur auf die About-Seite begrenzt */
+body.about-page {
   font-family: Arial, sans-serif;
   line-height: 1.6;
   margin: 0;
@@ -16,22 +16,208 @@ body {
   background-position: 0 0, 40px 40px;
 }
 
+.about-page :is(
+  .hero-content,
+  .hero-image,
+  .about-portrait-card,
+  .about-section,
+  .services-list li,
+  .workflow-steps li,
+  .fun-facts li
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* About text overflow safety */
+.about-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, button, blockquote, figcaption) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+/* Legacy Hero Fallback */
+.about-page .hero-section:not(.unified-hero) {
+  background-color: #1a3d5d;
+  color: #fff;
+  padding: 4em 1em;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-content {
+  flex: 1 1 400px;
+  color: #fff;
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-content h1 {
+  color: #fff !important;
+  font-size: 2.5em;
+  margin-bottom: 0.2em;
+  animation: fadeInDown 1s ease both;
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-content .subtitle {
+  color: #fff !important;
+  font-size: 1.2em;
+  font-weight: 300;
+  margin-bottom: 0;
+}
+
+.about-page .hero-content .wave {
+  display: inline-block;
+  animation: waveHand 2s infinite;
+}
+
+/* Neuer About-Hero */
+.about-page #about-hero.unified-hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: clamp(64px, 8vw, 112px) 0 clamp(48px, 6vw, 80px);
+  color: #0b2a46;
+  text-align: left;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(233, 74, 27, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(11, 42, 70, 0.1), rgba(233, 74, 27, 0.16)),
+    #f4f7fb !important;
+}
+
+.about-page #about-hero.unified-hero .hero-content {
+  color: #0b2a46;
+  text-align: left;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+
+.about-page #about-hero.unified-hero h1 {
+  color: #0b2a46 !important;
+  font-size: clamp(2rem, 4.25vw, 4.25rem);
+  margin-bottom: 0;
+  line-height: 1.08;
+  animation: fadeInDown 1s ease both;
+}
+
+.about-page #about-hero.unified-hero .subtitle {
+  max-width: 680px;
+  color: #526173 !important;
+  font-size: clamp(1.04rem, 1.7vw, 1.22rem);
+  font-weight: 600;
+  line-height: 1.68;
+}
+
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs {
+  color: #526173;
+}
+
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs a {
+  color: #e94a1b;
+}
+
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs a:hover,
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs a:focus-visible {
+  color: #0b2a46;
+}
+
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs li + li::before,
+.about-page #about-hero.unified-hero .unified-hero__breadcrumbs [aria-current="page"] {
+  color: #526173;
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-image {
+  flex: 1 1 300px;
+  text-align: center;
+  padding: 1em;
+}
+
+.about-page #about-hero.unified-hero .about-portrait-card {
+  color: #0b2a46;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 242, 0.84)),
+    #fff;
+  border: 1px solid rgba(11, 42, 70, 0.14);
+  box-shadow: 0 24px 60px rgba(24, 32, 47, 0.1);
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-image img.profile-pic {
+  max-width: 180px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  animation: fadeIn 2s ease both;
+}
+
+.about-page #about-hero.unified-hero .about-portrait-card img.profile-pic {
+  width: min(240px, 64vw);
+  max-width: none;
+  border: 6px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 18px 38px rgba(11, 42, 70, 0.18);
+  animation: fadeIn 2s ease both;
+}
+
+.about-page .about-portrait-card__copy {
+  margin-top: 0.85em;
+  color: #0b2a46;
+}
+
+.about-page .about-portrait-card__copy strong,
+.about-page .about-portrait-card__copy span {
+  display: block;
+}
+
+.about-page .about-portrait-card__copy strong {
+  color: #0b2a46;
+}
+
+.about-page .about-portrait-card__copy span {
+  color: #526173;
+}
+
 /* Abschnittscontainer */
-.about-section {
+.about-page .about-section {
   margin: 0 auto;
   padding: 2em 1em;
   color: #d9d9d7;
 }
 
+.about-page .about-section :is(p, li, em) {
+  color: #d9d9d7;
+}
+
+.about-page .about-section strong {
+  color: #fff;
+}
+
+.about-page .about-section a {
+  color: #ff6538;
+  font-weight: 700;
+  text-underline-offset: 0.18em;
+}
+
+.about-page .about-section a:hover,
+.about-page .about-section a:focus-visible {
+  color: #fff;
+}
+
 /* Überschriften-Stile */
-.about-section h2 {
+.about-page .about-section h2 {
   font-size: 2em;
-  color: #ff6538; /* Dunkler Blauton (Corporate Design) */
+  color: #ff6538;
   margin-top: 0.5em;
   text-align: left;
   position: relative;
 }
-.about-section h2::after {
+
+.about-page .about-section h2::after {
   content: "";
   display: block;
   width: 50px;
@@ -40,92 +226,61 @@ body {
   margin-top: 0.3em;
 }
 
-/* Hero Section */
-.hero-section {
-  background-color: #1a3d5d; /* Dunkles Blau für Kontrast */
-  color: #fff;
-  padding: 4em 1em;
-  text-align: center;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-}
-.hero-content {
-  flex: 1 1 400px;
-}
-.hero-content h1 {
-  font-size: 2.5em;
-  margin-bottom: 0.2em;
-  animation: fadeInDown 1s ease both;
-}
-.hero-content .subtitle {
-  font-size: 1.2em;
-  font-weight: 300;
-  margin-bottom: 0;
-}
-.hero-content .wave {
-  display: inline-block;
-  animation: waveHand 2s infinite;
-}
-.hero-image {
-  flex: 1 1 300px;
-  text-align: center;
-  padding: 1em;
-}
-.hero-image img.profile-pic {
-  max-width: 180px;
-  border-radius: 50%;
-  border: 4px solid #fff;
-  animation: fadeIn 2s ease both;
+.about-page .about-section h3 {
+  color: #eaeae9;
 }
 
 /* Leistungen (Services) Liste */
-.services-list {
+.about-page .services-list {
   list-style: none;
   padding: 0;
 }
-.services-list li {
+
+.about-page .services-list li {
   margin: 0.5em 0;
   font-size: 1.1em;
   display: flex;
   align-items: flex-start;
   color: #eaeae9;
 }
-.services-list .icon {
+
+.about-page .services-list .icon {
   font-size: 1.5em;
   margin-right: 0.5em;
   line-height: 1;
-  /* (Icons werden hier als Emojis verwendet. Falls Icon-Font, entsprechend anpassen.) */
 }
-.services-list .icon:hover {
+
+.about-page .services-list .icon:hover {
   transform: scale(1.2);
   transition: transform 0.2s;
 }
 
 /* Fun Facts Liste */
-.fun-facts {
+.about-page .fun-facts {
   list-style: none;
   padding: 0;
 }
-.fun-facts li {
+
+.about-page .fun-facts li {
   margin: 0.5em 0;
 }
 
 /* Nummerierte Schritte (Workflow) */
-.workflow-steps {
+.about-page .workflow-steps {
   counter-reset: step;
   margin-left: 0;
   padding-left: 0;
 }
-.workflow-steps li {
+
+.about-page .workflow-steps li {
   list-style: none;
   counter-increment: step;
   position: relative;
   margin: 1em 0;
   padding-left: 2em;
 }
-.workflow-steps li::before {
+
+.about-page .workflow-steps li::before {
   content: counter(step) ".";
   position: absolute;
   left: 0;
@@ -134,23 +289,25 @@ body {
 }
 
 /* Projekt-Highlight Bild */
-.project-image {
+.about-page .project-image {
   text-align: center;
   margin: 1.5em 0;
 }
-.project-image img {
+
+.about-page .project-image img {
   max-width: 100%;
   height: auto;
   border: 2px solid #ccc;
   transition: transform 0.3s;
 }
-.project-image img:hover {
+
+.about-page .project-image img:hover {
   transform: scale(1.02);
   border-color: #1a3d5d;
 }
 
 /* Call-to-Action Bereich */
-.cta-section {
+.about-page .cta-section {
   background-color: #1d63a3;
   opacity: 1;
   background-image: repeating-radial-gradient(
@@ -162,27 +319,32 @@ body {
   text-align: center;
   padding: 2.5em 1em;
 }
-.cta-section h2 {
+
+.about-page .cta-section h2 {
   font-size: 2em;
   color: #1a3d5d;
   margin-bottom: 0.2em;
 }
-.cta-section p {
+
+.about-page .cta-section p {
   font-size: 1.1em;
   margin: 0.5em auto;
   max-width: 600px;
+  color: #333;
 }
-.cta-section .note {
+
+.about-page .cta-section .note {
   font-size: 0.9em;
   color: #555;
 }
 
-/* Einbettung des Buchungs-Widgets (z.B. als iFrame oder Formular) */
-.booking-widget {
+/* Einbettung des Buchungs-Widgets */
+.about-page .booking-widget {
   margin: 1em auto;
 }
-.booking-widget iframe,
-.booking-widget form {
+
+.about-page .booking-widget iframe,
+.about-page .booking-widget form {
   width: 100%;
   max-width: 400px;
   height: 400px;
@@ -190,14 +352,14 @@ body {
 }
 
 /* Hover-Effekt für allgemeine Links/Buttons */
-a:hover,
-button:hover {
+.about-page a:hover,
+.about-page button:hover {
   opacity: 0.8;
   transition: opacity 0.3s;
 }
 
 /* Zwei-Spalten-Layout für Desktop */
-.two-column {
+.about-page .two-column {
   display: flex;
   gap: 2rem;
   max-width: 1260px;
@@ -207,54 +369,81 @@ button:hover {
   flex-wrap: wrap;
 }
 
-.two-column h2 {
+.about-page .two-column h2 {
   flex-basis: 100%;
   margin-bottom: 1em;
 }
-.two-column .column {
+
+.about-page .two-column .column {
   flex: 1 1 100%;
 }
 
 /* Responsives Design: Anpassungen für kleinere Bildschirme */
 @media (max-width: 600px) {
-  .two-column {
+  .about-page .two-column {
     flex-direction: column;
     padding: 0;
   }
-  .two-column .column {
+
+  .about-page .two-column .column {
     width: 100%;
     flex: 1 1 100%;
   }
-  .two-column .column p {
+
+  .about-page .two-column .column p {
     margin-bottom: 1.5em;
   }
-  .hero-section {
+
+  .about-page .hero-section:not(.unified-hero) {
     padding: 3em 1em;
     flex-direction: column;
   }
-  .hero-content {
+
+  .about-page #about-hero.unified-hero {
+    padding: clamp(48px, 9vw, 76px) 0 clamp(36px, 7vw, 58px);
+  }
+
+  .about-page .hero-section:not(.unified-hero) .hero-content {
     text-align: center;
     margin-top: 30px;
   }
-  .hero-content h1 {
-    font-size: 2em;
+
+  .about-page .hero-section:not(.unified-hero) .hero-content h1 {
+    font-size: 2em !important;
   }
-  .hero-image {
+
+  .about-page #about-hero.unified-hero h1 {
+    font-size: clamp(1.85rem, 10vw, 2.75rem) !important;
+  }
+
+  .about-page .hero-section:not(.unified-hero) .hero-image,
+  .about-page #about-hero.unified-hero .about-portrait-card {
     margin-top: 1.5em;
   }
-  .services-list li {
+
+  .about-page .services-list li {
     flex-direction: column;
     align-items: flex-start;
   }
-  .services-list .icon {
+
+  .about-page .services-list .icon {
     margin-bottom: 0.2em;
   }
 }
 
 @media (max-width: 500px) {
-  .two-column {
+  .about-page .two-column {
     font-size: 1.05em;
     line-height: 1.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-page *,
+  .about-page *::before,
+  .about-page *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -263,42 +452,53 @@ button:hover {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
+
 @keyframes fadeInDown {
   from {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 @keyframes waveHand {
   0% {
     transform: rotate(0deg);
   }
+
   10% {
     transform: rotate(14deg);
   }
+
   20% {
     transform: rotate(-8deg);
   }
+
   30% {
     transform: rotate(14deg);
   }
+
   40% {
     transform: rotate(-4deg);
   }
+
   50% {
     transform: rotate(10deg);
   }
+
   60% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(0deg);
   }

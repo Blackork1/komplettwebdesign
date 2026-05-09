@@ -68,7 +68,7 @@ const structuredDataRaw = `<script type="application/ld+json">
       "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
       "https://www.komplettwebdesign.de/images/heroBg.webp"
     ],
-    "description": "Website erstellen lassen in Berlin: persönliches Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand. Festpreis-Pakete ab 499 €. Kostenlose Beratung vereinbaren!",
+    "description": "Website erstellen lassen: persönliches Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand. Festpreis-Pakete ab 499 €. Kostenlose Beratung vereinbaren!",
     "areaServed": [
       {
         "@type": "Country",
@@ -204,7 +204,7 @@ const structuredDataRaw = `<script type="application/ld+json">
     "@id": "https://www.komplettwebdesign.de/#website",
     "name": "Komplett Webdesign",
     "url": "https://www.komplettwebdesign.de/",
-    "description": "Website erstellen lassen in Berlin – Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand",
+    "description": "Website erstellen lassen – Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand",
     "publisher": {
       "@id": "https://www.komplettwebdesign.de/#organization"
     },
@@ -217,7 +217,7 @@ const structuredDataRaw = `<script type="application/ld+json">
     "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": "https://www.komplettwebdesign.de/#webpage",
-    "name": "Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand",
+    "name": "Website erstellen lassen – persönlich, SEO-freundlich und aus einer Hand",
     "description": "Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin. Mit Texten, SEO-Grundlage, Kontaktformular, Hosting, Wartung und optional Buchungssystem oder Shop.",
     "url": "https://www.komplettwebdesign.de/",
     "inLanguage": "${lng === 'en' ? 'en-US' : 'de-DE'}",
@@ -295,6 +295,98 @@ const structuredDataRaw = `<script type="application/ld+json">
     width: 100%;
     z-index: -5;
     height: 1026px;
+  }
+
+  .hero-content.home-hero-sequence {
+    overflow: hidden;
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+    transition:
+      opacity 0.68s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--home-hero-reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll.out {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+
+  .home-hero-reveal--h1 {
+    --home-hero-reveal-delay: 0ms;
+  }
+
+  .home-hero-reveal--support {
+    --home-hero-reveal-delay: 180ms;
+  }
+
+  .home-hero-reveal--actions {
+    --home-hero-reveal-delay: 620ms;
+  }
+
+  .home-hero-reveal--prices {
+    --home-hero-reveal-delay: 720ms;
+  }
+
+  .hero-main .home-hero-reveal--support.animate-on-scroll,
+  .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll {
+    transform: translate3d(-18px, 18px, 0);
+  }
+
+  .hero-main .home-hero-reveal--support.animate-on-scroll.visible,
+  .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll.visible {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .home-hero-bullets {
+    display: grid;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0 0 2rem;
+    padding: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .home-hero-bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .home-hero-bullets li:nth-child(1) {
+    --home-hero-reveal-delay: 300ms;
+  }
+
+  .home-hero-bullets li:nth-child(2) {
+    --home-hero-reveal-delay: 390ms;
+  }
+
+  .home-hero-bullets li:nth-child(3) {
+    --home-hero-reveal-delay: 480ms;
+  }
+
+  .home-hero-bullets img {
+    flex: 0 0 auto;
+    margin-top: 0.05rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-main .home-hero-reveal.animate-on-scroll {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
   }
 
   .review-card {
@@ -615,29 +707,33 @@ const structuredDataRaw = `<script type="application/ld+json">
       <div class="hero-section">
         <div class="container">
           <div class="hero-flex">
-            <div class="hero-content">
-              <span class="hero-badge mb-3">
+            <div class="hero-content home-hero-sequence">
+              <span class="hero-badge mb-3 home-hero-reveal home-hero-reveal--support animate-on-scroll">
                 <i class="fas fa-bolt"></i> <%= copy.heroBadge %>
               </span>
-              <h1 class="display-5 fw-bold mt-2">
+              <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
                 <%= copy.heroTitle %> <br> <%= copy.heroTitle2 %>
               </h1>
-              <h2><span class="primaryColor"> <%= copy.heroSubline %> </span></h2>
-              <p>
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                <%= copy.heroBullet1 %>
-                <br />
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                <%= copy.heroBullet2 %>
-                <br />
-                <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
-                <%= copy.heroBullet3 %>
-              </p>
-              <div class="hero-ctas">
+              <h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll"><span class="primaryColor"> <%= copy.heroSubline %> </span></h2>
+              <ul class="home-hero-bullets" role="list">
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet1 %></span>
+                </li>
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet2 %></span>
+                </li>
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet3 %></span>
+                </li>
+              </ul>
+              <div class="hero-ctas home-hero-reveal home-hero-reveal--actions animate-on-scroll">
                 <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-primary hero-button" data-track="cta" data-cta-name="home_hero_contact" data-cta-location="home_hero"><%= copy.heroCtaPrimary %></a>
                 <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary" data-track="cta" data-cta-name="home_hero_packages" data-cta-location="home_hero"><%= copy.heroCtaSecondary %></a>
               </div>
-              <p class="mt-2 mb-0 heroPriceInfo">
+              <p class="mt-2 mb-0 heroPriceInfo home-hero-reveal home-hero-reveal--prices animate-on-scroll">
                 <a href="<%= isEn ? '/en/pakete/basis' : '/pakete/basis' %>">
                   <span class="badge text-bg-success"><%= copy.heroBadge1 %></span>
                 </a>
@@ -672,8 +768,9 @@ const structuredDataRaw = `<script type="application/ld+json">
                 As an experienced web designer, I support clients across Germany.
                 Looking specifically for a <a href="/webdesign-berlin" class="linkColor">web designer in Berlin</a>? Then check out our local offers.
                 <% } else { %>
-                Wenn du eine <a href="/webdesign-berlin" class="linkColor">Website in Berlin erstellen lassen</a> möchtest, bekommst du bei Komplett Webdesign einen persönlichen Full-Service-Dienstleister statt einzelner Baustellen.
+                Wenn du eine <a href="/website-erstellen-lassen-berlin" class="linkColor">Website in Berlin erstellen lassen</a> möchtest, bekommst du bei Komplett Webdesign einen persönlichen Full-Service-Dienstleister statt einzelner Baustellen.
                 Ich plane, gestalte und betreue deine Website aus einer Hand: Design, Texte, SEO-Grundlage, Kontaktformular, Hosting und Wartung.
+                Wenn bereits eine Website vorhanden ist, aber Design, Struktur oder Anfragen nicht mehr passen, ist ein <a href="/website-relaunch-berlin" class="linkColor">Website-Relaunch in Berlin</a> oft der sauberere nächste Schritt.
                 So entsteht ein professioneller Webauftritt, der verständlich bleibt, zu deinem Budget passt und lokale Anfragen einfacher macht.
                 <% } %>
               </p>
@@ -1364,7 +1461,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 ich biete maßgeschneiderte Lösungen für Unternehmen deutschlandweit.
                 Ob Restaurant, Handwerk, Café, Praxis oder lokaler Handel:
                 Ich habe die passende Lösung.
-                Wenn du deine <a href="/webdesign-berlin" class="linkColor">Webseite in Berlin erstellen lassen</a>
+                Wenn du deine <a href="/website-erstellen-lassen-berlin" class="linkColor">Webseite in Berlin erstellen lassen</a>
                 möchtest, bin ich der richtige Partner für dich.
                 <% } %>
               </p>
@@ -1540,7 +1637,7 @@ const structuredDataRaw = `<script type="application/ld+json">
           <a href="#faq" class="icon-link" aria-label="<%= isEn ? 'To FAQ section' : 'Zum FAQ-Bereich' %>">
             <i class="fas fa-question-circle"></i>
           </a>
-          <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To call-to-action section' : 'Zum Call-to-Action-Bereich' %>">
+          <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To inquiry section' : 'Zum Anfragebereich' %>">
             <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>
           </a>
           <a href="#footer" class="icon-link" aria-label="<%= isEn ? 'To footer section' : 'Zum Footer-Bereich' %>">
@@ -1581,7 +1678,7 @@ const structuredDataRaw = `<script type="application/ld+json">
   </script>
   <!--Scroll Indicator-->
 </body>
-<script src="/js/progressSlider.js" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/progressSlider.js') : '/js/progressSlider.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <!-- JSON-LD: ProfessionalService (online-first, ohne Adresse) -->
 <!-- FAQ -->

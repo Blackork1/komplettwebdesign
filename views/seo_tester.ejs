@@ -328,7 +328,7 @@
       }
     };
   </script>
-  <script src="/js/tester-utils.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
-  <script src="/js/seo-tester.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/seo-tester.js') : '/js/seo-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

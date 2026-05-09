@@ -1,5 +1,6 @@
 // helpers/cssHelper.js
 import fs from 'fs';
+import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -40,17 +41,16 @@ export function getAvailableCssFiles() {
   }
 }
 
-export function loadCssAssetManifest() {
-  const manifestPath = join(__dirname, '..', 'public', 'css-asset-manifest.json');
+export function loadCssAssetManifest(manifestPath = join(__dirname, '..', 'public', 'css-asset-manifest.json')) {
   try {
     const raw = fs.readFileSync(manifestPath, 'utf8');
     const manifest = JSON.parse(raw);
     return manifest && typeof manifest === 'object' ? manifest : { assets: {} };
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.warn('CSS asset manifest fehlt. Bitte "npm run build:css" vor dem Serverstart ausfuehren.');
+      console.warn('CSS-Asset-Manifest fehlt. Bitte "npm run build:css" vor dem Serverstart ausführen.');
     } else {
-      console.warn('CSS asset manifest konnte nicht gelesen werden:', error.message);
+      console.warn('CSS-Asset-Manifest konnte nicht gelesen werden:', error.message);
     }
     return { assets: {} };
   }
@@ -64,14 +64,66 @@ function normalizeCssAssetPath(file) {
     .replace(/\\/g, '/');
 }
 
-export function createCssAssetResolver(manifest = loadCssAssetManifest()) {
-  const manifestPath = join(__dirname, '..', 'public', 'css-asset-manifest.json');
+function createAssetVersion(publicDir, fallbackVersion = '1', extraFiles = {}) {
+  const cache = new Map();
+
+  return function asset(file) {
+    const normalized = normalizeCssAssetPath(file);
+    const output = `/${normalized}`;
+    const fallback = encodeURIComponent(fallbackVersion || '1');
+
+    if (!normalized || normalized.includes('..')) {
+      return `${output}?v=${fallback}`;
+    }
+
+    const assetPath = extraFiles[normalized] || join(publicDir, normalized);
+
+    try {
+      const stat = fs.statSync(assetPath);
+      if (!stat.isFile()) {
+        return `${output}?v=${fallback}`;
+      }
+
+      const cacheKey = `${stat.mtimeMs}:${stat.size}`;
+      const cached = cache.get(normalized);
+      if (cached?.cacheKey === cacheKey) {
+        return `${output}?v=${cached.version}`;
+      }
+
+      const version = createHash('sha256')
+        .update(fs.readFileSync(assetPath))
+        .digest('hex')
+        .slice(0, 12);
+
+      cache.set(normalized, { cacheKey, version });
+      return `${output}?v=${version}`;
+    } catch {
+      return `${output}?v=${fallback}`;
+    }
+  };
+}
+
+export function createPublicAssetResolver({
+  publicDir = join(__dirname, '..', 'public'),
+  fallbackVersion = '1',
+  extraFiles = {}
+} = {}) {
+  return createAssetVersion(publicDir, fallbackVersion, extraFiles);
+}
+
+export function createCssAssetResolver(manifest = loadCssAssetManifest(), {
+  publicDir = join(__dirname, '..', 'public'),
+  preferSource = false,
+  fallbackVersion = '1'
+} = {}) {
+  const manifestPath = join(publicDir, 'css-asset-manifest.json');
   let currentManifest = manifest;
   let currentMtimeMs = 0;
   let assets = currentManifest?.assets && typeof currentManifest.assets === 'object'
     ? currentManifest.assets
     : {};
   const warned = new Set();
+  const publicAsset = createPublicAssetResolver({ publicDir, fallbackVersion });
 
   try {
     currentMtimeMs = fs.statSync(manifestPath).mtimeMs;
@@ -83,7 +135,7 @@ export function createCssAssetResolver(manifest = loadCssAssetManifest()) {
       if (nextMtimeMs === currentMtimeMs) return;
 
       currentMtimeMs = nextMtimeMs;
-      currentManifest = loadCssAssetManifest();
+      currentManifest = loadCssAssetManifest(manifestPath);
       assets = currentManifest?.assets && typeof currentManifest.assets === 'object'
         ? currentManifest.assets
         : {};
@@ -94,18 +146,24 @@ export function createCssAssetResolver(manifest = loadCssAssetManifest()) {
   return function cssAsset(file) {
     refreshManifestIfChanged();
     const normalized = normalizeCssAssetPath(file);
-    const asset = assets[normalized];
+    const sourcePath = join(publicDir, normalized);
 
-    if (asset?.href) {
-      return asset.href;
+    if (preferSource && fs.existsSync(sourcePath)) {
+      return publicAsset(normalized);
+    }
+
+    const manifestAsset = assets[normalized];
+
+    if (manifestAsset?.href) {
+      return manifestAsset.href;
     }
 
     if (!warned.has(normalized)) {
       warned.add(normalized);
-      console.warn(`CSS asset fehlt im Manifest: ${normalized}. Bitte "npm run build:css" ausfuehren.`);
+      console.warn(`CSS-Asset fehlt im Manifest: ${normalized}. Bitte "npm run build:css" ausführen.`);
     }
 
-    return `/${normalized}`;
+    return publicAsset(normalized);
   };
 }
 
@@ -117,7 +175,7 @@ export function validateCssAssetManifest(manifest = loadCssAssetManifest(), requ
   const entries = Object.values(assets);
 
   if (!entries.length) {
-    console.warn('CSS asset manifest enthaelt keine Eintraege. CSS-Cache-Busting ist bis zum naechsten Build nicht aktiv.');
+    console.warn('CSS-Asset-Manifest enthält keine Einträge. CSS-Cache-Busting ist bis zum nächsten Build nicht aktiv.');
     return;
   }
 
@@ -125,14 +183,14 @@ export function validateCssAssetManifest(manifest = loadCssAssetManifest(), requ
     if (!asset?.output) return;
     const outputPath = join(publicDir, asset.output);
     if (!fs.existsSync(outputPath)) {
-      console.warn(`Minifizierte CSS-Datei fehlt: public/${asset.output}. Bitte "npm run build:css" ausfuehren.`);
+      console.warn(`Minifizierte CSS-Datei fehlt: public/${asset.output}. Bitte "npm run build:css" ausführen.`);
     }
   });
 
   requiredSources.forEach((source) => {
     const normalized = normalizeCssAssetPath(source);
     if (!assets[normalized]) {
-      console.warn(`CSS-Quelle fehlt im Manifest: ${normalized}. Bitte Datei pruefen und "npm run build:css" ausfuehren.`);
+      console.warn(`CSS-Quelle fehlt im Manifest: ${normalized}. Bitte Datei prüfen und "npm run build:css" ausführen.`);
     }
   });
 }

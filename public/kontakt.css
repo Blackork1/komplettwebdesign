@@ -1,6 +1,269 @@
 /* ==== Grundlayout je Slide ========================== */
+.contact-page-section :is(
+  .contact-choice,
+  .contact-choice__actions,
+  .contact-choice__button,
+  .contact-quick,
+  .contact-quick__card,
+  .contact-quick__intro,
+  .contact-quick__form,
+  .contact-quick__grid,
+  .contact-quick__field,
+  .contact-wizard-intro,
+  .carousel-item,
+  .option-label
+) {
+  min-width: 0;
+}
+
+/* Contact text overflow safety */
+.contact-page-section :is(h1, h2, h3, h4, p, li, a, span, strong, small, label, button) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.contact-page-section .contact-choice {
+  background: linear-gradient(135deg, #ffffff 0%, #f2f6fb 100%);
+  border: 1px solid rgba(12, 42, 70, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.14);
+  color: #0c2a46;
+  margin: 1.25rem auto 1.25rem;
+  max-width: 760px;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  text-align: center;
+}
+
+.contact-choice__eyebrow,
+.contact-quick__eyebrow {
+  color: #e94a1b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.contact-choice h2 {
+  color: #0c2a46;
+  font-size: clamp(1.55rem, 2.6vw, 2.45rem);
+  line-height: 1.14;
+  margin: 0 auto 0.65rem;
+  max-width: 760px;
+}
+
+.contact-choice p {
+  color: #526173;
+  line-height: 1.65;
+  margin: 0 auto;
+  max-width: 780px;
+}
+
+.contact-choice__actions {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.4rem;
+}
+
+.contact-choice__button {
+  background: #ffffff;
+  border: 2px solid rgba(12, 42, 70, 0.18);
+  border-radius: 8px;
+  color: #0c2a46;
+  cursor: pointer;
+  display: grid;
+  gap: 0.35rem;
+  min-height: 112px;
+  padding: 1rem;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.contact-choice__button span {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.contact-choice__button small {
+  color: #526173;
+  line-height: 1.45;
+}
+
+.contact-choice__button:hover,
+.contact-choice__button:focus,
+.contact-choice__button.is-active {
+  border-color: #e94a1b;
+  box-shadow: 0 14px 30px rgba(12, 42, 70, 0.12);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.contact-choice__button.is-active {
+  background: #0c2a46;
+  color: #ffffff;
+}
+
+.contact-choice__button.is-active small {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.contact-panel[hidden] {
+  display: none !important;
+}
+
+.contact-panel.is-active {
+  animation: contactPanelIn 180ms ease both;
+}
+
+@keyframes contactPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contact-quick {
+  display: flex;
+  margin: 1.25rem auto 1rem;
+  max-width: 980px;
+  padding: 0;
+  width: 100%;
+}
+
+.contact-quick__card {
+  align-items: stretch;
+  background: #f7fafc;
+  border: 1px solid rgba(12, 42, 70, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.14);
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  width: 100%;
+}
+
+.contact-quick__intro {
+  color: #0c2a46;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.contact-quick h2 {
+  color: #0c2a46;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.18;
+  margin: 0 0 0.65rem;
+}
+
+.contact-quick p {
+  color: #526173;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.contact-quick__form {
+  min-width: 0;
+}
+
+.contact-quick__grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contact-quick__field {
+  min-width: 0;
+}
+
+.contact-quick__field--message {
+  grid-column: 1 / -1;
+}
+
+.contact-quick__field label {
+  color: #0c2a46;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.contact-quick__field input,
+.contact-quick__field textarea {
+  background: #ffffff;
+  border: 1px solid #c9d6e3;
+  border-radius: 8px;
+  color: #0c2a46;
+  display: block;
+  font: inherit;
+  min-height: 46px;
+  padding: 0.72rem 0.85rem;
+  width: 100%;
+}
+
+.contact-quick__field textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.contact-quick__field input:focus,
+.contact-quick__field textarea:focus {
+  border-color: #e94a1b;
+  box-shadow: 0 0 0 0.18rem rgba(233, 74, 27, 0.16);
+  outline: none;
+}
+
+.contact-page-section .contact-quick__submit {
+  background: #e94a1b;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 800;
+  margin-top: 0.95rem;
+  min-height: 48px;
+  padding: 0.75rem 1.1rem;
+  width: 100%;
+}
+
+.contact-page-section .contact-quick__submit:hover {
+  background: #b93618;
+}
+
+.contact-wizard-intro {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(12, 42, 70, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.1);
+  color: #0c2a46;
+  margin: 1.25rem auto 1rem;
+  max-width: 760px;
+  padding: 1.15rem 1.25rem;
+  text-align: center;
+}
+
+.contact-wizard-intro h2 {
+  color: #0c2a46;
+  font-size: clamp(1.35rem, 2vw, 1.9rem);
+  line-height: 1.18;
+  margin: 0.15rem 0 0.45rem;
+}
+
+.contact-wizard-intro p {
+  margin: 0;
+}
+
 .carousel-item {
-  min-height: 80vh; /* nimmt fast die gesamte View-Höhe ein */
+  min-height: 60vh; /* nimmt fast die gesamte View-Höhe ein */
   display: flex;
   flex-direction: column;
   justify-content: center; /* vertikal zentriert */
@@ -18,9 +281,18 @@
 }
 
 /* ==== Buttons statt Radio-Dots ====================== */
-/* 1) Radio ausblenden, Label als Button stylen */
-.option-radio {
-  display: none; /* visuell verstecken – bleibt fokussierbar */
+.option-radio,
+.option-check {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 .option-label {
   display: block;
@@ -81,16 +353,12 @@
 }
 
 /* ==== Absenden-Button (Slide 9) ===================== */
-button[type="submit"] {
+#kontaktForm button[type="submit"] {
   background: #0e2b4c;
   border: none;
 }
-button[type="submit"]:hover {
+#kontaktForm button[type="submit"]:hover {
   background: #092039;
-}
-
-.option-check {
-  display: none;
 }
 
 .carousel-item:not(.active) {
@@ -104,5 +372,26 @@ button[type="submit"]:hover {
   .white-container {
     width: 60%;
     margin: 0 auto;
+  }
+
+  .contact-page-section .contact-quick {
+    min-height: calc(100vh - 6rem);
+    align-items: center;
+    justify-content: center;
+    margin: clamp(2rem, 6vh, 4rem) auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .contact-choice__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-quick__card {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-quick__grid {
+    grid-template-columns: 1fr;
   }
 }

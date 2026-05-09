@@ -1,6 +1,14 @@
 // public/js/main.js
 
-document.addEventListener('DOMContentLoaded', () => {
+function onPageLoaded(callback) {
+  if (document.readyState === 'complete') {
+    callback();
+  } else {
+    window.addEventListener('load', callback, { once: true });
+  }
+}
+
+onPageLoaded(() => {
   // 1) Elemente selektieren
   const els          = document.querySelectorAll('.animate-on-scroll');
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand
@@ -49,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+onPageLoaded(() => {
   // 1) Elemente selektieren
   const animateLeft          = document.querySelectorAll('.animate-on-scroll-left');
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand
@@ -98,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+onPageLoaded(() => {
   // 1) Elemente selektieren
   const animateRight          = document.querySelectorAll('.animate-on-scroll-right');
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand

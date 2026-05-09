@@ -172,6 +172,6 @@
   </form>
 </div>
 
-<script src="/js/admin_json_editor.js" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/admin_json_editor.js') : '/js/admin_json_editor.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/admin_footer') %>

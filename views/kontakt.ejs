@@ -2,6 +2,7 @@
 <%- include('partials/header') %>
 <% const isEn = lng === 'en'; %>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="<%= cssAsset('kontakt.css') %>">
 
 <style>
   .bi {
@@ -163,16 +164,92 @@
         </span>
       </div>
     <% } %>
-    <form id="kontaktForm" action="<%= contactAction || (isEn ? '/en/kontakt' : '/kontakt') %>" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
-      <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
-      <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
-        <input type="hidden" name="source" value="website-tester">
-        <input type="hidden" name="auditId" value="<%= testerPrefill.auditId || '' %>">
-        <input type="hidden" name="domain" value="<%= testerPrefill.domain || '' %>">
-        <input type="hidden" name="scoreBand" value="<%= testerPrefill.scoreBand || '' %>">
-        <input type="hidden" name="topIssues" value="<%= testerPrefill.topIssues || '' %>">
-      <% } %>
+    <section class="contact-choice" aria-labelledby="contact-choice-title">
+      <p class="contact-choice__eyebrow"><%= isEn ? 'Choose request type' : 'Anfrageart wählen' %></p>
+      <h2 id="contact-choice-title"><%= isEn ? 'How much detail do you want to send?' : 'Wie ausführlich möchtest du anfragen?' %></h2>
+      <p>
+        <%= isEn
+          ? 'Start with a short request if you only need a first assessment. Use the detailed request if you already want to define scope, pages, content and appointment preferences.'
+          : 'Starte mit der Schnellanfrage, wenn du erst eine grobe Einschätzung möchtest. Nutze die umfangreiche Anfrage, wenn du Umfang, Seiten, Inhalte und Terminwunsch direkt genauer festlegen willst.'
+        %>
+      </p>
+      <div class="contact-choice__actions" role="group" aria-label="<%= isEn ? 'Request type' : 'Anfrageart' %>">
+        <button class="contact-choice__button" type="button" data-contact-mode="quick" aria-controls="contact-quick-panel" aria-expanded="false">
+          <span><%= isEn ? 'Quick request' : 'Schnellanfrage' %></span>
+          <small><%= isEn ? '3 required fields, fastest first assessment' : '3 Pflichtfelder, schnellste Ersteinschätzung' %></small>
+        </button>
+        <button class="contact-choice__button" type="button" data-contact-mode="detailed" aria-controls="contact-detailed-panel" aria-expanded="false">
+          <span><%= isEn ? 'Detailed request' : 'Umfangreiche Anfrage' %></span>
+          <small><%= isEn ? 'Package, scope, content, files and appointment' : 'Paket, Umfang, Inhalte, Dateien und Termin' %></small>
+        </button>
+      </div>
+    </section>
+    <section class="contact-quick contact-panel" id="contact-quick-panel" aria-labelledby="contact-quick-title" hidden>
+      <div class="contact-quick__card">
+        <div class="contact-quick__intro">
+          <p class="contact-quick__eyebrow"><%= isEn ? 'Fast first request' : 'Schnelle Erstanfrage' %></p>
+          <h2 id="contact-quick-title"><%= isEn ? 'Free initial assessment' : 'Kostenlose Ersteinschätzung' %></h2>
+          <p>
+            <%= isEn
+              ? 'Send the essentials now. We will review your request and reply with a first assessment and sensible next steps.'
+              : 'Schick uns kurz die wichtigsten Eckdaten. Wir prüfen deine Anfrage und melden uns mit einer ersten Einschätzung und sinnvollen nächsten Schritten.'
+            %>
+          </p>
+        </div>
+        <form
+          class="contact-quick__form"
+          action="<%= isEn ? '/en/kontakt/kurzanfrage' : '/kontakt/kurzanfrage' %>"
+          method="POST"
+          data-recaptcha="v3"
+          data-recaptcha-action="contact_quick"
+        >
+          <input type="hidden" name="token">
+          <input type="hidden" name="source" value="contact-quick">
+          <input type="hidden" name="projectType" value="<%= isEn ? 'Contact quick request' : 'Kontakt-Kurzanfrage' %>">
+          <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
+          <div class="contact-quick__grid">
+            <div class="contact-quick__field">
+              <label for="contact-quick-name"><%= isEn ? 'Name *' : 'Name *' %></label>
+              <input id="contact-quick-name" name="name" type="text" autocomplete="name" placeholder="<%= isEn ? 'Your name' : 'Dein Name' %>" required>
+            </div>
+            <div class="contact-quick__field">
+              <label for="contact-quick-email"><%= isEn ? 'Email *' : 'E-Mail *' %></label>
+              <input id="contact-quick-email" name="email" type="email" autocomplete="email" placeholder="<%= isEn ? 'name@example.com' : 'name@beispiel.de' %>" required>
+            </div>
+            <div class="contact-quick__field">
+              <label for="contact-quick-phone"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
+              <input id="contact-quick-phone" name="phone" type="tel" autocomplete="tel" placeholder="+49 ...">
+            </div>
+            <div class="contact-quick__field contact-quick__field--message">
+              <label for="contact-quick-message"><%= isEn ? 'What should we assess? *' : 'Was sollen wir einschätzen? *' %></label>
+              <textarea id="contact-quick-message" name="message" rows="4" placeholder="<%= isEn ? 'Briefly describe your website, goal, deadline or current problem.' : 'Beschreibe kurz Website, Ziel, Timing oder aktuelles Problem.' %>" required></textarea>
+            </div>
+          </div>
+          <button type="submit" class="contact-quick__submit"><%= isEn ? 'Request assessment' : 'Ersteinschätzung anfragen' %></button>
+        </form>
+      </div>
+    </section>
+    <section class="contact-panel contact-detailed" id="contact-detailed-panel" aria-labelledby="contact-detailed-title" hidden>
+      <div class="contact-wizard-intro">
+        <p class="contact-quick__eyebrow"><%= isEn ? 'Detailed request' : 'Umfangreiche Anfrage' %></p>
+        <h2 id="contact-detailed-title"><%= isEn ? 'Plan your website project in detail' : 'Website-Projekt ausführlich planen' %></h2>
+        <p>
+          <%= isEn
+            ? 'Use the full project assistant if you want to define package, scope, content, appointment and additional notes right away.'
+            : 'Nutze den ausführlichen Projektassistenten, wenn du Paket, Umfang, Inhalte, Termin und Zusatzinfos direkt genauer festlegen möchtest.'
+          %>
+        </p>
+      </div>
+      <form id="kontaktForm" action="<%= contactAction || (isEn ? '/en/kontakt' : '/kontakt') %>" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
+        <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
+        <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
+          <input type="hidden" name="source" value="website-tester">
+          <input type="hidden" name="auditId" value="<%= testerPrefill.auditId || '' %>">
+          <input type="hidden" name="domain" value="<%= testerPrefill.domain || '' %>">
+          <input type="hidden" name="scoreBand" value="<%= testerPrefill.scoreBand || '' %>">
+          <input type="hidden" name="topIssues" value="<%= testerPrefill.topIssues || '' %>">
+        <% } %>
 
       <!-- Bootstrap Carousel für die Slides -->
       <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
@@ -389,7 +466,8 @@
           <!-- Wir verwenden eigene Navigation (Back/Next Buttons in den Slides), daher keine standard Carousel-Control-Buttons -->
         </div>
       </div>
-    </form>
+      </form>
+    </section>
 
     <!-- Erfolgsmeldung anzeigen, falls per Query-Param 'erfolg=1' übergeben -->
     <% if (typeof query !=='undefined' && query.erfolg=='1' ) { %>
@@ -425,4 +503,46 @@
   };
 </script>
 
-<script src="/js/kontakt.js?v=<%= encodeURIComponent(assetVersion || '1') %>" defer></script> <!-- Kontakt-spezifisches JS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const buttons = Array.from(document.querySelectorAll('[data-contact-mode]'));
+    const panels = {
+      quick: document.getElementById('contact-quick-panel'),
+      detailed: document.getElementById('contact-detailed-panel')
+    };
+
+    function showPanel(mode, shouldScroll) {
+      Object.entries(panels).forEach(([key, panel]) => {
+        if (!panel) return;
+        const isActive = key === mode;
+        panel.hidden = !isActive;
+        panel.classList.toggle('is-active', isActive);
+      });
+
+      buttons.forEach((button) => {
+        const isActive = button.dataset.contactMode === mode;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+      });
+
+      if (shouldScroll && panels[mode]) {
+        const shouldCenterQuick = mode === 'quick' && window.matchMedia('(min-width: 768px)').matches;
+        panels[mode].scrollIntoView({ behavior: 'smooth', block: shouldCenterQuick ? 'center' : 'start' });
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.contactMode;
+        if (!panels[mode]) return;
+        history.replaceState(null, '', mode === 'quick' ? '#schnellanfrage' : '#umfangreiche-anfrage');
+        showPanel(mode, true);
+      });
+    });
+
+    if (window.location.hash === '#schnellanfrage') showPanel('quick', false);
+    if (window.location.hash === '#umfangreiche-anfrage') showPanel('detailed', false);
+  });
+</script>
+
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/kontakt.js') : '/js/kontakt.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script> <!-- Kontakt-spezifisches JS -->

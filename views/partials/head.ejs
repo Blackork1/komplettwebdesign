@@ -19,7 +19,13 @@
     ? ogImage.trim()
     : `${siteBase}/images/heroBg.webp`;
   const assetV = encodeURIComponent(assetVersion || '1');
-  const versionSuffix = `?v=${assetV}`;
+  const versionedAsset = (typeof asset === 'function')
+    ? asset
+    : (file) => {
+        const normalized = String(file || '').replace(/^\/+/, '');
+        return `/${normalized}?v=${assetV}`;
+      };
+  const shouldLoadInteractionPolish = typeof disableInteractionPolish === 'undefined' || !disableInteractionPolish;
   %>
   <meta charset="UTF-8" />
   <title><%= pageTitle %></title>
@@ -72,29 +78,43 @@
   <% } %>
 
   <!-- Fonts / CSS (wie bei dir) -->
+  <% if (shouldLoadInteractionPolish) { %>
+  <script>
+    document.documentElement.classList.add('kwd-interaction-polish');
+  </script>
+  <% } %>
+
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-  <link rel="preload" href="/assets/css/fa-solid-900.woff2<%= versionSuffix %>" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="<%= versionedAsset('assets/css/fa-solid-900.woff2') %>" as="font" type="font/woff2" crossorigin />
 
-  <link rel="preload" href="/assets/css/fontawesome.min.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/assets/css/fontawesome.min.css<%= versionSuffix %>" />
+    <link rel="stylesheet" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" />
   </noscript>
 
-  <link rel="preload" href="/assets/css/solid.min.css<%= versionSuffix %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="<%= versionedAsset('assets/css/solid.min.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="/assets/css/solid.min.css<%= versionSuffix %>" />
+    <link rel="stylesheet" href="<%= versionedAsset('assets/css/solid.min.css') %>" />
   </noscript>
 
-  <link rel="preload" href="/fonts/inter-v19-latin-600.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/poppins-v23-latin-700.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/poppins-v23-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="<%= versionedAsset('fonts/inter-v19-latin-600.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="<%= versionedAsset('fonts/inter-v19-latin-regular.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="<%= versionedAsset('fonts/poppins-v23-latin-700.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="<%= versionedAsset('fonts/poppins-v23-latin-regular.woff2') %>" as="font" type="font/woff2" crossorigin />
 
-  <link rel="preload" href="/css/bootstrap.min.css" as="style" />
-  <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <link rel="preload" href="<%= versionedAsset('css/bootstrap.min.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= versionedAsset('css/bootstrap.min.css') %>" />
 
   <link rel="preload" href="<%= cssAsset('css/main.css') %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset('css/main.css') %>" />
+
+  <link rel="preload" href="<%= cssAsset('unified-hero.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset('unified-hero.css') %>" />
+
+  <% if (shouldLoadInteractionPolish) { %>
+  <link rel="preload" href="<%= cssAsset('interaction-polish.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset('interaction-polish.css') %>" />
+  <% } %>
 
   <link rel="preload" href="<%= cssAsset('extra.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
@@ -137,8 +157,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/images/icon180.png" />
   <link rel="manifest" href="/site.webmanifest" />
 
-  <% if (locals.seoExtra) { %>
-  <%- typeof seoExtra === 'string' ? seoExtra : '' %>
+  <% if (seoExtraText) { %>
+  <%- seoExtraText %>
   <% } %>
 
   <% if (typeof structuredDataRaw === 'string' && structuredDataRaw.trim()) { %>

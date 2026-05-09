@@ -360,4 +360,4 @@ slides.forEach((s,i)=>{ const eager = i===2; %>
 
 
 
-<script src="/js/carousel.js" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/carousel.js') : '/js/carousel.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>

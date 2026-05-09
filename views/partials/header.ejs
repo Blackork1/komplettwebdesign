@@ -59,6 +59,7 @@
             <a href="<%= homeHref %>">Home</a>
             <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
             <a href="<%= isEn ? '/en/pakete' : '/pakete' %>"><%= isEn ? 'Pricing' : 'Preise' %></a>
+            <a href="/referenzen"><%= isEn ? 'References' : 'Referenzen' %></a>
             <nav class="main-nav">
               <ul>
                 <li class="dropdown">
@@ -69,6 +70,12 @@
                     </button>
                   </div>
                   <ul class="dropdown-menu">
+                    <li><a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="main-color">Berlin</a></li>
+                    <% if (!isEn) { %>
+                    <li><a href="/website-erstellen-lassen-berlin" class="main-color">Website erstellen</a></li>
+                    <li><a href="/ablauf" class="main-color">Ablauf</a></li>
+                    <li><a href="/website-relaunch-berlin" class="main-color">Relaunch</a></li>
+                    <% } %>
                     <li><a href="<%= isEn ? '/en/webdesign-berlin/kreuzberg' : '/webdesign-berlin/kreuzberg' %>" class="main-color">Kreuzberg</a></li>
                     <li><a href="<%= isEn ? '/en/webdesign-berlin/friedrichshain' : '/webdesign-berlin/friedrichshain' %>" class="main-color">Friedrichshain</a></li>
                     <li><a href="<%= isEn ? '/en/webdesign-berlin/charlottenburg' : '/webdesign-berlin/charlottenburg' %>" class="main-color">Charlottenburg</a></li>

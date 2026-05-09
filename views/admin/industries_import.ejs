@@ -53,6 +53,6 @@
   </div>
 </div>
 
-<script src="/js/admin_import.js" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/admin_import.js') : '/js/admin_import.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/admin_footer') %>

@@ -1,0 +1,144 @@
+:root {
+  --kwd-motion-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --kwd-motion-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --kwd-motion-ink: #0b2a46;
+  --kwd-motion-accent: #e94a1b;
+  --kwd-motion-accent-dark: #b93618;
+  --kwd-motion-glow: rgba(233, 74, 27, 0.2);
+  --kwd-motion-shadow: 0 18px 38px rgba(11, 42, 70, 0.14);
+}
+
+.kwd-scroll-reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0) scale(0.985);
+  filter: blur(7px);
+  transition:
+    opacity 620ms var(--kwd-motion-ease),
+    transform 620ms var(--kwd-motion-ease),
+    filter 620ms var(--kwd-motion-ease);
+  transition-delay: var(--kwd-reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.kwd-scroll-reveal--preparing {
+  transition: none !important;
+}
+
+.kwd-scroll-reveal--from-left {
+  transform: translate3d(-28px, 18px, 0) scale(0.985);
+}
+
+.kwd-scroll-reveal--from-right {
+  transform: translate3d(28px, 18px, 0) scale(0.985);
+}
+
+.kwd-scroll-reveal--media {
+  transform: translate3d(0, 20px, 0) scale(0.965);
+}
+
+.kwd-scroll-reveal--visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+}
+
+@media (max-width: 700px) {
+  .kwd-scroll-reveal--from-left,
+  .kwd-scroll-reveal--from-right {
+    transform: translate3d(0, 24px, 0) scale(0.985);
+  }
+}
+
+:where(a[href], button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], [tabindex]:not([tabindex="-1"]), .btn) {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 220ms var(--kwd-motion-ease),
+    transform 180ms var(--kwd-motion-ease),
+    filter 180ms ease,
+    opacity 180ms ease,
+    text-decoration-color 180ms ease;
+}
+
+:where(a[href], button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], [tabindex]:not([tabindex="-1"]), .btn):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--kwd-motion-accent) 52%, transparent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--kwd-motion-accent) 12%, transparent);
+}
+
+:where(a[href]:not(:has(img)):not(.btn):not([class*="button" i]):not([class*="card" i]):not([class*="media" i])) {
+  text-decoration-color: color-mix(in srgb, currentColor 32%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(a[href]:not(:has(img)):not(.btn):not([class*="button" i]):not([class*="card" i]):not([class*="media" i])):hover {
+    color: var(--kwd-motion-accent-dark);
+    background-size: 100% 1px;
+    text-decoration-color: transparent;
+  }
+
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i], .kwd-slot-card, .option-label, .reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wd-case, .wt-tool-card, .wt-panel):not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translate3d(0, -3px, 0);
+    box-shadow: var(--kwd-motion-shadow);
+    filter: saturate(1.05);
+  }
+
+  :where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card):hover :is(img, svg) {
+    transform: scale(1.025);
+    filter: saturate(1.08) contrast(1.02);
+  }
+
+  :where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card):hover :is(h2, h3, strong, span) {
+    color: color-mix(in srgb, var(--kwd-motion-accent) 78%, var(--kwd-motion-ink));
+  }
+
+  :where(.reference-card a, .seo-landing__link-card, .rg-guide-card a, .post-card-link, .featured-post-card a, .featured-post-card-mobile a, .wd-package-card a, .wt-tool-card a):hover {
+    text-decoration: none;
+  }
+}
+
+:where(button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: translate3d(0, 0, 0) scale(0.975);
+  box-shadow: 0 8px 20px rgba(11, 42, 70, 0.12);
+}
+
+:where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card, .wt-panel) {
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms var(--kwd-motion-ease),
+    transform 220ms var(--kwd-motion-ease),
+    filter 180ms ease,
+    background-color 180ms ease;
+}
+
+:where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card) :is(img, svg) {
+  transition:
+    transform 360ms var(--kwd-motion-ease),
+    filter 260ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kwd-scroll-reveal,
+  .kwd-scroll-reveal--preparing,
+  .kwd-scroll-reveal--from-left,
+  .kwd-scroll-reveal--from-right,
+  .kwd-scroll-reveal--media,
+  .kwd-scroll-reveal--visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  :where(a[href], button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], [tabindex]:not([tabindex="-1"]), .btn),
+  :where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card, .wt-panel) {
+    transition: none;
+  }
+}

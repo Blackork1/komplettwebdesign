@@ -1,0 +1,396 @@
+.seo-landing {
+  --seo-landing-ink: #0b2a46;
+  --seo-landing-muted: #526173;
+  --seo-landing-line: #d9e3ee;
+  --seo-landing-soft: #f4f7fb;
+  --seo-landing-accent: #e94a1b;
+  --seo-landing-accent-dark: #b93618;
+  --seo-landing-warm: #ff6538;
+  background: #f4f7fb;
+  color: var(--seo-landing-ink);
+  overflow: hidden;
+}
+
+.seo-landing * {
+  box-sizing: border-box;
+}
+
+.seo-landing :is(
+  .seo-landing__container,
+  .seo-landing__hero-grid,
+  .seo-landing__hero-copy,
+  .seo-landing__hero-panel,
+  .seo-landing__section,
+  .seo-landing__section-copy,
+  .seo-landing__check-list,
+  .seo-landing__section-head,
+  .seo-landing__link-card,
+  .seo-landing__faq details,
+  .seo-landing__cta,
+  .seo-landing__actions
+) {
+  min-width: 0;
+}
+
+.seo-landing :is(
+  .seo-landing__hero-grid,
+  .seo-landing__hero-copy,
+  .seo-landing__hero-panel,
+  .seo-landing__section,
+  .seo-landing__section-copy,
+  .seo-landing__check-list,
+  .seo-landing__section-head,
+  .seo-landing__link-card,
+  .seo-landing__faq details,
+  .seo-landing__cta,
+  .seo-landing__actions
+) {
+  max-width: 100%;
+}
+
+/* SEO landing text overflow safety */
+.seo-landing :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, button) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.seo-landing__container {
+  width: min(1120px, calc(100% - 32px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.seo-landing__hero {
+  position: relative;
+  padding: clamp(30px, 5vw, 60px) 0 clamp(72px, 10vw, 132px);
+  background:
+    linear-gradient(135deg, rgba(11, 42, 70, 0.1), rgba(233, 74, 27, 0.16)),
+    #f4f7fb;
+  border-bottom: 1px solid var(--seo-landing-line);
+}
+
+.seo-landing__hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+}
+
+.seo-landing__hero-copy {
+  max-width: 760px;
+}
+
+.seo-landing__eyebrow {
+  margin: 0 0 12px;
+  color: var(--seo-landing-accent-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.seo-landing h1,
+.seo-landing h2,
+.seo-landing h3,
+.seo-landing p {
+  overflow-wrap: anywhere;
+}
+
+.seo-landing h1 {
+  margin: 0;
+  max-width: 760px;
+  color: var(--seo-landing-ink);
+  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.seo-landing h2 {
+  margin: 0;
+  color: var(--seo-landing-ink);
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.seo-landing__lead {
+  margin: 22px 0 0;
+  max-width: 720px;
+  color: var(--seo-landing-muted);
+  font-size: clamp(1.05rem, 2vw, 1.22rem);
+  line-height: 1.75;
+}
+
+.seo-landing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.seo-landing__button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.seo-landing__button--primary {
+  border: 1px solid var(--seo-landing-accent);
+  background: var(--seo-landing-accent);
+  color: #ffffff;
+}
+
+.seo-landing__button--primary:hover,
+.seo-landing__button--primary:focus {
+  border-color: var(--seo-landing-accent-dark);
+  background: var(--seo-landing-accent-dark);
+  color: #ffffff;
+}
+
+.seo-landing__button--secondary {
+  border: 1px solid var(--seo-landing-line);
+  background: #ffffff;
+  color: var(--seo-landing-ink);
+}
+
+.seo-landing__button--secondary:hover,
+.seo-landing__button--secondary:focus {
+  border-color: var(--seo-landing-accent);
+  color: var(--seo-landing-accent-dark);
+}
+
+.seo-landing__hero-panel {
+  border: 1px solid rgba(11, 42, 70, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 24px 60px rgba(23, 32, 51, 0.12);
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.seo-landing__panel-label {
+  margin: 0 0 14px;
+  color: var(--seo-landing-accent-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.seo-landing__hero-panel ul,
+.seo-landing__check-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seo-landing__hero-panel li,
+.seo-landing__check-list li {
+  position: relative;
+  padding-left: 26px;
+  color: var(--seo-landing-ink);
+  line-height: 1.55;
+}
+
+.seo-landing__hero-panel li::before,
+.seo-landing__check-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--seo-landing-warm);
+  box-shadow: 0 0 0 4px rgba(233, 74, 27, 0.16);
+}
+
+.seo-landing__section-list {
+  display: grid;
+  gap: 22px;
+  padding: clamp(48px, 8vw, 88px) 0;
+}
+
+.seo-landing__section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(260px, 0.68fr);
+  gap: clamp(24px, 5vw, 56px);
+  align-items: start;
+  border-bottom: 1px solid var(--seo-landing-line);
+  padding: 0 0 clamp(28px, 5vw, 48px);
+}
+
+.seo-landing__section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.seo-landing__section-copy p:not(.seo-landing__eyebrow) {
+  margin: 18px 0 0;
+  color: var(--seo-landing-muted);
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.seo-landing__check-list {
+  border-left: 3px solid var(--seo-landing-accent);
+  background: var(--seo-landing-soft);
+  padding: 20px;
+}
+
+.seo-landing__links,
+.seo-landing__faq,
+.seo-landing__cta {
+  padding: clamp(44px, 7vw, 76px) 0;
+}
+
+.seo-landing__links {
+  border-top: 1px solid var(--seo-landing-line);
+}
+
+.seo-landing__section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.seo-landing__link-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.seo-landing__link-card {
+  display: grid;
+  gap: 10px;
+  min-height: 148px;
+  align-content: start;
+  border: 1px solid var(--seo-landing-line);
+  border-radius: 8px;
+  padding: 18px;
+  color: var(--seo-landing-ink);
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.seo-landing__link-card:hover,
+.seo-landing__link-card:focus {
+  border-color: var(--seo-landing-accent);
+  transform: translateY(-2px);
+}
+
+.seo-landing__link-card span {
+  font-weight: 800;
+}
+
+.seo-landing__link-card small {
+  color: var(--seo-landing-muted);
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.seo-landing__faq {
+  background: var(--seo-landing-soft);
+  width: min(1120px, calc(100% - 32px));
+  max-width: 1120px;
+  padding-inline: 0;
+}
+
+.seo-landing__faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.seo-landing__faq details {
+  border: 1px solid var(--seo-landing-line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px 20px;
+}
+
+.seo-landing__faq summary {
+  cursor: pointer;
+  color: var(--seo-landing-ink);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.seo-landing__faq details p {
+  margin: 12px 0 0;
+  color: var(--seo-landing-muted);
+  line-height: 1.7;
+}
+
+.seo-landing__cta {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: center;
+}
+
+.seo-landing__cta p:not(.seo-landing__eyebrow) {
+  margin: 14px 0 0;
+  max-width: 640px;
+  color: var(--seo-landing-muted);
+  line-height: 1.7;
+}
+
+.seo-landing__cta .seo-landing__actions {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .seo-landing__hero-grid,
+  .seo-landing__section {
+    grid-template-columns: 1fr;
+  }
+
+  .seo-landing__link-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .seo-landing__section-head,
+  .seo-landing__cta {
+    display: grid;
+    align-items: start;
+  }
+
+  .seo-landing__cta .seo-landing__actions {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .seo-landing__container {
+    width: min(100% - 24px, 1120px);
+  }
+
+  .seo-landing__hero {
+    padding: clamp(28px, 6vw, 46px) 0 clamp(56px, 10vw, 82px);
+  }
+
+  .seo-landing__actions,
+  .seo-landing__button {
+    width: 100%;
+  }
+
+  .seo-landing__link-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .seo-landing__link-card {
+    min-height: 0;
+  }
+}
