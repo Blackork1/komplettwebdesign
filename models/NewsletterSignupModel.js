@@ -51,6 +51,25 @@ class NewsletterSignupModel {
     );
     return rows[0] ?? null;
   }
+
+  static async deleteCreatedWithinDays(days = 3) {
+    const normalizedDays = Number.parseInt(days, 10);
+    const safeDays = Number.isFinite(normalizedDays) && normalizedDays > 0
+      ? normalizedDays
+      : 3;
+
+    const { rowCount, rows } = await pool.query(
+      `DELETE FROM newsletter_signups
+       WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+       RETURNING id, email, created_at;`,
+      [safeDays]
+    );
+
+    return {
+      deletedCount: rowCount,
+      deletedRows: rows
+    };
+  }
 }
 
 export default NewsletterSignupModel;

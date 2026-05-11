@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 // ---------- Anmeldung ---------------------------------------------------
 export async function signup(req, res) {
-  const email = (req.body.email ?? '').trim();
+  const email = (req.newsletterSignup?.email ?? req.body.email ?? '').trim().toLowerCase();
   console.log('Newsletter-Anmeldung:', email);
   if (!email) return res.status(400).send('E-Mail fehlt');
 

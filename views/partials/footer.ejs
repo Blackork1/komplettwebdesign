@@ -71,7 +71,14 @@
           <!-- Newsletter-Sektion -->
           <div class="newsletter">
             <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
-            <form action="/newsletter/signup" method="POST" class="newsletter-form">
+            <form action="/newsletter/signup" method="POST" class="newsletter-form" data-recaptcha="v3" data-recaptcha-action="newsletter_signup">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <input type="hidden" name="token">
+              <input type="hidden" name="newsletter_started_at" value="<%= Date.now() %>">
+              <div class="newsletter-form__trap" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">
+                <label for="footerNewsletterCompanyWebsite">Website</label>
+                <input type="text" name="company_website" id="footerNewsletterCompanyWebsite" tabindex="-1" autocomplete="off">
+              </div>
               <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="<%= isEn ? 'Your email' : 'Deine E-Mail' %>" required />
               <button type="submit" aria-label="Subscribe">
                 <!-- Pfeil-Icon -->

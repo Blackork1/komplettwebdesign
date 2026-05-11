@@ -1,7 +1,14 @@
 <!-- views/partials/newsletter_form.ejs -->
 
 
-<form action="/newsletter/signup" method="POST" class="newsletter-form">
+<form action="/newsletter/signup" method="POST" class="newsletter-form" data-recaptcha="v3" data-recaptcha-action="newsletter_signup">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <input type="hidden" name="token">
+  <input type="hidden" name="newsletter_started_at" value="<%= Date.now() %>">
+  <div class="newsletter-form__trap" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">
+    <label for="newsletterCompanyWebsite">Website</label>
+    <input type="text" name="company_website" id="newsletterCompanyWebsite" tabindex="-1" autocomplete="off">
+  </div>
   <div class="mb-3">
     <label for="newsletterEmail" class="form-label">E-Mail-Adresse</label>
     <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="Deine E-Mail" required>
