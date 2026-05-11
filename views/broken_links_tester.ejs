@@ -276,10 +276,15 @@
   </style>
 
   <script>
+    window.KWD_TESTER_SPAM = {
+      siteKey: "<%= process.env.RECAPTCHA_SITEKEY || '' %>"
+    };
     window.BROKEN_LINK_TESTER_CONFIG = {
       locale: "<%= isEn ? 'en' : 'de' %>",
       endpoint: "/api/broken-link-audit",
       leadEndpoint: "/api/broken-link-audit/lead",
+      recaptchaAction: "broken_link_audit_scan",
+      leadRecaptchaAction: "broken_link_audit_lead",
       i18n: {
         scanFor: "<%= isEn ? 'Scan for' : 'Scan für' %>",
         modeLabel: "<%= isEn ? 'Mode' : 'Modus' %>",
@@ -318,6 +323,7 @@
     };
   </script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-spam-protection.js') : '/js/tester-spam-protection.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/broken-links-tester.js') : '/js/broken-links-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

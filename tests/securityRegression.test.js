@@ -96,6 +96,44 @@ test('safe HTTP helper rejects loopback and private network targets', async () =
   await assert.rejects(() => assertPublicHttpUrl('http://169.254.169.254/'), /private|unsafe|link/i);
 });
 
+test('safe HTTP helper returns pinned lookup addresses in Node all-mode requests', async () => {
+  const dns = (await import('node:dns/promises')).default;
+  const axios = (await import('axios')).default;
+  const { safeAxiosRequest } = await import('../util/safeHttpClient.js');
+  const originalLookup = dns.lookup;
+  const originalRequest = axios.request;
+
+  dns.lookup = async () => [{ address: '93.184.216.34', family: 4 }];
+
+  try {
+    let allModeAddresses = null;
+    axios.request = async (config) => {
+      const lookup = config.httpsAgent?.options?.lookup;
+      assert.equal(typeof lookup, 'function');
+
+      await new Promise((resolve, reject) => {
+        lookup('example.com', { all: true }, (error, addresses) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          allModeAddresses = addresses;
+          resolve();
+        });
+      });
+
+      return { status: 200, headers: {}, data: 'ok', config };
+    };
+
+    const response = await safeAxiosRequest('https://example.com/');
+    assert.equal(response.status, 200);
+    assert.deepEqual(allModeAddresses, [{ address: '93.184.216.34', family: 4 }]);
+  } finally {
+    dns.lookup = originalLookup;
+    axios.request = originalRequest;
+  }
+});
+
 test('production checkout base URL must come from BASE_URL', async () => {
   const { resolveBaseUrl } = await import('../util/resolveBaseUrl.js');
   const oldNodeEnv = process.env.NODE_ENV;

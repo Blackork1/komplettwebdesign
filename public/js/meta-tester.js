@@ -3,6 +3,8 @@
   const locale = config.locale === 'en' ? 'en' : 'de';
   const endpoint = config.endpoint || '/api/meta-audit';
   const leadEndpoint = config.leadEndpoint || '/api/meta-audit/lead';
+  const recaptchaAction = config.recaptchaAction || 'meta_audit_scan';
+  const leadRecaptchaAction = config.leadRecaptchaAction || 'meta_audit_lead';
   const i18n = config.i18n || {};
 
   const form = document.querySelector('[data-meta-tester-form]');
@@ -28,6 +30,12 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  async function collectSpamFields(targetForm, action) {
+    const spamProtection = window.KWDTesterSpamProtection;
+    if (!spamProtection || typeof spamProtection.collect !== 'function') return {};
+    return spamProtection.collect(targetForm, action);
   }
 
   function toneToCssTone(tone) {
@@ -199,6 +207,7 @@
       }
 
       try {
+        const spamFields = await collectSpamFields(leadForm, leadRecaptchaAction);
         const response = await fetch(leadEndpoint, {
           method: 'POST',
           headers: {
@@ -210,7 +219,8 @@
             email: String(leadForm.email?.value || '').trim(),
             name: String(leadForm.name?.value || '').trim(),
             consent: !!leadForm.consent?.checked,
-            locale
+            locale,
+            ...spamFields
           })
         });
 
@@ -337,6 +347,7 @@
         throw new Error(i18n.contextRequired || 'Bitte ergänze Branche, Hauptleistung und Zielregion.');
       }
 
+      const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -346,7 +357,8 @@
         body: JSON.stringify({
           url: String(urlInput?.value || '').trim(),
           locale,
-          context
+          context,
+          ...spamFields
         })
       });
 

@@ -283,10 +283,15 @@
   </style>
 
   <script>
+    window.KWD_TESTER_SPAM = {
+      siteKey: "<%= process.env.RECAPTCHA_SITEKEY || '' %>"
+    };
     window.GEO_TESTER_CONFIG = {
       locale: "<%= isEn ? 'en' : 'de' %>",
       endpoint: "/api/geo-audit",
       leadEndpoint: "/api/geo-audit/lead",
+      recaptchaAction: "geo_audit_scan",
+      leadRecaptchaAction: "geo_audit_lead",
       i18n: {
         scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
         geoAuditFor: "<%= isEn ? 'GEO audit for' : 'GEO-Analyse für' %>",
@@ -321,6 +326,7 @@
     };
   </script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-spam-protection.js') : '/js/tester-spam-protection.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/geo-tester.js') : '/js/geo-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

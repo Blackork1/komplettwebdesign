@@ -4,6 +4,8 @@
   const endpoint = config.endpoint || '/api/website-audit';
   const leadEndpoint = config.leadEndpoint || '/api/website-audit/lead';
   const mode = config.mode || 'deep';
+  const recaptchaAction = config.recaptchaAction || 'website_audit_scan';
+  const leadRecaptchaAction = config.leadRecaptchaAction || 'website_audit_lead';
   const i18n = config.i18n || {};
 
   const form = document.querySelector('[data-website-tester-form]');
@@ -37,6 +39,12 @@
     } catch (_err) {
       // ignore tracking errors
     }
+  }
+
+  async function collectSpamFields(targetForm, action) {
+    const spamProtection = window.KWDTesterSpamProtection;
+    if (!spamProtection || typeof spamProtection.collect !== 'function') return {};
+    return spamProtection.collect(targetForm, action);
   }
 
   function buildCtxUrl(href, result) {
@@ -309,6 +317,7 @@
       }
 
       try {
+        const spamFields = await collectSpamFields(leadForm, leadRecaptchaAction);
         const response = await fetch(leadEndpoint, {
           method: 'POST',
           headers: {
@@ -320,7 +329,8 @@
             email,
             name,
             locale,
-            consent
+            consent,
+            ...spamFields
           })
         });
 
@@ -492,6 +502,7 @@
         throw new Error(i18n.contextRequired || 'Bitte ergänze Branche, Hauptleistung und Zielregion.');
       }
 
+      const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -502,7 +513,8 @@
           url: input.value,
           locale,
           mode,
-          context
+          context,
+          ...spamFields
         })
       });
 

@@ -3,6 +3,8 @@
   const locale = config.locale === 'en' ? 'en' : 'de';
   const endpoint = config.endpoint || '/api/seo-audit';
   const leadEndpoint = config.leadEndpoint || '/api/seo-audit/lead';
+  const recaptchaAction = config.recaptchaAction || 'seo_audit_scan';
+  const leadRecaptchaAction = config.leadRecaptchaAction || 'seo_audit_lead';
   const i18n = config.i18n || {};
 
   const form = document.querySelector('[data-seo-tester-form]');
@@ -27,6 +29,12 @@
     } catch (_error) {
       // ignore
     }
+  }
+
+  async function collectSpamFields(targetForm, action) {
+    const spamProtection = window.KWDTesterSpamProtection;
+    if (!spamProtection || typeof spamProtection.collect !== 'function') return {};
+    return spamProtection.collect(targetForm, action);
   }
 
   function escapeHtml(value) {
@@ -188,13 +196,14 @@
       }
 
       try {
+        const spamFields = await collectSpamFields(leadForm, leadRecaptchaAction);
         const response = await fetch(leadEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ ...payload, ...spamFields })
         });
 
         const data = await response.json();
@@ -348,6 +357,7 @@
         throw new Error(i18n.contextRequired || 'Bitte ergänze Branche, Hauptleistung und Zielregion.');
       }
 
+      const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -357,7 +367,8 @@
         body: JSON.stringify({
           url: String(urlInput?.value || '').trim(),
           locale,
-          context
+          context,
+          ...spamFields
         })
       });
 

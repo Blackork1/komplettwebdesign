@@ -22,6 +22,10 @@ import {
   runWebsiteAuditLead,
   testPage
 } from '../controllers/testController.js';
+import {
+  TESTER_RECAPTCHA_ACTIONS,
+  createTesterSpamGuard
+} from '../helpers/testerSpamProtection.js';
 
 const router = express.Router();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -134,6 +138,17 @@ const metaAuditLeadRateLimit = createTesterRateLimiter({
   label: 'meta-audit-lead'
 });
 
+const websiteAuditSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.websiteAudit });
+const websiteAuditLeadSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.websiteAuditLead });
+const brokenLinkAuditSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.brokenLinkAudit });
+const brokenLinkAuditLeadSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.brokenLinkAuditLead });
+const geoAuditSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.geoAudit });
+const geoAuditLeadSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.geoAuditLead });
+const seoAuditSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.seoAudit });
+const seoAuditLeadSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.seoAuditLead });
+const metaAuditSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.metaAudit });
+const metaAuditLeadSpamGuard = createTesterSpamGuard({ expectedAction: TESTER_RECAPTCHA_ACTIONS.metaAuditLead });
+
 router.get('/test', (_req, res) => res.redirect(302, '/website-tester'));
 router.get('/en/test', (_req, res) => res.redirect(302, '/en/website-tester'));
 router.get('/website-tester', (req, res) => {
@@ -176,16 +191,16 @@ router.get('/en/website-tester/seo', (req, res) => {
   req.params.lng = 'en';
   return seoTestPage(req, res);
 });
-router.post('/api/website-audit', websiteAuditRateLimit, runWebsiteAudit);
-router.post('/api/website-audit/lead', websiteAuditLeadRateLimit, runWebsiteAuditLead);
-router.post('/api/broken-link-audit', brokenLinkAuditRateLimit, runBrokenLinkAudit);
-router.post('/api/broken-link-audit/lead', brokenLinkAuditLeadRateLimit, runBrokenLinkAuditLead);
-router.post('/api/geo-audit', geoAuditRateLimit, runGeoAudit);
-router.post('/api/geo-audit/lead', geoAuditLeadRateLimit, runGeoAuditLead);
-router.post('/api/seo-audit', seoAuditRateLimit, runSeoAudit);
-router.post('/api/seo-audit/lead', seoAuditLeadRateLimit, runSeoAuditLead);
-router.post('/api/meta-audit', metaAuditRateLimit, runMetaAudit);
-router.post('/api/meta-audit/lead', metaAuditLeadRateLimit, runMetaAuditLead);
+router.post('/api/website-audit', websiteAuditRateLimit, websiteAuditSpamGuard, runWebsiteAudit);
+router.post('/api/website-audit/lead', websiteAuditLeadRateLimit, websiteAuditLeadSpamGuard, runWebsiteAuditLead);
+router.post('/api/broken-link-audit', brokenLinkAuditRateLimit, brokenLinkAuditSpamGuard, runBrokenLinkAudit);
+router.post('/api/broken-link-audit/lead', brokenLinkAuditLeadRateLimit, brokenLinkAuditLeadSpamGuard, runBrokenLinkAuditLead);
+router.post('/api/geo-audit', geoAuditRateLimit, geoAuditSpamGuard, runGeoAudit);
+router.post('/api/geo-audit/lead', geoAuditLeadRateLimit, geoAuditLeadSpamGuard, runGeoAuditLead);
+router.post('/api/seo-audit', seoAuditRateLimit, seoAuditSpamGuard, runSeoAudit);
+router.post('/api/seo-audit/lead', seoAuditLeadRateLimit, seoAuditLeadSpamGuard, runSeoAuditLead);
+router.post('/api/meta-audit', metaAuditRateLimit, metaAuditSpamGuard, runMetaAudit);
+router.post('/api/meta-audit/lead', metaAuditLeadRateLimit, metaAuditLeadSpamGuard, runMetaAuditLead);
 router.get('/api/website-audit/:auditId', getCachedWebsiteAudit);
 router.get('/website-tester/report-confirm', (req, res) => {
   req.params.lng = 'de';

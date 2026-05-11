@@ -77,15 +77,31 @@ export async function assertPublicHttpUrl(rawUrl) {
   };
 }
 
-function agentFor(protocol, hostname, address, family) {
-  const lookup = (requestedHostname, _opts, callback) => {
+function createPinnedLookup(hostname, address, family) {
+  return (requestedHostname, opts, callback) => {
+    let options = opts;
+    let done = callback;
+    if (typeof opts === 'function') {
+      done = opts;
+      options = {};
+    }
+
     if (requestedHostname !== hostname) {
-      callback(new Error('unsafe-hostname-change'));
+      done(new Error('unsafe-hostname-change'));
       return;
     }
-    callback(null, address, family);
-  };
 
+    if (options?.all) {
+      done(null, [{ address, family }]);
+      return;
+    }
+
+    done(null, address, family);
+  };
+}
+
+function agentFor(protocol, hostname, address, family) {
+  const lookup = createPinnedLookup(hostname, address, family);
   return protocol === 'https:'
     ? new https.Agent({ lookup })
     : new http.Agent({ lookup });
@@ -118,3 +134,7 @@ export async function safeAxiosRequest(rawUrl, axiosOptions = {}, { maxRedirects
   error.status = 508;
   throw error;
 }
+
+export const __testables = {
+  createPinnedLookup
+};

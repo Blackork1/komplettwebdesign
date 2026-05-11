@@ -283,10 +283,15 @@
   </style>
 
   <script>
+    window.KWD_TESTER_SPAM = {
+      siteKey: "<%= process.env.RECAPTCHA_SITEKEY || '' %>"
+    };
     window.SEO_TESTER_CONFIG = {
       locale: "<%= isEn ? 'en' : 'de' %>",
       endpoint: "/api/seo-audit",
       leadEndpoint: "/api/seo-audit/lead",
+      recaptchaAction: "seo_audit_scan",
+      leadRecaptchaAction: "seo_audit_lead",
       i18n: {
         scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
         seoAuditFor: "<%= isEn ? 'SEO audit for' : 'SEO-Analyse für' %>",
@@ -329,6 +334,7 @@
     };
   </script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-spam-protection.js') : '/js/tester-spam-protection.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/seo-tester.js') : '/js/seo-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>

@@ -298,11 +298,16 @@
 
 
   <script>
+    window.KWD_TESTER_SPAM = {
+      siteKey: "<%= process.env.RECAPTCHA_SITEKEY || '' %>"
+    };
     window.WEBSITE_TESTER_CONFIG = {
       locale: "<%= isEn ? 'en' : 'de' %>",
       endpoint: "/api/website-audit",
       leadEndpoint: "/api/website-audit/lead",
       mode: "deep",
+      recaptchaAction: "website_audit_scan",
+      leadRecaptchaAction: "website_audit_lead",
       i18n: {
         scoreOf: "<%= isEn ? 'of 100' : 'von 100' %>",
         auditFor: "<%= isEn ? 'Audit for' : 'Analyse für' %>",
@@ -368,6 +373,7 @@
     };
   </script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-utils.js') : '/js/tester-utils.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tester-spam-protection.js') : '/js/tester-spam-protection.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
   <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/website-tester.js') : '/js/website-tester.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>
