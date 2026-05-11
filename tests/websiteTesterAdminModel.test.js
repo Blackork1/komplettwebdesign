@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { __testables } from '../models/websiteTesterAdminModel.js';
+
+const modelSource = fs.readFileSync(new URL('../models/websiteTesterAdminModel.js', import.meta.url), 'utf8');
 
 test('clampMaxSubpages clamps into allowed range', () => {
   assert.equal(__testables.clampMaxSubpages('5'), 5);
@@ -71,4 +74,28 @@ test('normalizeLeadSource only accepts supported sources', () => {
 test('topIssuesToText merges list safely', () => {
   assert.equal(__testables.topIssuesToText(['A', 'B', '']), 'A | B');
   assert.equal(__testables.topIssuesToText('Single'), 'Single');
+});
+
+test('admin archive list queries avoid heavy JSON payload columns', () => {
+  const listFunctions = [
+    'listWebsiteTesterRequests',
+    'listBrokenLinkAuditRequests',
+    'listGeoAuditRequests',
+    'listSeoAuditRequests',
+    'listWebsiteTesterLeads'
+  ];
+
+  for (const fnName of listFunctions) {
+    const start = modelSource.indexOf(`export async function ${fnName}`);
+    assert.notEqual(start, -1, `${fnName} should be present`);
+    const listStart = modelSource.indexOf('const listSql = `', start);
+    const listEnd = modelSource.indexOf('`;', listStart + 17);
+    assert.notEqual(listStart, -1, `${fnName} list SQL should be present`);
+    assert.notEqual(listEnd, -1, `${fnName} list SQL should be terminated`);
+    const sql = modelSource.slice(listStart, listEnd);
+    assert.doesNotMatch(sql, /SELECT\s+\*/i, `${fnName} should not select every column`);
+    assert.doesNotMatch(sql, /result_json/i, `${fnName} should not load result_json`);
+    assert.doesNotMatch(sql, /audit_snapshot_json/i, `${fnName} should not load audit_snapshot_json`);
+    assert.doesNotMatch(sql, /full_guide_json/i, `${fnName} should not load full_guide_json`);
+  }
 });

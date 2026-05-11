@@ -187,7 +187,7 @@
     <div class="card-body">
       <h2 class="h5 mb-2">Test Mail / Vorschau (ohne Versand)</h2>
       <p class="text-muted mb-3">
-        Erzeuge eine Testvorschau für Kurzreport + Vollanleitung. Dabei wird nichts an Kunden versendet.
+        Erzeuge eine Testvorschau für die Tester-Reports. Dabei wird nichts an Kunden versendet.
       </p>
       <%
         const previewDefaults = preview || {};
@@ -199,6 +199,7 @@
           <label class="form-label" for="preview_source">Tester</label>
           <select id="preview_source" class="form-select" name="preview_source" required>
             <option value="website" <%= (previewDefaults.source || 'website') === 'website' ? 'selected' : '' %>>Website</option>
+            <option value="broken-links" <%= previewDefaults.source === 'broken-links' ? 'selected' : '' %>>Broken-Links</option>
             <option value="seo" <%= previewDefaults.source === 'seo' ? 'selected' : '' %>>SEO</option>
             <option value="geo" <%= previewDefaults.source === 'geo' ? 'selected' : '' %>>GEO</option>
             <option value="meta" <%= previewDefaults.source === 'meta' ? 'selected' : '' %>>Meta</option>
@@ -217,15 +218,15 @@
         </div>
         <div class="col-md-2">
           <label class="form-label" for="preview_business_type">Branche</label>
-          <input id="preview_business_type" class="form-control" type="text" name="preview_business_type" placeholder="Webdesign" value="<%= previewContextDefaults.businessType || '' %>" required>
+          <input id="preview_business_type" class="form-control" type="text" name="preview_business_type" placeholder="Webdesign" value="<%= previewContextDefaults.businessType || '' %>">
         </div>
         <div class="col-md-2">
           <label class="form-label" for="preview_primary_service">Hauptleistung</label>
-          <input id="preview_primary_service" class="form-control" type="text" name="preview_primary_service" placeholder="Website erstellen" value="<%= previewContextDefaults.primaryService || '' %>" required>
+          <input id="preview_primary_service" class="form-control" type="text" name="preview_primary_service" placeholder="Website erstellen" value="<%= previewContextDefaults.primaryService || '' %>">
         </div>
         <div class="col-md-2">
           <label class="form-label" for="preview_target_region">Zielregion</label>
-          <input id="preview_target_region" class="form-control" type="text" name="preview_target_region" placeholder="Berlin" value="<%= previewContextDefaults.targetRegion || '' %>" required>
+          <input id="preview_target_region" class="form-control" type="text" name="preview_target_region" placeholder="Berlin" value="<%= previewContextDefaults.targetRegion || '' %>">
         </div>
         <div class="col-md-auto">
           <button class="btn btn-outline-primary" type="submit">Vorschau erzeugen</button>
@@ -245,13 +246,17 @@
             Kontext: Branche=<%= preview.context?.businessType || '-' %>, Leistung=<%= preview.context?.primaryService || '-' %>, Region=<%= preview.context?.targetRegion || '-' %>
           </div>
           <div class="d-flex flex-wrap gap-2 mb-2">
-            <a class="btn btn-sm btn-outline-primary" href="/admin/website-tester/preview/<%= preview.id %>/short.pdf">Kurzanleitung PDF laden</a>
-            <a class="btn btn-sm btn-outline-success" href="/admin/website-tester/preview/<%= preview.id %>/full.pdf">Vollanleitung PDF laden</a>
-            <a class="btn btn-sm btn-outline-secondary" href="/admin/website-tester/preview/<%= preview.id %>/full.txt">Vollanleitung TXT laden</a>
+            <a class="btn btn-sm btn-outline-primary" href="/admin/website-tester/preview/<%= preview.id %>/short.pdf"><%= preview.source === 'broken-links' ? 'Broken-Links-Report PDF laden' : 'Kurzanleitung PDF laden' %></a>
+            <% if (preview.fullGuide?.filename) { %>
+              <a class="btn btn-sm btn-outline-success" href="/admin/website-tester/preview/<%= preview.id %>/full.pdf">Vollanleitung PDF laden</a>
+              <a class="btn btn-sm btn-outline-secondary" href="/admin/website-tester/preview/<%= preview.id %>/full.txt">Vollanleitung TXT laden</a>
+            <% } %>
           </div>
           <div class="small text-muted">
-            Kurzreport: <%= preview.shortReport?.filename || '-' %> (<%= preview.shortReport?.pageCount || 0 %> Seiten) |
-            Vollanleitung: <%= preview.fullGuide?.filename || '-' %> (<%= preview.fullGuide?.pageCount || 0 %> Seiten)
+            <%= preview.source === 'broken-links' ? 'Broken-Links-Report' : 'Kurzreport' %>: <%= preview.shortReport?.filename || '-' %> (<%= preview.shortReport?.pageCount || 0 %> Seiten)
+            <% if (preview.fullGuide?.filename) { %>
+              | Vollanleitung: <%= preview.fullGuide.filename %> (<%= preview.fullGuide.pageCount || 0 %> Seiten)
+            <% } %>
           </div>
           <% if (preview.fullGuide?.summary) { %>
             <p class="small mt-2 mb-0"><strong>Guide-Summary:</strong> <%= preview.fullGuide.summary %></p>

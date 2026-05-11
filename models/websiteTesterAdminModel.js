@@ -1093,7 +1093,20 @@ export async function listWebsiteTesterRequests(options = {}) {
     ${whereSql}
   `;
   const listSql = `
-    SELECT *
+    SELECT
+      id,
+      audit_id,
+      requested_url,
+      final_url,
+      status,
+      error_message,
+      overall_score,
+      score_band,
+      crawl_planned_pages,
+      crawl_visited_pages,
+      crawl_failed_pages,
+      top_issues,
+      created_at
     FROM website_tester_requests
     ${whereSql}
     ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
@@ -1170,7 +1183,22 @@ export async function listBrokenLinkAuditRequests(options = {}) {
     ${whereSql}
   `;
   const listSql = `
-    SELECT *
+    SELECT
+      id,
+      audit_id,
+      requested_url,
+      final_url,
+      status,
+      error_message,
+      scan_mode,
+      crawl_planned_pages,
+      crawl_visited_pages,
+      crawl_failed_pages,
+      partial_result,
+      link_total_checked,
+      link_broken_count,
+      link_warning_count,
+      created_at
     FROM website_tester_broken_link_requests
     ${whereSql}
     ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
@@ -1247,7 +1275,21 @@ export async function listGeoAuditRequests(options = {}) {
     ${whereSql}
   `;
   const listSql = `
-    SELECT *
+    SELECT
+      id,
+      audit_id,
+      requested_url,
+      final_url,
+      status,
+      error_message,
+      scan_mode,
+      crawl_planned_pages,
+      crawl_visited_pages,
+      crawl_failed_pages,
+      partial_result,
+      geo_score,
+      geo_band,
+      created_at
     FROM website_tester_geo_requests
     ${whereSql}
     ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
@@ -1324,7 +1366,21 @@ export async function listSeoAuditRequests(options = {}) {
     ${whereSql}
   `;
   const listSql = `
-    SELECT *
+    SELECT
+      id,
+      audit_id,
+      requested_url,
+      final_url,
+      status,
+      error_message,
+      scan_mode,
+      crawl_planned_pages,
+      crawl_visited_pages,
+      crawl_failed_pages,
+      partial_result,
+      seo_score,
+      seo_band,
+      created_at
     FROM website_tester_seo_requests
     ${whereSql}
     ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}
@@ -1401,7 +1457,20 @@ export async function listWebsiteTesterLeads(options = {}) {
     ${whereSql}
   `;
   const listSql = `
-    SELECT *
+    SELECT
+      id,
+      audit_id,
+      domain,
+      email,
+      locale,
+      source,
+      status,
+      overall_score,
+      score_band,
+      top_issues,
+      full_guide_status,
+      full_guide_profile,
+      created_at
     FROM website_tester_leads
     ${whereSql}
     ORDER BY ${sortBy} ${sortDir} NULLS LAST, id ${sortDir}

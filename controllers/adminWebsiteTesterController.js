@@ -33,10 +33,12 @@ import {
   resendMetaTesterLeadReport
 } from '../services/metaTesterLeadService.js';
 import { auditWebsite } from '../services/websiteAuditService.js';
+import { auditBrokenLinks } from '../services/brokenLinkAuditService.js';
 import { auditGeoWebsite, getCachedGeoAuditResult } from '../services/geoAuditService.js';
 import { auditSeoWebsite, getCachedSeoAuditResult } from '../services/seoAuditService.js';
 import { auditMetaWebsite, getCachedMetaAuditResult } from '../services/metaAuditService.js';
 import { buildWebsiteTesterReport } from '../services/websiteTesterPdfService.js';
+import { buildBrokenLinksTesterReport } from '../services/brokenLinksTesterPdfService.js';
 import { buildGeoTesterReport } from '../services/geoTesterPdfService.js';
 import { buildSeoTesterReport } from '../services/seoTesterPdfService.js';
 import { buildMetaTesterReport } from '../services/metaTesterPdfService.js';
@@ -85,6 +87,7 @@ function normalizeLocale(raw = 'de') {
 
 function normalizePreviewSource(raw = 'website') {
   const source = String(raw || '').trim().toLowerCase();
+  if (source === 'broken-links' || source === 'broken') return 'broken-links';
   if (source === 'geo') return 'geo';
   if (source === 'seo') return 'seo';
   if (source === 'meta') return 'meta';
@@ -127,6 +130,19 @@ function getPreview(id = '') {
 }
 
 async function runPreviewAudit({ source, url, locale, context, config }) {
+  if (source === 'broken-links') {
+    const detailedResult = await auditBrokenLinks({
+      url,
+      locale,
+      maxSubpages: config?.brokenLinksMaxSubpages ?? 5,
+      scanMode: config?.brokenLinksScanMode || 'maximal'
+    });
+    return {
+      publicResult: detailedResult,
+      detailedResult
+    };
+  }
+
   if (source === 'geo') {
     const publicResult = await auditGeoWebsite({
       url,
@@ -181,6 +197,14 @@ async function runPreviewAudit({ source, url, locale, context, config }) {
 }
 
 function buildPreviewShortReport({ source, lead, detailedResult, locale }) {
+  if (source === 'broken-links') {
+    return buildBrokenLinksTesterReport({
+      lead,
+      result: detailedResult,
+      locale
+    });
+  }
+
   if (source === 'geo') {
     return buildGeoTesterReport({
       lead,
@@ -510,7 +534,7 @@ export async function runWebsiteTesterPreviewAction(req, res) {
     return res.redirect(withQueryParam(returnTo, 'preview_error', 'Bitte eine URL für die Vorschau angeben.'));
   }
 
-  if (!context.businessType || !context.primaryService || !context.targetRegion) {
+  if (source !== 'broken-links' && (!context.businessType || !context.primaryService || !context.targetRegion)) {
     return res.redirect(withQueryParam(returnTo, 'preview_error', 'Bitte Branche, Hauptleistung und Zielregion für die Vorschau ergänzen.'));
   }
 
@@ -557,20 +581,28 @@ export async function runWebsiteTesterPreviewAction(req, res) {
       locale
     });
 
-    const fullGuide = generateTesterFullGuide({
-      result: detailedResult,
-      source,
-      locale,
-      maxPages: config?.fullGuideMaxPages ?? 10
-    });
-    const guideText = formatTesterFullGuideAsText(fullGuide);
-    const guidePdf = buildTesterFullGuidePdf({
-      guideText,
-      sourceLabel: source,
-      domain,
-      locale,
-      generatedAt: fullGuide.createdAt || new Date().toISOString()
-    });
+    let fullGuideRecord = null;
+    if (source !== 'broken-links') {
+      const fullGuide = generateTesterFullGuide({
+        result: detailedResult,
+        source,
+        locale,
+        maxPages: config?.fullGuideMaxPages ?? 10
+      });
+      const guideText = formatTesterFullGuideAsText(fullGuide);
+      const guidePdf = buildTesterFullGuidePdf({
+        guideText,
+        sourceLabel: source,
+        domain,
+        locale,
+        generatedAt: fullGuide.createdAt || new Date().toISOString()
+      });
+      fullGuideRecord = {
+        ...fullGuide,
+        guideText,
+        pdf: guidePdf
+      };
+    }
 
     const record = savePreview({
       source,
@@ -579,11 +611,7 @@ export async function runWebsiteTesterPreviewAction(req, res) {
       context,
       domain,
       shortReport,
-      fullGuide: {
-        ...fullGuide,
-        guideText,
-        pdf: guidePdf
-      }
+      fullGuide: fullGuideRecord
     });
 
     let redirectTo = withQueryParam(returnTo, 'preview_action', 'generated');
@@ -627,3 +655,8 @@ export async function downloadWebsiteTesterPreviewFullText(req, res) {
   res.setHeader('Content-Disposition', 'attachment; filename=\"vollanleitung.txt\"');
   return res.send(preview.fullGuide.guideText);
 }
+
+export const __testables = {
+  normalizePreviewSource,
+  buildPreviewShortReport
+};
