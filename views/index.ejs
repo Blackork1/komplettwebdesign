@@ -712,7 +712,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                 <i class="fas fa-bolt"></i> <%= copy.heroBadge %>
               </span>
               <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
-                <%= copy.heroTitle %> <br> <%= copy.heroTitle2 %>
+                <%= copy.heroTitle %><% if (copy.heroTitle2) { %> <br> <%= copy.heroTitle2 %><% } %>
               </h1>
               <h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll"><span class="primaryColor"> <%= copy.heroSubline %> </span></h2>
               <ul class="home-hero-bullets" role="list">

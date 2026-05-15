@@ -100,14 +100,14 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Website erstellen lassen – ab 499 € | Komplett Webdesign',
-    seoDescription: 'Website erstellen lassen: persönliches Webdesign, Texte, SEO, Hosting und Wartung aus einer Hand. Festpreis-Pakete ab 499 €.',
+    seoTitle: 'Website erstellen lassen Berlin | Webdesign für mehr Anfragen',
+    seoDescription: 'Moderne Website in Berlin erstellen lassen: individuelles Webdesign, responsive Umsetzung, SEO-Grundlagen und klare Struktur für mehr Kundenanfragen.',
     seoKeywords: 'webseite erstellen lassen, webdesign in berlin, website in berlin erstellen lassen, webdesigner berlin, lokale seo berlin',
     ogTitle: 'Website erstellen lassen – persönlich, SEO-freundlich und aus einer Hand',
     ogDescription: 'Webdesign, Texte, SEO, Hosting und Wartung für kleine Unternehmen in Berlin. Faire Festpreis-Pakete ab 499 €.',
     heroBadge: 'Komplett Webdesign aus Berlin',
-    heroTitle: 'Website erstellen lassen',
-    heroTitle2: 'persönlich, SEO-freundlich und aus einer Hand',
+    heroTitle: 'Website erstellen lassen in Berlin – moderne Webseiten, die Kunden gewinnen',
+    heroTitle2: '',
     heroSubline: 'Design, Texte, SEO, Hosting und Wartung für kleine Unternehmen',
     heroBullet1: 'Persönliche Betreuung vom ersten Gespräch bis zum Livegang',
     heroBullet2: 'Faire Festpreis-Pakete ab 499 EUR ohne versteckte Projektkosten',
