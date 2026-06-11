@@ -11,6 +11,7 @@ const packageListCss = read('public/package-list.css');
 const webdesignBerlinCss = read('public/webdesign-berlin.css');
 const homeCss = read('public/home.css');
 const interactionPolish = read('public/js/interaction-polish.js');
+const interactionPolishCss = read('public/interaction-polish.css');
 const localSeoTemplate = read('views/static/local-seo-berlin.ejs');
 const footerPartial = read('views/partials/footer.ejs');
 
@@ -70,6 +71,23 @@ test('package sliders preserve native touch scroll and expose thin active scroll
   );
 });
 
+test('mobile horizontal sliders use one persistent native slide indicator', () => {
+  assert.match(interactionPolish, /data-pricing-slider/);
+  assert.match(interactionPolish, /rg-featured-scroll/);
+  assert.match(interactionPolish, /horizontalSlider/);
+  assert.match(interactionPolish, /industries-index-page \.post-list/);
+  assert.doesNotMatch(interactionPolish, /kwd-scroll-indicator/);
+  assert.doesNotMatch(interactionPolishCss, /kwd-scroll-indicator/);
+  assert.match(
+    interactionPolishCss,
+    /::-webkit-scrollbar\s*\{[\s\S]*?display:\s*block !important;[\s\S]*?height:\s*3px !important;/
+  );
+  assert.match(
+    interactionPolishCss,
+    /\.is-scrolling::-webkit-scrollbar\s*\{[\s\S]*?height:\s*8px !important;/
+  );
+});
+
 test('webdesign berlin process titles and FAQ indicators avoid duplicate affordances', () => {
   assert.ok(
     webdesignBerlinPage.process.steps.every((step) => !/^\d+\.\s/.test(step.title)),
@@ -116,6 +134,34 @@ test('local SEO comparison lists use check and x markers with horizontal icon ca
   );
 });
 
+test('service FAQ variants share plus and minus summary indicators', () => {
+  [
+    '.seo-landing__faq details summary::after',
+    '.service-faq details summary::after',
+    '.running-costs-faq-item summary::after',
+    '.add-ons-faq-item summary::after',
+    '.local-seo-faq-item summary::after'
+  ].forEach((selector) => {
+    assert.match(
+      leistungenCss,
+      new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?\\{[\\s\\S]*?content:\\s*"\\+";')
+    );
+  });
+
+  [
+    '.seo-landing__faq details[open] summary::after',
+    '.service-faq details[open] summary::after',
+    '.running-costs-faq-item[open] summary::after',
+    '.add-ons-faq-item[open] summary::after',
+    '.local-seo-faq-item[open] summary::after'
+  ].forEach((selector) => {
+    assert.match(
+      leistungenCss,
+      new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?\\{[\\s\\S]*?content:\\s*"–";')
+    );
+  });
+});
+
 test('homepage website-check cards align icons beside headings', () => {
   assert.match(
     homeCss,
@@ -157,4 +203,9 @@ test('FAQ accordion setup includes every FAQ root and supports container clicks'
   assert.match(footerPartial, /function isQuestionAreaClick\(event,\s*item\)/);
   assert.match(footerPartial, /event\.target\.closest\(interactiveSelector\)/);
   assert.match(footerPartial, /item\.open\s*=\s*!item\.open;/);
+});
+
+test('footer renders the copyright year dynamically', () => {
+  assert.match(footerPartial, /new Date\(\)\.getFullYear\(\)/);
+  assert.doesNotMatch(footerPartial, /©\s*2025\s+Komplett Webdesign/);
 });

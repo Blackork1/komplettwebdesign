@@ -4262,3 +4262,79 @@
       text-align: left;
     }
   }
+
+  .seo-landing__faq details,
+  .service-faq details,
+  .running-costs-faq-item,
+  .add-ons-faq-item,
+  .maintenance-faq-item,
+  .local-seo-faq-item {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .seo-landing__faq details summary,
+  .service-faq details summary,
+  .running-costs-faq-item summary,
+  .add-ons-faq-item summary,
+  .maintenance-faq-item summary,
+  .local-seo-faq-item summary {
+    cursor: pointer;
+    display: block;
+    list-style: none;
+    padding: 22px 56px 22px 24px;
+    position: relative;
+  }
+
+  .seo-landing__faq details summary::-webkit-details-marker,
+  .service-faq details summary::-webkit-details-marker,
+  .running-costs-faq-item summary::-webkit-details-marker,
+  .add-ons-faq-item summary::-webkit-details-marker,
+  .maintenance-faq-item summary::-webkit-details-marker,
+  .local-seo-faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .seo-landing__faq details summary::after,
+  .service-faq details summary::after,
+  .running-costs-faq-item summary::after,
+  .add-ons-faq-item summary::after,
+  .maintenance-faq-item summary::after,
+  .local-seo-faq-item summary::after {
+    color: var(--service-accent, var(--wd-accent, #e94a1b));
+    content: "+";
+    font-size: 1.6rem;
+    font-weight: 900;
+    line-height: 1;
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .seo-landing__faq details[open] summary::after,
+  .service-faq details[open] summary::after,
+  .running-costs-faq-item[open] summary::after,
+  .add-ons-faq-item[open] summary::after,
+  .maintenance-faq-item[open] summary::after,
+  .local-seo-faq-item[open] summary::after {
+    content: "–";
+  }
+
+  .seo-landing__faq details summary > h3,
+  .running-costs-faq-item summary > h3,
+  .add-ons-faq-item summary > h3,
+  .maintenance-faq-item summary > h3,
+  .local-seo-faq-item summary > h3 {
+    margin: 0;
+  }
+
+  .seo-landing__faq details p,
+  .service-faq details p,
+  .running-costs-faq-item p,
+  .add-ons-faq-item p,
+  .maintenance-faq-item p,
+  .local-seo-faq-item p {
+    margin: 0;
+    padding: 0 24px 22px;
+  }

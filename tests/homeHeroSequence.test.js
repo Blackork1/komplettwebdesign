@@ -106,13 +106,13 @@ test('homepage hero sequence uses branch-style load timing with staggered delays
   assert.match(slideOnScroll, /window\.addEventListener\('load', callback, \{ once: true \}\)/);
 });
 
-test('homepage hero bridge spans the hero width and accelerates on smaller viewports', () => {
+test('homepage hero bridge spans the hero width and keeps one 30s slider duration on all viewport widths', () => {
+  const durations = [...homeCss.matchAll(/--highlight-marquee-duration:\s*([^;]+);/g)].map((match) => match[1].trim());
+
+  assert.deepEqual(durations, ['30s']);
   assert.match(homeCss, /\.home-page \.hero-bridge\s*\{[\s\S]*?--highlight-marquee-duration:\s*30s;/);
   assert.match(homeCss, /\.home-page \.hero-bridge\s*\{[\s\S]*?width:\s*100%;[\s\S]*?max-width:\s*none;[\s\S]*?overflow:\s*visible;/);
   assert.match(homeCss, /\.home-page \.highlight-marquee__track\s*\{[\s\S]*?min-width:\s*max-content;[\s\S]*?max-width:\s*none;[\s\S]*?animation:\s*highlight-marquee-scroll var\(--highlight-marquee-duration\) linear infinite;/);
   assert.match(homeCss, /\.home-page \.highlight-marquee__group\s*\{[\s\S]*?min-width:\s*max-content;[\s\S]*?max-width:\s*none;[\s\S]*?overflow:\s*visible;/);
   assert.match(homeCss, /\.home-page \.highlight-chip\s*\{[\s\S]*?flex:\s*0 0 auto;/);
-  assert.match(homeCss, /@media\s*\(max-width:\s*1020px\)\s*\{[\s\S]*?\.home-page \.hero-bridge\s*\{[\s\S]*?--highlight-marquee-duration:\s*22s;/);
-  assert.match(homeCss, /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.home-page \.hero-bridge\s*\{[\s\S]*?--highlight-marquee-duration:\s*14s;/);
-  assert.match(homeCss, /@media\s*\(max-width:\s*540px\)\s*\{[\s\S]*?\.home-page \.hero-bridge\s*\{[\s\S]*?--highlight-marquee-duration:\s*10s;/);
 });

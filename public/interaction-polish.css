@@ -150,3 +150,111 @@
     transition: none;
   }
 }
+
+@media (max-width: 900px) {
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  ) {
+    scrollbar-color: var(--kwd-motion-accent) color-mix(in srgb, var(--kwd-motion-ink) 10%, transparent);
+    scrollbar-width: thin;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  )::-webkit-scrollbar {
+    display: block !important;
+    height: 3px !important;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  ).is-scrolling::-webkit-scrollbar {
+    height: 8px !important;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  ).is-dragging::-webkit-scrollbar {
+    height: 8px !important;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  )::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--kwd-motion-ink) 10%, transparent);
+    border-radius: 999px;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  )::-webkit-scrollbar-thumb {
+    background: var(--kwd-motion-accent);
+    border-radius: 999px;
+  }
+}

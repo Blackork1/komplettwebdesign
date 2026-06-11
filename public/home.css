@@ -1830,10 +1830,6 @@
   }
 
   @media (max-width: 1020px) {
-    .home-page .hero-bridge {
-      --highlight-marquee-duration: 22s;
-    }
-
     .home-page .hero-main .hero-flex {
       grid-template-columns: 1fr;
       gap: clamp(2rem, 6vw, 3rem);
@@ -2099,7 +2095,6 @@
     }
 
     .home-page .hero-bridge {
-      --highlight-marquee-duration: 14s;
       padding: 0.54rem 0;
     }
 
@@ -2156,10 +2151,6 @@
   }
 
   @media (max-width: 540px) {
-    .home-page .hero-bridge {
-      --highlight-marquee-duration: 10s;
-    }
-
     .home-page .home-hero-showcase {
       min-height: clamp(300px, 78vw, 380px);
       margin-top: 0.25rem;

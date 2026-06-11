@@ -128,7 +128,10 @@ test('homepage visual polish keeps spacing, slider headings and side navigation 
   assert.match(homepage, /@keyframes highlight-marquee-scroll/);
   assert.match(homepage, /\.home-page \.highlight-marquee__track\s*{[\s\S]*?animation:\s*highlight-marquee-scroll var\(--highlight-marquee-duration\) linear infinite/);
   assert.match(homepage, /\.home-page \.hero-bridge\s*{[\s\S]*?--highlight-marquee-duration:\s*30s/);
-  assert.match(homepage, /@media \(max-width: 768px\)[\s\S]*?\.home-page \.hero-bridge\s*{[\s\S]*?--highlight-marquee-duration:\s*14s/);
+  assert.deepEqual(
+    [...homepage.matchAll(/--highlight-marquee-duration:\s*([^;]+);/g)].map((match) => match[1].trim()),
+    ['30s']
+  );
   assert.match(homepage, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.home-page \.highlight-marquee__group\[aria-hidden="true"\]\s*{[\s\S]*?display:\s*none/);
   assert.match(homepage, /\.home-page #usp-strip\s*{[\s\S]*?background:\s*linear-gradient\(180deg, #f7fafc 0%, #ffffff 100%\)/);
   assert.doesNotMatch(homepage, /\.home-page #usp-strip\s*{[\s\S]*?rgba\(11, 42, 70, 0\.78\)/);

@@ -385,9 +385,17 @@
   function initPackageSliders() {
     var scrollStateTargets = document.querySelectorAll([
       '[data-package-slider]',
+      '[data-pricing-slider]',
       '.webdesign-berlin .wd-tech-grid',
       '.webdesign-berlin .wd-scroll-cards',
-      '.webdesign-berlin .wd-district-grid'
+      '.webdesign-berlin .wd-district-grid',
+      '.rg-featured-scroll',
+      '.horizontalSlider',
+      '.funktionenItemContainer',
+      '.flexVorteile',
+      '.tippsContainer',
+      '.industries-index-page .post-list',
+      '.package-detail-page .addons-ticker'
     ].join(','));
 
     scrollStateTargets.forEach(function(slider) {
