@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { createAuditCache } from '../util/testerAuditCache.js';
 import { safeAxiosRequest } from '../util/safeHttpClient.js';
 
-const USER_AGENT = 'KomplettWebdesign Meta Tester/2.0 (+https://komplettwebdesign.de)';
+const USER_AGENT = 'Komplett Webdesign Meta Tester/2.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
 const MIN_MAX_SUBPAGES = 1;
 const MAX_MAX_SUBPAGES = 50;

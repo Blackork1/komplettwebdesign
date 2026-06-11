@@ -20,9 +20,9 @@
 /* Leistungen text overflow safety */
 .service-page :where(h1, h2, h3, h4, p, li, a, span, small, strong, summary) {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .service-shell {
@@ -143,6 +143,31 @@
   border-radius: 8px;
   display: block;
   text-decoration: none;
+}
+
+.package-slider-scroll {
+  touch-action: pan-x pan-y;
+  scrollbar-color: var(--service-accent, #e94a1b) rgba(11, 42, 70, 0.1);
+  scrollbar-width: thin;
+}
+
+.package-slider-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+
+.package-slider-scroll.is-dragging::-webkit-scrollbar,
+.package-slider-scroll.is-scrolling::-webkit-scrollbar {
+  height: 8px;
+}
+
+.package-slider-scroll::-webkit-scrollbar-thumb {
+  background: var(--service-accent, #e94a1b);
+  border-radius: 999px;
+}
+
+.package-slider-scroll::-webkit-scrollbar-track {
+  background: rgba(11, 42, 70, 0.1);
+  border-radius: 999px;
 }
 
 .leistungen-overview-kicker {
@@ -316,9 +341,9 @@
 .seo-landing :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, button) {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .seo-landing__container {
@@ -413,7 +438,7 @@
 .seo-landing h2,
 .seo-landing h3,
 .seo-landing p {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .seo-landing h1 {
@@ -651,6 +676,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  align-items: stretch;
 }
 
 .seo-landing__link-card {
@@ -660,6 +686,7 @@
   align-content: start;
   border: 1.5px solid rgba(233, 74, 27, 0.5);
   border-radius: 8px;
+  margin-block: 0;
   padding: 18px;
   color: var(--seo-landing-ink);
   text-decoration: none;
@@ -778,6 +805,7 @@
 
   .seo-landing__link-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .seo-landing__link-card {
@@ -2093,7 +2121,7 @@
     border: 1px solid var(--rc-border);
     border-radius: 8px;
     box-shadow: 0 18px 46px rgba(11, 42, 70, 0.08);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .running-costs-card {
@@ -2271,6 +2299,30 @@
     display: block;
     font-size: 0.9rem;
     text-transform: uppercase;
+  }
+
+  .running-costs-example-range {
+    background: var(--rc-warm);
+    border: 1px solid rgba(240, 74, 35, 0.22);
+    border-radius: 8px;
+    display: grid;
+    gap: 6px;
+    margin-top: 18px;
+    padding: 14px 16px;
+  }
+
+  .running-costs-example-range span {
+    color: #9a321b;
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .running-costs-example-range b {
+    color: var(--rc-primary);
+    font-size: clamp(1rem, 1.6vw, 1.18rem);
+    line-height: 1.35;
   }
 
   .running-costs-pill-list {
@@ -3206,7 +3258,7 @@
     border: 1px solid var(--mw-border);
     border-radius: 8px;
     box-shadow: 0 18px 46px rgba(11, 42, 70, 0.08);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .maintenance-hero-panel {
@@ -4011,6 +4063,21 @@
     padding: 22px;
   }
 
+  .local-seo-icon-card {
+    align-items: start;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .local-seo-icon-card .local-seo-icon {
+    margin-top: 0.2em;
+  }
+
+  .local-seo-icon-card p {
+    margin: 0;
+  }
+
   .local-seo-card h3,
   .local-seo-price-card h3,
   .local-seo-link-card h3 {
@@ -4025,20 +4092,34 @@
   }
 
   .local-seo-list li {
+    align-items: start;
     color: var(--lseo-muted);
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 8px;
     font-weight: 650;
     line-height: 1.55;
-    padding-left: 24px;
-    position: relative;
+    padding-left: 0;
   }
 
   .local-seo-list li::before {
     color: var(--lseo-accent);
     content: "•";
+    display: inline-block;
     font-weight: 900;
-    left: 0;
-    position: absolute;
-    top: 0;
+    line-height: 1.25;
+    position: static;
+    text-align: center;
+  }
+
+  .local-seo-list--checks li::before {
+    content: "✓";
+  }
+
+  .local-seo-list--crosses li::before {
+    content: "×";
+    font-size: 1.15rem;
+    line-height: 1;
   }
 
   .local-seo-list-label {

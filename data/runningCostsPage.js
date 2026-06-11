@@ -86,7 +86,7 @@ export const runningCostsPage = Object.freeze({
       },
       {
         title: 'Zuständigkeiten klären',
-        text: 'Manche Dienste laufen sinnvoll über Komplettwebdesign, andere besser direkt über dein Kundenkonto.'
+        text: 'Manche Dienste laufen sinnvoll über Komplett Webdesign, andere besser direkt über dein Kundenkonto.'
       }
     ]
   },
@@ -134,7 +134,7 @@ export const runningCostsPage = Object.freeze({
     {
       type: 'Hosting',
       rhythm: 'meist monatlich',
-      responsibility: 'optional über Komplettwebdesign möglich',
+      responsibility: 'optional über Komplett Webdesign möglich',
       note: 'Technischer Serverbetrieb der Website, aber keine automatische Wartung.'
     },
     {
@@ -306,7 +306,7 @@ export const runningCostsPage = Object.freeze({
   selectedAddOns,
   responsibilities: {
     kompletWebdesign: {
-      title: 'Was über Komplettwebdesign laufen kann',
+      title: 'Was über Komplett Webdesign laufen kann',
       items: [
         'technische Website-Erstellung',
         'optionales Hosting über VPS, wenn vereinbart',
@@ -340,24 +340,28 @@ export const runningCostsPage = Object.freeze({
       title: 'Sehr schlanke Website',
       setup: 'Kompakter Auftritt ohne externe Sonderfunktionen',
       costs: ['Domain extern/jährlich', 'E-Mail extern/monatlich oder jährlich', 'Hosting optional', 'Wartung optional', 'Drittanbieter: keine oder minimal'],
+      costRange: 'ca. 5 bis 40 € monatlich plus ca. 10 bis 40 € jährlich',
       note: 'Sinnvoll, wenn eine kleine Website mit wenigen Inhalten und klarer Kontaktmöglichkeit reicht.'
     },
     {
       title: 'Kleine Unternehmenswebsite mit Wartung',
       setup: 'Business-Website mit technischer Betreuung',
-      costs: ['Domain und E-Mail auf Kundenrechnung', 'Hosting optional über Komplettwebdesign', 'Wartung Basis oder Standard', 'Consent-Tool, wenn externe Dienste eingesetzt werden'],
+      costs: ['Domain und E-Mail auf Kundenrechnung', 'Hosting optional über Komplett Webdesign', 'Wartung Basis oder Standard', 'Consent-Tool, wenn externe Dienste eingesetzt werden'],
+      costRange: 'ca. 49 bis 180 € monatlich plus ca. 10 bis 80 € jährlich',
       note: 'Sinnvoll, wenn die Website regelmäßig geprüft und im kleinen Rahmen gepflegt werden soll.'
     },
     {
       title: 'Website mit Buchungssystem oder Newsletter',
       setup: 'Zusatzfunktion mit externem Anbieter',
       costs: ['Domain und E-Mail', 'Hosting', 'Wartung', 'Buchungssystem-Abo', 'Newsletter-Tool', 'Consent-Tool', 'optional Tracking'],
+      costRange: 'ca. 80 bis 300 € monatlich plus mögliche Transaktions- oder Toolgebühren',
       note: 'Sinnvoll, wenn Termine, Reservierungen oder E-Mail-Marketing in den Website-Prozess eingebunden werden.'
     },
     {
       title: 'Umfangreichere Website mit laufender Betreuung',
       setup: 'Mehr Struktur, mehr Prüfung, mehr Weiterentwicklung',
       costs: ['Hosting', 'Wartung Plus', 'Monitoring im vereinbarten Umfang', 'zusätzliche Pflege', 'externe Tools', 'optionale Local-SEO-Betreuung'],
+      costRange: 'ca. 180 bis 600 € monatlich plus externe Tools nach Umfang',
       note: 'Sinnvoll für Websites, die nach dem Launch aktiv weiterentwickelt werden.'
     }
   ],
@@ -396,7 +400,7 @@ export const runningCostsPage = Object.freeze({
     },
     {
       question: 'Ist Hosting im Website-Paket enthalten?',
-      answer: 'Nein, Hosting ist nicht automatisch in jedem Website-Paket enthalten. Es kann optional über Komplettwebdesign angeboten oder separat über deinen Anbieter gelöst werden.'
+      answer: 'Nein, Hosting ist nicht automatisch in jedem Website-Paket enthalten. Es kann optional über Komplett Webdesign angeboten oder separat über deinen Anbieter gelöst werden.'
     },
     {
       question: 'Was kostet eine Domain?',
@@ -455,8 +459,8 @@ export const runningCostsPage = Object.freeze({
       answer: 'Häufig ja. Zahlungsanbieter können Transaktionsgebühren oder eigene Anbieterbedingungen haben, die direkt beim Anbieter geprüft werden sollten.'
     },
     {
-      question: 'Kann alles über Komplettwebdesign laufen?',
-      answer: 'Technische Website-Erstellung, optionales Hosting, Wartung und Tool-Einbindungen können über Komplettwebdesign laufen. Domain, E-Mail und externe Tool-Konten bleiben häufig besser direkt bei dir.'
+      question: 'Kann alles über Komplett Webdesign laufen?',
+      answer: 'Technische Website-Erstellung, optionales Hosting, Wartung und Tool-Einbindungen können über Komplett Webdesign laufen. Domain, E-Mail und externe Tool-Konten bleiben häufig besser direkt bei dir.'
     },
     {
       question: 'Was sollte besser auf Kundenrechnung laufen?',
@@ -497,7 +501,7 @@ export const runningCostsPage = Object.freeze({
     { id: 'one-time-vs-running', title: 'Einmalige Projektkosten vs. laufende Kosten' },
     { id: 'cost-overview', title: 'Typische laufende Kosten im Überblick' },
     ...detailSectionIds.map((id) => ({ id })),
-    { id: 'handled-by-komplettwebdesign', title: 'Was über Komplettwebdesign laufen kann' },
+    { id: 'handled-by-komplettwebdesign', title: 'Was über Komplett Webdesign laufen kann' },
     { id: 'handled-by-client', title: 'Was direkt über den Kunden laufen sollte' },
     { id: 'examples', title: 'Beispielrechnungen für laufende Kosten' },
     { id: 'not-included', title: 'Was nicht automatisch enthalten ist' },

@@ -56,9 +56,9 @@
 .district-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, button, blockquote, figcaption) {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .district-page a {
@@ -525,8 +525,8 @@
 
 .district-mini-tile h3 {
   font-size: 1.24rem;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 
 .district-mini-tile p {

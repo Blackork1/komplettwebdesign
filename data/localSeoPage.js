@@ -128,7 +128,7 @@ export const localSeoPage = Object.freeze({
     ]
   },
   meaning: {
-    title: 'Was Local SEO bei Komplettwebdesign bedeutet',
+    title: 'Was Local SEO bei Komplett Webdesign bedeutet',
     lead:
       'Ich ordne Local SEO als klar abgegrenzte Website- und Profiloptimierung ein. Der Umfang wird vorab festgelegt, damit daraus kein offenes Dauerprojekt wird.',
     included: [
@@ -301,7 +301,7 @@ export const localSeoPage = Object.freeze({
         'Sinnvoll ist es für lokale Dienstleister, Handwerker, Praxen, Beratungen, Gastronomie, kleine Händler und Selbstständige mit klarem Einzugsgebiet in Berlin oder Brandenburg.'
     },
     {
-      question: 'Was kostet Local SEO bei Komplettwebdesign?',
+      question: 'Was kostet Local SEO bei Komplett Webdesign?',
       answer:
         'Die Local-SEO-Basis liegt je nach Umfang typischerweise bei 300 bis 700 €. Einzelne Profil- oder Leistungsseiten-Erweiterungen werden separat eingeordnet.'
     },

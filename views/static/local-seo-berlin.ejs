@@ -131,7 +131,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Sinnvoll für</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.targetGroups.usefulFor.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -139,7 +139,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Nicht der beste Einstieg für</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.targetGroups.notPrimary.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -159,7 +159,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Kann dazugehören</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.meaning.included.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -167,7 +167,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Nicht automatisch enthalten</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.meaning.notAutomatic.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -186,7 +186,7 @@
         </div>
         <div class="local-seo-card-grid">
           <% page.technicalFoundation.points.forEach(function(item) { %>
-          <article class="local-seo-card animate-on-scroll">
+          <article class="local-seo-card local-seo-icon-card animate-on-scroll">
             <i class="fa-solid fa-check local-seo-icon" aria-hidden="true"></i>
             <p><%= item %></p>
           </article>
@@ -205,7 +205,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Prüfung und Optimierung</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.googleBusinessProfile.checks.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -213,7 +213,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Klare Grenzen</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.googleBusinessProfile.boundaries.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -233,7 +233,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Sinnvolle Ansätze</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.localLandingPages.good.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -241,7 +241,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Was ich vermeide</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.localLandingPages.avoid.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -261,7 +261,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Mögliche Schema-Typen</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.structuredData.types.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -269,7 +269,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Nur mit korrekten Angaben</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.structuredData.boundaries.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -288,7 +288,7 @@
         </div>
         <div class="local-seo-card-grid">
           <% page.trustSignals.items.forEach(function(item) { %>
-          <article class="local-seo-card animate-on-scroll">
+          <article class="local-seo-card local-seo-icon-card animate-on-scroll">
             <i class="fa-solid fa-circle-check local-seo-icon" aria-hidden="true"></i>
             <p><%= item %></p>
           </article>
@@ -396,7 +396,7 @@
         <div class="local-seo-split">
           <article class="local-seo-note animate-on-scroll">
             <h3>Technische Grundlage</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--checks">
               <% page.seoBoundary.foundation.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>
@@ -404,7 +404,7 @@
           </article>
           <article class="local-seo-note animate-on-scroll">
             <h3>Laufende Betreuung</h3>
-            <ul class="local-seo-list">
+            <ul class="local-seo-list local-seo-list--crosses">
               <% page.seoBoundary.ongoing.forEach(function(item) { %>
               <li><%= item %></li>
               <% }) %>

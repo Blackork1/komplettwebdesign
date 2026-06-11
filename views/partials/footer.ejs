@@ -215,6 +215,41 @@
 </script>
 <script>
   (function() {
+    var faqRootSelector = [
+      '.seo-landing__faq-list',
+      '.wd-faq-grid',
+      '.wd-faq',
+      '.district-faq',
+      '.service-faq',
+      '.maintenance-faq',
+      '.running-costs-faq',
+      '.add-ons-faq',
+      '.local-seo-faq',
+      '.faq-list',
+      '.faq-detail-list',
+      '.rg-faq-list',
+      '.wt-faq',
+      '[data-faq-accordion]'
+    ].join(', ');
+    var interactiveSelector = 'summary, a, button, input, textarea, select, label, [role="button"], [data-no-faq-toggle]';
+
+    function isQuestionAreaClick(event, item) {
+      if (event.defaultPrevented || event.button !== 0 || event.target.closest(interactiveSelector)) {
+        return false;
+      }
+
+      var summary = item.querySelector('summary');
+      if (!summary) return false;
+
+      var itemRect = item.getBoundingClientRect();
+      var summaryRect = summary.getBoundingClientRect();
+      var itemStyle = window.getComputedStyle(item);
+      var extraQuestionSpace = parseFloat(itemStyle.paddingBottom) || 0;
+      var questionBottom = Math.min(itemRect.bottom, summaryRect.bottom + extraQuestionSpace);
+
+      return event.clientY >= itemRect.top && event.clientY <= questionBottom;
+    }
+
     function setupDetailsAccordion(root) {
       var items = Array.prototype.slice.call(root.querySelectorAll('details'));
       if (!items.length) return;
@@ -230,11 +265,17 @@
             if (other !== item) other.open = false;
           });
         });
+
+        item.addEventListener('click', function(event) {
+          if (!isQuestionAreaClick(event, item)) return;
+          event.preventDefault();
+          item.open = !item.open;
+        });
       });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.seo-landing__faq-list, .wd-faq-grid, .service-faq, .maintenance-faq, .running-costs-faq, .add-ons-faq, .local-seo-faq, .faq-list, .faq-detail-list, .rg-faq-list, .wt-faq, [data-faq-accordion]').forEach(setupDetailsAccordion);
+      document.querySelectorAll(faqRootSelector).forEach(setupDetailsAccordion);
     });
   })();
 </script>

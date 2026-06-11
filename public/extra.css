@@ -1819,10 +1819,31 @@ p.step-description {
   gap: 18px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  scrollbar-color: var(--color-accent, #e94a1b) rgba(11, 42, 70, 0.1);
+  scrollbar-width: thin;
   scroll-padding-inline: 6px;
   scroll-snap-type: none;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
+}
+
+.package-slider-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+
+.package-slider-scroll.is-dragging::-webkit-scrollbar,
+.package-slider-scroll.is-scrolling::-webkit-scrollbar {
+  height: 8px;
+}
+
+.package-slider-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-accent, #e94a1b);
+  border-radius: 999px;
+}
+
+.package-slider-scroll::-webkit-scrollbar-track {
+  background: rgba(11, 42, 70, 0.1);
+  border-radius: 999px;
 }
 
 .package-slider-scroll.is-dragging {
@@ -1934,9 +1955,9 @@ article#relaunch {
   :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, label, button) {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 @media (max-width: 900px) {

@@ -64,8 +64,8 @@ const expectedLinks = [
 ];
 
 const requiredFaqQuestions = [
-  'Was kostet Webdesign in Berlin bei Komplettwebdesign?',
-  'Für wen ist Komplettwebdesign geeignet?',
+  'Was kostet Webdesign in Berlin bei Komplett Webdesign?',
+  'Für wen ist Komplett Webdesign geeignet?',
   'Was ist der Unterschied zu einer Agentur?',
   'Was ist der Unterschied zu Baukasten oder WordPress-Theme?',
   'Warum setzt du auf Node.js und EJS?',

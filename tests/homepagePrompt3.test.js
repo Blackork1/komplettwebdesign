@@ -71,7 +71,8 @@ test('homepage prompt 3 design keeps previous visual assets and mobile overflow 
   assert.match(homepage, /home-reference-band img\s*{[\s\S]*?aspect-ratio:\s*16 \/ 9/);
   assert.match(homepage, /\/images\/review-bg\.webp/);
   assert.match(homepage, /\.home-page[\s\S]*?overflow-x: hidden/);
-  assert.match(homepage, /overflow-wrap: anywhere/);
+  assert.match(homepage, /overflow-wrap: break-word/);
+  assert.match(homepage, /hyphens:\s*none/);
   assert.match(homepage, /\.home-pricing-track[\s\S]*?overflow-x: auto/);
   assert.match(homepage, /scroll-snap-type: x mandatory/);
 });
@@ -140,6 +141,11 @@ test('homepage hero bridge uses safe scoped highlights with dynamic pricing', ()
   assert.match(homeHighlightsData, /Keine Standard-Templates/);
   assert.match(homeHighlightsData, /Serverseitig gerendertes HTML/);
   assert.match(homeHighlightsData, /Transparente Zusatzleistungen/);
+  assert.match(
+    homeHighlightsData,
+    /key:\s*'performance-goal'[\s\S]*?label:\s*'Schnelle Ladezeiten als Ziel'[\s\S]*?iconClass:\s*'fa-gauge-high'/
+  );
+  assert.doesNotMatch(homeHighlightsData, /iconClass:\s*'fa-tachometer-alt'/);
   assert.match(controller, /buildHomeHeroBridgeHighlights/);
   assert.match(controller, /lowestPackagePriceLabel:\s*localizedLowestPackagePriceLabel/);
   assert.match(homepageTemplate, /heroBridgeHighlights:\s*homeHeroBridgeHighlights/);

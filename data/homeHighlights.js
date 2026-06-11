@@ -63,7 +63,7 @@ const BASE_HERO_BRIDGE_HIGHLIGHTS = Object.freeze([
     key: 'performance-goal',
     label: 'Schnelle Ladezeiten als Ziel',
     labelEn: 'Fast loading as a goal',
-    iconClass: 'fa-tachometer-alt'
+    iconClass: 'fa-gauge-high'
   },
   {
     key: 'mobile-optimized',

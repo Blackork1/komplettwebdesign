@@ -65,9 +65,9 @@ body.website-tester-page {
 .website-tester-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, label, button, dt, dd, blockquote, figcaption) {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .wt-shell {
@@ -638,7 +638,8 @@ body.website-tester-page {
 
 .wt-scanned-pages a {
   font-weight: 600;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .wt-scanned-pages small {

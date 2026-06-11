@@ -8,9 +8,9 @@
 .contact-page-section :is(h1, h2, h3, h4, p, li, a, span, strong, small, label, button, input, textarea, select) {
   max-width: 100%;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .contact-page-section {

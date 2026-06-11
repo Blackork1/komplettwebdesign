@@ -77,6 +77,18 @@ test('interaction polish script is cache-busted when loaded through the shared f
   assert.doesNotMatch(footer, /<script src="\/js\/interaction-polish\.js" defer><\/script>/);
 });
 
+test('interaction polish protects short hyphenated words but keeps overlong tokens breakable', () => {
+  const js = readFileSync(jsUrl, 'utf8');
+
+  assert.match(js, /function applyLayoutAwareHyphenProtection/);
+  assert.match(js, /nonBreakingHyphen\s*=\s*'\\u2011'/);
+  assert.match(js, /measureText\(token/);
+  assert.match(js, /tokenWidth\s*<=\s*availableWidth/);
+  assert.match(js, /replace\(\/-\/g,\s*nonBreakingHyphen\)/);
+  assert.match(js, /window\.addEventListener\('resize',\s*scheduleHyphenProtection/);
+  assert.match(js, /document\.fonts\.ready/);
+});
+
 test('interaction polish prepares hero reveal targets before full page load but waits before showing them', () => {
   const js = readFileSync(jsUrl, 'utf8');
   const listeners = new Map();

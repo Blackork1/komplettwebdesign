@@ -192,7 +192,7 @@ const detailBlocks = Object.freeze([
     points: [
       'Hilfe nach Verfügbarkeit und Wartungspaket',
       'komplexe Probleme können separat berechnet werden',
-      'Drittanbieter-Ausfälle liegen nicht immer im Einflussbereich von Komplettwebdesign'
+      'Drittanbieter-Ausfälle liegen nicht immer im Einflussbereich von Komplett Webdesign'
     ]
   },
   {
@@ -373,7 +373,7 @@ export const maintenancePage = Object.freeze({
   legalNotes: [
     'Wartung erfolgt im vereinbarten Umfang.',
     'Drittanbieter-Kosten, Lizenzen und externe Toolgebühren sind separat zu betrachten.',
-    'Externe Dienste liegen nicht vollständig im Einflussbereich von Komplettwebdesign.',
+    'Externe Dienste liegen nicht vollständig im Einflussbereich von Komplett Webdesign.',
     'Notfallhilfe erfolgt nach Vereinbarung und Verfügbarkeit.',
     'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.',
     'Rechtliche Prüfungen und Rechtstexterstellung sind nicht Bestandteil der technischen Wartung.'

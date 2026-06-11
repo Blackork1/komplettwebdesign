@@ -795,7 +795,8 @@
   scroll-padding-inline: 4px;
   scroll-snap-type: x mandatory;
   scrollbar-color: var(--wd-accent) rgba(11, 42, 70, 0.1);
-  touch-action: pan-y;
+  scrollbar-width: thin;
+  touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -809,7 +810,22 @@
 .webdesign-berlin .wd-scroll-cards::-webkit-scrollbar,
 .webdesign-berlin .wd-district-grid::-webkit-scrollbar,
 .webdesign-berlin .wd-tech-grid::-webkit-scrollbar {
-  height: 10px;
+  height: 3px;
+}
+
+.webdesign-berlin :is(
+  .wd-packages,
+  .wd-scroll-cards,
+  .wd-district-grid,
+  .wd-tech-grid
+).is-dragging::-webkit-scrollbar,
+.webdesign-berlin :is(
+  .wd-packages,
+  .wd-scroll-cards,
+  .wd-district-grid,
+  .wd-tech-grid
+).is-scrolling::-webkit-scrollbar {
+  height: 8px;
 }
 
 .webdesign-berlin .wd-packages::-webkit-scrollbar-thumb,
@@ -958,6 +974,13 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.webdesign-berlin .wd-scroll-cards,
+.webdesign-berlin .wd-district-grid,
+.webdesign-berlin .wd-tech-grid {
+  scrollbar-color: var(--wd-accent) rgba(11, 42, 70, 0.1);
+  scrollbar-width: thin;
+}
+
 .webdesign-berlin .wd-steps {
   counter-reset: steps;
   display: grid;
@@ -1049,6 +1072,29 @@
   color: var(--wd-ink);
   cursor: pointer;
   font-weight: 850;
+  list-style: none;
+  padding-right: 36px;
+  position: relative;
+}
+
+.webdesign-berlin summary::-webkit-details-marker {
+  display: none;
+}
+
+.webdesign-berlin .wd-faq summary::after {
+  color: var(--wd-accent);
+  content: "+";
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.webdesign-berlin .wd-faq details[open] summary::after {
+  content: "–";
 }
 
 .webdesign-berlin .wd-link-row {
@@ -1212,6 +1258,8 @@
     scroll-padding-inline: 2px;
     scroll-snap-type: x mandatory;
     scrollbar-color: var(--wd-accent) rgba(11, 42, 70, 0.1);
+    scrollbar-width: thin;
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -1238,6 +1286,8 @@
     scroll-padding-inline: 2px;
     scroll-snap-type: x mandatory;
     scrollbar-color: var(--wd-accent) rgba(11, 42, 70, 0.1);
+    scrollbar-width: thin;
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
   }
 

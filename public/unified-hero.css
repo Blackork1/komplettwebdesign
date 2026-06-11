@@ -57,9 +57,9 @@
 .unified-hero button {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 .unified-hero__container {
@@ -183,9 +183,9 @@
   line-height: 1.08 !important;
   letter-spacing: 0;
   text-wrap: balance;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
   overflow: visible !important;
 }
 
@@ -203,7 +203,7 @@
   font-weight: 800;
   line-height: 1.25;
   text-transform: uppercase;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .unified-hero :is(.unified-hero__lead, .references-lead, .seo-landing__lead, .rg-lead, .rg-detail-lead, .wd-lead, .hero-subtitle, .wt-lead) {
@@ -213,8 +213,8 @@
   font-size: clamp(1.04rem, 1.7vw, 1.22rem);
   font-weight: 600;
   line-height: 1.68;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 
 :is(.unified-hero, .service-hero) .home-hero-reveal.animate-on-scroll {
@@ -425,8 +425,8 @@
 .blog-page .unified-hero :is(h1, h2, h3, p),
 .industries-index-page .unified-hero :is(h1, h2, h3, p),
 .industry-detail-page .unified-hero :is(h1, h2, h3, p) {
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  overflow-wrap: break-word;
+  hyphens: none;
   overflow: visible;
 }
 

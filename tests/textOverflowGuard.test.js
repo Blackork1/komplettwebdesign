@@ -17,9 +17,11 @@ function blockAfter(source, marker) {
 function assertTextWrapGuard(source, marker) {
   const block = blockAfter(source, marker);
   assert.match(block, /min-width:\s*0;/);
-  assert.match(block, /overflow-wrap:\s*anywhere;/);
+  assert.match(block, /overflow-wrap:\s*break-word;/);
   assert.match(block, /word-break:\s*normal;/);
-  assert.match(block, /hyphens:\s*auto;/);
+  assert.match(block, /hyphens:\s*none;/);
+  assert.doesNotMatch(block, /overflow-wrap:\s*anywhere;/);
+  assert.doesNotMatch(block, /hyphens:\s*auto;/);
 }
 
 function simpleCssRules(source) {
@@ -76,9 +78,37 @@ test('new marketing pages protect long German words from text overflow', () => {
     ['public/ratgeber.css', 'Ratgeber text overflow safety'],
     ['public/district-berlin.css', 'District text overflow safety'],
     ['public/about.css', 'About text overflow safety'],
-    ['public/kontakt.css', 'Contact text overflow safety']
+    ['public/kontakt.css', 'Contact text overflow safety'],
+    ['public/home.css', 'Homepage mobile text overflow safety']
   ].forEach(([path, marker]) => {
     assertTextWrapGuard(read(path), marker);
+  });
+});
+
+test('public marketing text avoids aggressive automatic hyphenation rules', () => {
+  [
+    'public/package-list.css',
+    'public/extra.css',
+    'public/package-detail.css',
+    'public/references.css',
+    'public/leistungen.css',
+    'public/website-tester.css',
+    'public/unified-hero.css',
+    'public/ratgeber.css',
+    'public/district-berlin.css',
+    'public/about.css',
+    'public/kontakt.css',
+    'public/home.css',
+    'public/seo-landing.css'
+  ].forEach((path) => {
+    const source = read(path);
+
+    assert.doesNotMatch(source, /hyphens:\s*auto;/, `${path} must not auto-hyphenate text`);
+    assert.doesNotMatch(
+      source,
+      /overflow-wrap:\s*anywhere;/,
+      `${path} must not create arbitrary text break opportunities`
+    );
   });
 });
 

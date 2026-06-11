@@ -11,7 +11,7 @@ import { safeAxiosRequest } from '../util/safeHttpClient.js';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const PUBLIC_TOP_PAGES = 3;
 
-const USER_AGENT = 'KomplettWebdesign Broken Links Tester/1.0 (+https://komplettwebdesign.de)';
+const USER_AGENT = 'Komplett Webdesign Broken Links Tester/1.0 (+https://komplettwebdesign.de)';
 const DEFAULT_MAX_SUBPAGES = 5;
 const MIN_MAX_SUBPAGES = 1;
 const MAX_MAX_SUBPAGES = 20;

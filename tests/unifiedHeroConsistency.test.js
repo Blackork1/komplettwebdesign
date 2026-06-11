@@ -63,8 +63,8 @@ test('shared hero css uses the brand palette and protects long h1 text from clip
 
   assert.match(css, /#0b2a46/i);
   assert.match(css, /#e94a1b/i);
-  assert.match(css, /overflow-wrap:\s*anywhere/i);
-  assert.match(css, /hyphens:\s*auto/i);
+  assert.match(css, /overflow-wrap:\s*break-word/i);
+  assert.match(css, /hyphens:\s*none/i);
   assert.match(css, /overflow:\s*visible/i);
   assert.match(css, /line-height:\s*1\.08/i);
 });

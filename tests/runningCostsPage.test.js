@@ -61,6 +61,18 @@ test('running costs copy separates project, hosting, domain, email, maintenance 
   assert.ok(runningCostsPage.faq.length >= 20);
 });
 
+test('running costs examples show a cost range for every scenario', () => {
+  assert.equal(runningCostsPage.examples.length, 4);
+
+  runningCostsPage.examples.forEach((example) => {
+    assert.equal(typeof example.costRange, 'string', `${example.title} is missing a cost range`);
+    assert.match(example.costRange, /ca\.\s*\d+.*€/i, `${example.title} should show an approximate euro range`);
+  });
+
+  assert.match(templateSource, /example\.costRange/);
+  assert.match(templateSource, /running-costs-example-range/);
+});
+
 test('running costs page avoids legacy prices, guarantee language and false all-inclusive claims', () => {
   assert.doesNotMatch(pageText, /(?:^|[^.\d])(499|899)\s*€/);
   assert.doesNotMatch(pageText, /Wartung ab 5|ab\s*5\s*€|keine laufenden Kosten|keine monatlichen Kosten/i);

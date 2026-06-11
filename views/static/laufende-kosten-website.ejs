@@ -193,7 +193,7 @@
     <section class="running-costs-section running-costs-section--soft">
       <div class="running-costs-shell animate-on-scroll">
         <p class="running-costs-section-kicker"><i class="fa-solid fa-people-arrows" aria-hidden="true"></i>Zuständigkeit</p>
-        <h2>Was über Komplettwebdesign laufen kann und was besser direkt über dich läuft</h2>
+        <h2>Was über Komplett Webdesign laufen kann und was besser direkt über dich läuft</h2>
         <p class="running-costs-section-lead">Das Ziel ist weniger Abhängigkeit und klarere Rechnungen, nicht mehr Komplexität.</p>
         <div class="running-costs-responsibility">
           <article id="handled-by-komplettwebdesign" class="running-costs-note-box">
@@ -228,6 +228,10 @@
               <strong><%= example.setup %></strong>
               <h3><%= example.title %></h3>
               <p><%= example.note %></p>
+              <div class="running-costs-example-range">
+                <span>Grobe Kostenspanne</span>
+                <b><%= example.costRange %></b>
+              </div>
             </div>
             <ul class="running-costs-pill-list">
               <% example.costs.forEach((cost) => { %>
@@ -253,7 +257,7 @@
 
         <div id="legal-notes" class="running-costs-note-grid">
           <article class="running-costs-note-box">
-            <h3>Rechtlich vorsichtige Hinweise</h3>
+            <h3>Rechtliche Hinweise</h3>
             <% page.legalNotes.forEach((note) => { %>
             <p><%= note %></p>
             <% }) %>

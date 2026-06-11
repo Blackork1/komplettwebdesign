@@ -23,7 +23,7 @@ import { safeAxiosRequest } from '../util/safeHttpClient.js';
  * from data the Website-Audit already collected.
  */
 
-const USER_AGENT = 'KomplettWebdesign GEO Tester/2.0 (+https://komplettwebdesign.de)';
+const USER_AGENT = 'Komplett Webdesign GEO Tester/2.0 (+https://komplettwebdesign.de)';
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_RESPONSE_BYTES = 200_000;
 

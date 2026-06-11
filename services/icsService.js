@@ -11,7 +11,7 @@ export function generateICS(apt, status ="pending"){
     const cal = ical ({
         name: "Komplett Webdesign Termin",
         domain: "komplettwebdesign.de",
-        prodId: "//KomplettWebdesign//Booking 1.0//DE",
+        prodId: "//Komplett Webdesign//Booking 1.0//DE",
         timezone: "Europe/Berlin",
     });
 

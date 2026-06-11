@@ -33,9 +33,9 @@ body.about-page {
 .about-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, button, blockquote, figcaption) {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  hyphens: auto;
+  hyphens: none;
 }
 
 /* Legacy Hero Fallback */

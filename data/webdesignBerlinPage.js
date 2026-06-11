@@ -209,27 +209,27 @@ export const webdesignBerlinPage = Object.freeze({
     },
     steps: [
       {
-        title: '1. Anfrage und Einordnung',
+        title: 'Anfrage und Einordnung',
         text: 'Du beschreibst kurz Projektart, Umfang, Budgetrahmen und vorhandene Website.',
         href: '/kontakt'
       },
       {
-        title: '2. Struktur und Angebot',
+        title: 'Struktur und Angebot',
         text: 'Ich ordne den passenden Paketrahmen ein und grenze Zusatzleistungen sichtbar ab.',
         href: '/pakete'
       },
       {
-        title: '3. Design und Umsetzung',
+        title: 'Design und Umsetzung',
         text: 'Die Website wird mit Node.js, EJS, CSS und JavaScript im vereinbarten Umfang umgesetzt.',
         href: '/webdesign-berlin'
       },
       {
-        title: '4. Feedback und Freigabe',
+        title: 'Feedback und Freigabe',
         text: 'Feedbackrunden laufen gemäß Paket. Weitere Wünsche können separat kalkuliert werden.',
         href: '/leistungen/zusatzleistungen-webdesign'
       },
       {
-        title: '5. Launch-Vorbereitung',
+        title: 'Launch-Vorbereitung',
         text: 'Der Livegang erfolgt nach Freigabe und gemäß vereinbartem Zahlungsmodell.',
         href: '/leistungen/website-wartung'
       }
@@ -273,11 +273,11 @@ export const webdesignBerlinPage = Object.freeze({
   },
   faq: [
     {
-      question: 'Was kostet Webdesign in Berlin bei Komplettwebdesign?',
+      question: 'Was kostet Webdesign in Berlin bei Komplett Webdesign?',
       answer: 'Start beginnt bei {{price.start}}, Business bei {{price.business}}, Wachstum bei {{price.wachstum}} und individuelle Projekte bei {{price.individuell}}. Die Preise beziehen sich auf die einmalige Erstellung im vereinbarten Umfang und gelten gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
     },
     {
-      question: 'Für wen ist Komplettwebdesign geeignet?',
+      question: 'Für wen ist Komplett Webdesign geeignet?',
       answer: 'Geeignet ist das Angebot für kleine Unternehmen, Selbstständige, lokale Dienstleister, Praxen, Handwerk und Beratungen in Berlin und Brandenburg, die eine klare Website für Anfragen benötigen.'
     },
     {
@@ -310,7 +310,7 @@ export const webdesignBerlinPage = Object.freeze({
     },
     {
       question: 'Ist Hosting enthalten?',
-      answer: 'Hosting ist nicht automatisch Teil des Projektpreises. Je nach Setup kann es separat über Komplettwebdesign betreut werden oder direkt über dich laufen.'
+      answer: 'Hosting ist nicht automatisch Teil des Projektpreises. Je nach Setup kann es separat über Komplett Webdesign betreut werden oder direkt über dich laufen.'
     },
     {
       question: 'Gibt es laufende Kosten?',
