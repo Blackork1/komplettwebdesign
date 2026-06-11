@@ -166,8 +166,38 @@
     .industries-index-page .post-list,
     .package-detail-page .addons-ticker
   ) {
+    --kwd-slider-indicator-track: color-mix(in srgb, var(--kwd-motion-ink) 13%, transparent);
+    --kwd-slider-indicator-thumb: var(--kwd-motion-accent);
+    --kwd-slider-thumb-width: 28%;
+    --kwd-slider-thumb-offset: 0%;
     scrollbar-color: var(--kwd-motion-accent) color-mix(in srgb, var(--kwd-motion-ink) 10%, transparent);
     scrollbar-width: thin;
+  }
+
+  :where(
+    [data-package-slider],
+    [data-pricing-slider],
+    .webdesign-berlin .wd-tech-grid,
+    .webdesign-berlin .wd-scroll-cards,
+    .webdesign-berlin .wd-district-grid,
+    .rg-featured-scroll,
+    .horizontalSlider,
+    .funktionenItemContainer,
+    .flexVorteile,
+    .tippsContainer,
+    .industries-index-page .post-list,
+    .package-detail-page .addons-ticker
+  ).has-overflow-indicator {
+    background-image:
+      linear-gradient(var(--kwd-slider-indicator-thumb), var(--kwd-slider-indicator-thumb)),
+      linear-gradient(var(--kwd-slider-indicator-track), var(--kwd-slider-indicator-track));
+    background-position:
+      var(--kwd-slider-thumb-offset) calc(100% - 2px),
+      left calc(100% - 2px);
+    background-repeat: no-repeat;
+    background-size:
+      var(--kwd-slider-thumb-width) 4px,
+      100% 4px;
   }
 
   :where(

@@ -568,7 +568,10 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             <h2><%= copy.trustTitle %></h2>
             <p class="home-section-lead"><%= copy.trustSubline %></p>
             <figure class="home-wide-media animate-on-scroll">
-              <img src="/images/review-bg.webp" alt="<%= isEn ? 'Project preview and reference presentation' : 'Projektvorschau und Referenzdarstellung' %>" width="920" height="520" loading="lazy" decoding="async">
+              <a href="/referenzen" class="home-wide-media-link" aria-label="<%= isEn ? 'View references' : 'Referenzen anzeigen' %>">
+                <img src="/images/review-bg.webp" alt="<%= isEn ? 'Project preview and reference presentation' : 'Projektvorschau und Referenzdarstellung' %>" width="920" height="520" loading="lazy" decoding="async">
+                <span class="home-wide-media-cta" aria-hidden="true"><%= isEn ? 'View references' : 'Referenzen anzeigen' %></span>
+              </a>
             </figure>
             <% const hasTrustReviews = Array.isArray(trustReviews) && trustReviews.length > 0; %>
             <% if (reviewAggregate && reviewAggregate.count) { %>

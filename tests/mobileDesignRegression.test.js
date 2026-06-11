@@ -71,13 +71,21 @@ test('package sliders preserve native touch scroll and expose thin active scroll
   );
 });
 
-test('mobile horizontal sliders use one persistent native slide indicator', () => {
+test('mobile horizontal sliders use one persistent slide indicator', () => {
   assert.match(interactionPolish, /data-pricing-slider/);
   assert.match(interactionPolish, /rg-featured-scroll/);
   assert.match(interactionPolish, /horizontalSlider/);
   assert.match(interactionPolish, /industries-index-page \.post-list/);
+  assert.match(interactionPolish, /function updatePersistentSliderIndicator/);
+  assert.match(interactionPolish, /slider\.classList\.toggle\('has-overflow-indicator', hasOverflow\)/);
+  assert.match(interactionPolish, /--kwd-slider-thumb-width/);
+  assert.match(interactionPolish, /--kwd-slider-thumb-offset/);
   assert.doesNotMatch(interactionPolish, /kwd-scroll-indicator/);
   assert.doesNotMatch(interactionPolishCss, /kwd-scroll-indicator/);
+  assert.match(interactionPolishCss, /\.has-overflow-indicator/);
+  assert.match(interactionPolishCss, /--kwd-slider-thumb-width/);
+  assert.match(interactionPolishCss, /--kwd-slider-thumb-offset/);
+  assert.match(interactionPolishCss, /background-image:\s*linear-gradient\(var\(--kwd-slider-indicator-thumb\),\s*var\(--kwd-slider-indicator-thumb\)\),[\s\S]*?linear-gradient\(var\(--kwd-slider-indicator-track\),\s*var\(--kwd-slider-indicator-track\)\)/);
   assert.match(
     interactionPolishCss,
     /::-webkit-scrollbar\s*\{[\s\S]*?display:\s*block !important;[\s\S]*?height:\s*3px !important;/

@@ -404,12 +404,50 @@
 
       var scrollTimer = 0;
 
+      function updatePersistentSliderIndicator() {
+        var clientWidth = slider.clientWidth || 0;
+        var scrollWidth = slider.scrollWidth || 0;
+        var maxScroll = Math.max(0, scrollWidth - clientWidth);
+        var hasOverflow = maxScroll > 2;
+
+        slider.classList.toggle('has-overflow-indicator', hasOverflow);
+
+        if (!hasOverflow || !scrollWidth || !clientWidth) {
+          slider.style.removeProperty('--kwd-slider-thumb-width');
+          slider.style.removeProperty('--kwd-slider-thumb-offset');
+          return;
+        }
+
+        var visibleRatio = Math.min(1, Math.max(0.18, clientWidth / scrollWidth));
+        var thumbWidth = visibleRatio * 100;
+        var maxOffset = Math.max(0, 100 - thumbWidth);
+        var progress = Math.min(1, Math.max(0, slider.scrollLeft / maxScroll));
+
+        slider.style.setProperty('--kwd-slider-thumb-width', thumbWidth.toFixed(2) + '%');
+        slider.style.setProperty('--kwd-slider-thumb-offset', (progress * maxOffset).toFixed(2) + '%');
+      }
+
       function markScrolling() {
+        updatePersistentSliderIndicator();
         slider.classList.add('is-scrolling');
         window.clearTimeout(scrollTimer);
         scrollTimer = window.setTimeout(function() {
           slider.classList.remove('is-scrolling');
         }, 420);
+      }
+
+      updatePersistentSliderIndicator();
+      onPageLoaded(updatePersistentSliderIndicator);
+      window.addEventListener('resize', updatePersistentSliderIndicator, { passive: true });
+      window.addEventListener('orientationchange', updatePersistentSliderIndicator, { passive: true });
+
+      if (window.ResizeObserver) {
+        var sliderResizeObserver = new ResizeObserver(updatePersistentSliderIndicator);
+        sliderResizeObserver.observe(slider);
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(updatePersistentSliderIndicator).catch(function() {});
       }
 
       slider.addEventListener('scroll', markScrolling, { passive: true });

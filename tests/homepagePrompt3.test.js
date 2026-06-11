@@ -146,14 +146,44 @@ test('homepage hero bridge uses safe scoped highlights with dynamic pricing', ()
   assert.match(homeHighlightsData, /Transparente Zusatzleistungen/);
   assert.match(
     homeHighlightsData,
-    /key:\s*'performance-goal'[\s\S]*?label:\s*'Schnelle Ladezeiten als Ziel'[\s\S]*?iconClass:\s*'fa-gauge-high'/
+    /key:\s*'performance-goal'[\s\S]*?label:\s*'Schnelle Ladezeiten als Ziel'[\s\S]*?iconClass:\s*'fa-stopwatch'/
   );
   assert.doesNotMatch(homeHighlightsData, /iconClass:\s*'fa-tachometer-alt'/);
+  assert.doesNotMatch(homeHighlightsData, /iconClass:\s*'fa-gauge-high'/);
   assert.match(controller, /buildHomeHeroBridgeHighlights/);
   assert.match(controller, /lowestPackagePriceLabel:\s*localizedLowestPackagePriceLabel/);
   assert.match(homepageTemplate, /heroBridgeHighlights:\s*homeHeroBridgeHighlights/);
 
   assert.doesNotMatch(homeHighlightsData, /DSGVO-konform|rechtssicher|Ranking garantiert|garantiert mehr Kunden|alles inklusive|keine versteckten Kosten/i);
+});
+
+test('homepage trust section points to the project example and real customer reviews', () => {
+  const joined = `${homepage}\n${controller}`;
+
+  assert.match(
+    controller,
+    /trustSubline:\s*'Hier siehst du ein echtes Projektbeispiel von mir sowie echte Bewertungen von Kunden, die bereits mit Komplett Webdesign zusammengearbeitet haben\.'/
+  );
+  assert.match(
+    controller,
+    /trustSubline:\s*'Here you can see a real project example from Komplett Webdesign and verified client reviews from people who have already worked with me\.'/
+  );
+  assert.doesNotMatch(joined, /Wenn echte Bewertungen vorhanden sind|Bis dahin zählen Arbeitsweise/);
+  assert.doesNotMatch(joined, /When verified reviews are available|Until then, the focus/);
+});
+
+test('homepage trust media links to references and zooms gently on hover', () => {
+  const trustSection = homepageTemplate.match(/<section class="section" id="trust"[\s\S]*?<\/section>/)?.[0] || '';
+
+  assert.match(
+    trustSection,
+    /<figure class="home-wide-media animate-on-scroll">[\s\S]*?<a href="\/referenzen" class="home-wide-media-link" aria-label="<%= isEn \? 'View references' : 'Referenzen anzeigen' %>">[\s\S]*?<img src="\/images\/review-bg\.webp"[\s\S]*?<span class="home-wide-media-cta" aria-hidden="true"><%= isEn \? 'View references' : 'Referenzen anzeigen' %><\/span>/
+  );
+  assert.match(homeCss, /\.home-page \.home-wide-media-link\s*{[\s\S]*?display:\s*block[\s\S]*?height:\s*100%[\s\S]*?position:\s*relative/);
+  assert.match(homeCss, /\.home-page \.home-wide-media-link img\s*{[\s\S]*?transition:\s*transform 0\.28s ease/);
+  assert.match(homeCss, /\.home-page \.home-wide-media-link:is\(:hover, :focus-visible\) img\s*{[\s\S]*?transform:\s*scale\(1\.035\)/);
+  assert.match(homeCss, /\.home-page \.home-wide-media-cta\s*{[\s\S]*?position:\s*absolute[\s\S]*?bottom:\s*clamp\(0\.8rem, 2vw, 1\.25rem\)[\s\S]*?opacity:\s*0/);
+  assert.match(homeCss, /\.home-page \.home-wide-media-link:is\(:hover, :focus-visible\) \.home-wide-media-cta\s*{[\s\S]*?opacity:\s*1[\s\S]*?transform:\s*translate\(-50%, 0\)/);
 });
 
 test('homepage hero uses the final recommended copy and a quieter CTA hierarchy', () => {
