@@ -24,8 +24,13 @@
 
   function trackEvent(name, payload) {
     try {
-      if (typeof window.gtag !== 'function') return;
-      window.gtag('event', name, payload || {});
+      if (window.KWDTracking && typeof window.KWDTracking.trackEvent === 'function') {
+        window.KWDTracking.trackEvent(name, payload || {});
+        return;
+      }
+      document.dispatchEvent(new CustomEvent('kwd:tracking', {
+        detail: { eventName: name, params: payload || {} }
+      }));
     } catch (_error) {
       // ignore
     }
@@ -139,7 +144,7 @@
         <div class="wt-next-step-package">
           <strong>${escapeHtml(pkg.title)}</strong>
           <p>${escapeHtml(pkg.text || '')}</p>
-          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkgHref)}" data-tester-cta="seo" data-tester-action="package" data-seo-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+          <a class="btn btn-secondary" href="${escapeHtml(pkgHref)}" data-tester-cta="seo" data-tester-action="package" data-seo-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
         </div>`;
     }
 
@@ -148,8 +153,8 @@
         <h2><i class="fa-solid fa-rocket"></i> ${escapeHtml(headline)}</h2>
         <p>${escapeHtml(intro)}</p>
         <div class="wt-cta-actions">
-          <a class="wt-button" href="${escapeHtml(bookingUrl)}" data-tester-cta="seo" data-tester-action="booking" data-seo-cta="booking">${escapeHtml(bookingLabel)}</a>
-          <a class="wt-button wt-button-ghost" href="${escapeHtml(contactUrl)}" data-tester-cta="seo" data-tester-action="contact" data-seo-cta="contact">${escapeHtml(contactLabel)}</a>
+          <a class="btn btn-primary" href="${escapeHtml(bookingUrl)}" data-tester-cta="seo" data-tester-action="booking" data-seo-cta="booking">${escapeHtml(bookingLabel)}</a>
+          <a class="btn btn-secondary" href="${escapeHtml(contactUrl)}" data-tester-cta="seo" data-tester-action="contact" data-seo-cta="contact">${escapeHtml(contactLabel)}</a>
         </div>
         ${pkgBlock}
       </section>
@@ -292,9 +297,9 @@
         <aside>
           <section class="wt-priorities">
             <h3><i class="fa-solid fa-bullseye"></i> ${escapeHtml(i18n.potentialTitle || 'Optimierungspotenzial')}</h3>
-            <p style="margin-top:0.55rem;">${escapeHtml(potential.headline || '')}</p>
+            <p class="wt-stack-xs">${escapeHtml(potential.headline || '')}</p>
             <p>${escapeHtml(potential.text || '')}</p>
-            <h4 style="margin:0.75rem 0 0.35rem;">${escapeHtml(i18n.topPotentialAreasTitle || 'Top-Potenzialbereiche')}</h4>
+            <h4 class="wt-heading-spaced">${escapeHtml(i18n.topPotentialAreasTitle || 'Top-Potenzialbereiche')}</h4>
             <ul class="wt-priority-list">${renderPotentialAreas(potential.topPotentialAreas || [])}</ul>
           </section>
         </aside>
@@ -315,7 +320,7 @@
               ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
             </a>
           </small>
-          <button class="wt-button" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
+          <button class="btn btn-primary" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
           <p class="wt-lead-state" data-seo-lead-state hidden></p>
         </form>
       </section>

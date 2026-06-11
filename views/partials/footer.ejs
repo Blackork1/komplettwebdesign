@@ -1,81 +1,25 @@
-<style>
-  .chat-container.open {
-    transform: translateX(0);
-  }
-
-  .chat-container {
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 0.5rem;
-    bottom: 20px;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    height: 450px;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    width: 320px;
-  }
-
-  .chat-button {
-    position: fixed;
-    right: -50px;
-    z-index: 990;
-  }
-</style>
 <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
+<% const footerColumns = (typeof footerNavigation !== 'undefined' && Array.isArray(footerNavigation)) ? footerNavigation : []; %>
+<% const footerHref = (item = {}) => (isEn && item.hrefEn ? item.hrefEn : item.href); %>
+<% const footerLabel = (item = {}) => (isEn && item.labelEn ? item.labelEn : item.label); %>
 
 <section class="section" id="footer">
   <div class="footer-container">
     <footer class="site-footer">
       <div class="footer-main">
-        <!-- LINKS: Logo -->
+        <!-- LINKS: Logo + Newsletter -->
         <div class="footer-left">
           <a href="<%= isEn ? '/en' : '/' %>" class="footerLogo">
             <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo" loading="lazy" />
           </a>
-        </div>
 
-        <!-- RECHTS: Nav-Liste + Newsletter -->
-        <div class="footer-right">
-          <!-- Link-Liste -->
-          <nav class="footer-nav">
-            <h3><%= isEn ? 'Legal' : 'Rechtliches' %></h3>
-            <a href="/impressum"><%= isEn ? 'Legal notice' : 'Impressum' %></a>
-            <a href="/datenschutz"><%= isEn ? 'Privacy policy' : 'Datenschutz' %></a>
-            <!-- <a href="/agb">AGB</a> -->
-          </nav>
-          <nav class="footer-nav">
-            <h3><%= isEn ? 'Information' : 'Informationen' %></h3>
-            <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>">Webdesign Berlin</a>
-            <% if (!isEn) { %>
-            <a href="/website-erstellen-lassen-berlin">Website erstellen lassen Berlin</a>
-            <a href="/website-relaunch-berlin">Website Relaunch Berlin</a>
-            <a href="/ablauf">Ablauf Webdesign Berlin</a>
-            <% } %>
-            <a href="/referenzen"><%= isEn ? 'References' : 'Referenzen' %></a>
-            <a href="/ratgeber"><%= isEn ? 'Guides' : 'Ratgeber' %></a>
-            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
-            <a href="/faq">FAQ</a>
-            <a href="/about"><%= isEn ? 'About me' : 'Über mich' %></a>
-          </nav>
-          <nav class="footer-nav">
-            <h3>Website-Tester</h3>
-            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Overview' : 'Übersicht' %></a>
-            <a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">SEO-Tester</a>
-            <a href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">GEO-Tester</a>
-            <a href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">Meta-Tester</a>
-            <a href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>"><%= isEn ? 'Broken Links Tester' : 'Broken-Links-Tester' %></a>
-          </nav>
-
-          <!-- Newsletter-Sektion -->
           <div class="newsletter">
             <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
             <form action="/newsletter/signup" method="POST" class="newsletter-form" data-recaptcha="v3" data-recaptcha-action="newsletter_signup">
               <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
               <input type="hidden" name="token">
               <input type="hidden" name="newsletter_started_at" value="<%= Date.now() %>">
-              <div class="newsletter-form__trap" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">
+              <div class="newsletter-form__trap form-honeypot" aria-hidden="true">
                 <label for="footerNewsletterCompanyWebsite">Website</label>
                 <input type="text" name="company_website" id="footerNewsletterCompanyWebsite" tabindex="-1" autocomplete="off">
               </div>
@@ -96,6 +40,18 @@
               </label>
             </div>
           </div>
+        </div>
+
+        <!-- RECHTS: Nav-Liste -->
+        <div class="footer-right">
+          <% footerColumns.forEach((column) => { %>
+            <nav class="footer-nav" aria-label="<%= footerLabel(column) %>">
+              <h3><%= footerLabel(column) %></h3>
+              <% (column.links || []).forEach((link) => { %>
+                <a href="<%= footerHref(link) %>"><%= footerLabel(link) %></a>
+              <% }) %>
+            </nav>
+          <% }) %>
         </div>
       </div>
 
@@ -120,7 +76,7 @@
   <!-- Floating Chat-Button -->
   <button id="chat-toggle" class="btn btn-primary chat-button"><%= isEn ? 'Chat' : 'Chat' %></button>
   <!-- Chat-Container -->
-  <div id="chat-container" class="chat-container">
+  <div id="chat-container" class="chat-container" aria-hidden="true">
     <div class="chat-header d-flex justify-content-between align-items-center p-2 border-bottom">
       <strong>Chatbot</strong>
       <button id="chat-close" type="button" class="btn-close" aria-label="<%= isEn ? 'Close chatbot' : 'Chatbot schließen' %>"></button>
@@ -150,7 +106,7 @@
 <% if (typeof disableInteractionPolish === 'undefined' || !disableInteractionPolish) { %>
 <script src="<%= scriptAsset('js/interaction-polish.js') %>" defer></script>
 <% } %>
-<script src="<%= scriptAsset('js/ga-events.js') %>" defer></script>
+<script src="<%= scriptAsset('js/tracking.js') %>" defer></script>
 
 <script src="<%= scriptAsset('js/chat.js') %>" defer></script>
 <script>
@@ -255,6 +211,31 @@
     });
     window.addEventListener('resize', toggleBackToTop);
     toggleBackToTop();
+  })();
+</script>
+<script>
+  (function() {
+    function setupDetailsAccordion(root) {
+      var items = Array.prototype.slice.call(root.querySelectorAll('details'));
+      if (!items.length) return;
+
+      items.forEach(function(item, index) {
+        item.open = index === 0;
+      });
+
+      items.forEach(function(item) {
+        item.addEventListener('toggle', function() {
+          if (!item.open) return;
+          items.forEach(function(other) {
+            if (other !== item) other.open = false;
+          });
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.seo-landing__faq-list, .wd-faq-grid, .service-faq, .maintenance-faq, .running-costs-faq, .add-ons-faq, .local-seo-faq, .faq-list, .faq-detail-list, .rg-faq-list, .wt-faq, [data-faq-accordion]').forEach(setupDetailsAccordion);
+    });
   })();
 </script>
 <script src="<%= scriptAsset('js/recaptcha-form.js') %>" defer></script>

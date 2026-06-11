@@ -71,11 +71,7 @@
     input.autocomplete = 'off';
     input.tabIndex = -1;
     input.setAttribute('aria-hidden', 'true');
-    input.style.position = 'absolute';
-    input.style.left = '-10000px';
-    input.style.width = '1px';
-    input.style.height = '1px';
-    input.style.opacity = '0';
+    input.className = 'tester-honeypot';
     return input;
   }
 

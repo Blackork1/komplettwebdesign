@@ -1,0 +1,108 @@
+<%
+  const noticePath = '/hinweise-rechtstexte-seo-datenschutz';
+  const siteBase = (typeof canonicalBaseUrl !== 'undefined' ? canonicalBaseUrl : 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const pageUrl = `${siteBase}${noticePath}`;
+  const structuredDataBlocks = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      '@id': `${pageUrl}#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${siteBase}/` },
+        { '@type': 'ListItem', position: 2, name: 'Hinweise zu Rechtstexten, SEO und Datenschutz', item: pageUrl }
+      ]
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': `${pageUrl}#webpage`,
+      url: pageUrl,
+      name: 'Hinweise zu Rechtstexten, SEO und Datenschutz',
+      description: 'Wichtige Hinweise zur technischen Einbindung von Rechtstexten, SEO-Grenzen, Drittanbieter-Kosten und Datenschutz bei Website-Anfragen.',
+      isPartOf: {
+        '@type': 'WebSite',
+        '@id': `${siteBase}/#website`,
+        url: `${siteBase}/`,
+        name: 'Komplett Webdesign'
+      },
+      breadcrumb: { '@id': `${pageUrl}#breadcrumb` }
+    }
+  ];
+%>
+<%- include('../partials/head', { title, description, canonicalUrl: pageUrl, structuredDataBlocks, extraCssAssets: ['legal-notices.css'] }) %>
+<%- include('../partials/header') %>
+
+<main class="notice-page">
+  <section class="notice-hero">
+    <div class="container notice-hero__inner">
+      <nav class="notice-breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Startseite</a>
+        <span aria-hidden="true">/</span>
+        <span>Hinweise</span>
+      </nav>
+      <p class="notice-eyebrow">Hinweisseite</p>
+      <h1>Hinweise zu Rechtstexten, SEO und Datenschutz</h1>
+      <p>
+        Diese Seite fasst wichtige Hinweise zusammen, die für Website-Anfragen, Projektabgrenzung
+        und die Verarbeitung deiner Angaben relevant sind. Sie ergänzt die Datenschutzerklärung,
+        ersetzt aber keine individuelle rechtliche Prüfung.
+      </p>
+    </div>
+  </section>
+
+  <section class="notice-content" aria-labelledby="notice-topics">
+    <div class="container">
+      <h2 id="notice-topics">Wichtige Hinweise vor deiner Anfrage</h2>
+      <div class="notice-grid">
+        <article class="notice-card">
+          <h3>Rechtstexte und Cookie-Hinweise</h3>
+          <p>
+            Impressum, Datenschutzerklärung und Cookie-/Consent-Hinweise können technisch in eine Website
+            eingebunden werden. Die Erstellung, Prüfung oder Bewertung rechtlicher Texte ist keine
+            Rechtsberatung und sollte bei Bedarf über spezialisierte Anbieter oder eine Rechtsberatung erfolgen.
+          </p>
+        </article>
+        <article class="notice-card">
+          <h3>SEO und lokale Sichtbarkeit</h3>
+          <p>
+            Ich kann technische SEO-Grundlagen, saubere Seitenstrukturen, Meta-Daten und lokale Inhalte
+            im vereinbarten Umfang umsetzen. Bestimmte Platzierungen bei Google, Google Maps, Anfragen
+            oder Umsätze können nicht garantiert werden.
+          </p>
+        </article>
+        <article class="notice-card">
+          <h3>Drittanbieter und laufende Kosten</h3>
+          <p>
+            Kosten für Drittanbieter-Tools, Cookie-/Consent-Dienste, Buchungssysteme, Newsletter-Tools,
+            Zahlungsanbieter, Lizenzen, Domain, E-Mail, Hosting oder Wartung sind nicht automatisch enthalten.
+            Solche Kosten werden getrennt eingeordnet.
+          </p>
+        </article>
+        <article class="notice-card">
+          <h3>Datenschutz und Kontaktformular</h3>
+          <p>
+            Angaben aus dem Kontaktformular werden zur Bearbeitung deiner Anfrage verarbeitet. Bitte sende
+            über das Formular keine Passwörter, vertraulichen Zugangsdaten oder sensiblen Kundendaten.
+            Details zur Verarbeitung stehen in der Datenschutzerklärung.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="notice-actions" aria-labelledby="notice-actions-title">
+    <div class="container notice-actions__inner">
+      <h2 id="notice-actions-title">Weiter zur Anfrage</h2>
+      <p>
+        Wenn die Hinweise für dich passen, kannst du deine Anfrage über das Kontaktformular absenden.
+        Die Anfrage bleibt unverbindlich.
+      </p>
+      <div class="notice-actions__links">
+        <a class="notice-button notice-button--primary" href="/kontakt">Kontaktformular öffnen</a>
+        <a class="notice-button notice-button--secondary" href="/datenschutz">Datenschutzerklärung ansehen</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

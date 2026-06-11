@@ -1,228 +1,108 @@
-<!DOCTYPE html>
 <%
+  const siteBaseUrl = (typeof canonicalBaseUrl !== 'undefined' && canonicalBaseUrl
+    ? canonicalBaseUrl
+    : 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const packagePathHints = ['/pakete/start', '/pakete/business', '/pakete/wachstum', '/pakete/individuell'];
+  const visiblePackages = Array.isArray(packages) ? packages.filter((pkg) => pkg && pkg.isVisible !== false) : [];
+  const contactPath = isEn ? '/en/kontakt' : '/kontakt';
+  const tablePackages = Array.isArray(comparisonPackages) && comparisonPackages.length ? comparisonPackages : visiblePackages;
+  const dbComparisonRows = Array.isArray(comparisonRows) ? comparisonRows : [];
+  const dbOverviewFaqs = Array.isArray(overviewFaqs) ? overviewFaqs : [];
+  const dbGlobalNotes = Array.isArray(globalNotes) ? globalNotes : [];
+  const heroPriceLabel = lowestPriceLabel || (visiblePackages[0] && visiblePackages[0].priceLabel) || '';
+  const packageSummary = packageSummaryLabel || visiblePackages
+    .slice(0, 3)
+    .map((pkg) => `${pkg.name}: ${pkg.priceLabel}`)
+    .join(', ');
+  const schemaFaqs = dbOverviewFaqs.filter((faq) => faq && faq.schemaEligible && faq.question && faq.answer);
+  function canShowPackageDetail(pkg) {
+    return pkg && pkg.allowDetailPage !== false && (pkg.canonicalPath || pkg.slug);
+  }
+
+  const schemaPackages = visiblePackages.map((pkg, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    ...(canShowPackageDetail(pkg) ? { "url": `${siteBaseUrl}${pkg.canonicalPath || `/pakete/${pkg.slug}`}` } : {}),
+    "name": isEn ? `${pkg.name} package` : `${pkg.name}-Paket`
+  }));
   const structuredDataBlocks = [
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": isEn ? "Home" : "Startseite",
-          "item": "https://www.komplettwebdesign.de/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": isEn ? "Packages" : "Pakete",
-          "item": "https://www.komplettwebdesign.de/pakete"
-        }
+        { "@type": "ListItem", "position": 1, "name": isEn ? "Home" : "Startseite", "item": `${siteBaseUrl}/` },
+        { "@type": "ListItem", "position": 2, "name": isEn ? "Packages" : "Pakete", "item": `${siteBaseUrl}/pakete` }
       ]
     },
     {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      "name": isEn
-        ? "Website Packages - Komplett Webdesign Berlin"
-        : "Website-Pakete – Komplett Webdesign Berlin",
-      "url": "https://www.komplettwebdesign.de/pakete",
-      "description": isEn
-        ? "Website packages for Berlin & Brandenburg: Basic, Business and Premium with design, copy, SEO and optional monthly services."
-        : "Website-Pakete für Berlin & Brandenburg: Basis, Business und Premium mit Design, Text, SEO und optionalen Monatsleistungen.",
+      "name": title || (isEn ? "Website Packages - Komplett Webdesign Berlin" : "Website-Pakete - Komplett Webdesign Berlin"),
+      "url": `${siteBaseUrl}/pakete`,
+      "description": description || "",
       "inLanguage": isEn ? "en" : "de",
-      "isPartOf": {
-        "@type": "WebSite",
-        "name": "Komplett Webdesign",
-        "url": "https://www.komplettwebdesign.de/"
-      }
+      "isPartOf": { "@type": "WebSite", "name": "Komplett Webdesign", "url": `${siteBaseUrl}/` }
     },
     {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      "url": "https://www.komplettwebdesign.de/pakete",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "url": "https://www.komplettwebdesign.de/pakete/basis",
-          "name": isEn ? "Basic package" : "Basis-Paket",
-          "item": {
-            "@type": "Product",
-            "name": isEn ? "Basic package" : "Basis-Paket",
-            "description": isEn
-              ? "Fast start: 1 professional page including copy, basic SEO and legal pages."
-              : "Schneller Einstieg: 1 professionelle Seite inklusive Texten, SEO-Grundoptimierung und rechtlichen Seiten.",
-            "brand": {
-              "@type": "Brand",
-              "name": "Komplett Webdesign"
-            },
-            "image": "https://www.komplettwebdesign.de/images/paket-basis.webp",
-            "offers": {
-              "@type": "Offer",
-              "price": "499",
-              "priceCurrency": "EUR",
-              "availability": "https://schema.org/InStock",
-              "url": "https://www.komplettwebdesign.de/pakete/basis",
-              "seller": {
-                "@type": "Organization",
-                "name": "Komplett Webdesign",
-                "url": "https://www.komplettwebdesign.de/"
-              }
-            }
-          }
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "url": "https://www.komplettwebdesign.de/pakete/business",
-          "name": isEn ? "Business package" : "Business-Paket",
-          "item": {
-            "@type": "Product",
-            "name": isEn ? "Business package" : "Business-Paket",
-            "description": isEn
-              ? "Up to 5 pages with contact form, service pages, about/team page and on-page SEO."
-              : "Bis zu 5 Seiten mit Kontaktformular, Leistungsseiten, Über-uns-/Team-Seite und On-Page-SEO.",
-            "brand": {
-              "@type": "Brand",
-              "name": "Komplett Webdesign"
-            },
-            "image": "https://www.komplettwebdesign.de/images/paket-business.webp",
-            "offers": {
-              "@type": "Offer",
-              "price": "899",
-              "priceCurrency": "EUR",
-              "availability": "https://schema.org/InStock",
-              "url": "https://www.komplettwebdesign.de/pakete/business",
-              "seller": {
-                "@type": "Organization",
-                "name": "Komplett Webdesign",
-                "url": "https://www.komplettwebdesign.de/"
-              }
-            }
-          }
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "url": "https://www.komplettwebdesign.de/pakete/premium",
-          "name": isEn ? "Premium package" : "Premium-Paket",
-          "item": {
-            "@type": "Product",
-            "name": isEn ? "Premium package" : "Premium-Paket",
-            "description": isEn
-              ? "Up to 20 pages including strategy, copy, SEO and booking system. Shop optional depending on scope."
-              : "Bis zu 20 Seiten inklusive Strategie, Texten, SEO und Buchungssystem. Shop optional nach Umfang.",
-            "brand": {
-              "@type": "Brand",
-              "name": "Komplett Webdesign"
-            },
-            "image": "https://www.komplettwebdesign.de/images/paket-premium.webp",
-            "offers": {
-              "@type": "Offer",
-              "price": "1499",
-              "priceCurrency": "EUR",
-              "availability": "https://schema.org/InStock",
-              "url": "https://www.komplettwebdesign.de/pakete/premium",
-              "seller": {
-                "@type": "Organization",
-                "name": "Komplett Webdesign",
-                "url": "https://www.komplettwebdesign.de/"
-              }
-            }
-          }
-        }
-      ]
+      "url": `${siteBaseUrl}/pakete`,
+      "itemListElement": schemaPackages
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "AggregateOffer",
-      "url": "https://www.komplettwebdesign.de/pakete",
-      "priceCurrency": "EUR",
-      "lowPrice": "499",
-      "highPrice": "1499",
-      "offerCount": "3"
-    },
-    {
+    ...(schemaFaqs.length ? [{
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": isEn ? "How long does a website project in Berlin take?" : "Wie lange dauert ein Website erstellen-Projekt in Berlin?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "Depending on scope, a focused launch can go live within a few weeks. We work along clear milestones for strategy, content, design, development and QA so the timeline stays predictable."
-              : "Je nach Umfang kann ein fokussierter Launch in wenigen Wochen live gehen. Wir arbeiten mit klaren Meilensteinen für Strategie, Inhalte, Design, Umsetzung und QA, damit der Zeitrahmen planbar bleibt."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": isEn ? "Which package fits my company?" : "Welches Paket passt zu meinem Unternehmen?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "It depends on your goal, sales process and existing material. We recommend the smallest sensible scope that delivers measurable value quickly and show the growth path from there."
-              : "Das hängt von Ziel, Vertriebsprozess und vorhandenem Material ab. Wir empfehlen dir den kleinsten sinnvollen Umfang, der schnell messbaren Nutzen liefert, und zeigen den Ausbaupfad danach."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": isEn ? "Are SEO and GEO included?" : "Sind SEO und GEO direkt enthalten?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "Yes. Depending on the package we integrate on-page SEO and GEO-friendly structural blocks like answer-first elements, FAQ modules and clear entity signals so the site is visible in both search and AI answers."
-              : "Ja, je nach Paket integrieren wir OnPage-SEO und GEO-freundliche Strukturblöcke wie answer-first Elemente, FAQ-Module und klare Entity-Signale, damit die Seite in Suche und KI-Antworten sichtbar wird."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": isEn ? "Can existing content be reused?" : "Kann bestehender Content weiter genutzt werden?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "In many cases yes. We keep content that works and rewrite weak passages for better clarity, findability and conversion without unnecessary rework of what is already performing."
-              : "In vielen Fällen ja. Wir übernehmen funktionierende Inhalte und überarbeiten schwache Abschnitte für bessere Klarheit, Auffindbarkeit und Conversion, ohne Unnötiges neu zu schreiben."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": isEn ? "How transparent are the costs?" : "Wie transparent sind die Kosten?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "You get transparent package prices plus optional add-ons. That gives you a planning-safe total and still lets you expand step by step as the business grows."
-              : "Du erhältst transparente Paketpreise plus optionale Add-ons. So hast du eine planbare Gesamtgröße und kannst trotzdem schrittweise ausbauen, wenn das Geschäft wächst."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": isEn ? "Who owns the website and content after launch?" : "Wem gehören Website und Inhalte nach dem Launch?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": isEn
-              ? "You own the website and the content. After launch we continue with monitoring, optimization and prioritization of further measures so the site keeps delivering results sustainably."
-              : "Dir gehören Website und Inhalte. Nach dem Livegang begleiten wir Monitoring, Optimierung und Priorisierung weiterer Maßnahmen, damit die Seite dauerhaft Ergebnisse liefert."
-          }
-        }
-      ]
-    }
+      "mainEntity": schemaFaqs.map((faq) => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": { "@type": "Answer", "text": faq.answer }
+      }))
+    }] : [])
   ];
-%>
-<html lang="<%= isEn ? 'en' : 'de' %>">
 
-<head>
-  <%- include('partials/head', { structuredDataBlocks }) %>
-  <!-- Annahme: Enthält Bootstrap CSS etc. -->
-  <title><%= isEn ? 'Website Pricing in Berlin | Packages, Scope & Timeline' : 'Preise für Website erstellen in Berlin | Pakete und Umfang' %></title>
-</head>
+  function packageUrl(pkg) {
+    if (!canShowPackageDetail(pkg)) {
+      const packageValue = pkg && (pkg.packageKey || pkg.slug);
+      return `${contactPath}${packageValue ? `?paket=${encodeURIComponent(packageValue)}` : ''}`;
+    }
+    return `${isEn ? '/en' : ''}${pkg.canonicalPath || `/pakete/${pkg.slug}`}`;
+  }
+
+  function packagePrimaryCtaLabel(pkg) {
+    if (!canShowPackageDetail(pkg)) return isEn ? 'Request package' : 'Paket anfragen';
+    return isEn ? 'View details' : 'Details ansehen';
+  }
+
+  function packageTitle(pkg) {
+    if (isEn) return `${pkg.name} package`;
+    return pkg.displayName || `${pkg.name}-Paket`;
+  }
+
+  function packageText(pkg) {
+    return pkg.shortDescription || pkg.description || pkg.positioning || pkg.longDescription || '';
+  }
+
+  function featureText(item) {
+    return item && typeof item === 'object' ? item.text : item;
+  }
+
+  function packageImage(pkg) {
+    const imageMap = {
+      start: '/images/paket-start.webp',
+      business: '/images/paket-business.webp',
+      wachstum: '/images/paket-wachstum.webp',
+      individuell: '/images/paket-individuell.webp'
+    };
+    return imageMap[pkg.packageKey || pkg.slug] || '/images/preiseHero.webp';
+  }
+%>
+<%- include('partials/head', { structuredDataBlocks, extraCssAssets: ['package-list.css'] }) %>
 
 <body>
   <%- include('partials/header') %>
 
   <main class="packages-page">
-    <section class="packages-hero unified-hero">
+    <section class="packages-hero unified-hero" data-reveal-immediate>
       <div class="container hero-grid unified-hero__grid">
         <div class="hero-copy unified-hero__copy">
           <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
@@ -231,28 +111,44 @@
               <li aria-current="page"><%= isEn ? 'Packages' : 'Pakete' %></li>
             </ol>
           </nav>
-          <h1 class="hero-title"><%= isEn ? 'Create a website in Berlin: packages from EUR 499' : 'Website erstellen lassen in Berlin: Pakete ab 499 EUR' %></h1>
-          <h2 class="hero-subtitle unified-hero__lead">
+          <h1 class="hero-title home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
             <%= isEn
-              ? 'Choose the right scope for your business: Basic for a digital business card, Business for a structured multi-page site and Premium for a larger online offer with booking system.'
-              : 'Wähle den passenden Umfang für dein Unternehmen: Basis als digitale Visitenkarte, Business für eine strukturierte mehrseitige Website und Premium für ein größeres Online-Angebot mit Buchungssystem.'
+              ? `Create a website in Berlin: packages${heroPriceLabel ? ` from ${heroPriceLabel.replace('€', 'EUR')}` : ''}`
+              : `Website erstellen lassen in Berlin: Pakete${heroPriceLabel ? ` ab ${heroPriceLabel}` : ''}`
+            %>
+          </h1>
+          <h2 class="hero-subtitle unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll">
+            <%= isEn
+              ? 'Choose the right scope for your business: compact start, structured company website, growth-oriented relaunch or custom functionality.'
+              : 'Wähle den passenden Umfang für dein Unternehmen: kompakter Start, strukturierte Unternehmenswebsite, wachstumsorientierter Relaunch oder Sonderfunktionen.'
             %>
           </h2>
           <ul class="hero-highlights">
-            <li><%= isEn ? 'Basic EUR 499, Business EUR 899 and Premium EUR 1,499' : 'Basis 499 EUR, Business 899 EUR und Premium 1.499 EUR' %></li>
-            <li><%= isEn ? 'Copy and SEO included in every package' : 'Texte und SEO in jedem Paket enthalten' %></li>
-            <li><%= isEn ? 'Domain, email, hosting and maintenance available as clear monthly services' : 'Domain, E-Mail, Hosting und Wartung als klare Monatsleistungen wählbar' %></li>
+            <% if (packageSummary) { %>
+            <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= packageSummary %></span>
+            </li>
+            <% } %>
+            <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= isEn ? 'Technical SEO basics and supplied-content structure by scope' : 'Technische SEO-Grundlagen und Strukturierung gelieferter Inhalte je nach Umfang' %></span>
+            </li>
+            <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= isEn ? 'Domain, email, hosting, maintenance and third-party tools are separated clearly' : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools werden klar getrennt' %></span>
+            </li>
           </ul>
-          <div class="hero-actions unified-hero__actions">
-            <a class="btn btn-hero unified-hero__button unified-hero__button--primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_hero_contact" data-cta-location="packages_hero"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
-            <a class="btn btn-soft-outline unified-hero__button unified-hero__button--secondary" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_hero_booking" data-cta-location="packages_hero"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+          <div class="hero-actions unified-hero__actions home-hero-reveal home-hero-reveal--actions animate-on-scroll">
+            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_hero_contact" data-cta-location="packages_hero"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt?projektart=unsure' : '/kontakt?projektart=unsure' %>" data-track="cta" data-cta-name="packages_hero_scope" data-cta-location="packages_hero"><%= isEn ? 'Clarify project scope' : 'Projektumfang klären' %></a>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="hero-image-frame unified-hero__media-frame">
             <picture>
-              <source srcset="/images/preiseHero.webp" type="image/webp" />
-              <img src="/images/preiseHero.webp" alt="<%= isEn ? 'Website packages Basic, Business, Premium' : 'Websitepakete Basis, Business, Premium' %>" loading="lazy" />
+              <source srcset="/images/heroPakete.webp" type="image/webp" />
+              <img src="/images/heroPakete.webp" alt="<%= isEn ? 'Website packages overview' : 'Websitepakete im Überblick' %>" loading="eager" fetchpriority="high" decoding="async" />
             </picture>
           </div>
         </div>
@@ -263,242 +159,117 @@
       <div class="container">
         <p class="packages-intro-lead">
           <%= isEn
-            ? 'Here you can quickly see which website package fits your current situation, what is included, what remains optional and how long the project will realistically take.'
-            : 'Hier siehst du schnell, welches Website-Paket zu deiner aktuellen Situation passt, was enthalten ist, was optional bleibt und wie lange die Umsetzung realistisch dauert.'
+            ? 'Here you can quickly see which website package fits your current situation, what is included, what remains optional and which ongoing costs should be considered separately.'
+            : 'Hier siehst du schnell, welches Website-Paket zu deiner aktuellen Situation passt, was enthalten ist, was optional bleibt und welche laufenden Kosten separat zu betrachten sind.'
           %>
         </p>
       </div>
       <div class="container intro-grid">
         <article class="intro-card">
-          <h2><%= isEn ? 'Choose by business phase' : 'Auswahl nach Unternehmensphase' %></h2>
-          <p>
-            <%= isEn
-              ? 'Every package is mapped to a clear situation: first professional presence, structured lead generation or larger online offer.'
-              : 'Jedes Paket ist einer klaren Situation zugeordnet: erster professioneller Auftritt, strukturierte Leadgewinnung oder größeres Online-Angebot.'
-            %>
-          </p>
+          <h2><%= isEn ? 'Choose by scope' : 'Auswahl nach Umfang' %></h2>
+          <p><%= isEn ? 'Each package has clear boundaries for page scope, feedback and optional extensions.' : 'Jedes Paket hat klare Grenzen für Seitenumfang, Feedbackrunden und optionale Erweiterungen.' %></p>
         </article>
         <article class="intro-card">
           <h2><%= isEn ? 'Clear limits, fair prices' : 'Klare Grenzen, faire Preise' %></h2>
-          <p>
-            <%= isEn
-              ? 'Project scope and monthly services are separated clearly, so you know what is one-time and what can be booked monthly.'
-              : 'Projektumfang und Monatsleistungen sind klar getrennt, damit du weißt, was einmalig ist und was monatlich gebucht werden kann.'
-            %>
-          </p>
+          <p><%= isEn ? 'One-time project costs, monthly services and third-party tools are separated before implementation.' : 'Einmalige Projektkosten, Monatsleistungen und Drittanbieter-Tools werden vor der Umsetzung getrennt eingeordnet.' %></p>
         </article>
         <article class="intro-card">
-          <h2><%= isEn ? 'Planned launch, not guesswork' : 'Planbarer Launch statt Blindflug' %></h2>
-          <p>
-            <%= isEn
-              ? 'Basic usually takes 2 to 4 weeks, Business 4 to 6 weeks and Premium 6 to 8 weeks, depending on content and feedback speed.'
-              : 'Basis dauert meist 2 bis 4 Wochen, Business 4 bis 6 Wochen und Premium 6 bis 8 Wochen, abhängig von Inhalten und Feedbackgeschwindigkeit.'
-            %>
-          </p>
+          <h2><%= isEn ? 'Planned launch' : 'Planbarer Launch' %></h2>
+          <p><%= isEn ? 'The exact timeline depends on content, feedback and technical access.' : 'Der genaue Zeitrahmen hängt von Inhalten, Feedback und technischen Zugängen ab.' %></p>
         </article>
       </div>
     </section>
 
     <section id="paket-angebote" class="package-collection">
       <div class="container">
-        <%
-            function slugify(value) {
-              if (!value) return '';
-              return value
-                .toString()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^\w\s-]/g, '')
-                .trim()
-                .toLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-');
-            }
-
-            function formatPrice(pkg) {
-              if (!pkg) return '';
-              if (pkg.price && typeof pkg.price === 'string') return pkg.price;
-              if (pkg.price_formatted) return pkg.price_formatted;
-              if (pkg.price_amount_cents != null) {
-                return (Number(pkg.price_amount_cents) / 100).toLocaleString(isEn ? 'en-US' : 'de-DE', {
-                  style: 'currency',
-                  currency: 'EUR'
-                });
-              }
-              if (pkg.price_amount != null) {
-                return Number(pkg.price_amount).toLocaleString(isEn ? 'en-US' : 'de-DE', {
-                  style: 'currency',
-                  currency: 'EUR'
-                });
-              }
-              return '';
-            }
-
-            const fallbackFeatures = isEn ? {
-              basis: [
-                '1 professional page with clear offer, copy and contact option',
-                'Responsive web design for mobile, tablet and desktop',
-                'Basic SEO, technical foundation and legal pages'
-              ],
-              business: [
-                'Up to 5 pages including homepage, services, about/team and contact',
-                'Contact form, clear inquiry flow and on-page SEO',
-                'Blog or additional content available as optional extension'
-              ],
-              premium: [
-                'Up to 20 pages with strategy, copy and SEO structure',
-                'Booking system included, shop optional depending on scope',
-                'Ideal for small shops, local retailers and companies with larger offers'
-              ]
-            } : {
-              basis: [
-                '1 professionelle Seite mit klarem Angebot, Texten und Kontaktmöglichkeit',
-                'Responsive Webdesign für Handy, Tablet und Desktop',
-                'SEO-Grundoptimierung, technische Basis und rechtliche Seiten'
-              ],
-              business: [
-                'Bis zu 5 Seiten inklusive Startseite, Leistungen, Über uns/Team und Kontakt',
-                'Kontaktformular, klare Anfrageführung und On-Page-SEO',
-                'Blog oder weitere Inhalte optional als Erweiterung möglich'
-              ],
-              premium: [
-                'Bis zu 20 Seiten mit Strategie, Texten und SEO-Struktur',
-                'Buchungssystem enthalten, Shop optional nach Umfang',
-                'Ideal für kleine Shops, lokale Händler und Unternehmen mit größerem Angebot'
-              ]
-            };
-
-            const translatedDescriptions = isEn ? {
-              basis: 'For small businesses and local service providers that need a professional digital business card: 1 page including copy and basic SEO.',
-              business: 'For small businesses that need more than a business card: up to 5 pages with contact form, service pages, about/team page and on-page SEO.',
-              premium: 'For larger online offers in Berlin: up to 20 pages including copy, strategy, SEO and booking system. Shop features are optional depending on scope.'
-            } : {};
-
-            const visiblePackages = (packages || []).filter(pkg => pkg && pkg.display !== false);
-          %>
         <% if (visiblePackages.length) { %>
         <% visiblePackages.forEach((pkg, index) => { %>
-        <%
-            const slug = pkg.slug ? slugify(pkg.slug) : slugify(pkg.name);
-            const normalizedKey = slugify(pkg.name || slug) || '';
-            const priceDisplay = formatPrice(pkg);
-            const featureList = Array.isArray(pkg.features) && pkg.features.length
-              ? pkg.features
-              : (pkg.feature_list
-                  ? pkg.feature_list
-                      .split(/\r?\n/)
-                      .map(item => item.trim())
-                      .filter(Boolean)
-                  : (fallbackFeatures[normalizedKey] || []));
-            const imagePath = pkg.image
-              ? (pkg.image.startsWith('http') || pkg.image.startsWith('/') ? pkg.image : `/images/${pkg.image}`)
-              : '/images/heroBGG.webp';
-          %>
+        <% const features = Array.isArray(pkg.features) ? pkg.features.map(featureText).filter(Boolean).slice(0, 4) : []; %>
         <article class="package-row <%= index % 2 === 1 ? 'is-reversed' : '' %>">
           <div class="package-visual">
             <div class="package-frame">
-              <img src="<%= imagePath %>" alt="<%= isEn ? `${pkg.name} package` : `${pkg.name} Paket` %>" loading="lazy" />
-              <a class="package-overlay" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>" aria-label="<%= isEn ? `Learn more about the ${pkg.name} package` : `Mehr erfahren über das ${pkg.name}-Paket` %>">
-                <span><%= isEn ? `View ${pkg.name} package` : `Zum ${pkg.name}-Paket` %></span>
+              <a class="package-image-link" href="<%= packageUrl(pkg) %>" aria-label="<%= canShowPackageDetail(pkg) ? (isEn ? `Learn more about ${pkg.name}` : `Mehr erfahren über ${pkg.name}`) : (isEn ? `Request ${pkg.name}` : `${pkg.name}-Paket anfragen`) %>" data-track="cta" data-cta-name="packages_image_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
+                <img src="<%= packageImage(pkg) %>" alt="<%= packageTitle(pkg) %>" loading="lazy" />
               </a>
+            </div>
+            <div class="package-actions package-actions--image">
+              <a class="btn btn-primary" href="<%= packageUrl(pkg) %>" data-track="cta" data-cta-name="packages_details_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
+                <%= packagePrimaryCtaLabel(pkg) %>
+              </a>
+              <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_consult_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
             </div>
           </div>
           <div class="package-content">
             <div class="package-header">
               <span class="package-index">0<%= index + 1 %></span>
-              <span class="package-eyebrow"><%= isEn ? `Complete package ${pkg.name}` : `Komplettpaket ${pkg.name}` %></span>
+              <span class="package-eyebrow"><%= isEn ? `${pkg.name} package` : `Paket ${pkg.name}` %></span>
+              <% if (pkg.isRecommended && pkg.recommendationLabel) { %>
+              <span class="package-eyebrow"><%= pkg.recommendationLabel %></span>
+              <% } %>
             </div>
-            <h2 class="package-title"><%= isEn ? `${pkg.name} package` : `${pkg.name}-Paket` %></h2>
-            <p class="package-description"><%= translatedDescriptions[normalizedKey] || pkg.description %></p>
-            <% if (featureList.length) { %>
+            <h2 class="package-title"><%= packageTitle(pkg) %></h2>
+            <p class="package-description"><%= packageText(pkg) %></p>
+            <% if (features.length) { %>
             <ul class="package-features">
-              <% featureList.forEach(feature => { %>
+              <% features.forEach(feature => { %>
               <li>
-                <span class="feature-icon" aria-hidden="true">✓</span>
+                <img class="feature-icon" src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
                 <span><%= feature %></span>
               </li>
               <% }) %>
             </ul>
             <% } %>
             <div class="package-meta">
-              <span class="price-label"><%= isEn ? 'Starting at' : 'Preis ab' %></span>
-              <span class="price-amount"><%= priceDisplay %></span>
-            </div>
-            <div class="package-actions">
-              <a class="btn btn-hero" href="<%= isEn ? '/en' : '' %>/pakete/<%= slug %>" data-track="cta" data-cta-name="packages_details_<%= slug %>" data-cta-location="packages_list">
-                <%= isEn ? 'View details' : 'Details ansehen' %>
-              </a>
-              <a class="btn btn-soft-outline" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_consult_<%= slug %>" data-cta-location="packages_list"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
+              <span class="price-label"><%= isEn ? 'Starting at' : 'Preis' %></span>
+              <span class="price-amount"><%= pkg.priceLabel %></span>
             </div>
           </div>
         </article>
         <% }) %>
         <% } else { %>
         <div class="text-center py-5">
-          <p><%= isEn ? 'No packages are currently available. Please check back later.' : 'Aktuell sind keine Pakete verfügbar. Bitte schauen Sie später noch einmal vorbei.' %></p>
+          <p><%= isEn ? 'No packages are currently available. Please check back later.' : 'Aktuell sind keine Pakete verfügbar. Bitte schau später noch einmal vorbei.' %></p>
         </div>
         <% } %>
       </div>
     </section>
 
-    <!-- 1. Für wen welches Paket passt -->
+    <% if (visiblePackages.length) { %>
     <section id="paketwahl" class="packages-section packages-fit">
       <div class="container">
         <header class="section-header">
           <span class="section-eyebrow"><%= isEn ? 'Self-selection' : 'Selbstselektion' %></span>
-          <h2><%= isEn ? 'Which package fits which business phase?' : 'Für wen welches Paket passt' %></h2>
+          <h2><%= isEn ? 'Which package fits which situation?' : 'Für wen welches Paket passt' %></h2>
           <p class="section-lead">
             <%= isEn
-              ? 'Sort your project by goal and business phase: entry, growth or scale. Each package is matched to a realistic outcome so you decide based on value - not just price.'
-              : 'Ordne dein Projekt nach Ziel und Unternehmensphase ein: Einstieg, Wachstum oder Ausbau. Jedes Paket ist einem realistischen Ergebnis zugeordnet, damit die Entscheidung nicht allein über den Preis, sondern über den Nutzen fällt.'
+              ? 'Use page scope, target group and use cases to choose the smallest sensible package for your current goal.'
+              : 'Nutze Seitenumfang, Zielgruppe und Einsatzfälle, um das kleinste sinnvolle Paket für dein aktuelles Ziel zu wählen.'
             %>
           </p>
         </header>
         <div class="fit-grid">
-          <article class="fit-card">
-            <span class="fit-phase"><%= isEn ? 'Entry' : 'Einstieg' %></span>
-            <h3><%= isEn ? 'Basic package - fast professional launch' : 'Basis-Paket – schneller professioneller Start' %></h3>
-            <p>
-              <%= isEn
-                ? 'For small businesses, solo professionals and local service providers that need a credible digital business card. Typical outcome: one professional page with clear offer, copy, basic SEO and contact path.'
-                : 'Für kleine Unternehmen, Selbstständige und lokale Dienstleister, die eine glaubwürdige digitale Visitenkarte brauchen. Typisches Ergebnis: eine professionelle Seite mit klarem Angebot, Texten, SEO-Grundlage und Kontaktweg.'
-              %>
-            </p>
+          <% visiblePackages.slice(0, 3).forEach((pkg) => { %>
+          <article class="fit-card <%= pkg.isRecommended ? 'is-highlighted' : '' %>">
+            <span class="fit-phase"><%= pkg.priceLabel %></span>
+            <h3><%= packageTitle(pkg) %></h3>
+            <p><%= pkg.targetGroup || pkg.pageScope || packageText(pkg) %></p>
           </article>
-          <article class="fit-card is-highlighted">
-            <span class="fit-phase"><%= isEn ? 'Growth' : 'Wachstum' %></span>
-            <h3><%= isEn ? 'Business package - more pages, more requests' : 'Business-Paket – mehr Seiten, mehr Anfragen' %></h3>
-            <p>
-              <%= isEn
-                ? 'For small companies that want a stronger start into their professional market. Typical outcome: up to 5 pages with service structure, contact form, about/team page and on-page SEO.'
-                : 'Für kleine Unternehmen, die stärker in ihre Berufswelt starten wollen. Typisches Ergebnis: bis zu 5 Seiten mit Leistungsstruktur, Kontaktformular, Über-uns-/Team-Seite und On-Page-SEO.'
-              %>
-            </p>
-          </article>
-          <article class="fit-card">
-            <span class="fit-phase"><%= isEn ? 'Scale' : 'Ausbau' %></span>
-            <h3><%= isEn ? 'Premium package - strategy, content, support' : 'Premium-Paket – Strategie, Content, Betreuung' %></h3>
-            <p>
-              <%= isEn
-                ? 'For companies, small shops and local retailers with a larger online offer. Typical outcome: up to 20 pages with strategy, copy, SEO and booking system; shop features remain optional by scope.'
-                : 'Für Unternehmen, kleine Shops und lokale Händler mit größerem Online-Angebot. Typisches Ergebnis: bis zu 20 Seiten mit Strategie, Texten, SEO und Buchungssystem; Shop-Funktionen bleiben optional nach Umfang.'
-              %>
-            </p>
-          </article>
+          <% }) %>
         </div>
       </div>
     </section>
+    <% } %>
 
-    <!-- 2. Paketvergleich mit Leistungsgrenzen -->
+    <% if (dbComparisonRows.length && tablePackages.length) { %>
     <section id="vergleich" class="packages-section packages-compare">
       <div class="container">
         <header class="section-header">
           <span class="section-eyebrow"><%= isEn ? 'Package comparison' : 'Paketvergleich' %></span>
-          <h2><%= isEn ? 'Scope, timeline and support at a glance' : 'Vergleich mit klaren Leistungsgrenzen' %></h2>
+          <h2><%= isEn ? 'Scope and limits at a glance' : 'Vergleich mit klaren Leistungsgrenzen' %></h2>
           <p class="section-lead">
             <%= isEn
-              ? 'Deliverables, timeline, revisions and support per package - including honest limits. Clear boundaries build trust and reduce coordination effort once the project starts.'
-              : 'Lieferumfang, Zeitrahmen, Revisionen und Support je Paket – inklusive ehrlicher Grenzen. Klare Leistungsgrenzen schaffen Vertrauen und senken späteren Abstimmungsaufwand.'
+              ? 'Deliverables, limits and decision points are kept visible so add-ons do not become hidden assumptions.'
+              : 'Leistungsumfang, Grenzen und Entscheidungspunkte bleiben sichtbar, damit Zusatzleistungen keine versteckten Annahmen werden.'
             %>
           </p>
         </header>
@@ -507,183 +278,81 @@
             <thead>
               <tr>
                 <th scope="col"><%= isEn ? 'Criterion' : 'Kriterium' %></th>
-                <th scope="col"><%= isEn ? 'Basic' : 'Basis' %></th>
-                <th scope="col"><%= isEn ? 'Business' : 'Business' %></th>
-                <th scope="col"><%= isEn ? 'Premium' : 'Premium' %></th>
+                <% tablePackages.forEach((pkg) => { %>
+                <th scope="col"><%= pkg.name %></th>
+                <% }) %>
               </tr>
             </thead>
             <tbody>
+              <% dbComparisonRows.forEach(row => { %>
               <tr>
-                <th scope="row"><%= isEn ? 'Scope of pages' : 'Seitenumfang' %></th>
-                <td><%= isEn ? '1 page' : '1 Seite' %></td>
-                <td><%= isEn ? 'Up to 5 pages incl. service and about/team page' : 'Bis zu 5 Seiten inkl. Leistungen und Über uns/Team' %></td>
-                <td><%= isEn ? 'Up to 20 pages, individually structured' : 'Bis zu 20 Seiten, individuell strukturiert' %></td>
+                <th scope="row"><%= row.label %></th>
+                <% tablePackages.forEach((pkg) => { %>
+                <td><%= row.valuesByPackage[pkg.packageKey] || '—' %></td>
+                <% }) %>
               </tr>
-              <tr>
-                <th scope="row"><%= isEn ? 'Copy and SEO' : 'Texte und SEO' %></th>
-                <td><%= isEn ? 'Copy and basic SEO included' : 'Texte und SEO-Grundoptimierung enthalten' %></td>
-                <td><%= isEn ? 'Copy and on-page SEO included' : 'Texte und On-Page-SEO enthalten' %></td>
-                <td><%= isEn ? 'Strategy, copy and SEO structure included' : 'Strategie, Texte und SEO-Struktur enthalten' %></td>
-              </tr>
-              <tr>
-                <th scope="row"><%= isEn ? 'Forms and systems' : 'Formulare und Systeme' %></th>
-                <td><%= isEn ? 'Simple contact option' : 'Einfache Kontaktmöglichkeit' %></td>
-                <td><%= isEn ? 'Contact form included, blog optional' : 'Kontaktformular enthalten, Blog optional' %></td>
-                <td><%= isEn ? 'Booking system included, shop optional' : 'Buchungssystem enthalten, Shop optional' %></td>
-              </tr>
-              <tr>
-                <th scope="row"><%= isEn ? 'Timeline to go-live' : 'Zeitrahmen bis Livegang' %></th>
-                <td><%= isEn ? 'approx. 2 - 4 weeks' : 'ca. 2 bis 4 Wochen' %></td>
-                <td><%= isEn ? 'approx. 4 - 6 weeks' : 'ca. 4 bis 6 Wochen' %></td>
-                <td><%= isEn ? 'approx. 6 - 8 weeks' : 'ca. 6 bis 8 Wochen' %></td>
-              </tr>
-              <tr>
-                <th scope="row"><%= isEn ? 'Monthly services' : 'Monatliche Leistungen' %></th>
-                <td><%= isEn ? 'Optional: domain/email, hosting, maintenance' : 'Optional: Domain/E-Mail, Hosting, Wartung' %></td>
-                <td><%= isEn ? 'Optional: domain/email, hosting, maintenance' : 'Optional: Domain/E-Mail, Hosting, Wartung' %></td>
-                <td><%= isEn ? 'Optional: domain/email, hosting, maintenance' : 'Optional: Domain/E-Mail, Hosting, Wartung' %></td>
-              </tr>
-              <tr>
-                <th scope="row"><%= isEn ? 'Best fit' : 'Am besten geeignet für' %></th>
-                <td><%= isEn ? 'Digital business card' : 'Digitale Visitenkarte' %></td>
-                <td><%= isEn ? 'Small companies starting professionally' : 'Kleine Unternehmen beim professionellen Start' %></td>
-                <td><%= isEn ? 'Larger online offer in Berlin' : 'Größeres Online-Angebot in Berlin' %></td>
-              </tr>
+              <% }) %>
             </tbody>
           </table>
         </div>
       </div>
     </section>
+    <% } %>
 
-    <!-- 3. Ablauf und Zeitplanung -->
-    <section id="ablauf" class="packages-section packages-process">
+    <% if (dbGlobalNotes.length) { %>
+    <section id="hinweise" class="packages-section packages-addons">
       <div class="container">
         <header class="section-header">
-          <span class="section-eyebrow"><%= isEn ? 'Timeline' : 'Ablauf' %></span>
-          <h2><%= isEn ? 'From kickoff to launch - in clear milestones' : 'Ablauf und Zeitplanung je Paket' %></h2>
-          <p class="section-lead">
-            <%= isEn
-              ? 'Every package follows the same clear logic: goals, structure and copy, design and development, QA and launch. The timeline changes with scope, but the process stays transparent.'
-              : 'Jedes Paket folgt derselben klaren Logik: Ziele, Struktur und Texte, Design und Umsetzung, QA und Livegang. Der Zeitrahmen ändert sich mit dem Umfang, der Ablauf bleibt transparent.'
-            %>
-          </p>
-        </header>
-        <ol class="process-steps">
-          <li>
-            <span class="step-number">01</span>
-            <h3><%= isEn ? 'Kickoff and goals' : 'Kickoff und Ziele' %></h3>
-            <p><%= isEn ? 'We align goals, target audience, content inventory and success metrics - so the scope matches your real business outcome.' : 'Wir stimmen Ziele, Zielgruppe, Content-Bestand und Erfolgskriterien ab – damit der Umfang zum tatsächlichen Geschäftsziel passt.' %></p>
-          </li>
-          <li>
-            <span class="step-number">02</span>
-            <h3><%= isEn ? 'Structure and copy' : 'Struktur und Texte' %></h3>
-            <p><%= isEn ? 'Sitemap, page structure and core copy are drafted. Existing material is reused where useful; missing copy is created for the package scope.' : 'Sitemap, Seitenstruktur und Kerntexte werden erstellt. Vorhandenes Material wird sinnvoll übernommen; fehlende Texte entstehen passend zum Paketumfang.' %></p>
-          </li>
-          <li>
-            <span class="step-number">03</span>
-            <h3><%= isEn ? 'Design and development' : 'Design und Umsetzung' %></h3>
-            <p><%= isEn ? 'Responsive design, component build and CMS integration. You review in real previews, not long PDFs.' : 'Responsive Design, Komponentenaufbau und CMS-Integration. Du prüfst an echten Vorschauen – nicht an langen PDFs.' %></p>
-          </li>
-          <li>
-            <span class="step-number">04</span>
-            <h3><%= isEn ? 'QA and launch' : 'QA und Launch' %></h3>
-            <p><%= isEn ? 'Technical QA, performance and SEO checks, legal pages review - then guided go-live with rollback plan.' : 'Technische QA, Performance- und SEO-Check, Prüfung rechtlicher Seiten – anschließend begleiteter Livegang mit Rückfallplan.' %></p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- 4. Add-ons und Ausbaupfad -->
-    <section id="addons" class="packages-section packages-addons">
-      <div class="container">
-        <header class="section-header">
-          <span class="section-eyebrow"><%= isEn ? 'Add-ons' : 'Add-ons' %></span>
-          <h2><%= isEn ? 'Add-ons and a scalable growth path' : 'Add-ons und skalierbarer Ausbaupfad' %></h2>
-          <p class="section-lead">
-            <%= isEn
-              ? 'Monthly services and optional extensions stay separate from the one-time package price: domain and email from EUR 10/month, hosting EUR 10/month and maintenance EUR 5/month.'
-              : 'Monatliche Leistungen und optionale Erweiterungen bleiben getrennt vom einmaligen Paketpreis: Domain und E-Mail ab 10 € pro Monat, Hosting 10 € pro Monat und Wartung 5 € pro Monat.'
-            %>
-          </p>
+          <span class="section-eyebrow"><%= isEn ? 'Notes' : 'Hinweise' %></span>
+          <h2><%= isEn ? 'Costs, add-ons and boundaries' : 'Kosten, Zusatzleistungen und Grenzen' %></h2>
+          <p class="section-lead"><%= isEn ? 'These notes are part of the public pricing logic.' : 'Diese Hinweise gehören zur öffentlichen Preis- und Angebotslogik.' %></p>
         </header>
         <div class="addons-grid">
+          <% dbGlobalNotes.forEach((note) => { %>
           <article class="addon-card">
-            <h3><%= isEn ? 'Domain and email' : 'Domain und E-Mail' %></h3>
-            <p><%= isEn ? 'Domain and email setup from EUR 10/month, depending on mailbox and domain requirements.' : 'Domain- und E-Mail-Einrichtung ab 10 € pro Monat, abhängig von Postfächern und Domain-Anforderungen.' %></p>
+            <h3><%= note.title %></h3>
+            <p><%= note.body %></p>
           </article>
-          <article class="addon-card">
-            <h3><%= isEn ? 'Hosting' : 'Hosting' %></h3>
-            <p><%= isEn ? 'Hosting can be booked for EUR 10/month, including technical setup and connection to your website.' : 'Hosting kann für 10 € pro Monat gebucht werden, inklusive technischer Einrichtung und Verbindung mit deiner Website.' %></p>
-          </article>
-          <article class="addon-card">
-            <h3><%= isEn ? 'Maintenance' : 'Wartung' %></h3>
-            <p><%= isEn ? 'Maintenance starts at EUR 5/month and covers small technical updates so your site stays stable.' : 'Wartung startet bei 5 € pro Monat und deckt kleine technische Aktualisierungen ab, damit deine Website stabil bleibt.' %></p>
-          </article>
-          <article class="addon-card">
-            <h3><%= isEn ? 'SEO and content expansion' : 'SEO- und Content-Ausbau' %></h3>
-            <p><%= isEn ? 'Additional service pages, blog content or location pages can be added later when you want to grow visibility.' : 'Zusätzliche Leistungsseiten, Blog-Inhalte oder Standortseiten können später ergänzt werden, wenn du die Sichtbarkeit ausbauen willst.' %></p>
-          </article>
+          <% }) %>
         </div>
       </div>
     </section>
+    <% } %>
 
-    <!-- 5. FAQ zu Kosten und Entscheidung -->
+    <% if (dbOverviewFaqs.length) { %>
     <section id="faq" class="packages-section packages-faq">
       <div class="container">
         <header class="section-header">
-          <span class="section-eyebrow"><%= isEn ? 'FAQ' : 'FAQ' %></span>
-          <h2><%= isEn ? 'FAQ on pricing, changes and ownership' : 'FAQ zu Kosten, Änderungen und Besitzrechten' %></h2>
-          <p class="section-lead">
-            <%= isEn
-              ? 'Precise answers to the most important decision questions - so you can request an offer with confidence instead of lingering doubts.'
-              : 'Präzise Antworten auf die wichtigsten Entscheidungsfragen – damit du mit Klarheit anfragen kannst, statt mit Restzweifeln.'
-            %>
-          </p>
+          <span class="section-eyebrow">FAQ</span>
+          <h2><%= isEn ? 'FAQ on packages and scope' : 'FAQ zu Paketen und Umfang' %></h2>
+          <p class="section-lead"><%= isEn ? 'Visible FAQ entries are maintained in the pricing admin.' : 'Sichtbare FAQ-Einträge werden im Preis-Admin gepflegt.' %></p>
         </header>
         <div class="faq-list">
-          <details class="faq-item" open>
-            <summary><%= isEn ? 'How long does a website project in Berlin take?' : 'Wie lange dauert ein Website erstellen-Projekt in Berlin?' %></summary>
-            <p><%= isEn ? 'Basic usually takes 2 to 4 weeks, Business 4 to 6 weeks and Premium 6 to 8 weeks. The timeline depends mainly on content, feedback speed and technical access.' : 'Basis dauert meist 2 bis 4 Wochen, Business 4 bis 6 Wochen und Premium 6 bis 8 Wochen. Der Zeitrahmen hängt vor allem von Inhalten, Feedbackgeschwindigkeit und technischen Zugängen ab.' %></p>
+          <% dbOverviewFaqs.forEach((faq, idx) => { %>
+          <details class="faq-item" <%= idx === 0 ? 'open' : '' %>>
+            <summary><%= faq.question %></summary>
+            <p><%= faq.answer %></p>
           </details>
-          <details class="faq-item">
-            <summary><%= isEn ? 'Which package fits my company?' : 'Welches Paket passt zu meinem Unternehmen?' %></summary>
-            <p><%= isEn ? 'Basic is ideal for a digital business card, Business for a structured small-business site with contact form and Premium for larger offers with booking system or optional shop.' : 'Basis ist ideal als digitale Visitenkarte, Business für eine strukturierte Website kleiner Unternehmen mit Kontaktformular und Premium für größere Angebote mit Buchungssystem oder optionalem Shop.' %></p>
-          </details>
-          <details class="faq-item">
-            <summary><%= isEn ? 'Are SEO and GEO included?' : 'Sind SEO und GEO direkt enthalten?' %></summary>
-            <p><%= isEn ? 'Yes. Basic includes basic SEO, Business includes on-page SEO and Premium includes strategy, SEO structure and content planning. AI/answer visibility is supported through clear structure, FAQs and entity signals.' : 'Ja. Basis enthält SEO-Grundoptimierung, Business enthält On-Page-SEO und Premium enthält Strategie, SEO-Struktur und Content-Planung. Sichtbarkeit in KI-Antworten wird durch klare Struktur, FAQs und Entity-Signale unterstützt.' %></p>
-          </details>
-          <details class="faq-item">
-            <summary><%= isEn ? 'Can existing content be reused?' : 'Kann bestehender Content weiter genutzt werden?' %></summary>
-            <p><%= isEn ? 'In many cases yes. We keep content that works and rewrite weak passages for better clarity, findability and conversion - without unnecessary rework of what is already performing.' : 'In vielen Fällen ja. Wir übernehmen funktionierende Inhalte und überarbeiten schwache Abschnitte für bessere Klarheit, Auffindbarkeit und Conversion – ohne Unnötiges neu zu schreiben.' %></p>
-          </details>
-          <details class="faq-item">
-            <summary><%= isEn ? 'Which monthly costs should I expect?' : 'Welche monatlichen Kosten kommen dazu?' %></summary>
-            <p><%= isEn ? 'Domain and email start from EUR 10/month, hosting is EUR 10/month and maintenance starts at EUR 5/month. These services are optional and separated from the one-time package price.' : 'Domain und E-Mail starten ab 10 € pro Monat, Hosting kostet 10 € pro Monat und Wartung startet bei 5 € pro Monat. Diese Leistungen sind optional und getrennt vom einmaligen Paketpreis.' %></p>
-          </details>
-          <details class="faq-item">
-            <summary><%= isEn ? 'Who owns the website and content after launch?' : 'Wem gehören Website und Inhalte nach dem Launch?' %></summary>
-            <p><%= isEn ? 'You own the website and the content. After launch we continue with monitoring, optimization and prioritization of further measures - so the site keeps delivering results, not just going online once.' : 'Dir gehören Website und Inhalte. Nach dem Livegang begleiten wir Monitoring, Optimierung und Priorisierung weiterer Maßnahmen – damit die Seite dauerhaft Ergebnisse liefert, nicht nur einmal online geht.' %></p>
-          </details>
+          <% }) %>
         </div>
       </div>
     </section>
+    <% } %>
 
-    <!-- 6. Angebots-CTA -->
     <section class="packages-cta">
       <div class="container cta-inner">
         <div>
           <h2><%= isEn ? 'Request a tailored website offer' : 'Individuelles Website-Angebot anfragen' %></h2>
           <p>
             <%= isEn
-              ? 'Send a short message about your project. Within one working day you receive a short assessment, a recommended package option and a realistic time and budget range - no obligation, no sales pressure.'
-              : 'Schick uns eine kurze Nachricht zu deinem Projekt. Innerhalb eines Werktages erhältst du eine kurze Einordnung, eine empfohlene Paketoption sowie einen realistischen Zeit- und Budgetrahmen – unverbindlich und ohne Verkaufsdruck.'
+              ? 'Send a short message about your project. I will classify the scope and recommend the suitable package or add-on path.'
+              : 'Schick mir eine kurze Nachricht zu deinem Projekt. Ich ordne den Umfang ein und empfehle dir das passende Paket oder den passenden Zusatzleistungsweg.'
             %>
           </p>
         </div>
         <div class="cta-actions">
-          <a class="btn btn-hero" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_final_contact" data-cta-location="packages_final_cta"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
-          <a class="btn btn-soft-outline" href="<%= isEn ? '/en/booking' : '/booking' %>" data-track="cta" data-cta-name="packages_final_booking" data-cta-location="packages_final_cta"><%= isEn ? 'Book a project call' : 'Projektgespräch buchen' %></a>
+          <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_final_contact" data-cta-location="packages_final_cta"><%= isEn ? 'Request consultation' : 'Beratung anfragen' %></a>
+          <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt?projektart=unsure' : '/kontakt?projektart=unsure' %>" data-track="cta" data-cta-name="packages_final_scope" data-cta-location="packages_final_cta"><%= isEn ? 'Clarify project scope' : 'Projektumfang klären' %></a>
         </div>
       </div>
       <div class="container cta-internal-links">
@@ -691,7 +360,7 @@
         <ul>
           <li><a href="<%= isEn ? '/en' : '' %>/kontakt"><%= isEn ? 'Contact & initial meeting' : 'Kontakt und Erstgespräch' %></a></li>
           <li><a href="#paket-angebote"><%= isEn ? 'Packages & price overview' : 'Pakete und Preisübersicht' %></a></li>
-          <li><a href="<%= isEn ? '/en' : '' %>/faq"><%= isEn ? 'Frequent questions' : 'Häufige Fragen' %></a></li>
+          <li><a href="/faq"><%= isEn ? 'Frequent questions' : 'Häufige Fragen' %></a></li>
         </ul>
       </div>
     </section>

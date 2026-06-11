@@ -6,18 +6,6 @@
   <main id="hero">
     <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
-    <section class="wt-section wt-section-compact">
-      <div class="wt-shell">
-        <nav class="breadcrumbs" aria-label="breadcrumb">
-          <ol>
-            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
-            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
-            <li aria-current="page">SEO Tester</li>
-          </ol>
-        </nav>
-      </div>
-    </section>
-
     <section class="wt-section">
       <div class="wt-shell">
         <article class="wt-cta-card wt-cta-inline">
@@ -28,11 +16,11 @@
               : 'Wir helfen dir, die wirkungsvollsten SEO-Maßnahmen für bessere Rankings, Auffindbarkeit und Lead-Qualität zu priorisieren.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-comments"></i>
               <%= isEn ? 'Request consultation' : 'Beratung anfragen' %>
             </a>
-            <a class="wt-button-secondary" href="/booking">
+            <a class="btn btn-secondary" href="/booking">
               <i class="fa-solid fa-calendar-check"></i>
               <%= isEn ? 'Book appointment' : 'Termin buchen' %>
             </a>
@@ -41,13 +29,20 @@
       </div>
     </section>
 
-    <section class="wt-hero">
+    <section class="wt-hero unified-hero">
       <div class="wt-shell">
-        <div class="wt-hero-grid">
-          <div class="wt-hero-copy">
+        <div class="wt-hero-grid unified-hero__grid">
+          <div class="wt-hero-copy unified-hero__copy">
+            <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+              <ol>
+                <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+                <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+                <li aria-current="page"><%= isEn ? 'SEO Tester' : 'SEO-Tester' %></li>
+              </ol>
+            </nav>
             <span class="wt-eyebrow">
               <i class="fa-solid fa-magnifying-glass"></i>
-              SEO Tester
+              <%= isEn ? 'SEO Tester' : 'SEO-Tester' %>
             </span>
             <h1><%= isEn ? 'Check whether your website can be found well on Google.' : 'Prüfe, ob deine Website bei Google gut gefunden werden kann.' %></h1>
             <p class="wt-lead">
@@ -62,7 +57,7 @@
             </ul>
           </div>
 
-          <div class="wt-form-card">
+          <div class="wt-form-card unified-hero__panel">
             <h2><%= isEn ? 'Start SEO check' : 'SEO-Check starten' %></h2>
             <p><%= isEn ? 'Enter URL and business context for realistic SEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische SEO-Bewertung ein.' %></p>
             <form data-seo-tester-form>
@@ -86,7 +81,7 @@
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
                   <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 </div>
-                <button class="wt-button" type="submit">
+                <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start SEO check' : 'SEO-Check starten' %>
                 </button>
@@ -163,8 +158,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Structured data' : 'Strukturierte Daten' %></h3>
               <p><%= isEn
-                ? 'Organization, LocalBusiness, Service, FAQPage, BreadcrumbList, and Product schemas in JSON-LD. Correctly implemented, this unlocks rich snippets and AI answer citations.'
-                : 'Organization, LocalBusiness, Service, FAQPage, BreadcrumbList und Product-Schemas als JSON-LD. Korrekt umgesetzt, erschließt das Rich-Snippets und KI-Antwort-Zitierungen.' %></p>
+                ? 'Organization, Service, FAQPage and BreadcrumbList schemas in JSON-LD where the visible page content supports them.'
+                : 'Organization, Service, FAQPage und BreadcrumbList als JSON-LD, wenn die sichtbaren Seiteninhalte diese Angaben stützen.' %></p>
             </div>
           </div>
           <p>
@@ -184,8 +179,8 @@
             <figure class="wt-review">
               <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
               <blockquote><%= isEn
-                ? '“The SEO audit gave us a clear picture of where we were losing traffic. The recommendations were concrete and we saw rankings move within four weeks.”'
-                : '„Die SEO-Analyse hat uns klar gezeigt, wo wir Traffic verlieren. Die Empfehlungen waren konkret und wir haben innerhalb von vier Wochen Ranking-Verbesserungen gesehen."' %></blockquote>
+                ? '“The SEO audit gave us a clear picture of where we were losing traffic. The recommendations were concrete and easy to prioritize.”'
+                : '„Die SEO-Analyse hat uns klar gezeigt, wo wir Traffic verlieren. Die Empfehlungen waren konkret und leicht zu priorisieren."' %></blockquote>
               <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
             </figure>
             <figure class="wt-review">
@@ -198,8 +193,8 @@
             <figure class="wt-review">
               <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
               <blockquote><%= isEn
-                ? '“Fair pricing, fast delivery, and the report pays for itself after the first ranking jump.”'
-                : '„Faire Preise, schnelle Umsetzung — der Report amortisiert sich mit dem ersten Ranking-Sprung."' %></blockquote>
+                ? '“Fair pricing, fast delivery, and a report that made our next SEO steps much easier to decide.”'
+                : '„Faire Preise, schnelle Umsetzung und ein Report, der unsere nächsten SEO-Schritte deutlich leichter planbar gemacht hat."' %></blockquote>
               <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
             </figure>
           </div>
@@ -246,18 +241,18 @@
     <section class="wt-section">
       <div class="wt-shell">
         <article class="wt-cta-card">
-          <h2><%= isEn ? 'Ready to turn SEO findings into measurable results?' : 'Bereit, SEO-Befunde in messbare Ergebnisse umzusetzen?' %></h2>
+          <h2><%= isEn ? 'Ready to turn SEO findings into a clear roadmap?' : 'Bereit, SEO-Befunde in eine klare Roadmap umzusetzen?' %></h2>
           <p>
             <%= isEn
-              ? 'We help you turn SEO findings into a practical roadmap with measurable visibility impact.'
-              : 'Wir helfen dir, SEO-Befunde in eine praktische Roadmap mit messbarem Sichtbarkeits-Impact zu übersetzen.' %>
+              ? 'We help you turn SEO findings into a practical roadmap with clear priorities.'
+              : 'Wir helfen dir, SEO-Befunde in eine praktische Roadmap mit klaren Prioritäten zu übersetzen.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-paper-plane"></i>
               <%= isEn ? 'Request SEO consultation' : 'SEO-Beratung anfragen' %>
             </a>
-            <a class="wt-button-secondary" href="/booking">
+            <a class="btn btn-secondary" href="/booking">
               <i class="fa-solid fa-calendar-days"></i>
               <%= isEn ? 'Book a call' : 'Call buchen' %>
             </a>
@@ -268,19 +263,6 @@
   </main>
 
   <%- include('partials/footer') %>
-
-  <style>
-    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
-    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
-    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
-    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
-    .breadcrumbs a { color: #374151; text-decoration: none; }
-    .breadcrumbs a:hover { text-decoration: underline; }
-    .wt-cta-inline { padding: 1rem; }
-    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
-    .wt-faq summary { cursor: pointer; font-weight: 600; }
-    .wt-faq p { margin: 10px 0 0; }
-  </style>
 
   <script>
     window.KWD_TESTER_SPAM = {

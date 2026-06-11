@@ -164,13 +164,15 @@ test('interaction polish leaves blog and ratgeber article text outside reveal ta
 });
 
 test('webdesign berlin hero avoids mixing legacy child scroll classes with shared hero reveal', () => {
-  const heroStart = webdesignBerlin.indexOf('<section class="wd-container wd-hero unified-hero"');
+  const heroStart = webdesignBerlin.search(/<section id="hero" class="wd-container wd-hero unified-hero"/);
   assert.notEqual(heroStart, -1, 'missing webdesign berlin hero');
   const heroEnd = webdesignBerlin.indexOf('</section>', heroStart);
   assert.notEqual(heroEnd, -1, 'missing webdesign berlin hero end');
   const heroBlock = webdesignBerlin.slice(heroStart, heroEnd);
 
-  assert.doesNotMatch(heroBlock, /animate-on-scroll/);
+  assert.match(heroBlock, /home-hero-reveal home-hero-reveal--h1 animate-on-scroll/);
+  assert.match(heroBlock, /home-hero-reveal home-hero-reveal--actions animate-on-scroll/);
+  assert.doesNotMatch(heroBlock, /kwd-scroll-reveal/);
 });
 
 test('legacy scroll reveal waits for full page load before observing animated elements', () => {

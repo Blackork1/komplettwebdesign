@@ -19,6 +19,7 @@
     ? ogImage.trim()
     : `${siteBase}/images/heroBg.webp`;
   const assetV = encodeURIComponent(assetVersion || '1');
+  const safeTrackingContext = (typeof trackingContext === 'object' && trackingContext) ? trackingContext : {};
   const versionedAsset = (typeof asset === 'function')
     ? asset
     : (file) => {
@@ -26,6 +27,10 @@
         return `/${normalized}?v=${assetV}`;
       };
   const shouldLoadInteractionPolish = typeof disableInteractionPolish === 'undefined' || !disableInteractionPolish;
+  const rawPageCssAssets = typeof extraCssAssets !== 'undefined' ? extraCssAssets : [];
+  const pageCssAssets = Array.isArray(rawPageCssAssets)
+    ? rawPageCssAssets.filter(Boolean)
+    : [];
   %>
   <meta charset="UTF-8" />
   <title><%= pageTitle %></title>
@@ -121,10 +126,21 @@
     <link rel="stylesheet" href="<%= cssAsset('extra.css') %>" />
   </noscript>
 
+  <link rel="preload" href="<%= cssAsset('footer.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset('footer.css') %>" />
+
+  <link rel="preload" href="<%= cssAsset('chat.css') %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset('chat.css') %>" />
+
   <link rel="preload" href="<%= cssAsset('booking-widget.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
     <link rel="stylesheet" href="<%= cssAsset('booking-widget.css') %>" />
   </noscript>
+
+  <% pageCssAssets.forEach((cssFile) => { %>
+  <link rel="preload" href="<%= cssAsset(cssFile) %>" as="style" />
+  <link rel="stylesheet" href="<%= cssAsset(cssFile) %>" />
+  <% }) %>
 
   <!-- Stripe lazy loader (wie bei dir) -->
   <script>
@@ -191,6 +207,7 @@
       GA_MEASUREMENT_ID: "<%= process.env.GA_MEASUREMENT_ID %>",
       CLARITY_ID: "<%= process.env.CLARITY_ID %>"
     };
+    window.KWD_TRACKING_CONTEXT = <%- JSON.stringify(safeTrackingContext) %>;
 
     // Consent Mode Defaults (alles denied)
     window.dataLayer = window.dataLayer || [];

@@ -48,7 +48,7 @@ export const referenceProjects = [
     quoteAuthor: 'TM Sauber & Mehr',
     image: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1778179218/admin_gallery/lfhdeq3nkirr9wijelqb.webp',
     liveUrl: '',
-    relaunchUrl: '/website-relaunch-berlin',
+    relaunchUrl: '/leistungen/website-relaunch',
     beforeAfterComparisons: [
       {
         title: 'Startseite',

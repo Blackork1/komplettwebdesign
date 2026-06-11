@@ -19,12 +19,12 @@
           <p class="references-lead unified-hero__lead"><%= project.summary %></p>
           <div class="references-actions unified-hero__actions">
             <% if (project.liveUrl) { %>
-            <a class="references-button references-button--primary unified-hero__button unified-hero__button--primary" href="<%= project.liveUrl %>" target="_blank" rel="noopener">Live ansehen</a>
+            <a class="btn btn-primary" href="<%= project.liveUrl %>" target="_blank" rel="noopener">Live ansehen</a>
             <% } %>
             <% if (project.relaunchUrl) { %>
-            <a class="references-button references-button--primary unified-hero__button unified-hero__button--primary" href="<%= project.relaunchUrl %>">Mehr zum Relaunch</a>
+            <a class="btn btn-primary" href="<%= project.relaunchUrl %>">Mehr zum Relaunch</a>
             <% } %>
-            <a class="references-button references-button--secondary unified-hero__button unified-hero__button--secondary" href="/kontakt">Ähnliches Projekt anfragen</a>
+            <a class="btn btn-secondary" href="/kontakt">Ähnliches Projekt anfragen</a>
           </div>
         </div>
         <figure class="reference-detail-hero__image unified-hero__media-frame">
@@ -68,7 +68,7 @@
           Der Fokus lag nicht auf einem komplett anderen Auftritt um jeden Preis, sondern auf klarerer Führung:
           Leistungen, Vertrauen und Kontaktwege sollten schneller erfassbar werden.
           Mehr zur Herangehensweise findest du auf der Seite
-          <a href="<%= project.relaunchUrl || '/website-relaunch-berlin' %>">Website Relaunch Berlin</a>.
+          <a href="<%= project.relaunchUrl || '/leistungen/website-relaunch' %>">Website Relaunch Berlin</a>.
         </p>
       </div>
 
@@ -137,6 +137,24 @@
       </ul>
     </section>
 
+    <section class="references-container reference-section reference-section--split" aria-labelledby="reference-boundary-title">
+      <div class="reference-section__copy">
+        <p class="references-eyebrow">Einordnung</p>
+        <h2 id="reference-boundary-title">Was aus dieser Referenz ableitbar ist</h2>
+        <p>
+          Dieses Projekt zeigt, wie ein lokaler Betrieb online verständlicher präsentiert werden kann:
+          mit klarer Seitenführung, passender Bildsprache, sichtbaren Kontaktwegen und einer technischen Grundlage,
+          die später erweitert werden kann. Es ist kein pauschales Versprechen für andere Branchen oder Ausgangslagen.
+        </p>
+      </div>
+      <ul class="reference-check-list">
+        <li>Übertragbar sind Struktur, Priorisierung und klare Anfragewege</li>
+        <li>Nicht übertragbar sind feste Ergebnisse, Rankings oder Anfragezahlen</li>
+        <li>Zusatzfunktionen werden je nach Projekt separat geprüft</li>
+        <li>Rechtstexte, Tracking, Wartung und laufende Kosten werden vorab abgegrenzt</li>
+      </ul>
+    </section>
+
     <section class="references-container reference-section reference-testimonial" aria-labelledby="reference-quote-title">
       <p class="references-eyebrow">Kundenstimme</p>
       <h2 id="reference-quote-title">Feedback zum Projekt</h2>
@@ -160,7 +178,7 @@
         <h2 id="reference-cta-title">Soll deine Website genauso klar werden?</h2>
         <p>Schick kurz deine Ausgangslage. Danach klären wir, welche Struktur, Inhalte und nächsten Schritte sinnvoll sind.</p>
       </div>
-      <a class="references-button references-button--primary" href="/kontakt">Projekt besprechen</a>
+      <a class="btn btn-primary" href="/kontakt">Projekt besprechen</a>
     </section>
 
     <% if ((otherProjects || []).length) { %>

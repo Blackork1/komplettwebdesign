@@ -1,0 +1,128 @@
+<%
+  const heroImage = page.heroImage || null;
+  const siteBase = canonicalBaseUrl.replace(/\/$/, '');
+  const pageUrl = `${siteBase}${page.canonicalPath}`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${siteBase}/` },
+      { '@type': 'ListItem', position: 2, name: page.h1, item: pageUrl }
+    ]
+  };
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.h1,
+    headline: page.h1,
+    description: page.description,
+    inLanguage: 'de-DE',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${siteBase}/#website`,
+      url: `${siteBase}/`,
+      name: 'Komplett Webdesign'
+    },
+    breadcrumb: { '@id': `${pageUrl}#breadcrumb` }
+  };
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${pageUrl}#leistungen`,
+    itemListElement: page.services.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.title,
+      url: `${siteBase}${item.href}`
+    }))
+  };
+  const structuredDataBlocks = [webPageSchema, breadcrumbSchema, itemListSchema];
+%>
+<%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
+
+<body class="service-page leistungen-page leistungen-overview-page">
+  <%- include('../partials/header') %>
+
+  <main id="main-content">
+    <section class="service-hero hero leistungen-service-hero unified-hero" id="hero"<% if (heroImage?.src) { %> style="--service-hero-image: url('<%= heroImage.src %>');"<% } %>>
+      <div class="leistungen-hero-shell">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li aria-current="page"><%= page.h1 %></li>
+          </ol>
+        </nav>
+
+        <div class="service-hero__grid leistungen-hero-grid unified-hero__grid">
+          <div class="hero-content service-hero__copy">
+            <span class="service-kicker leistungen-service-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll">
+              <i class="fa-solid fa-layer-group" aria-hidden="true"></i><%= page.hero.eyebrow %>
+            </span>
+            <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+            <p class="hero-subtitle home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.lead %></p>
+            <p class="hero-answer home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.answer %></p>
+            <div class="hero-cta-variants">
+              <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.primaryCta.url %>" data-track="cta" data-cta-name="leistungen_overview_primary" data-cta-location="leistungen_overview_hero"><%= page.hero.primaryCta.label %></a>
+              <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.secondaryCta.url %>" data-track="cta" data-cta-name="leistungen_overview_secondary" data-cta-location="leistungen_overview_hero"><%= page.hero.secondaryCta.label %></a>
+            </div>
+          </div>
+
+          <aside class="service-hero__panel leistungen-hero-panel unified-hero__panel" aria-label="Kurzüberblick">
+            <div class="leistungen-hero-panel__reveal home-hero-reveal home-hero-reveal--visual animate-on-scroll">
+              <h2><%= page.panel.title %></h2>
+              <p><%= page.panel.text %></p>
+              <div class="leistungen-hero-mini-list">
+                <% page.panel.items.forEach(function(item) { %>
+                  <div><i class="fa-solid fa-check" aria-hidden="true"></i><span><%= item %></span></div>
+                <% }) %>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="service-section" id="uebersicht">
+      <div class="service-shell">
+        <div class="service-section__head animate-on-scroll">
+          <span class="service-kicker leistungen-overview-kicker">Überblick</span>
+          <h2>Welche Leistung passt zu deinem Projekt?</h2>
+          <p>Die einzelnen Seiten erklären Umfang, Grenzen, Preislogik und sinnvolle nächste Schritte genauer.</p>
+        </div>
+        <div class="service-card-grid leistungen-overview-grid">
+          <% page.services.forEach(function(item) { %>
+            <a class="service-link-card leistungen-overview-card animate-on-scroll" href="<%= item.href %>">
+              <span class="leistungen-overview-card__icon"><i class="fa-solid <%= item.icon %>" aria-hidden="true"></i></span>
+              <h3><%= item.title %></h3>
+              <p><%= item.text %></p>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="service-section service-section--soft" id="naechste-schritte">
+      <div class="service-shell">
+        <div class="service-section__head animate-on-scroll">
+          <span class="service-kicker leistungen-overview-kicker">Einordnung</span>
+          <h2>So findest du den passenden Einstieg</h2>
+          <p>Wenn dein Umfang noch offen ist, wird zuerst geklärt, welche Leistung wirklich sinnvoll ist.</p>
+        </div>
+        <div class="service-card-grid leistungen-overview-grid leistungen-overview-grid--steps">
+          <% page.nextSteps.forEach(function(item, index) { %>
+            <article class="service-card leistungen-overview-step animate-on-scroll">
+              <span><%= String(index + 1).padStart(2, '0') %></span>
+              <p><%= item %></p>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

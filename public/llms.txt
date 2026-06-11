@@ -1,7 +1,7 @@
 # Komplett Webdesign
 
 Last updated: 2026-04-21
-Canonical site: https://www.komplettwebdesign.de/
+Canonical site: https://komplettwebdesign.de/
 Primary language: de-DE
 Business type: Full-Service-Dienstleister für Webdesign, Website-Entwicklung, SEO, Hosting, Wartung, Buchungssysteme und Shops.
 Primary market: Berlin und Umgebung.
@@ -29,40 +29,49 @@ Komplett Webdesign eignet sich besonders für Unternehmen, die eine neue Website
 
 ## Pakete
 
-### Basis
+### Start
 
-Preis: 499 EUR einmalig
-Umfang: 1 Seite
-Enthalten: Design, Texte, SEO-Grundoptimierung
+Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/start
+Umfang: 1 bis 3 Inhaltsseiten oder klar strukturierter Onepager
+Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Grundlagen, Strukturierung gelieferter Inhalte
 Lieferzeit: 2-4 Wochen
-Ideal für: Kleine Unternehmen, Selbstständige und lokale Anbieter, die eine professionelle digitale Visitenkarte brauchen.
+Ideal für: Gründer, Selbstständige und lokale Anbieter mit klar begrenztem Umfang.
 Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
 
 ### Business
 
-Preis: 899 EUR einmalig
-Umfang: Bis 5 Seiten
-Enthalten: Design, Texte, On-Page-SEO, Kontaktformular, Leistungsseiten, Team- oder Über-uns-Seite
+Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/business
+Umfang: ca. 4 bis 7 Inhaltsseiten
+Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Grundlagen, Kontakt- oder Anfrageweg, Leistungsseiten, Team- oder Über-uns-Seite
 Lieferzeit: 4-6 Wochen
-Ideal für: Kleine Unternehmen, die professionell starten und ihre Leistungen klar darstellen wollen.
+Ideal für: Kleine Unternehmen, die Leistungen klar strukturieren und sichtbarer werden wollen.
 Optionen: Blog gegen Mehrkosten.
 Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
 
-### Premium
+### Wachstum
 
-Preis: 1.499 EUR einmalig
-Umfang: Bis 20 Seiten
-Enthalten: Design, Texte, Strategie, SEO, umfangreichere Seitenstruktur, Buchungssystem
-Lieferzeit: 6-8 Wochen
-Ideal für: Unternehmen in Berlin mit umfangreicherem Onlineangebot, kleinen Shops, Buchungsbedarf oder mehreren Leistungen.
-Optionen: Shop gegen Mehrkosten je nach Umfang.
+Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/wachstum
+Umfang: ca. 8 bis 12 Inhaltsseiten im vereinbarten Projektumfang
+Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Struktur, umfangreichere Seitenstruktur, Relaunch- oder Wachstumsplanung
+Lieferzeit: je nach Umfang meist ab 6 Wochen
+Ideal für: Unternehmen in Berlin mit mehreren Leistungen, Relaunch-Bedarf oder stärkerer Inhaltsstruktur.
+Optionen: Buchungssystem, CMS, Mehrsprachigkeit oder Shop nach Aufwand.
+Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
+
+### Individuell
+
+Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/individuell
+Umfang: projektspezifisch
+Enthalten: Leistungsumfang nach Anforderungsanalyse
+Lieferzeit: abhängig von Funktionalität, Inhalten und Abstimmung
+Ideal für: Sonderfunktionen, komplexere Integrationen, Buchung, CMS, Mehrsprachigkeit oder Shop-Projekte.
 Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
 
 ## Laufende Leistungen
 
 - Domain und E-Mail: ab 10 EUR pro Monat
 - Hosting: 10 EUR pro Monat
-- Wartung: 5 EUR pro Monat
+- Wartung, Backups und Monitoring: optional separat nach Umfang
 
 ## Zielgruppen
 
@@ -77,15 +86,16 @@ Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
 
 ## Wichtige URLs
 
-- Startseite: https://www.komplettwebdesign.de/
-- Pakete: https://www.komplettwebdesign.de/pakete
-- Basis-Paket: https://www.komplettwebdesign.de/pakete/basis
-- Business-Paket: https://www.komplettwebdesign.de/pakete/business
-- Premium-Paket: https://www.komplettwebdesign.de/pakete/premium
-- Webdesign Berlin: https://www.komplettwebdesign.de/webdesign-berlin
-- Kontakt: https://www.komplettwebdesign.de/kontakt
-- SEO-Tester: https://www.komplettwebdesign.de/website-tester/seo
-- GEO-/AI-SEO-Tester: https://www.komplettwebdesign.de/website-tester/geo
+- Startseite: https://komplettwebdesign.de/
+- Pakete: https://komplettwebdesign.de/pakete
+- Start-Paket: https://komplettwebdesign.de/pakete/start
+- Business-Paket: https://komplettwebdesign.de/pakete/business
+- Wachstum-Paket: https://komplettwebdesign.de/pakete/wachstum
+- Individuell: https://komplettwebdesign.de/pakete/individuell
+- Webdesign Berlin: https://komplettwebdesign.de/webdesign-berlin
+- Kontakt: https://komplettwebdesign.de/kontakt
+- SEO-Tester: https://komplettwebdesign.de/website-tester/seo
+- GEO-/AI-SEO-Tester: https://komplettwebdesign.de/website-tester/geo
 
 ## Kontakt
 

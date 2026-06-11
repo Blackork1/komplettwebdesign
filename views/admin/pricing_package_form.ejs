@@ -1,0 +1,265 @@
+<%- include('../partials/admin_header') %>
+
+<%
+  const actionUrl = mode === 'create'
+    ? '/admin/pricing/packages'
+    : '/admin/pricing/packages/' + row.id;
+  const checked = (value) => value ? 'checked' : '';
+%>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-tag"></i> <%= mode === 'create' ? 'Paket erstellen' : 'Paket bearbeiten' %>
+</h1>
+
+<% if (errors && errors.length) { %>
+  <div class="alert alert-danger">
+    <strong>Bitte korrigieren:</strong>
+    <ul class="mb-0">
+      <% errors.forEach((error) => { %>
+        <li><%= error %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<% if (successMessages && successMessages.length) { %>
+  <div class="alert alert-success">
+    <ul class="mb-0">
+      <% successMessages.forEach((message) => { %>
+        <li><%= message %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<% if (warnings && warnings.length) { %>
+  <div class="alert alert-warning">
+    <strong>Hinweise zur Prüfung:</strong>
+    <ul class="mb-0">
+      <% warnings.forEach((warning) => { %>
+        <li><%= warning %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<form method="POST" action="<%= actionUrl %>" class="admin-card">
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+  <% if (warnings && warnings.length) { %>
+    <div class="form-check border rounded p-3 mb-4 bg-warning-subtle">
+      <input class="form-check-input" type="checkbox" id="confirm_warnings" name="confirm_warnings" value="on">
+      <label class="form-check-label fw-semibold" for="confirm_warnings">
+        Ich habe die Warnhinweise geprüft und möchte die Paketdaten trotzdem speichern.
+      </label>
+    </div>
+  <% } %>
+
+  <h2 class="h5 mb-3">Basis</h2>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label" for="package_key">Paket-Key</label>
+      <input id="package_key" name="package_key" class="form-control" required value="<%= row.packageKey || '' %>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="name">Name</label>
+      <input id="name" name="name" class="form-control" required value="<%= row.name || '' %>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="display_name">Anzeigename</label>
+      <input id="display_name" name="display_name" class="form-control" required value="<%= row.displayName || '' %>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="slug">Slug</label>
+      <input id="slug" name="slug" class="form-control" required value="<%= row.slug || '' %>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="canonical_path">Canonical Path</label>
+      <input id="canonical_path" name="canonical_path" class="form-control" required value="<%= row.canonicalPath || '' %>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="sort_order">Sortierung</label>
+      <input id="sort_order" name="sort_order" type="number" class="form-control" value="<%= row.sortOrder ?? 0 %>">
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">Preis</h2>
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label" for="price_amount_euro">Preis in Euro</label>
+      <input id="price_amount_euro" name="price_amount_euro" class="form-control" inputmode="decimal" value="<%= row.priceAmountEuro || '' %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="price_currency">Währung</label>
+      <input id="price_currency" name="price_currency" class="form-control" maxlength="3" value="<%= row.priceCurrency || 'EUR' %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="price_prefix">Preis-Präfix</label>
+      <input id="price_prefix" name="price_prefix" class="form-control" value="<%= row.pricePrefix || '' %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="price_suffix">Preis-Suffix</label>
+      <input id="price_suffix" name="price_suffix" class="form-control" value="<%= row.priceSuffix || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="price_label_override">Preislabel überschreiben</label>
+      <input id="price_label_override" name="price_label_override" class="form-control" value="<%= row.priceLabelOverride || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="price_type">Preistyp</label>
+      <select id="price_type" name="price_type" class="form-select">
+        <% priceTypes.forEach((type) => { %>
+          <option value="<%= type %>" <%= row.priceType === type ? 'selected' : '' %>><%= type %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="vat_note">USt.-Hinweis</label>
+      <textarea id="vat_note" name="vat_note" class="form-control" rows="2"><%= row.vatNote || '' %></textarea>
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">Sichtbarkeit</h2>
+  <div class="row g-2">
+    <div class="col-md-3 form-check">
+      <input id="is_active" name="is_active" class="form-check-input" type="checkbox" <%= checked(row.isActive) %>>
+      <label class="form-check-label" for="is_active">Aktiv</label>
+    </div>
+    <div class="col-md-3 form-check">
+      <input id="is_visible" name="is_visible" class="form-check-input" type="checkbox" <%= checked(row.isVisible) %>>
+      <label class="form-check-label" for="is_visible">Sichtbar</label>
+    </div>
+    <div class="col-md-3 form-check">
+      <input id="show_in_contact_form" name="show_in_contact_form" class="form-check-input" type="checkbox" <%= checked(row.showInContactForm) %>>
+      <label class="form-check-label" for="show_in_contact_form">Kontaktformular</label>
+    </div>
+    <div class="col-md-3 form-check">
+      <input id="show_in_comparison" name="show_in_comparison" class="form-check-input" type="checkbox" <%= checked(row.showInComparison) %>>
+      <label class="form-check-label" for="show_in_comparison">Vergleich</label>
+    </div>
+    <div class="col-md-3 form-check">
+      <input id="allow_detail_page" name="allow_detail_page" class="form-check-input" type="checkbox" <%= checked(row.allowDetailPage) %>>
+      <label class="form-check-label" for="allow_detail_page">Detailseite</label>
+    </div>
+    <div class="col-md-3 form-check">
+      <input id="is_recommended" name="is_recommended" class="form-check-input" type="checkbox" <%= checked(row.isRecommended) %>>
+      <label class="form-check-label" for="is_recommended">Empfohlen</label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="recommendation_label">Empfehlungslabel</label>
+      <input id="recommendation_label" name="recommendation_label" class="form-control" value="<%= row.recommendationLabel || '' %>">
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">Inhalt</h2>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label" for="short_description">Kurzbeschreibung</label>
+      <textarea id="short_description" name="short_description" class="form-control" rows="3"><%= row.shortDescription || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="long_description">Beschreibung</label>
+      <textarea id="long_description" name="long_description" class="form-control" rows="3"><%= row.longDescription || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="positioning">Positionierung</label>
+      <textarea id="positioning" name="positioning" class="form-control" rows="3"><%= row.positioning || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="target_group">Zielgruppe</label>
+      <textarea id="target_group" name="target_group" class="form-control" rows="3"><%= row.targetGroup || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="not_for">Nicht geeignet für</label>
+      <textarea id="not_for" name="not_for" class="form-control" rows="3"><%= row.notFor || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="page_scope">Seitenumfang</label>
+      <textarea id="page_scope" name="page_scope" class="form-control" rows="3"><%= row.pageScope || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="text_scope">Textumfang</label>
+      <textarea id="text_scope" name="text_scope" class="form-control" rows="3"><%= row.textScope || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="seo_scope">SEO-Umfang</label>
+      <textarea id="seo_scope" name="seo_scope" class="form-control" rows="3"><%= row.seoScope || '' %></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="tech_scope">Technik-Umfang</label>
+      <textarea id="tech_scope" name="tech_scope" class="form-control" rows="3"><%= row.techScope || '' %></textarea>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="feedback_rounds">Feedbackrunden</label>
+      <input id="feedback_rounds" name="feedback_rounds" class="form-control" value="<%= row.feedbackRounds || '' %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="timeline">Zeitplan</label>
+      <input id="timeline" name="timeline" class="form-control" value="<%= row.timeline || '' %>">
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">CTA</h2>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label" for="cta_label">CTA-Label</label>
+      <input id="cta_label" name="cta_label" class="form-control" value="<%= row.ctaLabel || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="cta_url">CTA-URL</label>
+      <input id="cta_url" name="cta_url" class="form-control" value="<%= row.ctaUrl || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="secondary_cta_label">Sekundäre CTA</label>
+      <input id="secondary_cta_label" name="secondary_cta_label" class="form-control" value="<%= row.secondaryCtaLabel || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="secondary_cta_url">Sekundäre CTA-URL</label>
+      <input id="secondary_cta_url" name="secondary_cta_url" class="form-control" value="<%= row.secondaryCtaUrl || '' %>">
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">SEO</h2>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label" for="meta_title">Meta Title</label>
+      <input id="meta_title" name="meta_title" class="form-control" value="<%= row.metaTitle || '' %>">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="h1">H1</label>
+      <input id="h1" name="h1" class="form-control" value="<%= row.h1 || '' %>">
+    </div>
+    <div class="col-md-8">
+      <label class="form-label" for="meta_description">Meta Description</label>
+      <textarea id="meta_description" name="meta_description" class="form-control" rows="3"><%= row.metaDescription || '' %></textarea>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="schema_type">Schema Type</label>
+      <input id="schema_type" name="schema_type" class="form-control" value="<%= row.schemaType || '' %>">
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h2 class="h5 mb-3">Admin</h2>
+  <div class="row g-3">
+    <div class="col-12">
+      <label class="form-label" for="admin_note">Admin-Notiz</label>
+      <textarea id="admin_note" name="admin_note" class="form-control" rows="3"><%= row.adminNote || '' %></textarea>
+      <div class="form-text">Admin-Notizen werden nicht öffentlich ausgegeben.</div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mt-4">
+    <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Paket erstellen' : 'Paket speichern' %></button>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/packages">Abbrechen</a>
+    <% if (mode !== 'create' && row.canonicalPath) { %>
+      <a class="btn btn-outline-secondary" href="<%= row.canonicalPath %>" target="_blank" rel="noopener">Vorschau</a>
+    <% } %>
+  </div>
+</form>
+
+<%- include('../partials/admin_footer') %>

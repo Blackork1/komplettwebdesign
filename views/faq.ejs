@@ -4,18 +4,6 @@ const structuredDataBlocks = (typeof faqJsonLd === 'string' && faqJsonLd.trim())
 <%- include('partials/head', { structuredDataBlocks }) %>
 <%- include('partials/header') %>
 
-<style>
-  .chat-container.open {
-    display: none;
-  }
-  .chat-container {
-    display: none;
-  }
-  .chat-button {
-    display: none;
-  }
-</style>
-
 <link rel="stylesheet" href="<%= cssAsset('faq.css') %>" />
 
 <!-- 1) Voll-Breite Header -->
@@ -101,7 +89,7 @@ const structuredDataBlocks = (typeof faqJsonLd === 'string' && faqJsonLd.trim())
 </div>
 <div class="mt-5 p-4 border rounded">
   <h4>Chatbot</h4>
-  <div id="chat-window" style="max-height: 200px; overflow-y: auto"></div>
+  <div id="chat-window" class="faq-chat-window"></div>
   <form id="chat-form" class="mt-2">
     <div class="input-group">
       <input

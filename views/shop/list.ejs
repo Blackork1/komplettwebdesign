@@ -4,35 +4,7 @@
     <meta charset="UTF-8" />
     <title>Pakete – Shop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      .grid {
-        display: grid;
-        gap: 1.5rem;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      }
-      .card {
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 16px;
-      }
-      .card img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-      }
-      .price {
-        font-weight: bold;
-        font-size: 1.2rem;
-        margin: 0.5rem 0;
-      }
-      .btn {
-        display: inline-block;
-        padding: 0.6rem 1rem;
-        border: 1px solid #222;
-        border-radius: 6px;
-        text-decoration: none;
-      }
-    </style>
+    <link rel="stylesheet" href="<%= cssAsset('shop.css') %>">
   </head>
   <body>
     <h1>Pakete</h1>
@@ -51,7 +23,7 @@
           <%= (p.amount_cents/100).toFixed(2) %> <%= (p.currency ||
           'eur').toUpperCase() %>
         </div>
-        <a class="btn" href="/checkout/<%= p.id %>">Jetzt kaufen</a>
+        <a class="btn btn-primary" href="/checkout/<%= p.id %>">Jetzt kaufen</a>
       </div>
       <% }) %>
     </div>

@@ -139,6 +139,31 @@
   border-color: rgba(233, 74, 27, 0.16);
 }
 
+.district-list-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.district-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+.district-list li {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.district-list a {
+  text-decoration: none;
+}
+
 .district-breadcrumb.unified-hero__breadcrumbs {
   max-width: 1180px;
   margin: 0 auto;
@@ -253,47 +278,6 @@
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 34px;
-}
-
-.district-btn {
-  min-height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: 2px solid transparent;
-  border-radius: var(--radius, 8px);
-  padding: 13px 18px;
-  text-decoration: none;
-  font-weight: 800;
-  box-shadow: var(--shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
-}
-
-.district-btn:hover {
-  transform: translateY(-4px);
-}
-
-.district-btn--primary {
-  background: var(--district-accent);
-  color: #fff;
-}
-
-.district-btn--primary:hover {
-  background: var(--district-ink);
-  color: #fff;
-  border-color: var(--district-accent);
-}
-
-.district-btn--ghost {
-  background: var(--district-surface);
-  color: var(--district-ink);
-  border-color: rgba(11, 42, 70, 0.16);
-}
-
-.district-btn--ghost:hover {
-  background: var(--district-ink);
-  color: #fff;
 }
 
 .district-hero__media {
@@ -1005,7 +989,8 @@
     margin-top: 18px;
   }
 
-  .district-btn {
+  .district-hero__actions .btn,
+  .district-final__actions .btn {
     width: 100%;
   }
 }
@@ -1157,51 +1142,6 @@
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 34px;
-}
-
-.webdesign-berlin-page .wd-btn {
-  min-height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: 2px solid transparent;
-  border-radius: var(--radius, 8px);
-  padding: 13px 18px;
-  text-decoration: none;
-  font-weight: 800;
-  box-shadow: var(--shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
-}
-
-.webdesign-berlin-page .wd-btn:hover,
-.webdesign-berlin-page .wd-btn:focus {
-  transform: translateY(-4px);
-}
-
-.webdesign-berlin-page .wd-btn-primary {
-  background: var(--wd-accent);
-  border-color: var(--wd-accent);
-  color: #fff;
-}
-
-.webdesign-berlin-page .wd-btn-primary:hover,
-.webdesign-berlin-page .wd-btn-primary:focus {
-  background: var(--wd-ink);
-  border-color: var(--wd-accent);
-  color: #fff;
-}
-
-.webdesign-berlin-page .wd-btn-outline {
-  background: var(--wd-surface);
-  color: var(--wd-ink);
-  border-color: rgba(11, 42, 70, 0.16);
-}
-
-.webdesign-berlin-page .wd-btn-outline:hover,
-.webdesign-berlin-page .wd-btn-outline:focus {
-  background: var(--wd-ink);
-  color: #fff;
 }
 
 .webdesign-berlin-page .wd-social-proof {
@@ -1957,7 +1897,7 @@
     padding: 22px;
   }
 
-  .webdesign-berlin-page .wd-btn {
+  .webdesign-berlin-page .wd-hero-ctas .btn {
     width: 100%;
   }
 }
@@ -2097,6 +2037,42 @@
   align-self: center;
   background: transparent;
   text-align: center;
+}
+
+.webdesign-berlin-page .wd-packages-grid[data-package-slider] {
+  cursor: grab;
+  display: flex;
+  gap: 18px;
+  margin: 0 -6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 6px 6px 18px;
+  scroll-padding-inline: 6px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.webdesign-berlin-page .wd-packages-grid[data-package-slider].is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
+.webdesign-berlin-page .wd-packages-grid[data-package-slider] > .wd-package-card {
+  flex: 0 0 clamp(320px, 34vw, 430px);
+  max-width: 430px;
+  scroll-snap-align: start;
+}
+
+.webdesign-berlin-page .wd-packages-grid[data-package-slider] .wd-package-card__header {
+  align-content: start;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-rows: 32px auto auto;
+}
+
+.webdesign-berlin-page .wd-package-card__label--placeholder {
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .webdesign-berlin-page .wd-process {

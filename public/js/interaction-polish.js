@@ -189,8 +189,8 @@
       });
     }, {
       root: null,
-      rootMargin: '0px 0px -8% 0px',
-      threshold: 0.14
+      rootMargin: '0px 0px 12% 0px',
+      threshold: [0, 0.01, 0.08]
     });
 
     targets.forEach(function(element) {
@@ -203,7 +203,72 @@
     });
   }
 
+  function initPackageSliders() {
+    document.querySelectorAll('[data-package-slider]').forEach(function(slider) {
+      if (slider.dataset.packageSliderReady === 'true') return;
+      slider.dataset.packageSliderReady = 'true';
+
+      var isDragging = false;
+      var startX = 0;
+      var startScrollLeft = 0;
+      var dragDistance = 0;
+
+      function stopDragging(event) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        slider.classList.remove('is-dragging');
+
+        if (event && typeof slider.releasePointerCapture === 'function') {
+          try {
+            slider.releasePointerCapture(event.pointerId);
+          } catch (error) {
+            // The pointer can already be released by the browser on cancel.
+          }
+        }
+      }
+
+      slider.addEventListener('pointerdown', function(event) {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        if (event.target && event.target.closest('a, button, input, select, textarea, label')) return;
+
+        isDragging = true;
+        dragDistance = 0;
+        startX = event.clientX;
+        startScrollLeft = slider.scrollLeft;
+        slider.classList.add('is-dragging');
+        event.preventDefault();
+
+        if (typeof slider.setPointerCapture === 'function') {
+          slider.setPointerCapture(event.pointerId);
+        }
+      }, { passive: false });
+
+      slider.addEventListener('pointermove', function(event) {
+        if (!isDragging) return;
+
+        var distance = event.clientX - startX;
+        dragDistance = Math.max(dragDistance, Math.abs(distance));
+        slider.scrollLeft = startScrollLeft - distance;
+        event.preventDefault();
+      }, { passive: false });
+
+      slider.addEventListener('click', function(event) {
+        if (dragDistance > 8) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+
+      slider.addEventListener('pointerup', stopDragging);
+      slider.addEventListener('pointercancel', stopDragging);
+      slider.addEventListener('pointerleave', stopDragging);
+      slider.addEventListener('lostpointercapture', stopDragging);
+    });
+  }
+
   onDomReady(function() {
+    initPackageSliders();
     prepareRevealTargets();
     onPageLoaded(startReveal);
   });

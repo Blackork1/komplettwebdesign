@@ -262,8 +262,7 @@ p {
   /* ← oben ansetzen */
   left: 0;
   width: 100%;
-  height: 0;
-  /* wird per JS hochgezogen */
+  height: var(--progress-ratio, 0%);
   background: var(--color-accent);
   border-radius: 2px;
   transition: height 0.2s ease;
@@ -284,8 +283,7 @@ p {
 /* 4) Icon-Links zentral positionieren und mit translateY(-50%) zentrieren */
 .icon-link {
   position: absolute;
-  top: 0;
-  /* wird per JS verschoben */
+  top: var(--progress-icon-top, 0%);
   left: 0;
   transform: translateY(-50%) scale(1);
   transform-origin: center center;
@@ -343,13 +341,13 @@ a.logo {
   display: flex;
   gap: 1rem;
 }
-.heroLinks a:not(.btn-tertiary) {
+.heroLinks a:not(.btn) {
   color: var(--color-primary);
   font-weight: bold;
   padding: 5px;
   transition: all 0.2s ease;
 }
-.heroLinks a:hover:not(.btn-tertiary) {
+.heroLinks a:hover:not(.btn) {
   color: var(--color-accent);
   border-bottom: 3px solid var(--color-accent-light);
   padding-bottom: 10px;
@@ -426,52 +424,53 @@ a.logo {
    4) Buttons
 ---------------------------------------- */
 .btn {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
   border-radius: var(--radius);
-  font-weight: 600;
-  box-shadow: var(--shadow);
-  transition: opacity 0.2s;
+  border: 1px solid transparent;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
-.btn:hover {
-  background-color: var(--color-primary);
-  transform: translateY(-5px);
+
+.btn:hover,
+.btn:focus-visible {
+  text-decoration: none;
+  transform: translateY(-1px);
 }
+
 .btn-primary {
   background-color: var(--color-accent);
   color: var(--color-white);
-  transition: all 0.5s ease;
-  border: solid 2px transparent;
+  border-color: var(--color-accent);
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-color: #c13a2b;
+  border-color: #c13a2b;
   color: var(--color-white);
-  border: solid 2px var(--color-accent);
 }
 
 .btn-secondary {
-  background-color: var(--color-white);
-  color: var(--color-primary);
-  border: 2px solid transparent;
-  transition: all 0.5s ease;
-}
-
-.btn-secondary:hover {
-  color: var(--color-bg);
-  border: solid 2px var(--color-bg);
-}
-
-.btn-tertiary {
   background-color: var(--color-primary);
   color: var(--color-white);
-  transition: all 0.5s ease;
-  text-align: center;
-  border: solid 2px transparent;
+  border-color: rgba(255, 255, 255, 0.34);
 }
-.btn-tertiary:hover {
-  color: var(--color-bg);
-  border: solid 2px var(--color-bg);
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+  background-color: #24455f;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: var(--color-white);
 }
 
 /* ----------------------------------------
@@ -939,28 +938,6 @@ div#pkg-3 {
 }
 .cta-block .btn {
   flex: 1 1 auto;
-  text-align: center;
-}
-.cta-block .btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-accent-light),
-    var(--color-accent)
-  );
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: background 0.3s ease;
-}
-.cta-block .btn-primary:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-accent),
-    var(--color-accent-light)
-  );
-}
-.cta-block .btn-secondary {
-  background-color: var(--color-white);
-  color: var(--color-primary);
-  border: 2px solid var(--color-white);
 }
 
 /* ----------------------------------------
@@ -1281,4 +1258,4 @@ table.table.table-sm {
     .hero-content h1 {
         font-size: 2.2rem;
     }
-} 
+}

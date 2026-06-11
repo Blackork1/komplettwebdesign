@@ -15,7 +15,7 @@ const structuredDataRaw = `<script type="application/ld+json">
         "name": "Was kostet eine Website?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Landingpage ab 499,99 €, Mehrseiter ab 899,99 €, große Website mit allen Funktionen ab 1499,99 €. Klare Pakete, keine versteckten Kosten."
+          "text": "Start ab 799 €, Business ab 1.499 €, Wachstum ab 2.499 € und individuelle Projekte ab 3.500 € oder nach Aufwand. Hosting, Wartung, externe Tools und Zusatzleistungen werden separat eingeordnet."
         }
       }]
     }
@@ -26,12 +26,12 @@ const structuredDataRaw = `<script type="application/ld+json">
       "@context": "https://schema.org",
       "@type": ["ProfessionalService","Organization"],
       "name": "Komplett Webdesign | Sören Blocksdorf",
-      "url": "https://www.komplettwebdesign.de/",
+      "url": "https://komplettwebdesign.de/",
       "areaServed": "Berlin",
       "priceRange": "€€",
       "email": "kontakt@komplettwebdesign.de",
       "telephone": "+49 1525 4350378",
-      "logo": "https://www.komplettwebdesign.de/images/LogoTransparent.webp",
+      "logo": "https://komplettwebdesign.de/images/LogoTransparent.webp",
       "sameAs": [
         "https://www.instagram.com/KomplettWebdesign",
         "https://www.tiktok.com/@KomplettWebdesign",
@@ -44,15 +44,6 @@ const structuredDataRaw = `<script type="application/ld+json">
         "email": "kontakt@komplettwebdesign.de",
         "contactType": "customer support",
         "availableLanguage": ["de","en"]
-      },
-      "offers": {
-        "@type": "OfferCatalog",
-        "name": "Webdesign Pakete",
-        "itemListElement": [
-          { "@type": "Offer", "name": "Landingpage", "price": "499.99", "priceCurrency": "EUR" },
-          { "@type": "Offer", "name": "Mehrseitige Website", "price": "899.99", "priceCurrency": "EUR" },
-          { "@type": "Offer", "name": "Große Website (alle Funktionen)", "price": "1499.99", "priceCurrency": "EUR" }
-        ]
       }
       /* Optional: Wenn du die Postanschrift öffentlich zeigen willst, entferne die Kommentarzeichen.
       ,"address": {
@@ -83,9 +74,6 @@ const structuredDataRaw = `<script type="application/ld+json">
   .text-accent{ color: var(--color-accent); }
   .shadow-soft { box-shadow: 0 8px 24px rgba(0,0,0,.12); }
   .rounded-xl{ border-radius: 1.25rem; }
-  .btn-accent{ background: var(--color-accent); border-color: var(--color-accent); }
-  .btn-accent:hover{ background:#c13a2b; border-color:#c13a2b; }
-
   /* ---------- Grafik-Container ---------- */
   .figure-speed { max-width:640px; margin:2rem auto; text-align:center; }
   .figure-speed img { width:100%; height:auto; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.12); }
@@ -97,8 +85,6 @@ const structuredDataRaw = `<script type="application/ld+json">
   .cta-section p { margin-bottom:1.5rem; line-height:1.6; }
   .cta-section ul { list-style:none; padding:0; margin:0 0 1.5rem 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:.75rem; }
   .cta-section li { background:rgba(255,255,255,.12); padding:.6rem .9rem; border-radius:.5rem; font-size:.95rem; }
-  .cta-section a.cta-button { display:inline-block; background:#ffffff; color:#1e3a8a; font-weight:600; padding:.9rem 1.75rem; border-radius:.75rem; text-decoration:none; box-shadow:0 3px 10px rgba(0,0,0,.2); transition:transform .15s ease,box-shadow .15s ease; }
-  .cta-section a.cta-button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,.25); }
   .cta-section .price-note { font-size:.85rem; opacity:.9; margin-top:.5rem; }
   .background-gradient { background-image:linear-gradient(135deg,#E84632 0%,#F59763 40%,#FCD09A 100%); }
 
@@ -157,16 +143,16 @@ const structuredDataRaw = `<script type="application/ld+json">
               <li><i class="fas fa-check-circle"></i> Klare Preise, klare Deadlines – <strong>0</strong> Technik-Stress für dich</li>
             </ul>
             <div class="mt-4 d-flex gap-2">
-              <a href="/kontakt" class="btn btn-accent btn-lg">Beratungstermin</a>
-              <a href="/pakete" class="btn btn-outline-dark btn-lg">Angebote</a>
+              <a href="/kontakt" class="btn btn-primary">Beratungstermin</a>
+              <a href="/pakete" class="btn btn-secondary">Angebote</a>
             </div>
             <p class="mt-3 small text-muted">
               Studien von Google, Nielsen Norman Group & Harvard Business Review zeigen: <em>schnelle, fokussierte Seiten</em> erhöhen Vertrauen & Conversion – genau darauf optimiere ich deine Website.
             </p>
             <p class="mt-2 mb-0">
-              <span class="badge text-bg-success">Landingpage ab 499,99 €</span>
-              <span class="badge text-bg-success">Mehrseiter ab 899,99 €</span>
-              <span class="badge text-bg-success">All-in ab 1499,99 €</span>
+              <span class="badge text-bg-success">Start ab 799 €</span>
+              <span class="badge text-bg-success">Business ab 1.499 €</span>
+              <span class="badge text-bg-success">Wachstum ab 2.499 €</span>
             </p>
           </div>
           <div class="col-lg-6">
@@ -321,7 +307,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                   <p class="listText">Hosting</p>
                 </div>
                 <div class="card-back p-3">
-                  <li><strong>Hosting</strong> – sicher, schnell & DSGVO-konform.</li>
+                  <li><strong>Hosting</strong> – technisch sauber, schnell und passend zum eingesetzten Setup.</li>
                 </div>
               </div>
             </div>
@@ -413,8 +399,8 @@ const structuredDataRaw = `<script type="application/ld+json">
                   <p class="date text-muted small">vor <%= Math.floor((Date.now() - new Date(latestPost.created_at)) / (1000*60*60*24)) %> Tagen</p>
                 <% } %>
                 <div class="d-flex gap-2">
-                  <a href="/blog/<%= latestPost.slug %>" class="btn btn-accent">Zum Artikel</a>
-                  <a href="/blog" class="btn btn-outline-dark">Zum Blog</a>
+                  <a href="/blog/<%= latestPost.slug %>" class="btn btn-primary">Zum Artikel</a>
+                  <a href="/blog" class="btn btn-secondary">Zum Blog</a>
                 </div>
               </div>
             </article>
@@ -502,7 +488,7 @@ const structuredDataRaw = `<script type="application/ld+json">
                   <% }) %>
                 </ul>
                 <div class="d-grid mt-3">
-                  <a class="btn btn-accent" href="/pakete/<%= pkg.name %>">Details</a>
+                  <a class="btn btn-primary" href="/pakete/<%= pkg.name %>">Details</a>
                 </div>
               </div>
             </div>
@@ -588,7 +574,7 @@ const structuredDataRaw = `<script type="application/ld+json">
             <li>Buchung/Reservierung & Zahlung</li>
             <li>Performance-Tuning für Peaks</li>
           </ul>
-          <a href="/kontakt" class="cta-button">Kostenloses Kennenlernen</a>
+          <a href="/kontakt" class="btn btn-primary">Kostenloses Kennenlernen</a>
           <div class="price-note">Erstentwurf in 7 Tagen – Launch in 30 Tagen (Landingpage).</div>
           <div class="mt-4">
             <%- include('partials/booking_widget') %>

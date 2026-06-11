@@ -3,6 +3,10 @@
 
 <link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 
+<%
+const latestBlogArticles = Array.isArray(latestBlogPosts) ? latestBlogPosts.slice(0, 3) : [];
+%>
+
 <main class="rg-page rg-index-page" id="hero">
   <section class="rg-hero unified-hero" aria-labelledby="rg-hero-title">
     <div class="rg-hero-noise" aria-hidden="true"></div>
@@ -14,15 +18,15 @@
             <li aria-current="page">Ratgeber</li>
           </ol>
         </nav>
-        <h1 id="rg-hero-title">Website-Wissen für kleine Unternehmen in Berlin.</h1>
+        <h1 id="rg-hero-title">Evergreen-Wissen für Website-Projekte in Berlin.</h1>
         <p class="rg-lead unified-hero__lead">
-          Klare Antworten zu Kosten, Ablauf, Relaunch, SEO und Branchen-Websites.
-          Für alle, die professionell online gehen wollen, ohne sich durch Technik-Blabla zu kämpfen.
+          Dauerhaft hilfreiche Antworten zu Kosten, Ablauf, Relaunch, Local SEO und Branchen-Websites.
+          Der Ratgeber ist der zentrale Wissensbereich; aktuelle Einschätzungen findest du ergänzend im Blog.
         </p>
 
         <div class="rg-hero-actions unified-hero__actions">
-          <a class="btn btn-accent unified-hero__button unified-hero__button--primary" href="/website-tester">Website kostenlos prüfen</a>
-          <a class="btn btn-outline-light unified-hero__button unified-hero__button--secondary" href="/pakete">Pakete ansehen</a>
+          <a class="btn btn-primary" href="/website-tester">Website kostenlos prüfen</a>
+          <a class="btn btn-secondary" href="/pakete">Pakete ansehen</a>
         </div>
 
         <div class="rg-kpi-row" aria-label="Ratgeber Überblick">
@@ -76,6 +80,29 @@
       </ul>
     </div>
   </section>
+
+  <% if (latestBlogArticles.length) { %>
+  <section class="container rg-latest-blog" aria-labelledby="rg-latest-blog-title">
+    <div class="rg-section-head rg-latest-blog-head">
+      <p class="rg-section-kicker">Aktuelle Einschätzungen</p>
+      <h2 id="rg-latest-blog-title">Aktuelle Blogartikel</h2>
+      <p>
+        Der Blog ergänzt den Ratgeber mit kürzeren Einschätzungen zu Webdesign, KI, SEO und aktuellen Entwicklungen.
+        Für dauerhaftes Grundlagenwissen bleiben die Ratgeberartikel der bessere Einstieg.
+      </p>
+    </div>
+
+    <div class="rg-card-grid rg-latest-blog-grid">
+      <% latestBlogArticles.forEach(function(post, idx) { %>
+        <%- include('../blog/partials/post-card', { post, idx }) %>
+      <% }); %>
+    </div>
+
+    <div class="rg-cluster-actions rg-latest-blog-actions">
+      <a href="/blog">Alle Blogartikel ansehen</a>
+    </div>
+  </section>
+  <% } %>
 
   <section class="container rg-content-grid" aria-labelledby="rg-list-heading">
     <div class="rg-main-column">
@@ -132,7 +159,7 @@
           <p>
             Starte mit dem kostenlosen Website-Check und bekomme eine klare Grundlage für die nächsten Schritte.
           </p>
-          <a class="btn btn-accent" href="/website-tester">Website-Check starten</a>
+          <a class="btn btn-primary" href="/website-tester">Website-Check starten</a>
         </section>
       </div>
     </aside>

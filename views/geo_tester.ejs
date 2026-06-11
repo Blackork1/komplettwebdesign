@@ -6,18 +6,6 @@
   <main id="hero">
     <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
-    <section class="wt-section wt-section-compact">
-      <div class="wt-shell">
-        <nav class="breadcrumbs" aria-label="breadcrumb">
-          <ol>
-            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
-            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
-            <li aria-current="page">GEO Tester</li>
-          </ol>
-        </nav>
-      </div>
-    </section>
-
     <section class="wt-section">
       <div class="wt-shell">
         <article class="wt-cta-card wt-cta-inline">
@@ -28,11 +16,11 @@
               : 'Wir helfen dir, die wirkungsvollsten GEO-Maßnahmen für AI- und klassische Suchsichtbarkeit zu priorisieren.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-comments"></i>
               <%= isEn ? 'Request consultation' : 'Beratung anfragen' %>
             </a>
-            <a class="wt-button-secondary" href="/booking">
+            <a class="btn btn-secondary" href="/booking">
               <i class="fa-solid fa-calendar-check"></i>
               <%= isEn ? 'Book appointment' : 'Termin buchen' %>
             </a>
@@ -41,13 +29,20 @@
       </div>
     </section>
 
-    <section class="wt-hero">
+    <section class="wt-hero unified-hero">
       <div class="wt-shell">
-        <div class="wt-hero-grid">
-          <div class="wt-hero-copy">
+        <div class="wt-hero-grid unified-hero__grid">
+          <div class="wt-hero-copy unified-hero__copy">
+            <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+              <ol>
+                <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+                <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+                <li aria-current="page">GEO-Tester</li>
+              </ol>
+            </nav>
             <span class="wt-eyebrow">
               <i class="fa-solid fa-robot"></i>
-              GEO Tester
+              GEO-Tester
             </span>
             <h1><%= isEn ? 'Check whether AI search systems can understand your website.' : 'Prüfe, ob KI-Suchsysteme deine Website verstehen können.' %></h1>
             <p class="wt-lead">
@@ -62,7 +57,7 @@
             </ul>
           </div>
 
-          <div class="wt-form-card">
+          <div class="wt-form-card unified-hero__panel">
             <h2><%= isEn ? 'Start AI visibility check' : 'KI-Sichtbarkeits-Check starten' %></h2>
             <p><%= isEn ? 'Enter URL and business context for realistic GEO scoring.' : 'Gib URL und Geschäftskontext für eine realistische GEO-Bewertung ein.' %></p>
             <form data-geo-tester-form>
@@ -86,7 +81,7 @@
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
                   <input id="geo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 </div>
-                <button class="wt-button" type="submit">
+                <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start AI check' : 'KI-Check starten' %>
                 </button>
@@ -163,8 +158,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Structured context signals' : 'Strukturierte Kontextsignale' %></h3>
               <p><%= isEn
-                ? 'JSON-LD at the right granularity: Service for service pages, Article for posts, LocalBusiness for regional pages. Disambiguates intent for both classic and generative search.'
-                : 'JSON-LD in passender Granularität: Service für Leistungsseiten, Article für Beiträge, LocalBusiness für Regional-Seiten. Disambiguiert Intent für klassische und generative Suche.' %></p>
+                ? 'JSON-LD at the right granularity: Service for service pages, Article for posts and Organization or Breadcrumb data where the visible content supports it.'
+                : 'JSON-LD in passender Granularität: Service für Leistungsseiten, Article für Beiträge sowie Organization- oder Breadcrumb-Daten, wenn die sichtbaren Inhalte dazu passen.' %></p>
             </div>
           </div>
           <p>
@@ -253,11 +248,11 @@
               : 'Wir helfen dir, GEO-Befunde in eine praktische Roadmap mit messbarem Sichtbarkeits-Impact zu übersetzen.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="wt-button" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-paper-plane"></i>
               <%= isEn ? 'Request GEO consultation' : 'GEO-Beratung anfragen' %>
             </a>
-            <a class="wt-button-secondary" href="/booking">
+            <a class="btn btn-secondary" href="/booking">
               <i class="fa-solid fa-calendar-days"></i>
               <%= isEn ? 'Book a call' : 'Call buchen' %>
             </a>
@@ -268,19 +263,6 @@
   </main>
 
   <%- include('partials/footer') %>
-
-  <style>
-    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
-    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
-    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
-    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
-    .breadcrumbs a { color: #374151; text-decoration: none; }
-    .breadcrumbs a:hover { text-decoration: underline; }
-    .wt-cta-inline { padding: 1rem; }
-    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
-    .wt-faq summary { cursor: pointer; font-weight: 600; }
-    .wt-faq p { margin: 10px 0 0; }
-  </style>
 
   <script>
     window.KWD_TESTER_SPAM = {

@@ -20,9 +20,7 @@
     iframe.setAttribute('allowfullscreen', 'true');
     iframe.loading = 'lazy';
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.display = 'block';
+    iframe.className = 'youtube-embed-frame';
     return iframe;
   }
 

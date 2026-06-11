@@ -2,7 +2,7 @@
 
 <h1>Buchungen</h1>
 
-<table class="table">
+<table class="table admin-bookings-table">
   <thead>
     <tr>
       <th>Termin</th><th>Name</th><th>E-Mail</th><th>Sprache</th><th>Status</th><th>Aktion</th>
@@ -29,15 +29,15 @@
         <% if (b.status === 'pending') { %>
           <form method="POST"
                 action="/admin/bookings/<%= b.id %>/confirm"
-                style="display:inline">
+                class="admin-inline-form">
             <button class="btn">Bestätigen</button>
           </form>
         <% } %>
         <% if (b.status !== 'cancelled') { %>
           <form method="POST"
                 action="/admin/bookings/<%= b.id %>/cancel"
-                style="display:inline">
-            <button class="btn alt">Stornieren</button>
+                class="admin-inline-form">
+            <button class="btn admin-btn-alt">Stornieren</button>
           </form>
         <% } %>
       </td>
@@ -45,11 +45,5 @@
   <% }) %>
   </tbody>
 </table>
-
-<style>
-.table{border-collapse:collapse;width:100%}
-.table th,.table td{border:1px solid #ccc;padding:.4rem}
-.btn.alt{background:#999}
-</style>
 
 <% include('../partials/admin_footer') %>

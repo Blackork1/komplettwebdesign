@@ -1,12 +1,3 @@
-import { SITE_FACTS } from './siteFacts.js';
-
-const DEFAULT_OFFERS = SITE_FACTS.packages.map((pkg) => ({
-  name: pkg.name,
-  price: pkg.schemaPrice,
-  url: `/pakete/${pkg.slug}`,
-  description: pkg.description
-}));
-
 function normalizeBaseUrl(baseUrl) {
   return String(baseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
 }
@@ -90,7 +81,7 @@ export function buildIndustrySchemas({ industry = {}, url, baseUrl }) {
       '@type': 'Service',
       '@id': serviceId,
       name: `Webdesign für ${industry.name || 'lokale Unternehmen'}`,
-      serviceType: `Website-Erstellung, SEO und Lead-Generierung für ${industry.name || 'lokale Unternehmen'}`,
+      serviceType: `Website-Erstellung, SEO und klare Anfragewege für ${industry.name || 'lokale Unternehmen'}`,
       description,
       url: pageUrl,
       provider: { '@id': orgId },
@@ -102,20 +93,7 @@ export function buildIndustrySchemas({ industry = {}, url, baseUrl }) {
         '@type': 'BusinessAudience',
         audienceType: industry.name || 'Kleine Unternehmen'
       },
-      ...(image ? { image } : {}),
-      offers: {
-        '@type': 'OfferCatalog',
-        name: 'Webdesign-Pakete',
-        itemListElement: DEFAULT_OFFERS.map((offer) => ({
-          '@type': 'Offer',
-          name: offer.name,
-          price: offer.price,
-          priceCurrency: 'EUR',
-          url: toAbsoluteUrl(offer.url, base),
-          description: offer.description,
-          availability: 'https://schema.org/InStock'
-        }))
-      }
+      ...(image ? { image } : {})
     },
     {
       '@type': 'BreadcrumbList',

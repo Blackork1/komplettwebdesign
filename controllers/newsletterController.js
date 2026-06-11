@@ -13,10 +13,13 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+function logSafeError(label, err) {
+  console.error(label, err?.message || 'Unbekannter Fehler');
+}
+
 // ---------- Anmeldung ---------------------------------------------------
 export async function signup(req, res) {
   const email = (req.newsletterSignup?.email ?? req.body.email ?? '').trim().toLowerCase();
-  console.log('Newsletter-Anmeldung:', email);
   if (!email) return res.status(400).send('E-Mail fehlt');
 
   try {
@@ -38,11 +41,11 @@ export async function signup(req, res) {
     };
 
     // Fehler beim Senden fangen wir nur zum Logging ab
-    transporter.sendMail(mailOpts).catch(console.error);
+    transporter.sendMail(mailOpts).catch(err => logSafeError('Newsletter-Bestätigung konnte nicht gesendet werden:', err));
 
     res.redirect('/blog?subscribed=1');
   } catch (err) {
-    console.error('Newsletter-Signup-Fehler:', err);
+    logSafeError('Newsletter-Signup-Fehler:', err);
     res.status(500).send('Fehler bei der Newsletter-Anmeldung');
   }
 }
@@ -57,7 +60,7 @@ export async function unsubscribe(req, res) {
     // Einfache Bestätigungs-Seite
     res.render('blog/unsubscribed', {title: "Erfolgreich vom Newsletter abgemeldet", description: "Deine Abmeldung war erfolgreich!"});     // views/newsletter/unsubscribed.ejs
   } catch (err) {
-    console.error('Newsletter-Unsubscribe-Fehler:', err);
+    logSafeError('Newsletter-Unsubscribe-Fehler:', err);
     res.status(500).send('Fehler bei der Abmeldung');
   }
 }

@@ -2,10 +2,10 @@
    Footer Main Layout (Logo links, Content rechts)
    -------------------------------------------------- */
 .site-footer .footer-main {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   align-items: flex-start;
-  gap: 2rem;
+  gap: clamp(3rem, 7vw, 8rem);
   margin-top: 5rem;
 }
 
@@ -14,16 +14,22 @@
     margin: 0px auto 0px auto;
 }
 
-/* Rechte Spalte: Nav + Newsletter */
-.site-footer .footer-right {
-  flex: 1 1 auto;
+/* Linke Spalte: Logo + Newsletter */
+.site-footer .footer-left {
   display: flex;
-  position: relative;
-  flex-direction: row;
-  gap: 5rem;
-  justify-content: flex-end;
+  flex-direction: column;
   align-items: flex-start;
-  flex-wrap: wrap;
+  gap: clamp(3rem, 6vw, 6.5rem);
+}
+
+/* Rechte Spalte: Nav-Liste */
+.site-footer .footer-right {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  position: relative;
+  gap: clamp(1.75rem, 3vw, 4rem);
+  justify-content: stretch;
+  align-items: flex-start;
 }
 /* --------------------------------------------------
    Seiten-Footer
@@ -47,11 +53,10 @@
 /* Link-Liste oben */
 .site-footer .footer-nav {
   display: flex;
-  flex-wrap: wrap;
   gap: 1.5rem 2rem;
-  justify-content: center;
   margin-bottom: 3rem;
   flex-direction: column;
+  min-width: 0;
 }
 
 .site-footer .footer-nav a {
@@ -66,7 +71,7 @@
 
 /* Newsletter-Form */
 .site-footer .newsletter {
-  max-width: 500px;
+  width: min(100%, 440px);
   display: flex;
   text-align: center;
   flex-direction: column;
@@ -153,7 +158,105 @@
 
 .footerLogo img {
   border-radius: 18px;
+  display: block;
   height: 70px;
+  max-width: 70px;
+  object-fit: contain;
+  width: 70px;
+}
+
+#footer {
+  margin-bottom: 0;
+}
+
+:where(
+  .btn-primary
+):not(:hover):not(:focus):not(:focus-visible):not(:active) {
+  color: #ffffff !important;
+}
+
+:where(
+  .btn-secondary
+):not(:hover):not(:focus):not(:focus-visible):not(:active) {
+  color: #ffffff !important;
+}
+
+.hero-nav {
+  background: #ffffff;
+}
+
+.navigation {
+  border-bottom: 0;
+}
+
+.topWhiteGradient {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 1%);
+  box-shadow: none;
+  position: relative;
+  z-index: 1000;
+}
+
+.topWhiteGradients {
+  bottom: -20px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 40%);
+  pointer-events: none;
+}
+
+.heroLinks > a.is-active,
+.main-nav .dropdown.is-active > .dropdown-toggle > a,
+.main-nav .dropdown-menu a.is-active {
+  color: #e94a1b !important;
+}
+
+:where(.seo-landing__link-card, .maintenance-link-card, .add-ons-link-card, .local-seo-link-card, .running-costs-links a) {
+  border-color: rgba(233, 74, 27, 0.5) !important;
+}
+
+:where(.seo-landing__link-card, .maintenance-link-card, .add-ons-link-card, .local-seo-link-card, .running-costs-links a):hover,
+:where(.seo-landing__link-card, .maintenance-link-card, .add-ons-link-card, .local-seo-link-card, .running-costs-links a):focus-visible {
+  border-color: #e94a1b !important;
+  box-shadow: 0 18px 40px rgba(11, 42, 70, 0.12), 0 0 0 4px rgba(233, 74, 27, 0.12);
+  transform: translateY(-2px);
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) {
+  padding: 0 !important;
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) summary {
+  cursor: pointer;
+  display: block;
+  list-style: none;
+  padding: 22px 56px 22px 24px;
+  position: relative;
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) summary::-webkit-details-marker {
+  display: none;
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) summary::after {
+  color: #e94a1b;
+  content: "+";
+  font-size: 1.6rem;
+  font-weight: 900;
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item)[open] summary::after {
+  content: "–";
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) summary h3 {
+  margin: 0 !important;
+}
+
+:where(.running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item) > p {
+  padding: 0 24px 22px;
 }
 
 .footer-nav h3 {
@@ -163,7 +266,27 @@
 }
 
 /* Responsive */
-@media (max-width: 600px) {
+@media (max-width: 1180px) {
+  .site-footer .footer-main {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .site-footer .footer-left {
+    gap: 2rem;
+  }
+
+  .site-footer .footer-right {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 2rem 3rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-footer {
+    padding: 2rem 1.25rem;
+  }
+
   .site-footer .footer-nav {
     gap: 1rem;
     margin-bottom: 1rem;
@@ -181,11 +304,9 @@
   .site-footer .footer-nav a {
     font-size: 0.7rem;
   }
-  .footer-right{
-    justify-content: center;
-  }
-  .footer-left{
-    display: none;
+
+  .site-footer .footer-left {
+    display: flex;
   }
 
   .social-links {
@@ -196,11 +317,17 @@
   }
 
   .site-footer .footer-right {
-    gap: 1rem;
-    justify-content: space-between;
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+    gap: 1.5rem;
   }
 
   .footer-bottom span{
     text-align: center;
+  }
+}
+
+@media (max-width: 460px) {
+  .site-footer .footer-right {
+    grid-template-columns: 1fr;
   }
 }

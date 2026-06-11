@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 
-test('buildIndustrySchemas returns a WebPage graph with service, breadcrumbs, offers, and clean FAQ answers', () => {
+test('buildIndustrySchemas returns a WebPage graph with service, breadcrumbs and clean FAQ answers without offer schema', () => {
   const schemas = buildIndustrySchemas({
     baseUrl: 'https://komplettwebdesign.de',
     url: 'https://komplettwebdesign.de/branchen/webdesign-immobilienmakler',
@@ -16,7 +16,7 @@ test('buildIndustrySchemas returns a WebPage graph with service, breadcrumbs, of
       faq_items: [
         {
           q: 'Was kostet eine Makler-Website?',
-          a: '<p>Makler-Websites starten bei 499&nbsp;EUR.</p>'
+          a: '<p>Makler-Websites starten bei 799&nbsp;EUR.</p>'
         }
       ]
     }
@@ -36,15 +36,11 @@ test('buildIndustrySchemas returns a WebPage graph with service, breadcrumbs, of
   assert.equal(service.name, 'Webdesign für Immobilienmakler');
   assert.equal(service.provider['@id'], 'https://komplettwebdesign.de/#organization');
   assert.equal(service.areaServed.name, 'Berlin');
-  assert.equal(service.offers['@type'], 'OfferCatalog');
-  assert.deepEqual(
-    service.offers.itemListElement.map((offer) => offer.name),
-    ['Basis', 'Business', 'Premium']
-  );
+  assert.equal(service.offers, undefined);
 
   const breadcrumbs = graph.find((item) => item['@type'] === 'BreadcrumbList');
   assert.equal(breadcrumbs.itemListElement[2].item, 'https://komplettwebdesign.de/branchen/webdesign-immobilienmakler');
 
   const faq = graph.find((item) => item['@type'] === 'FAQPage');
-  assert.equal(faq.mainEntity[0].acceptedAnswer.text, 'Makler-Websites starten bei 499 EUR.');
+  assert.equal(faq.mainEntity[0].acceptedAnswer.text, 'Makler-Websites starten bei 799 EUR.');
 });

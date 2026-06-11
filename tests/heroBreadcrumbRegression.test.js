@@ -35,6 +35,12 @@ const districtEn = read('views/bereiche/webdesign-berlin-district-en.ejs');
 const referencesIndex = read('views/references/index.ejs');
 const referencesShow = read('views/references/show.ejs');
 const seoLandingShow = read('views/seo_landing/show.ejs');
+const staticServiceTemplates = [
+  'views/static/local-seo-berlin.ejs',
+  'views/static/laufende-kosten-website.ejs',
+  'views/static/website-wartung-berlin.ejs',
+  'views/static/zusatzleistungen-webdesign.ejs'
+];
 
 test('all unified hero templates expose breadcrumbs directly in the hero copy', () => {
   for (const template of heroTemplates) {
@@ -98,6 +104,66 @@ test('unified hero css contains readability and page-specific hero guards', () =
   assert.match(css, /\.rg-page\s+\.rg-hero\.unified-hero/);
   assert.match(css, /\.rg-page\s+\.unified-hero\s+\.rg-hero-panel/);
   assert.match(css, /\.about-portrait-card/);
+});
+
+test('leistungen and tester service heroes use the blue unified service hero system', () => {
+  const leistungen = read('views/leistungen/show.ejs');
+  const leistungenCss = read('public/leistungen.css');
+  const unifiedHeroCss = read('public/unified-hero.css');
+  const testerTemplates = [
+    'views/seo_tester.ejs',
+    'views/geo_tester.ejs',
+    'views/broken_links_tester.ejs',
+    'views/meta_tester.ejs'
+  ];
+
+  assert.match(leistungen, /class="service-hero\s+hero\s+leistungen-service-hero\s+unified-hero"/);
+  assert.match(leistungen, /class="service-hero__grid\s+leistungen-hero-grid\s+unified-hero__grid"/);
+  assert.match(leistungen, /class="service-hero__panel\s+leistungen-hero-panel\s+unified-hero__panel"/);
+  assert.match(leistungen, /class="service-hero__actions\s+hero-cta-variants\s+unified-hero__actions"/);
+  assert.doesNotMatch(leistungen, /class="hero-answer\s+unified-hero__lead"/);
+  assert.doesNotMatch(leistungen, /<div class="hero-icons"/);
+  assert.match(leistungen, /class="leistungen-answer-summary"/);
+  assert.doesNotMatch(leistungen, /\.hero\s*\{[\s\S]*?background:\s*linear-gradient\(135deg,\s*var\(--wd-accent\)/);
+  assert.match(leistungenCss, /\.leistungen-service-hero\s*\{[\s\S]*?linear-gradient\(135deg,\s*#08253f 0%,\s*#123a5a 58%,\s*#245a7d 100%\)/);
+  assert.match(leistungenCss, /\.leistungen-service-hero\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100svh;/);
+  assert.match(leistungenCss, /\.leistungen-page\s+\.leistungen-service-hero\.unified-hero\s*\{[\s\S]*?linear-gradient\(135deg,\s*#08253f 0%,\s*#123a5a 58%,\s*#245a7d 100%\)\s*!important/);
+  assert.match(leistungenCss, /\.leistungen-page\s+\.leistungen-service-hero\.unified-hero\s*\{[\s\S]*?min-height:\s*100vh\s*!important;[\s\S]*?min-height:\s*100svh\s*!important;/);
+  assert.match(leistungenCss, /\.seo-landing__hero\s*\{[\s\S]*?linear-gradient\(135deg,\s*#08253f 0%,\s*#123a5a 58%,\s*#245a7d 100%\)/);
+  assert.match(unifiedHeroCss, /\.seo-landing\s+\.seo-landing__hero\.unified-hero\s*\{[\s\S]*?linear-gradient\(135deg,\s*#08253f 0%,\s*#123a5a 58%,\s*#245a7d 100%\)/);
+
+  for (const template of testerTemplates) {
+    const source = read(template);
+    assert.doesNotMatch(source, /<section class="wt-section wt-section-compact">/, `${template} has detached breadcrumbs`);
+    assert.match(source, /<section class="wt-hero unified-hero">/, `${template} needs unified hero section`);
+    assert.match(source, /class="wt-hero-grid unified-hero__grid"/, `${template} needs unified hero grid`);
+    assert.match(source, /class="wt-hero-copy unified-hero__copy"/, `${template} needs unified hero copy`);
+    assert.match(source, /class="wt-form-card unified-hero__panel"/, `${template} needs unified hero panel`);
+    assert.match(source, /class="unified-hero__breadcrumbs"/, `${template} needs breadcrumbs in hero`);
+  }
+});
+
+test('leistung heroes use a shared leistungen breadcrumb, kicker and right-side summary panel', () => {
+  const leistungen = read('views/leistungen/show.ejs');
+  const seoLanding = read('views/seo_landing/show.ejs');
+
+  assert.match(leistungen, /isPricePage\s*\?\s*\{\s*label:\s*'Webdesign Berlin',\s*href:\s*'\/webdesign-berlin'\s*\}/);
+  assert.match(leistungen, /:\s*\{\s*label:\s*'Leistungen',\s*href:\s*'\/leistungen'\s*\}/);
+  assert.match(leistungen, /<li><a href="<%=\s*parentBreadcrumb\.href\s*%>"><%=\s*parentBreadcrumb\.label\s*%><\/a><\/li>/);
+  assert.match(leistungen, /class="service-kicker\s+leistungen-service-kicker/);
+  assert.match(leistungen, /class="leistungen-hero-mini-list"/);
+  assert.doesNotMatch(leistungen, /<li><a href="\/webdesign-berlin">Webdesign Berlin<\/a><\/li>/);
+  assert.doesNotMatch(leistungen, /leistungen-panel-label/);
+
+  assert.match(seoLanding, /<p class="service-kicker\s+seo-landing__hero-kicker/);
+  assert.match(seoLanding, /class="seo-landing__hero-mini-list"/);
+  assert.doesNotMatch(seoLanding, /seo-landing__panel-label/);
+
+  for (const template of staticServiceTemplates) {
+    const source = read(template);
+    assert.match(source, /<li><a href="\/leistungen">Leistungen<\/a><\/li>/, `${template} needs Leistungen breadcrumb parent`);
+    assert.doesNotMatch(source, /<ul class="(?:local-seo|running-costs|maintenance|add-ons)-highlights">/, `${template} still has hero highlights`);
+  }
 });
 
 test('about hero uses a dedicated portrait treatment instead of the generic media frame', () => {
@@ -172,7 +238,7 @@ test('ratgeber index hero keeps normal document flow and breadcrumb links on the
 test('page-specific CSS for new marketing pages uses hashed cssAsset URLs instead of stale fixed query strings', () => {
   assert.match(referencesIndex, /cssAsset\('references\.css'\)/);
   assert.match(referencesShow, /cssAsset\('references\.css'\)/);
-  assert.match(seoLandingShow, /cssAsset\('seo-landing\.css'\)/);
+  assert.match(seoLandingShow, /extraCssAssets:\s*\[\s*['"]leistungen\.css['"]\s*\]/);
   assert.match(districtController, /cssAsset\(['"]district-berlin\.css['"]\)/);
   assert.doesNotMatch(referencesIndex, /\/references\.css\?v=/);
   assert.doesNotMatch(referencesShow, /\/references\.css\?v=/);
@@ -195,7 +261,7 @@ test('requested index and landing heroes use full-bleed backgrounds with constra
   const referencesCss = read('public/references.css');
   const branchenCss = read('public/branchen.css');
   const testerCss = read('public/website-tester.css');
-  const seoLandingCss = read('public/seo-landing.css');
+  const seoLandingCss = read('public/leistungen.css');
   const ratgeberCss = read('public/ratgeber.css');
 
   assert.match(heroCss, /\.references-page--index\s+\.references-hero\.unified-hero,[\s\S]*?\.packages-page\s+\.packages-hero\.unified-hero\s*\{[\s\S]*?width:\s*100%\s*!important/);
@@ -226,7 +292,7 @@ test('branchen index hero copy does not render as a framed glass card', () => {
 test('shared index and landing heroes use smaller top padding than bottom padding', () => {
   const heroCss = read('public/unified-hero.css');
   const referencesCss = read('public/references.css');
-  const seoLandingCss = read('public/seo-landing.css');
+  const seoLandingCss = read('public/leistungen.css');
   const ratgeberCss = read('public/ratgeber.css');
   const testerCss = read('public/website-tester.css');
 

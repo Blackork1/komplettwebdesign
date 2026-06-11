@@ -56,6 +56,23 @@ body.about-page {
   color: #fff;
 }
 
+.about-page .hero-section:not(.unified-hero) .hero-content,
+.about-page .hero-section:not(.unified-hero) .hero-image {
+  min-height: 1px;
+  margin: 2rem 0;
+}
+
+.about-page .hero-section:not(.unified-hero) .hero-content {
+  backdrop-filter: none;
+  background: none;
+  box-shadow: none;
+  flex: 1 1 130px;
+}
+
+.about-page .cta-section {
+  border-radius: 0;
+}
+
 .about-page .hero-section:not(.unified-hero) .hero-content h1 {
   color: #fff !important;
   font-size: 2.5em;

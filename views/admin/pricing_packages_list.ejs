@@ -1,0 +1,130 @@
+<%- include('../partials/admin_header') %>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-tags"></i> Pakete &amp; Preise
+</h1>
+
+<div class="admin-card mb-4">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div>
+      <h2 class="h5 mb-1">Paket-Basisdaten</h2>
+      <p class="text-muted mb-0">Grundverwaltung für Pakete, Preise, Sichtbarkeit und Sortierung.</p>
+    </div>
+    <a class="btn btn-primary" href="/admin/pricing/packages/new">
+      <i class="fa-solid fa-plus"></i> Paket erstellen
+    </a>
+  </div>
+</div>
+
+<div class="admin-card mb-4">
+  <h2 class="h5 mb-3">Unterbereiche</h2>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" href="/admin/pricing/add-ons">Zusatzleistungen</a>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/maintenance">Wartungspläne</a>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/comparison">Paketvergleich</a>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/notes">Globale Hinweise</a>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/redirects">Redirects</a>
+  </div>
+</div>
+
+<% if (query?.archived) { %>
+  <div class="alert alert-warning">Paket wurde archiviert.</div>
+<% } %>
+<% if (query?.restored) { %>
+  <div class="alert alert-success">Paket wurde wiederhergestellt.</div>
+<% } %>
+<% if (query?.visibility) { %>
+  <div class="alert alert-info">Sichtbarkeit wurde geändert.</div>
+<% } %>
+<% if (query?.sorted) { %>
+  <div class="alert alert-success">Sortierung wurde gespeichert.</div>
+<% } %>
+
+<form method="POST" action="/admin/pricing/packages/reorder" class="admin-card">
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+  <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Sortierung</th>
+          <th>Name</th>
+          <th>Paket-Key</th>
+          <th>Slug</th>
+          <th>Preis</th>
+          <th>Sichtbar</th>
+          <th>Aktiv</th>
+          <th>Empfohlen</th>
+          <th>Kontaktformular</th>
+          <th>Vergleich</th>
+          <th>Detailseite</th>
+          <th>Zuletzt geändert</th>
+          <th class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!packages || packages.length === 0) { %>
+          <tr>
+            <td colspan="13" class="text-muted">Noch keine Pakete vorhanden.</td>
+          </tr>
+        <% } %>
+        <% (packages || []).forEach((pkg) => { %>
+          <tr>
+            <td class="admin-table-cell-min-sm">
+              <input type="hidden" name="package_ids[]" value="<%= pkg.id %>">
+              <input class="form-control form-control-sm" type="number" name="sort_orders[]" value="<%= pkg.sort_order ?? 0 %>">
+            </td>
+            <td>
+              <strong><%= pkg.display_name || pkg.name %></strong>
+              <% if (pkg.archived_at) { %>
+                <span class="badge text-bg-secondary ms-1">archiviert</span>
+              <% } %>
+            </td>
+            <td><code><%= pkg.package_key %></code></td>
+            <td><code><%= pkg.slug %></code></td>
+            <td><%= getPriceLabel(pkg) || 'ohne Preislabel' %></td>
+            <td><span class="badge <%= pkg.is_visible ? 'text-bg-success' : 'text-bg-secondary' %>"><%= pkg.is_visible ? 'ja' : 'nein' %></span></td>
+            <td><span class="badge <%= pkg.is_active ? 'text-bg-success' : 'text-bg-secondary' %>"><%= pkg.is_active ? 'ja' : 'nein' %></span></td>
+            <td><%= pkg.is_recommended ? (pkg.recommendation_label || 'ja') : 'nein' %></td>
+            <td><%= pkg.show_in_contact_form ? 'ja' : 'nein' %></td>
+            <td><%= pkg.show_in_comparison ? 'ja' : 'nein' %></td>
+            <td><%= pkg.allow_detail_page ? 'ja' : 'nein' %></td>
+            <td>
+              <% if (pkg.updated_at) { %>
+                <%= new Date(pkg.updated_at).toLocaleString('de-DE') %>
+              <% } else { %>
+                <span class="text-muted">unbekannt</span>
+              <% } %>
+            </td>
+            <td class="text-end">
+              <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                <a class="btn btn-sm btn-outline-secondary" href="<%= pkg.canonical_path %>" target="_blank" rel="noopener">Vorschau</a>
+                <a class="btn btn-sm btn-outline-secondary" href="/admin/pricing/packages/<%= pkg.id %>/content">Inhalte</a>
+                <a class="btn btn-sm btn-primary" href="/admin/pricing/packages/<%= pkg.id %>/edit">Bearbeiten</a>
+                <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/toggle-visibility" class="d-inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                  <button class="btn btn-sm btn-outline-warning" type="submit"><%= pkg.is_visible ? 'Ausblenden' : 'Einblenden' %></button>
+                </form>
+                <% if (pkg.archived_at || !pkg.is_active) { %>
+                  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/restore" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-success" type="submit">Wiederherstellen</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/archive" class="d-inline" onsubmit="return confirm('Paket wirklich archivieren?');">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Archivieren</button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-3">
+    <button class="btn btn-secondary" type="submit">Sortierung speichern</button>
+  </div>
+</form>
+
+<%- include('../partials/admin_footer') %>

@@ -39,7 +39,7 @@
     "cta_left_image": "https://res.cloudinary.com/demo/image/upload/basis.webp",
     "cta_right_image": "https://res.cloudinary.com/demo/image/upload/business.webp",
     "faq_items": [
-      { "q":"Wie lange dauert es?", "a":"<p>3–6 Wochen</p>", "link_url":"/pakete/basis", "link_label":"Zum Basis-Paket" }
+      { "q":"Wie lange dauert es?", "a":"<p>3–6 Wochen</p>", "link_url":"/pakete/start", "link_label":"Zum Start-Paket" }
     ]
   },
   {

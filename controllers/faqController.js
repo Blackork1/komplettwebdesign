@@ -4,6 +4,8 @@ import {
   getFaqsByCategory,
   getCategoryById
 } from '../models/faqModel.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
 /** (Optional) Wenn du später alle FAQs als JSON-LD brauchst,
  *  ohne die Seite zu rendern, nutzen wir diese Hilfsfunktion. */
@@ -62,7 +64,7 @@ export async function renderFaqPage(req, res) {
     const selectedCategory = await getCategoryById(selectedId);
 
     // FAQs der ausgewählten Kategorie
-    const faqs = await getFaqsByCategory(selectedId);
+    const faqs = normalizeLegacyPublicCopy(renderPricingTokens(await getFaqsByCategory(selectedId), res.locals.packagePricing || {}));
 
     // JSON-LD nur für die auf der Seite gerenderten FAQs erzeugen
     const faqJsonLd = buildFaqJsonLd(faqs);
@@ -98,7 +100,7 @@ export async function renderFaqPage(req, res) {
  *  sonst kann Google die Nicht-Übereinstimmung bemängeln). */
 export async function serveFaqJsonLd(req, res) {
   try {
-    const allFaqs = await fetchAllFaqsGrouped();
+    const allFaqs = normalizeLegacyPublicCopy(renderPricingTokens(await fetchAllFaqsGrouped(), res.locals.packagePricing || {}));
     const jsonLd = buildFaqJsonLd(allFaqs);
     res.setHeader('Content-Type', 'application/ld+json; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=300');

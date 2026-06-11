@@ -1,548 +1,832 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
-<% const isEn = lng === 'en'; %>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<%
+  const isEn = lng === 'en';
+  const options = contactFormOptions || {};
+  const values = formValues || {};
+  const errorList = Array.isArray(formErrors) ? formErrors : [];
+  const getOptions = (key) => Array.isArray(options[key]) ? options[key] : [];
+  const getValue = (name, fallback = '') => {
+    const value = values[name];
+    if (value === undefined || value === null || value === '') return fallback;
+    return Array.isArray(value) ? value[0] : value;
+  };
+  const isSelected = (name, value, fallback = '') => String(getValue(name, fallback)) === String(value) ? 'checked' : '';
+  const isOptionSelected = (name, value, fallback = '') => String(getValue(name, fallback)) === String(value) ? 'selected' : '';
+  const isChecked = (name, value) => {
+    const current = values[name];
+    const list = Array.isArray(current) ? current : (current ? [current] : []);
+    return list.map(String).includes(String(value)) ? 'checked' : '';
+  };
+  const inputValue = (name, fallback = '') => getValue(name, fallback);
+  const formatSlotLabel = (term) => {
+    const start = new Date(term.start_time);
+    const end = new Date(term.end_time);
+    const dateLabel = start.toLocaleDateString(isEn ? 'en-GB' : 'de-DE', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const endLabel = end.toLocaleTimeString(isEn ? 'en-GB' : 'de-DE', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return `${dateLabel} - ${endLabel}${isEn ? '' : ' Uhr'}`;
+  };
+  const contactBase = isEn ? '/en/kontakt' : '/kontakt';
+  const packagesHref = isEn ? '/en/pakete' : '/pakete';
+  const testerHref = isEn ? '/en/website-tester' : '/website-tester';
+  const privacyHref = '/datenschutz';
+  const noticesHref = '/hinweise-rechtstexte-seo-datenschutz';
+%>
 <link rel="stylesheet" href="<%= cssAsset('kontakt.css') %>">
+<noscript>
+  <link rel="stylesheet" href="<%= cssAsset('kontakt-noscript.css') %>">
+</noscript>
 
-<style>
-  .bi {
-    font-size: 36px;
-    color: #0C2A46;
-    margin-right: 8px;
-    position: absolute;
-    left: 20px;
-    top: 0;
-    bottom: 0;
-  }
+<main class="contact-page-section">
+  <section class="contact-hero" aria-labelledby="contact-title">
+    <div class="container contact-hero__inner">
+      <nav class="contact-breadcrumb" aria-label="<%= isEn ? 'Breadcrumb' : 'Breadcrumb' %>">
+        <a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a>
+        <span aria-hidden="true">/</span>
+        <span><%= isEn ? 'Contact' : 'Kontakt' %></span>
+      </nav>
 
-  .option-label {
-    position: relative;
-    padding: .9rem 2rem .9rem 0;
-    text-align: end;
-  }
-
-  .option-title {
-    display: block;
-    font-weight: 700;
-  }
-
-  .option-hint {
-    color: #526173;
-    display: block;
-    font-size: .82rem;
-    line-height: 1.35;
-    margin-top: .15rem;
-  }
-
-  .termin {
-    text-align: center;
-    padding: 1rem;
-  }
-
-  .small {
-    font-size: 0.8rem;
-  }
-  .carousel-item{
-    padding: 4rem 1rem 2rem 1rem;
-  }
-
-  .contact-intro {
-    color: #eaeae9;
-    margin: .75rem auto 0;
-    max-width: 720px;
-    text-align: center;
-  }
-
-  .contact-benefits {
-    color: #eaeae9;
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    justify-content: center;
-    margin: 1rem auto 1.25rem;
-    max-width: 780px;
-  }
-
-  .contact-benefits span {
-    border: 1px solid rgba(234, 234, 233, .35);
-    border-radius: 999px;
-    padding: .35rem .7rem;
-  }
-
-  .contact-progress {
-    background: rgba(255, 255, 255, .92);
-    border-radius: .5rem;
-    margin: 0 auto 1rem;
-    max-width: 760px;
-    padding: .85rem 1rem;
-  }
-
-  .contact-progress__meta {
-    color: #0C2A46;
-    display: flex;
-    font-size: .92rem;
-    font-weight: 700;
-    justify-content: space-between;
-    margin-bottom: .5rem;
-  }
-
-  .contact-progress__bar {
-    background: #dfe8f2;
-    border-radius: 999px;
-    height: .55rem;
-    overflow: hidden;
-  }
-
-  .contact-progress__fill {
-    background: #0C2A46;
-    display: block;
-    height: 100%;
-    transition: width .25s ease;
-    width: 11%;
-  }
-
-  .contact-field-help {
-    color: #526173;
-  }
-
-  .contact-page-section .contact-progress__fill {
-    background: #e94a1b;
-  }
-
-  .contact-page-section .white-container {
-    box-shadow: 0 18px 42px rgba(0, 0, 0, .16);
-  }
-
-  .contact-page-section .option-label {
-    border-radius: 12px;
-  }
-
-  .contact-page-section .option-radio:checked + .option-label,
-  .contact-page-section .option-check:checked + .option-label {
-    background: #0C2A46;
-    border-color: rgba(255, 255, 255, .55);
-    color: #ffffff;
-  }
-
-  .contact-page-section .option-radio:checked + .option-label .option-hint,
-  .contact-page-section .option-check:checked + .option-label .option-hint {
-    color: rgba(255, 255, 255, .82);
-  }
-
-  .contact-page-section button[type="submit"] {
-    background: #e94a1b;
-    border-radius: 12px;
-    font-weight: 800;
-  }
-
-  .contact-page-section button[type="submit"]:hover {
-    background: #b93618;
-  }
-</style>
-<div class="section contact-page-section">
-  <div class="container mt-5">
-    <h1 style="text-align: center; color:#eaeae9"><%= isEn ? 'Request your website project' : 'Website-Projekt anfragen' %></h1>
-    <p class="contact-intro">
-      <%= isEn
-        ? 'Describe your website project in about two minutes. You receive a first assessment, a fitting package recommendation and the next steps.'
-        : 'Beschreibe dein Website-Projekt in ca. 2 Minuten. Du erhältst eine erste Einschätzung, eine passende Paketempfehlung und die nächsten Schritte.'
-      %>
-    </p>
-    <div class="contact-benefits" aria-label="<%= isEn ? 'Project request benefits' : 'Vorteile der Projektanfrage' %>">
-      <span><%= isEn ? 'Free and non-binding' : 'Kostenfrei und unverbindlich' %></span>
-      <span><%= isEn ? 'Usually replies within 24 hours' : 'Antwort meist innerhalb von 24 Stunden' %></span>
-      <span><%= isEn ? 'Fixed-price packages from EUR 499' : 'Festpreis-Pakete ab 499 EUR' %></span>
+      <p class="contact-eyebrow"><%= isEn ? 'Project request' : 'Projektanfrage' %></p>
+      <h1 id="contact-title"><%= isEn ? 'Request your website project in Berlin' : 'Website-Projekt in Berlin anfragen' %></h1>
+      <p class="contact-hero__lead">
+        <%= isEn
+          ? 'Describe your website project, budget and rough scope. I review which package or project size is likely to fit.'
+          : 'Beschreibe dein Website-Projekt, Budget und den groben Umfang. Ich prüfe, welches Paket oder welcher Projektumfang wahrscheinlich passt.'
+        %>
+      </p>
+      <div class="contact-hero__actions">
+        <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_start" data-cta-location="contact_hero">
+          <%= isEn ? 'Start request' : 'Anfrage starten' %>
+        </a>
+        <a class="contact-button contact-button--secondary" href="<%= packagesHref %>" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_packages" data-cta-location="contact_hero">
+          <%= isEn ? 'View packages' : 'Pakete ansehen' %>
+        </a>
+      </div>
+      <ul class="contact-hero__facts" aria-label="<%= isEn ? 'Key request notes' : 'Wichtige Hinweise zur Anfrage' %>">
+        <li><%= isEn ? `Packages start from ${lowestPackagePriceLabel || 'EUR'}` : `Website-Pakete starten ab ${lowestPackagePriceLabel || ''}` %></li>
+        <li><%= isEn ? 'Special features are reviewed separately' : 'Sonderfunktionen werden separat geprüft' %></li>
+        <li><%= isEn ? 'The request is non-binding' : 'Die Anfrage ist unverbindlich' %></li>
+      </ul>
     </div>
+  </section>
+
+  <section class="contact-intro-block">
+    <div class="container contact-intro-grid">
+      <article class="contact-info-card">
+        <h2><%= isEn ? 'What happens after your request?' : 'Was passiert nach deiner Anfrage?' %></h2>
+        <p>
+          <%= isEn
+            ? 'I review your details, classify the likely scope and ask follow-up questions if something important is missing.'
+            : 'Ich prüfe deine Angaben, ordne den wahrscheinlichen Umfang ein und frage nach, wenn wichtige Informationen fehlen.'
+          %>
+        </p>
+        <ul>
+          <li><%= isEn ? 'A rough budget range helps with a realistic recommendation.' : 'Ein grober Budgetrahmen hilft bei einer realistischen Empfehlung.' %></li>
+          <li><%= isEn ? 'If you are unsure, choose “Not sure yet”.' : 'Wenn du unsicher bist, wähle einfach „Noch unsicher“.' %></li>
+          <li><%= isEn ? 'Scope, add-ons and running costs are clarified before the project starts.' : 'Umfang, Zusatzleistungen und laufende Kosten werden vor Projektstart abgestimmt.' %></li>
+        </ul>
+      </article>
+      <article class="contact-info-card">
+        <h2><%= isEn ? 'Important scope notes' : 'Wichtige Abgrenzungen' %></h2>
+        <p>
+          <%= isEn
+            ? 'Booking systems, CMS, multilingual setup, shop functions, tracking, extensive animation and copywriting are not automatic standard package contents.'
+            : 'Buchungssysteme, CMS, Mehrsprachigkeit, Shop-Funktionen, Tracking, umfangreiche Animationen und Texterstellung sind nicht automatisch Standardpaket-Bestandteil.'
+          %>
+        </p>
+        <p>
+          <%= isEn
+            ? 'Hosting, domain, email, maintenance and third-party tools can create separate running costs.'
+            : 'Hosting, Domain, E-Mail, Wartung und Drittanbieter-Tools können separate laufende Kosten verursachen.'
+          %>
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section id="anfrage" class="container contact-request">
+    <% if (errorList.length) { %>
+      <div class="contact-alert" role="alert" data-event="contact_form_error">
+        <strong><%= isEn ? 'Please check your details.' : 'Bitte prüfe deine Angaben.' %></strong>
+        <ul>
+          <% errorList.forEach((error) => { %>
+            <li><%= error.msg || error %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
     <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
-      <div class="alert alert-info mt-3" role="status">
+      <div class="contact-alert contact-alert--info" role="status">
         <strong><%= isEn ? 'Website Tester context detected:' : 'Website-Tester-Kontext erkannt:' %></strong>
         <span>
           <%= testerPrefill.domain || (isEn ? 'Website provided' : 'Website hinterlegt') %>
           <% if (testerPrefill.scoreBand) { %>
-            - <%= isEn ? 'Score band' : 'Score-Band' %>: <%= testerPrefill.scoreBand %>
+            · <%= isEn ? 'Score band' : 'Score-Band' %>: <%= testerPrefill.scoreBand %>
           <% } %>
         </span>
       </div>
     <% } %>
+
     <section class="contact-choice" aria-labelledby="contact-choice-title">
-      <p class="contact-choice__eyebrow"><%= isEn ? 'Choose request type' : 'Anfrageart wählen' %></p>
+      <p class="contact-eyebrow"><%= isEn ? 'Choose request type' : 'Anfrageart wählen' %></p>
       <h2 id="contact-choice-title"><%= isEn ? 'How much detail do you want to send?' : 'Wie ausführlich möchtest du anfragen?' %></h2>
       <p>
         <%= isEn
-          ? 'Start with a short request if you only need a first assessment. Use the detailed request if you already want to define scope, pages, content and appointment preferences.'
-          : 'Starte mit der Schnellanfrage, wenn du erst eine grobe Einschätzung möchtest. Nutze die umfangreiche Anfrage, wenn du Umfang, Seiten, Inhalte und Terminwunsch direkt genauer festlegen willst.'
+          ? 'Use the quick request for a first assessment. Use the detailed project request if you already want to define scope, package, budget and add-ons.'
+          : 'Nutze die Schnellanfrage für eine erste Einschätzung. Nutze die ausführliche Projektanfrage, wenn du Umfang, Paket, Budget und Zusatzwünsche direkt einordnen möchtest.'
         %>
       </p>
       <div class="contact-choice__actions" role="group" aria-label="<%= isEn ? 'Request type' : 'Anfrageart' %>">
         <button class="contact-choice__button" type="button" data-contact-mode="quick" aria-controls="contact-quick-panel" aria-expanded="false">
           <span><%= isEn ? 'Quick request' : 'Schnellanfrage' %></span>
-          <small><%= isEn ? '3 required fields, fastest first assessment' : '3 Pflichtfelder, schnellste Ersteinschätzung' %></small>
+          <small><%= isEn ? 'Few fields for a first assessment' : 'Wenige Felder für eine erste Einschätzung' %></small>
         </button>
         <button class="contact-choice__button" type="button" data-contact-mode="detailed" aria-controls="contact-detailed-panel" aria-expanded="false">
-          <span><%= isEn ? 'Detailed request' : 'Umfangreiche Anfrage' %></span>
-          <small><%= isEn ? 'Package, scope, content, files and appointment' : 'Paket, Umfang, Inhalte, Dateien und Termin' %></small>
+          <span><%= isEn ? 'Detailed project request' : 'Ausführliche Projektanfrage' %></span>
+          <small><%= isEn ? 'Project type, package, budget, timeline and add-ons' : 'Projektart, Paket, Budget, Zeitrahmen und Zusatzfunktionen' %></small>
         </button>
       </div>
     </section>
-    <section class="contact-quick contact-panel" id="contact-quick-panel" aria-labelledby="contact-quick-title" hidden>
-      <div class="contact-quick__card">
-        <div class="contact-quick__intro">
-          <p class="contact-quick__eyebrow"><%= isEn ? 'Fast first request' : 'Schnelle Erstanfrage' %></p>
-          <h2 id="contact-quick-title"><%= isEn ? 'Free initial assessment' : 'Kostenlose Ersteinschätzung' %></h2>
+
+    <section class="contact-panel contact-quick" id="contact-quick-panel" aria-labelledby="contact-quick-title" hidden>
+      <div class="contact-form-shell contact-form-shell--quick">
+        <div class="contact-form-intro">
+          <p class="contact-eyebrow"><%= isEn ? 'Quick request' : 'Schnellanfrage' %></p>
+          <h2 id="contact-quick-title"><%= isEn ? 'Get a first assessment' : 'Erste Einschätzung anfragen' %></h2>
           <p>
             <%= isEn
-              ? 'Send the essentials now. We will review your request and reply with a first assessment and sensible next steps.'
-              : 'Schick uns kurz die wichtigsten Eckdaten. Wir prüfen deine Anfrage und melden uns mit einer ersten Einschätzung und sinnvollen nächsten Schritten.'
+              ? 'Send the essential details. If the request needs more context, I ask follow-up questions before estimating the scope.'
+              : 'Schick mir die wichtigsten Eckdaten. Wenn noch Kontext fehlt, frage ich nach, bevor ich den Umfang einschätze.'
             %>
           </p>
         </div>
-        <form
-          class="contact-quick__form"
-          action="<%= isEn ? '/en/kontakt/kurzanfrage' : '/kontakt/kurzanfrage' %>"
-          method="POST"
-          data-recaptcha="v3"
-          data-recaptcha-action="contact_quick"
-        >
+
+        <form id="contactQuickForm" class="contact-form" action="<%= isEn ? '/en/kontakt/kurzanfrage' : '/kontakt/kurzanfrage' %>" method="POST" data-recaptcha="v3" data-recaptcha-action="contact_quick" data-form-variant="quick" data-event="contact_form_view">
           <input type="hidden" name="token">
           <input type="hidden" name="source" value="contact-quick">
-          <input type="hidden" name="projectType" value="<%= isEn ? 'Contact quick request' : 'Kontakt-Kurzanfrage' %>">
           <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
-          <div class="contact-quick__grid">
-            <div class="contact-quick__field">
-              <label for="contact-quick-name"><%= isEn ? 'Name *' : 'Name *' %></label>
-              <input id="contact-quick-name" name="name" type="text" autocomplete="name" placeholder="<%= isEn ? 'Your name' : 'Dein Name' %>" required>
+          <input type="hidden" name="startedAt" value="<%= Date.now() %>">
+          <div class="contact-hp" aria-hidden="true">
+            <label for="quick-contact-website"><%= isEn ? 'Leave this field empty' : 'Dieses Feld bitte leer lassen' %></label>
+            <input id="quick-contact-website" name="contactWebsite" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="contact-form-grid">
+            <div class="contact-field">
+              <label for="quick-project-type"><%= isEn ? 'What do you want to request?' : 'Was möchtest du anfragen?' %> *</label>
+              <select id="quick-project-type" name="projectType" required data-contact-event="project_type_selected">
+                <% getOptions('projectType').forEach((option) => { %>
+                  <option value="<%= option.value %>" <%= isOptionSelected('projectType', option.value, 'unsure') %>><%= option.label %></option>
+                <% }) %>
+              </select>
             </div>
-            <div class="contact-quick__field">
-              <label for="contact-quick-email"><%= isEn ? 'Email *' : 'E-Mail *' %></label>
-              <input id="contact-quick-email" name="email" type="email" autocomplete="email" placeholder="<%= isEn ? 'name@example.com' : 'name@beispiel.de' %>" required>
+            <div class="contact-field" data-quick-package-field>
+              <label for="quick-package-interest"><%= isEn ? 'If this is about a new website: which package are you interested in?' : 'Falls es um eine neue Website geht: welches Paket interessiert dich?' %></label>
+              <select id="quick-package-interest" name="packageInterest" data-contact-event="package_interest_selected">
+                <% getOptions('packageInterest').forEach((option) => { %>
+                  <option value="<%= option.value %>" <%= isOptionSelected('packageInterest', option.value, 'unsure') %>><%= option.label %></option>
+                <% }) %>
+              </select>
             </div>
-            <div class="contact-quick__field">
-              <label for="contact-quick-phone"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
-              <input id="contact-quick-phone" name="phone" type="tel" autocomplete="tel" placeholder="+49 ...">
+            <div class="contact-field">
+              <label for="quick-budget-range"><%= isEn ? 'Rough budget range' : 'Grober Budgetrahmen' %></label>
+              <select id="quick-budget-range" name="budgetRange" data-contact-event="budget_range_selected">
+                <% getOptions('budgetRange').forEach((option) => { %>
+                  <option value="<%= option.value %>" <%= isOptionSelected('budgetRange', option.value, 'open') %>><%= option.label %></option>
+                <% }) %>
+              </select>
+              <p class="contact-help"><%= isEn ? 'This helps with a realistic recommendation.' : 'Das hilft bei einer realistischen Empfehlung.' %></p>
             </div>
-            <div class="contact-quick__field contact-quick__field--message">
-              <label for="contact-quick-message"><%= isEn ? 'What should we assess? *' : 'Was sollen wir einschätzen? *' %></label>
-              <textarea id="contact-quick-message" name="message" rows="4" placeholder="<%= isEn ? 'Briefly describe your website, goal, deadline or current problem.' : 'Beschreibe kurz Website, Ziel, Timing oder aktuelles Problem.' %>" required></textarea>
+            <div class="contact-field">
+              <label for="quick-name"><%= isEn ? 'Name' : 'Name' %> *</label>
+              <input id="quick-name" name="name" type="text" autocomplete="name" maxlength="120" required>
+            </div>
+            <div class="contact-field">
+              <label for="quick-email"><%= isEn ? 'Email' : 'E-Mail' %> *</label>
+              <input id="quick-email" name="email" type="email" autocomplete="email" maxlength="180" required>
+            </div>
+            <div class="contact-field">
+              <label for="quick-phone"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
+              <input id="quick-phone" name="phone" type="tel" autocomplete="tel" maxlength="80" placeholder="+49 ...">
+            </div>
+            <div class="contact-field contact-field--full">
+              <label for="quick-message"><%= isEn ? 'What should I assess?' : 'Was soll ich einschätzen?' %> *</label>
+              <textarea id="quick-message" name="message" rows="5" minlength="20" maxlength="5000" required placeholder="<%= isEn ? 'Briefly describe what you need, whether a website already exists and what the next step should clarify.' : 'Beschreibe kurz, was du brauchst, ob es bereits eine Website gibt und was der nächste Schritt klären soll.' %>"></textarea>
+              <p class="contact-help"><%= isEn ? 'A few bullet points are enough.' : 'Ein paar Stichpunkte reichen für den Anfang.' %></p>
             </div>
           </div>
-          <button type="submit" class="contact-quick__submit"><%= isEn ? 'Request assessment' : 'Ersteinschätzung anfragen' %></button>
+
+          <label class="contact-consent" for="quick-privacy-consent">
+            <input id="quick-privacy-consent" name="privacyConsent" value="yes" type="checkbox" required>
+            <span>
+              <% if (isEn) { %>
+                I have read the <a href="<%= privacyHref %>">privacy policy</a> and the <a href="<%= noticesHref %>">notes page</a> and agree that my details may be processed to handle my request.
+              <% } else { %>
+                Ich habe die <a href="<%= privacyHref %>">Datenschutzerklärung</a> und die <a href="<%= noticesHref %>">Hinweisseite</a> gelesen und bin damit einverstanden, dass meine Angaben zur Bearbeitung meiner Anfrage verarbeitet werden.
+              <% } %>
+            </span>
+          </label>
+
+          <button class="contact-submit" type="submit" data-event="contact_form_submit"><%= isEn ? 'Request assessment' : 'Einschätzung anfragen' %></button>
+          <p class="contact-submit-note"><%= isEn ? 'The request is non-binding.' : 'Die Anfrage ist unverbindlich.' %></p>
         </form>
       </div>
     </section>
+
     <section class="contact-panel contact-detailed" id="contact-detailed-panel" aria-labelledby="contact-detailed-title" hidden>
-      <div class="contact-wizard-intro">
-        <p class="contact-quick__eyebrow"><%= isEn ? 'Detailed request' : 'Umfangreiche Anfrage' %></p>
-        <h2 id="contact-detailed-title"><%= isEn ? 'Plan your website project in detail' : 'Website-Projekt ausführlich planen' %></h2>
-        <p>
-          <%= isEn
-            ? 'Use the full project assistant if you want to define package, scope, content, appointment and additional notes right away.'
-            : 'Nutze den ausführlichen Projektassistenten, wenn du Paket, Umfang, Inhalte, Termin und Zusatzinfos direkt genauer festlegen möchtest.'
-          %>
-        </p>
-      </div>
-      <form id="kontaktForm" action="<%= contactAction || (isEn ? '/en/kontakt' : '/kontakt') %>" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="token"><!-- reCAPTCHA v3 Token -->
-        <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
-        <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
-          <input type="hidden" name="source" value="website-tester">
-          <input type="hidden" name="auditId" value="<%= testerPrefill.auditId || '' %>">
-          <input type="hidden" name="domain" value="<%= testerPrefill.domain || '' %>">
-          <input type="hidden" name="scoreBand" value="<%= testerPrefill.scoreBand || '' %>">
-          <input type="hidden" name="topIssues" value="<%= testerPrefill.topIssues || '' %>">
-        <% } %>
-
-      <!-- Bootstrap Carousel für die Slides -->
-      <div id="contactCarousel" class="carousel slide" data-bs-ride="false" data-bs-wrap="false">
-        <div class="contact-progress" aria-label="<%= isEn ? 'Form progress' : 'Formularfortschritt' %>">
-          <div class="contact-progress__meta">
-            <span id="contactProgressText"><%= isEn ? 'Step 1 of 9' : 'Schritt 1 von 9' %></span>
-            <span><%= isEn ? 'about 2 minutes' : 'ca. 2 Minuten' %></span>
-          </div>
-          <div class="contact-progress__bar" aria-hidden="true">
-            <span id="contactProgressFill" class="contact-progress__fill"></span>
-          </div>
+      <div class="contact-form-shell">
+        <div class="contact-form-intro">
+          <p class="contact-eyebrow"><%= isEn ? 'Detailed request' : 'Ausführliche Anfrage' %></p>
+          <h2 id="contact-detailed-title"><%= isEn ? 'Describe your project clearly' : 'Erzähle kurz von deinem Projekt' %></h2>
+          <p>
+            <%= isEn
+              ? 'This form asks for project type, package, budget, timeline, content and add-ons. Choose “not sure yet” wherever you do not know the answer.'
+              : 'Dieses Formular fragt Projektart, Paket, Budget, Zeitrahmen, Texte und Zusatzfunktionen ab. Wähle „Noch unsicher“, wenn du etwas noch nicht weißt.'
+            %>
+          </p>
         </div>
-        <div class="carousel-inner">
-          <div class="white-container">
 
-            <!-- ====================  Slide 1 – Paket  ==================== -->
-            <div class="carousel-item active">
-              <h2><%= isEn ? '1. What overall scope should your project have?' : '1. Was für ein Umfang soll dein Projekt haben?' %></h2>
-              <!-- <p>Bitte wähle ein Paket:</p> -->
+        <form id="kontaktForm" class="contact-form contact-form--detailed" action="<%= contactAction || contactBase %>" method="POST" data-form-variant="detailed" data-event="contact_form_view" data-form-has-errors="<%= errorList.length ? 'true' : 'false' %>">
+          <input type="hidden" name="token">
+          <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
+          <input type="hidden" name="startedAt" value="<%= Date.now() %>">
+          <% if (typeof testerPrefill !== 'undefined' && testerPrefill) { %>
+            <input type="hidden" name="source" value="website-tester">
+            <input type="hidden" name="auditId" value="<%= testerPrefill.auditId || '' %>">
+            <input type="hidden" name="domain" value="<%= testerPrefill.domain || '' %>">
+            <input type="hidden" name="scoreBand" value="<%= testerPrefill.scoreBand || '' %>">
+            <input type="hidden" name="topIssues" value="<%= testerPrefill.topIssues || '' %>">
+          <% } else { %>
+            <input type="hidden" name="source" value="contact-detailed">
+          <% } %>
+          <div class="contact-hp" aria-hidden="true">
+            <label for="contactWebsite"><%= isEn ? 'Leave this field empty' : 'Dieses Feld bitte leer lassen' %></label>
+            <input id="contactWebsite" name="contactWebsite" type="text" tabindex="-1" autocomplete="off">
+          </div>
 
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <input class="option-radio" type="radio" id="paketBasis" name="paket" value="Basis" required>
-                <label class="option-label" for="paketBasis"><i class="bi bi-house-fill"></i><span class="option-title"><%= isEn ? 'Basic - EUR 499' : 'Basis - 499 EUR' %></span><span class="option-hint"><%= isEn ? '1 page, copy and SEO foundation' : '1 Seite, Texte und SEO-Grundlage' %></span></label>
-
-                <input class="option-radio" type="radio" id="paketBusiness" name="paket" value="Business" required>
-                <label class="option-label" for="paketBusiness"><i class="bi bi-building-fill"></i><span class="option-title">Business - <%= isEn ? 'EUR 899' : '899 EUR' %></span><span class="option-hint"><%= isEn ? 'Up to 5 pages, contact form and on-page SEO' : 'Bis 5 Seiten, Kontaktformular und On-Page-SEO' %></span></label>
-
-                <input class="option-radio" type="radio" id="paketPremium" name="paket" value="Premium" required>
-                <label class="option-label" for="paketPremium"><i class="bi bi-buildings-fill"></i><span class="option-title">Premium - <%= isEn ? 'EUR 1,499' : '1.499 EUR' %></span><span class="option-hint"><%= isEn ? 'Up to 20 pages, strategy, SEO and booking system' : 'Bis 20 Seiten, Strategie, SEO und Buchungssystem' %></span></label>
-              </div>
-            </div>
-
-            <!-- ================  Slide 2 – Seiten-Umfang  ================= -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2><%= isEn ? '2. How many pages should your website have?' : '2. Wie viele Seiten soll deine Website haben?' %></h2>
-              <p><%= isEn ? 'Choose the approximate page scope:' : 'Wähle den ungefähren Seitenumfang:' %></p>
-
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <input class="option-radio" type="radio" id="umfang1" name="umfang" value="1 Seite" required>
-                <label class="option-label" for="umfang1"><i class="bi bi-book"></i><%= isEn ? '1 page' : '1 Seite' %></label>
-
-                <input class="option-radio" type="radio" id="umfang2-5" name="umfang" value="2-5 Seiten" required>
-                <label class="option-label" for="umfang2-5"><i class="bi bi-book-half"></i><%= isEn ? '2 - 5 pages' : '2 - 5 Seiten' %></label>
-
-                <input class="option-radio" type="radio" id="umfang5plus" name="umfang" value=">5 Seiten" required>
-                <label class="option-label" for="umfang5plus"><i class="bi bi-book-fill"></i><%= isEn ? '> 5 pages' : '> 5 Seiten' %></label>
-              </div>
-            </div>
-
-            <!-- ================  Slide 3 – Texterstellung  ================= -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2><%= isEn ? '3. Do you need content writing?' : '3. Texterstellung nötig?' %></h2>
-              <p><%= isEn ? 'Are texts already available, or should we create them?' : 'Sind Texte für die Seiten vorhanden, oder sollen wir sie erstellen?' %></p>
-
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <input class="option-radio" type="radio" id="textErstellen" name="texterstellung" value="erstellt" required>
-                <label class="option-label" for="textErstellen"><i class="bi bi-pencil-square"></i><%= isEn ? 'Create texts' : 'Texte erstellen' %></label>
-
-                <input class="option-radio" type="radio" id="textEigen" name="texterstellung" value="eigen" required>
-                <label class="option-label" for="textEigen"><i class="bi bi-folder-symlink-fill"></i><%= isEn ? 'Texts available' : 'Texte vorhanden' %></label>
-              </div>
-            </div>
-
-            <!-- ================  Slide 4 – Bilder  ================= -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2><%= isEn ? '4. Do you already have images?' : '4. Bilder vorhanden?' %></h2>
-              <p><%= isEn ? 'Do you already have fitting images, or should we create/select them?' : 'Sind passende Bilder vorhanden, oder sollen wir Bilder erstellen?' %></p>
-
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <input class="option-radio" type="radio" id="bilderErstellen" name="bilderstellung" value="erstellt" required>
-                <label class="option-label" for="bilderErstellen"><i class="bi bi-camera-fill"></i><%= isEn ? 'Create/select images' : 'Bilder erstellen' %></label>
-
-                <input class="option-radio" type="radio" id="bilderEigen" name="bilderstellung" value="eigen" required>
-                <label class="option-label" for="bilderEigen"><i class="bi bi-folder-symlink-fill"></i><%= isEn ? 'Images available' : 'Bilder vorhanden' %></label>
-              </div>
-
-              <div id="uploadImagesField" class="mt-3" style="display:none">
-                <label><%= isEn ? 'You can upload your images here (multiple files possible):' : 'Du kannst hier deine Bilder hochladen (mehrfache Auswahl möglich):' %></label><br>
-                <input type="file" name="images" id="imagesInput" multiple accept="image/*">
-              </div>
-            </div>
-
-            <!-- ========================  Slide 5 – Inhalte/Funktionen  ======================== -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2 style="padding-top: 30px; margin-bottom: 0px;"><%= isEn ? '5. Desired content/features' : '5. Gewünschte Inhalte/Funktionen' %></h2>
-              <p style="margin-bottom: 5px;"><%= isEn ? '(multiple selection possible)' : '(Mehrfachauswahl möglich)' %></p>
-
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <div>
-                  <input class="option-check" type="checkbox" id="featureBlog" name="inhalte" value="Blog">
-                  <label class="option-label small" for="featureBlog"><i class="bi bi-file-medical-fill"></i><%= isEn ? 'Blog' : 'Blog' %></label>
-                </div>
-                <div>
-                  <input class="option-check" type="checkbox" id="featureShop" name="inhalte" value="Onlineshop">
-                  <label class="option-label small" for="featureShop"><i class="bi bi-cart-dash-fill"></i><%= isEn ? 'Online shop' : 'Onlineshop' %></label>
-                </div>
-                <div>
-                  <input class="option-check" type="checkbox" id="featureMaps" name="inhalte" value="Google Maps Einbindung">
-                  <label class="option-label small" for="featureMaps"><i class="bi bi-pin-map-fill"></i>Google Maps</label>
-                </div>
-                <div>
-                  <input class="option-check" type="checkbox" id="featureKontakt" name="inhalte" value="Kontaktformular">
-                  <label class="option-label small" for="featureKontakt"><i class="bi bi-menu-button-wide-fill"></i><%= isEn ? 'Contact form' : 'Kontaktformular' %></label>
-                </div>
-                <div>
-                  <input class="option-check" type="checkbox" id="featureTermin" name="inhalte" value="Terminbuchung">
-                  <label class="option-label small" for="featureTermin"><i class="bi bi-calendar-week-fill"></i><%= isEn ? 'Online appointment booking' : 'Online-Terminbuchung' %></label>
-                </div>
-                <div>
-                  <input class="option-check" type="checkbox" id="featureBusiness" name="inhalte" value="Google Business Eintrag">
-                  <label class="option-label small" for="featureBusiness"><i class="bi bi-google"></i><%= isEn ? 'Google Business profile' : 'Google Business Eintrag' %></label>
-                </div>
-              </div>
-<!-- 
-              <div class="mt-3" style="max-width:650px;width:100%">
-                <label for="weitereWuensche">Weitere Wünsche oder Funktionen:</label>
-                <textarea id="weitereWuensche" name="weitereWuensche" class="form-control" rows="2" placeholder="Weitere Funktionen, spezifische Anforderungen …"></textarea>
-              </div> -->
-
-              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
-            </div>
-
-            <!-- ========================  Slide 6 – Terminwahl  ======================== -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2><%= isEn ? '6. Choose an appointment time' : '6. Termin für ein Gespräch wählen' %></h2>
-              <p><%= isEn ? 'Choose a free slot for a consultation call:' : 'Wähle einen freien Termin für ein Beratungsgespräch:' %></p>
-
-              <% if (freieTermine && freieTermine.length> 0) { %>
-              <div class="w-100 option-wrapper" style="max-width:340px">
-                <% freieTermine.forEach(term=> {
-                                                const startTime = new Date(term.start_time)
-                                                .toLocaleDateString(isEn ? 'en-GB' : 'de-DE',
-                                                { weekday:'short', day:'2-digit', month:'short',
-                                                hour:'2-digit', minute:'2-digit' });
-                                                %>
-                <input type="radio" class="option-radio" id="termin<%= term.id %>" name="slotId" value="<%= term.id %>">
-                <label class="termin option-label" for="termin<%= term.id %>">
-                  <%= startTime %>
-                </label>
+          <div class="contact-wizard-viewport" data-contact-wizard-viewport>
+            <fieldset class="contact-form-section" data-contact-step="projectType" data-contact-branch="all">
+              <legend><%= isEn ? 'What do you need?' : 'Was brauchst du?' %></legend>
+              <p class="contact-help"><%= isEn ? 'Choose what fits best. If you are unsure, choose “Not sure yet”.' : 'Wähle aus, was am besten passt. Wenn du unsicher bist, wähle „Noch unsicher“.' %></p>
+              <div class="contact-option-grid">
+                <% getOptions('projectType').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="projectType" value="<%= option.value %>" <%= isSelected('projectType', option.value) %> required data-contact-event="project_type_selected">
+                    <span><%= option.label %></span>
+                  </label>
                 <% }) %>
-                <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Other date' : 'Anderer Termin' %></button>
               </div>
-              <% } else { %>
-              <p><em><%= isEn ? 'Currently no free appointments are available. We will contact you for scheduling.' : 'Zurzeit sind keine freien Termine verfügbar. Wir kontaktieren dich zur Terminvereinbarung.' %></em></p>
-              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
-              <% } %>
-            </div>
+            </fieldset>
 
-            <!-- ========================  Slide 7 – Kontaktdaten  ======================== -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2 class="pt-5"><%= isEn ? '7. Your contact details' : '7. Deine Kontaktdaten' %></h2>
-              <p><%= isEn ? 'Please enter your contact details so we can reach you:' : 'Bitte gib deine Kontaktdaten ein, damit wir dich erreichen können:' %></p>
-
-              <div class="mb-3 w-100" style="max-width:460px">
-                <label for="nameInput" class="form-label"><%= isEn ? 'Name *' : 'Name *' %></label>
-                <input type="text" id="nameInput" name="name" class="form-control" placeholder="Max Mustermann" required>
+            <fieldset class="contact-form-section" data-contact-step="packageInterest" data-contact-branch="new-website">
+              <legend><%= isEn ? 'Which package probably fits?' : 'Welches Paket passt wahrscheinlich?' %></legend>
+              <p class="contact-help"><%= isEn ? 'If you are not sure yet, choose “Not sure yet”. I will classify the scope after your request.' : 'Wenn du noch nicht weißt, welches Paket passt, wähle „Noch unsicher“. Ich ordne dein Projekt nach der Anfrage grob ein.' %></p>
+              <div class="contact-package-grid">
+                <% getOptions('packageInterest').forEach((option) => { %>
+                  <label class="contact-option contact-option--package">
+                    <input type="radio" name="packageInterest" value="<%= option.value %>" <%= isSelected('packageInterest', option.value) %> data-required-for="new-website" data-contact-event="package_interest_selected">
+                    <span class="contact-option__title"><%= option.label %></span>
+                    <% if (option.hint) { %><small><%= option.hint %></small><% } %>
+                  </label>
+                <% }) %>
               </div>
-              <div class="mb-3 w-100" style="max-width:460px">
-                <label for="emailInput" class="form-label"><%= isEn ? 'Email *' : 'E-Mail *' %></label>
-                <input type="email" id="emailInput" name="email" class="form-control" placeholder="<%= isEn ? 'name@example.com' : 'name@beispiel.de' %>" required>
+              <p class="contact-tax-note"><%= globalNotes?.vatNote || 'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.' %></p>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="budgetTimeline" data-contact-branch="new-website relaunch landingpage local-seo audit custom-feature unsure">
+              <legend><%= isEn ? 'Budget and timeline' : 'Budget und Zeitrahmen' %></legend>
+              <div class="contact-step-split">
+                <div class="contact-question-group">
+                  <h3><%= isEn ? 'What rough budget range is planned?' : 'Welcher Budgetrahmen ist ungefähr geplant?' %></h3>
+                  <p class="contact-help"><%= isEn ? 'A rough range helps with the recommendation. It is not a commitment.' : 'Ein grober Rahmen hilft bei der Empfehlung. Er ist keine Verpflichtung.' %></p>
+                  <div class="contact-option-grid contact-option-grid--compact">
+                    <% getOptions('budgetRange').forEach((option) => { %>
+                      <label class="contact-option">
+                        <input type="radio" name="budgetRange" value="<%= option.value %>" <%= isSelected('budgetRange', option.value) %> data-required-for="new-website relaunch landingpage local-seo audit custom-feature" data-contact-event="budget_range_selected">
+                        <span><%= option.label %></span>
+                      </label>
+                    <% }) %>
+                  </div>
+                </div>
+                <div class="contact-question-group">
+                  <h3><%= isEn ? 'When should it start/go live?' : 'Wann soll es ungefähr starten/online gehen?' %></h3>
+                  <p class="contact-help"><%= isEn ? 'A concrete timeline is only agreed after coordination.' : 'Eine konkrete Zusage erfolgt erst nach Abstimmung.' %></p>
+                  <div class="contact-option-grid contact-option-grid--compact">
+                    <% getOptions('timeline').forEach((option) => { %>
+                      <label class="contact-option">
+                        <input type="radio" name="timeline" value="<%= option.value %>" <%= isSelected('timeline', option.value) %> data-required-for="new-website relaunch landingpage local-seo audit custom-feature" data-contact-event="timeline_selected">
+                        <span><%= option.label %></span>
+                      </label>
+                    <% }) %>
+                  </div>
+                </div>
               </div>
-              <div class="mb-3 w-100" style="max-width:460px">
-                <label for="telefonInput" class="form-label"><%= isEn ? 'Phone number (optional)' : 'Telefonnummer (optional)' %></label>
-                <input type="tel" id="telefonInput" name="telefon" class="form-control" placeholder="+49 …">
-                <div class="form-text contact-field-help"><%= isEn ? 'Helpful if you want a callback. Email is enough for the request.' : 'Hilft, wenn du einen Rückruf möchtest. E-Mail reicht für die Anfrage.' %></div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="existingWebsite" data-contact-branch="new-website">
+              <legend><%= isEn ? 'Existing website' : 'Bestehende Website' %></legend>
+              <div class="contact-question-group">
+                <h3><%= isEn ? 'Is there already a website?' : 'Gibt es bereits eine Website?' %></h3>
+                <div class="contact-option-grid">
+                  <% getOptions('existingWebsiteStatus').forEach((option) => { %>
+                    <label class="contact-option">
+                      <input type="radio" name="existingWebsiteStatus" value="<%= option.value %>" <%= isSelected('existingWebsiteStatus', option.value) %> data-required-for="new-website" data-contact-event="contact_form_field_select">
+                      <span><%= option.label %></span>
+                    </label>
+                  <% }) %>
+                </div>
               </div>
-              <div class="mb-3 w-100" style="max-width:460px">
-                <label for="firmaInput" class="form-label"><%= isEn ? 'Company (optional)' : 'Firma (optional)' %></label>
-                <input type="text" id="firmaInput" name="firma" class="form-control" placeholder="<%= isEn ? 'Your company name' : 'Dein Firmenname' %>">
+              <div class="contact-field contact-field--full">
+                <label for="existingWebsiteUrl"><%= isEn ? 'Current website URL (optional)' : 'Aktuelle Website-URL (optional)' %></label>
+                <input id="existingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl') %>">
+                <p class="contact-help"><%= isEn ? 'If available, this helps assess relaunch, audit or rebuild.' : 'Falls vorhanden, hilft die URL bei der Einschätzung von Relaunch, Audit oder Neubau.' %></p>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="pageScope" data-contact-branch="new-website">
+              <legend><%= isEn ? 'Website scope' : 'Umfang der neuen Website' %></legend>
+              <div class="contact-question-group">
+                <h3><%= isEn ? 'How large should the website roughly be?' : 'Wie groß soll die Website ungefähr werden?' %></h3>
+                <div class="contact-option-grid contact-option-grid--wide">
+                  <% getOptions('pageScope').forEach((option) => { %>
+                    <label class="contact-option">
+                      <input type="radio" name="pageScope" value="<%= option.value %>" <%= isSelected('pageScope', option.value) %> data-required-for="new-website" data-contact-event="page_scope_selected">
+                      <span><%= option.label %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="relaunchContext" data-contact-branch="relaunch">
+              <legend><%= isEn ? 'Current website and relaunch reason' : 'Bestehende Website und Relaunch-Grund' %></legend>
+              <p class="contact-help"><%= isEn ? 'A relaunch starts with the current website, the main problems and the target of the rebuild.' : 'Ein Relaunch startet mit der bestehenden Website, den Hauptproblemen und dem Ziel des Neuaufbaus.' %></p>
+              <div class="contact-option-grid">
+                <% getOptions('existingWebsiteStatus').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="existingWebsiteStatus" value="<%= option.value %>" <%= isSelected('existingWebsiteStatus', option.value) %> data-required-for="relaunch" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-field contact-field--full">
+                <label for="relaunchExistingWebsiteUrl"><%= isEn ? 'Current website URL' : 'Aktuelle Website-URL' %></label>
+                <input id="relaunchExistingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl') %>">
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="relaunchGoals" data-contact-branch="relaunch">
+              <legend><%= isEn ? 'Relaunch goals' : 'Relaunch-Ziele' %></legend>
+              <p class="contact-help"><%= isEn ? 'Select what should improve. Ranking preservation cannot be guaranteed.' : 'Wähle aus, was verbessert werden soll. Ein Ranking-Erhalt kann nicht garantiert werden.' %></p>
+              <div class="contact-checkbox-grid">
+                <% getOptions('relaunchGoals').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="relaunchGoals" value="<%= option.value %>" <%= isChecked('relaunchGoals', option.value) %> data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="seoContext" data-contact-branch="local-seo">
+              <legend><%= isEn ? 'Local SEO starting point' : 'Local-SEO-Ausgangslage' %></legend>
+              <p class="contact-help"><%= isEn ? 'Local SEO improves the technical and content basis. It does not guarantee Google rankings or Maps positions.' : 'Local SEO verbessert die technische und inhaltliche Grundlage. Es gibt keine Garantie für Google-Rankings oder Maps-Platzierungen.' %></p>
+              <div class="contact-field contact-field--full">
+                <label for="seoExistingWebsiteUrl"><%= isEn ? 'Website URL (if available)' : 'Website-URL, falls vorhanden' %></label>
+                <input id="seoExistingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl') %>">
+              </div>
+              <div class="contact-question-group">
+                <h3><%= isEn ? 'Is there a Google Business Profile?' : 'Gibt es ein Google Business Profile?' %></h3>
+                <div class="contact-option-grid">
+                  <% getOptions('googleBusinessProfileStatus').forEach((option) => { %>
+                    <label class="contact-option">
+                      <input type="radio" name="googleBusinessProfileStatus" value="<%= option.value %>" <%= isSelected('googleBusinessProfileStatus', option.value) %> data-required-for="local-seo" data-contact-event="contact_form_field_select">
+                      <span><%= option.label %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              </div>
+              <div class="contact-field contact-field--full">
+                <label for="localSeoArea"><%= isEn ? 'Target area' : 'Zielgebiet' %></label>
+                <input id="localSeoArea" name="localSeoArea" type="text" maxlength="180" value="<%= inputValue('localSeoArea') %>" placeholder="<%= isEn ? 'Berlin, district, Brandenburg or service area' : 'Berlin, Bezirk, Brandenburg oder Einzugsgebiet' %>" data-required-for="local-seo">
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="seoFocus" data-contact-branch="local-seo">
+              <legend><%= isEn ? 'SEO focus' : 'SEO-Fokus' %></legend>
+              <p class="contact-help"><%= isEn ? 'Reviews must be real. I do not buy, invent or manipulate reviews.' : 'Bewertungen müssen echt sein. Ich kaufe, erfinde oder manipuliere keine Bewertungen.' %></p>
+              <div class="contact-checkbox-grid">
+                <% getOptions('seoFocus').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="seoFocus" value="<%= option.value %>" <%= isChecked('seoFocus', option.value) %> data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="auditContext" data-contact-branch="audit">
+              <legend><%= isEn ? 'Website URL and audit context' : 'Website-URL und Audit-Ausgangslage' %></legend>
+              <p class="contact-help"><%= isEn ? 'The audit checks the current website before a relaunch or optimization decision.' : 'Der Audit prüft die bestehende Website, bevor Relaunch oder Optimierung entschieden werden.' %></p>
+              <div class="contact-field contact-field--full">
+                <label for="auditExistingWebsiteUrl"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+                <input id="auditExistingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl', (typeof testerPrefill !== 'undefined' && testerPrefill && testerPrefill.domain) ? testerPrefill.domain : '') %>" data-required-for="audit maintenance bugfix">
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="auditFocus" data-contact-branch="audit">
+              <legend><%= isEn ? 'Audit focus and result' : 'Prüffokus und gewünschtes Ergebnis' %></legend>
+              <div class="contact-checkbox-grid">
+                <% getOptions('auditFocus').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="auditFocus" value="<%= option.value %>" <%= isChecked('auditFocus', option.value) %> data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('auditDepth').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="auditDepth" value="<%= option.value %>" <%= isSelected('auditDepth', option.value, (typeof testerPrefill !== 'undefined' && testerPrefill) ? 'quick-check' : '') %> data-required-for="audit" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="landingpageGoal" data-contact-branch="landingpage">
+              <legend><%= isEn ? 'Landing page goal' : 'Ziel der Landingpage' %></legend>
+              <p class="contact-help"><%= isEn ? 'A landing page focuses on one clear action. Conversions or ad performance cannot be guaranteed.' : 'Eine Landingpage fokussiert eine klare Aktion. Conversions oder Ads-Erfolg können nicht garantiert werden.' %></p>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('landingpageGoal').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="landingpageGoal" value="<%= option.value %>" <%= isSelected('landingpageGoal', option.value) %> data-required-for="landingpage" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('landingpageSource').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="landingpageSource" value="<%= option.value %>" <%= isSelected('landingpageSource', option.value) %> data-required-for="landingpage" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="maintenanceContext" data-contact-branch="maintenance">
+              <legend><%= isEn ? 'Website maintenance context' : 'Ausgangslage für Wartung' %></legend>
+              <p class="contact-help"><%= isEn ? 'Please do not send passwords in the form. Access is clarified separately if needed.' : 'Bitte sende keine Passwörter im Formular. Zugänge werden bei Bedarf separat geklärt.' %></p>
+              <div class="contact-field contact-field--full">
+                <label for="maintenanceExistingWebsiteUrl"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+                <input id="maintenanceExistingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl') %>" data-required-for="audit maintenance bugfix">
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="maintenanceNeed" data-contact-branch="maintenance">
+              <legend><%= isEn ? 'Maintenance need' : 'Wartungsbedarf' %></legend>
+              <div class="contact-checkbox-grid">
+                <% getOptions('maintenanceNeed').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="maintenanceNeed" value="<%= option.value %>" <%= isChecked('maintenanceNeed', option.value) %> data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('maintenanceUrgency').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="maintenanceUrgency" value="<%= option.value %>" <%= isSelected('maintenanceUrgency', option.value) %> data-required-for="maintenance" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="customFeatureContext" data-contact-branch="custom-feature">
+              <legend><%= isEn ? 'Custom feature or extension' : 'Zusatzfunktion oder Erweiterung' %></legend>
+              <p class="contact-help"><%= isEn ? 'Extensions are checked against the existing system, external tools and the desired scope.' : 'Erweiterungen werden mit Blick auf bestehendes System, externe Tools und gewünschten Umfang geprüft.' %></p>
+              <div class="contact-option-grid">
+                <% getOptions('existingWebsiteStatus').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="existingWebsiteStatus" value="<%= option.value %>" <%= isSelected('existingWebsiteStatus', option.value) %> data-required-for="custom-feature" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-checkbox-grid">
+                <% getOptions('customFeatureType').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="customFeatureType" value="<%= option.value %>" <%= isChecked('customFeatureType', option.value) %> data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-field contact-field--full">
+                <label for="customFeatureDependencies"><%= isEn ? 'Existing systems or external tools' : 'Vorhandene Systeme oder externe Tools' %></label>
+                <textarea id="customFeatureDependencies" name="customFeatureDependencies" rows="4" maxlength="1200"><%= inputValue('customFeatureDependencies') %></textarea>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="bugfixContext" data-contact-branch="bugfix">
+              <legend><%= isEn ? 'Bug fix context' : 'Fehlerbehebung' %></legend>
+              <p class="contact-help"><%= isEn ? 'Describe the issue without sending passwords or confidential access data.' : 'Beschreibe das Problem, ohne Passwörter oder vertrauliche Zugangsdaten zu senden.' %></p>
+              <div class="contact-field contact-field--full">
+                <label for="bugfixExistingWebsiteUrl"><%= isEn ? 'Website URL' : 'Website-URL' %></label>
+                <input id="bugfixExistingWebsiteUrl" name="existingWebsiteUrl" type="url" maxlength="220" placeholder="https://..." value="<%= inputValue('existingWebsiteUrl') %>" data-required-for="audit maintenance bugfix">
+              </div>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('bugfixUrgency').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="bugfixUrgency" value="<%= option.value %>" <%= isSelected('bugfixUrgency', option.value) %> data-required-for="bugfix" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-field contact-field--full">
+                <label for="bugfixDescription"><%= isEn ? 'What is not working?' : 'Was funktioniert nicht?' %></label>
+                <textarea id="bugfixDescription" name="bugfixDescription" rows="5" maxlength="2000" data-required-for="bugfix"><%= inputValue('bugfixDescription') %></textarea>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="unsureContext" data-contact-branch="unsure">
+              <legend><%= isEn ? 'Rough orientation' : 'Grobe Einordnung' %></legend>
+              <p class="contact-help"><%= isEn ? 'If you are unsure, a short description is enough. I will suggest the useful next step.' : 'Wenn du unsicher bist, reicht eine kurze Beschreibung. Ich schlage dir den sinnvollen nächsten Schritt vor.' %></p>
+              <div class="contact-option-grid">
+                <% getOptions('existingWebsiteStatus').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="existingWebsiteStatus" value="<%= option.value %>" <%= isSelected('existingWebsiteStatus', option.value) %> data-required-for="unsure" data-contact-event="contact_form_field_select">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <div class="contact-field contact-field--full">
+                <label for="uncertaintyNotes"><%= isEn ? 'What should be clarified?' : 'Was soll grob geklärt werden?' %></label>
+                <textarea id="uncertaintyNotes" name="uncertaintyNotes" rows="4" maxlength="1200"><%= inputValue('uncertaintyNotes') %></textarea>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="content" data-contact-branch="new-website relaunch landingpage">
+              <legend><%= isEn ? 'Text content' : 'Texte' %></legend>
+              <p class="contact-help"><%= isEn ? 'Provided text can be added and structured. Extensive copywriting is estimated separately.' : 'Gelieferte Texte können eingebunden und strukturiert werden. Umfangreiche Texterstellung wird separat kalkuliert.' %></p>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('contentStatus').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="contentStatus" value="<%= option.value %>" <%= isSelected('contentStatus', option.value) %> data-required-for="new-website landingpage" data-contact-event="content_status_selected">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="optionalFeatures" data-contact-branch="new-website relaunch">
+              <legend><%= isEn ? 'Add-on features' : 'Zusatzfunktionen' %></legend>
+              <p class="contact-help"><%= isEn ? 'Select everything that might matter. Add-ons are reviewed and estimated separately before implementation.' : 'Wähle alles aus, was relevant sein könnte. Zusatzfunktionen werden vor der Umsetzung separat geprüft und kalkuliert.' %></p>
+              <div class="contact-checkbox-grid" aria-label="<%= isEn ? 'Additional features' : 'Zusatzfunktionen' %>">
+                <% getOptions('optionalFeatures').forEach((option) => { %>
+                  <label class="contact-check">
+                    <input type="checkbox" name="optionalFeatures" value="<%= option.value %>" <%= isChecked('optionalFeatures', option.value) %> data-contact-feature="<%= option.value %>" data-contact-event="optional_features_selected">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <p class="contact-help"><%= isEn ? 'If nothing fits, choose “No additional features planned” or “Not sure yet”.' : 'Wenn nichts davon passt, wähle „Keine Zusatzfunktionen geplant“ oder „Noch unsicher“.' %></p>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="hosting" data-contact-branch="new-website">
+              <legend><%= isEn ? 'Hosting and maintenance' : 'Hosting und Wartung' %></legend>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% getOptions('hostingMaintenanceInterest').forEach((option) => { %>
+                  <label class="contact-option">
+                    <input type="radio" name="hostingMaintenanceInterest" value="<%= option.value %>" <%= isSelected('hostingMaintenanceInterest', option.value) %> data-required-for="new-website" data-contact-event="hosting_maintenance_selected">
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+              <p class="contact-help"><%= globalNotes?.runningCostsNote || (isEn ? 'Hosting, domain, email and maintenance can create separate running costs.' : 'Hosting, Domain, E-Mail und Wartung können separate laufende Kosten verursachen.') %></p>
+            </fieldset>
+
+            <fieldset class="contact-form-section" data-contact-step="appointment" data-contact-branch="new-website relaunch landingpage local-seo audit custom-feature unsure">
+              <legend><%= isEn ? 'Appointment preference' : 'Terminwunsch' %></legend>
+              <p class="contact-help">
+                <%= isEn
+                  ? 'If a free consultation slot fits, choose it here. Otherwise we can clarify the appointment later.'
+                  : 'Wenn ein freier Beratungstermin passt, kannst du ihn hier direkt auswählen. Sonst stimmen wir den Termin später ab.'
+                %>
+              </p>
+              <div class="contact-option-grid contact-option-grid--wide">
+                <% const selectedSlotId = String(inputValue('slotId')); %>
+                <% if (freieTermine && freieTermine.length > 0) { %>
+                  <% freieTermine.forEach((term) => { %>
+                    <label class="contact-option">
+                      <input type="radio" name="slotId" value="<%= term.id %>" <%= selectedSlotId === String(term.id) ? 'checked' : '' %>>
+                      <span><%= formatSlotLabel(term) %></span>
+                    </label>
+                  <% }) %>
+                <% } %>
+                <label class="contact-option">
+                  <input type="radio" name="slotId" value="" <%= selectedSlotId ? '' : 'checked' %>>
+                  <span><%= isEn ? 'Clarify appointment later' : 'Termin später abstimmen' %></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="contact-form-section contact-form-section--final" data-contact-final="true">
+              <legend><%= isEn ? 'Contact and project note' : 'Kontaktdaten und Projektbeschreibung' %></legend>
+              <div class="contact-form-grid">
+                <div class="contact-field">
+                  <label for="nameInput"><%= isEn ? 'Name' : 'Name' %> *</label>
+                  <input id="nameInput" name="name" type="text" autocomplete="name" maxlength="120" value="<%= inputValue('name') %>" required>
+                </div>
+                <div class="contact-field">
+                  <label for="companyInput"><%= isEn ? 'Company (optional)' : 'Unternehmen (optional)' %></label>
+                  <input id="companyInput" name="company" type="text" autocomplete="organization" maxlength="160" value="<%= inputValue('company') %>">
+                </div>
+                <div class="contact-field">
+                  <label for="emailInput"><%= isEn ? 'Email' : 'E-Mail' %> *</label>
+                  <input id="emailInput" name="email" type="email" autocomplete="email" maxlength="180" value="<%= inputValue('email') %>" required>
+                </div>
+                <div class="contact-field">
+                  <label for="phoneInput"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
+                  <input id="phoneInput" name="phone" type="tel" autocomplete="tel" maxlength="80" value="<%= inputValue('phone') %>">
+                </div>
+                <div class="contact-field">
+                  <label for="preferredContact"><%= isEn ? 'Preferred contact channel' : 'Bevorzugter Kontaktweg' %> *</label>
+                  <select id="preferredContact" name="preferredContact" required>
+                    <% getOptions('preferredContact').forEach((option) => { %>
+                      <option value="<%= option.value %>" <%= isOptionSelected('preferredContact', option.value, 'email') %>><%= option.label %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="contact-field contact-field--full">
+                  <label for="messageInput"><%= isEn ? 'Project description (optional)' : 'Projektbeschreibung (optional)' %></label>
+                  <textarea id="messageInput" name="message" rows="5" maxlength="5000" placeholder="<%= isEn ? 'Briefly describe what you need, which services matter and whether a website already exists.' : 'Beschreibe bei Bedarf kurz, was du brauchst, welche Leistungen wichtig sind und ob es bereits eine Website gibt.' %>"><%= inputValue('message', (typeof testerPrefill !== 'undefined' && testerPrefill && testerPrefill.suggestedMessage) ? testerPrefill.suggestedMessage : '') %></textarea>
+                  <p class="contact-help"><%= isEn ? 'A few bullet points are enough. Please do not send passwords or confidential login data.' : 'Ein paar Stichpunkte reichen. Bitte sende keine Passwörter oder vertraulichen Zugangsdaten.' %></p>
+                </div>
               </div>
 
-              <button type="button" class="btn btn-primary mt-2 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
-            </div>
-
-            <!-- ========================  Slide 8 – Sonstige Infos  ======================== -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2 style="padding-top: 30px;"><%= isEn ? '8. Additional information' : '8. Weitere Informationen' %></h2>
-              <p><%= isEn ? 'Anything else you want to share with us?' : 'Gibt es sonst noch etwas, das du uns mitteilen möchtest?' %></p>
-
-              <textarea name="sonstigeInfos" class="form-control" rows="3" style="max-width:650px;width:100%" placeholder="<%= isEn ? 'Additional notes, wishes, or information...' : 'Weitere Anmerkungen, Wünsche oder Infos ...' %>"><%= (typeof testerPrefill !== 'undefined' && testerPrefill && testerPrefill.suggestedMessage) ? testerPrefill.suggestedMessage : '' %></textarea>
-
-              <button type="button" class="btn btn-primary mt-3 next-btn"><%= isEn ? 'Next' : 'Weiter' %></button>
-            </div>
-
-            <!-- ========================  Slide 9 – Zusammenfassung & Absenden  ======================== -->
-            <div class="carousel-item">
-              <button type="button" class="back-btn">← <%= isEn ? 'Back' : 'Zurück' %></button>
-
-              <h2 class="pt-5"><%= isEn ? 'Summary of your information' : 'Zusammenfassung deiner Angaben' %></h2>
-
-              <div id="summaryBox" class="table-responsive mb-4">
-                <!-- wird durch JS gefüllt -->
+              <div class="contact-legal-note">
+                <h3><%= isEn ? 'Legal, SEO and privacy notes' : 'Hinweise zu Rechtstexten, SEO und Datenschutz' %></h3>
+                <p>
+                  <%= isEn
+                    ? 'Before sending the request, please read the notes about legal text integration, SEO limits, third-party costs and privacy.'
+                    : 'Bitte lies vor dem Absenden die Hinweise zur technischen Einbindung von Rechtstexten, zu SEO-Grenzen, Drittanbieter-Kosten und Datenschutz.'
+                  %>
+                  <a href="<%= noticesHref %>"><%= isEn ? 'Open notes page' : 'Hinweisseite öffnen' %></a>
+                </p>
               </div>
 
-              <p><%= isEn ? 'If everything looks good, send your request.' : 'Wenn alles stimmt, sende deine Anfrage ab.' %></p>
-              <button type="submit" class="btn btn-success btn-lg"><%= isEn ? 'Send request' : 'Anfrage senden' %></button>
-            </div>
+              <label class="contact-consent" for="privacyConsent">
+                <input id="privacyConsent" name="privacyConsent" value="yes" type="checkbox" <%= inputValue('privacyConsent') === 'yes' ? 'checked' : '' %> required>
+                <span>
+                  <% if (isEn) { %>
+                    I have read the <a href="<%= privacyHref %>">privacy policy</a> and the <a href="<%= noticesHref %>">notes page</a> and agree that my details may be processed to handle my request.
+                  <% } else { %>
+                    Ich habe die <a href="<%= privacyHref %>">Datenschutzerklärung</a> und die <a href="<%= noticesHref %>">Hinweisseite</a> gelesen und bin damit einverstanden, dass meine Angaben zur Bearbeitung meiner Anfrage verarbeitet werden.
+                  <% } %>
+                </span>
+              </label>
 
+              <button class="contact-submit" type="submit" data-event="contact_form_submit"><%= isEn ? 'Send project request' : 'Website-Projekt senden' %></button>
+              <p class="contact-submit-note"><%= isEn ? 'The request is non-binding. A project only starts after scope, offer and approval are clarified.' : 'Die Anfrage ist unverbindlich. Ein Projekt startet erst nach Abstimmung, Angebot und Freigabe.' %></p>
+            </fieldset>
           </div>
-          <!-- Wir verwenden eigene Navigation (Back/Next Buttons in den Slides), daher keine standard Carousel-Control-Buttons -->
-        </div>
+        </form>
       </div>
-      </form>
     </section>
+  </section>
 
-    <!-- Erfolgsmeldung anzeigen, falls per Query-Param 'erfolg=1' übergeben -->
-    <% if (typeof query !=='undefined' && query.erfolg=='1' ) { %>
-    <div class="alert alert-success mt-4">
-      <%= isEn ? 'Thanks for your request! We received your details and will get back to you soon.' : 'Vielen Dank für deine Anfrage! Wir haben deine Angaben erhalten und melden uns bald bei dir.' %>
+  <section class="container contact-alternatives" aria-labelledby="contact-alt-title">
+    <h2 id="contact-alt-title"><%= isEn ? 'Other useful paths' : 'Alternative Kontaktmöglichkeiten' %></h2>
+    <div class="contact-alt-grid">
+      <a href="mailto:kontakt@komplettwebdesign.de" class="contact-alt-card">
+        <strong>E-Mail</strong>
+        <span>kontakt@komplettwebdesign.de</span>
+      </a>
+      <a href="<%= packagesHref %>" class="contact-alt-card">
+        <strong><%= isEn ? 'Package overview' : 'Paketübersicht' %></strong>
+        <span><%= isEn ? 'Compare Start, Business, Growth and Individual.' : 'Start, Business, Wachstum und Individuell vergleichen.' %></span>
+      </a>
+      <a href="<%= testerHref %>" class="contact-alt-card">
+        <strong><%= isEn ? 'Website check' : 'Website-Check' %></strong>
+        <span><%= isEn ? 'Useful if you already have a website.' : 'Sinnvoll, wenn es bereits eine Website gibt.' %></span>
+      </a>
     </div>
-    <% } %>
-  </div>
-</div>
+  </section>
+
+  <section class="container contact-faq" aria-labelledby="contact-faq-title">
+    <p class="contact-eyebrow"><%= isEn ? 'FAQ' : 'Häufige Fragen' %></p>
+    <h2 id="contact-faq-title"><%= isEn ? 'Frequently asked questions about the request' : 'Häufige Fragen zur Anfrage' %></h2>
+    <div class="contact-faq-grid">
+      <% (contactFaqs || []).forEach((item) => { %>
+        <article class="contact-faq-item">
+          <h3><%= item.question %></h3>
+          <p><%= item.answer %></p>
+        </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="contact-final-cta">
+    <div class="container contact-final-cta__inner">
+      <h2><%= isEn ? 'Ready to describe your project?' : 'Bereit, dein Projekt zu beschreiben?' %></h2>
+      <p><%= isEn ? 'Start with a few details. If something is unclear, choose “not sure yet”.' : 'Starte mit ein paar Eckdaten. Wenn etwas unklar ist, wähle einfach „Noch unsicher“.' %></p>
+      <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_final_start" data-cta-location="contact_final_cta"><%= isEn ? 'Start request' : 'Anfrage starten' %></a>
+    </div>
+  </section>
+</main>
+
 <%- include('partials/footer') %>
 <script>
   window.SITEKEY = "<%= process.env.RECAPTCHA_SITEKEY %>";
   window.CONTACT_I18N = {
-    invalidRequired: "<%= isEn ? 'Please complete all required fields.' : 'Bitte alle Pflichtfelder ausfüllen.' %>",
-    recaptchaMissingKey: "<%= isEn ? 'No reCAPTCHA site key configured.' : 'Es wurde kein reCAPTCHA Sitekey konfiguriert.' %>",
-    recaptchaLoadError: "<%= isEn ? 'reCAPTCHA could not be loaded. Please try again.' : 'reCAPTCHA konnte nicht geladen werden. Bitte versuche es erneut.' %>",
-    summaryNone: "<%= isEn ? 'None' : 'Keine' %>",
-    summaryNotSet: "<%= isEn ? 'Not specified' : 'Nicht angegeben' %>",
-    progressLabel: "<%= isEn ? 'Step {current} of {total}' : 'Schritt {current} von {total}' %>",
-    labels: {
-      paket: "<%= isEn ? 'Package' : 'Paket' %>",
-      umfang: "<%= isEn ? 'Page scope' : 'Seitenumfang' %>",
-      texte: "<%= isEn ? 'Texts' : 'Texte' %>",
-      bilder: "<%= isEn ? 'Images' : 'Bilder' %>",
-      funktionen: "<%= isEn ? 'Features' : 'Funktionen' %>",
-      termin: "<%= isEn ? 'Appointment' : 'Termin' %>",
-      name: "<%= isEn ? 'Name' : 'Name' %>",
-      email: "<%= isEn ? 'Email' : 'E-Mail' %>",
-      telefon: "<%= isEn ? 'Phone' : 'Telefon' %>",
-      firma: "<%= isEn ? 'Company' : 'Firma' %>",
-      infos: "<%= isEn ? 'Additional info' : 'Sonstige Infos' %>"
-    }
+    recaptchaMissingKey: "<%= isEn ? 'No spam protection key is configured.' : 'Es wurde kein Spamschutz-Schlüssel konfiguriert.' %>",
+    recaptchaLoadError: "<%= isEn ? 'Spam protection could not be loaded. Please try again.' : 'Der Spamschutz konnte nicht geladen werden. Bitte versuche es erneut.' %>",
+    formStartEvent: "contact_form_start",
+    backLabel: "<%= isEn ? 'Back' : 'Zurück' %>",
+    nextLabel: "<%= isEn ? 'Continue' : 'Weiter' %>",
+    stepLabel: "<%= isEn ? 'Step' : 'Schritt' %>",
+    ofLabel: "<%= isEn ? 'of' : 'von' %>"
   };
+  window.CONTACT_FLOWS = <%- contactFlowStepsJson || '{}' %>;
 </script>
-
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const buttons = Array.from(document.querySelectorAll('[data-contact-mode]'));
-    const panels = {
+    var buttons = Array.from(document.querySelectorAll('[data-contact-mode]'));
+    var panels = {
       quick: document.getElementById('contact-quick-panel'),
       detailed: document.getElementById('contact-detailed-panel')
     };
 
     function showPanel(mode, shouldScroll) {
-      Object.entries(panels).forEach(([key, panel]) => {
+      Object.keys(panels).forEach(function(key) {
+        var panel = panels[key];
         if (!panel) return;
-        const isActive = key === mode;
-        panel.hidden = !isActive;
-        panel.classList.toggle('is-active', isActive);
+        var active = key === mode;
+        panel.hidden = !active;
+        panel.classList.toggle('is-active', active);
       });
 
-      buttons.forEach((button) => {
-        const isActive = button.dataset.contactMode === mode;
-        button.classList.toggle('is-active', isActive);
-        button.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+      buttons.forEach(function(button) {
+        var active = button.dataset.contactMode === mode;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-expanded', active ? 'true' : 'false');
       });
 
       if (shouldScroll && panels[mode]) {
-        const shouldCenterQuick = mode === 'quick' && window.matchMedia('(min-width: 768px)').matches;
-        panels[mode].scrollIntoView({ behavior: 'smooth', block: shouldCenterQuick ? 'center' : 'start' });
+        panels[mode].scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    buttons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const mode = button.dataset.contactMode;
+    function hidePanels(shouldScroll) {
+      Object.keys(panels).forEach(function(key) {
+        var panel = panels[key];
+        if (!panel) return;
+        panel.hidden = true;
+        panel.classList.remove('is-active');
+      });
+
+      buttons.forEach(function(button) {
+        button.classList.remove('is-active');
+        button.setAttribute('aria-expanded', 'false');
+      });
+
+      if (shouldScroll) {
+        document.getElementById('anfrage')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    window.KWDContactPanels = {
+      showPanel: showPanel,
+      hidePanels: hidePanels
+    };
+
+    buttons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        var mode = button.dataset.contactMode;
         if (!panels[mode]) return;
-        history.replaceState(null, '', mode === 'quick' ? '#schnellanfrage' : '#umfangreiche-anfrage');
+        history.replaceState(null, '', mode === 'quick' ? '#schnellanfrage' : '#projektanfrage');
         showPanel(mode, true);
       });
     });
 
+    var contactParams = new URLSearchParams(window.location.search || '');
+    var hasDetailedPreselect = contactParams.has('projektart') || contactParams.has('projectType') || contactParams.get('source') === 'website-tester';
+
     if (window.location.hash === '#schnellanfrage') showPanel('quick', false);
-    if (window.location.hash === '#umfangreiche-anfrage') showPanel('detailed', false);
+    else if (window.location.hash === '#projektanfrage' || hasDetailedPreselect || document.querySelector('[data-form-has-errors="true"]')) showPanel('detailed', false);
+    else hidePanels(false);
   });
 </script>
-
-<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/kontakt.js') : '/js/kontakt.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script> <!-- Kontakt-spezifisches JS -->
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/kontakt.js') : '/js/kontakt.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>

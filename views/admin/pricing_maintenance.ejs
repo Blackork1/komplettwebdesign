@@ -1,0 +1,160 @@
+<%- include('../partials/admin_header') %>
+
+<%
+  const checked = (value) => value ? 'checked' : '';
+  const euro = (value) => centsToEuroInput ? centsToEuroInput(value) : '';
+  const listValue = (items) => Array.isArray(items) ? items.join('\n') : '';
+%>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-screwdriver-wrench"></i> Wartungspläne
+</h1>
+
+<div class="admin-card mb-4 border-warning">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div>
+      <h2 class="h5 mb-1">Öffentliche Wartungspakete</h2>
+      <p class="mb-0 text-muted">Diese Daten erscheinen auf Wartungs-, Kosten- und Laufende-Kosten-Seiten. Reaktionszeiten, Sicherheitschecks und Notfallhilfe vorsichtig formulieren.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary" href="/admin/pricing/add-ons">Zusatzleistungen</a>
+      <a class="btn btn-outline-secondary" href="/admin/pricing/packages">Zur Paketliste</a>
+    </div>
+  </div>
+</div>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Neuer Wartungsplan</h2>
+  <form method="POST" action="/admin/pricing/maintenance" class="row g-2 align-items-end">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-2"><label class="form-label" for="plan_key_new">Key</label><input id="plan_key_new" name="plan_key" class="form-control" required></div>
+    <div class="col-md-2"><label class="form-label" for="plan_name_new">Name</label><input id="plan_name_new" name="name" class="form-control" required></div>
+    <div class="col-md-1"><label class="form-label" for="plan_price_new">Preis ab</label><input id="plan_price_new" name="price_from_euro" class="form-control" inputmode="decimal"></div>
+    <div class="col-md-2"><label class="form-label" for="plan_price_label_new">Preislabel</label><input id="plan_price_label_new" name="price_label" class="form-control" placeholder="ab 79 €/Monat"></div>
+    <div class="col-md-2">
+      <label class="form-label" for="plan_billing_new">Abrechnung</label>
+      <select id="plan_billing_new" name="billing_cycle" class="form-select">
+        <% billingCycles.forEach((cycle) => { %>
+        <option value="<%= cycle %>" <%= cycle === 'monthly' ? 'selected' : '' %>><%= cycle %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-1"><label class="form-label" for="plan_sort_new">Sort.</label><input id="plan_sort_new" name="sort_order" type="number" class="form-control" value="<%= (plans || []).length + 1 %>"></div>
+    <div class="col-md-2 d-flex gap-3 align-items-center">
+      <label class="form-check mb-0"><input class="form-check-input" name="is_recommended" type="checkbox"> empfohlen</label>
+      <label class="form-check mb-0"><input class="form-check-input" name="is_active" type="checkbox" checked> aktiv</label>
+      <label class="form-check mb-0"><input class="form-check-input" name="is_visible" type="checkbox" checked> sichtbar</label>
+    </div>
+    <div class="col-md-6"><label class="form-label" for="plan_short_new">Kurzbeschreibung</label><input id="plan_short_new" name="short_description" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label" for="plan_response_new">Reaktionsweg</label><input id="plan_response_new" name="response_time" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label" for="plan_content_new">Änderungsrahmen</label><input id="plan_content_new" name="content_change_allowance" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label" for="plan_included_new">Enthaltene Punkte</label><textarea id="plan_included_new" name="included" class="form-control" rows="4"></textarea></div>
+    <div class="col-md-6"><label class="form-label" for="plan_not_included_new">Nicht enthalten</label><textarea id="plan_not_included_new" name="not_included" class="form-control" rows="4"></textarea></div>
+    <div class="col-md-4"><label class="form-label" for="plan_emergency_new">Notfallhinweis</label><input id="plan_emergency_new" name="emergency_note" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label" for="plan_third_party_new">Drittanbieter-Hinweis</label><input id="plan_third_party_new" name="third_party_note" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label" for="plan_cancel_new">Laufzeit/Kündigung</label><input id="plan_cancel_new" name="cancellation_note" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label" for="plan_cta_label_new">CTA-Label</label><input id="plan_cta_label_new" name="cta_label" class="form-control" value="Wartung anfragen"></div>
+    <div class="col-md-5"><label class="form-label" for="plan_cta_url_new">CTA-URL</label><input id="plan_cta_url_new" name="cta_url" class="form-control" value="/kontakt?projektart=maintenance"></div>
+    <div class="col-md-3"><button class="btn btn-primary w-100" type="submit">Wartungsplan anlegen</button></div>
+  </form>
+</section>
+
+<form method="POST" action="/admin/pricing/maintenance/reorder" class="admin-card mb-4">
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Bestehende Wartungspläne</h2>
+    <button class="btn btn-secondary" type="submit">Sortierung speichern</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Sortierung</th>
+          <th>Name</th>
+          <th>Key</th>
+          <th>Preis</th>
+          <th>Empfohlen</th>
+          <th>Sichtbar</th>
+          <th>Aktiv</th>
+          <th class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!plans || plans.length === 0) { %>
+          <tr><td colspan="8" class="text-muted">Noch keine Wartungspläne vorhanden.</td></tr>
+        <% } %>
+        <% (plans || []).forEach((plan) => { %>
+          <tr>
+            <td class="admin-table-cell-min-sm">
+              <input type="hidden" name="plan_ids[]" value="<%= plan.id %>">
+              <input class="form-control form-control-sm" type="number" name="sort_orders[]" value="<%= plan.sort_order ?? 0 %>">
+            </td>
+            <td><strong><%= plan.name %></strong><% if (plan.archived_at) { %><span class="badge text-bg-secondary ms-1">archiviert</span><% } %></td>
+            <td><code><%= plan.plan_key %></code></td>
+            <td><%= plan.price_label || '-' %></td>
+            <td><span class="badge <%= plan.is_recommended ? 'text-bg-success' : 'text-bg-secondary' %>"><%= plan.is_recommended ? 'ja' : 'nein' %></span></td>
+            <td><span class="badge <%= plan.is_visible ? 'text-bg-success' : 'text-bg-secondary' %>"><%= plan.is_visible ? 'ja' : 'nein' %></span></td>
+            <td><span class="badge <%= plan.is_active ? 'text-bg-success' : 'text-bg-secondary' %>"><%= plan.is_active ? 'ja' : 'nein' %></span></td>
+            <td class="text-end">
+              <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                <form method="POST" action="/admin/pricing/maintenance/<%= plan.id %>/toggle-visibility" class="d-inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                  <button class="btn btn-sm btn-outline-warning" type="submit"><%= plan.is_visible ? 'Ausblenden' : 'Einblenden' %></button>
+                </form>
+                <% if (plan.archived_at || !plan.is_active) { %>
+                  <form method="POST" action="/admin/pricing/maintenance/<%= plan.id %>/restore" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-success" type="submit">Wiederherstellen</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/admin/pricing/maintenance/<%= plan.id %>/archive" class="d-inline" onsubmit="return confirm('Wartungsplan archivieren?');">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Archivieren</button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="8">
+              <form method="POST" action="/admin/pricing/maintenance/<%= plan.id %>" class="row g-2 align-items-end">
+                <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                <div class="col-md-2"><label class="form-label">Key</label><input name="plan_key" class="form-control" value="<%= plan.plan_key || '' %>" required></div>
+                <div class="col-md-2"><label class="form-label">Name</label><input name="name" class="form-control" value="<%= plan.name || '' %>" required></div>
+                <div class="col-md-1"><label class="form-label">Preis ab</label><input name="price_from_euro" class="form-control" value="<%= euro(plan.price_from_cents) %>"></div>
+                <div class="col-md-2"><label class="form-label">Preislabel</label><input name="price_label" class="form-control" value="<%= plan.price_label || '' %>"></div>
+                <div class="col-md-2">
+                  <label class="form-label">Abrechnung</label>
+                  <select name="billing_cycle" class="form-select">
+                    <% billingCycles.forEach((cycle) => { %>
+                    <option value="<%= cycle %>" <%= cycle === plan.billing_cycle ? 'selected' : '' %>><%= cycle %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="col-md-1"><label class="form-label">Sort.</label><input name="sort_order" type="number" class="form-control" value="<%= plan.sort_order ?? 0 %>"></div>
+                <div class="col-md-2 d-flex gap-2 align-items-center">
+                  <label class="form-check mb-0"><input class="form-check-input" name="is_recommended" type="checkbox" <%= checked(plan.is_recommended) %>> empfohlen</label>
+                  <label class="form-check mb-0"><input class="form-check-input" name="is_active" type="checkbox" <%= checked(plan.is_active) %>> aktiv</label>
+                  <label class="form-check mb-0"><input class="form-check-input" name="is_visible" type="checkbox" <%= checked(plan.is_visible) %>> sichtbar</label>
+                </div>
+                <div class="col-md-6"><label class="form-label">Kurzbeschreibung</label><input name="short_description" class="form-control" value="<%= plan.short_description || '' %>"></div>
+                <div class="col-md-3"><label class="form-label">Reaktionsweg</label><input name="response_time" class="form-control" value="<%= plan.response_time || '' %>"></div>
+                <div class="col-md-3"><label class="form-label">Änderungsrahmen</label><input name="content_change_allowance" class="form-control" value="<%= plan.content_change_allowance || '' %>"></div>
+                <div class="col-md-6"><label class="form-label">Enthaltene Punkte</label><textarea name="included" class="form-control" rows="4"><%= listValue(plan.included) %></textarea></div>
+                <div class="col-md-6"><label class="form-label">Nicht enthalten</label><textarea name="not_included" class="form-control" rows="4"><%= listValue(plan.not_included) %></textarea></div>
+                <div class="col-md-4"><label class="form-label">Notfallhinweis</label><input name="emergency_note" class="form-control" value="<%= plan.emergency_note || '' %>"></div>
+                <div class="col-md-4"><label class="form-label">Drittanbieter-Hinweis</label><input name="third_party_note" class="form-control" value="<%= plan.third_party_note || '' %>"></div>
+                <div class="col-md-4"><label class="form-label">Laufzeit/Kündigung</label><input name="cancellation_note" class="form-control" value="<%= plan.cancellation_note || '' %>"></div>
+                <div class="col-md-4"><label class="form-label">CTA-Label</label><input name="cta_label" class="form-control" value="<%= plan.cta_label || '' %>"></div>
+                <div class="col-md-5"><label class="form-label">CTA-URL</label><input name="cta_url" class="form-control" value="<%= plan.cta_url || '' %>"></div>
+                <div class="col-md-3"><button class="btn btn-sm btn-primary w-100" type="submit">Speichern</button></div>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</form>
+
+<%- include('../partials/admin_footer') %>

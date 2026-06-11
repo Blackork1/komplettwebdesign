@@ -51,6 +51,28 @@
   --dot-muted: rgba(74, 74, 74, 0.5);
 }
 
+.sliderArrow[disabled] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.industry-wd-intro {
+  margin-bottom: 100px;
+}
+
+.industry-seo-intro {
+  margin-top: 50px;
+}
+
+.industry-fluid-image {
+  width: 100%;
+}
+
+.industry-cta-layer {
+  position: relative;
+  z-index: 2;
+}
+
 h1 {
   font-size: clamp(2rem, 1.6656rem + 1.5287vw, 3.5rem);
 }
@@ -1459,10 +1481,51 @@ ul li {
   width: clamp(9.375rem, 7.0536rem + 9.5238vw, 15.625rem);
   aspect-ratio: 1 / 1; /* garantiert Fläche, auch wenn img noch lazy ist */
   transform: translate(-50%, -50%); /* Basis-Referenz, siehe unten */
+  transform-origin: bottom right;
   box-shadow: -11px -4px 50px 20px rgb(0 0 0 / 20%);
   z-index: 1;
   border-radius: 25px;
   height: auto;
+}
+
+.packageCtaImageLink {
+  color: #ffffff;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+  width: 100%;
+}
+
+.packageCtaImageLink::after {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 42, 70, 0.78) 0%,
+    rgba(11, 42, 70, 0.48) 34%,
+    rgba(11, 42, 70, 0.02) 74%
+  );
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.packageCtaImageTitle {
+  color: #ffffff;
+  font-size: clamp(1rem, 0.82rem + 0.72vw, 1.35rem);
+  font-weight: 800;
+  left: 50%;
+  line-height: 1.12;
+  max-width: calc(100% - 1.5rem);
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.48);
+  top: 0.85rem;
+  transform: translateX(-50%);
+  width: max-content;
+  z-index: 2;
 }
 
 .imageCTALeft {
@@ -1477,8 +1540,10 @@ ul li {
 .imageCTALeft img,
 .imageCTARight img {
   width: 100%;
-  height: auto;
+  height: 100%;
   border-radius: 25px;
+  display: block;
+  object-fit: cover;
 }
 
 .imageCTAContainer {
@@ -1494,9 +1559,9 @@ ul li {
 /* Wenn sichtbar (im Viewport): gleitet an Position und wird sichtbar */
 .animate-on-scroll-right.visible {
   border: white solid 1px;
-  opacity: 1;
+  opacity: 1 !important;
   perspective: 1000px;
-  transform: translateX(50%) translateY(-50%) rotateZ(-15deg);
+  transform: translateX(50%) translateY(-50%) rotateZ(15deg) !important;
 }
 
 /* Wenn gerade verlassen (Viewport nach oben verlassen): nach rechts versetzen und ausblenden */
@@ -1514,8 +1579,8 @@ ul li {
 /* Wenn sichtbar (im Viewport): gleitet an Position und wird sichtbar */
 .animate-on-scroll-left.visible {
   border: white solid 1px;
-  opacity: 1;
-  transform: translateX(-50%) translateY(-50%) rotateZ(15deg);
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(-50%) rotateZ(-15deg) !important;
 }
 
 /* Wenn gerade verlassen (Viewport nach oben verlassen): nach rechts versetzen und ausblenden */
@@ -1551,22 +1616,6 @@ ul li {
   color: #eaeae9;
 }
 
-.ctaButton {
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  display: inline-block;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  transition: all 0.5s;
-  background: #43a04780;
-  color: #eaeae9;
-  border: #eaeaea solid 5px;
-  border-radius: 50px;
-  margin-bottom: 20px;
-  margin-top: 150px;
-}
-
 @media (min-width: 1000px) {
   .ctaText {
     opacity: 1 !important;
@@ -1580,11 +1629,11 @@ ul li {
     margin-right: 100px;
   }
   .imageCTALeft:hover {
-    transform: translateX(50%) translateY(-60%) rotateZ(0deg) !important;
+    transform: translateX(50%) translateY(-40%) rotateZ(0deg) !important;
   }
 
   .imageCTARight:hover {
-    transform: translateX(-50%) translateY(-60%) rotateZ(0deg) !important;
+    transform: translateX(-50%) translateY(-40%) rotateZ(0deg) !important;
   }
 }
 
@@ -1982,11 +2031,11 @@ ul li {
   }
   .animate-on-scroll-left.visible {
 
-    transform: translateX(-30%) translateY(0%) rotateZ(15deg) !important;
+    transform: translateX(-30%) translateY(0%) rotateZ(-15deg) !important;
   }
 
   .animate-on-scroll-right.visible {
-    transform: translateX(30%) translateY(-80%) rotateZ(-15deg) !important;
+    transform: translateX(30%) translateY(-80%) rotateZ(15deg) !important;
   }
 
   .ctaText{
@@ -2020,14 +2069,24 @@ ul li {
 
 .industries-index-page .post-card-content {
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .industries-index-page .post-card-bg {
   position: relative;
   height: 240px;
   border-radius: 8px;
-  background-position: center;
-  background-size: cover;
+  overflow: hidden;
+  background: #d9e3ef;
+}
+
+.industries-index-page .post-card-bg__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .industries-index-page .post-card-overlay {

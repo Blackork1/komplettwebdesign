@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { SEO_LANDING_PAGES } from '../data/seoLandingPages.js';
 import { referenceProjects } from '../data/referenceProjects.js';
+import { footerNavigation, headerNavigation } from '../data/siteNavigation.js';
 
 const files = {
   contact: readFileSync(new URL('../views/kontakt.ejs', import.meta.url), 'utf8'),
@@ -11,7 +12,7 @@ const files = {
   footer: readFileSync(new URL('../views/partials/footer.ejs', import.meta.url), 'utf8'),
   index: readFileSync(new URL('../views/index.ejs', import.meta.url), 'utf8'),
   webdesignBerlin: readFileSync(new URL('../controllers/districtController.js', import.meta.url), 'utf8'),
-  seoLandingCss: readFileSync(new URL('../public/seo-landing.css', import.meta.url), 'utf8'),
+  leistungenCss: readFileSync(new URL('../public/leistungen.css', import.meta.url), 'utf8'),
   referencesCss: readFileSync(new URL('../public/references.css', import.meta.url), 'utf8'),
   seoLandingTemplate: readFileSync(new URL('../views/seo_landing/show.ejs', import.meta.url), 'utf8'),
   referencesIndexTemplate: readFileSync(new URL('../views/references/index.ejs', import.meta.url), 'utf8'),
@@ -54,6 +55,17 @@ function stripSourceComments(source) {
     .replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
+function flattenNavigation(items = []) {
+  return items.flatMap((item) => [
+    item,
+    ...flattenNavigation(Array.isArray(item.children) ? item.children : []),
+    ...flattenNavigation(Array.isArray(item.links) ? item.links : [])
+  ]);
+}
+
+const headerHrefs = flattenNavigation(headerNavigation).map((item) => item.href).filter(Boolean);
+const footerHrefs = flattenNavigation(footerNavigation).map((item) => item.href).filter(Boolean);
+
 function visibleTemplateText(source) {
   return stripSourceComments(source)
     .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -72,30 +84,31 @@ test('contact page starts with a request type choice instead of showing both for
 });
 
 test('important website-erstellen-lassen landing page is linked from global and core pages', () => {
-  assert.match(files.header, /href="\/website-erstellen-lassen-berlin"/);
-  assert.match(files.footer, /href="\/website-erstellen-lassen-berlin"/);
+  assert.ok(footerHrefs.includes('/website-erstellen-lassen-berlin'));
   assert.match(files.index, /href="\/website-erstellen-lassen-berlin"/);
   assert.match(files.webdesignBerlin, /\/website-erstellen-lassen-berlin/);
 });
 
 test('important website-relaunch landing page is linked from global and core pages', () => {
-  assert.match(files.header, /href="\/website-relaunch-berlin"/);
-  assert.match(files.footer, /href="\/website-relaunch-berlin"/);
-  assert.match(files.index, /href="\/website-relaunch-berlin"/);
-  assert.match(files.webdesignBerlin, /\/website-relaunch-berlin/);
+  assert.ok(headerHrefs.includes('/leistungen/website-relaunch'));
+  assert.ok(footerHrefs.includes('/leistungen/website-relaunch'));
+  assert.match(files.index, /href="\/leistungen\/website-relaunch"/);
+  assert.match(files.webdesignBerlin, /\/leistungen\/website-relaunch/);
 });
 
-test('webdesign berlin dropdown and core pages link the berlin process page', () => {
-  assert.match(files.header, /href="<%= isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin' %>"[^>]*>Berlin/);
-  assert.match(files.header, /href="\/website-erstellen-lassen-berlin"[^>]*>Website erstellen/);
-  assert.match(files.header, /href="\/ablauf"[^>]*>Ablauf/);
-  assert.match(files.header, /href="\/website-relaunch-berlin"[^>]*>Relaunch/);
-  assert.match(files.footer, /href="\/ablauf"[^>]*>Ablauf Webdesign Berlin/);
+test('phase 11 navigation links core webdesign, package and service pages', () => {
+  assert.ok(headerHrefs.includes('/webdesign-berlin'));
+  assert.ok(headerHrefs.includes('/pakete'));
+  assert.ok(headerHrefs.includes('/leistungen/website-relaunch'));
+  assert.ok(headerHrefs.includes('/leistungen/local-seo'));
+  assert.ok(headerHrefs.includes('/leistungen/website-audit'));
+  assert.ok(footerHrefs.includes('/ablauf'));
+  assert.doesNotMatch(files.header, /Termin buchen|\/booking/);
   assert.match(files.webdesignBerlin, /\/ablauf/);
 });
 
 test('new and changed page styles use the existing blue orange brand palette', () => {
-  [files.seoLandingCss, files.referencesCss].forEach((css) => {
+  [files.leistungenCss, files.referencesCss].forEach((css) => {
     assert.match(css, /#0b2a46/i);
     assert.match(css, /#e94a1b/i);
     assert.doesNotMatch(css, /#0f766e|#115e59|#f6c453|#f7efe7/i);

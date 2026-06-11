@@ -25,6 +25,229 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
+.admin-inline-form,
+.admin-inline-block {
+  display: inline-block;
+}
+
+.admin-inline-action {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.admin-link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.admin-table-th-spacious {
+  padding-right: 100px;
+}
+
+.admin-table-th-wide {
+  min-width: 300px;
+  padding-right: 100px;
+}
+
+.admin-table-cell-min-sm {
+  min-width: 110px;
+}
+
+.admin-thumb-preview {
+  max-height: 150px;
+}
+
+.admin-muted-note {
+  opacity: 0.7;
+  font-size: 0.7rem;
+}
+
+.admin-muted-note--strong {
+  opacity: 0.8;
+}
+
+.admin-card-note {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.admin-badge-gap-sm {
+  margin-left: 0.3rem;
+}
+
+.admin-badge-gap-md,
+.admin-mail-sequence-note {
+  margin-left: 0.75rem;
+}
+
+.admin-badge-gap-lg {
+  margin-left: 0.5rem;
+}
+
+.admin-intro-muted {
+  margin-top: -0.5rem;
+  color: #6b7280;
+}
+
+.admin-preview-hidden {
+  display: none;
+}
+
+.admin-drop-zone {
+  border-style: dashed;
+}
+
+.admin-preview-pre {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.admin-import-error-pre {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.admin-form-field-hidden {
+  display: none;
+}
+
+.admin-textarea-wide {
+  min-width: 500px;
+}
+
+.admin-grid-span-all {
+  grid-column: 1 / -1;
+}
+
+.admin-sort-col {
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-cell-max-360 {
+  max-width: 360px;
+}
+
+.admin-cell-max-220 {
+  max-width: 220px;
+}
+
+.admin-cell-max-210 {
+  max-width: 210px;
+}
+
+.admin-cell-max-200 {
+  max-width: 200px;
+}
+
+.admin-cell-max-160 {
+  max-width: 160px;
+}
+
+.admin-actions-min {
+  min-width: 150px;
+}
+
+.admin-json-badge {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.admin-json-editor.is-valid {
+  border-color: #28a745;
+}
+
+.admin-json-editor.is-invalid {
+  border-color: #dc3545;
+}
+
+.admin-bookings-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.admin-bookings-table th,
+.admin-bookings-table td {
+  border: 1px solid #ccc;
+  padding: 0.4rem;
+}
+
+.admin-btn-alt {
+  background: #999;
+}
+
+.admin-auto-form .admin-auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.admin-auto-form input[type="text"],
+.admin-auto-form input[type="number"] {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 0.4rem;
+}
+
+.admin-auto-btn {
+  background: #e94a1b;
+  color: #fff;
+  border: 0;
+  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.admin-auto-btn--alt {
+  background: #999;
+}
+
+.admin-auto-btn--link {
+  background: transparent;
+  color: #0b2a46;
+  text-decoration: underline;
+}
+
+.admin-appointments-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.admin-appointments-table th,
+.admin-appointments-table td {
+  border: 1px solid #ccc;
+  padding: 0.4rem;
+}
+
+.admin-appointments-table .booked {
+  background: #ffe3e3;
+}
+
+.admin-appointments-table .free {
+  background: #e8ffe8;
+}
+
+.copy-link {
+  overflow: hidden;
+}
+
+.mailversand-lead {
+  margin-top: -0.5rem;
+  color: #6b7280;
+}
+
 /* ----------------------------------------------------------
    Admin-Topbar
    ---------------------------------------------------------- */
@@ -947,6 +1170,10 @@ body {
   overflow-y: auto;
   z-index: 1000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cls-dropdown.is-open {
+  display: block;
 }
 
 .cls-dropdown .item {

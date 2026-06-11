@@ -84,6 +84,16 @@
   background: #fafafa;
 }
 
+.faq-header ~ #footer .chat-container,
+.faq-header ~ #footer .chat-button {
+  display: none;
+}
+
+.faq-chat-window {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 /* --- Responsive --- */
 @media (max-width: 767.98px) {
   aside {

@@ -1,0 +1,2390 @@
+<%
+// Avatar-Helfer: deterministische Initialen + Farbe aus dem Namen.
+// Datensparsam (kein externer Service), generiert pro Person ein unverwechselbares Bild.
+//
+// hasAvatar(): prüft, ob eine Avatar-URL als "echt" gilt.
+// - leerer String, Whitespace, relative Default-Pfade (/images/avatar*.*, /images/default*.*,
+//   /images/user*.*, /uploads/default*.*) werden als fehlend behandelt
+// - nur http(s)-URLs oder /uploads/-Pfade mit konkretem Dateinamen zählen als echter Avatar
+function hasAvatar(url) {
+  if (!url || typeof url !== 'string') return false;
+  const u = url.trim();
+  if (!u) return false;
+  // Absolute URLs (http/https) gelten als echt
+  if (/^https?:\/\//i.test(u)) return true;
+  // Relative Pfade mit bekannten Platzhalter-Namen → ignorieren
+  if (/\/(default|placeholder|avatar[-_]?default|user[-_]?default|no[-_]?avatar)/i.test(u)) return false;
+  // Alles andere akzeptieren (/uploads/max.webp etc.)
+  return true;
+}
+function avatarInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().replace(/[^\p{L}\p{N}\s&.-]/gu, '').split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase().slice(0, 2);
+}
+function avatarColor(name) {
+  const palette = [
+    '#1e3a8a', '#0f766e', '#b45309', '#9f1239', '#047857',
+    '#c2410c', '#0e7490', '#6b21a8', '#475569', '#be185d'
+  ];
+  let sum = 0;
+  for (const ch of (name || '')) sum = (sum + ch.charCodeAt(0)) % 9973;
+  return palette[sum % palette.length];
+}
+
+const currentLang = typeof lng !== 'undefined' ? lng : 'de';
+const isEn = currentLang === 'en';
+const schemaBase = (typeof canonicalBaseUrl !== 'undefined' && canonicalBaseUrl
+  ? canonicalBaseUrl
+  : 'https://komplettwebdesign.de').replace(/\/$/, '');
+const schemaHomeUrl = `${schemaBase}/`;
+const schemaOrgId = `${schemaBase}/#organization`;
+const schemaWebsiteId = `${schemaBase}/#website`;
+const schemaPersonId = `${schemaBase}/#person`;
+const faqEntries = (typeof faq !== 'undefined' && Array.isArray(faq)) ? faq : [];
+const homeLowestPackagePriceLabel = typeof lowestPackagePriceLabel !== 'undefined' && lowestPackagePriceLabel
+  ? lowestPackagePriceLabel
+  : '';
+const homePackagesPriceText = homeLowestPackagePriceLabel
+  ? (isEn ? `clear website packages from ${homeLowestPackagePriceLabel}` : `klare Website-Pakete ab ${homeLowestPackagePriceLabel}`)
+  : (isEn ? 'clear website packages' : 'klare Website-Pakete');
+function homePackageAllowsDetail(pkg) {
+  return pkg && pkg.allowDetailPage !== false && pkg.slug;
+}
+function homePackageTarget(pkg) {
+  if (homePackageAllowsDetail(pkg)) return `${isEn ? '/en' : ''}/pakete/${pkg.slug}`;
+  const packageValue = pkg && (pkg.packageKey || pkg.slug);
+  return `${isEn ? '/en/kontakt' : '/kontakt'}${packageValue ? `?paket=${encodeURIComponent(packageValue)}` : ''}`;
+}
+function homePackageCtaLabel(pkg) {
+  if (!homePackageAllowsDetail(pkg)) return isEn ? 'Request package' : 'Paket anfragen';
+  return isEn ? 'View details' : 'Details ansehen';
+}
+const faqSchema = faqEntries.length ? {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqEntries.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a }
+  }))
+} : null;
+const structuredDataBlocks = [
+  faqSchema,
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': schemaOrgId,
+    name: 'Komplett Webdesign',
+    url: schemaHomeUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${schemaBase}/images/LogoTransparent.webp`,
+      width: 400,
+      height: 400
+    },
+    image: [
+      `${schemaBase}/images/LogoTransparent.webp`,
+      `${schemaBase}/images/heroBg.webp`
+    ],
+    description: `Persönliches Webdesign, technische SEO-Grundlagen und ${homePackagesPriceText}.`,
+    areaServed: [
+      { '@type': 'Country', name: 'Deutschland' },
+      { '@type': 'City', name: 'Berlin' },
+      { '@type': 'State', name: 'Brandenburg' }
+    ],
+    priceRange: homeLowestPackagePriceLabel ? `ab ${homeLowestPackagePriceLabel}` : 'nach Angebot',
+    email: 'kontakt@komplettwebdesign.de',
+    telephone: '+49 1551 245048',
+    sameAs: [
+      'https://www.instagram.com/KomplettWebdesign',
+      'https://www.facebook.com/profile.php?id=61579580713573',
+      'https://www.youtube.com/@KomplettWebdesign',
+      'https://www.threads.com/@komplettwebdesign',
+      'https://www.tiktok.com/@komplett.webdesign',
+      'https://www.linkedin.com/in/komplettwebdesign'
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+49 1551 245048',
+      email: 'kontakt@komplettwebdesign.de',
+      contactType: 'customer support',
+      availableLanguage: ['de', 'en']
+    }
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': schemaPersonId,
+    name: 'Sören Blocksdorf',
+    jobTitle: 'Webdesigner und Webentwickler',
+    description: 'Freiberuflicher Webdesigner und Entwickler aus Berlin mit Schwerpunkt auf individuellen Websites, technischer SEO-Grundlage und klarer Angebotsstruktur.',
+    url: schemaHomeUrl,
+    email: 'kontakt@komplettwebdesign.de',
+    telephone: '+49 1551 245048',
+    worksFor: { '@id': schemaOrgId },
+    knowsAbout: ['Webdesign', 'Webentwicklung', 'technische SEO-Grundlagen', 'Local SEO', 'Node.js', 'EJS'],
+    knowsLanguage: ['de', 'en'],
+    sameAs: [
+      'https://www.linkedin.com/in/komplettwebdesign',
+      'https://www.instagram.com/KomplettWebdesign',
+      'https://www.youtube.com/@KomplettWebdesign'
+    ]
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': schemaWebsiteId,
+    name: 'Komplett Webdesign',
+    url: schemaHomeUrl,
+    description: `Website erstellen lassen in Berlin: individuelles Webdesign mit Node.js/EJS, technischer SEO-Grundlage und ${homePackagesPriceText}.`,
+    publisher: { '@id': schemaOrgId },
+    inLanguage: isEn ? 'en-US' : 'de-DE'
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${schemaBase}/#webdesign-service`,
+    name: 'Individuelles Webdesign',
+    serviceType: 'Webdesign und Webentwicklung',
+    provider: { '@id': schemaOrgId },
+    areaServed: [
+      { '@type': 'City', name: 'Berlin' },
+      { '@type': 'State', name: 'Brandenburg' },
+      { '@type': 'Country', name: 'Deutschland' }
+    ],
+    description: 'Individuelle Websites mit serverseitig gerendertem HTML, klarer Seitenstruktur und technischer SEO-Grundlage im vereinbarten Umfang.'
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${schemaBase}/#webpage`,
+    name: 'Website erstellen lassen in Berlin',
+    description: `Komplett Webdesign plant und entwickelt individuelle Websites für kleine Unternehmen in Berlin. Technische SEO-Grundlagen, ${homePackagesPriceText} und separate Zusatzleistungen werden transparent abgegrenzt.`,
+    url: schemaHomeUrl,
+    inLanguage: isEn ? 'en-US' : 'de-DE',
+    datePublished: '2024-01-01',
+    dateModified: new Date().toISOString().split('T')[0],
+    isPartOf: { '@id': schemaWebsiteId },
+    about: { '@id': schemaOrgId },
+    author: { '@id': schemaPersonId },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: `${schemaBase}/images/heroBg.webp`,
+      width: 1200,
+      height: 630
+    },
+    relatedLink: [
+      `${schemaBase}/webdesign-berlin`,
+      `${schemaBase}/pakete`,
+      `${schemaBase}/leistungen/website-audit`,
+      `${schemaBase}/kontakt`
+    ],
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [{
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Startseite',
+        item: schemaHomeUrl
+      }]
+    }
+  }
+].filter(Boolean);
+%>
+<%- include('partials/head', { structuredDataBlocks, alternateUrls: (typeof alternateUrls !== 'undefined' ? alternateUrls : null) }) %>
+<style>
+  .linkColor {
+    color: #d75b36;
+  }
+
+  .primaryColor {
+    color: var(--color-primary);
+  }
+
+  .card-back a.btn {
+    position: relative;
+    bottom: 60px;
+  }
+
+  .heroImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .heroImage {
+    position: absolute;
+    width: 100%;
+    z-index: -5;
+    height: 1026px;
+  }
+
+  .hero-content.home-hero-sequence {
+    overflow: hidden;
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+    transition:
+      opacity 0.68s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--home-hero-reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .hero-main .home-hero-reveal.animate-on-scroll.out {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+
+  .home-hero-reveal--h1 {
+    --home-hero-reveal-delay: 0ms;
+  }
+
+  .home-hero-reveal--support {
+    --home-hero-reveal-delay: 180ms;
+  }
+
+  .home-hero-reveal--actions {
+    --home-hero-reveal-delay: 620ms;
+  }
+
+  .home-hero-reveal--prices {
+    --home-hero-reveal-delay: 720ms;
+  }
+
+  .hero-main .home-hero-reveal--support.animate-on-scroll,
+  .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll {
+    transform: translate3d(-18px, 18px, 0);
+  }
+
+  .hero-main .home-hero-reveal--support.animate-on-scroll.visible,
+  .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll.visible {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .home-hero-bullets {
+    display: grid;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0 0 2rem;
+    padding: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .home-hero-bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .home-hero-bullets li:nth-child(1) {
+    --home-hero-reveal-delay: 300ms;
+  }
+
+  .home-hero-bullets li:nth-child(2) {
+    --home-hero-reveal-delay: 390ms;
+  }
+
+  .home-hero-bullets li:nth-child(3) {
+    --home-hero-reveal-delay: 480ms;
+  }
+
+  .home-hero-bullets img {
+    flex: 0 0 auto;
+    margin-top: 0.05rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-main .home-hero-reveal.animate-on-scroll {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  .review-card {
+    align-items: center;
+    display: flex;
+    grid-template-columns: 1fr 2fr;
+    height: 100%;
+    justify-items: center;
+    margin-top: -50px;
+    padding: 1.5rem;
+    text-align: center;
+    flex-direction: column;
+  }
+
+  .badge {
+    transition: all 0.2s ease;
+  }
+
+  .badge:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .service-list {
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 400px) {
+    .hero-section {
+      padding: 0px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .scroll-snap-align {
+      scroll-snap-align: start;
+    }
+
+    .scroll-snap-container {
+      scroll-snap-type: x mandatory;
+      flex-wrap: nowrap;
+      overflow-y: auto;
+    }
+
+    .heroImage {
+      height: 1200px;
+    }
+  }
+
+  @media (max-width: 1050px) {
+    .latest-blog article h4 a {
+      color: var(--color-primary);
+      font-family: var(--font-heading);
+      font-size: 1rem;
+    }
+
+    .home-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Trust-Sektion ---------- */
+  .trust-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+  }
+
+  .trust-summary-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .trust-score-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+  }
+
+  .trust-score-stars i,
+  .trust-review-stars i {
+    color: #f5b301;
+    margin-right: 1px;
+  }
+
+  .trust-summary-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.95rem;
+  }
+
+  .trust-reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .trust-review-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .trust-review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .trust-review-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .trust-review-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .trust-review-avatar--initials,
+  .review-avatar--initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-family: "Poppins", "Inter", system-ui, -apple-system, sans-serif;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .trust-review-avatar--initials {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .review-avatar--initials {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .trust-review-author {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .trust-review-stars {
+    font-size: 0.85rem;
+  }
+
+  .trust-review-source {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.8;
+    color: #0b2f4f;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .trust-review-content {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #333;
+    border-left: 3px solid var(--color-primary);
+    padding-left: 0.85rem;
+  }
+
+  .trust-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+  }
+
+  .trust-empty {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px dashed rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .trust-empty h3 {
+    margin-top: 0;
+  }
+
+  /* ---------- FAQ-Sektion ---------- */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+
+  .faq-item {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 0 1.25rem;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .faq-item[open] {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    font-weight: 600;
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    color: #222;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq-question::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-chevron {
+    transition: transform 0.2s ease;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .faq-item[open] .faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    padding: 0 0 1rem;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .faq-answer p {
+    margin: 0;
+  }
+
+  .faq-more-help {
+    margin-top: 1.5rem;
+    color: #555;
+  }
+
+  .home-section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .home-section-lead {
+    max-width: 820px;
+    color: #444;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .home-usp-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .home-usp-item,
+  .home-card,
+  .home-note,
+  .home-cta-panel {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .home-usp-item {
+    padding: 1rem;
+  }
+
+  .home-usp-item strong,
+  .home-usp-item span {
+    display: block;
+  }
+
+  .home-usp-item span {
+    margin-top: 0.35rem;
+    color: #555;
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .home-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .home-card {
+    padding: 1.2rem;
+  }
+
+  .home-card h3 {
+    margin-top: 0;
+    font-size: 1.18rem;
+  }
+
+  .home-card p {
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .home-list {
+    display: grid;
+    gap: 0.65rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+  }
+
+  .home-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    color: #333;
+    line-height: 1.55;
+  }
+
+  .home-list li::before {
+    content: "✓";
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .home-list--caution li::before {
+    content: "•";
+  }
+
+  .home-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .home-pricing-grid {
+    align-items: stretch;
+  }
+
+  .home-pricing-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-pricing-card .p1rem {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .home-pricing-card .btn {
+    margin-top: auto;
+  }
+
+  .home-pricing-card.is-featured {
+    border: 2px solid var(--color-primary);
+  }
+
+  .home-page .home-price-tag {
+    display: inline-flex;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1;
+    align-self: flex-start;
+    max-width: calc(100% - 2rem);
+    margin-bottom: 0;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(215, 91, 54, 0.1);
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+
+  .home-note {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    color: #444;
+    line-height: 1.65;
+  }
+
+  .home-tech-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  }
+
+  .home-process-list {
+    counter-reset: process;
+  }
+
+  .home-process-list li::before {
+    counter-increment: process;
+    content: counter(process);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.85rem;
+  }
+
+  .home-cta-panel {
+    padding: clamp(1.5rem, 4vw, 3rem);
+    text-align: center;
+  }
+
+  .home-cta-panel p {
+    max-width: 720px;
+    margin: 0.75rem auto 1.25rem;
+    color: #444;
+    line-height: 1.7;
+  }
+
+  .home-muted {
+    color: #555;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 600px) {
+    .trust-summary {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .trust-summary-score {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .trust-review-content {
+      font-size: 0.9rem;
+    }
+
+    .faq-question {
+      font-size: 0.98rem;
+    }
+
+    .home-usp-strip,
+    .home-split,
+    .home-tech-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Startseite: visuelle Überarbeitung nach Phase 3 ---------- */
+  .home-page {
+    --home-ink: #0b2a46;
+    --home-muted: #526173;
+    --home-line: rgba(11, 42, 70, 0.14);
+    --home-soft: #f4f7fb;
+    --home-warm: #fff4ee;
+    --home-accent: #e94a1b;
+    --home-accent-dark: #b93618;
+    background: #f7fafc;
+    color: var(--home-ink);
+    overflow-x: hidden;
+  }
+
+  .home-page *,
+  .home-page *::before,
+  .home-page *::after {
+    box-sizing: border-box;
+  }
+
+  .home-page :is(.container, .outer-wrapper, .inner-wrapper, .home-card, .home-usp-item, .home-split, .home-card-grid, .home-pricing-track, .home-pricing-card, .home-note, .home-cta-panel, .hero-content, .hero-ctas) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .home-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, blockquote, summary, button) {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+  }
+
+  .home-page img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .home-page figure {
+    margin: 0;
+  }
+
+  .home-page .container {
+    width: min(1160px, calc(100% - 32px));
+    margin: 0 auto;
+    border-radius: 0;
+  }
+
+  .home-page .section {
+    padding: clamp(3.5rem, 7vw, 6.5rem) 0;
+  }
+
+  .home-page>.section:not(#hero):not(#usp-strip) {
+    background: #ffffff !important;
+  }
+
+  .home-page> :is(#enthalten-optional, #sichtbarkeit, #faq) {
+    background: var(--home-soft) !important;
+  }
+
+  .home-page .outer-wrapper,
+  .home-page .inner-wrapper {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .home-page .inner-wrapper {
+    text-align: left;
+  }
+
+  .home-page .inner-wrapper>.home-section-kicker,
+  .home-page .inner-wrapper>h2,
+  .home-page .inner-wrapper>.home-section-lead,
+  .home-page>.section .container>.home-section-kicker,
+  .home-page>.section .container>h2,
+  .home-page>.section .container>.home-section-lead {
+    text-align: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .home-page h2 {
+    color: var(--home-ink);
+    font-size: clamp(1.8rem, 3vw, 3rem);
+    line-height: 1.12;
+    letter-spacing: 0;
+    margin: 0;
+  }
+
+  .home-page h3 {
+    color: var(--home-ink);
+    letter-spacing: 0;
+  }
+
+  .home-page .home-section-kicker {
+    display: inline-flex;
+    margin-bottom: 0.8rem;
+    padding: 0.28rem 0.72rem;
+    border: 1px solid rgba(233, 74, 27, 0.2);
+    border-radius: 999px;
+    background: rgba(233, 74, 27, 0.08);
+    color: var(--home-accent-dark);
+    font-size: 0.82rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .home-page .home-section-lead {
+    max-width: 820px;
+    margin-top: 1rem;
+    color: var(--home-muted);
+    font-size: clamp(1rem, 1.45vw, 1.14rem);
+    line-height: 1.75;
+  }
+
+  .home-page .heroImage {
+    display: none;
+    height: clamp(760px, 86vh, 980px);
+  }
+
+  .home-page .hero-main {
+    height: auto;
+    min-height: 100vh;
+    padding: 0;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.08) 18%, rgba(11, 42, 70, 0.18) 58%, rgba(11, 42, 70, 0.78) 100%),
+      url("/images/heroBg.webp") center / cover no-repeat;
+    color: #fff;
+  }
+
+  .home-page .hero-main .hero-section {
+    display: flex;
+    align-items: center;
+    min-height: inherit;
+    padding: clamp(2rem, 6vw, 5rem) 0 clamp(4rem, 8vw, 7rem);
+    overflow: visible;
+  }
+
+  .home-page .hero-main .hero-flex {
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .home-page .hero-main .hero-content {
+    flex: 0 1 1040px;
+    padding: clamp(1.15rem, 3vw, 2.35rem);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(11, 42, 70, 0.58), rgba(11, 42, 70, 0.38));
+    box-shadow: 0 28px 70px rgba(11, 42, 70, 0.22);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    text-align: center;
+  }
+
+  .home-page .hero-main .hero-badge {
+    color: var(--home-ink);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow: 0 14px 36px rgba(11, 42, 70, 0.16);
+  }
+
+  .home-page .hero-main h1 {
+    color: #fff;
+    font-size: clamp(2rem, 2.7vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: 0;
+    margin: 0.8rem auto 1rem;
+    max-width: 1000px;
+  }
+
+  .home-page .hero-main .home-hero-title-primary {
+    display: block;
+    color: #fff;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: nowrap;
+  }
+
+  .home-page .hero-main .home-hero-title-secondary {
+    display: block;
+    color: #fff;
+    font-size: inherit;
+    line-height: inherit;
+    margin-top: 0.12em;
+  }
+
+  .home-page .hero-main h2 {
+    max-width: 760px;
+    margin: 0 auto 1.2rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .home-page .hero-main h2 .primaryColor {
+    color: var(--home-accent);
+  }
+
+  .home-page .home-hero-bullets {
+    max-width: 760px;
+    margin: 0 auto 1.3rem;
+    color: #fff;
+    font-size: clamp(0.98rem, 1.25vw, 1.1rem);
+    text-align: left;
+  }
+
+  .home-page .home-hero-bullets li {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .home-page .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+  }
+
+  .home-page .hero-ctas .btn {
+    margin: 0;
+    border-radius: 8px;
+    white-space: normal;
+  }
+
+  .home-page .heroPriceInfo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .home-page .heroPriceInfo a {
+    text-decoration: none;
+  }
+
+  .home-page .heroPriceInfo .badge {
+    background: #198754 !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+
+  .home-page #usp-strip {
+    position: relative;
+    z-index: 2;
+    margin-top: 0;
+    padding: clamp(2rem, 4vw, 3.5rem) 0 clamp(3rem, 6vw, 5rem);
+    background: linear-gradient(180deg, rgba(11, 42, 70, 0.78) 0%, rgba(244, 247, 251, 0.94) 70%, #fff 100%);
+  }
+
+  .home-page .home-usp-strip {
+    gap: 1rem;
+  }
+
+  .home-page .home-usp-item {
+    display: grid;
+    gap: 0.55rem;
+    align-content: start;
+    min-height: 164px;
+    padding: 1.15rem;
+    border: 1px solid var(--home-line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 44px rgba(11, 42, 70, 0.12);
+  }
+
+  .home-page .home-usp-icon,
+  .home-page .home-card-icon {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+  }
+
+  .home-page .home-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .home-page .home-card-grid--centered {
+    grid-template-columns: repeat(3, minmax(240px, 285px));
+    justify-content: center;
+  }
+
+  .home-page .home-card,
+  .home-page .home-note,
+  .home-page .trust-review-card,
+  .home-page .faq-item,
+  .home-page .trust-empty {
+    border: 1px solid var(--home-line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 14px 32px rgba(11, 42, 70, 0.08);
+  }
+
+  .home-page .home-card {
+    padding: clamp(1rem, 2vw, 1.35rem);
+  }
+
+  .home-page .home-card h3 {
+    font-size: clamp(1.08rem, 1.6vw, 1.28rem);
+    line-height: 1.25;
+  }
+
+  .home-page .home-card p,
+  .home-page .home-note,
+  .home-page .faq-answer,
+  .home-page .trust-review-content {
+    color: var(--home-muted);
+  }
+
+  .home-page .home-split {
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .home-page .home-tech-grid {
+    align-items: start;
+  }
+
+  .home-page .home-visual-panel,
+  .home-page .home-wide-media,
+  .home-page .home-card-media {
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--home-line);
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(11, 42, 70, 0.1);
+  }
+
+  .home-page .home-visual-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: clamp(1.2rem, 3vw, 2rem);
+    align-items: center;
+    margin: 2rem 0;
+    padding: clamp(1rem, 2.5vw, 1.4rem);
+    background:
+      linear-gradient(135deg, rgba(255, 244, 238, 0.9), rgba(244, 247, 251, 0.9)),
+      #fff;
+  }
+
+  .home-page .home-visual-panel img,
+  .home-page .home-wide-media img,
+  .home-page .home-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .home-page .home-visual-panel__image {
+    min-height: 260px;
+    aspect-ratio: 16 / 10;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .home-page .home-visual-panel__copy {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .home-page .home-visual-panel__copy p {
+    margin: 0;
+    color: var(--home-muted);
+    line-height: 1.7;
+  }
+
+  .home-page .home-reference-band {
+    display: grid;
+    gap: 1rem;
+    margin: 2rem auto;
+    overflow: hidden;
+    border: 1px solid var(--home-line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(11, 42, 70, 0.1);
+  }
+
+  .home-page .home-reference-band img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .home-page .home-reference-band figcaption {
+    display: grid;
+    gap: 0.55rem;
+    max-width: 820px;
+    padding: 0 1.2rem 1.2rem;
+  }
+
+  .home-page .home-reference-band h3,
+  .home-page .home-reference-band p {
+    margin: 0;
+  }
+
+  .home-page .home-check-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .home-page #website-check .hero-ctas {
+    margin-top: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .home-page .home-service-card {
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .home-page .home-service-card .home-card-body {
+    display: grid;
+    gap: 0.65rem;
+    padding: 1rem;
+    height: 60%;
+    align-content: space-between;
+  }
+
+  .home-page .home-card-media {
+    aspect-ratio: 16 / 10;
+    border-width: 0 0 1px;
+    border-radius: 8px 8px 0 0;
+    box-shadow: none;
+  }
+
+  .home-page .home-slider-shell {
+    position: relative;
+  }
+
+
+  .home-page .home-pricing-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .home-page .home-pricing-control {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--home-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--home-ink);
+    box-shadow: 0 8px 18px rgba(11, 42, 70, 0.08);
+    cursor: pointer;
+  }
+
+  .home-page .home-pricing-track {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0.25rem;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.4rem 0.25rem 1rem;
+    cursor: grab;
+    scrollbar-color: var(--home-accent) rgba(11, 42, 70, 0.1);
+  }
+
+  .home-page .home-pricing-track.is-dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    user-select: none;
+  }
+
+  .home-page .home-pricing-track::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .home-page .home-pricing-track::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--home-accent);
+  }
+
+  .home-page .home-pricing-track::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgba(11, 42, 70, 0.1);
+  }
+
+  .home-page [data-reveal-immediate] :is(.animate-on-scroll, .animate-on-scroll-left, .animate-on-scroll-right),
+  .home-page :is(.animate-on-scroll, .animate-on-scroll-left, .animate-on-scroll-right).visible:not(.home-hero-reveal) {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .home-page .home-pricing-card {
+    flex: 0 0 clamp(340px, 32vw, 360px);
+    align-items: stretch;
+    scroll-snap-align: start;
+    min-width: 0;
+    max-width: none;
+    height: 650px;
+    min-height: 650px;
+    padding: 1.35rem 1.45rem;
+    border: 2px solid transparent;
+    background: #fff;
+    box-shadow: 0 16px 34px rgba(11, 42, 70, 0.1);
+  }
+
+  .home-page .home-pricing-card h3 {
+    width: auto;
+    margin: 2rem 0 0.75rem;
+    padding: 0;
+    padding-top: 5px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--home-ink);
+    font-size: 1.35rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .home-page .home-pricing-card.is-featured {
+    border-color: var(--home-accent);
+    box-shadow: 0 22px 48px rgba(233, 74, 27, 0.16);
+  }
+
+  .home-page .home-pricing-card .price {
+    color: var(--home-accent-dark);
+    font-size: clamp(1.75rem, 2.6vw, 2.35rem);
+    line-height: 1.05;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  .home-page .home-pricing-card .price small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.58em;
+    line-height: 1.25;
+  }
+
+  .home-page .home-pricing-card .features-list {
+    display: grid;
+    align-content: start;
+    flex: 1 1 auto;
+    gap: 0.55rem;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .home-page .home-pricing-card .features-list li {
+    position: relative;
+    padding-left: 1.35rem;
+    color: var(--home-muted);
+    line-height: 1.45;
+  }
+
+  .home-page .home-pricing-card .features-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 999px;
+    background: var(--home-accent);
+    box-shadow: 0 0 0 4px rgba(233, 74, 27, 0.12);
+  }
+
+  .home-page .home-process-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .home-page .home-process-list li {
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
+    padding: 1rem;
+    border: 1px solid var(--home-line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 14px 32px rgba(11, 42, 70, 0.08);
+    grid-auto-flow: column;
+    align-items: center;
+  }
+
+  .home-page .home-process-list li::before {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .home-page .trust-summary {
+    background: #fff;
+  }
+
+  .home-page .home-wide-media {
+    margin: 1.6rem auto;
+    max-width: 100%;
+    aspect-ratio: 16 / 7;
+  }
+
+  .home-page .home-cta-panel {
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, rgba(11, 42, 70, 0.92), rgba(11, 42, 70, 0.74)),
+      url("/images/heroBg.webp") center / cover no-repeat;
+    color: #fff;
+    box-shadow: 0 24px 60px rgba(11, 42, 70, 0.18);
+  }
+
+  .home-page .home-cta-panel h2,
+  .home-page .home-cta-panel p,
+  .home-page .home-cta-panel .home-muted,
+  .home-page .home-cta-panel .home-section-kicker {
+    color: #fff;
+  }
+
+  .home-page .home-cta-panel .home-section-kicker {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .home-body .chat-button {
+    right: 0 !important;
+    bottom: 92px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 108px;
+    height: 50px;
+    padding: 0 1.1rem;
+    clip-path: none;
+    border-radius: 25px 0 0 25px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .home-body .chat-container {
+    max-width: calc(100vw - 24px);
+  }
+
+  body.home-body .progress-line {
+    background: rgba(11, 42, 70, 0.18);
+  }
+
+  body.home-body .icon-link {
+    color: var(--home-ink);
+  }
+
+  body.home-body .icon-link:is(:hover, :focus-visible, .active) {
+    color: var(--home-accent);
+  }
+
+  @media (min-width: 1180px) {
+    .home-page .home-pricing-card {
+      flex-basis: 360px;
+    }
+    .home-page .home-slider-shell{
+      margin-top: -4rem;
+    }
+  }
+
+  @media (max-width: 1020px) {
+    .home-page .home-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-page .home-card-grid--centered {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .home-page .home-usp-strip,
+    .home-page .home-process-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-page .home-visual-panel,
+    .home-page .home-tech-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .home-page .container {
+      width: min(100% - 24px, 1160px);
+      margin: 0 auto;
+    }
+
+    .home-page .section {
+      padding: 3rem 0;
+    }
+
+    .home-page .heroImage {
+      height: 760px;
+    }
+
+    .home-page .hero-main {
+      height: 100vh;
+      min-height: 760px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 18%, rgba(11, 42, 70, 0.22) 55%, rgba(11, 42, 70, 0.82) 100%),
+        url("/images/heroBGG.webp") center / cover no-repeat;
+      text-align: center;
+    }
+
+    .home-page .hero-main .hero-section {
+      min-height: 0;
+      padding: 6rem 0 2.5rem;
+    }
+
+    .home-page .hero-main .hero-content {
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .home-page .hero-main h1 {
+      font-size: clamp(0.8rem, 4.35vw, 1.35rem);
+      line-height: 1.08;
+    }
+
+    .home-page .hero-main h2 {
+      margin-bottom: 0.9rem;
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .home-body .chat-button {
+      right: 0 !important;
+      bottom: 4px;
+      width: 74px;
+      height: 38px;
+      padding: 0 0.7rem;
+      border-radius: 19px 0 0 19px;
+      font-size: 0.86rem;
+    }
+
+    .home-page .home-hero-bullets {
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+      font-size: 0.94rem;
+      line-height: 1.35;
+    }
+
+    .home-page .home-hero-bullets img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .home-page .heroPriceInfo {
+      display: none;
+    }
+
+    .home-page .home-hero-bullets li {
+      justify-content: flex-start;
+    }
+
+    .home-page .hero-ctas .btn,
+    .home-page .home-cta-panel .hero-ctas .btn {
+      width: 100%;
+    }
+
+    .home-page #usp-strip {
+      margin-top: 0;
+    }
+
+    .home-page .home-usp-strip,
+    .home-page .home-card-grid,
+    .home-page .home-card-grid--centered,
+    .home-page .home-check-grid,
+    .home-page .home-split,
+    .home-page .home-process-list {
+      grid-template-columns: 1fr;
+    }
+
+    .home-page .home-usp-item {
+      min-height: 0;
+    }
+
+    .home-page .home-pricing-controls {
+      justify-content: center;
+    }
+
+    .home-page .home-pricing-track {
+      margin-inline: -0.25rem;
+      padding-inline: 0.25rem;
+    }
+
+    .home-page .home-wide-media {
+      aspect-ratio: 4 / 3;
+    }
+
+    .home-page .home-reference-band img {
+      aspect-ratio: 16 / 9;
+    }
+
+    .home-page .home-visual-panel__image {
+      width: 100%;
+      min-height: 0;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .home-page .container {
+      width: min(100% - 20px, 1160px);
+    }
+
+    .home-page .hero-main h1 {
+      font-size: clamp(0.55rem, 3.75vw, 1rem);
+    }
+
+    .home-page h2 {
+      font-size: clamp(1.55rem, 8vw, 2.15rem);
+    }
+
+    .home-page .home-pricing-card {
+      flex-basis: calc(100vw - 42px);
+    }
+  }
+</style>
+
+<body class="home-body">
+  <%- include('partials/header') %>
+  <main class="home-page">
+    <!-- 1) Hero-Section -->
+    <!-- <div class="heroImage">
+      <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754397784/admin_gallery/s9bfoy0tm5s1invo7nod.webp">
+    </div> -->
+    <picture class="heroImage">
+      <!-- Desktop ab 801px -->
+      <source media="(min-width: 769px)" srcset="/images/heroBg.webp" type="image/webp">
+
+      <!-- Mobile bis 800px -->
+      <source media="(max-width: 768px)" srcset="/images/heroBGG.webp" type="image/webp" fetchpriority="low" loading="lazy" decoding="async">
+
+      <!-- Fallback + Attribute -->
+      <img src="/images/heroBGG.webp" alt="<%= isEn ? 'Hero image of the website intro section' : 'Hero Bild: Begrüßungsbild von mir' %>" fetchpriority="high" loading="eager" decoding="async" style="width:100%;height:100%;">
+    </picture>
+
+    <section class="hero hero-main" id="hero">
+      <div class="hero-section">
+        <div class="container">
+          <div class="hero-flex">
+            <div class="hero-content home-hero-sequence">
+              <span class="hero-badge mb-3 home-hero-reveal home-hero-reveal--support animate-on-scroll">
+                <i class="fas fa-bolt"></i> <%= copy.heroBadge %>
+              </span>
+              <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
+                <span class="home-hero-title-primary"><%= copy.heroTitle %></span>
+                <% if (copy.heroTitle2) { %>
+                <span class="home-hero-title-secondary"><%= copy.heroTitle2 %></span>
+                <% } %>
+              </h1>
+              <h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll"><span class="primaryColor"> <%= copy.heroSubline %> </span></h2>
+              <ul class="home-hero-bullets" role="list">
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet1 %></span>
+                </li>
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet2 %></span>
+                </li>
+                <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <span><%= copy.heroBullet3 %></span>
+                </li>
+              </ul>
+              <div class="hero-ctas home-hero-reveal home-hero-reveal--actions animate-on-scroll">
+                <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-primary" data-track="cta" data-cta-name="home_hero_contact" data-cta-location="home_hero"><%= copy.heroCtaPrimary %></a>
+                <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary" data-track="cta" data-cta-name="home_hero_packages" data-cta-location="home_hero"><%= copy.heroCtaSecondary %></a>
+              </div>
+              <% const heroBadgePackages = Array.isArray(packages) ? packages.filter((pkg) => pkg && pkg.display && pkg.priceLabel).slice(0, 3) : []; %>
+              <% if (heroBadgePackages.length) { %>
+              <p class="mt-2 mb-0 heroPriceInfo home-hero-reveal home-hero-reveal--prices animate-on-scroll">
+                <% heroBadgePackages.forEach((pkg) => { %>
+                <a href="<%= homePackageTarget(pkg) %>">
+                  <span class="badge text-bg-success"><%= `${pkg.name} ${pkg.priceLabel}` %></span>
+                </a>
+                <% }) %>
+              </p>
+              <% } %>
+            </div>
+            <!-- <div class="hero-image"></div> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2) USP-Streifen -->
+    <section class="section" id="usp-strip">
+      <div class="container">
+        <div class="home-usp-strip" aria-label="<%= isEn ? 'Key facts about the offer' : 'Kurzüberblick zum Angebot' %>">
+          <div class="home-usp-item">
+            <img class="home-usp-icon" src="/images/icons/gift1.svg" alt="" width="34" height="34" loading="lazy">
+            <strong><%= isEn ? 'Personal implementation' : 'Persönliche Umsetzung' %></strong>
+            <span><%= isEn ? 'One direct contact from first call to launch.' : 'Ein direkter Ansprechpartner vom Erstgespräch bis zum Launch.' %></span>
+          </div>
+          <div class="home-usp-item">
+            <img class="home-usp-icon" src="/images/icons/individual1.svg" alt="" width="34" height="34" loading="lazy">
+            <strong><%= isEn ? 'No builder templates' : 'Keine Standard-Templates' %></strong>
+            <span><%= isEn ? 'Custom layouts instead of page-builder, WordPress template or theme work.' : 'Individuelle Layouts statt Baukasten, WordPress-Template oder Agentur-Schablone.' %></span>
+          </div>
+          <div class="home-usp-item">
+            <img class="home-usp-icon" src="/images/icons/delivery1.svg" alt="" width="34" height="34" loading="lazy">
+            <strong><%= isEn ? 'Technical foundation' : 'Technische Grundlage' %></strong>
+            <span><%= isEn ? 'Node.js, EJS, CSS and JavaScript with server-rendered HTML.' : 'Node.js, EJS, CSS und JavaScript mit serverseitig gerendertem HTML.' %></span>
+          </div>
+          <div class="home-usp-item">
+            <img class="home-usp-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
+            <strong><%= isEn ? `Packages from ${lowestPackagePriceLabel || 'EUR'}` : `Pakete ab ${lowestPackagePriceLabel || ''}` %></strong>
+            <span><%= isEn ? 'Clear scope, separate add-ons and transparent running costs.' : 'Klarer Umfang, separate Zusatzleistungen und transparente laufende Kosten.' %></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3) Für wen das Angebot passt -->
+    <section class="section" id="passt">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-user-check" aria-hidden="true"></i><%= isEn ? 'Fit' : 'Für wen das Angebot passt' %></span>
+            <h2><%= isEn ? 'Custom websites for small businesses in Berlin' : 'Individuelle Websites für kleine Unternehmen in Berlin' %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.'
+                : 'Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und eine Website brauchst, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.'
+              %>
+            </p>
+            <figure class="home-reference-band animate-on-scroll">
+              <img src="/images/home-fit-beratung.webp" alt="<%= isEn ? 'Personal website consultation for a small local business' : 'Persönliches Website-Beratungsgespräch für ein kleines lokales Unternehmen' %>" width="1280" height="720" loading="lazy" decoding="async">
+              <figcaption>
+                <h3><%= isEn ? 'A website that explains your offer quickly' : 'Ein Auftritt, der dein Angebot schnell verständlich macht' %></h3>
+                <p>
+                  <%= isEn
+                    ? 'Visitors should understand who you help, what they can request and which next step makes sense without searching through the page.'
+                    : 'Besucher sollen ohne Suchen erkennen, wem du hilfst, welche Leistung sie anfragen können und welcher nächste Schritt sinnvoll ist.'
+                  %>
+                </p>
+              </figcaption>
+            </figure>
+            <div class="home-split">
+              <div class="home-card">
+                <h3><%= isEn ? 'Good fit' : 'Passt gut, wenn' %></h3>
+                <ul class="home-list">
+                  <li><%= isEn ? 'you run a local service, practice, shop, restaurant, trade or consulting business.' : 'du lokaler Dienstleister, Praxis, Händler, Gastronomie, Handwerk oder Berater bist.' %></li>
+                  <li><%= isEn ? 'you want a compact or structured business website without a generic template.' : 'du eine kompakte oder strukturierte Unternehmenswebsite ohne Standard-Template möchtest.' %></li>
+                  <li><%= isEn ? 'you value clear package boundaries, realistic timelines and direct feedback loops.' : 'du klare Paketgrenzen, realistische Zeitpläne und direkte Abstimmung schätzt.' %></li>
+                </ul>
+              </div>
+              <div class="home-card">
+                <h3><%= isEn ? 'Not ideal' : 'Nicht ideal, wenn' %></h3>
+                <ul class="home-list home-list--caution">
+                  <li><%= isEn ? 'you need a finished enterprise platform without discovery or specification.' : 'du eine fertige Enterprise-Plattform ohne Konzept- und Leistungsabgrenzung erwartest.' %></li>
+                  <li><%= isEn ? 'you need legal advice, guaranteed rankings or guaranteed customer growth.' : 'du Rechtsberatung, garantierte Rankings oder garantierte Kundengewinnung erwartest.' %></li>
+                  <li><%= isEn ? 'you want booking, CMS or shop functionality included in every standard package.' : 'du Buchung, CMS oder Shop-Funktionen pauschal in jedem Standardpaket erwartest.' %></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4) Leistungen -->
+    <section class="section" id="leistungen">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-layer-group" aria-hidden="true"></i><%= isEn ? 'Services' : 'Leistungen' %></span>
+            <h2><%= copy.servicesTitle %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'The homepage, package pages and inquiry path are planned together so visitors quickly understand your offer and can contact you without friction.'
+                : 'Startseite, Paketlogik und Anfrageweg werden zusammen geplant, damit Besucher dein Angebot schnell verstehen und ohne Reibung Kontakt aufnehmen können.'
+              %>
+            </p>
+            <div class="home-card-grid">
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="<%= isEn ? 'Custom web design example' : 'Beispiel für individuelles Webdesign' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Website strategy and structure' : 'Website-Strategie und Struktur' %></h3>
+                  <p><%= isEn ? 'Clear page architecture, priorities and content order before design starts.' : 'Klare Seitenstruktur, Prioritäten und Inhaltsreihenfolge, bevor das Design beginnt.' %></p>
+                  <a href="/website-erstellen-lassen-berlin" class="linkColor"><%= isEn ? 'Website creation in Berlin' : 'Website erstellen lassen Berlin' %></a>
+                </div>
+              </article>
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/code.webp" alt="<%= isEn ? 'Frontend code and technical implementation' : 'Frontend-Code und technische Umsetzung' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Custom design and frontend' : 'Individuelles Design und Frontend' %></h3>
+                  <p><%= isEn ? 'Responsive layouts for mobile, tablet and desktop, built to match your offer.' : 'Responsive Layouts für Smartphone, Tablet und Desktop, passend zu deinem Angebot.' %></p>
+                  <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="linkColor"><%= isEn ? 'View Webdesign Berlin' : 'Webdesign Berlin ansehen' %></a>
+                </div>
+              </article>
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/seo.webp" alt="<%= isEn ? 'SEO structure and search visibility' : 'SEO-Struktur und Suchsichtbarkeit' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Technical SEO basics' : 'Technische SEO-Grundlagen' %></h3>
+                  <p><%= isEn ? 'Clean HTML, metadata, internal links and performance basics in the agreed scope.' : 'Sauberes HTML, Metadaten, interne Verlinkung und Performance-Grundlagen im vereinbarten Umfang.' %></p>
+                  <a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>" class="linkColor"><%= isEn ? 'Run SEO tester' : 'SEO-Tester starten' %></a>
+                </div>
+              </article>
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/wartung.webp" alt="<%= isEn ? 'Website maintenance and relaunch planning' : 'Website-Wartung und Relaunch-Planung' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Relaunch and expansion' : 'Relaunch und Ausbau' %></h3>
+                  <p><%= isEn ? 'For existing websites with unclear structure, weak inquiries or outdated technical setup.' : 'Für bestehende Websites mit unklarer Struktur, schwachen Anfragen oder veralteter Technik.' %></p>
+                  <a href="/leistungen/website-relaunch" class="linkColor"><%= isEn ? 'View relaunch page' : 'Relaunch-Seite ansehen' %></a>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5) Paket-Teaser -->
+    <section class="section" id="preise" data-reveal-immediate>
+      <div class="container">
+        <div class="outer-wrapper home-section-shell">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-euro-sign" aria-hidden="true"></i><%= isEn ? 'Packages' : 'Pakete' %></span>
+            <h2><%= copy.pricingTitle %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'The packages are fair, clearly scoped entry points, not bargain offers. Add-ons, running costs and custom functions are discussed separately before implementation.'
+                : 'Die Pakete sind fair kalkulierte Einstiegspunkte mit definiertem Umfang, aber keine Billigangebote. Zusatzwünsche, laufende Kosten und Sonderfunktionen werden vor der Umsetzung separat besprochen.'
+              %>
+            </p>
+            <% const homePackages = Array.isArray(packages) ? packages.filter((pkg) => pkg.display).slice(0, 4) : []; %>
+            <div class="home-slider-shell" data-reveal-immediate>
+              <div class="home-pricing-controls" aria-label="<%= isEn ? 'Package slider controls' : 'Bedienung des Paket-Sliders' %>">
+                <button class="home-pricing-control" type="button" data-pricing-prev aria-label="<%= isEn ? 'Previous package' : 'Vorheriges Paket' %>">
+                  <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button class="home-pricing-control" type="button" data-pricing-next aria-label="<%= isEn ? 'Next package' : 'Nächstes Paket' %>">
+                  <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div class="home-pricing-track" data-pricing-slider tabindex="0" aria-label="<%= isEn ? 'Website packages, horizontally scrollable' : 'Website-Pakete, horizontal scrollbar' %>">
+                <% homePackages.forEach((pkg) => { %>
+                <% const packageSlug = String(pkg.slug || '').toLowerCase(); %>
+                <article class="pricing-card home-pricing-card animate-on-scroll<%= packageSlug === 'business' ? ' is-featured' : '' %>" id="pkg-<%= pkg.id %>">
+                  <% if (packageSlug === 'business') { %>
+                  <span class="home-price-tag"><%= isEn ? 'Often suitable' : 'Häufig passend' %></span>
+                  <% } %>
+                  <h3><%= pkg.name %></h3>
+                  <div class="p1rem">
+                    <% if (pkg.description) { %>
+                    <p class="package-description"><%= pkg.description %></p>
+                    <% } %>
+                    <p class="price">
+                      <%= pkg.priceLabel || pkg.price %>
+                    </p>
+                    <ul class="features-list">
+                      <% (pkg.features || []).slice(0, 4).forEach((feat) => { %>
+                      <li><%= feat %></li>
+                      <% }); %>
+                    </ul>
+                    <a class="btn btn-primary" href="<%= homePackageTarget(pkg) %>" data-track="cta" data-cta-name="home_package_details_<%= pkg.slug %>" data-cta-location="home_pricing" data-package-id="<%= pkg.slug %>"><%= homePackageCtaLabel(pkg) %></a>
+                  </div>
+                </article>
+                <% }); %>
+              </div>
+            </div>
+            <p class="home-note"><%= copy.pricingTagline %></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6) Enthalten und optional -->
+    <section class="section" id="enthalten-optional">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-sliders-h" aria-hidden="true"></i><%= isEn ? 'Scope' : 'Umfang und Grenzen' %></span>
+            <h2><%= isEn ? 'What is included and what is planned separately' : 'Was enthalten ist und was separat geplant wird' %></h2>
+            <div class="home-split">
+              <div class="home-card">
+                <h3><%= isEn ? 'Usually included in agreed scope' : 'Im vereinbarten Umfang enthalten' %></h3>
+                <ul class="home-list">
+                  <li><%= isEn ? 'individual layout and responsive implementation.' : 'individuelles Layout und responsive Umsetzung.' %></li>
+                  <li><%= isEn ? 'technical SEO basics such as metadata, headings, internal links and clean HTML.' : 'technische SEO-Grundlagen wie Metadaten, Überschriften, interne Links und sauberes HTML.' %></li>
+                  <li><%= isEn ? 'integration and structuring of supplied content.' : 'Einbindung und Strukturierung gelieferter Inhalte.' %></li>
+                  <li><%= isEn ? 'one contact form or a clearly defined inquiry path.' : 'ein Kontaktformular oder ein klar definierter Anfrageweg.' %></li>
+                </ul>
+              </div>
+              <div class="home-card">
+                <h3><%= isEn ? 'Optional or separate' : 'Optional oder separat' %></h3>
+                <ul class="home-list home-list--caution">
+                  <li><%= isEn ? 'Domain, email, hosting, maintenance and third-party tools may create running costs.' : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools können laufende Kosten verursachen.' %></li>
+                  <li><%= isEn ? 'CMS, booking systems, multilingual setup or small shop functions are add-ons or custom projects.' : 'CMS, Buchungssysteme, Mehrsprachigkeit oder kleine Shop-Funktionen sind Zusatzleistungen oder individuelle Projekte.' %></li>
+                  <li><%= isEn ? 'extensive copywriting, additional SEO landing pages and Local SEO are scoped separately.' : 'umfangreiche Texterstellung, zusätzliche SEO-Landingpages und Local SEO werden separat abgegrenzt.' %></li>
+                  <li><%= isEn ? 'legal text creation or legal review is not legal advice.' : 'Erstellung oder rechtliche Prüfung von Rechtstexten ist keine Rechtsberatung.' %></li>
+                </ul>
+              </div>
+            </div>
+            <p class="home-note">
+              <%= isEn
+                ? 'Domain, email, hosting, maintenance and third-party providers are not automatically included in the one-time project price. They are either documented as follow-up tasks or estimated separately.'
+                : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter sind nicht automatisch im einmaligen Projektpreis enthalten. Sie werden als Folgeaufgabe dokumentiert oder separat kalkuliert.'
+              %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7) Technischer USP -->
+    <section class="section" id="technik">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-code" aria-hidden="true"></i><%= isEn ? 'Technology' : 'Technik' %></span>
+            <h2><%= isEn ? 'Built with Node.js, EJS, CSS and JavaScript' : 'Entwickelt mit Node.js, EJS, CSS und JavaScript' %></h2>
+            <figure class="home-card-media home-wide-media animate-on-scroll-left">
+              <img src="/images/code.webp" alt="<%= isEn ? 'Node.js, EJS, CSS and JavaScript code' : 'Node.js-, EJS-, CSS- und JavaScript-Code' %>" width="920" height="520" loading="lazy" decoding="async">
+            </figure>
+            <div class="home-split home-tech-grid">
+              <div>
+                <p class="home-section-lead">
+                  <%= isEn
+                    ? 'The website is rendered server-side as HTML and not assembled from a generic builder template. That creates a clean base for performance, structured content and search-engine readability.'
+                    : 'Die Website wird serverseitig als HTML gerendert und nicht aus einem generischen Baukasten-Template zusammengesetzt. Das schafft eine saubere Grundlage für Performance, strukturierte Inhalte und Suchmaschinenlesbarkeit.'
+                  %>
+                </p>
+                <ul class="home-list">
+                  <li><%= isEn ? 'server-rendered HTML with EJS templates.' : 'serverseitig gerendertes HTML mit EJS-Templates.' %></li>
+                  <li><%= isEn ? 'custom CSS and JavaScript instead of overloaded theme logic.' : 'individuelles CSS und JavaScript statt überladener Theme-Logik.' %></li>
+                  <li><%= isEn ? 'clear metadata, headings and internal links in the agreed scope.' : 'klare Metadaten, Überschriften und interne Links im vereinbarten Umfang.' %></li>
+                </ul>
+              </div>
+              <div class="home-card animate-on-scroll-right">
+                <img class="home-card-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
+                <h3><%= isEn ? 'Important boundary' : 'Wichtige Abgrenzung' %></h3>
+                <p>
+                  <%= isEn
+                    ? 'Technical SEO basics improve the foundation. Specific Google positions, inquiry volume or sales results cannot be guaranteed.'
+                    : 'Technische SEO-Grundlagen verbessern die technische Grundlage. Bestimmte Platzierungen bei Google können nicht garantiert werden; auch Anfragen oder Umsätze hängen von Markt, Angebot und Wettbewerb ab.'
+                  %>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8) Ablauf -->
+    <section class="section" id="ablauf">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-route" aria-hidden="true"></i><%= isEn ? 'Process' : 'Ablauf' %></span>
+            <h2><%= copy.timelineTitle %></h2>
+            <p class="home-section-lead"><%= copy.timelineNote %></p>
+            <ol class="home-list home-process-list">
+              <li><%= isEn ? 'Short project check: goals, current website, budget and timeline.' : 'Kurzer Projektcheck: Ziel, bestehende Website, Budget und Zeitrahmen.' %></li>
+              <li><%= isEn ? 'Recommendation for Start, Business, Growth or individual scope.' : 'Empfehlung für Start, Business, Wachstum oder individuellen Umfang.' %></li>
+              <li><%= isEn ? 'Structure, page order and needed content are clarified.' : 'Struktur, Seitenreihenfolge und benötigte Inhalte werden geklärt.' %></li>
+              <li><%= isEn ? 'Design and frontend are built in the agreed scope.' : 'Design und Frontend werden im vereinbarten Umfang umgesetzt.' %></li>
+              <li><%= isEn ? 'Feedback round, technical checks and launch preparation.' : 'Feedbackrunde, technische Prüfung und Launch-Vorbereitung.' %></li>
+              <li><%= isEn ? 'Launch plus optional next steps for maintenance, hosting or further pages.' : 'Launch plus optionale nächste Schritte für Wartung, Hosting oder weitere Seiten.' %></li>
+            </ol>
+            <p class="home-note">
+              <%= isEn
+                ? 'For a deeper process overview, use the dedicated process page.'
+                : 'Für den detaillierten Ablauf ist die vorhandene Ablaufseite die passende Vertiefung.'
+              %>
+              <a href="/ablauf" class="linkColor"><%= isEn ? 'View process page' : 'Ablauf ansehen' %></a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9) Trust und Referenz -->
+    <section class="section" id="trust">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-star" aria-hidden="true"></i><%= isEn ? 'Trust' : 'Vertrauen' %></span>
+            <h2><%= copy.trustTitle %></h2>
+            <p class="home-section-lead"><%= copy.trustSubline %></p>
+            <figure class="home-wide-media animate-on-scroll">
+              <img src="/images/review-bg.webp" alt="<%= isEn ? 'Project preview and reference presentation' : 'Projektvorschau und Referenzdarstellung' %>" width="920" height="520" loading="lazy" decoding="async">
+            </figure>
+            <% const hasTrustReviews = Array.isArray(trustReviews) && trustReviews.length > 0; %>
+            <% if (reviewAggregate && reviewAggregate.count) { %>
+            <div class="trust-summary">
+              <div class="trust-summary-score">
+                <span class="trust-score-value"><%= reviewAggregate.avg.toFixed(1) %></span>
+                <span class="trust-score-stars" aria-hidden="true">
+                  <% const full = Math.round(reviewAggregate.avg); %>
+                  <% for (let i = 1; i <= 5; i++) { %>
+                  <i class="fas fa-star<%= i <= full ? '' : '-half-alt' %>"></i>
+                  <% } %>
+                </span>
+              </div>
+              <div class="trust-summary-meta">
+                <div><strong><%= copy.trustAverageLabel %></strong></div>
+                <div><%= reviewAggregate.count %> <%= copy.trustCountLabel %></div>
+                <div><a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="linkColor"><%= copy.trustCtaAll %></a></div>
+              </div>
+            </div>
+            <% } %>
+            <% if (hasTrustReviews) { %>
+            <div class="trust-reviews-grid">
+              <% trustReviews.forEach((r) => { %>
+              <article class="trust-review-card">
+                <div class="trust-review-header">
+                  <% if (hasAvatar(r.avatar_url)) { %>
+                  <img src="<%= r.avatar_url %>" alt="<%= isEn ? 'Portrait of client' : 'Portrait des Kunden' %> <%= r.author %>" class="trust-review-avatar" loading="lazy" width="48" height="48" />
+                  <% } else { %>
+                  <div class="trust-review-avatar trust-review-avatar--initials" style="background-color: <%= avatarColor(r.author) %>;" role="img" aria-label="<%= isEn ? 'Initials avatar of' : 'Initialen-Avatar von' %> <%= r.author %>">
+                    <%= avatarInitials(r.author) %>
+                  </div>
+                  <% } %>
+                  <div>
+                    <div class="trust-review-author"><%= r.author %></div>
+                    <div class="trust-review-stars" aria-label="<%= r.rating %> von 5 Sternen">
+                      <% for (let i = 1; i <= 5; i++) { %>
+                      <i class="fas fa-star<%= i <= r.rating ? '' : '-o' %>" aria-hidden="true"></i>
+                      <% } %>
+                    </div>
+                  </div>
+                  <span class="trust-review-source" aria-label="<%= isEn ? 'Google review source' : 'Quelle: Google-Bewertung' %>">Google</span>
+                </div>
+                <blockquote class="trust-review-content"><%= r.content %></blockquote>
+              </article>
+              <% }); %>
+            </div>
+            <div class="trust-actions">
+              <a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="btn btn-primary"><i class="fas fa-external-link-alt" aria-hidden="true"></i> <%= copy.trustCtaAll %></a>
+              <a href="<%= googleReviewUrl %>" target="_blank" rel="noopener" class="btn btn-secondary"><i class="fas fa-pen" aria-hidden="true"></i> <%= copy.trustCtaWrite %></a>
+            </div>
+            <% } else { %>
+            <div class="trust-empty">
+              <h3><%= copy.trustNoReviewsHeadline %></h3>
+              <p><%= copy.trustNoReviewsLead %></p>
+              <a href="<%= googleProfileUrl %>" target="_blank" rel="noopener" class="btn btn-primary"><i class="fas fa-external-link-alt" aria-hidden="true"></i> <%= copy.trustCtaAll %></a>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10) Lokale Sichtbarkeit -->
+    <section class="section" id="sichtbarkeit">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><%= isEn ? 'Visibility' : 'Lokale Sichtbarkeit' %></span>
+            <h2><%= isEn ? 'SEO foundation for local inquiries' : 'SEO-Grundlage für lokale Anfragen' %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'The website can be prepared for local search with clear service pages, metadata, internal links and location context. This is a foundation, not a ranking promise.'
+                : 'Die Website kann für lokale Suchen vorbereitet werden: mit klaren Leistungsseiten, Metadaten, interner Verlinkung und lokalem Kontext. Das ist eine Grundlage, kein Ranking-Versprechen.'
+              %>
+            </p>
+            <div class="home-card-grid home-card-grid--centered">
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/seo.webp" alt="<%= isEn ? 'Local SEO and visibility structure' : 'Local-SEO und Sichtbarkeitsstruktur' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Berlin focus' : 'Berlin-Fokus' %></h3>
+                  <p><%= isEn ? 'Useful for businesses that want to be found by people in Berlin and Brandenburg.' : 'Sinnvoll für Unternehmen, die in Berlin und Brandenburg gefunden und angefragt werden möchten.' %></p>
+                </div>
+              </article>
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/datenbank.webp" alt="<%= isEn ? 'Structured website data and content architecture' : 'Strukturierte Website-Daten und Inhaltsarchitektur' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'Service pages' : 'Leistungsseiten' %></h3>
+                  <p><%= isEn ? 'Additional landing pages can be planned separately when search intent and scope are clear.' : 'Zusätzliche Landingpages werden separat geplant, wenn Suchintention und Umfang klar sind.' %></p>
+                </div>
+              </article>
+              <article class="home-card home-service-card animate-on-scroll">
+                <figure class="home-card-media">
+                  <img src="/images/hosting.webp" alt="<%= isEn ? 'Stable technical base for websites' : 'Stabile technische Grundlage für Websites' %>" width="540" height="338" loading="lazy" decoding="async">
+                </figure>
+                <div class="home-card-body">
+                  <h3><%= isEn ? 'No guarantee' : 'Keine Garantie' %></h3>
+                  <p><%= isEn ? 'Search visibility depends on market, competition, content, reviews and ongoing signals.' : 'Sichtbarkeit hängt von Markt, Wettbewerb, Inhalten, Bewertungen und laufenden Signalen ab.' %></p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11) Website-Check -->
+    <section class="section" id="website-check">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-search" aria-hidden="true"></i><%= isEn ? 'Website check' : 'Website-Check' %></span>
+            <h2><%= isEn ? 'Check first, then rebuild with a clear plan' : 'Erst prüfen, dann mit klarem Plan neu bauen' %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'Use the website tester to check SEO basics, GEO signals, metadata and broken links before you request a project. The result helps choose the right scope.'
+                : 'Nutze den Website-Tester, um SEO-Grundlagen, GEO-Signale, Metadaten und kaputte Links zu prüfen, bevor du dein Projekt anfragst. Das Ergebnis hilft, den passenden Umfang zu wählen.'
+              %>
+            </p>
+            <p class="home-note">
+              <%= isEn
+                ? 'The check is an initial orientation, not a complete paid audit. A deeper evaluation can be scoped separately when needed.'
+                : 'Der Check ist eine erste Orientierung und kein vollständiges bezahltes Audit. Eine vertiefte Auswertung kann bei Bedarf separat abgegrenzt werden.'
+              %>
+            </p>
+            <div class="home-check-grid">
+              <article class="home-card animate-on-scroll">
+                <img class="home-card-icon" src="/images/icons/check.svg" alt="" width="34" height="34" loading="lazy">
+                <h3><%= isEn ? 'Technical basics' : 'Technische Grundlagen' %></h3>
+                <p><%= isEn ? 'The check looks at metadata, headings, loading basics and obvious technical blockers.' : 'Der Check prüft Metadaten, Überschriften, Ladezeit-Grundlagen und offensichtliche technische Bremsen.' %></p>
+              </article>
+              <article class="home-card animate-on-scroll">
+                <img class="home-card-icon" src="/images/icons/abstimmung1.svg" alt="" width="34" height="34" loading="lazy">
+                <h3><%= isEn ? 'Better scope decisions' : 'Bessere Einschätzung' %></h3>
+                <p><%= isEn ? 'The result helps decide whether a compact update, a relaunch or a larger package is more realistic.' : 'Das Ergebnis hilft einzuschätzen, ob ein kompakter Ausbau, ein Relaunch oder ein größeres Paket realistischer ist.' %></p>
+              </article>
+              <article class="home-card animate-on-scroll">
+                <img class="home-card-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
+                <h3><%= isEn ? 'No replacement for an audit' : 'Kein Ersatz für ein Audit' %></h3>
+                <p><%= isEn ? 'For important decisions, the quick check can be followed by a scoped project review.' : 'Für wichtige Entscheidungen kann auf den Schnellcheck eine abgegrenzte Projektprüfung folgen.' %></p>
+              </article>
+            </div>
+            <div class="hero-ctas">
+              <a class="btn btn-primary" href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" data-track="cta" data-cta-name="home_free_website_check" data-cta-location="home_website_check"><%= isEn ? 'Start website check' : 'Website-Check starten' %></a>
+              <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="home_check_to_contact" data-cta-location="home_website_check"><%= isEn ? 'Discuss result' : 'Ergebnis besprechen' %></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12) FAQ -->
+    <% if (faqEntries.length) { %>
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-question-circle" aria-hidden="true"></i>FAQ</span>
+            <h2 id="faq-title"><%= copy.faqTitle %></h2>
+            <p class="home-section-lead"><%= copy.faqSubline %></p>
+            <div class="faq-list">
+              <% faqEntries.forEach((item, idx) => { %>
+              <details class="faq-item" <%= idx === 0 ? ' open' : '' %>>
+                <summary class="faq-question">
+                  <span><%= item.q %></span>
+                  <i class="fas fa-chevron-down faq-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer">
+                  <p><%= item.a %></p>
+                </div>
+              </details>
+              <% }); %>
+            </div>
+            <p class="faq-more-help text-center mt-3">
+              <% if (isEn) { %>
+              Your question is not listed? <a href="/en/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Get in touch</a>.
+              <% } else { %>
+              Deine Frage ist nicht dabei? <a href="/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Schreib mir</a>.
+              <% } %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- 13) Finaler CTA -->
+    <section class="section" id="cta">
+      <div class="container">
+        <div class="home-cta-panel">
+          <span class="home-section-kicker"><i class="fas fa-paper-plane" aria-hidden="true"></i><%= isEn ? 'Next step' : 'Nächster Schritt' %></span>
+          <h2><%= isEn ? 'Request a realistic website scope' : 'Website-Projekt realistisch einschätzen lassen' %></h2>
+          <p>
+            <%= isEn
+              ? 'Tell me what you need, what already exists and which timeline matters. I will recommend whether Start, Business, Growth or an individual estimate is the cleaner fit.'
+              : 'Beschreib kurz, was du brauchst, was bereits vorhanden ist und welcher Zeitrahmen wichtig ist. Ich empfehle dir anschließend, ob Start, Business, Wachstum oder ein individuelles Angebot besser passt.'
+            %>
+          </p>
+          <div class="hero-ctas">
+            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" class="btn btn-primary" data-track="cta" data-cta-name="home_final_contact" data-cta-location="home_final_cta"><%= isEn ? 'Request project estimate' : 'Projekt anfragen' %></a>
+            <a href="<%= isEn ? '/en/pakete' : '/pakete' %>" class="btn btn-secondary" data-track="cta" data-cta-name="home_final_packages" data-cta-location="home_final_cta"><%= isEn ? 'Compare packages' : 'Pakete vergleichen' %></a>
+            <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" class="btn btn-secondary" data-track="cta" data-cta-name="home_final_tester" data-cta-location="home_final_cta"><%= isEn ? 'Start website check' : 'Website-Check starten' %></a>
+          </div>
+          <p class="home-muted"><%= isEn ? 'No legal, ranking or customer-growth guarantees are part of the offer.' : 'Rechtsberatung, Ranking-Garantien und garantierte Kundengewinnung sind nicht Teil des Angebots.' %></p>
+        </div>
+      </div>
+    </section>
+    <!-- Scroll-Indikator Leiste (fixed an linker Seite) -->
+    <aside class="scroll-indicator">
+      <!-- Vertikaler Strich -->
+      <div class="progress-line">
+        <div class="progress-fill"></div>
+        <div class="section-icons">
+          <a href="#hero" class="icon-link active" aria-label="<%= isEn ? 'To start section' : 'Zum Startbereich' %>">
+            <!-- Hero Section Icon -->
+            <i class="fas fa-home"></i> <!-- Beispiel Font Awesome Icon -->
+          </a>
+          <a href="#usp-strip" class="icon-link" aria-label="<%= isEn ? 'To key facts section' : 'Zum Kurzüberblick' %>">
+            <i class="fas fa-star"></i>
+          </a>
+          <a href="#passt" class="icon-link" aria-label="<%= isEn ? 'To fit section' : 'Zum Bereich Passung' %>">
+            <i class="fas fa-user-check"></i>
+          </a>
+          <a href="#leistungen" class="icon-link" aria-label="<%= isEn ? 'To services section' : 'Zu den Leistungen' %>">
+            <i class="fas fa-info-circle"></i>
+          </a>
+          <a href="#preise" class="icon-link" aria-label="<%= isEn ? 'To pricing section' : 'Zu den Preisen' %>">
+            <i class="fas fa-money-bill"></i>
+          </a>
+          <a href="#enthalten-optional" class="icon-link" aria-label="<%= isEn ? 'To scope section' : 'Zum Umfang' %>">
+            <i class="fas fa-sliders-h"></i>
+          </a>
+          <a href="#technik" class="icon-link" aria-label="<%= isEn ? 'To technology section' : 'Zur Technik' %>">
+            <i class="fas fa-code"></i>
+          </a>
+          <a href="#ablauf" class="icon-link" aria-label="<%= isEn ? 'To process section' : 'Zum Ablauf' %>">
+            <i class="fas fa-route"></i>
+          </a>
+          <a href="#trust" class="icon-link" aria-label="<%= isEn ? 'To trust section' : 'Zum Vertrauensbereich' %>">
+            <i class="fas fa-star"></i>
+          </a>
+          <a href="#sichtbarkeit" class="icon-link" aria-label="<%= isEn ? 'To visibility section' : 'Zur Sichtbarkeit' %>">
+            <i class="fas fa-map-marker-alt"></i>
+          </a>
+          <a href="#website-check" class="icon-link" aria-label="<%= isEn ? 'To website check section' : 'Zum Website-Check' %>">
+            <i class="fas fa-search"></i>
+          </a>
+          <a href="#faq" class="icon-link" aria-label="<%= isEn ? 'To FAQ section' : 'Zum FAQ-Bereich' %>">
+            <i class="fas fa-question-circle"></i>
+          </a>
+          <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To inquiry section' : 'Zum Anfragebereich' %>">
+            <i class="fas fa-envelope" style="transform: translateY(-5px);"></i>
+          </a>
+          <a href="#footer" class="icon-link" aria-label="<%= isEn ? 'To footer section' : 'Zum Footer-Bereich' %>">
+            <i class="fas fa-shoe-prints" style="transform: translateY(10px);"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <%- include('partials/footer') %>
+
+  <!-- <script>
+        const stripe = Stripe("<%= stripePublishable %>");
+        document.querySelectorAll(".checkout-form").forEach((form) => {
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const data = {
+              packageId: form.querySelector('input[name="packageId"]').value,
+              mode: form.querySelector('input[name="mode"]').value,
+            };
+            const response = await fetch(form.action, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+            const { sessionId, error } = await response.json();
+            if (error) return alert(error);
+            await stripe.redirectToCheckout({ sessionId });
+          });
+        });
+      </script> -->
+  <script>
+    // Beispiel in public/js/main.js
+    document.querySelectorAll(".card-container").forEach((card) => {
+      card.addEventListener("click", () => {
+        card.classList.toggle("flipped");
+      });
+    });
+
+    document.querySelectorAll("[data-pricing-slider]").forEach((slider) => {
+      const shell = slider.closest(".home-slider-shell");
+      const previousButton = shell?.querySelector("[data-pricing-prev]");
+      const nextButton = shell?.querySelector("[data-pricing-next]");
+      let isPointerDown = false;
+      let startX = 0;
+      let startScrollLeft = 0;
+      let dragDistance = 0;
+
+      const getStep = () => {
+        const firstCard = slider.querySelector(".home-pricing-card");
+        if (!firstCard) return slider.clientWidth * 0.85;
+        const cardStyles = window.getComputedStyle(firstCard);
+        const gap = parseFloat(window.getComputedStyle(slider).columnGap || "0") || 0;
+        return firstCard.getBoundingClientRect().width + gap + (parseFloat(cardStyles.marginRight) || 0);
+      };
+
+      const scrollByStep = (direction) => {
+        slider.scrollBy({
+          left: direction * getStep(),
+          behavior: "smooth"
+        });
+      };
+
+      previousButton?.addEventListener("click", () => scrollByStep(-1));
+      nextButton?.addEventListener("click", () => scrollByStep(1));
+
+      slider.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        isPointerDown = true;
+        startX = event.clientX;
+        startScrollLeft = slider.scrollLeft;
+        dragDistance = 0;
+        slider.classList.add("is-dragging");
+        slider.setPointerCapture?.(event.pointerId);
+      });
+
+      slider.addEventListener("pointermove", (event) => {
+        if (!isPointerDown) return;
+        const delta = event.clientX - startX;
+        dragDistance = Math.max(dragDistance, Math.abs(delta));
+        slider.scrollLeft = startScrollLeft - delta;
+      });
+
+      const endDrag = (event) => {
+        if (!isPointerDown) return;
+        isPointerDown = false;
+        slider.classList.remove("is-dragging");
+        slider.releasePointerCapture?.(event.pointerId);
+      };
+
+      slider.addEventListener("pointerup", endDrag);
+      slider.addEventListener("pointercancel", endDrag);
+      slider.addEventListener("pointerleave", endDrag);
+
+      slider.addEventListener("click", (event) => {
+        if (dragDistance > 8) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+    });
+  </script>
+  <!--Scroll Indicator-->
+</body>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/progressSlider.js') : '/js/progressSlider.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+
+<!-- JSON-LD: ProfessionalService (online-first, ohne Adresse) -->
+<!-- FAQ -->
+<!-- Organisation -->
+<!-- Website -->
+<!-- Webpage -->
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="..."> -->
+
+</html>

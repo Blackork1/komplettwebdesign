@@ -10,6 +10,22 @@ function parseRanges(str) {
     .filter(Boolean);
 }
 
+async function buildAppointmentsRedirect() {
+  const { rows } = await pool.query(`
+    SELECT TO_CHAR((start_time AT TIME ZONE 'Europe/Berlin')::date, 'YYYY-MM') AS month
+      FROM appointments
+     WHERE start_time >= NOW()
+       AND is_booked = FALSE
+     ORDER BY start_time
+     LIMIT 1
+  `);
+
+  const month = rows[0]?.month;
+  return month
+    ? `/admin/appointments?month=${encodeURIComponent(month)}&auto=1`
+    : '/admin/appointments?auto=1';
+}
+
 export async function getForm(_req, res) {
   const { rows } = await pool.query('SELECT * FROM auto_config WHERE id=1');
   const cfg = rows[0];
@@ -49,12 +65,12 @@ export async function saveForm(req, res) {
 
   if (req.body.fill_now === '1') {
     await ensureAutoSlots();
-    return res.redirect('/admin/appointments');
+    return res.redirect(await buildAppointmentsRedirect());
   }
   res.redirect('/admin/auto-config');
 }
 
 export async function runAutoGenerate(_req, res) {
   await ensureAutoSlots();
-  res.redirect('/admin/appointments');
+  res.redirect(await buildAppointmentsRedirect());
 }

@@ -1,0 +1,488 @@
+<%
+  const siteBase = canonicalBaseUrl.replace(/\/$/, '');
+  const pageUrl = `${siteBase}${page.canonicalPath}`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${siteBase}/` },
+      { '@type': 'ListItem', position: 2, name: 'Leistungen', item: `${siteBase}/leistungen` },
+      { '@type': 'ListItem', position: 3, name: page.h1, item: pageUrl }
+    ]
+  };
+  const serviceSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${pageUrl}#service`,
+    name: 'Local SEO Berlin',
+    serviceType: 'Local SEO und lokale Website-Optimierung',
+    provider: {
+      '@type': 'Organization',
+      '@id': `${siteBase}/#organization`,
+      name: 'Komplett Webdesign',
+      url: siteBase
+    },
+    areaServed: [
+      { '@type': 'AdministrativeArea', name: 'Berlin' },
+      { '@type': 'AdministrativeArea', name: 'Brandenburg' }
+    ],
+    description: page.description
+  };
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.h1,
+    headline: page.h1,
+    description: page.description,
+    inLanguage: 'de-DE',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${siteBase}/#website`,
+      url: `${siteBase}/`,
+      name: 'Komplett Webdesign'
+    },
+    mainEntity: { '@id': `${pageUrl}#service` },
+    about: page.primaryKeyword,
+    mentions: page.secondaryKeywords
+  };
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${pageUrl}#faq`,
+    mainEntity: page.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer
+      }
+    }))
+  };
+  const structuredDataBlocks = [webPageSchema, serviceSchema, breadcrumbSchema, faqSchema];
+%>
+<%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
+
+<body class="service-page service-page--local-seo local-seo-page">
+  <%- include('../partials/header') %>
+
+  <main id="main-content">
+    <section class="service-hero local-seo-hero <%= page.heroImage?.src ? 'has-service-hero-image' : '' %>" id="hero"<% if (page.heroImage?.src) { %> style="--service-hero-image: url('<%= page.heroImage.src %>');"<% } %>>
+      <div class="service-shell local-seo-shell">
+        <nav class="local-seo-breadcrumbs service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/leistungen">Leistungen</a></li>
+            <li aria-current="page"><%= page.h1 %></li>
+          </ol>
+        </nav>
+
+        <div class="service-hero__grid local-seo-hero-grid">
+          <div>
+            <span class="local-seo-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid fa-location-dot" aria-hidden="true"></i><%= page.hero.eyebrow %></span>
+            <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+            <p class="local-seo-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.lead %></p>
+            <div class="service-hero__actions local-seo-actions">
+              <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.primaryCta.url %>" data-track="cta" data-cta-name="local_seo_hero_primary" data-cta-location="local_seo_hero"><%= page.hero.primaryCta.label %></a>
+              <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.secondaryCta.url %>" data-track="cta" data-cta-name="local_seo_hero_secondary" data-cta-location="local_seo_hero"><%= page.hero.secondaryCta.label %></a>
+            </div>
+          </div>
+
+          <aside class="local-seo-hero-panel home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="Kurzüberblick">
+            <h2><%= page.heroPanel.title %></h2>
+            <p><%= page.heroPanel.text %></p>
+            <ul class="local-seo-panel-list">
+              <% page.heroPanel.items.forEach(function(item) { %>
+              <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span><%= item %></span></li>
+              <% }) %>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="intro">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-magnifying-glass-location" aria-hidden="true"></i>Einordnung</span>
+          <h2><%= page.intro.title %></h2>
+          <p><%= page.intro.text %></p>
+        </div>
+        <div class="local-seo-card-grid">
+          <% page.intro.points.forEach(function(item) { %>
+          <article class="local-seo-card animate-on-scroll">
+            <h3><%= item.title %></h3>
+            <p><%= item.text %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="targetGroups">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-users" aria-hidden="true"></i>Zielgruppe</span>
+          <h2><%= page.targetGroups.title %></h2>
+          <p><%= page.targetGroups.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Sinnvoll für</h3>
+            <ul class="local-seo-list">
+              <% page.targetGroups.usefulFor.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Nicht der beste Einstieg für</h3>
+            <ul class="local-seo-list">
+              <% page.targetGroups.notPrimary.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="localSeoMeaning">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-sliders" aria-hidden="true"></i>Leistungsumfang</span>
+          <h2><%= page.meaning.title %></h2>
+          <p><%= page.meaning.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Kann dazugehören</h3>
+            <ul class="local-seo-list">
+              <% page.meaning.included.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Nicht automatisch enthalten</h3>
+            <ul class="local-seo-list">
+              <% page.meaning.notAutomatic.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="technicalFoundation">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-code" aria-hidden="true"></i>Technik</span>
+          <h2><%= page.technicalFoundation.title %></h2>
+          <p><%= page.technicalFoundation.lead %></p>
+        </div>
+        <div class="local-seo-card-grid">
+          <% page.technicalFoundation.points.forEach(function(item) { %>
+          <article class="local-seo-card animate-on-scroll">
+            <i class="fa-solid fa-check local-seo-icon" aria-hidden="true"></i>
+            <p><%= item %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="googleBusinessProfile">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>Google-Profil</span>
+          <h2><%= page.googleBusinessProfile.title %></h2>
+          <p><%= page.googleBusinessProfile.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Prüfung und Optimierung</h3>
+            <ul class="local-seo-list">
+              <% page.googleBusinessProfile.checks.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Klare Grenzen</h3>
+            <ul class="local-seo-list">
+              <% page.googleBusinessProfile.boundaries.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="localLandingPages">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-file-lines" aria-hidden="true"></i>Lokale Seiten</span>
+          <h2><%= page.localLandingPages.title %></h2>
+          <p><%= page.localLandingPages.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Sinnvolle Ansätze</h3>
+            <ul class="local-seo-list">
+              <% page.localLandingPages.good.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Was ich vermeide</h3>
+            <ul class="local-seo-list">
+              <% page.localLandingPages.avoid.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="structuredData">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i>Strukturierte Daten</span>
+          <h2><%= page.structuredData.title %></h2>
+          <p><%= page.structuredData.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Mögliche Schema-Typen</h3>
+            <ul class="local-seo-list">
+              <% page.structuredData.types.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Nur mit korrekten Angaben</h3>
+            <ul class="local-seo-list">
+              <% page.structuredData.boundaries.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="trustSignals">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-star" aria-hidden="true"></i>Vertrauen</span>
+          <h2><%= page.trustSignals.title %></h2>
+          <p><%= page.trustSignals.lead %></p>
+        </div>
+        <div class="local-seo-card-grid">
+          <% page.trustSignals.items.forEach(function(item) { %>
+          <article class="local-seo-card animate-on-scroll">
+            <i class="fa-solid fa-circle-check local-seo-icon" aria-hidden="true"></i>
+            <p><%= item %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="limitations">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>Grenzen</span>
+          <h2><%= page.limitations.title %></h2>
+          <p><%= page.limitations.text %></p>
+        </div>
+        <div class="local-seo-card-grid">
+          <% page.limitations.reasons.forEach(function(item) { %>
+          <article class="local-seo-card animate-on-scroll">
+            <p><%= item %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="packageConnection">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-box-open" aria-hidden="true"></i>Pakete</span>
+          <h2><%= page.packageConnection.title %></h2>
+          <p><%= page.packageConnection.lead %></p>
+        </div>
+        <div class="local-seo-card-grid local-seo-card-grid--four local-seo-card-grid--packages package-slider-scroll" data-package-slider tabindex="0" aria-label="Local-SEO-Pakete horizontal scrollen">
+          <% page.packageConnection.packages.forEach(function(pkg) { %>
+          <% const packageName = String(pkg.name || '').trim(); %>
+          <% const isIndividualPackage = pkg.id === 'individuell' || packageName === 'Individuelles Projekt' || packageName === 'Individuell'; %>
+          <% const packageButtonLabel = isIndividualPackage ? 'Individuelles Projekt-Paket ansehen' : (/paket$/i.test(packageName) ? packageName + ' ansehen' : packageName + '-Paket ansehen'); %>
+          <article class="local-seo-card local-seo-package-card animate-on-scroll">
+            <h3><%= pkg.name %></h3>
+            <span class="local-seo-price"><%= pkg.priceLabel %></span>
+            <p><strong><%= pkg.scope %></strong></p>
+            <p><%= pkg.text %></p>
+            <a class="btn btn-primary" href="<%= pkg.path %>"><%= packageButtonLabel %></a>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="pricing">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-euro-sign" aria-hidden="true"></i>Preise</span>
+          <h2><%= page.pricing.title %></h2>
+          <p><%= page.pricing.lead %></p>
+        </div>
+        <div class="local-seo-price-grid">
+          <% page.pricing.addOns.forEach(function(item) { %>
+          <article class="local-seo-price-card animate-on-scroll">
+            <h3><%= item.name %></h3>
+            <p><%= item.shortDescription %></p>
+            <span class="local-seo-price"><%= item.priceLabel %></span>
+          </article>
+          <% }) %>
+          <% page.pricing.customItems.forEach(function(item) { %>
+          <article class="local-seo-price-card animate-on-scroll">
+            <h3><%= item.name %></h3>
+            <p><%= item.shortDescription %></p>
+            <span class="local-seo-price"><%= item.priceLabel %></span>
+          </article>
+          <% }) %>
+        </div>
+        <aside class="local-seo-note local-seo-note--spaced animate-on-scroll">
+          <h3>Preis- und Kostenhinweise</h3>
+          <ul class="local-seo-list">
+            <% page.pricing.notes.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="process">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-route" aria-hidden="true"></i>Ablauf</span>
+          <h2><%= page.process.title %></h2>
+        </div>
+        <ol class="local-seo-steps">
+          <% page.process.steps.forEach(function(item) { %>
+          <li class="animate-on-scroll"><%= item %></li>
+          <% }) %>
+        </ol>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="seoBoundary">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Abgrenzung</span>
+          <h2><%= page.seoBoundary.title %></h2>
+          <p><%= page.seoBoundary.lead %></p>
+        </div>
+        <div class="local-seo-split">
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Technische Grundlage</h3>
+            <ul class="local-seo-list">
+              <% page.seoBoundary.foundation.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="local-seo-note animate-on-scroll">
+            <h3>Laufende Betreuung</h3>
+            <ul class="local-seo-list">
+              <% page.seoBoundary.ongoing.forEach(function(item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" id="faq">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-question" aria-hidden="true"></i>FAQ</span>
+          <h2>Häufige Fragen zu Local SEO Berlin</h2>
+          <p>Kurze Antworten zu Umfang, Kosten, Google Business Profile und realistischen Grenzen.</p>
+        </div>
+        <div class="local-seo-faq">
+          <% page.faq.forEach(function(item, index) { %>
+          <details class="local-seo-faq-item animate-on-scroll" <%= index === 0 ? ' open' : '' %>>
+            <summary>
+              <h3><%= item.question %></h3>
+            </summary>
+            <p><%= item.answer %></p>
+          </details>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section" id="cta">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-comments" aria-hidden="true"></i>Nächster Schritt</span>
+          <h2><%= page.cta.title %></h2>
+          <p><%= page.cta.text %></p>
+          <div class="local-seo-actions local-seo-actions--center">
+            <a class="btn btn-primary" href="<%= page.cta.primary.url %>" data-track="cta" data-cta-name="local_seo_mid_primary" data-cta-location="local_seo_mid"><%= page.cta.primary.label %></a>
+            <a class="btn btn-secondary" href="<%= page.cta.secondary.url %>" data-track="cta" data-cta-name="local_seo_mid_secondary" data-cta-location="local_seo_mid"><%= page.cta.secondary.label %></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-section local-seo-section--soft" aria-labelledby="local-links-heading">
+      <div class="local-seo-shell">
+        <div class="local-seo-section-head animate-on-scroll">
+          <span class="local-seo-section-kicker"><i class="fa-solid fa-link" aria-hidden="true"></i>Weiterlesen</span>
+          <h2 id="local-links-heading">Passende Seiten für deine Entscheidung</h2>
+          <p>Diese Seiten helfen dir, Website-Paket, Zusatzleistung, Relaunch und laufende Kosten zusammen einzuordnen.</p>
+        </div>
+        <div class="local-seo-link-grid">
+          <% page.internalLinks.forEach(function(link) { %>
+          <a class="local-seo-link-card animate-on-scroll" href="<%= link.href %>">
+            <h3><%= link.label %></h3>
+            <p><%= link.text %></p>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-seo-final" id="finalCta">
+      <div class="local-seo-shell">
+        <div class="local-seo-final-inner animate-on-scroll">
+          <div>
+            <h2><%= page.finalCta.title %></h2>
+            <p><%= page.finalCta.text %></p>
+          </div>
+          <div class="local-seo-actions">
+            <a class="btn btn-primary" href="<%= page.finalCta.primary.url %>" data-track="cta" data-cta-name="local_seo_final_primary" data-cta-location="local_seo_final"><%= page.finalCta.primary.label %></a>
+            <a class="btn btn-secondary" href="<%= page.finalCta.secondary.url %>" data-track="cta" data-cta-name="local_seo_final_secondary" data-cta-location="local_seo_final"><%= page.finalCta.secondary.label %></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+
+</html>

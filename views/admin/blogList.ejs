@@ -12,12 +12,12 @@
   <table class="table table-striped align-middle">
     <thead>
       <tr>
-        <th style="padding-right: 100px;">ID</th>
-        <th style="padding-right: 100px; min-width: 300px">Titel</th>
-        <th style="padding-right: 100px;">Kategorie</th>
-        <th style="padding-right: 100px;">Featured</th>
-        <th style="padding-right: 100px;">Erstellt am</th>
-        <th style="padding-right: 100px;">Aktionen</th>
+        <th class="admin-table-th-spacious">ID</th>
+        <th class="admin-table-th-wide">Titel</th>
+        <th class="admin-table-th-spacious">Kategorie</th>
+        <th class="admin-table-th-spacious">Featured</th>
+        <th class="admin-table-th-spacious">Erstellt am</th>
+        <th class="admin-table-th-spacious">Aktionen</th>
       </tr>
     </thead>
     <tbody>
@@ -29,13 +29,13 @@
           <td><%= p.featured ? 'Ja' : 'Nein' %></td>
           <td><%= new Date(p.created_at).toLocaleDateString('de-DE') %></td>
           <td>
-            <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary" style="display: inline-block; margin-right: 10px;">
+            <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary admin-inline-action">
               Bearbeiten
             </a>
             <form action="/admin/blog/<%= p.id %>/delete"
-                  method="POST" class="d-inline" style="display: inline-block;"
+                  method="POST" class="d-inline admin-inline-block"
                   onsubmit="return confirm('Artikel wirklich löschen?');">
-              <button class="btn btn-sm btn-danger" style="display: inline-block;">Löschen</button>
+              <button class="btn btn-sm btn-danger admin-inline-block">Löschen</button>
             </form>
           </td>
         </tr>

@@ -93,6 +93,25 @@
         summary: `Aktueller Wert: ${config?.fullGuideMaxPages ?? 10} Website-Seiten pro Vollanleitung (eine PDF).`
       },
       {
+        id: 'notifications',
+        title: 'Benachrichtigungen',
+        hint: 'Steuert, ob du zusätzlich zur Admin-Historie eine E-Mail bei jedem abgeschlossenen Test erhältst.',
+        action: '/admin/website-tester/config',
+        fields: [
+          {
+            type: 'select',
+            name: 'tester_scan_email_notifications_enabled',
+            label: 'Bei jedem abgeschlossenen Website-Test per E-Mail benachrichtigen',
+            value: String(config?.testerScanEmailNotificationsEnabled !== false),
+            options: [
+              { value: 'true', label: 'Ja, per E-Mail benachrichtigen' },
+              { value: 'false', label: 'Nein, nur im Admin anzeigen' }
+            ]
+          }
+        ],
+        summary: `Aktueller Wert: ${config?.testerScanEmailNotificationsEnabled === false ? 'nur Admin-Benachrichtigung' : 'Admin- und E-Mail-Benachrichtigung'}.`
+      },
+      {
         id: 'broken',
         title: 'Broken-Links-Tester',
         hint: 'Interne/externe Linkziele mit konfigurierbarem Scan-Modus.',
@@ -156,7 +175,9 @@
                 <% if (field.type === 'select') { %>
                   <select id="<%= field.name %>" class="form-select" name="<%= field.name %>" required>
                     <% field.options.forEach((option) => { %>
-                      <option value="<%= option %>" <%= field.value === option ? 'selected' : '' %>><%= option %></option>
+                      <% const optionValue = typeof option === 'object' ? option.value : option; %>
+                      <% const optionLabel = typeof option === 'object' ? option.label : option; %>
+                      <option value="<%= optionValue %>" <%= field.value === optionValue ? 'selected' : '' %>><%= optionLabel %></option>
                     <% }) %>
                   </select>
                 <% } else { %>
@@ -180,6 +201,75 @@
           <small class="text-muted d-block mt-2"><%= item.summary %></small>
         </div>
       <% }) %>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 mb-2">Letzte Tester-Ausführungen</h2>
+      <p class="text-muted mb-3">Hier erscheinen abgeschlossene Website-Tests direkt nach der Ausführung. Die E-Mail-Spalte zeigt, ob zusätzlich eine Betreiber-Mail ausgelöst wurde.</p>
+
+      <% if (scanNotifications && scanNotifications.rows && scanNotifications.rows.length) { %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Zeitpunkt</th>
+                <th>Tester</th>
+                <th>Status</th>
+                <th>URL</th>
+                <th>Score</th>
+                <th>Kontext</th>
+                <th>E-Mail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% scanNotifications.rows.forEach((item) => { %>
+                <%
+                  const testerLabels = { website: 'Website', 'broken-links': 'Broken-Links', geo: 'GEO', seo: 'SEO', meta: 'Meta' };
+                  const context = item.context_json || {};
+                  const contextText = [context.businessType, context.primaryService, context.targetRegion].filter(Boolean).join(' · ');
+                %>
+                <tr>
+                  <td class="text-nowrap"><%= item.created_at ? new Date(item.created_at).toLocaleString('de-DE') : '-' %></td>
+                  <td><%= testerLabels[item.source] || item.source || 'Website' %></td>
+                  <td>
+                    <% if (item.status === 'error') { %>
+                      <span class="badge bg-danger">Fehler</span>
+                    <% } else { %>
+                      <span class="badge bg-success">Erfolgreich</span>
+                    <% } %>
+                  </td>
+                  <td class="text-break">
+                    <strong><%= item.final_url || item.requested_url || '-' %></strong>
+                    <% if (item.requested_url && item.final_url && item.requested_url !== item.final_url) { %>
+                      <br><small class="text-muted">angefragt: <%= item.requested_url %></small>
+                    <% } %>
+                    <% if (item.error_message) { %>
+                      <br><small class="text-danger"><%= item.error_message %></small>
+                    <% } %>
+                  </td>
+                  <td><%= item.score || item.score === 0 ? item.score : '-' %><%= item.score_band ? ` · ${item.score_band}` : '' %></td>
+                  <td><%= contextText || '-' %></td>
+                  <td>
+                    <% if (!item.email_notification_enabled) { %>
+                      <span class="text-muted">aus</span>
+                    <% } else if (item.email_notification_sent_at) { %>
+                      <span class="text-success">gesendet</span>
+                    <% } else if (item.email_notification_error) { %>
+                      <span class="text-danger">Fehler</span>
+                    <% } else { %>
+                      <span class="text-muted">offen</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <p class="text-muted mb-0">Noch keine Tester-Ausführungen gespeichert.</p>
+      <% } %>
     </div>
   </div>
 
@@ -318,7 +408,7 @@
 
     // Sortable th — sorting is handled client-side via JS
     const sortTh = (label, col, type) => {
-      return `<th class="sort-col text-nowrap" data-sort-col="${col}" data-sort-type="${type}" style="cursor:pointer;user-select:none">${label}<span class="sort-icon ms-1 small text-muted opacity-50">&#8597;</span></th>`;
+      return `<th class="sort-col text-nowrap admin-sort-col" data-sort-col="${col}" data-sort-type="${type}">${label}<span class="sort-icon ms-1 small text-muted opacity-50">&#8597;</span></th>`;
     };
   %>
 
@@ -421,7 +511,7 @@
                       <span class="badge text-bg-danger">Fehler</span>
                     <% } %>
                   </td>
-                  <td style="max-width: 360px;">
+                  <td class="admin-cell-max-360">
                     <div class="small"><strong>Eingabe:</strong><br><span class="text-break"><%= row.requested_url %></span></div>
                     <% if (row.final_url) { %><div class="small mt-1"><strong>Final:</strong><br><span class="text-break"><%= row.final_url %></span></div><% } %>
                     <% if (row.error_message) { %><div class="small text-danger mt-1 text-break"><%= row.error_message %></div><% } %>
@@ -440,7 +530,7 @@
                       <% if (row.crawl_failed_pages && row.crawl_failed_pages > 0) { %><br><span class="text-danger">Fehler: <%= row.crawl_failed_pages %></span><% } %>
                     </span>
                   </td>
-                  <td style="max-width: 220px;"><span class="small text-break"><%= row.top_issues || '-' %></span></td>
+                  <td class="admin-cell-max-220"><span class="small text-break"><%= row.top_issues || '-' %></span></td>
                   <td><span class="small text-break"><%= row.audit_id || '-' %></span></td>
                 </tr>
               <% }) %>
@@ -532,7 +622,7 @@
                     <% } %>
                     <% if (row.partial_result) { %><div class="small text-warning mt-1">Teil-Scan</div><% } %>
                   </td>
-                  <td style="max-width: 360px;">
+                  <td class="admin-cell-max-360">
                     <div class="small"><strong>Eingabe:</strong><br><span class="text-break"><%= row.requested_url %></span></div>
                     <% if (row.final_url) { %><div class="small mt-1"><strong>Final:</strong><br><span class="text-break"><%= row.final_url %></span></div><% } %>
                     <% if (row.error_message) { %><div class="small text-danger mt-1 text-break"><%= row.error_message %></div><% } %>
@@ -642,7 +732,7 @@
                     <% } %>
                     <% if (row.partial_result) { %><div class="small text-warning mt-1">Teil-Scan</div><% } %>
                   </td>
-                  <td style="max-width: 360px;">
+                  <td class="admin-cell-max-360">
                     <div class="small"><strong>Eingabe:</strong><br><span class="text-break"><%= row.requested_url %></span></div>
                     <% if (row.final_url) { %><div class="small mt-1"><strong>Final:</strong><br><span class="text-break"><%= row.final_url %></span></div><% } %>
                     <% if (row.error_message) { %><div class="small text-danger mt-1 text-break"><%= row.error_message %></div><% } %>
@@ -749,7 +839,7 @@
                     <% } %>
                     <% if (row.partial_result) { %><div class="small text-warning mt-1">Teil-Scan</div><% } %>
                   </td>
-                  <td style="max-width: 360px;">
+                  <td class="admin-cell-max-360">
                     <div class="small"><strong>Eingabe:</strong><br><span class="text-break"><%= row.requested_url %></span></div>
                     <% if (row.final_url) { %><div class="small mt-1"><strong>Final:</strong><br><span class="text-break"><%= row.final_url %></span></div><% } %>
                     <% if (row.error_message) { %><div class="small text-danger mt-1 text-break"><%= row.error_message %></div><% } %>
@@ -877,13 +967,13 @@
                     <div class="small text-muted mt-1"><%= row.locale || 'de' %></div>
                   </td>
                   <td data-sort-value="<%= row.source || 'website' %>"><span class="small"><%= row.source || 'website' %></span></td>
-                  <td style="max-width: 210px;" data-sort-value="<%= row.domain || '' %>"><span class="small text-break"><%= row.domain || '-' %></span></td>
-                  <td style="max-width: 210px;"><span class="small text-break"><%= row.maskedEmail || '-' %></span></td>
+                  <td class="admin-cell-max-210" data-sort-value="<%= row.domain || '' %>"><span class="small text-break"><%= row.domain || '-' %></span></td>
+                  <td class="admin-cell-max-210"><span class="small text-break"><%= row.maskedEmail || '-' %></span></td>
                   <td data-sort-value="<%= row.overall_score ?? '' %>">
                     <strong><%= row.overall_score ?? '-' %></strong>
                     <div class="small text-muted"><%= row.score_band || '-' %></div>
                   </td>
-                  <td style="max-width: 200px;"><span class="small text-break"><%= row.top_issues || '-' %></span></td>
+                  <td class="admin-cell-max-200"><span class="small text-break"><%= row.top_issues || '-' %></span></td>
                   <td>
                     <% if (row.full_guide_status === 'sent') { %>
                       <span class="badge text-bg-success">Sent</span>
@@ -896,9 +986,9 @@
                     <% } %>
                     <% if (row.full_guide_profile) { %><div class="small text-muted mt-1"><%= row.full_guide_profile %></div><% } %>
                   </td>
-                  <td style="max-width: 160px;"><span class="small text-break"><%= row.audit_id || '-' %></span></td>
+                  <td class="admin-cell-max-160"><span class="small text-break"><%= row.audit_id || '-' %></span></td>
                   <td>
-                    <div class="d-grid gap-1" style="min-width: 150px;">
+                    <div class="d-grid gap-1 admin-actions-min">
                       <% if (row.status === 'pending') { %>
                         <form method="POST" action="/admin/website-tester/leads/<%= row.id %>/resend-doi">
                           <input type="hidden" name="return_to" value="<%= returnTo %>">

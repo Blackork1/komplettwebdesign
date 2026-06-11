@@ -5,7 +5,7 @@
     <i class="fa-solid fa-paper-plane"></i>
     Mailversand
   </h1>
-  <p style="margin-top:-0.5rem; color:#6b7280;">
+  <p class="mailversand-lead">
     Sende eine einzelne Nachricht im einheitlichen Marken-Template (Header, Footer, Signatur bleiben automatisch erhalten).
     Gib nur Betreff und Inhalt ein – optional eine Call-to-Action oder Anhänge.
   </p>
@@ -139,7 +139,7 @@
     </div>
   </form>
 
-  <div class="mailversand-preview" id="mv-preview-box" style="display:none;">
+  <div class="mailversand-preview is-hidden" id="mv-preview-box">
     <iframe id="mv-preview-frame" title="Mailvorschau"></iframe>
   </div>
 </div>
@@ -163,7 +163,7 @@
             body: new URLSearchParams(fd)
           });
           var html = await res.text();
-          previewBox.style.display = 'block';
+          previewBox.classList.remove('is-hidden');
           var doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
           doc.open(); doc.write(html); doc.close();
           previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

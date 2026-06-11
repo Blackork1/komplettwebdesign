@@ -2,8 +2,12 @@ import pool from '../util/db.js';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Review from '../models/Review.js';
-import Package from '../models/Package.js';
-import { mockPackages } from '../data/mockPackages.js';
+import pricingService from '../services/pricingService.js';
+import {
+  buildPricingViewModel,
+  interpolatePricingTokens
+} from '../util/pricingViewModel.js';
+import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 
 // Öffentliches Google-Profil (aus sameAs im JSON-LD) – zentral hier gepflegt,
 // damit Trust-Sektion und "Alle Bewertungen"-Button konsistent bleiben.
@@ -14,70 +18,70 @@ const MIN_REVIEWS_FOR_AGGREGATE = 3;
 const HOMEPAGE_FAQ = {
   de: [
     {
-      q: 'Was kostet es, eine Website erstellen zu lassen?',
-      a: 'Bei mir gibt es transparente Festpreise: Basis ab 499 €, Business ab 899 € und Premium ab 1.499 €. Domain und Mail starten ab 10 € pro Monat, Hosting kostet 10 € pro Monat und Wartung 5 € pro Monat. So bleibt klar, was einmalig ist und was laufend dazukommt.'
+      q: 'Was kostet eine Website bei Komplett Webdesign?',
+      a: 'Website-Pakete starten bei {{lowestPackagePriceLabel}} mit klar definiertem Umfang. Business-Websites starten bei {{price.business}}, Wachstum-Projekte bei {{price.wachstum}} und individuelle Anforderungen bei {{price.individuell}}.'
     },
     {
-      q: 'Wie lange dauert es, bis meine Website online ist?',
-      a: 'Das Basis-Paket dauert typischerweise 2 bis 4 Wochen, das Business-Paket 4 bis 6 Wochen und das Premium-Paket 6 bis 8 Wochen. Der genaue Zeitrahmen hängt davon ab, wie schnell Inhalte, Feedback und technische Zugänge vorliegen.'
+      q: 'Warum starten die Pakete bei {{lowestPackagePriceLabel}}?',
+      a: 'Die Website wird individuell mit Node.js, EJS, CSS und JavaScript umgesetzt. Du bekommst keine Baukasten-Website und kein Standard-Theme, sondern serverseitig gerendertes HTML mit klarer technischer Grundlage.'
     },
     {
-      q: 'Welche Leistungen sind im Preis enthalten?',
-      a: 'In jedem Paket enthalten: individuelles Webdesign, responsive Umsetzung für Handy/Tablet/Desktop, SEO-Grundoptimierung, DSGVO-konforme Rechtstexte (Impressum, Datenschutz, ggf. Cookie-Banner), SSL-Zertifikat und persönlicher Support über einen festen Ansprechpartner.'
+      q: 'Welches Paket passt für mich?',
+      a: 'Start passt für kompakte Websites, Business für mehrere Leistungen und Wachstum für Relaunches oder stärkere Seitenstruktur. Sonderfunktionen wie Buchungssystem, CMS, Mehrsprachigkeit oder Shop-Funktionen werden individuell geprüft.'
     },
     {
-      q: 'Kümmerst du dich auch um Hosting und Wartung?',
-      a: 'Ja. Auf Wunsch übernehme ich Hosting auf sicheren deutschen Servern, Backups, Updates, Sicherheitspatches und laufenden Support. Du musst dich um nichts Technisches kümmern.'
+      q: 'Gibt es laufende Kosten nach dem Launch?',
+      a: 'Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools können separat anfallen. Diese laufenden Kosten werden nicht automatisch in den einmaligen Projektpreis eingerechnet.'
     },
     {
-      q: 'Bin ich mit meiner Website in Google sichtbar?',
-      a: 'Ja, jede Website wird technisch sauber und SEO-freundlich gebaut: saubere HTML-Struktur, schnelle Ladezeiten, strukturierte Daten, mobile-first, Metadaten. Für lokale Sichtbarkeit in Berlin richte ich zusätzlich dein Google-Unternehmensprofil mit ein.'
+      q: 'Sind Texte und SEO enthalten?',
+      a: 'Gelieferte Inhalte werden je nach Paket eingebunden und strukturiert. Technische SEO-Grundlagen sind im vereinbarten Umfang enthalten; umfangreiche Texterstellung, Local SEO und zusätzliche SEO-Seiten sind separate Leistungen.'
     },
     {
-      q: 'Kann ich meine Website später selbst pflegen?',
-      a: 'Ja. Auf Wunsch bekommst du ein einfaches CMS-Backend, mit dem du Texte, Bilder, Blog-Artikel und Angebote selbst pflegen kannst. Alternativ übernehme ich die Pflege im Rahmen eines Wartungspakets.'
+      q: 'Gibt es eine Ranking-Garantie?',
+      a: 'Nein. Ich setze technische SEO-Grundlagen um und achte auf saubere Struktur, Metadaten und Ladezeit. Bestimmte Platzierungen bei Google können nicht garantiert werden.'
     },
     {
-      q: 'Für welche Branchen erstellst du Websites?',
-      a: 'Schwerpunkte sind lokale Dienstleister, Restaurants und Cafés, Handwerksbetriebe, Immobilienmakler, Beauty- und Wellness-Angebote, Praxen sowie kleine Shops und lokale Händler. Ich kenne die Anforderungen dieser Branchen und setze sie gezielt für Sichtbarkeit und Anfragen in Berlin um.'
+      q: 'Sind Impressum und Datenschutzerklärung enthalten?',
+      a: 'Impressum, Datenschutzerklärung und Cookie-Hinweise können technisch eingebunden werden. Die Erstellung oder rechtliche Prüfung dieser Texte ist keine Rechtsberatung und sollte bei Bedarf über spezialisierte Anbieter oder eine Rechtsberatung erfolgen.'
     },
     {
-      q: 'Arbeitest du nur mit Kunden aus Berlin?',
-      a: 'Mein Sitz ist Berlin-Lichtenberg, der Großteil meiner Kunden kommt aus Berlin und Brandenburg. Ich betreue aber deutschlandweit – Termine laufen per Video-Call, Vor-Ort-Termine in Berlin sind jederzeit möglich.'
+      q: 'Sind Buchungssysteme, CMS oder Shops möglich?',
+      a: 'Ja, aber nicht als pauschales Standardpaket. Buchungssysteme, CMS, Mehrsprachigkeit und kleine Shop-Funktionen sind als Zusatzleistung oder individuelles Projekt möglich.'
     },
     {
-      q: 'Ist meine Website DSGVO- und rechtskonform?',
-      a: 'Ja. Jede Website ist DSGVO-konform aufgesetzt: Cookie-Consent vor dem Laden von Google Analytics/Clarity, datensparsame Einbindungen, geprüfte Rechtstexte und ein klarer Datenverarbeitungs-Workflow. So bist du als Betreiber rechtlich abgesichert.'
+      q: 'Wie viele Feedbackrunden sind enthalten?',
+      a: 'Feedbackrunden richten sich nach dem gewählten Paket und dem vereinbarten Umfang. Zusätzliche Änderungswünsche nach Freigabe werden vor der Umsetzung besprochen und separat kalkuliert.'
     },
     {
-      q: 'Wie läuft die Zusammenarbeit konkret ab?',
-      a: 'In einem 20-minütigen Kennenlerngespräch kläre ich mit dir Ziele und Budget. Danach erstelle ich ein Konzept und einen Entwurf, den du mit mir gemeinsam anpasst. Nach Freigabe erfolgen Umsetzung, Live-Test und Launch. Du hast immer einen festen Ansprechpartner und schnelle Antworten innerhalb von 24 Stunden.'
+      q: 'Wie lange dauert ein Projekt?',
+      a: 'Kompakte Start-Websites dauern häufig 2 bis 4 Wochen, Business-Projekte meist 4 bis 6 Wochen. Wachstum- und individuelle Projekte hängen stärker von Inhalten, Feedback, Funktionen und technischen Zugängen ab.'
     }
   ],
   en: [
     {
       q: 'How much does it cost to have a website built?',
-      a: 'Transparent fixed prices: Basic from EUR 499, Business from EUR 899 and Premium from EUR 1,499. Domain and email start from EUR 10 per month, hosting is EUR 10 per month and maintenance is EUR 5 per month. One-time project costs and monthly services stay clearly separated.'
+      a: 'Website packages start at {{lowestPackagePriceLabel.en}} for clearly defined scope. Business projects start at {{price.business.en}}, larger websites or relaunches at {{price.wachstum.en}}. Custom functionality is estimated individually.'
     },
     {
       q: 'How long until my website goes live?',
-      a: 'The Basic package usually takes 2 to 4 weeks, the Business package 4 to 6 weeks and the Premium package 6 to 8 weeks. The exact timeline depends on how quickly content, feedback and technical access are available.'
+      a: 'Compact Start websites often take 2 to 4 weeks, Business projects usually 4 to 6 weeks and Growth projects longer depending on scope. Content, feedback, access and add-ons affect the timeline.'
     },
     {
       q: 'What is included in the price?',
-      a: 'Every package includes: custom web design, responsive implementation (mobile, tablet, desktop), SEO basics, GDPR-compliant legal texts (imprint, privacy policy, cookie banner if needed), SSL certificate, and personal support via one fixed point of contact.'
+      a: 'Depending on the package, scope includes custom web design, responsive implementation, technical SEO basics, structuring supplied content and one personal point of contact. Legal pages can be integrated technically; legal review is not included.'
     },
     {
       q: 'Do you also handle hosting and maintenance?',
-      a: 'Yes. On request I take over hosting on secure German servers, backups, updates, security patches, and ongoing support. You do not have to deal with anything technical.'
+      a: 'Yes. Hosting, domain, email, maintenance, backups or monitoring can be agreed separately. Running costs are kept separate from the one-time project price.'
     },
     {
       q: 'Will my website be visible on Google?',
-      a: 'Yes, every site is built clean and SEO-friendly: semantic HTML, fast loading, structured data, mobile-first, proper metadata. For local visibility in Berlin I also help set up your Google Business Profile.'
+      a: 'The site is built with technical SEO basics, clean HTML, fast loading and proper metadata. Specific Google rankings cannot be guaranteed.'
     },
     {
       q: 'Can I edit my website myself later?',
-      a: 'Yes. On request you get a simple CMS backend to edit text, images, blog posts, and offers yourself. Alternatively I handle content updates under a maintenance package.'
+      a: 'Simple CMS or content-management functionality can be planned as a custom add-on. Alternatively, ongoing content updates can be agreed separately.'
     },
     {
       q: 'Which industries do you build websites for?',
@@ -88,8 +92,8 @@ const HOMEPAGE_FAQ = {
       a: 'I am based in Berlin-Lichtenberg, most of my clients come from Berlin and Brandenburg, but I serve clients across Germany. Meetings run via video call; on-site meetings in Berlin are always possible.'
     },
     {
-      q: 'Is my website GDPR-compliant?',
-      a: 'Yes. Every site is GDPR-ready: cookie consent before loading Google Analytics/Clarity, privacy-friendly embeds, reviewed legal texts, and a clear data processing workflow. You are legally covered as the operator.'
+      q: 'How are privacy and legal pages handled?',
+      a: 'Technical privacy basics are considered. Imprint, privacy policy and cookie notices can be integrated technically; legal creation or review is not legal advice.'
     },
     {
       q: 'How does the collaboration actually work?',
@@ -100,29 +104,30 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Website erstellen lassen Berlin | Webdesign für mehr Anfragen',
-    seoDescription: 'Moderne Website in Berlin erstellen lassen: individuelles Webdesign, responsive Umsetzung, SEO-Grundlagen und klare Struktur für mehr Kundenanfragen.',
-    seoKeywords: 'webseite erstellen lassen, webdesign in berlin, website in berlin erstellen lassen, webdesigner berlin, lokale seo berlin',
-    ogTitle: 'Website erstellen lassen – persönlich, SEO-freundlich und aus einer Hand',
-    ogDescription: 'Webdesign, Texte, SEO, Hosting und Wartung für kleine Unternehmen in Berlin. Faire Festpreis-Pakete ab 499 €.',
-    heroBadge: 'Komplett Webdesign aus Berlin',
-    heroTitle: 'Website erstellen lassen in Berlin – moderne Webseiten, die Kunden gewinnen',
-    heroTitle2: '',
-    heroSubline: 'Design, Texte, SEO, Hosting und Wartung für kleine Unternehmen',
-    heroBullet1: 'Persönliche Betreuung vom ersten Gespräch bis zum Livegang',
-    heroBullet2: 'Faire Festpreis-Pakete ab 499 EUR ohne versteckte Projektkosten',
-    heroBullet3: 'SEO-Grundlage, schnelle Ladezeiten und klare Anfragewege von Anfang an',
-    heroCtaPrimary: 'Beratungsgespräch anfragen',
+    seoTitle: 'Website erstellen lassen Berlin | Webdesign ab {{lowestPackagePriceLabel}}',
+    seoDescription: 'Professionelles Webdesign aus Berlin für Selbstständige, kleine Unternehmen und lokale Dienstleister. Ohne Baukasten, mit klaren Paketen ab {{lowestPackagePriceLabel}} und Fokus auf Kontaktanfragen.',
+    seoKeywords: 'website erstellen lassen berlin, webdesign berlin, webdesigner berlin, website für kleine unternehmen berlin, webdesign preise berlin, website pakete berlin, webdesign brandenburg, local seo berlin',
+    ogTitle: 'Website erstellen lassen Berlin | Webdesign ab {{lowestPackagePriceLabel}}',
+    ogDescription: 'Professionelles Webdesign aus Berlin für Selbstständige, kleine Unternehmen und lokale Dienstleister. Ohne Baukasten, mit klaren Paketen ab {{lowestPackagePriceLabel}}.',
+    heroBadge: 'Webdesign aus Berlin · ohne Baukasten',
+    heroTitle: 'Website erstellen lassen in Berlin',
+    heroTitle2: 'klar, modern und auf Anfragen optimiert',
+    heroSubline: 'Ich erstelle Websites für Selbstständige, kleine Unternehmen und lokale Dienstleister in Berlin & Brandenburg – technisch sauber, verständlich kalkuliert und ohne Standard-Theme.',
+    heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
+    heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
+    heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
+    heroCtaPrimary: 'Website-Projekt anfragen',
     heroCtaSecondary: 'Pakete ansehen',
-    heroBadge1: 'Basis ab 499 EUR',
-    heroBadge2: 'Business ab 899 EUR',
-    heroBadge3: 'Premium ab 1.499 EUR',
-    introTitleStrong: 'Deine professionelle Website aus Berlin',
-    introTitleRest: 'aus einer Hand bei',
-    featuresTitle: 'Was biete ich dir für deine Websiteerstellung?',
-    timelineTitle: 'Dein Zeitplan – klar geplant vom Erstgespräch bis zum Livegang',
-    timelineNote: 'Basis: 2 bis 4 Wochen, Business: 4 bis 6 Wochen, Premium: 6 bis 8 Wochen.',
-    servicesTitle: 'Alles aus einer Hand – ich erstelle deine professionelle Website in Berlin',
+    heroTrustNote: 'Kostenlose Ersteinschätzung',
+    heroBadge1: 'Start {{price.start}}',
+    heroBadge2: 'Business {{price.business}}',
+    heroBadge3: 'Wachstum {{price.wachstum}}',
+    introTitleStrong: 'Website erstellen lassen in Berlin',
+    introTitleRest: 'mit persönlicher Betreuung bei',
+    featuresTitle: 'Warum Komplett Webdesign anders arbeitet',
+    timelineTitle: 'So läuft dein Website-Projekt ab',
+    timelineNote: 'Klare Einschätzung, abgegrenztes Angebot, individuelle Umsetzung und Feedbackrunden im vereinbarten Umfang.',
+    servicesTitle: 'Webdesign-Leistungen im Überblick',
     blogSectionTitle: 'Aktuelles zum Thema Webseiten und bisherige Kundenstimmen',
     blogCardTitle: 'Aktueller Blog-Artikel',
     blogSoon: '(Demnächst mehr...)',
@@ -131,11 +136,11 @@ const HOMEPAGE_I18N = {
     blogToOverview: 'Zum Blog',
     reviewCardTitle: 'Kundenstimme',
     reviewSoon: '(Demnächst echte Stimmen...)',
-    pricingTitle: 'Bereit für eine professionelle Website?',
-    pricingTagline: '„Günstige Website erstellen lassen" heißt: sinnvoller Umfang, klare Leistungen und transparente laufende Kosten.',
-    industryTitle: 'Webseiten für lokale Dienstleister, Restaurants, Handwerk und kleine Händler in Berlin',
-    trustTitle: 'Das sagen meine Kunden',
-    trustSubline: 'Echte Bewertungen von Projekten, die ich für Kunden in Berlin umgesetzt habe.',
+    pricingTitle: 'Website-Pakete ab {{lowestPackagePriceLabel}}',
+    pricingTagline: 'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer. Zusatzwünsche und laufende Kosten werden separat ausgewiesen.',
+    industryTitle: 'Für wen Komplett Webdesign passt',
+    trustTitle: 'Persönlich, transparent und lokal ausgerichtet',
+    trustSubline: 'Wenn echte Bewertungen vorhanden sind, erscheinen sie hier. Bis dahin zählen Arbeitsweise, klare Kommunikation und nachvollziehbare Projektgrenzen.',
     trustCtaAll: 'Alle Bewertungen bei Google ansehen',
     trustCtaWrite: 'Eigene Bewertung abgeben',
     trustAverageLabel: 'Durchschnittliche Bewertung auf Google',
@@ -146,29 +151,30 @@ const HOMEPAGE_I18N = {
     faqSubline: 'Antworten auf die Fragen, die mir Interessenten am häufigsten stellen.'
   },
   en: {
-    seoTitle: 'Website Development Berlin – from €499 · live in 30 days | Komplett Webdesign',
-    seoDescription: 'Have your website built in Berlin: modern web design, SEO, hosting, and support from one source. Fixed price from €499, live in 30 days.',
+    seoTitle: 'Website Development Berlin – Packages from {{lowestPackagePriceLabel.en}} | Komplett Webdesign',
+    seoDescription: 'Have your website built in Berlin: custom web design, responsive implementation, technical SEO basics and clear packages from {{lowestPackagePriceLabel.en}}.',
     seoKeywords: 'website development berlin, web design berlin, berlin web designer, local seo berlin, website creation berlin',
-    ogTitle: 'Website Development in Berlin – from €499, live in 30 days',
-    ogDescription: 'Web design, SEO, hosting, and support from one source. I build your professional website in Berlin with a fixed price and clear timeline.',
+    ogTitle: 'Website Development in Berlin – packages from {{lowestPackagePriceLabel.en}}',
+    ogDescription: 'Custom web design, technical SEO basics and clear website packages from {{lowestPackagePriceLabel.en}} for small businesses in Berlin.',
     heroBadge: 'Komplett Webdesign from Berlin',
-    heroTitle: 'Get a website built in Berlin',
-    heroTitle2: 'personal, SEO-friendly and from one source',
-    heroSubline: 'design, copy, SEO, hosting and maintenance for small businesses',
-    heroBullet1: 'Personal support from first call to launch',
-    heroBullet2: 'Fair fixed-price packages from EUR 499 with clear scope',
-    heroBullet3: 'SEO foundation, fast loading and clear inquiry paths from day one',
-    heroCtaPrimary: 'Request consultation',
+    heroTitle: 'Get a custom website built in Berlin',
+    heroTitle2: '',
+    heroSubline: 'Individual web design for small businesses, solo professionals and local service providers.',
+    heroBullet1: 'Built with Node.js, EJS, CSS and JavaScript',
+    heroBullet2: 'No builder website and no standard theme',
+    heroBullet3: 'Packages from {{lowestPackagePriceLabel.en}} with clear scope boundaries',
+    heroCtaPrimary: 'Request website project',
     heroCtaSecondary: 'View packages',
-    heroBadge1: 'Basic from EUR 499',
-    heroBadge2: 'Business from EUR 899',
-    heroBadge3: 'Premium from EUR 1,499',
-    introTitleStrong: 'Your professional website from Berlin',
-    introTitleRest: 'from one source at',
-    featuresTitle: 'What do I offer for your website project?',
-    timelineTitle: 'Your timeline - clearly planned from first call to launch',
-    timelineNote: 'Basic: 2 to 4 weeks, Business: 4 to 6 weeks, Premium: 6 to 8 weeks.',
-    servicesTitle: 'Everything from one source – I build your professional website in Berlin',
+    heroTrustNote: 'Free initial assessment',
+    heroBadge1: 'Start {{price.start.en}}',
+    heroBadge2: 'Business {{price.business.en}}',
+    heroBadge3: 'Growth {{price.wachstum.en}}',
+    introTitleStrong: 'Custom website from Berlin',
+    introTitleRest: 'with personal support at',
+    featuresTitle: 'Why Komplett Webdesign works differently',
+    timelineTitle: 'How your website project works',
+    timelineNote: 'Clear recommendation, scoped offer, custom implementation and feedback rounds in the agreed scope.',
+    servicesTitle: 'Web design services at a glance',
     blogSectionTitle: 'Latest website topics and client feedback',
     blogCardTitle: 'Latest blog post',
     blogSoon: '(More coming soon...)',
@@ -177,11 +183,11 @@ const HOMEPAGE_I18N = {
     blogToOverview: 'Go to blog',
     reviewCardTitle: 'Client feedback',
     reviewSoon: '(Real feedback coming soon...)',
-    pricingTitle: 'Ready for a professional website?',
-    pricingTagline: '"Affordable website development" means: smart planning, modular implementation, no hidden costs.',
+    pricingTitle: 'Website packages from {{lowestPackagePriceLabel.en}}',
+    pricingTagline: 'All prices are listed under § 19 UStG without VAT shown. Add-ons and running costs are shown separately.',
     industryTitle: 'Websites for local service providers, restaurants, trades and small retailers in Berlin',
-    trustTitle: 'What my clients say',
-    trustSubline: 'Real reviews from projects I have delivered for Berlin-based clients.',
+    trustTitle: 'Personal, transparent and locally focused',
+    trustSubline: 'When verified reviews are available, they appear here. Until then, the focus is on process, clear communication and transparent scope.',
     trustCtaAll: 'See all reviews on Google',
     trustCtaWrite: 'Write a review',
     trustAverageLabel: 'Average rating on Google',
@@ -197,66 +203,95 @@ function resolveHomeLanguage(req) {
   return req.params?.lng === 'en' ? 'en' : 'de';
 }
 
-function localizeHomepagePackages(packages, lng) {
+async function localizeHomepagePackages(packages, lng) {
   const isEn = lng === 'en';
-  const packageDefaults = new Map(
-    (mockPackages || []).map((pkg) => [String(pkg.slug || '').toLowerCase(), pkg])
-  );
+  const legacySlugMap = {
+    basis: 'start',
+    basic: 'start',
+    premium: 'wachstum'
+  };
 
-  const nameMap = isEn
-    ? { Basis: 'Basic', Business: 'Business', Premium: 'Premium' }
-    : { Basis: 'Basis', Business: 'Business', Premium: 'Premium' };
+  const englishNames = {
+    start: 'Start',
+    business: 'Business',
+    wachstum: 'Growth',
+    individuell: 'Individual'
+  };
 
   const englishDescriptions = {
-    basis: 'For small businesses and local service providers that need a professional digital business card: 1 page including copy and basic SEO.',
-    business: 'For small businesses that need more than a business card: up to 5 pages with contact form, service pages, about/team page and on-page SEO.',
-    premium: 'For larger online offers in Berlin: up to 20 pages including copy, strategy, SEO and booking system. Shop features are optional depending on scope.'
+    start: 'For founders, solo professionals and local providers that need a compact custom website with clear scope.',
+    business: 'For small businesses that need multiple content pages, clear offer structure and technical SEO basics.',
+    wachstum: 'For larger websites, relaunches and stronger page structures with several service pages.',
+    individuell: 'For custom functionality such as booking flows, CMS, multilingual setup or small shop features after review.'
   };
 
   const englishFeatures = {
-    basis: [
-      '1 professional page with clear offer, copy and contact option',
+    start: [
+      '1 to 3 content pages or one clearly structured one-pager',
       'Responsive web design for mobile, tablet and desktop',
-      'Basic SEO, technical foundation and legal pages'
+      'Technical SEO basics and supplied-content integration'
     ],
     business: [
-      'Up to 5 pages including homepage, services, about/team and contact',
-      'Contact form, clear inquiry flow and on-page SEO',
-      'Blog or additional content available as optional extension'
+      'Approx. 4 to 7 content pages',
+      'Clear inquiry flow and technical SEO structure',
+      'Additional pages and local SEO add-ons available separately'
     ],
-    premium: [
-      'Up to 20 pages with strategy, copy and SEO structure',
-      'Booking system included, shop optional depending on scope',
-      'Ideal for small shops, local retailers and companies with larger offers'
+    wachstum: [
+      'Approx. 8 to 12 content pages in the agreed scope',
+      'Stronger structure for relaunches and several service pages',
+      'Booking, CMS or shop functionality treated as add-ons or custom work'
+    ],
+    individuell: [
+      'Custom scope after feasibility review',
+      'Suitable for booking, CMS, multilingual setup or special features',
+      'Third-party and running costs clarified separately'
     ]
   };
 
-  return packages.map((pkg) => {
-    const amount = Number(pkg.price_amount_cents || 0) / 100;
-    const slug = String(pkg.slug || pkg.name || '').toLowerCase();
-    const defaults = packageDefaults.get(slug);
+  return Promise.all(packages.map(async (pkg) => {
+    const rawSlug = String(pkg.slug || pkg.name || '').toLowerCase();
+    const slug = legacySlugMap[rawSlug] || rawSlug;
+    const features = await pricingService.getPackageFeatures(pkg.id).catch(() => []);
+    const featureTexts = features.map((item) => item.text).filter(Boolean);
+
     return {
       ...pkg,
-      name: nameMap[pkg.name] || pkg.name,
+      id: pkg.id || slug,
+      display: true,
+      name: isEn ? (englishNames[slug] || pkg.name) : pkg.name,
       description: isEn
-        ? (englishDescriptions[slug] || pkg.description)
-        : (defaults?.description || pkg.description),
+        ? (englishDescriptions[slug] || pkg.shortDescription || pkg.description)
+        : (pkg.shortDescription || pkg.description),
       features: isEn
-        ? (englishFeatures[slug] || pkg.features || [])
-        : (defaults?.features || pkg.features || []),
-      price: isEn
-        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount)
-        : pkg.price
+        ? (englishFeatures[slug] || featureTexts)
+        : featureTexts,
+      price: isEn ? pkg.priceLabel?.replace(/^ab\s+/i, 'from ').replace(/\s*€\b/g, ' EUR').replace(/(\d)\.(\d{3})/g, '$1,$2').replace(/oder nach Aufwand/i, 'or by effort') : pkg.priceLabel,
+      priceLabel: isEn ? pkg.priceLabel?.replace(/^ab\s+/i, 'from ').replace(/\s*€\b/g, ' EUR').replace(/(\d)\.(\d{3})/g, '$1,$2').replace(/oder nach Aufwand/i, 'or by effort') : pkg.priceLabel
     };
-  });
+  }));
 }
 
 export async function getIndex(req, res) {
   try {
     const lng = resolveHomeLanguage(req);
-    const copy = HOMEPAGE_I18N[lng];
     const pagePath = lng === 'en' ? '/en' : '/';
     const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+    const visiblePackages = res.locals.visiblePackages || await pricingService.getPackagesForHome();
+    const packagePriceMap = res.locals.packagePriceMap || await pricingService.getPackagePriceMap();
+    const lowestPackagePriceLabel = res.locals.lowestPackagePriceLabel || await pricingService.getLowestVisiblePackagePriceLabel();
+    const pricing = res.locals.packagePricing || buildPricingViewModel({
+      visiblePackages,
+      packagePriceMap,
+      lowestPackagePriceLabel,
+      contactPackageOptions: res.locals.packageContactOptions || []
+    });
+    const copy = interpolatePricingTokens(HOMEPAGE_I18N[lng], pricing, { lng });
+    const homepageFaq = interpolatePricingTokens(HOMEPAGE_FAQ[lng] || HOMEPAGE_FAQ.de, pricing, { lng });
+    const localizedLowestPackagePriceLabel = pricing.lowestLabel(lng);
+    const heroBridgeHighlights = buildHomeHeroBridgeHighlights({
+      lng,
+      lowestPackagePriceLabel: localizedLowestPackagePriceLabel
+    });
 
     // URLs für hreflang (de = default, en = /en)
     const alternateUrls = {
@@ -266,8 +301,7 @@ export async function getIndex(req, res) {
     };
 
     const users = await User.fetchAll();
-    const packagesRaw = await Package.fetchAll();
-    const packages = localizeHomepagePackages(packagesRaw, lng);
+    const packages = await localizeHomepagePackages(visiblePackages, lng);
     const latestPostRaw = await Post.fetchLatest();
 
     // Reviews: Trust-Sektion zieht bis zu 3 echte Stimmen,
@@ -330,9 +364,9 @@ export async function getIndex(req, res) {
       created_at: r.created_at || null
     }));
 
-    // Bewertungen bleiben sichtbar im Seiteninhalt. AggregateRating-Markup wird
-    // bewusst nicht ausgegeben, weil selbst kontrollierte LocalBusiness-Reviews
-    // laut Google nicht für Review-Sterne geeignet sind.
+    // Bewertungen bleiben sichtbar im Seiteninhalt. Bewertungs-Markup wird bewusst
+    // nicht ausgegeben, weil selbst kontrollierte LocalBusiness-Reviews laut
+    // Google nicht für Review-Sterne geeignet sind.
 
     res.render('index', {
       title: copy.seoTitle,
@@ -342,7 +376,7 @@ export async function getIndex(req, res) {
   <meta property="og:title" content="${copy.ogTitle}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="${copy.ogDescription}">
-  <meta property="og:image" content="${base}/images/heroBg.webp">
+  <meta property="og:image" content="${base}/images/home-hero-klarblick-desktop.webp">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="${lng === 'en' ? 'Komplett Webdesign – professional websites from Berlin' : 'Komplett Webdesign – professionelle Websites aus Berlin'}">
@@ -359,7 +393,9 @@ export async function getIndex(req, res) {
       reviewAggregate,
       googleProfileUrl: GOOGLE_PROFILE_URL,
       googleReviewUrl: GOOGLE_REVIEW_URL,
-      faq: HOMEPAGE_FAQ[lng] || HOMEPAGE_FAQ.de,
+      faq: homepageFaq,
+      heroBridgeHighlights,
+      lowestPackagePriceLabel: localizedLowestPackagePriceLabel,
       lng,
       copy,
       stripePublishable: process.env.STRIPE_PUBLISHABLE_KEY,
@@ -394,13 +430,11 @@ export async function getAbout(req, res) {
 }
 
 export async function getBranchen(req, res) {
-  const packages = await Package.fetchAll();
-
   res.render('branchen-tempaltes', {
     title: 'Branchen-Websites erstellen lassen – Komplett Webdesign',
     description: 'Professionelles Webdesign für verschiedene Branchen: Lass deine Website von Experten erstellen. Maßgeschneiderte Lösungen für deinen Erfolg.',
     keywords: 'Webdesign,Branchen-Websites,Webentwicklung',
-    packages
+    packages: res.locals.visiblePackages || []
   });
 }
 

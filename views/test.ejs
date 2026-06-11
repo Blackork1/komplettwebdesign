@@ -16,7 +16,7 @@
                 <li aria-current="page"><%= isEn ? 'Website Tester' : 'Website-Tester' %></li>
               </ol>
             </nav>
-            <h1><%= isEn ? 'Find out why your website is not generating enough requests.' : 'Finde heraus, warum deine Website zu wenig Anfragen bringt.' %></h1>
+            <h1><%= isEn ? 'Find out where your website slows down inquiry paths.' : 'Finde heraus, wo deine Website Anfragewege bremst.' %></h1>
             <p class="wt-lead unified-hero__lead">
               <%= isEn
                 ? 'Get a clear, easy-to-understand assessment of visibility, trust, usability and contact paths. The result shows what should be improved first.'
@@ -53,7 +53,7 @@
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
                   <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 </div>
-                <button class="wt-button" type="submit">
+                <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start check' : 'Check starten' %>
                 </button>
@@ -92,7 +92,7 @@
                 ? 'Check internal and external links and find broken targets, redirects, warnings and affected source pages.'
                 : 'Prüft interne und externe Links und findet defekte Ziele, Weiterleitungen, Warnungen und betroffene Quellseiten.' %>
             </p>
-            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>">
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>">
               <%= isEn ? 'Open tester' : 'Tester öffnen' %>
             </a>
           </article>
@@ -104,7 +104,7 @@
                 ? 'Analyze AI visibility signals such as entities, snippets, FAQ structure and crawler access.'
                 : 'Analysiert KI-Sichtbarkeitssignale wie Entitäten, Snippets, FAQ-Struktur und Crawler-Zugriff.' %>
             </p>
-            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>">
               <%= isEn ? 'Open tester' : 'Tester öffnen' %>
             </a>
           </article>
@@ -116,7 +116,7 @@
                 ? 'Audit on-page SEO, indexing, technical quality, content, internal linking and structured data.'
                 : 'Prüft Inhalte, Auffindbarkeit, Seitenstruktur, interne Verlinkung und wichtige Google-Signale.' %>
             </p>
-            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>">
               <%= isEn ? 'Open tester' : 'Tester öffnen' %>
             </a>
           </article>
@@ -128,7 +128,7 @@
                 ? 'Check title, description, H1, canonical, Open Graph, social tags, icons and head signals.'
                 : 'Prüft Title, Description, H1, Canonical, Open Graph, Social-Tags, Icons und Head-Signale.' %>
             </p>
-            <a class="wt-button-secondary" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>">
               <%= isEn ? 'Open tester' : 'Tester öffnen' %>
             </a>
           </article>
@@ -193,8 +193,8 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-shield-halved"></i> <%= isEn ? 'Trust & legal' : 'Vertrauen & Rechtliches' %></h3>
               <p><%= isEn
-                ? 'HTTPS, impressum/privacy visibility, security headers, modernity cues, tracking + consent detection. Proxies for BGH/LfDI risk.'
-                : 'HTTPS, Sichtbarkeit von Impressum/Datenschutz, Security-Header, Modernitäts-Signale, Tracking- und Consent-Erkennung. Proxies für BGH/LfDI-Risiko.' %></p>
+                ? 'HTTPS, impressum/privacy visibility, security headers, modernity cues, tracking + consent detection. These are technical signals, not legal advice.'
+                : 'HTTPS, Sichtbarkeit von Impressum/Datenschutz, Security-Header, Modernitäts-Signale, Tracking- und Consent-Erkennung. Das sind technische Hinweise, keine Rechtsberatung.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-bullseye"></i> <%= isEn ? 'Conversion readiness' : 'Conversion-Reife' %></h3>
@@ -220,8 +220,8 @@
             <figure class="wt-review">
               <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
               <blockquote><%= isEn
-                ? '“The audit and implementation roadmap gave us more organic leads in three months than our previous agency delivered in a year.”'
-                : '„Der Website-Check und der Umsetzungsplan haben uns in drei Monaten mehr organische Leads gebracht als die vorherige Agentur in einem Jahr."' %></blockquote>
+                ? '“The audit and implementation roadmap finally showed us which technical and content priorities mattered most.”'
+                : '„Der Website-Check und der Umsetzungsplan haben uns endlich gezeigt, welche technischen und inhaltlichen Prioritäten wirklich wichtig waren."' %></blockquote>
               <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
             </figure>
             <figure class="wt-review">
@@ -234,8 +234,8 @@
             <figure class="wt-review">
               <div class="wt-review-stars" aria-label="5 of 5 stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
               <blockquote><%= isEn
-                ? '“The free tester already convinced us. After the paid project our rankings moved from page 3 to top 5.”'
-                : '„Der kostenlose Tester hat uns überzeugt. Nach dem Folgeprojekt ging unser Ranking von Seite 3 in die Top 5."' %></blockquote>
+                ? '“The free tester already convinced us. The follow-up project gave us a much clearer technical and content roadmap.”'
+                : '„Der kostenlose Tester hat uns überzeugt. Das Folgeprojekt gab uns eine deutlich klarere technische und inhaltliche Roadmap."' %></blockquote>
               <figcaption><%= isEn ? 'Verified Google review' : 'Verifizierte Google-Bewertung' %></figcaption>
             </figure>
           </div>
@@ -282,20 +282,6 @@
   </main>
 
   <%- include('partials/footer') %>
-
-
-  <style>
-    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
-    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
-    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
-    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
-    .breadcrumbs a { color: #374151; text-decoration: none; }
-    .breadcrumbs a:hover { text-decoration: underline; }
-    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
-    .wt-faq summary { cursor: pointer; font-weight: 600; }
-    .wt-faq p { margin: 10px 0 0; }
-  </style>
-
 
   <script>
     window.KWD_TESTER_SPAM = {
@@ -347,7 +333,7 @@
         scannedPagesTitle: "<%= isEn ? 'Pages loaded for this scan' : 'Für den Scan geladene Seiten' %>",
         failedScansTitle: "<%= isEn ? 'Targets not loaded' : 'Nicht geladene Ziele' %>",
         noScannedPages: "<%= isEn ? 'No pages could be loaded.' : 'Es konnten keine Seiten geladen werden.' %>",
-        scannedLegalForced: "<%= isEn ? 'Required legal check' : 'Pflichtseiten-Check' %>",
+        scannedLegalForced: "<%= isEn ? 'Required page check' : 'Pflichtseiten-Sichtprüfung' %>",
         legalImpressumTag: "<%= isEn ? 'Imprint' : 'Impressum' %>",
         legalPrivacyTag: "<%= isEn ? 'Privacy' : 'Datenschutz' %>",
         seoGeoScore: "<%= isEn ? 'SEO/GEO' : 'SEO/GEO' %>",

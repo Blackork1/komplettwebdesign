@@ -17,13 +17,17 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
     '/',
     '/webdesign-berlin',
     '/website-erstellen-lassen-berlin',
-    '/website-relaunch-berlin',
+    '/leistungen/website-relaunch',
+    '/leistungen/website-audit',
+    '/leistungen/landingpage-erstellen-lassen',
+    '/leistungen/local-seo',
     '/webdesign-kleine-unternehmen-berlin',
     '/webdesign-berlin/kosten-preise-pakete',
     '/pakete',
-    '/pakete/basis',
+    '/pakete/start',
     '/pakete/business',
-    '/pakete/premium',
+    '/pakete/wachstum',
+    '/pakete/individuell',
     '/referenzen',
     '/referenzen/zur-alten-backstube',
     '/referenzen/tm-sauber-mehr',
@@ -36,9 +40,11 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
     '/kontakt',
     '/about',
     '/ratgeber',
+    '/branchen',
     '/blog',
     '/faq',
     '/datenschutz',
+    '/hinweise-rechtstexte-seo-datenschutz',
     '/impressum'
   ].forEach((path) => assert.ok(routes.includes(path), `${path} missing from static sitemap policy`));
 });
@@ -46,11 +52,13 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
 test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {
   assert.deepEqual(
     PRIORITY_INDUSTRY_SLUGS,
-    ['handwerker', 'restaurant', 'cafe', 'reinigungsfirma', 'immobilienmakler']
+    ['handwerker', 'restaurant', 'cafe', 'reinigungsfirma', 'reinigung', 'blumenladen', 'immobilienmakler']
   );
 
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-handwerker' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'restaurant' }), true);
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-reinigung' }), true);
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-blumenladen' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-kita', name: 'Kita' }), false);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'schule', title: 'Webdesign Schule' }), false);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'daycare', description: 'Daycare website' }), false);

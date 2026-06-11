@@ -1,0 +1,32 @@
+<%
+const bridgeItems = Array.isArray(heroBridgeHighlights) ? heroBridgeHighlights.filter(Boolean) : [];
+const bridgeIsEn = typeof isEn !== 'undefined'
+  ? isEn
+  : (typeof lng !== 'undefined' && lng === 'en');
+const bridgeLabel = bridgeIsEn ? 'Important website project advantages' : 'Wichtige Vorteile';
+%>
+
+<% if (bridgeItems.length) { %>
+<section class="hero-bridge" aria-label="<%= bridgeLabel %>">
+  <ul class="visually-hidden hero-bridge__sr-list">
+    <% bridgeItems.forEach((item) => { %>
+    <li><%= item.label %></li>
+    <% }) %>
+  </ul>
+
+  <div class="highlight-marquee" aria-hidden="true">
+    <div class="highlight-marquee__track">
+      <% [0, 1].forEach((loopIndex) => { %>
+      <div class="highlight-marquee__group" <%- loopIndex === 1 ? 'aria-hidden="true"' : '' %>>
+        <% bridgeItems.forEach((item) => { %>
+        <span class="highlight-chip highlight-chip--<%= item.key %>">
+          <i class="fas <%= item.iconClass %> highlight-chip__icon" aria-hidden="true"></i>
+          <span class="highlight-chip__label"><%= item.label %></span>
+        </span>
+        <% }) %>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>

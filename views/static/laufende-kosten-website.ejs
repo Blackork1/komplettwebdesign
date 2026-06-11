@@ -1,0 +1,314 @@
+<%
+  const pageUrl = `${canonicalBaseUrl.replace(/\/$/, '')}${page.canonicalPath}`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${canonicalBaseUrl.replace(/\/$/, '')}/` },
+      { '@type': 'ListItem', position: 2, name: 'Leistungen', item: `${canonicalBaseUrl.replace(/\/$/, '')}/leistungen` },
+      { '@type': 'ListItem', position: 3, name: 'Laufende Website-Kosten', item: pageUrl }
+    ]
+  };
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.h1,
+    headline: page.h1,
+    description: page.description,
+    inLanguage: 'de-DE',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${canonicalBaseUrl.replace(/\/$/, '')}/#website`,
+      url: `${canonicalBaseUrl.replace(/\/$/, '')}/`,
+      name: 'Komplett Webdesign'
+    },
+    about: [
+      'laufende Website-Kosten',
+      'Website-Hosting',
+      'Website-Wartung',
+      'Domain und E-Mail',
+      'Drittanbieter-Tools'
+    ]
+  };
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${pageUrl}#faq`,
+    mainEntity: page.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer
+      }
+    }))
+  };
+  const structuredDataBlocks = [webPageSchema, breadcrumbSchema, faqSchema];
+%>
+<%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
+
+<body class="service-page service-page--running-costs running-costs-page">
+  <%- include('../partials/header') %>
+
+  <main>
+    <section id="hero" class="service-hero running-costs-hero <%= page.heroImage?.src ? 'has-service-hero-image' : '' %>"<% if (page.heroImage?.src) { %> style="--service-hero-image: url('<%= page.heroImage.src %>');"<% } %>>
+      <div class="service-shell running-costs-shell">
+        <nav class="running-costs-breadcrumbs service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/leistungen">Leistungen</a></li>
+            <li aria-current="page">Laufende Website-Kosten</li>
+          </ol>
+        </nav>
+
+        <div class="service-hero__grid running-costs-hero-grid">
+          <div>
+            <p class="running-costs-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><%= page.hero.eyebrow %></p>
+            <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+            <p class="running-costs-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.lead %></p>
+            <div class="service-hero__actions running-costs-hero-actions">
+              <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.primaryCta.url %>" data-track="cta" data-cta-name="running_costs_hero_contact" data-cta-location="running_costs_hero">
+                <%= page.hero.primaryCta.label %>
+              </a>
+              <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.secondaryCta.url %>" data-track="cta" data-cta-name="running_costs_hero_packages" data-cta-location="running_costs_hero">
+                <%= page.hero.secondaryCta.label %>
+              </a>
+            </div>
+          </div>
+
+          <aside class="running-costs-hero-panel home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="Kurzüberblick">
+            <h2>Was du hier einordnen kannst</h2>
+            <div class="running-costs-mini-list">
+              <div><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Welche Kosten einmalig zum Website-Projekt gehören.</span></div>
+              <div><i class="fa-solid fa-server" aria-hidden="true"></i><span>Welche Betriebskosten nach dem Launch entstehen können.</span></div>
+              <div><i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Welche externen Dienste besser direkt über dich laufen.</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="intro" class="running-costs-section">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-compass" aria-hidden="true"></i>Einordnung</p>
+        <h2><%= page.intro.title %></h2>
+        <p class="running-costs-section-lead"><%= page.intro.text %></p>
+        <div class="running-costs-card-grid">
+          <% page.intro.cards.forEach((card) => { %>
+          <article class="running-costs-card">
+            <h3><%= card.title %></h3>
+            <p><%= card.text %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="one-time-vs-running" class="running-costs-section running-costs-section--soft">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Trennung</p>
+        <h2>Einmalige Projektkosten vs. laufende Kosten</h2>
+        <p class="running-costs-section-lead">So bleibt klar, wofür der Website-Paketpreis steht und welche Betriebskosten später separat betrachtet werden.</p>
+        <div class="running-costs-compare">
+          <% page.oneTimeVsRunning.columns.forEach((column) => { %>
+          <article>
+            <h3><%= column.title %></h3>
+            <ul class="running-costs-check-list">
+              <% column.items.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+        <p class="running-costs-note"><%= page.oneTimeVsRunning.note %></p>
+      </div>
+    </section>
+
+    <section id="cost-overview" class="running-costs-section">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-table-list" aria-hidden="true"></i>Übersicht</p>
+        <h2>Typische laufende Kosten im Überblick</h2>
+        <p class="running-costs-section-lead">Die folgenden Kostenarten sind keine festen Anbieterpreise, sondern Orientierungspunkte für die Planung.</p>
+        <div class="running-costs-overview">
+          <% page.costOverview.forEach((item) => { %>
+          <article class="running-costs-cost-card">
+            <span><%= item.rhythm %></span>
+            <h3><%= item.type %></h3>
+            <p><%= item.note %></p>
+            <small><%= item.responsibility %></small>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="running-costs-section running-costs-section--soft">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-plug-circle-bolt" aria-hidden="true"></i>Kostenarten</p>
+        <h2>Hosting, Domain, E-Mail, Wartung und externe Tools</h2>
+        <p class="running-costs-section-lead">Jeder Bereich hat eine eigene Aufgabe. Genau deshalb werden Zuständigkeit, Kosten und Umfang vorab getrennt eingeordnet.</p>
+        <div class="running-costs-detail-grid">
+          <% page.details.forEach((section) => { %>
+          <article id="<%= section.id %>" class="running-costs-detail-card">
+            <div class="running-costs-detail-icon"><i class="fa-solid <%= section.icon %>" aria-hidden="true"></i></div>
+            <h3><%= section.title %></h3>
+            <p><%= section.lead %></p>
+            <ul class="running-costs-check-list">
+              <% section.items.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="maintenance-plans" class="running-costs-section">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>Wartung</p>
+        <h2>Wartungspakete als separate Betreuung</h2>
+        <p class="running-costs-section-lead">Wartung ist optional. Die folgenden internen Wartungsrahmen zeigen, wie technische Betreuung eingeordnet werden kann.</p>
+        <div class="running-costs-maintenance">
+          <% page.maintenanceSummary.forEach((plan) => { %>
+          <article class="running-costs-card">
+            <h3><%= plan.name %></h3>
+            <p><strong><%= plan.priceLabel %></strong></p>
+            <p><%= plan.text %></p>
+            <ul class="running-costs-check-list">
+              <% plan.included.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="running-costs-section running-costs-section--soft">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-people-arrows" aria-hidden="true"></i>Zuständigkeit</p>
+        <h2>Was über Komplettwebdesign laufen kann und was besser direkt über dich läuft</h2>
+        <p class="running-costs-section-lead">Das Ziel ist weniger Abhängigkeit und klarere Rechnungen, nicht mehr Komplexität.</p>
+        <div class="running-costs-responsibility">
+          <article id="handled-by-komplettwebdesign" class="running-costs-note-box">
+            <h3><%= page.responsibilities.kompletWebdesign.title %></h3>
+            <ul class="running-costs-check-list">
+              <% page.responsibilities.kompletWebdesign.items.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article id="handled-by-client" class="running-costs-note-box">
+            <h3><%= page.responsibilities.client.title %></h3>
+            <ul class="running-costs-check-list">
+              <% page.responsibilities.client.items.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="examples" class="running-costs-section">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-calculator" aria-hidden="true"></i>Beispiele</p>
+        <h2>Beispielrechnungen für laufende Kosten</h2>
+        <p class="running-costs-section-lead">Die Beispiele dienen zur Orientierung und ersetzen keine konkrete Kalkulation.</p>
+        <div class="running-costs-examples">
+          <% page.examples.forEach((example) => { %>
+          <article class="running-costs-example">
+            <div>
+              <strong><%= example.setup %></strong>
+              <h3><%= example.title %></h3>
+              <p><%= example.note %></p>
+            </div>
+            <ul class="running-costs-pill-list">
+              <% example.costs.forEach((cost) => { %>
+              <li><%= cost %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="not-included" class="running-costs-section running-costs-section--soft">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-circle-minus" aria-hidden="true"></i>Abgrenzung</p>
+        <h2>Was nicht automatisch enthalten ist</h2>
+        <p class="running-costs-section-lead">Diese Punkte können je nach Projekt sinnvoll sein, sind aber nicht automatisch Teil des einmaligen Website-Pakets.</p>
+        <ul class="running-costs-pill-list">
+          <% page.notIncluded.forEach((item) => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ul>
+
+        <div id="legal-notes" class="running-costs-note-grid">
+          <article class="running-costs-note-box">
+            <h3>Rechtlich vorsichtige Hinweise</h3>
+            <% page.legalNotes.forEach((note) => { %>
+            <p><%= note %></p>
+            <% }) %>
+          </article>
+          <article class="running-costs-note-box">
+            <h3>Passende Zusatzleistungen</h3>
+            <ul class="running-costs-check-list">
+              <% page.selectedAddOns.forEach((addon) => { %>
+              <li><strong><%= addon.name %>:</strong> <%= addon.priceLabel %> · <%= addon.text %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="running-costs-section">
+      <div class="running-costs-shell animate-on-scroll">
+        <p class="running-costs-section-kicker"><i class="fa-solid fa-circle-question" aria-hidden="true"></i>FAQ</p>
+        <h2>FAQ zu laufenden Website-Kosten</h2>
+        <div class="running-costs-faq">
+          <% page.faq.forEach((item, index) => { %>
+          <details class="running-costs-faq-item"<%= index === 0 ? ' open' : '' %>>
+            <summary><h3><%= item.question %></h3></summary>
+            <p><%= item.answer %></p>
+          </details>
+          <% }) %>
+        </div>
+        <div class="running-costs-links" aria-label="Weitere passende Seiten">
+          <% page.internalLinks.forEach((link) => { %>
+          <a href="<%= link.href %>"><%= link.label %></a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="running-costs-cta">
+      <div class="running-costs-shell running-costs-cta-inner animate-on-scroll">
+        <div>
+          <h2><%= page.finalCta.title %></h2>
+          <p><%= page.finalCta.text %></p>
+        </div>
+        <div class="running-costs-cta-actions">
+          <a class="btn btn-primary" href="<%= page.finalCta.primary.url %>" data-track="cta" data-cta-name="running_costs_final_contact" data-cta-location="running_costs_final">
+            <%= page.finalCta.primary.label %>
+          </a>
+          <a class="btn btn-secondary" href="<%= page.finalCta.secondary.url %>" data-track="cta" data-cta-name="running_costs_final_packages" data-cta-location="running_costs_final">
+            <%= page.finalCta.secondary.label %>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+
+</html>

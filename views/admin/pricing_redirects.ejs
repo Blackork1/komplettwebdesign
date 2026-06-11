@@ -1,0 +1,64 @@
+<%- include('../partials/admin_header') %>
+
+<%
+  const checked = (value) => value ? 'checked' : '';
+%>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-route"></i> Paket-Redirects
+</h1>
+
+<div class="admin-card mb-4 border-warning">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div>
+      <h2 class="h5 mb-1">Warnung bei URL-Änderungen</h2>
+      <p class="mb-0 text-muted">Redirects beeinflussen interne Links, Canonicals, Sitemap und externe Altlinks. Alte Paketpfade sollten direkt auf kanonische neue Pfade zeigen.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/packages">Zur Paketliste</a>
+  </div>
+</div>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Neuen Redirect anlegen</h2>
+  <form method="POST" action="/admin/pricing/redirects" class="row g-2 align-items-end">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-3">
+      <label class="form-label" for="redirect_package_new">Paket</label>
+      <select id="redirect_package_new" name="package_id" class="form-select" required>
+        <% (packages || []).forEach((pkg) => { %>
+          <option value="<%= pkg.id %>"><%= pkg.display_name || pkg.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-3"><label class="form-label" for="old_path_new">Alter Pfad</label><input id="old_path_new" name="old_path" class="form-control" placeholder="/pakete/basis" required></div>
+    <div class="col-md-3"><label class="form-label" for="target_path_new">Zielpfad</label><input id="target_path_new" name="target_path" class="form-control" placeholder="/pakete/start" required></div>
+    <div class="col-md-1"><label class="form-label" for="status_code_new">Status</label><input id="status_code_new" name="status_code" type="number" class="form-control" value="301"></div>
+    <div class="col-md-1 form-check"><input id="redirect_active_new" name="is_active" class="form-check-input" type="checkbox" checked><label class="form-check-label" for="redirect_active_new">aktiv</label></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">+</button></div>
+  </form>
+</section>
+
+<section class="admin-card">
+  <h2 class="h5">Bestehende Redirects</h2>
+  <% (redirects || []).forEach((redirect) => { %>
+    <form method="POST" action="/admin/pricing/redirects/<%= redirect.id %>" class="row g-2 align-items-end border-top py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <div class="col-md-3">
+        <label class="form-label" for="redirect_package_<%= redirect.id %>">Paket</label>
+        <select id="redirect_package_<%= redirect.id %>" name="package_id" class="form-select" required>
+          <% (packages || []).forEach((pkg) => { %>
+            <option value="<%= pkg.id %>" <%= Number(pkg.id) === Number(redirect.package_id) ? 'selected' : '' %>><%= pkg.display_name || pkg.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-3"><label class="form-label" for="old_path_<%= redirect.id %>">Alter Pfad</label><input id="old_path_<%= redirect.id %>" name="old_path" class="form-control" value="<%= redirect.old_path || '' %>" required></div>
+      <div class="col-md-3"><label class="form-label" for="target_path_<%= redirect.id %>">Zielpfad</label><input id="target_path_<%= redirect.id %>" name="target_path" class="form-control" value="<%= redirect.target_path || '' %>" required></div>
+      <div class="col-md-1"><label class="form-label" for="status_code_<%= redirect.id %>">Status</label><input id="status_code_<%= redirect.id %>" name="status_code" type="number" class="form-control" value="<%= redirect.status_code || 301 %>"></div>
+      <div class="col-md-1 form-check"><input id="redirect_active_<%= redirect.id %>" name="is_active" class="form-check-input" type="checkbox" <%= checked(redirect.is_active) %>><label class="form-check-label" for="redirect_active_<%= redirect.id %>">aktiv</label></div>
+      <div class="col-md-1"><button class="btn btn-sm btn-primary w-100" type="submit">Speichern</button></div>
+      <div class="col-12 text-muted small">Verknüpftes Paket: <%= redirect.display_name || redirect.package_key || 'unbekannt' %></div>
+    </form>
+  <% }) %>
+</section>
+
+<%- include('../partials/admin_footer') %>

@@ -1,27 +1,4 @@
-<%
-const aboutHeadExtra = `
-  <link rel="stylesheet" href="${cssAsset('about.css')}" />
-  <style>
-    .hero-section:not(.unified-hero) .hero-content,
-    .hero-section:not(.unified-hero) .hero-image {
-      min-height: 1px;
-      margin: 2rem 0;
-    }
-
-    .hero-section:not(.unified-hero) .hero-content {
-      backdrop-filter: none;
-      background: none;
-      box-shadow: none;
-      flex: 1 1 130px;
-    }
-
-    .cta-section {
-      border-radius: 0;
-    }
-  </style>
-`;
-%>
-<%- include('partials/head', { seoExtra: aboutHeadExtra }) %>
+<%- include('partials/head', { extraCssAssets: ['about.css'] }) %>
 
 <body class="about-page">
   <!-- Header / Navigation (falls eine Header-Partial existiert) -->
@@ -190,7 +167,7 @@ const aboutHeadExtra = `
     <div class="column">
       <p>
         Bei mir bekommst du keinen Website-Baukasten von der Stange, sondern
-        einen <strong>Rundum-sorglos-Service</strong> für deinen Webauftritt.
+        eine <strong>persönlich begleitete Umsetzung</strong> für deinen Webauftritt.
         Folgende Leistungen übernehme ich persönlich für dich:
       </p>
       <ul class="services-list">
@@ -218,10 +195,9 @@ const aboutHeadExtra = `
         <li>
           <span class="icon">🔒</span>
           <strong>Hosting &amp; Sicherheit:</strong> Einrichtung von Hosting,
-          Domain und SSL-Zertifikat, regelmäßige Backups und Sicherheitsupdates
-          inklusive. (Natürlich achte ich auch auf Datenschutz und
-          DSGVO-Konformität.) Du musst dich um nichts Technisches kümmern – ich
-          halte dir den Rücken frei und deine Website online und sicher.
+          Domain und SSL-Zertifikat. Backups, Sicherheitsupdates und Wartung
+          werden bei Bedarf separat abgestimmt. Datenschutzrelevante Grundlagen
+          berücksichtige ich technisch; eine Rechtsberatung ersetzt das nicht.
         </li>
         <li>
           <span class="icon">🤝</span>

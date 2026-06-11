@@ -3,7 +3,7 @@
     "slug": "blumenladen",
     "name": "Blumenladen",
     "title": "Blumenladen Website erstellen – Professionelles Webdesign für Floristik & Gärtnereien",
-    "description": "Moderne Websites für Blumenläden & Gärtnereien: Galerie, Online-Shop, lokale Sichtbarkeit, SEO, mobil optimiert. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "description": "Moderne Websites für Blumenläden & Gärtnereien: Galerie, Online-Shop, lokale Sichtbarkeit, SEO, mobil optimiert. Preise, Funktionen & Beispiele klar abgestimmt.",
     "og_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
 
     "hero_h1": "Blumenladen Website erstellen",
@@ -76,7 +76,7 @@
       {
         "icon": "💐",
         "label": "Events",
-        "body": "<p>Floristik-Websites generieren bis zu 40% mehr Anfragen für Hochzeiten &amp; Events.</p>"
+        "body": "<p>Floristik-Websites können Hochzeiten, Events und saisonale Angebote klarer sichtbar machen.</p>"
       }
     ],
 
@@ -101,7 +101,7 @@
       },
       {
         "title": "Technik & Struktur",
-        "text": "Saubere Struktur, Bild-Komprimierung, Caching & strukturierte Daten (LocalBusiness, Product, FAQ).",
+        "text": "Saubere Struktur, Bild-Komprimierung, Caching und strukturierte Daten wie Organization, Service, Breadcrumb und FAQ, wenn sie zur Seite passen.",
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978624/admin_gallery/nuhgls3vy4xiallbxwix.webp",
         "img_alt": "Symbol für strukturierte Daten"
       },
@@ -125,7 +125,7 @@
     "vorteile": {
       "pros": [
         "Sichtbarkeit bei Google",
-        "Mehr Kunden & Umsatz",
+        "Bessere Kontakt- und Anfragewege",
         "Unabhängigkeit von Plattformen",
         "Moderne Präsentation",
         "Kundenbindung durch Newsletter & Aktionen"
@@ -171,8 +171,8 @@
     ],
 
     "cta_headline": "Benötigst du eine Website für deinen Blumenladen?",
-    "cta_text": "Eine Website ist Schaufenster, Shop und Kundenmagnet zugleich. Mit professionellem Webdesign, Online-Shop und SEO gewinnst du neue Kunden und steigerst deinen Umsatz.",
-    "cta_left_image": "/images/branchen/BasisPaket.webp",
+    "cta_text": "Eine Website ist Schaufenster, Anfrageweg und Vertrauenssignal zugleich. Mit professionellem Webdesign, optionalem Online-Shop und SEO-Grundlagen machst du dein Angebot verständlicher und leichter erreichbar.",
+    "cta_left_image": "/images/basis.webp",
     "cta_right_image": "/images/branchen/BusinessPaket.webp",
 
     "faq_items": [
@@ -182,7 +182,7 @@
       },
       {
         "q": "Kann ich Galerie oder Shop-Produkte selbst pflegen?",
-        "a": "<p>Ja, mit modernen Systemen kannst du Produkte und Bilder jederzeit selbst ändern.</p>"
+        "a": "<p>Ja, wenn eine passende Content-Verwaltung separat vereinbart wird, kannst du Produkte und Bilder selbst pflegen.</p>"
       },
       {
         "q": "Ist SEO wirklich wichtig für Floristen?",
@@ -190,11 +190,11 @@
       },
       {
         "q": "Bietet ihr auch Online-Shops für Blumenläden an?",
-        "a": "<p>Ja, inkl. Zahlungsoptionen und Liefersystemen.</p>"
+        "a": "<p>Ja, Online-Shops, Zahlungsoptionen und Liefersysteme können als Zusatzleistung oder individuelles Projekt geplant werden.</p>"
       },
       {
         "q": "Lohnt sich die Investition?",
-        "a": "<p>Ja – bereits wenige zusätzliche Aufträge pro Monat decken die Kosten.</p>"
+        "a": "<p>Das hängt von Angebot, Marge, Nachfrage und Pflege der Website ab. Die Investition wird vorab anhand deines Umfangs eingeordnet.</p>"
       }
     ]
   }

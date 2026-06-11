@@ -10,8 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateProgress() {
     const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
     const scrollTop    = document.documentElement.scrollTop || document.body.scrollTop;
-    const ratio        = scrollTop / scrollHeight;
-    progressFill.style.height = `${ratio * 100}%`;
+    const ratio        = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+    const percent      = `${Math.min(Math.max(ratio, 0), 1) * 100}%`;
+    progressFill.style.setProperty('--progress-ratio', percent);
   }
 
   // 3) Icons entlang der Progress-Line pixelgenau positionieren
@@ -24,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const link = document.querySelector(`.icon-link[href="#${sec.id}"]`);
       if (!link) return;
       // Verhältnis der Section-Top-Position zur gesamt Scroll-Strecke
-      let ratio = sec.offsetTop / scrollLength;
+      let ratio = scrollLength > 0 ? sec.offsetTop / scrollLength : 0;
       ratio = Math.min(Math.max(ratio, 0), 1);
-      link.style.top = `${ratio * 100}%`;
+      link.style.setProperty('--progress-icon-top', `${ratio * 100}%`);
     });
   }
 

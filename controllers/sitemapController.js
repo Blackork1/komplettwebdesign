@@ -2,6 +2,8 @@
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import pricingService from "../services/pricingService.js";
+import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
 import {
   INDEXABLE_STATIC_ROUTES,
   normalizeIndustrySlug,
@@ -17,7 +19,7 @@ function resolveBaseUrl(req) {
   const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https").split(",")[0].trim();
   const host = req.headers["x-forwarded-host"] || req.get("host");
   const normalizedHost = String(host || "").trim();
-  if (!normalizedHost) return "https://komplettwebdesign.de";
+  if (!normalizedHost) return "https://www.komplettwebdesign.de";
 
   return `${proto}://${normalizedHost}`;
 }
@@ -44,6 +46,15 @@ async function querySafe(sql, params = [], label = "query") {
     return rows;
   } catch (err) {
     console.error(`⚠ sitemap ${label} fehlgeschlagen:`, err.message);
+    return [];
+  }
+}
+
+async function getPackageSitemapRows() {
+  try {
+    return await pricingService.getVisiblePackages();
+  } catch (err) {
+    console.error("⚠ sitemap pricing packages fehlgeschlagen:", err.message);
     return [];
   }
 }
@@ -85,14 +96,15 @@ export async function sitemapXml(req, res, next) {
       "industries"
     );
 
-    // Leistungen für webdesign-berlin/:slug 
+    // Leistungen für /leistungen/:slug; die Berliner Preis-Seite behält ihre eigene URL.
     const leistungenPages = await querySafe(
       `SELECT slug,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM leistungen_pages
         WHERE is_published = true
+          AND slug <> ALL($1::text[])
         ORDER BY created_at DESC`,
-      [],
+      [REDIRECTED_LEISTUNG_SLUGS],
       "leistungen_pages"
     );
 
@@ -107,12 +119,16 @@ export async function sitemapXml(req, res, next) {
       "ratgeber"
     );
 
+    const pricingPackages = await getPackageSitemapRows();
+
     // ---- Statische Routen ----
-    // Policy contains `${base}/website-erstellen-lassen-berlin`, `${base}/website-relaunch-berlin`, `${base}/webdesign-kleine-unternehmen-berlin`, `${base}/ablauf`.
-    const staticRoutes = INDEXABLE_STATIC_ROUTES.map((route) => ({
-      ...route,
-      loc: `${base}${route.path === "/" ? "/" : route.path}`
-    }));
+    // Statische Canonicals kommen aus der zentralen SEO-Policy.
+    const staticRoutes = INDEXABLE_STATIC_ROUTES
+      .filter((route) => !/^\/(?:en\/)?pakete\/[^/]+$/.test(route.path))
+      .map((route) => ({
+        ...route,
+        loc: `${base}${route.path === "/" ? "/" : route.path}`
+      }));
 
     // Bezirke
     const districtRoutesDe = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
@@ -153,7 +169,7 @@ export async function sitemapXml(req, res, next) {
     }));
 
     const serviceRoutes = leistungenPages.map(s => ({
-      loc: `${base}/webdesign-berlin/${s.slug}`,
+      loc: `${base}${canonicalLeistungPath(s.slug)}`,
       lastmod: toIso(s.updated_at, nowIso),
       changefreq: "weekly",
       priority: 0.8
@@ -174,8 +190,26 @@ export async function sitemapXml(req, res, next) {
       priority: g.featured ? 0.8 : 0.7
     }));
 
+    const packageRoutes = pricingPackages
+      .filter((pkg) => pkg?.allowDetailPage && pkg?.canonicalPath)
+      .flatMap((pkg) => [
+        {
+          loc: `${base}${pkg.canonicalPath}`,
+          lastmod: nowIso,
+          changefreq: "monthly",
+          priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
+        },
+        {
+          loc: `${base}/en${pkg.canonicalPath}`,
+          lastmod: nowIso,
+          changefreq: "monthly",
+          priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
+        }
+      ]);
+
     const allUrlsRaw = [
       ...staticRoutes,
+      ...packageRoutes,
       ...districtRoutesDe,
       ...districtRoutesEn,
       ...pageRoutes,
@@ -215,7 +249,7 @@ export async function sitemapXml(req, res, next) {
 
     res.set("Content-Type", "application/xml; charset=utf-8");
     res.set("X-Content-Type-Options", "nosniff");
-    res.set("Cache-Control", "public, max-age=3600"); // 1h
+    res.set("Cache-Control", "no-cache, max-age=0, must-revalidate");
     return res.status(200).send(xml);
   } catch (err) {
     return next(err);

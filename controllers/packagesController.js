@@ -1,8 +1,4 @@
-// controllers/packagesController.js
-import { de } from 'date-fns/locale';
-import pool from '../util/db.js';
 import nodemailer from 'nodemailer';
-import { title } from 'process';
 import axios from 'axios';
 import {
   getNextOpenSlots,
@@ -12,8 +8,8 @@ import {
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import { renderBrandEmail } from '../services/emailTemplateService.js';
+import pricingService from '../services/pricingService.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
-import { mockPackages } from '../data/mockPackages.js';
 
 
 
@@ -29,10 +25,14 @@ const transporter = nodemailer.createTransport({
 
 const RECAPTCHA_MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
 const RECAPTCHA_ACTION = 'package_contact';
+const PACKAGE_CUSTOM_SLOT_VALUE = '__custom';
 
 
 // (optional) falls du kein util/resolveBaseUrl.js nutzt:
-function resolveBaseUrl(req) {
+function resolveBaseUrl(req, configuredBaseUrl = '') {
+  if (configuredBaseUrl) return String(configuredBaseUrl).replace(/\/$/, '');
+  if (process.env.CANONICAL_BASE_URL) return String(process.env.CANONICAL_BASE_URL).replace(/\/$/, '');
+  if (process.env.BASE_URL) return String(process.env.BASE_URL).replace(/\/$/, '');
   const proto = req.headers['cf-visitor']
     ? (JSON.parse(req.headers['cf-visitor']).scheme || 'https')
     : (req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http'));
@@ -49,88 +49,157 @@ function resolvePackageLocale(req) {
   return 'de';
 }
 
-function normalizePackSlug(pack, fallbackSlug = '') {
-  const raw = String(pack?.slug || pack?.name || fallbackSlug || '').trim().toLowerCase();
-  if (!raw) return '';
-  return raw
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+function toEnglishPriceLabel(label = '') {
+  return String(label)
+    .replace(/^ab\s+/i, 'from ')
+    .replace(/\s*€\b/g, ' EUR')
+    .replace(/oder nach Aufwand/i, 'or by effort');
 }
 
-function buildPackagesListMeta({ isEn }) {
+function packageTitle(pkg, isEn = false) {
+  const name = pkg?.displayName || pkg?.name || 'Website';
+  if (isEn) return `${pkg?.name || name} package`;
+  return name.endsWith('-Paket') || name === 'Individuelles Projekt' ? name : `${name}-Paket`;
+}
+
+function packageDescription(pkg) {
+  return pkg?.shortDescription || pkg?.positioning || pkg?.longDescription || '';
+}
+
+function escapeHtmlAttribute(value = '') {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeHtml(value = '') {
+  return escapeHtmlAttribute(value);
+}
+
+function buildPackageSummaryLabel(packages = [], isEn = false) {
+  const visible = packages.filter(Boolean).slice(0, 4);
+  if (!visible.length) return '';
+  const parts = visible.map((pkg) => {
+    const label = isEn ? toEnglishPriceLabel(pkg.priceLabel) : pkg.priceLabel;
+    return `${pkg.name || pkg.displayName}: ${label}`;
+  });
+  return parts.join(isEn ? ', ' : ', ');
+}
+
+function buildPackagesListMeta({ isEn, lowestPriceLabel }) {
+  const deLowest = lowestPriceLabel ? ` ab ${lowestPriceLabel}` : '';
+  const enLowest = lowestPriceLabel ? ` from ${toEnglishPriceLabel(lowestPriceLabel)}` : '';
   return isEn
     ? {
-      title: 'Website Pricing in Berlin | Packages, Scope & Timeline',
-      description: 'Compare website packages in Berlin: Basic from EUR 499, Business from EUR 899 and Premium from EUR 1,499 with clear scope, SEO and optional monthly services.',
-      keywords: 'website pricing berlin, create website berlin, web design packages, website costs berlin, basic business premium website, komplett webdesign'
+      title: `Website Packages & Pricing${enLowest} | Berlin`,
+      description: `Compare individual website packages${enLowest} for small businesses in Berlin. Clear scope, personal implementation and transparent costs.`,
+      keywords: 'website pricing berlin, web design packages berlin, website costs berlin, small business website berlin, komplett webdesign'
     }
     : {
-      title: 'Preise für Website erstellen in Berlin | Pakete und Umfang',
-      description: 'Vergleiche Website-Pakete in Berlin: Basis ab 499 EUR, Business ab 899 EUR und Premium ab 1.499 EUR mit klarem Umfang, SEO und optionalen Monatsleistungen.',
-      keywords: 'website erstellen berlin preise, webdesign pakete berlin, website paket kosten, leistungsumfang website, basis business premium, komplett webdesign'
+      title: `Website-Pakete und Preise${deLowest} | Berlin`,
+      description: `Vergleiche Website-Pakete${deLowest} für kleine Unternehmen in Berlin: klare Umfänge, technische SEO-Grundlagen, Zusatzleistungen und laufende Kosten getrennt eingeordnet.`,
+      keywords: 'website erstellen berlin preise, webdesign pakete berlin, website paket kosten, leistungsumfang website, start business wachstum individuell, komplett webdesign'
     };
 }
 
-function buildPackageDetailMeta({ slug, isEn, fallbackName, fallbackDescription }) {
-  const map = {
-    basis: isEn
-      ? {
-        title: 'Basic Website Package Berlin | Onepager from EUR 499',
-        description: 'Basic website package for Berlin: 1-page website including copy, basic SEO, legal pages and launch support - from EUR 499.',
-        keywords: 'basic website package berlin, onepager berlin, website erstellen 499, small business website berlin, webdesign starter berlin, komplett webdesign basic'
-      }
-      : {
-        title: 'Basis-Paket Berlin | Onepager-Website ab 499 EUR',
-        description: 'Basis-Paket für Berlin: 1 Seite inklusive Texten, SEO-Grundoptimierung, rechtlichen Seiten und Launch-Support - ab 499 EUR.',
-        keywords: 'basis paket berlin, onepager berlin, website erstellen 499 euro, kleinunternehmen website berlin, webdesign starter berlin, komplett webdesign basis'
-      },
-    business: isEn
-      ? {
-        title: 'Business Website Package Berlin | Multi-Page from EUR 899',
-        description: 'Business website package for Berlin: up to 5 pages, contact form, service pages, about/team page and on-page SEO - from EUR 899.',
-        keywords: 'business website package berlin, multi page website berlin, webdesign business berlin, lead generation website berlin, website kosten 899, komplett webdesign business'
-      }
-      : {
-        title: 'Business-Paket Berlin | Mehrseitige Website ab 899 EUR',
-        description: 'Business-Paket für Berlin: bis zu 5 Seiten, Kontaktformular, Leistungsseiten, Über-uns-/Team-Seite und On-Page-SEO - ab 899 EUR.',
-        keywords: 'business paket berlin, mehrseitige website berlin, webdesign business berlin, leadgenerierung website berlin, website kosten 899, komplett webdesign business'
-      },
-    premium: isEn
-      ? {
-        title: 'Premium Website Package Berlin | Strategy & Content from EUR 1,499',
-        description: 'Premium website package for Berlin: up to 20 pages, strategy, copy, SEO and booking system included - shop optional from EUR 1,499.',
-        keywords: 'premium website package berlin, strategic webdesign berlin, custom website berlin, seo website berlin, content production berlin, komplett webdesign premium'
-      }
-      : {
-        title: 'Premium-Paket Berlin | Strategie & Content ab 1.499 EUR',
-        description: 'Premium-Paket für Berlin: bis zu 20 Seiten, Strategie, Texte, SEO und Buchungssystem inklusive - Shop optional ab 1.499 EUR.',
-        keywords: 'premium paket berlin, strategisches webdesign berlin, individuelle website berlin, seo website berlin, content produktion berlin, komplett webdesign premium'
-      }
-  };
-
-  if (map[slug]) {
-    return map[slug];
-  }
-
+function buildPackageDetailMeta({ pack, isEn }) {
+  const name = pack?.name || 'Website';
+  const label = isEn ? toEnglishPriceLabel(pack?.priceLabel || '') : (pack?.priceLabel || '');
+  const fallbackDescription = packageDescription(pack);
   return {
     title: isEn
-      ? `${fallbackName} Package Berlin | Komplett Webdesign`
-      : `${fallbackName}-Paket Berlin | Komplett Webdesign`,
-    description: fallbackDescription || (isEn
-      ? `${fallbackName} package by Komplett Webdesign in Berlin.`
-      : `${fallbackName}-Paket von Komplett Webdesign in Berlin.`),
+      ? (pack?.metaTitle || `${name} Website Package | Berlin`)
+      : (pack?.metaTitle || `${packageTitle(pack)} Webdesign | Berlin`),
+    description: isEn
+      ? (pack?.metaDescription || `${fallbackDescription} Pricing starts ${label}. Scope and add-ons are clarified before the project starts.`)
+      : (pack?.metaDescription || `${fallbackDescription} ${label ? `Preis ${label}. ` : ''}Umfang, Zusatzleistungen und laufende Kosten werden vorab klar abgegrenzt.`),
     keywords: isEn
       ? 'web design package berlin, website package pricing berlin, komplett webdesign'
-      : 'webdesign paket berlin, website paket preise berlin, komplett webdesign'
+      : `webdesign paket berlin, ${pack?.slug || name} paket, website paket preise berlin, komplett webdesign`
   };
 }
 
-function buildPackagesSeoExtra({ req, isEn, title, description, imagePath, pathOverride }) {
-  const baseUrl = resolveBaseUrl(req).replace(/\/$/, '');
+function buildPackageContactAdminHtml({ pack, name, email, locale }) {
+  const isEn = locale === 'en';
+  return `
+    <p><strong>Neue Paketanfrage ohne gebuchten Termin</strong></p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;">
+      <tr><th align="left" style="padding:6px 10px 6px 0;">Paket</th><td style="padding:6px 0;">${escapeHtml(pack?.name || pack?.displayName || 'Paket')}</td></tr>
+      <tr><th align="left" style="padding:6px 10px 6px 0;">Name</th><td style="padding:6px 0;">${escapeHtml(name)}</td></tr>
+      <tr><th align="left" style="padding:6px 10px 6px 0;">E-Mail</th><td style="padding:6px 0;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+      <tr><th align="left" style="padding:6px 10px 6px 0;">Sprache</th><td style="padding:6px 0;">${isEn ? 'en' : 'de'}</td></tr>
+      <tr><th align="left" style="padding:6px 10px 6px 0;">Termin</th><td style="padding:6px 0;">kein Slot ausgewählt</td></tr>
+    </table>
+  `;
+}
+
+async function sendPackageContactAdminCopy({ pack, name, email, locale }) {
+  const isEn = locale === 'en';
+  const subject = `Neue Paketanfrage: ${pack?.name || pack?.displayName || 'Paket'}`;
+  return transporter.sendMail({
+    from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+    to: 'kontakt@komplettwebdesign.de',
+    replyTo: email,
+    subject,
+    html: renderBrandEmail({
+      locale: 'de',
+      subject,
+      headline: 'Neue Paketanfrage',
+      preheader: `${pack?.name || pack?.displayName || 'Paket'} ohne direkt gebuchten Termin`,
+      bodyHtml: buildPackageContactAdminHtml({ pack, name, email, locale: isEn ? 'en' : 'de' })
+    })
+  });
+}
+
+function normalizeFaqsForSchema(faqs = []) {
+  return faqs
+    .filter((faq) => faq?.question && faq?.answer)
+    .map((faq) => ({ q: faq.question, a: faq.answer }));
+}
+
+function withComparisonValueMap(rows = [], packages = [], isEn = false) {
+  const dynamicPriceMap = Object.fromEntries(
+    (packages || [])
+      .filter((pkg) => pkg?.packageKey && pkg?.priceLabel)
+      .map((pkg) => [
+        pkg.packageKey,
+        isEn ? toEnglishPriceLabel(pkg.priceLabel) : pkg.priceLabel
+      ])
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    valuesByPackage: row.rowKey === 'price'
+      ? dynamicPriceMap
+      : Object.fromEntries((row.values || []).map((item) => [item.packageKey, item.value]))
+  }));
+}
+
+async function enrichOverviewPackages(packages = []) {
+  return Promise.all(packages.map(async (pkg) => {
+    const [features, notIncluded, useCases, faqs] = await Promise.all([
+      pricingService.getPackageFeatures(pkg.id),
+      pricingService.getPackageNotIncluded(pkg.id),
+      pricingService.getPackageUseCases(pkg.id),
+      pricingService.getPackageFaqs(pkg.id, { overviewOnly: true })
+    ]);
+    return {
+      ...pkg,
+      features,
+      notIncluded,
+      useCases,
+      overviewFaqs: faqs,
+      description: packageDescription(pkg),
+      title: packageTitle(pkg)
+    };
+  }));
+}
+
+function buildPackagesSeoExtra({ req, baseUrl: configuredBaseUrl, isEn, title, description, imagePath, pathOverride }) {
+  const baseUrl = resolveBaseUrl(req, configuredBaseUrl).replace(/\/$/, '');
   const rawPath = pathOverride || req.path;
   const pathname = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
   const dePath = pathname.replace(/^\/en(?=\/|$)/, '') || '/';
@@ -143,24 +212,38 @@ function buildPackagesSeoExtra({ req, isEn, title, description, imagePath, pathO
   const image = imagePath && imagePath.startsWith('http')
     ? imagePath
     : `${baseUrl}${imagePath || '/images/preiseHero.webp'}`;
+  const safeCanonical = escapeHtmlAttribute(canonical);
+  const safeDeUrl = escapeHtmlAttribute(deUrl);
+  const safeEnUrl = escapeHtmlAttribute(enUrl);
+  const safeTitle = escapeHtmlAttribute(title);
+  const safeDescription = escapeHtmlAttribute(description);
+  const safeImage = escapeHtmlAttribute(image);
 
   return `
-  <link rel="canonical" href="${canonical}">
-  <link rel="alternate" hreflang="de-DE" href="${deUrl}">
-  <link rel="alternate" hreflang="en-US" href="${enUrl}">
-  <link rel="alternate" hreflang="x-default" href="${deUrl}">
+  <link rel="canonical" href="${safeCanonical}">
+  <link rel="alternate" hreflang="de-DE" href="${safeDeUrl}">
+  <link rel="alternate" hreflang="en-US" href="${safeEnUrl}">
+  <link rel="alternate" hreflang="x-default" href="${safeDeUrl}">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="${title}">
-  <meta property="og:description" content="${description}">
-  <meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="${image}">
+  <meta property="og:title" content="${safeTitle}">
+  <meta property="og:description" content="${safeDescription}">
+  <meta property="og:url" content="${safeCanonical}">
+  <meta property="og:image" content="${safeImage}">
   <meta property="og:locale" content="${ogLocale}">
   <meta property="og:locale:alternate" content="${ogLocaleAlt}">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${title}">
-  <meta name="twitter:description" content="${description}">
-  <meta name="twitter:image" content="${image}">
+  <meta name="twitter:title" content="${safeTitle}">
+  <meta name="twitter:description" content="${safeDescription}">
+  <meta name="twitter:image" content="${safeImage}">
   `;
+}
+
+function resolveAddOnsTickerDurationSeconds(notes = []) {
+  const note = notes.find((item) => item?.noteKey === 'addons_ticker_duration_seconds');
+  const raw = String(note?.body || '').replace(',', '.');
+  const seconds = Number.parseFloat(raw);
+  if (!Number.isFinite(seconds)) return 35;
+  return Math.min(180, Math.max(8, seconds));
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -170,54 +253,59 @@ function buildPackagesSeoExtra({ req, isEn, title, description, imagePath, pathO
 export async function listPackages(req, res) {
   const lng = resolvePackageLocale(req);
   const isEn = lng === 'en';
-  const baseMeta = buildPackagesListMeta({ isEn });
-  const pageMeta = {
-    ...baseMeta,
-    seoExtra: buildPackagesSeoExtra({
-      req,
-      isEn,
-      title: baseMeta.title,
-      description: baseMeta.description,
-      imagePath: '/images/preiseHero.webp'
-    })
-  };
   try {
-    const { rows: packages } = await pool.query(
-      `SELECT id, name, slug, description, image, price_amount_cents, price, display
-         FROM packages
-         ORDER BY price_amount_cents NULLS LAST, id`
+    const [
+      overviewPackagesRaw,
+      comparisonPackages,
+      comparisonRowsRaw,
+      globalNotes,
+      lowestPriceLabel
+    ] = await Promise.all([
+      pricingService.getPackagesForOverview(),
+      pricingService.getPackagesForComparison(),
+      pricingService.getPackageComparisonRows(),
+      pricingService.getGlobalPricingNotes('packages'),
+      pricingService.getLowestVisiblePackagePriceLabel()
+    ]);
+
+    const packages = await enrichOverviewPackages(overviewPackagesRaw);
+    const comparisonRows = withComparisonValueMap(comparisonRowsRaw, comparisonPackages, isEn);
+    const overviewFaqs = packages.flatMap((pkg) =>
+      (pkg.overviewFaqs || []).map((faq) => ({
+        ...faq,
+        packageName: pkg.name,
+        packageKey: pkg.packageKey,
+        slug: pkg.slug
+      }))
     );
+    const packageSummaryLabel = buildPackageSummaryLabel(packages, isEn);
+    const baseMeta = buildPackagesListMeta({ isEn, lowestPriceLabel });
+    const pageMeta = {
+      ...baseMeta,
+      seoExtra: buildPackagesSeoExtra({
+        req,
+        baseUrl: res.locals.canonicalBaseUrl,
+        isEn,
+        title: baseMeta.title,
+        description: baseMeta.description,
+        imagePath: '/images/heroPakete.webp'
+      })
+    };
 
-    const { rows: featureRows } = await pool.query(
-      'SELECT package_id, feature FROM package_features ORDER BY id'
-    );
-
-    const mockPackageBySlug = new Map(
-      (mockPackages || []).map(p => [String(p.slug || '').toLowerCase(), p])
-    );
-
-    const featureMap = featureRows.reduce((acc, row) => {
-      acc[row.package_id] = acc[row.package_id] || [];
-      acc[row.package_id].push(row.feature);
-      return acc;
-    }, {});
-
-    const enhancedPackages = packages.map(pkg => ({
-      ...pkg,
-      description: mockPackageBySlug.get(String(pkg.slug || '').toLowerCase())?.description || pkg.description,
-      features: mockPackageBySlug.get(String(pkg.slug || '').toLowerCase())?.features
-        ?? featureMap[pkg.id]
-        ?? []
-    }));
-
-    res.render('packages_list', { packages: enhancedPackages, lng, isEn, ...pageMeta });
+    res.render('packages_list', {
+      packages,
+      comparisonPackages,
+      comparisonRows,
+      overviewFaqs,
+      globalNotes,
+      lowestPriceLabel,
+      packageSummaryLabel,
+      lng,
+      isEn,
+      ...pageMeta
+    });
   } catch (err) {
-    console.error('❌ listPackages:', err);
-    if (process.env.NODE_ENV !== 'production' && mockPackages.length) {
-      console.warn('⚠️ Fallback auf Mock-Pakete für /pakete aktiviert.');
-      res.render('packages_list', { packages: mockPackages, lng, isEn, ...pageMeta });
-      return;
-    }
+    console.error('❌ listPackages:', err?.message || err);
     res.status(500).send(isEn ? 'Packages could not be loaded.' : 'Pakete konnten nicht geladen werden.');
   }
 }
@@ -230,101 +318,85 @@ export async function showPackage(req, res) {
   const slug = req.params.slug.toLowerCase();
   const lng = resolvePackageLocale(req);
   const isEn = lng === 'en';
-  let pack = null;
   let slots = [];
   let jsonLd = [];
 
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM packages WHERE LOWER(name) = $1 LIMIT 1',
-      [slug]
-    );
-    if (rows.length) {
-      pack = rows[0];
+    const redirectTarget = await pricingService.getPackageRedirectByOldPath(`/pakete/${slug}`);
+    if (redirectTarget) {
+      return res.redirect(Number(redirectTarget.statusCode || 301), `${isEn ? '/en' : ''}${redirectTarget.targetPath}`);
     }
-  } catch (err) {
-    console.error('❌ showPackage (DB):', err);
-  }
-  if (!pack) {
-    const fallbackPack = (mockPackages || []).find(mock => {
-      const mockSlug = String(mock.slug || mock.name || '').toLowerCase();
-      const mockName = String(mock.name || '').toLowerCase();
-      return mockSlug === slug || mockName === slug;
-    });
 
-    if (fallbackPack) {
-      pack = fallbackPack;
-    } else {
-      return res.status(404).send(isEn ? 'Package not found' : 'Paket nicht gefunden');
+    const [pack, previewPackages, globalNotes, optionalAddOns, addOnsTickerConfig] = await Promise.all([
+      pricingService.getPackageWithDetailsBySlug(slug),
+      pricingService.getPackagesForComparison(),
+      pricingService.getGlobalPricingNotes('packages'),
+      pricingService.getVisibleAddOns().catch((err) => {
+        console.error('❌ showPackage (add-ons):', err?.message || err);
+        return [];
+      }),
+      pricingService.getGlobalPricingNotes('package_detail_addons_config').catch(() => [])
+    ]);
+    if (!pack) return res.status(404).send(isEn ? 'Package not found' : 'Paket nicht gefunden');
+
+    try {
+      slots = await getNextOpenSlots(3);
+    } catch (err) {
+      console.error('❌ showPackage (slots):', err?.message || err);
+      slots = [];
     }
-  }
 
-  const mockPack = (mockPackages || []).find(mock => {
-    const mockSlug = String(mock.slug || mock.name || '').toLowerCase();
-    const packSlug = String(pack.slug || pack.name || slug || '').toLowerCase();
-    return mockSlug === packSlug;
-  });
+    try {
+      const schemaFaqs = await pricingService.getPackageFaqs(pack.id, { detailOnly: true, schemaOnly: true });
+      const baseUrl = resolveBaseUrl(req, res.locals.canonicalBaseUrl);
+      const url = `${baseUrl}${isEn ? '/en' : ''}${pack.canonicalPath || `/pakete/${slug}`}`;
+      pack.visibleFaqs = normalizeFaqsForSchema(schemaFaqs);
+      jsonLd = buildPackageSchemas({ pack, url, baseUrl, lng });
+    } catch (err) {
+      console.error('❌ showPackage (schema):', err?.message || err);
+      jsonLd = [];
+    }
 
-  if (mockPack) {
-    pack = {
-      ...pack,
-      description: mockPack.description,
-      features: mockPack.features,
-      price_amount_cents: mockPack.price_amount_cents,
-      image: pack.image || mockPack.image,
-      slug: pack.slug || mockPack.slug
-    };
-  }
-
-  try {
-    slots = await getNextOpenSlots(3);
-  } catch (err) {
-    console.error('❌ showPackage (slots):', err);
-    slots = [];
-  }
-
-  try {
-
-    const baseUrl = resolveBaseUrl(req);
-    const url = `${baseUrl}${req.originalUrl}`;
-    jsonLd = buildPackageSchemas({ pack, url, baseUrl, lng });
-
-  } catch (err) {
-    console.error('❌ showPackage (schema):', err);
-    jsonLd = [];
-  }
-  const normalizedSlug = normalizePackSlug(pack, slug);
-  const detailMeta = buildPackageDetailMeta({
-    slug: normalizedSlug,
-    isEn,
-    fallbackName: pack.name || (isEn ? 'Website' : 'Website'),
-    fallbackDescription: pack.description
-  });
-  res.render('package_detail', {
-    pack,
-    slots,
-    title: detailMeta.title,
-    description: detailMeta.description,
-    keywords: detailMeta.keywords,
-    seoExtra: buildPackagesSeoExtra({
-      req,
-      isEn,
+    const detailMeta = buildPackageDetailMeta({ pack, isEn });
+    res.render('package_detail', {
+      pack: {
+        ...pack,
+        description: packageDescription(pack)
+      },
+      previewPackages,
+      globalNotes,
+      optionalAddOns,
+      addOnsTickerDurationSeconds: resolveAddOnsTickerDurationSeconds(addOnsTickerConfig),
+      slots,
       title: detailMeta.title,
       description: detailMeta.description,
-      imagePath: pack?.image?.startsWith('/')
-        ? pack.image
-        : (pack?.image ? `/images/${pack.image}` : '/images/preiseHero.webp')
-    }),
-    lng,
-    isEn,
-    jsonLd,
-    successMessage: null
-  });
+      keywords: detailMeta.keywords,
+      seoExtra: buildPackagesSeoExtra({
+        req,
+        baseUrl: res.locals.canonicalBaseUrl,
+        isEn,
+        title: detailMeta.title,
+        description: detailMeta.description,
+        pathOverride: pack.canonicalPath || `/pakete/${slug}`,
+        imagePath: '/images/preiseHero.webp'
+      }),
+      lng,
+      isEn,
+      jsonLd,
+      successMessage: null
+    });
+  } catch (err) {
+    console.error('❌ showPackage:', err?.message || err);
+    res.status(500).send(isEn ? 'Package could not be loaded.' : 'Paket konnte nicht geladen werden.');
+  }
 }
 
 export async function handleContact(req, res) {
   const slug = req.params.slug.toLowerCase();
-  const { name, email, slot } = req.body;
+  const { name, email } = req.body;
+  const rawSlot = typeof req.body.slot === 'string' ? req.body.slot.trim() : req.body.slot;
+  const slotId = rawSlot === PACKAGE_CUSTOM_SLOT_VALUE ? NaN : Number(rawSlot);
+  const hasSelectedSlot = Number.isInteger(slotId) && slotId > 0;
   const locale = req.body.locale === 'en' ? 'en' : 'de';
   const lng = locale;
   const isEn = locale === 'en';
@@ -365,20 +437,16 @@ export async function handleContact(req, res) {
   }
   try {
     // Paketdaten holen (für Mail & Bestätigung)
-    const { rows } = await pool.query(
-      'SELECT * FROM packages WHERE LOWER(name) = $1 LIMIT 1',
-      [slug]
-    );
-    if (!rows.length) return res.status(404).send(isEn ? 'Package not found' : 'Paket nicht gefunden');
-    const pack = rows[0];
+    const pack = await pricingService.getPackageWithDetailsBySlug(slug);
+    if (!pack) return res.status(404).send(isEn ? 'Package not found' : 'Paket nicht gefunden');
 
-    if (slot) {
-      lockedSlot = await lockSlot(Number(slot));
+    if (hasSelectedSlot) {
+      lockedSlot = await lockSlot(slotId);
       if (!lockedSlot) return res.render('booking/slot_taken', {
         title: isEn ? "Slot unavailable" : "Termin vergeben",
         description: isEn
           ? "That slot was just taken. Please choose a different appointment."
-          : "Leider war jemand schneller. Bitte wählen Sie einen anderen Termin."
+          : "Leider war jemand schneller. Bitte wähle einen anderen Termin."
       });
       booking = await Book.create(lockedSlot.id, name, email, null, locale);
     }
@@ -410,9 +478,9 @@ export async function handleContact(req, res) {
         : `
         <p>Hallo <strong>${name}</strong>,</p>
         <p>
-          Sie haben sich für das <strong>${pack.name}-Paket</strong> entschieden.
-          Keine Sorge, Sie müssen noch nichts bezahlen.
-          Wir treffen uns zunächst zu einem Online-Beratungsgespräch
+          Du hast dich für das <strong>${pack.name}-Paket</strong> entschieden.
+          Keine Sorge, du musst noch nichts bezahlen.
+          Ich melde mich zunächst zu einem Online-Beratungsgespräch
           (gern auch persönlich).
         </p>
         <p>Beste Grüße<br>Komplett Webdesign</p>
@@ -420,46 +488,71 @@ export async function handleContact(req, res) {
       await transporter.sendMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: email,
-        subject: isEn ? `Your request - ${pack.name} package` : `Ihre Anfrage – ${pack.name}-Paket`,
+        subject: isEn ? `Your request - ${pack.name} package` : `Deine Anfrage – ${pack.name}-Paket`,
         html: renderBrandEmail({
           locale,
-          subject: isEn ? `Your request - ${pack.name} package` : `Ihre Anfrage – ${pack.name}-Paket`,
+          subject: isEn ? `Your request - ${pack.name} package` : `Deine Anfrage – ${pack.name}-Paket`,
           headline: isEn ? "Package request received" : "Paketanfrage eingegangen",
-          preheader: isEn ? "Thank you for your package request." : "Vielen Dank für Ihre Paketanfrage.",
+          preheader: isEn ? "Thank you for your package request." : "Vielen Dank für deine Paketanfrage.",
           bodyHtml: html
         })
+      });
+      await sendPackageContactAdminCopy({
+        pack,
+        name,
+        email,
+        locale
       });
     }
 
     // Erfolgsmeldung zurück auf Detailseite
-    const normalizedSlug = normalizePackSlug(pack, slug);
-    const detailMeta = buildPackageDetailMeta({
-      slug: normalizedSlug,
-      isEn,
-      fallbackName: pack.name || (isEn ? 'Website' : 'Website'),
-      fallbackDescription: pack.description
-    });
+    const [previewPackages, globalNotes, schemaFaqs, optionalAddOns, addOnsTickerConfig] = await Promise.all([
+      pricingService.getPackagesForComparison(),
+      pricingService.getGlobalPricingNotes('packages'),
+      pricingService.getPackageFaqs(pack.id, { detailOnly: true, schemaOnly: true }),
+      pricingService.getVisibleAddOns().catch((err) => {
+        console.error('❌ handleContact (add-ons):', err?.message || err);
+        return [];
+      }),
+      pricingService.getGlobalPricingNotes('package_detail_addons_config').catch(() => [])
+    ]);
+    pack.visibleFaqs = normalizeFaqsForSchema(schemaFaqs);
+    const detailMeta = buildPackageDetailMeta({ pack, isEn });
+    const baseUrl = resolveBaseUrl(req, res.locals.canonicalBaseUrl);
+    const packageCanonicalPath = pack.canonicalPath || `/pakete/${slug}`;
     res.render('package_detail', {
       title: detailMeta.title,
       description: detailMeta.description,
       keywords: detailMeta.keywords,
       seoExtra: buildPackagesSeoExtra({
         req,
+        baseUrl: res.locals.canonicalBaseUrl,
         isEn,
         title: detailMeta.title,
         description: detailMeta.description,
-        pathOverride: `/pakete/${slug}`,
-        imagePath: pack?.image?.startsWith('/')
-          ? pack.image
-          : (pack?.image ? `/images/${pack.image}` : '/images/preiseHero.webp')
+        pathOverride: pack.canonicalPath || `/pakete/${slug}`,
+        imagePath: '/images/preiseHero.webp'
       }),
       slots: slots,
-      pack,
+      pack: {
+        ...pack,
+        description: packageDescription(pack)
+      },
+      previewPackages,
+      globalNotes,
+      optionalAddOns,
+      addOnsTickerDurationSeconds: resolveAddOnsTickerDurationSeconds(addOnsTickerConfig),
       lng,
       isEn,
+      jsonLd: buildPackageSchemas({
+        pack,
+        url: `${baseUrl}${isEn ? '/en' : ''}${packageCanonicalPath}`,
+        baseUrl,
+        lng
+      }),
       successMessage: isEn
         ? 'Thank you! We received your request and will get back to you soon.'
-        : 'Vielen Dank! Wir haben Ihre Anfrage erhalten und melden uns bald.'
+        : 'Vielen Dank! Ich habe deine Anfrage erhalten und melde mich bald.'
     });
   } catch (err) {
     console.error('❌ handleContact:', err);

@@ -1,49 +1,59 @@
 # Preise und Pakete von Komplett Webdesign
 
 Last updated: 2026-04-21
-URL: https://www.komplettwebdesign.de/pakete
+URL: https://komplettwebdesign.de/pakete
 Currency: EUR
 
 Komplett Webdesign bietet transparente Website-Pakete für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Die Paketpreise sind einmalige Projektpreise. Hosting, Domain, E-Mail und Wartung werden separat als monatliche Leistungen berechnet.
 
-## Basis - 499 EUR
+Alle Preise gemäß § 19 UStG ohne Ausweis der Umsatzsteuer. Drittanbieter-Kosten, laufende Kosten und Zusatzleistungen werden separat eingeordnet.
 
-Für kleine Unternehmen, Selbstständige und lokale Anbieter, die eine professionelle digitale Visitenkarte brauchen.
+## Start
 
-- Preis: 499 EUR einmalig
-- Umfang: 1 Seite
-- Enthalten: Design, Texte, SEO-Grundoptimierung
-- Lieferzeit: 2-4 Wochen
-- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung optional extra
+Für einen kompakten Einstieg mit klar begrenztem Umfang.
 
-## Business - 899 EUR
+- Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/start
+- Umfang: 1 bis 3 Seiten oder Onepager
+- Enthalten: individuelle Gestaltung, responsive Umsetzung, technische SEO-Grundlagen, Strukturierung gelieferter Inhalte
+- Feedback: im vereinbarten Paketumfang
+- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung separat
 
-Für kleine Unternehmen, die professionell starten und ihre Leistungen klar darstellen wollen.
+## Business
 
-- Preis: 899 EUR einmalig
-- Umfang: bis 5 Seiten
-- Enthalten: Design, Texte, On-Page-SEO, Kontaktformular, Leistungsseiten, Team- oder Über-uns-Seite
-- Lieferzeit: 4-6 Wochen
-- Optional: Blog gegen Mehrkosten
-- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung optional extra
+Für kleine Unternehmen, die mehrere Leistungen verständlich darstellen möchten.
 
-## Premium - 1.499 EUR
+- Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/business
+- Umfang: ca. 4 bis 7 Seiten
+- Enthalten: individuelle Gestaltung, responsive Umsetzung, technische SEO-Grundlagen, Seitenstruktur für mehrere Inhalte
+- Feedback: im vereinbarten Paketumfang
+- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung separat
 
-Für Unternehmen in Berlin mit umfangreicherem Onlineangebot, Buchungsbedarf, kleinen Shops oder mehreren Leistungen.
+## Wachstum
 
-- Preis: 1.499 EUR einmalig
-- Umfang: bis 20 Seiten
-- Enthalten: Design, Texte, Strategie, SEO, umfangreichere Seitenstruktur, Buchungssystem
-- Lieferzeit: 6-8 Wochen
-- Optional: Shop gegen Mehrkosten je nach Umfang
-- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung optional extra
+Für umfangreichere Websites oder Relaunch-Projekte mit stärkerer Seitenstruktur.
+
+- Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/wachstum
+- Umfang: ca. 8 bis 12 Inhaltsseiten
+- Enthalten: individuelle Gestaltung, responsive Umsetzung, technische SEO-Grundlagen, klarere Seitenarchitektur
+- Feedback: im vereinbarten Paketumfang
+- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung separat
+
+## Individuell
+
+Für Sonderfunktionen, größere Anforderungen oder Projekte mit individueller technischer Planung.
+
+- Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/individuell
+- Umfang: projektspezifisch
+- Enthalten: Leistungsumfang nach Anforderungsanalyse und Angebot
+- Geeignet für: CMS, Buchungssysteme, Mehrsprachigkeit, Shop-Funktionen, komplexere Integrationen oder größere Seitenstrukturen
+- Laufende Leistungen: Hosting, Domain, E-Mail und Wartung separat
 
 ## Monatliche Zusatzleistungen
 
-- Domain und E-Mail: ab 10 EUR pro Monat
-- Hosting: 10 EUR pro Monat
-- Wartung: 5 EUR pro Monat
+- Domain und E-Mail: je nach Anbieter und Setup separat
+- Hosting: je nach technischem Bedarf separat
+- Wartung: optional nach vereinbartem Wartungspaket
 
 ## Hinweise
 
-Alle Pakete können je nach Projektumfang erweitert werden. Shops, individuelle Buchungssysteme, zusätzliche SEO-Leistungen, Blog-Aufbau oder größere Inhaltsmengen werden separat kalkuliert.
+Alle Pakete können je nach Projektumfang erweitert werden. Shops, individuelle Buchungssysteme, CMS, Mehrsprachigkeit, Local SEO, Tracking, Animationen, Inhaltsmigration oder größere Inhaltsmengen werden separat kalkuliert. Rankings, Umsätze, Anfragen oder rechtliche Ergebnisse werden nicht garantiert.

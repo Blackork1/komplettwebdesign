@@ -5,7 +5,7 @@
         <a href="/admin/appointments/new" class="btn">+ Neuer Termin</a>
     </p>
 
-    <table class="table">
+    <table class="table admin-appointments-table">
         <thead>
             <tr>
                 <th>Datum / Uhrzeit</th>
@@ -28,7 +28,7 @@
                         <% if (!a.is_booked) { %>
                             <form method="POST" + action="/admin/appointments/<%= a.id %>/delete"
                                 onsubmit="return confirm('Termin wirklich löschen?');">
-                                <button class="btn alt">Löschen</button>
+                                <button class="btn admin-btn-alt">Löschen</button>
                             </form>
                             <% } else { %>
                                 –
@@ -38,26 +38,4 @@
                 <%})%>
         </tbody>
     </table>
-
-    <style>
-        .table {
-            border-collapse: collapse;
-            width: 100%
-        }
-
-        .table th,
-        .table td {
-            border: 1px solid #ccc;
-            padding: .4rem
-        }
-
-        .booked {
-            background: #ffe3e3
-        }
-
-        .free {
-            background: #e8ffe8
-        }
-    </style>
-
     <%- include('../partials/admin_footer') %>

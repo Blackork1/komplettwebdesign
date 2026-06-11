@@ -6,25 +6,20 @@
   <main id="hero">
     <link rel="stylesheet" href="<%= cssAsset('website-tester.css') %>">
 
-    <section class="wt-section wt-section-compact">
+    <section class="wt-hero unified-hero">
       <div class="wt-shell">
-        <nav class="breadcrumbs" aria-label="breadcrumb">
-          <ol>
-            <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
-            <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
-            <li aria-current="page">Meta Tester</li>
-          </ol>
-        </nav>
-      </div>
-    </section>
-
-    <section class="wt-hero">
-      <div class="wt-shell">
-        <div class="wt-hero-grid">
-          <div class="wt-hero-copy">
+        <div class="wt-hero-grid unified-hero__grid">
+          <div class="wt-hero-copy unified-hero__copy">
+            <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+              <ol>
+                <li><a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a></li>
+                <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>"><%= isEn ? 'Website Tester' : 'Website-Tester' %></a></li>
+                <li aria-current="page"><%= isEn ? 'Meta Tester' : 'Meta-Tester' %></li>
+              </ol>
+            </nav>
             <span class="wt-eyebrow">
               <i class="fa-solid fa-code"></i>
-              Meta Tester
+              <%= isEn ? 'Meta Tester' : 'Meta-Tester' %>
             </span>
             <h1><%= isEn ? 'Find header meta problems on your website in minutes.' : 'Finde Header-Meta-Probleme auf deiner Website in wenigen Minuten.' %></h1>
             <p class="wt-lead">
@@ -39,7 +34,7 @@
             </ul>
           </div>
 
-          <div class="wt-form-card">
+          <div class="wt-form-card unified-hero__panel">
             <h2><%= isEn ? 'Start meta check' : 'Meta-Check starten' %></h2>
             <p><%= isEn ? 'Add website URL and market context so we can check title/description relevance for your industry and region.' : 'Gib URL und Marktkontext an, damit wir Title/Description auf Branchen- und Regions-Fit prüfen können.' %></p>
 
@@ -64,7 +59,7 @@
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
                   <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
                 </div>
-                <button class="wt-button" type="submit">
+                <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start meta check' : 'Meta-Check starten' %>
                 </button>
@@ -251,18 +246,6 @@
   </main>
 
   <%- include('partials/footer') %>
-
-  <style>
-    .wt-section-compact { padding-top: 16px; padding-bottom: 0; }
-    .breadcrumbs ol { margin: 0; padding: 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
-    .breadcrumbs li { color: #6b7280; font-size: .95rem; }
-    .breadcrumbs li+li::before { content: '›'; margin-right: 10px; color: #9ca3af; }
-    .breadcrumbs a { color: #374151; text-decoration: none; }
-    .breadcrumbs a:hover { text-decoration: underline; }
-    .wt-faq details { border-top: 1px solid #e5e7eb; padding: 14px 0; }
-    .wt-faq summary { cursor: pointer; font-weight: 600; }
-    .wt-faq p { margin: 10px 0 0; }
-  </style>
 
   <script>
     window.KWD_TESTER_SPAM = {

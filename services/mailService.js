@@ -1045,6 +1045,62 @@ export async function sendAdminTesterLeadNotification({
     }
 }
 
+export async function sendAdminTesterScanNotification({
+    source = "website",
+    requestedUrl = "",
+    finalUrl = "",
+    status = "success",
+    errorMessage = "",
+    auditId = "",
+    score = null,
+    scoreBand = "",
+    scanMode = "",
+    locale = "de",
+    context = {}
+} = {}) {
+    const srcLabel = sourceLabel(source, "de");
+    const statusLabel = status === "error" ? "Fehler" : "Erfolgreich";
+    const scoreLabel = scoreBand ? wtScoreLabel(scoreBand, "de") : "";
+    const domain = finalUrl || requestedUrl;
+    const subject = `Website-Test ausgeführt: ${srcLabel}${domain ? " · " + domain : ""}`;
+    const contextRows = [
+        context?.businessType && `<strong>Branche:</strong> ${safeHtml(context.businessType)}<br>`,
+        context?.primaryService && `<strong>Hauptleistung:</strong> ${safeHtml(context.primaryService)}<br>`,
+        context?.targetRegion && `<strong>Zielregion:</strong> ${safeHtml(context.targetRegion)}<br>`
+    ].filter(Boolean).join("");
+
+    const bodyHtml = `
+        <p>Soeben wurde ein <strong>${safeHtml(srcLabel)}</strong> abgeschlossen.</p>
+        <p>
+          <strong>Status:</strong> ${safeHtml(statusLabel)}<br>
+          <strong>Quelle:</strong> ${safeHtml(srcLabel)} (${safeHtml(source)})<br>
+          <strong>Angefragte URL:</strong> ${safeHtml(requestedUrl)}<br>
+          ${finalUrl ? `<strong>Finale URL:</strong> ${safeHtml(finalUrl)}<br>` : ""}
+          ${auditId ? `<strong>Audit-ID:</strong> ${safeHtml(auditId)}<br>` : ""}
+          ${scanMode ? `<strong>Scan-Modus:</strong> ${safeHtml(scanMode)}<br>` : ""}
+          ${(score || score === 0) ? `<strong>Score:</strong> ${safeHtml(String(score))}<br>` : ""}
+          ${scoreLabel ? `<strong>Score-Band:</strong> ${safeHtml(scoreLabel)} (${safeHtml(scoreBand)})<br>` : ""}
+          <strong>Sprache:</strong> ${safeHtml(wtLocale(locale))}
+        </p>
+        ${contextRows ? `<p>${contextRows}</p>` : ""}
+        ${errorMessage ? `<p><strong>Fehler:</strong> ${safeHtml(errorMessage)}</p>` : ""}
+        <p>Der Eintrag ist im Adminbereich unter Website-Tester sichtbar.</p>
+    `;
+
+    return transporter.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to: 'kontakt@komplettwebdesign.de',
+        subject,
+        html: renderBrandEmail({
+            locale: "de",
+            subject,
+            headline: "Website-Test ausgeführt",
+            preheader: `${srcLabel}: ${statusLabel}${domain ? " · " + domain : ""}`,
+            bodyHtml
+        })
+    });
+}
+
 /* ------------------------------------------------------------------
  * Freeform-Mail für den Admin (Mailversand-Funktion im Backend)
  * ------------------------------------------------------------------ */

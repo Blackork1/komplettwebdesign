@@ -34,8 +34,13 @@
 
   function trackEvent(eventName, payload) {
     try {
-      if (typeof window.gtag !== 'function') return;
-      window.gtag('event', eventName, payload || {});
+      if (window.KWDTracking && typeof window.KWDTracking.trackEvent === 'function') {
+        window.KWDTracking.trackEvent(eventName, payload || {});
+        return;
+      }
+      document.dispatchEvent(new CustomEvent('kwd:tracking', {
+        detail: { eventName, params: payload || {} }
+      }));
     } catch (_err) {
       // ignore tracking errors
     }
@@ -69,10 +74,10 @@
     const pkg = utils.buildPackageSuggestion(score, locale);
     if (!pkg || !pkg.title) return '';
     return `
-      <div class="wt-next-step-package" style="margin-top:0.65rem;">
+      <div class="wt-next-step-package wt-stack-package">
         <strong>${escapeHtml(pkg.title)}</strong>
         <p>${escapeHtml(pkg.text || '')}</p>
-        <a class="wt-button wt-button-secondary" data-tester-cta="website" data-tester-action="package" href="${escapeHtml(pkg.href || '/webdesign-berlin')}">${escapeHtml(pkg.label || (locale === 'en' ? 'View packages' : 'Pakete ansehen'))}</a>
+        <a class="btn btn-secondary" data-tester-cta="website" data-tester-action="package" href="${escapeHtml(pkg.href || '/webdesign-berlin')}">${escapeHtml(pkg.label || (locale === 'en' ? 'View packages' : 'Pakete ansehen'))}</a>
       </div>`;
   }
 
@@ -210,7 +215,7 @@
       : '';
 
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+      <section class="wt-sitefacts wt-stack-sm">
         <h3><i class="fa-solid fa-route"></i> ${escapeHtml(i18n.scannedPagesTitle || 'Für den Scan geladene Seiten')}</h3>
         <ul class="wt-priority-list wt-scanned-pages">${pageItems}</ul>
         ${failedItems}
@@ -230,15 +235,15 @@
       : `<li>${escapeHtml(i18n.noPenalties || 'Keine aktiven Penalties.')}</li>`;
 
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+      <section class="wt-sitefacts wt-stack-sm">
         <h3><i class="fa-solid fa-calculator"></i> ${escapeHtml(i18n.scoreWhyTitle || 'Warum dieser Score?')}</h3>
         <dl>
           <dt>${escapeHtml(i18n.rawScore || 'Rohscore')}</dt><dd>${escapeHtml(scoring.rawScore)}</dd>
           <dt>${escapeHtml(i18n.finalScore || 'Finaler Score')}</dt><dd>${escapeHtml(scoring.finalScore)}</dd>
           <dt>${escapeHtml(i18n.scorePenalty || 'Abzug')}</dt><dd>${escapeHtml(scoring.penalty || 0)}</dd>
         </dl>
-        <ul class="wt-priority-list" style="margin-top:0.55rem;">${capItems}</ul>
-        <ul class="wt-priority-list" style="margin-top:0.55rem;">${penaltyItems}</ul>
+        <ul class="wt-priority-list wt-stack-xs">${capItems}</ul>
+        <ul class="wt-priority-list wt-stack-xs">${penaltyItems}</ul>
       </section>
     `;
   }
@@ -248,13 +253,13 @@
     const reasons = Array.isArray(legalRisk.reasons) ? legalRisk.reasons : [];
     const blockers = Array.isArray(legalRisk.blockers) ? legalRisk.blockers : [];
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+      <section class="wt-sitefacts wt-stack-sm">
         <h3><i class="fa-solid fa-scale-balanced"></i> ${escapeHtml(i18n.legalRiskTitle || 'Abmahn-Risiko')}</h3>
-        <div class="wt-result-meta" style="margin-top:0.4rem;">
+        <div class="wt-result-meta wt-stack-2xs">
           <span class="wt-tag" data-tone="${escapeHtml(toneFromRisk(legalRisk.level))}">${escapeHtml(legalRisk.label || legalRisk.level || 'n/a')}</span>
           ${blockers.length ? `<span class="wt-tag" data-tone="kritisch">${escapeHtml(blockers.length)} ${escapeHtml(i18n.legalBlockers || 'Blocker')}</span>` : ''}
         </div>
-        <ul class="wt-priority-list" style="margin-top:0.55rem;">
+        <ul class="wt-priority-list wt-stack-xs">
           ${reasons.length ? reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('') : `<li>${escapeHtml(i18n.noLegalRiskReasons || 'Keine erhöhten Risikohinweise erkannt.')}</li>`}
         </ul>
       </section>
@@ -403,16 +408,16 @@
             <h3><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(i18n.topFindingsTitle || 'Top Befunde')}</h3>
             <ul class="wt-priority-list">${renderList(result.topFindings, i18n.noFindings || 'Keine kritischen Befunde erkannt.')}</ul>
           </section>
-          <section class="wt-priorities" style="margin-top:0.8rem;">
+          <section class="wt-priorities wt-stack-sm">
             <h3><i class="fa-solid fa-list-check"></i> ${escapeHtml(i18n.topActionsTitle || 'Top Maßnahmen')}</h3>
             <ul class="wt-priority-list">${renderList(result.topActions, i18n.noActions || 'Keine dringenden Maßnahmen erkannt.')}</ul>
           </section>
-          <section class="wt-sitefacts" style="margin-top:0.8rem;">
+          <section class="wt-sitefacts wt-stack-sm">
             <h3><i class="fa-solid fa-table-list"></i> ${escapeHtml(i18n.factsTitle || 'Fakten')}</h3>
             <dl>${renderFacts(result.siteFacts || {})}</dl>
           </section>
           ${renderScannedPages(result.scannedPages, result.failedScanTargets)}
-          <section class="wt-sitefacts" style="margin-top:0.8rem;">
+          <section class="wt-sitefacts wt-stack-sm">
             <h3><i class="fa-solid fa-bullseye"></i> ${escapeHtml(i18n.relevanceTitle || 'Relevanz-Scores')}</h3>
             <dl>
               <dt>${escapeHtml(i18n.seoGeoScore || 'SEO/GEO')}</dt><dd>${escapeHtml(relevance.seoGeoScore ?? 'n/a')}/100</dd>
@@ -421,7 +426,7 @@
             </dl>
           </section>
           ${renderScoringBreakdown(result.scoring)}
-          <section class="wt-sitefacts" style="margin-top:0.8rem;">
+          <section class="wt-sitefacts wt-stack-sm">
             <h3><i class="fa-solid fa-circle-info"></i> ${escapeHtml(i18n.limitationsTitle || 'Hinweise')}</h3>
             <ul class="wt-priority-list">${limitations}</ul>
           </section>
@@ -434,7 +439,7 @@
           <article class="wt-next-card">
             <h3>${escapeHtml(i18n.consultationTitle || 'Ergebnis gemeinsam priorisieren')}</h3>
             <p>${escapeHtml(i18n.consultationText || '')}</p>
-            <a class="wt-button" data-tester-cta="website" data-tester-action="primary" href="${escapeHtml(buildCtxUrl(result.cta?.primaryHref || '/kontakt', result))}">
+            <a class="btn btn-primary" data-tester-cta="website" data-tester-action="primary" href="${escapeHtml(buildCtxUrl(result.cta?.primaryHref || '/kontakt', result))}">
               ${escapeHtml(result.cta?.primaryLabel || i18n.consultationButton || 'Beratung buchen')}
             </a>
             ${renderPackageTeaser(result)}
@@ -455,7 +460,7 @@
                   ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
                 </a>
               </small>
-              <button class="wt-button" type="submit">${escapeHtml(i18n.reportSubmit || 'Bestätigungslink senden')}</button>
+              <button class="btn btn-primary" type="submit">${escapeHtml(i18n.reportSubmit || 'Bestätigungslink senden')}</button>
               <p class="wt-lead-state" data-tester-lead-state hidden></p>
             </form>
           </article>

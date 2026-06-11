@@ -1,5 +1,7 @@
 import pool from '../util/db.js';
 import { buildHandwerkerPageSchemas } from '../helpers/pageSchema.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
 export async function getPageBySlug(req, res, next) {
   const slug = req.params.slug;
@@ -12,13 +14,14 @@ export async function getPageBySlug(req, res, next) {
     );
     if (!pages.length) return next(); // keine Seite -> weiter zu 404
 
-    const page = pages[0];
+    const page = normalizeLegacyPublicCopy(renderPricingTokens(pages[0], res.locals.packagePricing || {}));
 
     // Lade alle Komponenten der Seite
-    const { rows: comps } = await db.query(
+    const { rows: rawComps } = await db.query(
       'SELECT * FROM components WHERE page_id = $1 ORDER BY order_index',
       [page.id]
     );
+    const comps = normalizeLegacyPublicCopy(renderPricingTokens(rawComps, res.locals.packagePricing || {}));
 
     // Baumstruktur für Komponenten
     const map = {};

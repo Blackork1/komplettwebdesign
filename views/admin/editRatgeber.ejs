@@ -45,7 +45,7 @@
     <div class="mb-3">
       <p class="mb-1">Aktuelles Titelbild:</p>
       <% if (post.image_url) { %>
-        <img src="<%= post.image_url %>" alt="Aktuelles Titelbild" class="img-fluid rounded mb-2" style="max-height:150px;">
+        <img src="<%= post.image_url %>" alt="Aktuelles Titelbild" class="img-fluid rounded mb-2 admin-thumb-preview">
       <% } else { %>
         <p class="text-muted">Kein Bild vorhanden.</p>
       <% } %>

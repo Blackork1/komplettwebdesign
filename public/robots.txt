@@ -2,52 +2,82 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 # Discovery-Bots / Search-Bots explizit erlaubt
 User-agent: Googlebot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 # Google-Extended (Training/Grounding-Steuerung, kein klassischer Ranking-Hebel)
 User-agent: Google-Extended
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: OAI-SearchBot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: GPTBot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: Claude-User
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 User-agent: Claude-SearchBot
 Allow: /
 Disallow: /admin/
 Disallow: /auth/
+Disallow: /api/
+Disallow: /webhook
+Disallow: /test
 
 Sitemap: https://www.komplettwebdesign.de/sitemap.xml

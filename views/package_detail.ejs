@@ -1,1798 +1,207 @@
 <%
 const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jsonLd)) ? jsonLd : [];
 %>
-<%- include('partials/head', { structuredDataBlocks }) %>
-<%- include('partials/header') %>
+<%- include('partials/head', { structuredDataBlocks, extraCssAssets: ['package-list.css', 'package-detail.css'] }) %>
 
-<style>
-  .package-detail-page {
-    --packages-shadow-buffer: clamp(1rem, 2vw, 1.5rem);
-  }
-
-  .package-detail-page .container,
-  .package-detail-page .package-overview,
-  .package-detail-page .package-detail-sections,
-  .package-detail-page .package-process,
-  .package-detail-page .package-addons,
-  .package-detail-page .package-who-for,
-  .package-detail-page .package-outcomes,
-  .package-detail-page .package-mid-cta,
-  .package-detail-page .package-timeline-detail,
-  .package-detail-page .package-faq-detail,
-  .package-detail-page .package-contact,
-  .package-detail-page .package-previews {
-    overflow: visible;
-  }
-
-  .package-detail-page .overview-cards,
-  .package-detail-page .detail-grid,
-  .package-detail-page .process-timeline,
-  .package-detail-page .addons-grid,
-  .package-detail-page .who-for-list,
-  .package-detail-page .outcomes-grid,
-  .package-detail-page .timeline-phases,
-  .package-detail-page .faq-detail-list,
-  .package-detail-page .previews-grid {
-    overflow: visible;
-    padding: var(--packages-shadow-buffer);
-  }
-
-  .package-detail-page .hero-price,
-  .package-detail-page .overview-card,
-  .package-detail-page .detail-card,
-  .package-detail-page .process-step,
-  .package-detail-page .addons-list li,
-  .package-detail-page .contact-inner,
-  .package-detail-page .preview-card,
-  .package-detail-page .who-for-list li,
-  .package-detail-page .outcome-card,
-  .package-detail-page .mid-cta-inner,
-  .package-detail-page .timeline-phases li,
-  .package-detail-page .faq-detail-item {
-    position: relative;
-    z-index: 0;
-  }
-
-  .package-detail-page .contact-inner,
-  .package-detail-page .mid-cta-inner,
-  .package-detail-page .hero-price {
-    margin-block: var(--packages-shadow-buffer);
-  }
-
-  .package-detail-page .package-detail-hero .hero-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .package-detail-page .package-detail-hero .hero-image-frame {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 2 / 3;
-    width: min(100%, 360px);
-    max-width: min(100%, 360px);
-    min-height: 0;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    overflow: hidden;
-    box-sizing: border-box;
-    line-height: 0;
-  }
-
-  .package-detail-page .package-detail-hero .hero-image-frame img {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-    object-fit: cover;
-    object-position: center;
-    border-radius: inherit;
-  }
-
-  @media (max-width: 900px) {
-    .package-detail-page .package-detail-hero .hero-image-frame {
-      width: min(100%, 320px);
-      max-width: min(100%, 320px);
-      margin-inline: auto;
-    }
-  }
-
-  .package-detail-page .hero-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .package-detail-page .hero-price {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem 1.5rem;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 20px 45px rgba(194, 74, 44, 0.18);
-    border: 1px solid rgba(228, 93, 63, 0.2);
-  }
-
-  .package-detail-page .hero-price .price-label {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--packages-muted);
-  }
-
-  .package-detail-page .hero-price .price-amount {
-    font-size: 1.9rem;
-    font-weight: 700;
-    color: var(--packages-ink);
-    font-family: "Poppins", "Inter", sans-serif;
-  }
-
-  .package-detail-page .hero-note {
-    font-size: 0.95rem;
-    color: var(--packages-accent-dark);
-    font-weight: 600;
-  }
-
-  .package-detail-page .package-overview {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-  }
-
-  .package-detail-page .overview-grid {
-    display: grid;
-    gap: clamp(2rem, 4vw, 3.5rem);
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    align-items: start;
-  }
-
-  .package-detail-page .overview-intro {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .package-detail-page .overview-intro h2 {
-    font-size: clamp(1.9rem, 3vw, 2.4rem);
-    color: var(--packages-ink);
-    margin-bottom: 1rem;
-  }
-
-  .package-detail-page .overview-intro p {
-    color: var(--packages-muted);
-    line-height: 1.7;
-  }
-
-  .package-detail-page .overview-cards {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .package-detail-page .overview-card {
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 20px;
-    padding: 1.75rem;
-    box-shadow: 0 25px 60px rgba(144, 58, 32, 0.12);
-    border: 1px solid rgba(228, 93, 63, 0.18);
-  }
-
-  .package-detail-page .overview-card h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.75rem;
-    color: var(--packages-ink);
-  }
-
-  .package-detail-page .overview-card p {
-    margin: 0;
-    color: var(--packages-text);
-    line-height: 1.6;
-  }
-
-  @media (min-width: 992px) {
-    .package-detail-page .overview-grid {
-      grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
-      align-items: stretch;
-    }
-
-    .package-detail-page .overview-intro {
-      justify-content: center;
-    }
-  }
-
-  .package-detail-page .package-detail-sections {
-    padding: clamp(3rem, 6vw, 5rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .package-detail-sections h2,
-  .package-detail-page .package-process h2,
-  .package-detail-page .package-previews h2,
-  .package-detail-page .package-addons h2,
-  .package-detail-page .package-contact h2 {
-    font-size: clamp(2rem, 3.2vw, 2.6rem);
-    color: var(--packages-ink);
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .package-detail-page .detail-grid {
-    display: grid;
-    gap: 1.75rem;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-
-  .package-detail-page .detail-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 22px;
-    padding: 1.85rem;
-    border: 1px solid rgba(228, 93, 63, 0.18);
-    box-shadow: 0 25px 50px rgba(144, 58, 32, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-  }
-
-  .package-detail-page .detail-card h3 {
-    font-size: 1.2rem;
-    color: var(--packages-ink);
-  }
-
-  .package-detail-page .detail-text {
-    color: var(--packages-text);
-    line-height: 1.65;
-  }
-
-  .package-detail-page .detail-text p {
-    margin-bottom: 0.65rem;
-  }
-
-  .package-detail-page .detail-text ul {
-    margin: 0.75rem 0 0 1.25rem;
-  }
-
-  .package-detail-page .package-process {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-  }
-
-  .package-detail-page .process-timeline {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .package-detail-page .process-step {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1rem;
-    align-items: start;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 20px;
-    padding: 1.5rem 1.75rem;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: 0 20px 45px rgba(144, 58, 32, 0.08);
-  }
-
-  .package-detail-page .process-index {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--packages-accent) 0%, var(--packages-accent-dark) 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  .package-detail-page .process-content h3 {
-    margin: 0 0 0.5rem;
-    font-size: 1.15rem;
-    color: var(--packages-ink);
-  }
-
-  .package-detail-page .process-content p {
-    margin: 0;
-    color: var(--packages-text);
-    line-height: 1.6;
-  }
-
-  .package-detail-page .package-addons {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .addons-grid {
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    align-items: start;
-  }
-
-  .package-detail-page .addons-intro p {
-    color: var(--packages-text);
-    line-height: 1.6;
-  }
-
-  .package-detail-page .addons-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 1rem;
-  }
-
-  .package-detail-page .addons-list li {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.75rem;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 16px;
-    padding: 1rem 1.25rem;
-    border: 1px solid rgba(228, 93, 63, 0.14);
-    color: var(--packages-text);
-  }
-
-  .package-detail-page .addons-list span[aria-hidden="true"] {
-    font-size: 1.35rem;
-    color: var(--packages-accent);
-  }
-
-  .package-detail-page .package-contact {
-    padding: clamp(3rem, 6vw, 5rem) 0;
-  }
-
-  .package-detail-page .contact-inner {
-    display: grid;
-    gap: clamp(2rem, 4vw, 3.5rem);
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    align-items: start;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 26px;
-    padding: clamp(2rem, 5vw, 3rem);
-    box-shadow: 0 35px 70px rgba(144, 58, 32, 0.14);
-    border: 1px solid rgba(228, 93, 63, 0.18);
-  }
-
-  .package-detail-page .contact-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .package-detail-page .contact-copy p {
-    color: var(--packages-text);
-    line-height: 1.7;
-  }
-
-  .package-detail-page .contact-highlights {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .package-detail-page .contact-highlights li {
-    display: flex;
-    gap: 0.65rem;
-    align-items: flex-start;
-    color: var(--packages-text);
-  }
-
-  .package-detail-page .contact-highlights li::before {
-    content: "";
-    width: 0.85rem;
-    height: 0.85rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--packages-accent) 0%, var(--packages-accent-dark) 100%);
-    box-shadow: 0 0 0 4px var(--packages-accent-soft);
-    margin-top: 0.25rem;
-  }
-
-  .package-detail-page .contact-form-wrapper {
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 22px;
-    padding: 1.75rem;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-
-  .package-detail-page .contact-form {
-    display: grid;
-    gap: 1.2rem;
-  }
-
-  .package-detail-page .contact-form label {
-    font-weight: 600;
-    color: var(--packages-ink);
-  }
-
-  .package-detail-page .contact-form input,
-  .package-detail-page .contact-form select,
-  .package-detail-page .contact-form textarea {
-    width: 100%;
-    border-radius: 12px;
-    border: 1px solid rgba(228, 93, 63, 0.2);
-    padding: 0.85rem 1rem;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--packages-text);
-    transition: border 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .package-detail-page .contact-form input:focus,
-  .package-detail-page .contact-form select:focus,
-  .package-detail-page .contact-form textarea:focus {
-    outline: none;
-    border-color: var(--packages-accent);
-    box-shadow: 0 0 0 3px rgba(228, 93, 63, 0.2);
-  }
-
-  .package-detail-page .contact-form .btn-hero {
-    justify-self: flex-start;
-  }
-
-  .package-detail-page .no-slots {
-    font-size: 0.95rem;
-    color: var(--packages-muted);
-    margin: 0;
-  }
-
-  .package-detail-page .package-previews {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .package-previews .previews-subtitle {
-    text-align: center;
-    max-width: 640px;
-    margin: 0 auto 2.5rem;
-    color: var(--packages-muted);
-  }
-
-  .package-detail-page .previews-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-
-  .package-detail-page .preview-card {
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 22px;
-    overflow: hidden;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: 0 25px 55px rgba(144, 58, 32, 0.12);
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .package-detail-page .preview-card:hover,
-  .package-detail-page .preview-card:focus-within {
-    transform: translateY(-6px);
-    box-shadow: 0 35px 65px rgba(144, 58, 32, 0.18);
-  }
-
-  .package-detail-page .preview-card.is-current {
-    border-color: var(--packages-accent);
-    box-shadow: 0 40px 70px rgba(228, 93, 63, 0.18);
-  }
-
-  .package-detail-page .preview-image {
-    position: relative;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-  }
-
-  .package-detail-page .preview-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .package-detail-page .preview-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    padding: 1.75rem;
-  }
-
-  .package-detail-page .preview-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--packages-muted);
-  }
-
-  .package-detail-page .preview-body h3 {
-    margin: 0;
-    font-size: 1.3rem;
-    color: var(--packages-ink);
-  }
-
-  .package-detail-page .preview-body p {
-    margin: 0;
-    color: var(--packages-text);
-    line-height: 1.6;
-  }
-
-  .package-detail-page .preview-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-weight: 600;
-    color: var(--packages-accent-dark);
-  }
-
-  .package-detail-page .preview-current {
-    background: rgba(228, 93, 63, 0.12);
-    color: var(--packages-accent-dark);
-    padding: 0.25rem 0.65rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-  }
-
-  @media (max-width: 640px) {
-    .package-detail-page .package-previews .previews-subtitle {
-      text-align: left;
-    }
-
-    .package-detail-page .previews-grid {
-      grid-template-columns: 1fr;
-      gap: 1.75rem;
-    }
-
-    .package-detail-page .preview-card {
-      max-width: 100%;
-    }
-
-    .package-detail-page .preview-body {
-      padding: 1.5rem;
-    }
-
-    .package-detail-page .preview-body h3 {
-      font-size: 1.2rem;
-    }
-
-    .package-detail-page .preview-meta {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.35rem;
-    }
-
-    .package-detail-page .preview-body .btn-soft-outline {
-      width: 100%;
-      text-align: center;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .package-detail-page .process-step {
-      grid-template-columns: 1fr;
-      text-align: left;
-    }
-
-    .package-detail-page .process-index {
-      width: 2.5rem;
-      height: 2.5rem;
-      font-size: 1rem;
-    }
-
-    .package-detail-page .contact-form .btn-hero {
-      width: 100%;
-      text-align: center;
-      justify-content: center;
-    }
-  }
-
-  /* Who-for */
-  .package-detail-page .package-who-for {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-  }
-
-  .package-detail-page .package-who-for h2 {
-    font-size: clamp(1.9rem, 3vw, 2.4rem);
-    color: var(--packages-ink);
-    margin: 0 auto 1rem;
-    max-width: 46rem;
-    text-align: center;
-  }
-
-  .package-detail-page .package-who-intro {
-    max-width: 52rem;
-    margin: 0 auto 2rem;
-    text-align: center;
-    color: var(--packages-text);
-    line-height: 1.7;
-  }
-
-  .package-detail-page .who-for-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 auto;
-    max-width: 52rem;
-    display: grid;
-    gap: 0.9rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-
-  .package-detail-page .who-for-list li {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 1.1rem 1.3rem;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: 0 14px 30px rgba(150, 62, 34, 0.07);
-    color: var(--packages-text);
-    line-height: 1.55;
-    position: relative;
-    padding-left: 2.4rem;
-  }
-
-  .package-detail-page .who-for-list li::before {
-    content: "✓";
-    position: absolute;
-    left: 1rem;
-    top: 1.05rem;
-    color: var(--packages-accent);
-    font-weight: 700;
-  }
-
-  /* Outcomes */
-  .package-detail-page .package-outcomes {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .package-outcomes h2 {
-    font-size: clamp(1.9rem, 3vw, 2.4rem);
-    color: var(--packages-ink);
-    text-align: center;
-    margin: 0 0 2rem;
-  }
-
-  .package-detail-page .outcomes-grid {
-    display: grid;
-    gap: 1.4rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-
-  .package-detail-page .outcome-card {
-    background: #ffffff;
-    border-radius: 22px;
-    padding: 1.7rem;
-    border: 1px solid rgba(228, 93, 63, 0.18);
-    box-shadow: 0 18px 40px rgba(150, 62, 34, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-  }
-
-  .package-detail-page .outcome-card h3 {
-    font-family: "Poppins", "Inter", sans-serif;
-    color: var(--packages-ink);
-    margin: 0;
-    font-size: 1.15rem;
-    line-height: 1.3;
-  }
-
-  .package-detail-page .outcome-card p {
-    margin: 0;
-    color: var(--packages-text);
-    line-height: 1.65;
-  }
-
-  /* Mid-page CTA */
-  .package-detail-page .package-mid-cta {
-    padding: clamp(2.5rem, 5vw, 4rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .mid-cta-inner {
-    background: linear-gradient(135deg, var(--packages-accent) 0%, var(--packages-accent-dark) 100%);
-    color: #ffffff;
-    border-radius: 26px;
-    padding: clamp(2rem, 4vw, 3rem);
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: 1fr;
-    align-items: center;
-    box-shadow: 0 30px 60px rgba(150, 62, 34, 0.2);
-    text-align: center;
-  }
-
-  @media (min-width: 820px) {
-    .package-detail-page .mid-cta-inner {
-      grid-template-columns: 1.3fr 1fr;
-      text-align: left;
-    }
-  }
-
-  .package-detail-page .mid-cta-copy h2 {
-    margin: 0 0 0.75rem;
-    font-size: clamp(1.6rem, 2.6vw, 2.1rem);
-    color: #ffffff;
-    font-family: "Poppins", "Inter", sans-serif;
-    line-height: 1.25;
-  }
-
-  .package-detail-page .mid-cta-copy p {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.92);
-    line-height: 1.6;
-    font-size: 1.05rem;
-  }
-
-  .package-detail-page .mid-cta-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    justify-self: center;
-  }
-
-  @media (min-width: 820px) {
-    .package-detail-page .mid-cta-actions {
-      justify-self: end;
-    }
-  }
-
-  .package-detail-page .mid-cta-actions .btn {
-    min-width: 220px;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .package-detail-page .mid-cta-actions .btn-white {
-    background: #ffffff;
-    color: var(--packages-accent-dark);
-    border: 1px solid #ffffff;
-    padding: 0.9rem 1.3rem;
-    border-radius: 999px;
-    font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .package-detail-page .mid-cta-actions .btn-white:hover,
-  .package-detail-page .mid-cta-actions .btn-white:focus {
-    transform: translateY(-2px);
-    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
-  }
-
-  .package-detail-page .mid-cta-actions .btn-ghost {
-    background: transparent;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    padding: 0.9rem 1.3rem;
-    border-radius: 999px;
-    font-weight: 600;
-    transition: background 0.2s ease, color 0.2s ease;
-  }
-
-  .package-detail-page .mid-cta-actions .btn-ghost:hover,
-  .package-detail-page .mid-cta-actions .btn-ghost:focus {
-    background: rgba(255, 255, 255, 0.14);
-  }
-
-  /* Timeline */
-  .package-detail-page .package-timeline-detail {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-  }
-
-  .package-detail-page .package-timeline-detail h2 {
-    font-size: clamp(1.9rem, 3vw, 2.4rem);
-    color: var(--packages-ink);
-    text-align: center;
-    margin: 0 0 1rem;
-  }
-
-  .package-detail-page .timeline-lead {
-    max-width: 52rem;
-    margin: 0 auto 2rem;
-    text-align: center;
-    color: var(--packages-muted);
-    line-height: 1.7;
-  }
-
-  .package-detail-page .timeline-phases {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    gap: 1.2rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    counter-reset: phase;
-  }
-
-  .package-detail-page .timeline-phases li {
-    background: #ffffff;
-    border-radius: 22px;
-    padding: 1.6rem;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: 0 16px 34px rgba(150, 62, 34, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-  }
-
-  .package-detail-page .timeline-index {
-    font-family: "Poppins", "Inter", sans-serif;
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--packages-accent);
-  }
-
-  .package-detail-page .timeline-content h3 {
-    font-family: "Poppins", "Inter", sans-serif;
-    color: var(--packages-ink);
-    margin: 0 0 0.35rem;
-    font-size: 1.1rem;
-    line-height: 1.3;
-  }
-
-  .package-detail-page .timeline-content p {
-    margin: 0;
-    color: var(--packages-text);
-    line-height: 1.6;
-  }
-
-  /* FAQ detail */
-  .package-detail-page .package-faq-detail {
-    padding: clamp(3rem, 6vw, 4.5rem) 0;
-    background: transparent;
-  }
-
-  .package-detail-page .package-faq-detail h2 {
-    font-size: clamp(1.9rem, 3vw, 2.4rem);
-    color: var(--packages-ink);
-    text-align: center;
-    margin: 0 0 1rem;
-  }
-
-  .package-detail-page .faq-detail-lead {
-    max-width: 52rem;
-    margin: 0 auto 2rem;
-    text-align: center;
-    color: var(--packages-muted);
-    line-height: 1.7;
-  }
-
-  .package-detail-page .faq-detail-list {
-    max-width: 52rem;
-    margin: 0 auto;
-    display: grid;
-    gap: 0.85rem;
-  }
-
-  .package-detail-page .faq-detail-item {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 1.1rem 1.4rem;
-    border: 1px solid rgba(228, 93, 63, 0.16);
-    box-shadow: 0 12px 28px rgba(150, 62, 34, 0.06);
-    transition: box-shadow 200ms ease;
-  }
-
-  .package-detail-page .faq-detail-item[open] {
-    box-shadow: 0 20px 38px rgba(150, 62, 34, 0.11);
-    border-color: rgba(228, 93, 63, 0.3);
-  }
-
-  .package-detail-page .faq-detail-item summary {
-    cursor: pointer;
-    font-family: "Poppins", "Inter", sans-serif;
-    font-weight: 600;
-    color: var(--packages-ink);
-    list-style: none;
-    position: relative;
-    padding-right: 1.8rem;
-    line-height: 1.4;
-  }
-
-  .package-detail-page .faq-detail-item summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .package-detail-page .faq-detail-item summary::after {
-    content: "+";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--packages-accent);
-    font-size: 1.4rem;
-    font-weight: 700;
-    transition: transform 200ms ease;
-  }
-
-  .package-detail-page .faq-detail-item[open] summary::after {
-    content: "–";
-  }
-
-  .package-detail-page .faq-detail-item p {
-    margin: 0.8rem 0 0;
-    color: var(--packages-text);
-    line-height: 1.65;
-  }
-
-  /* Final shadow safety: keep this after all package detail card rules. */
-  .package-detail-page :is(
-    .container,
-    .package-overview,
-    .package-detail-sections,
-    .package-process,
-    .package-addons,
-    .package-who-for,
-    .package-outcomes,
-    .package-mid-cta,
-    .package-timeline-detail,
-    .package-faq-detail,
-    .package-contact,
-    .package-previews,
-    .overview-grid,
-    .overview-cards,
-    .detail-grid,
-    .process-timeline,
-    .addons-grid,
-    .addons-list,
-    .who-for-list,
-    .outcomes-grid,
-    .timeline-phases,
-    .faq-detail-list,
-    .previews-grid
-  ) {
-    overflow: visible;
-  }
-
-  .package-detail-page :is(
-    .overview-cards,
-    .detail-grid,
-    .process-timeline,
-    .addons-grid,
-    .addons-list,
-    .who-for-list,
-    .outcomes-grid,
-    .timeline-phases,
-    .faq-detail-list,
-    .previews-grid
-  ) {
-    padding: var(--packages-shadow-buffer);
-  }
-
-  .package-detail-page :is(
-    .hero-price,
-    .overview-card,
-    .detail-card,
-    .process-step,
-    .addons-list li,
-    .contact-inner,
-    .preview-card,
-    .who-for-list li,
-    .outcome-card,
-    .mid-cta-inner,
-    .timeline-phases li,
-    .faq-detail-item
-  ) {
-    position: relative;
-    z-index: 0;
-  }
-
-  .package-detail-page :is(.contact-inner, .mid-cta-inner, .hero-price) {
-    margin-block: var(--packages-shadow-buffer);
-  }
-
-  .package-detail-page :is(
-    .hero-copy,
-    .hero-visual,
-    .hero-meta,
-    .overview-intro,
-    .overview-card,
-    .detail-card,
-    .process-content,
-    .addons-intro,
-    .addons-list li,
-    .contact-copy,
-    .contact-form-wrapper,
-    .preview-body,
-    .who-for-list li,
-    .outcome-card,
-    .mid-cta-copy,
-    .mid-cta-actions,
-    .timeline-content,
-    .faq-detail-item
-  ) {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  /* Final text overflow safety */
-  .package-detail-page :is(h1, h2, h3, h4, p, li, a, span, strong, small, summary, label, button) {
-    min-width: 0;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: normal;
-    hyphens: auto;
-  }
-</style>
 <body>
+  <%- include('partials/header') %>
+
   <main class="packages-page package-detail-page">
     <%
-      function slugify(value) {
-        if (!value) return '';
-        return value
-          .toString()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^\w\s-]/g, '')
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-');
-      }
-
       const isEnglish = typeof isEn !== 'undefined' && isEn;
+      const slug = String(pack.slug || '').trim();
+      const displayPackName = pack.displayName || pack.name || (isEnglish ? 'Website package' : 'Website-Paket');
+      const packageName = pack.name || displayPackName;
+      const priceDisplay = pack.priceLabel || '';
+      const priceDisplayText = String(priceDisplay || '');
+      const priceBreakMatch = priceDisplayText.match(/^(.+?€)\s+(oder nach Aufwand)$/);
+      const detailPath = pack.canonicalPath || ('/pakete/' + slug);
+      const localizedDetailPath = (isEnglish ? '/en' : '') + detailPath;
+      const overviewPath = isEnglish ? '/en/pakete' : '/pakete';
+      const overviewComparePath = overviewPath + '#vergleich';
+      const contactPath = isEnglish ? '/en/kontakt' : '/kontakt';
 
-      function formatPrice(pkg) {
-        if (!pkg) return '';
-        if (pkg.price && typeof pkg.price === 'string') {
-          const priceValue = pkg.price.replace(/[^0-9.,]/g, '').replace(',', '.');
-          const parsed = Number(priceValue);
-          if (!Number.isNaN(parsed)) {
-            return parsed.toLocaleString(isEnglish ? 'en-US' : 'de-DE', { style: 'currency', currency: 'EUR' });
-          }
-          return pkg.price;
-        }
-        if (pkg.price_formatted) return pkg.price_formatted;
-        if (pkg.price_amount_cents != null) {
-          return (Number(pkg.price_amount_cents) / 100).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
-            style: 'currency',
-            currency: 'EUR'
-          });
-        }
-        if (pkg.price_amount != null) {
-          return Number(pkg.price_amount).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
-            style: 'currency',
-            currency: 'EUR'
-          });
-        }
-        return '';
+      const imageByPackage = {
+        start: '/images/paket-start.webp',
+        business: '/images/paket-business.webp',
+        wachstum: '/images/paket-wachstum.webp',
+        individuell: '/images/paket-individuell.webp'
+      };
+
+      function textOf(item) {
+        if (!item) return '';
+        if (typeof item === 'string') return item;
+        return item.text || item.body || item.value || item.label || item.title || '';
       }
 
-      const slug = slugify(pack.slug || pack.name);
-      const priceDisplay = formatPrice(pack) || (pack.price ? `${pack.price} €` : (isEnglish ? 'On request' : 'Auf Anfrage'));
-      const translatedDetailEntries = isEnglish ? {
-        basis: [
-          ['How many pages are included?', '1 home page with all legally required pages (imprint, privacy policy, cookie notice).'],
-          ['Design & Structure', 'Modern one-page website with strong visual hierarchy, smooth scrolling flow and responsive behaviour for mobile devices.'],
-          ['Content & Legal', 'Core headline, service sections and about text, plus legal essentials such as imprint, privacy policy and cookie notices.'],
-          ['Technology & Support', 'Technical setup, SSL configuration, load-time optimisation and contact option. Hosting remains an optional monthly service.'],
-          ['SEO & GEO Basics', 'Clean metadata, structured headings, schema.org markup and answer-first content blocks for Google and AI answer engines.'],
-          ['Timeline & Handover', 'Go-live within 2 to 4 weeks including a handover call so you can edit content confidently.']
-        ],
-        business: [
-          ['How many pages are included?', 'Up to 5 pages: home, services, about/team, contact and one additional service or trust page.'],
-          ['Multi-Page Concept', 'Structured page architecture for services, team/about, trust elements and contact.'],
-          ['Content & SEO', 'Keyword-based copywriting, metadata, structured data and local SEO optimisation for search visibility.'],
-          ['Integrations', 'Contact form included. Blog, booking tools, newsletter systems or CRM connections are optional extensions.'],
-          ['Tracking & Analytics', 'GDPR-compliant Google Analytics 4, Consent Mode v2, cookie banner and conversion events for forms, calls and bookings.'],
-          ['Support & Launch', '2 revision rounds, launch handover and optional monthly support after go-live.']
-        ],
-        premium: [
-          ['How many pages are included?', 'Up to 20 pages including topic clusters, service hubs and campaign landing pages.'],
-          ['Strategy & UX', 'Deep-dive kickoff, audience analysis, customer-journey mapping and wireframes for each page.'],
-          ['Content Production', 'Complete copy and visual production, optional photo shoots, plus animations and microinteractions.'],
-          ['Booking & Expansion', 'Booking system included. Shop features, portals or calculators are optional depending on project scope.'],
-          ['Advanced SEO & GEO', 'Entity research, topic clusters, advanced schema markup (Service, FAQ, HowTo, Article) and Core Web Vitals tuning.'],
-          ['Custom Integrations', 'Bespoke features such as booking flows, portals, calculators or ERP/CRM integrations tailored to your business model.']
-        ]
-      } : {
-        basis: [
-          ['Wie viele Seiten sind enthalten?', '1 Seite inklusive Start, Leistungen, Über uns, Kontakt und rechtlichen Seiten.'],
-          ['Design & Struktur', 'Moderner Onepager mit visuellen Highlights, sinnvollem Scroll-Verlauf und responsivem Layout für Mobilgeräte.'],
-          ['Inhalte & Rechtliches', 'Startseiten-Headline, Leistungsblöcke, Über-uns-Text sowie Impressum, Datenschutzerklärung und Cookie-Hinweise.'],
-          ['Technik & Support', 'Technische Einrichtung, SSL-Konfiguration, Ladezeiten-Optimierung und Kontaktmöglichkeit. Hosting bleibt eine optionale Monatsleistung.'],
-          ['SEO- & GEO-Grundlagen', 'Saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke für Google und KI-Antwortmaschinen.'],
-          ['Zeitplan & Übergabe', 'Livegang innerhalb von 2 bis 4 Wochen inklusive Übergabe-Call, damit du Inhalte selbstständig pflegen kannst.']
-        ],
-        business: [
-          ['Wie viele Seiten sind enthalten?', 'Bis zu 5 Seiten: Startseite, Leistungen, Über uns/Team, Kontakt und eine weitere Leistungs- oder Vertrauensseite.'],
-          ['Mehrseitiges Konzept', 'Strukturierte Seitenarchitektur für Leistungen, Team/Über uns, Vertrauenselemente und Kontakt.'],
-          ['Content & SEO', 'Keyword-basierte Textproduktion, Metadaten, strukturierte Daten sowie Optimierung für lokale Suchanfragen.'],
-          ['Integrationen', 'Kontaktformular enthalten. Blog, Buchungssystem, Newsletter oder CRM-Schnittstellen sind optionale Erweiterungen.'],
-          ['Tracking & Analytics', 'DSGVO-konformes Google Analytics 4, Consent Mode v2, Cookie-Banner und Conversion-Events für Formulare, Anrufe und Buchungen.'],
-          ['Support & Launch', '2 Korrekturschleifen, Launch-Übergabe und optionaler monatlicher Support nach dem Livegang.']
-        ],
-        premium: [
-          ['Wie viele Seiten sind enthalten?', 'Bis zu 20 Seiten inklusive Themencluster, Leistungs-Hubs und Kampagnen-Landingpages.'],
-          ['Strategie & UX', 'Intensiver Kick-off-Workshop, Zielgruppenanalyse, Customer-Journey-Maps und Wireframes für jede Seite.'],
-          ['Content-Produktion', 'Ausarbeitung von Texten, Visuals, optional Fotoshootings sowie Animationen oder Microinteractions.'],
-          ['Buchung & Ausbau', 'Buchungssystem enthalten. Shop-Funktionen, Portale oder Rechner sind optional nach Projektumfang möglich.'],
-          ['Advanced SEO & GEO', 'Entity-Recherche, Themencluster, erweitertes Schema-Markup (Service, FAQ, HowTo, Article) und Core-Web-Vitals-Tuning.'],
-          ['Individuelle Integrationen', 'Custom-Features wie Buchungsstrecken, Portale, Rechner oder ERP/CRM-Integrationen passend zu deinem Geschäftsmodell.']
-        ]
-      };
-      const detailEntries = translatedDetailEntries[slug]
-        ? translatedDetailEntries[slug]
-        : (pack && pack.details && typeof pack.details === 'object'
-          ? Object.entries(pack.details).filter(([title, text]) => title && text)
-          : []);
+      function packageTitle(pkg) {
+        if (!pkg) return '';
+        return pkg.displayName || pkg.name || '';
+      }
 
-      const heroSubtitles = isEnglish ? {
-        basis: 'Perfect for a fast and professional online presence - everything you need to get started.',
-        business: 'Built for ambitious businesses that want to generate leads and present multiple services clearly.',
-        premium: 'The all-in package including strategy, content production and ongoing support.',
-        default: 'Tailored to your business - design, technology, content and support from one source.'
-      } : {
-        basis: 'Perfekt für eine professionelle digitale Visitenkarte mit Texten, SEO-Grundlage und klarem Kontaktweg.',
-        business: 'Für kleine Unternehmen, die mehrere Leistungen klar zeigen und mehr Anfragen über die Website erhalten wollen.',
-        premium: 'Für umfangreichere Online-Angebote mit Strategie, Texten, SEO und Buchungssystem.',
-        default: 'Individuell auf dein Unternehmen zugeschnitten – Design, Technik, Inhalte und Betreuung aus einer Hand.'
-      };
-
-      const highlightMap = isEnglish ? {
-        basis: [
-          'One-page website with a clear storyline for services, about and contact',
-          'Professional design including custom colors and typography',
-          'Legal pages, tracking setup and GDPR basics already prepared'
-        ],
-        business: [
-          'Multi-page website with dedicated landing pages for each offer',
-          'Conversion-focused copywriting including keyword research',
-          'Technical integrations such as booking tools or CRM connections'
-        ],
-        premium: [
-          'Strategic workshops and custom UX concepts',
-          'Content production included (copy, visuals, optional animations)',
-          'Ongoing optimization, support and prioritized response times'
-        ],
-        default: [
-          'Modern responsive web design focused on visibility',
-          'Clear conversion paths, strong messaging and SEO basics',
-          'Reliable technology, hosting and personal support'
-        ]
-      } : {
-        basis: [
-          '1 professionelle Seite mit klarer Storyline für Angebot und Kontakt',
-          'Texte, responsives Design und SEO-Grundoptimierung enthalten',
-          'Rechtliche Seiten und technische Basis bereits vorbereitet'
-        ],
-        business: [
-          'Bis zu 5 Seiten für Leistungen, Über uns/Team und Kontakt',
-          'Kontaktformular und On-Page-SEO enthalten',
-          'Blog, Buchungssystem oder weitere Integrationen optional erweiterbar'
-        ],
-        premium: [
-          'Bis zu 20 Seiten mit Strategie, Texten und SEO-Struktur',
-          'Buchungssystem enthalten, Shop optional nach Umfang',
-          'Ideal für kleine Shops, lokale Händler und Unternehmen mit größerem Angebot'
-        ],
-        default: [
-          'Modernes, responsives Webdesign mit Fokus auf Sichtbarkeit',
-          'Klare Conversion-Strecken, überzeugende Inhalte und SEO-Basics',
-          'Zuverlässige Technik, optionales Hosting und persönliche Betreuung'
-        ]
-      };
-
-      const deliverablesMap = isEnglish ? {
-        basis: [
-          {
-            title: 'Design & Structure',
-            text: 'Modern one-page website with visual highlights, thoughtful scroll flow and responsive layout for mobile devices.'
-          },
-          {
-            title: 'Content & Legal',
-            text: 'Homepage headline, service blocks, about section, imprint, privacy policy and cookie notices.'
-          },
-          {
-            title: 'Technology & Support',
-            text: 'Technical setup, SSL configuration, page-speed optimisation and contact option. Hosting can be booked separately as a monthly service.'
-          }
-        ],
-        business: [
-          {
-            title: 'Multi-Page Concept',
-            text: 'Structured site architecture for services, about/team, trust elements and contact.'
-          },
-          {
-            title: 'Content & SEO',
-            text: 'Keyword-driven copywriting, metadata, structured data and optimisation for local search.'
-          },
-          {
-            title: 'Integrations',
-            text: 'Contact form included. Blog, booking, newsletter or CRM connections are optional extensions.'
-          }
-        ],
-        premium: [
-          {
-            title: 'Strategy & UX',
-            text: 'Intensive kickoff workshop, target audience analysis, customer journey maps and wireframes for each page.'
-          },
-          {
-            title: 'Content Production',
-            text: 'Complete copy and visual production, optional photo shoots, plus animations and microinteractions.'
-          },
-          {
-            title: 'Booking & Expansion',
-            text: 'Booking system included. Shop features, portals or calculators are optional depending on project scope.'
-          }
-        ],
-        default: [
-          {
-            title: 'Concept & Design',
-            text: 'We create a custom layout that strengthens your brand and performs across all devices.'
-          },
-          {
-            title: 'Content & SEO',
-            text: 'Includes copywriting, SEO fundamentals, metadata, snippets and structured data for better rankings.'
-          },
-          {
-            title: 'Technology & Support',
-            text: 'Technical setup, optional hosting, maintenance and personal support keep operations smooth.'
-          }
-        ]
-      } : {
-        basis: [
-          {
-            title: 'Design & Struktur',
-            text: 'Moderner Onepager mit visuellen Highlights, sinnvollem Scroll-Verlauf und responsivem Layout für Mobilgeräte.'
-          },
-          {
-            title: 'Inhalte & Rechtliches',
-            text: 'Startseiten-Headline, Leistungsblöcke, Über-uns-Text sowie Impressum, Datenschutzerklärung und Cookie-Hinweise.'
-          },
-          {
-            title: 'Technik & Support',
-            text: 'Technische Einrichtung, SSL-Konfiguration, Ladezeiten-Optimierung und Kontaktmöglichkeit. Hosting kann separat als Monatsleistung gebucht werden.'
-          }
-        ],
-        business: [
-          {
-            title: 'Mehrseitiges Konzept',
-            text: 'Strukturierte Seitenarchitektur für Leistungen, Über uns/Team, Vertrauenselemente und Kontakt.'
-          },
-          {
-            title: 'Content & SEO',
-            text: 'Keyword-basierte Textproduktion, Metadaten, strukturierte Daten sowie Optimierung für lokale Suchanfragen.'
-          },
-          {
-            title: 'Integrationen',
-            text: 'Kontaktformular enthalten. Blog, Buchungssystem, Newsletter oder CRM-Schnittstellen sind optionale Erweiterungen.'
-          }
-        ],
-        premium: [
-          {
-            title: 'Strategie & UX',
-            text: 'Intensiver Kick-off-Workshop, Zielgruppenanalyse, Customer-Journey-Maps und Wireframes für jede Seite.'
-          },
-          {
-            title: 'Content-Produktion',
-            text: 'Ausarbeitung von Texten, Visuals, optional Fotoshootings sowie Animationen oder Microinteractions.'
-          },
-          {
-            title: 'Buchung & Ausbau',
-            text: 'Buchungssystem enthalten. Shop-Funktionen, Portale oder Rechner sind optional nach Projektumfang möglich.'
-          }
-        ],
-        default: [
-          {
-            title: 'Konzept & Design',
-            text: 'Wir entwickeln ein individuelles Layout, das deine Marke stärkt und für alle Geräte optimiert ist.'
-          },
-          {
-            title: 'Inhalte & SEO',
-            text: 'Inklusive Textproduktion, Grund-SEO, Metadaten, Snippets und strukturierte Daten für bessere Rankings.'
-          },
-          {
-            title: 'Technik & Betreuung',
-            text: 'Technische Einrichtung, optionales Hosting, Wartung und persönlicher Support sorgen für einen reibungslosen Betrieb.'
-          }
-        ]
-      };
-
-      const processMap = isEnglish ? {
-        basis: [
-          { label: 'Kickoff & Materials', description: 'We define your goals, collect assets and structure your one-page layout.' },
-          { label: 'Design & Build', description: 'Custom design, mobile optimization and complete technical setup.' },
-          { label: 'Launch & Handover', description: 'We test, publish and show you how to update content confidently.' }
-        ],
-        business: [
-          { label: 'Strategy Workshop', description: 'Analysis of target audiences, offers and conversion paths.' },
-          { label: 'Design & Content', description: 'We design multiple pages, write copy and integrate your tools.' },
-          { label: 'Launch & Optimization', description: 'Tracking setup, testing and handover training for your team.' }
-        ],
-        premium: [
-          { label: 'Discovery & Roadmap', description: 'Joint planning including UX research, brand guidelines and content roadmap.' },
-          { label: 'Production & Development', description: 'High-end design, custom components, automations and quality assurance.' },
-          { label: 'Go Live & Support', description: 'Continuous optimization, monitoring, growth sprints and support.' }
-        ],
-        default: [
-          { label: 'Analysis & Planning', description: 'We review goals, target audience and existing assets in detail.' },
-          { label: 'Design & Production', description: 'Concept, design, copy and technology delivered from one source.' },
-          { label: 'Launch & Support', description: 'After go-live, we support updates, SEO and future growth.' }
-        ]
-      } : {
-        basis: [
-          { label: 'Kick-off & Material', description: 'Wir besprechen Ziele, sammeln Inhalte und strukturieren den Onepager.' },
-          { label: 'Design & Umsetzung', description: 'Individuelle Gestaltung, mobile Optimierung und technische Einrichtung.' },
-          { label: 'Launch & Übergabe', description: 'Wir testen, veröffentlichen und erklären dir, wie du Inhalte anpasst.' }
-        ],
-        business: [
-          { label: 'Strategie-Workshop', description: 'Analyse von Zielgruppen, Angeboten und passenden Conversion-Strecken.' },
-          { label: 'Design & Content', description: 'Wir gestalten mehrere Seiten, erstellen Texte und integrieren deine Tools.' },
-          { label: 'Launch & Optimierung', description: 'Tracking-Setups, Testing und Übergabe mit Schulung deines Teams.' }
-        ],
-        premium: [
-          { label: 'Discovery & Roadmap', description: 'Gemeinsame Planung inkl. UX-Research, Markenleitfaden und Content-Plan.' },
-          { label: 'Produktion & Entwicklung', description: 'High-End-Design, individuelle Komponenten, Automationen und QA-Prozesse.' },
-          { label: 'Go-Live & Betreuung', description: 'Kontinuierliche Optimierung, Monitoring, Growth-Sprints und Support.' }
-        ],
-        default: [
-          { label: 'Analyse & Planung', description: 'Wir schauen uns Ziele, Zielgruppe und bestehende Inhalte genau an.' },
-          { label: 'Design & Erstellung', description: 'Konzeption, Design, Texte, Technik – alles aus einer Hand umgesetzt.' },
-          { label: 'Launch & Betreuung', description: 'Nach dem Go-Live unterstützen wir bei Updates, SEO und Weiterentwicklung.' }
-        ]
-      };
-
-      const addonsMap = isEnglish ? {
-        basis: [
-          'Multilingual versions or additional sections can be added at any time.',
-          'Optional maintenance starts at EUR 5/month.',
-          'Domain and email start at EUR 10/month; hosting is available for EUR 10/month.'
-        ],
-        business: [
-          'Lead nurturing automations, CRM integrations and newsletter setup available.',
-          'Regular landing page optimization and conversion tracking on request.',
-          'Technical support including updates and prioritized response.'
-        ],
-        premium: [
-          'Marketing automations, ERP/CRM integrations and custom web app features.',
-          'Monthly performance workshops, KPI reporting and growth sprints.',
-          'Content refreshes, campaign landing pages and SLA-based support.'
-        ],
-        default: [
-          'Flexible add-ons such as blog, booking flow or member areas can be added anytime.',
-          'Maintenance, hosting and support are available as modular monthly services.',
-          'We advise on SEO, online marketing and conversion optimization.'
-        ]
-      } : {
-        basis: [
-          'Mehrsprachige Versionen oder zusätzliche Sektionen jederzeit erweiterbar.',
-          'Optionale Wartung ab 5 € pro Monat.',
-          'Domain und E-Mail ab 10 € pro Monat; Hosting für 10 € pro Monat möglich.'
-        ],
-        business: [
-          'Lead-Nurturing-Automationen, CRM-Anbindungen und Newsletter-Setup möglich.',
-          'Regelmäßige Landingpage-Optimierung und Conversion-Tracking auf Wunsch.',
-          'Technische Betreuung inklusive Update-Service und priorisiertem Support.'
-        ],
-        premium: [
-          'Marketing-Automationen, Schnittstellen zu ERP/CRM und individuelle Web-Apps.',
-          'Monatliche Performance-Workshops, KPI-Reportings und Growth-Sprints.',
-          'Content-Refreshes, Kampagnen-Landingpages und Support-SLAs inklusive.'
-        ],
-        default: [
-          'Flexible Add-ons wie Blog, Terminbuchung oder Mitgliederbereich jederzeit ergänzbar.',
-          'Wartung, Hosting und Support können modular als Monatsleistung gebucht werden.',
-          'Wir beraten zu SEO, Online-Marketing und Conversion-Optimierung.'
-        ]
-      };
-
-      const whoForMap = isEnglish ? {
-        basis: {
-          headline: 'Who is the Basic package in Berlin for?',
-          intro: 'The Basic package is built for freelancers, small teams, tradespeople and newly founded companies in Berlin who need a credible, fast-loading website without a complex multi-page architecture. You get an answer-first one-pager that presents your offer clearly and makes phone, email or form inquiries easy.',
-          items: [
-            'Freelancers, coaches and consultants who need their first professional website in Berlin.',
-            'Craft and service businesses that want to be found locally for their core service.',
-            'Newly founded startups that need a trustworthy web presence before ramping up marketing.',
-            'Side projects and portfolios that should look premium without ongoing editorial work.',
-            'Solo professionals who want inquiries by phone, email or form without technical overhead.',
-            'Associations, clubs and initiatives in Berlin that need a clean digital business card.'
-          ]
-        },
-        business: {
-          headline: 'Who is the Business package in Berlin for?',
-          intro: 'The Business package is designed for established companies, agencies and SMEs in Berlin that offer multiple services, work with several target audiences or run more than one location. You get a structured multi-page site with conversion-focused copywriting and tracking so you can measure actual inquiries, not just traffic.',
-          items: [
-            'SMEs with 3 to 20 employees that need clear pages per service, industry or region.',
-            'Agencies and B2B service providers who want to showcase references and case studies.',
-            'Companies planning paid campaigns that require tracked landing pages.',
-            'Organizations that want to generate qualified leads in Berlin and Brandenburg.',
-            'Growing brands that need a scalable CMS with space for service and industry pages.',
-            'Consulting firms and specialists who want conversion-optimised copywriting per offer.'
-          ]
-        },
-        premium: {
-          headline: 'Who is the Premium package in Berlin for?',
-          intro: 'The Premium package fits ambitious brands, B2B companies and high-intent service providers in Berlin who want a strategic web presence that grows over time. Strategy, UX, content production and SEO are handled from one source, so you get a website that is visible in Google and in AI-driven answer engines (GEO).',
-          items: [
-            'Ambitious brands that need a differentiated design and coherent messaging.',
-            'B2B companies whose sales cycle depends on trust, case studies and content depth.',
-            'Service providers that want to build authority through content clusters and SEO.',
-            'Companies with a dedicated marketing lead who values structured reporting and KPIs.',
-            'Scale-ups that need a long-term growth platform instead of a one-off website.',
-            'Enterprises with custom integrations (CRM, ERP, portals) and multi-stakeholder sign-off.'
-          ]
-        },
-        default: {
-          headline: 'Who is this package for?',
-          intro: 'We tailor each project to your company size and goals - from the first professional website to a scalable growth platform.',
-          items: [
-            'Companies in Berlin and Brandenburg that need a reliable web partner.',
-            'Teams that value transparent pricing, clear scope and a predictable timeline.',
-            'Brands that want to be visible in Google search and in AI-driven answer engines.',
-            'Businesses that prefer one contact for design, development, content and SEO.',
-            'Founders who need a sparring partner for strategy, UX and conversion topics.',
-            'Local service providers that want to dominate Berlin-specific search terms.'
-          ]
+      function packageUrl(pkg) {
+        if (pkg && pkg.allowDetailPage === false) {
+          const packageValue = pkg.packageKey || pkg.slug || '';
+          return `${contactPath}${packageValue ? `?paket=${encodeURIComponent(packageValue)}` : ''}`;
         }
-      } : {
-        basis: {
-          headline: 'Für wen eignet sich das Basis-Paket in Berlin?',
-          intro: 'Das Basis-Paket richtet sich an Selbstständige, kleine Teams, Handwerksbetriebe und neu gegründete Unternehmen in Berlin, die eine glaubwürdige, schnelle Website ohne komplexe Mehrseitenstruktur brauchen. Du erhältst einen Answer-First-Onepager, der dein Angebot klar präsentiert und Anfragen per Telefon, E-Mail oder Formular einfach macht.',
-          items: [
-            'Selbstständige, Coaches und Berater, die ihre erste professionelle Website in Berlin benötigen.',
-            'Handwerks- und Dienstleistungsbetriebe, die lokal für ihre Kernleistung gefunden werden wollen.',
-            'Neu gegründete Startups, die einen vertrauenswürdigen Webauftritt vor dem Marketing-Ramp-up brauchen.',
-            'Nebenprojekte und Portfolios, die hochwertig wirken sollen, ohne laufenden Redaktionsaufwand.',
-            'Solo-Unternehmer, die Anfragen per Telefon, E-Mail oder Formular ohne technischen Aufwand erhalten wollen.',
-            'Vereine, Initiativen und lokale Einrichtungen in Berlin, die eine saubere digitale Visitenkarte brauchen.'
-          ]
+        const canonical = pkg && pkg.canonicalPath ? pkg.canonicalPath : ('/pakete/' + (pkg && pkg.slug ? pkg.slug : ''));
+        return (isEnglish ? '/en' : '') + canonical;
+      }
+
+      function packageImage(pkg) {
+        if (pkg && pkg.image) return pkg.image;
+        return imageByPackage[pkg && pkg.slug] || '/images/preiseHero.webp';
+      }
+
+      function faqQuestion(item) {
+        return item && (item.question || item.q || item.title || '');
+      }
+
+      function faqAnswer(item) {
+        return item && (item.answer || item.a || item.text || '');
+      }
+
+      const featureItems = Array.isArray(pack.features) ? pack.features : [];
+      const notIncludedItems = Array.isArray(pack.notIncluded) ? pack.notIncluded : [];
+      const useCaseItems = Array.isArray(pack.useCases) ? pack.useCases : [];
+      const packageFaqItems = Array.isArray(pack.faqs) ? pack.faqs : [];
+      const noteItems = Array.isArray(globalNotes) ? globalNotes : [];
+      const optionalAddOnItems = typeof optionalAddOns !== 'undefined' && Array.isArray(optionalAddOns) ? optionalAddOns : [];
+      const rawAddOnsTickerDuration = typeof addOnsTickerDurationSeconds !== 'undefined' ? addOnsTickerDurationSeconds : 35;
+      const addOnsTickerDurationValue = Number(rawAddOnsTickerDuration);
+      const addOnsTickerDuration = Number.isFinite(addOnsTickerDurationValue)
+        ? Math.min(180, Math.max(8, addOnsTickerDurationValue))
+        : 35;
+      const previewItems = Array.isArray(previewPackages)
+        ? previewPackages.filter((preview) => preview && preview.allowDetailPage !== false)
+        : [];
+      const shortDescription = pack.shortDescription || pack.description || pack.positioning || '';
+      const longDescription = pack.longDescription || shortDescription;
+      const heroHighlights = [
+        pack.pageScope ? (isEnglish ? 'Page scope: ' : 'Seitenumfang: ') + pack.pageScope : '',
+        pack.feedbackRounds ? (isEnglish ? 'Review rounds: ' : 'Feedbackrunden: ') + pack.feedbackRounds : '',
+        pack.timeline ? (isEnglish ? 'Timeline: ' : 'Zeitplan: ') + pack.timeline : ''
+      ].filter(Boolean);
+
+      const detailEntries = [
+        [isEnglish ? 'Page scope' : 'Seitenumfang', pack.pageScope],
+        [isEnglish ? 'Text scope' : 'Textumfang', pack.textScope],
+        [isEnglish ? 'SEO scope' : 'SEO-Umfang', pack.seoScope],
+        [isEnglish ? 'Technical scope' : 'Technik-Umfang', pack.techScope],
+        [isEnglish ? 'Review rounds' : 'Feedbackrunden', pack.feedbackRounds],
+        [isEnglish ? 'Timeline' : 'Zeitplan', pack.timeline],
+        [isEnglish ? 'Target group' : 'Zielgruppe', pack.targetGroup],
+        [isEnglish ? 'Not ideal for' : 'Nicht ideal für', pack.notFor]
+      ].filter((entry) => entry[1]);
+
+      const overviewCards = [
+        {
+          title: isEnglish ? 'Clear package scope' : 'Klarer Paketumfang',
+          text: pack.pageScope || shortDescription
         },
-        business: {
-          headline: 'Für wen eignet sich das Business-Paket in Berlin?',
-          intro: 'Das Business-Paket richtet sich an etablierte Unternehmen, Agenturen und KMU in Berlin mit mehreren Leistungen, Zielgruppen oder Standorten. Du erhältst eine strukturierte mehrseitige Website mit Conversion-Texten und Tracking - damit du echte Anfragen misst, nicht nur Traffic.',
-          items: [
-            'KMU mit 3 bis 20 Mitarbeitenden, die klare Seiten pro Leistung, Branche oder Region benötigen.',
-            'Agenturen und B2B-Dienstleister, die Referenzen und Case Studies präsentieren wollen.',
-            'Unternehmen, die bezahlte Kampagnen planen und getrackte Landingpages brauchen.',
-            'Organisationen, die qualifizierte Leads in Berlin und Brandenburg gewinnen wollen.',
-            'Wachsende Marken, die ein skalierbares CMS mit Platz für Leistungs- und Branchenseiten brauchen.',
-            'Beratungen und Fachbetriebe, die pro Angebot conversion-optimierte Texte wünschen.'
-          ]
+        {
+          title: isEnglish ? 'Defined feedback' : 'Definierte Abstimmung',
+          text: pack.feedbackRounds ? (isEnglish ? 'Feedback rounds: ' : 'Feedbackrunden: ') + pack.feedbackRounds : (isEnglish ? 'Feedback and changes are agreed before implementation.' : 'Feedback und Änderungen werden vor der Umsetzung eingeordnet.')
         },
-        premium: {
-          headline: 'Für wen eignet sich das Premium-Paket in Berlin?',
-          intro: 'Das Premium-Paket passt zu ambitionierten Marken, B2B-Unternehmen und hochwertigen Dienstleistern in Berlin, die einen strategischen Webauftritt aufbauen wollen, der langfristig wächst. Strategie, UX, Content-Produktion und SEO kommen aus einer Hand - für Sichtbarkeit in der klassischen Google-Suche und in KI-Antworten (GEO).',
-          items: [
-            'Ambitionierte Marken, die ein differenziertes Design und konsistentes Storytelling benötigen.',
-            'B2B-Unternehmen mit langen Vertriebszyklen, bei denen Vertrauen, Case Studies und Content-Tiefe zählen.',
-            'Dienstleister, die über Content-Cluster und SEO Thought-Leadership aufbauen möchten.',
-            'Unternehmen mit Marketing-Verantwortlichen, die strukturierte Reports und KPIs schätzen.',
-            'Scale-ups, die eine langfristige Wachstumsplattform statt einer einmaligen Website benötigen.',
-            'Konzerne mit individuellen Integrationen (CRM, ERP, Portale) und mehreren Entscheidungsträgern.'
-          ]
-        },
-        default: {
-          headline: 'Für wen eignet sich dieses Paket?',
-          intro: 'Wir passen jedes Projekt an Größe und Ziele deines Unternehmens an - von der ersten professionellen Website bis zur skalierbaren Wachstumsplattform.',
-          items: [
-            'Unternehmen in Berlin und Brandenburg, die einen verlässlichen Web-Partner suchen.',
-            'Teams, die Wert auf transparente Preise, klaren Umfang und planbaren Zeitrahmen legen.',
-            'Marken, die in der Google-Suche und in KI-Antworten sichtbar sein wollen.',
-            'Betriebe, die Design, Entwicklung, Inhalte und SEO aus einer Hand bevorzugen.',
-            'Gründer, die einen Sparringspartner für Strategie, UX und Conversion brauchen.',
-            'Lokale Dienstleister, die gezielt Berliner Suchbegriffe dominieren wollen.'
-          ]
+        {
+          title: isEnglish ? 'Separate add-ons' : 'Saubere Abgrenzung',
+          text: notIncludedItems.length ? textOf(notIncludedItems[0]) : (isEnglish ? 'Add-ons and external costs are clarified separately.' : 'Zusatzleistungen und externe Kosten werden separat geklärt.')
         }
-      };
+      ].filter((item) => item.text);
 
-      const outcomesMap = isEnglish ? {
-        basis: [
-          {
-            title: 'Professional presence in 2 to 4 weeks',
-            text: 'You go live with a professional one-pager that answers the most important questions of visitors directly on the first screen.'
-          },
-          {
-            title: 'Findable in Google search and AI answers',
-            text: 'Clean metadata, structured headings, schema.org markup and answer-first content blocks make the site visible in Google and in AI-driven answer engines (GEO).'
-          },
-          {
-            title: 'Solid foundation for future growth',
-            text: 'The page architecture is built modularly, so upgrades to Business or Premium are possible later without a full relaunch.'
-          }
-        ],
-        business: [
-          {
-            title: 'Structured lead generation',
-            text: 'Service pages, conversion-focused copy and clear request paths move visitors from information to request - measurable via tracked events.'
-          },
-          {
-            title: 'Stronger Google and GEO visibility',
-            text: 'Keyword research, semantic content structure and rich schema markup position you for relevant local searches and AI answer engines.'
-          },
-          {
-            title: 'Data-based decisions',
-            text: 'With GDPR-compliant analytics and conversion tracking you see which pages and channels actually generate inquiries - and where to optimize.'
-          }
-        ],
-        premium: [
-          {
-            title: 'Strategic growth platform',
-            text: 'A website built around your business model: strategy, UX and content production work together so the site supports long-term growth.'
-          },
-          {
-            title: 'Top visibility in Google and AI search',
-            text: 'Topic clusters, entity optimization, extensive schema markup and Core Web Vitals tuning position the brand prominently in Google and answer engines.'
-          },
-          {
-            title: 'Continuous optimization',
-            text: 'Ongoing monitoring, A/B tests, content refreshes and priority support ensure that performance and conversions keep improving after launch.'
-          }
-        ],
-        default: [
-          {
-            title: 'Measurable results',
-            text: 'Clear KPIs, transparent reporting and a web presence that actually generates inquiries.'
-          },
-          {
-            title: 'Visibility in search and AI answers',
-            text: 'SEO and GEO-ready structure so the site is findable where customers actually ask.'
-          },
-          {
-            title: 'Reliable partner in Berlin',
-            text: 'A single contact for design, development, content and growth - based in Berlin.'
-          }
-        ]
-      } : {
-        basis: [
-          {
-            title: 'Professioneller Auftritt in 2 bis 4 Wochen',
-            text: 'Du gehst mit einem professionellen Onepager online, der die wichtigsten Fragen der Besucher direkt auf dem ersten Bildschirm beantwortet.'
-          },
-          {
-            title: 'Sichtbar in Google-Suche und KI-Antworten',
-            text: 'Saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke sorgen für Sichtbarkeit in Google und in KI-Antwortmaschinen (GEO).'
-          },
-          {
-            title: 'Solides Fundament für späteres Wachstum',
-            text: 'Die Seitenarchitektur ist modular aufgebaut, sodass Upgrades auf Business oder Premium später ohne vollständigen Relaunch möglich sind.'
-          }
-        ],
-        business: [
-          {
-            title: 'Strukturierte Leadgenerierung',
-            text: 'Leistungsseiten, Conversion-orientierte Texte und klare Anfragewege führen Besucher gezielt von Information zu Anfrage - messbar über getrackte Events.'
-          },
-          {
-            title: 'Stärkere Google- und GEO-Sichtbarkeit',
-            text: 'Keyword-Recherche, semantische Content-Struktur und umfangreiches Schema-Markup positionieren dich für relevante lokale Suchanfragen und KI-Antwortmaschinen.'
-          },
-          {
-            title: 'Datenbasierte Entscheidungen',
-            text: 'Mit DSGVO-konformem Tracking und Conversion-Events siehst du, welche Seiten und Kanäle tatsächlich Anfragen bringen - und wo sich Optimierung lohnt.'
-          }
-        ],
-        premium: [
-          {
-            title: 'Strategische Wachstumsplattform',
-            text: 'Eine Website, die rund um dein Geschäftsmodell gebaut ist: Strategie, UX und Content-Produktion greifen ineinander und stützen langfristiges Wachstum.'
-          },
-          {
-            title: 'Top-Sichtbarkeit in Google und KI-Suche',
-            text: 'Themencluster, Entity-Optimierung, umfangreiches Schema-Markup und Core-Web-Vitals-Tuning positionieren die Marke prominent in Google und Antwortmaschinen.'
-          },
-          {
-            title: 'Laufende Optimierung',
-            text: 'Kontinuierliches Monitoring, A/B-Tests, Content-Refreshes und priorisierter Support sorgen dafür, dass Performance und Conversion nach dem Launch weiter wachsen.'
-          }
-        ],
-        default: [
-          {
-            title: 'Messbare Ergebnisse',
-            text: 'Klare KPIs, transparente Reports und ein Webauftritt, der tatsächlich Anfragen bringt.'
-          },
-          {
-            title: 'Sichtbar in Suche und KI-Antworten',
-            text: 'SEO- und GEO-fähige Strukturen, damit die Seite dort auffindbar ist, wo Kunden wirklich fragen.'
-          },
-          {
-            title: 'Verlässlicher Partner in Berlin',
-            text: 'Ein Ansprechpartner für Design, Entwicklung, Content und Wachstum - direkt aus Berlin.'
-          }
-        ]
-      };
-
-      const timelineMap = isEnglish ? {
-        basis: [
-          { label: 'Week 1: Kickoff', text: 'Short briefing, goal alignment and content check. We collect your logo, brand colors and existing copy.' },
-          { label: 'Week 1 - 2: Design and build', text: 'We design the one-pager, build it responsively and integrate legal pages plus the technical foundation.' },
-          { label: 'Week 3: Review and QA', text: 'You review in a live preview, we collect feedback, run technical QA and SEO checks.' },
-          { label: 'Week 4: Go-live', text: 'The site goes live including a short handover call. Hosting, domain and email can be set up as optional monthly services.' }
-        ],
-        business: [
-          { label: 'Week 1: Goals and structure', text: 'Target audience analysis, goals, service prioritization and sitemap planning for up to 5 pages.' },
-          { label: 'Week 2 - 3: Content and design', text: 'Conversion-focused copywriting, wireframes and the visual design system for all pages.' },
-          { label: 'Week 3 - 5: Development and SEO', text: 'Responsive build, contact form, technical setup and on-page SEO fundamentals.' },
-          { label: 'Week 5 - 6: QA, launch and handover', text: 'Cross-device QA, performance tuning, go-live and a structured handover for your team.' }
-        ],
-        premium: [
-          { label: 'Week 1 - 2: Discovery & strategy', text: 'Business model interviews, competitor analysis, customer journey mapping and a content and SEO roadmap.' },
-          { label: 'Week 3 - 5: UX & design', text: 'Wireframes, prototype, custom design system, component library and initial content production.' },
-          { label: 'Week 6 - 7: Development & content', text: 'Responsive build, integrations, full content production, structured data, performance and accessibility tuning.' },
-          { label: 'Week 8: Launch & optimization plan', text: 'QA, staged rollout, training and a practical optimization plan with KPIs and next-step recommendations.' }
-        ],
-        default: [
-          { label: 'Phase 1: Kickoff & plan', text: 'We align on goals, audience and the scope that delivers the most value first.' },
-          { label: 'Phase 2: Design & build', text: 'Design, content and technical implementation run in parallel milestones.' },
-          { label: 'Phase 3: Launch & support', text: 'After go-live we continue with optimization, monitoring and content updates.' }
-        ]
-      } : {
-        basis: [
-          { label: 'Woche 1: Kickoff', text: 'Kurzes Briefing, Zielabgleich und Content-Check. Wir sammeln Logo, Markenfarben und vorhandene Texte.' },
-          { label: 'Woche 1 - 2: Design und Umsetzung', text: 'Wir gestalten den Onepager, bauen ihn responsiv und integrieren rechtliche Seiten sowie die technische Basis.' },
-          { label: 'Woche 3: Review und QA', text: 'Du prüfst an einer Live-Vorschau, wir sammeln Feedback und führen technische QA- und SEO-Checks durch.' },
-          { label: 'Woche 4: Livegang', text: 'Die Seite geht live, inklusive kurzer Übergabe. Hosting, Domain und E-Mail können optional als Monatsleistung eingerichtet werden.' }
-        ],
-        business: [
-          { label: 'Woche 1: Ziele und Struktur', text: 'Zielgruppenanalyse, Ziele, Leistungspriorisierung und Sitemap-Planung für bis zu 5 Seiten.' },
-          { label: 'Woche 2 - 3: Content und Design', text: 'Conversion-orientierte Textproduktion, Wireframes und das visuelle Designsystem für alle Seiten.' },
-          { label: 'Woche 3 - 5: Entwicklung und SEO', text: 'Responsive Umsetzung, Kontaktformular, technische Einrichtung und On-Page-SEO-Grundlagen.' },
-          { label: 'Woche 5 - 6: QA, Launch und Übergabe', text: 'Cross-Device-QA, Performance-Tuning, Livegang und eine strukturierte Übergabe für dein Team.' }
-        ],
-        premium: [
-          { label: 'Woche 1 - 2: Discovery & Strategie', text: 'Geschäftsmodell-Interviews, Wettbewerbsanalyse, Customer-Journey-Maps und eine Content- und SEO-Roadmap.' },
-          { label: 'Woche 3 - 5: UX & Design', text: 'Wireframes, Prototyp, individuelles Designsystem, Komponentenbibliothek und erste Content-Produktion.' },
-          { label: 'Woche 6 - 7: Entwicklung & Content', text: 'Responsive Umsetzung, Integrationen, vollständige Content-Produktion, strukturierte Daten, Performance- und Accessibility-Tuning.' },
-          { label: 'Woche 8: Launch & Optimierungsplan', text: 'QA, gestaffelter Rollout, Schulung und ein praktischer Optimierungsplan mit KPIs und nächsten Empfehlungen.' }
-        ],
-        default: [
-          { label: 'Phase 1: Kickoff & Plan', text: 'Wir klären Ziele, Zielgruppe und den Umfang, der zuerst den größten Mehrwert liefert.' },
-          { label: 'Phase 2: Design & Umsetzung', text: 'Design, Content und technische Umsetzung laufen in parallelen Meilensteinen.' },
-          { label: 'Phase 3: Launch & Betreuung', text: 'Nach dem Livegang folgt Optimierung, Monitoring und Content-Pflege.' }
-        ]
-      };
-
-      const faqMap = isEnglish ? {
-        basis: [
-          { q: 'How long does the Basic website project take in Berlin?', a: 'Typically 2 to 4 weeks from kickoff to go-live, depending on how fast content and feedback come in.' },
-          { q: 'What is included in the Basic package?', a: '1 professional page, responsive design, copy, legal pages, GDPR basics, basic SEO, technical setup and one revision round. Hosting can be booked separately as a monthly service.' },
-          { q: 'Is SEO and GEO included?', a: 'Yes. You get clean metadata, structured headings, schema.org markup and answer-first content blocks so the site is findable in Google and in AI-driven answer engines.' },
-          { q: 'Can I reuse my existing logo and images?', a: 'Yes. We reuse what works and professionally rework weak content. If you lack assets, we advise on stock options or simple photo production.' },
-          { q: 'Can I upgrade to Business or Premium later?', a: 'Yes. The site is built modularly, so upgrades are possible at any time without a full relaunch. We fairly apply the package difference.' },
-          { q: 'What does the Basic package cost in Berlin?', a: 'The Basic package starts at EUR 499 one-time. Optional add-ons like maintenance or multilingual setup are quoted transparently in advance.' }
-        ],
-        business: [
-          { q: 'How long does the Business project take in Berlin?', a: 'Typically 4 to 6 weeks depending on scope and content readiness. Strategy, design, development and QA run as clear milestones with fixed review points.' },
-          { q: 'What is included in the Business package?', a: 'Up to 5 pages including service pages, about/team page and contact page, conversion copy, on-page SEO, contact form and two revision rounds. Blog, booking or further integrations are optional.' },
-          { q: 'Is local SEO for Berlin included?', a: 'Yes. We set up local SEO signals (address, service area, schema markup for Organization and Service) and optimize for relevant Berlin search queries.' },
-          { q: 'Do you set up GDPR-compliant tracking?', a: 'Yes. Google Analytics 4 (or a privacy-friendly alternative) is configured with Consent Mode v2, a cookie banner and conversion events for forms, calls and bookings.' },
-          { q: 'Can the site be extended with landing pages later?', a: 'Yes. The CMS structure is prepared for additional service pages, landing pages or campaign pages - ideal for growing SEO or paid efforts over time.' },
-          { q: 'What does the Business package cost in Berlin?', a: 'The Business package starts at EUR 899 one-time. Maintenance and additional services like SEO expansion or content production are transparently priced as add-ons.' }
-        ],
-        premium: [
-          { q: 'How long does the Premium project take in Berlin?', a: 'Typically 6 to 8 weeks, depending on strategy depth, content production and the number of pages. The timeline is structured in discovery, design, development and launch phases.' },
-          { q: 'What is included in the Premium package?', a: 'Up to 20 pages, strategy, copy, SEO structure and a booking system. Shop features, portals or custom functions are optional depending on scope.' },
-          { q: 'Which SEO and GEO services are included?', a: 'Keyword and entity research, topical clusters, answer-first structures, extensive schema markup (Organization, Service, FAQ, HowTo, Article), technical SEO audits, Core Web Vitals optimization and regular reporting.' },
-          { q: 'How does ongoing support work after launch?', a: 'After go-live we follow a fixed support cadence with monitoring, performance analytics, A/B testing, maintenance, security updates, content refreshes and priority response times.' },
-          { q: 'Do you offer custom integrations or web apps?', a: 'Yes. Custom features such as booking flows, portals, calculators, portals or ERP/CRM integrations can be added as part of the project or as a follow-up phase.' },
-          { q: 'What does the Premium package cost in Berlin?', a: 'The Premium package starts at EUR 1,499 and is always scoped individually. You receive a binding offer after the initial strategy call, including timeline, budget and KPIs.' }
-        ]
-      } : {
-        basis: [
-          { q: 'Wie lange dauert das Basis-Projekt in Berlin?', a: 'Typischerweise 2 bis 4 Wochen vom Kickoff bis zum Livegang - abhängig davon, wie schnell Inhalte und Feedback kommen.' },
-          { q: 'Was ist im Basis-Paket enthalten?', a: '1 professionelle Seite, responsives Design, Texte, rechtliche Seiten, DSGVO-Grundlagen, SEO-Grundoptimierung, technische Einrichtung und eine Korrekturschleife. Hosting kann separat als Monatsleistung gebucht werden.' },
-          { q: 'Sind SEO und GEO direkt enthalten?', a: 'Ja. Du erhältst saubere Metadaten, strukturierte Überschriften, schema.org-Markup und Answer-First-Content-Blöcke, damit die Seite in Google und in KI-Antwortmaschinen auffindbar ist.' },
-          { q: 'Kann ich bestehendes Logo und Bildmaterial weiter nutzen?', a: 'Ja. Wir übernehmen, was funktioniert, und überarbeiten schwache Inhalte professionell. Fehlt dir Material, beraten wir zu Stock-Optionen oder einfacher Foto-Produktion.' },
-          { q: 'Kann ich später auf Business oder Premium upgraden?', a: 'Ja. Die Seite ist modular aufgebaut, ein Upgrade ist jederzeit ohne vollständigen Relaunch möglich. Wir rechnen die Paketdifferenz fair an.' },
-          { q: 'Was kostet das Basis-Paket in Berlin?', a: 'Das Basis-Paket startet bei 499 EUR einmalig. Optionale Add-ons wie Wartung oder Mehrsprachigkeit werden transparent vorab angeboten.' }
-        ],
-        business: [
-          { q: 'Wie lange dauert das Business-Projekt in Berlin?', a: 'Typischerweise 4 bis 6 Wochen - abhängig vom Umfang und von der Verfügbarkeit der Inhalte. Strategie, Design, Entwicklung und QA laufen als klare Meilensteine mit festen Review-Punkten.' },
-          { q: 'Was ist im Business-Paket enthalten?', a: 'Bis zu 5 Seiten inklusive Leistungsseiten, Über-uns-/Team-Seite und Kontaktseite, Conversion-Texte, On-Page-SEO, Kontaktformular und zwei Korrekturschleifen. Blog, Buchungssystem oder weitere Integrationen sind optional.' },
-          { q: 'Ist lokale SEO für Berlin enthalten?', a: 'Ja. Wir konfigurieren lokale SEO-Signale (Adresse, Einzugsgebiet, Schema-Markup für Organization und Service) und optimieren für relevante Berliner Suchanfragen.' },
-          { q: 'Richtet ihr DSGVO-konformes Tracking ein?', a: 'Ja. Google Analytics 4 (oder eine datenschutzfreundliche Alternative) wird mit Consent Mode v2, Cookie-Banner und Conversion-Events für Formulare, Anrufe und Buchungen eingerichtet.' },
-          { q: 'Kann die Seite später um Landingpages erweitert werden?', a: 'Ja. Die CMS-Struktur ist auf weitere Leistungs-, Landing- oder Kampagnenseiten vorbereitet - ideal, um SEO- oder Paid-Aktivitäten schrittweise auszubauen.' },
-          { q: 'Was kostet das Business-Paket in Berlin?', a: 'Das Business-Paket startet bei 899 EUR einmalig. Wartung und weitere Leistungen wie SEO-Ausbau oder Content-Produktion werden transparent als Add-ons kalkuliert.' }
-        ],
-        premium: [
-          { q: 'Wie lange dauert das Premium-Projekt in Berlin?', a: 'Typischerweise 6 bis 8 Wochen, abhängig von Strategie-Tiefe, Content-Produktion und Seitenzahl. Der Zeitplan gliedert sich in Discovery, Design, Entwicklung und Launch.' },
-          { q: 'Was ist im Premium-Paket enthalten?', a: 'Bis zu 20 Seiten, Strategie, Texte, SEO-Struktur und ein Buchungssystem. Shop-Funktionen, Portale oder individuelle Funktionen sind optional nach Umfang möglich.' },
-          { q: 'Welche SEO- und GEO-Leistungen sind enthalten?', a: 'Keyword- und Entity-Recherche, topische Cluster, Answer-First-Strukturen, umfangreiches Schema-Markup (Organization, Service, FAQ, HowTo, Article), technische SEO-Audits, Core-Web-Vitals-Optimierung und regelmäßige Reports.' },
-          { q: 'Wie läuft die Betreuung nach dem Launch?', a: 'Nach dem Livegang können Wartung, Monitoring, Content-Refreshes und technischer Support als Monatsleistung gebucht werden.' },
-          { q: 'Bietet ihr individuelle Integrationen oder Web-Apps?', a: 'Ja. Individuelle Funktionen wie Buchungsstrecken, Portale, Rechner oder ERP/CRM-Integrationen können im Projekt oder als Folgephase umgesetzt werden.' },
-          { q: 'Was kostet das Premium-Paket in Berlin?', a: 'Das Premium-Paket startet bei 1.499 EUR und wird immer individuell kalkuliert. Nach dem Strategie-Gespräch erhältst du ein verbindliches Angebot inklusive Zeit- und Budgetrahmen sowie KPIs.' }
-        ]
-      };
-
-      const whoFor = whoForMap[slug] || whoForMap.default;
-      const outcomes = outcomesMap[slug] || outcomesMap.default;
-      const timeline = timelineMap[slug] || timelineMap.default;
-      const faqs = faqMap[slug] || [];
-
-      const previewPackages = isEnglish ? [
+      const scopeBoundaryBlocks = [
         {
-          slug: 'basis',
-          name: 'Basic',
-          description: 'Fast one-page launch - ideal for freelancers and early-stage projects.',
-          price: 'from EUR 499',
-          image: '/images/basis.webp'
+          title: isEnglish ? 'Included services' : 'Enthaltene Leistungen',
+          type: 'included',
+          items: featureItems.map(textOf).filter(Boolean).slice(0, 10)
         },
         {
-          slug: 'business',
-          name: 'Business',
-          description: 'Multi-page business presence focused on lead generation and growth.',
-          price: 'from EUR 899',
-          image: '/images/business.webp'
+          title: isEnglish ? 'Not automatically included' : 'Nicht automatisch enthalten',
+          type: 'excluded',
+          items: notIncludedItems.map(textOf).filter(Boolean).slice(0, 10)
         },
         {
-          slug: 'premium',
-          name: 'Premium',
-          description: 'High-end presence including strategy, content production and support.',
-          price: 'from EUR 1,499',
-          image: '/images/premium.webp'
+          title: isEnglish ? 'Typical use cases' : 'Typische Einsatzfälle',
+          type: 'use-cases',
+          items: useCaseItems.map(textOf).filter(Boolean).slice(0, 10)
+        },
+        {
+          title: isEnglish ? 'Important notes' : 'Wichtige Hinweise',
+          type: 'neutral',
+          items: noteItems.map(textOf).filter(Boolean).slice(0, 6)
         }
-      ] : [
+      ].filter((block) => block.items.length);
+
+      const processSteps = [
         {
-          slug: 'basis',
-          name: 'Basis',
-          description: 'Schneller Launch als Onepager – ideal für Selbstständige und erste Projekte.',
-          price: 'ab 499 €',
-          image: '/images/basis.webp'
+          label: isEnglish ? 'Inquiry and scope' : 'Anfrage und Einordnung',
+          text: isEnglish ? 'We clarify goals, scope, existing content and whether this package fits.' : 'Ich kläre Ziele, Umfang, vorhandene Inhalte und ob dieses Paket zum Projekt passt.'
         },
         {
-          slug: 'business',
-          name: 'Business',
-          description: 'Mehrseitiger Unternehmensauftritt mit Fokus auf Leads und Skalierung.',
-          price: 'ab 899 €',
-          image: '/images/business.webp'
+          label: isEnglish ? 'Offer and structure' : 'Angebot und Struktur',
+          text: isEnglish ? 'The agreed scope, add-ons, feedback rounds and timeline are documented before implementation.' : 'Vereinbarter Umfang, Zusatzleistungen, Feedbackrunden und Zeitplan werden vor der Umsetzung festgehalten.'
         },
         {
-          slug: 'premium',
-          name: 'Premium',
-          description: 'High-End-Auftritt inkl. Strategie, Content-Produktion & Betreuung.',
-          price: 'ab 1.499 €',
-          image: '/images/premium.webp'
+          label: isEnglish ? 'Implementation and approval' : 'Umsetzung und Freigabe',
+          text: isEnglish ? 'The website is implemented server-side and prepared for approval, launch and optional support.' : 'Die Website wird serverseitig umgesetzt und für Freigabe, Livegang und optionale Betreuung vorbereitet.'
         }
       ];
 
-      const heroHighlights = highlightMap[slug] || highlightMap.default;
-      const deliverables = deliverablesMap[slug] || deliverablesMap.default;
-      const processSteps = processMap[slug] || processMap.default;
-      const addons = addonsMap[slug] || addonsMap.default;
-      const heroSubtitle = heroSubtitles[slug] || heroSubtitles.default;
-      const isCurrent = preview => preview.slug === slug;
-      const includesBaseFeatures = Boolean(pack.includes_base_features);
-      const packageLabel = isEnglish ? 'package' : 'Paket';
-      const packageNames = isEnglish ? { basis: 'Basic', business: 'Business', premium: 'Premium' } : { basis: 'Basis', business: 'Business', premium: 'Premium' };
-      const displayPackName = packageNames[slug] || pack.name;
+      const heroImage = packageImage(pack);
+      const isCurrent = (preview) => preview && preview.slug === slug;
     %>
-    <section class="packages-hero package-detail-hero unified-hero">
+
+    <section class="packages-hero package-detail-hero unified-hero" data-reveal-immediate>
       <div class="container hero-grid unified-hero__grid">
         <div class="hero-copy unified-hero__copy">
           <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
             <ol>
               <li><a href="<%= isEnglish ? '/en' : '/' %>"><%= isEnglish ? 'Home' : 'Startseite' %></a></li>
-              <li><a href="<%= isEnglish ? '/en/pakete' : '/pakete' %>"><%= isEnglish ? 'Packages' : 'Pakete' %></a></li>
-              <li aria-current="page"><%= isEnglish ? `${displayPackName} ${packageLabel}` : `${displayPackName}-${packageLabel}` %></li>
+              <li><a href="<%= overviewPath %>"><%= isEnglish ? 'Packages' : 'Pakete' %></a></li>
+              <li aria-current="page"><%= displayPackName %></li>
             </ol>
           </nav>
-          <h1 class="hero-title"><%= isEnglish ? `${displayPackName} ${packageLabel}` : `${displayPackName}-${packageLabel}` %></h1>
-          <p class="hero-subtitle unified-hero__lead"><%= heroSubtitle %></p>
+          <h1 class="hero-title home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= pack.h1 || displayPackName %></h1>
+          <% if (shortDescription) { %>
+          <p class="hero-subtitle unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= shortDescription %></p>
+          <% } %>
+          <% if (heroHighlights.length) { %>
           <ul class="hero-highlights">
             <% heroHighlights.forEach(item => { %>
-            <li><%= item %></li>
+            <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= item %></span>
+            </li>
             <% }) %>
           </ul>
+          <% } %>
           <div class="hero-meta">
-            <div class="hero-price">
-              <span class="price-label"><%= isEnglish ? 'Investment from' : 'Investition ab' %></span>
-              <span class="price-amount"><%= priceDisplay %></span>
+            <% if (priceDisplay) { %>
+            <div class="hero-price home-hero-reveal home-hero-reveal--price animate-on-scroll">
+              <div class="hero-price-copy">
+                <span class="price-label"><%= isEnglish ? 'Investment' : 'Investition' %></span>
+                <span class="price-amount">
+                  <% if (priceBreakMatch) { %>
+                  <%= priceBreakMatch[1] %><br><span class="price-amount__suffix"><%= priceBreakMatch[2] %></span>
+                  <% } else { %>
+                  <%= priceDisplay %>
+                  <% } %>
+                </span>
+              </div>
+              <div class="hero-actions unified-hero__actions">
+                <a class="btn btn-primary" href="#kontaktformular" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_hero_contact_<%= slug %>" data-cta-location="package_detail_hero" data-package-id="<%= slug %>"><%= pack.ctaLabel || (isEnglish ? 'Request package' : 'Paket anfragen') %></a>
+                <a class="btn btn-secondary" href="<%= overviewComparePath %>" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_hero_compare_<%= slug %>" data-cta-location="package_detail_hero" data-package-id="<%= slug %>"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
+              </div>
             </div>
-            <% if (includesBaseFeatures) { %>
-            <p class="hero-note"><%= isEnglish ? '✔ Includes all Basic package features plus extended deliverables.' : '✔ Enthält alle Leistungen des Basis-Pakets plus erweiterte Inhalte.' %></p>
+            <% } %>
+            <% if (pack.recommendationLabel) { %>
+            <p class="hero-note"><%= pack.recommendationLabel %></p>
             <% } %>
           </div>
-          <div class="hero-actions unified-hero__actions">
-            <a class="btn btn-hero unified-hero__button unified-hero__button--primary" href="#kontaktformular"><%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %></a>
-            <a class="btn btn-soft-outline unified-hero__button unified-hero__button--secondary" href="<%= isEnglish ? '/en/booking' : '/booking' %>"><%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %></a>
-          </div>
         </div>
-        <div class="hero-visual" aria-hidden="true">
+        <div class="hero-visual">
           <div class="hero-image-frame unified-hero__media-frame">
-            <img src="<%= pack.image && pack.image.startsWith('/') ? pack.image : `/images/${pack.image}` %>" alt="<%= isEnglish ? `Preview of the ${displayPackName} package` : `Vorschau des ${displayPackName}-Pakets` %>" loading="lazy" />
+            <img src="<%= heroImage %>" alt="<%= isEnglish ? 'Preview of the package' : 'Vorschau des Pakets' %>" loading="lazy">
           </div>
         </div>
       </div>
@@ -1801,22 +210,21 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
     <section class="package-overview">
       <div class="container overview-grid">
         <div class="overview-intro">
-          <h2><%= isEnglish ? `What makes the ${displayPackName} package unique` : `Was das ${displayPackName}-Paket einzigartig macht` %></h2>
-          <p>
-            <%= isEnglish
-              ? 'Every project follows a clear plan: we analyze your goals, build coherent messaging and execute the design with precision. The result is a website that builds trust, generates leads and scales over time.'
-              : 'Jede Umsetzung basiert auf einem klaren Plan: Wir analysieren deine Ziele, entwickeln ein schlüssiges Storytelling und setzen das Design pixelgenau um. So entsteht eine Website, die Vertrauen schafft, Leads generiert und langfristig wächst.'
-            %>
-          </p>
+          <h2><%= isEnglish ? 'Package overview' : 'Paket im Überblick' %></h2>
+          <% if (longDescription) { %>
+          <p><%= longDescription %></p>
+          <% } %>
         </div>
+        <% if (overviewCards.length) { %>
         <div class="overview-cards">
-          <% deliverables.forEach(block => { %>
+          <% overviewCards.forEach(block => { %>
           <article class="overview-card">
             <h3><%= block.title %></h3>
             <p><%= block.text %></p>
           </article>
           <% }) %>
         </div>
+        <% } %>
       </div>
     </section>
 
@@ -1828,9 +236,33 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
           <% detailEntries.forEach(([title, text]) => { %>
           <article class="detail-card">
             <h3><%= title %></h3>
-            <div class="detail-text">
-              <%- text %>
-            </div>
+            <div class="detail-text"><%= text %></div>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (scopeBoundaryBlocks.length) { %>
+    <section class="package-scope-boundaries">
+      <div class="container">
+        <h2><%= isEnglish ? 'Scope boundaries before implementation starts' : 'Leistungsgrenzen vor der Umsetzung' %></h2>
+        <p class="scope-lead">
+          <%= isEnglish
+            ? 'The package price covers the agreed website scope. Add-ons, running costs, external tools and legal review remain separate unless they are explicitly included in the offer.'
+            : 'Der Paketpreis gilt für den vereinbarten Website-Umfang. Zusatzleistungen, laufende Kosten, externe Tools und rechtliche Prüfung bleiben separat, sofern sie nicht ausdrücklich im Angebot stehen.'
+          %>
+        </p>
+        <div class="scope-grid">
+          <% scopeBoundaryBlocks.forEach(block => { %>
+          <article class="scope-card scope-card--<%= block.type || 'neutral' %>">
+            <h3><%= block.title %></h3>
+            <ul>
+              <% block.items.forEach(item => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
           </article>
           <% }) %>
         </div>
@@ -1840,14 +272,14 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
 
     <section class="package-process">
       <div class="container">
-        <h2><%= isEnglish ? 'How our collaboration works' : 'So läuft unsere Zusammenarbeit ab' %></h2>
+        <h2><%= isEnglish ? 'How the project runs' : 'So läuft das Projekt ab' %></h2>
         <div class="process-timeline">
           <% processSteps.forEach((step, index) => { %>
           <div class="process-step">
-            <span class="process-index">0<%= index + 1 %></span>
+            <span class="process-index"><%= String(index + 1).padStart(2, '0') %></span>
             <div class="process-content">
               <h3><%= step.label %></h3>
-              <p><%= step.description %></p>
+              <p><%= step.text %></p>
             </div>
           </div>
           <% }) %>
@@ -1858,42 +290,67 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
     <section class="package-addons">
       <div class="container addons-grid">
         <div class="addons-intro">
-          <h2><%= isEnglish ? 'Optional extensions & services' : 'Optionale Erweiterungen & Services' %></h2>
+          <h2><%= isEnglish ? 'Optional extensions and services' : 'Optionale Erweiterungen und Services' %></h2>
           <p>
             <%= isEnglish
-              ? 'Whether you need marketing automation, additional landing pages or ongoing maintenance - we tailor exactly what fits your growth. Key options at a glance:'
-              : 'Ob Marketing-Automation, zusätzliche Landingpages oder laufende Wartung – wir schnüren genau das Paket, das zu deinem Wachstum passt. Die wichtigsten Optionen auf einen Blick:'
+              ? 'Optional services are scoped separately so the package remains clear and does not promise functions that are not needed.'
+              : 'Optionale Leistungen werden separat eingeordnet, damit das Paket klar bleibt und keine Funktionen verspricht, die dein Projekt nicht braucht.'
             %>
           </p>
         </div>
-        <ul class="addons-list">
-          <% addons.forEach(addon => { %>
-          <li><span aria-hidden="true">➕</span><span><%= addon %></span></li>
-          <% }) %>
-        </ul>
+        <aside class="addons-ticker" data-addons-ticker data-ticker-duration="<%= addOnsTickerDuration %>" aria-label="<%= isEnglish ? 'Optional add-ons' : 'Optionale Zusatzleistungen' %>">
+          <div class="addons-ticker__track">
+            <ul class="addons-list addons-ticker__group">
+              <% if (optionalAddOnItems.length) { %>
+              <% optionalAddOnItems.slice(0, 8).forEach(addOn => { %>
+              <li>
+                <span aria-hidden="true">+</span>
+                <span>
+                  <strong><%= addOn.name %><% if (addOn.priceLabel) { %> · <%= addOn.priceLabel %><% } %></strong>
+                  <% if (addOn.shortDescription) { %><br><%= addOn.shortDescription %><% } %>
+                </span>
+              </li>
+              <% }) %>
+              <% } else { %>
+              <% (notIncludedItems.length ? notIncludedItems : noteItems).map(textOf).filter(Boolean).slice(0, 8).forEach(item => { %>
+              <li><span aria-hidden="true">+</span><span><%= item %></span></li>
+              <% }) %>
+              <% } %>
+            </ul>
+          </div>
+        </aside>
       </div>
     </section>
 
+    <% if (pack.targetGroup || pack.notFor || useCaseItems.length) { %>
     <section class="package-who-for">
       <div class="container">
-        <h2><%= whoFor.headline %></h2>
-        <p class="package-who-intro"><%= whoFor.intro %></p>
+        <h2><%= isEnglish ? 'Who this package fits' : 'Für wen dieses Paket passt' %></h2>
+        <% if (pack.targetGroup) { %>
+        <p class="package-who-intro"><%= pack.targetGroup %></p>
+        <% } %>
+        <% if (useCaseItems.length) { %>
         <ul class="who-for-list">
-          <% whoFor.items.forEach(item => { %>
+          <% useCaseItems.map(textOf).filter(Boolean).forEach(item => { %>
           <li><%= item %></li>
           <% }) %>
         </ul>
+        <% } %>
+        <% if (pack.notFor) { %>
+        <p class="package-who-intro"><strong><%= isEnglish ? 'Not ideal:' : 'Nicht ideal:' %></strong> <%= pack.notFor %></p>
+        <% } %>
       </div>
     </section>
+    <% } %>
 
     <section class="package-outcomes">
       <div class="container">
-        <h2><%= isEnglish ? `What you achieve with the ${displayPackName} package` : `Was du mit dem ${displayPackName}-Paket erreichst` %></h2>
+        <h2><%= isEnglish ? 'What this package clarifies' : 'Was dieses Paket klärt' %></h2>
         <div class="outcomes-grid">
-          <% outcomes.forEach(outcome => { %>
+          <% [pack.positioning, pack.seoScope, pack.techScope].filter(Boolean).forEach((item, index) => { %>
           <article class="outcome-card">
-            <h3><%= outcome.title %></h3>
-            <p><%= outcome.text %></p>
+            <h3><%= [isEnglish ? 'Positioning' : 'Positionierung', isEnglish ? 'SEO foundation' : 'SEO-Grundlage', isEnglish ? 'Technical foundation' : 'Technische Grundlage'][index] || (isEnglish ? 'Result' : 'Ergebnis') %></h3>
+            <p><%= item %></p>
           </article>
           <% }) %>
         </div>
@@ -1904,69 +361,37 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       <div class="container">
         <div class="mid-cta-inner">
           <div class="mid-cta-copy">
-            <h2>
-              <%= isEnglish
-                ? `Ready to launch your ${displayPackName} website in Berlin?`
-                : `Bereit für deine ${displayPackName}-Website in Berlin?`
-              %>
-            </h2>
+            <h2><%= isEnglish ? 'Clarify this package' : 'Dieses Paket einordnen lassen' %></h2>
             <p>
               <%= isEnglish
-                ? 'Request a non-binding consultation or book a project call directly - we reply within one business day and prepare a transparent roadmap with timeline and fixed price.'
-                : 'Fordere eine unverbindliche Beratung an oder buche direkt ein Projektgespräch - wir melden uns innerhalb eines Werktags und erstellen eine transparente Roadmap mit Zeitplan und Festpreis.'
+                ? 'Start with a non-binding request. Scope, add-ons and running costs are clarified before implementation.'
+                : 'Starte mit einer unverbindlichen Anfrage. Umfang, Zusatzleistungen und laufende Kosten werden vor der Umsetzung sauber geklärt.'
               %>
             </p>
           </div>
           <div class="mid-cta-actions">
-            <a class="btn btn-white" href="<%= isEnglish ? '/en/kontakt' : '/kontakt' %>">
-              <%= isEnglish ? 'Request consultation' : 'Beratung anfragen' %>
-            </a>
-            <a class="btn btn-ghost" href="<%= isEnglish ? '/en/booking' : '/booking' %>">
-              <%= isEnglish ? 'Book a project call' : 'Projektgespräch buchen' %>
-            </a>
+            <a class="btn btn-primary" href="<%= contactPath %>" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_mid_contact_<%= slug %>" data-cta-location="package_detail_mid" data-package-id="<%= slug %>"><%= isEnglish ? 'Request project' : 'Projekt anfragen' %></a>
+            <a class="btn btn-secondary" href="<%= overviewComparePath %>" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_mid_compare_<%= slug %>" data-cta-location="package_detail_mid" data-package-id="<%= slug %>"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="package-timeline-detail">
-      <div class="container">
-        <h2><%= isEnglish ? `Realistic timeline for the ${displayPackName} package` : `Realistischer Zeitplan für das ${displayPackName}-Paket` %></h2>
-        <p class="timeline-lead">
-          <%= isEnglish
-            ? 'Every phase has a clear goal, a defined deliverable and an expected duration. You know at any point what we are working on, what we need from you and when the next milestone is due.'
-            : 'Jede Phase hat ein klares Ziel, eine definierte Lieferung und eine erwartete Dauer. Du weißt jederzeit, woran wir arbeiten, was wir von dir benötigen und wann der nächste Meilenstein ansteht.'
-          %>
-        </p>
-        <ol class="timeline-phases">
-          <% timeline.forEach((step, index) => { %>
-          <li>
-            <span class="timeline-index"><%= String(index + 1).padStart(2, '0') %></span>
-            <div class="timeline-content">
-              <h3><%= step.label %></h3>
-              <p><%= step.text %></p>
-            </div>
-          </li>
-          <% }) %>
-        </ol>
-      </div>
-    </section>
-
-    <% if (faqs && faqs.length) { %>
+    <% if (packageFaqItems.length) { %>
     <section class="package-faq-detail" id="faq">
       <div class="container">
-        <h2><%= isEnglish ? `FAQ about the ${displayPackName} package` : `Häufige Fragen zum ${displayPackName}-Paket` %></h2>
+        <h2><%= isEnglish ? 'Frequently asked questions' : 'Häufige Fragen' %></h2>
         <p class="faq-detail-lead">
           <%= isEnglish
-            ? 'Precise answers to the most common questions about scope, timeline, SEO, GEO visibility and pricing - so you can request your offer with confidence.'
-            : 'Präzise Antworten auf die wichtigsten Fragen zu Umfang, Zeitplan, SEO, GEO-Sichtbarkeit und Preisen - damit du dein Angebot mit Klarheit anfragen kannst.'
+            ? 'These answers summarize the most important questions about scope, boundaries and project flow for this package.'
+            : 'Diese Antworten fassen die wichtigsten Fragen zu Umfang, Abgrenzung und Ablauf dieses Pakets zusammen.'
           %>
         </p>
         <div class="faq-detail-list">
-          <% faqs.forEach((item, idx) => { %>
+          <% packageFaqItems.forEach((item, idx) => { %>
           <details class="faq-detail-item" <%= idx === 0 ? 'open' : '' %>>
-            <summary><%= item.q %></summary>
-            <p><%= item.a %></p>
+            <summary><%= faqQuestion(item) %></summary>
+            <p><%= faqAnswer(item) %></p>
           </details>
           <% }) %>
         </div>
@@ -1977,86 +402,257 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
     <section class="package-contact" id="kontaktformular">
       <div class="container contact-inner">
         <div class="contact-copy">
-          <h2><%= isEnglish ? `Request ${displayPackName} package now` : `Jetzt ${displayPackName}-Paket anfragen` %></h2>
+          <h2><%= isEnglish ? 'Request this package' : 'Dieses Paket anfragen' %></h2>
           <p>
             <%= isEnglish
-              ? 'We get back to you within one business day, clarify open questions and show a live preview of what your new website can look like. The consultation is free and non-binding.'
-              : 'Wir melden uns innerhalb eines Werktags, klären offene Fragen und zeigen dir anhand einer Live-Vorschau, wie deine neue Website aussehen kann. Das Beratungsgespräch ist kostenlos und unverbindlich.'
+              ? 'Send a non-binding request. I will review the project scope and come back with the next realistic step.'
+              : 'Sende eine unverbindliche Anfrage. Ich prüfe den Projektumfang und melde mich mit dem nächsten sinnvollen Schritt.'
             %>
           </p>
           <% if (successMessage) { %>
           <div class="alert alert-success"><%= successMessage %></div>
           <% } %>
           <ul class="contact-highlights">
-            <li><%= isEnglish ? 'Custom project roadmap with transparent pricing' : 'Individueller Projektplan und transparente Kostenaufstellung' %></li>
-            <li><%= isEnglish ? 'Optional: choose a slot for an initial strategy call' : 'Optional: Termin für ein erstes Strategie-Gespräch wählen' %></li>
-            <li><%= isEnglish ? 'Personal contact from concept to launch' : 'Persönliche Ansprechpartner von Konzeption bis Launch' %></li>
+            <li>
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= isEnglish ? 'Package scope and add-ons clarified before implementation' : 'Paketumfang und Zusatzleistungen werden vor der Umsetzung geklärt' %></span>
+            </li>
+            <li>
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= isEnglish ? 'Optional appointment slot for an initial call' : 'Optionaler Termin für ein erstes Gespräch' %></span>
+            </li>
+            <li>
+              <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+              <span><%= isEnglish ? 'Personal contact from concept to launch' : 'Persönliche Betreuung von Konzept bis Livegang' %></span>
+            </li>
           </ul>
         </div>
         <div class="contact-form-wrapper">
-          <form action="<%= isEnglish ? '/en' : '' %>/pakete/<%= slug %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
+          <form action="<%= localizedDetailPath %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
             <div class="form-group">
-              <label for="inputName"><%= isEnglish ? 'Your name' : 'Ihr Name' %></label>
+              <label for="inputName"><%= isEnglish ? 'Your name' : 'Dein Name' %></label>
               <input type="text" id="inputName" name="name" placeholder="<%= isEnglish ? 'John Doe' : 'Max Mustermann' %>" required>
             </div>
             <div class="form-group">
-              <label for="inputEmail"><%= isEnglish ? 'Your email address' : 'Ihre E-Mail-Adresse' %></label>
+              <label for="inputEmail"><%= isEnglish ? 'Your email address' : 'Deine E-Mail-Adresse' %></label>
               <input type="email" id="inputEmail" name="email" placeholder="<%= isEnglish ? 'email@example.com' : 'email@beispiel.de' %>" required>
             </div>
             <% if (slots && slots.length > 0) { %>
             <div class="form-group">
               <label for="slot"><%= isEnglish ? 'Preferred consultation slot' : 'Wunschtermin für Beratungsgespräch' %></label>
-              <select id="slot" name="slot">
+              <select id="slot" name="slot" data-package-slot-select>
                 <% slots.forEach(s => { %>
                 <option value="<%= s.id %>">
                   <%= new Date(s.start_time).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
-                    weekday: 'short', day: '2-digit', month: 'short',
-                    hour: '2-digit', minute: '2-digit'
+                    weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
                   }) %>
                 </option>
                 <% }) %>
+                <option value="__custom" data-package-custom-slot><%= isEnglish ? 'Other appointment' : 'Anderen Termin' %></option>
               </select>
+              <p class="package-slot-selected" data-package-selected-summary hidden></p>
             </div>
             <% } else { %>
-            <p class="no-slots"><%= isEnglish ? 'No free appointment slots are currently available. We will contact you shortly with proposed times.' : 'Zurzeit sind keine freien Termine buchbar. Wir melden uns zeitnah mit Terminvorschlägen.' %></p>
+            <p class="no-slots"><%= isEnglish ? 'No free appointment slots are currently available. We will contact you shortly with proposed times.' : 'Zurzeit sind keine freien Termine buchbar. Ich melde mich zeitnah mit Terminvorschlägen.' %></p>
             <% } %>
-            <input type="hidden" name="token"><!-- reCAPTCHA -->
+            <input type="hidden" name="token">
             <input type="hidden" name="locale" value="<%= isEnglish ? 'en' : 'de' %>">
-            <input type="hidden" name="package" value="<%= pack.name %>">
-            <button type="submit" class="btn btn-hero w-100"><%= isEnglish ? 'Send non-binding request' : 'Unverbindliche Anfrage senden' %></button>
+            <input type="hidden" name="package" value="<%= packageName %>">
+            <button type="submit" class="btn btn-primary w-100"><%= isEnglish ? 'Send non-binding request' : 'Unverbindliche Anfrage senden' %></button>
           </form>
+          <% if (slots && slots.length > 0) { %>
+          <div class="package-slot-overlay" data-package-slot-overlay data-lng="<%= isEnglish ? 'en' : 'de' %>" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="package-slot-overlay-title" hidden>
+            <button type="button" class="package-slot-backdrop" data-package-slot-close aria-label="<%= isEnglish ? 'Close appointment calendar' : 'Terminkalender schließen' %>"></button>
+            <div class="package-slot-dialog" role="document">
+              <div class="package-slot-dialog__header">
+                <div>
+                  <p class="package-slot-eyebrow"><%= isEnglish ? 'Calendar' : 'Kalender' %></p>
+                  <h3 id="package-slot-overlay-title"><%= isEnglish ? 'Choose another appointment' : 'Anderen Termin auswählen' %></h3>
+                  <p data-package-slot-status><%= isEnglish ? 'First choose a day with available appointments.' : 'Wähle zuerst einen Tag mit freien Terminen.' %></p>
+                </div>
+                <button type="button" class="package-slot-close" data-package-slot-close aria-label="<%= isEnglish ? 'Close' : 'Schließen' %>">×</button>
+              </div>
+
+              <div class="package-slot-dialog__grid">
+                <section class="package-slot-calendar" aria-label="<%= isEnglish ? 'Available days' : 'Freie Tage' %>">
+                  <div class="package-slot-calendar__header">
+                    <button type="button" class="package-slot-nav" data-package-slot-dir="-1" aria-label="<%= isEnglish ? 'Previous month' : 'Vorheriger Monat' %>">‹</button>
+                    <h4 data-package-month-label></h4>
+                    <button type="button" class="package-slot-nav" data-package-slot-dir="1" aria-label="<%= isEnglish ? 'Next month' : 'Nächster Monat' %>">›</button>
+                  </div>
+                  <div class="package-slot-weekdays" data-package-calendar-weekdays></div>
+                  <div class="package-slot-calendar-grid" data-package-calendar-days></div>
+                </section>
+
+                <section class="package-slot-times" aria-live="polite">
+                  <div class="package-slot-step" data-package-day-panel>
+                    <h4><%= isEnglish ? '1. Select day' : '1. Tag auswählen' %></h4>
+                    <p><%= isEnglish ? 'Only days with free backend slots can be selected.' : 'Auswählbar sind nur Tage mit freien Backend-Terminen.' %></p>
+                  </div>
+                  <div class="package-slot-step" data-package-time-panel hidden>
+                    <button type="button" class="package-slot-back" data-package-back-to-days>← <%= isEnglish ? 'Back to days' : 'Zurück zu den Tagen' %></button>
+                    <h4 data-package-selected-date></h4>
+                    <p><%= isEnglish ? '2. Select time' : '2. Uhrzeit auswählen' %></p>
+                    <div class="package-slot-time-list" data-package-time-list></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+          <% } %>
         </div>
       </div>
     </section>
 
+    <% if (previewItems.length) { %>
     <section class="package-previews" aria-label="<%= isEnglish ? 'Additional package overview' : 'Weitere Pakete im Überblick' %>">
       <div class="container">
-        <h2><%= isEnglish ? 'Compare all options' : 'Alle Varianten im Vergleich' %></h2>
-        <p class="previews-subtitle"><%= isEnglish ? 'See the key differences at a glance, including a preview for each option.' : 'Hier siehst du die wichtigsten Unterschiede auf einen Blick – inklusive Vorschau für jede Variante.' %></p>
+        <h2><%= isEnglish ? 'Compare all package options' : 'Alle Paketoptionen vergleichen' %></h2>
+        <p class="previews-subtitle"><%= isEnglish ? 'Compare the other package options and choose the smallest sensible scope for your project.' : 'Vergleiche die weiteren Paketoptionen und wähle den kleinsten sinnvollen Umfang für dein Projekt.' %></p>
         <div class="previews-grid">
-          <% previewPackages.forEach(preview => { %>
+          <% previewItems.forEach(preview => { %>
           <article class="preview-card <%= isCurrent(preview) ? 'is-current' : '' %>">
             <div class="preview-image">
-              <img src="<%= preview.image %>" alt="<%= isEnglish ? `Design preview of the ${preview.name} package` : `Design-Vorschau des ${preview.name}-Pakets` %>" loading="lazy">
+              <img src="<%= packageImage(preview) %>" alt="<%= packageTitle(preview) %>" loading="lazy">
             </div>
             <div class="preview-body">
-              <span class="preview-label"><%= isEnglish ? 'Website package' : 'Website-Paket' %></span>
-              <h3><%= preview.name %></h3>
-              <p><%= preview.description %></p>
-              <div class="preview-meta">
-                <span class="preview-price"><%= preview.price %></span>
-                <% if (isCurrent(preview)) { %>
-                <span class="preview-current"><%= isEnglish ? 'Currently selected' : 'Aktuell ausgewählt' %></span>
-                <% } %>
-              </div>
-              <a class="btn btn-soft-outline" href="<%= isEnglish ? '/en' : '' %>/pakete/<%= preview.slug %>"><%= isEnglish ? 'View preview' : 'Vorschau ansehen' %></a>
+              <span class="preview-eyebrow"><%= preview.priceLabel %></span>
+              <h3><%= packageTitle(preview) %></h3>
+              <p><%= preview.shortDescription || preview.positioning || '' %></p>
+              <a class="btn btn-secondary" href="<%= packageUrl(preview) %>" data-track="cta" data-event-name="package_card_click" data-cta-name="package_detail_preview_<%= preview.slug %>" data-cta-location="package_detail_preview" data-package-id="<%= preview.slug %>"><%= isEnglish ? 'View package' : 'Paket ansehen' %></a>
             </div>
           </article>
           <% }) %>
         </div>
       </div>
     </section>
+    <% } %>
   </main>
+
+  <script>
+    (() => {
+      const USER_PAUSE_MS = 5000;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      const durationSecondsFrom = (ticker) => {
+        const rawDuration = String(ticker.dataset.tickerDuration || '').trim();
+        const numericValue = Number.parseFloat(rawDuration);
+        if (!Number.isFinite(numericValue)) return 35;
+        return Math.min(180, Math.max(8, numericValue));
+      };
+
+      document.querySelectorAll('[data-addons-ticker]').forEach((ticker) => {
+        if (ticker.dataset.tickerReady === 'true') return;
+
+        const track = ticker.querySelector('.addons-ticker__track');
+        const group = ticker.querySelector('.addons-ticker__group');
+        if (!track || !group || group.children.length < 2) return;
+
+        const clone = group.cloneNode(true);
+        clone.setAttribute('aria-hidden', 'true');
+        track.appendChild(clone);
+        ticker.dataset.tickerReady = 'true';
+
+        let groupWidth = 0;
+        let pixelsPerMs = 0;
+        let lastFrame = null;
+        let pausedUntil = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartScrollLeft = 0;
+        let normalizeTimer = 0;
+
+        const measure = () => {
+          groupWidth = group.getBoundingClientRect().width;
+          pixelsPerMs = groupWidth / (durationSecondsFrom(ticker) * 1000);
+        };
+
+        const normalizeScrollPosition = () => {
+          if (!groupWidth) return;
+          if (ticker.scrollLeft >= groupWidth) {
+            ticker.scrollLeft -= groupWidth;
+          }
+        };
+
+        const pauseAutoScroll = (duration = USER_PAUSE_MS) => {
+          pausedUntil = performance.now() + duration;
+        };
+
+        const pauseAfterManualInteraction = () => {
+          pauseAutoScroll(USER_PAUSE_MS);
+          window.clearTimeout(normalizeTimer);
+          normalizeTimer = window.setTimeout(normalizeScrollPosition, 120);
+        };
+
+        const tick = (timestamp) => {
+          if (lastFrame === null) lastFrame = timestamp;
+          const delta = timestamp - lastFrame;
+          lastFrame = timestamp;
+
+          const canAutoScroll = !reducedMotion.matches &&
+            !isDragging &&
+            timestamp >= pausedUntil;
+
+          if (canAutoScroll && groupWidth > 0) {
+            ticker.scrollLeft += delta * pixelsPerMs;
+            normalizeScrollPosition();
+          }
+
+          window.requestAnimationFrame(tick);
+        };
+
+        measure();
+        window.addEventListener('resize', measure, {
+          passive: true
+        });
+
+        ticker.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0) return;
+          isDragging = true;
+          dragStartX = event.clientX;
+          dragStartScrollLeft = ticker.scrollLeft;
+          ticker.classList.add('is-dragging');
+          if (typeof event.pointerId === 'number') {
+            ticker.setPointerCapture?.(event.pointerId);
+          }
+          pauseAutoScroll(USER_PAUSE_MS);
+        });
+
+        ticker.addEventListener('pointermove', (event) => {
+          if (!isDragging) return;
+          event.preventDefault();
+          ticker.scrollLeft = dragStartScrollLeft - (event.clientX - dragStartX);
+        });
+
+        const endDrag = (event) => {
+          if (!isDragging) return;
+          isDragging = false;
+          ticker.classList.remove('is-dragging');
+          if (typeof event.pointerId === 'number') {
+            ticker.releasePointerCapture?.(event.pointerId);
+          }
+          pauseAfterManualInteraction();
+        };
+
+        ticker.addEventListener('pointerup', endDrag);
+        ticker.addEventListener('pointercancel', endDrag);
+        ticker.addEventListener('mouseleave', endDrag);
+        ticker.addEventListener('wheel', pauseAfterManualInteraction, {
+          passive: true
+        });
+        ticker.addEventListener('touchstart', pauseAfterManualInteraction, {
+          passive: true
+        });
+        ticker.addEventListener('touchend', pauseAfterManualInteraction, {
+          passive: true
+        });
+        ticker.addEventListener('focusin', () => pauseAutoScroll(USER_PAUSE_MS));
+
+        window.requestAnimationFrame(tick);
+      });
+    })();
+  </script>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/package-detail.js') : '/js/package-detail.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
   <%- include('partials/footer') %>
 </body>

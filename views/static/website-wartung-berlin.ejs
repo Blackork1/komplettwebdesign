@@ -1,0 +1,377 @@
+<%
+  const siteBase = canonicalBaseUrl.replace(/\/$/, '');
+  const pageUrl = `${siteBase}${page.canonicalPath}`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${siteBase}/` },
+      { '@type': 'ListItem', position: 2, name: 'Leistungen', item: `${siteBase}/leistungen` },
+      { '@type': 'ListItem', position: 3, name: 'Website-Wartung Berlin', item: pageUrl }
+    ]
+  };
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.h1,
+    headline: page.h1,
+    description: page.description,
+    inLanguage: 'de-DE',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${siteBase}/#website`,
+      url: `${siteBase}/`,
+      name: 'Komplett Webdesign'
+    },
+    about: [
+      'Website-Wartung',
+      'Website-Support',
+      'Backups',
+      'Monitoring',
+      'Sicherheitschecks',
+      'Website-Pflege Berlin'
+    ]
+  };
+  const serviceSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${pageUrl}#service`,
+    name: 'Website-Wartung und Support',
+    serviceType: 'Website-Wartung und technischer Website-Support',
+    provider: {
+      '@type': 'Organization',
+      '@id': `${siteBase}/#organization`,
+      name: 'Komplett Webdesign',
+      url: siteBase
+    },
+    areaServed: {
+      '@type': 'AdministrativeArea',
+      name: 'Berlin'
+    },
+    description: page.description
+  };
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${pageUrl}#faq`,
+    mainEntity: page.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer
+      }
+    }))
+  };
+  const structuredDataBlocks = [webPageSchema, serviceSchema, breadcrumbSchema, faqSchema];
+%>
+<%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
+
+<body class="service-page service-page--maintenance maintenance-page">
+  <%- include('../partials/header') %>
+
+  <main>
+    <section id="hero" class="service-hero maintenance-hero <%= page.heroImage?.src ? 'has-service-hero-image' : '' %>"<% if (page.heroImage?.src) { %> style="--service-hero-image: url('<%= page.heroImage.src %>');"<% } %>>
+      <div class="service-shell maintenance-shell">
+        <nav class="maintenance-breadcrumbs service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/leistungen">Leistungen</a></li>
+            <li aria-current="page">Website-Wartung Berlin</li>
+          </ol>
+        </nav>
+
+        <div class="service-hero__grid maintenance-hero-grid">
+          <div>
+            <p class="maintenance-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i><%= page.hero.eyebrow %></p>
+            <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+            <p class="maintenance-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.lead %></p>
+            <div class="service-hero__actions maintenance-actions">
+              <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.primaryCta.url %>" data-track="cta" data-cta-name="maintenance_hero_contact" data-cta-location="maintenance_hero">
+                <%= page.hero.primaryCta.label %>
+              </a>
+              <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.secondaryCta.url %>" data-track="cta" data-cta-name="maintenance_hero_running_costs" data-cta-location="maintenance_hero">
+                <%= page.hero.secondaryCta.label %>
+              </a>
+            </div>
+          </div>
+
+          <aside class="maintenance-hero-panel home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="Kurzüberblick">
+            <h2>Wartung sauber eingeordnet</h2>
+            <p>Wartung wird als laufender Rahmen geplant. Ich ordne technische Betreuung, Reaktionswege und Zuständigkeiten passend zu deinem Website-Setup ein.</p>
+            <div class="maintenance-mini-list">
+              <div><i class="fa-solid fa-server" aria-hidden="true"></i><span>Hosting, Wartung und Support werden getrennt betrachtet.</span></div>
+              <div><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Backups, Monitoring und Sicherheitschecks hängen vom Setup ab.</span></div>
+              <div><i class="fa-solid fa-clock" aria-hidden="true"></i><span>Reaktionswege werden passend zum Paket vereinbart.</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="intro" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-compass" aria-hidden="true"></i>Nach dem Launch</p>
+        <h2><%= page.intro.title %></h2>
+        <p class="maintenance-section-lead"><%= page.intro.text %></p>
+      </div>
+    </section>
+
+    <section id="why-maintenance" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>Warum Wartung</p>
+        <h2><%= page.whyMaintenance.title %></h2>
+        <div class="maintenance-card-grid">
+          <% page.whyMaintenance.points.forEach((point, index) => { %>
+          <article class="maintenance-card">
+            <div class="maintenance-card-icon"><i class="fa-solid <%= ['fa-bug', 'fa-plug', 'fa-box-archive', 'fa-signal', 'fa-pen-to-square', 'fa-shield-halved'][index] || 'fa-check' %>" aria-hidden="true"></i></div>
+            <h3><%= point.charAt(0).toUpperCase() + point.slice(1) %></h3>
+            <p>Dieser Punkt wird im passenden Wartungsrahmen eingeordnet und nicht pauschal als offenes Versprechen behandelt.</p>
+          </article>
+          <% }) %>
+        </div>
+        <p class="maintenance-note"><%= page.whyMaintenance.note %></p>
+      </div>
+    </section>
+
+    <section id="hosting-vs-maintenance" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Abgrenzung</p>
+        <h2><%= page.hostingVsMaintenance.title %></h2>
+        <p class="maintenance-section-lead"><%= page.hostingVsMaintenance.core %></p>
+        <div class="maintenance-split">
+          <% page.hostingVsMaintenance.columns.forEach((column) => { %>
+          <article class="maintenance-note-box">
+            <h3><%= column.title %></h3>
+            <ul class="maintenance-check-list">
+              <% column.points.forEach((point) => { %>
+              <li><%= point %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+        <div class="maintenance-actions">
+          <a class="btn btn-primary" href="<%= page.hostingVsMaintenance.link.href %>"><%= page.hostingVsMaintenance.link.label %></a>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-layer-group" aria-hidden="true"></i>Pakete</p>
+        <h2>Wartungspakete für Websites</h2>
+        <p class="maintenance-section-lead">Die Pakete sind Orientierungsrahmen. Der genaue Umfang hängt von Website, Hosting, technischem Zustand und gewünschter Betreuung ab.</p>
+        <div class="maintenance-plan-grid package-slider-scroll" data-package-slider tabindex="0" aria-label="Wartungspakete horizontal scrollen">
+          <% page.plans.forEach((plan) => { %>
+          <article class="maintenance-plan <%= plan.isRecommended ? 'maintenance-plan--recommended' : '' %>">
+            <% if (plan.isRecommended) { %>
+            <span class="maintenance-plan-badge">häufig passend</span>
+            <% } else { %>
+            <span class="maintenance-plan-badge maintenance-plan-badge--placeholder" aria-hidden="true">häufig passend</span>
+            <% } %>
+            <h3><%= plan.name %></h3>
+            <p><%= plan.shortDescription %></p>
+            <span class="maintenance-price"><%= plan.priceLabel %></span>
+            <ul class="maintenance-check-list maintenance-plan-list">
+              <% plan.included.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+            <p class="maintenance-note"><%= plan.emergencyNote %></p>
+            <div class="maintenance-plan-cta">
+              <a class="btn btn-primary" href="<%= plan.ctaUrl %>" data-track="cta" data-cta-name="<%= plan.id %>" data-cta-location="maintenance_plans"><%= plan.ctaLabel %></a>
+            </div>
+          </article>
+          <% }) %>
+        </div>
+        <p class="maintenance-note"><%= page.legalNotes.find((note) => note.includes('§ 19')) %></p>
+      </div>
+    </section>
+
+    <section id="plan-comparison" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-table-list" aria-hidden="true"></i>Vergleich</p>
+        <h2>Leistungsumfang im Vergleich</h2>
+        <p class="maintenance-section-lead">Die Tabelle trennt technische Prüfung, Backups, Monitoring, Support und Zusatzaufwand bewusst voneinander.</p>
+        <div class="maintenance-comparison-wrap">
+          <table class="maintenance-comparison">
+            <thead>
+              <tr>
+                <th scope="col">Bereich</th>
+                <% page.plans.forEach((plan) => { %>
+                <th scope="col"><%= plan.name %></th>
+                <% }) %>
+              </tr>
+            </thead>
+            <tbody>
+              <% page.planComparisonRows.forEach((row) => { %>
+              <tr>
+                <th scope="row"><%= row.label %></th>
+                <% page.plans.forEach((plan) => { %>
+                <td><%= row.values[plan.id] %></td>
+                <% }) %>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="included" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-check" aria-hidden="true"></i>Enthalten</p>
+        <h2>Was je nach Paket enthalten sein kann</h2>
+        <ul class="maintenance-pill-list">
+          <% page.included.forEach((item) => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </section>
+
+    <section id="not-included" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-circle-minus" aria-hidden="true"></i>Nicht automatisch</p>
+        <h2>Was separat eingeordnet wird</h2>
+        <p class="maintenance-section-lead">Diese Punkte können sinnvoll sein, sind aber nicht automatisch Teil eines Wartungspakets.</p>
+        <ul class="maintenance-pill-list maintenance-pill-list--soft">
+          <% page.notIncluded.forEach((item) => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </section>
+
+    <section id="details" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-list-check" aria-hidden="true"></i>Details</p>
+        <h2>Backups, Monitoring, Sicherheitschecks und Support</h2>
+        <p class="maintenance-section-lead">Die folgenden Bereiche werden je nach Wartungspaket und technischer Ausgangslage abgestimmt.</p>
+        <div class="maintenance-detail-grid">
+          <% page.detailBlocks.forEach((block) => { %>
+          <article id="<%= block.id %>" class="maintenance-detail-card">
+            <div class="maintenance-detail-icon"><i class="fa-solid <%= block.icon %>" aria-hidden="true"></i></div>
+            <h3><%= block.title %></h3>
+            <p><%= block.lead %></p>
+            <ul class="maintenance-check-list maintenance-check-list--spaced">
+              <% block.points.forEach((point) => { %>
+              <li><%= point %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="cancellation" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-file-signature" aria-hidden="true"></i>Rahmen</p>
+        <h2><%= page.cancellation.title %></h2>
+        <p class="maintenance-section-lead"><%= page.cancellation.text %></p>
+        <div class="maintenance-note-grid">
+          <article class="maintenance-note-box">
+            <h3><%= page.targetGroups.title %></h3>
+            <ul class="maintenance-check-list">
+              <% page.targetGroups.goodFit.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="maintenance-note-box">
+            <h3>Nicht immer nötig</h3>
+            <ul class="maintenance-check-list">
+              <% page.targetGroups.notAlwaysNeeded.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="hourly-support" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-business-time" aria-hidden="true"></i>Alternativen</p>
+        <h2><%= page.hourlySupport.title %></h2>
+        <p class="maintenance-section-lead"><%= page.hourlySupport.text %></p>
+        <div class="maintenance-fit-grid">
+          <article class="maintenance-note-box">
+            <h3>Wartung ist sinnvoll bei</h3>
+            <ul class="maintenance-check-list">
+              <% page.hourlySupport.maintenanceUsefulFor.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <article class="maintenance-note-box">
+            <h3>Stundenweise Hilfe passt bei</h3>
+            <ul class="maintenance-check-list">
+              <% page.hourlySupport.hourlyUsefulFor.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="legal-notes" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Hinweise</p>
+        <h2>Grenzen, Drittanbieter und rechtliche Einordnung</h2>
+        <p class="maintenance-section-lead">Wartung soll den laufenden Betrieb planbarer machen. Externe Dienste, Rechtstexte, Lizenzen und Anbieterbedingungen bleiben eigene Themen.</p>
+        <ul class="maintenance-pill-list maintenance-pill-list--soft">
+          <% page.legalNotes.forEach((note) => { %>
+          <li><%= note %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </section>
+
+    <section id="faq" class="maintenance-section">
+      <div class="maintenance-shell animate-on-scroll">
+        <p class="maintenance-section-kicker"><i class="fa-solid fa-circle-question" aria-hidden="true"></i>FAQ</p>
+        <h2>FAQ zu Website-Wartung und Support</h2>
+        <div class="maintenance-faq">
+          <% page.faq.forEach((item, index) => { %>
+          <details class="maintenance-faq-item"<%= index === 0 ? ' open' : '' %>>
+            <summary><h3><%= item.question %></h3></summary>
+            <p><%= item.answer %></p>
+          </details>
+          <% }) %>
+        </div>
+        <div class="maintenance-links" aria-label="Weitere passende Seiten">
+          <% page.internalLinks.forEach((link) => { %>
+          <a class="maintenance-link-card" href="<%= link.href %>">
+            <strong><%= link.label %></strong>
+            <span><%= link.text %></span>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="cta" class="maintenance-cta">
+      <div class="maintenance-shell maintenance-cta-inner animate-on-scroll">
+        <div>
+          <h2><%= page.finalCta.title %></h2>
+          <p><%= page.finalCta.text %></p>
+        </div>
+        <div class="maintenance-cta-actions">
+          <a class="btn btn-primary" href="<%= page.finalCta.primary.url %>" data-track="cta" data-cta-name="maintenance_final_contact" data-cta-location="maintenance_final"><%= page.finalCta.primary.label %></a>
+          <a class="btn btn-secondary" href="<%= page.finalCta.secondary.url %>" data-track="cta" data-cta-name="maintenance_final_running_costs" data-cta-location="maintenance_final"><%= page.finalCta.secondary.label %></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+
+</html>

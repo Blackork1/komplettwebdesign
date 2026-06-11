@@ -9,6 +9,11 @@
 <style>
 
 </style>
+<%
+const templateStartPriceLabel = typeof packagePriceLabel === 'function' ? packagePriceLabel('start') : '';
+const templateBusinessPriceLabel = typeof packagePriceLabel === 'function' ? packagePriceLabel('business') : '';
+const templateWachstumPriceLabel = typeof packagePriceLabel === 'function' ? packagePriceLabel('wachstum') : '';
+%>
 <div id="OverflowHidden">
   <div id="ContainerMarginSetup">
     <div id="ContainerCenterWidthSetup">
@@ -32,9 +37,9 @@
                 </figure>
               </div>
               <p class="mt-2 mb-0 heroPriceInfo">
-                <span class="badge text-bg-success">Basis ab 499 €</span>
-                <span class="badge text-bg-success">Business ab 899 €</span>
-                <span class="badge text-bg-success">Premium ab 1.499 €</span>
+                <% if (templateStartPriceLabel) { %><span class="badge text-bg-success">Start <%= templateStartPriceLabel %></span><% } %>
+                <% if (templateBusinessPriceLabel) { %><span class="badge text-bg-success">Business <%= templateBusinessPriceLabel %></span><% } %>
+                <% if (templateWachstumPriceLabel) { %><span class="badge text-bg-success">Wachstum <%= templateWachstumPriceLabel %></span><% } %>
               </p>
             </div>
             <div class="heroRight">
@@ -433,7 +438,7 @@
               </ul>
 
               <!-- Button -->
-              <a class="btn btn-primary alignCenter" href="/pakete/<%=pkg.name%>">Details</a>
+              <a class="btn btn-primary alignCenter" href="/pakete/<%= pkg.slug || pkg.name %>">Details</a>
             </div>
           </div>
           <% }}); %>
@@ -572,7 +577,7 @@
             <div class="sliderDots" role="tablist" aria-label="Slides" data-dots></div>
           </div>
         </div>
-        <p class="alignCenter">So schnell mache ich deine Website erfolgrech, dass sie von Kunden gefunden wird und du neue Reservierungen erhälst.</p>
+        <p class="alignCenter">So wird deine Website verständlicher, schneller auffindbar und besser auf Reservierungswege ausgerichtet.</p>
       </section>
 
       <section id="CTA">
@@ -580,23 +585,25 @@
           <div style="z-index: 2; position: relative;">
             <h2 class="alignCenter ctaH2 animate-on-scroll">Benötigst du eine Website für <br> <strong class="orange">dein Café?</strong></h2>
           </div>
-          <p class="alignCenter ctaText animate-on-scroll">Ein Café lebt von Gästen – und diese finden Sie heute online.
-            Eine professionelle Website mit Speisekarte, Bildern, SEO und Reservierungssystem ist Ihr Schlüssel zu mehr Sichtbarkeit,
-            mehr Besuchern und mehr Umsatz.</p>
+          <p class="alignCenter ctaText animate-on-scroll">Ein Café lebt von Gästen – und diese informieren sich heute online.
+            Eine professionelle Website mit Speisekarte, Bildern, SEO-Grundlagen und optionalem Reservierungssystem macht dein Angebot besser verständlich
+            und leichter erreichbar.</p>
           <div class="imageCTAContainer">
             <div class="imageCTALeft animate-on-scroll-right">
-              <a href="/pakete/basis">
-                <img src="../images/branchen/BasisPaket.webp" alt="Bild des Basis-Pakets" loading="lazy" fetchpriority="low">
+              <a class="packageCtaImageLink" href="/pakete/start" aria-label="Start-Paket ansehen">
+                <span class="packageCtaImageTitle">Start-Paket</span>
+                <img src="/images/paket-start.webp" alt="Start-Paket für kompakte Websites" loading="lazy" fetchpriority="low">
               </a>
             </div>
             <div class="imageCTARight animate-on-scroll-left">
-              <a href="/pakete/business">
-                <img src="../images/branchen/BusinessPaket.webp" alt="Bild des Basis-Pakets" loading="lazy" fetchpriority="low">
+              <a class="packageCtaImageLink" href="/pakete/business" aria-label="Business-Paket ansehen">
+                <span class="packageCtaImageTitle">Business-Paket</span>
+                <img src="/images/paket-business.webp" alt="Business-Paket für kleine Unternehmen" loading="lazy" fetchpriority="low">
               </a>
             </div>
           </div>
           <div class="alignCenter animate-on-scroll">
-            <a class="btn ctaButton" href="/kontakt">Beratungsgespräch vereinbaren</a>
+            <a class="btn btn-primary" href="/kontakt">Beratungsgespräch vereinbaren</a>
           </div>
           <p class="alignCenter animate-on-scroll">Kontaktieren uns für eine kostenlose Erstberatung!</p>
         </div>

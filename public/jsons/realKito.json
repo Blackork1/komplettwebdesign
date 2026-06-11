@@ -3,7 +3,7 @@
     "slug": "kita",
     "name": "Kita",
     "title": "Kita Website erstellen – Professionelles Webdesign für Kindergärten & Betreuungseinrichtungen",
-    "description": "Moderne Kita-Websites: Konzept, Team, Anmeldeinfos, Elternbereich, SEO & mobile Optimierung. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "description": "Moderne Kita-Websites: Konzept, Team, Anmeldeinfos, Elternbereich, SEO & mobile Optimierung. Preise, Funktionen & Beispiele klar abgestimmt.",
     "og_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
 
     "hero_h1": "Kita Website erstellen",
@@ -11,7 +11,7 @@
     "hero_checks": [
       "Transparenz: Konzept, Team & Tagesablauf klar dargestellt",
       "Eltern schnell informieren: Downloads, Termine & Newsletter",
-      "Mobil optimiert, sicher (SSL) & DSGVO-konform"
+      "Mobil optimiert, sicher (SSL) & mit technischen Datenschutz-Grundlagen"
     ],
     "hero_image_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758977436/admin_gallery/vycov9ggowbm7ql3ad3t.webp",
     "hero_image_alt": "Helle Kita-Umgebung mit Spiel- und Lernelementen",
@@ -66,17 +66,17 @@
       {
         "icon": "📄",
         "label": "Digitale Unterlagen",
-        "body": "<p>60% erwarten Anmeldeformulare &amp; Infos als Download.</p>"
+        "body": "<p>60% erwarten Anmeldeformulare und Infos als Download.</p>"
       },
       {
         "icon": "📈",
         "label": "Website-Effekt",
-        "body": "<p>Moderne Websites f&uuml;hren zu bis zu 40% mehr Anfragen (IHK-Studie).</p>"
+        "body": "<p>Moderne Websites machen Informationen, Anmeldung und Kontaktwege besser zugänglich.</p>"
       },
       {
         "icon": "📱",
         "label": "Mobile First",
-        "body": "<p>&gt;75% der Eltern recherchieren via Smartphone.</p>"
+      "body": "<p>Mehr als 75% der Eltern recherchieren via Smartphone.</p>"
       }
     ],
 
@@ -89,37 +89,37 @@
       },
       {
         "title": "Google Maps & Local SEO",
-        "text": "Optimiertes Google Business Profil: Kategorien, Öffnungszeiten, Fotos, Leistungen &amp; Link zur Website – f&uuml;r Suchanfragen wie „Kita in meiner Nähe“.",
+        "text": "Optimiertes Google Business Profil: Kategorien, Öffnungszeiten, Fotos, Leistungen und Link zur Website – für Suchanfragen wie „Kita in meiner Nähe“.",
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655506/admin_gallery/zr3urtt9yps048wnrua4.webp",
         "img_alt": "Google-Unternehmensprofil Beispiel"
       },
       {
         "title": "Technische SEO",
-        "text": "Schnelle Ladezeiten, mobile UX, SSL, saubere Struktur &amp; Bildkomprimierung. Core Web Vitals im Blick behalten.",
+        "text": "Schnelle Ladezeiten, mobile UX, SSL, saubere Struktur und Bildkomprimierung. Core Web Vitals im Blick behalten.",
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756655434/admin_gallery/pcimwespifkdsykyip13.webp",
         "img_alt": "Performance-Diagramm"
       },
       {
         "title": "Strukturierte Daten",
-        "text": "Schema.org (LocalBusiness, FAQ, Event) f&uuml;r mehr Sichtbarkeit &amp; Rich Results.",
+        "text": "Passendes Schema.org-Markup für sichtbare Unternehmens-, FAQ- und Event-Informationen.",
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758978624/admin_gallery/nuhgls3vy4xiallbxwix.webp",
         "img_alt": "Symbol für strukturierte Daten"
       },
       {
         "title": "Content & Bewertungen",
-        "text": "Elternfragen per Blog &amp; FAQ beantworten (z.B. Eingewöhnung, Sprachf&ouml;rderung). Bewertungen schaffen Vertrauen.",
+        "text": "Elternfragen per Blog und FAQ beantworten (z. B. Eingewöhnung, Sprachförderung). Bewertungen schaffen Vertrauen.",
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1756657030/admin_gallery/qwxxe97wnkx4gusxffcb.webp",
         "img_alt": "Bewertungs- und Inhalts-Symbole"
       }
     ],
 
     "funktionen_items": [
-      { "icon_url": "/images/icons/bookmark.svg",   "title": "Pädagogisches Konzept",      "text": "Werte, Methoden & Ziele verständlich darstellen." },
-      { "icon_url": "/images/icons/kontakte.svg",   "title": "Teamvorstellung",            "text": "Fotos & Kurzprofile schaffen Vertrauen." },
-      { "icon_url": "/images/icons/galery.svg",     "title": "Alltag & Galerie",           "text": "Einblicke in Projekte, Räume & Tagesablauf." },
-      { "icon_url": "/images/icons/bi_table.svg",   "title": "Anmeldeinformationen",       "text": "Formulare, Fristen & Ansprechpartner auf einen Blick." },
-      { "icon_url": "/images/icons/chat.svg",       "title": "Elternbereich",              "text": "Downloads, Newsletter & Veranstaltungskalender." },
-      { "icon_url": "/images/icons/door.svg",       "title": "Kontakt & Standort",         "text": "Telefon, E-Mail & Google Maps – schnell erreichbar." }
+      { "icon_url": "/images/icons/bookmark.svg",   "title": "Pädagogisches Konzept",      "text": "Werte, Methoden und Ziele verständlich darstellen." },
+      { "icon_url": "/images/icons/kontakte.svg",   "title": "Teamvorstellung",            "text": "Fotos und Kurzprofile schaffen Vertrauen." },
+      { "icon_url": "/images/icons/galery.svg",     "title": "Alltag & Galerie",           "text": "Einblicke in Projekte, Räume und Tagesablauf." },
+      { "icon_url": "/images/icons/bi_table.svg",   "title": "Anmeldeinformationen",       "text": "Formulare, Fristen und Ansprechpartner auf einen Blick." },
+      { "icon_url": "/images/icons/chat.svg",       "title": "Elternbereich",              "text": "Downloads, Newsletter und Veranstaltungskalender." },
+      { "icon_url": "/images/icons/door.svg",       "title": "Kontakt & Standort",         "text": "Telefon, E-Mail und Google Maps – schnell erreichbar." }
     ],
 
     "vorteile": {
@@ -142,38 +142,38 @@
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979160/admin_gallery/bcrwvvfjsy5obbfzrnws.webp",
         "img_alt": "geöffnetes Buch",
         "heading": "Authentische Fotos",
-        "text": "Alltagsszenen, Spiele & Projekte zeigen, was die Kita ausmacht."
+        "text": "Alltagsszenen, Spiele und Projekte zeigen, was die Kita ausmacht."
       },
       {
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979179/admin_gallery/ka0mrtecj0b4ptvzvea8.webp",
         "img_alt": "Smiley-Symbol",
         "heading": "Einfach & verständlich",
-        "text": "Texte klar strukturieren – f&uuml;r Eltern auf einen Blick erfassbar."
+        "text": "Texte klar strukturieren – für Eltern auf einen Blick erfassbar."
       },
       {
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979188/admin_gallery/dxieq3vnxspku2nrek9o.webp",
         "img_alt": "Wort „Simple“",
         "heading": "Wenige Klicks",
-        "text": "Anmeldeinfos &amp; Kontakt maximal leicht erreichbar machen."
+        "text": "Anmeldeinfos und Kontakt maximal leicht erreichbar machen."
       },
       {
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979197/admin_gallery/pkwskoehcpwhrxjwhoc4.webp",
         "img_alt": "SEO-Grafik",
         "heading": "SEO von Anfang an",
-        "text": "Relevante Keywords gezielt einsetzen &amp; Inhalte pflegen."
+        "text": "Relevante Keywords gezielt einsetzen und Inhalte pflegen."
       },
       {
         "img_url": "https://res.cloudinary.com/dvd2cd2be/image/upload/v1758979207/admin_gallery/oe0s7nxbw8tjlgyc9ngv.webp",
         "img_alt": "Aktuelles-Symbol",
         "heading": "Regelmäßig aktualisieren",
-        "text": "Termine, Formulare &amp; Infos aktuell halten."
+        "text": "Termine, Formulare und Infos aktuell halten."
       }
     ],
 
     "cta_headline": "Benötigst du eine Website für deine Kita?",
     "cta_text": "Eine moderne Kita-Website schafft Vertrauen, entlastet das Team und sorgt für mehr Anmeldungen. Mit professionellem Webdesign, SEO und Elternportal gewinnst du neue Familien.",
-    "cta_left_image": "/images/branchen/BasisPaket.webp",
-    "cta_right_image": "/images/branchen/BusinessPaket.webp",
+    "cta_left_image": "/images/basis.webp",
+    "cta_right_image": "/images/business.webp",
 
     "faq_items": [
       {
@@ -194,7 +194,7 @@
       },
       {
         "q": "Welche Kosten entstehen?",
-        "a": "<p>Zwischen 499€ und 1.499€, je nach Paket und Funktionsumfang.</p>"
+        "a": "<p>Die aktuelle Paketlogik und Preisangaben stehen auf der Paketseite. Elternbereich, Downloads oder andere Zusatzfunktionen werden separat kalkuliert.</p>"
       }
     ]
   }

@@ -43,18 +43,15 @@ const tippsItems      = asArray(industry.tipps_items);
 const faqItems        = asArray(industry.faq_items);
 const vorteile        = asObject(industry.vorteile);
 const pageYear        = new Date().getFullYear();
+const industryPackages = Array.isArray(packages) ? packages : [];
+const industryPackageById = Object.fromEntries(industryPackages.map((pkg) => [pkg.id || pkg.slug, pkg]));
+const startPriceLabel = industryPackageById.start?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('start') : '');
+const businessPriceLabel = industryPackageById.business?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('business') : '');
+const wachstumPriceLabel = industryPackageById.wachstum?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('wachstum') : '');
 
 // für das Carousel die Positionen
 const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--far-right"];
 %>
-
-<!-- Optional: Mini-Fallback, damit disabled-Buttons vor JS korrekt aussehen -->
-<style>
-  .sliderArrow[disabled] {
-    opacity: .45;
-    pointer-events: none
-  }
-</style>
 
 <nav class="wd-breadcrumbs" aria-label="breadcrumb">
   <ol>
@@ -95,9 +92,9 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
               <!-- Preisinformation (falls du sie dynamisch willst, später aus DB ziehen) -->
               <p class="mt-2 mb-0 heroPriceInfo">
-                <a href="/pakete/basis"><span class="badge text-bg-success">Basis ab 499 €</span></a>
-                <a href="/pakete/business"><span class="badge text-bg-success">Business ab 899 €</span></a>
-                <a href="/pakete/premium"><span class="badge text-bg-success">Premium ab 1.499 €</span></a>
+                <% if (startPriceLabel) { %><a href="/pakete/start"><span class="badge text-bg-success">Start <%= startPriceLabel %></span></a><% } %>
+                <% if (businessPriceLabel) { %><a href="/pakete/business"><span class="badge text-bg-success">Business <%= businessPriceLabel %></span></a><% } %>
+                <% if (wachstumPriceLabel) { %><a href="/pakete/wachstum"><span class="badge text-bg-success">Wachstum <%= wachstumPriceLabel %></span></a><% } %>
               </p>
             </div>
 
@@ -148,17 +145,17 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
           <% } %>
         </div>
-        <div style="margin-bottom: 100px;">
+        <div class="industry-wd-intro">
           <h3 class="alignCenter animate-on-scroll">Webdesign Berlin - Was erwartet dich!</h3>
           <p class="center animate-on-scroll"> Du suchst professionelles <strong>Webdesign in Berlin</strong>, das nicht nur gut aussieht,
             sondern auch Ergebnisse liefert? Unser <strong>Webdesign</strong>-Service ist darauf ausgerichtet,
-            deine Online-Präsenz zu stärken und messbar mehr Kunden zu gewinnen. Wir entwickeln moderne,
+            deine Online-Präsenz zu stärken und qualifizierte Anfragen besser messbar zu machen. Wir entwickeln moderne,
             benutzerfreundliche Websites mit durchdachtem User-Interface, optimieren deine Seite für Suchmaschinen (SEO),
-            damit du bei Google besser gefunden wirst, und kümmern uns um zuverlässiges Hosting sowie regelmäßige Wartung.
-            Zusätzlich stellen wir sicher, dass deine Website rechtlich abgesichert ist und allen Datenschutzanforderungen entspricht.
+            damit du bei Google besser gefunden werden kannst, und planen zuverlässiges Hosting sowie regelmäßige Wartung bei Bedarf separat ein.
+            Rechtlich relevante Seiten und Datenschutz-Hinweise binden wir technisch ein; die inhaltliche Prüfung erfolgt durch dich oder juristische Beratung.
             Auf Wunsch erstellen wir auch überzeugende Inhalte und Texte, die deine Zielgruppe ansprechen.
-            Mit unserem ganzheitlichen <a href="/webdesign-berlin">Webdesign Berlin</a>-Ansatz erhältst du alles aus einer Hand –
-            von der ersten Idee bis zur erfolgreichen Online-Präsenz, die kontinuierlich mehr Umsatz generiert.
+            Mit meinem ganzheitlichen <a href="/webdesign-berlin">Webdesign Berlin</a>-Ansatz erhältst du einen klar abgestimmten Projektprozess –
+            von der ersten Idee bis zur optionalen Weiterentwicklung deiner Online-Präsenz.
           </p>
         </div>
 
@@ -257,7 +254,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <h2 class="containerLeft animate-on-scroll alignLeft">SEO für <%= industry.name %> – so wirst du gefunden</h2>
         </div>
 
-        <p class="animate-on-scroll" style="margin-top: 50px;"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit dich Kund:innen online entdecken.</strong><br>
+        <p class="industry-seo-intro animate-on-scroll"><strong>SEO (Suchmaschinenoptimierung) ist der Schlüssel, damit dich Kund:innen online entdecken.</strong><br>
           Falls du dich fragst, was SEO überhaupt ist und eine kleine Einleitung benötigst, kannst du dich hier in das Thema <a href="/ratgeber/seo-zielgruppen-content-marketing">SEO und Zielgruppen</a> einlesen.</p>
 
         <div class="sliderWrap animate-on-scroll" data-slider>
@@ -365,12 +362,12 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       <section id="Preise">
         <h2 class="alignCenter animate-on-scroll">Was kostet eine professionelle <%= industry.name %>-Website <%= pageYear %>?</h2>
         <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Welches Website-Paket passt zu meinem Umfang, meinen Inhalten und meinen Anfragezielen?“</strong></p>
-        <p class="alignCenter animate-on-scroll">Eine professionelle Website startet bei uns ab 499&nbsp;€. Je nach Umfang planen wir Onepager, mehrseitige Business-Websites oder größere Projekte mit SEO-Struktur, Lead-Formularen, Buchungssystem oder Shop. So bleibt dein Budget planbar und du bekommst eine Website, die zu Branche, Zielgruppe und lokaler Suche passt. <br>
+        <p class="alignCenter animate-on-scroll">Eine professionelle Website startet bei uns im Start-Paket <%= startPriceLabel || 'nach Angebot' %>. Business-Projekte starten <%= businessPriceLabel || 'nach Angebot' %>, umfangreichere Vorhaben <%= wachstumPriceLabel || 'nach Angebot' %>; individuelle Funktionen wie Buchungssystem oder Shop kalkulieren wir passend zum Aufwand. So bleibt dein Budget planbar und du bekommst eine Website, die zu Branche, Zielgruppe und lokaler Suche passt. <br>
           <a href="/kontakt" class="primaryColor" data-track="cta" data-cta-name="pricing_contact">Kostenlose Einschätzung anfragen</a>
         </p>
 
         <div class="pricing-grid marginPricingGrid">
-          <% (packages||[]).forEach(pkg => { if (pkg.display) { %>
+          <% industryPackages.forEach(pkg => { if (pkg.display) { %>
           <div class="pricing-card animate-on-scroll" id="pkg-<%= pkg.id %>">
             <h3 class="alignCenter"><%- safeHtml(pkg.name) %></h3>
             <div class="p1rem alignCenter">
@@ -386,7 +383,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
               </ul>
               <% } %>
 
-              <a class="btn btn-primary alignCenter" href="/pakete/<%= pkg.name %>">Details</a>
+              <a class="btn btn-primary alignCenter" href="/pakete/<%= pkg.slug || pkg.name %>">Details</a>
             </div>
           </div>
           <% } }) %>
@@ -464,7 +461,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
             <div class="tippsItem animate-on-scroll">
               <div class="tippsImage">
                 <% if (t.img_url) { %>
-                <img style="width: 100%;" src="<%= t.img_url %>" alt="<%= t.img_alt || '' %>" loading="lazy" fetchpriority="low">
+                <img class="industry-fluid-image" src="<%= t.img_url %>" alt="<%= t.img_alt || '' %>" loading="lazy" fetchpriority="low">
                 <% } %>
               </div>
               <% if (t.heading) { %><p class="headingTipps"><%- safeHtml(t.heading) %></p><% } %>
@@ -500,7 +497,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       <!-- ===================== CTA ===================== -->
       <section id="CTA">
         <div class="ctaContainer">
-              <div style="z-index: 2; position: relative;">
+              <div class="industry-cta-layer">
                 <h2 class="alignCenter ctaH2 animate-on-scroll">
                   <%- safeHtml(industry.cta_headline || `Benötigst du eine professionelle Website als ${industry.name}?`) %>
                 </h2>
@@ -512,19 +509,21 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
           <div class="imageCTAContainer">
             <div class="imageCTALeft animate-on-scroll-right">
-              <a href="/pakete/basis">
-                <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1758813569/admin_gallery/pftk9banbj81aawjfmrj.webp" alt="Basis-Paket" loading="lazy" fetchpriority="low">
+              <a class="packageCtaImageLink" href="/pakete/start" aria-label="Start-Paket ansehen">
+                <span class="packageCtaImageTitle">Start-Paket</span>
+                <img src="/images/paket-start.webp" alt="Start-Paket für kompakte Websites" loading="lazy" fetchpriority="low">
               </a>
             </div>
             <div class="imageCTARight animate-on-scroll-left">
-              <a href="/pakete/business">
-                <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1758813532/admin_gallery/ayxgzegcivq3thhr2xpi.webp" alt="Business-Paket" loading="lazy" fetchpriority="low">
+              <a class="packageCtaImageLink" href="/pakete/business" aria-label="Business-Paket ansehen">
+                <span class="packageCtaImageTitle">Business-Paket</span>
+                <img src="/images/paket-business.webp" alt="Business-Paket für kleine Unternehmen" loading="lazy" fetchpriority="low">
               </a>
             </div>
           </div>
 
           <div class="alignCenter animate-on-scroll">
-            <a id="cta-footer" class="btn ctaButton" href="/kontakt" data-track="cta" data-cta-name="beratungsgespraech_vereinbaren">
+            <a id="cta-footer" class="btn btn-primary" href="/kontakt" data-track="cta" data-cta-name="beratungsgespraech_vereinbaren">
               Beratungsgespräch vereinbaren
             </a>
           </div>
@@ -582,6 +581,6 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/sliderAnimation.js') : '/js/sliderAnimation.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/carousel.js') : '/js/carousel.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/openField.js') : '/js/openField.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
-<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/ga-events.js') : '/js/ga-events.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tracking.js') : '/js/tracking.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/footer', { disableInteractionPolish: true }) %>

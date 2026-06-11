@@ -27,6 +27,11 @@
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:.6rem;
 }
+
+.cal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
 .cal-header .month-label{
   font-family: var(--font-heading,"Poppins",sans-serif);
   font-weight:600; color: var(--primary); margin:0;
@@ -71,7 +76,15 @@
 .day-summary h3{ margin:.2rem 0 .6rem }
 .hint{ color:rgba(255,255,255,.8); margin:0 0 .8rem }
 
+.is-hidden {
+  display: none !important;
+}
+
 .slot-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.6rem; }
+
+.slot-list__muted {
+  opacity: 0.7;
+}
 .slot{
   display:flex; align-items:center; justify-content:space-between;
   background:#1c3f63; border-radius:12px; padding:.65rem .75rem;

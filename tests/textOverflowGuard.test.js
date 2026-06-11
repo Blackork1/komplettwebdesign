@@ -66,11 +66,11 @@ function assertNoFullBleedLayoutRule(source, layoutSelector) {
 
 test('new marketing pages protect long German words from text overflow', () => {
   [
-    ['public/extra.css', 'Package text overflow safety'],
+    ['public/package-list.css', 'Package text overflow safety'],
     ['public/extra.css', 'Webdesign Berlin text overflow safety'],
-    ['views/package_detail.ejs', 'Final text overflow safety'],
+    ['public/package-detail.css', 'Final text overflow safety'],
     ['public/references.css', 'Reference text overflow safety'],
-    ['public/seo-landing.css', 'SEO landing text overflow safety'],
+    ['public/leistungen.css', 'Leistungen text overflow safety'],
     ['public/website-tester.css', 'Website tester text overflow safety'],
     ['public/unified-hero.css', 'Shared hero text overflow safety'],
     ['public/ratgeber.css', 'Ratgeber text overflow safety'],
@@ -86,7 +86,7 @@ test('overflow guards do not override page layout container widths', () => {
   const extraCss = read('public/extra.css');
   const districtCss = read('public/district-berlin.css');
   const referencesCss = read('public/references.css');
-  const seoLandingCss = read('public/seo-landing.css');
+  const seoLandingCss = read('public/leistungen.css');
   const ratgeberCss = read('public/ratgeber.css');
   const websiteTesterCss = read('public/website-tester.css');
 
@@ -108,7 +108,7 @@ test('overflow guards do not override page layout container widths', () => {
 
 test('page section container variants do not re-expand to full viewport width', () => {
   const districtCss = read('public/district-berlin.css');
-  const seoLandingCss = read('public/seo-landing.css');
+  const seoLandingCss = read('public/leistungen.css');
 
   assertNoFullBleedLayoutRule(districtCss, '.district-metrics');
   assertNoFullBleedLayoutRule(districtCss, '.district-section--dark');

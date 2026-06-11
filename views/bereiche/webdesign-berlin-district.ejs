@@ -1,5 +1,7 @@
 <%
 const districtUrl = `https://komplettwebdesign.de${districtPath}`;
+const districtStartPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('start')) || '';
+const districtIndividuellPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('individuell')) || '';
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -31,7 +33,7 @@ const structuredDataBlocks = [
     telephone: "+49 1551 245048",
     email: "kontakt@komplettwebdesign.de",
     image: districtPage.heroImage,
-    priceRange: "499 EUR bis 1499 EUR",
+    priceRange: `${districtStartPriceLabel || 'nach Angebot'} bis ${districtIndividuellPriceLabel || 'nach Angebot'}`,
     areaServed: [
       { "@type": "City", name: "Berlin" },
       { "@type": "AdministrativeArea", name: district.name }
@@ -62,15 +64,15 @@ const structuredDataBlocks = [
       <p class="district-lead"><%= districtPage.answerBlock %></p>
       <% } %>
       <div class="district-hero__actions">
-        <a class="district-btn district-btn--primary" href="<%= contactPath %>" data-track="district_hero_contact">
+        <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_hero_contact">
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           <span>Kostenloses Erstgespräch</span>
         </a>
-        <a class="district-btn district-btn--ghost" href="/website-tester" data-track="district_hero_tester">
+        <a class="btn btn-secondary" href="/website-tester" data-track="district_hero_tester">
           <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
           <span>Website testen</span>
         </a>
-        <a class="district-btn district-btn--ghost" href="/pakete/business" data-track="district_hero_package">
+        <a class="btn btn-secondary" href="/pakete/business" data-track="district_hero_package">
           <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
           <span>Business-Paket ansehen</span>
         </a>
@@ -87,8 +89,8 @@ const structuredDataBlocks = [
 
   <section class="district-metrics" aria-label="Projekt-Eckdaten">
     <div>
-      <span>ab</span>
-      <strong>499 EUR</strong>
+      <span>Start</span>
+      <strong><%= districtStartPriceLabel || 'nach Angebot' %></strong>
       <p>transparente Pakete</p>
     </div>
     <div>
@@ -254,7 +256,7 @@ const structuredDataBlocks = [
       <h2 id="district-tester-title">Schon eine Website? Erst prüfen, dann sinnvoll umbauen.</h2>
       <p>Der Tester zeigt technische, SEO- und Meta-Probleme. Das macht das Erstgespräch konkreter und verhindert, dass nur nach Gefühl optimiert wird.</p>
     </div>
-    <a class="district-btn district-btn--primary" href="/website-tester" data-track="district_tester_band">
+    <a class="btn btn-primary" href="/website-tester" data-track="district_tester_band">
       <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
       <span>Website-Check starten</span>
     </a>
@@ -292,25 +294,25 @@ const structuredDataBlocks = [
 
   <section class="district-final" aria-labelledby="district-final-title">
     <p class="district-eyebrow">Website erstellen lassen in <%= district.name %></p>
-    <h2 id="district-final-title">Bereit für eine Website, die lokal gefunden wird und mehr qualifizierte Anfragen bringt?</h2>
+    <h2 id="district-final-title">Bereit für eine Website, die lokal gefunden wird und klare Anfragewege bietet?</h2>
     <p class="district-final__lead">
-      Komplett Webdesign übernimmt Design, Texte, OnPage-SEO, Technik, Hosting und Wartung für dein Website-Projekt in Berlin. Im kostenlosen Erstgespräch klären wir, welches Paket zu deinem Umfang passt und welche Seiten für <%= district.name %> wirklich wichtig sind.
+      Komplett Webdesign übernimmt Design, Texte, OnPage-SEO und Technik für dein Website-Projekt in Berlin. Hosting und Wartung können separat vereinbart werden. Im kostenlosen Erstgespräch klären wir, welches Paket zu deinem Umfang passt und welche Seiten für <%= district.name %> wirklich wichtig sind.
     </p>
     <ul class="district-final__proof" aria-label="Vorteile von Komplett Webdesign">
-      <li>Klare Webdesign-Pakete ab 499 EUR</li>
-      <li>Lokale SEO-Basis für Berlin und <%= district.name %></li>
+      <li>Klare Webdesign-Pakete <%= (typeof packagePriceLabel === 'function' && packagePriceLabel('start')) || 'nach Angebot' %></li>
+      <li>Lokale SEO-Grundlage für Berlin und <%= district.name %></li>
       <li>Persönliche Betreuung statt anonymer Baukasten-Lösung</li>
     </ul>
     <div class="district-final__actions">
-      <a class="district-btn district-btn--primary" href="<%= contactPath %>" data-track="district_final_contact">
+      <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_final_contact">
         <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         <span>Kostenloses Erstgespräch vereinbaren</span>
       </a>
-      <a class="district-btn district-btn--ghost" href="/website-tester" data-track="district_final_tester">
+      <a class="btn btn-secondary" href="/website-tester" data-track="district_final_tester">
         <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
         <span>Website vorher testen</span>
       </a>
-      <a class="district-btn district-btn--ghost" href="tel:<%= phone %>">
+      <a class="btn btn-secondary" href="tel:<%= phone %>">
         <i class="fa-solid fa-phone" aria-hidden="true"></i>
         <span><%= phoneDisplay %></span>
       </a>

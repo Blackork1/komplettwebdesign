@@ -1,0 +1,132 @@
+<%- include('../partials/admin_header') %>
+
+<%
+  const checked = (value) => value ? 'checked' : '';
+  const euro = (value) => centsToEuroInput ? centsToEuroInput(value) : '';
+%>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-puzzle-piece"></i> Zusatzleistungen
+</h1>
+
+<div class="admin-card mb-4 border-warning">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div>
+      <h2 class="h5 mb-1">Öffentliche Add-ons und Preisrahmen</h2>
+      <p class="mb-0 text-muted">Diese Daten werden für Zusatzleistungs-, Kosten- und Paketbereiche genutzt. Drittanbieter-Kosten und Leistungsgrenzen vorsichtig formulieren.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="/admin/pricing/packages">Zur Paketliste</a>
+  </div>
+</div>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Neue Zusatzleistung</h2>
+  <form method="POST" action="/admin/pricing/add-ons" class="row g-2 align-items-end">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-2"><label class="form-label" for="addon_key_new">Key</label><input id="addon_key_new" name="addon_key" class="form-control" required></div>
+    <div class="col-md-2"><label class="form-label" for="addon_name_new">Name</label><input id="addon_name_new" name="name" class="form-control" required></div>
+    <div class="col-md-2"><label class="form-label" for="addon_category_new">Kategorie</label><input id="addon_category_new" name="category" class="form-control"></div>
+    <div class="col-md-1"><label class="form-label" for="addon_price_from_new">Preis von</label><input id="addon_price_from_new" name="price_from_euro" class="form-control" inputmode="decimal"></div>
+    <div class="col-md-1"><label class="form-label" for="addon_price_to_new">Preis bis</label><input id="addon_price_to_new" name="price_to_euro" class="form-control" inputmode="decimal"></div>
+    <div class="col-md-2"><label class="form-label" for="addon_price_label_new">Preislabel</label><input id="addon_price_label_new" name="price_label" class="form-control" placeholder="ab 250–450 €"></div>
+    <div class="col-md-1"><label class="form-label" for="addon_sort_new">Sort.</label><input id="addon_sort_new" name="sort_order" type="number" class="form-control" value="<%= (addOns || []).length + 1 %>"></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">+</button></div>
+    <div class="col-md-6"><label class="form-label" for="addon_short_new">Kurzbeschreibung</label><input id="addon_short_new" name="short_description" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label" for="addon_long_new">Wann sinnvoll</label><input id="addon_long_new" name="long_description" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label" for="addon_third_party_new">Drittanbieter-Hinweis</label><input id="addon_third_party_new" name="third_party_note" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label" for="addon_cta_label_new">CTA-Label</label><input id="addon_cta_label_new" name="cta_label" class="form-control" value="Zusatzleistung anfragen"></div>
+    <div class="col-md-3"><label class="form-label" for="addon_cta_url_new">CTA-URL</label><input id="addon_cta_url_new" name="cta_url" class="form-control" value="/kontakt?projektart=zusatzleistung"></div>
+    <div class="col-md-2 d-flex gap-3 align-items-center">
+      <label class="form-check mb-0"><input class="form-check-input" name="is_active" type="checkbox" checked> aktiv</label>
+      <label class="form-check mb-0"><input class="form-check-input" name="is_visible" type="checkbox" checked> sichtbar</label>
+    </div>
+  </form>
+</section>
+
+<form method="POST" action="/admin/pricing/add-ons/reorder" class="admin-card mb-4">
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Bestehende Zusatzleistungen</h2>
+    <button class="btn btn-secondary" type="submit">Sortierung speichern</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Sortierung</th>
+          <th>Name</th>
+          <th>Key</th>
+          <th>Kategorie</th>
+          <th>Preis</th>
+          <th>Sichtbar</th>
+          <th>Aktiv</th>
+          <th class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!addOns || addOns.length === 0) { %>
+          <tr><td colspan="8" class="text-muted">Noch keine Zusatzleistungen vorhanden.</td></tr>
+        <% } %>
+        <% (addOns || []).forEach((addon) => { %>
+          <tr>
+            <td class="admin-table-cell-min-sm">
+              <input type="hidden" name="addon_ids[]" value="<%= addon.id %>">
+              <input class="form-control form-control-sm" type="number" name="sort_orders[]" value="<%= addon.sort_order ?? 0 %>">
+            </td>
+            <td><strong><%= addon.name %></strong><% if (addon.archived_at) { %><span class="badge text-bg-secondary ms-1">archiviert</span><% } %></td>
+            <td><code><%= addon.addon_key %></code></td>
+            <td><%= addon.category || '-' %></td>
+            <td><%= addon.price_label || '-' %></td>
+            <td><span class="badge <%= addon.is_visible ? 'text-bg-success' : 'text-bg-secondary' %>"><%= addon.is_visible ? 'ja' : 'nein' %></span></td>
+            <td><span class="badge <%= addon.is_active ? 'text-bg-success' : 'text-bg-secondary' %>"><%= addon.is_active ? 'ja' : 'nein' %></span></td>
+            <td class="text-end">
+              <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                <form method="POST" action="/admin/pricing/add-ons/<%= addon.id %>/toggle-visibility" class="d-inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                  <button class="btn btn-sm btn-outline-warning" type="submit"><%= addon.is_visible ? 'Ausblenden' : 'Einblenden' %></button>
+                </form>
+                <% if (addon.archived_at || !addon.is_active) { %>
+                  <form method="POST" action="/admin/pricing/add-ons/<%= addon.id %>/restore" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-success" type="submit">Wiederherstellen</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/admin/pricing/add-ons/<%= addon.id %>/archive" class="d-inline" onsubmit="return confirm('Zusatzleistung archivieren?');">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Archivieren</button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="8">
+              <form method="POST" action="/admin/pricing/add-ons/<%= addon.id %>" class="row g-2 align-items-end">
+                <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                <div class="col-md-2"><label class="form-label">Key</label><input name="addon_key" class="form-control" value="<%= addon.addon_key || '' %>" required></div>
+                <div class="col-md-2"><label class="form-label">Name</label><input name="name" class="form-control" value="<%= addon.name || '' %>" required></div>
+                <div class="col-md-2"><label class="form-label">Kategorie</label><input name="category" class="form-control" value="<%= addon.category || '' %>"></div>
+                <div class="col-md-1"><label class="form-label">Preis von</label><input name="price_from_euro" class="form-control" value="<%= euro(addon.price_from_cents) %>"></div>
+                <div class="col-md-1"><label class="form-label">Preis bis</label><input name="price_to_euro" class="form-control" value="<%= euro(addon.price_to_cents) %>"></div>
+                <div class="col-md-2"><label class="form-label">Preislabel</label><input name="price_label" class="form-control" value="<%= addon.price_label || '' %>"></div>
+                <div class="col-md-1"><label class="form-label">Sort.</label><input name="sort_order" type="number" class="form-control" value="<%= addon.sort_order ?? 0 %>"></div>
+                <div class="col-md-1 d-flex gap-2 align-items-center">
+                  <label class="form-check mb-0"><input class="form-check-input" name="is_active" type="checkbox" <%= checked(addon.is_active) %>> aktiv</label>
+                  <label class="form-check mb-0"><input class="form-check-input" name="is_visible" type="checkbox" <%= checked(addon.is_visible) %>> sichtbar</label>
+                </div>
+                <div class="col-md-6"><label class="form-label">Kurzbeschreibung</label><input name="short_description" class="form-control" value="<%= addon.short_description || '' %>"></div>
+                <div class="col-md-6"><label class="form-label">Wann sinnvoll</label><input name="long_description" class="form-control" value="<%= addon.long_description || '' %>"></div>
+                <div class="col-md-4"><label class="form-label">Drittanbieter-Hinweis</label><input name="third_party_note" class="form-control" value="<%= addon.third_party_note || '' %>"></div>
+                <div class="col-md-3"><label class="form-label">CTA-Label</label><input name="cta_label" class="form-control" value="<%= addon.cta_label || '' %>"></div>
+                <div class="col-md-3"><label class="form-label">CTA-URL</label><input name="cta_url" class="form-control" value="<%= addon.cta_url || '' %>"></div>
+                <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Speichern</button></div>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</form>
+
+<%- include('../partials/admin_footer') %>

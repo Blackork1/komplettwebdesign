@@ -5,7 +5,7 @@ export const HANDWERKER_PAGE_UPDATE = {
   page: {
     title: 'Handwerker Website Berlin | Webdesign, SEO & Anfragen',
     description:
-      'Handwerker Website in Berlin: Webdesign mit Leistungsseiten, Referenzen, Local SEO, GEO-Struktur und Anfrageformular für mehr qualifizierte Aufträge.'
+      'Handwerker Website in Berlin: Webdesign mit Leistungsseiten, Referenzen, Local SEO, GEO-Struktur und klarem Anfrageformular.'
   },
   components: {
     56: {
@@ -14,7 +14,7 @@ export const HANDWERKER_PAGE_UPDATE = {
     },
     57: {
       content:
-        'Komplett Webdesign erstellt Websites für Handwerksbetriebe in Berlin: mobil, schnell, mit Leistungsseiten, Referenzen, Local SEO und Anfrageformular - ab <strong>499 EUR Festpreis</strong>.'
+        'Komplett Webdesign erstellt Websites für Handwerksbetriebe in Berlin: mobil, schnell, mit Leistungsseiten, Referenzen, Local SEO und Anfrageformular - Start ab <strong>799 EUR</strong>.'
     },
     63: {
       content: 'Handwerker-Website anfragen',
@@ -25,7 +25,7 @@ export const HANDWERKER_PAGE_UPDATE = {
       href: '/website-tester/seo'
     },
     69: {
-      content: 'Warum eine Handwerker-Website heute Aufträge entscheidet'
+      content: 'Warum eine Handwerker-Website heute Vertrauen und Anfragewege entscheidet'
     },
     72: {
       content:
@@ -82,7 +82,7 @@ export const HANDWERKER_PAGE_UPDATE = {
         'SSL, Hosting, Wartung und technische Pflege können direkt mit übernommen werden.'
     },
     98: {
-      content: 'Pakete ab <strong>499 EUR</strong>'
+      content: 'Pakete ab <strong>799 EUR</strong>'
     },
     99: {
       content:
@@ -170,14 +170,14 @@ export const HANDWERKER_PAGE_UPDATE = {
   <div class="handwerker-faq-list">
     <details open>
       <summary>Was kostet eine Handwerker-Website?</summary>
-      <p>Eine professionelle Handwerker-Website startet bei Komplett Webdesign ab 499 EUR. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und SEO-Struktur ist meist das Business-Paket ab 899 EUR sinnvoll.</p>
+      <p>Eine professionelle Handwerker-Website startet bei Komplett Webdesign mit dem Start-Paket ab 799 EUR. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und SEO-Struktur ist meist das Business-Paket ab 1.499 EUR sinnvoll.</p>
     </details>
     <details>
       <summary>Welche Inhalte braucht eine gute Handwerker-Website?</summary>
       <p>Wichtig sind klare Leistungen, Einsatzgebiet, Referenzen, Bewertungen, ein verständlicher Ablauf, schnelle Kontaktwege und ein Anfrageformular, das Projektart, Ort, Zeitraum und Fotos abfragen kann.</p>
     </details>
     <details>
-      <summary>Hilft Local SEO Handwerksbetrieben bei neuen Aufträgen?</summary>
+      <summary>Hilft Local SEO Handwerksbetrieben bei besserer Auffindbarkeit?</summary>
       <p>Ja. Local SEO hilft, wenn die Website konkrete Leistungen, Berliner Bezirke, Projektbeispiele, Kontaktwege und strukturierte Daten sauber verbindet.</p>
     </details>
     <details>

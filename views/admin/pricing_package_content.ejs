@@ -1,0 +1,166 @@
+<%- include('../partials/admin_header') %>
+
+<%
+  const checked = (value) => value ? 'checked' : '';
+%>
+
+<h1 class="admin-page-title">
+  <i class="fa-solid fa-list-check"></i> Paketinhalte: <%= pkg.display_name || pkg.name %>
+</h1>
+
+<div class="admin-card mb-4">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div>
+      <p class="text-muted mb-1">Paket-Key: <code><%= pkg.package_key %></code></p>
+      <p class="mb-0">Diese Inhalte können später öffentlich in Paketdetailseiten, Vergleich und Kontaktlogik genutzt werden.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary" href="/admin/pricing/packages">Zur Paketliste</a>
+      <a class="btn btn-outline-secondary" href="/admin/pricing/packages/<%= pkg.id %>/edit">Basisdaten bearbeiten</a>
+    </div>
+  </div>
+</div>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Enthaltene Leistungen</h2>
+  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/features" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-5">
+      <label class="form-label" for="feature_text_new">Leistung</label>
+      <input id="feature_text_new" name="feature_text" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="feature_group_new">Gruppe</label>
+      <input id="feature_group_new" name="feature_group" class="form-control">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="feature_sort_new">Sortierung</label>
+      <input id="feature_sort_new" name="sort_order" type="number" class="form-control" value="<%= (features || []).length + 1 %>">
+    </div>
+    <div class="col-md-1 form-check">
+      <input id="feature_visible_new" name="is_visible" class="form-check-input" type="checkbox" checked>
+      <label class="form-check-label" for="feature_visible_new">sichtbar</label>
+    </div>
+    <div class="col-md-1">
+      <button class="btn btn-primary w-100" type="submit">+</button>
+    </div>
+  </form>
+  <% (features || []).forEach((feature) => { %>
+    <form method="POST" action="/admin/pricing/features/<%= feature.id %>" class="row g-2 align-items-end border-top py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <div class="col-md-5"><input name="feature_text" class="form-control" value="<%= feature.feature_text || '' %>" required></div>
+      <div class="col-md-3"><input name="feature_group" class="form-control" value="<%= feature.feature_group || '' %>"></div>
+      <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= feature.sort_order ?? 0 %>"></div>
+      <div class="col-md-1 form-check">
+        <input id="feature_visible_<%= feature.id %>" name="is_visible" class="form-check-input" type="checkbox" <%= checked(feature.is_visible) %>>
+        <label class="form-check-label" for="feature_visible_<%= feature.id %>">sichtbar</label>
+      </div>
+      <div class="col-md-1 d-flex gap-1">
+        <button class="btn btn-sm btn-primary" type="submit">Speichern</button>
+      </div>
+    </form>
+    <form method="POST" action="/admin/pricing/features/<%= feature.id %>/delete" class="mb-2" onsubmit="return confirm('Leistung löschen?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+    </form>
+  <% }) %>
+</section>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Nicht enthaltene Leistungen</h2>
+  <p class="text-muted">Warnung bei unklaren Versprechen wie „Buchungssystem inklusive“, „Shop inklusive“, „CMS inklusive“, „alles inklusive“ oder „unbegrenzte Änderungen“.</p>
+  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/not-included" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-5"><input name="item_text" class="form-control" placeholder="Nicht enthaltene Leistung" required></div>
+    <div class="col-md-3"><input name="item_group" class="form-control" placeholder="Gruppe"></div>
+    <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= (notIncluded || []).length + 1 %>"></div>
+    <div class="col-md-1 form-check"><input id="not_included_visible_new" name="is_visible" class="form-check-input" type="checkbox" checked><label class="form-check-label" for="not_included_visible_new">sichtbar</label></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">+</button></div>
+  </form>
+  <% (notIncluded || []).forEach((item) => { %>
+    <form method="POST" action="/admin/pricing/not-included/<%= item.id %>" class="row g-2 align-items-end border-top py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <div class="col-md-5"><input name="item_text" class="form-control" value="<%= item.item_text || '' %>" required></div>
+      <div class="col-md-3"><input name="item_group" class="form-control" value="<%= item.item_group || '' %>"></div>
+      <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= item.sort_order ?? 0 %>"></div>
+      <div class="col-md-1 form-check"><input id="item_visible_<%= item.id %>" name="is_visible" class="form-check-input" type="checkbox" <%= checked(item.is_visible) %>><label class="form-check-label" for="item_visible_<%= item.id %>">sichtbar</label></div>
+      <div class="col-md-1"><button class="btn btn-sm btn-primary" type="submit">Speichern</button></div>
+    </form>
+    <form method="POST" action="/admin/pricing/not-included/<%= item.id %>/delete" class="mb-2" onsubmit="return confirm('Eintrag löschen?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+    </form>
+  <% }) %>
+</section>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Einsatzfälle</h2>
+  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/use-cases" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-8"><input name="use_case_text" class="form-control" placeholder="Typischer Einsatzfall" required></div>
+    <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= (useCases || []).length + 1 %>"></div>
+    <div class="col-md-1 form-check"><input id="use_case_visible_new" name="is_visible" class="form-check-input" type="checkbox" checked><label class="form-check-label" for="use_case_visible_new">sichtbar</label></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">+</button></div>
+  </form>
+  <% (useCases || []).forEach((useCase) => { %>
+    <form method="POST" action="/admin/pricing/use-cases/<%= useCase.id %>" class="row g-2 align-items-end border-top py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <div class="col-md-8"><input name="use_case_text" class="form-control" value="<%= useCase.use_case_text || '' %>" required></div>
+      <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= useCase.sort_order ?? 0 %>"></div>
+      <div class="col-md-1 form-check"><input id="use_case_visible_<%= useCase.id %>" name="is_visible" class="form-check-input" type="checkbox" <%= checked(useCase.is_visible) %>><label class="form-check-label" for="use_case_visible_<%= useCase.id %>">sichtbar</label></div>
+      <div class="col-md-1"><button class="btn btn-sm btn-primary" type="submit">Speichern</button></div>
+    </form>
+    <form method="POST" action="/admin/pricing/use-cases/<%= useCase.id %>/delete" class="mb-2" onsubmit="return confirm('Einsatzfall löschen?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+    </form>
+  <% }) %>
+</section>
+
+<section class="admin-card mb-4">
+  <h2 class="h5">Paket-FAQ</h2>
+  <form method="POST" action="/admin/pricing/packages/<%= pkg.id %>/faqs" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <div class="col-md-4"><input name="question" class="form-control" placeholder="Frage" required></div>
+    <div class="col-md-4"><textarea name="answer" class="form-control" rows="1" placeholder="Antwort" required></textarea></div>
+    <div class="col-md-2"><input name="category" class="form-control" placeholder="Kategorie"></div>
+    <div class="col-md-1"><input name="sort_order" type="number" class="form-control" value="<%= (faqs || []).length + 1 %>"></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">+</button></div>
+    <div class="col-12 d-flex flex-wrap gap-3">
+      <label class="form-check"><input class="form-check-input" name="show_on_overview" type="checkbox"> Übersicht</label>
+      <label class="form-check"><input class="form-check-input" name="show_on_detail" type="checkbox" checked> Detail</label>
+      <label class="form-check"><input class="form-check-input" name="schema_eligible" type="checkbox" checked> Schema geeignet</label>
+      <label class="form-check"><input class="form-check-input" name="is_visible" type="checkbox" checked> sichtbar</label>
+    </div>
+  </form>
+  <% (faqs || []).forEach((faq) => { %>
+    <form method="POST" action="/admin/pricing/faqs/<%= faq.id %>" class="row g-2 align-items-end border-top py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <div class="col-md-4"><input name="question" class="form-control" value="<%= faq.question || '' %>" required></div>
+      <div class="col-md-4"><textarea name="answer" class="form-control" rows="2" required><%= faq.answer || '' %></textarea></div>
+      <div class="col-md-2"><input name="category" class="form-control" value="<%= faq.category || '' %>"></div>
+      <div class="col-md-2"><input name="sort_order" type="number" class="form-control" value="<%= faq.sort_order ?? 0 %>"></div>
+      <div class="col-12 d-flex flex-wrap gap-3">
+        <label class="form-check"><input class="form-check-input" name="show_on_overview" type="checkbox" <%= checked(faq.show_on_overview) %>> Übersicht</label>
+        <label class="form-check"><input class="form-check-input" name="show_on_detail" type="checkbox" <%= checked(faq.show_on_detail) %>> Detail</label>
+        <label class="form-check"><input class="form-check-input" name="schema_eligible" type="checkbox" <%= checked(faq.schema_eligible) %>> Schema geeignet</label>
+        <label class="form-check"><input class="form-check-input" name="is_visible" type="checkbox" <%= checked(faq.is_visible) %>> sichtbar</label>
+        <button class="btn btn-sm btn-primary" type="submit">Speichern</button>
+      </div>
+    </form>
+    <form method="POST" action="/admin/pricing/faqs/<%= faq.id %>/delete" class="mb-2" onsubmit="return confirm('FAQ löschen?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="package_id" value="<%= pkg.id %>">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+    </form>
+  <% }) %>
+</section>
+
+<%- include('../partials/admin_footer') %>

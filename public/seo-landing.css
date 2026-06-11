@@ -24,6 +24,9 @@
   .seo-landing__section-copy,
   .seo-landing__check-list,
   .seo-landing__section-head,
+  .seo-landing__visual-feature,
+  .seo-landing__visual-copy,
+  .seo-landing__visual-frame,
   .seo-landing__link-card,
   .seo-landing__faq details,
   .seo-landing__cta,
@@ -40,6 +43,9 @@
   .seo-landing__section-copy,
   .seo-landing__check-list,
   .seo-landing__section-head,
+  .seo-landing__visual-feature,
+  .seo-landing__visual-copy,
+  .seo-landing__visual-frame,
   .seo-landing__link-card,
   .seo-landing__faq details,
   .seo-landing__cta,
@@ -67,9 +73,38 @@
   position: relative;
   padding: clamp(30px, 5vw, 60px) 0 clamp(72px, 10vw, 132px);
   background:
-    linear-gradient(135deg, rgba(11, 42, 70, 0.1), rgba(233, 74, 27, 0.16)),
-    #f4f7fb;
-  border-bottom: 1px solid var(--seo-landing-line);
+    radial-gradient(circle at 16% 14%, rgba(240, 74, 35, 0.24), transparent 30%),
+    linear-gradient(135deg, #08253f 0%, #123a5a 58%, #245a7d 100%);
+  border-bottom: 0;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.seo-landing__hero.has-service-hero-image {
+  background-image:
+    linear-gradient(90deg, rgba(8, 37, 63, 0.97) 0%, rgba(8, 37, 63, 0.9) 42%, rgba(8, 37, 63, 0.5) 100%),
+    var(--service-hero-image);
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.seo-landing .seo-landing__hero.unified-hero.has-service-hero-image {
+  background-image:
+    linear-gradient(90deg, rgba(8, 37, 63, 0.97) 0%, rgba(8, 37, 63, 0.9) 42%, rgba(8, 37, 63, 0.5) 100%),
+    var(--service-hero-image) !important;
+  background-position: center, center !important;
+  background-size: cover, cover !important;
+  background-repeat: no-repeat, no-repeat !important;
+}
+
+.seo-landing__hero::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 96px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #f4f7fb);
+  pointer-events: none;
 }
 
 .seo-landing__hero-grid {
@@ -77,6 +112,8 @@
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   gap: clamp(28px, 5vw, 64px);
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .seo-landing__hero-copy {
@@ -90,6 +127,28 @@
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.seo-landing__hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 11px 15px;
+  text-transform: uppercase;
+}
+
+.seo-landing__hero-kicker i {
+  color: #ffffff;
+  font-size: 0.92rem;
 }
 
 .seo-landing h1,
@@ -124,49 +183,35 @@
   line-height: 1.75;
 }
 
+.seo-landing .seo-landing__hero .unified-hero__breadcrumbs {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.seo-landing .seo-landing__hero .unified-hero__breadcrumbs a {
+  color: #ffffff;
+}
+
+.seo-landing .seo-landing__hero .unified-hero__breadcrumbs li + li::before {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.seo-landing .seo-landing__hero .unified-hero__breadcrumbs [aria-current="page"] {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.seo-landing .seo-landing__hero h1 {
+  color: #ffffff !important;
+}
+
+.seo-landing .seo-landing__hero .seo-landing__lead {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
 .seo-landing__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 28px;
-}
-
-.seo-landing__button {
-  display: inline-flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  padding: 12px 18px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-decoration: none;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
-}
-
-.seo-landing__button--primary {
-  border: 1px solid var(--seo-landing-accent);
-  background: var(--seo-landing-accent);
-  color: #ffffff;
-}
-
-.seo-landing__button--primary:hover,
-.seo-landing__button--primary:focus {
-  border-color: var(--seo-landing-accent-dark);
-  background: var(--seo-landing-accent-dark);
-  color: #ffffff;
-}
-
-.seo-landing__button--secondary {
-  border: 1px solid var(--seo-landing-line);
-  background: #ffffff;
-  color: var(--seo-landing-ink);
-}
-
-.seo-landing__button--secondary:hover,
-.seo-landing__button--secondary:focus {
-  border-color: var(--seo-landing-accent);
-  color: var(--seo-landing-accent-dark);
 }
 
 .seo-landing__hero-panel {
@@ -177,14 +222,31 @@
   padding: clamp(22px, 4vw, 34px);
 }
 
-.seo-landing__panel-label {
-  margin: 0 0 14px;
-  color: var(--seo-landing-accent-dark);
-  font-size: 0.9rem;
-  font-weight: 700;
+.seo-landing .seo-landing__hero .seo-landing__hero-panel {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 60px rgba(4, 20, 36, 0.24);
 }
 
-.seo-landing__hero-panel ul,
+.seo-landing__hero-panel h2 {
+  color: var(--seo-landing-ink);
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.15;
+}
+
+.seo-landing__hero-panel > p {
+  margin: 14px 0 0;
+  color: var(--seo-landing-muted);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.seo-landing__hero-mini-list {
+  display: grid;
+  margin-top: 22px;
+}
+
 .seo-landing__check-list {
   display: grid;
   gap: 12px;
@@ -193,7 +255,27 @@
   list-style: none;
 }
 
-.seo-landing__hero-panel li,
+.seo-landing__hero-mini-list div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-top: 1px solid var(--seo-landing-line);
+  padding: 14px 0;
+  color: var(--seo-landing-ink);
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.seo-landing__hero-mini-list div:last-child {
+  padding-bottom: 0;
+}
+
+.seo-landing__hero-mini-list i {
+  color: var(--seo-landing-accent);
+  flex: 0 0 auto;
+  margin-top: 0.15em;
+}
+
 .seo-landing__check-list li {
   position: relative;
   padding-left: 26px;
@@ -201,7 +283,6 @@
   line-height: 1.55;
 }
 
-.seo-landing__hero-panel li::before,
 .seo-landing__check-list li::before {
   content: "";
   position: absolute;
@@ -247,6 +328,49 @@
   padding: 20px;
 }
 
+.seo-landing__visual-feature {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(0, 1.25fr);
+  gap: clamp(24px, 5vw, 56px);
+  align-items: center;
+  padding: clamp(44px, 7vw, 76px) 0 0;
+}
+
+.seo-landing__visual-frame {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(233, 74, 27, 0.28);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 22px 54px rgba(23, 32, 51, 0.1);
+  padding: clamp(12px, 2vw, 18px);
+}
+
+.seo-landing__visual-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+  object-fit: contain;
+}
+
+.seo-landing__visual-copy {
+  border: 1px solid var(--seo-landing-line);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 20px 48px rgba(23, 32, 51, 0.08);
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.seo-landing__visual-copy p:not(.seo-landing__eyebrow) {
+  margin: 16px 0 0;
+  color: var(--seo-landing-muted);
+  font-size: 1.04rem;
+  line-height: 1.75;
+}
+
 .seo-landing__links,
 .seo-landing__faq,
 .seo-landing__cta {
@@ -276,17 +400,18 @@
   gap: 10px;
   min-height: 148px;
   align-content: start;
-  border: 1px solid var(--seo-landing-line);
+  border: 1.5px solid rgba(233, 74, 27, 0.5);
   border-radius: 8px;
   padding: 18px;
   color: var(--seo-landing-ink);
   text-decoration: none;
-  transition: border-color 160ms ease, transform 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .seo-landing__link-card:hover,
 .seo-landing__link-card:focus {
   border-color: var(--seo-landing-accent);
+  box-shadow: 0 18px 38px rgba(11, 42, 70, 0.12);
   transform: translateY(-2px);
 }
 
@@ -353,8 +478,15 @@
 
 @media (max-width: 900px) {
   .seo-landing__hero-grid,
+  .seo-landing__visual-feature,
   .seo-landing__section {
     grid-template-columns: 1fr;
+  }
+
+  .seo-landing__visual-frame {
+    justify-self: center;
+    max-width: 520px;
+    width: 100%;
   }
 
   .seo-landing__link-grid {
@@ -382,7 +514,7 @@
   }
 
   .seo-landing__actions,
-  .seo-landing__button {
+  .seo-landing__actions .btn {
     width: 100%;
   }
 

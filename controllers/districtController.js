@@ -1,7 +1,9 @@
 // controllers/districtController.js
-import { getDistrictBySlug } from "../models/districtModel.js";
+import { DISTRICTS, getDistrictBySlug } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import { webdesignBerlinPage } from "../data/webdesignBerlinPage.js";
 import { SITE_FACTS, formatGoogleRating } from "../helpers/siteFacts.js";
+import { interpolatePricingTokens } from "../util/pricingViewModel.js";
 
 export async function renderDistrictPage(req, res, next) {
   try {
@@ -10,7 +12,12 @@ export async function renderDistrictPage(req, res, next) {
     const { slug } = req.params;
     const district = getDistrictBySlug(slug);
     if (!district) return next(); // 404 → geht in dein NotFound-Handler
-    const districtPage = buildGermanDistrictPage(slug, district);
+    const pricing = res.locals.packagePricing || {};
+    const priceLabel = (packageKey) => (
+      typeof pricing.priceLabel === "function" ? pricing.priceLabel(packageKey, lng) : ""
+    );
+    const districtPage = interpolatePricingTokens(buildGermanDistrictPage(slug, district), pricing, { lng });
+    const districtPackageCards = buildDistrictPackageCards(priceLabel, lng);
 
     // Optional: Meta für Head-Partial (dein Hauptcontent enthält bereits JSON-LD)
     const metaTitle = isEn
@@ -74,7 +81,7 @@ export async function renderDistrictPage(req, res, next) {
         }
       };
       const districtCopy = districtCopyBySlug[slug] || {
-        lead: `In ${district.name}, competition is high and first impressions happen online. A modern website is your digital storefront, sales assistant, and lead channel running 24/7.`,
+        lead: `In ${district.name}, competition is high and first impressions happen online. A modern website is your digital storefront and a clear path for inquiries outside regular opening hours.`,
         caption: `Web design for local businesses in ${district.name}`,
         localFocus: `We optimize for district-specific search intent in ${district.name}.`
       };
@@ -91,35 +98,13 @@ export async function renderDistrictPage(req, res, next) {
         districtPath: `/en/webdesign-berlin/${slug}`,
         contactPath: "/en/kontakt",
         districtCopy,
-        packageCards: [
-          {
-            name: "Starter",
-            price: "499,00 €",
-            description: "A fast launch package with a focused one-page setup.",
-            features: ["One-page website", "Responsive design", "GDPR-ready setup"],
-            href: "/en/pakete/basis"
-          },
-          {
-            name: "Business",
-            price: "899,00 €",
-            description: "For growing companies that need multiple pages and stronger visibility.",
-            features: ["Multi-page website", "Custom layout", "SEO-optimized"],
-            href: "/en/pakete/business"
-          },
-          {
-            name: "Premium",
-            price: "1.499,00 €",
-            description: "For ambitious projects with advanced features and full support.",
-            features: ["Tailored solution", "E-commerce possible", "Advanced features"],
-            href: "/en/pakete/premium"
-          }
-        ],
+        packageCards: districtPackageCards,
         processSteps: [
           { title: "1) Analysis & Strategy", text: `We define goals, positioning, and priorities for your business in ${district.name}.` },
           { title: "2) UX & Design", text: "You get a clear, modern layout aligned with your offer and audience." },
-          { title: "3) Content & SEO", text: "We create conversion-focused copy and local SEO structure from day one." },
-          { title: "4) Development", text: "Fast implementation, clean code, mobile-first, and GDPR-ready setup." },
-          { title: "5) Launch & Tracking", text: "Go live with analytics, Search Console, and measurable lead tracking." },
+          { title: "3) Content & SEO", text: "We create clear copy and local SEO structure from day one." },
+          { title: "4) Development", text: "Fast implementation, clean code, mobile-first, and privacy-aware setup." },
+          { title: "5) Launch & Tracking", text: "Go live with analytics and Search Console where agreed, so visibility and inquiry paths remain traceable." },
           { title: "6) Ongoing Support", text: "Optional maintenance and SEO support for long-term growth." }
         ],
         faqItems: [
@@ -159,9 +144,9 @@ export async function renderDistrictPage(req, res, next) {
       hubPath: "/webdesign-berlin",
       districtPath: `/webdesign-berlin/${slug}`,
       contactPath: "/kontakt",
-      packageCards: DISTRICT_PACKAGE_CARDS,
+      packageCards: districtPackageCards,
       processSteps: buildGermanProcessSteps(district.name),
-      faqItems: buildGermanDistrictFaq(district.name),
+      faqItems: interpolatePricingTokens(buildGermanDistrictFaq(district.name), pricing, { lng }),
       districtServiceLinks: buildDistrictServiceLinks(slug),
       districtLastUpdatedIso: CONTENT_LAST_UPDATED_ISO,
       seoGuides: SEO_GUIDE_CLUSTER.slice(0, 6).map((guide) => ({
@@ -176,43 +161,69 @@ export async function renderDistrictPage(req, res, next) {
 }
 
 const SITE_URL = (process.env.CANONICAL_BASE_URL || process.env.BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
-const DEFAULT_PACKAGE_IMAGE = SITE_URL + "/images/heroImageH.webp";
 const YOUTUBE_ID = "M_fYtNuPcGg";
 const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 const CONTENT_LAST_UPDATED_ISO = "2026-04-23";
 
 const DISTRICT_PACKAGE_CARDS = [
   {
-    name: "Basis",
-    price: "499 EUR",
-    href: "/pakete/basis",
-    short: "Für eine kompakte Website als professionelle digitale Visitenkarte.",
-    features: ["1 Seite", "Texte enthalten", "SEO-Basis", "Lieferzeit 2 bis 4 Wochen"]
+    name: "Start",
+    priceKey: "start",
+    href: "/pakete/start",
+    short: "Für eine kompakte Website als professionellen Einstieg.",
+    features: ["1 bis 3 Seiten", "gelieferte Inhalte", "technische SEO-Grundlagen", "klare Feedbackrunde"]
   },
   {
     name: "Business",
-    price: "899 EUR",
+    priceKey: "business",
     href: "/pakete/business",
     short: "Für kleine Unternehmen mit mehreren Leistungen und Kontaktformular.",
-    features: ["Bis 5 Seiten", "Kontaktformular", "OnPage-SEO", "Lieferzeit 4 bis 6 Wochen"],
+    features: ["ca. 4 bis 7 Seiten", "Kontaktformular", "OnPage-SEO", "zwei Feedbackrunden"],
     featured: true
   },
   {
-    name: "Premium",
-    price: "1.499 EUR",
-    href: "/pakete/premium",
-    short: "Für umfangreiche Onlineangebote mit Strategie und Buchungssystem.",
-    features: ["Bis 20 Seiten", "Texte, SEO, Strategie", "Buchungssystem", "Lieferzeit 6 bis 8 Wochen"]
+    name: "Wachstum",
+    priceKey: "wachstum",
+    href: "/pakete/wachstum",
+    short: "Für umfangreichere Onlineangebote mit Strategie, Content-Tiefe und SEO-Struktur.",
+    features: ["ca. 8 bis 12 Seiten", "Strategie", "SEO-Struktur", "Add-ons nach Umfang"]
   }
 ];
+
+function buildDistrictPackageCards(priceLabel, lng = 'de') {
+  return DISTRICT_PACKAGE_CARDS.map((card) => ({
+    ...card,
+    href: lng === 'en' ? `/en${card.href}` : card.href,
+    price: priceLabel(card.priceKey) || "nach Angebot"
+  }));
+}
+
+function buildDistrictHubCards(lng = 'de') {
+  const basePath = lng === 'en' ? '/en/webdesign-berlin' : '/webdesign-berlin';
+
+  return DISTRICTS.map((district) => {
+    const page = buildGermanDistrictPage(district.slug, district);
+    return {
+      name: district.name,
+      slug: district.slug,
+      href: `${basePath}/${district.slug}`,
+      label: page.label,
+      title: `Webdesign ${district.name}`,
+      text: page.proof,
+      image: page.heroImage,
+      imageAlt: page.imageAlt,
+      neighborhoods: page.neighborhoods.slice(0, 3)
+    };
+  });
+}
 
 const DISTRICT_PAGE_COPY = {
   lichtenberg: {
     label: "Ost-Berlin im Wachstum",
     headline: "Webdesign für Lichtenberg - klar, schnell und lokal auffindbar",
     lead: "Lichtenberg wächst zwischen etabliertem Kiez, neuen Wohnquartieren und vielen kleinen Betrieben. Deine Website muss deshalb sofort verständlich machen, was du anbietest, wo du arbeitest und warum Kundinnen und Kunden dir vertrauen können.",
-    metaTitle: "Webdesign Lichtenberg | Website erstellen lassen ab 499 EUR",
-    metaDescription: "Komplett Webdesign erstellt Websites für Lichtenberg: lokale SEO, Texte, Design, Hosting und Wartung für kleine Unternehmen ab 499 EUR.",
+    metaTitle: "Webdesign Lichtenberg | Website erstellen lassen ab {{lowestPackagePriceLabel.en}}",
+    metaDescription: "Komplett Webdesign erstellt Websites für Lichtenberg: lokale SEO, Texte, Design, Hosting und Wartung für kleine Unternehmen ab {{lowestPackagePriceLabel.en}}.",
     heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194716/admin_gallery/joe7dzz6f0lql4uigcn9.webp",
     imageAlt: "Webdesigner von Komplett Webdesign für Projekte in Berlin Lichtenberg",
     neighborhoods: ["Alt-Lichtenberg", "Friedrichsfelde", "Karlshorst", "Rummelsburg"],
@@ -264,7 +275,7 @@ const DISTRICT_PAGE_COPY = {
     headline: "Webdesign für Berlin Mitte - professionell wirken, schnell Vertrauen gewinnen",
     lead: "In Mitte ist die Konkurrenz sichtbar und oft hochwertig. Deine Website muss professionell, glaubwürdig und sehr klar sein. Besonders wichtig sind Positionierung, Trust-Signale, schnelle Ladezeiten und ein sauberer Weg zur Anfrage.",
     metaTitle: "Webdesign Berlin Mitte | Professionelle Website erstellen lassen",
-    metaDescription: "Webdesign Berlin Mitte für Beratungen, Praxen, Immobilienmakler und lokale Dienstleister: SEO, Texte, Design und Tracking ab 499 EUR.",
+    metaDescription: "Webdesign Berlin Mitte für Beratungen, Praxen, Immobilienmakler und lokale Dienstleister: SEO, Texte, Design und Tracking ab {{lowestPackagePriceLabel.en}}.",
     heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194773/admin_gallery/s4bjmdaw4yrjdf8hs7o0.webp",
     imageAlt: "Professionelles Webdesign für Unternehmen in Berlin Mitte",
     neighborhoods: ["Alexanderplatz", "Regierungsviertel", "Rosenthaler Platz", "Hackescher Markt"],
@@ -323,7 +334,7 @@ function buildGermanDistrictPage(slug, district) {
     neighborhoods: [district.name, "Berlin"],
     audiences: ["lokale Dienstleister", "kleine Unternehmen", "Selbstständige"],
     proof: "Wichtig sind klare Leistungen, lokale Suchbegriffe, schnelle mobile Nutzung und direkte Kontaktwege.",
-    localExamples: ["Leistungsseiten", "Kontaktformular", "SEO-Basis"]
+    localExamples: ["Leistungsseiten", "Kontaktformular", "SEO-Grundlage"]
   };
 
   return {
@@ -339,7 +350,7 @@ function buildGermanProcessSteps(name) {
     { title: "01 Analyse", text: `Wir klären Angebot, Zielgruppe, Wettbewerb und lokale Suchintention in ${name}.` },
     { title: "02 Struktur", text: "Wir planen Seiten, Texte, Anfragewege, interne Links und die passende Paketlogik." },
     { title: "03 Design", text: "Du bekommst eine moderne Oberfläche, die zum Bezirk, zur Branche und zu deiner Zielgruppe passt." },
-    { title: "04 Umsetzung", text: "Wir bauen die Website mobiloptimiert, schnell, DSGVO-bewusst und mit sauberer SEO-Basis." },
+    { title: "04 Umsetzung", text: "Wir bauen die Website mobiloptimiert, schnell, datenschutzbewusst und mit sauberer SEO-Grundlage." },
     { title: "05 Launch", text: "Nach dem Test gehen Domain, Tracking, Sitemap und Search Console sauber live." }
   ];
 }
@@ -348,19 +359,19 @@ function buildGermanDistrictFaq(name) {
   return [
     {
       q: `Was kostet Webdesign in ${name}?`,
-      a: "Die Pakete starten bei 499 EUR. Business liegt bei 899 EUR und Premium bei 1.499 EUR. Hosting, Domain, E-Mail und Wartung sind optional extra buchbar."
+      a: "Die Pakete starten mit Start {{price.start.en}}. Business beginnt bei {{price.business.en}}, Wachstum bei {{price.wachstum.en}} und individuelle Projekte bei {{price.individuell.en}}. Hosting, Domain, E-Mail und Wartung können separat dazukommen."
     },
     {
       q: `Wie lange dauert eine Website für ${name}?`,
-      a: "Das Basis-Paket dauert meist 2 bis 4 Wochen, Business 4 bis 6 Wochen und Premium 6 bis 8 Wochen. Entscheidend sind Umfang, Feedback und vorhandene Inhalte."
+      a: "Kompakte Start-Projekte sind meist schneller als größere Websites. Business- und Wachstum-Projekte hängen stärker von Umfang, Feedback und vorhandenen Inhalten ab."
     },
     {
       q: "Ist SEO direkt enthalten?",
-      a: "Ja. Jede Website bekommt eine SEO-Basis mit sauberem Title, H1, Meta Description, Seitenstruktur, interner Verlinkung und lokaler Ausrichtung."
+      a: "Ja. Jede Website bekommt eine SEO-Grundlage mit sauberem Title, H1, Meta Description, Seitenstruktur, interner Verlinkung und lokaler Ausrichtung."
     },
     {
       q: "Kann ein Buchungssystem oder Shop integriert werden?",
-      a: "Ja. Ein Buchungssystem ist im Premium-Paket enthalten. Shops sind optional möglich und hängen vom Umfang ab."
+      a: "Ja. Buchungssysteme, Shop-Funktionen und ähnliche Module sind möglich, werden aber nach Umfang separat geprüft und kalkuliert."
     },
     {
       q: `Welche Seiten sind für ${name} besonders wichtig?`,
@@ -371,39 +382,39 @@ function buildGermanDistrictFaq(name) {
 
 function buildDistrictServiceLinks(slug) {
   const defaults = [
-    { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
-    { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
+    { label: "Local SEO Berlin", href: "/leistungen/local-seo" },
+    { label: "Responsives Design & Mobile", href: "/leistungen/responsives-design-mobile" },
     { label: "Business-Paket ansehen", href: "/pakete/business" }
   ];
 
   const byDistrict = {
     mitte: [
-      { label: "Design & Benutzerführung (UX/UI)", href: "/webdesign-berlin/design-ux-ui" },
-      { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
-      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+      { label: "Website-Relaunch", href: "/leistungen/website-relaunch" },
+      { label: "Local SEO Berlin", href: "/leistungen/local-seo" },
+      { label: "Wachstum-Paket ansehen", href: "/pakete/wachstum" }
     ],
     friedrichshain: [
-      { label: "Inhalte & Texte (Content)", href: "/webdesign-berlin/inhalte-texte-content" },
-      { label: "SEO & Sichtbarkeit (Einsteiger)", href: "/webdesign-berlin/seo-sichtbarkeit-einsteiger" },
+      { label: "Inhalte & Texte (Content)", href: "/leistungen/inhalte-texte-content" },
+      { label: "Local SEO Berlin", href: "/leistungen/local-seo" },
       { label: "Business-Paket ansehen", href: "/pakete/business" }
     ],
     "prenzlauer-berg": [
-      { label: "Design & Benutzerführung (UX/UI)", href: "/webdesign-berlin/design-ux-ui" },
-      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/webdesign-berlin/rechtliches-sicherheit" },
-      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+      { label: "Website-Relaunch", href: "/leistungen/website-relaunch" },
+      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/leistungen/rechtliches-sicherheit" },
+      { label: "Wachstum-Paket ansehen", href: "/pakete/wachstum" }
     ],
     kreuzberg: [
-      { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
-      { label: "Inhalte & Texte (Content)", href: "/webdesign-berlin/inhalte-texte-content" },
-      { label: "Basis-Paket ansehen", href: "/pakete/basis" }
+      { label: "Responsives Design & Mobile", href: "/leistungen/responsives-design-mobile" },
+      { label: "Inhalte & Texte (Content)", href: "/leistungen/inhalte-texte-content" },
+      { label: "Start-Paket ansehen", href: "/pakete/start" }
     ],
     charlottenburg: [
-      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/webdesign-berlin/rechtliches-sicherheit" },
-      { label: "Domain, Hosting & Technik", href: "/webdesign-berlin/domain-hosting-technik" },
-      { label: "Premium-Paket ansehen", href: "/pakete/premium" }
+      { label: "Rechtliches, Sicherheit & Vertrauen", href: "/leistungen/rechtliches-sicherheit" },
+      { label: "Laufende Website-Kosten", href: "/leistungen/laufende-kosten-website" },
+      { label: "Wachstum-Paket ansehen", href: "/pakete/wachstum" }
     ],
     lichtenberg: [
-      { label: "Responsives Design & Mobile", href: "/webdesign-berlin/responsives-design-mobile" },
+      { label: "Responsives Design & Mobile", href: "/leistungen/responsives-design-mobile" },
       { label: "Kosten, Preise & Pakete", href: "/webdesign-berlin/kosten-preise-pakete" },
       { label: "Business-Paket ansehen", href: "/pakete/business" }
     ]
@@ -417,17 +428,76 @@ export function renderWebdesignBerlinHub(req, res) {
   const lng = req.baseUrl?.startsWith("/en/") ? "en" : "de";
   const isEn = lng === "en";
   const pagePath = isEn ? "/en/webdesign-berlin" : "/webdesign-berlin";
-  const webdesignBerlinUrl = `${SITE_URL}${pagePath}`;
+  const pageBaseUrl = (res.locals.canonicalBaseUrl || SITE_URL).replace(/\/$/, "");
+  const webdesignBerlinUrl = `${pageBaseUrl}${pagePath}`;
   const contactPath = isEn ? "/en/kontakt" : "/kontakt";
+  const pricing = res.locals.packagePricing || {};
+  const priceLabel = (packageKey) => (
+    typeof pricing.priceLabel === "function" ? pricing.priceLabel(packageKey, lng) : ""
+  );
+  const lowestPackagePriceLabel = typeof pricing.lowestLabel === "function"
+    ? pricing.lowestLabel(lng)
+    : "";
+  const dbPackageTeasers = Array.isArray(res.locals.visiblePackages)
+    ? res.locals.visiblePackages.map((pkg) => ({
+      id: pkg.packageKey,
+      name: pkg.name,
+      priceLabel: pkg.priceLabel,
+      path: pkg.canonicalPath,
+      scope: pkg.pageScopeShort || pkg.pageScope,
+      description: pkg.shortDescription,
+      highlights: [
+        pkg.pageScopeShort || pkg.pageScope,
+        pkg.feedbackRounds ? `Feedbackrunden: ${pkg.feedbackRounds}` : null,
+        'technische SEO-Grundlagen'
+      ].filter(Boolean),
+      recommended: Boolean(pkg.isRecommended),
+      recommendationLabel: pkg.recommendationLabel,
+      ctaLabel: pkg.ctaLabel || 'Paket anfragen'
+    }))
+    : [];
+
+  if (!isEn) {
+    const page = interpolatePricingTokens(webdesignBerlinPage, res.locals.packagePricing || {}, { lng });
+    if (dbPackageTeasers.length) {
+      page.packageTeaser = {
+        ...page.packageTeaser,
+        packages: dbPackageTeasers
+      };
+    }
+    res.locals.title = page.title;
+    res.locals.description = page.description;
+    res.locals.seoExtra = `
+      <meta property="og:title" content="${page.title}">
+      <meta property="og:description" content="${page.description}">
+      <meta property="og:url" content="${webdesignBerlinUrl}">
+      <meta property="og:image" content="${pageBaseUrl}/images/heroImageH.webp">
+    `;
+
+    return res.render("bereiche/webdesign-berlin", {
+      lng,
+      page,
+      pagePath,
+      contactPath,
+      districtCards: buildDistrictHubCards(lng),
+      canonical: webdesignBerlinUrl,
+      canonicalUrl: webdesignBerlinUrl,
+      alternateUrls: {
+        de: `${pageBaseUrl}/webdesign-berlin`,
+        en: `${pageBaseUrl}/en/webdesign-berlin`,
+        xDefault: `${pageBaseUrl}/webdesign-berlin`
+      }
+    });
+  }
 
   let metaTitle = "Webdesign Berlin für kleine Unternehmen | Komplett Webdesign";
   let metaDescription =
-    "Webdesign Berlin für kleine Unternehmen, Selbstständige und lokale Dienstleister: persönliche Websites ab 499 EUR mit SEO-Basis, mobiler Optimierung und klaren Anfragewegen.";
+    `Webdesign Berlin für kleine Unternehmen, Selbstständige und lokale Dienstleister: persönliche Websites ${lowestPackagePriceLabel || "nach Angebot"} mit SEO-Grundlage, mobiler Optimierung und klaren Anfragewegen.`;
 
   const hero = {
     title: "Webdesign Berlin für kleine Unternehmen, die online Anfragen gewinnen wollen",
     description:
-      "Persönliches Webdesign ab 499 EUR, inklusive SEO-Grundlage, mobiler Optimierung und klarer Anfrageführung. Ideal für lokale Dienstleister, Handwerker, Cafés, Restaurants, Praxen und Selbstständige in Berlin.",
+      `Persönliches Webdesign ${lowestPackagePriceLabel || "nach Angebot"}, inklusive SEO-Grundlage, mobiler Optimierung und klarer Anfrageführung. Ideal für lokale Dienstleister, Handwerker, Cafés, Restaurants, Praxen und Selbstständige in Berlin.`,
     // answerBlock:
     //   "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
      ctaPrimary: { label: "Kostenlose Ersteinschätzung anfragen", href: "/kontakt" },
@@ -440,7 +510,7 @@ export function renderWebdesignBerlinHub(req, res) {
     },
     trustBadges: [
       "Persönliche Betreuung statt Agentur-Ping-Pong",
-      "Festpreise ab 499 EUR",
+      `Pakete ${lowestPackagePriceLabel || "nach Angebot"}`,
       "Antwort innerhalb von 24 Stunden"
     ]
   };
@@ -455,7 +525,7 @@ export function renderWebdesignBerlinHub(req, res) {
       "Unklare Inhalte ohne klare Conversion-Ziele"
     ],
     highlights: [
-      "<strong>Messbar</strong>: klare KPI- und Conversion-Tracking-Basis",
+      "<strong>Messbar</strong>: klare KPI- und Conversion-Tracking-Grundlage",
       "<strong>Lokal</strong>: Fokus auf Berlin und relevante Bezirke",
       "<strong>Wartungsarm</strong>: Updates, Backups und Support inklusive"
     ]
@@ -463,10 +533,10 @@ export function renderWebdesignBerlinHub(req, res) {
 
   const services = [
     {
-      name: "<a href='/webdesign-berlin/design-ux-ui' style='color:var(--wd-accent)'>Webdesign & UX</a>",
+      name: "<a href='/leistungen/website-relaunch' class='wd-link--accent'>Webdesign & UX</a>",
       description: "Individuelle Layouts mit klarer Nutzerführung, damit Besucher schneller zu Anfragen werden.",
       features: [
-        "<strong><a href='/webdesign-berlin/responsives-design-mobile' style='color:var(--wd-accent)'>Responsive Design</a></strong> für Desktop, Tablet & Smartphone",
+        "<strong><a href='/leistungen/responsives-design-mobile' class='wd-link--accent'>Responsive Design</a></strong> für Desktop, Tablet & Smartphone",
         "<strong>Core Web Vitals</strong> mit Performance-Fokus",
         "<strong>Klare UX</strong> für bessere Conversion-Raten",
         "<strong>CMS</strong> für eigenständige Pflege"
@@ -477,8 +547,8 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "<a href='/webdesign-berlin/seo-sichtbarkeit-einsteiger' style='color:var(--wd-accent)'>SEO & Local SEO</a>",
-      description: "Wir verbinden Keyword-Strategie mit lokalem Fokus, damit du in Berlin besser rankst.",
+      name: "<a href='/leistungen/local-seo' class='wd-link--accent'>SEO & Local SEO</a>",
+      description: "Wir verbinden Keyword-Strategie mit lokalem Fokus, damit deine Inhalte besser verständlich und auffindbar werden.",
       features: [
         "<strong>OnPage-SEO</strong> für Titles, H1, Struktur und interne Links",
         "<strong>Local SEO</strong> inkl. Google Business Profil",
@@ -491,8 +561,8 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "<a href='/webdesign-berlin/domain-hosting-technik' style='color:var(--wd-accent)'>Hosting & Wartung</a>",
-      description: "Stabile Technik für schnelle Ladezeiten, Sicherheit und weniger Ausfälle.",
+      name: "<a href='/leistungen/laufende-kosten-website' class='wd-link--accent'>Hosting & Wartung</a>",
+      description: "Stabile Technik für schnelle Ladezeiten, technische Sicherheit und weniger vermeidbare Probleme.",
       features: [
         "<strong>Hosting</strong> in ISO-zertifizierten Rechenzentren",
         "<strong>Backups</strong> & Recovery täglich",
@@ -510,7 +580,7 @@ export function renderWebdesignBerlinHub(req, res) {
       features: [
         "<strong>Stripe & PayPal</strong> Payment-Flows",
         "<strong>Online-Buchungen</strong> mit Kalender und Erinnerungen",
-        "<strong>Rechtssichere Grundlagen</strong> für Buchungsstrecken",
+        "<strong>Sauber dokumentierte Grundlagen</strong> für Buchungsstrecken",
         "<strong>Tracking</strong> für Anfragen und Conversions"
       ],
       image: {
@@ -519,12 +589,12 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "<a href='/webdesign-berlin/rechtliches-sicherheit' style='color:var(--wd-accent)'>Rechtliches und Sicherheit</a>",
-      description: "DSGVO-konforme Basis und technische Sicherheit für Vertrauen bei Besuchern.",
+      name: "<a href='/leistungen/rechtliches-sicherheit' class='wd-link--accent'>Rechtliches und Sicherheit</a>",
+      description: "Datenschutzbewusste technische Grundlage und Sicherheit für Vertrauen bei Besuchern.",
       features: [
-        "<strong>Impressum</strong> und Datenschutzerklärung sauber eingebunden",
-        "<strong>Datenschutzerklärung</strong> nach DSGVO",
-        "<strong>Cookie-Banner</strong> datenschutzkonform eingerichtet",
+        "<strong>Impressum</strong> und Datenschutzseiten technisch einbindbar",
+        "<strong>Datenschutz-Grundlagen</strong> bei der technischen Umsetzung berücksichtigt",
+        "<strong>Cookie-/Consent-Hinweise</strong> je nach eingesetzten Tools vorbereitet",
         "<strong>Schutz</strong> vor Spam und Bots"
       ],
       image: {
@@ -533,7 +603,7 @@ export function renderWebdesignBerlinHub(req, res) {
       }
     },
     {
-      name: "<a href='/webdesign-berlin/inhalte-texte-content' style='color:var(--wd-accent)'>Inhalte & Texte</a>",
+      name: "<a href='/leistungen/inhalte-texte-content' class='wd-link--accent'>Inhalte & Texte</a>",
       description: "Klare, verständliche Inhalte mit Fokus auf Nutzen und Anfrage.",
       features: [
         "<strong>Startseiten-Must-haves</strong> für lokale Sichtbarkeit",
@@ -550,49 +620,49 @@ export function renderWebdesignBerlinHub(req, res) {
 
   const packages = [
     {
-      name: "Basis",
-      price: "499 €",
-      anchor: "basis",
-      tagline: "Schnell startklar",
+      name: "Start",
+      price: priceLabel("start") || "nach Angebot",
+      anchor: "start",
+      tagline: "Kompakt starten",
       image: "/images/basis.webp",
-      description: "Ideal für kleine Unternehmen, die eine professionelle digitale Visitenkarte mit klarer Botschaft brauchen.",
+      description: "Ideal für kleine Unternehmen, die einen professionellen Einstieg mit klar begrenztem Umfang brauchen.",
       features: [
-        "Eine Seite mit klarer Story und Anfrageweg",
-        "Texte enthalten und mobiloptimiert aufbereitet",
-        "SEO-Basis für Title, H1, Meta Description und Struktur",
-        "DSGVO-Grundseiten und technische Launch-Prüfung",
-        "Lieferzeit: ca. 2 bis 4 Wochen"
+        "1 bis 3 Seiten oder klarer Onepager",
+        "Gelieferte Inhalte strukturiert eingebunden",
+        "SEO-Grundlagen für Title, H1, Meta Description und Struktur",
+        "Rechtstexte technisch einbindbar, keine Rechtsberatung",
+        "Eine Feedbackrunde"
       ]
     },
     {
       name: "Business",
-      price: "899 €",
+      price: priceLabel("business") || "nach Angebot",
       anchor: "business",
       tagline: "Beliebt bei KMU",
       image: "/images/business.webp",
       popular: true,
       description: "Für kleine Unternehmen, die mehrere Leistungen erklären und den Start in die Berufswelt professionell abbilden wollen.",
       features: [
-        "Bis zu 5 Seiten inklusive Leistungen und Über-uns-/Team-Seite",
+        "Ca. 4 bis 7 Seiten inklusive Leistungen und Über-uns-/Team-Seite",
         "Kontaktformular für qualifizierte Anfragen enthalten",
         "<strong>OnPage-SEO</strong> für Struktur, interne Links und Meta-Daten",
         "Blog optional gegen Mehrkosten möglich",
-        "Lieferzeit: ca. 4 bis 6 Wochen"
+        "Zwei Feedbackrunden"
       ]
     },
     {
-      name: "Premium",
-      price: "1.499 €",
-      anchor: "premium",
-      tagline: "Alles drin",
+      name: "Wachstum",
+      price: priceLabel("wachstum") || "nach Angebot",
+      anchor: "wachstum",
+      tagline: "Mehr Struktur",
       image: "/images/premium.webp",
-      description: "Für umfangreiche Onlineangebote, kleine Shops und Unternehmen in Berlin mit mehr Funktionen.",
+      description: "Für umfangreichere Onlineangebote, lokale Kampagnen und Unternehmen in Berlin mit mehr Content-Tiefe.",
       features: [
-        "Bis zu 20 Seiten inklusive Texte, SEO und Strategie",
-        "Buchungssystem im Paket enthalten",
-        "Shop optional gegen Mehrkosten je nach Umfang",
+        "Ca. 8 bis 12 Seiten mit Strategie und SEO-Struktur",
+        "Buchung, Shop und Portale nach Umfang als Add-on",
+        "Erweiterte Content-Struktur für lokale Sichtbarkeit",
         "Erweiterte Seitenstruktur für lokale Sichtbarkeit",
-        "Lieferzeit: ca. 6 bis 8 Wochen"
+        "Individuelle Module separat kalkuliert"
       ]
     }
   ];
@@ -642,12 +712,12 @@ export function renderWebdesignBerlinHub(req, res) {
     },
     {
       name: "Launch & Tracking",
-      description: "Nach Freigabe geht die Website live. Wir richten Tracking und Search Console ein, damit Sichtbarkeit, Klicks und Anfragen messbar werden."
+      description: "Nach Freigabe geht die Website live. Tracking und Search Console können im vereinbarten Umfang eingerichtet werden, damit Sichtbarkeit, Klicks und Anfragewege nachvollziehbar bleiben."
 
     },
     {
       name: "Wartung & Wachstum",
-      description: "Nach dem Launch optimieren wir Inhalte, Technik und lokale Rankings weiter. So wird aus deiner Website ein verlässlicher Lead-Kanal."
+      description: "Nach dem Launch können Inhalte, Technik und lokale Sichtbarkeit weiterentwickelt werden. So bleibt deine Website eine belastbare Grundlage für Anfragen."
     }
   ];
 
@@ -691,7 +761,7 @@ export function renderWebdesignBerlinHub(req, res) {
     {
       name: "Online-Shops & E-Commerce",
       description: "Produktdarstellung, Checkout-Optimierung und klare Conversion-Wege.",
-      link: "/pakete/premium",
+      link: "/pakete/wachstum",
       image: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847762/admin_gallery/fqq4ofor4dmsbszhoqqs.webp"
     },
     {
@@ -706,7 +776,7 @@ export function renderWebdesignBerlinHub(req, res) {
     {
       question: "Was kostet es, eine Webseite in Berlin erstellen zu lassen?",
       answer:
-        "Je nach Umfang liegt eine professionelle Website meist zwischen <strong>499 und 2.000 Euro</strong>. Auf unserer Seite <a href='/pakete'>Pakete</a> siehst du transparente Festpreise ohne versteckte Zusatzkosten."
+        `Je nach Umfang startet eine professionelle Website bei <strong>${lowestPackagePriceLabel || "einem klar eingeordneten Paketumfang"}</strong>. Start, Business, Wachstum und individuelle Projekte sind auf der Seite <a href='/pakete'>Pakete</a> transparent beschrieben.`
     },
     {
       question: "Wie lange dauert eine Website-Erstellung in Berlin?",
@@ -716,12 +786,12 @@ export function renderWebdesignBerlinHub(req, res) {
     {
       question: "Ist SEO bei der Website-Erstellung direkt dabei?",
       answer:
-        "Ja. Wir setzen eine saubere SEO-Basis mit strukturierten Seiten, optimierten Meta-Daten, interner Verlinkung und Local-SEO-Grundlagen für Berlin."
+        "Ja. Wir setzen eine saubere SEO-Grundlage mit strukturierten Seiten, optimierten Meta-Daten, interner Verlinkung und Local-SEO-Grundlagen für Berlin."
     },
     {
       question: "Erstellt ihr auch Inhalte und Texte?",
       answer:
-        "Ja. Wir unterstützen bei Seitentexten, Leistungsbeschreibungen und Conversion-Texten, damit deine Website nicht nur gut aussieht, sondern auch Anfragen erzeugt."
+        "Ja. Wir unterstützen bei Seitentexten, Leistungsbeschreibungen und Conversion-Texten, damit deine Website nicht nur gut aussieht, sondern Anfragewege klarer macht."
     },
     {
       question: "Ist meine Website nachher mobil optimiert?",
@@ -754,17 +824,17 @@ export function renderWebdesignBerlinHub(req, res) {
   ];
 
   const trust = [
-    "<strong>Datenschutz und technische Stabilität</strong> sind für uns die Basis neben einem einzigartigen Webdesign. Wir bieten ein verschlüsselte Log-In-System an, damit deine Daten und die Daten deiner Kunden immer sicher bleiben. <br> Bereits während der Planungsphase beschäftigen wir uns mit dem Cookie-Banner, dass deine Website beim Datenschutz auf der sicheren Seite ist. Somit erhält deine Website garantiert eine zuverlässige Datensicherheit und ein überzeugendes Webdesign in Berlin.",
-    "Weiterhin sind alle unsere <strong>Seiten TLS</strong> verschlüsselt. Was heißt das? <br> Daten zwischen Browser und Server werden verschlüsselt. WLAN-Mithörer oder Provider können Inhalte (Formulardaten, Logins, Cookies) nicht mitlesen. Der Inhalt kann unterwegs nicht heimlich verändert werden (Schutz vor Injected Ads/Code). Das Zertifikat bestätigt, dass der Browser wirklich mit deiner Domain spricht – Schutz vor Man-in-the-Middle/Phishing.",
+    "<strong>Datenschutz und technische Stabilität</strong> gehören zur technischen Grundlage. Externe Dienste, Formulare, Logins und Cookie-/Consent-Hinweise werden bewusst geplant und technisch vorbereitet. Das ersetzt keine rechtliche Prüfung; bei Bedarf sollten Rechtstexte und Datenschutzfragen extern geprüft werden.",
+    "Weiterhin werden Seiten mit <strong>TLS-Verschlüsselung</strong> ausgeliefert. Das schützt die Übertragung zwischen Browser und Server und reduziert Risiken beim Versand von Formular- oder Login-Daten. Je nach eingesetzten Tools können weitere technische und organisatorische Maßnahmen nötig sein.",
     "Weiterhin bieten wir auf Wunsch <strong>Backups für deine Webseite</strong> an. Dabei kannst du eigene Intervalle festlegen. Die Preise richten sich dabei an der Menge der Daten und der Häufigkeit der Datensicherungen.",
-    "Falls nun doch Probleme auftreten, garantieren ich ein <strong>schnellen Support mit Antwort innerhalb von maximal 24 Stunden</strong>. Updates und extra Funktionieren nach deinen Wünschen werden entsprechend immer nachts veröffentlicht, damit deine Kunden so wenig wie möglich beeinträchtigt werden. ",
-    "Wenn du nach der Fertigstellung des Webdesigns und der Website weitere <strong>Unterstützung für deine Googleplatzierung</strong> benötigst, stehen wir dir auch gerne zur Seite.",
+    "Falls Probleme auftreten, erhältst du <strong>persönlichen Support im vereinbarten Rahmen</strong>. Updates und zusätzliche Funktionen werden abgestimmt geplant, damit deine Kunden möglichst wenig beeinträchtigt werden.",
+    "Wenn du nach der Fertigstellung des Webdesigns und der Website weitere <strong>Unterstützung für deine Sichtbarkeit bei Google</strong> benötigst, stehen wir dir gerne zur Seite.",
     "Der Support für deine Website endet nicht mit der Fertigstellung des Webdesigns und auch nicht, wenn zum jetzigen Zeitpunkt keine Probleme bestehen. Wir stehen dir als <strong>verlässlicher Webdesigner in Berlin auch in Zukunft zur Seite</strong>."
   ];
 
   const resources = [
     { label: "Website erstellen lassen Berlin", href: "/website-erstellen-lassen-berlin" },
-    { label: "Website Relaunch Berlin", href: "/website-relaunch-berlin" },
+    { label: "Website Relaunch Berlin", href: "/leistungen/website-relaunch" },
     { label: "Ablauf Webdesign Berlin", href: "/ablauf" },
     { label: "Was kostet eine Website in Berlin?", href: "/ratgeber/website-kosten-berlin" },
     { label: "Ablauf, Dauer und Kosten", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
@@ -794,14 +864,14 @@ export function renderWebdesignBerlinHub(req, res) {
       servicesTitle: "What is included in our web design service in Berlin?",
       packagesBadge: "Our packages",
       packagesTitle: "How much does a website in Berlin cost in 2026?",
-      packagesText1: "If you want to have a website built in Berlin, pricing depends mainly on scope, features, and content. A clear one-page site usually starts around EUR 500, while larger company websites with multiple pages often range between EUR 1,500 and EUR 3,000.",
+      packagesText1: `If you want to have a website built in Berlin, pricing depends mainly on scope, features, and content. Start begins at ${priceLabel("start") || "a scoped offer"}, Business at ${priceLabel("business") || "a scoped offer"}, Growth at ${priceLabel("wachstum") || "a scoped offer"} and individual projects at ${priceLabel("individuell") || "a custom estimate"}.`,
       packagesText2: "More complex projects with shop functionality, booking systems, multilingual setup, or custom integrations can be higher. What matters most: your website should not only look good, but generate measurable inquiries and be technically clean for Google.",
       packagesText3: "Choose the package that fits your current stage and business goal:",
       packageBtnPrimary: "Choose package",
       packageBtnSecondary: "Request details",
       packageIncludedTitle: "What is actually included in a web design package?",
-      packageIncludedText1: "Already in the <a href='/en/pakete/basis'>Starter package from EUR 499</a>, you get a professionally designed website with mobile optimization, clear user flows, and core legal pages. Instead of template builders, we create a tailored design for your offer and target group.",
-      packageIncludedText2: "In the <a href='/en/pakete/business'>Business package from EUR 899</a>, the focus is on multiple service pages and stronger Google visibility. For larger projects with shop or booking features, the <a href='/en/pakete/premium'>Premium package from EUR 1,499</a> is the right fit.",
+      packageIncludedText1: `Already in the <a href='/en/pakete/start'>Start package ${priceLabel("start") || ""}</a>, you get a professionally designed compact website with mobile optimization, clear user flows and technical SEO fundamentals.`,
+      packageIncludedText2: `In the <a href='/en/pakete/business'>Business package ${priceLabel("business") || ""}</a>, the focus is on multiple service pages and stronger Google visibility. For larger projects with shop or booking features, <a href='/en/pakete/wachstum'>Growth ${priceLabel("wachstum") || ""}</a> or an individual estimate is the cleaner fit.`,
       casesTitle: "Berlin web design references",
       caseLinkLabel: "View reference",
       processTitle: "Website development in Berlin - how the process works",
@@ -812,8 +882,8 @@ export function renderWebdesignBerlinHub(req, res) {
       industriesTitle: "Web design in Berlin for different industries",
       industryMore: "Learn more",
       faqTitle: "Frequently asked questions about web design in Berlin",
-      trustTitle: "Secure, GDPR-ready, and continuously supported",
-      trustLead: "With Komplett Webdesign, your website stays stable, compliant, and supported long-term - without technical stress.",
+      trustTitle: "Secure, privacy-aware, and continuously supported",
+      trustLead: "With Komplett Webdesign, your website stays stable, privacy-aware, and supported long-term - without technical stress.",
       resourcesTitle: "Additional resources for web design and SEO in Berlin",
       resourcesLead: "These guides help you improve your digital presence strategically, instead of only maintaining it.",
       contactNameLabel: "Name",
@@ -848,14 +918,14 @@ export function renderWebdesignBerlinHub(req, res) {
       servicesTitle: "Was beinhaltet unser Webdesign in Berlin?",
       packagesBadge: "Unsere Pakete",
       packagesTitle: "Was kostet eine Website 2026 in Berlin?",
-      packagesText1: "Wenn du eine <strong>Webseite in Berlin erstellen lassen</strong> möchtest, hängen die Kosten vor allem von Umfang, Funktionen und Content ab. Ein klarer Onepager startet meist bei rund 500 €, umfangreichere Firmenwebsites mit mehreren Unterseiten liegen häufig im Bereich von 1.500 € bis 3.000 €.",
-      packagesText2: "Komplexe Projekte mit Shop, Buchungssystem, Mehrsprachigkeit oder individuellen Integrationen können deutlich darüber liegen. Wichtig ist: Eine Website sollte nicht nur gut aussehen, sondern messbar Anfragen erzeugen und für Google sauber aufgesetzt sein.",
+      packagesText1: `Wenn du eine <strong>Webseite in Berlin erstellen lassen</strong> möchtest, hängen die Kosten vor allem von Umfang, Funktionen und Content ab. Start beginnt bei ${priceLabel("start") || "einem klaren Angebot"}, Business bei ${priceLabel("business") || "einem klaren Angebot"}, Wachstum bei ${priceLabel("wachstum") || "einem klaren Angebot"} und individuelle Projekte bei ${priceLabel("individuell") || "einem individuellen Angebot"}.`,
+      packagesText2: "Komplexe Projekte mit Shop, Buchungssystem, Mehrsprachigkeit oder individuellen Integrationen können deutlich darüber liegen. Wichtig ist: Eine Website sollte nicht nur gut aussehen, sondern Anfragewege nachvollziehbar unterstützen und für Google sauber vorbereitet sein.",
       packagesText3: "Wähle das Paket, das zu deiner Ausgangslage und deinem Ziel passt:",
       packageBtnPrimary: "Paket wählen",
       packageBtnSecondary: "Details anfragen",
       packageIncludedTitle: "Was ist im Webdesign-Paket konkret enthalten?",
-      packageIncludedText1: "Bereits im <a href='/pakete/basis'>Basis-Paket ab 499 €</a> bekommst du eine professionell gestaltete Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und den wichtigsten rechtlichen Grundlagen. Statt Baukasten-Lösungen setzen wir auf ein individuelles Design, das zu deinem Angebot und deiner Zielgruppe passt.",
-      packageIncludedText2: "Im <a href='/pakete/business'>Business-Paket ab 899 €</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist das <a href='/pakete/premium'>Premium-Paket ab 1.499 €</a> die richtige Wahl. So entsteht eine Website, die nicht nur modern aussieht, sondern dir in Berlin planbar Anfragen bringt.",
+      packageIncludedText1: `Bereits im <a href='/pakete/start'>Start-Paket ${priceLabel("start") || ""}</a> bekommst du eine professionell gestaltete kompakte Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und technischen SEO-Grundlagen.`,
+      packageIncludedText2: `Im <a href='/pakete/business'>Business-Paket ${priceLabel("business") || ""}</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist <a href='/pakete/wachstum'>Wachstum ${priceLabel("wachstum") || ""}</a> oder ein individuelles Angebot die sauberere Wahl.`,
       casesTitle: "Erste echte Webdesign-Projekte aus Berlin",
       caseLinkLabel: "Referenz ansehen",
       processTitle: "Website in Berlin erstellen lassen - so läuft der Prozess ab",
@@ -866,8 +936,8 @@ export function renderWebdesignBerlinHub(req, res) {
       industriesTitle: "Webdesign Berlin für verschiedene Branchen",
       industryMore: "Mehr erfahren",
       faqTitle: "Häufige Fragen zu Webdesign in Berlin",
-      trustTitle: "Sicher, DSGVO-konform & betreut",
-      trustLead: "Mit Komplett Webdesign bleibt dein Auftritt stabil, rechtssicher und dauerhaft betreut - ohne Technikstress.",
+      trustTitle: "Sicher, datenschutzbewusst & betreut",
+      trustLead: "Mit Komplett Webdesign bleibt dein Auftritt stabil, technisch sauber und dauerhaft betreut - ohne Technikstress.",
       resourcesTitle: "Weiterführende Ressourcen zu Webdesign und SEO in Berlin",
       resourcesLead: "Diese Guides helfen dir, deinen digitalen Auftritt strategisch weiterzuentwickeln - statt nur zu verwalten.",
       contactNameLabel: "Name",
@@ -884,14 +954,14 @@ export function renderWebdesignBerlinHub(req, res) {
       contactFileHint: "Du kannst bis zu 10 Dateien (max. 15 MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.",
       contactSubmit: "Kostenloses Erstgespräch sichern",
       contactTitle: "Bereit, loszulegen?",
-      contactLead: "Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für mehr Sichtbarkeit, bessere Rankings und mehr Anfragen.<br>Du suchst allgemeine Informationen zur <a href='/'>professionellen Websiteerstellung</a>? Auf unserer Hauptseite findest du alle Leistungen im Überblick - auch für Kunden außerhalb von Berlin.",
+      contactLead: "Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für bessere Struktur, lokale Sichtbarkeit und klare Anfragewege.<br>Du suchst allgemeine Informationen zur <a href='/'>professionellen Websiteerstellung</a>? Auf unserer Hauptseite findest du alle Leistungen im Überblick - auch für Kunden außerhalb von Berlin.",
       directCallLabel: "Oder direkt anrufen"
     };
 
   if (isEn) {
     metaTitle = "Web Design Berlin: Get a Professional Website | Komplett Webdesign";
     metaDescription =
-      "Get a website built in Berlin: modern web design, local SEO, hosting, and ongoing support for freelancers and SMEs from EUR 499.";
+      `Get a website built in Berlin: modern web design, local SEO, hosting, and ongoing support for freelancers and SMEs ${lowestPackagePriceLabel || "by quote"}.`;
 
     hero.title = "Web Design in Berlin: Get a website that wins customers";
     hero.description =
@@ -904,7 +974,7 @@ export function renderWebdesignBerlinHub(req, res) {
     hero.rating.label = formatGoogleRating(lng);
     hero.image.alt = "Sören Blocksdorf - Web Designer Berlin";
     hero.trustBadges = [
-      "Professional website in Berlin from EUR 499",
+      `Professional website in Berlin ${lowestPackagePriceLabel || "by quote"}`,
       "Custom design instead of website builder templates",
       "Response within 24 hours"
     ];
@@ -920,10 +990,10 @@ export function renderWebdesignBerlinHub(req, res) {
 
     services.splice(0, services.length,
       {
-        name: "<a href='/webdesign-berlin/design-ux-ui' style='color:var(--wd-accent)'>Web Design & UX</a>",
+        name: "<a href='/leistungen/website-relaunch' class='wd-link--accent'>Web Design & UX</a>",
         description: "Custom layouts with clear user journeys so visitors turn into leads faster.",
         features: [
-          "<strong><a href='/webdesign-berlin/responsives-design-mobile' style='color:var(--wd-accent)'>Responsive design</a></strong> for desktop, tablet, and smartphone",
+          "<strong><a href='/leistungen/responsives-design-mobile' class='wd-link--accent'>Responsive design</a></strong> for desktop, tablet, and smartphone",
           "<strong>Core Web Vitals</strong> with performance focus",
           "<strong>Clear UX</strong> for better conversion rates",
           "<strong>CMS</strong> for easy content management"
@@ -931,7 +1001,7 @@ export function renderWebdesignBerlinHub(req, res) {
         image: services[0].image
       },
       {
-        name: "<a href='/webdesign-berlin/seo-sichtbarkeit-einsteiger' style='color:var(--wd-accent)'>SEO & Local SEO</a>",
+        name: "<a href='/leistungen/local-seo' class='wd-link--accent'>SEO & Local SEO</a>",
         description: "We combine keyword strategy with local intent so you rank better in Berlin.",
         features: [
           "<strong>On-page SEO</strong> for titles, H1, structure, and internal links",
@@ -942,7 +1012,7 @@ export function renderWebdesignBerlinHub(req, res) {
         image: services[1].image
       },
       {
-        name: "<a href='/webdesign-berlin/domain-hosting-technik' style='color:var(--wd-accent)'>Hosting & Maintenance</a>",
+        name: "<a href='/leistungen/laufende-kosten-website' class='wd-link--accent'>Hosting & Maintenance</a>",
         description: "Stable infrastructure for speed, security, and fewer outages.",
         features: [
           "<strong>Hosting</strong> in ISO-certified data centers",
@@ -958,24 +1028,24 @@ export function renderWebdesignBerlinHub(req, res) {
         features: [
           "<strong>Stripe & PayPal</strong> payment flows",
           "<strong>Online booking</strong> with calendar and reminders",
-          "<strong>Compliant setup</strong> for booking journeys",
+          "<strong>Documented technical setup</strong> for booking journeys",
           "<strong>Tracking</strong> for inquiries and conversions"
         ],
         image: services[3].image
       },
       {
-        name: "<a href='/webdesign-berlin/rechtliches-sicherheit' style='color:var(--wd-accent)'>Compliance & Security</a>",
-        description: "GDPR-ready setup and technical security to build trust.",
+        name: "<a href='/leistungen/rechtliches-sicherheit' class='wd-link--accent'>Compliance & Security</a>",
+        description: "Privacy-conscious technical setup and security basics to build trust.",
         features: [
-          "<strong>Legal notice</strong> and privacy page integrated cleanly",
-          "<strong>Privacy policy</strong> aligned with GDPR basics",
-          "<strong>Cookie banner</strong> configured in a compliant way",
+          "<strong>Legal notice</strong> and privacy pages technically integrated",
+          "<strong>Privacy basics</strong> considered during implementation",
+          "<strong>Cookie/consent notices</strong> prepared depending on the tools used",
           "<strong>Protection</strong> against spam and bots"
         ],
         image: services[4].image
       },
       {
-        name: "<a href='/webdesign-berlin/inhalte-texte-content' style='color:var(--wd-accent)'>Content & Copy</a>",
+        name: "<a href='/leistungen/inhalte-texte-content' class='wd-link--accent'>Content & Copy</a>",
         description: "Clear and persuasive content focused on customer value and inquiries.",
         features: [
           "<strong>Homepage essentials</strong> for local visibility",
@@ -989,23 +1059,23 @@ export function renderWebdesignBerlinHub(req, res) {
 
     packages.splice(0, packages.length,
       {
-        name: "Starter",
-        price: "499 €",
-        anchor: "basis",
-        tagline: "Fast launch",
+        name: "Start",
+        price: priceLabel("start") || "by quote",
+        anchor: "start",
+        tagline: "Compact launch",
         image: "/images/basis.webp",
-        description: "Ideal for solo professionals who want to launch quickly with a professional website.",
+        description: "Ideal for solo professionals who want a compact professional website with clear scope.",
         features: [
-          "One-page site with a clear story and request path",
+          "1 to 3 pages or a clear one-pager",
           "<strong>Mobile-first</strong> layout including performance checks",
-          "Contact form and GDPR core pages",
-          "Google Search Console and basic tracking",
-          "Hosting, SSL, and launch setup"
+          "Technical SEO fundamentals",
+          "Legal pages can be technically integrated",
+          "One feedback round"
         ]
       },
       {
         name: "Business",
-        price: "899 €",
+        price: priceLabel("business") || "by quote",
         anchor: "business",
         tagline: "Most popular for SMEs",
         image: "/images/business.webp",
@@ -1020,18 +1090,18 @@ export function renderWebdesignBerlinHub(req, res) {
         ]
       },
       {
-        name: "Premium",
-        price: "1.499 €",
-        anchor: "premium",
-        tagline: "Everything included",
+        name: "Growth",
+        price: priceLabel("wachstum") || "by quote",
+        anchor: "wachstum",
+        tagline: "More structure",
         image: "/images/premium.webp",
-        description: "For relaunches or complex projects with custom UX and content production.",
+        description: "For larger websites with strategy, content depth and scoped expansion modules.",
         features: [
           "Strategy workshop and customer-journey mapping",
           "Custom design systems and animations",
           "<strong>Content production</strong> (text, photo, video) as needed",
-          "Integrated e-commerce and booking systems",
-          "Ongoing optimization with KPI reporting"
+          "Booking, shop and portals scoped as add-ons",
+          "Ongoing optimization available separately"
         ]
       }
     );
@@ -1067,8 +1137,8 @@ export function renderWebdesignBerlinHub(req, res) {
       { name: "Analysis & Goals", description: "We analyze your offer, target audience, and local competition in Berlin. This creates a clear SEO and content strategy for your website." },
       { name: "Wireframe & Content", description: "We define page structure, messaging, calls to action, and design direction. The result is a robust concept instead of a generic template site." },
       { name: "Design & Development", description: "We build your site mobile-first, fast, and technically clean. Then we run a testing phase with feedback loops and final refinements." },
-      { name: "Launch & Tracking", description: "After approval, your website goes live. We configure tracking and Search Console so visibility, clicks, and inquiries are measurable." },
-      { name: "Maintenance & Growth", description: "After launch, we continue optimizing content, technology, and local rankings. This turns your website into a reliable lead channel." }
+      { name: "Launch & Tracking", description: "After approval, your website goes live. Tracking and Search Console can be configured within the agreed scope so visibility, clicks, and inquiry paths remain traceable." },
+      { name: "Maintenance & Growth", description: "After launch, content, technology, and local visibility can be developed further. This keeps your website a reliable foundation for inquiries." }
     );
 
     industries.splice(0, industries.length,
@@ -1083,7 +1153,7 @@ export function renderWebdesignBerlinHub(req, res) {
     faqs.splice(0, faqs.length,
       {
         question: "How much does it cost to get a website built in Berlin?",
-        answer: "Depending on scope, a professional website usually ranges between <strong>EUR 499 and EUR 2,000</strong>. On our <a href='/en/pakete'>packages</a> page, you can find transparent fixed pricing without hidden costs."
+        answer: `Depending on scope, a professional website starts at <strong>${lowestPackagePriceLabel || "a scoped offer"}</strong>. Start, Business, Growth and individual projects are described transparently on our <a href='/en/pakete'>packages</a> page.`
       },
       {
         question: "How long does website development in Berlin take?",
@@ -1124,11 +1194,11 @@ export function renderWebdesignBerlinHub(req, res) {
     );
 
     trust.splice(0, trust.length,
-      "<strong>Privacy and technical stability</strong> are our baseline for high-performing web design. We implement secure login systems so your data and your customers' data stay protected. We also handle cookie consent and data protection setup early in the planning phase.",
-      "All websites are delivered with <strong>TLS encryption</strong>. This means data between browser and server is encrypted, cannot be read by third parties, and cannot be modified in transit. Certificates also confirm that visitors are connected to the correct domain.",
+      "<strong>Privacy and technical stability</strong> are part of the technical baseline. External services, forms, login areas and cookie/consent notices are planned deliberately and prepared technically. This does not replace legal review when needed.",
+      "Websites are delivered with <strong>TLS encryption</strong>. This protects data transmission between browser and server and reduces risks when forms or login data are sent. Depending on the tools used, additional technical and organizational measures may be needed.",
       "On request, we provide <strong>regular backups</strong> with custom intervals. Pricing depends on data volume and backup frequency.",
-      "If issues arise, we provide <strong>fast support with replies within 24 hours</strong>. Updates and feature releases are scheduled to minimize impact on your users.",
-      "If you need further <strong>support for your Google rankings</strong> after launch, we can continue with structured SEO support.",
+      "If issues arise, we provide <strong>personal support within the agreed scope</strong>. Updates and feature releases are scheduled to minimize impact on your users.",
+      "If you need further <strong>support for visibility on Google</strong> after launch, we can continue with structured SEO support.",
       "Support does not end at launch. We stay available as your <strong>reliable web design partner in Berlin</strong> for the long term."
     );
 
@@ -1153,41 +1223,6 @@ export function renderWebdesignBerlinHub(req, res) {
     if (u.startsWith("//")) return `https:${u}`;
     return `${SITE_URL}${u.startsWith("/") ? "" : "/"}${u}`;
   };
-
-  const normalizePrice = (priceStr = "") => {
-    // "1.499 €" -> "1499"
-    const cleaned = String(priceStr)
-      .replace(/\./g, "")
-      .replace(/[^0-9,]/g, "")
-      .replace(",", ".");
-    const num = Number(cleaned);
-    return Number.isFinite(num) ? String(num) : "";
-  };
-
-  // ---------- Offers (korrekt modelliert) ----------
-  const offerNodes = packages.map((pkg, index) => {
-    const pkgUrl = `${SITE_URL}/pakete/${pkg.anchor || pkg.slug || `pkg-${index + 1}`}`;
-    const price = normalizePrice(pkg.price);
-
-    return {
-      "@type": "Offer",
-      "@id": `${pkgUrl}#offer`,
-      "name": isEn ? `${pkg.name} package` : `${pkg.name} Paket`,
-      "url": pkgUrl,
-      "image": toAbsUrl(pkg.image || DEFAULT_PACKAGE_IMAGE),
-      "description": stripHtml(pkg.description),
-      "priceCurrency": "EUR",
-      ...(price ? { "price": price } : {}),
-      "availability": "https://schema.org/InStock",
-      "itemOffered": {
-        "@type": "Service",
-        "name": isEn ? `${pkg.name} web design` : `${pkg.name} Webdesign`,
-        "serviceType": "Webdesign",
-        "areaServed": [{ "@type": "City", "name": "Berlin" }],
-        "provider": { "@id": `${webdesignBerlinUrl}#localbusiness` }
-      }
-    };
-  });
 
   // ---------- Schema Blocks ----------
   const schema = {
@@ -1240,64 +1275,25 @@ export function renderWebdesignBerlinHub(req, res) {
       ]
     },
 
-    // Tipp: ProfessionalService ist für Webdesign sauberer als "LocalBusiness" (ist aber weiterhin LocalBusiness-Kontext)
-    localBusiness: {
+    service: {
       "@context": "https://schema.org",
-      "@type": "ProfessionalService",
-      "@id": `${webdesignBerlinUrl}#localbusiness`,
-      "name": "Komplett Webdesign Berlin",
+      "@type": "Service",
+      "@id": `${webdesignBerlinUrl}#service`,
+      "name": isEn ? "Web Design Berlin" : "Webdesign Berlin",
+      "serviceType": isEn ? "Web design and website development" : "Webdesign und Website-Erstellung",
       "description":
         isEn
-          ? "Get a website built in Berlin: modern design, strong performance, local SEO, and continuous support. Fixed pricing from EUR 499."
-          : "Webseite in Berlin erstellen lassen: modernes Design, schnelle Ladezeiten, Local SEO & Betreuung. Festpreise ab 499 €. Kostenloses Erstgespräch vereinbaren!",
+          ? "Custom websites for small companies, self-employed people and local service providers in Berlin and Brandenburg."
+          : "Individuelle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin und Brandenburg.",
       "url": webdesignBerlinUrl,
       "inLanguage": isEn ? "en-US" : "de-DE",
-      "telephone": SITE_FACTS.phone,
-      "email": SITE_FACTS.email,
-
-      // bitte nur 1x priceRange – und konkret
-      "priceRange": "€499–€1499",
-
       "image": toAbsUrl("/images/heroBg.webp"),
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": SITE_FACTS.address.streetAddress,
-        "postalCode": SITE_FACTS.address.postalCode,
-        "addressLocality": SITE_FACTS.address.addressLocality,
-        "addressRegion": SITE_FACTS.address.addressRegion,
-        "addressCountry": SITE_FACTS.address.addressCountry
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 52.5163,
-        "longitude": 13.4783
-      },
-
-      // besser als Array (konsistent, erweiterbar)
+      "provider": { "@id": `${SITE_URL}/#organization` },
       "areaServed": [{ "@type": "City", "name": "Berlin" }],
-
-      "hasMap": SITE_FACTS.googleProfileUrl,
-      "sameAs": [
-        SITE_FACTS.googleProfileUrl,
-        "https://www.linkedin.com/in/komplettwebdesign",
-        "https://instagram.com/komplettwebdesign",
-        "https://www.facebook.com/profile.php?id=61579580713573",
-        "https://www.youtube.com/@komplettwebdesign",
-        "https://www.tiktok.com/@komplett.webdesign"
-      ],
-
-      "parentOrganization": {
-        "@id": `${SITE_URL}/#organization`
-      },
-
-      "serviceType": [
-        ...(isEn
-          ? ["Web design", "Website development", "Landing pages", "Relaunch", "SEO", "Hosting", "Maintenance"]
-          : ["Webdesign", "Website erstellen", "Landingpages", "Relaunch", "SEO", "Hosting", "Wartung"])
-      ],
-      
-      // Offers referenzieren (kein Duplicate Content im LocalBusiness)
-      "makesOffer": offerNodes.map((o) => ({ "@id": o["@id"] }))
+      "audience": {
+        "@type": "BusinessAudience",
+        "audienceType": isEn ? "Small businesses and local service providers" : "Kleine Unternehmen und lokale Dienstleister"
+      }
     },
 
     webPage: {
@@ -1314,8 +1310,8 @@ export function renderWebdesignBerlinHub(req, res) {
 
       // saubere Verknüpfung
       "breadcrumb": { "@id": `${webdesignBerlinUrl}#breadcrumbs` },
-      "about": { "@id": `${webdesignBerlinUrl}#localbusiness` },
-      "mainEntity": { "@id": `${webdesignBerlinUrl}#localbusiness` },
+      "about": { "@id": `${webdesignBerlinUrl}#service` },
+      "mainEntity": { "@id": `${webdesignBerlinUrl}#service` },
 
       "primaryImageOfPage": {
         "@type": "ImageObject",
@@ -1336,20 +1332,6 @@ export function renderWebdesignBerlinHub(req, res) {
           "@type": "Answer",
           "text": stripHtml(answer)
         }
-      }))
-    },
-
-    // OfferCatalog ersetzen wir durch ein sauberes ItemList + Offer Nodes
-    // (Google zeigt dafür nicht zwingend Rich Results, aber es ist korrektes, konsistentes Markup)
-    offerCatalog: {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      "@id": `${webdesignBerlinUrl}#offerlist`,
-      "name": isEn ? "Web design packages Berlin" : "Webdesign Pakete Berlin",
-      "itemListElement": offerNodes.map((offer, idx) => ({
-        "@type": "ListItem",
-        "position": idx + 1,
-        "item": offer
       }))
     },
 
@@ -1381,7 +1363,7 @@ export function renderWebdesignBerlinHub(req, res) {
     <meta property="og:image" content="${SITE_URL}/images/heroBg.webp">
   `;
 
-  return res.render("bereiche/webdesign-berlin", {
+  return res.render("bereiche/webdesign-berlin-en", {
     lng,
     pageCopy,
     pagePath,

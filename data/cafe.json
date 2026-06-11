@@ -3,7 +3,7 @@
     "slug": "cafe",
     "name": "Café",
     "title": "Café-Website erstellen lassen – Webdesign & SEO für Cafés",
-    "description": "Professionelle Café-Websites: Speisekarte, Reservierung, SEO, mobil optimiert und schnell. Preise, Funktionen & Beispiele – alles aus einer Hand.",
+    "description": "Professionelle Café-Websites: Speisekarte, Reservierung, SEO, mobil optimiert und schnell. Preise, Funktionen & Beispiele klar abgestimmt.",
     "og_image_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/og_cafe.webp",
 
     "hero_h1": "Café Website erstellen",
@@ -71,7 +71,7 @@
       {
         "icon": "🗺️",
         "label": "Google Maps",
-        "body": "<p>Gepflegtes Unternehmensprofil + Website steigern Anrufe und Wegbeschreibungen messbar.</p>"
+        "body": "<p>Ein gepflegtes Unternehmensprofil und eine klare Website machen Kontakt, Anfahrt und Öffnungszeiten besser auffindbar.</p>"
       },
       {
         "icon": "📅",
@@ -101,7 +101,7 @@
       },
       {
         "title": "Strukturierte Daten",
-        "text": "Schema.org für LocalBusiness, Menu, FAQ. Erhöht Chancen auf Rich Results.",
+        "text": "Schema.org für passende Unternehmens-, Service-, Menü- und FAQ-Informationen, wenn die Angaben sichtbar und korrekt sind.",
         "img_url": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/seo_schema.png",
         "img_alt": "Schema.org Markup Symbol"
       },
@@ -201,7 +201,7 @@
     ],
 
     "cta_headline": "Benötigst du eine Website für dein Café?",
-    "cta_text": "Ein Café lebt von Gästen – und diese finden dich heute online. Eine professionelle Website mit Speisekarte, Bildern, SEO und Reservierungssystem ist dein Schlüssel zu mehr Sichtbarkeit, mehr Besuchern und mehr Umsatz.",
+    "cta_text": "Ein Café lebt von Gästen – und diese informieren sich heute online. Eine professionelle Website mit Speisekarte, Bildern, SEO-Grundlagen und optionaler Reservierung macht dein Angebot besser verständlich und leichter erreichbar.",
     "cta_left_image": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/cta_basis.webp",
     "cta_right_image": "https://res.cloudinary.com/yourcloud/image/upload/industries/cafe/cta_business.webp",
 
@@ -209,8 +209,8 @@
       {
         "q": "Wie lange dauert es, eine Café-Website zu erstellen?",
         "a": "<p>Zwischen 3 und 6 Wochen – je nach Umfang, Inhalten und Funktionen.</p>",
-        "link_url": "/pakete/basis",
-        "link_label": "Zum Basis-Paket"
+        "link_url": "/pakete/start",
+        "link_label": "Zum Start-Paket"
       },
       {
         "q": "Braucht jedes Café eine Website?",
@@ -221,8 +221,8 @@
       {
         "q": "Wie wichtig ist SEO für Cafés?",
         "a": "<p>Sehr wichtig. Lokale Suchanfragen (Google &amp; Maps) entscheiden häufig in Sekunden über den Besuch.</p>",
-        "link_url": "/pakete/premium",
-        "link_label": "Zum Premium-Paket"
+        "link_url": "/pakete/wachstum",
+        "link_label": "Zum Wachstum-Paket"
       },
       {
         "q": "Kann ich meine Speisekarte selbst aktualisieren?",
@@ -230,7 +230,7 @@
       },
       {
         "q": "Bietet ihr auch Online-Reservierungen an?",
-        "a": "<p>Ja. Gäste können direkt über die Website Tische buchen – inkl. Bestätigungs-E-Mail und optionaler Terminverwaltung.</p>"
+        "a": "<p>Ja. Online-Reservierungen können als Zusatzleistung oder individuelles Modul umgesetzt werden, inklusive passender Bestätigungslogik und optionaler Terminverwaltung.</p>"
       }
     ]
   }

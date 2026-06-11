@@ -1,14 +1,13 @@
-<%- include('../partials/head') %>
+<%- include('../partials/head', { extraCssAssets: ['leistungen.css'] }) %>
 <%- include('../partials/header') %>
 
-<link rel="stylesheet" href="<%= cssAsset('seo-landing.css') %>" />
-
-<main class="seo-landing" id="hero">
+<% const heroImage = page.heroImage || null; %>
+<main class="service-page service-page--seo-landing seo-landing" id="hero">
   <article>
-    <header class="seo-landing__hero unified-hero">
-      <div class="seo-landing__container seo-landing__hero-grid unified-hero__grid">
+    <header class="service-hero seo-landing__hero unified-hero <%= heroImage?.src ? 'has-service-hero-image' : '' %>"<% if (heroImage?.src) { %> style="--service-hero-image: url('<%= heroImage.src %>');"<% } %>>
+      <div class="service-hero__grid seo-landing__container seo-landing__hero-grid unified-hero__grid">
         <div class="seo-landing__hero-copy unified-hero__copy">
-          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <nav class="service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
             <ol>
               <% (breadcrumbs || []).forEach(function(item) { %>
               <% if (item.current) { %>
@@ -19,27 +18,46 @@
               <% }); %>
             </ol>
           </nav>
-          <h1><%= page.h1 %></h1>
-          <p class="seo-landing__lead unified-hero__lead"><%= page.intro %></p>
-          <div class="seo-landing__actions unified-hero__actions" aria-label="Projektaktionen">
-            <a class="seo-landing__button seo-landing__button--primary unified-hero__button unified-hero__button--primary" href="<%= page.cta.href %>"><%= page.cta.label %></a>
-            <a class="seo-landing__button seo-landing__button--secondary unified-hero__button unified-hero__button--secondary" href="<%= page.secondaryCta.href %>"><%= page.secondaryCta.label %></a>
+          <p class="service-kicker seo-landing__hero-kicker service-hero-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid <%= heroKicker.icon %>" aria-hidden="true"></i><%= heroKicker.label %></p>
+          <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+          <p class="seo-landing__lead unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.intro %></p>
+          <div class="service-hero__actions seo-landing__actions unified-hero__actions" aria-label="Projektaktionen">
+            <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.cta.href %>" data-track="cta" data-cta-name="seo_landing_hero_primary" data-cta-location="seo_landing_hero"><%= page.cta.label %></a>
+            <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.secondaryCta.href %>" data-track="cta" data-cta-name="seo_landing_hero_secondary" data-cta-location="seo_landing_hero"><%= page.secondaryCta.label %></a>
           </div>
         </div>
-        <aside class="seo-landing__hero-panel unified-hero__panel" aria-label="Projektfokus">
-          <p class="seo-landing__panel-label">Fokus</p>
-          <ul>
-            <% page.sections.slice(0, 3).forEach(function(section) { %>
-            <li><%= section.heading %></li>
-            <% }); %>
-          </ul>
+        <aside class="service-hero__panel seo-landing__hero-panel unified-hero__panel" aria-label="Kurzüberblick">
+          <div class="seo-landing__hero-panel-reveal home-hero-reveal home-hero-reveal--visual animate-on-scroll">
+            <h2><%= heroPanel.title %></h2>
+            <p><%= heroPanel.text %></p>
+            <div class="seo-landing__hero-mini-list">
+              <% heroPanel.items.forEach(function(item) { %>
+              <div><i class="fa-solid <%= item.icon %>" aria-hidden="true"></i><span><%= item.text %></span></div>
+              <% }); %>
+            </div>
+          </div>
         </aside>
       </div>
     </header>
 
+    <% if (page.visual?.image?.src) { %>
+    <section class="seo-landing__container seo-landing__visual-feature" aria-labelledby="seo-landing-visual-title">
+      <figure class="seo-landing__visual-frame">
+        <img src="<%= page.visual.image.src %>" alt="<%= page.visual.image.alt %>" width="941" height="1672" loading="lazy">
+      </figure>
+      <div class="seo-landing__visual-copy">
+        <% if (page.visual.eyebrow) { %>
+        <p class="seo-landing__eyebrow"><%= page.visual.eyebrow %></p>
+        <% } %>
+        <h2 id="seo-landing-visual-title"><%= page.visual.heading %></h2>
+        <p><%= page.visual.text %></p>
+      </div>
+    </section>
+    <% } %>
+
     <section class="seo-landing__container seo-landing__section-list" aria-label="Leistungsdetails">
       <% page.sections.forEach(function(section, index) { %>
-      <section class="seo-landing__section" aria-labelledby="seo-landing-section-<%= index %>">
+      <section class="seo-landing__section" id="<%= section.id || ('section-' + index) %>" aria-labelledby="seo-landing-section-<%= index %>">
         <div class="seo-landing__section-copy">
           <% if (section.eyebrow) { %>
           <p class="seo-landing__eyebrow"><%= section.eyebrow %></p>
@@ -73,30 +91,37 @@
       </div>
     </section>
 
-    <section class="seo-landing__container seo-landing__faq" aria-labelledby="seo-landing-faq-title">
+    <% if (Array.isArray(page.faq) && page.faq.length) { %>
+    <section class="seo-landing__container seo-landing__faq" id="faq" aria-labelledby="seo-landing-faq-title">
       <div class="seo-landing__section-head">
         <p class="seo-landing__eyebrow">FAQ</p>
         <h2 id="seo-landing-faq-title">Häufige Fragen</h2>
       </div>
       <div class="seo-landing__faq-list">
-        <% page.faq.forEach(function(item) { %>
-        <details>
+        <% page.faq.forEach(function(item, index) { %>
+        <details<%= index === 0 ? ' open' : '' %>>
           <summary><%= item.question %></summary>
           <p><%= item.answer %></p>
         </details>
         <% }); %>
       </div>
     </section>
+    <% } %>
 
-    <section class="seo-landing__container seo-landing__cta" aria-labelledby="seo-landing-cta-title">
+    <% const bottomCta = page.finalCta || page.cta; %>
+    <section class="seo-landing__container seo-landing__cta" id="cta" aria-labelledby="seo-landing-cta-title">
       <div>
         <p class="seo-landing__eyebrow">Nächster Schritt</p>
-        <h2 id="seo-landing-cta-title"><%= page.cta.label %></h2>
-        <p><%= page.cta.text %></p>
+        <h2 id="seo-landing-cta-title"><%= bottomCta.label %></h2>
+        <p><%= bottomCta.text %></p>
       </div>
       <div class="seo-landing__actions">
-        <a class="seo-landing__button seo-landing__button--primary" href="<%= page.cta.href %>"><%= page.cta.label %></a>
-        <a class="seo-landing__button seo-landing__button--secondary" href="<%= page.secondaryCta.href %>"><%= page.secondaryCta.label %></a>
+        <a class="btn btn-primary" href="<%= bottomCta.href %>" data-track="cta" data-cta-name="seo_landing_final_primary" data-cta-location="seo_landing_final"><%= bottomCta.label %></a>
+        <% if (bottomCta.secondaryHref && bottomCta.secondaryLabel) { %>
+        <a class="btn btn-secondary" href="<%= bottomCta.secondaryHref %>" data-track="cta" data-cta-name="seo_landing_final_secondary" data-cta-location="seo_landing_final"><%= bottomCta.secondaryLabel %></a>
+        <% } else { %>
+        <a class="btn btn-secondary" href="<%= page.secondaryCta.href %>" data-track="cta" data-cta-name="seo_landing_final_secondary" data-cta-location="seo_landing_final"><%= page.secondaryCta.label %></a>
+        <% } %>
       </div>
     </section>
   </article>

@@ -26,25 +26,82 @@
     || (normalizedCurrentPath.startsWith('/en/') ? '/' : '/'); %>
   <% const switchToEnHref = `${switchToEnPath}${currentSearchPart}`; %>
   <% const switchToDeHref = `${switchToDePath}${currentSearchPart}`; %>
-  <% const toEnLabel = (label) => {
-    const map = {
-      Restaurants: 'Restaurants',
-      Handwerksbetriebe: 'Trades',
-      Cafés: 'Cafes',
-      Cafe: 'Cafe',
-      Kontakt: 'Contact',
-      Preise: 'Pricing',
-      Ratgeber: 'Guides',
-      Branchen: 'Industries'
+  <% const navItems = (typeof headerNavigation !== 'undefined' && Array.isArray(headerNavigation)) ? headerNavigation : []; %>
+  <% const navCta = (typeof headerCta !== 'undefined' && headerCta) ? headerCta : { label: 'Projekt anfragen', labelEn: 'Request project', href: '/kontakt', hrefEn: '/en/kontakt' }; %>
+  <% const navHref = (item = {}) => (isEn && item.hrefEn ? item.hrefEn : item.href); %>
+  <% const navLabel = (item = {}) => (isEn && item.labelEn ? item.labelEn : item.label); %>
+  <% const normalizeNavPath = (href = '/') => {
+    const path = String(href || '/').split('?')[0].replace(/\/+$/, '');
+    return path || '/';
+  }; %>
+  <% const normalizeIconPath = (href = '/') => normalizeNavPath(href).replace(/^\/en(?=\/|$)/, '') || '/'; %>
+  <% const navIconMap = {
+    '/': '/images/nav-icons/start.svg',
+    '/webdesign-berlin': '/images/nav-icons/webdesign.svg',
+    '/pakete': '/images/nav-icons/packages.svg',
+    '/leistungen': '/images/nav-icons/services.svg',
+    '/leistungen/website-relaunch': '/images/nav-icons/relaunch.svg',
+    '/leistungen/local-seo': '/images/nav-icons/local-seo.svg',
+    '/leistungen/landingpage-erstellen-lassen': '/images/nav-icons/landingpage.svg',
+    '/leistungen/website-audit': '/images/nav-icons/audit.svg',
+    '/leistungen/responsives-design-mobile': '/images/nav-icons/responsive.svg',
+    '/leistungen/inhalte-texte-content': '/images/nav-icons/content.svg',
+    '/leistungen/rechtliches-sicherheit': '/images/nav-icons/legal-security.svg',
+    '/leistungen/website-wartung': '/images/nav-icons/maintenance.svg',
+    '/leistungen/zusatzleistungen-webdesign': '/images/nav-icons/addons.svg',
+    '/leistungen/laufende-kosten-website': '/images/nav-icons/running-costs.svg',
+    '/referenzen': '/images/nav-icons/references.svg',
+    '/branchen': '/images/nav-icons/industries.svg',
+    '/kontakt': '/images/nav-icons/contact.svg'
+  }; %>
+  <% const navDescriptionMap = {
+    de: {
+      '/leistungen': 'Alle Leistungen im Überblick.',
+      '/leistungen/website-relaunch': 'Bestehende Website geordnet erneuern.',
+      '/leistungen/local-seo': 'Lokale Sichtbarkeit sauber vorbereiten.',
+      '/leistungen/landingpage-erstellen-lassen': 'Gezielte Seite für Kampagnen und Anfragen.',
+      '/leistungen/website-audit': 'Website prüfen und konkrete Schritte ableiten.',
+      '/leistungen/responsives-design-mobile': 'Mobile Darstellung und Bedienung sauber planen.',
+      '/leistungen/inhalte-texte-content': 'Texte und Inhalte verständlich strukturieren.',
+      '/leistungen/rechtliches-sicherheit': 'Rechtstexte technisch einbinden und Risiken einordnen.',
+      '/leistungen/website-wartung': 'Technische Betreuung nach dem Launch.',
+      '/leistungen/zusatzleistungen-webdesign': 'Erweiterungen separat und klar kalkulieren.',
+      '/leistungen/laufende-kosten-website': 'Domain, Hosting, Tools und Betrieb einordnen.',
+      '/branchen': 'Branchen-Websites passend einordnen.'
+    },
+    en: {
+      '/leistungen': 'Overview of all services.',
+      '/leistungen/website-relaunch': 'Renew an existing website in a structured way.',
+      '/leistungen/local-seo': 'Prepare clean local visibility signals.',
+      '/leistungen/landingpage-erstellen-lassen': 'Focused pages for campaigns and enquiries.',
+      '/leistungen/website-audit': 'Review your website and define next steps.',
+      '/leistungen/responsives-design-mobile': 'Plan mobile layout and usability cleanly.',
+      '/leistungen/inhalte-texte-content': 'Structure copy and content clearly.',
+      '/leistungen/rechtliches-sicherheit': 'Integrate legal texts technically and frame risks.',
+      '/leistungen/website-wartung': 'Technical support after launch.',
+      '/leistungen/zusatzleistungen-webdesign': 'Plan add-ons clearly and separately.',
+      '/leistungen/laufende-kosten-website': 'Understand domain, hosting, tools and operation.',
+      '/branchen': 'Structure industry websites clearly.'
+    }
+  }; %>
+  <% const navIcon = (item = {}) => navIconMap[normalizeIconPath(navHref(item))] || '/images/nav-icons/services.svg'; %>
+  <% const navDescription = (item = {}) => {
+    const key = normalizeIconPath(navHref(item));
+    return (isEn ? navDescriptionMap.en[key] : navDescriptionMap.de[key]) || '';
+  }; %>
+  <% const isActiveNavItem = (item = {}) => {
+    const hrefPath = normalizeNavPath(navHref(item));
+    const children = Array.isArray(item.children) ? item.children : [];
+    const isSameOrChildPath = (candidatePath, targetPath) => {
+      if (!targetPath || targetPath === '/') {
+        return candidatePath === targetPath;
+      }
+      return candidatePath === targetPath || candidatePath.startsWith(`${targetPath}/`);
     };
-    return map[label] || label;
+    return isSameOrChildPath(normalizedCurrentPath, hrefPath)
+      || children.some(child => isSameOrChildPath(normalizedCurrentPath, normalizeNavPath(navHref(child))));
   }; %>
-  <% const isExcludedIndustryNavItem = (item = {}) => {
-    const text = [item.nav, item.name, item.slug].filter(Boolean).join(' ').toLowerCase();
-    return ['kita', 'kitas', 'schule', 'schulen', 'school', 'schools', 'daycare', 'daycares', 'kindergarten'].some((needle) => text.includes(needle));
-  }; %>
-  <% const visibleNavPages = ((typeof navPages !== 'undefined' && navPages) ? navPages : []).filter((page) => !isExcludedIndustryNavItem(page)); %>
-  <% const visibleNavIndustries = ((typeof navIndustries !== 'undefined' && navIndustries) ? navIndustries : []).filter((industry) => !isExcludedIndustryNavItem(industry)); %>
+  <% const isActiveSubNavItem = (item = {}) => normalizedCurrentPath === normalizeNavPath(navHref(item)); %>
   <div class="topWhiteGradient">
     <div class="topWhiteGradients"></div>
 
@@ -54,85 +111,75 @@
           <img src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" role="presentation" />
         </a>
         <div class="nav-right">
-          <img src="/images/Nav-Bar-Icon.svg" alt="Menu Icon" class="menu-icon" id="menu-icon" />
-          <div class="links heroLinks" id="nav-links">
-            <a href="<%= homeHref %>">Home</a>
-            <a href="<%= isEn ? '/en/kontakt' : '/kontakt' %>"><%= isEn ? 'Contact' : 'Kontakt' %></a>
-            <a href="<%= isEn ? '/en/pakete' : '/pakete' %>"><%= isEn ? 'Pricing' : 'Preise' %></a>
-            <a href="/referenzen"><%= isEn ? 'References' : 'Referenzen' %></a>
-            <nav class="main-nav">
-              <ul>
-                <li class="dropdown">
-                  <div class="dropdown-toggle">
-                    <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>">Webdesign Berlin</a>
-                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open Webdesign Berlin submenu' : 'Webdesign Berlin Untermenü öffnen' %>">
-                      ▾
-                    </button>
-                  </div>
-                  <ul class="dropdown-menu">
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="main-color">Berlin</a></li>
-                    <% if (!isEn) { %>
-                    <li><a href="/website-erstellen-lassen-berlin" class="main-color">Website erstellen</a></li>
-                    <li><a href="/ablauf" class="main-color">Ablauf</a></li>
-                    <li><a href="/website-relaunch-berlin" class="main-color">Relaunch</a></li>
-                    <% } %>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/kreuzberg' : '/webdesign-berlin/kreuzberg' %>" class="main-color">Kreuzberg</a></li>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/friedrichshain' : '/webdesign-berlin/friedrichshain' %>" class="main-color">Friedrichshain</a></li>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/charlottenburg' : '/webdesign-berlin/charlottenburg' %>" class="main-color">Charlottenburg</a></li>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/lichtenberg' : '/webdesign-berlin/lichtenberg' %>" class="main-color">Lichtenberg</a></li>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/mitte' : '/webdesign-berlin/mitte' %>" class="main-color">Mitte</a></li>
-                    <li><a href="<%= isEn ? '/en/webdesign-berlin/prenzlauer-berg' : '/webdesign-berlin/prenzlauer-berg' %>" class="main-color">Prenzlauer-Berg</a></li>
+          <button
+            type="button"
+            class="menu-icon"
+            id="menu-icon"
+            aria-controls="nav-links"
+            aria-expanded="false"
+            data-label-open="<%= isEn ? 'Open main navigation' : 'Hauptnavigation öffnen' %>"
+            data-label-close="<%= isEn ? 'Close main navigation' : 'Hauptnavigation schließen' %>"
+            aria-label="<%= isEn ? 'Open main navigation' : 'Hauptnavigation öffnen' %>"
+          >
+            <img src="/images/Nav-Bar-Icon.svg" alt="" aria-hidden="true" />
+          </button>
+          <button type="button" class="mobile-nav-backdrop" id="mobile-nav-backdrop" hidden aria-label="<%= isEn ? 'Close navigation' : 'Navigation schließen' %>"></button>
+          <div class="links heroLinks mobile-nav-panel" id="nav-links" aria-label="<%= isEn ? 'Main navigation' : 'Hauptnavigation' %>">
+            <div class="mobile-nav-panel__header">
+              <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="<%= isEn ? 'Close navigation' : 'Navigation schließen' %>">×</button>
+              <a href="<%= homeHref %>" class="mobile-nav-brand" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
+                <img src="/images/LogoTransparent.webp" alt="Komplett Webdesign" />
+              </a>
+            </div>
+            <% navItems.forEach((item) => { %>
+              <% const itemChildren = Array.isArray(item.children) ? item.children : []; %>
+              <% const itemHref = navHref(item); %>
+              <% if (itemChildren.length) { %>
+                <nav class="main-nav" aria-label="<%= navLabel(item) %>">
+                  <ul>
+                    <li class="dropdown <%= isActiveNavItem(item) ? 'is-active' : '' %>">
+                      <div class="dropdown-toggle">
+                        <a href="<%= itemHref %>" class="nav-link-item <%= isActiveNavItem(item) ? 'is-active' : '' %>">
+                          <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                          <span class="mobile-nav-label"><%= navLabel(item) %></span>
+                        </a>
+                        <button class="dropdown-toggle-btn" type="button" aria-expanded="false" aria-label="<%= isEn ? `Open ${navLabel(item)} submenu` : `${navLabel(item)} Untermenü öffnen` %>">
+                          ▾
+                        </button>
+                      </div>
+                      <ul class="dropdown-menu">
+                        <% itemChildren.forEach((child) => { %>
+                          <li>
+                            <a href="<%= navHref(child) %>" class="main-color nav-sub-link <%= isActiveSubNavItem(child) ? 'is-active' : '' %>">
+                              <span class="mobile-nav-icon"><img src="<%= navIcon(child) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                              <span class="mobile-nav-copy">
+                                <span class="mobile-nav-label"><%= navLabel(child) %></span>
+                                <% if (navDescription(child)) { %>
+                                  <span class="mobile-nav-description"><%= navDescription(child) %></span>
+                                <% } %>
+                              </span>
+                            </a>
+                          </li>
+                        <% }) %>
+                      </ul>
+                    </li>
                   </ul>
-                </li>
-              </ul>
-            </nav>
-            <nav class="main-nav">
-              <ul>
-                <li class="dropdown">
-                  <div class="dropdown-toggle">
-                    <a href="/branchen"><%= isEn ? 'Industries' : 'Branchen' %></a>
-                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open industries submenu' : 'Branchen Untermenü öffnen' %>">
-                      ▾
-                    </button>
-                  </div>
-                  <ul class="dropdown-menu">
-                    <% visibleNavPages.forEach(page=> { %>
-                    <li><a href="/<%= page.slug %>" class="main-color">
-                        <%= isEn ? toEnLabel(page.nav) : page.nav %>
-                      </a></li>
-                    <% }) %>
-                    <% visibleNavIndustries.forEach(industry => { %>
-                    <% const slug = industry.slug || ''; %>
-                    <% const href = `/branchen/${slug.startsWith('webdesign-') ? slug : `webdesign-${slug}`}`; %>
-                    <li><a href="<%= href %>" class="main-color"><%= isEn ? toEnLabel(industry.name) : industry.name %></a></li>
-                    <% }) %>
-                  </ul>
-                </li>
-              </ul>
-            </nav>
-            <nav class="main-nav">
-              <ul>
-                <li class="dropdown">
-                  <div class="dropdown-toggle">
-                    <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>">Website Tester</a>
-                    <button class="dropdown-toggle-btn" type="button" aria-label="<%= isEn ? 'Open website tester submenu' : 'Website-Tester Untermenü öffnen' %>">
-                      ▾
-                    </button>
-                  </div>
-                  <ul class="dropdown-menu">
-                    <li><a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" class="main-color"><%= isEn ? 'Complete Test' : 'Komplett Test' %></a></li>
-                    <li><a href="<%= isEn ? '/en/website-tester/broken-links' : '/website-tester/broken-links' %>" class="main-color"><%= isEn ? 'Broken Links' : 'Fehlerhafte Links' %></a></li>
-                    <li><a href="<%= isEn ? '/en/website-tester/geo' : '/website-tester/geo' %>" class="main-color">GEO Tester</a></li>
-                    <li><a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>" class="main-color">SEO Tester</a></li>
-                    <li><a href="<%= isEn ? '/en/website-tester/meta' : '/website-tester/meta' %>" class="main-color">Meta Tester</a></li>
-                  </ul>
-                </li>
-              </ul>
-            </nav>
-            <a href="/blog">Blog</a>
-            <a href="<%= isEn ? '/en/booking' : '/booking' %>" class="btn btn-tertiary"><%= isEn ? 'Book a call' : 'Termin buchen' %></a>
-            <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>
-            <!-- <a href="/reservation" class="reserve-button">Reservierung</a> -->
+                </nav>
+              <% } else { %>
+                <a href="<%= itemHref %>" class="nav-link-item <%= isActiveNavItem(item) ? 'is-active' : '' %>">
+                  <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                  <span class="mobile-nav-label"><%= navLabel(item) %></span>
+                </a>
+              <% } %>
+            <% }) %>
+            <div class="mobile-nav-actions">
+              <a href="<%= navHref(navCta) %>" class="btn btn-primary" data-track="cta" data-cta-name="header_project_request" data-cta-location="global_header">
+                <span class="mobile-nav-icon"><img src="<%= navIcon(navCta) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                <span><%= navLabel(navCta) %></span>
+              </a>
+              <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>
+              <span class="mobile-nav-note"><%= isEn ? 'Personal and clearly scoped' : 'Unverbindlich und persönlich' %></span>
+            </div>
           </div>
         </div>
       </div>

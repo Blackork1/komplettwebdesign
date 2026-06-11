@@ -2,14 +2,20 @@
   // Basis-Variablen für Schema.org
   const baseUrl = (typeof canonicalBaseUrl !== 'undefined'
     ? canonicalBaseUrl
-    : 'https://www.komplettwebdesign.de'
+    : 'https://komplettwebdesign.de'
   ).replace(/\/$/, '');
 
   const pageSlug = page.slug || '';
-  const pageUrl = `${baseUrl}/webdesign-berlin/${pageSlug}`;
+  const isPricePage = pageSlug === 'kosten-preise-pakete';
+  const canonicalPath = page.canonicalPath || (isPricePage ? `/webdesign-berlin/${pageSlug}` : `/leistungen/${pageSlug}`);
+  const pageUrl = `${baseUrl}${canonicalPath}`;
+  const parentBreadcrumb = isPricePage
+    ? { label: 'Webdesign Berlin', href: '/webdesign-berlin' }
+    : { label: 'Leistungen', href: '/leistungen' };
   const pageName = (page.hero && page.hero.title) || page.title || title || 'Leistung';
   const pageDesc = description || page.meta_description || (page.hero && page.hero.subtitle) || '';
-  const updatedIso = page.updatedAt ? new Date(page.updatedAt).toISOString() : null;
+  const updatedDate = page.updatedAt ? new Date(page.updatedAt) : null;
+  const updatedIso = updatedDate && !Number.isNaN(updatedDate.getTime()) ? updatedDate.toISOString() : null;
   const orgName = typeof schemaOrgName !== 'undefined' ? schemaOrgName : 'Komplett Webdesign';
   const orgLogo = typeof schemaOrgLogo !== 'undefined' ? schemaOrgLogo : `${baseUrl}/images/LogoWhite.svg`;
   const orgSameAs = (typeof schemaOrgSameAs !== 'undefined' && Array.isArray(schemaOrgSameAs))
@@ -63,8 +69,8 @@
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Webdesign-Berlin",
-        "item": baseUrl + "/webdesign-berlin"
+        "name": parentBreadcrumb.label,
+        "item": baseUrl + parentBreadcrumb.href
       },
       {
         "@type": "ListItem",
@@ -75,7 +81,7 @@
     ]
   };
 
-  // Service + OfferCatalog aus den Services dieser Unterseite
+  // Service-Schema ohne Angebotskatalog, weil die sichtbaren Leistungen projektabhängig kalkuliert werden.
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -88,24 +94,6 @@
       "@id": baseUrl + "#organization"
     }
   };
-
-  if (page.services && page.services.length) {
-    serviceSchema.hasOfferCatalog = {
-      "@type": "OfferCatalog",
-      "name": pageName + " – Leistungen",
-      "itemListElement": page.services.map(function(s, index) {
-        return {
-          "@type": "Offer",
-          "position": index + 1,
-          "itemOffered": {
-            "@type": "Service",
-            "name": s.title,
-            "description": s.intro || (s.content && s.content[0]) || ''
-          }
-        };
-      })
-    };
-  }
 
   // WebPage (verweist auf Service & Breadcrumb)
   const webPageSchema = {
@@ -164,783 +152,149 @@
     faqSchema
   ].filter(Boolean);
 %>
-<%- include('../partials/head', { title, description, ogImage, structuredDataBlocks }) %>
+<%- include('../partials/head', { title, description, ogImage, structuredDataBlocks, extraCssAssets: ['leistungen.css'] }) %>
 <%- include('../partials/header') %>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
 
-  /* Farb- & Typo-Setup für Leistungsseiten */
-  .leistungen-page {
-    --wd-bg: #f4f7fb;
-    --wd-sand: #f8fbff;
-    --wd-ink: #0b2a46;
-    --wd-muted: #526173;
-    --wd-accent: #e94a1b;
-    --wd-accent-strong: #b93618;
-    --wd-border: rgba(11, 42, 70, 0.14);
-
-    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.7;
-    color: var(--wd-ink);
-    background: linear-gradient(180deg, var(--wd-sand) 0%, #ffffff 60%);
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-  }
-
-  /* Breadcrumbs oben */
-  .breadcrumbs {
-    font-size: 0.85em;
-    color: #8b8175;
-    margin-bottom: 25px;
-  }
-
-  .breadcrumbs ol {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .breadcrumbs li {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .breadcrumbs li+li::before {
-    content: "/";
-    color: #c7bfb4;
-  }
-
-  .breadcrumbs a {
-    color: #8b8175;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .breadcrumbs a:hover {
-    color: var(--wd-accent-strong);
-  }
-
-  .breadcrumbs li[aria-current="page"] {
-    color: var(--wd-ink);
-    font-weight: 500;
-  }
-
-  /* Hero Section (Layout unverändert, Farben angepasst) */
-  .hero {
-    background: linear-gradient(135deg,
-        var(--wd-accent) 0%,
-        var(--wd-accent-strong) 100%);
-    color: #ffffff;
-    padding: 80px 40px;
-    border-radius: 20px;
-    margin-bottom: 60px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    height: auto;
-  }
-
-  .hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle,
-        rgba(255, 255, 255, 0.16) 0%,
-        transparent 70%);
-    animation: pulse 15s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-
-    0%,
-    100% {
-      transform: translate(0, 0) scale(1);
+<%
+  const serviceHeroKickers = {
+    'design-ux-ui': { icon: 'fa-arrows-rotate', label: 'Website-Relaunch' },
+    'seo-sichtbarkeit-einsteiger': { icon: 'fa-magnifying-glass-location', label: 'Lokale Sichtbarkeit' },
+    'responsives-design-mobile': { icon: 'fa-mobile-screen-button', label: 'Mobile Nutzerführung' },
+    'domain-hosting-technik': { icon: 'fa-server', label: 'Technische Grundlage' },
+    'inhalte-texte-content': { icon: 'fa-file-lines', label: 'Website-Inhalte' },
+    'rechtliches-sicherheit': { icon: 'fa-shield-halved', label: 'Technik & Vertrauen' },
+    'kosten-preise-pakete': { icon: 'fa-euro-sign', label: 'Kostenklarheit' }
+  };
+  const serviceHeroPanels = {
+    'design-ux-ui': {
+      title: 'Was du realistisch bekommst',
+      text: 'Ein Relaunch wird als strukturierte Erneuerung geplant. Ich prüfe, welche Inhalte, Nutzerwege und technischen Schritte für deinen Umfang sinnvoll sind.',
+      items: [
+        { icon: 'fa-sitemap', text: 'Bestehende Struktur, Inhalte und Ziele sauber einordnen.' },
+        { icon: 'fa-arrow-right-arrow-left', text: 'Weiterleitungen und wichtige URLs bewusst planen.' },
+        { icon: 'fa-list-check', text: 'Design, Technik und SEO-Risiken vor dem Launch prüfen.' }
+      ]
+    },
+    'seo-sichtbarkeit-einsteiger': {
+      title: 'Was du realistisch bekommst',
+      text: 'Local SEO wird als Grundlage und Zusatzleistung geplant. Ich prüfe, welche lokalen Seiten, Profilangaben und technischen Signale für deinen Umfang sinnvoll sind.',
+      items: [
+        { icon: 'fa-location-dot', text: 'Lokale Suchintention und Einzugsgebiet klären.' },
+        { icon: 'fa-building-circle-check', text: 'Website, Profil und Kontaktwege zusammen denken.' },
+        { icon: 'fa-receipt', text: 'Preisrahmen vor der Umsetzung sauber abgrenzen.' }
+      ]
+    },
+    'responsives-design-mobile': {
+      title: 'Was du realistisch bekommst',
+      text: 'Mobile Optimierung wird als Nutzerführung geplant. Ich prüfe, welche Inhalte, CTAs und technischen Grenzen auf Smartphone und Desktop funktionieren müssen.',
+      items: [
+        { icon: 'fa-mobile-screen-button', text: 'Lesbarkeit, Abstände und Bedienung mobil prüfen.' },
+        { icon: 'fa-bolt', text: 'Ladezeit und technische Basis realistisch einordnen.' },
+        { icon: 'fa-phone-volume', text: 'Kontaktwege auf mobilen Geräten klar erreichbar machen.' }
+      ]
+    },
+    'domain-hosting-technik': {
+      title: 'Was du realistisch bekommst',
+      text: 'Domain, Hosting und Technik werden als Betriebsgrundlage geplant. Ich ordne Setup, Zuständigkeiten und laufende Kosten vor der Umsetzung nachvollziehbar ein.',
+      items: [
+        { icon: 'fa-server', text: 'Hosting, Domain und E-Mail sauber trennen.' },
+        { icon: 'fa-shield-halved', text: 'Backups, SSL und Monitoring passend zum Setup prüfen.' },
+        { icon: 'fa-screwdriver-wrench', text: 'Wartung und Support als laufenden Rahmen abgrenzen.' }
+      ]
+    },
+    'inhalte-texte-content': {
+      title: 'Was du realistisch bekommst',
+      text: 'Website-Texte werden als Teil der Nutzerführung geplant. Ich kläre, welche Aussagen, Leistungsseiten und Kontaktimpulse für dein Angebot nötig sind.',
+      items: [
+        { icon: 'fa-comments', text: 'Angebot, Zielgruppe und Einwände sprachlich klären.' },
+        { icon: 'fa-layer-group', text: 'Startseite, Leistungen und Kontaktwege zusammen denken.' },
+        { icon: 'fa-magnifying-glass', text: 'Suchintention und Lesbarkeit ohne Keyword-Überladung verbinden.' }
+      ]
+    },
+    'rechtliches-sicherheit': {
+      title: 'Was du realistisch bekommst',
+      text: 'Rechtliches und Sicherheit werden technisch sauber vorbereitet. Ich ordne vorhandene Texte, Einbindungen und Sicherheitsgrundlagen ohne Rechtsberatung ein.',
+      items: [
+        { icon: 'fa-scale-balanced', text: 'Impressum, Datenschutz und Cookie-Logik technisch berücksichtigen.' },
+        { icon: 'fa-lock', text: 'SSL, Backups und Basis-Sicherheit sauber einplanen.' },
+        { icon: 'fa-triangle-exclamation', text: 'Grenzen und externe Rechtsprüfung transparent benennen.' }
+      ]
+    },
+    'kosten-preise-pakete': {
+      title: 'Was du realistisch einordnen kannst',
+      text: 'Website-Preise werden als Rahmen geplant. Ich trenne Projektkosten, laufende Kosten und Zusatzleistungen, bevor ein Angebot entsteht.',
+      items: [
+        { icon: 'fa-layer-group', text: 'Paketumfang und Seitenstruktur klären.' },
+        { icon: 'fa-server', text: 'Betriebskosten separat betrachten.' },
+        { icon: 'fa-receipt', text: 'Zusatzleistungen vorab abgrenzen.' }
+      ]
     }
-
-    50% {
-      transform: translate(-10%, -10%) scale(1.1);
-    }
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  .hero h1 {
-    font-size: 2.8em;
-    margin-bottom: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .hero-subtitle {
-    font-size: 1.3em;
-    opacity: 0.96;
-    max-width: 860px;
-    margin: 0 auto 18px;
-    line-height: 1.6;
-  }
-
-  .hero-answer {
-    max-width: 860px;
-    margin: 0 auto 18px;
-    font-size: 1.06em;
-    line-height: 1.75;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 16px 18px;
-    border-radius: 12px;
-  }
-
-  .hero-cta-variants {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
-  }
-
-  .hero-cta-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    border-radius: 999px;
-    padding: 12px 20px;
-    font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  }
-
-  .hero-cta-button:hover {
-    transform: translateY(-2px);
-  }
-
-  .hero-cta-button--primary {
-    background: #ffffff;
-    color: var(--wd-accent-strong);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
-  }
-
-  .hero-cta-button--primary:hover {
-    background: #fdf8f4;
-  }
-
-  .hero-cta-button--secondary {
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.46);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .hero-cta-button--secondary:hover {
-    background: rgba(255, 255, 255, 0.18);
-  }
-
-  .hero-icons {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-top: 40px;
-    flex-wrap: wrap;
-  }
-
-  .hero-icon-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .hero-icon-item i {
-    font-size: 2.5em;
-    opacity: 0.95;
-    color: #ffffff;
-  }
-
-  .hero-icon-item span {
-    font-size: 0.9em;
-    opacity: 0.9;
-  }
-
-  .hero-icon-item:hover {
-    transform: translateY(-5px);
-  }
-
-  /* Problem-Solution Section */
-  .problem-solution {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    margin-bottom: 60px;
-  }
-
-  .card {
-    background: #ffffff;
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--wd-border);
-    transition: transform 0.3s ease, box-shadow 0.3s ease,
-      border-color 0.3s ease;
-  }
-
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-    border-color: var(--wd-accent);
-  }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-
-  .card-icon {
-    font-size: 2.5em;
-    width: 70px;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    color: #ffffff;
-  }
-
-  .problem-card .card-icon {
-    background: linear-gradient(135deg,
-        var(--wd-accent-strong) 0%,
-        var(--wd-accent) 100%);
-  }
-
-  .solution-card .card-icon {
-    background: linear-gradient(135deg, var(--wd-accent) 0%, #f4a17a 100%);
-  }
-
-  .card h2 {
-    font-size: 1.8em;
-    color: var(--wd-ink);
-  }
-
-  .card p {
-    font-size: 1.05em;
-    line-height: 1.8;
-    color: var(--wd-muted);
-  }
-
-  /* Services Intro */
-  .services-intro {
-    background: #ffffff;
-    padding: 40px;
-    border-radius: 15px;
-    margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--wd-border);
-    text-align: center;
-  }
-
-  .services-intro h2 {
-    font-size: 2em;
-    margin-bottom: 15px;
-    color: var(--wd-ink);
-  }
-
-  .services-intro p {
-    color: var(--wd-muted) !important;
-  }
-
-  /* Services Grid */
-  .services-grid {
-    display: grid;
-    gap: 30px;
-    margin-bottom: 60px;
-  }
-
-  .service-item {
-    background: #ffffff;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--wd-border);
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-
-  .service-item:hover {
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
-    transform: translateY(-3px);
-    border-color: var(--wd-accent);
-  }
-
-  .service-header {
-    background: linear-gradient(135deg,
-        #86351dbd 0%,
-        var(--wd-accent-strong) 100%);
-    color: #ffffff;
-    padding: 30px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .service-icon {
-    font-size: 2.5em;
-    min-width: 60px;
-  }
-
-  .service-title {
-    font-size: 1.6em;
-    font-weight: 600;
-    flex: 1;
-  }
-
-  .expand-indicator {
-    font-size: 1.2em;
-    transition: transform 0.3s ease;
-  }
-
-  .service-content {
-    padding: 0 30px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease, padding 0.5s ease;
-  }
-
-  .service-item.active .service-content {
-    max-height: 2000px;
-    padding: 30px;
-  }
-
-  .service-content p {
-    margin-bottom: 15px;
-    font-size: 1.05em;
-    line-height: 1.8;
-    color: var(--wd-muted);
-  }
-
-  .service-content ul {
-    list-style: none;
-    padding-left: 0;
-    margin: 20px 0;
-  }
-
-  .service-content li {
-    padding: 10px 0 10px 30px;
-    position: relative;
-    font-size: 1.05em;
-    color: var(--wd-muted);
-  }
-
-  .service-content li:before {
-    content: "✓";
-    position: absolute;
-    left: 0;
-    color: var(--wd-accent);
-    font-weight: bold;
-    font-size: 1.2em;
-  }
-
-  .service-item.active .expand-indicator {
-    transform: rotate(180deg);
-  }
-
-  /* Risk Assessment Section */
-  .risk-section {
-    background: linear-gradient(135deg, #fff4ec 0%, var(--wd-sand) 100%);
-    color: var(--wd-ink);
-    padding: 50px 40px;
-    border-radius: 15px;
-    margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--wd-border);
-  }
-
-  .risk-section h2 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    text-align: center;
-    color: var(--wd-ink);
-  }
-
-  .risk-section h2 i {
-    color: var(--wd-accent);
-    margin-right: 8px;
-  }
-
-  .risk-content {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .risk-content>p {
-    font-size: 1.05em;
-    line-height: 1.8;
-    color: var(--wd-muted);
-  }
-
-  .risk-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin: 30px 0;
-  }
-
-  .risk-item {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(233, 74, 27, 0.16);
-    transition: transform 0.3s ease, box-shadow 0.3s ease,
-      border-color 0.3s ease;
-    color: var(--wd-muted);
-  }
-
-  .risk-item i {
-    font-size: 2em;
-    margin-bottom: 10px;
-    display: block;
-    color: var(--wd-accent);
-  }
-
-  .risk-item strong {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 1.1em;
-    color: var(--wd-ink);
-  }
-
-  .risk-item:hover {
-    transform: scale(1.03);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    border-color: var(--wd-accent);
-  }
-
-  .risk-content p[style] {
-    color: var(--wd-muted) !important;
-  }
-
-  .proof-trust-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 40px;
-  }
-
-  .proof-card,
-  .trust-card {
-    background: #ffffff;
-    border-radius: 15px;
-    border: 1px solid var(--wd-border);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    padding: 32px;
-  }
-
-  .proof-card h2,
-  .trust-card h2 {
-    font-size: 1.65em;
-    margin-bottom: 12px;
-  }
-
-  .proof-card p,
-  .trust-card p {
-    color: var(--wd-muted);
-  }
-
-  .leistungen-examples {
-    background: #ffffff;
-    border: 1px solid var(--wd-border);
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    margin-bottom: 40px;
-    padding: 32px;
-  }
-
-  .leistungen-examples h2 {
-    font-size: 1.8em;
-    margin-bottom: 10px;
-  }
-
-  .leistungen-examples>p {
-    color: var(--wd-muted);
-    margin-bottom: 22px;
-    max-width: 780px;
-  }
-
-  .leistungen-example-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-  }
-
-  .leistungen-example {
-    background: #fff9f5;
-    border: 1px solid rgba(233, 74, 27, 0.18);
-    border-radius: 12px;
-    padding: 20px;
-  }
-
-  .leistungen-example h3 {
-    font-size: 1.1em;
-    line-height: 1.35;
-    margin-bottom: 14px;
-  }
-
-  .leistungen-example dl {
-    display: grid;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .leistungen-example dt {
-    color: var(--wd-muted);
-    font-size: 0.85em;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .leistungen-example dd {
-    color: var(--wd-ink);
-    font-weight: 600;
-  }
-
-  .leistungen-example p {
-    color: var(--wd-muted);
-    font-size: 0.95em;
-  }
-
-  .context-links {
-    background: #ffffff;
-    border-radius: 15px;
-    border: 1px solid var(--wd-border);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    padding: 28px;
-    margin-bottom: 40px;
-  }
-
-  .context-links h2 {
-    font-size: 1.55em;
-    margin-bottom: 14px;
-  }
-
-  .context-links ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .context-links a {
-    display: inline-flex;
-    text-decoration: none;
-    border: 1px solid rgba(233, 74, 27, 0.22);
-    border-radius: 10px;
-    padding: 10px 12px;
-    color: var(--wd-accent-strong);
-    font-weight: 500;
-    background: #fff9f5;
-  }
-
-  .context-links a:hover {
-    background: #fff2e9;
-  }
-
-  .service-faq {
-    margin-bottom: 40px;
-    background: #ffffff;
-    border-radius: 15px;
-    border: 1px solid var(--wd-border);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    padding: 26px;
-  }
-
-  .service-faq h2 {
-    margin-bottom: 14px;
-    font-size: 1.6em;
-  }
-
-  .service-faq details {
-    border: 1px solid rgba(233, 74, 27, 0.16);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    background: #fff9f5;
-  }
-
-  .service-faq summary {
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--wd-ink);
-  }
-
-  .service-faq p {
-    margin-top: 9px;
-    color: var(--wd-muted);
-  }
-
-  /* CTA Section */
-  .cta-section {
-    background: linear-gradient(135deg,
-        var(--wd-accent) 0%,
-        var(--wd-accent-strong) 100%);
-    color: #ffffff;
-    padding: 60px 40px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-  }
-
-  .cta-section h2 {
-    font-size: 2.2em;
-    margin-bottom: 20px;
-  }
-
-  .cta-section p {
-    font-size: 1.2em;
-    margin-bottom: 30px;
-    opacity: 0.98;
-  }
-
-  .cta-button {
-    display: inline-block;
-    background: #ffffff;
-    color: var(--wd-accent-strong);
-    padding: 18px 45px;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.1em;
-    transition: all 0.3s ease;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  }
-
-  .cta-button i {
-    margin-right: 8px;
-  }
-
-  .cta-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-    background: #fdf8f4;
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .hero h1 {
-      font-size: 2em;
-    }
-
-    .hero-subtitle {
-      font-size: 1.1em;
-    }
-
-    .problem-solution {
-      grid-template-columns: 1fr;
-    }
-
-    .proof-trust-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .leistungen-example-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .leistungen-examples {
-      padding: 24px;
-    }
-
-    .context-links ul {
-      grid-template-columns: 1fr;
-    }
-
-    .hero-icons {
-      gap: 20px;
-    }
-
-    .service-header {
-      padding: 20px;
-    }
-
-    .service-title {
-      font-size: 1.3em;
-    }
-
-    .card {
-      padding: 25px;
-    }
-
-    .hero {
-      padding: 50px 25px;
-    }
-
-    .service-content {
-      padding: 0 20px;
-    }
-
-    .service-item.active .service-content {
-      padding: 20px;
-    }
-  }
-</style>
-
-<main class="leistungen-page">
-  <div class="container">
-    <!-- Hero Section -->
-    <section class="hero unified-hero">
-      <div class="hero-content unified-hero__copy">
-        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
-          <ol>
-            <li><a href="/">Startseite</a></li>
-            <li><a href="/webdesign-berlin">Webdesign Berlin</a></li>
-            <li aria-current="page"><%- safeHtml(page.title) %></li>
-          </ol>
-        </nav>
-        <h1><%= page.hero.title %></h1>
-
-        <% if (page.hero.subtitle) { %>
-        <p class="hero-subtitle unified-hero__lead"><%= page.hero.subtitle %></p>
-        <% } %>
-        <% if (page.answerBlock) { %>
-        <p class="hero-answer unified-hero__lead"><%= page.answerBlock %></p>
-        <% } %>
-        <% if (page.ctaVariants && page.ctaVariants.length) { %>
-        <div class="hero-cta-variants unified-hero__actions" aria-label="Anfrageoptionen">
-          <% page.ctaVariants.forEach(function(item, index) { %>
-          <a href="<%= item.href %>" class="hero-cta-button unified-hero__button <%= index === 0 ? 'hero-cta-button--primary unified-hero__button--primary' : 'hero-cta-button--secondary unified-hero__button--secondary' %>"><%= item.label %></a>
-          <% }) %>
-        </div>
-        <% } %>
-        <% if (page.hero.icons && page.hero.icons.length) { %>
-        <div class="hero-icons">
-          <% page.hero.icons.forEach(function(icon){ %>
-          <div class="hero-icon-item">
-            <i class="fas <%= icon.icon %>"></i>
-            <span><%= icon.label %></span>
+  };
+  const fallbackPanelItems = [];
+  if (page.proofBlock && page.proofBlock.title) fallbackPanelItems.push({ icon: 'fa-list-check', text: page.proofBlock.title });
+  if (page.trustBlock && page.trustBlock.title) fallbackPanelItems.push({ icon: 'fa-shield-halved', text: page.trustBlock.title });
+  if (!fallbackPanelItems.length) {
+    fallbackPanelItems.push(
+      { icon: 'fa-layer-group', text: 'Projektumfang sauber klären.' },
+      { icon: 'fa-receipt', text: 'Kosten, Betrieb und Zusatzleistungen getrennt einordnen.' },
+      { icon: 'fa-comments', text: 'Klare Anfragewege und nächste Schritte sichtbar machen.' }
+    );
+  }
+  const serviceHeroKicker = serviceHeroKickers[pageSlug] || { icon: 'fa-layer-group', label: 'Leistung' };
+  const serviceHeroPanel = serviceHeroPanels[pageSlug] || {
+    title: 'Was du realistisch bekommst',
+    text: page.answerBlock || 'Die Leistung wird mit klarem Umfang geplant. Ich ordne Ziele, Inhalte und technische Anforderungen vor der Umsetzung nachvollziehbar ein.',
+    items: fallbackPanelItems.slice(0, 3)
+  };
+  const heroImage = page.heroImage || null;
+%>
+<main class="service-page service-page--leistungen leistungen-page">
+  <section class="service-hero hero leistungen-service-hero unified-hero"<% if (heroImage?.src) { %> style="--service-hero-image: url('<%= heroImage.src %>');"<% } %>>
+    <div class="service-shell leistungen-hero-shell">
+      <div class="service-hero__grid leistungen-hero-grid unified-hero__grid">
+        <div class="hero-content unified-hero__copy">
+          <nav class="service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              <li><a href="/">Startseite</a></li>
+              <li><a href="<%= parentBreadcrumb.href %>"><%= parentBreadcrumb.label %></a></li>
+              <li aria-current="page"><%- safeHtml(page.title) %></li>
+            </ol>
+          </nav>
+          <p class="service-kicker leistungen-service-kicker service-hero-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid <%= serviceHeroKicker.icon %>" aria-hidden="true"></i><%= serviceHeroKicker.label %></p>
+          <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.hero.title %></h1>
+
+          <% if (page.hero.subtitle) { %>
+          <p class="hero-subtitle unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.subtitle %></p>
+          <% } %>
+          <% if (page.ctaVariants && page.ctaVariants.length) { %>
+          <div class="service-hero__actions hero-cta-variants unified-hero__actions" aria-label="Anfrageoptionen">
+            <% page.ctaVariants.forEach(function(item, index) { %>
+            <a href="<%= item.href %>" class="btn <%= index === 0 ? 'btn-primary' : 'btn-secondary' %> home-hero-reveal home-hero-reveal--actions animate-on-scroll"><%= item.label %></a>
+            <% }) %>
           </div>
-          <% }) %>
+          <% } %>
         </div>
-        <% } %>
+        <aside class="service-hero__panel leistungen-hero-panel unified-hero__panel" aria-label="Kurzüberblick">
+          <div class="leistungen-hero-panel__reveal home-hero-reveal home-hero-reveal--visual animate-on-scroll">
+            <h2><%= serviceHeroPanel.title %></h2>
+            <p><%= serviceHeroPanel.text %></p>
+            <div class="leistungen-hero-mini-list">
+              <% serviceHeroPanel.items.forEach(function(item) { %>
+              <div><i class="fa-solid <%= item.icon %>" aria-hidden="true"></i><span><%= item.text %></span></div>
+              <% }) %>
+            </div>
+          </div>
+        </aside>
       </div>
+    </div>
+  </section>
+
+  <div class="container leistungen-content">
+    <% if (page.answerBlock) { %>
+    <section class="leistungen-answer-summary" aria-label="Kurzantwort">
+      <p><%= page.answerBlock %></p>
     </section>
+    <% } %>
 
     <% if (page.proofBlock || page.trustBlock) { %>
     <section class="proof-trust-grid">
@@ -956,6 +310,188 @@
         <p><%= page.trustBlock.text %></p>
       </article>
       <% } %>
+    </section>
+    <% } %>
+
+    <% if (page.costPageContent) { %>
+    <% const cost = page.costPageContent; %>
+    <% if (cost.pricePrinciples && cost.pricePrinciples.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-principles-title">
+      <h2 id="cost-principles-title">So entstehen realistische Website-Kosten</h2>
+      <p>Die Preise sind bewusst als nachvollziehbare Rahmen formuliert. Entscheidend ist, welcher Umfang wirklich gebraucht wird und welche laufenden Kosten nach dem Livegang entstehen.</p>
+      <div class="cost-principle-grid">
+        <% cost.pricePrinciples.forEach(function(principle) { %>
+        <article class="cost-card">
+          <h3><%= principle.title %></h3>
+          <p><%= principle.text %></p>
+        </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (cost.packages && cost.packages.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-packages-title">
+      <h2 id="cost-packages-title">Aktuelle Paketpreise</h2>
+      <p>Die Paketgrenzen helfen dir, dein Projekt grob einzuordnen. Sonderfunktionen, größere Inhalte und laufender Betrieb werden vorab separat abgegrenzt.</p>
+      <div class="cost-package-slider package-slider-scroll" data-package-slider tabindex="0" aria-label="Aktuelle Paketpreise horizontal scrollen">
+        <% cost.packages.forEach(function(pkg) { %>
+        <% const packageName = String(pkg.name || '').trim(); %>
+        <% const isIndividualPackage = pkg.id === 'individuell' || packageName === 'Individuelles Projekt' || packageName === 'Individuell'; %>
+        <% const packageButtonLabel = isIndividualPackage ? 'Individuelles Projekt-Paket ansehen' : (/paket$/i.test(packageName) ? packageName + ' ansehen' : packageName + '-Paket ansehen'); %>
+        <article class="cost-card cost-package-card <%= pkg.recommended ? 'cost-card--recommended' : '' %>">
+          <div class="cost-package-card__head">
+            <% if (pkg.recommended && pkg.recommendationLabel) { %>
+            <span class="cost-card__badge"><%= pkg.recommendationLabel %></span>
+            <% } else { %>
+            <span class="cost-card__badge cost-card__badge--placeholder" aria-hidden="true">Paket</span>
+            <% } %>
+            <h3><%= pkg.name %></h3>
+          </div>
+          <span class="cost-price"><%= pkg.priceLabel %></span>
+          <span class="cost-meta"><%= pkg.scope %></span>
+          <p><%= pkg.description %></p>
+          <% if (pkg.included && pkg.included.length) { %>
+          <ul aria-label="Enthaltene Leistungen">
+            <% pkg.included.slice(0, 4).forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+          <% } %>
+          <a class="btn btn-primary" href="<%= pkg.href %>"><%= packageButtonLabel %></a>
+        </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="cost-page-section" aria-labelledby="cost-scope-title">
+      <h2 id="cost-scope-title">Was enthalten ist und was separat geplant wird</h2>
+      <div class="cost-two-column">
+        <% if (cost.included && cost.included.length) { %>
+        <article>
+          <h3>Im vereinbarten Paketrahmen</h3>
+          <ul class="cost-bullet-list">
+            <% cost.included.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+        <% if (cost.notIncluded && cost.notIncluded.length) { %>
+        <article>
+          <h3>Nicht automatisch enthalten</h3>
+          <ul class="cost-bullet-list">
+            <% cost.notIncluded.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+      </div>
+    </section>
+
+    <% if (cost.priceFactors && cost.priceFactors.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-factors-title">
+      <h2 id="cost-factors-title">Diese Faktoren verändern den Preis</h2>
+      <ul class="cost-bullet-list">
+        <% cost.priceFactors.forEach(function(item) { %>
+        <li><%= item %></li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <% if (cost.costSplit && cost.costSplit.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-split-title">
+      <h2 id="cost-split-title">Einmalige Erstellung und laufende Kosten</h2>
+      <div class="cost-split-grid">
+        <% cost.costSplit.forEach(function(group) { %>
+        <article class="cost-card">
+          <h3><%= group.title %></h3>
+          <p><%= group.text %></p>
+          <% if (group.items && group.items.length) { %>
+          <ul>
+            <% group.items.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (cost.maintenancePlans && cost.maintenancePlans.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-maintenance-title">
+      <h2 id="cost-maintenance-title">Wartung, Hosting, Domain und E-Mail</h2>
+      <p>Wartung und Betrieb sind laufende Themen und werden passend zum Setup vereinbart. Domain, E-Mail und Hosting können über externe Anbieter oder ein separat abgestimmtes Setup laufen.</p>
+      <div class="cost-maintenance-grid">
+        <% cost.maintenancePlans.forEach(function(plan) { %>
+        <article class="cost-card">
+          <h3><%= plan.name %></h3>
+          <span class="cost-price"><%= plan.priceLabel %></span>
+          <p><%= plan.shortDescription %></p>
+          <ul>
+            <li>Reaktion: <%= plan.responseTime %></li>
+            <li>Inhalte: <%= plan.contentChangeAllowance %></li>
+          </ul>
+        </article>
+        <% }) %>
+      </div>
+      <% if (cost.thirdPartyCosts && cost.thirdPartyCosts.length) { %>
+      <div class="cost-note-box">
+        <% cost.thirdPartyCosts.forEach(function(item) { %>
+        <p><%= item %></p>
+        <% }) %>
+      </div>
+      <% } %>
+    </section>
+    <% } %>
+
+    <% if (cost.addOns && cost.addOns.length) { %>
+    <section class="cost-page-section" aria-labelledby="cost-addons-title">
+      <h2 id="cost-addons-title">Typische Zusatzleistungen</h2>
+      <p>Diese Leistungen sind nicht automatisch Teil jedes Standardpakets. Sie werden nur eingeplant, wenn sie für dein Projekt sinnvoll sind.</p>
+      <div class="cost-addons-grid">
+        <% cost.addOns.forEach(function(addOn) { %>
+        <article class="cost-card">
+          <span class="cost-card__badge"><%= addOn.category %></span>
+          <h3><%= addOn.name %></h3>
+          <span class="cost-price"><%= addOn.priceLabel %></span>
+          <p><%= addOn.shortDescription %></p>
+          <p><%= addOn.whenUseful %></p>
+        </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="cost-page-section" aria-labelledby="cost-payment-title">
+      <h2 id="cost-payment-title">Zahlung, Freigabe und rechtliche Abgrenzung</h2>
+      <div class="cost-two-column">
+        <% if (cost.paymentAndLaunch && cost.paymentAndLaunch.length) { %>
+        <article>
+          <h3>Projektablauf</h3>
+          <ul class="cost-bullet-list">
+            <% cost.paymentAndLaunch.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+        <% if (cost.legalNotes && cost.legalNotes.length) { %>
+        <article>
+          <h3>Wichtige Hinweise</h3>
+          <ul class="cost-bullet-list">
+            <% cost.legalNotes.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+      </div>
     </section>
     <% } %>
 
@@ -1081,7 +617,7 @@
 
       <div class="risk-content">
         <% if (page.risks.intro) { %>
-        <p style="text-align: center; margin-bottom: 30px">
+        <p class="risk-intro">
           <%= page.risks.intro %>
         </p>
         <% } %> <% if (page.risks.items && page.risks.items.length) { %>
@@ -1100,7 +636,7 @@
         </div>
         <% } %> <% if (page.risks.conclusion && page.risks.conclusion.length) {
         %> <% page.risks.conclusion.forEach(function(text) { %>
-        <p style="text-align: center; margin-top: 20px; font-size: 1.05em">
+        <p class="risk-conclusion">
           <%= text %>
         </p>
         <% }) %> <% } %>
@@ -1139,7 +675,7 @@
       <% } %> <% if (page.cta.text) { %>
       <p><%= page.cta.text %></p>
       <% } %> <% if (page.cta.buttonLink && page.cta.buttonText) { %>
-      <a href="<%= page.cta.buttonLink %>" class="cta-button">
+      <a href="<%= page.cta.buttonLink %>" class="btn btn-primary">
         <i class="fas fa-envelope"></i> <%= page.cta.buttonText %>
       </a>
       <% } %>
@@ -1169,11 +705,11 @@
   // Hover-Effekt für Hero-Icons
   document.querySelectorAll(".hero-icon-item").forEach((item) => {
     item.addEventListener("mouseenter", function() {
-      this.style.transform = "translateY(-5px) scale(1.05)";
+      this.classList.add("is-hovered");
     });
 
     item.addEventListener("mouseleave", function() {
-      this.style.transform = "translateY(0) scale(1)";
+      this.classList.remove("is-hovered");
     });
   });
 </script>

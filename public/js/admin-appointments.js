@@ -7,8 +7,19 @@ const slotList = document.querySelector('.slot-list');
 const selectedDateEl = document.querySelector('.selected-date');
 const hint = document.querySelector('.hint');
 
-let current = new Date(); // aktueller Monat
-current.setDate(1); // auf Monatsersten
+function initialMonthFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const rawMonth = params.get('month') || '';
+  if (/^\d{4}-\d{2}$/.test(rawMonth)) {
+    const [year, month] = rawMonth.split('-').map((part) => parseInt(part, 10));
+    return new Date(year, month - 1, 1);
+  }
+  const fallback = new Date();
+  fallback.setDate(1);
+  return fallback;
+}
+
+let current = initialMonthFromQuery();
 
 function pad2(n){ return String(n).padStart(2,'0'); }
 function fmtDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
@@ -65,15 +76,15 @@ async function selectDay(dateStr, el){
   selectedDateEl.textContent = new Intl.DateTimeFormat('de-DE', {
     weekday:'long', day:'2-digit', month:'long', year:'numeric'
   }).format(new Date(dateStr));
-  hint.style.display = 'none';
+  hint.classList.add('is-hidden');
 
-  slotList.innerHTML = '<li style="opacity:.7">Lade Zeiten…</li>';
+  slotList.innerHTML = '<li class="slot-list__muted">Lade Zeiten…</li>';
 
   const resp = await fetch(`/admin/api/day-slots?date=${dateStr}`);
   const slots = await resp.json();
 
   if (!slots.length){
-    slotList.innerHTML = '<li style="opacity:.7">Keine freien Termine an diesem Tag.</li>';
+    slotList.innerHTML = '<li class="slot-list__muted">Keine freien Termine an diesem Tag.</li>';
     return;
   }
 
@@ -124,7 +135,7 @@ btns.forEach(b=>{
     // rechte Spalte zurücksetzen
     selectedDateEl.textContent = '–';
     slotList.innerHTML = '';
-    document.querySelector('.hint').style.display = '';
+    document.querySelector('.hint')?.classList.remove('is-hidden');
   });
 });
 

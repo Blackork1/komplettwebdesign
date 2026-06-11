@@ -1,41 +1,36 @@
 <%
+const pageBase = (typeof canonicalBaseUrl !== 'undefined' && canonicalBaseUrl ? canonicalBaseUrl : 'https://komplettwebdesign.de').replace(/\/$/, '');
+const startPriceLabel = (typeof packagePriceLabel === 'function' ? packagePriceLabel('start') : '') || 'nach Angebot';
+const wachstumPriceLabel = (typeof packagePriceLabel === 'function' ? packagePriceLabel('wachstum') : '') || 'nach Angebot';
 const structuredDataRaw = `<script type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Start","item":"https://www.komplettwebdesign.de/"},
-    {"@type":"ListItem","position":2,"name":"Branchen","item":"https://www.komplettwebdesign.de/branchen"},
+    {"@type":"ListItem","position":1,"name":"Start","item":"${pageBase}/"},
+    {"@type":"ListItem","position":2,"name":"Branchen","item":"${pageBase}/branchen"},
     {"@type":"ListItem","position":3,"name":"Blumenladen-Website"}
   ]}
   </script>
 
 <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-    {"@type":"Question","name":"Brauche ich direkt einen kompletten Shop?","acceptedAnswer":{"@type":"Answer","text":"Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen."}},
-    {"@type":"Question","name":"Wie pflege ich mein Sortiment?","acceptedAnswer":{"@type":"Answer","text":"Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren."}},
+    {"@type":"Question","name":"Brauche ich direkt einen kompletten Shop?","acceptedAnswer":{"@type":"Answer","text":"Nicht unbedingt. Lokal reicht oft ein Produkt- oder Anfragebereich. Bezahl-Lösungen und Shop-Funktionen können später separat ergänzt werden."}},
+    {"@type":"Question","name":"Wie pflege ich mein Sortiment?","acceptedAnswer":{"@type":"Answer","text":"Ein Editor kann vereinbart werden, wenn du Kategorien, Bilder oder Preise selbst pflegen möchtest. Umfang und Pflegeweg werden vorab festgelegt."}},
     {"@type":"Question","name":"Wie mache ich Saison-Angebote sichtbar?","acceptedAnswer":{"@type":"Answer","text":"Saison-Box auf der Startseite und kurze Landingpages, die du schnell ein- und ausblendest."}}
   ]}
   </script>`;
-%>
-<%- include('../../partials/head', { structuredDataRaw }) %>
-<%- include('../../partials/header') %>
-  <style>
-    /* Nur Farben & Schriften übernehmen; Layout via Bootstrap */
-    :root { --brand: var(--color-primary, #0b2a46); --accent: var(--color-accent, #e94a1b); }
-    body { font-family: var(--font-body, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif); color: var(--color-text, #111); background: var(--color-bg, #fff); }
-    h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading, inherit); color: var(--color-primary, #0b2a46); }
-    .bg-brand { background-color: var(--brand) !important; }
-    .btn-accent { background: var(--accent); color: #fff; border: none; }
-    .btn-accent:hover { filter: brightness(0.9); color: #fff; }
-    .hero { background: linear-gradient(0deg, color-mix(in srgb, var(--brand) 88%, #0000), color-mix(in srgb, var(--brand) 88%, #0000)); color:#fff; }
-    .breadcrumb a { text-decoration: none; }
-    .card-shadow { box-shadow: 0 8px 18px rgba(0,0,0,.06); }
-    .hero {height: 600px;}
-  </style>
-
-  <link rel="canonical" href="https://www.komplettwebdesign.de/branchen/webdesign-blumenladen" />
+const seoExtra = `
   <meta property="og:title" content="Blumenladen-Website: Kosten & 4-Wochen-Zeitplan (Sortiment, Lieferung, Saison)" />
   <meta property="og:description" content="Klarer Preisrahmen, 4-Wochen-Ablauf und Tipps zu Sortiment, Lieferanfrage & saisonalen Specials." />
-</head>
-<body>
+`;
+%>
+<%- include('../../partials/head', {
+  title: 'Blumenladen-Website: Kosten & 4-Wochen-Zeitplan',
+  description: 'Klarer Preisrahmen, 4-Wochen-Ablauf und Tipps zu Sortiment, Lieferanfrage und saisonalen Specials.',
+  canonicalUrl: `${pageBase}/webdesign-blumenladen/kosten`,
+  seoExtra,
+  structuredDataRaw,
+  extraCssAssets: ['cost-pages.css']
+}) %>
+<%- include('../../partials/header') %>
 
   <!-- Hero -->
   <header class="hero py-5">
@@ -51,8 +46,8 @@ const structuredDataRaw = `<script type="application/ld+json">
         <h1 class="display-6 fw-bold text-white">Kosten & Zeitplan für eine Blumenladen-Website (Sortiment, Lieferanfrage, Saison-Specials)</h1>
         <p class="lead mt-2 text-white">Anlässe, Verfügbarkeit und schöne Bilder: So überzeugt dein Blumenladen online.</p>
         <div class="mt-3 d-flex gap-2">
-          <a href="/branchen/webdesign-blumenladen" class="btn btn-accent btn-lg">Blumenladen-Details</a>
-          <a href="/kontakt" class="btn btn-outline-light btn-lg">Kostenschätzung</a>
+          <a href="/branchen/webdesign-blumenladen" class="btn btn-primary">Blumenladen-Details</a>
+          <a href="/kontakt" class="btn btn-secondary">Kostenschätzung</a>
         </div>
       </div>
     </div>
@@ -89,17 +84,48 @@ const structuredDataRaw = `<script type="application/ld+json">
       <div class="row g-4">
         <div class="col-md-6">
           <div class="border rounded-3 p-4 h-100 card-shadow">
-            <h3 class="h5">Kompakt (499 - 899 €)</h3>
+            <h3 class="h5">Kompakt (<%= startPriceLabel %>)</h3>
             <p class="small mb-0">Start, Sortiment (1–2 Kategorien), Galerie, Kontakt/Öffnungszeiten.</p>
           </div>
         </div>
         <div class="col-md-6">
           <div class="border rounded-3 p-4 h-100 card-shadow">
-            <h3 class="h5">Plus (ab 1.499 €)</h3>
-            <p class="small mb-0">+ Liefer-/Abholanfrage, Anlässe-Seiten, Saison-Bereich, optional zweite Sprache.</p>
+            <h3 class="h5">Plus (<%= wachstumPriceLabel %>)</h3>
+            <p class="small mb-0">Liefer-/Abholanfrage, Anlässe-Seiten, Saison-Bereich und eine zweite Sprache können separat eingeordnet werden.</p>
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="container my-5">
+      <h2 class="h3">Was den Preis bei einem Blumenladen beeinflusst</h2>
+      <p>
+        Der Umfang hängt vor allem davon ab, wie viele Angebote wirklich erklärt werden müssen und wie aktuell die Inhalte gehalten werden sollen.
+        Eine kompakte Seite kann reichen, wenn Öffnungszeiten, Sortiment, Kontakt und wenige Beispielbilder im Mittelpunkt stehen.
+        Wird zusätzlich mit Anlassseiten, Lieferanfrage, saisonalen Bereichen, Google-Business-Profil, Bildbearbeitung oder späterer Inhaltsverwaltung gearbeitet,
+        entsteht Zusatzaufwand, der vorab separat eingeordnet wird.
+      </p>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Typische Basis</h3>
+            <p class="small mb-0">Startseite, Sortiment, Öffnungszeiten, Kontakt, Anfahrt und ausgewählte Fotos im vereinbarten Umfang.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Mögliche Erweiterungen</h3>
+            <p class="small mb-0">Anlassseiten, Liefer- oder Abholanfrage, Saisonbereiche, Bilderrecherche, Local SEO oder einfache Inhaltsverwaltung.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-3 p-4 h-100 card-shadow">
+            <h3 class="h5">Laufende Kosten</h3>
+            <p class="small mb-0">Domain, E-Mail, Hosting, Wartung, externe Tools und Lizenzen gehören nicht automatisch zum einmaligen Projektpreis.</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small mt-3">Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer. Die Beispiele sind Orientierung, keine verbindliche Endpreisgarantie.</p>
     </section>
 
     <!-- Zeitplan -->
@@ -109,7 +135,7 @@ const structuredDataRaw = `<script type="application/ld+json">
         <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 1</strong><br>Kickoff, Inhalte (Kategorien/Anlässe, Liefergebiet), Bilder</div></div>
         <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 2</strong><br>Design & Struktur, erste Vorschau</div></div>
         <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 3</strong><br>Umsetzung, Formular-Logik, Maps & Bewertungen</div></div>
-        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 4</strong><br>Tests (Formular/Mails), Rechtstexte, Go-Live</div></div>
+        <div class="col-md-3"><div class="p-3 border rounded-3 h-100 card-shadow"><strong>Woche 4</strong><br>Tests (Formular/Mails), technische Einbindung vorhandener Rechtstexte, Go-Live</div></div>
       </div>
     </section>
 
@@ -124,7 +150,7 @@ const structuredDataRaw = `<script type="application/ld+json">
             </button>
           </h2>
           <div id="a4a" class="accordion-collapse collapse show" aria-labelledby="q4a" data-bs-parent="#faq4">
-            <div class="accordion-body">Nicht unbedingt. Lokal reicht oft ein „Shop light“ mit Anfrageformular. Bezahl-Lösungen kann man später ergänzen.</div>
+            <div class="accordion-body">Nicht unbedingt. Lokal reicht oft ein Produkt- oder Anfragebereich. Bezahl-Lösungen und Shop-Funktionen können später separat ergänzt werden.</div>
           </div>
         </div>
         <div class="accordion-item">
@@ -134,7 +160,7 @@ const structuredDataRaw = `<script type="application/ld+json">
             </button>
           </h2>
           <div id="a4b" class="accordion-collapse collapse" aria-labelledby="q4b" data-bs-parent="#faq4">
-            <div class="accordion-body">Über einen einfachen Editor: Kategorien, Bilder und Preise in wenigen Minuten aktualisieren.</div>
+            <div class="accordion-body">Ein Editor kann vereinbart werden, wenn du Kategorien, Bilder oder Preise selbst pflegen möchtest. Umfang und Pflegeweg werden vorab festgelegt.</div>
           </div>
         </div>
         <div class="accordion-item">
@@ -158,8 +184,9 @@ const structuredDataRaw = `<script type="application/ld+json">
           <p class="mb-0 text-muted small">Sortiment & Lieferanfrage klar präsentiert – in 4 Wochen machbar.</p>
         </div>
         <div class="mt-3 mt-lg-0 d-flex gap-2">
-          <a href="/kontakt" class="btn btn-accent">Kostenschätzung</a>
-          <a href="/branchen/webdesign-blumenladen" class="btn btn-outline-secondary">Details ansehen</a>
+          <a href="/kontakt" class="btn btn-primary">Kostenschätzung</a>
+          <a href="/branchen/webdesign-blumenladen" class="btn btn-secondary">Details ansehen</a>
+          <a href="/webdesign-berlin/kosten-preise-pakete" class="btn btn-secondary">Preise vergleichen</a>
         </div>
       </div>
     </section>

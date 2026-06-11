@@ -17,9 +17,9 @@
       <a href="/admin/pages/<%= component.page_id %>/components/new?parent=<%= component.id %>">+ Kind</a>
     <% } %>
     <a href="/admin/components/<%= component.id %>/edit">Bearbeiten</a>
-    <form action="/admin/components/<%= component.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('Komponente wirklich löschen?');">
+    <form action="/admin/components/<%= component.id %>/delete" method="post" class="admin-inline-form" onsubmit="return confirm('Komponente wirklich löschen?');">
       <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-      <button type="submit" class="link-button" style="background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;">Löschen</button>
+      <button type="submit" class="link-button admin-link-button">Löschen</button>
     </form>
   </span>
   <% if (component.children && component.children.length) { %>

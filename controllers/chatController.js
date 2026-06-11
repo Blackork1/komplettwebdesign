@@ -2,6 +2,8 @@ import { retrieveFaqs } from '../models/faqModel.js';
 import { retrievePages } from '../models/pageModel.js';
 import { saveMessage, getHistory } from '../models/chatModel.js';
 import { searchIndustryEmbeddings } from '../scripts/embeddingsService.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import OpenAI from 'openai';
 
 
@@ -26,11 +28,15 @@ export async function message(req, res) {
   await saveMessage(sessionId, 'user', userQ);
 
   // 2) Embedding-Retrieval: FAQs, Seiten, Branchen
-  const [faqs, pages, industries] = await Promise.all([
+  const [rawFaqs, rawPages, rawIndustries] = await Promise.all([
     retrieveFaqs(userQ),
     retrievePages(userQ),
     searchIndustryEmbeddings(userQ, 5) // Anzahl Treffer nach Geschmack
   ]);
+  const pricing = res.locals.packagePricing || {};
+  const faqs = normalizeLegacyPublicCopy(renderPricingTokens(rawFaqs, pricing));
+  const pages = normalizeLegacyPublicCopy(renderPricingTokens(rawPages, pricing));
+  const industries = normalizeLegacyPublicCopy(renderPricingTokens(rawIndustries, pricing));
 
   // 3) Kontextstrings bauen
   const faqCtx = faqs.map((f, i) =>
@@ -71,7 +77,7 @@ REGELN:
 - Antworte auf Deutsch in der Du-Form.
 - Nutze nur Informationen aus den obigen Blöcken, erfinde nichts dazu.
 - Wenn du auf eine Seite oder Branche verlinkst, verwende ausschließlich Pfade, die oben vorkommen.
-  Beispiel: <a href="https://www.komplettwebdesign.de/PFAD">Zur Seite</a>
+  Beispiel: <a href="https://komplettwebdesign.de/PFAD">Zur Seite</a>
 - Wenn nichts wirklich passt, sag ehrlich, dass es dazu noch keine Inhalte auf der Website gibt und verweise auf das Kontaktformular.
 `;
 

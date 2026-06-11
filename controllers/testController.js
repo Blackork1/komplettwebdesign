@@ -30,6 +30,7 @@ import {
   confirmBrokenLinkTesterLeadToken,
   requestBrokenLinkTesterLead
 } from '../services/brokenLinkTesterLeadService.js';
+import { notifyWebsiteTesterScanCompleted } from '../services/websiteTesterScanNotificationService.js';
 import { t as tError } from '../util/testerI18n.js';
 
 const PAGE_I18N = {
@@ -394,7 +395,7 @@ const SEO_PAGE_I18N = {
       },
       {
         q: 'Wie wichtig sind strukturierte Daten (Schema.org)?',
-        a: 'Strukturierte Daten helfen Google und KI-Systemen, Inhalte korrekt einzuordnen. Für Unternehmensseiten sind Organization, LocalBusiness, Service und FAQPage besonders wirksam.'
+        a: 'Strukturierte Daten helfen Google und KI-Systemen, Inhalte korrekt einzuordnen. Für Unternehmensseiten sind Organization, Service, BreadcrumbList und FAQPage sinnvoll, wenn die Angaben sichtbar und korrekt sind.'
       },
       {
         q: 'Lohnt sich SEO noch in 2026?',
@@ -446,7 +447,7 @@ const SEO_PAGE_I18N = {
       },
       {
         q: 'How important is structured data (Schema.org)?',
-        a: 'Structured data helps Google and AI systems classify content correctly. For business sites, Organization, LocalBusiness, Service, and FAQPage are especially effective.'
+        a: 'Structured data helps Google and AI systems classify content correctly. For business sites, Organization, Service, BreadcrumbList, and FAQPage are useful when the information is visible and accurate.'
       },
       {
         q: 'Is SEO still worth it in 2026?',
@@ -912,6 +913,26 @@ export async function runWebsiteAudit(req, res) {
       console.error('Website-Tester-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
+    await notifyWebsiteTesterScanCompleted({
+      source: 'website',
+      auditId: result.auditId,
+      requestedUrl,
+      finalUrl: result.finalUrl,
+      locale: safeLocale,
+      status: 'success',
+      score: result.overallScore,
+      scoreBand: result.scoreBand,
+      scanMode: safeMode,
+      contextJson: safeContext,
+      detailsJson: {
+        crawlStats: result.crawlStats,
+        httpStatus: result.httpStatus,
+        loadTimeMs: result.loadTimeMs,
+        topIssues: (result.topActions || []).slice(0, 3).map((item) => item.label || item.text)
+      },
+      sourceIp
+    }, config);
+
     res.json({ success: true, result });
   } catch (error) {
     const status = error.status || 500;
@@ -928,6 +949,17 @@ export async function runWebsiteAudit(req, res) {
     } catch (archiveError) {
       console.error('Website-Tester-Archiv (error) fehlgeschlagen:', archiveError);
     }
+
+    await notifyWebsiteTesterScanCompleted({
+      source: 'website',
+      requestedUrl,
+      locale: safeLocale,
+      status: 'error',
+      errorMessage: error.message || 'Audit fehlgeschlagen',
+      scanMode: safeMode,
+      contextJson: safeContext,
+      sourceIp
+    }, config);
 
     res.status(status).json({
       success: false,
@@ -993,6 +1025,21 @@ export async function runBrokenLinkAudit(req, res) {
       console.error('Broken-Links-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
+    await notifyWebsiteTesterScanCompleted({
+      source: 'broken-links',
+      auditId: result.auditId,
+      requestedUrl,
+      finalUrl: result.finalUrl,
+      locale: safeLocale,
+      status: 'success',
+      scanMode: result.scanMode,
+      detailsJson: {
+        crawlStats: result.crawlStats,
+        linkStats: result.linkStats
+      },
+      sourceIp
+    }, config);
+
     return res.json({ success: true, result: toPublicBrokenLinkResult(result) });
   } catch (error) {
     const status = error.status || 500;
@@ -1010,6 +1057,16 @@ export async function runBrokenLinkAudit(req, res) {
     } catch (archiveError) {
       console.error('Broken-Links-Archiv (error) fehlgeschlagen:', archiveError);
     }
+
+    await notifyWebsiteTesterScanCompleted({
+      source: 'broken-links',
+      requestedUrl,
+      locale: safeLocale,
+      status: 'error',
+      errorMessage: error.message || 'Broken-Link-Audit fehlgeschlagen',
+      scanMode: effectiveScanMode,
+      sourceIp
+    }, config);
 
     return res.status(status).json({
       success: false,
@@ -1079,6 +1136,24 @@ export async function runGeoAudit(req, res) {
       console.error('GEO-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
+    await notifyWebsiteTesterScanCompleted({
+      source: 'geo',
+      auditId: result.auditId,
+      requestedUrl,
+      finalUrl: result.finalUrl,
+      locale: safeLocale,
+      status: 'success',
+      score: result.geoScore?.overall,
+      scoreBand: result.geoScore?.band,
+      scanMode: result.scanMode,
+      contextJson: safeContext,
+      detailsJson: {
+        crawlStats: result.crawlStats,
+        geoScore: result.geoScore
+      },
+      sourceIp
+    }, config);
+
     return res.json({ success: true, result });
   } catch (error) {
     const status = error.status || 500;
@@ -1096,6 +1171,17 @@ export async function runGeoAudit(req, res) {
     } catch (archiveError) {
       console.error('GEO-Archiv (error) fehlgeschlagen:', archiveError);
     }
+
+    await notifyWebsiteTesterScanCompleted({
+      source: 'geo',
+      requestedUrl,
+      locale: safeLocale,
+      status: 'error',
+      errorMessage: error.message || 'GEO-Audit fehlgeschlagen',
+      scanMode: effectiveScanMode,
+      contextJson: safeContext,
+      sourceIp
+    }, config);
 
     return res.status(status).json({
       success: false,
@@ -1165,6 +1251,24 @@ export async function runSeoAudit(req, res) {
       console.error('SEO-Archiv (success) fehlgeschlagen:', archiveError);
     }
 
+    await notifyWebsiteTesterScanCompleted({
+      source: 'seo',
+      auditId: result.auditId,
+      requestedUrl,
+      finalUrl: result.finalUrl,
+      locale: safeLocale,
+      status: 'success',
+      score: result.seoScore?.overall,
+      scoreBand: result.seoScore?.band,
+      scanMode: result.scanMode,
+      contextJson: safeContext,
+      detailsJson: {
+        crawlStats: result.crawlStats,
+        seoScore: result.seoScore
+      },
+      sourceIp
+    }, config);
+
     return res.json({ success: true, result });
   } catch (error) {
     const status = error.status || 500;
@@ -1183,6 +1287,17 @@ export async function runSeoAudit(req, res) {
       console.error('SEO-Archiv (error) fehlgeschlagen:', archiveError);
     }
 
+    await notifyWebsiteTesterScanCompleted({
+      source: 'seo',
+      requestedUrl,
+      locale: safeLocale,
+      status: 'error',
+      errorMessage: error.message || 'SEO-Audit fehlgeschlagen',
+      scanMode: effectiveScanMode,
+      contextJson: safeContext,
+      sourceIp
+    }, config);
+
     return res.status(status).json({
       success: false,
       message: error.message || tError('audit.seo.failed', safeLocale)
@@ -1199,6 +1314,14 @@ export async function runMetaAudit(req, res) {
     primaryService: String(context?.primaryService || '').trim(),
     targetRegion: String(context?.targetRegion || '').trim()
   };
+  const sourceIp = extractClientIp(req);
+
+  let config = {};
+  try {
+    config = await getWebsiteTesterConfig();
+  } catch (error) {
+    console.error('Meta-Tester-Config konnte nicht geladen werden:', error);
+  }
 
   try {
     const result = await auditMetaWebsite({
@@ -1207,8 +1330,33 @@ export async function runMetaAudit(req, res) {
       maxSubpages: 5,
       context: safeContext
     });
+    await notifyWebsiteTesterScanCompleted({
+      source: 'meta',
+      auditId: result.auditId,
+      requestedUrl,
+      finalUrl: result.finalUrl,
+      locale: safeLocale,
+      status: 'success',
+      score: result.metaScore?.overall || result.overallScore,
+      scoreBand: result.metaScore?.band || result.scoreBand,
+      contextJson: safeContext,
+      detailsJson: {
+        crawlStats: result.crawlStats,
+        metaScore: result.metaScore
+      },
+      sourceIp
+    }, config);
     return res.json({ success: true, result });
   } catch (error) {
+    await notifyWebsiteTesterScanCompleted({
+      source: 'meta',
+      requestedUrl,
+      locale: safeLocale,
+      status: 'error',
+      errorMessage: error.message || 'Meta-Audit fehlgeschlagen',
+      contextJson: safeContext,
+      sourceIp
+    }, config);
     return res.status(error.status || 500).json({
       success: false,
       message: error.message || tError('audit.meta.failed', safeLocale)

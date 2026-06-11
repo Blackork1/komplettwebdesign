@@ -105,7 +105,7 @@
       </table>`;
         } catch (e) {
             document.getElementById('importResult').innerHTML =
-                `<div class="alert alert-danger mt-3"><pre style="white-space:pre-wrap;margin:0">Fehler: ${e.message}</pre></div>`;
+                `<div class="alert alert-danger mt-3"><pre class="admin-import-error-pre">Fehler: ${e.message}</pre></div>`;
         } finally {
             btnImport.disabled = false;
             btnImport.textContent = 'Import starten';

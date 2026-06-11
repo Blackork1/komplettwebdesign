@@ -8,19 +8,41 @@ function onPageLoaded(callback) {
   }
 }
 
+const revealTargetSelector = '.animate-on-scroll, .animate-on-scroll-left, .animate-on-scroll-right';
+
+function markVisible(el) {
+  el.classList.add('visible');
+  el.classList.remove('out');
+}
+
+function revealImmediately(selector) {
+  document.querySelectorAll(selector).forEach((root) => {
+    markVisible(root);
+    root.querySelectorAll(revealTargetSelector).forEach(markVisible);
+  });
+}
+
+function shouldRevealImmediately(el) {
+  return el.hasAttribute('data-reveal-immediate') || Boolean(el.closest('[data-reveal-immediate]'));
+}
+
+function getRevealThresholds() {
+  const showThreshold = window.innerWidth < 1200 ? 0.08 : 0.14;
+  return {
+    showThreshold,
+    hideThreshold: showThreshold * 0.45
+  };
+}
+
 onPageLoaded(() => {
   // 1) Elemente selektieren
   const els          = document.querySelectorAll('.animate-on-scroll');
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand
 
-  // 2) Schwellwerte je nach Fensterbreite
-  const showThreshold = window.innerWidth < 1200
-    ? 0.1    // Mobile: 20% sichtbar → einblenden
-    : 0.7;   // Desktop: erst ab 70% sichtbar
+  revealImmediately('[data-reveal-immediate]');
 
-  const hideThreshold = showThreshold * 0.5;
-  // z. B. showThreshold=0.7 → hideThreshold=0.35.
-  // wir verstecken erst, wenn nur noch <35% sichtbar sind
+  // 2) Schwellwerte je nach Fensterbreite
+  const { showThreshold, hideThreshold } = getRevealThresholds();
 
   // 3) Callback-Funktion
   const callback = entries => {
@@ -47,11 +69,17 @@ onPageLoaded(() => {
 
   // 4) Observer mit mehreren Threshold-Stufen, damit intersectionRatio korrekt reported wird
   const observer = new IntersectionObserver(callback, {
-    threshold: [0, hideThreshold, showThreshold, 1]
+    threshold: [0, 0.01, hideThreshold, showThreshold, 1]
   });
 
   // 5) Jedes Ziel-Element initialisieren und beobachten
   els.forEach(el => {
+    if (shouldRevealImmediately(el)) {
+      markVisible(el);
+      isVisibleMap.set(el, true);
+      return;
+    }
+
     isVisibleMap.set(el, false);
     observer.observe(el);
   });
@@ -63,13 +91,7 @@ onPageLoaded(() => {
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand
 
   // 2) Schwellwerte je nach Fensterbreite
-  const showThreshold = window.innerWidth < 1200
-    ? 0.1    // Mobile: 20% sichtbar → einblenden
-    : 0.7;   // Desktop: erst ab 70% sichtbar
-
-  const hideThreshold = showThreshold * 0.5;
-  // z. B. showThreshold=0.7 → hideThreshold=0.35.
-  // wir verstecken erst, wenn nur noch <35% sichtbar sind
+  const { showThreshold, hideThreshold } = getRevealThresholds();
 
   // 3) Callback-Funktion
   const callback = entries => {
@@ -96,11 +118,17 @@ onPageLoaded(() => {
 
   // 4) Observer mit mehreren Threshold-Stufen, damit intersectionRatio korrekt reported wird
   const observer = new IntersectionObserver(callback, {
-    threshold: [0, hideThreshold, showThreshold, 1]
+    threshold: [0, 0.01, hideThreshold, showThreshold, 1]
   });
 
   // 5) Jedes Ziel-Element initialisieren und beobachten
   animateLeft.forEach(al => {
+    if (shouldRevealImmediately(al)) {
+      markVisible(al);
+      isVisibleMap.set(al, true);
+      return;
+    }
+
     isVisibleMap.set(al, false);
     observer.observe(al);
   });
@@ -112,13 +140,7 @@ onPageLoaded(() => {
   const isVisibleMap = new WeakMap();  // speichert pro Element den letzten Sichtbarkeitszustand
 
   // 2) Schwellwerte je nach Fensterbreite
-  const showThreshold = window.innerWidth < 1200
-    ? 0.1    // Mobile: 20% sichtbar → einblenden
-    : 0.7;   // Desktop: erst ab 70% sichtbar
-
-  const hideThreshold = showThreshold * 0.5;
-  // z. B. showThreshold=0.7 → hideThreshold=0.35.
-  // wir verstecken erst, wenn nur noch <35% sichtbar sind
+  const { showThreshold, hideThreshold } = getRevealThresholds();
 
   // 3) Callback-Funktion
   const callback = entries => {
@@ -145,11 +167,17 @@ onPageLoaded(() => {
 
   // 4) Observer mit mehreren Threshold-Stufen, damit intersectionRatio korrekt reported wird
   const observer = new IntersectionObserver(callback, {
-    threshold: [0, hideThreshold, showThreshold, 1]
+    threshold: [0, 0.01, hideThreshold, showThreshold, 1]
   });
 
   // 5) Jedes Ziel-Element initialisieren und beobachten
   animateRight.forEach(ar => {
+    if (shouldRevealImmediately(ar)) {
+      markVisible(ar);
+      isVisibleMap.set(ar, true);
+      return;
+    }
+
     isVisibleMap.set(ar, false);
     observer.observe(ar);
   });

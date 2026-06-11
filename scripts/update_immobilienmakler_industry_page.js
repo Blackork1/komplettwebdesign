@@ -9,7 +9,7 @@ const content = {
     'Exposé-Seiten, Objektfilter und 360°-Rundgänge sauber strukturiert',
     'Local SEO für Bezirke, Leistungen und Eigentümer-Suchanfragen',
     'Bewertungstool, Rückruf-CTA und Kontaktformulare als Lead-Magneten',
-    'Transparente Pakete ab 499 EUR und persönliche Umsetzung aus Berlin'
+    'Transparente Pakete ab 799 EUR und persönliche Umsetzung aus Berlin'
   ],
   hero_image_alt: 'Moderne Immobilienmakler Website mit Exposé- und Anfragebereich',
   warum_upper: `<p>Wer heute eine Immobilie verkaufen, kaufen oder vermieten möchte, startet die Recherche fast immer digital. Für Makler bedeutet das: Die eigene Website muss in wenigen Sekunden Vertrauen aufbauen, lokale Kompetenz zeigen und Interessenten zu einer klaren Anfrage führen.</p>
@@ -155,11 +155,11 @@ const content = {
     }
   ],
   cta_headline: 'Bereit für eine Makler-Website, die Eigentümer-Anfragen gewinnt?',
-  cta_text: 'Wir planen Design, Texte, SEO, GEO-Struktur, Exposé-Bereiche und Kontaktwege so, dass dein Webauftritt Vertrauen aufbaut und messbar mehr qualifizierte Anfragen auslöst.',
+  cta_text: 'Wir planen Design, Texte, SEO, GEO-Struktur, Exposé-Bereiche und Kontaktwege so, dass dein Webauftritt Vertrauen aufbaut und qualifizierte Anfragewege klarer macht.',
   faq_items: [
     {
       q: 'Was kostet eine Immobilienmakler-Website?',
-      a: '<p>Ein professioneller Einstieg ist ab 499 EUR möglich. Für Makler ist meist das Business- oder Premium-Paket sinnvoll, wenn mehrere Unterseiten, SEO-Struktur, Exposé-Bereiche oder ein Bewertungstool geplant sind.</p>',
+      a: '<p>Ein professioneller Einstieg ist mit dem Start-Paket ab 799 EUR möglich. Für Makler ist meist das Business- oder Wachstum-Paket sinnvoll, wenn mehrere Unterseiten, SEO-Struktur, Exposé-Bereiche oder ein Bewertungstool geplant sind.</p>',
       link_url: '/pakete',
       link_label: 'Pakete ansehen'
     },
@@ -291,7 +291,7 @@ const content = {
       position: 'after_tipps',
       html: `<section class="industry-check-block alignCenter animate-on-scroll">
   <p class="industry-eyebrow">Nächster Schritt</p>
-  <h2>Ist deine aktuelle Makler-Website bereit für mehr Anfragen?</h2>
+  <h2>Ist deine aktuelle Makler-Website bereit für klarere Anfragewege?</h2>
   <p>Wir prüfen kostenlos, ob deine Website mobil überzeugt, lokale Suchanfragen abdeckt, saubere Meta-Daten hat, für KI-Antworten verständlich ist und Besucher zu Bewertung, Rückruf oder Kontakt führt.</p>
   <div class="industry-check-actions">
     <a class="primary" href="/website-tester" data-track="cta" data-cta-name="realestate_full_website_test">Kostenlosen Website-Test starten</a>

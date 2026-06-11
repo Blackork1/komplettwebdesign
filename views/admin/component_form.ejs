@@ -49,14 +49,14 @@
     <!-- ==== Alle möglichen Felder (data-field steuert Anzeige) =========== -->
 
     <!-- form: action + method -->
-    <div data-field="action" style="display:none;">
+    <div data-field="action" class="admin-form-field-hidden">
       <label for="inpAction">Formular-Action (Ziel-URL):<br>
         <input type="text" id="inpAction" name="action"
                value="<%= component ? component.action : '' %>"
                placeholder="/kontakt-senden">
       </label>
     </div>
-    <div data-field="method" style="display:none;">
+    <div data-field="method" class="admin-form-field-hidden">
       <label for="inpMethod">Methode:</label>
       <select id="inpMethod" name="method">
         <option value="post" <%= component && component.method==='post' ? 'selected="selected"' : '' %>>POST</option>
@@ -65,7 +65,7 @@
     </div>
 
     <!-- input: input_type, name, placeholder, value, required, pattern, minlength -->
-    <div data-field="input_type" style="display:none;">
+    <div data-field="input_type" class="admin-form-field-hidden">
       <label for="inpInputType">Input-Typ:</label>
       <select id="inpInputType" name="input_type">
         <% ['text','email','password','date','file','number','hidden'].forEach(it => { %>
@@ -77,7 +77,7 @@
       </select>
     </div>
 
-    <div data-field="name" style="display:none;">
+    <div data-field="name" class="admin-form-field-hidden">
       <label for="inpName">Name (für Formular-Felder):<br>
         <input type="text" id="inpName" name="name" 
                value="<%= component ? component.name : '' %>" 
@@ -85,7 +85,7 @@
       </label>
     </div>
 
-    <div data-field="placeholder" style="display:none;">
+    <div data-field="placeholder" class="admin-form-field-hidden">
       <label for="inpPlaceholder">Placeholder:<br>
         <input type="text" id="inpPlaceholder" name="placeholder" 
                value="<%= component ? component.placeholder : '' %>" 
@@ -93,7 +93,7 @@
       </label>
     </div>
 
-    <div data-field="value" style="display:none;">
+    <div data-field="value" class="admin-form-field-hidden">
       <label for="inpValue">Wert / Label:<br>
         <input type="text" id="inpValue" name="value" 
                value="<%= component ? component.value : '' %>" 
@@ -101,7 +101,7 @@
       </label>
     </div>
 
-    <div data-field="required" style="display:none;">
+    <div data-field="required" class="admin-form-field-hidden">
       <label>
         <input type="checkbox" name="required" 
           <%= component && component.required ? 'checked="checked"' : '' %> >
@@ -109,7 +109,7 @@
       </label>
     </div>
 
-    <div data-field="pattern" style="display:none;">
+    <div data-field="pattern" class="admin-form-field-hidden">
       <label for="inpPattern">Muster (RegEx) pattern:<br>
         <input type="text" id="inpPattern" name="pattern" 
                value="<%= component ? component.pattern : '' %>" 
@@ -117,7 +117,7 @@
       </label>
     </div>
 
-    <div data-field="minlength" style="display:none;">
+    <div data-field="minlength" class="admin-form-field-hidden">
       <label for="inpMinlength">Minimale Länge:<br>
         <input type="number" id="inpMinlength" name="minlength" min="0"
                value="<%= component ? component.minlength : '' %>">
@@ -125,14 +125,14 @@
     </div>
 
     <!-- textarea: content (Name + placeholder gelten ebenfalls) -->
-    <div data-field="content" style="display:none;">
+    <div data-field="content" class="admin-form-field-hidden">
       <label for="inpContent">Text-Inhalt:<br>
-        <textarea id="inpContent" name="content" rows="10" style="min-width:500px"><%= component ? component.content : '' %></textarea>
+        <textarea id="inpContent" name="content" rows="10" class="admin-textarea-wide"><%= component ? component.content : '' %></textarea>
       </label>
     </div>
 
     <!-- select / radio: options -->
-    <div data-field="options" style="display:none;">
+    <div data-field="options" class="admin-form-field-hidden">
       <label for="inpOptions">Optionen (bei Select/Radio), mit '|' trennen:<br>
         <input type="text" id="inpOptions" name="options" 
                value="<%= component ? component.options : '' %>" 
@@ -141,7 +141,7 @@
     </div>
 
     <!-- img: alt + src -->
-    <div data-field="alt" style="display:none;">
+    <div data-field="alt" class="admin-form-field-hidden">
       <label for="inpAlt">Alt-Text (Bildbeschreibung):<br>
         <input type="text" id="inpAlt" name="alt" 
                value="<%= component ? component.alt : '' %>" 
@@ -149,7 +149,7 @@
       </label>
     </div>
 
-    <div data-field="src" style="display:none;">
+    <div data-field="src" class="admin-form-field-hidden">
       <label for="inpImage">Bild-Datei hochladen / URL:<br>
         <input type="file" id="inpImage" name="imageFile">
         <br>
@@ -160,7 +160,7 @@
     </div>
 
     <!-- a: href (Linkziel); Inhalt über content gesteuert -->
-    <div data-field="href" style="display:none;">
+    <div data-field="href" class="admin-form-field-hidden">
       <label for="inpHref">Link-Ziel href:<br>
         <input type="text" id="inpHref" name="href" 
                value="<%= component ? component.href : '' %>" 
@@ -206,12 +206,12 @@
       // Alle data-field-Container verbergen (außer classes)
       document.querySelectorAll('[data-field]').forEach(el => {
         if (el.getAttribute('data-field') === 'classes') return;
-        el.style.display = 'none';
+        el.classList.add('admin-form-field-hidden');
       });
       // Nur die Felder anzeigen, die in FIELD_CFG[type] gelistet sind
       ;(FIELD_CFG[type] || []).forEach(fieldName => {
         const node = document.querySelector(`[data-field="${fieldName}"]`);
-        if (node) node.style.display = '';
+        if (node) node.classList.remove('admin-form-field-hidden');
       });
     }
 
@@ -235,7 +235,7 @@
 
   // 3) Hilfsfunktion: Dropdown unsichtbar machen
   function hideDropdown() {
-    dropdown.style.display = 'none';
+    dropdown.classList.remove('is-open');
     dropdown.innerHTML = '';
   }
 
@@ -243,7 +243,7 @@
   function buildDropdown(matches) {
     // Leeren und sichtbar machen
     dropdown.innerHTML = '';
-    dropdown.style.display = matches.length ? 'block' : 'none';
+    dropdown.classList.toggle('is-open', matches.length > 0);
 
     matches.forEach(cls => {
       const div = document.createElement('div');

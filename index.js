@@ -30,6 +30,7 @@ import { navbarMiddleware } from './helpers/navHelper.js';
 import consentMiddleware from './middleware/consentMiddleware.js';
 import { accessLog } from './middleware/accessLog.js';
 import { attachCsrfToken } from './middleware/csrf.js';
+import pricingLocalsMiddleware from './middleware/pricingLocals.js';
 import { ensureAutoSlots } from './services/autoAppointmentService.js';
 import {
   deleteExpiredUnbooked,
@@ -52,6 +53,7 @@ import slugRoutes from './routes/slug.js';
 import widgetApiRoutes from './routes/widgetApiRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import adminBlogRoutes from './routes/adminBlogRoutes.js';
+import adminPricingRoutes from './routes/adminPricingRoutes.js';
 import newsletterRoutes from './routes/newsletter.js';
 import starticPagesRoutes from './routes/staticPages.js';
 import packageRoutes from './routes/packages.js';
@@ -73,6 +75,8 @@ import adminRatgeberRoutes from './routes/adminRatgeberRoutes.js';
 import testRouter from './routes/testRouter.js';
 import adminLeistungenRoutes from './routes/adminLeistungenRoutes.js';
 import leistungenRoutes from './routes/leistungenRoutes.js';
+import { footerNavigation, headerCta, headerNavigation } from './data/siteNavigation.js';
+import { trackingPageContextForPath } from './data/trackingEvents.js';
 import {
   escapeHtml,
   escapeJsonForHtml,
@@ -99,7 +103,10 @@ Object.assign(app.locals, {
   safeFormMethod,
   safeInputType,
   safeUrl,
-  sanitizeHtml
+  sanitizeHtml,
+  footerNavigation,
+  headerCta,
+  headerNavigation
 });
 // Healthcheck (für Docker/Monitoring)
 app.get('/health', (_req, res) => {
@@ -117,19 +124,32 @@ const cssAssetManifest = loadCssAssetManifest(path.join(publicDir, 'css-asset-ma
 validateCssAssetManifest(cssAssetManifest, [
   'about.css',
   'admin-appointments.css',
+  'admin-logs.css',
+  'admin-newsletter.css',
   'admin.css',
   'blog.css',
   'booking-widget.css',
   'branchen.css',
+  'carousel.css',
+  'cost-pages.css',
   'css/main.css',
   'district-berlin.css',
   'extra.css',
   'faq.css',
+  'footer.css',
+  'chat.css',
+  'home.css',
   'interaction-polish.css',
+  'kontakt.css',
+  'kontakt-noscript.css',
+  'leistungen.css',
+  'pricing.css',
   'references.css',
   'seo-landing.css',
+  'shop.css',
   'styles.css',
   'unified-hero.css',
+  'webdesign-berlin.css',
   'website-tester.css'
 ]);
 app.locals.asset = createPublicAssetResolver({
@@ -144,9 +164,18 @@ app.locals.cssAsset = createCssAssetResolver(cssAssetManifest, {
   fallbackVersion: app.locals.assetVersion
 });
 
-const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://komplettwebdesign.de' : '')).replace(/\/$/, '');
+const configuredCanonicalBase = (process.env.CANONICAL_BASE_URL || (isProd ? 'https://www.komplettwebdesign.de' : '')).replace(/\/$/, '');
 const configuredCanonicalHost = (process.env.CANON_HOST || '').trim().replace(/:\d+$/, '').toLowerCase();
-const noIndexPrefixes = ['/admin', '/auth', '/api/', '/webhook', '/login', '/logout'];
+const noIndexPrefixes = [
+  '/admin',
+  '/auth',
+  '/api',
+  '/webhook',
+  '/login',
+  '/logout',
+  '/test',
+  '/create-checkout-session'
+];
 
 function resolveRequestBaseUrl(req) {
   const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').toString().split(',')[0].trim();
@@ -236,6 +265,7 @@ app.use((req, res, next) => {
   res.locals.canonicalUrl = canonicalUrl;
   res.locals.currentPathname = normalizedPath;
   res.locals.currentSearch = queryString;
+  res.locals.trackingContext = trackingPageContextForPath(req.path);
   res.locals.robots = shouldNoindex
     ? 'noindex,nofollow'
     : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1';
@@ -301,6 +331,7 @@ app.set('fieldConfig', FIELD_CONFIG);
 const availableCssFiles = getAvailableCssFiles();
 app.locals.availableCssFiles = availableCssFiles;
 app.use(navbarMiddleware(pool));
+app.use(pricingLocalsMiddleware);
 
 // ganz am Anfang von index.js
 process.on('unhandledRejection', err => {
@@ -353,6 +384,7 @@ app.use('/admin/pages', adminPageRoutes);
 app.use(adminComponentRoutes);
 app.use(referenceRoutes);
 app.use(seoLandingRoutes);
+app.use(adminPricingRoutes);
 app.use(slugRoutes);
 app.use(authRoutes);
 app.use(bookingRoutes);

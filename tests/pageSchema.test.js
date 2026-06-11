@@ -33,7 +33,7 @@ test('buildHandwerkerPageSchemas returns extractable WebPage, Service, breadcrum
   assert.equal(service.name, 'Webdesign für Handwerker');
   assert.equal(service.areaServed.name, 'Berlin');
   assert.equal(service.audience.audienceType, 'Handwerksbetriebe');
-  assert.equal(service.offers.itemListElement[0].price, '499.00');
+  assert.equal(service.offers, undefined);
 
   const faq = graph.find((node) => node['@type'] === 'FAQPage');
   assert.ok(faq.mainEntity.length >= 5);

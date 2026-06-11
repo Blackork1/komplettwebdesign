@@ -5,6 +5,7 @@ import {
   listGeoAuditRequests,
   listSeoAuditRequests,
   getWebsiteTesterConfig,
+  listWebsiteTesterScanNotifications,
   listWebsiteTesterLeads,
   listWebsiteTesterRequests,
   updateBrokenLinksTesterConfig,
@@ -278,8 +279,12 @@ export async function websiteTesterPage(req, res) {
   const leadDir = String(req.query.lead_dir || '').trim();
   const leadToEndOfDay = /^\d{4}-\d{2}-\d{2}$/.test(leadTo) ? `${leadTo}T23:59:59.999Z` : leadTo;
 
-  const [config, archive, brokenArchive, geoArchive, seoArchive, leadArchive] = await Promise.all([
+  const [config, scanNotifications, archive, brokenArchive, geoArchive, seoArchive, leadArchive] = await Promise.all([
     getWebsiteTesterConfig(),
+    listWebsiteTesterScanNotifications({
+      page: 1,
+      pageSize: 20
+    }),
     listWebsiteTesterRequests({
       page: requestPage,
       pageSize: 30,
@@ -337,6 +342,7 @@ export async function websiteTesterPage(req, res) {
   res.render('admin/website_tester', {
     title: 'Website-Tester Admin',
     config,
+    scanNotifications,
     preview: previewRecord
       ? {
         id: previewRecord.id,
@@ -404,6 +410,7 @@ export async function saveWebsiteTesterConfig(req, res) {
   const currentConfig = await getWebsiteTesterConfig();
   const hasMaxSubpages = hasFormValue(req.body.max_subpages);
   const hasFullGuideMaxPages = hasFormValue(req.body.full_guide_max_pages);
+  const hasTesterScanEmailNotificationsEnabled = hasFormValue(req.body.tester_scan_email_notifications_enabled);
 
   const maxSubpages = hasMaxSubpages
     ? parsePositiveInt(req.body.max_subpages, currentConfig?.maxSubpages ?? 5)
@@ -411,13 +418,19 @@ export async function saveWebsiteTesterConfig(req, res) {
   const fullGuideMaxPages = hasFullGuideMaxPages
     ? parsePositiveInt(req.body.full_guide_max_pages, currentConfig?.fullGuideMaxPages ?? 10)
     : (currentConfig?.fullGuideMaxPages ?? 10);
+  const testerScanEmailNotificationsEnabled = hasTesterScanEmailNotificationsEnabled
+    ? String(req.body.tester_scan_email_notifications_enabled) === 'true'
+    : currentConfig?.testerScanEmailNotificationsEnabled !== false;
 
   await updateWebsiteTesterConfig({
     maxSubpages,
-    fullGuideMaxPages
+    fullGuideMaxPages,
+    testerScanEmailNotificationsEnabled
   });
 
-  const settingsTester = hasFullGuideMaxPages && !hasMaxSubpages ? 'full_guide' : 'website';
+  const settingsTester = hasTesterScanEmailNotificationsEnabled && !hasMaxSubpages && !hasFullGuideMaxPages
+    ? 'notifications'
+    : (hasFullGuideMaxPages && !hasMaxSubpages ? 'full_guide' : 'website');
   res.redirect(`/admin/website-tester?saved=1&settings_tester=${settingsTester}`);
 }
 

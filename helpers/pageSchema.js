@@ -1,37 +1,16 @@
 import { stripHtml } from './industrySchema.js';
 
-const DEFAULT_OFFERS = [
-  {
-    name: 'Basis',
-    price: '499.00',
-    url: '/pakete/basis',
-    description: 'Onepager mit Design, Texten und SEO-Grundoptimierung.'
-  },
-  {
-    name: 'Business',
-    price: '899.00',
-    url: '/pakete/business',
-    description: 'Mehrseitige Unternehmenswebsite mit Kontaktformular und On-Page-SEO.'
-  },
-  {
-    name: 'Premium',
-    price: '1499.00',
-    url: '/pakete/premium',
-    description: 'Umfangreiche Website mit Strategie, SEO und optionalen Funktionen.'
-  }
-];
-
 const HANDWERKER_FAQ = [
   {
     q: 'Was kostet eine Handwerker-Website?',
-    a: 'Eine professionelle Handwerker-Website startet bei Komplett Webdesign ab 499 EUR. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und SEO-Struktur ist meist das Business-Paket ab 899 EUR sinnvoll.'
+    a: 'Eine kompakte Handwerker-Website startet bei Komplett Webdesign üblicherweise im Start-Paket. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und stärkerer Struktur ist häufig das Business-Paket sinnvoll.'
   },
   {
     q: 'Welche Inhalte braucht eine gute Handwerker-Website?',
     a: 'Wichtig sind klare Leistungen, Einsatzgebiet, Referenzen, Bewertungen, ein verständlicher Ablauf, schnelle Kontaktwege und ein Anfrageformular, das Projektart, Ort, Zeitraum und Fotos abfragen kann.'
   },
   {
-    q: 'Hilft Local SEO Handwerksbetrieben bei neuen Aufträgen?',
+    q: 'Hilft Local SEO Handwerksbetrieben bei besserer Auffindbarkeit?',
     a: 'Ja. Local SEO hilft, wenn die Website konkrete Leistungen, Berliner Bezirke, Projektbeispiele, Kontaktwege und strukturierte Daten sauber verbindet. Das macht die Seite für Suchmaschinen und Interessenten leichter verständlich.'
   },
   {
@@ -111,7 +90,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
         '@type': 'Service',
         '@id': serviceId,
         name: 'Webdesign für Handwerker',
-        serviceType: 'Website-Erstellung, Local SEO und Lead-Generierung für Handwerksbetriebe',
+        serviceType: 'Website-Erstellung, Local SEO und klare Anfragewege für Handwerksbetriebe',
         description,
         url: pageUrl,
         provider: { '@id': orgId },
@@ -123,20 +102,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
           '@type': 'BusinessAudience',
           audienceType: 'Handwerksbetriebe'
         },
-        image,
-        offers: {
-          '@type': 'OfferCatalog',
-          name: 'Webdesign-Pakete',
-          itemListElement: DEFAULT_OFFERS.map((offer) => ({
-            '@type': 'Offer',
-            name: offer.name,
-            price: offer.price,
-            priceCurrency: 'EUR',
-            url: toAbsoluteUrl(offer.url, base),
-            description: offer.description,
-            availability: 'https://schema.org/InStock'
-          }))
-        }
+        image
       },
       {
         '@type': 'BreadcrumbList',

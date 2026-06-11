@@ -30,9 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2) Toggle (öffnen)
   toggleBtn.addEventListener('click', () => {
-    toggleBtn.style.display = 'none';
-    container.style.display = 'flex';
-    // ensure the transition runs after display change
+    toggleBtn.classList.add('is-hidden');
+    container.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => container.classList.add('open'));
 
     // Begrüßung nur beim allerersten Öffnen
@@ -45,10 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3) Schließen
   closeBtn.addEventListener('click', () => {
     container.classList.remove('open');
-    // wait for slide-out transition before hiding completely
+    container.setAttribute('aria-hidden', 'true');
     setTimeout(() => {
-      container.style.display = 'none';
-      toggleBtn.style.display = 'block';
+      toggleBtn.classList.remove('is-hidden');
     }, 300);
   });
 

@@ -22,14 +22,14 @@ a.logo {
   gap: 1rem;
 }
 
-.heroLinks a:not(.btn-tertiary) {
+.heroLinks a:not(.btn) {
   color: var(--color-primary);
   font-weight: bold;
   padding: 5px;
   transition: all 0.2s ease;
 }
 
-.heroLinks a:hover:not(.btn-tertiary) {
+.heroLinks a:hover:not(.btn) {
   color: var(--color-accent);
   border-bottom: 3px solid var(--color-accent-light);
   padding-bottom: 10px;
@@ -107,14 +107,6 @@ a.logo {
 
 .hero-ctas .btn {
   margin: 0 auto 1rem;
-}
-
-.btn {
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  display: inline-block;
-  font-weight: 600;
-  padding: 0.75rem 1rem;
 }
 
 /* public/css/cta.css */

@@ -1,14 +1,24 @@
 <%- include('partials/head') %>
-<%- include('partials/header', {title: "404"})  %>
 
-<body class="center">
-  <div style="padding: 100px 0;">
-    <h1>404 - Seite nicht gefunden</h1>
-    <p>Leider konnte die Seite "<%= path %>" nicht gefunden werden.</p>
-    <p>Das ist ja echt blöd gelaufen.</p>
-    <a href="/"><button class="btn btn-tertiary">Erstmal zurück zur Startseite</button></a>
-  </div>
+<body class="not-found-page">
+  <%- include('partials/header', {title: "404"})  %>
 
+  <main class="section not-found-page__main">
+    <div class="container">
+      <div class="not-found-page__card">
+        <p class="not-found-page__eyebrow">404</p>
+        <h1>Diese Seite wurde nicht gefunden</h1>
+        <p>Der Link ist veraltet oder die Adresse stimmt nicht. Du kannst zur Startseite zurückgehen, die Pakete ansehen oder dein Projekt direkt anfragen.</p>
+        <div class="not-found-page__actions">
+          <a class="btn btn-primary" href="/">Zur Startseite</a>
+          <a class="btn btn-secondary" href="/pakete">Pakete ansehen</a>
+          <a class="btn btn-secondary" href="/kontakt">Kontakt aufnehmen</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
 </body>
 
-<%- include('partials/footer') %>
+</html>

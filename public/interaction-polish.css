@@ -71,20 +71,16 @@
   text-decoration-color: color-mix(in srgb, currentColor 32%, transparent);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 0 1px;
+  background-image: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
   :where(a[href]:not(:has(img)):not(.btn):not([class*="button" i]):not([class*="card" i]):not([class*="media" i])):hover {
     color: var(--kwd-motion-accent-dark);
-    background-size: 100% 1px;
-    text-decoration-color: transparent;
+    text-decoration-color: currentColor;
   }
 
-  :where(button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i], .kwd-slot-card, .option-label, .reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wd-case, .wt-tool-card, .wt-panel):not(:disabled):not([aria-disabled="true"]):hover {
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"], label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i], .kwd-slot-card, .option-label, .reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wd-case, .wt-tool-card, .wt-panel):not(:disabled):not([aria-disabled="true"]):hover {
     transform: translate3d(0, -3px, 0);
     box-shadow: var(--kwd-motion-shadow);
     filter: saturate(1.05);
@@ -102,14 +98,26 @@
   :where(.reference-card a, .seo-landing__link-card, .rg-guide-card a, .post-card-link, .featured-post-card a, .featured-post-card-mobile a, .wd-package-card a, .wt-tool-card a):hover {
     text-decoration: none;
   }
+
+  :where(.webdesign-berlin .wd-faq details, .seo-landing__faq details, .maintenance-faq details, .running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item, .packages-page .faq-list details, .rg-faq-list details, [data-faq-accordion] details):hover {
+    border-color: color-mix(in srgb, var(--kwd-motion-accent) 42%, rgba(11, 42, 70, 0.14));
+    box-shadow: 0 14px 32px rgba(11, 42, 70, 0.1);
+    transform: translate3d(0, -2px, 0);
+  }
+
+  :where(summary):hover {
+    box-shadow: none;
+    filter: none;
+    transform: none;
+  }
 }
 
-:where(button, input[type="button"], input[type="submit"], input[type="reset"], summary, label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i]):not(:disabled):not([aria-disabled="true"]):active {
+:where(button, input[type="button"], input[type="submit"], input[type="reset"], label[for], [role="button"], .btn, a[href][class*="btn" i], a[href][class*="button" i]):not(:disabled):not([aria-disabled="true"]):active {
   transform: translate3d(0, 0, 0) scale(0.975);
   box-shadow: 0 8px 20px rgba(11, 42, 70, 0.12);
 }
 
-:where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card, .wt-panel) {
+:where(.reference-card, .seo-landing__link-card, .rg-guide-card, .post-card, .featured-post-card, .featured-post-card-mobile, .intro-card, .overview-card, .detail-card, .proof-card, .trust-card, .leistungen-example, .wd-package-card, .wt-tool-card, .wt-panel, .webdesign-berlin .wd-faq details, .seo-landing__faq details, .maintenance-faq details, .running-costs-faq-item, .add-ons-faq-item, .local-seo-faq-item, .packages-page .faq-list details, .rg-faq-list details, [data-faq-accordion] details) {
   transition:
     border-color 180ms ease,
     box-shadow 220ms var(--kwd-motion-ease),

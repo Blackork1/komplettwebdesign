@@ -1,6 +1,8 @@
 import ejs from 'ejs';
 import BlogPostModel from '../models/BlogPostModel.js';
 import { isoOffset, isoAtNoon } from '../util/date.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
 const BLOG_PAGE_SIZE = 10;
 
@@ -19,6 +21,12 @@ function renderDbEjs(template, locals = {}) {
 
 function stripHtml(html) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function demoteContentH1(html) {
+  return String(html || '')
+    .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
 }
 
 function parseNonNegativeInteger(value, fallback = 0) {
@@ -40,14 +48,17 @@ function renderPostCard(res, post, idx) {
 }
 
 export async function listPosts(req, res) {
-  const [posts, totalPosts, featuredPosts] = await Promise.all([
+  const [rawPosts, totalPosts, rawFeaturedPosts] = await Promise.all([
     BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset: 0 }),
     BlogPostModel.countPublished(),
     BlogPostModel.findFeatured(5)
   ]);
+  const pricing = res.locals.packagePricing || {};
+  const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, pricing));
+  const featuredPosts = normalizeLegacyPublicCopy(renderPricingTokens(rawFeaturedPosts, pricing));
   res.render('blog/index', {
-    title: "Aktuelles und News aus dem Technikbereich sowie Rabattaktionen",
-    description: "Neue Informationen zu KI, Websiten, Wissenswertes sowie Angebote und Rabattaktionen.",
+    title: "Aktuelle Einschätzungen zu Webdesign, SEO und Sichtbarkeit",
+    description: "Aktuelle Einschätzungen zu Webdesign, KI, Performance und SEO. Dauerhafte Grundlagen zu Kosten, Ablauf und Local SEO findest du im Ratgeber.",
     posts,
     featuredPosts,
     totalPosts,
@@ -60,10 +71,11 @@ export async function listPostsPage(req, res) {
     const offset = parseNonNegativeInteger(req.query.offset, 0);
     const requestedLimit = parseNonNegativeInteger(req.query.limit, BLOG_PAGE_SIZE);
     const limit = Math.min(Math.max(requestedLimit, 1), BLOG_PAGE_SIZE);
-    const [posts, totalPosts] = await Promise.all([
+    const [rawPosts, totalPosts] = await Promise.all([
       BlogPostModel.findPage({ limit, offset }),
       BlogPostModel.countPublished()
     ]);
+    const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, res.locals.packagePricing || {}));
     const html = (await Promise.all(
       posts.map((post, idx) => renderPostCard(res, post, offset + idx))
     )).join('');
@@ -83,7 +95,8 @@ export async function listPostsPage(req, res) {
 }
 
 export async function showPost(req, res) {
-  const post = await BlogPostModel.findBySlug(req.params.slug);
+  const rawPost = await BlogPostModel.findBySlug(req.params.slug);
+  const post = normalizeLegacyPublicCopy(renderPricingTokens(rawPost, res.locals.packagePricing || {}));
   if (!post) return res.status(404).send('Artikel nicht gefunden');
 
 
@@ -99,7 +112,7 @@ export async function showPost(req, res) {
     try { faqArray = JSON.parse(post.faq_json); } catch { faqArray = []; }
   }
 
-  const renderedContent = renderDbEjs(post.content, {
+  const renderedContent = demoteContentH1(normalizeLegacyPublicCopy(renderPricingTokens(renderDbEjs(post.content, {
     post: { ...post, description: post.description }, // erlaubt <%= post.description %> im DB-Content
     modifiedISO,
     publishedISO,
@@ -108,7 +121,7 @@ export async function showPost(req, res) {
     helpers: {
       date: d => new Date(d).toLocaleDateString('de-DE')
     }
-  });
+  }), res.locals.packagePricing || {})));
 
   // Beschreibung/Excerpt bestimmen (DB-Excerpt bevorzugt)
   let desc = (post.excerpt && post.excerpt.trim()) || (post.excerpt && post.excerpt.trim()) || '';

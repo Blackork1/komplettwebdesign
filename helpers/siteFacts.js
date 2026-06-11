@@ -1,8 +1,23 @@
+import { maintenancePlans } from '../data/maintenancePlans.js';
+import { packages } from '../data/packages.js';
+
+const sitePackages = packages.map((pkg) => ({
+  slug: pkg.slug,
+  name: pkg.name,
+  price: pkg.priceFrom,
+  priceLabel: pkg.priceLabel,
+  schemaPrice: pkg.schemaPrice,
+  scope: pkg.pageScopeShort,
+  deliveryTime: pkg.timeline,
+  description: pkg.shortDescription,
+  canonicalPath: pkg.canonicalPath
+}));
+
 export const SITE_FACTS = {
   brandName: 'Komplett Webdesign',
   legalName: 'Komplett Webdesign',
   founderName: 'Sören Blocksdorf',
-  baseUrlFallback: 'https://www.komplettwebdesign.de',
+  baseUrlFallback: 'https://komplettwebdesign.de',
   email: 'kontakt@komplettwebdesign.de',
   phone: '+491551245048',
   phoneDisplay: '01551 245048',
@@ -19,43 +34,12 @@ export const SITE_FACTS = {
     ratingValue: 5.0,
     reviewCount: 4
   },
-  packages: [
-    {
-      slug: 'basis',
-      name: 'Basis',
-      price: 499,
-      priceLabel: '499 EUR',
-      schemaPrice: '499.00',
-      scope: '1 Seite',
-      deliveryTime: '2 bis 4 Wochen',
-      description: 'Onepager mit Design, Texten und SEO-Grundoptimierung.'
-    },
-    {
-      slug: 'business',
-      name: 'Business',
-      price: 899,
-      priceLabel: '899 EUR',
-      schemaPrice: '899.00',
-      scope: 'bis 5 Seiten',
-      deliveryTime: '4 bis 6 Wochen',
-      description: 'Mehrseitige Unternehmenswebsite mit Kontaktformular, Leistungsseiten und On-Page-SEO.'
-    },
-    {
-      slug: 'premium',
-      name: 'Premium',
-      price: 1499,
-      priceLabel: '1.499 EUR',
-      schemaPrice: '1499.00',
-      scope: 'bis 20 Seiten',
-      deliveryTime: '6 bis 8 Wochen',
-      description: 'Umfangreiche Website mit Strategie, Texten, SEO und Buchungssystem.'
-    }
-  ],
-  recurringCosts: [
-    { label: 'Domain und Mail', priceLabel: 'ab 10 EUR/Monat' },
-    { label: 'Hosting', priceLabel: '10 EUR/Monat' },
-    { label: 'Wartung', priceLabel: '5 EUR/Monat' }
-  ]
+  packages: sitePackages,
+  recurringCosts: maintenancePlans.map((plan) => ({
+    label: plan.name,
+    priceLabel: plan.priceLabel
+  })),
+  runningCostNote: 'Laufende Kosten für Hosting, Domain, E-Mail, Wartung, Monitoring oder externe Dienste werden separat vereinbart.'
 };
 
 export function getPackageBySlug(slug) {
@@ -68,7 +52,8 @@ export function formatGoogleRating(locale = 'de') {
     maximumFractionDigits: 1
   });
   const count = SITE_FACTS.googleRating.reviewCount;
-  return locale === 'en'
-    ? `★★★★★ ${decimal}/5 · ${count} Google reviews`
-    : `★★★★★ ${decimal}/5 · ${count} Google-Rezensionen`;
+  const noun = locale === 'en'
+    ? (count === 1 ? 'Google review' : 'Google reviews')
+    : (count === 1 ? 'Google-Rezension' : 'Google-Rezensionen');
+  return `★★★★★ ${decimal}/5 · ${count} ${noun}`;
 }

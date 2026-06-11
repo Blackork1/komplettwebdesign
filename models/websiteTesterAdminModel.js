@@ -12,6 +12,7 @@ const DEFAULT_GEO_MAX_SUBPAGES = 5;
 const DEFAULT_GEO_SCAN_MODE = 'maximal';
 const DEFAULT_SEO_MAX_SUBPAGES = 5;
 const DEFAULT_SEO_SCAN_MODE = 'maximal';
+const DEFAULT_TESTER_SCAN_EMAIL_NOTIFICATIONS_ENABLED = true;
 const BROKEN_LINK_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const GEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
 const SEO_SCAN_MODES = new Set(['schnell', 'balanced', 'maximal']);
@@ -72,6 +73,12 @@ function normalizeSeoScanMode(rawValue) {
   return SEO_SCAN_MODES.has(value) ? value : DEFAULT_SEO_SCAN_MODE;
 }
 
+function normalizeBooleanSetting(rawValue, fallback = true) {
+  if (rawValue === true || rawValue === 'true' || rawValue === 1 || rawValue === '1') return true;
+  if (rawValue === false || rawValue === 'false' || rawValue === 0 || rawValue === '0') return false;
+  return fallback;
+}
+
 function clampPage(rawValue) {
   const parsed = parseInt(rawValue, 10);
   if (!Number.isFinite(parsed) || parsed < 1) return 1;
@@ -127,6 +134,7 @@ async function ensureTables() {
         seo_max_subpages INT NOT NULL DEFAULT ${DEFAULT_SEO_MAX_SUBPAGES},
         seo_scan_mode VARCHAR(16) NOT NULL DEFAULT '${DEFAULT_SEO_SCAN_MODE}',
         full_guide_max_pages INT NOT NULL DEFAULT ${DEFAULT_FULL_GUIDE_MAX_PAGES},
+        tester_scan_email_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
@@ -159,6 +167,10 @@ async function ensureTables() {
       ALTER TABLE website_tester_config
       ADD COLUMN IF NOT EXISTS full_guide_max_pages INT NOT NULL DEFAULT ${DEFAULT_FULL_GUIDE_MAX_PAGES}
     `);
+    await pool.query(`
+      ALTER TABLE website_tester_config
+      ADD COLUMN IF NOT EXISTS tester_scan_email_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE
+    `);
 
     await pool.query(`
       INSERT INTO website_tester_config (
@@ -171,6 +183,7 @@ async function ensureTables() {
         seo_max_subpages,
         seo_scan_mode
         ,full_guide_max_pages
+        ,tester_scan_email_notifications_enabled
       )
       VALUES (
         1,
@@ -181,7 +194,8 @@ async function ensureTables() {
         '${DEFAULT_GEO_SCAN_MODE}',
         ${DEFAULT_SEO_MAX_SUBPAGES},
         '${DEFAULT_SEO_SCAN_MODE}',
-        ${DEFAULT_FULL_GUIDE_MAX_PAGES}
+        ${DEFAULT_FULL_GUIDE_MAX_PAGES},
+        ${DEFAULT_TESTER_SCAN_EMAIL_NOTIFICATIONS_ENABLED}
       )
       ON CONFLICT (id) DO NOTHING
     `);
@@ -431,6 +445,41 @@ async function ensureTables() {
       CREATE INDEX IF NOT EXISTS idx_wt_seo_requests_mode
       ON website_tester_seo_requests (scan_mode)
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS website_tester_scan_notifications (
+        id BIGSERIAL PRIMARY KEY,
+        source VARCHAR(24) NOT NULL DEFAULT 'website',
+        audit_id TEXT,
+        requested_url TEXT NOT NULL,
+        final_url TEXT,
+        locale VARCHAR(8) NOT NULL DEFAULT 'de',
+        status VARCHAR(16) NOT NULL DEFAULT 'success',
+        error_message TEXT,
+        score INT,
+        score_band VARCHAR(16),
+        scan_mode VARCHAR(16),
+        context_json JSONB,
+        details_json JSONB,
+        source_ip TEXT,
+        email_notification_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        email_notification_sent_at TIMESTAMPTZ,
+        email_notification_error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_wt_scan_notifications_created
+      ON website_tester_scan_notifications (created_at DESC)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_wt_scan_notifications_source
+      ON website_tester_scan_notifications (source)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_wt_scan_notifications_status
+      ON website_tester_scan_notifications (status)
+    `);
   })();
 
   try {
@@ -453,6 +502,7 @@ export async function getWebsiteTesterConfig() {
       seo_max_subpages,
       seo_scan_mode,
       full_guide_max_pages,
+      tester_scan_email_notifications_enabled,
       updated_at
     FROM website_tester_config
     WHERE id = 1
@@ -468,16 +518,21 @@ export async function getWebsiteTesterConfig() {
     seoMaxSubpages: clampSeoMaxSubpages(row.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(row.seo_scan_mode),
     fullGuideMaxPages: clampFullGuideMaxPages(row.full_guide_max_pages),
+    testerScanEmailNotificationsEnabled: normalizeBooleanSetting(row.tester_scan_email_notifications_enabled, true),
     updatedAt: row.updated_at || null
   };
 }
 
-export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages }) {
+export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages, testerScanEmailNotificationsEnabled }) {
   await ensureTables();
   const hasMaxSubpages = maxSubpages !== undefined && maxSubpages !== null && String(maxSubpages).trim() !== '';
   const hasFullGuideMaxPages = fullGuideMaxPages !== undefined && fullGuideMaxPages !== null && String(fullGuideMaxPages).trim() !== '';
+  const hasTesterScanEmailNotificationsEnabled = testerScanEmailNotificationsEnabled !== undefined && testerScanEmailNotificationsEnabled !== null && String(testerScanEmailNotificationsEnabled).trim() !== '';
   const clampedMaxSubpages = hasMaxSubpages ? clampMaxSubpages(maxSubpages) : null;
   const clampedFullGuideMaxPages = hasFullGuideMaxPages ? clampFullGuideMaxPages(fullGuideMaxPages) : null;
+  const normalizedTesterScanEmailNotificationsEnabled = hasTesterScanEmailNotificationsEnabled
+    ? normalizeBooleanSetting(testerScanEmailNotificationsEnabled, true)
+    : null;
   const { rows } = await pool.query(`
     INSERT INTO website_tester_config (
       id,
@@ -489,6 +544,7 @@ export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages
       seo_max_subpages,
       seo_scan_mode,
       full_guide_max_pages,
+      tester_scan_email_notifications_enabled,
       updated_at
     ) VALUES (
       1,
@@ -500,14 +556,16 @@ export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages
       ${DEFAULT_SEO_MAX_SUBPAGES},
       '${DEFAULT_SEO_SCAN_MODE}',
       COALESCE($2, ${DEFAULT_FULL_GUIDE_MAX_PAGES}),
+      COALESCE($3, ${DEFAULT_TESTER_SCAN_EMAIL_NOTIFICATIONS_ENABLED}),
       NOW()
     )
     ON CONFLICT (id) DO UPDATE
     SET max_subpages = COALESCE($1, website_tester_config.max_subpages),
         full_guide_max_pages = COALESCE($2, website_tester_config.full_guide_max_pages),
+        tester_scan_email_notifications_enabled = COALESCE($3, website_tester_config.tester_scan_email_notifications_enabled),
         updated_at = NOW()
-    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, updated_at
-  `, [clampedMaxSubpages, clampedFullGuideMaxPages]);
+    RETURNING max_subpages, broken_links_max_subpages, broken_links_scan_mode, geo_max_subpages, geo_scan_mode, seo_max_subpages, seo_scan_mode, full_guide_max_pages, tester_scan_email_notifications_enabled, updated_at
+  `, [clampedMaxSubpages, clampedFullGuideMaxPages, normalizedTesterScanEmailNotificationsEnabled]);
   return {
     maxSubpages: clampMaxSubpages(rows[0]?.max_subpages),
     brokenLinksMaxSubpages: clampBrokenLinksMaxSubpages(rows[0]?.broken_links_max_subpages),
@@ -517,6 +575,7 @@ export async function updateWebsiteTesterConfig({ maxSubpages, fullGuideMaxPages
     seoMaxSubpages: clampSeoMaxSubpages(rows[0]?.seo_max_subpages),
     seoScanMode: normalizeSeoScanMode(rows[0]?.seo_scan_mode),
     fullGuideMaxPages: clampFullGuideMaxPages(rows[0]?.full_guide_max_pages),
+    testerScanEmailNotificationsEnabled: normalizeBooleanSetting(rows[0]?.tester_scan_email_notifications_enabled, true),
     updatedAt: rows[0]?.updated_at || null
   };
 }
@@ -860,6 +919,76 @@ export async function archiveSeoAuditRequest(payload = {}) {
   ]);
 }
 
+export async function createWebsiteTesterScanNotification(payload = {}) {
+  await ensureTables();
+
+  const { rows } = await pool.query(`
+    INSERT INTO website_tester_scan_notifications (
+      source,
+      audit_id,
+      requested_url,
+      final_url,
+      locale,
+      status,
+      error_message,
+      score,
+      score_band,
+      scan_mode,
+      context_json,
+      details_json,
+      source_ip,
+      email_notification_enabled
+    ) VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14
+    )
+    RETURNING *
+  `, [
+    String(payload.source || 'website').slice(0, 24),
+    payload.auditId || null,
+    String(payload.requestedUrl || '').slice(0, 2000),
+    payload.finalUrl || null,
+    payload.locale === 'en' ? 'en' : 'de',
+    payload.status === 'error' ? 'error' : 'success',
+    payload.errorMessage || null,
+    Number.isFinite(payload.score) ? payload.score : null,
+    String(payload.scoreBand || '').slice(0, 16) || null,
+    String(payload.scanMode || '').slice(0, 16) || null,
+    payload.contextJson || null,
+    payload.detailsJson || null,
+    payload.sourceIp || null,
+    payload.emailNotificationEnabled !== false
+  ]);
+
+  return rows[0] || null;
+}
+
+export async function markWebsiteTesterScanNotificationMailSent(id) {
+  await ensureTables();
+  const parsed = parseInt(id, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  const { rows } = await pool.query(`
+    UPDATE website_tester_scan_notifications
+    SET email_notification_sent_at = NOW(),
+        email_notification_error = NULL
+    WHERE id = $1
+    RETURNING *
+  `, [parsed]);
+  return rows[0] || null;
+}
+
+export async function markWebsiteTesterScanNotificationMailFailed(id, errorMessage = '') {
+  await ensureTables();
+  const parsed = parseInt(id, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  const { rows } = await pool.query(`
+    UPDATE website_tester_scan_notifications
+    SET email_notification_error = $2
+    WHERE id = $1
+    RETURNING *
+  `, [parsed, String(errorMessage || 'Mailversand fehlgeschlagen').slice(0, 1200)]);
+  return rows[0] || null;
+}
+
 export async function createWebsiteTesterLead(payload = {}) {
   await ensureTables();
 
@@ -1050,6 +1179,53 @@ export async function markWebsiteTesterLeadFullGuideSent(id) {
     RETURNING *
   `, [parsed]);
   return rows[0] || null;
+}
+
+export async function listWebsiteTesterScanNotifications(options = {}) {
+  await ensureTables();
+
+  const page = clampPage(options.page);
+  const pageSize = clampPageSize(options.pageSize || 20);
+  const offset = (page - 1) * pageSize;
+
+  const { rows: countRows } = await pool.query(`
+    SELECT COUNT(*)::int AS total
+    FROM website_tester_scan_notifications
+  `);
+  const { rows } = await pool.query(`
+    SELECT
+      id,
+      source,
+      audit_id,
+      requested_url,
+      final_url,
+      locale,
+      status,
+      error_message,
+      score,
+      score_band,
+      scan_mode,
+      context_json,
+      details_json,
+      source_ip,
+      email_notification_enabled,
+      email_notification_sent_at,
+      email_notification_error,
+      created_at
+    FROM website_tester_scan_notifications
+    ORDER BY created_at DESC, id DESC
+    LIMIT $1
+    OFFSET $2
+  `, [pageSize, offset]);
+
+  const total = countRows[0]?.total || 0;
+  return {
+    rows,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize))
+  };
 }
 
 export async function listWebsiteTesterRequests(options = {}) {

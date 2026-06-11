@@ -134,7 +134,7 @@
           <small class="wt-lead-legal-note">
             <a href="${esc(i18n.privacyHref || '/datenschutz')}" target="_blank" rel="noopener">${esc(i18n.privacyLabel || 'Datenschutz')}</a>
           </small>
-          <button class="wt-button" type="submit">${esc(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
+          <button class="btn btn-primary" type="submit">${esc(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
           <p class="wt-lead-state" data-meta-lead-state hidden></p>
         </form>
       </section>
@@ -168,17 +168,17 @@
         <div class="wt-next-step-package">
           <strong>${esc(pkg.title)}</strong>
           <p>${esc(pkg.text || '')}</p>
-          <a class="wt-button wt-button-secondary" href="${esc(pkg.href || '/webdesign-berlin')}" data-tester-cta="meta" data-tester-action="package" data-meta-cta="package">${esc(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+          <a class="btn btn-secondary" href="${esc(pkg.href || '/webdesign-berlin')}" data-tester-cta="meta" data-tester-action="package" data-meta-cta="package">${esc(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
         </div>`;
     }
 
     return `
-      <section class="wt-cta-card wt-next-step-card" style="margin-top:0.9rem;">
+      <section class="wt-cta-card wt-next-step-card wt-stack-md">
         <h2><i class="fa-solid fa-rocket"></i> ${esc(i18n.ctaTitle || headline)}</h2>
         <p>${esc(intro)}</p>
         <div class="wt-cta-actions">
-          <a class="wt-button" href="${esc(bookingUrl)}" data-tester-cta="meta" data-tester-action="booking" data-meta-cta="booking">${esc(bookingLabel)}</a>
-          <a class="wt-button wt-button-ghost" href="${esc(contactUrl)}" data-tester-cta="meta" data-tester-action="contact" data-meta-cta="contact">${esc(contactLabel)}</a>
+          <a class="btn btn-primary" href="${esc(bookingUrl)}" data-tester-cta="meta" data-tester-action="booking" data-meta-cta="booking">${esc(bookingLabel)}</a>
+          <a class="btn btn-secondary" href="${esc(contactUrl)}" data-tester-cta="meta" data-tester-action="contact" data-meta-cta="contact">${esc(contactLabel)}</a>
         </div>
         ${pkgBlock}
       </section>`;
@@ -282,7 +282,7 @@
             <ul class="wt-priority-list">${renderChecks(homepage.checks || [])}</ul>
           </section>
 
-          <section class="wt-priorities" style="margin-top:0.9rem;">
+          <section class="wt-priorities wt-stack-md">
             <h3><i class="fa-solid fa-bug"></i> ${esc(i18n.findingsTitle || 'Befunde')}</h3>
             <ul class="wt-priority-list">${renderSimpleList(result.topFindings || homepage.topFindings || [])}</ul>
           </section>
@@ -294,9 +294,9 @@
             <ul class="wt-priority-list">${renderCategoryRows(result.categories || homepage.categories || [])}</ul>
           </section>
 
-          <section class="wt-priorities" style="margin-top:0.9rem;">
+          <section class="wt-priorities wt-stack-md">
             <h3><i class="fa-solid fa-bullseye"></i> ${esc(i18n.contextFitTitle || 'Branchen-/Regions-Fit')}</h3>
-            <p style="margin-top:0.55rem;">${esc(i18n.contextFitDetails || '')}</p>
+            <p class="wt-stack-xs">${esc(i18n.contextFitDetails || '')}</p>
             <ul class="wt-priority-list">
               <li><strong>Title:</strong> <span class="wt-tag" data-tone="${esc(toneForScore(contextFit.titleCoverage || 0))}">${esc(contextFit.titleCoverage || 0)}%</span></li>
               <li><strong>Description:</strong> <span class="wt-tag" data-tone="${esc(toneForScore(contextFit.descriptionCoverage || 0))}">${esc(contextFit.descriptionCoverage || 0)}%</span></li>
@@ -304,7 +304,7 @@
             </ul>
           </section>
 
-          <section class="wt-priorities" style="margin-top:0.9rem;">
+          <section class="wt-priorities wt-stack-md">
             <h3><i class="fa-solid fa-wrench"></i> ${esc(i18n.recommendationsTitle || 'Maßnahmen')}</h3>
             <ul class="wt-priority-list">${renderSimpleList(homepage.recommendations || result.topActions || [])}</ul>
           </section>

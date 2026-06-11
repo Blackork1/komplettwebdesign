@@ -85,7 +85,7 @@ test('tm sauber mehr reference is positioned as a relaunch case with before afte
   assert.equal(project.image, 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1778179218/admin_gallery/lfhdeq3nkirr9wijelqb.webp');
   assert.match(project.title, /Relaunch/i);
   assert.match(project.summary, /Relaunch/i);
-  assert.equal(project.relaunchUrl, '/website-relaunch-berlin');
+  assert.equal(project.relaunchUrl, '/leistungen/website-relaunch');
   assert.ok(Array.isArray(project.beforeAfterComparisons));
   assert.equal(project.beforeAfterComparisons.length, 2);
 

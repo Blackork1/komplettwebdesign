@@ -1,0 +1,402 @@
+<%
+const structuredDataBlocks = (typeof schema !== 'undefined' && schema)
+  ? [
+      schema.organization,
+      schema.website,
+      schema.service,
+      schema.webPage,
+      schema.breadcrumbList,
+      schema.faqPage
+    ].filter(Boolean)
+  : [];
+%>
+<%- include('../partials/head', { structuredDataBlocks }) %>
+<body>
+<%- include('../partials/header') %>
+<% const isEn = lng === 'en'; %>
+<% const wdBase = pagePath || (isEn ? '/en/webdesign-berlin' : '/webdesign-berlin'); %>
+<% const wdContact = contactPath || (isEn ? '/en/kontakt' : '/kontakt'); %>
+<% const wdCostsPath = isEn ? '/webdesign-berlin/kosten-preise-pakete' : `${wdBase}/kosten-preise-pakete`; %>
+<% const copy = pageCopy || {}; %>
+<%
+const wdStartPriceLabel = (typeof packagePriceLabel === 'function' ? packagePriceLabel('start', isEn ? 'en' : 'de') : '') || (isEn ? 'by offer' : 'nach Angebot');
+const wdBusinessPriceLabel = (typeof packagePriceLabel === 'function' ? packagePriceLabel('business', isEn ? 'en' : 'de') : '') || (isEn ? 'by offer' : 'nach Angebot');
+const wdWachstumPriceLabel = (typeof packagePriceLabel === 'function' ? packagePriceLabel('wachstum', isEn ? 'en' : 'de') : '') || (isEn ? 'by offer' : 'nach Angebot');
+const wdPackagesFallback = `Wenn du eine <strong>Webseite in Berlin erstellen lassen</strong> möchtest, hängen die Kosten vor allem von Umfang, Funktionen und Content ab. Start beginnt bei ${wdStartPriceLabel}, Business bei ${wdBusinessPriceLabel} und Wachstum bei ${wdWachstumPriceLabel}. Individuelle Funktionen werden separat kalkuliert.`;
+const wdPackageIncludedFallback1 = `Bereits im <a href="/pakete/start">Start-Paket ${wdStartPriceLabel}</a> bekommst du eine professionell gestaltete kompakte Website mit mobiloptimiertem Aufbau, klarer Nutzerführung und technischen SEO-Grundlagen.`;
+const wdPackageIncludedFallback2 = `Im <a href="/pakete/business">Business-Paket ${wdBusinessPriceLabel}</a> liegt der Fokus auf mehreren Leistungsseiten und besserer Sichtbarkeit bei Google. Für größere Vorhaben mit Shop oder Buchungssystem ist <a href="/pakete/wachstum">Wachstum ${wdWachstumPriceLabel}</a> oder ein individuelles Angebot die sauberere Wahl.`;
+%>
+
+<main class="webdesign-berlin-page">
+  <section class="wd-container wd-hero unified-hero" aria-labelledby="wd-hero-title">
+    <div class="wd-hero__content unified-hero__copy">
+      <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="<%= isEn ? '/en' : '/' %>"><%= copy.homeLabel || 'Startseite' %></a></li>
+          <li aria-current="page">Webdesign Berlin</li>
+        </ol>
+      </nav>
+      <h1 id="wd-hero-title"><%= hero.title %></h1>
+      <p class="wd-lead unified-hero__lead"><%= hero.description %></p>
+      <% if (hero.answerBlock) { %>
+      <p class="wd-lead unified-hero__lead"><%= hero.answerBlock %></p>
+      <% } %>
+      <div class="wd-hero-ctas unified-hero__actions">
+        <a class="btn btn-primary" href="<%= hero.ctaPrimary.href %>" data-track="webdesign_berlin_hero_contact"><%= hero.ctaPrimary.label %></a>
+        <a class="btn btn-secondary" href="<%= hero.ctaSecondary.href %>" data-track="webdesign_berlin_hero_packages"><%= hero.ctaSecondary.label %></a>
+      </div>
+      <div class="wd-social-proof" role="note">
+        <span><%= hero.rating.label %></span>
+        <a href="<%= hero.rating.href %>" target="_blank" rel="noopener"><%= copy.googleProfile || 'Google Profil' %></a>
+      </div>
+    </div>
+    <div class="wd-hero__visual">
+      <figure class="wd-hero__frame unified-hero__media-frame">
+        <img src="<%= hero.image.src %>" alt="<%= hero.image.alt %>" width="960" height="960" loading="eager" fetchpriority="high">
+      </figure>
+      <% if (hero.trustBadges?.length) { %>
+      <ul class="wd-trust-badges" aria-label="Trust Badges">
+        <% hero.trustBadges.forEach(function (badge) { %>
+        <li>
+          <span aria-hidden="true">✓</span>
+          <span><%= badge %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section wd-section--audience" aria-labelledby="wd-audience-title">
+    <div class="wd-section__inner wd-section__inner--audience">
+      <div class="wd-audience__media">
+        <figure class="wd-section__visual animate-on-scroll">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761846940/admin_gallery/qhi0ozk9fqclwv8r1fzj.webp" width="400" height="400" alt="Webdesign für Selbstständige und KMU in Berlin" loading="lazy">
+        </figure>
+      </div>
+      <div class="wd-section__content wd-audience__content">
+        <h2 id="wd-audience-title" class="animate-on-scroll"><%= audience.title %></h2>
+        <p class="wd-lead animate-on-scroll"><%- audience.description %></p>
+        <ul class="wd-list">
+          <% audience.painPoints.forEach(function (point) { %>
+          <li class="animate-on-scroll"><%- point %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-website-check-title">
+    <div class="wd-case animate-on-scroll">
+      <div class="wd-case__body">
+        <header>
+          <h2 id="wd-website-check-title"><%= isEn ? 'Start with a free website check' : 'Starte mit einem kostenlosen Website-Check' %></h2>
+          <p><%= isEn ? 'Before we talk about a relaunch or new website, you can check SEO basics, GEO visibility, meta data, broken links, and technical issues.' : 'Bevor wir über Relaunch oder neue Website sprechen, kannst du SEO-Basis, GEO-Sichtbarkeit, Meta-Daten, fehlerhafte Links und technische Themen prüfen.' %></p>
+        </header>
+        <ul class="wd-case__list">
+          <li><%= isEn ? 'Clear next steps for better visibility' : 'Klare nächste Schritte für bessere Sichtbarkeit' %></li>
+          <li><%= isEn ? 'Useful input for the first consultation' : 'Hilfreiche Grundlage für das Erstgespräch' %></li>
+          <li><%= isEn ? 'Good fit for existing websites and planned relaunches' : 'Sinnvoll für bestehende Websites und geplante Relaunches' %></li>
+        </ul>
+        <p class="wd-case__link">
+          <a href="<%= isEn ? '/en/website-tester' : '/website-tester' %>" data-track="webdesign_berlin_website_tester_cta"><%= isEn ? 'Open website tester' : 'Website-Tester öffnen' %></a>
+        </p>
+      </div>
+      <figure class="wd-case__visual">
+        <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1760634492/admin_gallery/psckvurmyqzchazrx3ec.webp" alt="<%= isEn ? 'Website tester preview' : 'Website-Tester Vorschau' %>" width="400" height="300" loading="lazy">
+      </figure>
+    </div>
+  </section>
+
+  <section class="wd-section wd-section--video" aria-labelledby="wd-video-title">
+    <div class="wd-container">
+      <div class="wd-video">
+        <h2 id="wd-video-title" class="animate-on-scroll"><%= isEn ? 'What we clarify in the first web design call' : 'Was wir im Erstgespräch für dein Webdesign-Projekt klären' %></h2>
+        <p class="animate-on-scroll"><%= isEn ? 'In the first call we clarify your goals, current website situation, project scope, timeline and the right package logic before moving into a first design direction.' : 'Im Erstgespräch ordne ich deine Vorstellungen, die vorhandenen Voraussetzungen und den realistischen Projektumfang ein. So wird früh klar, ob ein kompaktes Start-Paket, eine Business-Website, ein Wachstum-Projekt oder ein individuelles Angebot sinnvoll ist.' %></p>
+        <div class="wd-card-grid wd-card-grid--services animate-on-scroll">
+          <article class="wd-card">
+            <h3><%= isEn ? 'Starting point and goals' : 'Ausgangslage und Ziele' %></h3>
+            <p><%= isEn ? 'We clarify whether a website already exists, whether a relaunch is needed or whether we start from scratch. This includes target group, services, enquiry paths, existing content and key requirements.' : 'Wir besprechen, ob bereits eine Website vorhanden ist, ob ein Relaunch ansteht oder ob du komplett neu startest. Dazu gehören Zielgruppe, Leistungen, gewünschte Anfragewege, vorhandene Inhalte und wichtige Anforderungen.' %></p>
+          </article>
+          <article class="wd-card">
+            <h3><%= isEn ? 'Scope, timeline and package fit' : 'Umfang, Zeitrahmen und Paketlogik' %></h3>
+            <p><%= isEn ? 'Then we look at the planned number of pages, optional add-ons, copy, images, local SEO basics, running costs and timeline to find the right package level.' : 'Danach klären wir Seitenumfang, mögliche Zusatzleistungen, Texte, Bilder, Local-SEO-Grundlagen, laufende Kosten und den zeitlichen Rahmen. Dadurch lässt sich einschätzen, welches Website-Paket passt.' %></p>
+          </article>
+          <article class="wd-card">
+            <h3><%= isEn ? 'Price range and design idea' : 'Preisbereich und erste Designidee' %></h3>
+            <p><%= isEn ? 'Based on this, I name a non-binding price range. If the scope fits, we start with a first design idea, discuss it together and develop the website from there.' : 'Auf Basis deiner Angaben nenne ich dir einen unverbindlichen Preisbereich. Wenn der Rahmen passt, starten wir mit einer ersten Designidee, besprechen diese gemeinsam und entwickeln daraus die passende Website.' %></p>
+          </article>
+        </div>
+        <div class="wd-hero-ctas wd-hero-ctas--center unified-hero__actions animate-on-scroll">
+          <a class="btn btn-primary" href="<%= wdContact %>"><%= isEn ? 'Request first call' : 'Erstgespräch anfragen' %></a>
+          <a class="btn btn-secondary" href="<%= isEn ? '/en/pakete' : '/pakete' %>"><%= isEn ? 'View packages' : 'Pakete ansehen' %></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-services-title">
+    <h2 id="wd-services-title" class="animate-on-scroll"><%= copy.servicesTitle || 'Was beinhaltet unser Webdesign in Berlin?' %></h2>
+    <div class="wd-card-grid wd-card-grid--services">
+      <% services.forEach(function(service) { %>
+      <article class="wd-card wd-service-card animate-on-scroll">
+        <header class="wd-card__header">
+          <div class="wd-card__icon" aria-hidden="true">✦</div>
+          <div>
+            <h3><%- service.name %></h3>
+            <p><%- service.description %></p>
+          </div>
+        </header>
+        <ul class="wd-card__list">
+          <% service.features.forEach(function(feature) { %>
+          <li><%- feature %></li>
+          <% }) %>
+        </ul>
+        <figure class="wd-card__figure">
+          <img src="<%= service.image.src %>" alt="<%= service.image.alt %>" width="640" height="480" loading="lazy">
+        </figure>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section wd-section--packages" aria-labelledby="wd-packages-title">
+    <div class="wd-packages__intro">
+      <span class="wd-packages__badge animate-on-scroll"><%= copy.packagesBadge || 'Unsere Pakete' %></span>
+      <h2 id="wd-packages-title"><a class="wd-link--accent animate-on-scroll" href="<%= wdCostsPath %>"><%= copy.packagesTitle || 'Was kostet eine Website 2026 in Berlin?' %></a></h2>
+      <div class="readable">
+        <p class="animate-on-scroll"><%- copy.packagesText1 || wdPackagesFallback %></p>
+        <p class="animate-on-scroll"><%- copy.packagesText2 || 'Komplexe Projekte mit Shop, Buchungssystem, Mehrsprachigkeit oder individuellen Integrationen können deutlich darüber liegen. Wichtig ist: Eine Website sollte nicht nur gut aussehen, sondern Anfragewege nachvollziehbar unterstützen und für Google sauber vorbereitet sein.' %></p>
+      </div>
+      <p class="animate-on-scroll"><strong class="wd-copy-strong"><%= copy.packagesText3 || 'Wähle das Paket, das zu deiner Ausgangslage und deinem Ziel passt:' %></strong></p>
+    </div>
+    <div class="wd-packages-grid package-slider-scroll" data-package-slider tabindex="0" aria-label="Website-Pakete horizontal scrollen">
+      <% packages.forEach(function(pkg) { %>
+      <article class="wd-package-card<% if (pkg.popular) { %> wd-package-card--featured<% } %> animate-on-scroll">
+        <header class="wd-package-card__header">
+          <% if (pkg.tagline) { %>
+          <span class="wd-package-card__label"><%= pkg.tagline %></span>
+          <% } else { %>
+          <span class="wd-package-card__label wd-package-card__label--placeholder" aria-hidden="true">Paket</span>
+          <% } %>
+          <h3><%= pkg.name %></h3>
+          <span class="wd-package-card__price"><%= pkg.price %></span>
+        </header>
+        <p class="wd-package-card__lead"><%= pkg.description %></p>
+        <ul class="wd-package-card__list">
+          <% pkg.features.forEach(function(feature) { %>
+          <li><%- feature %></li>
+          <% }) %>
+        </ul>
+        <div class="wd-package-card__actions">
+          <a class="btn btn-primary" href="<%= isEn ? '/en' : '' %>/pakete/<%= pkg.anchor %>" data-track="webdesign_berlin_package_<%= pkg.anchor %>" data-cta-location="webdesign_berlin_packages" data-package-id="<%= pkg.anchor %>"><%= copy.packageBtnPrimary || 'Paket wählen' %></a>
+          <a class="btn btn-secondary" href="<%= wdContact %>" data-track="webdesign_berlin_package_contact" data-cta-location="webdesign_berlin_packages" data-package-id="<%= pkg.anchor %>"><%= copy.packageBtnSecondary || 'Details anfragen' %></a>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+    <div class="wd-packages__intro">
+      <h3 class="animate-on-scroll"><%= copy.packageIncludedTitle || 'Was ist im Webdesign-Paket konkret enthalten?' %></h3>
+      <div class="readable">
+        <p class="animate-on-scroll"><%- copy.packageIncludedText1 || wdPackageIncludedFallback1 %></p>
+        <p class="animate-on-scroll"><%- copy.packageIncludedText2 || wdPackageIncludedFallback2 %></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-cases-title">
+    <h2 class="animate-on-scroll" id="wd-cases-title"><%= copy.casesTitle || 'Ergebnisse aus Berlin - echte Zahlen' %></h2>
+    <div class="wd-case-grid">
+      <% caseStudies.forEach(function(cs) { %>
+      <article class="wd-case animate-on-scroll">
+        <div class="wd-case__body">
+          <header>
+            <h3><%= cs.name %></h3>
+            <p><%= cs.summary %></p>
+          </header>
+          <ul class="wd-case__list">
+            <% cs.bullets.forEach(function(item) { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+          <blockquote>„<%= cs.quote %>“</blockquote>
+          <p class="wd-case__link"><a href="<%= cs.link %>"><%= copy.caseLinkLabel || 'Website ansehen' %></a></p>
+        </div>
+        <figure class="wd-case__visual">
+          <img src="<%= cs.image %>" alt="Case Visual – <%= cs.name %>" width="400" height="300" loading="lazy">
+        </figure>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-process-title" id="Ablauf">
+    <h2 id="wd-process-title" class="animate-on-scroll"><%= copy.processTitle || 'Website in Berlin erstellen lassen - so läuft der Prozess ab' %></h2>
+    <div class="wd-process">
+      <ol class="wd-process__steps">
+        <% processSteps.forEach(function(step, index) { %>
+        <li class="animate-on-scroll">
+          <span class="wd-process__step-index">0<%= index + 1 %></span>
+          <span class="wd-process__step-label"><%= step.name %></span>
+          <p></p>
+          <p class="step-description"><%= step.description%></p>
+        </li>
+        <% }) %>
+      </ol>
+      <p class="wd-lead wd-lead--center animate-on-scroll"><%= copy.processLead || 'Vom Briefing bis zum Livegang vergehen meist nur 4 bis 6 Wochen - mit klaren Feedbackschleifen und transparenten Milestones.' %></p>
+    </div>
+  </section>
+
+  <section class="wd-section wd-section--berlin" aria-labelledby="wd-berlin-title">
+    <h2 id="wd-berlin-title" class="animate-on-scroll"><%= copy.berlinTitle || 'Webdesign in Berlin und allen Bezirken' %></h2>
+    <div class="wd-container">
+      <div class="wd-section__inner wd-section__inner--berlin">
+        <div class="wd-section__content">
+          <p class="wd-lead animate-on-scroll"><%= copy.berlinLead || 'Wenn du eine Website in Berlin erstellen lassen willst, ist lokaler Bezug entscheidend. Wir arbeiten in allen Berliner Bezirken und optimieren Inhalte, Struktur und lokale Signale so, dass du dort sichtbar bist, wo deine Kunden tatsächlich suchen.' %></p>
+          <nav class="wd-district-nav" aria-label="<%= copy.districtsLabel || 'Berliner Bezirke' %>">
+            <ul>
+              <% districts.forEach(function(district) { %>
+              <li class="animate-on-scroll"><a href="<%= wdBase %>/<%= district.toLowerCase().replace(/\s+/g, '-') %>">Webdesign <%= district %></a></li>
+              <% }) %>
+            </ul>
+          </nav>
+        </div>
+        <figure class="wd-section__visual animate-on-scroll">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761847566/admin_gallery/ukiymhlne3z9yq1xcia7.webp" width="600" height="600" alt="<%= isEn ? 'Web design service map across Berlin districts' : 'Webdesign in allen Berliner Bezirken - Servicekarte' %>" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-industries-title">
+    <h2 id="wd-industries-title" class="animate-on-scroll"><%= copy.industriesTitle || 'Webdesign Berlin für verschiedene Branchen' %></h2>
+    <div class="wd-industry-grid">
+      <% industries.forEach(function(industry) { %>
+      <article class="wd-industry-card animate-on-scroll">
+        <figure class="wd-industry-card__media">
+          <img src="<%= industry.image %>" alt="<%= isEn ? `Web design in Berlin for ${industry.name}` : `Webdesign in Berlin für ${industry.name}` %>" width="480" height="360" loading="lazy">
+        </figure>
+        <div class="wd-industry-card__heading">
+          <h3><%= industry.name %></h3>
+        </div>
+        <div class="wd-industry-card__body">
+          <p><%= industry.description %></p>
+          <a class="wd-industry-card__link" href="<%= industry.link %>"><%= copy.industryMore || 'Mehr erfahren' %></a>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <% if (typeof seoGuides !== 'undefined' && seoGuides && seoGuides.length) { %>
+  <section class="wd-container wd-section" aria-labelledby="wd-seo-guides-title">
+    <h2 id="wd-seo-guides-title" class="animate-on-scroll"><%= isEn ? 'Guides for your Berlin website project' : 'Ratgeber für dein Website-Projekt in Berlin' %></h2>
+    <p class="wd-lead animate-on-scroll"><%= isEn ? 'Use these guides to understand costs, process, relaunch planning, and industry-specific website requirements before your first consultation.' : 'Nutze diese Ratgeber, um Kosten, Ablauf, Relaunch-Planung und branchenspezifische Anforderungen vor dem Erstgespräch besser einzuordnen.' %></p>
+    <div class="wd-card-grid wd-card-grid--services">
+      <% seoGuides.slice(0, 6).forEach(function(guide) { %>
+      <article class="wd-card animate-on-scroll">
+        <header class="wd-card__header">
+          <div class="wd-card__icon" aria-hidden="true">↗</div>
+          <div>
+            <h3><a href="<%= guide.href %>"><%= guide.title %></a></h3>
+            <p><%= guide.excerpt %></p>
+          </div>
+        </header>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-faq-title">
+    <h2 id="wd-faq-title" class="animate-on-scroll"><%= copy.faqTitle || 'Häufige Fragen zu Webdesign in Berlin' %></h2>
+    <div class="wd-faq-grid">
+      <% faqs.forEach(function(faq) { %>
+      <details class="wd-faq animate-on-scroll">
+        <summary>
+          <h3><%= faq.question %></h3>
+        </summary>
+        <p><%- faq.answer %></p>
+      </details>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-trust-title">
+    <h2 id="wd-trust-title" class="animate-on-scroll"><%= copy.trustTitle || 'Sicher, datenschutzbewusst & betreut' %></h2>
+    <p class="wd-lead wd-lead--start animate-on-scroll"><%= copy.trustLead || 'Mit Komplett Webdesign bleibt dein Auftritt stabil, technisch sauber und dauerhaft betreut - ohne Technikstress.' %></p>
+    <ul class="wd-trust-list">
+      <% trust.forEach(function(item) { %>
+      <li class="animate-on-scroll">
+        <span aria-hidden="true">●</span>
+        <span class="wd-trust-list__text"><%- item %></span>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="wd-container wd-section wd-resources" aria-labelledby="wd-resources-title">
+    <h2 id="wd-resources-title" class="animate-on-scroll"><%= copy.resourcesTitle || 'Weiterführende Ressourcen zu Webdesign und SEO in Berlin' %></h2>
+    <div class="wd-resource-grid">
+      <% resources.forEach(function(resource) { %>
+      <article class="wd-resource-card animate-on-scroll">
+        <figure>
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1760634492/admin_gallery/psckvurmyqzchazrx3ec.webp" width="320" height="320" alt="Cover: <%= resource.label %>" loading="lazy">
+        </figure>
+        <a href="<%= resource.href %>"><%= resource.label %></a>
+      </article>
+      <% }) %>
+    </div>
+    <p class="wd-lead animate-on-scroll"><%= copy.resourcesLead || 'Diese Guides helfen dir, deinen digitalen Auftritt strategisch weiterzuentwickeln - statt nur zu verwalten.' %></p>
+  </section>
+
+  <section class="wd-container wd-section" aria-labelledby="wd-contact-title">
+    <div class="wd-contact">
+
+      <form action="<%= wdBase %>/kontakt" method="post" class="wd-contact__form" data-recaptcha="v3" data-recaptcha-action="webdesign_berlin_kontakt" enctype="multipart/form-data">
+        <div class="wd-form-row animate-on-scroll">
+          <div>
+            <label for="contact-name"><%= copy.contactNameLabel || 'Name' %></label>
+            <input id="contact-name" name="name" type="text" autocomplete="name" placeholder="<%= copy.contactNamePlaceholder || 'Max Mustermann' %>" required>
+          </div>
+          <div>
+            <label for="contact-email"><%= copy.contactEmailLabel || 'E-Mail' %></label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" placeholder="<%= copy.contactEmailPlaceholder || 'hallo@unternehmen.de' %>" required>
+          </div>
+        </div>
+        <div class="wd-form-row animate-on-scroll">
+          <div>
+            <label for="contact-goal"><%= copy.contactGoalLabel || 'Projektziel' %></label>
+            <input id="contact-goal" name="goal" type="text" placeholder="<%= copy.contactGoalPlaceholder || 'z. B. Relaunch, Landingpage, SEO' %>">
+          </div>
+          <div>
+            <label for="contact-timeline"><%= copy.contactTimelineLabel || 'Wunsch-Timing' %></label>
+            <input id="contact-timeline" name="timeline" type="text" placeholder="<%= copy.contactTimelinePlaceholder || 'z. B. sofort, Q3 2026' %>">
+          </div>
+        </div>
+        <div class="animate-on-scroll">
+          <label for="contact-message"><%= copy.contactMessageLabel || 'Was sollen wir wissen?' %></label>
+          <textarea id="contact-message" name="message" placeholder="<%= copy.contactMessagePlaceholder || 'Beschreibe kurz dein Projekt' %>"></textarea>
+        </div>
+        <div class="animate-on-scroll">
+          <label for="contact-file"><%= copy.contactFileLabel || 'Dateien hochladen (optional)' %></label>
+          <input id="contact-file" name="attachments" type="file" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" multiple aria-describedby="contact-file-hint">
+          <p id="contact-file-hint" class="wd-form-hint"><%= copy.contactFileHint || 'Du kannst bis zu 10 Dateien (max. 15 MB insgesamt) hinzufügen. In der Bestätigungsmail erhältst du die Dateinamen als Übersicht.' %></p>
+        </div>
+        <button type="submit" class="btn btn-primary"><%= copy.contactSubmit || 'Kostenloses Erstgespräch sichern' %></button>
+      </form>
+      <div class="wd-contact__intro">
+        <h2 id="wd-contact-title" class="animate-on-scroll"><%= copy.contactTitle || 'Bereit, loszulegen?' %></h2>
+        <p class="wd-lead animate-on-scroll"><%- copy.contactLead || 'Wenn du deine Webseite in Berlin professionell erstellen lassen willst, lass uns sprechen. Wir zeigen dir konkrete Schritte für bessere Struktur, lokale Sichtbarkeit und klare Anfragewege.<br>Du suchst allgemeine Informationen zur <a href=\"/\">professionellen Websiteerstellung</a>? Auf unserer Hauptseite findest du alle Leistungen im Überblick - auch für Kunden außerhalb von Berlin.' %></p>
+        <p class="wd-contact-meta animate-on-scroll"><%= copy.directCallLabel || 'Oder direkt anrufen' %>: <a href="tel:<%= contact.phone.replace(/\s+/g, '') %>"><%= contact.phoneDisplay %></a> · <a href="mailto:<%= contact.email %>"><%= contact.email %></a></p>
+        <figure class="wd-contact__visual">
+          <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1761848534/admin_gallery/umjle1pyusv5lclhptxt.webp" width="480" height="480" alt="Team-Porträt Placeholder" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

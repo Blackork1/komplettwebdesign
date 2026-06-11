@@ -1,0 +1,329 @@
+<%
+  const siteBase = canonicalBaseUrl.replace(/\/$/, '');
+  const pageUrl = `${siteBase}${page.canonicalPath}`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${siteBase}/` },
+      { '@type': 'ListItem', position: 2, name: 'Leistungen', item: `${siteBase}/leistungen` },
+      { '@type': 'ListItem', position: 3, name: page.h1, item: pageUrl }
+    ]
+  };
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.h1,
+    headline: page.h1,
+    description: page.description,
+    inLanguage: 'de-DE',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${siteBase}/#website`,
+      url: `${siteBase}/`,
+      name: 'Komplett Webdesign'
+    },
+    about: page.primaryKeyword,
+    mentions: page.secondaryKeywords
+  };
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${pageUrl}#faq`,
+    mainEntity: page.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer
+      }
+    }))
+  };
+  const structuredDataBlocks = [webPageSchema, breadcrumbSchema, faqSchema];
+%>
+<%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
+
+<body class="service-page service-page--add-ons add-ons-page">
+  <%- include('../partials/header') %>
+
+  <main id="main-content">
+    <section class="service-hero add-ons-hero <%= page.heroImage?.src ? 'has-service-hero-image' : '' %>" id="hero"<% if (page.heroImage?.src) { %> style="--service-hero-image: url('<%= page.heroImage.src %>');"<% } %>>
+      <div class="service-shell add-ons-shell">
+        <nav class="add-ons-breadcrumbs service-hero-breadcrumbs unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/leistungen">Leistungen</a></li>
+            <li aria-current="page"><%= page.h1 %></li>
+          </ol>
+        </nav>
+
+        <div class="service-hero__grid add-ons-hero-grid">
+          <div>
+            <span class="add-ons-kicker home-hero-reveal home-hero-reveal--support animate-on-scroll"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i><%= page.hero.eyebrow %></span>
+            <h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%= page.h1 %></h1>
+            <p class="add-ons-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= page.hero.lead %></p>
+            <div class="service-hero__actions add-ons-hero-actions">
+              <a class="btn btn-primary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.primaryCta.url %>" data-track="cta" data-cta-name="add_ons_hero_primary" data-cta-location="add_ons_hero"><%= page.hero.primaryCta.label %></a>
+              <a class="btn btn-secondary home-hero-reveal home-hero-reveal--actions animate-on-scroll" href="<%= page.hero.secondaryCta.url %>" data-track="cta" data-cta-name="add_ons_hero_secondary" data-cta-location="add_ons_hero"><%= page.hero.secondaryCta.label %></a>
+            </div>
+          </div>
+
+          <aside class="add-ons-hero-panel home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="Kurzüberblick">
+            <h2>Kein Paket wird künstlich aufgebläht</h2>
+            <p>Erweiterungen werden dann geplant, wenn sie fachlich und technisch zu deinem Projekt passen.</p>
+            <ul class="add-ons-panel-list">
+              <li><i class="fa-solid fa-layer-group" aria-hidden="true"></i>Pakete behalten klare Grenzen</li>
+              <li><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Zusatzaufwand wird vorab eingeordnet</li>
+              <li><i class="fa-solid fa-plug" aria-hidden="true"></i>Tools und Lizenzen separat prüfen</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section" id="intro">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>Einordnung</span>
+          <h2><%= page.intro.title %></h2>
+          <p><%= page.intro.text %></p>
+        </div>
+        <div class="add-ons-card-grid">
+          <% page.whySeparate.points.forEach(function(item) { %>
+            <article class="add-ons-card animate-on-scroll">
+              <h3><%= item %></h3>
+              <p>Der Umfang wird vor der Umsetzung abgestimmt, damit Angebot, Aufwand und laufende Verantwortung zusammenpassen.</p>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section add-ons-section--soft" id="why-separate">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-sliders" aria-hidden="true"></i>Klare Kalkulation</span>
+          <h2><%= page.whySeparate.title %></h2>
+          <p><%= page.whySeparate.text %></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section" id="package-boundary">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-box-open" aria-hidden="true"></i>Paketgrenzen</span>
+          <h2>Was zu welchem Paket passt</h2>
+          <p>Zusatzleistungen können mit Paketen kombiniert werden, sind aber nicht automatisch Teil des Standardumfangs.</p>
+        </div>
+        <div class="add-ons-card-grid add-ons-card-grid--packages package-slider-scroll" data-package-slider tabindex="0" aria-label="Paketgrenzen horizontal scrollen">
+          <% page.packageBoundary.forEach(function(pkg) { %>
+            <% const packageName = String(pkg.name || '').trim(); %>
+            <% const isIndividualPackage = pkg.id === 'individuell' || packageName === 'Individuelles Projekt' || packageName === 'Individuell'; %>
+            <% const packageButtonLabel = isIndividualPackage ? 'Individuelles Projekt-Paket ansehen' : (/paket$/i.test(packageName) ? packageName + ' ansehen' : packageName + '-Paket ansehen'); %>
+            <article class="add-ons-card add-ons-package-card animate-on-scroll">
+              <h3><%= pkg.name %></h3>
+              <span class="add-ons-price"><%= pkg.priceLabel %></span>
+              <p><strong><%= pkg.title %></strong></p>
+              <p><%= pkg.text %></p>
+              <a class="btn btn-primary" href="<%= pkg.path %>"><%= packageButtonLabel %></a>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section add-ons-section--soft" id="add-on-overview">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-list-check" aria-hidden="true"></i>Übersicht</span>
+          <h2>Typische Zusatzleistungen und Preisrahmen</h2>
+          <p>Die Beträge sind Orientierungswerte. Der genaue Umfang wird vor der Umsetzung abgestimmt.</p>
+        </div>
+        <div class="add-ons-overview-grid">
+          <% page.addOns.forEach(function(addOn) { %>
+            <article class="add-ons-overview-card animate-on-scroll">
+              <span class="add-ons-category"><%= addOn.category %></span>
+              <h3><%= addOn.name %></h3>
+              <p><%= addOn.shortDescription %></p>
+              <span class="add-ons-price"><%= addOn.priceLabel %></span>
+            </article>
+          <% }) %>
+        </div>
+        <aside class="add-ons-note animate-on-scroll">
+          <h3>Preis- und Kostenhinweis</h3>
+          <ul>
+            <% page.legalNotes.forEach(function(note) { %>
+              <li><%= note %></li>
+            <% }) %>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="add-ons-section" aria-labelledby="details-heading">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>Details</span>
+          <h2 id="details-heading">Zusatzleistungen im Detail</h2>
+          <p>Jede Erweiterung hat eigene Grenzen. Das schützt dein Budget und macht Angebote vergleichbarer.</p>
+        </div>
+        <div class="add-ons-detail-grid">
+          <% page.detailSections.forEach(function(detail) { %>
+            <article class="add-ons-detail-card animate-on-scroll" id="<%= detail.id %>">
+              <div class="add-ons-detail-body">
+                <span class="add-ons-section-kicker"><%= detail.kicker %></span>
+                <h3><%= detail.title %></h3>
+                <p><%= detail.lead %></p>
+                <div class="add-ons-detail-prices">
+                  <% detail.addOns.forEach(function(addOn) { %>
+                    <span class="add-ons-detail-price"><%= addOn.name %>: <%= addOn.priceLabel %></span>
+                  <% }) %>
+                </div>
+                <div class="add-ons-lists">
+                  <div>
+                    <span class="add-ons-list-label">Sinnvoll für</span>
+                    <ul class="add-ons-list">
+                      <% detail.usefulFor.forEach(function(item) { %>
+                        <li><%= item %></li>
+                      <% }) %>
+                    </ul>
+                  </div>
+                  <div>
+                    <span class="add-ons-list-label">Abgrenzung</span>
+                    <ul class="add-ons-list">
+                      <% detail.boundaries.forEach(function(item) { %>
+                        <li><%= item %></li>
+                      <% }) %>
+                    </ul>
+                  </div>
+                </div>
+                <ul class="add-ons-list">
+                  <% detail.points.forEach(function(item) { %>
+                    <li><%= item %></li>
+                  <% }) %>
+                </ul>
+                <% if (detail.links && detail.links.length) { %>
+                  <div class="add-ons-inline-links">
+                    <% detail.links.forEach(function(link) { %>
+                      <a href="<%= link.href %>"><%= link.label %></a>
+                    <% }) %>
+                  </div>
+                <% } %>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section add-ons-section--soft" id="when-individual">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-route" aria-hidden="true"></i>Projektgrenze</span>
+          <h2><%= page.whenIndividual.title %></h2>
+          <p><%= page.whenIndividual.text %></p>
+        </div>
+        <div class="add-ons-card-grid">
+          <% page.whenIndividual.points.forEach(function(item) { %>
+            <article class="add-ons-card animate-on-scroll">
+              <h3><%= item %></h3>
+              <p>In diesem Fall prüfe ich, ob ein individuelles Projekt wirtschaftlicher und sauberer planbar ist.</p>
+            </article>
+          <% }) %>
+        </div>
+        <div class="add-ons-hero-actions add-ons-centered-action animate-on-scroll">
+          <a class="btn btn-primary" href="<%= page.whenIndividual.cta.url %>" data-track="cta" data-cta-name="add_ons_individual_primary" data-cta-location="add_ons_individual"><%= page.whenIndividual.cta.label %></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section" id="not-offered">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-border-none" aria-hidden="true"></i>Abgrenzung</span>
+          <h2><%= page.notOffered.title %></h2>
+          <p><%= page.notOffered.text %></p>
+        </div>
+        <div class="add-ons-overview-grid">
+          <% page.notOffered.items.forEach(function(item) { %>
+            <article class="add-ons-overview-card animate-on-scroll">
+              <h3><%= item %></h3>
+              <p>Diese Anforderung wird nicht als normale Website-Zusatzleistung eingeordnet.</p>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section add-ons-section--soft" id="faq">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-question" aria-hidden="true"></i>FAQ</span>
+          <h2>Häufige Fragen zu Zusatzleistungen</h2>
+          <p>Kurze Antworten, damit Umfang, Preise und Grenzen vor der Anfrage klarer sind.</p>
+        </div>
+        <div class="add-ons-faq">
+          <% page.faq.forEach(function(item, index) { %>
+            <details class="add-ons-faq-item animate-on-scroll"<%= index === 0 ? ' open' : '' %>>
+              <summary><h3><%= item.question %></h3></summary>
+              <p><%= item.answer %></p>
+            </details>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-section" id="legal-notes">
+      <div class="add-ons-shell">
+        <aside class="add-ons-note animate-on-scroll">
+          <h3>Vorsichtige Hinweise zu Tools, Rechtstexten und SEO</h3>
+          <ul>
+            <% page.legalNotes.forEach(function(note) { %>
+              <li><%= note %></li>
+            <% }) %>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="add-ons-section add-ons-section--soft" aria-labelledby="internal-links-heading">
+      <div class="add-ons-shell">
+        <div class="add-ons-section-head animate-on-scroll">
+          <span class="add-ons-section-kicker"><i class="fa-solid fa-link" aria-hidden="true"></i>Weiterlesen</span>
+          <h2 id="internal-links-heading">Passende Seiten für deine Entscheidung</h2>
+          <p>Diese Seiten helfen dir, Paket, Zusatzleistung und laufende Kosten zusammen einzuordnen.</p>
+        </div>
+        <div class="add-ons-link-grid">
+          <% page.internalLinks.forEach(function(link) { %>
+            <a class="add-ons-link-card animate-on-scroll" href="<%= link.href %>">
+              <h3><%= link.label %></h3>
+              <p><%= link.text %></p>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-ons-final" id="final-cta">
+      <div class="add-ons-shell">
+        <div class="add-ons-final-inner animate-on-scroll">
+          <div>
+            <h2><%= page.finalCta.title %></h2>
+            <p><%= page.finalCta.text %></p>
+          </div>
+          <div class="add-ons-hero-actions">
+            <a class="btn btn-primary" href="<%= page.finalCta.primary.url %>" data-track="cta" data-cta-name="add_ons_final_primary" data-cta-location="add_ons_final"><%= page.finalCta.primary.label %></a>
+            <a class="btn btn-secondary" href="<%= page.finalCta.secondary.url %>" data-track="cta" data-cta-name="add_ons_final_secondary" data-cta-location="add_ons_final"><%= page.finalCta.secondary.label %></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

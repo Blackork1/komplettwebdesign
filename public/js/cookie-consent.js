@@ -44,13 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Banner show/hide (robust) ----------
   const showBanner = () => {
     if (!banner) return;
-    banner.classList.remove('hidden');
-    banner.style.display = 'block';
+    banner.classList.remove('hidden', 'is-hidden');
   };
   const hideBanner = () => {
     if (!banner) return;
-    banner.classList.add('hidden');
-    banner.style.display = 'none';
+    banner.classList.add('is-hidden');
   };
 
   // ---------- Cookie-Utilities ----------
@@ -145,20 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function createRevokeButton() {
     const wrap = document.createElement('div');
     wrap.id = 'cookie-revoke';
-    Object.assign(wrap.style, { position: 'fixed', bottom: '0', left: '0', zIndex: 1000 });
+    wrap.className = 'cookie-revoke';
 
     const btn = document.createElement('button');
     btn.id = 'revoke-cookies';
+    btn.className = 'cookie-revoke__button';
     btn.textContent = 'Cookies widerrufen';
-    Object.assign(btn.style, {
-      background: '#e94b1b65',
-      color: '#fff',
-      border: 'none',
-      padding: '.2rem .2rem',
-      borderRadius: '0 0.25rem 0.25rem 0',
-      cursor: 'pointer',
-      fontSize: '10px'
-    });
 
     wrap.appendChild(btn);
     attachRevokeHandler(btn);

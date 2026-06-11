@@ -30,13 +30,17 @@ const structuredDataBlocks = [
             <li aria-current="page">Branchen</li>
           </ol>
         </nav>
-        <h1 id="industries-hero-title" class="display-5 fw-bold mb-3">Webdesign für Berliner Branchen.</h1>
-        <p class="lead mb-4 unified-hero__lead">
+        <h1 id="industries-hero-title" class="display-5 fw-bold mb-3 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">Webdesign für Berliner Branchen.</h1>
+        <p class="lead mb-4 unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll">
           Finde deine Branche mit Beispielen, Funktionen, SEO-Tipps und passenden Paketempfehlungen.
         </p>
+        <div class="industries-hero__actions unified-hero__actions home-hero-reveal home-hero-reveal--actions animate-on-scroll">
+          <a class="btn btn-primary" href="/kontakt">Projekt anfragen</a>
+          <a class="btn btn-secondary" href="/pakete">Pakete ansehen</a>
+        </div>
       </div>
 
-      <aside class="industries-hero__panel unified-hero__panel">
+      <aside class="industries-hero__panel unified-hero__panel home-hero-reveal home-hero-reveal--visual animate-on-scroll">
         <figure class="industries-hero__media unified-hero__media-frame">
           <img src="/images/branchen/features.webp" alt="Website-Funktionen für Branchen-Websites" loading="eager" fetchpriority="high">
         </figure>
@@ -48,6 +52,37 @@ const structuredDataBlocks = [
   </section>
 
 <div class="container my-5">
+  <section class="mb-5" aria-labelledby="industries-intro-title">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7">
+        <p class="text-uppercase fw-bold accentColor mb-2">Einordnung</p>
+        <h2 id="industries-intro-title" class="mb-3">Branchen-Websites brauchen mehr als ein austauschbares Layout</h2>
+        <p>
+          Eine Website für einen Blumenladen, ein Café, eine Reinigungsfirma oder einen Handwerksbetrieb muss schnell erklären,
+          welche Leistung angeboten wird, für wen sie passt und welcher nächste Kontaktweg sinnvoll ist. Deshalb sammelt diese
+          Übersicht Branchen, bei denen Angebotsstruktur, lokale Sichtbarkeit, Bilder, Öffnungszeiten, Anfragewege und spätere
+          Erweiterungen unterschiedlich gewichtet werden.
+        </p>
+        <p>
+          Die Seiten sind als Orientierung gedacht. Sie ersetzen kein individuelles Angebot, helfen dir aber dabei,
+          typische Inhalte, sinnvolle Zusatzleistungen und passende Paketgrößen früh einzuordnen. Preise, laufende Kosten,
+          Buchungssysteme, CMS, Tracking oder Local SEO werden nicht pauschal versprochen, sondern vor der Umsetzung abgegrenzt.
+        </p>
+      </div>
+      <div class="col-lg-5">
+        <div class="border rounded-3 p-4 h-100 card-shadow">
+          <h3 class="h5">Sinnvolle nächste Seiten</h3>
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2"><a href="/webdesign-berlin">Webdesign Berlin als Hauptleistung ansehen</a></li>
+            <li class="mb-2"><a href="/pakete">Start, Business, Wachstum und Individuell vergleichen</a></li>
+            <li class="mb-2"><a href="/leistungen/zusatzleistungen-webdesign">Zusatzleistungen sauber abgrenzen</a></li>
+            <li><a href="/kontakt">Projekt unverbindlich einordnen lassen</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="row">
     <!-- Hauptliste der Blogposts (linke Spalte) -->
     <div class="col-md-8">
@@ -59,7 +94,10 @@ const structuredDataBlocks = [
           <!-- Verlinkter Artikel -->
           <a href="<%= toPath(ind) %>" class="post-card-link">
             <!-- Hintergrundbild + Overlay -->
-            <div class="post-card-bg" style="background-image: url('<%= ind.og_image_url%>');">
+            <div class="post-card-bg">
+              <% if (ind.og_image_url) { %>
+                <img class="post-card-bg__image" src="<%= ind.og_image_url %>" alt="" loading="lazy" decoding="async">
+              <% } %>
               <div class="post-card-content">
                 <div class="post-card-overlay">
                   <h2 class="post-card-title alignCenter">

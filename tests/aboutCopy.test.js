@@ -28,8 +28,8 @@ test('about page passes page-specific css through the head partial', async () =>
   const about = await readFile(new URL('../views/about.ejs', import.meta.url), 'utf8');
   const head = await readFile(new URL('../views/partials/head.ejs', import.meta.url), 'utf8');
 
-  assert.match(about, /include\('partials\/head', \{ seoExtra: aboutHeadExtra \}\)/);
-  assert.match(head, /if \(seoExtraText\)/);
+  assert.match(about, /include\('partials\/head', \{ extraCssAssets: \['about\.css'\] \}\)/);
+  assert.match(head, /pageCssAssets\.forEach/);
   assert.doesNotMatch(head, /locals\.seoExtra/);
 });
 
@@ -47,6 +47,7 @@ test('about page keeps the refreshed hero while legacy content only gets readabl
   assert.doesNotMatch(css, /\.about-page\s+\.about-section\s*\{[\s\S]*?background:\s*linear-gradient[\s\S]*?#ffffff/);
   assert.match(css, /\.about-page\s+\.about-section\s+h2\s*\{[\s\S]*?color:\s*#ff6538/);
   assert.match(css, /\.about-page\s+\.cta-section\s*\{[\s\S]*?background-color:\s*#1d63a3/);
-  assert.doesNotMatch(css, /\.about-page\s+\.cta-section\s*\{[\s\S]*?linear-gradient\(135deg,\s*rgba\(11,\s*42,\s*70/);
+  const ctaRule = css.match(/\.about-page\s+\.cta-section\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  assert.doesNotMatch(ctaRule, /linear-gradient\(135deg,\s*rgba\(11,\s*42,\s*70/);
   assert.doesNotMatch(about, /\.hero-content,\s*\n\s*\.hero-image\s*\{/);
 });

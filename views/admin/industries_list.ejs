@@ -16,8 +16,8 @@
           <td class="text-end">
             <a class="btn btn-sm btn-outline-secondary" href="/webdesign-<%= r.slug %>" target="_blank">Seite ansehen</a>
             <a class="btn btn-sm btn-primary" href="/admin/industries/<%= r.id %>/edit">Bearbeiten</a>
-            <form method="post" action="/admin/industries/<%= r.id %>/id/delete" style="display:inline"></form>
-            <form method="post" action="/admin/industries/<%= r.id %>/delete" style="display:inline" onsubmit="return confirm('Wirklich löschen?');">
+            <form method="post" action="/admin/industries/<%= r.id %>/id/delete" class="admin-inline-form"></form>
+            <form method="post" action="/admin/industries/<%= r.id %>/delete" class="admin-inline-form" onsubmit="return confirm('Wirklich löschen?');">
               <button class="btn btn-sm btn-danger">Löschen</button>
             </form>
           </td>

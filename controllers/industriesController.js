@@ -1,8 +1,9 @@
 // controllers/industriesController.js
 import pool from '../util/db.js';
 import { getIndustryBySlug } from '../models/industryModel.js'; // vorhanden bei dir
-import Package from '../models/Package.js';
+import pricingService from '../services/pricingService.js';
 import { buildIndustrySchemas } from '../helpers/industrySchema.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
@@ -22,6 +23,25 @@ function isExcludedIndustry(industry = {}) {
     .some((needle) => text.includes(needle));
 }
 
+async function getIndustryPackages(res) {
+  const visiblePackages = res.locals.visiblePackages || await pricingService.getVisiblePackages();
+  return visiblePackages
+    .slice(0, 3)
+    .map((pkg) => ({
+      id: pkg.packageKey || pkg.slug,
+      name: pkg.displayName || pkg.name,
+      slug: pkg.slug,
+      description: pkg.shortDescription || pkg.positioning,
+      price: pkg.priceLabel,
+      display: true,
+      features: [
+        pkg.pageScope,
+        pkg.feedbackRounds ? `${pkg.feedbackRounds} Feedbackrunden` : '',
+        pkg.seoScope
+      ].filter(Boolean)
+    }));
+}
+
 /* --- NEU: Branchen-Übersicht (/branchen) --- */
 export async function listIndustries(req, res) {
   try {
@@ -36,7 +56,9 @@ export async function listIndustries(req, res) {
       ORDER BY featured DESC, name ASC
     `);
 
-    const visibleRows = rows.filter((r) => !isExcludedIndustry(r));
+    const visibleRows = rows
+      .filter((r) => !isExcludedIndustry(r))
+      .map((r) => normalizeLegacyPublicCopy(r));
     const featured = visibleRows.filter(r => r.featured);
     const others   = visibleRows.filter(r => !r.featured);
 
@@ -67,7 +89,7 @@ export async function listIndustries(req, res) {
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
   try {
-    const industry = await getIndustryBySlug(slug);
+    const industry = normalizeLegacyPublicCopy(await getIndustryBySlug(slug));
     if (!industry) {
       return res.status(404).render('404', {
         title: 'Branche nicht gefunden',
@@ -79,14 +101,12 @@ export async function showIndustryPage(req, res) {
     const url = `${baseUrl}${req.originalUrl}`;
     const jsonLd = buildIndustrySchemas({ industry, url, baseUrl });
 
-    const packages = await Package.fetchAll();
-
     res.render('industries/show.ejs', {
       title: industry.title || (`Webdesign für ${industry.name}`),
       description: industry.description || (`Website-Erstellung & SEO für ${industry.name}`),
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
-      packages,
+      packages: await getIndustryPackages(res),
       jsonLd
     });
   } catch (err) {

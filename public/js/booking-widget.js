@@ -143,19 +143,27 @@
     showStep('days');
   }
 
-  async function loadMonth() {
+  async function loadMonth(options = {}) {
     const month = `${state.month.getFullYear()}-${String(state.month.getMonth() + 1).padStart(2, '0')}`;
     monthLabel.textContent = formatMonth(state.month);
     weekdayRow.innerHTML = text.weekdays.map((w) => `<span>${w}</span>`).join('');
     gridDays.innerHTML = '';
 
     let availableDays = new Set();
+    let loadFailed = false;
     try {
       const res = await fetch(`/api/calendar?month=${month}`, { credentials: 'same-origin' });
       const data = await res.json();
       availableDays = new Set((data.days || []).map((d) => d.date));
     } catch (_err) {
+      loadFailed = true;
       hintEl.textContent = text.loadError;
+    }
+
+    if (!loadFailed && availableDays.size === 0 && options.autoAdvance && options.remaining > 0) {
+      state.month = new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1);
+      await loadMonth({ autoAdvance: true, remaining: options.remaining - 1 });
+      return;
     }
 
     const firstWeekday = (new Date(state.month.getFullYear(), state.month.getMonth(), 1).getDay() + 6) % 7;
@@ -281,5 +289,5 @@
     }
   });
 
-  loadMonth();
+  loadMonth({ autoAdvance: true, remaining: 6 });
 })();

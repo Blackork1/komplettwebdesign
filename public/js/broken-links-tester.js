@@ -30,7 +30,13 @@
 
   function trackEvent(name, data) {
     try {
-      if (typeof window.gtag === 'function') window.gtag('event', name, data || {});
+      if (window.KWDTracking && typeof window.KWDTracking.trackEvent === 'function') {
+        window.KWDTracking.trackEvent(name, data || {});
+        return;
+      }
+      document.dispatchEvent(new CustomEvent('kwd:tracking', {
+        detail: { eventName: name, params: data || {} }
+      }));
     } catch (_e) { /* ignore */ }
   }
 
@@ -105,17 +111,17 @@
         <div class="wt-next-step-package">
           <strong>${escapeHtml(pkg.title)}</strong>
           <p>${escapeHtml(pkg.text || '')}</p>
-          <a class="wt-button wt-button-secondary" href="${escapeHtml(pkg.href || '/webdesign-berlin')}" data-tester-cta="broken" data-tester-action="package" data-bl-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
+          <a class="btn btn-secondary" href="${escapeHtml(pkg.href || '/webdesign-berlin')}" data-tester-cta="broken" data-tester-action="package" data-bl-cta="package">${escapeHtml(pkg.label || (locale === 'en' ? 'See packages' : 'Pakete ansehen'))}</a>
         </div>`;
     }
 
     return `
-      <section class="wt-cta-card wt-next-step-card" style="margin-top:0.9rem;">
+      <section class="wt-cta-card wt-next-step-card wt-stack-md">
         <h2><i class="fa-solid fa-rocket"></i> ${escapeHtml(headline)}</h2>
         <p>${escapeHtml(intro)}</p>
         <div class="wt-cta-actions">
-          <a class="wt-button" href="${escapeHtml(bookingUrl)}" data-tester-cta="broken" data-tester-action="booking" data-bl-cta="booking">${escapeHtml(bookingLabel)}</a>
-          <a class="wt-button wt-button-ghost" href="${escapeHtml(contactUrl)}" data-tester-cta="broken" data-tester-action="contact" data-bl-cta="contact">${escapeHtml(contactLabel)}</a>
+          <a class="btn btn-primary" href="${escapeHtml(bookingUrl)}" data-tester-cta="broken" data-tester-action="booking" data-bl-cta="booking">${escapeHtml(bookingLabel)}</a>
+          <a class="btn btn-secondary" href="${escapeHtml(contactUrl)}" data-tester-cta="broken" data-tester-action="contact" data-bl-cta="contact">${escapeHtml(contactLabel)}</a>
         </div>
         ${pkgBlock}
       </section>`;
@@ -133,7 +139,7 @@
     const empty = i18n.topPagesEmpty || (locale === 'en' ? 'No affected pages detected.' : 'Keine betroffenen Seiten gefunden.');
     if (!items.length) {
       return `
-        <section class="wt-sitefacts" style="margin-top:0.8rem;">
+        <section class="wt-sitefacts wt-stack-sm">
           <h3><i class="fa-solid fa-list-check"></i> ${escapeHtml(title)}</h3>
           <p>${escapeHtml(empty)}</p>
         </section>`;
@@ -148,7 +154,7 @@
       </li>
     `).join('');
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+      <section class="wt-sitefacts wt-stack-sm">
         <h3><i class="fa-solid fa-list-check"></i> ${escapeHtml(title)}</h3>
         <ul class="wt-priority-list">${rows}</ul>
       </section>`;
@@ -157,7 +163,7 @@
   function renderLimitations(limitations) {
     if (!Array.isArray(limitations) || !limitations.length) return '';
     return `
-      <section class="wt-sitefacts" style="margin-top:0.8rem;">
+      <section class="wt-sitefacts wt-stack-sm">
         <h3><i class="fa-solid fa-circle-info"></i> ${escapeHtml(i18n.limitations || 'Hinweise')}</h3>
         <ul class="wt-priority-list">${limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
       </section>
@@ -168,7 +174,7 @@
     const title = i18n.lockedTitle || (locale === 'en' ? 'Detailed broken-links report (PDF)' : 'Detaillierter Broken-Links-Report (PDF)');
     const text = i18n.lockedText || '';
     return `
-      <section class="wt-cta-card" style="margin-top:0.9rem;">
+      <section class="wt-cta-card wt-stack-md">
         <h2>${escapeHtml(title)}</h2>
         <p>${escapeHtml(text)}</p>
         <form class="wt-lead-form" data-broken-links-lead-form>
@@ -183,7 +189,7 @@
               ${escapeHtml(i18n.privacyLabel || 'Datenschutzerklärung')}
             </a>
           </small>
-          <button class="wt-button" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
+          <button class="btn btn-primary" type="submit">${escapeHtml(i18n.leadSubmit || 'Bestätigungslink senden')}</button>
           <p class="wt-lead-state" data-broken-links-lead-state hidden></p>
         </form>
       </section>
@@ -300,7 +306,7 @@
         </div>
       </section>
 
-      <div class="bl-meta-grid" style="margin-top:0.8rem;">
+      <div class="bl-meta-grid wt-stack-sm">
         <section class="wt-sitefacts">
           <h3><i class="fa-solid fa-chart-column"></i> ${escapeHtml(i18n.checkedLinks || 'Geprüfte Links')}</h3>
           <dl>
@@ -313,7 +319,7 @@
 
         <section class="wt-sitefacts">
           <h3><i class="fa-solid fa-traffic-light"></i> Status</h3>
-          <div class="wt-result-meta" style="margin-top:0.4rem;">
+          <div class="wt-result-meta wt-stack-2xs">
             <span class="wt-tag" data-tone="${toneForCount(stats.brokenCount)}">${escapeHtml(i18n.brokenLinks || 'Broken Links')}: ${escapeHtml(stats.brokenCount ?? 0)}</span>
             <span class="wt-tag" data-tone="${toneForCount(stats.warningCount)}">${escapeHtml(i18n.warnings || 'Warnings')}: ${escapeHtml(stats.warningCount ?? 0)}</span>
           </div>

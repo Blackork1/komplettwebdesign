@@ -16,8 +16,8 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
   {
     title: 'Was kostet eine Website in Berlin?',
     slug: 'website-kosten-berlin',
-    excerpt: 'Preise ab 499 EUR: Welche Website-Pakete sinnvoll sind, welche laufenden Kosten dazukommen und worauf Berliner Unternehmen achten sollten.',
-    description: 'Website-Kosten in Berlin: Preise ab 499 EUR, Paketvergleich, laufende Kosten und Budget-Empfehlung für kleine Unternehmen.',
+    excerpt: 'Preise {{lowestPackagePriceLabel}}: Welche Website-Pakete sinnvoll sind, welche laufenden Kosten dazukommen und worauf Berliner Unternehmen achten sollten.',
+    description: 'Website-Kosten in Berlin: Preise {{lowestPackagePriceLabel}}, Paketvergleich, laufende Kosten und Budget-Empfehlung für kleine Unternehmen.',
     image_url: '/images/ratgeber/Kosten.png',
     category: 'Kosten',
     featured: true,
@@ -25,9 +25,9 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
     created_at: UPDATED_AT,
     updated_at: UPDATED_AT,
     content: `
-      <p><strong>Kurzantwort:</strong> Eine professionelle Website in Berlin startet bei Komplett Webdesign ab 499 EUR. Für die meisten kleinen Unternehmen liegen sinnvolle Website-Projekte zwischen 899 EUR und 1.499 EUR, weil neben Design auch Texte, mobile Darstellung, On-Page-SEO, Kontaktwege und eine saubere technische Grundlage gebraucht werden.</p>
+      <p><strong>Kurzantwort:</strong> Eine professionelle Website in Berlin startet bei Komplett Webdesign {{price.start}}. Für die meisten kleinen Unternehmen ist das Business-Paket {{price.business}} der sinnvolle Einstieg, wenn neben Design auch Content-Struktur, mobile Darstellung, On-Page-SEO, Kontaktwege und eine saubere technische Grundlage gebraucht werden.</p>
       <h2>Website-Kosten im Überblick</h2>
-      <p>Als grobe Orientierung gilt: Ein Onepager ist der günstige Einstieg, eine Business-Website ist für die meisten kleinen Unternehmen der beste Standard, und Premium lohnt sich bei mehr Seiten, Buchungssystem oder stärkerer SEO-Struktur.</p>
+      <p>Als grobe Orientierung gilt: Start ist der kompakte Einstieg, Business ist für viele kleine Unternehmen der beste Standard, und Wachstum lohnt sich bei mehr Seiten, Buchungssystem oder stärkerer SEO-Struktur.</p>
       <div class="table-responsive">
         <table class="table">
           <thead>
@@ -39,19 +39,19 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
           </thead>
           <tbody>
             <tr>
-              <td>Basis</td>
-              <td>ab 499 EUR</td>
+              <td>Start</td>
+              <td>{{price.start}}</td>
               <td>digitale Visitenkarte, Gründer, kleine lokale Anbieter</td>
             </tr>
             <tr>
               <td>Business</td>
-              <td>ab 899 EUR</td>
+              <td>{{price.business}}</td>
               <td>Firmenwebsite mit Leistungen, Kontaktformular und On-Page-SEO</td>
             </tr>
             <tr>
-              <td>Premium</td>
-              <td>ab 1.499 EUR</td>
-              <td>umfangreichere Websites mit Strategie, SEO und Buchungssystem</td>
+              <td>Wachstum</td>
+              <td>{{price.wachstum}}</td>
+              <td>umfangreichere Websites mit Strategie, SEO-Struktur und Add-ons nach Umfang</td>
             </tr>
           </tbody>
         </table>
@@ -59,25 +59,25 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       <h2>Welche Website-Kosten sind realistisch?</h2>
       <p>Der Preis hängt vor allem davon ab, wie viele Seiten, Texte und Funktionen deine Website braucht. Ein Onepager ist günstiger als eine mehrseitige Firmenwebsite mit Leistungsseiten, Kontaktformular, SEO-Struktur, Buchungssystem oder Shop-Perspektive.</p>
       <ul>
-        <li><strong>Basis ab 499 EUR:</strong> eine Seite mit Design, Texten und SEO-Grundoptimierung. Ideal, wenn du schnell professionell online sein willst.</li>
-        <li><strong>Business ab 899 EUR:</strong> bis zu 5 Seiten mit Leistungen, Kontaktformular, Über-uns-/Team-Bereich und On-Page-SEO. Das passt für viele lokale Dienstleister.</li>
-        <li><strong>Premium ab 1.499 EUR:</strong> bis zu 20 Seiten mit Strategie, SEO, umfangreicher Struktur und Buchungssystem. Sinnvoll bei mehreren Angeboten, Standorten oder mehr Content.</li>
+        <li><strong>Start {{price.start}}:</strong> kompakte Website mit 1 bis 3 Seiten oder Onepager, technischer SEO-Grundlage und klarer Kontaktmöglichkeit.</li>
+        <li><strong>Business {{price.business}}:</strong> ca. 4 bis 7 Seiten mit Leistungen, Kontaktformular, Über-uns-/Team-Bereich und On-Page-SEO. Das passt für viele lokale Dienstleister.</li>
+        <li><strong>Wachstum {{price.wachstum}}:</strong> ca. 8 bis 12 Seiten mit Strategie, SEO-Struktur und Add-ons nach Umfang. Sinnvoll bei mehreren Angeboten, Standorten oder mehr Content.</li>
       </ul>
       <h2>Welche laufenden Kosten kommen dazu?</h2>
-      <p>Bei einer Website solltest du einmalige Projektkosten und laufende Betriebskosten getrennt betrachten. Domain und Mail starten ab 10 EUR pro Monat, Hosting ab 10 EUR pro Monat und Wartung ab 5 EUR pro Monat. So bleibt klar, was der Aufbau kostet und was später für Betrieb, Sicherheit und Betreuung anfällt.</p>
+      <p>Bei einer Website solltest du einmalige Projektkosten und laufende Betriebskosten getrennt betrachten. Domain, Mail, Hosting, Wartung, Backups, Monitoring oder externe Tools können separat entstehen und werden je nach Umfang angeboten.</p>
       <h2>Wann lohnt sich ein größeres Paket?</h2>
       <p>Ein größeres Paket lohnt sich, wenn deine Website mehr leisten soll als nur "da sein". Sobald du mehrere Leistungen erklären, lokal in Berlin gefunden werden, Buchungen ermöglichen oder Anfragen vorqualifizieren willst, brauchst du Struktur, Texte, interne Verlinkung und klare Kontaktwege.</p>
       <h2>Welche Budget-Entscheidung ist sinnvoll?</h2>
-      <p>Wenn du nur eine professionelle Startseite brauchst, reicht meist Basis. Wenn du regelmäßig über Google, Empfehlungen oder lokale Suche Anfragen gewinnen willst, ist Business oft der bessere Einstieg. Premium lohnt sich, wenn du mehrere Leistungen, viele Inhalte, ein Buchungssystem oder spätere Shop-Funktionen einplanst.</p>
+      <p>Wenn du nur einen professionellen kompakten Einstieg brauchst, reicht meist Start. Wenn du regelmäßig über Google, Empfehlungen oder lokale Suche Anfragen gewinnen willst, ist Business oft der bessere Einstieg. Wachstum lohnt sich, wenn du mehrere Leistungen, viele Inhalte, ein Buchungssystem oder spätere Shop-Funktionen einplanst.</p>
       <h2>So vermeidest du versteckte Kosten</h2>
       <p>Klare Angebote nennen Seitenanzahl, enthaltene Texte, SEO-Umfang, technische Einrichtung, Feedbackrunden und laufende Kosten separat. Wenn du bereits eine Website hast, starte mit dem <a href="/website-tester">kostenlosen Website-Tester</a>. Danach lässt sich besser einschätzen, ob eine Optimierung reicht oder ein Relaunch sinnvoller ist.</p>
       <p><a class="btn btn-accent" href="/pakete">Pakete vergleichen</a> <a class="btn btn-outline-primary" href="/kontakt">Budget einschätzen lassen</a></p>
     `,
     faq_json: [
-      faq('Was kostet eine einfache Website in Berlin?', 'Eine einfache Website startet bei Komplett Webdesign ab 499 EUR. Darin enthalten sind eine Seite, Texte, SEO-Grundoptimierung und mobilfreundliches Design.'),
-      faq('Was kostet eine mehrseitige Firmenwebsite?', 'Eine mehrseitige Firmenwebsite startet im Business-Paket ab 899 EUR. Enthalten sind bis zu 5 Seiten, Kontaktformular, Leistungsseiten, Über-uns-/Team-Bereich und On-Page-SEO.'),
-      faq('Sind Hosting und Wartung im Website-Preis enthalten?', 'Hosting und Wartung sind separate laufende Leistungen. Domain und Mail starten ab 10 EUR pro Monat, Hosting ab 10 EUR pro Monat und Wartung ab 5 EUR pro Monat.'),
-      faq('Wann brauche ich das Premium-Paket?', 'Premium passt für umfangreichere Websites mit bis zu 20 Seiten, mehreren Leistungen, lokaler SEO-Struktur, Buchungssystem oder späterer Shop-Perspektive.')
+      faq('Was kostet eine einfache Website in Berlin?', 'Eine einfache Website startet bei Komplett Webdesign {{price.start}}. Darin enthalten ist ein kompakter Umfang mit technischer SEO-Grundlage und mobilfreundlichem Design.'),
+      faq('Was kostet eine mehrseitige Firmenwebsite?', 'Eine mehrseitige Firmenwebsite startet im Business-Paket {{price.business}}. Typisch sind ca. 4 bis 7 Seiten, Kontaktformular, Leistungsseiten, Über-uns-/Team-Bereich und On-Page-SEO.'),
+      faq('Sind Hosting und Wartung im Website-Preis enthalten?', 'Hosting, Wartung, Domain, E-Mail, Backups, Monitoring und externe Tools sind separate laufende Leistungen, sofern sie nicht ausdrücklich vereinbart werden.'),
+      faq('Wann brauche ich das Wachstum-Paket?', 'Wachstum passt für umfangreichere Websites mit ca. 8 bis 12 Seiten, mehreren Leistungen, lokaler SEO-Struktur, Buchungssystem oder späterer Shop-Perspektive.')
     ]
   },
   {
@@ -92,7 +92,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
     created_at: UPDATED_AT,
     updated_at: UPDATED_AT,
     content: `
-      <p><strong>Kurzantwort:</strong> Eine Website erstellen zu lassen dauert bei kleinen Unternehmen meist 2 bis 8 Wochen. Basis-Websites sind oft nach 2 bis 4 Wochen online, Business-Websites nach 4 bis 6 Wochen und umfangreiche Projekte nach 6 bis 8 Wochen.</p>
+      <p><strong>Kurzantwort:</strong> Eine Website erstellen zu lassen dauert bei kleinen Unternehmen meist mehrere Wochen. Kompakte Start-Websites sind oft schneller online, Business-Websites brauchen mehr Abstimmung und umfangreiche Wachstum- oder Individualprojekte hängen stärker von Content, Funktionen und Feedback ab.</p>
       <h2>Website-Projekt in 6 Schritten</h2>
       <p>Ein gutes Website-Projekt folgt einer klaren Reihenfolge: erst Ziele und Struktur, dann Inhalte und Design, danach technische Umsetzung, Tests und Launch. So entsteht nicht nur eine schöne Seite, sondern ein Auftritt, der verstanden, gefunden und angefragt werden kann.</p>
       <h2>Der typische Ablauf einer Website-Erstellung</h2>
@@ -101,7 +101,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
         <li><strong>Struktur:</strong> Seitenplan, Kernbotschaft, lokale Keywords und wichtigste Kontaktwege festlegen.</li>
         <li><strong>Texte und Inhalte:</strong> Leistungen verständlich erklären, Einwände beantworten und passende Bilder auswählen.</li>
         <li><strong>Design:</strong> Layout, Farben, Bildsprache und Nutzerführung so ausarbeiten, dass Besucher schnell verstehen, warum sie anfragen sollten.</li>
-        <li><strong>Umsetzung:</strong> mobile Website, Kontaktformular, technische SEO-Basis, Performance und rechtliche Pflichtseiten einrichten.</li>
+        <li><strong>Umsetzung:</strong> mobile Website, Kontaktformular, technische SEO-Grundlage, Performance und gelieferte Pflichtseiten technisch einbinden.</li>
         <li><strong>Launch:</strong> Domain, Hosting, SSL, Sitemap, Weiterleitungen, Search Console und Conversion-Tracking prüfen.</li>
       </ol>
       <h2>Wie lange dauert welcher Website-Typ?</h2>
@@ -117,7 +117,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
           </thead>
           <tbody>
             <tr>
-              <td>Basis</td>
+              <td>Start</td>
               <td>2 bis 4 Wochen</td>
               <td>schneller professioneller Start mit einer Seite</td>
             </tr>
@@ -127,7 +127,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
               <td>Leistungsseiten, Kontaktformular, Texte und SEO-Grundlage</td>
             </tr>
             <tr>
-              <td>Premium</td>
+              <td>Wachstum</td>
               <td>6 bis 8 Wochen</td>
               <td>mehr Struktur, Strategie, Inhalte und Funktionen</td>
             </tr>
@@ -141,11 +141,11 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       <h2>Was solltest du vor dem Erstgespräch vorbereiten?</h2>
       <p>Hilfreich sind 3 bis 5 Wettbewerber, eine grobe Liste deiner Leistungen, vorhandene Bilder, Wunschfunktionen und eine ehrliche Einschätzung, was deine aktuelle Website nicht leistet. Das spart Abstimmung und macht das Angebot genauer.</p>
       <h2>Was kostet die Website-Erstellung?</h2>
-      <p>Bei Komplett Webdesign starten Websites ab 499 EUR. Für eine mehrseitige Unternehmenswebsite mit Kontaktformular, Leistungsseiten und On-Page-SEO solltest du eher mit dem Business-Paket ab 899 EUR planen. Umfangreichere Projekte mit mehr Seiten, Strategie oder Buchungssystem starten ab 1.499 EUR.</p>
+      <p>Bei Komplett Webdesign starten Websites {{price.start}}. Für eine mehrseitige Unternehmenswebsite mit Kontaktformular, Leistungsseiten und On-Page-SEO solltest du eher mit dem Business-Paket {{price.business}} planen. Umfangreichere Projekte mit mehr Seiten, Strategie oder Buchungssystem starten im Wachstum-Paket {{price.wachstum}} oder werden individuell kalkuliert.</p>
       <p><a class="btn btn-accent" href="/webdesign-berlin">Webdesign Berlin ansehen</a> <a class="btn btn-outline-primary" href="/website-tester">Bestehende Website prüfen</a></p>
     `,
     faq_json: [
-      faq('Wie lange dauert eine Website-Erstellung in Berlin?', 'Je nach Paket dauert die Umsetzung meist 2 bis 8 Wochen. Basis-Projekte liegen häufig bei 2 bis 4 Wochen, Business-Projekte bei 4 bis 6 Wochen und Premium-Projekte bei 6 bis 8 Wochen.'),
+      faq('Wie lange dauert eine Website-Erstellung in Berlin?', 'Je nach Paket und Inhaltsstand variiert die Umsetzung. Start-Projekte sind meist schneller, Business-Projekte brauchen mehr Abstimmung und Wachstum- oder Individualprojekte hängen stärker von Content, Funktionen und Feedback ab.'),
       faq('Sind Website-Texte enthalten?', 'Ja, Texte sind in den Paketen enthalten. Der Umfang hängt vom gewählten Paket, der Seitenanzahl und den Leistungen ab, die erklärt werden müssen.'),
       faq('Wird SEO direkt bei der Website-Erstellung mitgemacht?', 'Ja. Titles, Meta Descriptions, H1, interne Links, Seitenstruktur, mobile Darstellung und lokale Signale werden von Anfang an berücksichtigt.'),
       faq('Was brauche ich vor dem Erstgespräch?', 'Hilfreich sind eine Liste deiner Leistungen, Zielgruppe, vorhandene Bilder, Wunschfunktionen, Beispiele von Websites, die dir gefallen, und eine grobe Budgetvorstellung.')
@@ -364,9 +364,9 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       <p><a class="btn btn-accent" href="/branchen/webdesign-cafe">Webdesign für Cafés ansehen</a> <a class="btn btn-outline-primary" href="/kontakt">Restaurant-Website besprechen</a></p>
     `,
     faq_json: [
-      faq('Was kostet eine Restaurant-Website in Berlin?', 'Je nach Umfang startet eine einfache Website ab 499 EUR. Mit mehreren Seiten, Reservierung, Events, Speisekarte oder Buchungssystem liegt der Aufwand meist höher.'),
+      faq('Was kostet eine Restaurant-Website in Berlin?', 'Je nach Umfang startet eine einfache Website {{price.start}}. Mit mehreren Seiten, Reservierung, Events, Speisekarte oder Buchungssystem liegt der Aufwand meist höher.'),
       faq('Sollte eine Speisekarte als PDF eingebunden werden?', 'Eine PDF kann zusätzlich sinnvoll sein, aber die wichtigsten Speisen, Kategorien und Hinweise sollten auch als HTML auf der Website stehen. Das ist nutzerfreundlicher und besser für SEO.'),
-      faq('Kann ein Buchungssystem integriert werden?', 'Ja. Im Premium-Paket ist ein Buchungssystem enthalten, bei anderen Paketen kann es je nach Umfang ergänzt werden.'),
+      faq('Kann ein Buchungssystem integriert werden?', 'Ja. Buchungssysteme können integriert werden, werden aber je nach Umfang als Add-on oder individuelles Modul kalkuliert.'),
       faq('Was ist für Restaurants mobil am wichtigsten?', 'Mobil sollten Öffnungszeiten, Adresse, Speisekarte, Reservierung und Telefonkontakt sofort erreichbar sein. Viele Gäste suchen diese Infos unterwegs.')
     ]
   }

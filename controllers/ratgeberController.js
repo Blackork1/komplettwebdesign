@@ -1,8 +1,11 @@
 // controllers/ratgeberController.js
 import ejs from 'ejs';
 import RatgeberModel from '../models/RatgeberModel.js';
+import BlogPostModel from '../models/BlogPostModel.js';
 import { isoOffset, isoAtNoon } from '../util/date.js';
 import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js';
+import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
 function renderDbEjs(template, locals = {}) {
@@ -20,6 +23,12 @@ function renderDbEjs(template, locals = {}) {
 /* ---------- Helper: HTML → Text ---------- */
 function stripHtml(html) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function demoteContentH1(html) {
+  return String(html || '')
+    .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
 }
 
 function guideTime(post) {
@@ -56,6 +65,15 @@ async function findFeaturedGuidesSafe(limit = 5) {
   }
 }
 
+async function findLatestBlogPostsSafe(limit = 3) {
+  try {
+    return await BlogPostModel.findPage({ limit, offset: 0 });
+  } catch (err) {
+    console.error('Aktuelle Blogartikel konnten nicht gelesen werden:', err.message);
+    return [];
+  }
+}
+
 async function findGuideBySlugSafe(slug) {
   try {
     return await RatgeberModel.findBySlug(slug);
@@ -69,7 +87,9 @@ async function findGuideBySlugSafe(slug) {
 export async function listGuides(req, res) {
   const dbPosts = await findAllGuidesSafe();
   const dbFeaturedPosts = await findFeaturedGuidesSafe(5);
-  const posts = mergeGuides(dbPosts);
+  const latestBlogPosts = await findLatestBlogPostsSafe(3);
+  const pricing = res.locals.packagePricing || {};
+  const posts = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(dbPosts), pricing, { lng: 'de' }));
   const featuredPosts = mergeGuides(
     dbFeaturedPosts,
     SEO_GUIDE_CLUSTER.filter((guide) => guide.featured)
@@ -77,17 +97,19 @@ export async function listGuides(req, res) {
 
   res.render('ratgeber/index', {
     title: 'Ratgeber – Webdesign, SEO, Kosten & Zeitpläne',
-    description: 'Praxisnahe Ratgeber zu Webdesign, Performance und SEO – mit Beispielen, Checklisten und realistischen Zeitplänen.',
+    description: 'Evergreen-Wissen zu Webdesign, Kosten, Ablauf, Relaunch und Local SEO für kleine Unternehmen in Berlin und Brandenburg.',
     posts,
-    featuredPosts
+    featuredPosts: normalizeLegacyPublicCopy(renderPricingTokens(featuredPosts, pricing, { lng: 'de' })),
+    latestBlogPosts: normalizeLegacyPublicCopy(renderPricingTokens(latestBlogPosts, pricing, { lng: 'de' })).slice(0, 3)
   });
 }
 
 /* ---------- GET /ratgeber/:slug ---------- */
 export async function showGuide(req, res) {
-  let post = await findGuideBySlugSafe(req.params.slug);
-  if (!post) post = getSeoGuideBySlug(req.params.slug);
+  let post = normalizeLegacyPublicCopy(await findGuideBySlugSafe(req.params.slug));
+  if (!post) post = normalizeLegacyPublicCopy(getSeoGuideBySlug(req.params.slug));
   if (!post) return res.status(404).send('Ratgeber nicht gefunden');
+  post = normalizeLegacyPublicCopy(renderPricingTokens(post, res.locals.packagePricing || {}, { lng: 'de' }));
 
   // ISO-Timestamps mit Offset
   const publishedISO = isoOffset(post.created_at);
@@ -102,7 +124,7 @@ export async function showGuide(req, res) {
   }
 
   // DB-Content (EJS) rendern
-  const renderedContent = renderDbEjs(post.content, {
+  const renderedContent = demoteContentH1(normalizeLegacyPublicCopy(renderPricingTokens(renderDbEjs(post.content, {
     post: { ...post, description: post.description },
     modifiedISO,
     publishedISO,
@@ -111,7 +133,7 @@ export async function showGuide(req, res) {
     helpers: {
       date: d => new Date(d).toLocaleDateString('de-DE')
     }
-  });
+  }), res.locals.packagePricing || {}, { lng: 'de' })));
 
   // Beschreibung/Excerpt fallback
   let desc = (post.excerpt && post.excerpt.trim()) || '';
@@ -189,7 +211,7 @@ export async function showGuide(req, res) {
   </script>
   `;
 
-  const others = mergeGuides(await findAllGuidesSafe()).filter((guide) => guide.slug !== post.slug);
+  const others = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(await findAllGuidesSafe()).filter((guide) => guide.slug !== post.slug), res.locals.packagePricing || {}, { lng: 'de' }));
 
   res.render('ratgeber/show', {
     // SEO/OG Variablen
