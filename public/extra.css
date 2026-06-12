@@ -1621,20 +1621,74 @@ p.step-description {
   }
 
   #nav-links.mobile-nav-panel > a.nav-link-item.is-active,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown.is-active
+    > .dropdown-toggle
+    > a.nav-link-item,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown.is-active
+    > .dropdown-toggle
+    > a.nav-link-item
+    .mobile-nav-label,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown.is-active
+    > .dropdown-toggle
+    > a.nav-link-item
+    .mobile-nav-copy,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown.is-active
+    > .dropdown-toggle
+    > a.nav-link-item
+    .mobile-nav-description,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown-menu
+    li
+    a.nav-sub-link.is-active,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown-menu
+    li
+    a.nav-sub-link.is-active
+    .mobile-nav-label,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown-menu
+    li
+    a.nav-sub-link.is-active
+    .mobile-nav-copy,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown-menu
+    li
+    a.nav-sub-link.is-active
+    .mobile-nav-description {
+    color: var(--color-accent) !important;
+  }
+
   #nav-links.mobile-nav-panel .main-nav .dropdown.is-active > .dropdown-toggle > a.nav-link-item,
   #nav-links.mobile-nav-panel .main-nav .dropdown.is-active > .dropdown-toggle > a.nav-link-item .mobile-nav-label,
-  #nav-links.mobile-nav-panel .main-nav .dropdown.is-active > .dropdown-toggle > a.nav-link-item .mobile-nav-copy,
-  #nav-links.mobile-nav-panel .main-nav .dropdown.is-active > .dropdown-toggle > a.nav-link-item .mobile-nav-description,
-  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active,
-  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active .mobile-nav-label,
-  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active .mobile-nav-copy,
-  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active .mobile-nav-description {
+  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active {
     color: var(--color-accent) !important;
   }
 
   #nav-links.mobile-nav-panel > a.nav-link-item.is-active .mobile-nav-icon,
-  #nav-links.mobile-nav-panel .main-nav .dropdown.is-active > .dropdown-toggle > a.nav-link-item .mobile-nav-icon,
-  #nav-links.mobile-nav-panel .main-nav .dropdown-menu li a.nav-sub-link.is-active .mobile-nav-icon {
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown.is-active
+    > .dropdown-toggle
+    > a.nav-link-item
+    .mobile-nav-icon,
+  #nav-links.mobile-nav-panel
+    .main-nav
+    .dropdown-menu
+    li
+    a.nav-sub-link.is-active
+    .mobile-nav-icon {
     background: rgba(240, 75, 36, 0.1);
     border-color: rgba(240, 75, 36, 0.32);
   }
@@ -1948,7 +2002,8 @@ p.step-description {
 }
 
 article#relaunch {
-    margin-top: 30px;
+  margin-top: 20px;
+  gap: 5px;
 }
 /* Webdesign Berlin text overflow safety */
 .webdesign-berlin-page

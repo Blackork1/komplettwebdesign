@@ -394,8 +394,7 @@
       '.funktionenItemContainer',
       '.flexVorteile',
       '.tippsContainer',
-      '.industries-index-page .post-list',
-      '.package-detail-page .addons-ticker'
+      '.industries-index-page .post-list'
     ].join(','));
 
     scrollStateTargets.forEach(function(slider) {
@@ -419,12 +418,12 @@
         }
 
         var visibleRatio = Math.min(1, Math.max(0.18, clientWidth / scrollWidth));
-        var thumbWidth = visibleRatio * 100;
-        var maxOffset = Math.max(0, 100 - thumbWidth);
+        var thumbWidth = Math.min(clientWidth, Math.max(44, clientWidth * visibleRatio));
+        var maxOffset = Math.max(0, clientWidth - thumbWidth);
         var progress = Math.min(1, Math.max(0, slider.scrollLeft / maxScroll));
 
-        slider.style.setProperty('--kwd-slider-thumb-width', thumbWidth.toFixed(2) + '%');
-        slider.style.setProperty('--kwd-slider-thumb-offset', (progress * maxOffset).toFixed(2) + '%');
+        slider.style.setProperty('--kwd-slider-thumb-width', thumbWidth.toFixed(2) + 'px');
+        slider.style.setProperty('--kwd-slider-thumb-offset', (progress * maxOffset).toFixed(2) + 'px');
       }
 
       function markScrolling() {

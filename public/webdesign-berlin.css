@@ -432,6 +432,21 @@
   justify-self: flex-start;
 }
 
+.webdesign-berlin #websiteCheck .wd-check-card {
+  display: grid;
+  gap: clamp(10px, 2vw, 14px);
+}
+
+.webdesign-berlin #websiteCheck .wd-check-card > .wd-chip,
+.webdesign-berlin #websiteCheck .wd-check-card > .wd-lead,
+.webdesign-berlin #websiteCheck .wd-check-card .wd-link-row {
+  margin: 0;
+}
+
+.webdesign-berlin #websiteCheck .wd-check-card .wd-link-row {
+  margin-top: 2px;
+}
+
 .webdesign-berlin .wd-visual {
   background: #fff;
   border: 1px solid rgba(239, 75, 28, 0.28);
@@ -532,6 +547,16 @@
   gap: 12px;
 }
 
+.webdesign-berlin .wd-consultation-step__head {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+}
+
+.webdesign-berlin .wd-consultation-step__head h3 {
+  margin: 0;
+}
+
 .webdesign-berlin .wd-consultation-step__number {
   align-items: center;
   background: rgba(239, 75, 28, 0.1);
@@ -539,6 +564,7 @@
   border-radius: 999px;
   color: var(--wd-accent);
   display: inline-flex;
+  flex: 0 0 34px;
   font-family: Poppins, Inter, system-ui, sans-serif;
   font-size: 0.84rem;
   font-weight: 850;
@@ -1299,6 +1325,16 @@
   .webdesign-berlin .wd-link-row--split,
   .webdesign-berlin .wd-link-row--center {
     justify-content: center;
+  }
+
+  .webdesign-berlin #websiteCheck .wd-check-card {
+    padding: 15px;
+    gap: 9px;
+  }
+
+  .webdesign-berlin #websiteCheck .wd-check-card .wd-link-row {
+    gap: 0.45rem;
+    margin-top: 2px;
   }
 
   .webdesign-berlin .wd-card,

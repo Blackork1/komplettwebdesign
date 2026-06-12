@@ -107,18 +107,20 @@ test('package detail add-ons render as a backend-timed seamless ticker', () => {
   assert.match(packageDetailTemplate, /const rawDuration = String\(ticker\.dataset\.tickerDuration \|\| ''\)\.trim\(\);/);
   assert.match(packageDetailTemplate, /typeof addOnsTickerDurationSeconds !== 'undefined' \? addOnsTickerDurationSeconds : 35/);
   assert.match(packageDetailTemplate, /Math\.min\(180,\s*Math\.max\(8,\s*addOnsTickerDurationValue\)\)/);
-  assert.match(packageDetailCss, /\.package-detail-page\s+\.addons-ticker\s*\{[\s\S]*?overflow-x:\s*auto;[\s\S]*?scroll-snap-type:\s*none;[\s\S]*?container-type:\s*inline-size;[\s\S]*?-webkit-mask-image:\s*linear-gradient/);
-  assert.match(packageDetailCss, /\.package-detail-page\s+\.addons-ticker\.is-dragging\s*\{[\s\S]*?cursor:\s*grabbing;/);
+  assert.match(packageDetailCss, /\.package-detail-page\s+\.addons-ticker\s*\{[\s\S]*?overflow-x:\s*hidden;[\s\S]*?touch-action:\s*pan-y;[\s\S]*?container-type:\s*inline-size;[\s\S]*?-webkit-mask-image:\s*linear-gradient/);
+  assert.doesNotMatch(packageDetailCss, /\.package-detail-page\s+\.addons-ticker\.is-dragging/);
+  assert.doesNotMatch(packageDetailCss, /\.package-detail-page\s+\.addons-ticker[\s\S]*?cursor:\s*grab/);
   assert.match(packageDetailCss, /\.package-detail-page\s+\.addons-list li\s*\{[\s\S]*?flex:\s*0 0 min\(80vw,\s*540px\);/);
   assert.match(packageDetailCss, /@supports \(width:\s*1cqw\)[\s\S]*?flex-basis:\s*min\(80cqw,\s*540px\);/);
   assert.match(packageDetailTemplate, /const clone = group\.cloneNode\(true\);[\s\S]*?clone\.setAttribute\('aria-hidden', 'true'\);[\s\S]*?track\.appendChild\(clone\);/);
-  assert.match(packageDetailTemplate, /const USER_PAUSE_MS = 5000/);
   assert.match(packageDetailTemplate, /pixelsPerMs = groupWidth \/ \(durationSecondsFrom\(ticker\) \* 1000\)/);
   assert.match(packageDetailTemplate, /ticker\.scrollLeft \+= delta \* pixelsPerMs/);
-  assert.match(packageDetailTemplate, /ticker\.addEventListener\('pointerdown'/);
-  assert.match(packageDetailTemplate, /ticker\.addEventListener\('pointermove'/);
-  assert.match(packageDetailTemplate, /ticker\.addEventListener\('touchstart', pauseAfterManualInteraction/);
-  assert.match(packageDetailTemplate, /ticker\.addEventListener\('wheel', pauseAfterManualInteraction/);
+  assert.doesNotMatch(packageDetailTemplate, /USER_PAUSE_MS/);
+  assert.doesNotMatch(packageDetailTemplate, /isDragging/);
+  assert.doesNotMatch(packageDetailTemplate, /ticker\.addEventListener\('pointerdown'/);
+  assert.doesNotMatch(packageDetailTemplate, /ticker\.addEventListener\('pointermove'/);
+  assert.doesNotMatch(packageDetailTemplate, /ticker\.addEventListener\('touchstart'/);
+  assert.doesNotMatch(packageDetailTemplate, /ticker\.addEventListener\('wheel'/);
   assert.match(packageDetailTemplate, /window\.requestAnimationFrame\(tick\)/);
 });
 

@@ -112,19 +112,42 @@ const detailSections = [
     boundaries: ['keine unbegrenzte Texterstellung', 'keine Rechtsberatung', 'keine automatische Übersetzung']
   }),
   section({
-    id: 'animationen',
+    id: 'animationen-einfach',
     kicker: 'Bewegung',
-    title: 'Animationen und Interaktionen',
+    title: 'Einfache Animationen',
     lead:
-      'Animationen können eine Website hochwertiger wirken lassen, sollten aber Inhalt und Ladezeit nicht verdrängen. Deshalb werden sie nach Umfang und technischer Wirkung eingeordnet.',
-    addOnIds: ['animationen-einfach', 'animationen-umfangreich'],
+      'Einfache Animationen sind kleine, gezielte Bewegungen, die vorhandene Inhalte hochwertiger wirken lassen, ohne eine eigene Interaktionslogik oder ein neues Gestaltungskonzept zu brauchen.',
+    addOnIds: ['animationen-einfach'],
     points: [
-      'dezente Scroll-, Hover- oder Statusanimationen für ausgewählte Elemente',
-      'umfangreichere Interaktionskonzepte nur nach Prüfung',
-      'Performance und Bedienbarkeit bleiben wichtiger als Effektstärke'
+      'dezente Hover-, Scroll- oder Statusanimationen für einzelne Buttons, Karten oder Abschnitte',
+      'Bewegungen werden im bestehenden Designrahmen umgesetzt und bewusst begrenzt',
+      'Ziel ist mehr Wertigkeit und Orientierung, nicht ein animiertes Gesamterlebnis'
     ],
-    usefulFor: ['Landingpages', 'markenprägende Abschnitte', 'Erklärbereiche'],
-    boundaries: ['keine schweren Animationen ohne Nutzen', 'Darstellung kann je nach Browser leicht abweichen', 'kein Effektpaket ohne Umfangsprüfung']
+    usefulFor: ['Buttons und Karten', 'kleine Landingpage-Akzente', 'mehr Wertigkeit ohne neue Interaktionslogik'],
+    boundaries: [
+      'keine komplexen Szenen oder animierten Storyboards',
+      'keine durchgehenden Effekte über ganze Seiten hinweg',
+      'keine Sonderlogik, die Layout oder Ladezeit stark verändert'
+    ]
+  }),
+  section({
+    id: 'animationen-umfangreich',
+    kicker: 'Bewegung',
+    title: 'Umfangreiche Animationen',
+    lead:
+      'Umfangreiche Animationen sind ein eigenes Interaktionskonzept. Sie werden separat geprüft, weil Timing, Zustände, Geräteverhalten, Performance und Bedienbarkeit deutlich mehr Abstimmung brauchen.',
+    addOnIds: ['animationen-umfangreich'],
+    points: [
+      'mehrstufige Scroll-, Übergangs- oder Interaktionsabläufe mit mehreren Zuständen',
+      'Bewegung wird konzeptionell geplant und technisch auf Machbarkeit geprüft',
+      'Performance, mobile Darstellung und reduzierte Bewegung werden von Anfang an mitgedacht'
+    ],
+    usefulFor: ['markenprägende Landingpages', 'erklärungsintensive Angebote', 'individuelle Kampagnenbereiche'],
+    boundaries: [
+      'nicht als kleines Pauschal-Effektpaket kalkulierbar',
+      'keine Animation ohne klares Ziel, Konzept und Performanceprüfung',
+      'zusätzliche Tests für Geräte, Browser und reduzierte Bewegung einplanen'
+    ]
   }),
   section({
     id: 'buchungssystem-integration',

@@ -138,12 +138,17 @@
     }
 
     .home-page .home-wide-media-link img,
-    .home-page .home-wide-media-link:is(:hover, :focus-visible) img {
+    .home-page .home-wide-media-link:is(:hover, :focus-visible) img,
+    .home-page .home-service-card--link,
+    .home-page .home-service-card--link:is(:hover, :focus-visible),
+    .home-page .home-service-card--link .home-card-media img,
+    .home-page .home-service-card--link:is(:hover, :focus-visible) .home-card-media img {
       transform: none;
       transition: none;
     }
 
-    .home-page .home-wide-media-cta {
+    .home-page .home-wide-media-cta,
+    .home-page .home-card-media-cta {
       transition: none;
     }
   }
@@ -434,20 +439,28 @@
     color: #222;
     cursor: pointer;
     list-style: none;
+    padding-right: 36px;
+    position: relative;
   }
 
   .faq-question::-webkit-details-marker {
     display: none;
   }
 
-  .faq-chevron {
-    transition: transform 0.2s ease;
-    color: var(--color-primary);
-    flex-shrink: 0;
+  .faq-question::after {
+    color: #ef4b1c;
+    content: "+";
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
-  .faq-item[open] .faq-chevron {
-    transform: rotate(180deg);
+  .faq-item[open] .faq-question::after {
+    content: "–";
   }
 
   .faq-answer {
@@ -1565,6 +1578,24 @@
     justify-content: space-between;
   }
 
+  .home-page .home-service-card--link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+  }
+
+  .home-page .home-service-card--link:is(:hover, :focus-visible) {
+    border-color: rgba(233, 74, 27, 0.24);
+    box-shadow: 0 18px 42px rgba(11, 42, 70, 0.14);
+    transform: translateY(-2px);
+  }
+
+  .home-page .home-service-card--link:focus-visible {
+    outline: 3px solid rgba(233, 74, 27, 0.82);
+    outline-offset: 4px;
+  }
+
   .home-page .home-service-card .home-card-body {
     display: grid;
     gap: 0.65rem;
@@ -1578,6 +1609,49 @@
     border-width: 0 0 1px;
     border-radius: 8px 8px 0 0;
     box-shadow: none;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .home-page .home-service-card--link .home-card-media img {
+    transform: scale(1);
+    transition: transform 0.3s ease;
+    will-change: transform;
+  }
+
+  .home-page .home-service-card--link:is(:hover, :focus-visible) .home-card-media img {
+    transform: scale(1.035);
+  }
+
+  .home-page .home-card-media-cta {
+    align-items: center;
+    background: rgba(11, 42, 70, 0.74);
+    border: 1px solid rgba(255, 255, 255, 0.46);
+    border-radius: 8px;
+    bottom: 0.9rem;
+    box-shadow: 0 12px 26px rgba(11, 42, 70, 0.2);
+    color: #fff;
+    display: inline-flex;
+    font-size: 0.9rem;
+    font-weight: 800;
+    justify-content: center;
+    left: 50%;
+    line-height: 1;
+    max-width: calc(100% - 1.4rem);
+    min-height: 40px;
+    opacity: 0;
+    padding: 0.58rem 0.9rem;
+    pointer-events: none;
+    position: absolute;
+    transform: translate(-50%, 8px);
+    transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  .home-page .home-service-card--link:is(:hover, :focus-visible) .home-card-media-cta {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 
   .home-page .home-slider-shell {

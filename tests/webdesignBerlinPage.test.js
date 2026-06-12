@@ -238,8 +238,23 @@ test('webdesign berlin first consultation section is text based without video em
   assert.match(templateSource, /Preisbereich und erste Designidee/);
   assert.match(templateSource, /unverbindlichen Preisbereich/);
   assert.match(templateSource, /ersten Designidee/);
+  assert.match(templateSource, /class="wd-consultation-step__head"/);
+  assert.match(cssSource, /\.wd-consultation-step__head\s*\{[\s\S]*?display:\s*flex;/);
+  assert.match(cssSource, /\.wd-consultation-step__head\s*\{[\s\S]*?align-items:\s*flex-start;/);
+  assert.match(cssSource, /\.wd-consultation-step__number\s*\{[\s\S]*?flex:\s*0 0 34px;/);
   assert.match(cssSource, /\.wd-video\s*\{[^}]*max-width:\s*1160px/s);
   assert.doesNotMatch(templateSource, /youtube-wrapper|data-youtube-id|img\.youtube\.com|youtube-consent-btn|VideoObject/);
+});
+
+test('webdesign berlin website tester card uses compact mobile spacing', () => {
+  const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
+  const cssSource = readFileSync(new URL('../public/webdesign-berlin.css', import.meta.url), 'utf8');
+
+  assert.match(templateSource, /<article class="wd-card wd-check-card">/);
+  assert.match(cssSource, /#websiteCheck\s+\.wd-check-card\s*\{[\s\S]*?gap:\s*clamp\(10px,\s*2vw,\s*14px\);/);
+  assert.match(cssSource, /#websiteCheck\s+\.wd-check-card > \.wd-chip,[\s\S]*?#websiteCheck\s+\.wd-check-card \.wd-link-row\s*\{[\s\S]*?margin:\s*0;/);
+  assert.match(cssSource, /@media \(max-width: 580px\)[\s\S]*?#websiteCheck\s+\.wd-check-card\s*\{[\s\S]*?padding:\s*15px;[\s\S]*?gap:\s*9px;/);
+  assert.match(cssSource, /@media \(max-width: 580px\)[\s\S]*?#websiteCheck\s+\.wd-check-card \.wd-link-row\s*\{[\s\S]*?margin-top:\s*2px;/);
 });
 
 test('webdesign berlin canonical page exposes clickable district cards with district hero images', () => {

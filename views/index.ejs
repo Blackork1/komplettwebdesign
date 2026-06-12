@@ -648,33 +648,36 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
               %>
             </p>
             <div class="home-card-grid home-card-grid--centered">
-              <article class="home-card home-service-card animate-on-scroll">
+              <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open Webdesign Berlin page' : 'Unterseite Webdesign Berlin öffnen' %>">
                 <figure class="home-card-media">
-                  <img src="/images/seo.webp" alt="<%= isEn ? 'Local SEO and visibility structure' : 'Local-SEO und Sichtbarkeitsstruktur' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <img src="/images/webdesign-berlin-begruessung.jpg" alt="<%= isEn ? 'Personal greeting for a web design consultation in Berlin' : 'Persönliche Begrüßung zum Webdesign-Erstgespräch in Berlin' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'to Webdesign Berlin' : 'zu Webdesign Berlin' %></span>
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Berlin focus' : 'Berlin-Fokus' %></h3>
                   <p><%= isEn ? 'Useful for businesses that want to be found by people in Berlin and Brandenburg.' : 'Sinnvoll für Unternehmen, die in Berlin und Brandenburg gefunden und angefragt werden möchten.' %></p>
                 </div>
-              </article>
-              <article class="home-card home-service-card animate-on-scroll">
+              </a>
+              <a href="/leistungen" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open services overview' : 'Unterseite Leistungen öffnen' %>">
                 <figure class="home-card-media">
-                  <img src="/images/datenbank.webp" alt="<%= isEn ? 'Structured website data and content architecture' : 'Strukturierte Website-Daten und Inhaltsarchitektur' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <img src="/images/leistungen/leistungen-uebersicht-hero.webp" alt="<%= isEn ? 'Overview of web design services with website structure and modules' : 'Übersicht der Webdesign-Leistungen mit Website-Struktur, Modulen und Servicebereichen' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'to the services overview' : 'zur Leistungsübersicht' %></span>
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Service pages' : 'Leistungsseiten' %></h3>
                   <p><%= isEn ? 'Additional landing pages can be planned separately when search intent and scope are clear.' : 'Zusätzliche Landingpages werden separat geplant, wenn Suchintention und Umfang klar sind.' %></p>
                 </div>
-              </article>
-              <article class="home-card home-service-card animate-on-scroll">
+              </a>
+              <a href="/leistungen/rechtliches-sicherheit" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open legal and security service page' : 'Unterseite Rechtliches und Sicherheit öffnen' %>">
                 <figure class="home-card-media">
-                  <img src="/images/hosting.webp" alt="<%= isEn ? 'Stable technical base for websites' : 'Stabile technische Grundlage für Websites' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <img src="/images/home-keine-garantie.webp" alt="<%= isEn ? 'Dashboard visual for search visibility without ranking guarantees' : 'Dashboard-Visual: keine Garantie für Suchsichtbarkeit' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'more context' : 'weitere Erläuterung' %></span>
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'No guarantee' : 'Keine Garantie' %></h3>
                   <p><%= isEn ? 'Search visibility depends on market, competition, content, reviews and ongoing signals.' : 'Sichtbarkeit hängt von Markt, Wettbewerb, Inhalten, Bewertungen und laufenden Signalen ab.' %></p>
                 </div>
-              </article>
+              </a>
             </div>
           </div>
         </div>
@@ -735,12 +738,11 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             <span class="home-section-kicker"><i class="fas fa-question-circle" aria-hidden="true"></i>FAQ</span>
             <h2 id="faq-title"><%= copy.faqTitle %></h2>
             <p class="home-section-lead"><%= copy.faqSubline %></p>
-            <div class="faq-list">
+            <div class="faq-list" data-faq-accordion>
               <% faqEntries.forEach((item, idx) => { %>
               <details class="faq-item" <%= idx === 0 ? ' open' : '' %>>
                 <summary class="faq-question">
                   <span><%= item.q %></span>
-                  <i class="fas fa-chevron-down faq-chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="faq-answer">
                   <p><%= item.a %></p>

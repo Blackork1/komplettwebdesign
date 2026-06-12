@@ -552,26 +552,13 @@
   --ticker-duration: 35s;
   width: 100%;
   min-width: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   padding-block: 0.75rem;
-  scroll-snap-type: none;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  cursor: grab;
-  user-select: none;
+  touch-action: pan-y;
   container-type: inline-size;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
-}
-
-.package-detail-page .addons-ticker::-webkit-scrollbar {
-  display: none;
-}
-
-.package-detail-page .addons-ticker.is-dragging {
-  cursor: grabbing;
 }
 
 .package-detail-page .addons-ticker__track {

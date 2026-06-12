@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 
 const homepageTemplate = readFileSync(new URL('../views/index.ejs', import.meta.url), 'utf8');
 const homeCss = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
@@ -9,6 +9,8 @@ const homeHighlightsData = readFileSync(new URL('../data/homeHighlights.js', imp
 const homepage = `${homepageTemplate}\n${homeCss}\n${heroBridgePartial}\n${homeHighlightsData}`;
 const controller = readFileSync(new URL('../controllers/mainController.js', import.meta.url), 'utf8');
 const slideOnScroll = readFileSync(new URL('../public/js/slideOnScroll.js', import.meta.url), 'utf8');
+const footerPartial = readFileSync(new URL('../views/partials/footer.ejs', import.meta.url), 'utf8');
+const webdesignBerlinCss = readFileSync(new URL('../public/webdesign-berlin.css', import.meta.url), 'utf8');
 
 function indexOfRequired(source, needle) {
   const index = source.indexOf(needle);
@@ -61,11 +63,26 @@ test('homepage prompt 3 keeps pricing usable as a touch and drag slider with wor
   assert.doesNotMatch(slideOnScroll, /\?\s*0\.1[\s\S]*:\s*0\.7/);
 });
 
+test('homepage FAQ uses plus and minus accordion controls', () => {
+  const faqSection = homepageTemplate.match(/<section class="section" id="faq"[\s\S]*?<\/section>/)?.[0] || '';
+
+  assert.ok(faqSection, 'homepage FAQ section should exist');
+  assert.match(faqSection, /<div class="faq-list" data-faq-accordion>/);
+  assert.match(faqSection, /<details class="faq-item" <%= idx === 0 \? ' open' : '' %>>/);
+  assert.match(faqSection, /<summary class="faq-question">\s*<span><%= item\.q %><\/span>\s*<\/summary>/);
+  assert.doesNotMatch(faqSection, /faq-toggle|faq-chevron|fa-chevron-down/);
+  assert.match(webdesignBerlinCss, /\.webdesign-berlin \.wd-faq summary::after\s*\{[\s\S]*?content:\s*"\+";/);
+  assert.match(webdesignBerlinCss, /\.webdesign-berlin \.wd-faq details\[open\] summary::after\s*\{[\s\S]*?content:\s*"–";/);
+  assert.match(homeCss, /\.faq-question::after\s*\{[\s\S]*?color:\s*#ef4b1c;[\s\S]*?content:\s*"\+";[\s\S]*?font-weight:\s*900/);
+  assert.match(homeCss, /\.faq-item\[open\] \.faq-question::after\s*\{[\s\S]*?content:\s*"–";/);
+  assert.doesNotMatch(homeCss, /border-radius:\s*999px[\s\S]*?faq-toggle|\.faq-toggle/);
+  assert.match(footerPartial, /\.faq-list/);
+});
+
 test('homepage prompt 3 design keeps previous visual assets and mobile overflow guards', () => {
   assert.match(homepage, /\/images\/icons\/gift1\.svg/);
   assert.match(homepage, /\/images\/icons\/support1\.svg/);
   assert.match(homepage, /\/images\/code\.webp/);
-  assert.match(homepage, /\/images\/seo\.webp/);
   assert.match(homepage, /\/images\/wartung\.webp/);
   assert.match(homepage, /\/images\/home-fit-beratung\.webp/);
   assert.match(homepage, /home-reference-band img\s*{[\s\S]*?aspect-ratio:\s*16 \/ 9/);
@@ -75,6 +92,45 @@ test('homepage prompt 3 design keeps previous visual assets and mobile overflow 
   assert.match(homepage, /hyphens:\s*none/);
   assert.match(homepage, /\.home-pricing-track[\s\S]*?overflow-x: auto/);
   assert.match(homepage, /scroll-snap-type: x mandatory/);
+});
+
+test('homepage visibility cards use the requested Berlin, services and no-guarantee images', () => {
+  const visibilitySection = homepageTemplate.match(/<section class="section" id="sichtbarkeit"[\s\S]*?<\/section>/)?.[0] || '';
+  const noGuaranteeImage = new URL('../public/images/home-keine-garantie.webp', import.meta.url);
+
+  assert.ok(visibilitySection, 'visibility section should exist');
+  assert.doesNotMatch(visibilitySection, /src="\/images\/seo\.webp"/);
+  assert.doesNotMatch(visibilitySection, /src="\/images\/datenbank\.webp"/);
+  assert.doesNotMatch(visibilitySection, /src="\/images\/hosting\.webp"/);
+  assert.match(visibilitySection, /<h3><%= isEn \? 'Berlin focus' : 'Berlin-Fokus' %><\/h3>/);
+  assert.match(visibilitySection, /src="\/images\/webdesign-berlin-begruessung\.jpg"/);
+  assert.match(visibilitySection, /Persönliche Begrüßung/);
+  assert.match(visibilitySection, /<h3><%= isEn \? 'Service pages' : 'Leistungsseiten' %><\/h3>/);
+  assert.match(visibilitySection, /src="\/images\/leistungen\/leistungen-uebersicht-hero\.webp"/);
+  assert.match(visibilitySection, /Übersicht der Webdesign-Leistungen/);
+  assert.match(visibilitySection, /<h3><%= isEn \? 'No guarantee' : 'Keine Garantie' %><\/h3>/);
+  assert.match(visibilitySection, /src="\/images\/home-keine-garantie\.webp"/);
+  assert.match(visibilitySection, /keine Garantie für Suchsichtbarkeit/);
+  assert.equal(existsSync(noGuaranteeImage), true);
+  assert.ok(statSync(noGuaranteeImage).size < 120_000, 'Keine-Garantie-Bild sollte komprimiert bleiben');
+});
+
+test('homepage visibility cards link to their detail pages with image hover labels', () => {
+  const visibilitySection = homepageTemplate.match(/<section class="section" id="sichtbarkeit"[\s\S]*?<\/section>/)?.[0] || '';
+
+  assert.ok(visibilitySection, 'visibility section should exist');
+  assert.match(visibilitySection, /href="<%= isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin' %>"/);
+  assert.match(visibilitySection, /href="\/leistungen"/);
+  assert.match(visibilitySection, /href="\/leistungen\/rechtliches-sicherheit"/);
+  assert.equal((visibilitySection.match(/home-service-card--link/g) || []).length, 3);
+  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu Webdesign Berlin/);
+  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zur Leistungsübersicht/);
+  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?weitere Erläuterung/);
+  assert.doesNotMatch(visibilitySection, /<article class="home-card home-service-card animate-on-scroll">/);
+  assert.match(homeCss, /\.home-page \.home-service-card--link\s*\{[\s\S]*?color:\s*inherit;[\s\S]*?text-decoration:\s*none;/);
+  assert.match(homeCss, /\.home-page \.home-service-card--link:is\(:hover, :focus-visible\) \.home-card-media img\s*\{[\s\S]*?transform:\s*scale\(1\.035\);/);
+  assert.match(homeCss, /\.home-page \.home-card-media-cta\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?pointer-events:\s*none;/);
+  assert.match(homeCss, /\.home-page \.home-service-card--link:is\(:hover, :focus-visible\) \.home-card-media-cta\s*\{[\s\S]*?opacity:\s*1;/);
 });
 
 test('homepage visual cleanup keeps footer isolated and removes internal placeholder copy', () => {

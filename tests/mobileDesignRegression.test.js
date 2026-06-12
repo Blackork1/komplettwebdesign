@@ -76,6 +76,7 @@ test('mobile horizontal sliders use one persistent slide indicator', () => {
   assert.match(interactionPolish, /rg-featured-scroll/);
   assert.match(interactionPolish, /horizontalSlider/);
   assert.match(interactionPolish, /industries-index-page \.post-list/);
+  assert.doesNotMatch(interactionPolish, /package-detail-page \.addons-ticker/);
   assert.match(interactionPolish, /function updatePersistentSliderIndicator/);
   assert.match(interactionPolish, /slider\.classList\.toggle\('has-overflow-indicator', hasOverflow\)/);
   assert.match(interactionPolish, /--kwd-slider-thumb-width/);
@@ -85,15 +86,18 @@ test('mobile horizontal sliders use one persistent slide indicator', () => {
   assert.match(interactionPolishCss, /\.has-overflow-indicator/);
   assert.match(interactionPolishCss, /--kwd-slider-thumb-width/);
   assert.match(interactionPolishCss, /--kwd-slider-thumb-offset/);
+  assert.doesNotMatch(interactionPolishCss, /package-detail-page \.addons-ticker/);
   assert.match(interactionPolishCss, /background-image:\s*linear-gradient\(var\(--kwd-slider-indicator-thumb\),\s*var\(--kwd-slider-indicator-thumb\)\),[\s\S]*?linear-gradient\(var\(--kwd-slider-indicator-track\),\s*var\(--kwd-slider-indicator-track\)\)/);
   assert.match(
     interactionPolishCss,
-    /::-webkit-scrollbar\s*\{[\s\S]*?display:\s*block !important;[\s\S]*?height:\s*3px !important;/
+    /scrollbar-width:\s*none\s*!important;/
   );
   assert.match(
     interactionPolishCss,
-    /\.is-scrolling::-webkit-scrollbar\s*\{[\s\S]*?height:\s*8px !important;/
+    /::-webkit-scrollbar\s*\{[\s\S]*?display:\s*none !important;/
   );
+  assert.doesNotMatch(interactionPolishCss, /display:\s*block !important;/);
+  assert.doesNotMatch(interactionPolishCss, /\.is-scrolling::-webkit-scrollbar/);
 });
 
 test('webdesign berlin process titles and FAQ indicators avoid duplicate affordances', () => {

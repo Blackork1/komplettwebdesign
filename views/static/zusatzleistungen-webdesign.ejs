@@ -43,6 +43,22 @@
     }))
   };
   const structuredDataBlocks = [webPageSchema, breadcrumbSchema, faqSchema];
+  const detailByAddOnId = new Map();
+  page.detailSections.forEach((detail) => {
+    if (detail.id && !detailByAddOnId.has(detail.id)) {
+      detailByAddOnId.set(detail.id, detail);
+    }
+
+    (detail.addOns || []).forEach((addOn) => {
+      if (addOn?.id && !detailByAddOnId.has(addOn.id)) {
+        detailByAddOnId.set(addOn.id, detail);
+      }
+    });
+  });
+  const overlayEntries = page.addOns
+    .map((addOn) => ({ addOn, detail: detailByAddOnId.get(addOn.id) }))
+    .filter((entry) => entry.detail);
+  const overlayIndexByAddOnId = new Map(overlayEntries.map((entry, index) => [entry.addOn.id, index]));
 %>
 <%- include('../partials/head', { structuredDataBlocks, canonicalUrl: pageUrl, title: page.title, description: page.description, extraCssAssets: ['leistungen.css'] }) %>
 
@@ -129,7 +145,7 @@
               <span class="add-ons-price"><%= pkg.priceLabel %></span>
               <p><strong><%= pkg.title %></strong></p>
               <p><%= pkg.text %></p>
-              <a class="btn btn-primary" href="<%= pkg.path %>"><%= packageButtonLabel %></a>
+              <a class="btn btn-primary add-ons-package-button" href="<%= pkg.path %>"><%= packageButtonLabel %></a>
             </article>
           <% }) %>
         </div>
@@ -145,11 +161,23 @@
         </div>
         <div class="add-ons-overview-grid">
           <% page.addOns.forEach(function(addOn) { %>
-            <article class="add-ons-overview-card animate-on-scroll">
-              <span class="add-ons-category"><%= addOn.category %></span>
-              <h3><%= addOn.name %></h3>
-              <p><%= addOn.shortDescription %></p>
-              <span class="add-ons-price"><%= addOn.priceLabel %></span>
+            <% const detailIndex = overlayIndexByAddOnId.get(addOn.id); %>
+            <article class="add-ons-overview-card add-ons-overview-card--interactive animate-on-scroll">
+              <button
+                class="add-ons-overview-card__button"
+                type="button"
+                data-add-ons-overlay-trigger
+                data-add-ons-detail-index="<%= detailIndex %>"
+                data-add-ons-detail-id="<%= addOn.id %>"
+                aria-haspopup="dialog"
+                aria-controls="add-ons-detail-overlay"
+              >
+                <span class="add-ons-category"><%= addOn.category %></span>
+                <span class="add-ons-overview-card__title"><%= addOn.name %></span>
+                <span class="add-ons-overview-card__text"><%= addOn.shortDescription %></span>
+                <span class="add-ons-price"><%= addOn.priceLabel %></span>
+                <span class="add-ons-overview-card__action"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>Details ansehen</span>
+              </button>
             </article>
           <% }) %>
         </div>
@@ -164,61 +192,78 @@
       </div>
     </section>
 
-    <section class="add-ons-section" aria-labelledby="details-heading">
-      <div class="add-ons-shell">
-        <div class="add-ons-section-head animate-on-scroll">
-          <span class="add-ons-section-kicker"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>Details</span>
-          <h2 id="details-heading">Zusatzleistungen im Detail</h2>
-          <p>Jede Erweiterung hat eigene Grenzen. Das schützt dein Budget und macht Angebote vergleichbarer.</p>
-        </div>
-        <div class="add-ons-detail-grid">
-          <% page.detailSections.forEach(function(detail) { %>
-            <article class="add-ons-detail-card animate-on-scroll" id="<%= detail.id %>">
-              <div class="add-ons-detail-body">
-                <span class="add-ons-section-kicker"><%= detail.kicker %></span>
-                <h3><%= detail.title %></h3>
-                <p><%= detail.lead %></p>
-                <div class="add-ons-detail-prices">
-                  <% detail.addOns.forEach(function(addOn) { %>
+    <div class="add-ons-overlay" id="add-ons-detail-overlay" data-add-ons-overlay aria-hidden="true" hidden>
+      <button class="add-ons-overlay__backdrop" type="button" data-add-ons-overlay-close aria-label="Detailansicht schließen"></button>
+      <section class="add-ons-overlay__dialog" data-add-ons-overlay-dialog role="dialog" aria-modal="true" aria-labelledby="add-ons-overlay-title" tabindex="-1">
+        <header class="add-ons-overlay__header">
+          <div>
+            <span class="add-ons-overlay__counter" data-add-ons-overlay-counter>1 von <%= page.addOns.length %></span>
+            <h2 id="add-ons-overlay-title">Zusatzleistung im Detail</h2>
+          </div>
+          <button class="add-ons-overlay__icon-button" type="button" data-add-ons-overlay-close aria-label="Detailansicht schließen">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <div class="add-ons-overlay__content">
+          <button class="add-ons-overlay__nav add-ons-overlay__nav--prev" type="button" data-add-ons-overlay-prev aria-label="Vorherige Zusatzleistung">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          </button>
+
+          <div class="add-ons-overlay__viewport" data-add-ons-overlay-viewport>
+            <% overlayEntries.forEach(function(entry, index) { %>
+              <% const addOn = entry.addOn; %>
+              <% const detail = entry.detail; %>
+              <article class="add-ons-overlay__slide<%= index === 0 ? ' is-active' : '' %>" id="<%= addOn.id %>" data-add-ons-overlay-slide data-add-ons-detail-id="<%= addOn.id %>" aria-hidden="<%= index === 0 ? 'false' : 'true' %>">
+                <div class="add-ons-overlay__detail-body">
+                  <span class="add-ons-section-kicker"><%= detail.kicker %></span>
+                  <h3><%= addOn.name %></h3>
+                  <p><%= addOn.shortDescription %></p>
+                  <p><%= detail.lead %></p>
+                  <div class="add-ons-detail-prices">
                     <span class="add-ons-detail-price"><%= addOn.name %>: <%= addOn.priceLabel %></span>
-                  <% }) %>
-                </div>
-                <div class="add-ons-lists">
-                  <div>
-                    <span class="add-ons-list-label">Sinnvoll für</span>
-                    <ul class="add-ons-list">
-                      <% detail.usefulFor.forEach(function(item) { %>
-                        <li><%= item %></li>
-                      <% }) %>
-                    </ul>
                   </div>
-                  <div>
-                    <span class="add-ons-list-label">Abgrenzung</span>
-                    <ul class="add-ons-list">
-                      <% detail.boundaries.forEach(function(item) { %>
-                        <li><%= item %></li>
-                      <% }) %>
-                    </ul>
+                  <div class="add-ons-lists">
+                    <div>
+                      <span class="add-ons-list-label">Sinnvoll für</span>
+                      <ul class="add-ons-list add-ons-list--checks">
+                        <% detail.usefulFor.forEach(function(item) { %>
+                          <li><%= item %></li>
+                        <% }) %>
+                      </ul>
+                    </div>
+                    <div>
+                      <span class="add-ons-list-label">Abgrenzung</span>
+                      <ul class="add-ons-list add-ons-list--crosses">
+                        <% detail.boundaries.forEach(function(item) { %>
+                          <li><%= item %></li>
+                        <% }) %>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-                <ul class="add-ons-list">
-                  <% detail.points.forEach(function(item) { %>
-                    <li><%= item %></li>
-                  <% }) %>
-                </ul>
-                <% if (detail.links && detail.links.length) { %>
-                  <div class="add-ons-inline-links">
-                    <% detail.links.forEach(function(link) { %>
-                      <a href="<%= link.href %>"><%= link.label %></a>
+                  <ul class="add-ons-list add-ons-overlay__point-list">
+                    <% detail.points.forEach(function(item) { %>
+                      <li><%= item %></li>
                     <% }) %>
-                  </div>
-                <% } %>
-              </div>
-            </article>
-          <% }) %>
+                  </ul>
+                  <% if (detail.links && detail.links.length) { %>
+                    <div class="add-ons-inline-links">
+                      <% detail.links.forEach(function(link) { %>
+                        <a href="<%= link.href %>"><%= link.label %></a>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+
+          <button class="add-ons-overlay__nav add-ons-overlay__nav--next" type="button" data-add-ons-overlay-next aria-label="Nächste Zusatzleistung">
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <section class="add-ons-section add-ons-section--soft" id="when-individual">
       <div class="add-ons-shell">
@@ -325,5 +370,6 @@
   </main>
 
   <%- include('../partials/footer') %>
+  <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/add-ons-overlay.js') : '/js/add-ons-overlay.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 </body>
 </html>
