@@ -14,22 +14,59 @@
     nextLabel: CONTACT_I18N.nextLabel || "Weiter",
     submittingLabel: CONTACT_I18N.submittingLabel || "Wird gesendet ...",
     stepLabel: CONTACT_I18N.stepLabel || "Schritt",
-    ofLabel: CONTACT_I18N.ofLabel || "von"
+    ofLabel: CONTACT_I18N.ofLabel || "von",
+    recaptchaTimeoutMs: Number(CONTACT_I18N.recaptchaTimeoutMs) || 12000
   };
 
   let recaptchaPromise = null;
   const startedForms = new WeakSet();
 
+  function withTimeout(promise, timeoutMs, errorMessage) {
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        reject(new Error(errorMessage));
+      }, timeoutMs);
+
+      Promise.resolve(promise).then(
+        (value) => {
+          window.clearTimeout(timeout);
+          resolve(value);
+        },
+        (error) => {
+          window.clearTimeout(timeout);
+          reject(error);
+        }
+      );
+    });
+  }
+
   function waitForGrecaptchaReady() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = Math.ceil(I18N.recaptchaTimeoutMs / 50);
+
+      function resolveWhenReady() {
+        try {
+          window.grecaptcha.ready(resolve);
+        } catch (err) {
+          reject(err);
+        }
+      }
+
       if (window.grecaptcha && typeof window.grecaptcha.ready === "function") {
-        window.grecaptcha.ready(resolve);
+        resolveWhenReady();
         return;
       }
       const interval = window.setInterval(() => {
         if (window.grecaptcha && typeof window.grecaptcha.ready === "function") {
           window.clearInterval(interval);
-          window.grecaptcha.ready(resolve);
+          resolveWhenReady();
+          return;
+        }
+        attempts += 1;
+        if (attempts > maxAttempts) {
+          window.clearInterval(interval);
+          reject(new Error(I18N.recaptchaLoadError));
         }
       }, 50);
     });
@@ -157,8 +194,8 @@
         form_variant: form.dataset.formVariant || "contact"
       });
       try {
-        await loadRecaptchaScript();
-        const token = await window.grecaptcha.execute(SITEKEY, { action: form.dataset.recaptchaAction || "contact_request" });
+        await withTimeout(loadRecaptchaScript(), I18N.recaptchaTimeoutMs, I18N.recaptchaLoadError);
+        const token = await withTimeout(window.grecaptcha.execute(SITEKEY, { action: form.dataset.recaptchaAction || "contact_request" }), I18N.recaptchaTimeoutMs, I18N.recaptchaLoadError);
         const tokenField = form.querySelector('input[name="token"]');
         if (tokenField) tokenField.value = token;
         HTMLFormElement.prototype.submit.call(form);

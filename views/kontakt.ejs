@@ -747,7 +747,8 @@
     nextLabel: "<%= isEn ? 'Continue' : 'Weiter' %>",
     submittingLabel: "<%= isEn ? 'Sending ...' : 'Wird gesendet ...' %>",
     stepLabel: "<%= isEn ? 'Step' : 'Schritt' %>",
-    ofLabel: "<%= isEn ? 'of' : 'von' %>"
+    ofLabel: "<%= isEn ? 'of' : 'von' %>",
+    recaptchaTimeoutMs: 12000
   };
   window.CONTACT_FLOWS = <%- contactFlowStepsJson || '{}' %>;
 </script>

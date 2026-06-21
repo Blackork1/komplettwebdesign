@@ -243,6 +243,24 @@ test('contact form script uses a guarded native submit after recaptcha', () => {
   assert.match(kontaktJs, /HTMLFormElement\.prototype\.submit\.call\(form\)/);
 });
 
+test('contact form recaptcha wait cannot block a valid submit forever', () => {
+  assert.match(kontaktJs, /recaptchaTimeoutMs/);
+  assert.match(kontaktJs, /function\s+withTimeout/);
+  assert.match(kontaktJs, /window\.setTimeout/);
+  assert.match(kontaktJs, /window\.clearTimeout/);
+  assert.match(kontaktJs, /attempts\s*>\s*maxAttempts/);
+  assert.match(kontaktJs, /reject\(new Error\(I18N\.recaptchaLoadError\)\)/);
+});
+
+test('contact form wraps recaptcha loading and execution before native submit', () => {
+  assert.match(kontaktJs, /withTimeout\(\s*loadRecaptchaScript\(\)/);
+  assert.match(kontaktJs, /withTimeout\(\s*window\.grecaptcha\.execute\(\s*SITEKEY/);
+  assert.ok(
+    kontaktJs.indexOf('withTimeout(window.grecaptcha.execute') < kontaktJs.indexOf('HTMLFormElement.prototype.submit.call(form)'),
+    'native submit should only run after the bounded reCAPTCHA execution'
+  );
+});
+
 test('optional feature none option clears other add-on choices', () => {
   assert.match(kontaktJs, /function\s+bindOptionalFeatureLogic/);
   assert.match(kontaktJs, /input\.value === "none"/);
