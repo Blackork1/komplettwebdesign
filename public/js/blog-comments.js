@@ -15,6 +15,7 @@
   const replyIndicator = section.querySelector('[data-reply-indicator]');
   const replyTarget = section.querySelector('[data-reply-target]');
   const cancelReplyBtn = section.querySelector('[data-cancel-reply]');
+  const RECAPTCHA_TIMEOUT_MS = 12_000;
 
   let grecaptchaPromise = null;
   let currentConsentGranted = false;
@@ -42,6 +43,29 @@
       commentBody.classList.add('is-disabled');
       form?.querySelectorAll('input, textarea, button').forEach(el => el.setAttribute('disabled', 'disabled'));
     }
+  }
+
+  function withTimeout(promise, timeoutMs, message) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        reject(new Error(message));
+      }, timeoutMs);
+
+      Promise.resolve(promise).then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }, (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
   }
 
   function hasFullConsent() {
@@ -90,7 +114,11 @@
     if (!window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
       throw new Error('reCAPTCHA konnte nicht initialisiert werden.');
     }
-    return window.grecaptcha.execute(siteKey, { action: 'blog_comment' });
+    return withTimeout(
+      window.grecaptcha.execute(siteKey, { action: 'blog_comment' }),
+      RECAPTCHA_TIMEOUT_MS,
+      'reCAPTCHA ist nicht erreichbar. Bitte versuche es erneut.'
+    );
   }
 
   function showInlineConsentWarning(item) {

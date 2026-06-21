@@ -11,7 +11,9 @@
   </div>
   <div class="mb-3">
     <label for="newsletterEmail" class="form-label">E-Mail-Adresse</label>
-    <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="Deine E-Mail" required>
+    <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="Deine E-Mail" autocomplete="email" aria-describedby="newsletterEmailHelp" required>
+    <small id="newsletterEmailHelp" class="form-help">Bitte gib eine gültige E-Mail-Adresse ein. Du erhältst danach eine Bestätigung per E-Mail.</small>
   </div>
   <button type="submit" class="btn btn-primary w-100">Anmelden</button>
+  <p class="form-status" data-form-status role="alert" aria-live="polite" hidden></p>
 </form>

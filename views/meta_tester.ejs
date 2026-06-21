@@ -57,13 +57,18 @@
               <div class="wt-form-row">
                 <div class="wt-input-shell wt-input-shell--url">
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                  <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                  <input id="meta-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" aria-describedby="meta-url-help" required>
                 </div>
                 <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start meta check' : 'Meta-Check starten' %>
                 </button>
               </div>
+              <p class="wt-form-hint" id="meta-url-help">
+                <%= isEn
+                  ? 'Enter the public website address, for example https://domain.de or domain.de. Also fill in business type, main service and target region.'
+                  : 'Gib die öffentlich erreichbare Website-Adresse ein, zum Beispiel https://domain.de oder domain.de. Fülle außerdem Branche, Hauptleistung und Zielregion aus.' %>
+              </p>
             </form>
 
             <p class="wt-form-note">
@@ -89,7 +94,7 @@
           </ul>
         </div>
 
-        <div class="wt-error" data-meta-error hidden></div>
+        <div class="wt-error" data-meta-error role="alert" aria-live="polite" hidden></div>
         <div id="meta-results" class="wt-results" data-meta-results hidden></div>
       </div>
     </section>

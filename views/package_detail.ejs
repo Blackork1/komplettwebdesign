@@ -428,19 +428,22 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
           </ul>
         </div>
         <div class="contact-form-wrapper">
-          <form action="<%= localizedDetailPath %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact">
+          <form action="<%= localizedDetailPath %>/kontakt" method="POST" class="contact-form" data-recaptcha="v3" data-recaptcha-action="package_contact" data-recaptcha-error="<%= isEnglish ? 'Spam protection could not be completed. Please check your connection and try again.' : 'Der Spamschutz konnte nicht abgeschlossen werden. Bitte prüfe deine Verbindung und versuche es erneut.' %>">
             <div class="form-group">
               <label for="inputName"><%= isEnglish ? 'Your name' : 'Dein Name' %></label>
-              <input type="text" id="inputName" name="name" placeholder="<%= isEnglish ? 'John Doe' : 'Max Mustermann' %>" required>
+              <input type="text" id="inputName" name="name" placeholder="<%= isEnglish ? 'John Doe' : 'Max Mustermann' %>" autocomplete="name" aria-describedby="package-name-help" required>
+              <p class="form-help" id="package-name-help"><%= isEnglish ? 'Please enter the name I should use when replying.' : 'Bitte gib den Namen ein, mit dem ich dich ansprechen soll.' %></p>
             </div>
             <div class="form-group">
               <label for="inputEmail"><%= isEnglish ? 'Your email address' : 'Deine E-Mail-Adresse' %></label>
-              <input type="email" id="inputEmail" name="email" placeholder="<%= isEnglish ? 'email@example.com' : 'email@beispiel.de' %>" required>
+              <input type="email" id="inputEmail" name="email" placeholder="<%= isEnglish ? 'email@example.com' : 'email@beispiel.de' %>" autocomplete="email" aria-describedby="package-email-help" required>
+              <p class="form-help" id="package-email-help"><%= isEnglish ? 'Use an address where you can receive the confirmation.' : 'Nutze eine Adresse, unter der du die Bestätigung erhalten kannst.' %></p>
             </div>
             <% if (slots && slots.length > 0) { %>
             <div class="form-group">
               <label for="slot"><%= isEnglish ? 'Preferred consultation slot' : 'Wunschtermin für Beratungsgespräch' %></label>
-              <select id="slot" name="slot" data-package-slot-select>
+              <select id="slot" name="slot" data-package-slot-select aria-describedby="package-slot-help">
+                <option value="" selected><%= isEnglish ? 'Arrange appointment later' : 'Termin später abstimmen' %></option>
                 <% slots.forEach(s => { %>
                 <option value="<%= s.id %>">
                   <%= new Date(s.start_time).toLocaleString(isEnglish ? 'en-US' : 'de-DE', {
@@ -450,6 +453,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
                 <% }) %>
                 <option value="__custom" data-package-custom-slot><%= isEnglish ? 'Other appointment' : 'Anderen Termin' %></option>
               </select>
+              <p class="form-help" id="package-slot-help"><%= isEnglish ? 'Optional: choose a slot now or leave it on later arrangement.' : 'Optional: Wähle direkt einen Termin aus oder lass ihn auf später abstimmen.' %></p>
               <p class="package-slot-selected" data-package-selected-summary hidden></p>
             </div>
             <% } else { %>
@@ -459,6 +463,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
             <input type="hidden" name="locale" value="<%= isEnglish ? 'en' : 'de' %>">
             <input type="hidden" name="package" value="<%= packageName %>">
             <button type="submit" class="btn btn-primary w-100"><%= isEnglish ? 'Send non-binding request' : 'Unverbindliche Anfrage senden' %></button>
+            <p class="form-status" data-form-status role="alert" aria-live="polite" hidden></p>
           </form>
           <% if (slots && slots.length > 0) { %>
           <div class="package-slot-overlay" data-package-slot-overlay data-lng="<%= isEnglish ? 'en' : 'de' %>" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="package-slot-overlay-title" hidden>

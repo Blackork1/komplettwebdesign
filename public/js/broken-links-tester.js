@@ -358,6 +358,11 @@
     }, 900);
 
     try {
+      const normalizedUrl = window.TesterUtils && typeof window.TesterUtils.normalizeWebsiteUrl === 'function'
+        ? window.TesterUtils.normalizeWebsiteUrl(input?.value || '', locale)
+        : String(input?.value || '').trim();
+      if (input) input.value = normalizedUrl;
+
       const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -366,7 +371,7 @@
           Accept: 'application/json'
         },
         body: JSON.stringify({
-          url: String(input?.value || '').trim(),
+          url: normalizedUrl,
           locale,
           ...spamFields
         })

@@ -71,14 +71,16 @@
             <div class="row g-3 align-items-start">
               <div class="col-12 col-md-4">
                 <label class="form-label">Name</label>
-                <input type="text" name="name" class="form-control" placeholder="Dein Name" maxlength="80" required />
+                <input type="text" name="name" class="form-control" placeholder="Dein Name" maxlength="80" aria-describedby="comment-name-help" required />
+                <small id="comment-name-help" class="form-help">Bitte gib den Namen ein, der beim Kommentar angezeigt werden soll.</small>
               </div>
               <div class="col-12 col-md-8">
                 <label class="form-label">Kommentar</label>
-                <textarea name="comment" class="form-control" rows="3" placeholder="Teile deine Frage oder Meinung..." maxlength="1500" required></textarea>
+                <textarea name="comment" class="form-control" rows="3" placeholder="Teile deine Frage oder Meinung..." maxlength="1500" aria-describedby="comment-text-help" required></textarea>
+                <small id="comment-text-help" class="form-help">Bitte schreibe mindestens einen kurzen Kommentar. Maximal 1.500 Zeichen.</small>
                 <input type="hidden" name="parentId" value="" />
                 <div class="comment-form-actions">
-                  <small>Klick ins Textfeld lädt reCAPTCHA.</small>
+                  <small>Pflichtfelder müssen ausgefüllt sein. Der Spamschutz wird beim Absenden geprüft.</small>
                   <button type="submit" class="btn btn-primary" data-submit-btn>
                     Kommentar senden
                   </button>

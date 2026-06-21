@@ -303,6 +303,11 @@
         throw new Error(i18n.contextRequired || 'Bitte ergänze Branche, Hauptleistung und Zielregion.');
       }
 
+      const normalizedUrl = window.TesterUtils && typeof window.TesterUtils.normalizeWebsiteUrl === 'function'
+        ? window.TesterUtils.normalizeWebsiteUrl(urlInput?.value || '', locale)
+        : String(urlInput?.value || '').trim();
+      if (urlInput) urlInput.value = normalizedUrl;
+
       const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -311,7 +316,7 @@
           Accept: 'application/json'
         },
         body: JSON.stringify({
-          url: String(urlInput?.value || '').trim(),
+          url: normalizedUrl,
           locale,
           context,
           ...spamFields

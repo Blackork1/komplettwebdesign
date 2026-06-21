@@ -1,6 +1,33 @@
 (function () {
   'use strict';
 
+  var RECAPTCHA_TIMEOUT_MS = 12_000;
+  var DEFAULT_ERROR_MESSAGE = 'Die reCAPTCHA-Validierung ist fehlgeschlagen. Bitte versuche es erneut.';
+  var DEFAULT_SUBMITTING_LABEL = 'Wird gesendet ...';
+
+  function withTimeout(promise, timeoutMs, message) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        reject(new Error(message || DEFAULT_ERROR_MESSAGE));
+      }, timeoutMs);
+
+      Promise.resolve(promise).then(function (value) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }, function (err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
   function normaliseAction(action) {
     if (!action) return '';
     action = action.trim();
@@ -21,8 +48,7 @@
   function isEligibleForm(form) {
     if (!form) return false;
     if (form.dataset && form.dataset.recaptchaBound === 'true') return false;
-    if (form.classList && form.classList.contains('contact-form')) return false;
-    if (form.id === 'kontaktForm') return false; // eigenes Handling in kontakt.ejs
+    if (form.id === 'kontaktForm' || form.id === 'contactQuickForm') return false; // eigenes Handling in kontakt.ejs
 
     if (form.dataset && typeof form.dataset.recaptcha === 'string' && form.dataset.recaptcha.toLowerCase() === 'v3') {
       return true;
@@ -43,22 +69,76 @@
     return input;
   }
 
+  function findStatusElement(form) {
+    var status = form.querySelector('[data-form-status]');
+    if (status) return status;
+
+    status = document.createElement('p');
+    status.className = 'form-status';
+    status.setAttribute('data-form-status', '');
+    status.setAttribute('role', 'alert');
+    status.setAttribute('aria-live', 'polite');
+    form.appendChild(status);
+    return status;
+  }
+
+  function setStatus(form, message, isError) {
+    var status = findStatusElement(form);
+    if (!status) return;
+    status.textContent = message || '';
+    status.hidden = !message;
+    status.classList.toggle('is-error', !!isError);
+    status.classList.toggle('is-success', !!message && !isError);
+  }
+
+  function clearStatus(form) {
+    var status = form.querySelector('[data-form-status]');
+    if (!status) return;
+    status.textContent = '';
+    status.hidden = true;
+    status.classList.remove('is-error', 'is-success');
+  }
+
+  function getSubmitButton(form, event) {
+    if (event && event.submitter && typeof event.submitter === 'object') {
+      return event.submitter;
+    }
+    return form.querySelector('button[type="submit"], input[type="submit"]');
+  }
+
+  function setSubmitState(button, isSubmitting, originalText, label) {
+    if (!button) return;
+    button.disabled = !!isSubmitting;
+    if (isSubmitting) {
+      button.setAttribute('aria-busy', 'true');
+      if ('textContent' in button) button.textContent = label || DEFAULT_SUBMITTING_LABEL;
+      return;
+    }
+    button.removeAttribute('aria-busy');
+    if (originalText && 'textContent' in button) button.textContent = originalText;
+  }
+
   function bindForm(form, siteKey) {
     if (!form || form.dataset.recaptchaBound === 'true') return;
     form.dataset.recaptchaBound = 'true';
     var actionName = (form.dataset && form.dataset.recaptchaAction) || 'kontakt';
     var tokenInput = ensureHiddenToken(form);
     var pendingPromise = null;
+    var isSubmitting = false;
 
     function requestToken() {
       if (pendingPromise) return pendingPromise;
 
       try {
-        pendingPromise = loadRecaptchaScript(siteKey).then(function () {
+        pendingPromise = withTimeout(loadRecaptchaScript(siteKey), RECAPTCHA_TIMEOUT_MS, DEFAULT_ERROR_MESSAGE).then(function () {
           if (!window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
             throw new Error('reCAPTCHA ist nicht bereit.');
           }
-          return window.grecaptcha.execute(siteKey, { action: actionName });
+          return withTimeout(
+            window.grecaptcha.execute(siteKey, { action: actionName }),
+            RECAPTCHA_TIMEOUT_MS,
+            DEFAULT_ERROR_MESSAGE
+          );
         }).then(function (token) {
           tokenInput.value = token || '';
           pendingPromise = null;
@@ -78,8 +158,9 @@
     function showError(err) {
       console.error('reCAPTCHA Fehler:', err);
       var message = (form.dataset && form.dataset.recaptchaError) ||
-        'Die reCAPTCHA-Validierung ist fehlgeschlagen. Bitte versuche es erneut.';
-      if (typeof window.alert === 'function') {
+        DEFAULT_ERROR_MESSAGE;
+      setStatus(form, message, true);
+      if (!form.querySelector('[data-form-status]') && typeof window.alert === 'function') {
         window.alert(message);
       }
     }
@@ -131,10 +212,24 @@
 
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+      if (isSubmitting) return;
+      clearStatus(form);
 
+      if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+        if (typeof form.reportValidity === 'function') form.reportValidity();
+        setStatus(form, (form.dataset && form.dataset.validationError) || 'Bitte prüfe die markierten Pflichtfelder.', true);
+        return;
+      }
+
+      var submitButton = getSubmitButton(form, event);
+      var originalButtonText = submitButton && 'textContent' in submitButton ? submitButton.textContent : '';
+      isSubmitting = true;
+      setSubmitState(submitButton, true, originalButtonText, (form.dataset && form.dataset.submittingLabel) || DEFAULT_SUBMITTING_LABEL);
       requestToken().then(function () {
-        form.submit();
+        HTMLFormElement.prototype.submit.call(form);
       }).catch(function (err) {
+        isSubmitting = false;
+        setSubmitState(submitButton, false, originalButtonText);
         showError(err);
       });
     });

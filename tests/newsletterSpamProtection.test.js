@@ -27,13 +27,15 @@ test('newsletter form partial includes silent spam protection fields', () => {
 });
 
 test('footer newsletter form includes silent spam protection fields', () => {
-  const footerNewsletter = footer.match(/<div class="newsletter">[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/)?.[0] || '';
+  const footerNewsletter = footer.match(/<form action="\/newsletter\/signup"[\s\S]*?<\/form>/)?.[0] || '';
   assert.match(footerNewsletter, /data-recaptcha="v3"/);
   assert.match(footerNewsletter, /data-recaptcha-action="newsletter_signup"/);
   assert.match(footerNewsletter, /<input type="hidden" name="token">/);
   assert.match(footerNewsletter, /typeof csrfToken !== 'undefined' \? csrfToken : ''/);
   assert.match(footerNewsletter, /name="newsletter_started_at"/);
   assert.match(footerNewsletter, /name="company_website"/);
+  assert.match(footerNewsletter, /name="consent" required/);
+  assert.match(footerNewsletter, /data-form-status/);
 });
 
 test('validateNewsletterSignupBody rejects bots and normalizes valid email', () => {

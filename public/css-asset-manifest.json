@@ -53,9 +53,9 @@
     "booking-widget.css": {
       "source": "booking-widget.css",
       "output": "booking-widget.min.css",
-      "href": "/booking-widget.min.css?v=3747c0fa176c",
-      "hash": "3747c0fa176c",
-      "bytes": 4443
+      "href": "/booking-widget.min.css?v=98392a66f1f5",
+      "hash": "98392a66f1f5",
+      "bytes": 4522
     },
     "booking.css": {
       "source": "booking.css",
@@ -109,9 +109,9 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=f21eb1f27f55",
-      "hash": "f21eb1f27f55",
-      "bytes": 29020
+      "href": "/css/main.min.css?v=6e6e4d877af3",
+      "hash": "6e6e4d877af3",
+      "bytes": 29540
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
@@ -151,9 +151,9 @@
     "footer.css": {
       "source": "footer.css",
       "output": "footer.min.css",
-      "href": "/footer.min.css?v=d9e1cf7f00ad",
-      "hash": "d9e1cf7f00ad",
-      "bytes": 5538
+      "href": "/footer.min.css?v=fa8affd680c1",
+      "hash": "fa8affd680c1",
+      "bytes": 5979
     },
     "handwerker.css": {
       "source": "handwerker.css",
@@ -214,9 +214,9 @@
     "package-detail.css": {
       "source": "package-detail.css",
       "output": "package-detail.min.css",
-      "href": "/package-detail.min.css?v=f44fcfca60ab",
-      "hash": "f44fcfca60ab",
-      "bytes": 29809
+      "href": "/package-detail.min.css?v=da6fda1667af",
+      "hash": "da6fda1667af",
+      "bytes": 29941
     },
     "package-list.css": {
       "source": "package-list.css",
@@ -284,9 +284,9 @@
     "website-tester.css": {
       "source": "website-tester.css",
       "output": "website-tester.min.css",
-      "href": "/website-tester.min.css?v=2cefcf478b0a",
-      "hash": "2cefcf478b0a",
-      "bytes": 16330
+      "href": "/website-tester.min.css?v=ca29a8bc4e46",
+      "hash": "ca29a8bc4e46",
+      "bytes": 16436
     }
   }
 }

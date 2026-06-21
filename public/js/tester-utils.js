@@ -25,6 +25,34 @@
     }
   }
 
+  function normalizeWebsiteUrl(value, locale) {
+    const isEn = locale === 'en';
+    const raw = safeString(value, 500).trim();
+    if (!raw) {
+      throw new Error(isEn ? 'Please enter a website address.' : 'Bitte gib eine Website-Adresse ein.');
+    }
+    if (/\s/.test(raw)) {
+      throw new Error(isEn ? 'Please enter one website address without spaces.' : 'Bitte gib genau eine Website-Adresse ohne Leerzeichen ein.');
+    }
+
+    const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
+    let parsed;
+    try {
+      parsed = new URL(candidate);
+    } catch (_err) {
+      throw new Error(isEn ? 'Please enter a valid website address, for example domain.de.' : 'Bitte gib eine gültige Website-Adresse ein, zum Beispiel domain.de.');
+    }
+
+    if (!/^https?:$/.test(parsed.protocol)) {
+      throw new Error(isEn ? 'Only public http or https websites can be checked.' : 'Es können nur öffentliche Websites mit http oder https geprüft werden.');
+    }
+    if (!parsed.hostname || (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost')) {
+      throw new Error(isEn ? 'Please enter the full domain, for example domain.de.' : 'Bitte gib die vollständige Domain ein, zum Beispiel domain.de.');
+    }
+
+    return parsed.toString();
+  }
+
   function pickScore(result) {
     if (!result || typeof result !== 'object') return null;
     // verschiedene Tester legen den Score unter unterschiedlichen Schlüsseln ab
@@ -132,6 +160,7 @@
     extractDomain,
     pickScore,
     pickTopAction,
+    normalizeWebsiteUrl,
     buildBookingUrl,
     buildContactUrl,
     buildPackageSuggestion,

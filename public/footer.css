@@ -87,6 +87,8 @@
 
 .site-footer .newsletter-form {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   align-items: center;
   padding-bottom: 0.25rem;
@@ -123,11 +125,33 @@
   transform: translateX(4px);
 }
 
+.site-footer .newsletter-form .form-help,
+.site-footer .newsletter-form .form-status,
+.site-footer .newsletter-form .newsletter-consent {
+  flex: 0 0 100%;
+}
+
+.site-footer .newsletter-form .form-help {
+  margin-top: 0;
+  color: rgba(255, 255, 255, 0.74);
+  text-align: left;
+}
+
+.site-footer .newsletter-form .form-status {
+  margin-top: 0.25rem;
+}
+
 /* Consent-Checkbox */
 .site-footer .newsletter-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
   text-align: start;
+}
+.site-footer .newsletter-consent input {
+  margin-top: 0.25rem;
 }
 .site-footer .newsletter-consent a {
   color: #fff;

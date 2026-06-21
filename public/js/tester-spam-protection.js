@@ -2,6 +2,30 @@
   var config = window.KWD_TESTER_SPAM || {};
   var startedAt = Date.now();
   var recaptchaPromise = null;
+  var RECAPTCHA_TIMEOUT_MS = 12_000;
+
+  function withTimeout(promise, timeoutMs, message) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        reject(new Error(message || 'reCAPTCHA konnte nicht geladen werden.'));
+      }, timeoutMs);
+
+      Promise.resolve(promise).then(function (value) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }, function (error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
 
   function getSiteKey() {
     return String(config.siteKey || window.SITEKEY || '');
@@ -56,11 +80,11 @@
   async function execute(action) {
     var siteKey = getSiteKey();
     if (!siteKey) return '';
-    await loadRecaptcha(siteKey);
+    await withTimeout(loadRecaptcha(siteKey), RECAPTCHA_TIMEOUT_MS, 'reCAPTCHA konnte nicht geladen werden.');
     if (!window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
       throw new Error('reCAPTCHA konnte nicht geladen werden.');
     }
-    return window.grecaptcha.execute(siteKey, { action: action || 'website_audit_scan' });
+    return withTimeout(window.grecaptcha.execute(siteKey, { action: action || 'website_audit_scan' }), RECAPTCHA_TIMEOUT_MS, 'reCAPTCHA konnte nicht geladen werden.');
   }
 
   function createInput(name, value) {

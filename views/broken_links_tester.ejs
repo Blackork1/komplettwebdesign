@@ -65,13 +65,18 @@
               <div class="wt-form-row">
                 <div class="wt-input-shell wt-input-shell--url">
                   <i class="fa-solid fa-link" aria-hidden="true"></i>
-                  <input id="broken-links-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                  <input id="broken-links-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" aria-describedby="broken-links-url-help" required>
                 </div>
                 <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Run Scan' : 'Scan starten' %>
                 </button>
               </div>
+              <p class="wt-form-hint" id="broken-links-url-help">
+                <%= isEn
+                  ? 'Enter the public website address, for example https://domain.de or domain.de. The scan checks public links and cannot access password-protected pages.'
+                  : 'Gib die öffentlich erreichbare Website-Adresse ein, zum Beispiel https://domain.de oder domain.de. Der Scan prüft öffentliche Links und kann keine passwortgeschützten Seiten abrufen.' %>
+              </p>
             </form>
             <p class="wt-form-note">
               <%= isEn
@@ -96,7 +101,7 @@
           </ul>
         </div>
 
-        <div class="wt-error" data-broken-links-error hidden></div>
+        <div class="wt-error" data-broken-links-error role="alert" aria-live="polite" hidden></div>
         <div id="broken-links-results" class="wt-results" data-broken-links-results hidden></div>
       </div>
     </section>

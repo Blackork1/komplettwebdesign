@@ -507,6 +507,11 @@
         throw new Error(i18n.contextRequired || 'Bitte ergänze Branche, Hauptleistung und Zielregion.');
       }
 
+      const normalizedUrl = window.TesterUtils && typeof window.TesterUtils.normalizeWebsiteUrl === 'function'
+        ? window.TesterUtils.normalizeWebsiteUrl(input.value, locale)
+        : String(input.value || '').trim();
+      input.value = normalizedUrl;
+
       const spamFields = await collectSpamFields(form, recaptchaAction);
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -515,7 +520,7 @@
           Accept: 'application/json'
         },
         body: JSON.stringify({
-          url: input.value,
+          url: normalizedUrl,
           locale,
           mode,
           context,

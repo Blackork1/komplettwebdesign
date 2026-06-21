@@ -23,22 +23,25 @@
                 <label for="footerNewsletterCompanyWebsite">Website</label>
                 <input type="text" name="company_website" id="footerNewsletterCompanyWebsite" tabindex="-1" autocomplete="off">
               </div>
-              <input type="email" name="email" id="newsletterEmail" class="form-control" placeholder="<%= isEn ? 'Your email' : 'Deine E-Mail' %>" required />
+              <input type="email" name="email" id="footerNewsletterEmail" class="form-control" placeholder="<%= isEn ? 'Your email' : 'Deine E-Mail' %>" autocomplete="email" aria-describedby="footerNewsletterHelp" required />
               <button type="submit" aria-label="Subscribe">
                 <!-- Pfeil-Icon -->
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10 17l5-5-5-5v10z" />
                 </svg>
               </button>
-            </form>
-            <div class="newsletter-consent">
-              <label>
+              <small id="footerNewsletterHelp" class="form-help">
+                <%= isEn ? 'Enter a valid email address and confirm the privacy notice.' : 'Gib eine gültige E-Mail-Adresse ein und bestätige den Datenschutzhinweis.' %>
+              </small>
+              <label class="newsletter-consent">
                 <input type="checkbox" name="consent" required />
-                <%= isEn ? 'I want to subscribe to the newsletter and accept the' : 'Ich möchte mich für den Newsletter anmelden und akzeptiere die' %>
-                <br />
-                <a href="/datenschutz"><%= isEn ? 'privacy policy' : 'Datenschutzerklärung' %></a>.*
+                <span>
+                  <%= isEn ? 'I want to subscribe to the newsletter and accept the' : 'Ich möchte mich für den Newsletter anmelden und akzeptiere die' %>
+                  <a href="/datenschutz"><%= isEn ? 'privacy policy' : 'Datenschutzerklärung' %></a>.*
+                </span>
               </label>
-            </div>
+              <p class="form-status" data-form-status role="alert" aria-live="polite" hidden></p>
+            </form>
           </div>
         </div>
 

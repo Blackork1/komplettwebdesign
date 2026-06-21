@@ -255,6 +255,14 @@ body.website-tester-page {
   font-size: 0.93rem;
 }
 
+.wt-form-hint {
+  margin: 0.65rem 0 0;
+  color: rgba(11, 42, 70, 0.72);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .wt-section {
   padding-top: 1.2rem;
 }

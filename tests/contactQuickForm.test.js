@@ -243,6 +243,24 @@ test('contact form script uses a guarded native submit after recaptcha', () => {
   assert.match(kontaktJs, /HTMLFormElement\.prototype\.submit\.call\(form\)/);
 });
 
+test('detailed contact form normalizes domain-only website URLs before final validation', () => {
+  assert.match(kontaktJs, /function\s+normalizeUrlField/);
+  assert.match(kontaktJs, /field\.type !== "url"/);
+  assert.match(kontaktJs, /field\.value = `https:\/\/\$\{value\}`/);
+  assert.match(kontaktJs, /const submitTrigger = event\.target\.closest/);
+  assert.match(kontaktJs, /form\.addEventListener\("click"[\s\S]*normalizeUrlFields\(form\);/);
+  assert.match(kontaktJs, /normalizeUrlFields\(form\);[\s\S]*form\.checkValidity\(\)/);
+});
+
+test('detailed contact form reveals hidden invalid wizard fields instead of silently blocking submit', () => {
+  assert.match(kontaktJs, /function\s+findFirstInvalidField/);
+  assert.match(kontaktJs, /function\s+revealInvalidField/);
+  assert.match(kontaktJs, /contact:show-invalid-card/);
+  assert.match(kontaktJs, /form\.dispatchEvent\(new CustomEvent\("contact:show-invalid-card"/);
+  assert.match(kontaktJs, /form\.addEventListener\("contact:show-invalid-card"/);
+  assert.match(kontaktJs, /reportCardProblem\(targetCard\)/);
+});
+
 test('contact form recaptcha wait cannot block a valid submit forever', () => {
   assert.match(kontaktJs, /recaptchaTimeoutMs/);
   assert.match(kontaktJs, /function\s+withTimeout/);

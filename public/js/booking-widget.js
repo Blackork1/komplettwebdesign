@@ -5,6 +5,7 @@
   const SITEKEY = widget.dataset.sitekey || '';
   const lang = widget.dataset.lng === 'en' ? 'en' : 'de';
   const locale = lang === 'en' ? 'en-GB' : 'de-DE';
+  const RECAPTCHA_TIMEOUT_MS = 12_000;
 
   const text = {
     de: {
@@ -16,6 +17,9 @@
       backToCalendar: 'Klicke im Kalender einen Tag mit freien Terminen an.',
       chooseTime: 'Wähle eine Uhrzeit:',
       selectedLabel: 'Ausgewählter Termin',
+      noSlotSelected: 'Bitte wähle zuerst einen freien Termin im Kalender aus.',
+      validationError: 'Bitte fülle Name und E-Mail korrekt aus.',
+      submitting: 'Wird gesendet ...',
       recaptchaError: 'reCAPTCHA-Validierung fehlgeschlagen. Bitte neu versuchen.'
     },
     en: {
@@ -27,6 +31,9 @@
       backToCalendar: 'Click a day in the calendar with available appointments.',
       chooseTime: 'Choose a time:',
       selectedLabel: 'Selected appointment',
+      noSlotSelected: 'Please choose an available appointment in the calendar first.',
+      validationError: 'Please enter your name and a valid email address.',
+      submitting: 'Sending ...',
       recaptchaError: 'reCAPTCHA validation failed. Please try again.'
     }
   }[lang];
@@ -56,13 +63,52 @@
 
   let recaptchaScriptLoaded = false;
   let recaptchaPromise = null;
+  let isSubmitting = false;
+
+  function withTimeout(promise, timeoutMs, message) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        reject(new Error(message));
+      }, timeoutMs);
+
+      Promise.resolve(promise).then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }, (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
 
   function loadRecaptchaScript() {
     if (!SITEKEY) return Promise.resolve();
     if (recaptchaScriptLoaded) return recaptchaPromise;
     recaptchaScriptLoaded = true;
 
-    recaptchaPromise = new Promise((resolve) => {
+    recaptchaPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]');
+      if (existing) {
+        const start = Date.now();
+        const iv = setInterval(() => {
+          if (typeof grecaptcha !== 'undefined') {
+            clearInterval(iv);
+            grecaptcha.ready(resolve);
+          } else if (Date.now() - start > RECAPTCHA_TIMEOUT_MS) {
+            clearInterval(iv);
+            reject(new Error(text.recaptchaError));
+          }
+        }, 50);
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(SITEKEY)}`;
       script.async = true;
@@ -79,15 +125,19 @@
           }
         }, 50);
       };
+      script.onerror = () => reject(new Error(text.recaptchaError));
       document.head.appendChild(script);
+    }).finally(() => {
+      recaptchaScriptLoaded = false;
+      recaptchaPromise = null;
     });
 
     return recaptchaPromise;
   }
 
-  widget.addEventListener('mouseover', () => loadRecaptchaScript(), { once: true });
-  widget.addEventListener('focusin', () => loadRecaptchaScript(), { once: true });
-  widget.addEventListener('click', () => loadRecaptchaScript(), { once: true });
+  widget.addEventListener('mouseover', () => loadRecaptchaScript().catch(() => {}), { once: true });
+  widget.addEventListener('focusin', () => loadRecaptchaScript().catch(() => {}), { once: true });
+  widget.addEventListener('click', () => loadRecaptchaScript().catch(() => {}), { once: true });
 
   function formatMonth(date) {
     return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
@@ -266,24 +316,51 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     msgEl.textContent = '';
     msgEl.classList.remove('is-error');
 
     if (!inputSlotId.value) {
-      msgEl.textContent = text.noTimesForDay;
+      msgEl.textContent = text.noSlotSelected;
       msgEl.classList.add('is-error');
       showStep('times');
       return;
     }
 
+    if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+      msgEl.textContent = text.validationError;
+      msgEl.classList.add('is-error');
+      if (typeof form.reportValidity === 'function') form.reportValidity();
+      return;
+    }
+
+    const submitButton = e.submitter || form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton?.textContent || '';
+    isSubmitting = true;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.setAttribute('aria-busy', 'true');
+      submitButton.textContent = text.submitting;
+    }
+
     try {
-      await loadRecaptchaScript();
+      await withTimeout(loadRecaptchaScript(), RECAPTCHA_TIMEOUT_MS, text.recaptchaError);
       if (SITEKEY && typeof grecaptcha !== 'undefined') {
-        const token = await grecaptcha.execute(SITEKEY, { action: 'booking_submit' });
+        const token = await withTimeout(
+          grecaptcha.execute(SITEKEY, { action: 'booking_submit' }),
+          RECAPTCHA_TIMEOUT_MS,
+          text.recaptchaError
+        );
         if (inputToken) inputToken.value = token;
       }
-      form.submit();
+      HTMLFormElement.prototype.submit.call(form);
     } catch (_err) {
+      isSubmitting = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.removeAttribute('aria-busy');
+        submitButton.textContent = originalButtonText;
+      }
       msgEl.textContent = text.recaptchaError;
       msgEl.classList.add('is-error');
     }

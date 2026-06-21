@@ -79,13 +79,18 @@
               <div class="wt-form-row">
                 <div class="wt-input-shell wt-input-shell--url">
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                  <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                  <input id="seo-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" aria-describedby="seo-url-help" required>
                 </div>
                 <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start SEO check' : 'SEO-Check starten' %>
                 </button>
               </div>
+              <p class="wt-form-hint" id="seo-url-help">
+                <%= isEn
+                  ? 'Enter the public website address, for example https://domain.de or domain.de. Also fill in business type, main service and target region.'
+                  : 'Gib die öffentlich erreichbare Website-Adresse ein, zum Beispiel https://domain.de oder domain.de. Fülle außerdem Branche, Hauptleistung und Zielregion aus.' %>
+              </p>
             </form>
             <p class="wt-form-note">
               <%= isEn
@@ -110,7 +115,7 @@
           </ul>
         </div>
 
-        <div class="wt-error" data-seo-error hidden></div>
+        <div class="wt-error" data-seo-error role="alert" aria-live="polite" hidden></div>
         <div id="seo-results" class="wt-results" data-seo-results hidden></div>
       </div>
     </section>

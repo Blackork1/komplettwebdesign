@@ -150,6 +150,34 @@
     });
   }
 
+  function normalizeUrlField(field) {
+    if (!field || field.type !== "url") return;
+    const value = field.value.trim();
+    if (field.value !== value) field.value = value;
+    if (!value || /^[a-z][a-z0-9+.-]*:\/\//i.test(value)) return;
+    if (!/^[^\s@]+\.[^\s@]+/.test(value)) return;
+    field.value = `https://${value}`;
+  }
+
+  function normalizeUrlFields(form) {
+    Array.from(form.querySelectorAll('input[type="url"]')).forEach(normalizeUrlField);
+  }
+
+  function findFirstInvalidField(form) {
+    return Array.from(form.querySelectorAll("input, select, textarea"))
+      .find((field) => !field.disabled && field.type !== "hidden" && typeof field.checkValidity === "function" && !field.checkValidity());
+  }
+
+  function revealInvalidField(form, field) {
+    if (!form.classList.contains("contact-form--detailed")) return false;
+    const invalidCard = field.closest("[data-contact-step], [data-contact-final]");
+    if (!invalidCard || !invalidCard.hidden) return false;
+    form.dispatchEvent(new CustomEvent("contact:show-invalid-card", {
+      detail: { card: invalidCard, field }
+    }));
+    return true;
+  }
+
   function bindRecaptcha(form) {
     if (!form) return;
     let isSubmitting = false;
@@ -167,11 +195,31 @@
 
     form.addEventListener("input", () => markFormStarted(form), { once: true });
     form.addEventListener("change", () => markFormStarted(form), { once: true });
+    form.addEventListener("focusout", (event) => {
+      if (event.target instanceof HTMLInputElement) normalizeUrlField(event.target);
+    }, true);
+    form.addEventListener("change", (event) => {
+      if (event.target instanceof HTMLInputElement) normalizeUrlField(event.target);
+    }, true);
+
+    form.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element)) return;
+      const submitTrigger = event.target.closest('button[type="submit"], input[type="submit"]');
+      if (!submitTrigger || !form.contains(submitTrigger)) return;
+      normalizeUrlFields(form);
+      const firstInvalid = findFirstInvalidField(form);
+      if (firstInvalid && revealInvalidField(form, firstInvalid)) {
+        event.preventDefault();
+      }
+    }, true);
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (isSubmitting) return;
+      normalizeUrlFields(form);
       if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+        const firstInvalid = findFirstInvalidField(form);
+        if (firstInvalid && revealInvalidField(form, firstInvalid)) return;
         if (typeof form.reportValidity === "function") form.reportValidity();
         return;
       }
@@ -309,19 +357,20 @@
 
   function reportCardProblem(card) {
     card.classList.add("was-validated");
-    const firstRequired = findCardFields(card).find((field) => {
-      if (!field.required) return false;
-      if (field.type === "radio" || field.type === "checkbox") return !isGroupComplete(field.form, field);
-      return !field.checkValidity();
+    const firstInvalid = findCardFields(card).find((field) => {
+      if (field.type === "radio" || field.type === "checkbox") {
+        return field.required && !isGroupComplete(field.form, field);
+      }
+      return typeof field.checkValidity === "function" && !field.checkValidity();
     });
 
-    if (!firstRequired) return;
-    if (firstRequired.type === "radio" || firstRequired.type === "checkbox") {
-      firstRequired.closest("label")?.focus?.();
-      firstRequired.reportValidity?.();
+    if (!firstInvalid) return;
+    if (firstInvalid.type === "radio" || firstInvalid.type === "checkbox") {
+      firstInvalid.closest("label")?.focus?.();
+      firstInvalid.reportValidity?.();
       return;
     }
-    firstRequired.reportValidity?.();
+    firstInvalid.reportValidity?.();
   }
 
   function stepIdForCard(card, index) {
@@ -547,6 +596,15 @@
         window.KWDContactPanels.hidePanels(true);
       }
     }
+
+    form.addEventListener("contact:show-invalid-card", (event) => {
+      refreshActiveCards();
+      const targetCard = event.detail?.card;
+      const targetIndex = activeCards.indexOf(targetCard);
+      if (targetIndex === -1) return;
+      showOnly(targetIndex, true);
+      window.setTimeout(() => reportCardProblem(targetCard), reduceMotion ? 0 : 360);
+    });
 
     refreshActiveCards();
 

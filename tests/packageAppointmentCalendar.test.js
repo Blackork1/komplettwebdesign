@@ -10,8 +10,10 @@ const packageDetailJs = existsSync(packageDetailJsUrl)
   ? readFileSync(packageDetailJsUrl, 'utf8')
   : '';
 
-test('package detail appointment select exposes a fourth custom calendar option', () => {
-  assert.match(packageDetailTemplate, /<select id="slot" name="slot" data-package-slot-select>/);
+test('package detail appointment select keeps appointment optional and exposes custom calendar option', () => {
+  assert.match(packageDetailTemplate, /<select id="slot" name="slot" data-package-slot-select[^>]*>/);
+  assert.match(packageDetailTemplate, /<option value="" selected>/);
+  assert.match(packageDetailTemplate, /Termin später abstimmen/);
   assert.match(packageDetailTemplate, /<option value="__custom" data-package-custom-slot>/);
   assert.match(packageDetailTemplate, /Anderen Termin/);
   assert.match(packageDetailTemplate, /Other appointment/);

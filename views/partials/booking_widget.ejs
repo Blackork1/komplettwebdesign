@@ -51,21 +51,24 @@
 
           <label class="kwd-field">
             <span><%= isEn ? 'Name' : 'Name' %></span>
-            <input type="text" name="name" required autocomplete="name">
+            <input type="text" name="name" required autocomplete="name" aria-describedby="booking-name-help">
+            <small id="booking-name-help" class="form-help"><%= isEn ? 'Enter the name for the appointment confirmation.' : 'Gib den Namen für die Terminbestätigung ein.' %></small>
           </label>
 
           <label class="kwd-field">
             <span><%= isEn ? 'Email' : 'E-Mail' %></span>
-            <input type="email" name="email" required autocomplete="email">
+            <input type="email" name="email" required autocomplete="email" aria-describedby="booking-email-help">
+            <small id="booking-email-help" class="form-help"><%= isEn ? 'Use an address where you can receive the confirmation link.' : 'Nutze eine Adresse, unter der du die Terminbestätigung erhältst.' %></small>
           </label>
 
           <label class="kwd-field">
             <span><%= isEn ? 'Note (optional)' : 'Bemerkung (optional)' %></span>
-            <textarea name="note" rows="3"><%= prefillNote %></textarea>
+            <textarea name="note" rows="3" aria-describedby="booking-note-help"><%= prefillNote %></textarea>
+            <small id="booking-note-help" class="form-help"><%= isEn ? 'Optional: add context for the call, for example your website or project goal.' : 'Optional: Ergänze kurz Kontext, zum Beispiel Website oder Projektziel.' %></small>
           </label>
 
           <button class="btn btn-primary kwd-submit" type="submit"><%= isEn ? 'Book appointment' : 'Termin vereinbaren' %></button>
-          <p class="form-msg"></p>
+          <p class="form-msg" role="alert" aria-live="polite"></p>
         </form>
       </div>
     </section>

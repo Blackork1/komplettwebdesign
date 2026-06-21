@@ -51,13 +51,18 @@
               <div class="wt-form-row">
                 <div class="wt-input-shell wt-input-shell--url">
                   <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                  <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" required>
+                  <input id="website-url" name="url" type="text" inputmode="url" placeholder="<%= isEn ? 'https://your-website.com' : 'https://deine-website.de' %>" aria-describedby="website-url-help" required>
                 </div>
                 <button class="btn btn-primary" type="submit">
                   <i class="fa-solid fa-bolt"></i>
                   <%= isEn ? 'Start check' : 'Check starten' %>
                 </button>
               </div>
+              <p class="wt-form-hint" id="website-url-help">
+                <%= isEn
+                  ? 'Enter the public website address, for example https://domain.de or domain.de. Business type, service and region must also be filled in.'
+                  : 'Gib die öffentlich erreichbare Website-Adresse ein, zum Beispiel https://domain.de oder domain.de. Branche, Leistung und Zielregion müssen ebenfalls ausgefüllt sein.' %>
+              </p>
             </form>
             <p class="wt-form-note">
               <%= isEn
@@ -151,7 +156,7 @@
           </ul>
         </div>
 
-        <div class="wt-error" data-audit-error hidden></div>
+        <div class="wt-error" data-audit-error role="alert" aria-live="polite" hidden></div>
         <div id="website-tester-results" class="wt-results" data-audit-results hidden></div>
       </div>
     </section>

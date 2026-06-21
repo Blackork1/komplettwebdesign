@@ -704,6 +704,14 @@
   color: var(--packages-ink);
 }
 
+.package-detail-page .contact-form .form-help {
+  color: rgba(49, 61, 77, 0.72);
+}
+
+.package-detail-page .contact-form .form-status {
+  margin-top: 0;
+}
+
 .package-detail-page .contact-form input,
 .package-detail-page .contact-form select,
 .package-detail-page .contact-form textarea {
