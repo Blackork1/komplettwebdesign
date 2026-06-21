@@ -21,6 +21,7 @@
   function isEligibleForm(form) {
     if (!form) return false;
     if (form.dataset && form.dataset.recaptchaBound === 'true') return false;
+    if (form.classList && form.classList.contains('contact-form')) return false;
     if (form.id === 'kontaktForm') return false; // eigenes Handling in kontakt.ejs
 
     if (form.dataset && typeof form.dataset.recaptcha === 'string' && form.dataset.recaptcha.toLowerCase() === 'v3') {

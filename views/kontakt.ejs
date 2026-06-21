@@ -220,8 +220,8 @@
               <input id="quick-phone" name="phone" type="tel" autocomplete="tel" maxlength="80" placeholder="+49 ...">
             </div>
             <div class="contact-field contact-field--full">
-              <label for="quick-message"><%= isEn ? 'What should I assess?' : 'Was soll ich einschätzen?' %> *</label>
-              <textarea id="quick-message" name="message" rows="5" minlength="20" maxlength="5000" required placeholder="<%= isEn ? 'Briefly describe what you need, whether a website already exists and what the next step should clarify.' : 'Beschreibe kurz, was du brauchst, ob es bereits eine Website gibt und was der nächste Schritt klären soll.' %>"></textarea>
+              <label for="quick-message"><%= isEn ? 'What should I assess? (optional)' : 'Was soll ich einschätzen? (optional)' %></label>
+              <textarea id="quick-message" name="message" rows="5" maxlength="5000" placeholder="<%= isEn ? 'Briefly describe what you need, whether a website already exists and what the next step should clarify.' : 'Beschreibe kurz, was du brauchst, ob es bereits eine Website gibt und was der nächste Schritt klären soll.' %>"></textarea>
               <p class="contact-help"><%= isEn ? 'A few bullet points are enough.' : 'Ein paar Stichpunkte reichen für den Anfang.' %></p>
             </div>
           </div>
@@ -676,17 +676,6 @@
                 </div>
               </div>
 
-              <div class="contact-legal-note">
-                <h3><%= isEn ? 'Legal, SEO and privacy notes' : 'Hinweise zu Rechtstexten, SEO und Datenschutz' %></h3>
-                <p>
-                  <%= isEn
-                    ? 'Before sending the request, please read the notes about legal text integration, SEO limits, third-party costs and privacy.'
-                    : 'Bitte lies vor dem Absenden die Hinweise zur technischen Einbindung von Rechtstexten, zu SEO-Grenzen, Drittanbieter-Kosten und Datenschutz.'
-                  %>
-                  <a href="<%= noticesHref %>"><%= isEn ? 'Open notes page' : 'Hinweisseite öffnen' %></a>
-                </p>
-              </div>
-
               <label class="contact-consent" for="privacyConsent">
                 <input id="privacyConsent" name="privacyConsent" value="yes" type="checkbox" <%= inputValue('privacyConsent') === 'yes' ? 'checked' : '' %> required>
                 <span>
@@ -756,6 +745,7 @@
     formStartEvent: "contact_form_start",
     backLabel: "<%= isEn ? 'Back' : 'Zurück' %>",
     nextLabel: "<%= isEn ? 'Continue' : 'Weiter' %>",
+    submittingLabel: "<%= isEn ? 'Sending ...' : 'Wird gesendet ...' %>",
     stepLabel: "<%= isEn ? 'Step' : 'Schritt' %>",
     ofLabel: "<%= isEn ? 'of' : 'von' %>"
   };

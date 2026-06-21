@@ -12,6 +12,7 @@
     formStartEvent: CONTACT_I18N.formStartEvent || "contact_form_start",
     backLabel: CONTACT_I18N.backLabel || "Zurück",
     nextLabel: CONTACT_I18N.nextLabel || "Weiter",
+    submittingLabel: CONTACT_I18N.submittingLabel || "Wird gesendet ...",
     stepLabel: CONTACT_I18N.stepLabel || "Schritt",
     ofLabel: CONTACT_I18N.ofLabel || "von"
   };
@@ -114,6 +115,7 @@
 
   function bindRecaptcha(form) {
     if (!form) return;
+    let isSubmitting = false;
 
     const prefetch = () => {
       form.removeEventListener("focusin", prefetch, true);
@@ -131,6 +133,25 @@
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (isSubmitting) return;
+      if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+        if (typeof form.reportValidity === "function") form.reportValidity();
+        return;
+      }
+
+      const submitButton = event.submitter instanceof HTMLElement
+        ? event.submitter
+        : form.querySelector('button[type="submit"], input[type="submit"]');
+      const originalButtonText = submitButton && "textContent" in submitButton ? submitButton.textContent : "";
+      isSubmitting = true;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.setAttribute("aria-busy", "true");
+        if ("textContent" in submitButton) {
+          submitButton.textContent = I18N.submittingLabel;
+        }
+      }
+
       dispatchContactEvent("contact_form_submit_attempt", {
         form_id: form.id || "",
         form_variant: form.dataset.formVariant || "contact"
@@ -140,8 +161,16 @@
         const token = await window.grecaptcha.execute(SITEKEY, { action: form.dataset.recaptchaAction || "contact_request" });
         const tokenField = form.querySelector('input[name="token"]');
         if (tokenField) tokenField.value = token;
-        form.submit();
+        HTMLFormElement.prototype.submit.call(form);
       } catch (err) {
+        isSubmitting = false;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.removeAttribute("aria-busy");
+          if ("textContent" in submitButton && originalButtonText) {
+            submitButton.textContent = originalButtonText;
+          }
+        }
         dispatchContactEvent("contact_form_submit_error", {
           form_id: form.id || "",
           form_variant: form.dataset.formVariant || "contact",

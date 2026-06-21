@@ -32,7 +32,7 @@ test('contact page contains quick assessment form above the detailed project req
   assert.ok(quickFormIndex < wizardIndex, 'quick form should appear before kontaktForm');
 });
 
-test('contact quick form posts localized recaptcha-protected requests with required fields', () => {
+test('contact quick form posts localized recaptcha-protected requests with required contact fields', () => {
   assert.doesNotMatch(quickForm, /id="kontaktForm"/);
   assert.match(quickForm, /\/kontakt\/kurzanfrage/);
   assert.match(quickForm, /\/en\/kontakt\/kurzanfrage/);
@@ -47,10 +47,19 @@ test('contact quick form posts localized recaptcha-protected requests with requi
   assert.match(quickForm, /<input[^>]*name="name"[\s\S]*?required>/);
   assert.match(quickForm, /<input[^>]*name="email"[\s\S]*?required>/);
   assert.match(quickForm, /<input[^>]*name="phone"[\s\S]*?>/);
-  assert.match(quickForm, /<textarea[^>]*name="message"[\s\S]*?required[\s\S]*><\/textarea>/);
+  const quickMessageTag = quickForm.match(/<textarea id="quick-message"[^>]*>/)?.[0] || '';
+  assert.match(quickMessageTag, /name="message"/);
+  assert.doesNotMatch(quickMessageTag, /required/);
+  assert.doesNotMatch(quickMessageTag, /minlength/);
+  assert.match(quickForm, /Was soll ich einschätzen\? \(optional\)/);
   assert.match(quickForm, /<input type="hidden" name="source" value="contact-quick">/);
   assert.match(quickForm, /<input type="hidden" name="locale"/);
   assert.match(quickForm, /name="privacyConsent"[\s\S]*required/);
+});
+
+test('contact quick request accepts an empty message after required contact and consent checks', () => {
+  assert.doesNotMatch(contactControllerSource, /quickMessage\.length\s*<\s*20/);
+  assert.match(contactControllerSource, /Bitte bestätige Datenschutzerklärung und Hinweisseite/);
 });
 
 test('contact forms require consent for privacy policy and the notes page', () => {
@@ -60,6 +69,23 @@ test('contact forms require consent for privacy policy and the notes page', () =
   assert.match(kontaktTemplate, /Datenschutzerklärung[\s\S]*Hinweisseite[\s\S]*gelesen/);
   assert.match(kontaktTemplate, /I have read[\s\S]*privacy policy[\s\S]*notes page/);
   assert.match(contactControllerSource, /Bitte bestätige Datenschutzerklärung und Hinweisseite/);
+});
+
+test('detailed contact form does not duplicate the legal notes text before consent', () => {
+  assert.doesNotMatch(kontaktTemplate, /class="contact-legal-note"/);
+  assert.doesNotMatch(kontaktTemplate, /Hinweise zu Rechtstexten, SEO und Datenschutz/);
+  assert.match(kontaktTemplate, /Datenschutzerklärung[\s\S]*Hinweisseite[\s\S]*gelesen/);
+});
+
+test('webdesign and quick request thank-you render receives summary rows', () => {
+  assert.match(contactControllerSource, /summaryRows:\s*summaryRows/);
+});
+
+test('internal source and locale fields are not included as customer summary extras', () => {
+  const knownKeysMatch = contactControllerSource.match(/const KNOWN_FORM_KEYS = new Set\(\[[\s\S]*?\]\);/);
+  assert.ok(knownKeysMatch, 'KNOWN_FORM_KEYS should be declared');
+  assert.match(knownKeysMatch[0], /"source"/);
+  assert.match(knownKeysMatch[0], /"locale"/);
 });
 
 test('contact routes expose quick request endpoint through upload and processor handlers', () => {
@@ -209,6 +235,12 @@ test('contact form script prepares non-PII events without analytics transmission
   assert.match(kontaktJs, /selected_value:\s*target\.value/);
   assert.doesNotMatch(kontaktJs, /gtag\(/);
   assert.doesNotMatch(kontaktJs, /localStorage/);
+});
+
+test('contact form script uses a guarded native submit after recaptcha', () => {
+  assert.match(kontaktJs, /form\.checkValidity\(\)/);
+  assert.match(kontaktJs, /form\.reportValidity\(\)/);
+  assert.match(kontaktJs, /HTMLFormElement\.prototype\.submit\.call\(form\)/);
 });
 
 test('optional feature none option clears other add-on choices', () => {

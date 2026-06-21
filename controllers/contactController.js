@@ -163,7 +163,7 @@ const KNOWN_FORM_KEYS = new Set([
     "auditFocus", "auditDepth", "landingpageGoal", "landingpageSource",
     "maintenanceNeed", "maintenanceUrgency", "customFeatureType", "customFeatureDependencies",
     "bugfixUrgency", "bugfixDescription", "uncertaintyNotes",
-    "privacyConsent", "startedAt", "contactWebsite",
+    "privacyConsent", "startedAt", "contactWebsite", "source", "locale",
     "services", "service", "leistungen", "inhalte",
     "currentWebsite", "websiteVorhanden", "bestandswebsite",
     "district", "stadtteil", "bezirk",
@@ -1600,15 +1600,14 @@ export async function processWebdesignBerlinForm(req, res) {
     }
 
     if (isContactQuick) {
-        const quickMessage = toCleanString(normalized.message);
         const startedAt = Number(bodyData.startedAt);
         const timingOk = Number.isFinite(startedAt) && Date.now() - startedAt >= 2500;
         const honeypotOk = !toCleanString(bodyData.contactWebsite);
         const privacyOk = bodyData.privacyConsent === "yes";
-        if (quickMessage.length < 20 || !privacyOk || !timingOk || !honeypotOk) {
+        if (!privacyOk || !timingOk || !honeypotOk) {
             const message = lng === "en"
-                ? "Please describe your project briefly and confirm the privacy notice."
-                : "Bitte beschreibe dein Projekt kurz und bestätige Datenschutzerklärung und Hinweisseite.";
+                ? "Please confirm the privacy notice and submit the form again."
+                : "Bitte bestätige Datenschutzerklärung und Hinweisseite und sende das Formular noch einmal ab.";
             if (expectsJson(req)) {
                 return res.status(422).json({ success: false, message });
             }
@@ -1907,6 +1906,7 @@ export async function processWebdesignBerlinForm(req, res) {
         description: lng === "en" ? "Confirmation of your request" : "Bestätigung deiner Kontaktanfrage",
         robots: "noindex,nofollow",
         data: thankYouData,
+        summaryRows: summaryRows,
         appointment: null,
         formattedAppointment: null,
         leadEventId: contactRequest?.id ? `contact-${contactRequest.id}` : null,
