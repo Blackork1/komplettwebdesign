@@ -106,6 +106,7 @@ Zeitplan oder Adminaktion
   → Website-Inventar
   → Themenkandidaten
   → Themen-Scoring
+  → Quellenrecherche bei aktuellen Themen
   → SEO-Briefing
   → Artikelgenerierung
   → deterministische Validierung
@@ -270,6 +271,7 @@ Zulässige Stufen:
 inventory
 topic_research
 topic_scoring
+source_research
 seo_brief
 article_generation
 validation
@@ -336,7 +338,22 @@ Auditberichte enthalten:
 
 Audits verändern den Artikel nicht.
 
-### 6.7 `content_agent_settings`
+### 6.7 `content_post_revisions`
+
+Vorgeschlagene Änderungen an veröffentlichten Artikeln werden getrennt gespeichert:
+
+- `post_id`,
+- `source_job_id`,
+- `revision_type`,
+- `snapshot_json`,
+- `status`,
+- `created_at`,
+- `approved_at`,
+- `approved_by`.
+
+Eine Revision ersetzt den veröffentlichten Artikel erst in einer Transaktion, nachdem ein Administrator sie freigegeben hat.
+
+### 6.8 `content_agent_settings`
 
 Eine Singleton-Konfiguration enthält die veränderbaren Adminwerte:
 
@@ -349,7 +366,7 @@ Eine Singleton-Konfiguration enthält die veränderbaren Adminwerte:
 
 Die Datenbankeinstellung darf die sicherheitsrelevanten Umgebungsvariablen nicht überstimmen. Auto-Publishing ist nur aktiv, wenn Umgebungsvariable und Datenbankeinstellung gleichzeitig aktiv sind.
 
-### 6.8 `content_worker_state`
+### 6.9 `content_worker_state`
 
 Der Worker aktualisiert einen kleinen Zustandsdatensatz mit:
 
@@ -362,7 +379,7 @@ Der Worker aktualisiert einen kleinen Zustandsdatensatz mit:
 
 Dashboard und Container-Healthcheck verwenden diesen Datensatz, ohne einen öffentlichen Worker-Port einzuführen.
 
-### 6.9 `content_search_metrics`
+### 6.10 `content_search_metrics`
 
 Nach der Search-Console-Anbindung speichert die Anwendung normalisierte Messwerte:
 
@@ -379,7 +396,7 @@ Nach der Search-Console-Anbindung speichert die Anwendung normalisierte Messwert
 
 Die Tabelle enthält nur Search-Performance-Daten und keine personenbezogenen Such- oder Kontaktdaten.
 
-### 6.10 Slug-Weiterleitungen
+### 6.11 Slug-Weiterleitungen
 
 Eine kleine Weiterleitungstabelle speichert alte und neue Blogslugs. Wird ein veröffentlichter Slug nach menschlicher Freigabe geändert, entsteht gleichzeitig eine permanente 301-Weiterleitung. Ohne Weiterleitung darf ein veröffentlichter Slug nicht geändert werden.
 
