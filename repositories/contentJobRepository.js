@@ -56,6 +56,15 @@ function normalizeMaxAttempts(value) {
   return Math.min(POSTGRES_INTEGER_MAX, Math.max(1, parsed));
 }
 
+function requiresEnabledAgent(jobType, payload) {
+  return (jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule')
+    || (jobType === 'generate_manual_draft' && payload?.source === 'admin_manual')
+    || (
+      ['regenerate_article', 'regenerate_metadata', 'regenerate_faq', 'regenerate_image'].includes(jobType)
+      && payload?.source === 'admin_regeneration'
+    );
+}
+
 export async function enqueueJob({
   jobType,
   idempotencyKey,
@@ -88,8 +97,7 @@ export async function enqueueJob({
       payload,
       runAfter,
       normalizeMaxAttempts(maxAttempts),
-      (jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule')
-        || (jobType === 'generate_manual_draft' && payload?.source === 'admin_manual')
+      requiresEnabledAgent(jobType, payload)
     ]
   );
 

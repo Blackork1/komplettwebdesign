@@ -99,6 +99,35 @@
       <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Unveröffentlicht speichern</button>
     </div>
   </form>
+
+  <section class="content-agent-panel mt-4" aria-labelledby="draft-regeneration-heading">
+    <div class="content-agent-panel__head">
+      <div>
+        <p class="content-agent-eyebrow">Gezielte KI-Überarbeitung</p>
+        <h2 id="draft-regeneration-heading">Bereich neu erstellen</h2>
+      </div>
+      <span class="content-agent-status is-warning">Immer Review</span>
+    </div>
+    <p class="content-agent-quiet">Jede Aktion wird als eigener, budgetierter Queuejob ausgeführt und veröffentlicht den Artikel niemals automatisch.</p>
+    <div class="content-agent-actions">
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/regenerate-article" data-confirm="Den vollständigen Artikel als neuen Review-Entwurf überarbeiten?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-outline-primary" type="submit">Artikel neu erstellen</button>
+      </form>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/regenerate-metadata" data-confirm="Kurzbeschreibung und Meta-Daten neu erstellen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-outline-primary" type="submit">Meta-Daten neu erstellen</button>
+      </form>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/regenerate-faq" data-confirm="FAQ im Artikel und FAQ-JSON gemeinsam neu erstellen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-outline-primary" type="submit">FAQ neu erstellen</button>
+      </form>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/regenerate-image" data-confirm="Ein neues Beitragsbild erzeugen und das bisherige Bild nach sicherem Commit ersetzen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-outline-primary" type="submit">Bild neu erstellen</button>
+      </form>
+    </div>
+  </section>
 </div>
 
 <script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>

@@ -163,6 +163,20 @@ test('Queue-Schreibfunktionen sind parameterisiert und räumen Sperrfelder auf',
   assert.deepEqual(db.calls[2].params, [2, 'worker-2', 1, 'API antwortet nicht']);
 });
 
+test('Admin-Regenerationsjobs werden atomar durch den operativen Agentschalter geschützt', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 71, status: 'queued' }] }]);
+
+  await enqueueJob({
+    jobType: 'regenerate_metadata',
+    idempotencyKey: 'regenerate_metadata:19:uuid',
+    payload: { source: 'admin_regeneration', post_id: 19, forced_mode: 'review' },
+    maxAttempts: 3
+  }, db);
+
+  assert.equal(db.calls[0].params.at(-1), true);
+  assert.match(db.calls[0].sql, /WHERE \$6 = FALSE OR EXISTS/i);
+});
+
 test('terminale Jobupdates akzeptieren keine veraltete oder unvollständige Lease', async () => {
   const staleClaim = { id: 7, locked_by: 'worker-alt', attempts: 1 };
   const db = createQueryRecorder([{ rows: [] }, { rows: [] }]);

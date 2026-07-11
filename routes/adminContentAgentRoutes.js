@@ -39,7 +39,8 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/reject', isAdmin, verifyCsrfToken, controller.rejectDraftAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-image', isAdmin, verifyCsrfToken, controller.regenerateImageAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-faq', isAdmin, verifyCsrfToken, controller.regenerateFaqAction);
-  router.post('/admin/content-agent/drafts/:id/regenerate', isAdmin, verifyCsrfToken, controller.regenerateDraftAction);
+  router.post('/admin/content-agent/drafts/:id/regenerate-metadata', isAdmin, verifyCsrfToken, controller.regenerateMetadataAction);
+  router.post('/admin/content-agent/drafts/:id/regenerate-article', isAdmin, verifyCsrfToken, controller.regenerateDraftAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
   router.post('/admin/content-agent/existing-content/:id/revision', isAdmin, verifyCsrfToken, controller.createRevisionAction);
   router.get('/admin/content-agent/revisions/:id/edit', isAdmin, controller.revisionEditPage);

@@ -4,7 +4,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getContentAgentConfig } from '../services/contentAgent/config.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 
-const SUPPORTED_JOB_TYPES = new Set(['generate_weekly_draft', 'generate_manual_draft']);
+const GENERATION_JOB_TYPES = new Set(['generate_weekly_draft', 'generate_manual_draft']);
+const REGENERATION_JOB_TYPES = new Set([
+  'regenerate_article',
+  'regenerate_metadata',
+  'regenerate_faq',
+  'regenerate_image'
+]);
+const SUPPORTED_JOB_TYPES = new Set([...GENERATION_JOB_TYPES, ...REGENERATION_JOB_TYPES]);
 
 function required(value, name) {
   if (!value) throw new TypeError(`Die Produktionsabhängigkeit ${name} wird benötigt.`);
@@ -68,7 +75,9 @@ export function createProductionJobHandler({
   createRun,
   runPipeline,
   pipelineDependencies,
-  createPipelineDependencies
+  createPipelineDependencies,
+  runRegenerationJob,
+  createRegenerationDependencies
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
@@ -92,16 +101,29 @@ export function createProductionJobHandler({
     });
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
     const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
-    const jobDependencies = typeof createPipelineDependencies === 'function'
-      ? await createPipelineDependencies(persistedSnapshot)
-      : pipelineDependencies;
     const jobTimezone = persistedSnapshot?.timezone || timezone;
-    const result = await runPipeline({
-      ...(claim.payload_json || {}),
-      runId: run.id,
-      ...(typeof leaseGuard === 'function' ? { leaseGuard } : {}),
-      currentDate: berlinDateKey(now(), jobTimezone)
-    }, jobDependencies);
+    let result;
+    if (REGENERATION_JOB_TYPES.has(claim.job_type)) {
+      required(runRegenerationJob, 'runRegenerationJob');
+      required(createRegenerationDependencies, 'createRegenerationDependencies');
+      const regenerationDependencies = await createRegenerationDependencies(persistedSnapshot);
+      result = await runRegenerationJob({
+        claim,
+        run,
+        runtimeSnapshot: persistedSnapshot,
+        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+      }, regenerationDependencies);
+    } else {
+      const jobDependencies = typeof createPipelineDependencies === 'function'
+        ? await createPipelineDependencies(persistedSnapshot)
+        : pipelineDependencies;
+      result = await runPipeline({
+        ...(claim.payload_json || {}),
+        runId: run.id,
+        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {}),
+        currentDate: berlinDateKey(now(), jobTimezone)
+      }, jobDependencies);
+    }
     if (!['completed', 'needs_manual_attention'].includes(result?.status)) {
       throw new Error('Content-Agent-Pipeline lieferte keinen terminalen Status.');
     }
@@ -256,6 +278,13 @@ export function createProductionRuntime({
       recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database)
     };
   }
+  function createRegenerationDependencies(snapshot = null) {
+    const dependencies = createPipelineDependencies(snapshot);
+    return {
+      ...dependencies,
+      draftRepository: modules.createDraftRegenerationRepository(database)
+    };
+  }
   const snapshotRuntimeAvailable = typeof modules.settingsRepository?.getContentAgentSettings === 'function'
     && typeof modules.runtimeConfigService?.resolveContentAgentRuntimeConfig === 'function'
     && typeof modules.runtimeConfigService?.createContentAgentJobSnapshot === 'function';
@@ -267,10 +296,12 @@ export function createProductionRuntime({
       getSettings: () => modules.settingsRepository.getContentAgentSettings(database),
       resolveRuntimeConfig: modules.runtimeConfigService.resolveContentAgentRuntimeConfig,
       createJobSnapshot: modules.runtimeConfigService.createContentAgentJobSnapshot,
-      createPipelineDependencies
+      createPipelineDependencies,
+      createRegenerationDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
     runPipeline: modules.runDraftPipeline,
+    runRegenerationJob: modules.runDraftRegenerationJob,
     pipelineDependencies
   });
   const worker = createContentWorker({
@@ -369,7 +400,8 @@ export async function loadProductionModules() {
     pricingServiceModule,
     databaseModule,
     runtimeConfigService,
-    schedulerService
+    schedulerService,
+    regenerationService
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -390,7 +422,8 @@ export async function loadProductionModules() {
     import('../services/pricingService.js'),
     import('../util/db.js'),
     import('../services/contentAgent/runtimeConfigService.js'),
-    import('../services/contentAgent/contentSchedulerService.js')
+    import('../services/contentAgent/contentSchedulerService.js'),
+    import('../services/contentAgent/draftRegenerationService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -412,7 +445,9 @@ export async function loadProductionModules() {
     createPricingService: pricingServiceModule.createPricingService,
     database: databaseModule.default,
     runtimeConfigService,
-    schedulerService
+    schedulerService,
+    runDraftRegenerationJob: regenerationService.runDraftRegenerationJob,
+    createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository
   };
 }
 

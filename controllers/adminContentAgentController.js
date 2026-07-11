@@ -140,6 +140,52 @@ export function createAdminContentAgentController(dependencies) {
     blogPostPresentation
   } = dependencies;
 
+  async function enqueueRegeneration(jobType, req) {
+    const postId = positiveId(req.params.id);
+    const settings = await settingsRepository.getSettings();
+    if (runtimeConfig.enabled !== true || settings.agent_enabled !== true) {
+      throw Object.assign(new Error('Content-Agent deaktiviert.'), {
+        code: 'CONTENT_AGENT_DISABLED'
+      });
+    }
+    if (typeof draftService?.getDraftForReview !== 'function') {
+      throw Object.assign(new Error('Entwurfsprüfung nicht verfügbar.'), {
+        code: 'CONTENT_DRAFT_NOT_FOUND'
+      });
+    }
+    await draftService.getDraftForReview(postId);
+    const job = await jobRepository.enqueueJob({
+      jobType,
+      idempotencyKey: `${jobType}:${postId}:${randomUUID()}`,
+      payload: {
+        source: 'admin_regeneration',
+        post_id: postId,
+        forced_mode: 'review'
+      },
+      maxAttempts: Math.min(
+        Number(settings.maximum_attempts),
+        Number(runtimeConfig.maxAttempts)
+      )
+    });
+    if (!job) {
+      throw Object.assign(new Error('Content-Agent deaktiviert.'), {
+        code: 'CONTENT_AGENT_DISABLED'
+      });
+    }
+    return job;
+  }
+
+  function regenerationAction(jobType, req, res, next) {
+    return actionCapability({
+      capability: { enqueue: () => enqueueRegeneration(jobType, req) },
+      method: 'enqueue',
+      args: [],
+      redirect: `/admin/content-agent/drafts/${req.params.id}/edit?queued=1`,
+      res,
+      next
+    });
+  }
+
   return {
     async overviewPage(req, res, next) {
       try {
@@ -364,36 +410,19 @@ export function createAdminContentAgentController(dependencies) {
     },
 
     regenerateImageAction(req, res, next) {
-      return actionCapability({
-        capability: draftService,
-        method: 'regenerateImage',
-        args: () => [{ postId: positiveId(req.params.id), admin: adminFromRequest(req) }],
-        redirect: `/admin/content-agent/drafts/${req.params.id}/edit?queued=1`,
-        res,
-        next
-      });
+      return regenerationAction('regenerate_image', req, res, next);
     },
 
     regenerateFaqAction(req, res, next) {
-      return actionCapability({
-        capability: draftService,
-        method: 'regenerateFaq',
-        args: () => [{ postId: positiveId(req.params.id), admin: adminFromRequest(req) }],
-        redirect: `/admin/content-agent/drafts/${req.params.id}/edit?queued=1`,
-        res,
-        next
-      });
+      return regenerationAction('regenerate_faq', req, res, next);
+    },
+
+    regenerateMetadataAction(req, res, next) {
+      return regenerationAction('regenerate_metadata', req, res, next);
     },
 
     regenerateDraftAction(req, res, next) {
-      return actionCapability({
-        capability: draftService,
-        method: 'regenerateDraft',
-        args: () => [{ postId: positiveId(req.params.id), admin: adminFromRequest(req) }],
-        redirect: `/admin/content-agent/drafts/${req.params.id}/edit?queued=1`,
-        res,
-        next
-      });
+      return regenerationAction('regenerate_article', req, res, next);
     },
 
     enqueueAuditAction(req, res, next) {

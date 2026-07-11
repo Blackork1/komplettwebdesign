@@ -52,6 +52,68 @@ test('manuelle Erstellung erzwingt admin_manual und review', async () => {
   assert.equal(res.redirectedTo, '/admin/content-agent?created=1');
 });
 
+test('vier getrennte Regenerationsaktionen enqueuen minimale Reviewjobs mit Hardcap', async () => {
+  const jobs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    runtimeConfig: { enabled: true, maxAttempts: 3, autoPublishEnabled: false },
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: true, maximum_attempts: 5 }; }
+    },
+    draftService: {
+      async getDraftForReview(postId) { return { post: { id: postId, published: false } }; }
+    },
+    jobRepository: {
+      async enqueueJob(input) { jobs.push(input); return { id: jobs.length }; }
+    }
+  }));
+  const actions = [
+    ['regenerateDraftAction', 'regenerate_article'],
+    ['regenerateMetadataAction', 'regenerate_metadata'],
+    ['regenerateFaqAction', 'regenerate_faq'],
+    ['regenerateImageAction', 'regenerate_image']
+  ];
+
+  for (const [action, jobType] of actions) {
+    const res = response();
+    await controller[action]({
+      params: { id: '19' },
+      session: { user: { id: 7, username: 'admin' } }
+    }, res, assert.fail);
+    const job = jobs.at(-1);
+    assert.equal(job.jobType, jobType);
+    assert.match(job.idempotencyKey, new RegExp(`^${jobType}:19:[0-9a-f-]+$`, 'i'));
+    assert.deepEqual(job.payload, {
+      source: 'admin_regeneration',
+      post_id: 19,
+      forced_mode: 'review'
+    });
+    assert.equal(job.maxAttempts, 3);
+    assert.equal(res.redirectedTo, '/admin/content-agent/drafts/19/edit?queued=1');
+  }
+  assert.equal(new Set(jobs.map(({ idempotencyKey }) => idempotencyKey)).size, 4);
+});
+
+test('Regeneration ist bei operativer Pause oder technischem Not-Aus gesperrt', async () => {
+  for (const { runtimeConfig, settings } of [
+    { runtimeConfig: { enabled: true, maxAttempts: 3 }, settings: { agent_enabled: false } },
+    { runtimeConfig: { enabled: false, maxAttempts: 3 }, settings: { agent_enabled: true } }
+  ]) {
+    let enqueueCalls = 0;
+    const controller = createAdminContentAgentController(baseDependencies({
+      runtimeConfig,
+      settingsRepository: { async getSettings() { return settings; } },
+      draftService: { async getDraftForReview() { return {}; } },
+      jobRepository: { async enqueueJob() { enqueueCalls += 1; } }
+    }));
+    const res = response();
+
+    await controller.regenerateMetadataAction({ params: { id: '19' } }, res, assert.fail);
+
+    assert.equal(enqueueCalls, 0);
+    assert.equal(res.statusCode, 409);
+  }
+});
+
 test('ein deaktivierter Agent legt keinen manuellen Job an', async () => {
   let enqueueCalls = 0;
   const controller = createAdminContentAgentController(baseDependencies({

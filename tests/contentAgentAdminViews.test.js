@@ -161,6 +161,38 @@ test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmod
   }
 });
 
+test('Drafteditor bietet vier getrennte CSRF-Regenerationsformulare ohne Publishaktion', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
+    ...baseLocals,
+    draft: {
+      id: 19,
+      title: 'Entwurf',
+      shortDescription: 'Kurzbeschreibung',
+      slug: 'entwurf',
+      metaTitle: 'Meta Title mit ausreichend vielen Zeichen für Google',
+      metaDescription: 'Meta Description mit ausreichend vielen Zeichen für die sichere Vorschau und die spätere Suchdarstellung des Artikels.',
+      ogTitle: 'OG-Titel',
+      ogDescription: 'OG-Beschreibung',
+      imageAlt: 'Bildbeschreibung',
+      contentHtml: '<section><h2>Artikel</h2></section>',
+      faqJsonText: '[]'
+    },
+    saved: false,
+    queued: false
+  });
+
+  for (const action of [
+    'regenerate-article',
+    'regenerate-metadata',
+    'regenerate-faq',
+    'regenerate-image'
+  ]) {
+    assert.match(html, new RegExp(`method="post" action="/admin/content-agent/drafts/19/${action}"`));
+  }
+  assert.equal((html.match(/name="_csrf"/g) || []).length >= 5, true);
+  assert.doesNotMatch(html, /action="[^"]*\/publish"/);
+});
+
 test('Adminnavigation und Dashboard führen sichtbar zum Content-Agenten', async () => {
   const [header, adminDashboard] = await Promise.all([
     readFile(new URL('../views/partials/admin_header.ejs', import.meta.url), 'utf8'),

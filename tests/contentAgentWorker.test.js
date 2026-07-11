@@ -877,6 +877,65 @@ test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () 
   );
 });
 
+test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben Run und Snapshot', async () => {
+  const persistedSnapshot = {
+    operatingMode: 'review',
+    monthlyCostLimitEur: 25,
+    timezone: 'Europe/Berlin'
+  };
+  const calls = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    async getSettings() { return { settings_version: 9 }; },
+    resolveRuntimeConfig() { return { operatingMode: 'auto_publish', timezone: 'UTC' }; },
+    createJobSnapshot() { return { operatingMode: 'auto_publish', timezone: 'UTC' }; },
+    async createRun(input) {
+      calls.push(['run', input]);
+      return { id: 88, runtime_snapshot_json: persistedSnapshot, stage_results_json: {} };
+    },
+    async runPipeline() { assert.fail('Regenerationsjobs dürfen die Entwurfspipeline nicht ausführen'); },
+    createPipelineDependencies() { return { pipeline: true }; },
+    createRegenerationDependencies(snapshot) {
+      calls.push(['dependencies', snapshot]);
+      return { regeneration: true };
+    },
+    async runRegenerationJob(context, dependencies) {
+      calls.push(['regeneration', context, dependencies]);
+      return { status: 'completed', post: { id: 19, published: false } };
+    }
+  });
+
+  for (const jobType of [
+    'regenerate_article',
+    'regenerate_metadata',
+    'regenerate_faq',
+    'regenerate_image'
+  ]) {
+    const result = await handler({
+      id: 51,
+      job_type: jobType,
+      payload_json: { post_id: 19, forced_mode: 'review', source: 'admin_regeneration' }
+    });
+    assert.equal(result.post.published, false);
+  }
+
+  const dispatched = calls.filter(([type]) => type === 'regeneration');
+  assert.equal(dispatched.length, 4);
+  for (const [, context, dependencies] of dispatched) {
+    assert.equal(context.run.id, 88);
+    assert.equal(context.claim.payload_json.forced_mode, 'review');
+    assert.equal(context.runtimeSnapshot, persistedSnapshot);
+    assert.deepEqual(dependencies, { regeneration: true });
+  }
+});
+
+test('Produktionsmodule laden den Regenerationsservice ausschließlich verzögert', async () => {
+  const modules = await loadProductionModules();
+
+  assert.equal(typeof modules.runDraftRegenerationJob, 'function');
+  assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
+});
+
 test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Repositories oder Models', async () => {
   const workerSource = await readFile(new URL('../scripts/contentWorker.js', import.meta.url), 'utf8');
   const healthSource = await readFile(new URL('../scripts/contentWorkerHealthcheck.js', import.meta.url), 'utf8');
