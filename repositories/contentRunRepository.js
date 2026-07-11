@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { sanitizeErrorReport } from './contentErrorSanitizer.js';
 
 export async function createRun({
   jobId,
@@ -18,6 +19,7 @@ export async function createRun({
 
 export async function updateRunStage(runId, {
   currentStage,
+  stageId = currentStage,
   stageResult = {},
   tokenUsage = {},
   costEstimate = 0,
@@ -28,17 +30,30 @@ export async function updateRunStage(runId, {
     `
       UPDATE content_runs
       SET current_stage = $2,
-          stage_results_json = stage_results_json || $3::jsonb,
-          token_usage_json = token_usage_json || $4::jsonb,
-          cost_estimate = cost_estimate + $5,
-          openai_response_ids_json = openai_response_ids_json || to_jsonb($6::text[]),
-          selected_topic_id = COALESCE($7, selected_topic_id)
+          stage_results_json = CASE
+            WHEN stage_results_json ? $3 THEN stage_results_json
+            ELSE stage_results_json || jsonb_build_object($3, $4::jsonb)
+          END,
+          token_usage_json = CASE
+            WHEN stage_results_json ? $3 THEN token_usage_json
+            ELSE token_usage_json || $5::jsonb
+          END,
+          cost_estimate = CASE
+            WHEN stage_results_json ? $3 THEN cost_estimate
+            ELSE cost_estimate + $6
+          END,
+          openai_response_ids_json = CASE
+            WHEN stage_results_json ? $3 THEN openai_response_ids_json
+            ELSE openai_response_ids_json || to_jsonb($7::text[])
+          END,
+          selected_topic_id = COALESCE($8, selected_topic_id)
       WHERE id = $1
       RETURNING *
     `,
     [
       runId,
       currentStage,
+      stageId,
       stageResult,
       tokenUsage,
       costEstimate,
@@ -69,7 +84,7 @@ export async function finishRun(runId, {
       WHERE id = $1
       RETURNING *
     `,
-    [runId, status, postId, errorReport]
+    [runId, status, postId, sanitizeErrorReport(errorReport)]
   );
 
   return rows[0] || null;

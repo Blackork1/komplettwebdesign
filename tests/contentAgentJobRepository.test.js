@@ -119,6 +119,8 @@ test('claimNextJob rollt bei einem Claimfehler vor dem Release zurück', async (
 
 test('Queue-Schreibfunktionen sind parameterisiert und räumen Sperrfelder auf', async () => {
   const payload = { source: 'admin', options: { locale: 'de-DE' } };
+  const completedClaim = { id: 1, locked_by: 'worker-1', attempts: 2 };
+  const failedClaim = { id: 2, locked_by: 'worker-2', attempts: 1 };
   const db = createQueryRecorder([
     { rows: [{ id: 1, status: 'queued' }] },
     { rows: [{ id: 1, status: 'completed' }] },
@@ -132,8 +134,8 @@ test('Queue-Schreibfunktionen sind parameterisiert und räumen Sperrfelder auf',
     runAfter: '2026-07-11T09:00:00.000Z',
     maxAttempts: 4
   }, db);
-  await completeJob(1, db);
-  await failJob(2, new Error('API antwortet nicht'), db);
+  await completeJob(completedClaim, db);
+  await failJob(failedClaim, new Error('API antwortet nicht'), db);
 
   assert.match(db.calls[0].sql, /INSERT INTO content_jobs/i);
   assert.match(db.calls[0].sql, /ON CONFLICT \(idempotency_key\)/i);
@@ -141,23 +143,56 @@ test('Queue-Schreibfunktionen sind parameterisiert und räumen Sperrfelder auf',
   assert.match(db.calls[1].sql, /status = 'completed'/i);
   assert.match(db.calls[1].sql, /locked_at = NULL/i);
   assert.match(db.calls[1].sql, /locked_by = NULL/i);
+  assert.match(db.calls[1].sql, /WHERE id = \$1 AND locked_by = \$2 AND attempts = \$3 AND status = 'running'/i);
+  assert.deepEqual(db.calls[1].params, [1, 'worker-1', 2]);
   assert.match(db.calls[2].sql, /status = 'failed'/i);
-  assert.match(db.calls[2].sql, /last_error = \$2/i);
-  assert.deepEqual(db.calls[2].params, [2, 'API antwortet nicht']);
+  assert.match(db.calls[2].sql, /last_error = \$4/i);
+  assert.match(db.calls[2].sql, /WHERE id = \$1 AND locked_by = \$2 AND attempts = \$3 AND status = 'running'/i);
+  assert.deepEqual(db.calls[2].params, [2, 'worker-2', 1, 'API antwortet nicht']);
+});
+
+test('terminale Jobupdates akzeptieren keine veraltete oder unvollständige Lease', async () => {
+  const staleClaim = { id: 7, locked_by: 'worker-alt', attempts: 1 };
+  const db = createQueryRecorder([{ rows: [] }, { rows: [] }]);
+
+  assert.equal(await completeJob(staleClaim, db), null);
+  assert.equal(await failJob(staleClaim, new Error('veralteter Worker'), db), null);
+
+  for (const call of db.calls) {
+    assert.match(call.sql, /WHERE id = \$1 AND locked_by = \$2 AND attempts = \$3 AND status = 'running'/i);
+    assert.match(call.sql, /RETURNING \*/i);
+  }
+  await assert.rejects(completeJob(7, db), /vollständiger Lease-Claim/i);
+});
+
+test('enqueueJob begrenzt maxAttempts auf mindestens einen Versuch', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 8, max_attempts: 1 }] }]);
+
+  await enqueueJob({
+    jobType: 'generate_manual_draft',
+    idempotencyKey: 'manual:min-attempts',
+    maxAttempts: 0
+  }, db);
+
+  assert.equal(db.calls[0].params[4], 1);
 });
 
 test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 9, status: 'failed' }] }]);
+  const claim = { id: 9, locked_by: 'worker-1', attempts: 3 };
   const error = new Error(
-    'OpenAI sk-test-1234567890 und postgres://user:secret@db/app\n'
+    'OpenAI sk-test-1234567890, {"api_key":"json-api-secret"}, '
+      + 'Authorization: Basic dXNlcjpwYXNzd29ydA==, '
+      + 'Authorization: Bearer bearer-secret und postgres://user:db-passwort@db/app\n'
       + '    at internerStack (/srv/worker.js:42:1)'
   );
 
-  await failJob(9, error, db);
+  await failJob(claim, error, db);
 
-  const storedError = db.calls[0].params[1];
+  const storedError = db.calls[0].params[3];
   assert.doesNotMatch(storedError, /sk-test/i);
-  assert.doesNotMatch(storedError, /secret/i);
+  assert.doesNotMatch(storedError, /json-api-secret|dXNlcjpwYXNzd29ydA|bearer-secret|db-passwort/i);
+  assert.doesNotMatch(storedError, /Authorization:\s*(?:Basic|Bearer)\s+[^\[]/i);
   assert.doesNotMatch(storedError, /internerStack/i);
   assert.ok(storedError.length <= 2000);
 });
@@ -182,7 +217,7 @@ test('recoverExpiredJobs trennt Wiederholungen von endgültigen Fehlern und lös
 });
 
 test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zurück', async () => {
-  const stageResult = { review: { score: 91 } };
+  const stageResult = { score: 91 };
   const tokenUsage = { input_tokens: 120, output_tokens: 80 };
   const responseIds = ['resp_1'];
   const errorReport = { code: 'quality_gate' };
@@ -196,6 +231,7 @@ test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zur�
   assert.equal(await createRun({ jobId: 7 }, db), rows[0]);
   assert.equal(await updateRunStage(21, {
     currentStage: 'review',
+    stageId: 'review',
     stageResult,
     tokenUsage,
     costEstimate: 0.12,
@@ -208,11 +244,82 @@ test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zur�
     errorReport
   }, db), rows[2]);
 
-  assert.equal(db.calls[1].params[2], stageResult);
-  assert.equal(db.calls[1].params[3], tokenUsage);
-  assert.equal(db.calls[1].params[5], responseIds);
-  assert.match(db.calls[1].sql, /to_jsonb\(\$6::text\[\]\)/i);
-  assert.equal(db.calls[2].params[3], errorReport);
+  assert.equal(db.calls[1].params[2], 'review');
+  assert.equal(db.calls[1].params[3], stageResult);
+  assert.equal(db.calls[1].params[4], tokenUsage);
+  assert.equal(db.calls[1].params[6], responseIds);
+  assert.match(db.calls[1].sql, /to_jsonb\(\$7::text\[\]\)/i);
+  assert.deepEqual(db.calls[2].params[3], errorReport);
+});
+
+test('updateRunStage verbucht dieselbe stageId höchstens einmal', async () => {
+  const persisted = {
+    id: 25,
+    current_stage: 'review',
+    cost_estimate: '0.120000',
+    openai_response_ids_json: ['resp_1'],
+    stage_results_json: { 'review:initial': { score: 91 } }
+  };
+  const db = createQueryRecorder([
+    { rows: [persisted] },
+    { rows: [persisted] }
+  ]);
+  const update = {
+    currentStage: 'review',
+    stageId: 'review:initial',
+    stageResult: { score: 91 },
+    tokenUsage: { input_tokens: 120, output_tokens: 80 },
+    costEstimate: 0.12,
+    responseIds: ['resp_1']
+  };
+
+  assert.equal(await updateRunStage(25, update, db), persisted);
+  assert.equal(await updateRunStage(25, update, db), persisted);
+
+  for (const call of db.calls) {
+    assert.equal(call.params[2], 'review:initial');
+    assert.match(call.sql, /stage_results_json \? \$3/i);
+    assert.match(call.sql, /jsonb_build_object\(\$3, \$4::jsonb\)/i);
+    assert.match(call.sql, /cost_estimate = CASE WHEN stage_results_json \? \$3 THEN cost_estimate ELSE cost_estimate \+ \$6 END/i);
+    assert.match(call.sql, /openai_response_ids_json = CASE WHEN stage_results_json \? \$3 THEN openai_response_ids_json ELSE openai_response_ids_json \|\| to_jsonb\(\$7::text\[\]\) END/i);
+  }
+});
+
+test('finishRun verwirft unbekannte und verschachtelte Secrets aus Fehlerberichten', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 22, status: 'failed' }] }]);
+  const errorReport = {
+    message: 'OpenAI {"api_key":"top-json-secret"} Authorization: Basic dXNlcjpwYXNz',
+    code: 'OPENAI_ERROR',
+    stage: 'article_generation',
+    api_key: 'top-secret',
+    stack: 'at internerStack (/srv/worker.js:42:1)',
+    credentials: {
+      password: 'nested-password',
+      token: 'nested-token'
+    },
+    issues: [
+      {
+        message: 'Authorization: Bearer issue-bearer und postgres://user:issue-db-pass@db/app',
+        code: 'UPSTREAM_ERROR',
+        stage: 'request',
+        api_key: 'issue-api-key',
+        stack: 'at issueStack (/srv/worker.js:17:1)',
+        nested: { secret: 'deep-secret' }
+      },
+      'API-Key: sk-issue-1234567890'
+    ]
+  };
+
+  await finishRun(22, { status: 'failed', errorReport }, db);
+
+  const storedReport = db.calls[0].params[3];
+  assert.deepEqual(Object.keys(storedReport).sort(), ['code', 'issues', 'message', 'stage']);
+  assert.deepEqual(Object.keys(storedReport.issues[0]).sort(), ['code', 'message', 'stage']);
+  const serialized = JSON.stringify(storedReport);
+  assert.doesNotMatch(serialized, /top-json-secret|dXNlcjpwYXNz|top-secret|nested-password|nested-token/i);
+  assert.doesNotMatch(serialized, /issue-bearer|issue-db-pass|issue-api-key|issueStack|deep-secret|sk-issue/i);
+  assert.doesNotMatch(serialized, /"stack"|"credentials"|"password"/i);
+  assert.doesNotMatch(serialized, /ENTFERNT\]\s+ENTFERNT/i);
 });
 
 test('Themenfunktionen speichern JSON-Arrays als Parameter und markieren die Nutzung', async () => {

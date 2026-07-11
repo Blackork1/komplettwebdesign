@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
@@ -20,18 +21,26 @@ const CLAIM_NEXT_JOB_SQL = `
   RETURNING job.*;
 `;
 
-const REDACTED = '[ZUGANGSDATEN ENTFERNT]';
+function leaseParameters(claim) {
+  if (
+    !claim
+    || typeof claim !== 'object'
+    || claim.id === null
+    || claim.id === undefined
+    || typeof claim.locked_by !== 'string'
+    || claim.locked_by.length === 0
+    || !Number.isInteger(claim.attempts)
+    || claim.attempts < 1
+  ) {
+    throw new TypeError('Für den Jobabschluss ist ein vollständiger Lease-Claim erforderlich.');
+  }
 
-function sanitizeErrorMessage(error) {
-  const rawMessage = error instanceof Error ? error.message : String(error ?? 'Unbekannter Fehler');
-  const [message] = rawMessage.split(/\r?\n/, 1);
+  return [claim.id, claim.locked_by, claim.attempts];
+}
 
-  return message
-    .replace(/\bsk-[a-z0-9_-]{8,}\b/gi, REDACTED)
-    .replace(/\b(postgres(?:ql)?):\/\/([^:\s/@]+):([^@\s/]+)@/gi, `$1://$2:${REDACTED}@`)
-    .replace(/\b(authorization\s*:\s*bearer)\s+[^\s,;]+/gi, `$1 ${REDACTED}`)
-    .replace(/\b(password|passwd|secret|api[_-]?key)\s*[=:]\s*[^\s,;]+/gi, `$1=${REDACTED}`)
-    .slice(0, 2000);
+function normalizeMaxAttempts(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 3;
 }
 
 export async function enqueueJob({
@@ -55,7 +64,7 @@ export async function enqueueJob({
       SET idempotency_key = content_jobs.idempotency_key
       RETURNING content_jobs.*
     `,
-    [jobType, idempotencyKey, payload, runAfter, maxAttempts]
+    [jobType, idempotencyKey, payload, runAfter, normalizeMaxAttempts(maxAttempts)]
   );
 
   return rows[0] || null;
@@ -85,7 +94,8 @@ export async function claimNextJob(workerId, db = pool) {
   }
 }
 
-export async function completeJob(jobId, db = pool) {
+export async function completeJob(claim, db = pool) {
+  const lease = leaseParameters(claim);
   const { rows } = await db.query(
     `
       UPDATE content_jobs
@@ -96,28 +106,35 @@ export async function completeJob(jobId, db = pool) {
           finished_at = NOW(),
           updated_at = NOW()
       WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
       RETURNING *
     `,
-    [jobId]
+    lease
   );
 
   return rows[0] || null;
 }
 
-export async function failJob(jobId, error, db = pool) {
+export async function failJob(claim, error, db = pool) {
+  const lease = leaseParameters(claim);
   const { rows } = await db.query(
     `
       UPDATE content_jobs
       SET status = 'failed',
-          last_error = $2,
+          last_error = $4,
           locked_at = NULL,
           locked_by = NULL,
           finished_at = NOW(),
           updated_at = NOW()
       WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
       RETURNING *
     `,
-    [jobId, sanitizeErrorMessage(error)]
+    [...lease, sanitizeErrorMessage(error)]
   );
 
   return rows[0] || null;
