@@ -9,6 +9,9 @@
     "dev": "node scripts/dev.js",
     "backup:postgres": "node scripts/backupPostgres.js",
     "migrate:content-agent": "node scripts/runContentAgentMigration.js",
+    "start:content-worker": "node scripts/contentWorker.js",
+    "content-agent:dry-run": "node scripts/contentAgentDryRun.js",
+    "content-agent:healthcheck": "node scripts/contentWorkerHealthcheck.js",
     "build:css": "node scripts/buildCssAssets.js",
     "watch:css": "node scripts/buildCssAssets.js --watch",
     "test": "node --test tests/*.test.js"
