@@ -177,8 +177,17 @@ function createDependencies(overrides = {}) {
       }
     },
     costService: {
-      async reserveMonthlyBudget(input) { budgetReservations.push(input); return { status: 'reserved' }; },
+      async reserveMonthlyBudget(input) {
+        budgetReservations.push(input);
+        return {
+          created: true,
+          status: 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
       async settleMonthlyBudget(input) { budgetSettlements.push(input); return { status: 'settled' }; },
+      async getPersistedStageResult() { return null; },
       estimateTextCost() { return 0.01; }
     },
     validateArticle(value) {
@@ -447,6 +456,97 @@ test('Bildfactory meldet Stream- und Cleanupfehler sicher statt sie zu verschluc
       return true;
     }
   );
+});
+
+test('Bildfactory führt synchrone upload_stream-Fehler durch denselben Cleanup-Auditpfad', async () => {
+  const destroyed = [];
+  const service = createContentImageService({
+    config: { imageModel: 'gpt-image-test' },
+    idFactory: () => 'sync-setup',
+    openai: { images: { async generate() { return { data: [{ b64_json: Buffer.from('bild').toString('base64') }] }; } } },
+    cloudinary: {
+      uploader: {
+        upload_stream() { throw new Error('Synchroner Setupfehler'); },
+        async destroy(publicId) { destroyed.push(publicId); return { result: 'ok' }; }
+      }
+    }
+  });
+
+  await assert.rejects(
+    service.generateAndUploadImage({ prompt: 'Szene', filename: 'bild.webp', runId: 45 }),
+    (error) => {
+      assert.equal(error instanceof ContentImageError, true);
+      assert.equal(error.audit.upload.status, 'failed');
+      assert.equal(error.audit.cleanup.status, 'completed');
+      assert.doesNotMatch(JSON.stringify(error.audit), /Setupfehler/);
+      return true;
+    }
+  );
+  assert.deepEqual(destroyed, ['blog_images/bild-run-45-sync-setup']);
+});
+
+test('Bildfactory führt synchrone stream.end-Fehler durch denselben Cleanup-Auditpfad', async () => {
+  const destroyed = [];
+  const service = createContentImageService({
+    config: { imageModel: 'gpt-image-test' },
+    idFactory: () => 'sync-end',
+    openai: { images: { async generate() { return { data: [{ b64_json: Buffer.from('bild').toString('base64') }] }; } } },
+    cloudinary: {
+      uploader: {
+        upload_stream() {
+          return { on() { return this; }, end() { throw new Error('Synchroner Endfehler'); } };
+        },
+        async destroy(publicId) { destroyed.push(publicId); return { result: 'ok' }; }
+      }
+    }
+  });
+
+  await assert.rejects(
+    service.generateAndUploadImage({ prompt: 'Szene', filename: 'bild.webp', runId: 46 }),
+    (error) => {
+      assert.equal(error instanceof ContentImageError, true);
+      assert.equal(error.audit.upload.status, 'failed');
+      assert.equal(error.audit.cleanup.status, 'completed');
+      assert.doesNotMatch(JSON.stringify(error.audit), /Endfehler/);
+      return true;
+    }
+  );
+  assert.deepEqual(destroyed, ['blog_images/bild-run-46-sync-end']);
+});
+
+test('deleteImage akzeptiert nur explizite ok- oder not-found-Ergebnisse', async () => {
+  for (const destroyResult of [undefined, {}, { result: 'unknown' }]) {
+    const service = createContentImageService({
+      config: { imageModel: 'gpt-image-test' },
+      openai: { images: { async generate() { throw new Error('nicht benötigt'); } } },
+      cloudinary: {
+        uploader: {
+          upload_stream() { throw new Error('nicht benötigt'); },
+          async destroy() { return destroyResult; }
+        }
+      }
+    });
+
+    await assert.rejects(service.deleteImage({ publicId: 'blog_images/explizit' }), (error) => {
+      assert.equal(error.code, 'IMAGE_CLEANUP_FAILED');
+      assert.equal(error.audit.cleanup.status, 'failed');
+      return true;
+    });
+  }
+
+  for (const explicit of [{ result: 'ok' }, { result: 'not found' }]) {
+    const service = createContentImageService({
+      config: { imageModel: 'gpt-image-test' },
+      openai: { images: { async generate() { throw new Error('nicht benötigt'); } } },
+      cloudinary: {
+        uploader: {
+          upload_stream() { throw new Error('nicht benötigt'); },
+          async destroy() { return explicit; }
+        }
+      }
+    });
+    assert.equal((await service.deleteImage({ publicId: 'blog_images/explizit' })).status, 'completed');
+  }
 });
 
 test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder und speichert atomar', async () => {
@@ -1093,4 +1193,330 @@ test('Budgetreservierung umfasst Quellen-, Repair- und erneute Reviewstufen', as
     harness.budgetSettlements.map(({ stageId }) => stageId),
     harness.budgetReservations.map(({ stageId }) => stageId)
   );
+});
+
+test('bestehende reservierte Textstufe ruft den Provider nicht erneut auf', async () => {
+  let providerCalls = 0;
+  const harness = createDependencies({
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      async createTopicCandidates() { providerCalls += 1; return operation({ candidates: [topic] }, 'resp-neu')(); }
+    },
+    costService: {
+      async reserveMonthlyBudget() {
+        return {
+          created: false,
+          status: 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: 'budget:2026-07:topic_research'
+        };
+      },
+      async settleMonthlyBudget() { throw new Error('darf nicht abrechnen'); },
+      async getPersistedStageResult() { return null; },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 201 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_recovery_reserved');
+  assert.equal(providerCalls, 0);
+  assert.equal(harness.imageCalls.length, 0);
+});
+
+test('bestehende abgerechnete Textstufe ohne dauerhaftes Ergebnis stoppt sicher', async () => {
+  let providerCalls = 0;
+  const harness = createDependencies({
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      async createTopicCandidates() { providerCalls += 1; return operation({ candidates: [topic] }, 'resp-neu')(); }
+    },
+    costService: {
+      async reserveMonthlyBudget() {
+        return {
+          created: false,
+          status: 'settled',
+          reservationMonth: '2026-07',
+          reservationKey: 'budget:2026-07:topic_research',
+          actualCost: 0.01
+        };
+      },
+      async settleMonthlyBudget() { throw new Error('darf nicht abrechnen'); },
+      async getPersistedStageResult() { return null; },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 202 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_recovery_result_missing');
+  assert.equal(providerCalls, 0);
+});
+
+test('abgerechnete Textstufe verwendet nur ein dauerhaftes vertragsgültiges Ergebnis', async () => {
+  let providerCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() { providerCalls += 1; return operation({ candidates: [topic] }, 'resp-neu')(); }
+    },
+    costService: {
+      async reserveMonthlyBudget(input) {
+        if (input.stageId === 'topic_research') {
+          return {
+            created: false,
+            status: 'settled',
+            reservationMonth: '2026-07',
+            reservationKey: 'budget:2026-07:topic_research',
+            actualCost: 0.01
+          };
+        }
+        return {
+          created: true,
+          status: 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult({ stageId }) {
+        if (stageId !== 'topic_research') return null;
+        return {
+          value: { candidates: [topic] },
+          responseId: 'resp-persisted',
+          usage,
+          promptVersion: '2026-07-10.1'
+        };
+      },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 203 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(providerCalls, 0);
+});
+
+test('bestehende Bildreservierung verhindert einen erneuten Bildprovideraufruf', async () => {
+  const harness = createDependencies({
+    costService: {
+      async reserveMonthlyBudget(input) {
+        return {
+          created: input.stageId !== 'image_generation',
+          status: 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult() { return null; },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 204 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_recovery_reserved');
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+});
+
+test('abgerechnete Bildstufe nutzt ausschließlich dauerhaftes Uploadergebnis', async () => {
+  const harness = createDependencies({
+    costService: {
+      async reserveMonthlyBudget(input) {
+        return {
+          created: input.stageId !== 'image_generation',
+          status: input.stageId === 'image_generation' ? 'settled' : 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'image_generation') return { status: 'completed', costIncurred: true };
+        if (stageId === 'cloudinary_upload') {
+          return {
+            status: 'completed',
+            imageUrl: 'https://cdn.example.test/persisted.webp',
+            publicId: 'blog_images/persisted',
+            bytes: 123
+          };
+        }
+        return null;
+      },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 205 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts[0].post.hero_public_id, 'blog_images/persisted');
+});
+
+test('Pricing-Integrity umfasst Kategorie, SEO, Lead, FAQ und sämtliche Bilddaten', async () => {
+  const cases = [
+    { category: 'Paket für 1 299 Euro' },
+    { seo: { ...article.seo, primaryKeyword: 'Website für 799&euro;' } },
+    { lead: { ...article.lead, businessGoal: 'Projektwert 799&#8364;' } },
+    { faqJson: [{ question: 'Preis?', answer: 'Der Aufwand liegt bei 1.299,00&nbsp;Euro.' }] },
+    { imagePrompt: 'Arbeitsszene für ein Budget von 799 Euro' },
+    { imageAlt: 'Projekt im Wert von 799&euro;' },
+    { imageFilename: 'projekt-799-euro.webp' }
+  ];
+
+  for (const [index, overrides] of cases.entries()) {
+    const harness = createDependencies({
+      config: { ...createDependencies().dependencies.config, maxRevisions: 0 },
+      openaiService: {
+        ...createDependencies().dependencies.openaiService,
+        generateArticle: operation({ ...article, ...overrides }, `resp-pricing-field-${index}`)
+      }
+    });
+    const result = await runDraftPipeline({ runId: 220 + index }, harness.dependencies);
+    assert.equal(result.status, 'needs_manual_attention', `Pricingfall ${index} wurde nicht blockiert.`);
+    assert.equal(harness.createdDrafts.length, 0);
+  }
+});
+
+test('statischer Preis im späteren seo_brief_json stoppt vor dem Writer', async () => {
+  let articleCalls = 0;
+  const harness = createDependencies({
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      createSeoBrief: operation({ ...seoBrief, businessGoal: 'Projekt für 1 299 Euro' }, 'resp-priced-brief'),
+      async generateArticle() { articleCalls += 1; return operation(article, 'resp-article')(); }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 230 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'pricing_integrity_failed');
+  assert.equal(articleCalls, 0);
+});
+
+test('Review-Risiko staticPrices blockiert auch passed=true vor und nach Repair', async () => {
+  let reviewCalls = 0;
+  let repairCalls = 0;
+  const riskyReview = { ...review, passed: true, score: 95, risks: { ...review.risks, staticPrices: true } };
+  const harness = createDependencies({
+    config: { ...createDependencies().dependencies.config, maxRevisions: 1 },
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      async reviewArticle() { reviewCalls += 1; return operation(riskyReview, `resp-risky-review-${reviewCalls}`)(); },
+      async repairArticle() { repairCalls += 1; return operation(article, 'resp-risky-repair')(); }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 231 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(reviewCalls, 2);
+  assert.equal(repairCalls, 1);
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+});
+
+test('Cleanup-Auditfehler verdeckt den Draftfehler nicht und Runabschluss wird versucht', async () => {
+  for (const cleanupFails of [false, true]) {
+    const draftError = new Error(`Primärer Draftfehler ${cleanupFails}`);
+    const finishAttempts = [];
+    const harness = createDependencies({
+      draftRepository: { async createAIDraft() { throw draftError; } },
+      imageService: {
+        ...createDependencies().dependencies.imageService,
+        async deleteImage({ publicId }) {
+          if (cleanupFails) {
+            throw new ContentImageError('Cleanup fehlgeschlagen.', {
+              code: 'IMAGE_CLEANUP_FAILED',
+              audit: { cleanup: { status: 'failed', publicId, code: 'IMAGE_CLEANUP_FAILED' } }
+            });
+          }
+          return { status: 'completed', publicId };
+        }
+      },
+      runRepository: {
+        async updateRunStage(runId, update) {
+          if (update.stageId === 'image_cleanup') throw new Error('Sekundärer Auditfehler');
+          return { runId, ...update };
+        },
+        async finishRun(runId, update) { finishAttempts.push({ runId, ...update }); return update; }
+      }
+    });
+
+    await assert.rejects(runDraftPipeline({ runId: cleanupFails ? 241 : 240 }, harness.dependencies), draftError);
+    assert.equal(finishAttempts.some(({ status }) => status === 'failed'), true);
+    assert.equal(Array.isArray(draftError.auditWarnings), true);
+    assert.equal(draftError.auditWarnings.some(({ code }) => code === 'STAGE_AUDIT_FAILED'), true);
+  }
+});
+
+test('Settlement- und Bildauditfehler verdecken den primären Providerfehler nicht', async () => {
+  const providerError = new ContentImageError('Primärer Providerfehler.', {
+    code: 'IMAGE_UPLOAD_FAILED',
+    audit: {
+      imageGeneration: { status: 'completed', costIncurred: true },
+      upload: { status: 'failed', code: 'IMAGE_UPLOAD_FAILED' },
+      cleanup: { status: 'failed', code: 'IMAGE_CLEANUP_FAILED' }
+    }
+  });
+  const finishAttempts = [];
+  const base = createDependencies();
+  const harness = createDependencies({
+    imageService: {
+      ...base.dependencies.imageService,
+      async generateAndUploadImage() { throw providerError; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async settleMonthlyBudget(input) {
+        if (input.stageId === 'image_generation') throw new Error('Sekundärer Settlementfehler');
+        return { status: 'settled' };
+      }
+    },
+    runRepository: {
+      async updateRunStage(runId, update) {
+        if (['image_generation', 'cloudinary_upload', 'image_cleanup'].includes(update.stageId)) {
+          throw new Error('Sekundärer Bildauditfehler');
+        }
+        return { runId, ...update };
+      },
+      async finishRun(runId, update) { finishAttempts.push({ runId, ...update }); return update; }
+    }
+  });
+
+  await assert.rejects(runDraftPipeline({ runId: 242 }, harness.dependencies), providerError);
+
+  assert.equal(finishAttempts.some(({ status }) => status === 'failed'), true);
+  assert.equal(providerError.auditWarnings.some(({ code }) => code === 'BUDGET_SETTLEMENT_FAILED'), true);
+  assert.equal(providerError.auditWarnings.some(({ code }) => code === 'STAGE_AUDIT_FAILED'), true);
+});
+
+test('Fehler nach Draft und completed-Stage liefert erfolgreichen Status mit Auditwarnung', async () => {
+  const finishCalls = [];
+  const harness = createDependencies({
+    runRepository: {
+      async updateRunStage(runId, update) { return { runId, ...update }; },
+      async finishRun(runId, update) {
+        finishCalls.push({ runId, ...update });
+        if (update.status === 'completed') throw new Error('Abschlusszeile nicht speicherbar');
+        return update;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 243 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
+  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed']);
 });

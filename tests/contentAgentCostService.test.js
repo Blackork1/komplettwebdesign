@@ -5,6 +5,7 @@ import {
   assertMonthlyBudget,
   estimateTextCost,
   getMonthlyContentCost,
+  getPersistedStageResult,
   reserveMonthlyBudget,
   settleMonthlyBudget
 } from '../services/contentAgent/contentCostService.js';
@@ -13,7 +14,14 @@ function createConcurrentBudgetDb(initialCosts = {}) {
   const runs = new Map(Object.entries(initialCosts).map(([id, cost]) => [Number(id), {
     id: Number(id),
     cost_estimate: Number(cost),
-    stage_results_json: {}
+    stage_results_json: Number(cost) > 0 ? {
+      [`budget:2026-07:existing-${id}`]: {
+        status: 'settled',
+        reservationMonth: '2026-07',
+        reservedCost: Number(cost),
+        actualCost: Number(cost)
+      }
+    } : {}
   }]));
   const events = [];
   let lockOwner = null;
@@ -44,8 +52,15 @@ function createConcurrentBudgetDb(initialCosts = {}) {
             const row = runs.get(Number(params[0]));
             return { rows: row ? [{ ...row, stage_results_json: { ...row.stage_results_json } }] : [] };
           }
-          if (/SELECT COALESCE\(SUM\(cost_estimate\)/i.test(normalized)) {
-            return { rows: [{ spent: Array.from(runs.values()).reduce((sum, run) => sum + run.cost_estimate, 0) }] };
+          if (/SELECT COALESCE\(SUM/i.test(normalized)) {
+            const monthValue = params.find((value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value))
+              || (params[0] instanceof Date ? params[0].toISOString().slice(0, 7) : '2026-07');
+            const spent = Array.from(runs.values()).reduce((sum, run) => sum + Object.entries(run.stage_results_json)
+              .filter(([key, value]) => key.startsWith(`budget:${monthValue}:`) && value.reservationMonth === monthValue)
+              .reduce((runSum, [, value]) => runSum + Number(
+                value.status === 'settled' ? value.actualCost : value.reservedCost
+              ), 0), 0);
+            return { rows: [{ spent }] };
           }
           if (/cost_estimate = cost_estimate \+ \$4/i.test(normalized)) {
             const [runId, reservationKey, reservation, amount] = params;
@@ -106,9 +121,9 @@ test('getMonthlyContentCost summiert Läufe ab dem ersten Kalendertag des Monats
   });
 
   assert.equal(spent, 12.3456);
-  assert.match(calls[0].sql, /SUM\(cost_estimate\)/i);
-  assert.match(calls[0].sql, /started_at >= \$1/i);
-  assert.equal(calls[0].params[0].toISOString(), '2026-07-01T00:00:00.000Z');
+  assert.match(calls[0].sql, /jsonb_each\(stage_results_json\)/i);
+  assert.doesNotMatch(calls[0].sql, /SUM\(cost_estimate\)|started_at/i);
+  assert.equal(calls[0].params.includes('2026-07'), true);
 });
 
 test('reserveMonthlyBudget serialisiert konkurrierende Reservierungen monatsbezogen', async () => {
@@ -131,6 +146,9 @@ test('reserveMonthlyBudget serialisiert konkurrierende Reservierungen monatsbezo
   assert.equal(db.runs.get(1).cost_estimate + db.runs.get(2).cost_estimate, 0.15);
   assert.equal(db.events.filter(({ sql }) => /pg_advisory_xact_lock/.test(sql)).length, 2);
   assert.equal(db.events.every(({ sql, params }) => !/pg_advisory_xact_lock/.test(sql) || params[0] === 'content-agent-budget:2026-07'), true);
+  const created = results.find(({ status }) => status === 'fulfilled').value;
+  assert.equal(created.created, true);
+  assert.equal(created.reservationMonth, '2026-07');
 });
 
 test('Reservierung und Abrechnung sind pro runId und stageId idempotent', async () => {
@@ -144,18 +162,128 @@ test('Reservierung und Abrechnung sind pro runId und stageId idempotent', async 
     db
   };
 
-  await reserveMonthlyBudget(reservation);
-  await reserveMonthlyBudget(reservation);
-  await settleMonthlyBudget({ runId: 7, stageId: 'review:1', actualCost: 0.1, now: reservation.now, db });
-  await settleMonthlyBudget({ runId: 7, stageId: 'review:1', actualCost: 0.1, now: reservation.now, db });
+  const created = await reserveMonthlyBudget(reservation);
+  const existing = await reserveMonthlyBudget(reservation);
+  await settleMonthlyBudget({
+    runId: 7,
+    stageId: 'review:1',
+    reservationMonth: created.reservationMonth,
+    actualCost: 0.1,
+    db
+  });
+  await settleMonthlyBudget({
+    runId: 7,
+    stageId: 'review:1',
+    reservationMonth: created.reservationMonth,
+    actualCost: 0.1,
+    db
+  });
 
   const run = db.runs.get(7);
   assert.equal(run.cost_estimate, 0.1);
-  assert.deepEqual(run.stage_results_json['budget:review:1'], {
+  assert.equal(created.created, true);
+  assert.equal(existing.created, false);
+  assert.deepEqual(run.stage_results_json['budget:2026-07:review:1'], {
     status: 'settled',
+    reservationMonth: '2026-07',
     reservedCost: 0.5,
     actualCost: 0.1
   });
+});
+
+test('Reservierung bleibt über Monatswechsel an Monat und Lock gebunden', async () => {
+  const db = createConcurrentBudgetDb({ 21: 0 });
+  const july = await reserveMonthlyBudget({
+    runId: 21,
+    stageId: 'article_generation',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-07-31T23:59:59.000Z'),
+    db
+  });
+  const august = await reserveMonthlyBudget({
+    runId: 21,
+    stageId: 'review',
+    estimatedCost: 0.25,
+    limit: 25,
+    now: new Date('2026-08-01T00:00:01.000Z'),
+    db
+  });
+  await settleMonthlyBudget({
+    runId: 21,
+    stageId: 'article_generation',
+    reservationMonth: july.reservationMonth,
+    actualCost: 0.1,
+    now: new Date('2026-09-01T00:00:00.000Z'),
+    db
+  });
+
+  assert.equal(july.reservationMonth, '2026-07');
+  assert.equal(august.reservationMonth, '2026-08');
+  assert.deepEqual(
+    db.events.filter(({ sql }) => /pg_advisory_xact_lock/.test(sql)).map(({ params }) => params[0]),
+    ['content-agent-budget:2026-07', 'content-agent-budget:2026-08', 'content-agent-budget:2026-07']
+  );
+  assert.equal(db.runs.get(21).stage_results_json['budget:2026-07:article_generation'].actualCost, 0.1);
+});
+
+test('dieselbe Stufe erhält beim Retry nach Monatswechsel keine zweite Reservierung', async () => {
+  const db = createConcurrentBudgetDb({ 23: 0 });
+  const july = await reserveMonthlyBudget({
+    runId: 23,
+    stageId: 'article_generation',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-07-31T23:59:59.000Z'),
+    db
+  });
+  const retriedInAugust = await reserveMonthlyBudget({
+    runId: 23,
+    stageId: 'article_generation',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-08-01T00:00:01.000Z'),
+    db
+  });
+
+  assert.equal(july.created, true);
+  assert.equal(retriedInAugust.created, false);
+  assert.equal(retriedInAugust.reservationMonth, '2026-07');
+  assert.equal(retriedInAugust.reservationKey, 'budget:2026-07:article_generation');
+  assert.equal(
+    Object.hasOwn(db.runs.get(23).stage_results_json, 'budget:2026-08:article_generation'),
+    false
+  );
+});
+
+test('ungültiges now wird vor dem Datenbank-Connect abgelehnt', async () => {
+  let connects = 0;
+  const db = { async connect() { connects += 1; throw new Error('darf nicht verbinden'); } };
+
+  await assert.rejects(reserveMonthlyBudget({
+    runId: 22,
+    stageId: 'review',
+    estimatedCost: 0.1,
+    limit: 25,
+    now: 'kein-datum',
+    db
+  }), /gültiges Datum/i);
+
+  assert.equal(connects, 0);
+});
+
+test('getPersistedStageResult liest ein dauerhaftes Stage-Ergebnis injizierbar', async () => {
+  const calls = [];
+  const expected = { value: { candidates: [] }, responseId: 'resp-1', usage: {}, promptVersion: 'v1' };
+  const db = {
+    async query(sql, params) {
+      calls.push({ sql: sql.replace(/\s+/g, ' ').trim(), params });
+      return { rows: [{ stage_result: expected }] };
+    }
+  };
+
+  assert.equal(await getPersistedStageResult({ runId: 7, stageId: 'topic_research', db }), expected);
+  assert.deepEqual(calls[0].params, [7, 'topic_research']);
 });
 
 test('ein Advisory-Lockfehler rollt zurück und gibt den Client frei', async () => {

@@ -7,7 +7,14 @@ const CURRENT_RISK_FIELDS = [
   'softwareVersionClaims'
 ];
 const PRICING_TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
-const STATIC_PRICE_PATTERN = /(?:\b\d[\d.,\s]*\s*(?:EUR|€)(?!\w)|\bEUR\s*\d[\d.,\s]*)/i;
+const STATIC_PRICE_PATTERN = /(?:\b\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*(?:EUR|Euro|€|&euro;|&#8364;)(?!\w)|\b(?:EUR|Euro)(?:[\s\u00A0_-]|&nbsp;|&#160;)*\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*)/i;
+
+class ManualAttentionStop extends Error {
+  constructor(result) {
+    super(result.code);
+    this.result = result;
+  }
+}
 
 function required(value, name) {
   if (!value) throw new TypeError(`Die Abhängigkeit ${name} wird benötigt.`);
@@ -83,18 +90,8 @@ function reviewRequiresSources(review) {
   return CURRENT_RISK_FIELDS.some((field) => review?.risks?.[field] === true);
 }
 
-function articlePricingText(article) {
-  return JSON.stringify({
-    title: article?.title,
-    shortDescription: article?.shortDescription,
-    metaTitle: article?.metaTitle,
-    metaDescription: article?.metaDescription,
-    ogTitle: article?.ogTitle,
-    ogDescription: article?.ogDescription,
-    contentHtml: article?.contentHtml,
-    faqJson: article?.faqJson,
-    imageAlt: article?.imageAlt
-  });
+function persistedPricingText(value) {
+  return JSON.stringify(value ?? {});
 }
 
 function extractPricingTokens(html, pricingContext) {
@@ -125,7 +122,7 @@ function pricingLockIssue(tokens) {
 
 function inspectPricing(article, pricingContext, lockedTokens, enforceLock) {
   const issues = [];
-  const persistedText = articlePricingText(article);
+  const persistedText = persistedPricingText(article);
   const tokens = extractPricingTokens(persistedText, pricingContext);
   if (STATIC_PRICE_PATTERN.test(persistedText) || article?.risk?.staticPrices === true) {
     issues.push(pricingIssue(
@@ -151,6 +148,32 @@ function inspectPricing(article, pricingContext, lockedTokens, enforceLock) {
   return { issues, knownTokens: tokens.known };
 }
 
+function isProviderEnvelope(value, stage) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!Object.hasOwn(value, 'value') || !value.usage || typeof value.usage !== 'object') return false;
+  if (typeof value.promptVersion !== 'string' || value.promptVersion.trim() === '') return false;
+  if (value.responseId != null && typeof value.responseId !== 'string') return false;
+
+  const payload = value.value;
+  if (stage === 'topic_research') return Array.isArray(payload?.candidates);
+  if (stage === 'source_research') return Array.isArray(payload) && inspectSourceReferences(payload, { required: true }).valid;
+  if (stage === 'seo_brief') return Boolean(payload && typeof payload === 'object' && payload.sourceRequirements);
+  if (stage === 'article_generation' || stage === 'repair') {
+    return Boolean(payload && typeof payload.title === 'string' && typeof payload.contentHtml === 'string');
+  }
+  if (stage === 'review') {
+    return Boolean(payload && typeof payload.passed === 'boolean' && Number.isFinite(payload.score));
+  }
+  return false;
+}
+
+function isPersistedImageResult(imageGeneration, upload) {
+  if (imageGeneration?.status !== 'completed' || upload?.status !== 'completed') return false;
+  if (typeof upload.imageUrl !== 'string' || !upload.imageUrl.startsWith('https://')) return false;
+  if (typeof upload.publicId !== 'string' || !upload.publicId.startsWith('blog_images/')) return false;
+  return Number.isFinite(Number(upload.bytes)) && Number(upload.bytes) >= 0;
+}
+
 export async function runDraftPipeline(input = {}, dependencies = {}) {
   const config = required(dependencies.config, 'config');
   const inventoryService = required(dependencies.inventoryService, 'inventoryService');
@@ -167,6 +190,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
 
   const runId = input.runId;
   const modelResults = [];
+  const auditWarnings = [];
   let uploadedImage = null;
   let draftPersisted = false;
 
@@ -182,6 +206,39 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     });
   }
 
+  function recordAuditWarning(primaryError, code, details = {}) {
+    const warning = { code, ...details };
+    auditWarnings.push(warning);
+    if (primaryError && typeof primaryError === 'object') {
+      primaryError.auditWarnings = auditWarnings;
+    }
+    return warning;
+  }
+
+  async function safeUpdateStage(currentStage, stageResult, extra, primaryError) {
+    try {
+      return await updateStage(currentStage, stageResult, extra);
+    } catch {
+      recordAuditWarning(primaryError, 'STAGE_AUDIT_FAILED', {
+        stageId: extra?.stageId || currentStage
+      });
+      return null;
+    }
+  }
+
+  async function safeFinishRun(
+    payload,
+    primaryError,
+    failureCode = 'RUN_FINISH_AUDIT_FAILED'
+  ) {
+    try {
+      return await runRepository.finishRun(runId, payload);
+    } catch {
+      recordAuditWarning(primaryError, failureCode, { status: payload.status });
+      return null;
+    }
+  }
+
   async function reserve(stageId, stage) {
     return costService.reserveMonthlyBudget({
       runId,
@@ -191,13 +248,55 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     });
   }
 
+  async function stopForRecovery(code, message) {
+    const result = await finishManual(code, message);
+    throw new ManualAttentionStop(result);
+  }
+
+  async function recoverProviderStage(stageId, stage, reservation) {
+    if (reservation.status === 'reserved') {
+      return stopForRecovery(
+        'provider_recovery_reserved',
+        'Für diese Providerstufe existiert bereits eine offene Reservierung; ein erneuter Aufruf ist gesperrt.'
+      );
+    }
+    if (reservation.status !== 'settled' || typeof costService.getPersistedStageResult !== 'function') {
+      return stopForRecovery(
+        'provider_recovery_result_missing',
+        'Die bereits abgerechnete Providerstufe kann ohne dauerhaftes Ergebnis nicht sicher fortgesetzt werden.'
+      );
+    }
+    const persisted = await costService.getPersistedStageResult({ runId, stageId });
+    if (!isProviderEnvelope(persisted, stage)) {
+      return stopForRecovery(
+        'provider_recovery_result_missing',
+        'Das dauerhafte Ergebnis der bereits abgerechneten Providerstufe fehlt oder ist vertragswidrig.'
+      );
+    }
+    modelResults.push(persisted);
+    return persisted.value;
+  }
+
   async function paidTextOperation({ stage, stageId = stage, operation, input: operationInput }) {
-    await reserve(stageId, stage);
+    const reservation = await reserve(stageId, stage);
+    if (reservation.created !== true) {
+      return recoverProviderStage(stageId, stage, reservation);
+    }
     const result = await operation(operationInput);
     const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
-    await costService.settleMonthlyBudget({ runId, stageId, actualCost });
+    await costService.settleMonthlyBudget({
+      runId,
+      stageId,
+      reservationMonth: reservation.reservationMonth,
+      actualCost
+    });
     modelResults.push(result);
-    await updateStage(stage, result.value, {
+    await updateStage(stage, {
+      value: result.value,
+      responseId: result.responseId ?? null,
+      usage: result.usage || {},
+      promptVersion: result.promptVersion
+    }, {
       stageId,
       tokenUsage: result.usage,
       responseIds: result.responseId ? [result.responseId] : []
@@ -321,6 +420,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       if (!requiredSources.ok) return requiredSources.result;
       sourceReferences = requiredSources.sources;
     }
+    const briefingPricing = inspectPricing(briefing, pricingContext, [], false);
+    if (briefingPricing.issues.length > 0) {
+      return finishManual(
+        'pricing_integrity_failed',
+        'Das SEO-Briefing enthält statische Preise oder nicht freigegebene Pricing-Tokens.'
+      );
+    }
 
     let currentArticle = await paidTextOperation({
       stage: 'article_generation',
@@ -374,11 +480,19 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     const approved = () => validation.passed
       && currentReview?.passed === true
       && currentReview.score >= 80
-      && currentReview.requiresManualReview !== true;
+      && currentReview.requiresManualReview !== true
+      && currentReview.risks?.staticPrices !== true;
 
     while (!approved() && revision < config.maxRevisions) {
       revision += 1;
-      const issues = validation.passed ? (currentReview?.issues || []) : validation.issues;
+      const issues = validation.passed ? [...(currentReview?.issues || [])] : [...validation.issues];
+      if (currentReview?.risks?.staticPrices === true) {
+        issues.push(pricingIssue(
+          'review_static_price_risk',
+          'Das Review meldet weiterhin statische Preise.',
+          'Entferne alle statischen Preisangaben aus sämtlichen persistierten Artikelfeldern.'
+        ));
+      }
       currentArticle = await paidTextOperation({
         stage: 'repair',
         stageId: `repair:${revision}`,
@@ -427,48 +541,98 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
 
-    await costService.reserveMonthlyBudget({
+    const imageReservation = await costService.reserveMonthlyBudget({
       runId,
       stageId: 'image_generation',
       estimatedCost: config.imageCostEur,
       limit: config.monthlyCostLimitEur
     });
-    try {
-      uploadedImage = await imageService.generateAndUploadImage({
-        prompt: currentArticle.imagePrompt,
-        filename: currentArticle.imageFilename,
-        runId
-      });
-      await costService.settleMonthlyBudget({
+    if (imageReservation.created !== true) {
+      if (imageReservation.status === 'reserved') {
+        await stopForRecovery(
+          'provider_recovery_reserved',
+          'Für die Bildstufe existiert bereits eine offene Reservierung; ein erneuter Provideraufruf ist gesperrt.'
+        );
+      }
+      if (imageReservation.status !== 'settled' || typeof costService.getPersistedStageResult !== 'function') {
+        await stopForRecovery(
+          'provider_recovery_result_missing',
+          'Das bereits abgerechnete Bild kann ohne dauerhaftes Uploadergebnis nicht sicher verwendet werden.'
+        );
+      }
+      const persistedGeneration = await costService.getPersistedStageResult({
         runId,
-        stageId: 'image_generation',
-        actualCost: config.imageCostEur
+        stageId: 'image_generation'
       });
-      await updateStage('image_generation', uploadedImage.audit?.imageGeneration || {
-        status: 'completed',
-        costIncurred: true
-      });
-      await updateStage('cloudinary_upload', {
-        ...(uploadedImage.audit?.upload || { status: 'completed' }),
-        imageUrl: uploadedImage.imageUrl,
-        publicId: uploadedImage.publicId,
-        bytes: uploadedImage.bytes
-      });
-    } catch (error) {
-      await costService.settleMonthlyBudget({
+      const persistedUpload = await costService.getPersistedStageResult({
         runId,
-        stageId: 'image_generation',
-        actualCost: config.imageCostEur
+        stageId: 'cloudinary_upload'
       });
-      const audit = error.audit || {};
-      await updateStage('image_generation', audit.imageGeneration || {
-        status: 'failed',
-        costIncurred: true,
-        code: 'IMAGE_GENERATION_FAILED'
-      });
-      await updateStage('cloudinary_upload', audit.upload || { status: 'not_started' });
-      if (audit.cleanup) await updateStage('image_cleanup', audit.cleanup);
-      throw error;
+      if (!isPersistedImageResult(persistedGeneration, persistedUpload)) {
+        await stopForRecovery(
+          'provider_recovery_result_missing',
+          'Das dauerhafte Ergebnis der bereits abgerechneten Bildstufe fehlt oder ist vertragswidrig.'
+        );
+      }
+      uploadedImage = {
+        imageUrl: persistedUpload.imageUrl,
+        publicId: persistedUpload.publicId,
+        bytes: Number(persistedUpload.bytes),
+        audit: {
+          imageGeneration: persistedGeneration,
+          upload: persistedUpload,
+          cleanup: { status: 'not_required', publicId: persistedUpload.publicId }
+        }
+      };
+    } else {
+      try {
+        uploadedImage = await imageService.generateAndUploadImage({
+          prompt: currentArticle.imagePrompt,
+          filename: currentArticle.imageFilename,
+          runId
+        });
+        await costService.settleMonthlyBudget({
+          runId,
+          stageId: 'image_generation',
+          reservationMonth: imageReservation.reservationMonth,
+          actualCost: config.imageCostEur
+        });
+        await updateStage('image_generation', uploadedImage.audit?.imageGeneration || {
+          status: 'completed',
+          costIncurred: true
+        });
+        await updateStage('cloudinary_upload', {
+          ...(uploadedImage.audit?.upload || { status: 'completed' }),
+          imageUrl: uploadedImage.imageUrl,
+          publicId: uploadedImage.publicId,
+          bytes: uploadedImage.bytes
+        });
+      } catch (error) {
+        try {
+          await costService.settleMonthlyBudget({
+            runId,
+            stageId: 'image_generation',
+            reservationMonth: imageReservation.reservationMonth,
+            actualCost: config.imageCostEur
+          });
+        } catch {
+          recordAuditWarning(error, 'BUDGET_SETTLEMENT_FAILED', { stageId: 'image_generation' });
+        }
+        const audit = error.audit || {};
+        await safeUpdateStage('image_generation', audit.imageGeneration || {
+          status: 'failed',
+          costIncurred: true,
+          code: 'IMAGE_GENERATION_FAILED'
+        }, {}, error);
+        await safeUpdateStage(
+          'cloudinary_upload',
+          audit.upload || { status: 'not_started' },
+          {},
+          error
+        );
+        if (audit.cleanup) await safeUpdateStage('image_cleanup', audit.cleanup, {}, error);
+        throw error;
+      }
     }
 
     const draft = await draftRepository.createAIDraft({
@@ -512,10 +676,19 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     await updateStage('draft_creation', { postId: draft.post.id, qualityScore: currentReview.score });
     await topicRepository.markTopicUsed(storedTopic?.id || selectedTopic.id);
     await updateStage('completed', { postId: draft.post.id, qualityScore: currentReview.score });
-    await runRepository.finishRun(runId, { status: 'completed', postId: draft.post.id });
+    const completedRun = await safeFinishRun(
+      { status: 'completed', postId: draft.post.id },
+      null,
+      'RUN_COMPLETION_PERSIST_FAILED'
+    );
 
-    return { status: 'completed', ...draft };
+    return {
+      status: 'completed',
+      ...draft,
+      ...(completedRun ? {} : { auditWarnings })
+    };
   } catch (error) {
+    if (error instanceof ManualAttentionStop) return error.result;
     if (uploadedImage?.publicId && !draftPersisted) {
       let cleanupResult;
       try {
@@ -527,12 +700,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           code: 'IMAGE_CLEANUP_FAILED'
         };
       }
-      await updateStage('image_cleanup', cleanupResult);
+      await safeUpdateStage('image_cleanup', cleanupResult, {}, error);
     }
-    await runRepository.finishRun(runId, {
+    await safeFinishRun({
       status: 'failed',
       errorReport: { code: 'pipeline_failed', message: error.message }
-    });
+    }, error);
+    if (auditWarnings.length > 0) error.auditWarnings = auditWarnings;
     throw error;
   }
 }

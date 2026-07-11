@@ -53,7 +53,7 @@ export function createContentImageService({ config, openai, cloudinary, idFactor
   async function deleteImage({ publicId }) {
     try {
       const result = await cloudinary.uploader.destroy(publicId, { invalidate: true });
-      if (result?.result && !['ok', 'not found'].includes(result.result)) {
+      if (!['ok', 'not found'].includes(result?.result)) {
         throw new Error('Cloudinary konnte das Bild nicht löschen.');
       }
       return cleanupAudit('completed', publicId);
@@ -91,28 +91,32 @@ export function createContentImageService({ config, openai, cloudinary, idFactor
         }));
       }
 
-      const stream = cloudinary.uploader.upload_stream({
-        folder: IMAGE_FOLDER,
-        format: 'webp',
-        public_id: uploadPublicId,
-        overwrite: false,
-        unique_filename: false
-      }, (error, result) => {
-        if (error) {
-          void fail(error);
-          return;
-        }
-        if (terminal) return;
-        if (!result?.secure_url || !result?.public_id) {
-          void fail(new Error('Unvollständiges Upload-Ergebnis.'));
-          return;
-        }
-        terminal = true;
-        resolve(result);
-      });
+      try {
+        const stream = cloudinary.uploader.upload_stream({
+          folder: IMAGE_FOLDER,
+          format: 'webp',
+          public_id: uploadPublicId,
+          overwrite: false,
+          unique_filename: false
+        }, (error, result) => {
+          if (error) {
+            void fail(error);
+            return;
+          }
+          if (terminal) return;
+          if (!result?.secure_url || !result?.public_id) {
+            void fail(new Error('Unvollständiges Upload-Ergebnis.'));
+            return;
+          }
+          terminal = true;
+          resolve(result);
+        });
 
-      stream.on?.('error', (error) => void fail(error));
-      stream.end(buffer);
+        stream.on?.('error', (error) => void fail(error));
+        stream.end(buffer);
+      } catch (cause) {
+        void fail(cause);
+      }
     });
   }
 
