@@ -25,6 +25,10 @@ import {
   createDryRunAdapterMonitor,
   runContentAgentDryRun
 } from '../scripts/contentAgentDryRun.js';
+import {
+  createContentAgentJobSnapshot,
+  resolveContentAgentRuntimeConfig
+} from '../services/contentAgent/runtimeConfigService.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -702,6 +706,162 @@ test('der Produktions-Jobhandler bewahrt beim Retry den ersten Snapshot und baut
     { settingsVersion: 3, timezone: 'Europe/Berlin' }
   ]);
   assert.deepEqual(pipelineCalls.map(({ input }) => input.currentDate), ['2026-08-01', '2026-08-01']);
+});
+
+test('die Produktionsruntime verwendet nach Neustart ausschließlich die vollständige erste Jobconfig', async () => {
+  const initialTechnicalConfig = {
+    enabled: true,
+    autoPublishEnabled: true,
+    maxTopicCandidates: 8,
+    maxRevisions: 2,
+    maxAttempts: 4,
+    monthlyCostLimitEur: 40,
+    contentStageReservationEur: 0.51,
+    reviewStageReservationEur: 0.26,
+    contentInputCostPerMtok: 2.5,
+    contentOutputCostPerMtok: 15,
+    reviewInputCostPerMtok: 0.75,
+    reviewOutputCostPerMtok: 4.5,
+    imageCostEur: 0.041,
+    contentModel: 'content-model-v1',
+    reviewModel: 'review-model-v1',
+    imageModel: 'image-model-v1',
+    timezone: 'UTC',
+    workerPollMs: 5_000,
+    jobLeaseMinutes: 30
+  };
+  const changedTechnicalConfig = {
+    maxTopicCandidates: 19,
+    maxRevisions: 4,
+    maxAttempts: 1,
+    monthlyCostLimitEur: 5,
+    contentStageReservationEur: 1.51,
+    reviewStageReservationEur: 1.26,
+    contentInputCostPerMtok: 12.5,
+    contentOutputCostPerMtok: 115,
+    reviewInputCostPerMtok: 10.75,
+    reviewOutputCostPerMtok: 14.5,
+    imageCostEur: 0.41,
+    contentModel: 'content-model-v2',
+    reviewModel: 'review-model-v2',
+    imageModel: 'image-model-v2',
+    timezone: 'America/New_York'
+  };
+  const settings = {
+    agent_enabled: true,
+    operating_mode: 'review',
+    schedule_weekdays: [1, 4],
+    schedule_time: '18:00',
+    timezone: 'Europe/Berlin',
+    monthly_budget_cents: 3500,
+    auto_publish_min_score: 94,
+    maximum_attempts: 3,
+    manual_approvals_count: 8,
+    settings_version: 7
+  };
+  const claims = [1, 2].map((attempts) => ({
+    id: 404,
+    job_type: 'generate_weekly_draft',
+    locked_by: 'worker-snapshot',
+    attempts,
+    payload_json: { source: 'weekly-schedule' }
+  }));
+  let persistedSnapshot = null;
+  const pipelineConfigs = [];
+  const config = { ...initialTechnicalConfig };
+  const database = { async query() { return { rows: [] }; } };
+  const modules = {
+    OpenAI: class {},
+    cloudinary: { config() {} },
+    jobRepository: {
+      async upsertWorkerHeartbeat() {},
+      async recoverExpiredJobs() {},
+      async claimNextJob() { return claims.shift() || null; },
+      async renewJobLease(claim) { return claim; },
+      async completeJob(claim) { return claim; },
+      async failJob(claim) { return claim; },
+      async retryOrFailJob(claim) { return claim; },
+      async markJobNeedsManualAttention(claim) { return claim; },
+      async enqueueJob() { return null; },
+      async updateContentSchedulerState() { return null; }
+    },
+    runRepository: {
+      async createRun(input) {
+        persistedSnapshot ||= structuredClone(input.runtimeSnapshot);
+        return { id: 909, runtime_snapshot_json: structuredClone(persistedSnapshot) };
+      },
+      async updateRunStage() { return null; },
+      async finishRun() { return null; }
+    },
+    settingsRepository: { async getContentAgentSettings() { return settings; } },
+    runtimeConfigService: {
+      createContentAgentJobSnapshot,
+      resolveContentAgentRuntimeConfig
+    },
+    topicRepository: {
+      async createTopic() { return null; },
+      async markTopicUsed() { return null; }
+    },
+    costService: {
+      estimateTextCost() { return 0; },
+      assertMonthlyBudget() {},
+      async getMonthlyContentCost() { return 0; },
+      async reserveMonthlyBudget() { return {}; },
+      async settleMonthlyBudget() { return {}; },
+      async releaseMonthlyBudgetReservation() { return {}; },
+      async getPersistedStageResult() { return null; }
+    },
+    BlogPostModel: {
+      async createAIDraft() { return null; },
+      async findAIDraftByGenerationRunId() { return null; }
+    },
+    createPricingRepository() { return {}; },
+    createPricingService() { return { async getVisiblePackages() { return []; } }; },
+    createOpenAIContentService() { return {}; },
+    createContentImageService() { return {}; },
+    buildSiteInventory: async () => ({}),
+    selectBestTopic: () => null,
+    validateArticle: () => ({ passed: true }),
+    async runDraftPipeline(_input, dependencies) {
+      pipelineConfigs.push(structuredClone(dependencies.config));
+      return { status: 'completed' };
+    }
+  };
+  const runtime = createProductionRuntime({
+    config,
+    env: { OPENAI_API_KEY: 'test-key' },
+    database,
+    modules
+  });
+
+  await runtime.worker.processOnce();
+  Object.assign(config, changedTechnicalConfig);
+  await runtime.worker.processOnce();
+
+  const expectedJobConfig = {
+    maxTopicCandidates: 8,
+    maxRevisions: 2,
+    maxAttempts: 3,
+    monthlyCostLimitEur: 35,
+    contentStageReservationEur: 0.51,
+    reviewStageReservationEur: 0.26,
+    contentInputCostPerMtok: 2.5,
+    contentOutputCostPerMtok: 15,
+    reviewInputCostPerMtok: 0.75,
+    reviewOutputCostPerMtok: 4.5,
+    imageCostEur: 0.041,
+    contentModel: 'content-model-v1',
+    reviewModel: 'review-model-v1',
+    imageModel: 'image-model-v1',
+    timezone: 'Europe/Berlin'
+  };
+  assert.equal(pipelineConfigs.length, 2);
+  for (const pipelineConfig of pipelineConfigs) {
+    assert.deepEqual(
+      Object.fromEntries(Object.keys(expectedJobConfig).map((key) => [key, pipelineConfig[key]])),
+      expectedJobConfig
+    );
+  }
 });
 
 test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () => {

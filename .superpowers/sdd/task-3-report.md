@@ -79,3 +79,37 @@ Umgesetzt sind ein Luxon-basierter dynamischer Scheduler, kanonische Wochen-Slot
 - Branch: `codex/content-agent-admin-dashboard`
 - Betreff: `feat: schedule content jobs from database settings`
 - Der endgültige Commit-Hash steht im Task-Handoff, da ein Commit seinen eigenen Hash nicht in seinem Inhalt referenzieren kann.
+
+## Review-Fix: Vollständiger technischer Job-Snapshot
+
+### Befund
+
+`jobConfigFromSnapshot` ergänzte den persistierten Snapshot bisher mit der jeweils aktuellen technischen Konfiguration. Nach einem Worker-Neustart konnten dadurch neue Werte für Themenanzahl, Revisionen, Reservierungsbeträge, Tokenpreise und Bildkosten in einen Retry gelangen.
+
+### RED
+
+- Befehl: `node --test tests/contentAgentRunSnapshot.test.js tests/contentAgentWorker.test.js tests/contentAgentCostService.test.js tests/contentAgentRuntimeConfig.test.js`
+- Ergebnis: 61 bestanden, 1 fehlgeschlagen.
+- Erwartetes Rot: `die Produktionsruntime verwendet nach Neustart ausschließlich die vollständige erste Jobconfig`.
+- Der zweite Lauf verwendete erwartungsgemäß fälschlich die geänderten Werte für `maxTopicCandidates`, `maxRevisions`, beide Reservierungsbeträge, alle vier Tokenpreise und `imageCostEur`.
+
+### GREEN
+
+- Derselbe Review-Befehl: 62/62 bestanden, 0 fehlgeschlagen.
+- Relevante fokussierte Task-3-Suite:
+  - `node --test tests/contentAgentScheduler.test.js tests/contentAgentRunSnapshot.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js tests/contentAgentCostService.test.js tests/contentAgentRuntimeConfig.test.js`
+  - 92/92 bestanden, 0 fehlgeschlagen.
+- Gesamtsuite: `OPENAI_API_KEY=test-key npm test` mit 709 bestanden, 0 fehlgeschlagen und 1 vorhandenem PostgreSQL-Skip.
+- `git diff --check`: erfolgreich.
+
+### Änderung und Selbstreview
+
+- `createContentAgentJobSnapshot` speichert nun zusätzlich `maxTopicCandidates`, `maxRevisions`, beide Reservierungsbeträge, alle vier Tokenpreise und `imageCostEur`.
+- Modelle, `maxAttempts`, `monthlyCostLimitEur`, Zeitzone und die neuen Werte werden im Regressionstest einzeln geprüft.
+- `jobConfigFromSnapshot` rekonstruiert die Pipelinekonfiguration aus dem persistierten Snapshot, nicht mehr durch Überschreiben einer aktuellen `.env`-Konfiguration.
+- Nur die aktuellen absoluten Kill-Gates `enabled` und `autoPublishEnabled` bleiben separat wirksam; `autoPublishEnabled` kann den gespeicherten Effektivzustand nur weiter einschränken.
+
+### Fix-Commit
+
+- Betreff: `fix: preserve complete content job runtime snapshots`
+- Der endgültige Hash steht im Task-Handoff.

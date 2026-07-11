@@ -192,16 +192,11 @@ function bindRepositories(database, modules) {
 function jobConfigFromSnapshot(technicalConfig, snapshot) {
   if (!snapshot) return technicalConfig;
   return Object.freeze({
-    ...technicalConfig,
-    operatingMode: snapshot.operatingMode,
-    monthlyCostLimitEur: snapshot.monthlyCostLimitEur,
-    autoPublishMinScore: snapshot.autoPublishMinScore,
-    maxAttempts: snapshot.maxAttempts,
-    autoPublishEffective: snapshot.autoPublishEffective,
-    timezone: snapshot.timezone,
-    contentModel: snapshot.contentModel,
-    reviewModel: snapshot.reviewModel,
-    imageModel: snapshot.imageModel
+    ...snapshot,
+    enabled: technicalConfig.enabled === true,
+    autoPublishEnabled: technicalConfig.autoPublishEnabled === true,
+    autoPublishEffective: technicalConfig.autoPublishEnabled === true
+      && snapshot.autoPublishEffective === true
   });
 }
 
