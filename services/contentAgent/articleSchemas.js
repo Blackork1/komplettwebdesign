@@ -196,7 +196,13 @@ export const ReviewIssueSchema = z.object({
   severity: z.enum(['info', 'warning', 'error']),
   message: NonEmptyString,
   repairInstruction: NonEmptyString,
-  blocking: z.boolean()
+  blocking: z.boolean(),
+  sectionHeading: z.string().trim().max(180).nullable().optional().default(null),
+  evidenceExcerpt: z.string().trim().max(280).nullable().optional().default(null),
+  verificationType: z.enum(['none', 'source', 'date', 'price', 'version', 'legal', 'privacy'])
+    .optional().default('none'),
+  sourceRequired: z.boolean().optional().default(false),
+  autoPublishBlocking: z.boolean().optional().default(false)
 }).strict();
 
 export const ReviewOutputSchema = z.object({

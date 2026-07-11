@@ -1,0 +1,33 @@
+<% const focusedRiskReview = typeof riskReview !== 'undefined' && riskReview && typeof riskReview === 'object' ? riskReview : {}; %>
+<% const focusedRiskItems = Array.isArray(focusedRiskReview.items) ? focusedRiskReview.items : []; %>
+<% const verificationLabels = { none: 'Redaktionell', source: 'Quelle', date: 'Aktualität', price: 'Preis', version: 'Version', legal: 'Recht', privacy: 'Datenschutz' }; %>
+<% if (focusedRiskItems.length) { %>
+  <aside class="content-agent-risk-checklist" aria-labelledby="focused-risk-heading">
+    <div class="content-agent-risk-checklist__head">
+      <div>
+        <p class="content-agent-eyebrow">Fokussierte Prüfung</p>
+        <h2 id="focused-risk-heading">Konkrete Prüfstellen</h2>
+      </div>
+      <span class="content-agent-status <%= focusedRiskReview.blocked ? 'is-warning' : 'is-ready' %>">
+        <%= focusedRiskReview.blocked ? 'Veröffentlichung blockiert' : 'Hinweise vorhanden' %>
+      </span>
+    </div>
+    <ol class="content-agent-risk-checklist__items">
+      <% focusedRiskItems.forEach((item) => { %>
+        <li class="content-agent-risk-checklist__item">
+          <div class="content-agent-risk-checklist__meta">
+            <a href="#<%= item.anchor %>"><%= item.section %></a>
+            <span><%= verificationLabels[item.verificationType] || 'Redaktionell' %></span>
+            <% if (item.sourceRequired) { %><span>Quelle erforderlich</span><% } %>
+            <% if (item.blocking) { %><span>Blockierend</span><% } %>
+          </div>
+          <% if (item.excerpt) { %><blockquote><%= item.excerpt %></blockquote><% } %>
+          <p><strong>Begründung:</strong> <%= item.reason %></p>
+          <p><strong>Prüfanweisung:</strong> <%= item.instruction %></p>
+          <small>Kategorie: <%= item.code %></small>
+        </li>
+      <% }) %>
+    </ol>
+    <p class="content-agent-quiet mb-0"><%= Number(focusedRiskReview.sourceCount || 0) %> Quellen im Bericht</p>
+  </aside>
+<% } %>

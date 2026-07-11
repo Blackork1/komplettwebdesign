@@ -7,6 +7,7 @@ import {
   TopicCandidatesSchema
 } from './articleSchemas.js';
 import { ContentBudgetLimitError } from './contentCostService.js';
+import { buildFocusedRiskReport } from './riskReportService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -919,6 +920,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     } else {
       await assertLease();
+      const focusedReview = buildFocusedRiskReport({
+        article: reviewableArticle(),
+        review: currentReview,
+        validation,
+        sources: sourceReferences
+      });
       const draftInput = {
         generationRunId: runId,
         post: {
@@ -953,7 +960,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           source_references_json: sourceReferences,
           seo_brief_json: briefing,
           quality_score: currentReview.score,
-          quality_report_json: currentReview,
+          quality_report_json: {
+            ...currentReview,
+            focusedReview
+          },
           generation_metadata_json: generationMetadata(modelResults)
         }
       };

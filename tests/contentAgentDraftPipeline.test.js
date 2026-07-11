@@ -1179,6 +1179,15 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.equal(createdPost.generated_by_ai, true);
   assert.equal(createdPost.content.endsWith('<!-- sanitized -->'), true);
   assert.equal(createdMetadata.quality_score >= 80, true);
+  assert.equal(createdMetadata.quality_report_json.score, review.score);
+  assert.deepEqual(createdMetadata.quality_report_json.issues, review.issues);
+  assert.deepEqual(createdMetadata.quality_report_json.risks, review.risks);
+  assert.deepEqual(createdMetadata.quality_report_json.focusedReview, {
+    blocked: false,
+    items: [],
+    riskFlags: [],
+    sourceCount: 0
+  });
   assert.equal(result.status, 'completed');
   assert.equal(harness.imageCalls.length, 1);
   assert.equal(harness.finishCalls.at(-1).status, 'completed');
@@ -1206,6 +1215,39 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.equal(harness.reviewInputs[0].article.contentHtml.endsWith('<!-- sanitized -->'), true);
   assert.equal(harness.events.at(-2).stageId, 'completed');
   assert.deepEqual(harness.events.at(-1), { type: 'finish', status: 'completed' });
+});
+
+test('Pipeline persistiert fokussierte Review-Fundstellen additiv zum kompatiblen Qualitätsbericht', async () => {
+  const focusedIssue = {
+    code: 'claim_check',
+    severity: 'warning',
+    message: 'Aussage prüfen.',
+    repairInstruction: 'Die konkrete Aussage fachlich prüfen.',
+    blocking: false,
+    sectionHeading: 'Planung',
+    evidenceExcerpt: 'Ursprünglicher Inhalt',
+    verificationType: 'source',
+    sourceRequired: true,
+    autoPublishBlocking: false
+  };
+  const focusedReview = { ...review, issues: [focusedIssue] };
+  const harness = createDependencies({
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      reviewArticle: operation(focusedReview, 'resp-focused-review')
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 701 }, harness.dependencies);
+  const qualityReport = harness.createdDrafts[0].metadata.quality_report_json;
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(qualityReport.issues, [focusedIssue]);
+  assert.deepEqual(qualityReport.risks, focusedReview.risks);
+  assert.equal(qualityReport.focusedReview.items[0].section, 'Planung');
+  assert.equal(qualityReport.focusedReview.items[0].anchor, 'pruefung-planung');
+  assert.equal(qualityReport.focusedReview.items[0].instruction, 'Die konkrete Aussage fachlich prüfen.');
+  assert.equal(qualityReport.focusedReview.sourceCount, 0);
 });
 
 test('aktuelle Themen ohne zwei validierte Quellen enden ohne Bild und Draft', async () => {

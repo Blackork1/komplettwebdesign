@@ -235,6 +235,50 @@ test('die strukturierten Operationen wählen jeweils passendes Schema, Prompt un
   });
 });
 
+test('Review-Issues bleiben ohne neue optionale Fokusfelder kompatibel und erhalten sichere Standardwerte', async () => {
+  const legacyReview = {
+    ...validReview,
+    issues: [{
+      code: 'legacy_issue',
+      severity: 'warning',
+      message: 'Bestehendes Issue.',
+      repairInstruction: 'Bestehendes Issue prüfen.',
+      blocking: false
+    }]
+  };
+  const client = createParseClient(legacyReview);
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  });
+
+  assert.deepEqual(result.value.issues[0], {
+    ...legacyReview.issues[0],
+    sectionHeading: null,
+    evidenceExcerpt: null,
+    verificationType: 'none',
+    sourceRequired: false,
+    autoPublishBlocking: false
+  });
+});
+
+test('Reviewer-Prompt fordert echte H2/H3-Fundstellen ohne erfundene HTML-IDs', () => {
+  const prompt = buildArticleReviewerPrompt({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  }).system;
+
+  assert.match(prompt, /exakten vorhandenen H2- oder H3-Titel/i);
+  assert.match(prompt, /höchstens 280 Zeichen/i);
+  assert.match(prompt, /Prüfart/i);
+  assert.match(prompt, /Quellenbedarf/i);
+  assert.match(prompt, /keine HTML-IDs/i);
+});
+
 test('fehlendes output_parsed führt zu einem klaren Fehler', async () => {
   const client = {
     responses: {
