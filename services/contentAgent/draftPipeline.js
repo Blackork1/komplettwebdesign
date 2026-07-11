@@ -1,4 +1,11 @@
 import { resolvePricingToken } from '../../util/pricingTokenRenderer.js';
+import {
+  ArticleOutputSchema,
+  ReviewOutputSchema,
+  SeoBriefSchema,
+  TopicCandidateSchema,
+  TopicCandidatesSchema
+} from './articleSchemas.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -7,7 +14,7 @@ const CURRENT_RISK_FIELDS = [
   'softwareVersionClaims'
 ];
 const PRICING_TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
-const STATIC_PRICE_PATTERN = /(?:\b\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*(?:EUR|Euro|€|&euro;|&#8364;)(?!\w)|\b(?:EUR|Euro)(?:[\s\u00A0_-]|&nbsp;|&#160;)*\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*)/i;
+const STATIC_PRICE_PATTERN = /(?:\b\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*(?:\b(?:EUR|Euro)\b|€|&euro;|&#8364;)|(?:\b(?:EUR|Euro)\b|€|&euro;|&#8364;)(?:[\s\u00A0_-]|&nbsp;|&#160;)*\d(?:[\d.,\s\u00A0_-]|&nbsp;|&#160;)*)/i;
 
 class ManualAttentionStop extends Error {
   constructor(result) {
@@ -148,30 +155,71 @@ function inspectPricing(article, pricingContext, lockedTokens, enforceLock) {
   return { issues, knownTokens: tokens.known };
 }
 
-function isProviderEnvelope(value, stage) {
+function parseProviderEnvelope(value, stage) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if (!Object.hasOwn(value, 'value') || !value.usage || typeof value.usage !== 'object') return false;
   if (typeof value.promptVersion !== 'string' || value.promptVersion.trim() === '') return false;
   if (value.responseId != null && typeof value.responseId !== 'string') return false;
 
   const payload = value.value;
-  if (stage === 'topic_research') return Array.isArray(payload?.candidates);
-  if (stage === 'source_research') return Array.isArray(payload) && inspectSourceReferences(payload, { required: true }).valid;
-  if (stage === 'seo_brief') return Boolean(payload && typeof payload === 'object' && payload.sourceRequirements);
-  if (stage === 'article_generation' || stage === 'repair') {
-    return Boolean(payload && typeof payload.title === 'string' && typeof payload.contentHtml === 'string');
-  }
-  if (stage === 'review') {
-    return Boolean(payload && typeof payload.passed === 'boolean' && Number.isFinite(payload.score));
-  }
-  return false;
+  let parsed;
+  if (stage === 'topic_research') parsed = TopicCandidatesSchema.safeParse(payload);
+  else if (stage === 'seo_brief') parsed = SeoBriefSchema.safeParse(payload);
+  else if (stage === 'article_generation' || stage === 'repair') parsed = ArticleOutputSchema.safeParse(payload);
+  else if (stage === 'review') parsed = ReviewOutputSchema.safeParse(payload);
+  else if (stage === 'source_research') {
+    const sources = inspectSourceReferences(payload, { required: true });
+    return sources.valid ? { ...value, value: sources.sources } : null;
+  } else return null;
+  return parsed.success ? { ...value, value: parsed.data } : null;
 }
 
 function isPersistedImageResult(imageGeneration, upload) {
   if (imageGeneration?.status !== 'completed' || upload?.status !== 'completed') return false;
   if (typeof upload.imageUrl !== 'string' || !upload.imageUrl.startsWith('https://')) return false;
   if (typeof upload.publicId !== 'string' || !upload.publicId.startsWith('blog_images/')) return false;
-  return Number.isFinite(Number(upload.bytes)) && Number(upload.bytes) >= 0;
+  return Number.isFinite(Number(upload.bytes)) && Number(upload.bytes) > 0;
+}
+
+function isPersistedTopicResult(value) {
+  const parsedTopic = TopicCandidateSchema.passthrough().safeParse(value?.topic);
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && parsedTopic.success
+    && Number.isInteger(Number(value.topic.id))
+    && Number(value.topic.id) > 0
+    && typeof value.topic.slug === 'string'
+    && value.topic.slug.trim() !== ''
+  );
+}
+
+function isPersistedDraftResult(value) {
+  const post = value?.post;
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && post
+    && Number.isInteger(Number(post.id))
+    && Number(post.id) > 0
+    && typeof post.slug === 'string'
+    && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(post.slug)
+    && post.published === false
+    && post.workflow_status === 'needs_review'
+    && post.content_format === 'static_html'
+    && post.generated_by_ai === true
+    && value.metadata
+    && typeof value.metadata === 'object'
+    && !Array.isArray(value.metadata)
+  );
+}
+
+function isPersistedCompletedResult(value, draft) {
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && Number(value.postId) === Number(draft?.post?.id)
+  );
 }
 
 export async function runDraftPipeline(input = {}, dependencies = {}) {
@@ -192,6 +240,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   const modelResults = [];
   const auditWarnings = [];
   let uploadedImage = null;
+  let imageCreatedThisRun = false;
   let draftPersisted = false;
 
   async function updateStage(currentStage, stageResult = {}, extra = {}) {
@@ -232,11 +281,19 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     failureCode = 'RUN_FINISH_AUDIT_FAILED'
   ) {
     try {
-      return await runRepository.finishRun(runId, payload);
+      const result = await runRepository.finishRun(runId, payload);
+      if (result) return result;
+      recordAuditWarning(primaryError, failureCode, { status: payload.status });
+      return null;
     } catch {
       recordAuditWarning(primaryError, failureCode, { status: payload.status });
       return null;
     }
+  }
+
+  async function readPersistedStage(stageId) {
+    if (typeof costService.getPersistedStageResult !== 'function') return null;
+    return costService.getPersistedStageResult({ runId, stageId });
   }
 
   async function reserve(stageId, stage) {
@@ -266,8 +323,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         'Die bereits abgerechnete Providerstufe kann ohne dauerhaftes Ergebnis nicht sicher fortgesetzt werden.'
       );
     }
-    const persisted = await costService.getPersistedStageResult({ runId, stageId });
-    if (!isProviderEnvelope(persisted, stage)) {
+    const persisted = parseProviderEnvelope(
+      await costService.getPersistedStageResult({ runId, stageId }),
+      stage
+    );
+    if (!persisted) {
       return stopForRecovery(
         'provider_recovery_result_missing',
         'Das dauerhafte Ergebnis der bereits abgerechneten Providerstufe fehlt oder ist vertragswidrig.'
@@ -347,6 +407,47 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   }
 
   try {
+    const persistedCompleted = await readPersistedStage('completed');
+    const persistedDraft = await readPersistedStage('draft_creation');
+    if (persistedCompleted) {
+      if (!isPersistedDraftResult(persistedDraft)
+        || !isPersistedCompletedResult(persistedCompleted, persistedDraft)) {
+        await stopForRecovery(
+          'side_effect_recovery_result_missing',
+          'Der abgeschlossene Lauf kann ohne gültiges dauerhaftes Draft-Ergebnis nicht sicher wiederaufgenommen werden.'
+        );
+      }
+      draftPersisted = true;
+      return { status: 'completed', post: persistedDraft.post, metadata: persistedDraft.metadata };
+    }
+    if (persistedDraft) {
+      if (!isPersistedDraftResult(persistedDraft)) {
+        await stopForRecovery(
+          'side_effect_recovery_result_missing',
+          'Das dauerhafte Draft-Ergebnis ist unvollständig oder widerspricht dem Entwurfsvertrag.'
+        );
+      }
+      draftPersisted = true;
+      if (persistedDraft.topicId != null) await topicRepository.markTopicUsed(persistedDraft.topicId);
+      const completedResult = {
+        postId: persistedDraft.post.id,
+        slug: persistedDraft.post.slug,
+        qualityScore: persistedDraft.qualityScore ?? persistedDraft.metadata.quality_score ?? null
+      };
+      await updateStage('completed', completedResult);
+      const completedRun = await safeFinishRun(
+        { status: 'completed', postId: persistedDraft.post.id },
+        null,
+        'RUN_COMPLETION_PERSIST_FAILED'
+      );
+      return {
+        status: 'completed',
+        post: persistedDraft.post,
+        metadata: persistedDraft.metadata,
+        ...(completedRun ? {} : { auditWarnings })
+      };
+    }
+
     const inventory = await inventoryService.buildSiteInventory();
     const pricingContext = inventory.packages || [];
     await updateStage('inventory', {
@@ -374,7 +475,27 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       return finishManual('no_eligible_topic', 'Kein geeigneter Themenkandidat verfügbar.');
     }
 
-    const storedTopic = await topicRepository.createTopic(selectedTopic);
+    const persistedTopic = await readPersistedStage('topic_persistence');
+    let storedTopic;
+    if (persistedTopic) {
+      if (!isPersistedTopicResult(persistedTopic)) {
+        await stopForRecovery(
+          'side_effect_recovery_result_missing',
+          'Das dauerhafte Topic-Ergebnis ist unvollständig; eine doppelte Themenanlage wird verhindert.'
+        );
+      }
+      storedTopic = persistedTopic.topic;
+    } else {
+      const createdTopic = await topicRepository.createTopic(selectedTopic);
+      storedTopic = { ...selectedTopic, ...createdTopic };
+      if (!isPersistedTopicResult({ topic: storedTopic })) {
+        await stopForRecovery(
+          'side_effect_persistence_failed',
+          'Das neu angelegte Topic lieferte kein vollständig persistierbares Ergebnis.'
+        );
+      }
+      await updateStage('topic_persistence', { topic: storedTopic });
+    }
     await updateStage('topic_scoring', selectedTopic, {
       selectedTopicId: storedTopic?.id || selectedTopic.id || null
     });
@@ -591,6 +712,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           filename: currentArticle.imageFilename,
           runId
         });
+        imageCreatedThisRun = true;
         await costService.settleMonthlyBudget({
           runId,
           stageId: 'image_generation',
@@ -635,47 +757,83 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     }
 
-    const draft = await draftRepository.createAIDraft({
-      post: {
-        title: currentArticle.title,
-        slug: currentArticle.slug,
-        excerpt: currentArticle.shortDescription,
-        content: validation.sanitizedHtml,
-        hero_image: uploadedImage.imageUrl,
-        hero_public_id: uploadedImage.publicId,
-        category: currentArticle.category,
-        faq_json: currentArticle.faqJson,
-        meta_title: currentArticle.metaTitle,
-        meta_description: currentArticle.metaDescription,
-        og_title: currentArticle.ogTitle,
-        og_description: currentArticle.ogDescription,
-        image_alt: currentArticle.imageAlt,
-        published: false,
-        workflow_status: 'needs_review',
-        content_format: 'static_html',
-        generated_by_ai: true
-      },
-      metadata: {
-        primary_keyword: currentArticle.seo?.primaryKeyword || briefing.primaryKeyword,
-        secondary_keywords: currentArticle.seo?.secondaryKeywords || briefing.secondaryKeywords || [],
-        search_intent: currentArticle.seo?.searchIntent || briefing.searchIntent,
-        target_audience: currentArticle.seo?.targetAudience || briefing.targetAudience,
-        region_focus: input.regionFocus || null,
-        content_cluster: currentArticle.seo?.contentCluster || briefing.contentCluster,
-        business_goal: currentArticle.lead?.businessGoal || briefing.businessGoal,
-        cta_type: currentArticle.lead?.ctaType || briefing.ctaType,
-        internal_links_json: briefing.internalLinks || [],
-        source_references_json: sourceReferences,
-        seo_brief_json: briefing,
-        quality_score: currentReview.score,
-        quality_report_json: currentReview,
-        generation_metadata_json: generationMetadata(modelResults)
+    const existingDraft = await readPersistedStage('draft_creation');
+    let draft;
+    if (existingDraft) {
+      if (!isPersistedDraftResult(existingDraft)) {
+        await stopForRecovery(
+          'side_effect_recovery_result_missing',
+          'Das unmittelbar vor der Anlage gefundene Draft-Ergebnis ist unvollständig.'
+        );
       }
-    });
+      draft = existingDraft;
+      if (imageCreatedThisRun && uploadedImage?.publicId !== draft.post.hero_public_id) {
+        let cleanupResult;
+        try {
+          cleanupResult = await imageService.deleteImage({ publicId: uploadedImage.publicId });
+        } catch (cleanupError) {
+          cleanupResult = cleanupError.audit?.cleanup || {
+            status: 'failed',
+            publicId: uploadedImage.publicId,
+            code: 'IMAGE_CLEANUP_FAILED'
+          };
+        }
+        await safeUpdateStage('image_cleanup', cleanupResult, {}, null);
+      }
+    } else {
+      draft = await draftRepository.createAIDraft({
+        post: {
+          title: currentArticle.title,
+          slug: currentArticle.slug,
+          excerpt: currentArticle.shortDescription,
+          content: validation.sanitizedHtml,
+          hero_image: uploadedImage.imageUrl,
+          hero_public_id: uploadedImage.publicId,
+          category: currentArticle.category,
+          faq_json: currentArticle.faqJson,
+          meta_title: currentArticle.metaTitle,
+          meta_description: currentArticle.metaDescription,
+          og_title: currentArticle.ogTitle,
+          og_description: currentArticle.ogDescription,
+          image_alt: currentArticle.imageAlt,
+          published: false,
+          workflow_status: 'needs_review',
+          content_format: 'static_html',
+          generated_by_ai: true
+        },
+        metadata: {
+          primary_keyword: currentArticle.seo?.primaryKeyword || briefing.primaryKeyword,
+          secondary_keywords: currentArticle.seo?.secondaryKeywords || briefing.secondaryKeywords || [],
+          search_intent: currentArticle.seo?.searchIntent || briefing.searchIntent,
+          target_audience: currentArticle.seo?.targetAudience || briefing.targetAudience,
+          region_focus: input.regionFocus || null,
+          content_cluster: currentArticle.seo?.contentCluster || briefing.contentCluster,
+          business_goal: currentArticle.lead?.businessGoal || briefing.businessGoal,
+          cta_type: currentArticle.lead?.ctaType || briefing.ctaType,
+          internal_links_json: briefing.internalLinks || [],
+          source_references_json: sourceReferences,
+          seo_brief_json: briefing,
+          quality_score: currentReview.score,
+          quality_report_json: currentReview,
+          generation_metadata_json: generationMetadata(modelResults)
+        }
+      });
+    }
     draftPersisted = true;
-    await updateStage('draft_creation', { postId: draft.post.id, qualityScore: currentReview.score });
-    await topicRepository.markTopicUsed(storedTopic?.id || selectedTopic.id);
-    await updateStage('completed', { postId: draft.post.id, qualityScore: currentReview.score });
+    const topicId = storedTopic?.id || selectedTopic.id;
+    const persistedDraftResult = {
+      post: draft.post,
+      metadata: draft.metadata,
+      topicId,
+      qualityScore: currentReview.score
+    };
+    if (!existingDraft) await updateStage('draft_creation', persistedDraftResult);
+    await topicRepository.markTopicUsed(topicId);
+    await updateStage('completed', {
+      postId: draft.post.id,
+      slug: draft.post.slug,
+      qualityScore: currentReview.score
+    });
     const completedRun = await safeFinishRun(
       { status: 'completed', postId: draft.post.id },
       null,

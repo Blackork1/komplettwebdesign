@@ -103,6 +103,63 @@ const review = {
   risks: { ...article.risk }
 };
 
+const { id: _topicId, finalScore: _finalScore, eligible: _eligible, ...schemaTopic } = topic;
+const schemaSeoBrief = {
+  ...seoBrief,
+  sourceReferences: undefined,
+  targetWordCount: 1800,
+  outline: Array.from({ length: 5 }, (_, index) => ({
+    heading: `Abschnitt ${index + 1}`,
+    level: index === 0 ? 'h2' : 'h3',
+    purpose: `Zweck ${index + 1}`
+  })),
+  localExamples: ['Lokaler Betrieb in Berlin'],
+  internalLinks: [
+    seoBrief.internalLinks[0],
+    { url: '/website-tester', label: 'Website prüfen', purpose: 'Selbsttest' }
+  ],
+  faqQuestions: Array.from({ length: 5 }, (_, index) => `Frage ${index + 1}?`)
+};
+const schemaArticle = {
+  ...article,
+  contentHtml: `<section><h2>Planung</h2><p>${'Hilfreicher konkreter Inhalt. '.repeat(210)}</p></section>`,
+  faqJson: Array.from({ length: 5 }, (_, index) => ({
+    question: `Frage ${index + 1}?`,
+    answer: `Konkrete Antwort ${index + 1}.`
+  })),
+  lead: {
+    ...article.lead,
+    ctaPositions: ['blog_early', 'blog_mid', 'blog_final']
+  },
+  qualitySelfCheck: {
+    searchIntentFulfilled: true,
+    noH1: true,
+    noOuterBootstrapContainer: true,
+    noInventedPricesOrServices: true,
+    faqMatchesHtml: true,
+    approvedLinksOnly: true
+  }
+};
+
+function persistedEnvelope(value, responseId = 'resp-persisted') {
+  return { value, responseId, usage, promptVersion: '2026-07-10.1' };
+}
+
+const persistedDraft = {
+  post: {
+    id: 41,
+    slug: article.slug,
+    title: article.title,
+    published: false,
+    workflow_status: 'needs_review',
+    content_format: 'static_html',
+    generated_by_ai: true
+  },
+  metadata: { quality_score: review.score },
+  topicId: 17,
+  qualityScore: review.score
+};
+
 function operation(value, responseId) {
   return async () => ({ value, responseId, usage, promptVersion: '2026-07-10.1' });
 }
@@ -651,6 +708,7 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.deepEqual(harness.stageUpdates.map(({ currentStage }) => currentStage), [
     'inventory',
     'topic_research',
+    'topic_persistence',
     'topic_scoring',
     'seo_brief',
     'article_generation',
@@ -1284,12 +1342,7 @@ test('abgerechnete Textstufe verwendet nur ein dauerhaftes vertragsgültiges Erg
       async settleMonthlyBudget() { return { status: 'settled' }; },
       async getPersistedStageResult({ stageId }) {
         if (stageId !== 'topic_research') return null;
-        return {
-          value: { candidates: [topic] },
-          responseId: 'resp-persisted',
-          usage,
-          promptVersion: '2026-07-10.1'
-        };
+        return persistedEnvelope({ candidates: [schemaTopic] });
       },
       estimateTextCost() { return 0.01; }
     }
@@ -1299,6 +1352,283 @@ test('abgerechnete Textstufe verwendet nur ein dauerhaftes vertragsgültiges Erg
 
   assert.equal(result.status, 'completed');
   assert.equal(providerCalls, 0);
+});
+
+test('vertragswidrige persistierte Task-6-Werte stoppen ohne erneuten Provideraufruf', async () => {
+  const cases = [
+    ['topic_research', 'createTopicCandidates', { candidates: [{ topic: 'Unvollständig' }] }],
+    ['seo_brief', 'createSeoBrief', { sourceRequirements: { requiresCurrentSources: false } }],
+    ['article_generation', 'generateArticle', { title: 'Unvollständig', contentHtml: '<p>Zu kurz</p>' }],
+    ['review', 'reviewArticle', { passed: true, score: 95 }]
+  ];
+
+  for (const [index, [targetStage, method, invalidValue]] of cases.entries()) {
+    let providerCalls = 0;
+    const base = createDependencies();
+    const harness = createDependencies({
+      openaiService: {
+        ...base.dependencies.openaiService,
+        async [method](input) {
+          providerCalls += 1;
+          return base.dependencies.openaiService[method](input);
+        }
+      },
+      costService: {
+        async reserveMonthlyBudget(input) {
+          return {
+            created: input.stageId !== targetStage,
+            status: input.stageId === targetStage ? 'settled' : 'reserved',
+            reservationMonth: '2026-07',
+            reservationKey: `budget:2026-07:${input.stageId}`
+          };
+        },
+        async settleMonthlyBudget() { return { status: 'settled' }; },
+        async getPersistedStageResult({ stageId }) {
+          return stageId === targetStage ? persistedEnvelope(invalidValue) : null;
+        },
+        estimateTextCost() { return 0.01; }
+      }
+    });
+
+    const result = await runDraftPipeline({ runId: 260 + index }, harness.dependencies);
+
+    assert.equal(result.status, 'needs_manual_attention', `${targetStage} wurde nicht gestoppt.`);
+    assert.equal(result.code, 'provider_recovery_result_missing');
+    assert.equal(providerCalls, 0);
+    assert.equal(harness.imageCalls.length, 0);
+    assert.equal(harness.createdDrafts.length, 0);
+  }
+});
+
+test('vollständig schemagültige persistierte Providerwerte bleiben wiederverwendbar', async () => {
+  const providerCalls = {
+    createTopicCandidates: 0,
+    createSeoBrief: 0,
+    generateArticle: 0,
+    reviewArticle: 0
+  };
+  const base = createDependencies();
+  const persisted = {
+    topic_research: persistedEnvelope({ candidates: [schemaTopic] }, 'resp-persisted-topic'),
+    seo_brief: persistedEnvelope(schemaSeoBrief, 'resp-persisted-brief'),
+    article_generation: persistedEnvelope(schemaArticle, 'resp-persisted-article'),
+    review: persistedEnvelope(review, 'resp-persisted-review')
+  };
+  const wrappedOpenai = { ...base.dependencies.openaiService };
+  for (const method of Object.keys(providerCalls)) {
+    wrappedOpenai[method] = async () => {
+      providerCalls[method] += 1;
+      throw new Error(`${method} darf nicht aufgerufen werden`);
+    };
+  }
+  const harness = createDependencies({
+    openaiService: wrappedOpenai,
+    costService: {
+      async reserveMonthlyBudget(input) {
+        const isPersisted = Object.hasOwn(persisted, input.stageId);
+        return {
+          created: !isPersisted,
+          status: isPersisted ? 'settled' : 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult({ stageId }) { return persisted[stageId] || null; },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 264 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(providerCalls, {
+    createTopicCandidates: 0,
+    createSeoBrief: 0,
+    generateArticle: 0,
+    reviewArticle: 0
+  });
+});
+
+test('Retry nach Topicanlage verwendet topic_persistence statt eine zweite Themenzeile anzulegen', async () => {
+  let createTopicCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    topicRepository: {
+      async createTopic() { createTopicCalls += 1; throw new Error('Thema darf nicht erneut angelegt werden'); },
+      async markTopicUsed() {}
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'topic_persistence') return { topic: { ...topic, id: 17 } };
+        return null;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 265 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(createTopicCalls, 0);
+  assert.equal(
+    harness.stageUpdates.filter(({ stageId }) => stageId === 'topic_persistence').length,
+    0
+  );
+});
+
+test('unvollständige topic_persistence stoppt sicher ohne doppelte Themenanlage', async () => {
+  let createTopicCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    topicRepository: {
+      async createTopic() { createTopicCalls += 1; return { ...topic, id: 17 }; },
+      async markTopicUsed() {}
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'topic_persistence') return { topic: { id: 17, slug: topic.slug } };
+        return null;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 269 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'side_effect_recovery_result_missing');
+  assert.equal(createTopicCalls, 0);
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+});
+
+test('topic_persistence ergänzt das Datenbankergebnis um den vollständigen ausgewählten Topicvertrag', async () => {
+  const harness = createDependencies({
+    topicRepository: {
+      async createTopic(value) {
+        return {
+          id: 17,
+          topic: value.topic,
+          primary_keyword: value.primaryKeyword,
+          status: 'candidate'
+        };
+      },
+      async markTopicUsed() {}
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 270 }, harness.dependencies);
+  const persisted = harness.stageUpdates.find(({ stageId }) => stageId === 'topic_persistence');
+
+  assert.equal(result.status, 'completed');
+  assert.equal(persisted.stageResult.topic.id, 17);
+  assert.equal(persisted.stageResult.topic.slug, topic.slug);
+  assert.equal(persisted.stageResult.topic.primaryKeyword, topic.primaryKeyword);
+  assert.equal(persisted.stageResult.topic.readerProblem, topic.readerProblem);
+});
+
+test('Retry nach Draftanlage schließt den persistierten Draft ohne Provider und Neuanlage ab', async () => {
+  let providerCalls = 0;
+  let createTopicCalls = 0;
+  let createDraftCalls = 0;
+  const base = createDependencies();
+  const openaiService = Object.fromEntries(Object.entries(base.dependencies.openaiService).map(([name, method]) => [
+    name,
+    async (...args) => { providerCalls += 1; return method(...args); }
+  ]));
+  const harness = createDependencies({
+    openaiService,
+    topicRepository: {
+      async createTopic() { createTopicCalls += 1; return { ...topic, id: 17 }; },
+      async markTopicUsed() {}
+    },
+    draftRepository: {
+      async createAIDraft() { createDraftCalls += 1; return persistedDraft; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'draft_creation') return persistedDraft;
+        return null;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 266 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.id, 41);
+  assert.equal(providerCalls, 0);
+  assert.equal(createTopicCalls, 0);
+  assert.equal(createDraftCalls, 0);
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.stageUpdates.some(({ stageId }) => stageId === 'completed'), true);
+});
+
+test('unmittelbarer Guard vor createAIDraft verwendet einen inzwischen persistierten Draft', async () => {
+  let draftReads = 0;
+  let createDraftCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    draftRepository: {
+      async createAIDraft() { createDraftCalls += 1; return persistedDraft; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId !== 'draft_creation') return null;
+        draftReads += 1;
+        return draftReads === 1 ? null : persistedDraft;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 268 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(draftReads >= 2, true);
+  assert.equal(createDraftCalls, 0);
+});
+
+test('Retry nach completed liefert den persistierten Draft ohne weitere Seiteneffekte', async () => {
+  let providerCalls = 0;
+  let createTopicCalls = 0;
+  let createDraftCalls = 0;
+  const base = createDependencies();
+  const openaiService = Object.fromEntries(Object.entries(base.dependencies.openaiService).map(([name, method]) => [
+    name,
+    async (...args) => { providerCalls += 1; return method(...args); }
+  ]));
+  const harness = createDependencies({
+    openaiService,
+    topicRepository: {
+      async createTopic() { createTopicCalls += 1; return { ...topic, id: 17 }; },
+      async markTopicUsed() {}
+    },
+    draftRepository: {
+      async createAIDraft() { createDraftCalls += 1; return persistedDraft; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'draft_creation') return persistedDraft;
+        if (stageId === 'completed') return { postId: 41, qualityScore: review.score };
+        return null;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 267 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.id, 41);
+  assert.equal(providerCalls, 0);
+  assert.equal(createTopicCalls, 0);
+  assert.equal(createDraftCalls, 0);
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.stageUpdates.length, 0);
+  assert.equal(harness.finishCalls.length, 0);
 });
 
 test('bestehende Bildreservierung verhindert einen erneuten Bildprovideraufruf', async () => {
@@ -1364,6 +1694,9 @@ test('abgerechnete Bildstufe nutzt ausschließlich dauerhaftes Uploadergebnis', 
 test('Pricing-Integrity umfasst Kategorie, SEO, Lead, FAQ und sämtliche Bilddaten', async () => {
   const cases = [
     { category: 'Paket für 1 299 Euro' },
+    { category: 'Paket für € 799' },
+    { category: 'Paket für &euro; 799' },
+    { category: 'Paket für &#8364; 799' },
     { seo: { ...article.seo, primaryKeyword: 'Website für 799&euro;' } },
     { lead: { ...article.lead, businessGoal: 'Projektwert 799&#8364;' } },
     { faqJson: [{ question: 'Preis?', answer: 'Der Aufwand liegt bei 1.299,00&nbsp;Euro.' }] },
@@ -1519,4 +1852,54 @@ test('Fehler nach Draft und completed-Stage liefert erfolgreichen Status mit Aud
   assert.equal(harness.createdDrafts.length, 1);
   assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
   assert.deepEqual(finishCalls.map(({ status }) => status), ['completed']);
+});
+
+test('fehlende Abschlusszeile liefert completed mit persistierter Warnung', async () => {
+  const harness = createDependencies({
+    runRepository: {
+      async updateRunStage(runId, update) { return { runId, ...update }; },
+      async finishRun() { return null; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 244 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
+});
+
+test('persistierter Bildupload mit null Bytes wird nicht wiederverwendet', async () => {
+  const harness = createDependencies({
+    costService: {
+      async reserveMonthlyBudget(input) {
+        return {
+          created: input.stageId !== 'image_generation',
+          status: input.stageId === 'image_generation' ? 'settled' : 'reserved',
+          reservationMonth: '2026-07',
+          reservationKey: `budget:2026-07:${input.stageId}`
+        };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'image_generation') return { status: 'completed', costIncurred: true };
+        if (stageId === 'cloudinary_upload') {
+          return {
+            status: 'completed',
+            imageUrl: 'https://cdn.example.test/leer.webp',
+            publicId: 'blog_images/leer',
+            bytes: 0
+          };
+        }
+        return null;
+      },
+      estimateTextCost() { return 0.01; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 245 }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_recovery_result_missing');
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
 });
