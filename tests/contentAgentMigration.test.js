@@ -43,4 +43,5 @@ test('Migration synchronisiert Publikationszustände und kennt manuelle Queuezus
   assert.match(sql, /published = FALSE[\s\S]*workflow_status = 'published'/i);
   assert.match(sql, /posts_publication_workflow_consistent/i);
   assert.match(sql, /needs_manual_attention/i);
+  assert.match(sql, /cancelled/i);
 });

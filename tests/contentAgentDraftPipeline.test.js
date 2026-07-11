@@ -10,6 +10,7 @@ import {
 import { validateArticle as validateRealArticle } from '../services/contentAgent/articleValidator.js';
 import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
 import { ContentBudgetLimitError } from '../services/contentAgent/contentCostService.js';
+import { createContentWorker } from '../services/contentAgent/workerService.js';
 
 const usage = { input_tokens: 1_000, output_tokens: 500 };
 
@@ -867,6 +868,304 @@ test('Cleanupfehler beim Konflikt-Draft gefährdet den referenzierten Entwurf ni
   assert.equal(cleanup.stageResult.publicId, 'blog_images/article-run');
 });
 
+test('Leaseverlust direkt nach erfolgreichem Draft-Commit löscht das referenzierte Bild nicht', async () => {
+  const deleted = [];
+  let committed = false;
+  const leaseError = new Error('Lease direkt nach COMMIT verloren');
+  leaseError.code = 'CONTENT_JOB_LEASE_LOST';
+  const base = createDependencies();
+  const committedDraft = {
+    ...persistedDraft,
+    post: { ...persistedDraft.post, hero_public_id: 'blog_images/article-run' },
+    created: true,
+    referencedImagePublicId: 'blog_images/article-run'
+  };
+  const harness = createDependencies({
+    draftRepository: {
+      async createAIDraft() { committed = true; return committedDraft; },
+      async findAIDraftByGenerationRunId() { return committedDraft; }
+    },
+    imageService: {
+      ...base.dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  await assert.rejects(runDraftPipeline({
+    runId: 305,
+    leaseGuard: async () => { if (committed) throw leaseError; return true; }
+  }, harness.dependencies), leaseError);
+  assert.deepEqual(deleted, []);
+});
+
+test('unklarer Commit und fehlgeschlagenes Reconciliation-Read verschieben Cleanup statt blind zu löschen', async () => {
+  const deleted = [];
+  let reads = 0;
+  const commitError = new Error('COMMIT-Ausgang unklar');
+  const harness = createDependencies({
+    draftRepository: {
+      async createAIDraft() { throw commitError; },
+      async findAIDraftByGenerationRunId() { reads += 1; throw new Error('Read vorübergehend fehlgeschlagen'); }
+    },
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 306 }, harness.dependencies);
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'draft_reconciliation_uncertain');
+  assert.equal(reads >= 2, true);
+  assert.deepEqual(deleted, []);
+  const deferred = harness.stageUpdates.find(({ stageId }) => stageId === 'image_cleanup');
+  assert.equal(deferred.stageResult.status, 'deferred_uncertain');
+});
+
+test('erfolgreiches Reconciliation-Read ohne Draft beweist Nichtreferenzierung und erlaubt Cleanup', async () => {
+  const deleted = [];
+  const draftError = new Error('Draft nicht gespeichert');
+  const harness = createDependencies({
+    draftRepository: {
+      async createAIDraft() { throw draftError; },
+      async findAIDraftByGenerationRunId() { return null; }
+    },
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  await assert.rejects(runDraftPipeline({ runId: 307 }, harness.dependencies), draftError);
+  assert.deepEqual(deleted, ['blog_images/article-run']);
+});
+
+test('aus früherem Attempt wiederverwendetes Bild wird trotz fehlendem Draft nicht als neu bereinigt', async () => {
+  const deleted = [];
+  const draftError = new Error('Draft weiterhin nicht gespeichert');
+  const base = createDependencies();
+  const harness = createDependencies({
+    costService: {
+      ...base.dependencies.costService,
+      async reserveMonthlyBudget(input) {
+        if (input.stageId !== 'image_generation') return base.dependencies.costService.reserveMonthlyBudget(input);
+        return { created: false, status: 'settled', reservationMonth: '2026-07' };
+      },
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'image_generation') return { status: 'completed', costIncurred: true };
+        if (stageId === 'cloudinary_upload') {
+          return {
+            status: 'completed',
+            imageUrl: 'https://cdn.example.test/frueher.webp',
+            publicId: 'blog_images/frueher',
+            bytes: 321
+          };
+        }
+        return null;
+      }
+    },
+    draftRepository: {
+      async createAIDraft() { throw draftError; },
+      async findAIDraftByGenerationRunId() { return null; }
+    },
+    imageService: {
+      ...base.dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  await assert.rejects(runDraftPipeline({ runId: 312 }, harness.dependencies), draftError);
+  assert.deepEqual(deleted, []);
+});
+
+test('sicher abgelehnter 429-Provideraufruf gibt Reservierung frei und bleibt job-retrybar', async () => {
+  const rateLimit = new Error('Rate Limit vor Ausführung');
+  rateLimit.status = 429;
+  let releaseCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() { throw rateLimit; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation(input) { releaseCalls += 1; return { ...input, status: 'released' }; }
+    }
+  });
+
+  await assert.rejects(runDraftPipeline({ runId: 308 }, harness.dependencies), (error) => (
+    error === rateLimit && error.retryable === true && error.code === 'CONTENT_PROVIDER_SAFE_RETRY'
+  ));
+  assert.equal(releaseCalls, 1);
+  assert.equal(harness.finishCalls.at(-1).status, 'failed');
+});
+
+test('fehlgeschlagene Reservierungsfreigabe wird nicht als sicher retrybar requeued', async () => {
+  const rateLimit = new Error('Rate Limit vor Ausführung');
+  rateLimit.status = 429;
+  const releaseError = new Error('Freigabe nicht persistierbar');
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() { throw rateLimit; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation() { throw releaseError; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 311 }, harness.dependencies);
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_retry_release_failed');
+  assert.notEqual(rateLimit.retryable, true);
+});
+
+test('ambiger Providertimeout endet manuell und wird nicht als sicher retrybar markiert', async () => {
+  const timeout = new Error('Provider timeout');
+  timeout.code = 'ETIMEDOUT';
+  let releaseCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() { throw timeout; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation() { releaseCalls += 1; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 309 }, harness.dependencies);
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_execution_uncertain');
+  assert.equal(releaseCalls, 0);
+  assert.equal(harness.finishCalls.at(-1).status, 'needs_manual_attention');
+});
+
+test('Bildproviderfehler endet im ersten Jobattempt manuell statt irreführend zu requeueen', async () => {
+  const imageError = new ContentImageError('Bildprovider unklar.', {
+    code: 'IMAGE_GENERATION_FAILED',
+    audit: { imageGeneration: { status: 'failed', costIncurred: true } }
+  });
+  const harness = createDependencies({
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async generateAndUploadImage() { throw imageError; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 310 }, harness.dependencies);
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_provider_uncertain');
+  assert.equal(harness.finishCalls.at(-1).status, 'needs_manual_attention');
+});
+
+test('End-to-End: 429 durchläuft Worker-Backoff und dieselbe Pipeline genau einmal erneut bis zum Draft', async () => {
+  const claims = [
+    { id: 401, locked_by: 'worker-e2e', attempts: 1, payload_json: {} },
+    { id: 401, locked_by: 'worker-e2e', attempts: 2, payload_json: {} }
+  ];
+  let topicProviderCalls = 0;
+  let releasedReservations = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates(input) {
+        topicProviderCalls += 1;
+        if (topicProviderCalls === 1) {
+          const error = new Error('429 vor Ausführung');
+          error.status = 429;
+          throw error;
+        }
+        return base.dependencies.openaiService.createTopicCandidates(input);
+      }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation() {
+        releasedReservations += 1;
+        return { status: 'released' };
+      }
+    }
+  });
+  const terminal = [];
+  const worker = createContentWorker({
+    enabled: true,
+    workerId: 'worker-e2e',
+    leaseRenewMs: 60_000,
+    setIntervalFn() { return {}; },
+    clearIntervalFn() {},
+    async upsertHeartbeat() {},
+    async recoverExpiredJobs() {},
+    async claimNextJob() { return claims.shift() || null; },
+    async renewJobLease(claim) { return claim; },
+    async handleJob(_claim, { leaseGuard }) {
+      return runDraftPipeline({ runId: 401, leaseGuard }, harness.dependencies);
+    },
+    async completeJob(claim) { terminal.push(['completed', claim.attempts]); return { status: 'completed' }; },
+    async failJob() { throw new Error('nicht erwartet'); },
+    async retryOrFailJob(claim) { terminal.push(['queued', claim.attempts]); return { status: 'queued' }; },
+    async markJobNeedsManualAttention() { throw new Error('nicht erwartet'); }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  assert.equal((await worker.processOnce()).status, 'completed');
+  assert.equal(topicProviderCalls, 2);
+  assert.equal(releasedReservations, 1);
+  assert.equal(harness.imageCalls.length, 1);
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.deepEqual(terminal, [['queued', 1], ['completed', 2]]);
+});
+
+test('End-to-End: ambiger Timeout endet im Worker manuell ohne zweiten Provideraufruf', async () => {
+  const claims = [{ id: 402, locked_by: 'worker-e2e', attempts: 1, payload_json: {} }];
+  let providerCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() {
+        providerCalls += 1;
+        const error = new Error('Timeout mit unklarem Providerausgang');
+        error.code = 'ETIMEDOUT';
+        throw error;
+      }
+    }
+  });
+  const terminal = [];
+  const worker = createContentWorker({
+    enabled: true,
+    workerId: 'worker-e2e',
+    leaseRenewMs: 60_000,
+    setIntervalFn() { return {}; },
+    clearIntervalFn() {},
+    async upsertHeartbeat() {},
+    async recoverExpiredJobs() {},
+    async claimNextJob() { return claims.shift() || null; },
+    async renewJobLease(claim) { return claim; },
+    async handleJob(_claim, { leaseGuard }) {
+      return runDraftPipeline({ runId: 402, leaseGuard }, harness.dependencies);
+    },
+    async completeJob() { throw new Error('nicht erwartet'); },
+    async failJob() { throw new Error('nicht erwartet'); },
+    async retryOrFailJob() { throw new Error('nicht erwartet'); },
+    async markJobNeedsManualAttention(claim, result) {
+      terminal.push([result.status, claim.attempts]);
+      return { status: 'needs_manual_attention' };
+    }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'needs_manual_attention');
+  assert.equal(await worker.processOnce(), null);
+  assert.equal(providerCalls, 1);
+  assert.deepEqual(terminal, [['needs_manual_attention', 1]]);
+});
+
 test('runDraftPipeline erstellt nach bestandener Validierung und Review einen unveröffentlichten KI-Entwurf', async () => {
   const harness = createDependencies();
 
@@ -1085,7 +1384,8 @@ test('ein Draftfehler nach erfolgreichem Upload bereinigt das injizierte Bild', 
       async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
     },
     draftRepository: {
-      async createAIDraft() { throw draftError; }
+      async createAIDraft() { throw draftError; },
+      async findAIDraftByGenerationRunId() { return null; }
     }
   });
 
@@ -1377,8 +1677,10 @@ test('Uploadfehler auditiert Bildkosten, Upload und Service-Cleanup getrennt', a
   });
   const harness = createDependencies({ imageService });
 
-  await assert.rejects(runDraftPipeline({ runId: 110 }, harness.dependencies), ContentImageError);
+  const result = await runDraftPipeline({ runId: 110 }, harness.dependencies);
 
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_provider_uncertain');
   assert.equal(harness.budgetSettlements.some(({ stageId, actualCost }) => stageId === 'image_generation' && actualCost === 0.041), true);
   assert.deepEqual(
     harness.stageUpdates.filter(({ stageId }) => ['image_generation', 'cloudinary_upload', 'image_cleanup'].includes(stageId)).map(({ stageId }) => stageId),
@@ -1391,7 +1693,10 @@ test('Uploadfehler auditiert Bildkosten, Upload und Service-Cleanup getrennt', a
 test('Cleanupfehler nach Draftfehler wird sicher auditiert und verdeckt den Draftfehler nicht', async () => {
   const draftError = new Error('Draft fehlgeschlagen');
   const harness = createDependencies({
-    draftRepository: { async createAIDraft() { throw draftError; } },
+    draftRepository: {
+      async createAIDraft() { throw draftError; },
+      async findAIDraftByGenerationRunId() { return null; }
+    },
     imageService: {
       ...createDependencies().dependencies.imageService,
       async deleteImage({ publicId }) {
@@ -2124,7 +2429,10 @@ test('Cleanup-Auditfehler verdeckt den Draftfehler nicht und Runabschluss wird v
     const draftError = new Error(`Primärer Draftfehler ${cleanupFails}`);
     const finishAttempts = [];
     const harness = createDependencies({
-      draftRepository: { async createAIDraft() { throw draftError; } },
+      draftRepository: {
+        async createAIDraft() { throw draftError; },
+        async findAIDraftByGenerationRunId() { return null; }
+      },
       imageService: {
         ...createDependencies().dependencies.imageService,
         async deleteImage({ publicId }) {
@@ -2187,9 +2495,11 @@ test('Settlement- und Bildauditfehler verdecken den primären Providerfehler nic
     }
   });
 
-  await assert.rejects(runDraftPipeline({ runId: 242 }, harness.dependencies), providerError);
+  const result = await runDraftPipeline({ runId: 242 }, harness.dependencies);
 
-  assert.equal(finishAttempts.some(({ status }) => status === 'failed'), true);
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_provider_uncertain');
+  assert.equal(finishAttempts.some(({ status }) => status === 'needs_manual_attention'), true);
   assert.equal(providerError.auditWarnings.some(({ code }) => code === 'BUDGET_SETTLEMENT_FAILED'), true);
   assert.equal(providerError.auditWarnings.some(({ code }) => code === 'STAGE_AUDIT_FAILED'), true);
 });

@@ -236,6 +236,18 @@ function isPersistedCompletedResult(value, draft) {
   );
 }
 
+function providerFailureIsSafeToRetry(error) {
+  return error?.safeToRetry === true
+    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
+}
+
+function markSafeProviderRetry(error) {
+  if (!error || typeof error !== 'object') return error;
+  error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
+  error.retryable = true;
+  return error;
+}
+
 export async function runDraftPipeline(input = {}, dependencies = {}) {
   const config = required(dependencies.config, 'config');
   const inventoryService = required(dependencies.inventoryService, 'inventoryService');
@@ -257,6 +269,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   let uploadedImage = null;
   let imageCreatedThisRun = false;
   let draftPersisted = false;
+  let referencedDraftPublicId = null;
 
   async function assertLease() {
     return leaseGuard();
@@ -365,7 +378,38 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       return recoverProviderStage(stageId, stage, reservation);
     }
     await assertLease();
-    const result = await operation(operationInput);
+    let result;
+    try {
+      result = await operation(operationInput);
+    } catch (error) {
+      if (error?.code === 'dry_run_external_call') throw error;
+      await assertLease();
+      if (!providerFailureIsSafeToRetry(error)) {
+        return stopForRecovery(
+          'provider_execution_uncertain',
+          'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.'
+        );
+      }
+      if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
+        return stopForRecovery(
+          'provider_retry_release_failed',
+          'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht freigeben.'
+        );
+      }
+      try {
+        await costService.releaseMonthlyBudgetReservation({
+          runId,
+          stageId,
+          reservationMonth: reservation.reservationMonth
+        });
+      } catch {
+        return stopForRecovery(
+          'provider_retry_release_failed',
+          'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht atomar freigeben.'
+        );
+      }
+      throw markSafeProviderRetry(error);
+    }
     await assertLease();
     const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
     await costService.settleMonthlyBudget({
@@ -797,7 +841,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           error
         );
         if (audit.cleanup) await safeUpdateStage('image_cleanup', audit.cleanup, {}, error);
-        throw error;
+        await stopForRecovery(
+          'image_provider_uncertain',
+          'Ein Bildproviderfehler wird nicht automatisch wiederholt, weil Ausführung oder Upload unklar sein können.'
+        );
       }
     }
 
@@ -867,9 +914,18 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       };
       try {
         draft = await draftRepository.createAIDraft(draftInput);
+        draftPersisted = Boolean(draft?.post?.id);
+        referencedDraftPublicId = draft?.referencedImagePublicId || draft?.post?.hero_public_id || null;
       } catch (draftError) {
         if (typeof draftRepository.findAIDraftByGenerationRunId !== 'function') throw draftError;
-        const recovered = await draftRepository.findAIDraftByGenerationRunId(runId);
+        let recovered;
+        try {
+          recovered = await draftRepository.findAIDraftByGenerationRunId(runId);
+        } catch (reconciliationError) {
+          reconciliationError.code = 'DRAFT_RECONCILIATION_UNCERTAIN';
+          reconciliationError.cause ??= draftError;
+          throw reconciliationError;
+        }
         if (!recovered?.post?.id || !recovered?.metadata) throw draftError;
         draft = {
           ...recovered,
@@ -878,11 +934,14 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           created: false,
           referencedImagePublicId: recovered.post.hero_public_id || null
         };
+        draftPersisted = true;
+        referencedDraftPublicId = draft.referencedImagePublicId;
       }
       await assertLease();
     }
     draftPersisted = true;
-    const referencedPublicId = draft.referencedImagePublicId || draft.post?.hero_public_id || null;
+    referencedDraftPublicId ||= draft.referencedImagePublicId || draft.post?.hero_public_id || null;
+    const referencedPublicId = referencedDraftPublicId;
     if (imageCreatedThisRun && uploadedImage?.publicId !== referencedPublicId && draft.created === false) {
       let cleanupResult;
       try {
@@ -930,7 +989,47 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     };
   } catch (error) {
     if (error instanceof ManualAttentionStop) return error.result;
-    if (uploadedImage?.publicId && !draftPersisted) {
+    if (uploadedImage?.publicId && imageCreatedThisRun && !draftPersisted) {
+      let reconciliationKnown = false;
+      let reconciledDraft = null;
+      if (typeof draftRepository.findAIDraftByGenerationRunId === 'function') {
+        try {
+          reconciledDraft = await draftRepository.findAIDraftByGenerationRunId(runId);
+          reconciliationKnown = true;
+          if (reconciledDraft?.post?.id) {
+            draftPersisted = true;
+            referencedDraftPublicId = reconciledDraft.post.hero_public_id || null;
+          }
+        } catch {
+          reconciliationKnown = false;
+        }
+      }
+      if (!reconciliationKnown) {
+        const deferred = {
+          status: 'deferred_uncertain',
+          publicId: uploadedImage.publicId,
+          code: 'DRAFT_RECONCILIATION_UNCERTAIN'
+        };
+        await safeUpdateStage('image_cleanup', deferred, {}, error);
+        recordAuditWarning(error, 'IMAGE_CLEANUP_DEFERRED_UNCERTAIN', {
+          publicId: uploadedImage.publicId
+        });
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+        return finishManual(
+          'draft_reconciliation_uncertain',
+          'Der Draftstatus ist unklar; das Bild bleibt bis zur manuellen Klärung erhalten.'
+        );
+      }
+      const uploadedImageIsUnreferenced = !reconciledDraft?.post?.id
+        || referencedDraftPublicId !== uploadedImage.publicId;
+      if (!uploadedImageIsUnreferenced) {
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+        await safeFinishRun({
+          status: 'failed',
+          errorReport: { code: 'pipeline_failed', message: error.message }
+        }, error);
+        throw error;
+      }
       let cleanupResult;
       try {
         cleanupResult = await imageService.deleteImage({ publicId: uploadedImage.publicId });

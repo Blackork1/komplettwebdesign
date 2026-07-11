@@ -166,7 +166,7 @@ export async function reserveMonthlyBudget({
     await client.query(
       `
         UPDATE content_runs
-        SET stage_results_json = stage_results_json || jsonb_build_object($2, $3::jsonb),
+        SET stage_results_json = stage_results_json || jsonb_build_object($2::text, $3::jsonb),
             cost_estimate = cost_estimate + $4
         WHERE id = $1 AND NOT stage_results_json ? $2
         RETURNING *
@@ -223,7 +223,7 @@ export async function settleMonthlyBudget({
     await client.query(
       `
         UPDATE content_runs
-        SET stage_results_json = stage_results_json || jsonb_build_object($2, $3::jsonb),
+        SET stage_results_json = stage_results_json || jsonb_build_object($2::text, $3::jsonb),
             cost_estimate = GREATEST(0, cost_estimate - $4 + $5)
         WHERE id = $1
         RETURNING *
@@ -232,6 +232,50 @@ export async function settleMonthlyBudget({
     );
     await client.query('COMMIT');
     return { reservationKey: key, ...settled };
+  } catch (error) {
+    await rollbackQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function releaseMonthlyBudgetReservation({
+  runId,
+  stageId,
+  reservationMonth,
+  db = pool
+}) {
+  const context = contextFromReservationMonth(reservationMonth);
+  const key = reservationKey(context.reservationMonth, stageId);
+  const client = await beginBudgetTransaction(db, context);
+  try {
+    const { rows: runRows } = await client.query(
+      'SELECT stage_results_json, cost_estimate FROM content_runs WHERE id = $1 FOR UPDATE',
+      [runId]
+    );
+    const reservation = runRows[0]?.stage_results_json?.[key];
+    if (!reservation) {
+      await client.query('COMMIT');
+      return { status: 'already_released', reservationKey: key };
+    }
+    if (reservation.status !== 'reserved' || reservation.reservationMonth !== context.reservationMonth) {
+      throw new Error('Nur eine offene Budgetreservierung kann für einen sicheren Retry freigegeben werden.');
+    }
+    const reservedCost = nonNegativeNumber(reservation.reservedCost, 'reservedCost');
+    await client.query(
+      `
+        UPDATE content_runs
+        SET stage_results_json = stage_results_json - $2::text,
+            cost_estimate = GREATEST(0, cost_estimate - $3)
+        WHERE id = $1
+          AND stage_results_json -> $2::text ->> 'status' = 'reserved'
+        RETURNING *
+      `,
+      [runId, key, reservedCost]
+    );
+    await client.query('COMMIT');
+    return { status: 'released', reservationKey: key, releasedCost: reservedCost };
   } catch (error) {
     await rollbackQuietly(client);
     throw error;

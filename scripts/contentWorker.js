@@ -160,6 +160,7 @@ function bindRepositories(database, modules) {
     getMonthlyContentCost: (input = {}) => modules.costService.getMonthlyContentCost({ ...input, db: database }),
     reserveMonthlyBudget: (input) => modules.costService.reserveMonthlyBudget({ ...input, db: database }),
     settleMonthlyBudget: (input) => modules.costService.settleMonthlyBudget({ ...input, db: database }),
+    releaseMonthlyBudgetReservation: (input) => modules.costService.releaseMonthlyBudgetReservation({ ...input, db: database }),
     getPersistedStageResult: (input) => modules.costService.getPersistedStageResult({ ...input, db: database })
   };
   return { jobRepository, runRepository, topicRepository, costService };

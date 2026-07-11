@@ -7,10 +7,20 @@ import {
   claimNextJob,
   completeJob,
   enqueueJob,
+  failJob,
+  markJobNeedsManualAttention,
+  recoverExpiredJobs,
   renewJobLease,
-  retryOrFailJob
+  retryOrFailJob,
+  upsertWorkerHeartbeat
 } from '../repositories/contentJobRepository.js';
 import { createRun, updateRunStage } from '../repositories/contentRunRepository.js';
+import {
+  releaseMonthlyBudgetReservation,
+  reserveMonthlyBudget,
+  settleMonthlyBudget
+} from '../services/contentAgent/contentCostService.js';
+import { createContentWorker } from '../services/contentAgent/workerService.js';
 import BlogPostModel from '../models/BlogPostModel.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
@@ -47,6 +57,16 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    await pool.query('ALTER TABLE content_jobs DROP CONSTRAINT content_jobs_status_valid');
+    await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key)
+      VALUES ('generate_manual_draft', 'cancelled', 'bestehend-abgebrochen')
+    `);
+    await runContentAgentMigration(pool);
+    await runContentAgentMigration(pool);
+    const cancelled = await pool.query("SELECT status FROM content_jobs WHERE idempotency_key = 'bestehend-abgebrochen'");
+    assert.equal(cancelled.rows[0].status, 'cancelled');
 
     const migrated = await pool.query('SELECT slug, published, workflow_status, published_at FROM posts ORDER BY id');
     assert.equal(migrated.rows[0].workflow_status, 'published');
@@ -120,6 +140,115 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal((await completeJob(secondClaim, pool)).status, 'completed');
     const counts = await pool.query('SELECT COUNT(*)::int AS count FROM content_runs WHERE job_id = $1', [job.id]);
     assert.equal(counts.rows[0].count, 1);
+
+    const safeJob = await enqueueJob({
+      jobType: 'generate_manual_draft',
+      idempotencyKey: 'pg-worker-safe-provider-retry',
+      payload: { mode: 'safe-provider-retry' },
+      maxAttempts: 2
+    }, pool);
+    const providerCalls = { safe: 0, ambiguous: 0 };
+    const runIds = [];
+    const timers = new Set();
+    const worker = createContentWorker({
+      enabled: true,
+      workerId: 'pg-real-worker',
+      workerName: 'pg-real-worker',
+      version: 'test',
+      leaseMinutes: 5,
+      leaseRenewMs: 30_000,
+      setIntervalFn(callback) {
+        const handle = { callback };
+        timers.add(handle);
+        return handle;
+      },
+      clearIntervalFn(handle) { timers.delete(handle); },
+      upsertHeartbeat: (input) => upsertWorkerHeartbeat(input, pool),
+      recoverExpiredJobs: (minutes) => recoverExpiredJobs(minutes, pool),
+      claimNextJob: (workerId) => claimNextJob(workerId, pool),
+      renewJobLease: (claim) => renewJobLease(claim, pool),
+      completeJob: (claim) => completeJob(claim, pool),
+      failJob: (claim, error) => failJob(claim, error, pool),
+      retryOrFailJob: (claim, error, options) => retryOrFailJob(claim, error, options, pool),
+      markJobNeedsManualAttention: (claim, reason) => markJobNeedsManualAttention(claim, reason, pool),
+      async handleJob(claim, { leaseGuard }) {
+        let step = 'createRun';
+        try {
+          const run = await createRun({ jobId: claim.id }, pool);
+          runIds.push(run.id);
+          step = 'leaseGuard';
+          await leaseGuard();
+          const stageId = 'article_generation';
+          step = 'reserve';
+          const reservation = await reserveMonthlyBudget({
+            runId: run.id,
+            stageId,
+            estimatedCost: 0.5,
+            limit: 100,
+            db: pool
+          });
+          if (claim.payload_json.mode === 'safe-provider-retry') {
+            providerCalls.safe += 1;
+            if (claim.attempts === 1) {
+              step = 'release';
+              await releaseMonthlyBudgetReservation({
+                runId: run.id,
+                stageId,
+                reservationMonth: reservation.reservationMonth,
+                db: pool
+              });
+              const error = new Error('429 vor Ausführung');
+              error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
+              error.retryable = true;
+              throw error;
+            }
+            step = 'settle';
+            await settleMonthlyBudget({
+              runId: run.id,
+              stageId,
+              reservationMonth: reservation.reservationMonth,
+              actualCost: 0.01,
+              db: pool
+            });
+            step = 'updateStage';
+            await updateRunStage(run.id, {
+              currentStage: stageId,
+              stageId,
+              stageResult: { responseId: 'resp-nach-retry' }
+            }, pool);
+            return { status: 'completed' };
+          }
+          providerCalls.ambiguous += 1;
+          return { status: 'needs_manual_attention', code: 'provider_execution_uncertain' };
+        } catch (error) {
+          error.message = `${step}: ${error.message}`;
+          throw error;
+        }
+      }
+    });
+
+    assert.equal((await worker.processOnce()).status, 'queued');
+    await pool.query('UPDATE content_jobs SET run_after = NOW() WHERE id = $1', [safeJob.id]);
+    const secondWorkerResult = await worker.processOnce();
+    const safeDiagnostic = await pool.query('SELECT status, last_error, attempts FROM content_jobs WHERE id = $1', [safeJob.id]);
+    assert.equal(secondWorkerResult.status, 'completed', JSON.stringify(safeDiagnostic.rows[0]));
+    assert.equal(providerCalls.safe, 2);
+    assert.equal(runIds[0], runIds[1]);
+    const safeState = await pool.query('SELECT status FROM content_jobs WHERE id = $1', [safeJob.id]);
+    assert.equal(safeState.rows[0].status, 'completed');
+
+    const ambiguousJob = await enqueueJob({
+      jobType: 'generate_manual_draft',
+      idempotencyKey: 'pg-worker-ambiguous-provider',
+      payload: { mode: 'ambiguous-provider' },
+      maxAttempts: 3
+    }, pool);
+    assert.equal((await worker.processOnce()).status, 'needs_manual_attention');
+    assert.equal(await worker.processOnce(), null);
+    assert.equal(providerCalls.ambiguous, 1);
+    const ambiguousState = await pool.query('SELECT status FROM content_jobs WHERE id = $1', [ambiguousJob.id]);
+    assert.equal(ambiguousState.rows[0].status, 'needs_manual_attention');
+    assert.equal(timers.size, 0);
   } finally {
     await pool.end();
   }

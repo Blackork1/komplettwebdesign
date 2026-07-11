@@ -287,6 +287,31 @@ test('Worker erneuert die Job-Lease während handleJob und reicht einen Fence-Gu
   assert.equal(calls.some(([type]) => type === 'clear'), true);
 });
 
+test('jeder explizite Lease-Guard erneuert den DB-Fence aktuell und koalesziert parallele Aufrufe', async () => {
+  const renewGate = deferred();
+  let renewCalls = 0;
+  const { worker } = createWorkerHarness({
+    async renewJobLease(job) {
+      renewCalls += 1;
+      if (renewCalls === 1) await renewGate.promise;
+      return { id: job.id };
+    },
+    async handleJob(_job, { leaseGuard }) {
+      const first = leaseGuard();
+      const second = leaseGuard();
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(renewCalls, 1);
+      renewGate.resolve();
+      await Promise.all([first, second]);
+      await leaseGuard();
+      return { status: 'completed' };
+    }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'completed');
+  assert.equal(renewCalls, 3, 'zwei Handler-Fences plus Abschluss-Fence müssen aktuell erneuern');
+});
+
 test('verlorene Lease stoppt den Guard und verhindert alle terminalen Queueupdates', async () => {
   const gate = deferred();
   const { worker, calls } = createWorkerHarness({
@@ -667,6 +692,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
       getMonthlyContentCost: async ({ db }) => { dbArguments.push(db); return 0; },
       reserveMonthlyBudget: async ({ db }) => { dbArguments.push(db); return {}; },
       settleMonthlyBudget: async ({ db }) => { dbArguments.push(db); return {}; },
+      releaseMonthlyBudgetReservation: async ({ db }) => { dbArguments.push(db); return {}; },
       getPersistedStageResult: async ({ db }) => { dbArguments.push(db); return null; }
     },
     BlogPostModel: {
@@ -707,6 +733,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   await runtime.pipelineDependencies.costService.getMonthlyContentCost({});
   await runtime.pipelineDependencies.costService.reserveMonthlyBudget({});
   await runtime.pipelineDependencies.costService.settleMonthlyBudget({});
+  await runtime.pipelineDependencies.costService.releaseMonthlyBudgetReservation({});
   await runtime.pipelineDependencies.costService.getPersistedStageResult({});
   await runtime.pipelineDependencies.draftRepository.createAIDraft({});
   await runtime.pipelineDependencies.draftRepository.findAIDraftByGenerationRunId(1);

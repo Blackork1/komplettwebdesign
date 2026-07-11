@@ -7,6 +7,7 @@ import {
   estimateTextCost,
   getMonthlyContentCost,
   getPersistedStageResult,
+  releaseMonthlyBudgetReservation,
   reserveMonthlyBudget,
   settleMonthlyBudget
 } from '../services/contentAgent/contentCostService.js';
@@ -77,6 +78,13 @@ function createConcurrentBudgetDb(initialCosts = {}) {
             const row = runs.get(Number(runId));
             row.stage_results_json[reservationKey] = settled;
             row.cost_estimate = Math.max(0, row.cost_estimate - Number(reservedCost) + Number(actualCost));
+            return { rows: [{ ...row, stage_results_json: { ...row.stage_results_json } }] };
+          }
+          if (/stage_results_json = stage_results_json - \$2::text/i.test(normalized)) {
+            const [runId, key, reservedCost] = params;
+            const row = runs.get(Number(runId));
+            delete row.stage_results_json[key];
+            row.cost_estimate = Math.max(0, row.cost_estimate - Number(reservedCost));
             return { rows: [{ ...row, stage_results_json: { ...row.stage_results_json } }] };
           }
           if (/^(?:COMMIT|ROLLBACK)$/i.test(normalized)) {
@@ -287,6 +295,37 @@ test('getPersistedStageResult liest ein dauerhaftes Stage-Ergebnis injizierbar',
 
   assert.equal(await getPersistedStageResult({ runId: 7, stageId: 'topic_research', db }), expected);
   assert.deepEqual(calls[0].params, [7, 'topic_research']);
+});
+
+test('sicher nicht ausgeführte Providerstufe gibt ihre offene Reservierung atomar für Retry frei', async () => {
+  const db = createConcurrentBudgetDb({ 31: 0 });
+  const reservation = await reserveMonthlyBudget({
+    runId: 31,
+    stageId: 'topic_research',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-07-11T09:00:00.000Z'),
+    db
+  });
+
+  const released = await releaseMonthlyBudgetReservation({
+    runId: 31,
+    stageId: 'topic_research',
+    reservationMonth: reservation.reservationMonth,
+    db
+  });
+  const retried = await reserveMonthlyBudget({
+    runId: 31,
+    stageId: 'topic_research',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-07-11T09:01:00.000Z'),
+    db
+  });
+
+  assert.equal(released.status, 'released');
+  assert.equal(db.runs.get(31).cost_estimate, 0.5);
+  assert.equal(retried.created, true);
 });
 
 test('ein Advisory-Lockfehler rollt zurück und gibt den Client frei', async () => {

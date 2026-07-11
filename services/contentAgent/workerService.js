@@ -96,7 +96,7 @@ export function createContentWorker(dependencies = {}) {
     };
     const leaseTimer = setIntervalFn(renewLease, leaseRenewMs);
     const leaseGuard = async () => {
-      if (renewalPromise) await renewalPromise;
+      await renewLease();
       if (!leaseValid) throw new LeaseLostError();
       return true;
     };

@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS content_jobs (
 CREATE INDEX IF NOT EXISTS idx_content_jobs_claim ON content_jobs (status, run_after, created_at);
 ALTER TABLE content_jobs DROP CONSTRAINT IF EXISTS content_jobs_status_valid;
 ALTER TABLE content_jobs ADD CONSTRAINT content_jobs_status_valid CHECK (
-  status IN ('queued', 'running', 'completed', 'failed', 'needs_manual_attention')
+  status IN ('queued', 'running', 'completed', 'failed', 'needs_manual_attention', 'cancelled')
 );
 
 CREATE TABLE IF NOT EXISTS content_topics (
