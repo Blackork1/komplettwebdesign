@@ -216,23 +216,35 @@ export function createProductionRuntime({
   return { worker, pipelineDependencies, jobRepository: repositories.jobRepository };
 }
 
-export function createShutdownController({ scheduler, worker, pool: database, logger = console }) {
+export function createShutdownController({
+  scheduler,
+  worker,
+  pool: database,
+  logger = console,
+  setIntervalFn = setInterval,
+  clearIntervalFn = clearInterval,
+  keepaliveMs = 1_000,
+  onFailure = () => { process.exitCode = 1; }
+}) {
   let shutdownPromise = null;
   return function shutdown() {
     if (shutdownPromise) return shutdownPromise;
     shutdownPromise = (async () => {
+      let keepalive = null;
       scheduler?.stop();
-      const result = await worker?.stop();
-      if (result?.drained === false) {
-        void worker.whenIdle()
-          .then(() => database.end())
-          .catch(() => logger.error?.('Content-Worker konnte den Pool nicht sauber schließen.'));
-        return;
+      try {
+        const result = await worker?.stop();
+        if (result?.drained === false) {
+          keepalive = setIntervalFn(() => {}, keepaliveMs);
+          await worker.whenIdle();
+        }
+        await database.end();
+      } finally {
+        if (keepalive !== null) clearIntervalFn(keepalive);
       }
-      await database.end();
     })().catch(() => {
       logger.error?.('Content-Worker konnte nicht sauber beendet werden.');
-      process.exitCode = 1;
+      onFailure();
     });
     return shutdownPromise;
   };

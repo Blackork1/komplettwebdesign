@@ -50,6 +50,7 @@ export function createContentWorker(dependencies = {}) {
   let running = false;
   let stopping = false;
   let activePromise = null;
+  let heartbeatPromise = null;
 
   async function executeOnce() {
     await writeHeartbeat();
@@ -94,7 +95,20 @@ export function createContentWorker(dependencies = {}) {
   }
 
   function writeHeartbeat() {
-    return upsertHeartbeat({ workerName, workerId, startedAt, lastJobAt, version });
+    if (heartbeatPromise) return heartbeatPromise;
+    const operation = Promise.resolve().then(() => upsertHeartbeat({
+      workerName,
+      workerId,
+      startedAt,
+      lastJobAt,
+      version
+    }));
+    let wrapped;
+    wrapped = operation.finally(() => {
+      if (heartbeatPromise === wrapped) heartbeatPromise = null;
+    });
+    heartbeatPromise = wrapped;
+    return wrapped;
   }
 
   async function heartbeatSafely() {
@@ -125,11 +139,11 @@ export function createContentWorker(dependencies = {}) {
       clearIntervalFn(heartbeatTimer);
       heartbeatTimer = null;
     }
-    if (!activePromise) return { drained: true };
+    if (!activePromise && !heartbeatPromise) return { drained: true };
 
     let timeout = null;
     const drained = await Promise.race([
-      activePromise.then(() => true, () => true),
+      whenIdle().then(() => true),
       new Promise((resolve) => {
         timeout = setTimeoutFn(() => resolve(false), stopTimeoutMs);
       })
@@ -138,9 +152,11 @@ export function createContentWorker(dependencies = {}) {
     return { drained };
   }
 
-  function whenIdle() {
-    if (!activePromise) return Promise.resolve();
-    return activePromise.then(() => undefined, () => undefined);
+  async function whenIdle() {
+    while (activePromise || heartbeatPromise) {
+      const pending = [activePromise, heartbeatPromise].filter(Boolean);
+      await Promise.allSettled(pending);
+    }
   }
 
   return { start, stop, processOnce, whenIdle };

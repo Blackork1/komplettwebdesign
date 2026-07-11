@@ -21,7 +21,7 @@ import {
   runWorkerHealthcheck
 } from '../scripts/contentWorkerHealthcheck.js';
 import {
-  createDryRunExternalCallGuard,
+  createDryRunAdapterMonitor,
   runContentAgentDryRun
 } from '../scripts/contentAgentDryRun.js';
 
@@ -145,6 +145,45 @@ test('ein unabhängiger Heartbeat läuft während langer Jobs weiter ohne erneut
   gate.resolve();
   await worker.whenIdle();
   await worker.stop();
+  assert.equal(calls.filter(([type]) => type === 'clear').length, 2);
+});
+
+test('langsame Heartbeats sind nicht reentrant und gehören zum Worker-Idle-Zustand', async () => {
+  const heartbeatGate = deferred();
+  let slowHeartbeat = false;
+  const { worker, calls } = createWorkerHarness({
+    async claimNextJob(workerId) { calls.push(['claim', workerId]); return null; },
+    async upsertHeartbeat(input) {
+      calls.push(['heartbeat', input]);
+      if (slowHeartbeat) await heartbeatGate.promise;
+      return { fresh: true };
+    },
+    setTimeoutFn(callback, milliseconds) {
+      calls.push(['timeout', milliseconds]);
+      queueMicrotask(callback);
+      return 'stop-timeout';
+    },
+    clearTimeoutFn(timer) { calls.push(['clear-timeout', timer]); }
+  });
+
+  await worker.start();
+  await worker.whenIdle();
+  slowHeartbeat = true;
+  const heartbeatTimer = calls.find(([, milliseconds]) => milliseconds === 30_000)?.[2];
+  const firstTick = heartbeatTimer.callback();
+  const secondTick = heartbeatTimer.callback();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(calls.filter(([type]) => type === 'heartbeat').length, 2);
+  assert.deepEqual(await worker.stop(), { drained: false });
+  let idle = false;
+  const idlePromise = worker.whenIdle().then(() => { idle = true; });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(idle, false);
+
+  heartbeatGate.resolve();
+  await Promise.all([firstTick, secondTick, idlePromise]);
+  assert.equal(idle, true);
   assert.equal(calls.filter(([type]) => type === 'clear').length, 2);
 });
 
@@ -296,15 +335,76 @@ test('Shutdown lässt den Pool nach Timeout offen und schließt ihn erst bei tat
       whenIdle() { events.push('worker.whenIdle'); return idle.promise; }
     },
     pool: { async end() { events.push('pool.end'); } },
+    setIntervalFn() { events.push('keepalive.start'); return 'keepalive'; },
+    clearIntervalFn(handle) { events.push(`keepalive.clear:${handle}`); },
     logger: { error(message) { events.push(message); } }
   });
 
-  await shutdown('SIGTERM');
-  assert.deepEqual(events, ['scheduler.stop', 'worker.stop', 'worker.whenIdle']);
+  const pending = shutdown('SIGTERM');
+  assert.equal(pending, shutdown('SIGINT'));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(events, ['scheduler.stop', 'worker.stop', 'keepalive.start', 'worker.whenIdle']);
 
   idle.resolve();
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(events, ['scheduler.stop', 'worker.stop', 'worker.whenIdle', 'pool.end']);
+  await pending;
+  assert.deepEqual(events, [
+    'scheduler.stop',
+    'worker.stop',
+    'keepalive.start',
+    'worker.whenIdle',
+    'pool.end',
+    'keepalive.clear:keepalive'
+  ]);
+});
+
+test('verzögerter Shutdown hält einen Child-Prozess bis whenIdle und pool.end am Leben', async () => {
+  const workerUrl = new URL('../scripts/contentWorker.js', import.meta.url).href;
+  const script = `
+    import { createShutdownController } from ${JSON.stringify(workerUrl)};
+    const worker = {
+      async stop() { return { drained: false }; },
+      whenIdle() {
+        return new Promise((resolve) => {
+          const timer = setTimeout(() => { console.log('idle'); resolve(); }, 80);
+          timer.unref();
+        });
+      }
+    };
+    const shutdown = createShutdownController({
+      worker,
+      pool: { async end() { console.log('pool.end'); } },
+      logger: { error() {} }
+    });
+    void shutdown('SIGTERM');
+  `;
+  const { stdout, stderr } = await execFileAsync(
+    process.execPath,
+    ['--input-type=module', '--eval', script],
+    { timeout: 2_000 }
+  );
+
+  assert.equal(stderr, '');
+  assert.equal(stdout, 'idle\npool.end\n');
+});
+
+test('Fehler beim verzögerten pool.end melden den Shutdown sicher als fehlgeschlagen', async () => {
+  const failures = [];
+  const logs = [];
+  const shutdown = createShutdownController({
+    worker: {
+      async stop() { return { drained: false }; },
+      async whenIdle() {}
+    },
+    pool: { async end() { throw new Error('postgres://user:secret@db/app'); } },
+    setIntervalFn() { return 'keepalive'; },
+    clearIntervalFn() {},
+    onFailure() { failures.push('failed'); },
+    logger: { error(message) { logs.push(message); } }
+  });
+
+  await shutdown('SIGTERM');
+  assert.deepEqual(failures, ['failed']);
+  assert.deepEqual(logs, ['Content-Worker konnte nicht sauber beendet werden.']);
 });
 
 test('der Produktions-Jobhandler akzeptiert completed und needs_manual_attention als sichere Pipelineabschlüsse', async () => {
@@ -504,23 +604,28 @@ test('der Healthcheck verbirgt Datenbank-Credentials und Stacks', async () => {
 test('der Dry-Run verwendet reale Pipeline- und Validatorlogik ohne externe Aufrufe', async () => {
   const result = await runContentAgentDryRun();
 
-  assert.deepEqual(result, {
-    mode: 'dry-run',
-    externalCalls: 0,
-    articleValid: true,
-    qualityScore: 90,
-    publishMode: 'draft'
-  });
+  assert.equal(result.mode, 'dry-run');
+  assert.equal(result.externalCalls, 0);
+  assert.ok(result.simulatedAdapterCalls > 0);
+  assert.equal(result.articleValid, true);
+  assert.equal(result.qualityScore, 90);
+  assert.equal(result.publishMode, 'draft');
 });
 
-test('Dry-Run-Forbidden-Adapter zählen und blockieren versehentliche externe Aufrufe', () => {
-  const guard = createDryRunExternalCallGuard();
+test('ein tatsächlich verwendeter externer Dry-Run-Adapter erhöht den Zähler und bricht die Pipeline ab', async () => {
+  const adapterMonitor = createDryRunAdapterMonitor();
 
-  assert.throws(
-    () => guard.adapters.openai.responses.create(),
+  await assert.rejects(
+    runContentAgentDryRun({
+      adapterMonitor,
+      configureAdapters(adapters, monitor) {
+        adapters.openaiService.createTopicCandidates = monitor.forbidden('openai.createTopicCandidates');
+      }
+    }),
     (error) => error.code === 'dry_run_external_call'
+      && error.dryRunMetrics.externalCalls === 1
   );
-  assert.equal(guard.count, 1);
+  assert.equal(adapterMonitor.externalCalls, 1);
 });
 
 test('das Dry-Run-Skript benötigt keine DB-, OpenAI- oder Cloudinary-Zugangsdaten', async () => {
@@ -538,13 +643,13 @@ test('das Dry-Run-Skript benötigt keine DB-, OpenAI- oder Cloudinary-Zugangsdat
   );
 
   assert.equal(stderr, '');
-  assert.deepEqual(JSON.parse(stdout), {
-    mode: 'dry-run',
-    externalCalls: 0,
-    articleValid: true,
-    qualityScore: 90,
-    publishMode: 'draft'
-  });
+  const result = JSON.parse(stdout);
+  assert.equal(result.mode, 'dry-run');
+  assert.equal(result.externalCalls, 0);
+  assert.ok(result.simulatedAdapterCalls > 0);
+  assert.equal(result.articleValid, true);
+  assert.equal(result.qualityScore, 90);
+  assert.equal(result.publishMode, 'draft');
 });
 
 test('der deaktivierte Entrypoint startet weder Scheduler noch Datenbankzugriff', async () => {

@@ -5,27 +5,44 @@ import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
 import { selectBestTopic } from '../services/contentAgent/topicScoringService.js';
 
 const qualityScore = 90;
+const MONITORED_OPERATION = Symbol('dryRunMonitoredOperation');
 
-export function createDryRunExternalCallGuard() {
-  let count = 0;
-  const forbid = () => {
-    count += 1;
-    const error = new Error('Externe Aufrufe sind im Dry-Run gesperrt.');
-    error.code = 'dry_run_external_call';
-    throw error;
-  };
+export function createDryRunAdapterMonitor() {
+  let externalCalls = 0;
+  let simulatedAdapterCalls = 0;
+
+  function operation(fn, { external = false, label = 'adapter' } = {}) {
+    if (fn?.[MONITORED_OPERATION]) return fn;
+    const monitored = function monitoredOperation(...args) {
+      if (external) {
+        externalCalls += 1;
+        const error = new Error('Externe Aufrufe sind im Dry-Run gesperrt.');
+        error.code = 'dry_run_external_call';
+        error.adapter = label;
+        throw error;
+      }
+      simulatedAdapterCalls += 1;
+      return fn.apply(this, args);
+    };
+    Object.defineProperty(monitored, MONITORED_OPERATION, { value: true });
+    return monitored;
+  }
+
   return {
-    get count() { return count; },
-    adapters: Object.freeze({
-      database: Object.freeze({ query: forbid, connect: forbid, end: forbid }),
-      openai: Object.freeze({
-        responses: Object.freeze({ create: forbid, parse: forbid }),
-        images: Object.freeze({ generate: forbid })
-      }),
-      cloudinary: Object.freeze({
-        uploader: Object.freeze({ upload_stream: forbid, destroy: forbid })
-      })
-    })
+    get externalCalls() { return externalCalls; },
+    get simulatedAdapterCalls() { return simulatedAdapterCalls; },
+    operation,
+    forbidden(label) {
+      return operation(() => undefined, { external: true, label });
+    },
+    adapter(adapter, label) {
+      return Object.fromEntries(Object.entries(adapter).map(([name, value]) => [
+        name,
+        typeof value === 'function'
+          ? operation(value, { label: `${label}.${name}` })
+          : value
+      ]));
+    }
   };
 }
 
@@ -152,10 +169,9 @@ function localOperation(value, responseId) {
   });
 }
 
-function createDryRunDependencies(externalCallGuard) {
+function createDryRunDependencies(adapterMonitor, configureAdapters) {
   const stageResults = new Map();
-  return {
-    externalAdapters: externalCallGuard.adapters,
+  const dependencies = {
     config: {
       publishMode: 'draft',
       maxTopicCandidates: 1,
@@ -246,26 +262,55 @@ function createDryRunDependencies(externalCallGuard) {
       }
     }
   };
+  configureAdapters?.(dependencies, adapterMonitor);
+  for (const name of [
+    'inventoryService',
+    'openaiService',
+    'topicScoringService',
+    'topicRepository',
+    'runRepository',
+    'costService',
+    'imageService',
+    'draftRepository'
+  ]) {
+    dependencies[name] = adapterMonitor.adapter(dependencies[name], name);
+  }
+  dependencies.validateArticle = adapterMonitor.operation(
+    dependencies.validateArticle,
+    { label: 'validateArticle' }
+  );
+  return dependencies;
 }
 
 export async function runContentAgentDryRun({
-  externalCallGuard = createDryRunExternalCallGuard()
+  adapterMonitor = createDryRunAdapterMonitor(),
+  configureAdapters
 } = {}) {
-  const dependencies = createDryRunDependencies(externalCallGuard);
+  const dependencies = createDryRunDependencies(adapterMonitor, configureAdapters);
   const validation = validateArticle(article, {
     existingSlugs: [],
     allowedInternalLinks: [{ url: '/kontakt' }],
     sourceReferences: []
   });
-  const result = await runDraftPipeline({
-    runId: 1,
-    currentDate: '2026-07-11',
-    regionFocus: 'Berlin'
-  }, dependencies);
+  let result;
+  try {
+    result = await runDraftPipeline({
+      runId: 1,
+      currentDate: '2026-07-11',
+      regionFocus: 'Berlin'
+    }, dependencies);
+  } catch (error) {
+    error.dryRunMetrics = {
+      externalCalls: adapterMonitor.externalCalls,
+      simulatedAdapterCalls: adapterMonitor.simulatedAdapterCalls
+    };
+    throw error;
+  }
 
   return {
     mode: 'dry-run',
-    externalCalls: externalCallGuard.count,
+    externalCalls: adapterMonitor.externalCalls,
+    simulatedAdapterCalls: adapterMonitor.simulatedAdapterCalls,
     articleValid: validation.passed,
     qualityScore: result.metadata?.quality_score ?? 0,
     publishMode: dependencies.config.publishMode
