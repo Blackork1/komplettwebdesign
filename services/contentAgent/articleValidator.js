@@ -1,0 +1,245 @@
+import * as cheerio from 'cheerio';
+import { sanitizeArticleHtml } from './articleSanitizer.js';
+
+const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CTA_LOCATIONS = ['blog_early', 'blog_mid', 'blog_final'];
+const MIN_META_TITLE_LENGTH = 50;
+const MAX_META_TITLE_LENGTH = 60;
+const MIN_META_DESCRIPTION_LENGTH = 100;
+const MAX_META_DESCRIPTION_LENGTH = 160;
+
+// Diese kleine Freigabeliste entspricht den im Content-Agent-Design dokumentierten
+// Artikelklassen. Containerklassen sind nur innerhalb des Fragments zulässig.
+const ALLOWED_CLASSES = new Set([
+  'container',
+  'container-fluid',
+  'container-sm',
+  'container-md',
+  'container-lg',
+  'container-xl',
+  'container-xxl',
+  'row',
+  'col-lg-12',
+  'my-4',
+  'my-5',
+  'mb-3',
+  'mb-4',
+  'mb-5',
+  'mt-4',
+  'p-4',
+  'rounded',
+  'bg-light',
+  'border',
+  'alert',
+  'alert-primary',
+  'table-responsive',
+  'table',
+  'table-striped',
+  'list-group',
+  'list-group-item',
+  'btn',
+  'btn-primary',
+  'btn-secondary',
+  'lead'
+]);
+
+const BOOTSTRAP_CLASS_PATTERN = /^(?:container(?:-|$)|row$|col(?:-|$)|g[xy]?-[0-9]|d-|flex-|justify-content-|align-items-|align-self-|text-|bg-|border(?:-|$)|rounded(?:-|$)|m[trblxy]?-[0-9]|p[trblxy]?-[0-9]|btn(?:-|$)|alert(?:-|$)|table(?:-|$)|list-group(?:-|$)|fw-|fs-|lh-|position-|(?:top|bottom|start|end)-|[wh]-)/;
+
+function createIssue(code, message, details = {}) {
+  return { code, message, ...details };
+}
+
+function normalizeText(value) {
+  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+function hasOuterBootstrapContainer($) {
+  const topLevelContent = $.root().contents().toArray().filter((node) => {
+    if (node.type === 'comment') return false;
+    if (node.type === 'text') return normalizeText($(node).text()) !== '';
+    return true;
+  });
+
+  if (topLevelContent.length !== 1 || topLevelContent[0].type !== 'tag') return false;
+
+  const classes = ($(topLevelContent[0]).attr('class') || '').split(/\s+/).filter(Boolean);
+  return classes.some((className) => className === 'container' || /^container-(?:fluid|sm|md|lg|xl|xxl)$/.test(className));
+}
+
+function sourceUrlsFromContext(context) {
+  const values = Array.isArray(context.sourceReferences)
+    ? context.sourceReferences
+    : (Array.isArray(context.allowedExternalUrls) ? context.allowedExternalUrls : []);
+
+  return values
+    .map((value) => typeof value === 'string' ? value : value?.url)
+    .filter((value) => typeof value === 'string');
+}
+
+function extractFaqInspection($) {
+  const questionElements = $('[data-faq-question]').toArray();
+  const answerElements = $('[data-faq-answer]').toArray();
+  const pairs = questionElements.map((questionElement, index) => {
+    const answerElement = $(questionElement).is('[data-faq-answer]')
+      ? questionElement
+      : answerElements[index];
+    const question = normalizeText($(questionElement).attr('data-faq-question'));
+    const answer = normalizeText(answerElement ? $(answerElement).attr('data-faq-answer') : '');
+    const visibleQuestionText = normalizeText($(questionElement).text());
+    const visibleAnswerText = normalizeText(answerElement ? $(answerElement).text() : '');
+
+    return {
+      question,
+      answer,
+      visible: question !== ''
+        && answer !== ''
+        && visibleQuestionText.includes(question)
+        && visibleAnswerText.includes(answer)
+    };
+  });
+
+  return {
+    questionCount: questionElements.length,
+    answerCount: answerElements.length,
+    pairs
+  };
+}
+
+function normalizedFaqJson(faqJson) {
+  if (!Array.isArray(faqJson)) return [];
+  return faqJson.map((item) => ({
+    question: normalizeText(item?.question),
+    answer: normalizeText(item?.answer)
+  }));
+}
+
+export function validateArticle(article = {}, context = {}) {
+  const html = typeof article.contentHtml === 'string' ? article.contentHtml : '';
+  const sanitizedHtml = sanitizeArticleHtml(html);
+  const issues = [];
+  const $ = cheerio.load(html, null, false);
+
+  if ($('h1').length > 0) {
+    issues.push(createIssue('h1_forbidden', 'Artikel-HTML darf keine H1 enthalten.'));
+  }
+  if ($('script').length > 0) {
+    issues.push(createIssue('script_forbidden', 'Artikel-HTML darf keine Skripte enthalten.'));
+  }
+  if (/<%|%>/.test(html)) {
+    issues.push(createIssue('ejs_forbidden', 'Artikel-HTML darf kein EJS enthalten.'));
+  }
+  if ($('[style], style').length > 0) {
+    issues.push(createIssue('inline_style_forbidden', 'Artikel-HTML darf keine Inline-Styles enthalten.'));
+  }
+  if ($('img').length > 0) {
+    issues.push(createIssue('image_forbidden', 'Artikel-HTML darf keine Bilder enthalten.'));
+  }
+  if (hasOuterBootstrapContainer($)) {
+    issues.push(createIssue('outer_container_forbidden', 'Artikel-HTML darf keinen äußeren Bootstrap-Container enthalten.'));
+  }
+
+  const metaTitleLength = normalizeText(article.metaTitle).length;
+  if (metaTitleLength < MIN_META_TITLE_LENGTH || metaTitleLength > MAX_META_TITLE_LENGTH) {
+    issues.push(createIssue(
+      'meta_title_length',
+      `Der Meta Title muss ${MIN_META_TITLE_LENGTH} bis ${MAX_META_TITLE_LENGTH} Zeichen lang sein.`,
+      { actualLength: metaTitleLength }
+    ));
+  }
+
+  const metaDescriptionLength = normalizeText(article.metaDescription).length;
+  if (metaDescriptionLength < MIN_META_DESCRIPTION_LENGTH || metaDescriptionLength > MAX_META_DESCRIPTION_LENGTH) {
+    issues.push(createIssue(
+      'meta_description_length',
+      `Die Meta Description muss ${MIN_META_DESCRIPTION_LENGTH} bis ${MAX_META_DESCRIPTION_LENGTH} Zeichen lang sein.`,
+      { actualLength: metaDescriptionLength }
+    ));
+  }
+
+  const slug = typeof article.slug === 'string' ? article.slug : '';
+  if (!ASCII_SLUG.test(slug)) {
+    issues.push(createIssue('slug_invalid', 'Der Slug darf nur ASCII-Kleinbuchstaben, Ziffern und Bindestriche enthalten.'));
+  }
+
+  const existingSlugs = (Array.isArray(context.existingSlugs) ? context.existingSlugs : [])
+    .map((value) => typeof value === 'string' ? value : value?.slug);
+  if (existingSlugs.includes(slug)) {
+    issues.push(createIssue('slug_duplicate', 'Der Slug ist bereits vorhanden.'));
+  }
+
+  const ctaElements = $('[data-track="cta"]').toArray();
+  if (ctaElements.length !== CTA_LOCATIONS.length) {
+    issues.push(createIssue('cta_count_invalid', 'Artikel-HTML muss genau drei getrackte CTA-Elemente enthalten.'));
+  }
+
+  const ctaLocations = ctaElements.map((element) => $(element).attr('data-cta-location') || '');
+  if (ctaLocations.length === CTA_LOCATIONS.length
+      && ctaLocations.some((location, index) => location !== CTA_LOCATIONS[index])) {
+    issues.push(createIssue('cta_locations_invalid', 'CTA-Elemente müssen in der Reihenfolge blog_early, blog_mid und blog_final erscheinen.'));
+  }
+
+  if (ctaElements.some((element) => {
+    const location = $(element).attr('data-cta-location') || '';
+    return $(element).attr('data-cta-name') !== `${location}_contact`;
+  })) {
+    issues.push(createIssue('cta_tracking_invalid', 'Jeder CTA benötigt einen zur Position passenden Trackingnamen.'));
+  }
+
+  const faqInspection = extractFaqInspection($);
+  const jsonFaqs = normalizedFaqJson(article.faqJson);
+  if (faqInspection.questionCount < 5
+      || faqInspection.questionCount > 7
+      || jsonFaqs.length < 5
+      || jsonFaqs.length > 7) {
+    issues.push(createIssue('faq_count_invalid', 'Artikel-HTML und FAQ-JSON müssen jeweils fünf bis sieben FAQ enthalten.'));
+  }
+
+  const visibleFaqsMatch = faqInspection.questionCount === faqInspection.answerCount
+    && faqInspection.pairs.every(({ visible }) => visible)
+    && faqInspection.pairs.length === jsonFaqs.length
+    && faqInspection.pairs.every(({ question, answer }, index) => (
+      question === jsonFaqs[index]?.question && answer === jsonFaqs[index]?.answer
+    ));
+  if (!visibleFaqsMatch) {
+    issues.push(createIssue('faq_mismatch', 'Sichtbare FAQ und FAQ-JSON müssen in Reihenfolge und Inhalt übereinstimmen.'));
+  }
+
+  const allowedInternalLinks = new Set((Array.isArray(context.allowedInternalLinks) ? context.allowedInternalLinks : [])
+    .map((value) => typeof value === 'string' ? value : value?.url)
+    .filter((value) => typeof value === 'string'));
+  const allowedExternalUrls = new Set(sourceUrlsFromContext(context));
+  $('a[href]').each((_, element) => {
+    const href = $(element).attr('href');
+    if (/^https?:\/\//i.test(href || '')) {
+      if (!allowedExternalUrls.has(href)) {
+        issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
+      }
+    } else if ((href || '').startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(href || '')) {
+      issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
+    } else if (!allowedInternalLinks.has(href)) {
+      issues.push(createIssue('internal_link_forbidden', `Der interne Link ${href} ist nicht freigegeben.`));
+    }
+  });
+
+  const reportedClasses = new Set();
+  $('[class]').each((_, element) => {
+    for (const className of ($(element).attr('class') || '').split(/\s+/).filter(Boolean)) {
+      if (ALLOWED_CLASSES.has(className) || reportedClasses.has(className)) continue;
+      reportedClasses.add(className);
+      const bootstrapClass = BOOTSTRAP_CLASS_PATTERN.test(className);
+      issues.push(createIssue(
+        bootstrapClass ? 'bootstrap_class_unknown' : 'class_forbidden',
+        bootstrapClass
+          ? `Die Bootstrap-Klasse ${className} ist für Artikel nicht freigegeben.`
+          : `Die semantische Klasse ${className} ist für Artikel nicht freigegeben.`,
+        { className }
+      ));
+    }
+  });
+
+  return {
+    passed: issues.length === 0,
+    sanitizedHtml,
+    issues
+  };
+}
