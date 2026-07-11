@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import * as cheerio from 'cheerio';
+import ejs from 'ejs';
 import BlogPostModel from '../models/BlogPostModel.js';
 import pool from '../util/db.js';
 import { showPost } from '../controllers/blogController.js';
+import { escapeJsonForHtml } from '../util/security.js';
 
 const controllerSource = readFileSync(new URL('../controllers/blogController.js', import.meta.url), 'utf8');
 const viewSource = readFileSync(new URL('../views/blog/show.ejs', import.meta.url), 'utf8');
+const blogViewPath = fileURLToPath(new URL('../views/blog/show.ejs', import.meta.url));
 
 const pricing = {
   packageByKey: {
@@ -64,12 +69,37 @@ async function renderControllerPost(post, packagePricing = pricing) {
   return rendered.locals;
 }
 
+async function renderCompleteBlogPage(controllerLocals) {
+  const assetUrl = (file) => `/${String(file || '').replace(/^\/+/, '')}?v=test`;
+  return ejs.renderFile(blogViewPath, {
+    ...controllerLocals,
+    asset: assetUrl,
+    assetVersion: 'test',
+    canonicalBaseUrl: 'https://example.test',
+    csrfToken: 'test-csrf',
+    cssAsset: assetUrl,
+    currentPathname: `/blog/${controllerLocals.post.slug}`,
+    currentSearch: '',
+    disableInteractionPolish: true,
+    escapeJsonForHtml,
+    footerNavigation: [],
+    headerCta: null,
+    headerNavigation: [],
+    jsAsset: assetUrl,
+    lng: 'de',
+    robots: 'index,follow',
+    trackingContext: {}
+  });
+}
+
 test('Controller trennt statisches HTML ausdrücklich vom Legacy-EJS-Pfad', () => {
   assert.match(controllerSource, /post\.content_format === 'static_html'/);
   assert.match(controllerSource, /sanitizeArticleHtml/);
   assert.match(controllerSource, /renderDbEjs/);
   assert.match(controllerSource, /post\.meta_title \|\| post\.title/);
   assert.match(controllerSource, /post\.meta_description \|\| post\.description/);
+  assert.match(controllerSource, /structuredDataBlocks/);
+  assert.doesNotMatch(controllerSource, /const seoExtra = `[\s\S]*?<script type="application\/ld\+json">/);
 });
 
 test('static_html wertet selbst fehlerhafte EJS-Payloads niemals aus und wird nach Preistokens sanitisiert', async () => {
@@ -104,6 +134,13 @@ test('Legacybeiträge rendern EJS, zentrale Preistokens und stufen eine Inhalts-
   assert.match(locals.renderedContent, /Sicherer Blogbeitrag/);
   assert.match(locals.renderedContent, /ab 1\.234 €/);
   assert.doesNotMatch(locals.renderedContent, /<h1\b/i);
+
+  const html = await renderCompleteBlogPage(locals);
+  const $ = cheerio.load(html);
+  assert.equal($('h1').length, 1);
+  assert.match($('.rg-article-body').text(), /Interne Überschrift/);
+  assert.match($('.rg-article-body').text(), /Sicherer Blogbeitrag/);
+  assert.match($('.rg-article-body').text(), /ab 1\.234 €/);
 });
 
 test('unbekanntes und null content_format bleiben rückwärtskompatibel im Legacy-EJS-Pfad', async () => {
@@ -148,10 +185,64 @@ test('SEO- und OG-Felder verwenden ihre Fallbacks und werden für den Head passe
   assert.equal(fallbackLocals.ogDescription, 'Öffentliche Beschreibung');
 });
 
+test('echter EJS-Gesamtrender schützt Metaattribute und JSON-LD vor gespeicherter Script-Injektion', async () => {
+  const scriptBreakout = '</script><script id="xss-probe">';
+  const specialCharacters = '< > & \u2028\u2029';
+  const metaTitle = `SEO ${scriptBreakout} ${specialCharacters}`;
+  const metaDescription = `Meta ${scriptBreakout} ${specialCharacters}`;
+  const ogTitle = `OG-Titel ${scriptBreakout} ${specialCharacters}`;
+  const ogDescription = `OG-Beschreibung ${scriptBreakout} ${specialCharacters}`;
+  const imageAlt = `Alt "onerror=probe" ${scriptBreakout} ${specialCharacters}`;
+  const faqQuestion = `Frage ${scriptBreakout} ${specialCharacters}`;
+  const faqAnswer = `Antwort ${scriptBreakout} ${specialCharacters}`;
+
+  delete globalThis.__blogFullRenderPayload;
+  const locals = await renderControllerPost(postFixture({
+    content_format: 'static_html',
+    content: '<section><h2>Statischer Inhalt</h2><p><%= globalThis.__blogFullRenderPayload = "ausgeführt" %></p></section>',
+    meta_title: metaTitle,
+    meta_description: metaDescription,
+    og_title: ogTitle,
+    og_description: ogDescription,
+    image_alt: imageAlt,
+    faq_json: [{ question: faqQuestion, answer: faqAnswer }]
+  }));
+  const html = await renderCompleteBlogPage(locals);
+  const $ = cheerio.load(html);
+
+  assert.equal(globalThis.__blogFullRenderPayload, undefined);
+  assert.equal($('h1').length, 1);
+  assert.equal($('title').text(), metaTitle);
+  assert.equal($('meta[name="description"]').attr('content'), metaDescription);
+  assert.equal($('meta[property="og:title"]').attr('content'), ogTitle);
+  assert.equal($('meta[property="og:description"]').attr('content'), ogDescription);
+  assert.equal($('img[src="/images/blog.webp"]').attr('alt'), imageAlt);
+  assert.equal($('script#xss-probe').length, 0);
+  assert.doesNotMatch(html, /<script id=/i);
+  assert.doesNotMatch(html, /<\/script><script id=/i);
+
+  const jsonLdScripts = $('script[type="application/ld+json"]').toArray();
+  const rawJsonLd = jsonLdScripts.map((element) => $(element).text()).join('\n');
+  assert.doesNotMatch(rawJsonLd, /[\u2028\u2029]/);
+  assert.match(rawJsonLd, /\\u003C/);
+  assert.match(rawJsonLd, /\\u003E/);
+  assert.match(rawJsonLd, /\\u0026/);
+
+  const structuredData = jsonLdScripts.map((element) => JSON.parse($(element).text()));
+  const article = structuredData.find((block) => block['@type'] === 'BlogPosting');
+  const faq = structuredData.find((block) => block['@type'] === 'FAQPage');
+  const organization = structuredData.find((block) => block['@type'] === 'Organization');
+  assert.equal(article.headline, metaTitle);
+  assert.equal(article.description, metaDescription);
+  assert.deepEqual(faq.mainEntity, [{ question: faqQuestion, answer: faqAnswer }]);
+  assert.equal(organization.name, 'Komplett Webdesign');
+});
+
 test('öffentliche View nutzt Bild-Alt-Fallback und enthält nur die Titel-H1', () => {
   assert.match(viewSource, /alt="<%= post\.image_alt \|\| post\.title %>"/);
   assert.equal((viewSource.match(/<h1\b/gi) || []).length, 1);
   assert.match(viewSource, /<%- renderedContent %>/);
+  assert.match(viewSource, /structuredDataBlocks/);
 });
 
 test('öffentliche und Admin-Queries reichen neue Postfelder unverändert durch', async () => {

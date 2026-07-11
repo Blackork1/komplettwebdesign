@@ -163,8 +163,55 @@ export async function showPost(req, res) {
 
   const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/blog/${post.slug}` : `/blog/${post.slug}`;
+  const organizationId = `${base}/#organization`;
 
-  // --- SEO Head-Block zusammenbauen (als String) ---
+  const structuredDataBlocks = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": organizationId,
+      "name": "Komplett Webdesign",
+      "url": `${base}/`,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${base}/images/LogoTransparent.webp`
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Startseite", "item": `${base}/` },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${base}/blog` },
+        { "@type": "ListItem", "position": 3, "name": post.title, "item": canonicalUrl }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": pageTitle,
+      "description": metaDescription,
+      "url": canonicalUrl,
+      "mainEntityOfPage": canonicalUrl,
+      "image": {
+        "@type": "ImageObject",
+        "url": post.image_url || '',
+        "width": 1200,
+        "height": 675
+      },
+      "author": { "@id": organizationId },
+      "publisher": { "@id": organizationId },
+      "datePublished": publishedISO,
+      "dateModified": modifiedISO
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqArray
+    }
+  ];
+
+  // Ausschließlich attributsicheres Meta-Markup; JSON-LD läuft über structuredDataBlocks.
   const seoExtra = `
   <link rel="canonical" href="${ejs.escapeXML(canonicalUrl)}">
   <!-- Open Graph -->
@@ -180,54 +227,6 @@ export async function showPost(req, res) {
   <meta property="og:image:height" content="675">
   <meta property="article:published_time" content="${publishedISO}">
   <meta property="article:modified_time" content="${modifiedISO}">
-
-  <!-- JSON-LD: BreadcrumbList -->
-  <script type="application/ld+json">
-  ${JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Startseite", "item": `${base}/` },
-      { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${base}/blog` },
-      { "@type": "ListItem", "position": 3, "name": post.title, "item": canonicalUrl }
-    ]
-  }, null, 2)}
-  </script>
-
-  <!-- JSON-LD: BlogPosting -->
-  <script type="application/ld+json">
-  ${JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": pageTitle,
-    "description": metaDescription,
-    "url": canonicalUrl,
-    "mainEntityOfPage": canonicalUrl,
-    "image": {
-      "@type": "ImageObject",
-      "url": post.image_url || '',
-      "width": 1200,
-      "height": 675
-    },
-    "author": { "@type": "Organization", "name": "Komplett Webdesign" },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Komplett Webdesign",
-      "logo": { "@type": "ImageObject", "url": `${base}/images/LogoTransparent.webp` }
-    },
-    "datePublished": publishedISO,
-    "dateModified": modifiedISO
-  }, null, 2)}
-  </script>
-
-  <!-- JSON-LD: FAQPage -->
-  <script type="application/ld+json">
-  ${JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqArray
-  }, null, 2)}
-  </script>
   `;
 
   res.render('blog/show', {
@@ -245,6 +244,7 @@ export async function showPost(req, res) {
     publishedISO,
     modifiedISO,
     renderedContent,
+    structuredDataBlocks,
 
     // Head-Injektion
     seoExtra
