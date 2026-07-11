@@ -88,6 +88,41 @@ test('manuelles Event ist per Partial-Unique-Insert genau einmal anlegbar und en
   assert.doesNotMatch(JSON.stringify(call.params), /contentHtml|api[_-]?key|<section/i);
 });
 
+test('Auto-Event ist pro Run und Policy idempotent und enthält nur begrenzten Entscheidungskontext', async () => {
+  const client = sqlClient([{ rows: [{ id: 41, decision: 'blocked' }] }]);
+  const repository = createContentPublishEventRepository();
+
+  await repository.insertAutoEvent({
+    postId: 9,
+    runId: 21,
+    decision: 'blocked',
+    policyVersion: 'auto-v1',
+    qualityScore: 94,
+    reasons: ['forced_review'],
+    context: { action: 'auto_publish_policy', settingsVersion: 3 }
+  }, client);
+
+  const call = client.calls[0];
+  assert.match(call.sql, /INSERT INTO content_publish_events/i);
+  assert.match(call.sql, /ON CONFLICT \(run_id, policy_version\)[\s\S]*decision IN \('allowed', 'blocked'\)/i);
+  assert.deepEqual(call.params, [
+    9, 21, 'blocked', 'auto-v1', 94,
+    JSON.stringify(['forced_review']),
+    JSON.stringify({ action: 'auto_publish_policy', settingsVersion: 3 })
+  ]);
+});
+
+test('Auto-Event-Recovery liest exakt dieselbe Run- und Policyidentität', async () => {
+  const client = sqlClient([{ rows: [{ id: 41, decision: 'allowed' }] }]);
+  const repository = createContentPublishEventRepository();
+
+  const event = await repository.getAutoEvent({ runId: 21, policyVersion: 'auto-v1' }, client);
+
+  assert.equal(event.id, 41);
+  assert.match(client.calls[0].sql, /WHERE run_id = \$1 AND policy_version = \$2/i);
+  assert.deepEqual(client.calls[0].params, [21, 'auto-v1']);
+});
+
 test('Freigabezähler wird ausschließlich durch den atomaren Incrementpfad erhöht', async () => {
   const client = sqlClient([{ rows: [{ id: 1, manual_approvals_count: 8 }] }]);
   const repository = createContentPublishEventRepository();

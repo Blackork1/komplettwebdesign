@@ -273,6 +273,12 @@ export function createProductionRuntime({
         timezone: jobConfig.timezone
       })
     };
+    const publicationService = typeof modules.createContentPublicationService === 'function'
+      ? modules.createContentPublicationService({
+        db: database,
+        validateArticle: modules.validateArticle
+      })
+      : null;
     return {
       config: jobConfig,
       inventoryService: {
@@ -284,6 +290,7 @@ export function createProductionRuntime({
       runRepository: repositories.runRepository,
       costService: jobCostService,
       validateArticle: modules.validateArticle,
+      ...(publicationService ? { publicationService } : {}),
       imageService: modules.createContentImageService({
         config: jobConfig,
         openai,
@@ -420,7 +427,8 @@ export async function loadProductionModules() {
     databaseModule,
     runtimeConfigService,
     schedulerService,
-    regenerationService
+    regenerationService,
+    publicationService
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -442,7 +450,8 @@ export async function loadProductionModules() {
     import('../util/db.js'),
     import('../services/contentAgent/runtimeConfigService.js'),
     import('../services/contentAgent/contentSchedulerService.js'),
-    import('../services/contentAgent/draftRegenerationService.js')
+    import('../services/contentAgent/draftRegenerationService.js'),
+    import('../services/contentAgent/contentPublicationService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -466,7 +475,8 @@ export async function loadProductionModules() {
     runtimeConfigService,
     schedulerService,
     runDraftRegenerationJob: regenerationService.runDraftRegenerationJob,
-    createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository
+    createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository,
+    createContentPublicationService: publicationService.createContentPublicationService
   };
 }
 

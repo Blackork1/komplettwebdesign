@@ -113,6 +113,50 @@ export function createContentPublishEventRepository(db = pool) {
       return rows[0] || null;
     },
 
+    async getAutoEvent({ runId, policyVersion }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        SELECT *
+        FROM content_publish_events
+        WHERE run_id = $1 AND policy_version = $2
+          AND decision IN ('allowed', 'blocked')
+        LIMIT 1
+      `, [runId, policyVersion]);
+      return rows[0] || null;
+    },
+
+    async insertAutoEvent({
+      postId,
+      runId,
+      decision,
+      policyVersion,
+      qualityScore,
+      reasons,
+      context
+    }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        INSERT INTO content_publish_events (
+          post_id, run_id, decision, policy_version, quality_score,
+          reasons_json, context_json
+        )
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+        ON CONFLICT (run_id, policy_version)
+          WHERE run_id IS NOT NULL AND decision IN ('allowed', 'blocked')
+        DO NOTHING
+        RETURNING *
+      `, [
+        postId,
+        runId,
+        decision,
+        policyVersion,
+        qualityScore,
+        JSON.stringify(reasons),
+        JSON.stringify(context)
+      ]);
+      return rows[0] || null;
+    },
+
     async incrementManualApprovals(client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
@@ -142,5 +186,7 @@ export const publishDraft = defaultRepository.publishDraft;
 export const rejectDraft = defaultRepository.rejectDraft;
 export const insertManualEvent = defaultRepository.insertManualEvent;
 export const insertRejectionEvent = defaultRepository.insertRejectionEvent;
+export const getAutoEvent = defaultRepository.getAutoEvent;
+export const insertAutoEvent = defaultRepository.insertAutoEvent;
 export const incrementManualApprovals = defaultRepository.incrementManualApprovals;
 export const getSettings = defaultRepository.getSettings;

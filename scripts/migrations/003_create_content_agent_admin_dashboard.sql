@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS content_publish_events (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_manual_post
   ON content_publish_events (post_id) WHERE decision = 'manual';
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_auto_run_policy
+  ON content_publish_events (run_id, policy_version)
+  WHERE run_id IS NOT NULL AND decision IN ('allowed', 'blocked');
 
 ALTER TABLE content_publish_events
   DROP CONSTRAINT IF EXISTS content_publish_events_post_id_fkey;

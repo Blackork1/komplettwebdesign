@@ -31,6 +31,7 @@ export function createContentAgentJobSnapshot({ runtimeConfig, claim, now = new 
   return Object.freeze({
     version: 1,
     operatingMode: claim?.payload_json?.forced_mode || runtimeConfig.operatingMode,
+    forcedMode: claim?.payload_json?.forced_mode || null,
     source: claim?.payload_json?.source || 'unknown',
     scheduleSlot: claim?.payload_json?.schedule_slot || null,
     monthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,

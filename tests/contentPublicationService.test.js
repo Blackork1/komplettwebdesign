@@ -19,6 +19,13 @@ const internalLinks = [
   { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
   { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
 ];
+const autoSnapshot = {
+  operatingMode: 'auto_publish',
+  forcedMode: null,
+  autoPublishEffective: true,
+  manualApprovalsCount: 8,
+  autoPublishMinScore: 90
+};
 
 function validDraft(overrides = {}) {
   const base = {
@@ -64,7 +71,7 @@ function validDraft(overrides = {}) {
   };
 }
 
-function harness({ draft = validDraft(), validation, failAt } = {}) {
+function harness({ draft = validDraft(), validation, failAt, existingAutoEvent = null } = {}) {
   const calls = [];
   const client = {
     async query(sql) {
@@ -112,6 +119,24 @@ function harness({ draft = validDraft(), validation, failAt } = {}) {
       calls.push(['reject-event', input, transaction]);
       if (failAt === 'event') throw new Error('Event fehlgeschlagen');
       return { id: 32, decision: 'blocked' };
+    },
+    async getAutoEvent(input, transaction) {
+      calls.push(['auto-event-read', input, transaction]);
+      return existingAutoEvent;
+    },
+    async insertAutoEvent(input, transaction) {
+      calls.push(['auto-event', input, transaction]);
+      if (failAt === 'auto-event') throw new Error('Auto-Event fehlgeschlagen');
+      return {
+        id: 41,
+        post_id: input.postId,
+        run_id: input.runId,
+        decision: input.decision,
+        policy_version: input.policyVersion,
+        quality_score: input.qualityScore,
+        reasons_json: input.reasons,
+        context_json: input.context
+      };
     }
   };
   const validateArticle = validation || ((article) => ({
@@ -343,13 +368,121 @@ test('fehlgeschlagenes Ablehnungsereignis rollt die Statusänderung zurück', as
   assert.equal(calls.includes('COMMIT'), false);
 });
 
-test('automatische Veröffentlichung bleibt als sichere Task-11-Basis inaktiv und zählt nie manuell', async () => {
+test('automatische Veröffentlichung verlangt gültige Post-, Run- und Snapshotdaten', async () => {
   const { service, calls } = harness();
 
   await assert.rejects(
     service.publishDraftAutomatically({ postId: 9 }),
-    (error) => error.code === 'CONTENT_AUTOPUBLISH_NOT_READY'
+    (error) => error.code === 'CONTENT_ACTION_VALIDATION_FAILED'
   );
   assert.equal(calls.includes('CONNECT'), false);
   assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
+});
+
+test('automatische Veröffentlichung revalidiert unter Lock, speichert allowed vor Publish und zählt nie manuell', async () => {
+  const { service, calls } = harness();
+
+  const result = await service.publishDraftAutomatically({
+    postId: 9,
+    runId: 21,
+    snapshot: autoSnapshot
+  });
+
+  assert.equal(result.post.published, true);
+  assert.equal(result.reviewRequired, false);
+  assert.equal(result.event.decision, 'allowed');
+  const names = calls.filter(Array.isArray).map(([name]) => name);
+  assert.ok(names.indexOf('lock') < names.indexOf('auto-event'));
+  assert.ok(names.indexOf('auto-event') < names.indexOf('publish'));
+  assert.equal(names.includes('increment'), false);
+  assert.equal(calls.includes('COMMIT'), true);
+});
+
+test('forced review und spätere Revalidierungsblocker speichern blocked und lassen den Post unveröffentlicht', async () => {
+  const cases = [
+    { snapshot: { ...autoSnapshot, forcedMode: 'review', operatingMode: 'review' } },
+    { validation: () => ({ passed: false, sanitizedHtml: '', issues: [{ code: 'link_invalid' }] }) }
+  ];
+  for (const current of cases) {
+    const { service, calls } = harness({ validation: current.validation });
+    const result = await service.publishDraftAutomatically({
+      postId: 9,
+      runId: 22,
+      snapshot: current.snapshot || autoSnapshot
+    });
+
+    assert.equal(result.reviewRequired, true);
+    assert.equal(result.post.published, false);
+    assert.equal(result.event.decision, 'blocked');
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+    assert.equal(calls.includes('COMMIT'), true);
+  }
+});
+
+test('Auto-Eventfehler rollt vor jeder öffentlichen Änderung vollständig zurück', async () => {
+  const { service, calls } = harness({ failAt: 'auto-event' });
+
+  await assert.rejects(
+    service.publishDraftAutomatically({ postId: 9, runId: 23, snapshot: autoSnapshot }),
+    /Auto-Event fehlgeschlagen/
+  );
+
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(calls.includes('COMMIT'), false);
+});
+
+test('bestehendes blockiertes Auto-Event wird beim Retry weder dupliziert noch veröffentlicht', async () => {
+  const existingAutoEvent = {
+    id: 55,
+    post_id: 9,
+    run_id: 24,
+    decision: 'blocked',
+    policy_version: 'auto-v1',
+    quality_score: 92,
+    reasons_json: ['risk_privacyClaims'],
+    context_json: { action: 'auto_publish_policy' }
+  };
+  const { service, calls } = harness({ existingAutoEvent });
+
+  const result = await service.publishDraftAutomatically({
+    postId: 9,
+    runId: 24,
+    snapshot: autoSnapshot
+  });
+
+  assert.equal(result.event.id, 55);
+  assert.equal(result.reviewRequired, true);
+  assert.equal(calls.filter((entry) => Array.isArray(entry) && entry[0] === 'auto-event').length, 0);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+});
+
+test('Retry nach unklarem Commit erkennt vorhandenes allowed-Event und bereits veröffentlichten Post', async () => {
+  const existingAutoEvent = {
+    id: 56,
+    post_id: 9,
+    run_id: 25,
+    decision: 'allowed',
+    policy_version: 'auto-v1',
+    quality_score: 92,
+    reasons_json: [],
+    context_json: { action: 'auto_publish_policy' }
+  };
+  const publishedDraft = validDraft({
+    post: { published: true, workflow_status: 'published' }
+  });
+  const { service, calls } = harness({ draft: publishedDraft, existingAutoEvent });
+
+  const result = await service.publishDraftAutomatically({
+    postId: 9,
+    runId: 25,
+    snapshot: autoSnapshot
+  });
+
+  assert.equal(result.event.id, 56);
+  assert.equal(result.post.published, true);
+  assert.equal(result.reviewRequired, false);
+  assert.equal(calls.filter((entry) => Array.isArray(entry) && entry[0] === 'auto-event').length, 0);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(calls.includes('COMMIT'), true);
 });

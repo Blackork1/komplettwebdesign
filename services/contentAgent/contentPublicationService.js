@@ -6,6 +6,10 @@ import {
 } from './articleSchemas.js';
 import { validateArticle as validateArticleDefault } from './articleValidator.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
+import {
+  AUTO_PUBLISH_POLICY_VERSION,
+  evaluateAutoPublish
+} from './autoPublishPolicy.js';
 import { createContentPublishEventRepository } from '../../repositories/contentPublishEventRepository.js';
 import pool from '../../util/db.js';
 
@@ -224,8 +228,8 @@ export function createContentPublicationService({
     }
   }
 
-  async function loadValidatedDraft(postId, client) {
-    const draft = await repository.getDraftWithMetadataForUpdate(postId, client);
+  async function loadValidatedDraft(postId, client, lockedDraft = null) {
+    const draft = lockedDraft || await repository.getDraftWithMetadataForUpdate(postId, client);
     assertDraftState(draft);
     const {
       article,
@@ -259,7 +263,65 @@ export function createContentPublicationService({
         [{ code: 'risk_review_inconsistent', field: 'riskReview' }]
       );
     }
-    return { draft, qualityScore };
+    return {
+      draft,
+      qualityScore,
+      validation,
+      riskReport: derivedFocusedReview
+    };
+  }
+
+  function eventReasons(event) {
+    return Array.isArray(event?.reasons_json)
+      ? event.reasons_json.filter((reason) => typeof reason === 'string')
+      : [];
+  }
+
+  function eventDecision(event) {
+    return {
+      allowed: event?.decision === 'allowed',
+      policyVersion: event?.policy_version || AUTO_PUBLISH_POLICY_VERSION,
+      reasons: eventReasons(event)
+    };
+  }
+
+  function safeQualityScore(draft) {
+    const score = Number(draft?.metadata?.quality_score);
+    return Number.isInteger(score) && score >= 0 && score <= 100 ? score : 0;
+  }
+
+  async function persistAutoEvent({ draft, postId, runId, decision, snapshot }, client) {
+    const eventInput = {
+      postId,
+      runId,
+      decision: decision.allowed ? 'allowed' : 'blocked',
+      policyVersion: decision.policyVersion,
+      qualityScore: safeQualityScore(draft),
+      reasons: decision.reasons,
+      context: {
+        action: 'auto_publish_policy',
+        settingsVersion: Number.isSafeInteger(Number(snapshot?.settingsVersion))
+          ? Number(snapshot.settingsVersion)
+          : null,
+        source: typeof snapshot?.source === 'string' ? snapshot.source : 'unknown',
+        forcedMode: snapshot?.forcedMode === 'review' ? 'review' : null
+      }
+    };
+    const inserted = await repository.insertAutoEvent(eventInput, client);
+    if (inserted) return inserted;
+    const existing = await repository.getAutoEvent({
+      runId,
+      policyVersion: decision.policyVersion
+    }, client);
+    if (!existing
+        || Number(existing.post_id) !== Number(postId)
+        || existing.decision !== eventInput.decision) {
+      throw publicationError(
+        'CONTENT_AUTO_EVENT_UNCERTAIN',
+        'Die automatische Veröffentlichungsentscheidung konnte nicht eindeutig gespeichert werden.'
+      );
+    }
+    return existing;
   }
 
   return {
@@ -335,11 +397,89 @@ export function createContentPublicationService({
       });
     },
 
-    async publishDraftAutomatically() {
-      throw publicationError(
-        'CONTENT_AUTOPUBLISH_NOT_READY',
-        'Die automatische Veröffentlichung wird erst durch die konservative Policy freigeschaltet.'
-      );
+    async publishDraftAutomatically({ postId, runId, snapshot, leaseGuard } = {}) {
+      const normalizedPostId = positiveDatabaseId(postId, 'postId');
+      const normalizedRunId = positiveDatabaseId(runId, 'runId');
+      if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+        throw publicationError(
+          'CONTENT_ACTION_VALIDATION_FAILED',
+          'Der unveränderliche Job-Snapshot fehlt.'
+        );
+      }
+      const assertLease = typeof leaseGuard === 'function' ? leaseGuard : async () => true;
+      await assertLease();
+
+      return withTransaction(async (client) => {
+        const lockedDraft = await repository.getDraftWithMetadataForUpdate(normalizedPostId, client);
+        if (!lockedDraft?.post) {
+          throw publicationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
+        }
+        const existingEvent = await repository.getAutoEvent({
+          runId: normalizedRunId,
+          policyVersion: AUTO_PUBLISH_POLICY_VERSION
+        }, client);
+        if (existingEvent) {
+          const decision = eventDecision(existingEvent);
+          const alreadyPublished = decision.allowed
+            && lockedDraft.post.generated_by_ai === true
+            && lockedDraft.post.published === true
+            && lockedDraft.post.workflow_status === 'published'
+            && lockedDraft.post.content_format === 'static_html';
+          return {
+            post: lockedDraft.post,
+            event: existingEvent,
+            decision,
+            reviewRequired: !alreadyPublished
+          };
+        }
+
+        let validated;
+        let decision;
+        try {
+          validated = await loadValidatedDraft(normalizedPostId, client, lockedDraft);
+          decision = evaluateAutoPublish({
+            snapshot,
+            post: validated.draft.post,
+            metadata: validated.draft.metadata,
+            validation: validated.validation,
+            riskReport: validated.riskReport
+          });
+        } catch (error) {
+          if (!String(error?.code || '').startsWith('CONTENT_DRAFT_')) throw error;
+          decision = {
+            allowed: false,
+            policyVersion: AUTO_PUBLISH_POLICY_VERSION,
+            reasons: ['draft_revalidation_failed']
+          };
+        }
+
+        await assertLease();
+        const event = await persistAutoEvent({
+          draft: lockedDraft,
+          postId: normalizedPostId,
+          runId: normalizedRunId,
+          decision,
+          snapshot
+        }, client);
+        if (!decision.allowed) {
+          return {
+            post: lockedDraft.post,
+            event,
+            decision,
+            reviewRequired: true
+          };
+        }
+
+        await assertLease();
+        const post = await repository.publishDraft(normalizedPostId, client);
+        if (!post) {
+          throw publicationError(
+            'CONTENT_DRAFT_NOT_PUBLISHABLE',
+            'Der Entwurf wurde unmittelbar vor der automatischen Veröffentlichung verändert.'
+          );
+        }
+        return { post, event, decision, reviewRequired: false };
+      });
     }
   };
 }

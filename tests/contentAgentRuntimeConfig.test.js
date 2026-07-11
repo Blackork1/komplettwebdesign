@@ -128,6 +128,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
   assert.deepEqual(snapshot, {
     version: 1,
     operatingMode: 'review',
+    forcedMode: 'review',
     source: 'admin_manual',
     scheduleSlot: 'weekly:2026-07-13:18:00:Europe/Berlin',
     monthlyCostLimitEur: 100,

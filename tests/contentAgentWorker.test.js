@@ -1071,6 +1071,7 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
 
   assert.equal(typeof modules.runDraftRegenerationJob, 'function');
   assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
+  assert.equal(typeof modules.createContentPublicationService, 'function');
 });
 
 test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Repositories oder Models', async () => {
@@ -1096,6 +1097,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
     async end() {}
   };
   const dbArguments = [];
+  let publicationServiceDependencies;
   const recordDb = (...args) => {
     dbArguments.push(args.at(-1));
     return { id: 1, locked_by: 'worker', attempts: 1 };
@@ -1153,6 +1155,10 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
     },
     createOpenAIContentService: () => ({}),
     createContentImageService: () => ({}),
+    createContentPublicationService(dependencies) {
+      publicationServiceDependencies = dependencies;
+      return { publishDraftAutomatically: async () => ({ decision: 'blocked' }) };
+    },
     runDraftPipeline: async () => ({ status: 'completed' }),
     validateArticle: () => ({ passed: true }),
     selectBestTopic: () => null
@@ -1185,6 +1191,9 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   assert.ok(dbArguments.length >= 16);
   assert.equal(dbArguments.every((value) => value === database), true);
   assert.ok(database.queries.length >= 4);
+  assert.equal(runtime.pipelineDependencies.publicationService.publishDraftAutomatically instanceof Function, true);
+  assert.equal(publicationServiceDependencies.db, database);
+  assert.equal(publicationServiceDependencies.validateArticle, modules.validateArticle);
 });
 
 test('der Healthcheck bewertet den Heartbeat mit Datenbankzeit', async () => {

@@ -8,6 +8,7 @@ import {
 } from './articleSchemas.js';
 import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
+import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -226,8 +227,35 @@ function isPersistedDraftResult(value) {
   );
 }
 
-function isPersistedCompletedResult(value, draft) {
+function isPersistedAutoPublishResult(value, draft) {
+  const post = value?.post;
+  const allowed = value?.decision === 'allowed';
+  const blocked = value?.decision === 'blocked';
   return Boolean(
+    value
+    && typeof value === 'object'
+    && Number.isInteger(Number(value.eventId))
+    && Number(value.eventId) > 0
+    && (allowed || blocked)
+    && value.policyVersion === AUTO_PUBLISH_POLICY_VERSION
+    && Array.isArray(value.reasons)
+    && value.reasons.every((reason) => typeof reason === 'string' && reason.length > 0)
+    && typeof value.reviewRequired === 'boolean'
+    && post
+    && Number(post.id) === Number(draft?.post?.id)
+    && post.generated_by_ai === true
+    && post.content_format === 'static_html'
+    && (
+      (allowed && value.reviewRequired === false
+        && post.published === true && post.workflow_status === 'published')
+      || (blocked && value.reviewRequired === true
+        && post.published === false && post.workflow_status === 'needs_review')
+    )
+  );
+}
+
+function isPersistedCompletedResult(value, draft, autoPublishResult = null) {
+  const baseMatches = Boolean(
     value
     && typeof value === 'object'
     && Number(value.postId) === Number(draft?.post?.id)
@@ -235,6 +263,10 @@ function isPersistedCompletedResult(value, draft) {
     && Number(value.topicId) === Number(draft?.topicId)
     && Number(value.qualityScore) === Number(draft?.qualityScore)
   );
+  if (!baseMatches || !autoPublishResult) return baseMatches;
+  return value.policyVersion === autoPublishResult.policyVersion
+    && value.published === autoPublishResult.post.published
+    && value.reviewRequired === autoPublishResult.reviewRequired;
 }
 
 function providerFailureIsSafeToRetry(error) {
@@ -263,6 +295,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   const providerResultRecorder = typeof dependencies.recordProviderResult === 'function'
     ? dependencies.recordProviderResult
     : null;
+  const publicationService = dependencies.publicationService || null;
+  if (publicationService) {
+    required(publicationService.publishDraftAutomatically, 'publicationService.publishDraftAutomatically');
+  }
   required(imageService.generateAndUploadImage, 'imageService.generateAndUploadImage');
   required(imageService.deleteImage, 'imageService.deleteImage');
 
@@ -516,13 +552,102 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     );
   }
 
+  async function applyAutoPublish(draft, persistedAutoPublish = null) {
+    if (!publicationService) {
+      return {
+        post: draft.post,
+        metadata: draft.metadata,
+        reviewRequired: true,
+        autoPublishResult: null
+      };
+    }
+    await assertLease();
+    const publication = await publicationService.publishDraftAutomatically({
+      postId: draft.post.id,
+      runId,
+      snapshot: config,
+      leaseGuard: assertLease
+    });
+    const autoPublishResult = {
+      post: publication?.post,
+      eventId: publication?.event?.id,
+      decision: publication?.event?.decision,
+      policyVersion: publication?.decision?.policyVersion,
+      reasons: publication?.decision?.reasons,
+      reviewRequired: publication?.reviewRequired
+    };
+    if (!isPersistedAutoPublishResult(autoPublishResult, draft)) {
+      await stopForRecovery(
+        'auto_publish_result_invalid',
+        'Die automatische Veröffentlichungsentscheidung ist unvollständig oder widersprüchlich.'
+      );
+    }
+    if (persistedAutoPublish) {
+      if (!isPersistedAutoPublishResult(persistedAutoPublish, draft)
+          || persistedAutoPublish.eventId !== autoPublishResult.eventId
+          || persistedAutoPublish.decision !== autoPublishResult.decision
+          || persistedAutoPublish.reviewRequired !== autoPublishResult.reviewRequired
+          || JSON.stringify(persistedAutoPublish.reasons) !== JSON.stringify(autoPublishResult.reasons)
+          || persistedAutoPublish.post.published !== autoPublishResult.post.published) {
+        await stopForRecovery(
+          'auto_publish_recovery_conflict',
+          'Die persistierte Veröffentlichungsentscheidung widerspricht dem aktuellen Retry-Ergebnis.'
+        );
+      }
+    } else {
+      await updateStage('auto_publish', autoPublishResult, {
+        stageId: `auto_publish:${AUTO_PUBLISH_POLICY_VERSION}`
+      });
+    }
+    return {
+      post: autoPublishResult.post,
+      metadata: draft.metadata,
+      reviewRequired: autoPublishResult.reviewRequired,
+      autoPublishResult
+    };
+  }
+
+  async function completeDraft(draft, persistedAutoPublish = null) {
+    const publication = await applyAutoPublish(draft, persistedAutoPublish);
+    if (draft.topicId != null) await topicRepository.markTopicUsed(draft.topicId);
+    const completedResult = {
+      postId: draft.post.id,
+      slug: draft.post.slug,
+      topicId: draft.topicId,
+      qualityScore: draft.qualityScore ?? draft.metadata.quality_score ?? null,
+      ...(publication.autoPublishResult ? {
+        published: publication.post.published,
+        reviewRequired: publication.reviewRequired,
+        policyVersion: publication.autoPublishResult.policyVersion
+      } : {})
+    };
+    await updateStage('completed', completedResult);
+    const completedRun = await safeFinishRun(
+      { status: 'completed', postId: draft.post.id },
+      null,
+      'RUN_COMPLETION_PERSIST_FAILED'
+    );
+    return {
+      status: 'completed',
+      ...draft,
+      post: publication.post,
+      metadata: publication.metadata,
+      ...(publication.autoPublishResult ? { reviewRequired: publication.reviewRequired } : {}),
+      ...(completedRun ? {} : { auditWarnings })
+    };
+  }
+
   try {
     await assertLease();
     const persistedCompleted = await readPersistedStage('completed');
     const persistedDraft = await readPersistedStage('draft_creation');
+    const persistedAutoPublish = publicationService
+      ? await readPersistedStage(`auto_publish:${AUTO_PUBLISH_POLICY_VERSION}`)
+      : null;
     if (persistedCompleted) {
       if (!isPersistedDraftResult(persistedDraft)
-        || !isPersistedCompletedResult(persistedCompleted, persistedDraft)) {
+        || (publicationService && !isPersistedAutoPublishResult(persistedAutoPublish, persistedDraft))
+        || !isPersistedCompletedResult(persistedCompleted, persistedDraft, persistedAutoPublish)) {
         await stopForRecovery(
           'side_effect_recovery_result_missing',
           'Der abgeschlossene Lauf kann ohne gültiges dauerhaftes Draft-Ergebnis nicht sicher wiederaufgenommen werden.'
@@ -536,8 +661,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
       return {
         status: 'completed',
-        post: persistedDraft.post,
+        post: persistedAutoPublish?.post || persistedDraft.post,
         metadata: persistedDraft.metadata,
+        ...(persistedAutoPublish ? { reviewRequired: persistedAutoPublish.reviewRequired } : {}),
         ...(completedRun ? {} : { auditWarnings })
       };
     }
@@ -549,25 +675,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         );
       }
       draftPersisted = true;
-      if (persistedDraft.topicId != null) await topicRepository.markTopicUsed(persistedDraft.topicId);
-      const completedResult = {
-        postId: persistedDraft.post.id,
-        slug: persistedDraft.post.slug,
-        topicId: persistedDraft.topicId,
-        qualityScore: persistedDraft.qualityScore ?? persistedDraft.metadata.quality_score ?? null
-      };
-      await updateStage('completed', completedResult);
-      const completedRun = await safeFinishRun(
-        { status: 'completed', postId: persistedDraft.post.id },
-        null,
-        'RUN_COMPLETION_PERSIST_FAILED'
-      );
-      return {
-        status: 'completed',
-        post: persistedDraft.post,
-        metadata: persistedDraft.metadata,
-        ...(completedRun ? {} : { auditWarnings })
-      };
+      return await completeDraft(persistedDraft, persistedAutoPublish);
     }
 
     const inventory = await inventoryService.buildSiteInventory();
@@ -1023,25 +1131,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
     if (!existingDraft) await updateStage('draft_creation', persistedDraftResult);
-    await assertLease();
-    await topicRepository.markTopicUsed(topicId);
-    await updateStage('completed', {
-      postId: draft.post.id,
-      slug: draft.post.slug,
+    return await completeDraft({
+      ...draft,
       topicId,
       qualityScore: currentReview.score
     });
-    const completedRun = await safeFinishRun(
-      { status: 'completed', postId: draft.post.id },
-      null,
-      'RUN_COMPLETION_PERSIST_FAILED'
-    );
-
-    return {
-      status: 'completed',
-      ...draft,
-      ...(completedRun ? {} : { auditWarnings })
-    };
   } catch (error) {
     if (error instanceof ManualAttentionStop) return error.result;
     if (uploadedImage?.publicId && imageCreatedThisRun && !draftPersisted) {
