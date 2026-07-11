@@ -1,0 +1,217 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { getContentAgentConfig } from '../services/contentAgent/config.js';
+import {
+  ArticleOutputSchema,
+  ReviewOutputSchema,
+  RiskSchema,
+  SeoBriefSchema,
+  TopicCandidatesSchema
+} from '../services/contentAgent/articleSchemas.js';
+import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
+import { CONTENT_AGENT_PROFILE } from '../data/contentAgentProfile.js';
+
+const validRisk = {
+  currentClaims: false,
+  legalClaims: false,
+  privacyClaims: false,
+  softwareVersionClaims: false,
+  staticPrices: false
+};
+
+const validTopicCandidate = {
+  topic: 'Mehr Anfragen über eine lokale Unternehmenswebsite',
+  suggestedTitle: 'Wie eine lokale Unternehmenswebsite mehr Anfragen gewinnt',
+  slug: 'lokale-unternehmenswebsite-mehr-anfragen',
+  primaryKeyword: 'lokale Unternehmenswebsite',
+  secondaryKeywords: ['Webdesign für kleine Unternehmen'],
+  contentCluster: 'Webdesign für kleine Unternehmen',
+  searchIntent: 'informational-commercial',
+  targetAudience: 'Inhabergeführte lokale Unternehmen in Berlin',
+  source: 'seed',
+  readerProblem: 'Die Website erzeugt zu wenige qualifizierte Anfragen.',
+  concreteReaderBenefit: 'Leser erkennen konkrete Hebel für bessere Kontaktwege.',
+  businessGoal: 'Qualifizierte Beratungsanfragen',
+  ctaType: 'contact',
+  requiresCurrentSources: false,
+  businessValue: 9,
+  searchOpportunity: 8,
+  problemPurchaseProximity: 9,
+  internalLinkPotential: 8,
+  clusterFit: 8,
+  localRelevance: 7,
+  cannibalizationRisk: 2
+};
+
+const validSeoBrief = {
+  topic: validTopicCandidate.topic,
+  workingTitle: validTopicCandidate.suggestedTitle,
+  primaryKeyword: validTopicCandidate.primaryKeyword,
+  secondaryKeywords: validTopicCandidate.secondaryKeywords,
+  searchIntent: validTopicCandidate.searchIntent,
+  targetAudience: validTopicCandidate.targetAudience,
+  readerProblem: validTopicCandidate.readerProblem,
+  contentCluster: validTopicCandidate.contentCluster,
+  businessGoal: validTopicCandidate.businessGoal,
+  ctaType: validTopicCandidate.ctaType,
+  targetWordCount: 1800,
+  outline: Array.from({ length: 5 }, (_, index) => ({
+    heading: `Abschnitt ${index + 1}`,
+    level: index === 0 ? 'h2' : 'h3',
+    purpose: `Konkreter Zweck des Abschnitts ${index + 1}`
+  })),
+  localExamples: ['Ein lokaler Dienstleister aus Berlin'],
+  internalLinks: [
+    { url: '/kontakt', label: 'Beratung anfragen', purpose: 'Abschluss-CTA' },
+    { url: '/website-tester', label: 'Website kostenlos prüfen', purpose: 'Direkter Selbsttest' }
+  ],
+  faqQuestions: Array.from({ length: 5 }, (_, index) => `Konkrete FAQ-Frage ${index + 1}?`),
+  sourceRequirements: {
+    requiresCurrentSources: false,
+    requiredTopics: []
+  },
+  imageIdea: {
+    prompt: 'Professionelle Arbeitsszene mit einer lokalen Unternehmerin und einer Website-Analyse',
+    altText: 'Unternehmerin prüft die Anfragewege ihrer Website',
+    filename: 'lokale-unternehmenswebsite-anfragen.webp'
+  }
+};
+
+const validArticle = {
+  title: validSeoBrief.workingTitle,
+  shortDescription: 'Ein praxisnaher Leitfaden für bessere Anfragewege auf lokalen Unternehmenswebsites.',
+  metaTitle: 'Lokale Unternehmenswebsite: mehr Anfragen gewinnen',
+  metaDescription: 'Erfahre, wie klare Inhalte, Kontaktwege und lokale Relevanz deine Unternehmenswebsite zu mehr qualifizierten Anfragen führen.',
+  ogTitle: 'Mehr Anfragen über deine lokale Unternehmenswebsite',
+  ogDescription: 'Konkrete Schritte für verständliche Inhalte, klare Kontaktwege und eine überzeugende lokale Website.',
+  slug: validTopicCandidate.slug,
+  contentHtml: `<section><h2>Einleitung</h2><p>${'Konkreter hilfreicher Inhalt. '.repeat(190)}</p></section>`,
+  faqJson: Array.from({ length: 5 }, (_, index) => ({
+    question: `Konkrete FAQ-Frage ${index + 1}?`,
+    answer: `Konkrete und verständliche Antwort ${index + 1}.`
+  })),
+  category: 'Webdesign',
+  imagePrompt: validSeoBrief.imageIdea.prompt,
+  imageAlt: validSeoBrief.imageIdea.altText,
+  imageFilename: validSeoBrief.imageIdea.filename,
+  seo: {
+    primaryKeyword: validSeoBrief.primaryKeyword,
+    secondaryKeywords: validSeoBrief.secondaryKeywords,
+    searchIntent: validSeoBrief.searchIntent,
+    targetAudience: validSeoBrief.targetAudience,
+    contentCluster: validSeoBrief.contentCluster
+  },
+  lead: {
+    businessGoal: validSeoBrief.businessGoal,
+    ctaType: validSeoBrief.ctaType,
+    ctaPositions: ['blog_early', 'blog_mid', 'blog_final']
+  },
+  sourceReferences: [],
+  risk: validRisk,
+  qualitySelfCheck: {
+    searchIntentFulfilled: true,
+    noH1: true,
+    noOuterBootstrapContainer: true,
+    noInventedPricesOrServices: true,
+    faqMatchesHtml: true,
+    approvedLinksOnly: true
+  }
+};
+
+const validReview = {
+  passed: true,
+  score: 92,
+  summary: 'Der Artikel beantwortet die Suchintention konkret und nachvollziehbar.',
+  strengths: ['Klare Handlungsschritte', 'Passender Zielgruppenbezug'],
+  issues: [],
+  recommendedActions: [],
+  requiresManualReview: false,
+  risks: validRisk
+};
+
+test('config defaults to drafts in Europe Berlin', () => {
+  const config = getContentAgentConfig({});
+  assert.equal(config.publishMode, 'draft');
+  assert.equal(config.timezone, 'Europe/Berlin');
+  assert.equal(config.maxTopicCandidates, 8);
+  assert.equal(config.autoPublishEnabled, false);
+  assert.equal(config.monthlyCostLimitEur, 25);
+  assert.equal(Object.isFrozen(config), true);
+});
+
+test('config parses overrides and clamps bounded integers', () => {
+  const config = getContentAgentConfig({
+    CONTENT_AGENT_ENABLED: 'TRUE',
+    CONTENT_AGENT_PUBLISH_MODE: 'auto',
+    CONTENT_AGENT_MAX_TOPIC_CANDIDATES: '99',
+    CONTENT_AGENT_MAX_REVISIONS: '-2',
+    CONTENT_AGENT_WORKER_POLL_MS: '250',
+    CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR: '-1'
+  });
+
+  assert.equal(config.enabled, true);
+  assert.equal(config.publishMode, 'auto');
+  assert.equal(config.maxTopicCandidates, 20);
+  assert.equal(config.maxRevisions, 0);
+  assert.equal(config.workerPollMs, 1000);
+  assert.equal(config.monthlyCostLimitEur, 25);
+});
+
+test('mark profile and links expose stable approved context', () => {
+  assert.equal(CONTENT_AGENT_PROFILE.brandName, 'Komplett Webdesign');
+  assert.equal(CONTENT_AGENT_PROFILE.tone.address, 'Du');
+  assert.ok(CONTENT_AGENT_PROFILE.forbiddenPhrases.includes('In der heutigen digitalen Welt'));
+  assert.deepEqual(CONTENT_AGENT_LINKS.map(({ url }) => url), [
+    '/kontakt',
+    '/pakete',
+    '/webdesign-berlin',
+    '/leistungen/website-relaunch',
+    '/leistungen/local-seo',
+    '/leistungen/website-audit',
+    '/leistungen/landingpage-erstellen-lassen',
+    '/website-tester'
+  ]);
+});
+
+test('topic candidates require strict candidate objects and ASCII slugs', () => {
+  assert.equal(TopicCandidatesSchema.safeParse({ candidates: [validTopicCandidate] }).success, true);
+  assert.equal(TopicCandidatesSchema.safeParse({ candidates: [{ ...validTopicCandidate, slug: 'für-berlin' }] }).success, false);
+  assert.equal(TopicCandidatesSchema.safeParse({ candidates: [{ ...validTopicCandidate, extra: true }] }).success, false);
+  assert.equal(TopicCandidatesSchema.safeParse({ candidates: [validTopicCandidate], extra: true }).success, false);
+});
+
+test('SEO brief enforces word, outline, internal-link and FAQ boundaries', () => {
+  assert.equal(SeoBriefSchema.safeParse(validSeoBrief).success, true);
+
+  for (const invalid of [
+    { ...validSeoBrief, targetWordCount: 1199 },
+    { ...validSeoBrief, targetWordCount: 3201 },
+    { ...validSeoBrief, outline: validSeoBrief.outline.slice(0, 4) },
+    { ...validSeoBrief, outline: Array.from({ length: 17 }, () => validSeoBrief.outline[0]) },
+    { ...validSeoBrief, internalLinks: validSeoBrief.internalLinks.slice(0, 1) },
+    { ...validSeoBrief, internalLinks: Array.from({ length: 9 }, () => validSeoBrief.internalLinks[0]) },
+    { ...validSeoBrief, faqQuestions: validSeoBrief.faqQuestions.slice(0, 4) },
+    { ...validSeoBrief, faqQuestions: [...validSeoBrief.faqQuestions, 'Frage 6?', 'Frage 7?', 'Frage 8?'] }
+  ]) {
+    assert.equal(SeoBriefSchema.safeParse(invalid).success, false);
+  }
+});
+
+test('article output enforces strict objects, ASCII slug, HTML length and FAQ count', () => {
+  assert.equal(ArticleOutputSchema.safeParse(validArticle).success, true);
+  assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, slug: 'website-für-berlin' }).success, false);
+  assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, contentHtml: 'x'.repeat(4999) }).success, false);
+  assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, faqJson: validArticle.faqJson.slice(0, 4) }).success, false);
+  assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, faqJson: [...validArticle.faqJson, validArticle.faqJson[0], validArticle.faqJson[0], validArticle.faqJson[0]] }).success, false);
+  assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, qualitySelfCheck: { ...validArticle.qualitySelfCheck, extra: true } }).success, false);
+});
+
+test('risk and review outputs reject missing, mistyped and unknown risk flags', () => {
+  assert.equal(RiskSchema.safeParse(validRisk).success, true);
+  assert.equal(RiskSchema.safeParse({ ...validRisk, legalClaims: 'false' }).success, false);
+  assert.equal(RiskSchema.safeParse({ ...validRisk, staticPrices: undefined }).success, false);
+  assert.equal(RiskSchema.safeParse({ ...validRisk, unknownRisk: false }).success, false);
+  assert.equal(ReviewOutputSchema.safeParse(validReview).success, true);
+  assert.equal(ReviewOutputSchema.safeParse({ ...validReview, score: 101 }).success, false);
+  assert.equal(ReviewOutputSchema.safeParse({ ...validReview, extra: true }).success, false);
+});
