@@ -1,24 +1,18 @@
 <%- include('../../partials/admin_header') %>
-
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Technik</h1>
-  <%- include('_navigation') %>
-
-  <p><strong>Worker:</strong> <%= technology.worker.label %></p>
-  <div class="table-responsive">
-    <table class="table align-middle">
-      <thead><tr><th>Wert</th><th>Konfiguration</th><th>Quelle</th></tr></thead>
-      <tbody>
-        <% Object.entries(technology.technical || {}).forEach(([key, item]) => { %>
-          <tr>
-            <td><%= key %></td>
-            <td><%= item.value %></td>
-            <td><%= item.source %><%= item.restartRequired ? ' · Neustart erforderlich' : '' %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+<%
+  const safeTechnology = technology || { technical: {}, versions: {}, worker: {}, providers: [] };
+  const labels = { enabled: 'Technischer Hauptschalter', autoPublishEnabled: 'Auto-Publish-Freigabe', maxTopicCandidates: 'Themenkandidaten', maxRevisions: 'Maximale Revisionen', maxAttempts: 'Technische Versuchsgrenze', contentModel: 'OpenAI Content-Modell', reviewModel: 'OpenAI Review-Modell', imageModel: 'OpenAI Bildmodell', monthlyCostLimitEur: 'Technische Budgetobergrenze', contentStageReservationEur: 'Reservierung Content-Stufe', reviewStageReservationEur: 'Reservierung Review-Stufe', contentInputCostPerMtok: 'Content Input-Preis / Mio. Token', contentOutputCostPerMtok: 'Content Output-Preis / Mio. Token', reviewInputCostPerMtok: 'Review Input-Preis / Mio. Token', reviewOutputCostPerMtok: 'Review Output-Preis / Mio. Token', imageCostEur: 'Bildpreis', workerPollMs: 'Worker-Polling', jobLeaseMinutes: 'Job-Lease' };
+%>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead"><div><p class="content-agent-eyebrow">Diagnose</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-microchip" aria-hidden="true"></i> Technik</h1><p class="content-agent-lead">Transparente Laufzeitwerte und Providerzustände ohne Geheimnisse oder Rohpayloads.</p></div><span class="content-agent-readonly"><i class="fa-solid fa-lock" aria-hidden="true"></i> Schreibgeschützt</span></header>
+  <%- include('_tabs', { activeTab: 'technology' }) %>
+  <div class="content-agent-notice"><i class="fa-solid fa-terminal" aria-hidden="true"></i><div><strong>Änderungen erfolgen außerhalb des Dashboards</strong><p>Diese Expertenwerte stammen aus <code>.env</code>. Nach einer Änderung ist für entsprechend markierte Werte ein Worker-Neustart erforderlich.</p></div></div>
+  <div class="content-agent-technology-grid">
+    <section class="content-agent-panel" aria-labelledby="runtime-heading"><div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Konfiguration</p><h2 id="runtime-heading">Technische Laufzeitwerte</h2></div></div><dl class="content-agent-tech-list">
+      <% Object.entries(safeTechnology.technical || {}).forEach(([key, item]) => { %><div><dt><%= labels[key] || key %></dt><dd><output><%= typeof item.value === 'boolean' ? (item.value ? 'aktiv' : 'deaktiviert') : item.value %></output><span>Quelle: <%= item.source %><%= item.restartRequired ? ' · Neustart erforderlich' : '' %></span></dd></div><% }) %>
+    </dl></section>
+    <aside class="content-agent-panel content-agent-sidepanel" aria-labelledby="health-heading"><div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">System</p><h2 id="health-heading">Zustände &amp; Versionen</h2></div></div><ul class="content-agent-status-list"><li><span class="content-agent-status-dot <%= safeTechnology.worker?.healthy ? 'is-online' : 'is-error' %>" aria-hidden="true"></span><span><strong>Content-Worker</strong><small><%= safeTechnology.worker?.label || 'Status unbekannt' %></small></span></li><% (safeTechnology.providers || []).forEach((provider) => { %><li><span class="content-agent-status-dot <%= provider.healthy ? 'is-online' : 'is-neutral' %>" aria-hidden="true"></span><span><strong><%= provider.name %></strong><small><%= provider.statusLabel %></small></span></li><% }) %></ul><div class="content-agent-divider"></div><h3 class="content-agent-sidepanel__title">Versionen</h3><dl class="content-agent-version-list"><% Object.entries(safeTechnology.versions || {}).forEach(([key, item]) => { %><div><dt><%= key === 'app' ? 'App' : 'Worker' %></dt><dd><%= item.value %><small>Quelle: <%= item.source %><%= item.restartRequired ? ' · Neustart erforderlich' : '' %></small></dd></div><% }) %></dl></aside>
   </div>
 </div>
-
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

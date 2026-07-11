@@ -1,0 +1,18 @@
+<%
+  const contentAgentTabs = [
+    { id: 'overview', href: '/admin/content-agent', label: 'Übersicht', icon: 'fa-gauge-high' },
+    { id: 'drafts', href: '/admin/content-agent/drafts', label: 'Entwürfe', icon: 'fa-file-circle-check' },
+    { id: 'schedule', href: '/admin/content-agent/schedule', label: 'Zeitplan & Modus', icon: 'fa-calendar-check' },
+    { id: 'jobs', href: '/admin/content-agent/jobs', label: 'Jobs & Protokolle', icon: 'fa-list-check' },
+    { id: 'technology', href: '/admin/content-agent/technology', label: 'Technik', icon: 'fa-microchip' }
+  ];
+%>
+<nav class="content-agent-tabs" aria-label="Content-Agent-Bereiche">
+  <% contentAgentTabs.forEach((tab) => { %>
+    <a class="content-agent-tabs__link <%= activeTab === tab.id ? 'is-active' : '' %>"
+      href="<%= tab.href %>" <% if (activeTab === tab.id) { %>aria-current="page"<% } %>>
+      <i class="fa-solid <%= tab.icon %>" aria-hidden="true"></i>
+      <span><%= tab.label %></span>
+    </a>
+  <% }) %>
+</nav>

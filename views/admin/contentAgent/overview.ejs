@@ -1,35 +1,125 @@
 <%- include('../../partials/admin_header') %>
+<%
+  const safeSettings = typeof settings !== 'undefined' && settings ? settings : {};
+  const safeDashboard = dashboard || {};
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const recentDrafts = Array.isArray(safeDashboard.drafts) ? safeDashboard.drafts.slice(0, 4) : [];
+  const recentJobs = Array.isArray(safeDashboard.jobs) ? safeDashboard.jobs : [];
+  const failedJobs = recentJobs.filter((job) => ['failed', 'needs_manual_attention'].includes(job.status));
+%>
 
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Übersicht</h1>
-  <%- include('_navigation') %>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Redaktionelle Leitstelle</p>
+      <h1 class="admin-page-title mb-1"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Content-Agent</h1>
+      <p class="content-agent-lead">
+        <span class="content-agent-status-dot <%= safeSettings.agent_enabled ? 'is-online' : 'is-paused' %>" aria-hidden="true"></span>
+        <%= safeSettings.agent_enabled ? 'Aktiv' : 'Pausiert' %> · <%= safeDashboard.modeLabel || 'Status unbekannt' %>
+      </p>
+    </div>
+    <div class="content-agent-actions" aria-label="Schnellaktionen">
+      <form method="post" action="/admin/content-agent/settings"
+        data-confirm="Agentstatus wirklich ändern? Laufende Jobs werden kontrolliert abgeschlossen.">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="settings_version" value="<%= safeSettings.settings_version || '' %>">
+        <input type="hidden" name="agent_enabled" value="<%= safeSettings.agent_enabled ? 'false' : 'true' %>">
+        <button class="btn btn-outline-secondary" type="submit">
+          <i class="fa-solid <%= safeSettings.agent_enabled ? 'fa-pause' : 'fa-play' %>" aria-hidden="true"></i>
+          <%= safeSettings.agent_enabled ? 'Agent pausieren' : 'Agent aktivieren' %>
+        </button>
+      </form>
+      <form method="post" action="/admin/content-agent/jobs/manual-draft"
+        data-confirm="Jetzt einen kostenpflichtigen Entwurf im Review-Modus erzeugen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-primary" type="submit" <%= safeSettings.agent_enabled ? '' : 'disabled' %>>
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> Jetzt Entwurf erstellen
+        </button>
+      </form>
+    </div>
+  </header>
 
-  <div class="row g-3">
-    <div class="col-md-6 col-xl-3">
-      <div class="card h-100"><div class="card-body">
-        <h2 class="h6">Betriebsmodus</h2>
-        <p class="mb-0"><%= dashboard.modeLabel %></p>
-      </div></div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-      <div class="card h-100"><div class="card-body">
-        <h2 class="h6">Worker</h2>
-        <p class="mb-0"><%= dashboard.worker.label %></p>
-      </div></div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-      <div class="card h-100"><div class="card-body">
-        <h2 class="h6">Monatsbudget</h2>
-        <p class="mb-0"><%= dashboard.budget.usedEur.toFixed(2) %> von <%= dashboard.budget.limitEur.toFixed(2) %> Euro</p>
-      </div></div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-      <div class="card h-100"><div class="card-body">
-        <h2 class="h6">Manuelle Freigaben</h2>
-        <p class="mb-0"><%= dashboard.approvals.current %> von <%= dashboard.approvals.required %></p>
-      </div></div>
-    </div>
+  <%- include('_statusCards', { dashboard: safeDashboard, settings: safeSettings }) %>
+  <%- include('_tabs', { activeTab: 'overview' }) %>
+
+  <% if (typeof created !== 'undefined' || (typeof currentPathname !== 'undefined' && String(currentPathname).includes('created=1'))) { %>
+    <div class="alert alert-success" role="status">Der Entwurfsjob wurde sicher eingeplant.</div>
+  <% } %>
+
+  <div class="content-agent-overview-grid">
+    <section class="content-agent-panel" aria-labelledby="review-heading">
+      <div class="content-agent-panel__head">
+        <div>
+          <p class="content-agent-eyebrow">Redaktion</p>
+          <h2 id="review-heading">Zur Prüfung</h2>
+        </div>
+        <a href="/admin/content-agent/drafts" class="content-agent-text-link">Alle Entwürfe <span aria-hidden="true">→</span></a>
+      </div>
+
+      <% if (!recentDrafts.length) { %>
+        <div class="content-agent-empty">
+          <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
+          <div><strong>Keine offenen Entwürfe</strong><p>Neue Ergebnisse erscheinen nach einem erfolgreichen Job hier.</p></div>
+        </div>
+      <% } else { %>
+        <div class="content-agent-review-list">
+          <% recentDrafts.forEach((draft) => { %>
+            <article class="content-agent-review-item <%= draft.riskBlocked ? 'is-risk' : '' %>">
+              <div class="content-agent-review-item__main">
+                <div class="content-agent-review-item__topline">
+                  <span class="content-agent-score <%= Number(draft.qualityScore) >= 90 ? 'is-strong' : '' %>"><%= draft.qualityScore %> Punkte</span>
+                  <% if (draft.riskBlocked) { %><span class="content-agent-risk-label"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Prüfung erforderlich</span><% } %>
+                </div>
+                <h3><%= draft.title %></h3>
+                <p><%= draft.riskBlocked ? `${draft.riskCount} konkrete Hinweise prüfen` : (draft.excerpt || 'Bereit für die redaktionelle Prüfung') %></p>
+              </div>
+              <div class="content-agent-review-item__actions">
+                <a class="btn btn-sm btn-outline-primary" href="/admin/content-agent/drafts/<%= draft.id %>/preview">Vorschau</a>
+                <a class="btn btn-sm btn-primary" href="/admin/content-agent/drafts/<%= draft.id %>/edit">Prüfen</a>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="content-agent-stock-link">
+        <div><i class="fa-solid fa-box-archive" aria-hidden="true"></i><span><strong>Bestehende Inhalte</strong><small>Veröffentlichte Artikel prüfen, ohne sie zu überschreiben.</small></span></div>
+        <a href="/admin/content-agent/existing-content" class="btn btn-sm btn-outline-secondary">Zum Bestand</a>
+      </div>
+    </section>
+
+    <aside class="content-agent-panel content-agent-sidepanel" aria-labelledby="system-heading">
+      <div class="content-agent-panel__head">
+        <div><p class="content-agent-eyebrow">Betrieb</p><h2 id="system-heading">Systemstatus</h2></div>
+        <a href="/admin/content-agent/technology" class="content-agent-icon-link" aria-label="Technikstatus öffnen"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+      </div>
+      <ul class="content-agent-status-list">
+        <li><span class="content-agent-status-dot <%= safeDashboard.worker?.healthy ? 'is-online' : 'is-error' %>" aria-hidden="true"></span><span><strong>Worker</strong><small><%= safeDashboard.worker?.label || 'Status unbekannt' %></small></span></li>
+        <li><span class="content-agent-status-dot is-online" aria-hidden="true"></span><span><strong>Dashboarddaten</strong><small>Sicher geladen</small></span></li>
+        <li><span class="content-agent-status-dot is-neutral" aria-hidden="true"></span><span><strong>OpenAI &amp; Bilddienst</strong><small>Letzte Ergebnisse unter Technik</small></span></li>
+      </ul>
+
+      <div class="content-agent-divider"></div>
+      <h3 class="content-agent-sidepanel__title">Freigabestatus</h3>
+      <div class="content-agent-approval">
+        <div class="content-agent-approval__value"><%= safeDashboard.approvals?.current || 0 %><span>/ <%= safeDashboard.approvals?.required || 8 %></span></div>
+        <div><strong>manuelle KI-Freigaben</strong><p>Direktveröffentlichung bleibt bis zur achten geprüften Freigabe gesperrt.</p></div>
+      </div>
+
+      <div class="content-agent-divider"></div>
+      <h3 class="content-agent-sidepanel__title">Jobs mit Handlungsbedarf</h3>
+      <% if (!failedJobs.length) { %>
+        <p class="content-agent-quiet"><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Kein Job wartet auf einen Eingriff.</p>
+      <% } else { %>
+        <ul class="content-agent-compact-list">
+          <% failedJobs.slice(0, 3).forEach((job) => { %>
+            <li><span><strong>Job #<%= job.id %></strong><small><%= job.statusLabel %> · <%= job.lastSafeStageLabel %></small></span><a href="/admin/content-agent/jobs">Öffnen</a></li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </aside>
   </div>
 </div>
 
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

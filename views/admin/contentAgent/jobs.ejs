@@ -1,28 +1,29 @@
 <%- include('../../partials/admin_header') %>
-
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Jobs</h1>
-  <%- include('_navigation') %>
-
-  <% if (!jobs.length) { %>
-    <p class="text-muted">Es sind noch keine Content-Agent-Jobs vorhanden.</p>
-  <% } else { %>
-    <div class="table-responsive">
-      <table class="table align-middle">
-        <thead><tr><th>ID</th><th>Typ</th><th>Status</th><th>Versuche</th></tr></thead>
-        <tbody>
-          <% jobs.forEach((job) => { %>
-            <tr>
-              <td><%= job.id %></td>
-              <td><%= job.jobType %></td>
-              <td><%= job.statusLabel %></td>
-              <td><%= job.attempts ?? 0 %> / <%= job.maxAttempts ?? 0 %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
+<%
+  const safeJobs = Array.isArray(jobs) ? jobs : [];
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead"><div><p class="content-agent-eyebrow">Nachvollziehbarkeit</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Jobs &amp; Protokolle</h1><p class="content-agent-lead">Bereinigte Abläufe, Kosten und sichere Fortsetzung auf einen Blick.</p></div></header>
+  <%- include('_tabs', { activeTab: 'jobs' }) %>
+  <section class="content-agent-panel" aria-labelledby="job-list-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Letzte Aktivitäten</p><h2 id="job-list-heading"><%= safeJobs.length %> Jobs</h2></div><span class="content-agent-readonly"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Protokolle bereinigt</span></div>
+    <% if (!safeJobs.length) { %><div class="content-agent-empty"><i class="fa-solid fa-list-check" aria-hidden="true"></i><div><strong>Noch keine Jobs</strong><p>Geplante und manuelle Läufe erscheinen nach ihrer Anlage hier.</p></div></div><% } else { %>
+      <div class="content-agent-job-list">
+        <% safeJobs.forEach((job) => { const retryable = ['failed', 'needs_manual_attention'].includes(job.status); %>
+          <article class="content-agent-job <%= retryable ? 'is-warning' : '' %>">
+            <div class="content-agent-job__status"><span class="content-agent-status-dot <%= job.status === 'completed' ? 'is-online' : retryable ? 'is-error' : 'is-neutral' %>" aria-hidden="true"></span><div><span class="content-agent-eyebrow">Job #<%= job.id %></span><strong><%= job.statusLabel %></strong></div></div>
+            <dl class="content-agent-job__facts"><div><dt>Typ</dt><dd><%= job.jobType %></dd></div><div><dt>Letzte sichere Stufe</dt><dd><%= job.lastSafeStageLabel %></dd></div><div><dt>Versuche</dt><dd><%= job.attempts %> / <%= job.maxAttempts %></dd></div><div><dt>Kosten</dt><dd><%= Number(job.costEur || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %> €</dd></div></dl>
+            <% if (job.lastError) { %><p class="content-agent-job__error"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span><strong>Fehlerursache</strong><%= job.lastError %></span></p><% } %>
+            <div class="content-agent-job__action">
+              <% if (job.postId) { %><a class="btn btn-sm btn-outline-secondary" href="/admin/content-agent/drafts/<%= job.postId %>/preview">Entwurf öffnen</a><% } %>
+              <% if (retryable) { %><form method="post" action="/admin/content-agent/jobs/<%= job.id %>/retry" data-confirm="Diesen Job am letzten sicheren Schritt fortsetzen?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Job fortsetzen</button></form><% } %>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
 </div>
-
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

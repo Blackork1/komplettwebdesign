@@ -1,20 +1,46 @@
 <%- include('../../partials/admin_header') %>
+<%
+  const safeSettings = settings || {};
+  const safeTechnical = typeof technical !== 'undefined' && technical ? technical : {};
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const selectedDays = Array.isArray(safeSettings.schedule_weekdays) ? safeSettings.schedule_weekdays.map(Number) : [];
+  const weekdays = [[1, 'Montag'], [2, 'Dienstag'], [3, 'Mittwoch'], [4, 'Donnerstag'], [5, 'Freitag'], [6, 'Samstag'], [7, 'Sonntag']];
+  const approvalCount = Number(safeSettings.manual_approvals_count || 0);
+  const technicalAutoPublish = safeTechnical.autoPublishEnabled?.value === true;
+%>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead"><div><p class="content-agent-eyebrow">Betriebseinstellungen</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Zeitplan &amp; Modus</h1><p class="content-agent-lead">Sichere Laufzeitwerte werden ohne Container-Neustart wirksam.</p></div><span class="content-agent-saved-state"><i class="fa-solid fa-database" aria-hidden="true"></i> Gespeichert in PostgreSQL</span></header>
+  <%- include('_tabs', { activeTab: 'schedule' }) %>
+  <form method="post" action="/admin/content-agent/settings" class="content-agent-settings" data-confirm-mode="auto_publish">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="settings_version" value="<%= safeSettings.settings_version || '' %>">
+    <div class="content-agent-settings-grid">
+      <section class="content-agent-panel" aria-labelledby="mode-heading">
+        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">01 · Steuerung</p><h2 id="mode-heading">Agent und Betriebsmodus</h2></div></div>
+        <div class="content-agent-switch-row"><div><label for="agent-enabled"><strong>Content-Agent Status</strong></label><p>Deaktiviert werden keine neuen automatischen oder manuellen Jobs gestartet.</p></div><select class="form-select" id="agent-enabled" name="agent_enabled"><option value="true" <%= safeSettings.agent_enabled ? 'selected' : '' %>>Aktiviert</option><option value="false" <%= safeSettings.agent_enabled ? '' : 'selected' %>>Deaktiviert</option></select></div>
+        <fieldset class="content-agent-mode-options"><legend>Betriebsmodus</legend>
+          <label class="content-agent-mode-option"><input type="radio" name="operating_mode" value="review" <%= safeSettings.operating_mode !== 'auto_publish' ? 'checked' : '' %>><span><i class="fa-solid fa-user-check" aria-hidden="true"></i><strong>Review</strong><small>Jeder erzeugte Artikel bleibt zur manuellen Prüfung als Entwurf liegen.</small></span></label>
+          <label class="content-agent-mode-option <%= technicalAutoPublish && approvalCount >= 8 ? '' : 'is-locked' %>"><input type="radio" name="operating_mode" value="auto_publish" <%= safeSettings.operating_mode === 'auto_publish' ? 'checked' : '' %> <%= technicalAutoPublish && approvalCount >= 8 ? '' : 'disabled' %>><span><i class="fa-solid fa-bolt" aria-hidden="true"></i><strong>Direkt veröffentlichen</strong><small>Nur nach allen technischen, qualitativen und redaktionellen Sicherheitsprüfungen.</small></span></label>
+        </fieldset>
+        <div class="content-agent-gate"><div class="content-agent-gate__head"><strong>Voraussetzungen für Direktveröffentlichung</strong><span><%= approvalCount %> / 8 Freigaben</span></div><ul><li class="<%= approvalCount >= 8 ? 'is-met' : '' %>"><i class="fa-solid <%= approvalCount >= 8 ? 'fa-circle-check' : 'fa-circle' %>" aria-hidden="true"></i> Mindestens acht manuell freigegebene KI-Artikel</li><li class="<%= technicalAutoPublish ? 'is-met' : '' %>"><i class="fa-solid <%= technicalAutoPublish ? 'fa-circle-check' : 'fa-lock' %>" aria-hidden="true"></i> Technische Freigabe über <code>CONTENT_AGENT_AUTOPUBLISH_ENABLED</code></li><li class="is-met"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Mindestscore mindestens 90 Punkte</li><li><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Risikothemen und ungeprüfte aktuelle Aussagen bleiben immer im Review</li></ul></div>
+      </section>
 
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Zeitplan</h1>
-  <%- include('_navigation') %>
+      <section class="content-agent-panel" aria-labelledby="schedule-heading">
+        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">02 · Taktung</p><h2 id="schedule-heading">Wochentage und Uhrzeit</h2></div></div>
+        <fieldset class="content-agent-weekdays"><legend>Wochentage</legend><div>
+          <% weekdays.forEach(([value, label]) => { %><label><input type="checkbox" name="schedule_weekdays" value="<%= value %>" <%= selectedDays.includes(value) ? 'checked' : '' %>><span><%= label %></span></label><% }) %>
+        </div></fieldset>
+        <div class="row g-3"><div class="col-sm-5"><label class="form-label" for="schedule-time">Gemeinsame Uhrzeit</label><input class="form-control" id="schedule-time" type="time" name="schedule_time" value="<%= String(safeSettings.schedule_time || '').slice(0, 5) %>" required></div><div class="col-sm-7"><label class="form-label" for="schedule-timezone">Zeitzone</label><input class="form-control" id="schedule-timezone" type="text" name="timezone" value="<%= safeSettings.timezone || 'Europe/Berlin' %>" autocomplete="off" required><div class="form-text">Gültige IANA-Zeitzone, zum Beispiel Europe/Berlin.</div></div></div>
+        <div class="content-agent-schedule-note"><i class="fa-regular fa-clock" aria-hidden="true"></i><p><strong>Standard: Montag und Donnerstag um 18:00 Uhr.</strong><br>Sommer- und Winterzeit werden anhand der gewählten Zeitzone berücksichtigt.</p></div>
+      </section>
 
-  <dl class="row">
-    <dt class="col-sm-4">Agent</dt><dd class="col-sm-8"><%= settings.agent_enabled ? 'Aktiv' : 'Deaktiviert' %></dd>
-    <dt class="col-sm-4">Modus</dt><dd class="col-sm-8"><%= settings.operating_mode %></dd>
-    <dt class="col-sm-4">Wochentage</dt><dd class="col-sm-8"><%= settings.schedule_weekdays.join(', ') %></dd>
-    <dt class="col-sm-4">Uhrzeit</dt><dd class="col-sm-8"><%= String(settings.schedule_time).slice(0, 5) %> Uhr</dd>
-    <dt class="col-sm-4">Zeitzone</dt><dd class="col-sm-8"><%= settings.timezone %></dd>
-    <dt class="col-sm-4">Monatsbudget</dt><dd class="col-sm-8"><%= (settings.monthly_budget_cents / 100).toFixed(2) %> Euro</dd>
-    <dt class="col-sm-4">Mindestscore</dt><dd class="col-sm-8"><%= settings.auto_publish_min_score %></dd>
-    <dt class="col-sm-4">Maximale Versuche</dt><dd class="col-sm-8"><%= settings.maximum_attempts %></dd>
-  </dl>
-  <p class="text-muted">Die Bearbeitungsoberfläche wird im nächsten Cockpit-Schritt ergänzt.</p>
+      <section class="content-agent-panel content-agent-settings-wide" aria-labelledby="limits-heading">
+        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">03 · Sicherheitsgrenzen</p><h2 id="limits-heading">Budget und Qualität</h2></div><span class="content-agent-readonly">Technisch begrenzt durch .env</span></div>
+        <div class="content-agent-limit-grid"><div><label class="form-label" for="monthly-budget">Monatsbudget in Cent</label><div class="input-group"><input class="form-control" id="monthly-budget" type="number" name="monthly_budget_cents" min="0" max="<%= Number(safeTechnical.monthlyCostLimitEur?.value || 0) * 100 || '' %>" step="100" value="<%= safeSettings.monthly_budget_cents || 0 %>" required><span class="input-group-text">Cent</span></div><div class="form-text">Aktuell <%= (Number(safeSettings.monthly_budget_cents || 0) / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) %> €.</div></div><div><label class="form-label" for="minimum-score">Auto-Publish-Mindestscore</label><div class="input-group"><input class="form-control" id="minimum-score" type="number" name="auto_publish_min_score" min="90" max="100" value="<%= safeSettings.auto_publish_min_score || 90 %>" required><span class="input-group-text">/ 100</span></div><div class="form-text">Werte unter 90 werden serverseitig abgelehnt.</div></div><div><label class="form-label" for="maximum-attempts">Maximale Jobversuche</label><input class="form-control" id="maximum-attempts" type="number" name="maximum_attempts" min="1" max="<%= safeTechnical.maxAttempts?.value || 5 %>" value="<%= safeSettings.maximum_attempts || 3 %>" required><div class="form-text">Die technische Obergrenze kann hier nicht überschritten werden.</div></div></div>
+      </section>
+    </div>
+    <div class="content-agent-formbar"><p><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Änderungen gelten nur für neue Jobs. Laufende Jobs behalten ihren Start-Snapshot.</p><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Einstellungen speichern</button></div>
+  </form>
 </div>
-
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

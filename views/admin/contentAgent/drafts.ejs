@@ -1,27 +1,41 @@
 <%- include('../../partials/admin_header') %>
+<% const safeDrafts = Array.isArray(drafts) ? drafts : []; %>
 
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Entwürfe</h1>
-  <%- include('_navigation') %>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead">
+    <div><p class="content-agent-eyebrow">Redaktion</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-file-circle-check" aria-hidden="true"></i> Entwürfe</h1><p class="content-agent-lead"><%= safeDrafts.length %> unveröffentlichte <%= safeDrafts.length === 1 ? 'Fassung' : 'Fassungen' %> zur sicheren Prüfung</p></div>
+    <a href="/admin/content-agent/existing-content" class="btn btn-outline-secondary"><i class="fa-solid fa-box-archive" aria-hidden="true"></i> Bestehende Inhalte</a>
+  </header>
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
 
-  <% if (!drafts.length) { %>
-    <p class="text-muted">Derzeit sind keine KI-Entwürfe zur Prüfung vorhanden.</p>
-  <% } else { %>
-    <div class="table-responsive">
-      <table class="table align-middle">
-        <thead><tr><th>Titel</th><th>Status</th><th>Qualität</th></tr></thead>
-        <tbody>
-          <% drafts.forEach((draft) => { %>
-            <tr>
-              <td><%= draft.title %></td>
-              <td><%= draft.workflowStatus %></td>
-              <td><%= draft.qualityScore ?? 0 %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+  <section class="content-agent-panel" aria-labelledby="draft-list-heading">
+    <div class="content-agent-panel__head">
+      <div><p class="content-agent-eyebrow">Arbeitsvorrat</p><h2 id="draft-list-heading">Offene Entwürfe</h2></div>
+      <p class="content-agent-quiet mb-0">Vorschau und Bearbeitung verändern keine veröffentlichten Inhalte.</p>
     </div>
-  <% } %>
+    <% if (!safeDrafts.length) { %>
+      <div class="content-agent-empty"><i class="fa-regular fa-circle-check" aria-hidden="true"></i><div><strong>Alles geprüft</strong><p>Derzeit sind keine KI-Entwürfe offen.</p></div></div>
+    <% } else { %>
+      <div class="content-agent-draft-grid">
+        <% safeDrafts.forEach((draft) => { %>
+          <article class="content-agent-draft-card <%= draft.riskBlocked ? 'is-risk' : '' %>">
+            <div class="content-agent-draft-card__visual">
+              <% if (draft.imageUrl) { %><img src="<%= draft.imageUrl %>" alt="" loading="lazy"><% } else { %><i class="fa-regular fa-image" aria-hidden="true"></i><% } %>
+              <span class="content-agent-score <%= Number(draft.qualityScore) >= 90 ? 'is-strong' : '' %>"><%= draft.qualityScore %> Punkte</span>
+            </div>
+            <div class="content-agent-draft-card__body">
+              <div class="content-agent-draft-card__meta"><span><%= draft.contentCluster || '–' %></span><span><%= draft.createdAt ? new Date(draft.createdAt).toLocaleDateString('de-DE') : 'Datum offen' %></span></div>
+              <h2><%= draft.title %></h2>
+              <p><%= draft.excerpt || 'Keine Kurzbeschreibung vorhanden.' %></p>
+              <dl class="content-agent-inline-details"><div><dt>Keyword</dt><dd><%= draft.primaryKeyword || '–' %></dd></div><div><dt>Kosten</dt><dd><%= Number(draft.costEur || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %> €</dd></div></dl>
+              <% if (draft.riskBlocked) { %><p class="content-agent-risk"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span><strong>Review erforderlich</strong><%= draft.riskCount %> konkrete <%= draft.riskCount === 1 ? 'Prüfstelle' : 'Prüfstellen' %></span></p><% } %>
+              <div class="content-agent-card-actions"><a class="btn btn-outline-primary" href="/admin/content-agent/drafts/<%= draft.id %>/preview"><i class="fa-regular fa-eye" aria-hidden="true"></i> Vorschau</a><a class="btn btn-primary" href="/admin/content-agent/drafts/<%= draft.id %>/edit"><i class="fa-solid fa-pen" aria-hidden="true"></i> Entwurf prüfen</a></div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
 </div>
-
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

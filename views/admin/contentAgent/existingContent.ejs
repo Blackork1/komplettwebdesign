@@ -1,27 +1,27 @@
 <%- include('../../partials/admin_header') %>
-
-<div class="container py-4">
-  <h1 class="mb-3">Content-Agent – Bestehende Inhalte</h1>
-  <%- include('_navigation') %>
-
-  <% if (!existingContent.length) { %>
-    <p class="text-muted">Es sind keine veröffentlichten Artikel vorhanden.</p>
-  <% } else { %>
-    <div class="table-responsive">
-      <table class="table align-middle">
-        <thead><tr><th>Titel</th><th>Slug</th><th>Aktualisiert</th></tr></thead>
-        <tbody>
-          <% existingContent.forEach((item) => { %>
-            <tr>
-              <td><%= item.title %></td>
-              <td><%= item.slug %></td>
-              <td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
+<%
+  const safeExistingContent = Array.isArray(existingContent) ? existingContent : [];
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<div class="content-agent-page">
+  <header class="content-agent-pagehead">
+    <div><p class="content-agent-eyebrow">Bestandsprüfung</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-box-archive" aria-hidden="true"></i> Bestehende Inhalte</h1><p class="content-agent-lead">Veröffentlichte Artikel analysieren, ohne die Livefassung zu überschreiben.</p></div>
+    <form method="post" action="/admin/content-agent/existing-content/audit" data-confirm="Bestehende Inhalte jetzt prüfen? Dabei wird kein veröffentlichter Artikel verändert.">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass-chart" aria-hidden="true"></i> Bestehende Inhalte prüfen</button>
+    </form>
+  </header>
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
+  <div class="content-agent-subnav"><a href="/admin/content-agent/drafts">KI-Entwürfe</a><a class="is-active" href="/admin/content-agent/existing-content" aria-current="page">Bestehende Inhalte</a></div>
+  <div class="content-agent-notice"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Liveinhalte bleiben geschützt</strong><p>Prüfungen und spätere Überarbeitungen werden getrennt gespeichert. Erst eine ausdrückliche Freigabe kann eine veröffentlichte Fassung ändern.</p></div></div>
+  <section class="content-agent-panel" aria-labelledby="stock-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Inventar</p><h2 id="stock-heading"><%= safeExistingContent.length %> veröffentlichte Inhalte</h2></div></div>
+    <% if (!safeExistingContent.length) { %><div class="content-agent-empty"><i class="fa-regular fa-folder-open" aria-hidden="true"></i><div><strong>Kein Bestand gefunden</strong><p>Es sind derzeit keine veröffentlichten Artikel vorhanden.</p></div></div><% } else { %>
+      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Artikel</th><th scope="col">Slug</th><th scope="col">Aktualisiert</th><th scope="col" class="text-end">Aktion</th></tr></thead><tbody>
+        <% safeExistingContent.forEach((item) => { %><tr><td><strong><%= item.title %></strong></td><td><code><%= item.slug %></code></td><td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel <span class="visually-hidden">„<%= item.title %>“</span> öffnen</a></td></tr><% }) %>
+      </tbody></table></div>
+    <% } %>
+  </section>
 </div>
-
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>
