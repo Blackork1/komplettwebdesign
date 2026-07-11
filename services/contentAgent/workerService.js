@@ -27,6 +27,7 @@ export function createContentWorker(dependencies = {}) {
   const workerName = String(dependencies.workerName || 'content-worker');
   const version = String(dependencies.version || 'unknown');
   const pollMs = Number(dependencies.pollMs) || 5_000;
+  const heartbeatMs = Number(dependencies.heartbeatMs) || 30_000;
   const leaseMinutes = Number(dependencies.leaseMinutes) || 30;
   const stopTimeoutMs = Number(dependencies.stopTimeoutMs) || DEFAULT_STOP_TIMEOUT_MS;
   const now = dependencies.now || (() => new Date());
@@ -44,29 +45,34 @@ export function createContentWorker(dependencies = {}) {
 
   const startedAt = now();
   let lastJobAt = null;
-  let timer = null;
+  let pollTimer = null;
+  let heartbeatTimer = null;
   let running = false;
   let stopping = false;
   let activePromise = null;
 
   async function executeOnce() {
-    await upsertHeartbeat({ workerName, workerId, startedAt, lastJobAt, version });
+    await writeHeartbeat();
     await recoverExpiredJobs(leaseMinutes);
     if (stopping) return null;
 
     const claim = await claimNextJob(workerId);
     if (!claim) return null;
 
+    let result;
     try {
-      const result = await handleJob(claim);
-      await completeJob(claim);
-      lastJobAt = now();
-      return result;
+      result = await handleJob(claim);
     } catch (error) {
-      await failJob(claim, error);
+      const failed = await failJob(claim, error);
       lastJobAt = now();
+      if (!failed) return { status: 'lease_lost' };
       return { status: 'failed' };
     }
+
+    const completed = await completeJob(claim);
+    lastJobAt = now();
+    if (!completed) return { status: 'lease_lost' };
+    return result;
   }
 
   function processOnce() {
@@ -87,10 +93,23 @@ export function createContentWorker(dependencies = {}) {
     });
   }
 
+  function writeHeartbeat() {
+    return upsertHeartbeat({ workerName, workerId, startedAt, lastJobAt, version });
+  }
+
+  async function heartbeatSafely() {
+    try {
+      await writeHeartbeat();
+    } catch {
+      logger.error?.('Content-Worker-Heartbeat fehlgeschlagen.');
+    }
+  }
+
   async function start() {
     if (!enabled || running || stopping) return false;
     running = true;
-    timer = setIntervalFn(pollSafely, pollMs);
+    pollTimer = setIntervalFn(pollSafely, pollMs);
+    heartbeatTimer = setIntervalFn(heartbeatSafely, heartbeatMs);
     pollSafely();
     return true;
   }
@@ -98,9 +117,13 @@ export function createContentWorker(dependencies = {}) {
   async function stop() {
     stopping = true;
     running = false;
-    if (timer !== null) {
-      clearIntervalFn(timer);
-      timer = null;
+    if (pollTimer !== null) {
+      clearIntervalFn(pollTimer);
+      pollTimer = null;
+    }
+    if (heartbeatTimer !== null) {
+      clearIntervalFn(heartbeatTimer);
+      heartbeatTimer = null;
     }
     if (!activePromise) return { drained: true };
 
@@ -115,5 +138,10 @@ export function createContentWorker(dependencies = {}) {
     return { drained };
   }
 
-  return { start, stop, processOnce };
+  function whenIdle() {
+    if (!activePromise) return Promise.resolve();
+    return activePromise.then(() => undefined, () => undefined);
+  }
+
+  return { start, stop, processOnce, whenIdle };
 }

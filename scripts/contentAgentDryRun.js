@@ -5,6 +5,30 @@ import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
 import { selectBestTopic } from '../services/contentAgent/topicScoringService.js';
 
 const qualityScore = 90;
+
+export function createDryRunExternalCallGuard() {
+  let count = 0;
+  const forbid = () => {
+    count += 1;
+    const error = new Error('Externe Aufrufe sind im Dry-Run gesperrt.');
+    error.code = 'dry_run_external_call';
+    throw error;
+  };
+  return {
+    get count() { return count; },
+    adapters: Object.freeze({
+      database: Object.freeze({ query: forbid, connect: forbid, end: forbid }),
+      openai: Object.freeze({
+        responses: Object.freeze({ create: forbid, parse: forbid }),
+        images: Object.freeze({ generate: forbid })
+      }),
+      cloudinary: Object.freeze({
+        uploader: Object.freeze({ upload_stream: forbid, destroy: forbid })
+      })
+    })
+  };
+}
+
 const faqJson = Array.from({ length: 5 }, (_, index) => ({
   question: `Wie funktioniert Schritt ${index + 1}?`,
   answer: `Schritt ${index + 1} wird verständlich und konkret erklärt.`
@@ -128,9 +152,10 @@ function localOperation(value, responseId) {
   });
 }
 
-function createDryRunDependencies() {
+function createDryRunDependencies(externalCallGuard) {
   const stageResults = new Map();
   return {
+    externalAdapters: externalCallGuard.adapters,
     config: {
       publishMode: 'draft',
       maxTopicCandidates: 1,
@@ -223,8 +248,10 @@ function createDryRunDependencies() {
   };
 }
 
-export async function runContentAgentDryRun() {
-  const dependencies = createDryRunDependencies();
+export async function runContentAgentDryRun({
+  externalCallGuard = createDryRunExternalCallGuard()
+} = {}) {
+  const dependencies = createDryRunDependencies(externalCallGuard);
   const validation = validateArticle(article, {
     existingSlugs: [],
     allowedInternalLinks: [{ url: '/kontakt' }],
@@ -238,7 +265,7 @@ export async function runContentAgentDryRun() {
 
   return {
     mode: 'dry-run',
-    externalCalls: 0,
+    externalCalls: externalCallGuard.count,
     articleValid: validation.passed,
     qualityScore: result.metadata?.quality_score ?? 0,
     publishMode: dependencies.config.publishMode

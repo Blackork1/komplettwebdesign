@@ -1,7 +1,6 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import pool from '../util/db.js';
 
-export async function checkWorkerHeartbeat(database = pool) {
+export async function checkWorkerHeartbeat(database) {
   const { rows } = await database.query(
     `
       SELECT heartbeat_at >= NOW() - INTERVAL '90 seconds' AS fresh
@@ -14,7 +13,7 @@ export async function checkWorkerHeartbeat(database = pool) {
 }
 
 export async function runWorkerHealthcheck({
-  database = pool,
+  database,
   stdout = process.stdout,
   stderr = process.stderr
 } = {}) {
@@ -34,9 +33,12 @@ const currentFile = fileURLToPath(import.meta.url);
 const entryFile = process.argv[1] ? fileURLToPath(pathToFileURL(process.argv[1])) : null;
 
 if (currentFile === entryFile) {
-  runWorkerHealthcheck()
-    .then((code) => {
-      process.exitCode = code;
-    })
-    .finally(() => pool.end().catch(() => {}));
+  import('../util/db.js').then(async ({ default: database }) => {
+    const code = await runWorkerHealthcheck({ database });
+    process.exitCode = code;
+    await database.end().catch(() => {});
+  }).catch(() => {
+    console.error('Content-Worker-Healthcheck fehlgeschlagen.');
+    process.exitCode = 1;
+  });
 }
