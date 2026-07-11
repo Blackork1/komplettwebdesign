@@ -35,26 +35,7 @@ cd ..
 
 Alle drei Befehle müssen erfolgreich enden, bevor die Serverkonfiguration geändert wird.
 
-## 3. PostgreSQL-Backup erstellen und prüfen
-
-Das Custom-Format erhält die Struktur und Datenbankinhalte. `umask 077`, Verzeichnisrechte `700` und Dateirechte `600` verhindern, dass andere lokale Benutzer das Backup lesen. Das Backup enthält sensible Produktionsdaten und darf nicht in Git oder in einen öffentlich erreichbaren Ordner gelangen.
-
-```bash
-cd /home/webadmin/apps/komplettwebdesign
-umask 077
-mkdir -p ./data/backups
-chmod 700 ./data/backups
-BACKUP_FILE="./data/backups/komplettwebdesign-before-content-agent-$(date +%Y%m%d-%H%M%S).dump"
-docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$BACKUP_FILE"
-chmod 600 "$BACKUP_FILE"
-test -s "$BACKUP_FILE"
-docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
-printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
-```
-
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups.
-
-## 4. Nur die notwendigen Compose-Blöcke ändern
+## 3. Nur die notwendigen Compose-Blöcke ändern
 
 Vor der Bearbeitung eine Arbeitskopie der Compose-Datei anlegen:
 
@@ -64,7 +45,7 @@ cp -p docker-compose.yml "docker-compose.yml.before-content-worker-$(date +%Y%m%
 
 Die folgenden Ausschnitte zeigen ausschließlich die Änderungen. Auslassungen sind absichtlich nicht als komplette Compose-Datei dargestellt.
 
-### 4.1 `app.image` ergänzen und den vorhandenen Build explizit benennen
+### 3.1 `app.image` ergänzen und den vorhandenen Build explizit benennen
 
 Direkt im vorhandenen `app`-Block `image` ergänzen. Falls `build` derzeit als Kurzform `build: ./server` geschrieben ist, diesen Eintrag in die gezeigte gleichwertige Langform ändern:
 
@@ -78,7 +59,7 @@ services:
 
 Alle weiteren vorhandenen `app`-Einträge bleiben direkt darunter unverändert, insbesondere `env_file`, `networks` mit `default` und `proxy`, `expose: 3000`, Upload-/Download-Volumes und Traefik-Labels. Der explizite Image-Name sorgt dafür, dass `app` und `content-worker` exakt dasselbe lokal gebaute Image verwenden.
 
-### 4.2 `app.depends_on` auf den PostgreSQL-Healthstatus umstellen
+### 3.2 `app.depends_on` auf den PostgreSQL-Healthstatus umstellen
 
 Den bisherigen PostgreSQL-Eintrag in `app.depends_on` durch diese Mapping-Form ersetzen. Falls `app` noch von weiteren Diensten abhängt, bleiben deren Einträge im selben `depends_on`-Block erhalten.
 
@@ -90,7 +71,7 @@ services:
         condition: service_healthy
 ```
 
-### 4.3 `postgres.healthcheck` ergänzen
+### 3.3 `postgres.healthcheck` ergänzen
 
 Diesen Block in den vorhandenen `postgres`-Service einfügen. Das doppelte Dollarzeichen ist beabsichtigt: Compose gibt dadurch `${POSTGRES_USER}` und `${POSTGRES_DB}` erst im Container zur Auswertung frei.
 
@@ -107,7 +88,7 @@ services:
 
 Das vorhandene Image `pgvector/pgvector:pg16`, `./data/postgres`, alle übrigen PostgreSQL-Einstellungen und der WireGuard-Port bleiben unverändert.
 
-### 4.4 Den neuen `content-worker` einfügen
+### 3.4 Den neuen `content-worker` einfügen
 
 Den folgenden Block auf derselben Einrückungsebene wie `app`, `webhook`, `pgadmin` und `postgres` unter `services:` einfügen:
 
@@ -119,6 +100,7 @@ services:
       - .env
     restart: unless-stopped
     init: true
+    stop_grace_period: 10m
     command: ["npm", "run", "start:content-worker"]
     depends_on:
       postgres:
@@ -135,7 +117,9 @@ services:
 
 Der Worker erhält bewusst keine `build`-Anweisung: `docker compose build app` baut und markiert das gemeinsam verwendete Image `komplettwebdesign-app:local`. Ebenso erhält der Worker keine `ports`, keinen `expose`-Block, keine Traefik-Labels, kein `proxy`-Netzwerk und keine zusätzlichen Volumes.
 
-## 5. Content-Agent-Konfiguration in `.env` ergänzen
+`stop_grace_period: 10m` ist absichtlich länger als die interne erste Drain-Wartezeit von 30 Sekunden. Nach `SIGTERM` stoppt der Worker den Scheduler, nimmt keine neuen Jobs an und wartet bei einem bereits aktiven Job weiter auf dessen Abschluss. Zehn Minuten geben diesem kontrollierten Drain ausreichend Spielraum; dauert ein realer Job regelmäßig länger, müssen Compose-Frist und Stopbefehl gemeinsam entsprechend erhöht werden.
+
+## 4. Content-Agent-Konfiguration in `.env` ergänzen
 
 Die vorhandenen Zugangsdaten für OpenAI, Cloudinary und PostgreSQL bleiben unverändert in der bereits genutzten `.env`; ihre Werte werden hier absichtlich nicht abgedruckt. Nur die folgenden Plan-A-Werte ergänzen oder vorhandene Einträge entsprechend ändern:
 
@@ -163,22 +147,103 @@ OPENAI_IMAGE_COST_EUR=0.041
 
 Für Plan A ist kein Search-Console-API-Zugang erforderlich; die Search Console folgt erst in Plan C.
 
-## 6. Konfiguration validieren, Image bauen und Migration prüfen
+## 5. Konfiguration validieren und Image bauen
 
 Zuerst die bearbeitete Compose-Datei erneut prüfen. Die Befehle danach bauen nur `app`; der Worker verwendet dasselbe explizit benannte App-Image.
 
 ```bash
 cd /home/webadmin/apps/komplettwebdesign
 docker compose config --quiet
-docker compose config --services
 docker compose build app
 docker image inspect komplettwebdesign-app:local >/dev/null
 ```
 
-Führe die Migration zweimal aus, um ihre Idempotenz praktisch zu belegen. Beide Läufe müssen `Content-Agent-Migration 002 erfolgreich.` melden:
+## 6. Migration zweimal in einer separaten Testdatenbank ausführen
+
+Vor jeder Produktionsmigration wird die echte Migration mit dem gebauten App-Image zweimal gegen eine vollständig getrennte Testdatenbank ausgeführt. Der folgende Block exportiert dafür ausschließlich das aktuelle Produktionsschema ohne Daten, Rollen oder Rechte. Damit enthält die Testdatenbank auch die für die Migration notwendigen Basistabellen `users` und `posts`, ohne Produktionsinhalte zu kopieren. Dieser Lesezugriff verändert die Produktionsdatenbank nicht. Danach stellt er das Schema in einem temporären, nicht veröffentlichten `pgvector/pgvector:pg16`-Container auf einem eigenen Docker-Netzwerk wieder her.
+
+Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht in die Shell-Historie geschrieben. Die Produktions-`.env` wird weder geladen noch verändert. Der `EXIT`-Trap entfernt auch bei einem Fehler Container, Netzwerk und Schemadatei; die Signal-Traps lösen dafür einen regulären Exit aus.
 
 ```bash
-docker compose run --rm app npm run migrate:content-agent
+cd /home/webadmin/apps/komplettwebdesign
+umask 077
+TEST_DB_SUFFIX="$(date +%Y%m%d%H%M%S)-$$"
+TEST_DB_CONTAINER="kwd-content-migration-test-$TEST_DB_SUFFIX"
+TEST_DB_NETWORK="kwd-content-migration-test-$TEST_DB_SUFFIX"
+TEST_DB_USER="content_migration_test"
+TEST_DB_NAME="content_migration_test"
+TEST_DB_PASSWORD="$(tr -d '-' < /proc/sys/kernel/random/uuid)"
+TEST_SCHEMA_FILE="$(mktemp /tmp/kwd-content-schema.XXXXXX)"
+
+cleanup() {
+  docker rm -f "$TEST_DB_CONTAINER" >/dev/null 2>&1 || true
+  docker network rm "$TEST_DB_NETWORK" >/dev/null 2>&1 || true
+  rm -f "$TEST_SCHEMA_FILE"
+  unset TEST_DB_PASSWORD
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --schema-only --no-owner --no-privileges' > "$TEST_SCHEMA_FILE"
+test -s "$TEST_SCHEMA_FILE"
+docker network create "$TEST_DB_NETWORK" >/dev/null
+docker run -d --name "$TEST_DB_CONTAINER" --network "$TEST_DB_NETWORK" \
+  -e POSTGRES_USER="$TEST_DB_USER" \
+  -e POSTGRES_PASSWORD="$TEST_DB_PASSWORD" \
+  -e POSTGRES_DB="$TEST_DB_NAME" \
+  pgvector/pgvector:pg16 >/dev/null
+
+TEST_DB_READY=false
+for attempt in $(seq 1 30); do
+  if docker exec "$TEST_DB_CONTAINER" pg_isready -U "$TEST_DB_USER" -d "$TEST_DB_NAME" >/dev/null 2>&1; then
+    TEST_DB_READY=true
+    break
+  fi
+  sleep 1
+done
+test "$TEST_DB_READY" = true
+
+docker exec -i -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
+  psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" < "$TEST_SCHEMA_FILE"
+
+docker run --rm --network "$TEST_DB_NETWORK" \
+  -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
+  -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
+  komplettwebdesign-app:local npm run migrate:content-agent
+docker run --rm --network "$TEST_DB_NETWORK" \
+  -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
+  -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
+  komplettwebdesign-app:local npm run migrate:content-agent
+
+docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
+  psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
+cleanup
+trap - EXIT INT TERM
+```
+
+Beide Migrationsläufe müssen `Content-Agent-Migration 002 erfolgreich.` melden. Schlägt Export, Wiederherstellung, einer der beiden Läufe oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+
+## 7. Produktionsbackup erstellen, prüfen und erst danach migrieren
+
+Erst nach der erfolgreichen Testdatenbankprüfung folgt das vollständige Produktionsbackup. Das Custom-Format erhält Struktur und Datenbankinhalte. `umask 077`, Verzeichnisrechte `700` und Dateirechte `600` verhindern, dass andere lokale Benutzer das Backup lesen. Das Backup enthält sensible Produktionsdaten und darf nicht in Git oder in einen öffentlich erreichbaren Ordner gelangen.
+
+```bash
+cd /home/webadmin/apps/komplettwebdesign
+umask 077
+mkdir -p ./data/backups
+chmod 700 ./data/backups
+BACKUP_FILE="./data/backups/komplettwebdesign-before-content-agent-$(date +%Y%m%d-%H%M%S).dump"
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$BACKUP_FILE"
+chmod 600 "$BACKUP_FILE"
+test -s "$BACKUP_FILE"
+docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
+printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
+```
+
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung ist bereits in der separaten Testdatenbank erfolgt:
+
+```bash
 docker compose run --rm app npm run migrate:content-agent
 ```
 
@@ -190,7 +255,7 @@ docker compose run --rm app npm run content-agent:dry-run
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
 
-## 7. Erst die App, dann den Worker starten
+## 8. Erst die App, dann den Worker starten
 
 Die Dienste absichtlich in zwei Schritten hochfahren. Durch `condition: service_healthy` startet die App erst nach einem erfolgreichen PostgreSQL-Healthcheck.
 
@@ -226,7 +291,7 @@ docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB
 
 Das Alter sollte deutlich unter 90 Sekunden liegen.
 
-## 8. Kontrollierter Plan-A-Abnahmelauf
+## 9. Kontrollierter Plan-A-Abnahmelauf
 
 Der Dry-Run verursacht null externe Aufrufe. Einen echten Queuejob erst nach bestätigten API-Berechtigungen, Kostensätzen und Budgets bewusst einplanen, da er OpenAI- und Cloudinary-Kosten verursacht. Für den Abnahmelauf eine einmalige Idempotenz-ID verwenden:
 
@@ -243,23 +308,46 @@ docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB
 
 Erwartet sind genau eine Ergebniszeile, `published = false`, `workflow_status = needs_review`, `content_format = static_html`, `contains_h1 = false` und `contains_ejs = false`. Den Entwurf zusätzlich in der vorhandenen Admin-Vorschau öffnen: Er muss ohne EJS-Auswertung, ohne zweite H1 und ohne Veröffentlichung rendern.
 
-## 9. Normaler Rückfall ohne Datenbank-Restore
+## 10. Normaler Rückfall ohne Datenbank-Restore
 
-Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig.
+Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig. Aktive Jobs vor dem Stop über Logs und Datenbank beobachten und möglichst bis zu einem terminalen Status `completed` oder `failed` laufen lassen; ein Generierungslauf soll nicht mitten in einem externen Aufruf abgebrochen werden.
 
 ```bash
 cd /home/webadmin/apps/komplettwebdesign
-docker compose stop content-worker
+docker compose logs --tail=100 content-worker
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'') ORDER BY id;"'
+docker compose stop -t 600 content-worker
 sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=false/' .env
 docker compose up -d app
 docker compose ps app content-worker
 ```
 
+`-t 600` entspricht `stop_grace_period: 10m`. Der Worker erhält `SIGTERM`, stoppt Polling und Scheduler und wartet nach seiner ersten internen 30-Sekunden-Drainphase weiter auf den aktiven Job. Erst nach 600 Sekunden würde Docker hart beenden. Ist ein Job dann noch aktiv, den Stop nach Möglichkeit abbrechen und die Ursache untersuchen; nur im Notfall den harten Abbruch in Kauf nehmen.
+
+Bei einem harten Abbruch bleibt der Datensatz zunächst `running`. Die Lease-Recovery setzt ihn nach Ablauf der konfigurierten Job-Lease wieder auf `queued`, solange `attempts < max_attempts`; andernfalls wird er `failed`. Deshalb vor und nach jedem Wiederanlauf Status, `locked_at`, `attempts` und Laufprotokolle prüfen, statt sofort einen zweiten manuellen Job anzulegen.
+
 Den `content-worker`-Block kann man später in einem geplanten Wartungsfenster aus der Compose-Datei entfernen. Additive Spalten und Tabellen nicht übereilt löschen. Sie stören den Webprozess nicht und ihre Löschung würde Diagnose- und Entwurfsdaten vernichten.
 
 Ein Datenbank-Restore ist **kein normaler Rollback**. Er ist eine getrennte, bewusst destruktive Notfalloption, weil er alle seit dem Backup geschriebenen Daten verlieren kann. Nur nach bestätigtem Wartungsfenster, gestoppten schreibenden Diensten, erneut geprüftem Backup und einem für diese PostgreSQL-Instanz getesteten Restore-Plan durchführen. Keinen `pg_restore --clean`-Befehl ungeprüft gegen die Produktionsdatenbank ausführen.
 
-## 10. Fehlerbehebung
+## 11. Kontrollierter Wiederanlauf nach einem Rückfall
+
+Beim Wiederanlauf reicht `docker compose start` nicht: Ein gestoppter Container behält seine alte Umgebung. `CONTENT_AGENT_ENABLED=true` setzen und den Worker zwingend neu erzeugen. Vorher zurückgebliebene Jobs und Queue-Einträge prüfen; keinen Ersatzjob anlegen, solange ein alter Job noch `running` oder wieder `queued` ist.
+
+```bash
+cd /home/webadmin/apps/komplettwebdesign
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'', '\''failed'\'') ORDER BY id DESC LIMIT 20;"'
+sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=true/' .env
+docker compose up -d --force-recreate content-worker
+docker compose ps content-worker
+docker compose exec -T content-worker npm run content-agent:healthcheck
+docker compose logs --tail=100 content-worker
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'', '\''failed'\'') ORDER BY id DESC LIMIT 20;"'
+```
+
+Der Healthcheck muss gesund sein. Bei einer zuvor erzwungenen Beendigung kann der alte Job bis zum Ablauf seiner Lease noch `running` bleiben; der laufende Worker prüft die Lease-Recovery in seinen Pollzyklen. Logs und Datenbank weiter beobachten, bis jeder zurückgebliebene Job plausibel `queued`, `running`, `completed` oder `failed` ist.
+
+## 12. Fehlerbehebung
 
 ### Worker ist `unhealthy`
 
