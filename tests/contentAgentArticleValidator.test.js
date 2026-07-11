@@ -284,3 +284,39 @@ test('validator recognizes additional Bootstrap utility families as unknown Boot
     );
   }
 });
+
+test('validator preserves natural FAQ text across allowed inline markup', () => {
+  const inlineFaqJson = faqJson.map((item, index) => (
+    index === 0 ? { ...item, answer: 'Antwort 1.' } : item
+  ));
+  const html = validHtml({ faqs: inlineFaqJson }).replace(
+    '<p>Antwort 1.</p>',
+    '<p>Antwort <strong>1</strong>.</p>'
+  );
+
+  const result = validateArticle(validArticle({ contentHtml: html, faqJson: inlineFaqJson }), validContext);
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.issues, []);
+});
+
+test('validator blocks forbidden raw link schemes exactly once before sanitizing href', () => {
+  for (const href of ['javascript:alert(1)', '//example.com/pfad', 'mailto:hallo@example.com']) {
+    const html = validHtml().replace(
+      '<h2>Die wichtigsten Schritte</h2>',
+      `<p><a href="${href}">Unsicherer Link</a></p><h2>Die wichtigsten Schritte</h2>`
+    );
+
+    const result = validateArticle(validArticle({ contentHtml: html }), validContext);
+    const linkIssues = result.issues.filter((issue) => (
+      issue.code === 'link_scheme_forbidden'
+      || issue.code === 'internal_link_forbidden'
+      || issue.code === 'external_link_forbidden'
+    ));
+
+    assert.equal(result.passed, false, `Verbotener Link wurde akzeptiert: ${href}`);
+    assert.equal(linkIssues.length, 1, `Link erzeugte nicht genau einen Issue: ${href}`);
+    assert.equal(linkIssues[0].code, 'link_scheme_forbidden');
+    assert.equal(linkIssues[0].href, href);
+  }
+});

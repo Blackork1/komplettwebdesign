@@ -51,6 +51,11 @@ const BOOTSTRAP_CLASS_PATTERNS = [
   new RegExp(`^order-(?:${BOOTSTRAP_BREAKPOINT}-)?(?:[0-9]+|first|last)$`),
   new RegExp(`^[mp][trblxy]?-(?:${BOOTSTRAP_BREAKPOINT}-)?(?:[0-9]+|auto)$`)
 ];
+const BLOCK_TAGS = new Set([
+  'section', 'div', 'p', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'hr',
+  'table', 'thead', 'tbody', 'tr', 'th', 'td'
+]);
+const BLOCK_BOUNDARY = '\u0000';
 
 function createIssue(code, message, details = {}) {
   return { code, message, ...details };
@@ -64,14 +69,33 @@ function isBootstrapClass(className) {
   return BOOTSTRAP_CLASS_PATTERNS.some((pattern) => pattern.test(className));
 }
 
-function normalizedVisibleText(element) {
+function visibleTextWithBlockBoundaries(element, isRoot = true) {
   if (!element) return '';
-  if (element.type === 'text') return normalizeText(element.data);
+  if (element.type === 'text') return element.data || '';
+  if (element.type === 'comment') return '';
 
-  return (element.children || [])
-    .map((child) => normalizedVisibleText(child))
+  const content = (element.children || [])
+    .map((child) => visibleTextWithBlockBoundaries(child, false))
+    .join('');
+  const isBlock = !isRoot && element.type === 'tag' && BLOCK_TAGS.has(element.name);
+
+  return isBlock ? `${BLOCK_BOUNDARY}${content}${BLOCK_BOUNDARY}` : content;
+}
+
+function normalizedVisibleText(element) {
+  return visibleTextWithBlockBoundaries(element)
+    .split(BLOCK_BOUNDARY)
+    .map((part) => normalizeText(part))
     .filter(Boolean)
     .join(' ');
+}
+
+function hasForbiddenLinkScheme(href) {
+  const candidate = typeof href === 'string' ? href.trim() : '';
+  if (candidate.startsWith('//')) return true;
+
+  const scheme = candidate.match(/^([a-z][a-z0-9+.-]*):/i)?.[1];
+  return Boolean(scheme && !/^https?$/i.test(scheme));
 }
 
 function hasOuterBootstrapContainer($) {
@@ -158,6 +182,20 @@ export function validateArticle(article = {}, context = {}) {
   if ($raw('img').length > 0) {
     issues.push(createIssue('image_forbidden', 'Artikel-HTML darf keine Bilder enthalten.'));
   }
+
+  const forbiddenLinkHrefs = new Set();
+  $raw('a[href]').each((_, element) => {
+    const href = $raw(element).attr('href');
+    if (!hasForbiddenLinkScheme(href) || forbiddenLinkHrefs.has(href)) return;
+
+    forbiddenLinkHrefs.add(href);
+    issues.push(createIssue(
+      'link_scheme_forbidden',
+      `Das Linkziel ${href} verwendet ein nicht erlaubtes Scheme.`,
+      { href }
+    ));
+  });
+
   if (hasOuterBootstrapContainer($sanitized)) {
     issues.push(createIssue('outer_container_forbidden', 'Artikel-HTML darf keinen äußeren Bootstrap-Container enthalten.'));
   }
@@ -234,12 +272,13 @@ export function validateArticle(article = {}, context = {}) {
   const allowedExternalUrls = new Set(sourceUrlsFromContext(context));
   $sanitized('a[href]').each((_, element) => {
     const href = $sanitized(element).attr('href');
+    if (hasForbiddenLinkScheme(href)) {
+      return;
+    }
     if (/^https?:\/\//i.test(href || '')) {
       if (!allowedExternalUrls.has(href)) {
         issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
       }
-    } else if ((href || '').startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(href || '')) {
-      issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
     } else if (!allowedInternalLinks.has(href)) {
       issues.push(createIssue('internal_link_forbidden', `Der interne Link ${href} ist nicht freigegeben.`));
     }
