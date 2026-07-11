@@ -80,11 +80,16 @@ test('separate Testdatenbank belegt Migration zweimal und wird vollständig aufg
   );
 
   assert.match(testDatabase, /pgvector\/pgvector:pg16/);
+  assert.match(testDatabase, /^\(\n  set -Eeuo pipefail\n/);
+  assert.match(testDatabase, /\n\)$/);
   assert.match(testDatabase, /--schema-only --no-owner --no-privileges/);
   assert.match(testDatabase, /docker network create "\$TEST_DB_NETWORK"/);
   assert.match(testDatabase, /trap cleanup EXIT/);
   assert.match(testDatabase, /trap 'exit 130' INT/);
   assert.match(testDatabase, /trap 'exit 143' TERM/);
+  assert.match(testDatabase, /local command_status=\$\?/);
+  assert.match(testDatabase, /if \(\( command_status != 0 \)\); then\n      return "\$command_status"/);
+  assert.match(testDatabase, /return "\$cleanup_status"/);
   assert.match(testDatabase, /docker rm -f "\$TEST_DB_CONTAINER"/);
   assert.match(testDatabase, /docker network rm "\$TEST_DB_NETWORK"/);
   assert.doesNotMatch(testDatabase, /docker compose run --rm app/);

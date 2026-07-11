@@ -162,64 +162,87 @@ docker image inspect komplettwebdesign-app:local >/dev/null
 
 Vor jeder Produktionsmigration wird die echte Migration mit dem gebauten App-Image zweimal gegen eine vollständig getrennte Testdatenbank ausgeführt. Der folgende Block exportiert dafür ausschließlich das aktuelle Produktionsschema ohne Daten, Rollen oder Rechte. Damit enthält die Testdatenbank auch die für die Migration notwendigen Basistabellen `users` und `posts`, ohne Produktionsinhalte zu kopieren. Dieser Lesezugriff verändert die Produktionsdatenbank nicht. Danach stellt er das Schema in einem temporären, nicht veröffentlichten `pgvector/pgvector:pg16`-Container auf einem eigenen Docker-Netzwerk wieder her.
 
-Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht in die Shell-Historie geschrieben. Die Produktions-`.env` wird weder geladen noch verändert. Der `EXIT`-Trap entfernt auch bei einem Fehler Container, Netzwerk und Schemadatei; die Signal-Traps lösen dafür einen regulären Exit aus.
+Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht in die Shell-Historie geschrieben. Die Produktions-`.env` wird weder geladen noch verändert. Die umschließende Subshell begrenzt Variablen und Traps auf diesen Ablauf. `set -Eeuo pipefail` beendet sie bei jedem nicht behandelten Fehler. Der `EXIT`-Trap entfernt Container, Netzwerk und Schemadatei, sichert aber zuerst den ursprünglichen Exitcode und gibt ihn nach dem Cleanup zurück. Dadurch kann die Aufräumroutine einen fehlgeschlagenen Schemaexport, Restore oder Migrationslauf nicht als Erfolg maskieren.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
-umask 077
-TEST_DB_SUFFIX="$(date +%Y%m%d%H%M%S)-$$"
-TEST_DB_CONTAINER="kwd-content-migration-test-$TEST_DB_SUFFIX"
-TEST_DB_NETWORK="kwd-content-migration-test-$TEST_DB_SUFFIX"
-TEST_DB_USER="content_migration_test"
-TEST_DB_NAME="content_migration_test"
-TEST_DB_PASSWORD="$(tr -d '-' < /proc/sys/kernel/random/uuid)"
-TEST_SCHEMA_FILE="$(mktemp /tmp/kwd-content-schema.XXXXXX)"
+(
+  set -Eeuo pipefail
+  cd /home/webadmin/apps/komplettwebdesign
+  umask 077
 
-cleanup() {
-  docker rm -f "$TEST_DB_CONTAINER" >/dev/null 2>&1 || true
-  docker network rm "$TEST_DB_NETWORK" >/dev/null 2>&1 || true
-  rm -f "$TEST_SCHEMA_FILE"
-  unset TEST_DB_PASSWORD
-}
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
+  TEST_DB_CONTAINER=""
+  TEST_DB_NETWORK=""
+  TEST_DB_PASSWORD=""
+  TEST_SCHEMA_FILE=""
 
-docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --schema-only --no-owner --no-privileges' > "$TEST_SCHEMA_FILE"
-test -s "$TEST_SCHEMA_FILE"
-docker network create "$TEST_DB_NETWORK" >/dev/null
-docker run -d --name "$TEST_DB_CONTAINER" --network "$TEST_DB_NETWORK" \
-  -e POSTGRES_USER="$TEST_DB_USER" \
-  -e POSTGRES_PASSWORD="$TEST_DB_PASSWORD" \
-  -e POSTGRES_DB="$TEST_DB_NAME" \
-  pgvector/pgvector:pg16 >/dev/null
+  cleanup() {
+    local command_status=$?
+    local cleanup_status=0
 
-TEST_DB_READY=false
-for attempt in $(seq 1 30); do
-  if docker exec "$TEST_DB_CONTAINER" pg_isready -U "$TEST_DB_USER" -d "$TEST_DB_NAME" >/dev/null 2>&1; then
-    TEST_DB_READY=true
-    break
-  fi
-  sleep 1
-done
-test "$TEST_DB_READY" = true
+    if [[ -n "${TEST_DB_CONTAINER:-}" ]]; then
+      docker rm -f "$TEST_DB_CONTAINER" >/dev/null 2>&1 || cleanup_status=$?
+    fi
+    if [[ -n "${TEST_DB_NETWORK:-}" ]]; then
+      docker network rm "$TEST_DB_NETWORK" >/dev/null 2>&1 || cleanup_status=$?
+    fi
+    if [[ -n "${TEST_SCHEMA_FILE:-}" ]]; then
+      rm -f "$TEST_SCHEMA_FILE" || cleanup_status=$?
+    fi
+    TEST_DB_PASSWORD=""
 
-docker exec -i -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
-  psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" < "$TEST_SCHEMA_FILE"
+    if (( command_status != 0 )); then
+      return "$command_status"
+    fi
+    return "$cleanup_status"
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
 
-docker run --rm --network "$TEST_DB_NETWORK" \
-  -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
-  -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
-  komplettwebdesign-app:local npm run migrate:content-agent
-docker run --rm --network "$TEST_DB_NETWORK" \
-  -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
-  -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
-  komplettwebdesign-app:local npm run migrate:content-agent
+  TEST_DB_SUFFIX="$(date +%Y%m%d%H%M%S)-$$"
+  TEST_DB_CONTAINER="kwd-content-migration-test-$TEST_DB_SUFFIX"
+  TEST_DB_NETWORK="kwd-content-migration-test-$TEST_DB_SUFFIX"
+  TEST_DB_USER="content_migration_test"
+  TEST_DB_NAME="content_migration_test"
+  TEST_DB_PASSWORD="$(tr -d '-' < /proc/sys/kernel/random/uuid)"
+  TEST_SCHEMA_FILE="$(mktemp /tmp/kwd-content-schema.XXXXXX)"
 
-docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
-  psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
-cleanup
-trap - EXIT INT TERM
+  docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --schema-only --no-owner --no-privileges' > "$TEST_SCHEMA_FILE"
+  test -s "$TEST_SCHEMA_FILE"
+  docker network create "$TEST_DB_NETWORK" >/dev/null
+  docker run -d --name "$TEST_DB_CONTAINER" --network "$TEST_DB_NETWORK" \
+    -e POSTGRES_USER="$TEST_DB_USER" \
+    -e POSTGRES_PASSWORD="$TEST_DB_PASSWORD" \
+    -e POSTGRES_DB="$TEST_DB_NAME" \
+    pgvector/pgvector:pg16 >/dev/null
+
+  TEST_DB_READY=false
+  for attempt in $(seq 1 30); do
+    if docker exec "$TEST_DB_CONTAINER" pg_isready -U "$TEST_DB_USER" -d "$TEST_DB_NAME" >/dev/null 2>&1; then
+      TEST_DB_READY=true
+      break
+    fi
+    sleep 1
+  done
+  test "$TEST_DB_READY" = true
+
+  docker exec -i -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
+    psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" < "$TEST_SCHEMA_FILE"
+
+  docker run --rm --network "$TEST_DB_NETWORK" \
+    -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
+    -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
+    komplettwebdesign-app:local npm run migrate:content-agent
+  docker run --rm --network "$TEST_DB_NETWORK" \
+    -e DB_HOST="$TEST_DB_CONTAINER" -e DB_PORT=5432 \
+    -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
+    komplettwebdesign-app:local npm run migrate:content-agent
+
+  docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
+    psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
+  cleanup
+  trap - EXIT INT TERM
+)
 ```
 
 Beide Migrationsläufe müssen `Content-Agent-Migration 002 erfolgreich.` melden. Schlägt Export, Wiederherstellung, einer der beiden Läufe oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
