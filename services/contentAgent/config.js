@@ -14,7 +14,7 @@ function decimal(value, fallback) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-export function getContentAgentConfig(env = process.env) {
+export function getContentAgentTechnicalConfig(env = process.env) {
   return Object.freeze({
     enabled: boolean(env.CONTENT_AGENT_ENABLED, false),
     publishMode: env.CONTENT_AGENT_PUBLISH_MODE === 'auto' ? 'auto' : 'draft',
@@ -38,4 +38,44 @@ export function getContentAgentConfig(env = process.env) {
     workerPollMs: integer(env.CONTENT_AGENT_WORKER_POLL_MS, 5000, 1000, 60000),
     jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180)
   });
+}
+
+export function getContentAgentConfig(env = process.env) {
+  return getContentAgentTechnicalConfig(env);
+}
+
+const PRESENTED_TECHNICAL_KEYS = Object.freeze([
+  'enabled',
+  'autoPublishEnabled',
+  'maxTopicCandidates',
+  'maxRevisions',
+  'maxAttempts',
+  'contentModel',
+  'reviewModel',
+  'imageModel',
+  'monthlyCostLimitEur',
+  'contentStageReservationEur',
+  'reviewStageReservationEur',
+  'contentInputCostPerMtok',
+  'contentOutputCostPerMtok',
+  'reviewInputCostPerMtok',
+  'reviewOutputCostPerMtok',
+  'imageCostEur',
+  'workerPollMs',
+  'jobLeaseMinutes'
+]);
+
+export function buildTechnicalConfigPresentation(input = {}) {
+  const technicalConfig = input.technicalConfig || input;
+  const presentation = Object.fromEntries(PRESENTED_TECHNICAL_KEYS.map((key) => [
+    key,
+    Object.freeze({
+      value: technicalConfig[key],
+      editable: false,
+      source: '.env',
+      restartRequired: true
+    })
+  ]));
+
+  return Object.freeze(presentation);
 }

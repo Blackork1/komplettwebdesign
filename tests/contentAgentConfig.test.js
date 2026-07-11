@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getContentAgentConfig } from '../services/contentAgent/config.js';
+import {
+  buildTechnicalConfigPresentation,
+  getContentAgentConfig,
+  getContentAgentTechnicalConfig
+} from '../services/contentAgent/config.js';
 import {
   ArticleOutputSchema,
   ReviewOutputSchema,
@@ -170,6 +174,44 @@ test('config parses overrides and clamps bounded integers', () => {
   assert.equal(config.monthlyCostLimitEur, 25);
   assert.equal(config.contentStageReservationEur, 0.75);
   assert.equal(config.reviewStageReservationEur, 0.30);
+});
+
+test('technische Konfiguration bleibt über den bisherigen Dry-Run-Alias kompatibel', () => {
+  const env = {
+    CONTENT_AGENT_ENABLED: 'true',
+    CONTENT_AGENT_AUTOPUBLISH_ENABLED: 'true',
+    CONTENT_AGENT_MAX_ATTEMPTS: '4',
+    CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR: '80'
+  };
+
+  assert.deepEqual(getContentAgentConfig(env), getContentAgentTechnicalConfig(env));
+});
+
+test('technische Präsentation ist schreibgeschützt und enthält niemals Secrets', () => {
+  const presentation = buildTechnicalConfigPresentation({
+    technicalConfig: {
+      ...getContentAgentTechnicalConfig({
+        OPENAI_CONTENT_MODEL: 'content-model',
+        OPENAI_REVIEW_MODEL: 'review-model',
+        OPENAI_IMAGE_MODEL: 'image-model',
+        OPENAI_CONTENT_INPUT_COST_PER_MTOK: '2.50',
+        CONTENT_AGENT_WORKER_POLL_MS: '7000',
+        CONTENT_AGENT_JOB_LEASE_MINUTES: '45'
+      }),
+      openaiApiKey: 'sk-geheim',
+      databaseUrl: 'postgres://geheim'
+    }
+  });
+
+  assert.equal(presentation.contentModel.value, 'content-model');
+  assert.equal(presentation.contentInputCostPerMtok.value, 2.5);
+  assert.equal(presentation.workerPollMs.value, 7000);
+  assert.equal(presentation.jobLeaseMinutes.value, 45);
+  assert.equal(presentation.monthlyCostLimitEur.editable, false);
+  assert.equal(presentation.maxAttempts.source, '.env');
+  assert.equal(presentation.autoPublishEnabled.restartRequired, true);
+  const serialized = JSON.stringify(presentation);
+  assert.doesNotMatch(serialized, /sk-geheim|postgres:\/\/geheim|openaiApiKey|databaseUrl/i);
 });
 
 test('mark profile and links expose stable approved context', () => {
