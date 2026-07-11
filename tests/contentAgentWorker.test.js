@@ -929,6 +929,143 @@ test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben 
   }
 });
 
+test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als failed', async () => {
+  const finishCalls = [];
+  const permanent = Object.assign(new Error('Entwurf nicht mehr verfügbar'), {
+    code: 'CONTENT_DRAFT_NOT_FOUND',
+    retryable: false
+  });
+  const leaseCalls = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() { return { operatingMode: 'review', timezone: 'Europe/Berlin' }; },
+    createJobSnapshot({ runtimeConfig }) { return runtimeConfig; },
+    async createRun() {
+      return { id: 88, runtime_snapshot_json: { operatingMode: 'review', timezone: 'Europe/Berlin' } };
+    },
+    async finishRun(runId, payload) { finishCalls.push([runId, payload]); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createRegenerationDependencies() { return {}; },
+    async runRegenerationJob() { throw permanent; }
+  });
+
+  await assert.rejects(handler({
+    id: 51,
+    job_type: 'regenerate_article',
+    payload_json: { post_id: 19, forced_mode: 'review' }
+  }, {
+    async leaseGuard() { leaseCalls.push('guard'); return true; }
+  }), permanent);
+
+  assert.deepEqual(leaseCalls, ['guard']);
+  assert.deepEqual(finishCalls, [[88, {
+    status: 'failed',
+    postId: null,
+    errorReport: {
+      code: 'CONTENT_DRAFT_NOT_FOUND',
+      message: 'Entwurf nicht mehr verfügbar'
+    }
+  }]]);
+});
+
+test('retrybarer Regenerationsfehler lässt den Run für denselben Retry offen', async () => {
+  let finishCalls = 0;
+  const retryable = Object.assign(new Error('Provider vor Ausführung nicht erreichbar'), {
+    code: 'CONTENT_PROVIDER_SAFE_RETRY',
+    retryable: true
+  });
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() { return { operatingMode: 'review', timezone: 'Europe/Berlin' }; },
+    createJobSnapshot({ runtimeConfig }) { return runtimeConfig; },
+    async createRun() {
+      return { id: 88, runtime_snapshot_json: { operatingMode: 'review', timezone: 'Europe/Berlin' } };
+    },
+    async finishRun() { finishCalls += 1; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createRegenerationDependencies() { return {}; },
+    async runRegenerationJob() { throw retryable; }
+  });
+
+  await assert.rejects(handler({
+    id: 51,
+    job_type: 'regenerate_article',
+    payload_json: { post_id: 19, forced_mode: 'review' }
+  }), retryable);
+  assert.equal(finishCalls, 0);
+});
+
+test('Produktionsruntime bindet Regenerationsrepository an die aktive Datenbank und dispatcht', async () => {
+  const claim = {
+    id: 61,
+    job_type: 'regenerate_metadata',
+    locked_by: 'worker-regeneration',
+    attempts: 1,
+    payload_json: { post_id: 19, forced_mode: 'review', source: 'admin_regeneration' }
+  };
+  const database = { async query() { return { rows: [] }; } };
+  const boundDatabases = [];
+  let regenerationDependencies;
+  const modules = {
+    OpenAI: class {},
+    cloudinary: { config() {} },
+    jobRepository: {
+      async upsertWorkerHeartbeat() {}, async recoverExpiredJobs() {},
+      async claimNextJob() { return claim; }, async renewJobLease(value) { return value; },
+      async completeJob(value) { return value; }, async failJob(value) { return value; },
+      async retryOrFailJob(value) { return value; }, async markJobNeedsManualAttention(value) { return value; },
+      async enqueueJob() {}, async updateContentSchedulerState() {}
+    },
+    runRepository: {
+      async createRun(_input, db) {
+        boundDatabases.push(db);
+        return { id: 91, runtime_snapshot_json: { operatingMode: 'review', timezone: 'Europe/Berlin' } };
+      },
+      async updateRunStage() {}, async finishRun() {}
+    },
+    settingsRepository: { async getContentAgentSettings() { return { settings_version: 1 }; } },
+    runtimeConfigService: {
+      resolveContentAgentRuntimeConfig() { return { operatingMode: 'review', timezone: 'Europe/Berlin' }; },
+      createContentAgentJobSnapshot({ runtimeConfig }) { return runtimeConfig; }
+    },
+    providerStateRepository: { async recordProviderResult() {} },
+    topicRepository: { async createTopic() {}, async markTopicUsed() {} },
+    costService: {
+      estimateTextCost() { return 0; }, assertMonthlyBudget() {},
+      async getMonthlyContentCost() {}, async reserveMonthlyBudget() {}, async settleMonthlyBudget() {},
+      async releaseMonthlyBudgetReservation() {}, async getPersistedStageResult() {}
+    },
+    BlogPostModel: { async createAIDraft() {}, async findAIDraftByGenerationRunId() {} },
+    createPricingRepository() { return {}; },
+    createPricingService() { return { async getVisiblePackages() { return []; } }; },
+    createOpenAIContentService() { return { repairArticle() {} }; },
+    createContentImageService() { return { generateAndUploadImage() {}, deleteImage() {} }; },
+    createDraftRegenerationRepository(db) {
+      boundDatabases.push(db);
+      return { bound: db };
+    },
+    async runDraftRegenerationJob(_context, dependencies) {
+      regenerationDependencies = dependencies;
+      return { status: 'completed', post: { id: 19, published: false } };
+    },
+    async runDraftPipeline() { assert.fail('nicht erwartet'); },
+    buildSiteInventory: async () => ({}), selectBestTopic() {}, validateArticle() { return { passed: true }; }
+  };
+  const runtime = createProductionRuntime({
+    config: { enabled: true, workerPollMs: 5000, jobLeaseMinutes: 30 },
+    env: { OPENAI_API_KEY: 'test-key' },
+    database,
+    modules
+  });
+
+  await runtime.worker.processOnce();
+
+  assert.equal(regenerationDependencies.draftRepository.bound, database);
+  assert.equal(boundDatabases.every((db) => db === database), true);
+});
+
 test('Produktionsmodule laden den Regenerationsservice ausschließlich verzögert', async () => {
   const modules = await loadProductionModules();
 

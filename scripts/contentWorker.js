@@ -73,6 +73,7 @@ export function createProductionJobHandler({
   resolveRuntimeConfig,
   createJobSnapshot,
   createRun,
+  finishRun,
   runPipeline,
   pipelineDependencies,
   createPipelineDependencies,
@@ -107,12 +108,29 @@ export function createProductionJobHandler({
       required(runRegenerationJob, 'runRegenerationJob');
       required(createRegenerationDependencies, 'createRegenerationDependencies');
       const regenerationDependencies = await createRegenerationDependencies(persistedSnapshot);
-      result = await runRegenerationJob({
-        claim,
-        run,
-        runtimeSnapshot: persistedSnapshot,
-        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
-      }, regenerationDependencies);
+      try {
+        result = await runRegenerationJob({
+          claim,
+          run,
+          runtimeSnapshot: persistedSnapshot,
+          ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+        }, regenerationDependencies);
+      } catch (error) {
+        const isLeaseLoss = error?.code === 'CONTENT_JOB_LEASE_LOST';
+        if (error?.retryable === false && !isLeaseLoss) {
+          required(finishRun, 'finishRun');
+          if (typeof leaseGuard === 'function') await leaseGuard();
+          await finishRun(run.id, {
+            status: 'failed',
+            postId: null,
+            errorReport: {
+              code: error?.code || 'CONTENT_REGENERATION_FAILED',
+              message: error?.message || 'Die Entwurfsregeneration ist dauerhaft fehlgeschlagen.'
+            }
+          });
+        }
+        throw error;
+      }
     } else {
       const jobDependencies = typeof createPipelineDependencies === 'function'
         ? await createPipelineDependencies(persistedSnapshot)
@@ -300,6 +318,7 @@ export function createProductionRuntime({
       createRegenerationDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
+    finishRun: repositories.runRepository.finishRun,
     runPipeline: modules.runDraftPipeline,
     runRegenerationJob: modules.runDraftRegenerationJob,
     pipelineDependencies

@@ -276,15 +276,85 @@ test('persistiertes Textresultat wird vor Budget und Provider wiederverwendet', 
       value: generated,
       responseId: 'resp-persisted',
       usage: { input_tokens: 100, output_tokens: 200 },
-      promptVersion: 'repair-v1'
+      promptVersion: 'repair-v1',
+      actualCost: 0.04,
+      reservationMonth: '2026-07'
     };
+  };
+  deps.costService.reserveMonthlyBudget = async (payload) => {
+    deps.calls.push(['reserve', payload]);
+    return { created: false, status: 'reserved', reservationMonth: '2026-07' };
   };
 
   await runDraftRegenerationJob(input('regenerate_article'), deps);
 
   assert.equal(deps.calls.filter(([type]) => type === 'repair').length, 0);
-  assert.equal(deps.calls.filter(([type]) => type === 'reserve').length, 0);
+  assert.equal(deps.calls.filter(([type]) => type === 'reserve').length, 1);
+  assert.equal(deps.calls.filter(([type]) => type === 'settle').length, 1);
   assert.equal(deps.calls.find(([type]) => type === 'updateFields')[1].article.title, 'Persistierter Titel');
+});
+
+test('Textproviderresultat wird vor Leaseprüfung und Settlement dauerhaft gespeichert', async () => {
+  let deps;
+  deps = dependencies({
+    async recordProviderResult(payload) { deps.calls.push(['provider', payload]); }
+  });
+
+  await runDraftRegenerationJob(input('regenerate_article'), deps);
+
+  const order = deps.calls.map(([type]) => type);
+  assert.ok(order.indexOf('repair') < order.indexOf('stage'));
+  assert.ok(order.indexOf('stage') < order.indexOf('settle'));
+  assert.ok(order.indexOf('settle') < order.indexOf('provider'));
+});
+
+test('Stufenpersistenzfehler nach Textprovider stoppt manuell ohne Settlement oder Zweitaufruf', async () => {
+  const deps = dependencies();
+  deps.runRepository.updateRunStage = async () => {
+    throw new Error('Stufenergebnis nicht speicherbar');
+  };
+
+  const result = await runDraftRegenerationJob(input('regenerate_article'), deps);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_stage_persistence_uncertain');
+  assert.equal(deps.calls.filter(([type]) => type === 'repair').length, 1);
+  assert.equal(deps.calls.filter(([type]) => type === 'settle').length, 0);
+});
+
+test('Leaseverlust nach persistiertem Textresultat wird ohne Settlement fortsetzbar', async () => {
+  const leaseError = Object.assign(new Error('Lease verloren'), {
+    code: 'CONTENT_JOB_LEASE_LOST',
+    retryable: false
+  });
+  let persisted = null;
+  let guards = 0;
+  const first = dependencies();
+  first.costService.getPersistedStageResult = async () => persisted;
+  first.runRepository.updateRunStage = async (_runId, payload) => {
+    first.calls.push(['stage', _runId, payload]);
+    persisted = payload.stageResult;
+  };
+
+  await assert.rejects(runDraftRegenerationJob(input('regenerate_article', {
+    leaseGuard: async () => {
+      guards += 1;
+      if (guards >= 4) throw leaseError;
+      return true;
+    }
+  }), first), leaseError);
+  assert.ok(persisted?.value);
+  assert.equal(first.calls.filter(([type]) => type === 'settle').length, 0);
+
+  const retry = dependencies();
+  retry.costService.getPersistedStageResult = async () => persisted;
+  retry.costService.reserveMonthlyBudget = async (payload) => {
+    retry.calls.push(['reserve', payload]);
+    return { created: false, status: 'reserved', reservationMonth: persisted.reservationMonth };
+  };
+  await runDraftRegenerationJob(input('regenerate_article'), retry);
+  assert.equal(retry.calls.filter(([type]) => type === 'repair').length, 0);
+  assert.equal(retry.calls.filter(([type]) => type === 'settle').length, 1);
 });
 
 test('offene oder abgerechnete Reservierung ohne Ergebnis stoppt ohne zweiten Provideraufruf', async () => {
@@ -384,11 +454,52 @@ test('Bildregeneration persistiert vor dem Postupdate und löscht das alte Bild 
   assert.equal(result.status, 'completed');
   assert.equal(result.post.published, false);
   const order = deps.calls.map(([type]) => type);
-  assert.ok(order.indexOf('settle') < order.indexOf('stage'));
-  assert.ok(order.indexOf('stage') < order.indexOf('updateImage'));
+  assert.ok(order.indexOf('stage') < order.indexOf('settle'));
+  assert.ok(order.indexOf('settle') < order.indexOf('updateImage'));
   assert.ok(order.indexOf('updateImage') < order.indexOf('deleteImage'));
   assert.deepEqual(deps.calls.find(([type]) => type === 'deleteImage')[1], { publicId: 'blog_images/alt' });
   assert.equal(deps.calls.find(([type]) => type === 'stage')[2].stageId, 'regenerate_image:19');
+});
+
+test('Bildfehlerpfad prüft die Lease unmittelbar vor dem Settlement', async () => {
+  const leaseError = Object.assign(new Error('Lease verloren'), {
+    code: 'CONTENT_JOB_LEASE_LOST',
+    retryable: false
+  });
+  const deps = dependencies();
+  deps.imageService.generateAndUploadImage = async () => {
+    throw Object.assign(new Error('Bildprovider fehlgeschlagen'), {
+      code: 'IMAGE_GENERATION_FAILED',
+      audit: { imageGeneration: { status: 'failed', code: 'IMAGE_GENERATION_FAILED' } }
+    });
+  };
+  let guards = 0;
+
+  await assert.rejects(runDraftRegenerationJob(input('regenerate_image', {
+    leaseGuard: async () => {
+      guards += 1;
+      if (guards >= 4) throw leaseError;
+      return true;
+    }
+  }), deps), leaseError);
+
+  assert.equal(deps.calls.filter(([type]) => type === 'settle').length, 0);
+  assert.equal(deps.calls.filter(([type]) => type === 'finish').length, 0);
+});
+
+test('Bildstufen-Persistenzfehler lässt die Reservierung offen und verhindert das Postupdate', async () => {
+  const deps = dependencies();
+  deps.runRepository.updateRunStage = async () => {
+    throw new Error('Bildstufe nicht speicherbar');
+  };
+
+  const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_stage_persistence_uncertain');
+  assert.equal(deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(deps.calls.filter(([type]) => type === 'settle').length, 0);
+  assert.equal(deps.calls.filter(([type]) => type === 'updateImage').length, 0);
 });
 
 test('erfolgreiche Bildregeneration aktualisiert OpenAI- und Cloudinary-Status getrennt', async () => {
@@ -413,13 +524,20 @@ test('Bild-Retry verwendet persistiertes Uploadresultat und erzeugt kein zweites
     imageUrl: 'https://example.test/persistiert.webp',
     publicId: 'blog_images/persistiert',
     bytes: 456,
-    imageAlt: 'Persistiertes Bild'
+    imageAlt: 'Persistiertes Bild',
+    actualCost: 0.041,
+    reservationMonth: '2026-07'
   });
+  deps.costService.reserveMonthlyBudget = async (payload) => {
+    deps.calls.push(['reserve', payload]);
+    return { created: false, status: 'reserved', reservationMonth: '2026-07' };
+  };
 
   await runDraftRegenerationJob(input('regenerate_image'), deps);
 
   assert.equal(deps.calls.filter(([type]) => type === 'generateImage').length, 0);
-  assert.equal(deps.calls.filter(([type]) => type === 'reserve').length, 0);
+  assert.equal(deps.calls.filter(([type]) => type === 'reserve').length, 1);
+  assert.equal(deps.calls.filter(([type]) => type === 'settle').length, 1);
   assert.equal(deps.calls.find(([type]) => type === 'updateImage')[1].publicId, 'blog_images/persistiert');
 });
 
@@ -436,6 +554,70 @@ test('unklarer Bildcommit löscht weder altes noch neues Bild', async () => {
   assert.equal(result.status, 'needs_manual_attention');
   assert.equal(result.code, 'image_commit_uncertain');
   assert.equal(deps.calls.filter(([type]) => type === 'deleteImage').length, 0);
+});
+
+test('konkurrierendes Bildupdate überschreibt nichts und bereinigt nur den eindeutigen neuen Orphan', async () => {
+  const deps = dependencies();
+  deps.draftRepository.updateGeneratedImage = async () => ({
+    committed: false,
+    casMismatch: true,
+    currentPublicId: 'blog_images/konkurrenz',
+    post: null
+  });
+
+  const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_concurrent_update');
+  assert.deepEqual(
+    deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/neu']
+  );
+  assert.equal(deps.calls.some(([type, value]) => (
+    type === 'deleteImage' && ['blog_images/alt', 'blog_images/konkurrenz'].includes(value.publicId)
+  )), false);
+});
+
+test('ambiger aber bestätigter Bildcommit verwendet die gelockte Cleanup-Intention', async () => {
+  const commitError = Object.assign(new Error('COMMIT-Ausgang unklar'), {
+    code: 'CONTENT_IMAGE_COMMIT_UNCERTAIN',
+    lockedOldPublicId: 'blog_images/tatsaechlich-alt'
+  });
+  const deps = dependencies();
+  deps.draftRepository.updateGeneratedImage = async () => { throw commitError; };
+  deps.draftRepository.reconcileGeneratedImage = async () => ({
+    state: 'committed',
+    post: { ...draft().post, hero_public_id: 'blog_images/neu' }
+  });
+
+  const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(
+    deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/tatsaechlich-alt']
+  );
+});
+
+test('ambiger nicht erfolgter Bildcommit bereinigt nur den neuen Orphan', async () => {
+  const commitError = Object.assign(new Error('COMMIT-Ausgang unklar'), {
+    code: 'CONTENT_IMAGE_COMMIT_UNCERTAIN',
+    lockedOldPublicId: 'blog_images/alt'
+  });
+  const deps = dependencies();
+  deps.draftRepository.updateGeneratedImage = async () => { throw commitError; };
+  deps.draftRepository.reconcileGeneratedImage = async () => ({
+    state: 'not_committed',
+    currentPublicId: 'blog_images/alt'
+  });
+
+  const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.deepEqual(
+    deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/neu']
+  );
 });
 
 test('fehlgeschlagener Bildabgleich bleibt manuell und löscht keine Cloudinarydatei', async () => {
@@ -512,4 +694,72 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
   assert.match(update.sql, /meta_title =/i);
   const setClause = update.sql.match(/SET (.+) WHERE/i)?.[1] || '';
   assert.doesNotMatch(setClause, /published\s*=|slug\s*=|content_format\s*=/i);
+});
+
+test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock', async () => {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
+        return { rows: [{ id: 19, hero_public_id: 'blog_images/konkurrenz' }] };
+      }
+      throw new Error(`Unerwartete Query: ${normalized}`);
+    },
+    release() {}
+  };
+  const repository = createDraftRegenerationRepository({
+    async connect() { return client; },
+    async query() { return { rows: [] }; }
+  });
+
+  const result = await repository.updateGeneratedImage({
+    postId: 19,
+    imageUrl: 'https://example.test/neu.webp',
+    publicId: 'blog_images/neu',
+    imageAlt: 'Neu',
+    expectedOldPublicId: 'blog_images/alt'
+  });
+
+  assert.equal(result.casMismatch, true);
+  assert.equal(result.currentPublicId, 'blog_images/konkurrenz');
+  assert.equal(calls.some(({ sql }) => /^UPDATE posts/i.test(sql)), false);
+});
+
+test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädikat aus', async () => {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
+        return { rows: [{ id: 19, hero_public_id: null }] };
+      }
+      if (/^UPDATE posts/i.test(normalized)) {
+        return { rows: [{ id: 19, hero_public_id: 'blog_images/neu', published: false }] };
+      }
+      throw new Error(`Unerwartete Query: ${normalized}`);
+    },
+    release() {}
+  };
+  const repository = createDraftRegenerationRepository({
+    async connect() { return client; },
+    async query() { return { rows: [] }; }
+  });
+
+  const result = await repository.updateGeneratedImage({
+    postId: 19,
+    imageUrl: 'https://example.test/neu.webp',
+    publicId: 'blog_images/neu',
+    imageAlt: 'Neu',
+    expectedOldPublicId: null
+  });
+
+  const update = calls.find(({ sql }) => /^UPDATE posts/i.test(sql));
+  assert.equal(result.committed, true);
+  assert.match(update.sql, /hero_public_id IS NOT DISTINCT FROM \$5/i);
+  assert.equal(update.params[4], null);
 });

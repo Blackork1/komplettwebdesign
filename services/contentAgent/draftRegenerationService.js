@@ -140,6 +140,34 @@ function providerEnvelope(value) {
     : null;
 }
 
+function manualProviderResult(code, message) {
+  return { manual: { code, message } };
+}
+
+async function reserveAndSettlePersistedStage({
+  run,
+  stageId,
+  runtimeSnapshot,
+  estimatedCost,
+  actualCost,
+  reservationMonth
+}, dependencies) {
+  const reservation = await dependencies.costService.reserveMonthlyBudget({
+    runId: run.id,
+    stageId,
+    estimatedCost,
+    limit: Number(runtimeSnapshot.monthlyCostLimitEur || 0),
+    timezone: runtimeSnapshot.timezone
+  });
+  await dependencies.assertLease();
+  await dependencies.costService.settleMonthlyBudget({
+    runId: run.id,
+    stageId,
+    reservationMonth: reservationMonth || reservation.reservationMonth,
+    actualCost
+  });
+}
+
 function persistedImage(value) {
   return value
     && typeof value === 'object'
@@ -253,7 +281,24 @@ async function loadTextResult({
     stageId
   });
   if (rawPersisted !== null && rawPersisted !== undefined) {
-    return providerEnvelope(rawPersisted)?.value || null;
+    const envelope = providerEnvelope(rawPersisted);
+    if (!envelope) return null;
+    const actualCost = Number.isFinite(Number(envelope.actualCost))
+      ? Number(envelope.actualCost)
+      : dependencies.costService.estimateTextCost({
+        usage: envelope.usage || {},
+        ...textRates(runtimeSnapshot)
+      });
+    await reserveAndSettlePersistedStage({
+      run,
+      stageId,
+      runtimeSnapshot,
+      estimatedCost: textReservation(runtimeSnapshot),
+      actualCost,
+      reservationMonth: envelope.reservationMonth
+    }, dependencies);
+    await recordProvider(dependencies, { providerName: 'openai', success: true });
+    return envelope.value;
   }
 
   await dependencies.assertLease();
@@ -299,26 +344,34 @@ async function loadTextResult({
     usage: result.usage || {},
     ...textRates(runtimeSnapshot)
   });
+  const envelope = {
+    value: result.value,
+    responseId: result.responseId ?? null,
+    usage: result.usage || {},
+    promptVersion: result.promptVersion || 'unknown',
+    actualCost,
+    reservationMonth: reservation.reservationMonth
+  };
+  try {
+    await dependencies.runRepository.updateRunStage(run.id, {
+      currentStage: stageId,
+      stageId,
+      stageResult: envelope,
+      tokenUsage: envelope.usage,
+      responseIds: envelope.responseId ? [envelope.responseId] : []
+    });
+  } catch {
+    return manualProviderResult(
+      'provider_stage_persistence_uncertain',
+      'Das Providerergebnis konnte nicht eindeutig dauerhaft gespeichert werden. Die Budgetreservierung bleibt zur sicheren manuellen Prüfung offen.'
+    );
+  }
   await dependencies.assertLease();
   await dependencies.costService.settleMonthlyBudget({
     runId: run.id,
     stageId,
     reservationMonth: reservation.reservationMonth,
     actualCost
-  });
-  const envelope = {
-    value: result.value,
-    responseId: result.responseId ?? null,
-    usage: result.usage || {},
-    promptVersion: result.promptVersion || 'unknown'
-  };
-  await dependencies.assertLease();
-  await dependencies.runRepository.updateRunStage(run.id, {
-    currentStage: stageId,
-    stageId,
-    stageResult: envelope,
-    tokenUsage: envelope.usage,
-    responseIds: envelope.responseId ? [envelope.responseId] : []
   });
   await recordProvider(dependencies, { providerName: 'openai', success: true });
   return envelope.value;
@@ -333,6 +386,13 @@ async function runTextRegeneration(context, dependencies) {
     draft,
     jobType: claim.job_type
   }, dependencies);
+  if (generated?.manual) {
+    return finishManual({
+      runId: run.id,
+      postId,
+      ...generated.manual
+    }, dependencies.runRepository, dependencies.assertLease);
+  }
   if (!generated) {
     return finishManual({
       runId: run.id,
@@ -379,7 +439,21 @@ async function loadImageResult(context, dependencies) {
     stageId
   });
   if (rawPersisted !== null && rawPersisted !== undefined) {
-    return persistedImage(rawPersisted);
+    const image = persistedImage(rawPersisted);
+    if (!image) return null;
+    const actualCost = Number.isFinite(Number(image.actualCost))
+      ? Number(image.actualCost)
+      : Number(runtimeSnapshot.imageCostEur || 0);
+    await reserveAndSettlePersistedStage({
+      run,
+      stageId,
+      runtimeSnapshot,
+      estimatedCost: Number(runtimeSnapshot.imageCostEur || 0),
+      actualCost,
+      reservationMonth: image.reservationMonth
+    }, dependencies);
+    await recordImageProviders(dependencies, image.audit || {});
+    return image;
   }
 
   await dependencies.assertLease();
@@ -403,6 +477,7 @@ async function loadImageResult(context, dependencies) {
     });
   } catch (error) {
     if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+    await dependencies.assertLease();
     try {
       await dependencies.costService.settleMonthlyBudget({
         runId: run.id,
@@ -417,34 +492,75 @@ async function loadImageResult(context, dependencies) {
     return null;
   }
 
-  await dependencies.assertLease();
-  await dependencies.costService.settleMonthlyBudget({
-    runId: run.id,
-    stageId,
-    reservationMonth: reservation.reservationMonth,
-    actualCost: Number(runtimeSnapshot.imageCostEur || 0)
-  });
+  const actualCost = Number(runtimeSnapshot.imageCostEur || 0);
   const result = {
     imageUrl: uploaded.imageUrl,
     publicId: uploaded.publicId,
     bytes: Number(uploaded.bytes) || 0,
     imageAlt: currentArticle.imageAlt,
     previousPublicId: draft.post.hero_public_id || null,
+    actualCost,
+    reservationMonth: reservation.reservationMonth,
     audit: uploaded.audit || {}
   };
+  try {
+    await dependencies.runRepository.updateRunStage(run.id, {
+      currentStage: stageId,
+      stageId,
+      stageResult: result
+    });
+  } catch {
+    return manualProviderResult(
+      'provider_stage_persistence_uncertain',
+      'Das Bildproviderergebnis konnte nicht eindeutig dauerhaft gespeichert werden. Die Budgetreservierung bleibt zur sicheren manuellen Prüfung offen.'
+    );
+  }
   await dependencies.assertLease();
-  await dependencies.runRepository.updateRunStage(run.id, {
-    currentStage: stageId,
+  await dependencies.costService.settleMonthlyBudget({
+    runId: run.id,
     stageId,
-    stageResult: result
+    reservationMonth: reservation.reservationMonth,
+    actualCost
   });
   await recordImageProviders(dependencies, uploaded.audit || {});
   return result;
 }
 
+async function cleanupGeneratedImage({ runId, stageId, publicId, suffix }, dependencies) {
+  let cleanup;
+  try {
+    await dependencies.assertLease();
+    cleanup = await dependencies.imageService.deleteImage({ publicId });
+  } catch (error) {
+    cleanup = {
+      status: 'failed',
+      publicId,
+      code: error?.code || 'IMAGE_CLEANUP_FAILED'
+    };
+  }
+  try {
+    await dependencies.assertLease();
+    await dependencies.runRepository.updateRunStage(runId, {
+      currentStage: stageId,
+      stageId: `${stageId}:${suffix}`,
+      stageResult: cleanup
+    });
+  } catch {
+    // Ein bestätigter Postzustand darf durch ein reines Cleanup-Audit nicht zurückgerollt werden.
+  }
+  return cleanup;
+}
+
 async function runImageRegeneration(context, dependencies) {
   const { run, draft, postId, stageId } = context;
   const image = await loadImageResult(context, dependencies);
+  if (image?.manual) {
+    return finishManual({
+      runId: run.id,
+      postId,
+      ...image.manual
+    }, dependencies.runRepository, dependencies.assertLease);
+  }
   if (!image) {
     return finishManual({
       runId: run.id,
@@ -470,12 +586,13 @@ async function runImageRegeneration(context, dependencies) {
     try {
       reconciled = await dependencies.draftRepository.reconcileGeneratedImage({
         postId,
-        publicId: image.publicId
+        publicId: image.publicId,
+        lockedOldPublicId: error.lockedOldPublicId ?? image.previousPublicId ?? null
       });
     } catch {
       // Ohne eindeutigen Abgleich bleiben beide Cloudinarybilder unangetastet.
     }
-    if (!reconciled) {
+    if (!reconciled || reconciled.state === 'concurrent') {
       return finishManual({
         runId: run.id,
         postId,
@@ -483,39 +600,53 @@ async function runImageRegeneration(context, dependencies) {
         message: 'Der Datenbank-Commit des neuen Beitragsbildes konnte nicht eindeutig bestätigt werden.'
       }, dependencies.runRepository, dependencies.assertLease);
     }
+    if (reconciled.state === 'not_committed') {
+      await cleanupGeneratedImage({
+        runId: run.id,
+        stageId,
+        publicId: image.publicId,
+        suffix: 'orphan_cleanup'
+      }, dependencies);
+      return finishManual({
+        runId: run.id,
+        postId,
+        code: 'image_commit_not_applied',
+        message: 'Der Datenbank-Commit des neuen Beitragsbildes wurde nicht ausgeführt; der eindeutige neue Orphan wurde bereinigt.'
+      }, dependencies.runRepository, dependencies.assertLease);
+    }
     update = {
       committed: true,
       reconciled: true,
-      oldPublicId: image.previousPublicId || null,
-      post: reconciled
+      oldPublicId: error.lockedOldPublicId ?? image.previousPublicId ?? null,
+      post: reconciled.post
     };
+  }
+
+  if (update?.casMismatch) {
+    await cleanupGeneratedImage({
+      runId: run.id,
+      stageId,
+      publicId: image.publicId,
+      suffix: 'orphan_cleanup'
+    }, dependencies);
+    return finishManual({
+      runId: run.id,
+      postId,
+      code: 'image_concurrent_update',
+      message: 'Das Beitragsbild wurde zwischenzeitlich geändert. Das konkurrierende Bild bleibt erhalten; nur der eindeutige neue Orphan wurde bereinigt.'
+    }, dependencies.runRepository, dependencies.assertLease);
   }
 
   const cleanupPublicId = update.oldPublicId === image.publicId
     ? image.previousPublicId
     : update.oldPublicId;
   if (cleanupPublicId && cleanupPublicId !== image.publicId) {
-    let cleanup;
-    try {
-      await dependencies.assertLease();
-      cleanup = await dependencies.imageService.deleteImage({ publicId: cleanupPublicId });
-    } catch (error) {
-      cleanup = {
-        status: 'failed',
-        publicId: cleanupPublicId,
-        code: error?.code || 'IMAGE_CLEANUP_FAILED'
-      };
-    }
-    try {
-      await dependencies.assertLease();
-      await dependencies.runRepository.updateRunStage(run.id, {
-        currentStage: stageId,
-        stageId: `${stageId}:cleanup`,
-        stageResult: cleanup
-      });
-    } catch {
-      // Das bestätigte Postupdate darf durch ein reines Cleanup-Audit nicht zurückgerollt werden.
-    }
+    await cleanupGeneratedImage({
+      runId: run.id,
+      stageId,
+      publicId: cleanupPublicId,
+      suffix: 'cleanup'
+    }, dependencies);
   }
 
   await dependencies.assertLease();
@@ -617,9 +748,10 @@ export function createDraftRegenerationRepository(db = pool) {
       }
     },
 
-    async updateGeneratedImage({ postId, imageUrl, publicId, imageAlt }) {
+    async updateGeneratedImage({ postId, imageUrl, publicId, imageAlt, expectedOldPublicId }) {
       const client = await db.connect();
       let commitStarted = false;
+      let lockedOldPublicId = null;
       try {
         await client.query('BEGIN');
         const locked = await client.query(`
@@ -634,7 +766,26 @@ export function createDraftRegenerationRepository(db = pool) {
         if (!locked.rows[0]) {
           throw regenerationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
         }
-        const oldPublicId = locked.rows[0].hero_public_id || null;
+        lockedOldPublicId = locked.rows[0].hero_public_id ?? null;
+        const expected = expectedOldPublicId ?? null;
+        if (lockedOldPublicId === publicId) {
+          await client.query('COMMIT');
+          return {
+            committed: true,
+            idempotent: true,
+            oldPublicId: expected,
+            post: locked.rows[0]
+          };
+        }
+        if (lockedOldPublicId !== expected) {
+          await client.query('COMMIT');
+          return {
+            committed: false,
+            casMismatch: true,
+            currentPublicId: lockedOldPublicId,
+            post: locked.rows[0]
+          };
+        }
         const { rows } = await client.query(`
           UPDATE posts
           SET image_url = $2,
@@ -645,21 +796,25 @@ export function createDraftRegenerationRepository(db = pool) {
             AND generated_by_ai = TRUE
             AND published = FALSE
             AND content_format = 'static_html'
+            AND hero_public_id IS NOT DISTINCT FROM $5
           RETURNING *
-        `, [postId, imageUrl, publicId, imageAlt]);
+        `, [postId, imageUrl, publicId, imageAlt, expected]);
         if (!rows[0]) {
           throw regenerationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
         }
         commitStarted = true;
         await client.query('COMMIT');
-        return { committed: true, oldPublicId, post: rows[0] };
+        return { committed: true, oldPublicId: lockedOldPublicId, post: rows[0] };
       } catch (error) {
         try { await client.query('ROLLBACK'); } catch { /* COMMIT-Ausgang kann unklar sein */ }
         if (commitStarted) {
-          throw regenerationError(
+          const uncertain = regenerationError(
             'CONTENT_IMAGE_COMMIT_UNCERTAIN',
             'Der Datenbank-Commit des Beitragsbildes ist unklar.'
           );
+          uncertain.lockedOldPublicId = lockedOldPublicId;
+          uncertain.newPublicId = publicId;
+          throw uncertain;
         }
         throw error;
       } finally {
@@ -667,7 +822,7 @@ export function createDraftRegenerationRepository(db = pool) {
       }
     },
 
-    async reconcileGeneratedImage({ postId, publicId }) {
+    async reconcileGeneratedImage({ postId, publicId, lockedOldPublicId = null }) {
       const { rows } = await db.query(`
         SELECT *
         FROM posts
@@ -675,10 +830,16 @@ export function createDraftRegenerationRepository(db = pool) {
           AND generated_by_ai = TRUE
           AND published = FALSE
           AND content_format = 'static_html'
-          AND hero_public_id = $2
         LIMIT 1
-      `, [postId, publicId]);
-      return rows[0] || null;
+      `, [postId]);
+      const post = rows[0] || null;
+      if (!post) return null;
+      const currentPublicId = post.hero_public_id ?? null;
+      if (currentPublicId === publicId) return { state: 'committed', post };
+      if (currentPublicId === (lockedOldPublicId ?? null)) {
+        return { state: 'not_committed', currentPublicId, post };
+      }
+      return { state: 'concurrent', currentPublicId, post };
     }
   };
 }
