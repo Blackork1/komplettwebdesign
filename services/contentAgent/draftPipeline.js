@@ -259,6 +259,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   const validateArticle = required(dependencies.validateArticle, 'validateArticle');
   const imageService = required(dependencies.imageService, 'imageService');
   const draftRepository = required(dependencies.draftRepository, 'draftRepository');
+  const providerResultRecorder = typeof dependencies.recordProviderResult === 'function'
+    ? dependencies.recordProviderResult
+    : null;
   required(imageService.generateAndUploadImage, 'imageService.generateAndUploadImage');
   required(imageService.deleteImage, 'imageService.deleteImage');
 
@@ -295,6 +298,41 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       primaryError.auditWarnings = auditWarnings;
     }
     return warning;
+  }
+
+  async function recordProviderOutcome(providerName, success, errorCode = null, primaryError = null) {
+    if (!providerResultRecorder) return null;
+    try {
+      return await providerResultRecorder({ providerName, success, errorCode });
+    } catch {
+      recordAuditWarning(primaryError, 'PROVIDER_STATE_UPDATE_FAILED', { providerName });
+      return null;
+    }
+  }
+
+  async function recordImageProviderOutcomes(audit = {}, primaryError = null) {
+    const imageGeneration = audit.imageGeneration || {};
+    const upload = audit.upload || {};
+    if (imageGeneration.status === 'completed') {
+      await recordProviderOutcome('openai', true, null, primaryError);
+    } else if (imageGeneration.status === 'failed') {
+      await recordProviderOutcome(
+        'openai',
+        false,
+        imageGeneration.code || 'IMAGE_GENERATION_FAILED',
+        primaryError
+      );
+    }
+    if (upload.status === 'completed') {
+      await recordProviderOutcome('cloudinary', true, null, primaryError);
+    } else if (upload.status === 'failed') {
+      await recordProviderOutcome(
+        'cloudinary',
+        false,
+        upload.code || 'IMAGE_UPLOAD_FAILED',
+        primaryError
+      );
+    }
   }
 
   async function safeUpdateStage(currentStage, stageResult, extra, primaryError) {
@@ -390,6 +428,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.'
         );
       }
+      await recordProviderOutcome('openai', false, error?.code || 'OPENAI_REQUEST_FAILED', error);
       if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
         return stopForRecovery(
           'provider_retry_release_failed',
@@ -410,6 +449,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       throw markSafeProviderRetry(error);
     }
+    await recordProviderOutcome('openai', true, null);
     await assertLease();
     const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
     await costService.settleMonthlyBudget({
@@ -799,6 +839,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           filename: currentArticle.imageFilename,
           runId
         });
+        await recordImageProviderOutcomes(uploadedImage.audit || {
+          imageGeneration: { status: 'completed' },
+          upload: { status: 'completed' }
+        });
         imageCreatedThisRun = true;
         await assertLease();
         await costService.settleMonthlyBudget({
@@ -818,6 +862,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           bytes: uploadedImage.bytes
         });
       } catch (error) {
+        await recordImageProviderOutcomes(error.audit || {}, error);
         try {
           await costService.settleMonthlyBudget({
             runId,
