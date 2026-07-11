@@ -53,6 +53,7 @@ function safeError(value) {
 function providerHealthy(provider) {
   const success = new Date(provider?.last_success_at || 0).getTime();
   const failure = new Date(provider?.last_failure_at || 0).getTime();
+  if (String(provider?.last_error_code || '').trim() !== '') return false;
   return success > 0 && success >= failure;
 }
 

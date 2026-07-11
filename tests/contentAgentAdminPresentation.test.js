@@ -90,3 +90,19 @@ test('Technikpräsentation übernimmt nur redigierte Werte und bleibt schreibges
   const serialized = JSON.stringify(presentation);
   assert.doesNotMatch(serialized, /sk-geheim|openaiApiKey|worker_id|internal_secret|nicht ausgeben/);
 });
+
+test('Providerfehler bleibt bei identischen Erfolgs- und Fehlerzeitstempeln sichtbar', () => {
+  const instant = '2026-07-11T10:00:00.000Z';
+  const presentation = buildTechnologyPresentation({}, {
+    providers: [{
+      provider_name: 'openai',
+      last_success_at: instant,
+      last_failure_at: instant,
+      last_error_code: 'RATE_LIMIT'
+    }]
+  });
+
+  assert.equal(presentation.providers[0].healthy, false);
+  assert.equal(presentation.providers[0].statusLabel, 'Fehler gemeldet');
+  assert.equal(presentation.providers[0].lastErrorCode, 'RATE_LIMIT');
+});

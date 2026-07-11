@@ -252,7 +252,8 @@ export function createProductionRuntime({
       draftRepository: {
         createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database),
         findAIDraftByGenerationRunId: (runId) => modules.BlogPostModel.findAIDraftByGenerationRunId(runId, database)
-      }
+      },
+      recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database)
     };
   }
   const snapshotRuntimeAvailable = typeof modules.settingsRepository?.getContentAgentSettings === 'function'
@@ -356,6 +357,7 @@ export async function loadProductionModules() {
     runRepository,
     settingsRepository,
     topicRepository,
+    providerStateRepository,
     costService,
     validatorModule,
     imageModule,
@@ -376,6 +378,7 @@ export async function loadProductionModules() {
     import('../repositories/contentRunRepository.js'),
     import('../repositories/contentAgentSettingsRepository.js'),
     import('../repositories/contentTopicRepository.js'),
+    import('../repositories/contentProviderStateRepository.js'),
     import('../services/contentAgent/contentCostService.js'),
     import('../services/contentAgent/articleValidator.js'),
     import('../services/contentAgent/contentImageService.js'),
@@ -397,6 +400,7 @@ export async function loadProductionModules() {
     runRepository,
     settingsRepository,
     topicRepository,
+    providerStateRepository,
     costService,
     validateArticle: validatorModule.validateArticle,
     createContentImageService: imageModule.createContentImageService,

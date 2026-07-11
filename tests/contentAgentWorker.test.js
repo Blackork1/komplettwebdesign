@@ -15,6 +15,7 @@ import {
   createProductionRuntime,
   createShutdownController,
   createWeeklyScheduler,
+  loadProductionModules,
   startContentWorker
 } from '../scripts/contentWorker.js';
 import {
@@ -886,6 +887,12 @@ test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Reposi
   assert.doesNotMatch(staticHealthImports, /util\/db|repositories\/|models\/|node-cron/);
 });
 
+test('Produktionsmodule laden den Providerstatus-Adapter ausschließlich im verzögerten Produktionspfad', async () => {
+  const modules = await loadProductionModules();
+
+  assert.equal(typeof modules.providerStateRepository?.recordProviderResult, 'function');
+});
+
 test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den injizierten Pool', async () => {
   const database = {
     queries: [],
@@ -919,6 +926,9 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
     topicRepository: {
       createTopic: async (...args) => recordDb(...args),
       markTopicUsed: async (...args) => recordDb(...args)
+    },
+    providerStateRepository: {
+      recordProviderResult: async (...args) => recordDb(...args)
     },
     costService: {
       estimateTextCost: () => 0,
@@ -971,11 +981,12 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   await runtime.pipelineDependencies.costService.getPersistedStageResult({});
   await runtime.pipelineDependencies.draftRepository.createAIDraft({});
   await runtime.pipelineDependencies.draftRepository.findAIDraftByGenerationRunId(1);
+  await runtime.pipelineDependencies.recordProviderResult({ providerName: 'openai', success: true });
   await runtime.pipelineDependencies.inventoryService.buildSiteInventory();
   await runtime.worker.processOnce();
   await runtime.jobRepository.enqueueJob({});
 
-  assert.ok(dbArguments.length >= 15);
+  assert.ok(dbArguments.length >= 16);
   assert.equal(dbArguments.every((value) => value === database), true);
   assert.ok(database.queries.length >= 4);
 });
