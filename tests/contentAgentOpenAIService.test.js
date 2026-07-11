@@ -3,8 +3,13 @@ import assert from 'node:assert/strict';
 
 import {
   createOpenAIContentService,
-  extractWebSources
+  extractWebSources,
+  OpenAIContentResponseError
 } from '../services/contentAgent/openaiContentService.js';
+import {
+  buildBrandPolicy,
+  buildBrandPolicyPrompt
+} from '../services/contentAgent/prompts/brandPolicy.js';
 import { buildTopicResearchPrompt } from '../services/contentAgent/prompts/topicResearchPrompt.js';
 import { buildWebResearchPrompt } from '../services/contentAgent/prompts/webResearchPrompt.js';
 import { buildSeoBriefPrompt } from '../services/contentAgent/prompts/seoBriefPrompt.js';
@@ -448,6 +453,44 @@ test('Promptbuilder lassen fehlende optionale Allowlist-Felder weg', () => {
   });
 });
 
+test('buildBrandPolicyPrompt ignoriert freie Eingaben und liefert nur die feste Policy', () => {
+  const prompt = buildBrandPolicyPrompt({
+    secret: 'darf nicht serialisiert werden',
+    adminNotes: 'interne Notiz'
+  });
+
+  assert.deepEqual(prompt, { system: buildBrandPolicy() });
+  assert.doesNotMatch(JSON.stringify(prompt), /secret|adminNotes|interne Notiz/);
+});
+
+test('Response-IDs werden in Fehlerobjekt und Meldung eng normalisiert', () => {
+  const error = new OpenAIContentResponseError({
+    code: 'OPENAI_RESPONSE_FAILED',
+    responseId: '\t\r\n\u001b[31mresp_safe:ID-1!? ä',
+    message: 'OpenAI konnte die Antwort nicht erzeugen.'
+  });
+
+  assert.equal(error.responseId, 'resp_safe:ID-1');
+  assert.match(error.responseId, /^[A-Za-z0-9._:-]+$/);
+  assert.match(error.message, /Response-ID: resp_safe:ID-1\./);
+  assert.doesNotMatch(error.message, /\u001b|\[31m|\t|\r|\n|!|\?|ä/);
+
+  const withoutId = new OpenAIContentResponseError({
+    code: 'OPENAI_RESPONSE_FAILED',
+    responseId: '\t\r\n\u001b[31m!? ä',
+    message: 'OpenAI konnte die Antwort nicht erzeugen.'
+  });
+  assert.equal(withoutId.responseId, null);
+  assert.doesNotMatch(withoutId.message, /Response-ID/);
+
+  const longId = new OpenAIContentResponseError({
+    code: 'OPENAI_RESPONSE_FAILED',
+    responseId: 'a'.repeat(200),
+    message: 'OpenAI konnte die Antwort nicht erzeugen.'
+  });
+  assert.equal(longId.responseId, 'a'.repeat(128));
+});
+
 function completedWebResponse(overrides = {}) {
   return {
     id: 'web-response-status',
@@ -462,6 +505,36 @@ function completedWebResponse(overrides = {}) {
     ...overrides
   };
 }
+
+test('researchCurrentSources akzeptiert completed Responses mit echten Minimal-Citations', async () => {
+  const service = createOpenAIContentService({
+    config,
+    client: { responses: { async create() { return completedWebResponse(); } } }
+  });
+
+  const result = await service.researchCurrentSources({ topic: 'Aktuelles Thema' });
+
+  assert.deepEqual(result.value, sourceReferences);
+  assert.equal(result.responseId, 'web-response-status');
+});
+
+test('researchCurrentSources lehnt Responses ohne Status ausdrücklich ab', async () => {
+  const response = completedWebResponse();
+  delete response.status;
+  const service = createOpenAIContentService({
+    config,
+    client: { responses: { async create() { return response; } } }
+  });
+
+  await assert.rejects(
+    service.researchCurrentSources({ topic: 'Aktuelles Thema' }),
+    (error) => {
+      assert.equal(error.code, 'OPENAI_RESPONSE_NOT_COMPLETED');
+      assert.equal(error.responseId, 'web-response-status');
+      return true;
+    }
+  );
+});
 
 test('researchCurrentSources lehnt fehlgeschlagene und unvollständige Responses trotz Citations sicher ab', async () => {
   for (const response of [

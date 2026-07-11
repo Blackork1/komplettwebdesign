@@ -32,12 +32,21 @@ import {
   promptVersion as articleRepairPromptVersion
 } from './prompts/articleRepairPrompt.js';
 
+const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
+
+function normalizeResponseId(value) {
+  if (typeof value !== 'string') return null;
+  const normalized = value
+    .replace(ANSI_ESCAPE, '')
+    .replace(/[^A-Za-z0-9._:-]/g, '')
+    .slice(0, 128);
+  return normalized || null;
+}
+
 export class OpenAIContentResponseError extends Error {
   constructor({ code, responseId, message }) {
-    const safeResponseId = typeof responseId === 'string'
-      ? responseId.replace(/[\r\n]/g, '').slice(0, 128)
-      : null;
-    super(`${message} Response-ID: ${safeResponseId || 'unbekannt'}.`);
+    const safeResponseId = normalizeResponseId(responseId);
+    super(safeResponseId ? `${message} Response-ID: ${safeResponseId}.` : message);
     this.name = 'OpenAIContentResponseError';
     this.code = code;
     this.responseId = safeResponseId;

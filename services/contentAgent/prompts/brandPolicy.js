@@ -20,9 +20,6 @@ export function buildBrandPolicy() {
   ].join('\n');
 }
 
-export function buildBrandPolicyPrompt(input = {}) {
-  return {
-    system: buildBrandPolicy(),
-    user: JSON.stringify(input)
-  };
+export function buildBrandPolicyPrompt() {
+  return { system: buildBrandPolicy() };
 }
