@@ -19,13 +19,18 @@ export async function createRun({
 
 export async function updateRunStage(runId, {
   currentStage,
-  stageId = currentStage,
+  stageId,
   stageResult = {},
   tokenUsage = {},
   costEstimate = 0,
   responseIds = [],
   selectedTopicId = null
 }, db = pool) {
+  const normalizedStageId = typeof stageId === 'string' ? stageId.trim() : '';
+  if (!normalizedStageId) {
+    throw new TypeError('updateRunStage benötigt eine nichtleere explizite stageId.');
+  }
+
   const { rows } = await db.query(
     `
       UPDATE content_runs
@@ -36,7 +41,7 @@ export async function updateRunStage(runId, {
           END,
           token_usage_json = CASE
             WHEN stage_results_json ? $3 THEN token_usage_json
-            ELSE token_usage_json || $5::jsonb
+            ELSE token_usage_json || jsonb_build_object($3, $5::jsonb)
           END,
           cost_estimate = CASE
             WHEN stage_results_json ? $3 THEN cost_estimate
@@ -53,7 +58,7 @@ export async function updateRunStage(runId, {
     [
       runId,
       currentStage,
-      stageId,
+      normalizedStageId,
       stageResult,
       tokenUsage,
       costEstimate,

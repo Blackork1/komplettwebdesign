@@ -18,6 +18,10 @@ import {
   createTopic,
   markTopicUsed
 } from '../repositories/contentTopicRepository.js';
+import {
+  sanitizeErrorMessage,
+  sanitizeErrorReport
+} from '../repositories/contentErrorSanitizer.js';
 
 function normalizeSql(sql) {
   return sql.replace(/\s+/g, ' ').trim();
@@ -165,16 +169,36 @@ test('terminale Jobupdates akzeptieren keine veraltete oder unvollständige Leas
   await assert.rejects(completeJob(7, db), /vollständiger Lease-Claim/i);
 });
 
-test('enqueueJob begrenzt maxAttempts auf mindestens einen Versuch', async () => {
-  const db = createQueryRecorder([{ rows: [{ id: 8, max_attempts: 1 }] }]);
+test('enqueueJob normalisiert maxAttempts als sicheren PostgreSQL-Integer', async () => {
+  const db = createQueryRecorder([
+    { rows: [{ id: 8, max_attempts: 1 }] },
+    { rows: [{ id: 9, max_attempts: 3 }] },
+    { rows: [{ id: 10, max_attempts: 2147483647 }] },
+    { rows: [{ id: 11, max_attempts: 5 }] }
+  ]);
 
   await enqueueJob({
     jobType: 'generate_manual_draft',
     idempotencyKey: 'manual:min-attempts',
     maxAttempts: 0
   }, db);
+  await enqueueJob({
+    jobType: 'generate_manual_draft',
+    idempotencyKey: 'manual:partially-invalid-attempts',
+    maxAttempts: '12jobs'
+  }, db);
+  await enqueueJob({
+    jobType: 'generate_manual_draft',
+    idempotencyKey: 'manual:too-many-attempts',
+    maxAttempts: 3_000_000_000
+  }, db);
+  await enqueueJob({
+    jobType: 'generate_manual_draft',
+    idempotencyKey: 'manual:numeric-string-attempts',
+    maxAttempts: '5'
+  }, db);
 
-  assert.equal(db.calls[0].params[4], 1);
+  assert.deepEqual(db.calls.map((call) => call.params[4]), [1, 3, 2147483647, 5]);
 });
 
 test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials', async () => {
@@ -195,6 +219,35 @@ test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials
   assert.doesNotMatch(storedError, /Authorization:\s*(?:Basic|Bearer)\s+[^\[]/i);
   assert.doesNotMatch(storedError, /internerStack/i);
   assert.ok(storedError.length <= 2000);
+});
+
+test('Fehlerbereinigung redigiert JSON-Authorization, präfixierte API-Schlüssel und URL-Passwörter', () => {
+  const samples = [
+    {
+      text: '{"Authorization":"Bearer JSON_BEARER_SECRET"}',
+      secret: 'JSON_BEARER_SECRET'
+    },
+    {
+      text: 'STRIPE_API_KEY=rk_live_EXAMPLESECRET',
+      secret: 'rk_live_EXAMPLESECRET'
+    },
+    {
+      text: 'https://user:HTTPS_PASSWORD@example.test/path',
+      secret: 'HTTPS_PASSWORD'
+    }
+  ];
+
+  for (const { text, secret } of samples) {
+    const message = sanitizeErrorMessage(`${text}\nStack darf nicht bleiben`);
+    const report = sanitizeErrorReport({ message: `${text}\nStack darf nicht bleiben` });
+
+    assert.equal(message.includes(secret), false);
+    assert.equal(report.message.includes(secret), false);
+    assert.doesNotMatch(message, /\r|\n|Stack darf nicht bleiben/);
+    assert.doesNotMatch(report.message, /\r|\n|Stack darf nicht bleiben/);
+    assert.ok(message.length <= 2000);
+    assert.ok(report.message.length <= 2000);
+  }
 });
 
 test('recoverExpiredJobs trennt Wiederholungen von endgültigen Fehlern und löst Leases', async () => {
@@ -252,37 +305,75 @@ test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zur�
   assert.deepEqual(db.calls[2].params[3], errorReport);
 });
 
-test('updateRunStage verbucht dieselbe stageId höchstens einmal', async () => {
-  const persisted = {
+test('updateRunStage trennt Usage nach stageId und verbucht dieselbe ID höchstens einmal', async () => {
+  const firstRepair = {
     id: 25,
-    current_stage: 'review',
+    current_stage: 'repair',
     cost_estimate: '0.120000',
     openai_response_ids_json: ['resp_1'],
-    stage_results_json: { 'review:initial': { score: 91 } }
+    stage_results_json: { 'repair:1': { score: 76 } },
+    token_usage_json: {
+      'repair:1': { input_tokens: 120, output_tokens: 80 }
+    }
+  };
+  const secondRepair = {
+    id: 25,
+    current_stage: 'repair',
+    cost_estimate: '0.240000',
+    openai_response_ids_json: ['resp_1', 'resp_2'],
+    stage_results_json: {
+      'repair:1': { score: 76 },
+      'repair:2': { score: 88 }
+    },
+    token_usage_json: {
+      'repair:1': { input_tokens: 120, output_tokens: 80 },
+      'repair:2': { input_tokens: 120, output_tokens: 80 }
+    }
   };
   const db = createQueryRecorder([
-    { rows: [persisted] },
-    { rows: [persisted] }
+    { rows: [firstRepair] },
+    { rows: [firstRepair] },
+    { rows: [secondRepair] }
   ]);
-  const update = {
-    currentStage: 'review',
-    stageId: 'review:initial',
-    stageResult: { score: 91 },
+  const update = (stageId, responseId) => ({
+    currentStage: 'repair',
+    stageId,
+    stageResult: { score: stageId === 'repair:1' ? 76 : 88 },
     tokenUsage: { input_tokens: 120, output_tokens: 80 },
     costEstimate: 0.12,
-    responseIds: ['resp_1']
-  };
+    responseIds: [responseId]
+  });
 
-  assert.equal(await updateRunStage(25, update, db), persisted);
-  assert.equal(await updateRunStage(25, update, db), persisted);
+  assert.equal(await updateRunStage(25, update('repair:1', 'resp_1'), db), firstRepair);
+  assert.equal(await updateRunStage(25, update('repair:1', 'resp_1'), db), firstRepair);
+  assert.equal(await updateRunStage(25, update('repair:2', 'resp_2'), db), secondRepair);
 
   for (const call of db.calls) {
-    assert.equal(call.params[2], 'review:initial');
     assert.match(call.sql, /stage_results_json \? \$3/i);
     assert.match(call.sql, /jsonb_build_object\(\$3, \$4::jsonb\)/i);
+    assert.match(call.sql, /token_usage_json \|\| jsonb_build_object\(\$3, \$5::jsonb\)/i);
     assert.match(call.sql, /cost_estimate = CASE WHEN stage_results_json \? \$3 THEN cost_estimate ELSE cost_estimate \+ \$6 END/i);
     assert.match(call.sql, /openai_response_ids_json = CASE WHEN stage_results_json \? \$3 THEN openai_response_ids_json ELSE openai_response_ids_json \|\| to_jsonb\(\$7::text\[\]\) END/i);
   }
+  assert.deepEqual(db.calls.map((call) => call.params[2]), ['repair:1', 'repair:1', 'repair:2']);
+  assert.deepEqual(secondRepair.token_usage_json, {
+    'repair:1': { input_tokens: 120, output_tokens: 80 },
+    'repair:2': { input_tokens: 120, output_tokens: 80 }
+  });
+});
+
+test('updateRunStage verlangt eine nichtleere explizite stageId vor der Query', async () => {
+  const db = createQueryRecorder();
+
+  await assert.rejects(
+    updateRunStage(26, { currentStage: 'review' }, db),
+    /stageId/i
+  );
+  await assert.rejects(
+    updateRunStage(26, { currentStage: 'review', stageId: '   ' }, db),
+    /stageId/i
+  );
+  assert.equal(db.calls.length, 0);
 });
 
 test('finishRun verwirft unbekannte und verschachtelte Secrets aus Fehlerberichten', async () => {

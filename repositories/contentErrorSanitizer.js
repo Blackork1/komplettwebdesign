@@ -1,14 +1,17 @@
 const REDACTED = '[ZUGANGSDATEN ENTFERNT]';
-const SENSITIVE_KEY = '(?:api[_-]?key|password|passwd|secret|token|access[_-]?token|client[_-]?secret|database[_-]?password)';
+const SENSITIVE_KEY = '(?:(?:[a-z0-9]+[_-])*(?:api[_-]?key|token|secret|password|authorization)|passwd)';
 
 function sanitizeDiagnosticString(value) {
   const [firstLine] = String(value ?? '').split(/\r?\n/, 1);
 
   return firstLine
-    .replace(/\b(postgres(?:ql)?):\/\/([^:\s/@]+):([^@\s/]+)@/gi, `$1://$2:${REDACTED}@`)
-    .replace(/(\bauthorization\s*:\s*)(basic|bearer)\s+[^\s,;"'}]+/gi, `$1$2 ${REDACTED}`)
+    .replace(/\b([a-z][a-z0-9+.-]*):\/\/([^:\s/@]+):([^@\s/]+)@/gi, `$1://$2:${REDACTED}@`)
     .replace(
-      new RegExp(`(\\b${SENSITIVE_KEY}\\b["']?\\s*[=:]\\s*)(?:"[^"]*"|'[^']*'|[^\\s,;}]+)`, 'gi'),
+      new RegExp(
+        `((?:["'])?\\b${SENSITIVE_KEY}\\b(?:["'])?\\s*[=:]\\s*)`
+          + `(?:"[^"]*"|'[^']*'|(?:basic|bearer)\\s+[^\\s,;}"']+|[^\\s,;}]+)`,
+        'gi'
+      ),
       `$1"${REDACTED}"`
     )
     .replace(/\bsk-[a-z0-9_-]{8,}\b/gi, REDACTED)

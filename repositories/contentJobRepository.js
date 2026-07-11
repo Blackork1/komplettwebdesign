@@ -21,6 +21,8 @@ const CLAIM_NEXT_JOB_SQL = `
   RETURNING job.*;
 `;
 
+const POSTGRES_INTEGER_MAX = 2147483647;
+
 function leaseParameters(claim) {
   if (
     !claim
@@ -39,8 +41,14 @@ function leaseParameters(claim) {
 }
 
 function normalizeMaxAttempts(value) {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? Math.max(1, parsed) : 3;
+  if (value === null || value === undefined) {
+    return 3;
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    return 3;
+  }
+  return Math.min(POSTGRES_INTEGER_MAX, Math.max(1, parsed));
 }
 
 export async function enqueueJob({
