@@ -91,3 +91,32 @@ Task 6 ergänzt ausschließlich die sichere Cockpit-Oberfläche. Vorschau-, Bear
 ## Sorge
 
 Der lokale PostgreSQL-Integrationstest bleibt ohne ausdrücklich freigegebene, zurücksetzbare Testdatenbank erwartungsgemäß übersprungen. Für Task 6 selbst besteht kein offener UI- oder Sicherheitsblocker.
+
+## Review-Fix
+
+Die Reviewfunde wurden in einem eigenen TDD-Zyklus behoben:
+
+- Das vollständige Zeitplanformular sendet nun die eindeutige Markierung `settings_form_scope=schedule`.
+- Fehlt in genau diesem Scope `schedule_weekdays`, erzeugt der Controller bewusst `scheduleWeekdays: []`. Die Transitionvalidierung lehnt den leeren Zeitplan mit `CONTENT_SETTINGS_VALIDATION_FAILED` und HTTP 400 ab.
+- Scope-lose Teilupdates wie der Agent-Schnellschalter bewahren alle nicht übertragenen Zeitplanwerte.
+- Das Monatsbudget akzeptiert mit `step="1"` auch einzelne Centbeträge; der Rendervertrag prüft ausdrücklich 1250 Cent.
+- `?created=1` wird im Controller strikt in einen booleschen Viewlocal übersetzt. Andere Querywerte werden ignoriert und niemals roh ausgegeben.
+- Der aktive Content-Agent-Hauptlink verwendet nun zusätzlich `aria-current="page"`.
+
+RED des Review-Fixes:
+
+```text
+Controller-/Viewverträge: 13 bestanden, 5 fehlgeschlagen
+Runtime-Transitionvertrag: 5 bestanden, 1 fehlgeschlagen
+```
+
+GREEN des Review-Fixes:
+
+```text
+Runtime-, Controller-, View-, Fallback- und Routentests: 30 bestanden, 0 fehlgeschlagen
+Gesamtsuite: 753 bestanden, 1 PostgreSQL-Opt-in-Test übersprungen, 0 fehlgeschlagen
+CSS-Build: 41 Quelldateien gebaut, Manifest unverändert
+git diff --check: ohne Befund
+```
+
+Die geänderten Zustände wurden erneut in Headless Chrome geprüft: Desktop zeigt die sichere Erfolgsmeldung und den aktiven Hauptlink; mobil sendet das Zeitplanformular den Scope, `step=1` und 1250 Cent. Beide Viewports besitzen keine horizontale Seitenüberbreite.

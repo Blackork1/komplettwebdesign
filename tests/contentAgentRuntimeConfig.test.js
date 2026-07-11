@@ -95,6 +95,19 @@ test('Direktveröffentlichung verlangt auch bei geöffnetem Hardgate Score 90', 
   }), (error) => error.code === 'CONTENT_SETTINGS_VALIDATION_FAILED');
 });
 
+test('Transitionvalidierung lehnt einen vollständigen Zeitplan ohne Wochentag ab', () => {
+  assert.throws(() => validateContentAgentSettingsTransition({
+    current: { operating_mode: 'review', manual_approvals_count: 0 },
+    next: {
+      operating_mode: 'review',
+      manual_approvals_count: 0,
+      schedule_weekdays: [],
+      auto_publish_min_score: 90
+    },
+    technicalConfig: { autoPublishEnabled: false }
+  }), (error) => error.code === 'CONTENT_SETTINGS_VALIDATION_FAILED');
+});
+
 test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () => {
   const runtimeConfig = resolveContentAgentRuntimeConfig({
     technicalConfig: { ...technicalConfig, autoPublishEnabled: true },

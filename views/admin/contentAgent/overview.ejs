@@ -42,7 +42,7 @@
   <%- include('_statusCards', { dashboard: safeDashboard, settings: safeSettings }) %>
   <%- include('_tabs', { activeTab: 'overview' }) %>
 
-  <% if (typeof created !== 'undefined' || (typeof currentPathname !== 'undefined' && String(currentPathname).includes('created=1'))) { %>
+  <% if (typeof created !== 'undefined' && created === true) { %>
     <div class="alert alert-success" role="status">Der Entwurfsjob wurde sicher eingeplant.</div>
   <% } %>
 

@@ -65,6 +65,8 @@ function settingsPatch(body = {}) {
     patch.scheduleWeekdays = Array.isArray(body.schedule_weekdays)
       ? body.schedule_weekdays
       : [body.schedule_weekdays];
+  } else if (body.settings_form_scope === 'schedule') {
+    patch.scheduleWeekdays = [];
   }
   if (Object.hasOwn(body, 'schedule_time')) patch.scheduleTime = body.schedule_time;
   if (Object.hasOwn(body, 'timezone')) patch.timezone = body.timezone;
@@ -144,7 +146,8 @@ export function createAdminContentAgentController(dependencies) {
         const data = await adminRepository.getOverview();
         return res.render('admin/contentAgent/overview', {
           dashboard: presentation.buildDashboardPresentation(data),
-          settings: data.settings
+          settings: data.settings,
+          created: req.query?.created === '1'
         });
       } catch (error) {
         return sendKnownError(error, res, next);

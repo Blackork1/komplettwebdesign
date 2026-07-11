@@ -77,7 +77,7 @@
           </div>
         </div>
 
-        <a href="/admin/content-agent" class="<%= isActivePath('/admin/content-agent') ? 'is-active' : '' %>">
+        <a href="/admin/content-agent" class="<%= isActivePath('/admin/content-agent') ? 'is-active' : '' %>" <% if (isActivePath('/admin/content-agent')) { %>aria-current="page"<% } %>>
           <span class="ico"><i class="fa-solid fa-wand-magic-sparkles"></i></span> Content-Agent
         </a>
 

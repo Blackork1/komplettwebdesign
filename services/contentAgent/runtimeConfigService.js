@@ -57,6 +57,13 @@ export function createContentAgentJobSnapshot({ runtimeConfig, claim, now = new 
 }
 
 export function validateContentAgentSettingsTransition({ current, next, technicalConfig }) {
+  if (Array.isArray(next.schedule_weekdays) && next.schedule_weekdays.length === 0) {
+    throw Object.assign(
+      new Error('Mindestens ein Wochentag ist erforderlich.'),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+
   if (next.operating_mode !== 'auto_publish') return next;
 
   if (

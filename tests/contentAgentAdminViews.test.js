@@ -81,7 +81,9 @@ test('Cockpit enthält bestätigte fünf Reiter und sichere Aktionsformulare', a
   assert.match(schedule, /Montag/);
   assert.match(schedule, /Donnerstag/);
   assert.match(schedule, /name="schedule_weekdays"/);
+  assert.match(schedule, /name="settings_form_scope" value="schedule"/);
   assert.match(schedule, /name="settings_version"/);
+  assert.match(schedule, /step="1"/);
   assert.match(technology, /schreibgeschützt/i);
   assert.match(script, /window\.confirm/);
   assert.doesNotMatch(script, /fetch\(|XMLHttpRequest|localStorage/);
@@ -96,11 +98,40 @@ test('Übersicht rendert Layout A zugänglich und escaped dynamische Werte', asy
 
   assert.match(html, /aria-label="Content-Agent-Bereiche"/);
   assert.match(html, /aria-current="page"/);
+  assert.match(html, /href="\/admin\/content-agent" class="is-active" aria-current="page"/);
   assert.match(html, /Zur Prüfung/);
   assert.match(html, /Systemstatus/);
   assert.match(html, /&lt;script&gt;entwurf&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>entwurf<\/script>/);
   assert.doesNotMatch(html, /stage_results_json|payload_json|openai_response_ids_json/i);
+});
+
+test('Zeitplan akzeptiert Centbeträge und Erfolgsmeldung ist über sicheren Viewlocal erreichbar', async () => {
+  const scheduleHtml = await renderFile(fileURLToPath(viewUrl('schedule.ejs')), {
+    ...baseLocals,
+    settings: { ...settings, monthly_budget_cents: 1250 },
+    technical: {
+      autoPublishEnabled: { value: false },
+      monthlyCostLimitEur: { value: 100 },
+      maxAttempts: { value: 5 }
+    }
+  });
+  const successHtml = await renderFile(fileURLToPath(viewUrl('overview.ejs')), {
+    ...baseLocals,
+    dashboard,
+    settings,
+    created: true
+  });
+  const neutralHtml = await renderFile(fileURLToPath(viewUrl('overview.ejs')), {
+    ...baseLocals,
+    dashboard,
+    settings,
+    created: false
+  });
+
+  assert.match(scheduleHtml, /name="monthly_budget_cents"[^>]*step="1"[^>]*value="1250"/);
+  assert.match(successHtml, /Der Entwurfsjob wurde sicher eingeplant/);
+  assert.doesNotMatch(neutralHtml, /Der Entwurfsjob wurde sicher eingeplant/);
 });
 
 test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmodels erreichbar', async () => {

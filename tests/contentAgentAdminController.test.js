@@ -107,6 +107,101 @@ test('Einstellungsupdate prüft Transition und technische Hardgates vor dem Spei
   assert.equal(res.redirectedTo, '/admin/content-agent/schedule?saved=1');
 });
 
+test('vollständiges Zeitplanformular behandelt fehlende Wochentage als leere Auswahl', async () => {
+  const current = {
+    agent_enabled: true,
+    operating_mode: 'review',
+    schedule_weekdays: [1, 4],
+    schedule_time: '18:00:00',
+    timezone: 'Europe/Berlin',
+    monthly_budget_cents: 1250,
+    auto_publish_min_score: 90,
+    maximum_attempts: 3,
+    settings_version: 4
+  };
+  let updateCalls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return current; },
+      async updateSettings() { updateCalls += 1; }
+    },
+    validateSettingsTransition({ next }) {
+      assert.deepEqual(next.schedule_weekdays, []);
+      throw Object.assign(new Error('Mindestens ein Wochentag ist erforderlich.'), {
+        code: 'CONTENT_SETTINGS_VALIDATION_FAILED'
+      });
+    }
+  }));
+  const res = response();
+
+  await controller.updateSettingsAction({
+    body: {
+      settings_form_scope: 'schedule',
+      settings_version: '4',
+      agent_enabled: 'true',
+      operating_mode: 'review',
+      schedule_time: '18:00',
+      timezone: 'Europe/Berlin',
+      monthly_budget_cents: '1250',
+      auto_publish_min_score: '90',
+      maximum_attempts: '3'
+    },
+    session: { user: { id: 7, username: 'admin' } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(updateCalls, 0);
+});
+
+test('Agent-Schnellschalter bleibt ein Teilupdate und bewahrt den Zeitplan', async () => {
+  const current = {
+    agent_enabled: true,
+    operating_mode: 'review',
+    schedule_weekdays: [1, 4],
+    schedule_time: '18:00:00',
+    timezone: 'Europe/Berlin',
+    monthly_budget_cents: 1250,
+    auto_publish_min_score: 90,
+    maximum_attempts: 3,
+    settings_version: 4
+  };
+  let updateInput;
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return current; },
+      async updateSettings(input) { updateInput = input; return current; }
+    },
+    validateSettingsTransition({ next }) {
+      assert.deepEqual(next.schedule_weekdays, [1, 4]);
+      return next;
+    }
+  }));
+
+  await controller.updateSettingsAction({
+    body: { settings_version: '4', agent_enabled: 'false' },
+    session: { user: { id: 7, username: 'admin' } }
+  }, response(), assert.fail);
+
+  assert.equal(Object.hasOwn(updateInput.patch, 'scheduleWeekdays'), false);
+  assert.equal(updateInput.patch.agentEnabled, false);
+});
+
+test('Übersicht erhält nur für created=1 eine sichere Erfolgsmeldung', async () => {
+  const data = { settings: { agent_enabled: true }, drafts: [], jobs: [] };
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: { async getOverview() { return data; } },
+    presentation: { buildDashboardPresentation() { return { modeLabel: 'Review' }; } }
+  }));
+  const successRes = response();
+  const ignoredRes = response();
+
+  await controller.overviewPage({ query: { created: '1' } }, successRes, assert.fail);
+  await controller.overviewPage({ query: { created: '<script>1</script>' } }, ignoredRes, assert.fail);
+
+  assert.equal(successRes.rendered.locals.created, true);
+  assert.equal(ignoredRes.rendered.locals.created, false);
+});
+
 test('bekannte Controllerfehler werden explizit abgebildet, unbekannte gehen an next', async () => {
   const conflict = Object.assign(new Error('interner Kontext'), { code: 'CONTENT_SETTINGS_VERSION_CONFLICT' });
   const conflictController = createAdminContentAgentController(baseDependencies({
