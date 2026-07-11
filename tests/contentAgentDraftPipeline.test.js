@@ -155,7 +155,7 @@ const persistedDraft = {
     content_format: 'static_html',
     generated_by_ai: true
   },
-  metadata: { quality_score: review.score },
+  metadata: { post_id: 41, quality_score: review.score },
   topicId: 17,
   qualityScore: review.score
 };
@@ -277,7 +277,7 @@ function createDependencies(overrides = {}) {
             content_format: 'static_html',
             generated_by_ai: true
           },
-          metadata: { ...input.metadata }
+          metadata: { post_id: 41, ...input.metadata }
         };
         createdDrafts.push(result);
         return result;
@@ -617,6 +617,7 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
   ]);
 
   const result = await BlogPostModel.createAIDraft({
+    generationRunId: 71,
     post: {
       title: article.title,
       slug: article.slug,
@@ -666,10 +667,70 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
   assert.match(db.events[2].sql, /featured, published, description/i);
   assert.match(db.events[2].sql, /faq_json, workflow_status, meta_title/i);
   assert.match(db.events[2].sql, /image_alt, content_format, generated_by_ai/i);
+  assert.match(db.events[2].sql, /generation_run_id/i);
+  assert.match(db.events[2].sql, /ON CONFLICT \(generation_run_id\) DO UPDATE SET generation_run_id = EXCLUDED\.generation_run_id/i);
   assert.match(db.events[2].sql, /false, false, \$8, \$9, 'needs_review'/i);
-  assert.match(db.events[2].sql, /'static_html', true, NOW\(\), NOW\(\)/i);
+  assert.equal(db.events[2].params.at(-1), 71);
   assert.equal(db.events[2].params.includes(article.metaDescription), true);
   assert.match(db.events[3].sql, /INSERT INTO content_post_metadata/i);
+  assert.match(db.events[3].sql, /ON CONFLICT \(post_id\) DO UPDATE SET post_id = EXCLUDED\.post_id/i);
+});
+
+test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und geprüfte Metadaten zurück', async () => {
+  const postRow = {
+    id: 53,
+    slug: article.slug,
+    generation_run_id: 72,
+    published: false,
+    workflow_status: 'needs_review',
+    content_format: 'static_html',
+    generated_by_ai: true
+  };
+  const metadataRow = { post_id: 53, quality_score: 93, primary_keyword: topic.primaryKeyword };
+  const db = createTransactionalDb([
+    {}, { rows: [postRow] }, { rows: [metadataRow] }, {},
+    {}, { rows: [postRow] }, { rows: [metadataRow] }, {}
+  ]);
+  const input = {
+    generationRunId: 72,
+    post: {
+      title: article.title,
+      slug: article.slug,
+      content: article.contentHtml
+    },
+    metadata: {
+      primary_keyword: topic.primaryKeyword,
+      quality_score: 93
+    }
+  };
+
+  const first = await BlogPostModel.createAIDraft(input, db);
+  const second = await BlogPostModel.createAIDraft({
+    ...input,
+    post: { ...input.post, title: 'Schwächerer Retry-Titel' },
+    metadata: { ...input.metadata, quality_score: 80 }
+  }, db);
+
+  assert.deepEqual(first, { post: postRow, metadata: metadataRow });
+  assert.deepEqual(second, first);
+  const postCalls = db.events.filter(({ sql }) => /^INSERT INTO posts/i.test(sql));
+  const metadataCalls = db.events.filter(({ sql }) => /^INSERT INTO content_post_metadata/i.test(sql));
+  assert.equal(postCalls.length, 2);
+  assert.equal(metadataCalls.length, 2);
+  assert.equal(postCalls.every(({ sql }) => /ON CONFLICT \(generation_run_id\)/i.test(sql)), true);
+  assert.equal(metadataCalls.every(({ sql }) => /ON CONFLICT \(post_id\)/i.test(sql)), true);
+  assert.equal(metadataCalls.every(({ sql }) => !/quality_score = EXCLUDED\.quality_score/i.test(sql)), true);
+});
+
+test('BlogPostModel.createAIDraft verlangt eine positive generationRunId vor dem Connect', async () => {
+  let connects = 0;
+  const db = { async connect() { connects += 1; throw new Error('darf nicht verbinden'); } };
+
+  await assert.rejects(
+    BlogPostModel.createAIDraft({ post: { title: article.title }, metadata: {} }, db),
+    /generationRunId/i
+  );
+  assert.equal(connects, 0);
 });
 
 test('BlogPostModel.createAIDraft rollt bei einem Metadatenfehler zurück', async () => {
@@ -682,6 +743,7 @@ test('BlogPostModel.createAIDraft rollt bei einem Metadatenfehler zurück', asyn
   ]);
 
   await assert.rejects(BlogPostModel.createAIDraft({
+    generationRunId: 73,
     post: { title: article.title, content: article.contentHtml, meta_description: article.metaDescription },
     metadata: {}
   }, db), error);
@@ -1613,7 +1675,9 @@ test('Retry nach completed liefert den persistierten Draft ohne weitere Seitenef
       ...base.dependencies.costService,
       async getPersistedStageResult({ stageId }) {
         if (stageId === 'draft_creation') return persistedDraft;
-        if (stageId === 'completed') return { postId: 41, qualityScore: review.score };
+        if (stageId === 'completed') {
+          return { postId: 41, slug: article.slug, topicId: 17, qualityScore: review.score };
+        }
         return null;
       }
     }
@@ -1628,7 +1692,165 @@ test('Retry nach completed liefert den persistierten Draft ohne weitere Seitenef
   assert.equal(createDraftCalls, 0);
   assert.equal(harness.imageCalls.length, 0);
   assert.equal(harness.stageUpdates.length, 0);
-  assert.equal(harness.finishCalls.length, 0);
+  assert.equal(harness.finishCalls.length, 1);
+  assert.equal(harness.finishCalls[0].status, 'completed');
+});
+
+test('unvollständige persistierte Draftdaten stoppen vor jeder neuen Arbeit', async () => {
+  const cases = [
+    { ...persistedDraft, topicId: 0 },
+    { ...persistedDraft, qualityScore: 79 },
+    { ...persistedDraft, metadata: { ...persistedDraft.metadata, quality_score: 79 } },
+    { ...persistedDraft, metadata: { ...persistedDraft.metadata, post_id: 999 } }
+  ];
+
+  for (const [index, invalidDraft] of cases.entries()) {
+    const base = createDependencies();
+    const harness = createDependencies({
+      costService: {
+        ...base.dependencies.costService,
+        async getPersistedStageResult({ stageId }) {
+          return stageId === 'draft_creation' ? invalidDraft : null;
+        }
+      }
+    });
+
+    const result = await runDraftPipeline({ runId: 280 + index }, harness.dependencies);
+    assert.equal(result.status, 'needs_manual_attention');
+    assert.equal(result.code, 'side_effect_recovery_result_missing');
+    assert.equal(harness.budgetReservations.length, 0);
+    assert.equal(harness.imageCalls.length, 0);
+    assert.equal(harness.createdDrafts.length, 0);
+  }
+});
+
+test('completed-Recovery verlangt exakt passende Post-, Slug-, Topic- und Qualitätswerte', async () => {
+  const cases = [
+    { postId: 999, slug: article.slug, topicId: 17, qualityScore: review.score },
+    { postId: 41, slug: 'anderer-slug', topicId: 17, qualityScore: review.score },
+    { postId: 41, slug: article.slug, topicId: 999, qualityScore: review.score },
+    { postId: 41, slug: article.slug, topicId: 17, qualityScore: 90 }
+  ];
+
+  for (const [index, invalidCompleted] of cases.entries()) {
+    const base = createDependencies();
+    const harness = createDependencies({
+      costService: {
+        ...base.dependencies.costService,
+        async getPersistedStageResult({ stageId }) {
+          if (stageId === 'draft_creation') return persistedDraft;
+          if (stageId === 'completed') return invalidCompleted;
+          return null;
+        }
+      }
+    });
+
+    const result = await runDraftPipeline({ runId: 284 + index }, harness.dependencies);
+    assert.equal(result.status, 'needs_manual_attention');
+    assert.equal(result.code, 'side_effect_recovery_result_missing');
+    assert.equal(harness.budgetReservations.length, 0);
+    assert.equal(harness.createdDrafts.length, 0);
+  }
+});
+
+test('completed-Recovery versucht finishRun erneut und behält Fehler als Auditwarnung', async () => {
+  const base = createDependencies();
+  const finishCalls = [];
+  const harness = createDependencies({
+    costService: {
+      ...base.dependencies.costService,
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'draft_creation') return persistedDraft;
+        if (stageId === 'completed') {
+          return { postId: 41, slug: article.slug, topicId: 17, qualityScore: review.score };
+        }
+        return null;
+      }
+    },
+    runRepository: {
+      async updateRunStage() { throw new Error('darf nicht aktualisieren'); },
+      async finishRun(runId, update) {
+        finishCalls.push({ runId, ...update });
+        throw new Error('Abschluss bleibt vorübergehend nicht speicherbar');
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 288 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed']);
+  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
+  assert.equal(harness.budgetReservations.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+});
+
+test('Pipeline übergibt die Run-ID an Topic- und Draft-Upserts', async () => {
+  const generationRunIds = { topic: [], draft: [] };
+  const base = createDependencies();
+  const harness = createDependencies({
+    topicRepository: {
+      async createTopic(value) {
+        generationRunIds.topic.push(value.generationRunId);
+        return { ...value, id: 17 };
+      },
+      async markTopicUsed() {}
+    },
+    draftRepository: {
+      async createAIDraft(input) {
+        generationRunIds.draft.push(input.generationRunId);
+        return base.dependencies.draftRepository.createAIDraft(input);
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 289 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(generationRunIds, { topic: [289], draft: [289] });
+});
+
+test('Crash vor Stage-Persistenz verwendet vorhandene Topic- und Draftzeilen derselben Run-ID', async () => {
+  const topics = new Map([[290, { ...topic, id: 170, generation_run_id: 290 }]]);
+  const drafts = new Map([[290, {
+    post: { ...persistedDraft.post, id: 410, generation_run_id: 290 },
+    metadata: { ...persistedDraft.metadata, post_id: 410 },
+    topicId: 170,
+    qualityScore: review.score
+  }]]);
+  const base = createDependencies();
+  const harness = createDependencies({
+    topicRepository: {
+      async createTopic(value) {
+        if (!topics.has(value.generationRunId)) topics.set(value.generationRunId, { ...value, id: 171 });
+        return topics.get(value.generationRunId);
+      },
+      async markTopicUsed() {}
+    },
+    draftRepository: {
+      async createAIDraft(input) {
+        if (!drafts.has(input.generationRunId)) {
+          drafts.set(input.generationRunId, base.dependencies.draftRepository.createAIDraft(input));
+        }
+        return drafts.get(input.generationRunId);
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 290 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.id, 410);
+  assert.equal(topics.size, 1);
+  assert.equal(drafts.size, 1);
+  assert.equal(
+    harness.stageUpdates.find(({ stageId }) => stageId === 'topic_persistence').stageResult.topic.id,
+    170
+  );
+  assert.equal(
+    harness.stageUpdates.find(({ stageId }) => stageId === 'draft_creation').stageResult.post.id,
+    410
+  );
 });
 
 test('bestehende Bildreservierung verhindert einen erneuten Bildprovideraufruf', async () => {

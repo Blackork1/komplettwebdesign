@@ -17,7 +17,8 @@ export async function createTopic({
   clusterFit = 0,
   cannibalizationRisk = 0,
   finalScore = 0,
-  status = 'candidate'
+  status = 'candidate',
+  generationRunId = null
 }, db = pool) {
   const { rows } = await db.query(
     `
@@ -38,12 +39,15 @@ export async function createTopic({
         cluster_fit,
         cannibalization_risk,
         final_score,
-        status
+        status,
+        generation_run_id
       )
       VALUES (
         $1, $2, $3, to_jsonb($4::text[]), $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17
+        $15, $16, $17, $18
       )
+      ON CONFLICT (generation_run_id) DO UPDATE
+      SET generation_run_id = EXCLUDED.generation_run_id
       RETURNING *
     `,
     [
@@ -63,7 +67,8 @@ export async function createTopic({
       clusterFit,
       cannibalizationRisk,
       finalScore,
-      status
+      status,
+      generationRunId
     ]
   );
 

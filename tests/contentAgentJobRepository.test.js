@@ -439,6 +439,38 @@ test('Themenfunktionen speichern JSON-Arrays als Parameter und markieren die Nut
   assert.match(db.calls[1].sql, /used_at = NOW\(\)/i);
 });
 
+test('createTopic verwendet generation_run_id idempotent ohne bestehende Fachwerte zu überschreiben', async () => {
+  const existing = { id: 31, generation_run_id: 77, topic: 'Erster Themenstand' };
+  const db = createQueryRecorder([
+    { rows: [existing] },
+    { rows: [existing] }
+  ]);
+  const input = {
+    topic: 'Erster Themenstand',
+    suggestedTitle: 'Erster Titel',
+    primaryKeyword: 'Webdesign Kosten',
+    secondaryKeywords: ['Webdesign Berlin'],
+    contentCluster: 'Webdesign',
+    searchIntent: 'commercial',
+    targetAudience: 'KMU',
+    source: 'agent',
+    generationRunId: 77
+  };
+
+  const first = await createTopic(input, db);
+  const second = await createTopic({ ...input, topic: 'Schwächerer Retry-Stand' }, db);
+
+  assert.equal(first.id, second.id);
+  assert.equal(first.topic, 'Erster Themenstand');
+  assert.equal(second.topic, 'Erster Themenstand');
+  for (const call of db.calls) {
+    assert.match(call.sql, /generation_run_id/i);
+    assert.match(call.sql, /ON CONFLICT \(generation_run_id\) DO UPDATE SET generation_run_id = EXCLUDED\.generation_run_id/i);
+    assert.doesNotMatch(call.sql, /DO UPDATE SET (?:topic|suggested_title|primary_keyword)/i);
+    assert.equal(call.params.at(-1), 77);
+  }
+});
+
 test('upsertWorkerHeartbeat aktualisiert den benannten Worker und gibt dessen Zeile zurück', async () => {
   const heartbeat = {
     worker_name: 'content-worker',

@@ -18,3 +18,16 @@ test('content agent migration is additive', () => {
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_worker_state/i);
   assert.match(sql, /UNIQUE \(idempotency_key\)/i);
 });
+
+test('content agent migration ergänzt idempotente generation_run_id-Verknüpfungen nach content_runs', () => {
+  const runsPosition = sql.search(/CREATE TABLE IF NOT EXISTS content_runs/i);
+  const topicAlterPosition = sql.search(/ALTER TABLE content_topics\s+ADD COLUMN IF NOT EXISTS generation_run_id BIGINT REFERENCES content_runs\(id\) ON DELETE SET NULL/i);
+  const postAlterPosition = sql.search(/ALTER TABLE posts\s+ADD COLUMN IF NOT EXISTS generation_run_id BIGINT REFERENCES content_runs\(id\) ON DELETE SET NULL/i);
+
+  assert.equal(runsPosition >= 0, true);
+  assert.equal(topicAlterPosition > runsPosition, true);
+  assert.equal(postAlterPosition > runsPosition, true);
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_topics_generation_run_id\s+ON content_topics \(generation_run_id\)/i);
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_posts_generation_run_id\s+ON posts \(generation_run_id\)/i);
+  assert.doesNotMatch(sql, /generation_run_id[^;]*NOT NULL/i);
+});

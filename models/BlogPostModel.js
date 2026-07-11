@@ -42,7 +42,11 @@ export default class BlogPostModel {
     return rows[0];
   }
 
-  static async createAIDraft({ post = {}, metadata = {} }, db = pool) {
+  static async createAIDraft({ generationRunId, post = {}, metadata = {} }, db = pool) {
+    const normalizedGenerationRunId = Number(generationRunId);
+    if (!Number.isInteger(normalizedGenerationRunId) || normalizedGenerationRunId <= 0) {
+      throw new TypeError('generationRunId muss eine positive Ganzzahl sein.');
+    }
     const client = await db.connect();
     try {
       await client.query('BEGIN');
@@ -54,14 +58,16 @@ export default class BlogPostModel {
             title, slug, excerpt, content, image_url, hero_public_id, category,
             featured, published, description, faq_json, workflow_status,
             meta_title, meta_description, og_title, og_description, image_alt,
-            content_format, generated_by_ai, created_at, updated_at
+            content_format, generated_by_ai, generation_run_id, created_at, updated_at
           )
           VALUES (
             $1, $2, $3, $4, $5, $6, $7,
             false, false, $8, $9, 'needs_review',
             $10, $11, $12, $13, $14,
-            'static_html', true, NOW(), NOW()
+            'static_html', true, $15, NOW(), NOW()
           )
+          ON CONFLICT (generation_run_id) DO UPDATE
+          SET generation_run_id = EXCLUDED.generation_run_id
           RETURNING *
         `,
         [
@@ -78,7 +84,8 @@ export default class BlogPostModel {
           post.meta_description || null,
           post.og_title || null,
           post.og_description || null,
-          post.image_alt || null
+          post.image_alt || null,
+          normalizedGenerationRunId
         ]
       );
       const createdPost = postRows[0];
@@ -99,6 +106,8 @@ export default class BlogPostModel {
             $13, $14::jsonb, $15::jsonb,
             NOW(), NOW()
           )
+          ON CONFLICT (post_id) DO UPDATE
+          SET post_id = EXCLUDED.post_id
           RETURNING *
         `,
         [

@@ -85,6 +85,15 @@ CREATE TABLE IF NOT EXISTS content_runs (
   finished_at TIMESTAMPTZ
 );
 
+ALTER TABLE content_topics
+  ADD COLUMN IF NOT EXISTS generation_run_id BIGINT REFERENCES content_runs(id) ON DELETE SET NULL;
+ALTER TABLE posts
+  ADD COLUMN IF NOT EXISTS generation_run_id BIGINT REFERENCES content_runs(id) ON DELETE SET NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_topics_generation_run_id
+  ON content_topics (generation_run_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_posts_generation_run_id
+  ON posts (generation_run_id);
+
 CREATE TABLE IF NOT EXISTS content_post_metadata (
   post_id INTEGER PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
   primary_keyword TEXT NOT NULL,

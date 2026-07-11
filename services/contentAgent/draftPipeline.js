@@ -196,6 +196,9 @@ function isPersistedTopicResult(value) {
 
 function isPersistedDraftResult(value) {
   const post = value?.post;
+  const topicId = Number(value?.topicId);
+  const qualityScore = Number(value?.qualityScore);
+  const metadataQualityScore = Number(value?.metadata?.quality_score);
   return Boolean(
     value
     && typeof value === 'object'
@@ -208,9 +211,16 @@ function isPersistedDraftResult(value) {
     && post.workflow_status === 'needs_review'
     && post.content_format === 'static_html'
     && post.generated_by_ai === true
+    && Number.isInteger(topicId)
+    && topicId > 0
+    && Number.isFinite(qualityScore)
+    && qualityScore >= 80
     && value.metadata
     && typeof value.metadata === 'object'
     && !Array.isArray(value.metadata)
+    && Number(value.metadata.post_id) === Number(post.id)
+    && Number.isFinite(metadataQualityScore)
+    && metadataQualityScore >= 80
   );
 }
 
@@ -219,6 +229,9 @@ function isPersistedCompletedResult(value, draft) {
     value
     && typeof value === 'object'
     && Number(value.postId) === Number(draft?.post?.id)
+    && value.slug === draft?.post?.slug
+    && Number(value.topicId) === Number(draft?.topicId)
+    && Number(value.qualityScore) === Number(draft?.qualityScore)
   );
 }
 
@@ -418,7 +431,17 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         );
       }
       draftPersisted = true;
-      return { status: 'completed', post: persistedDraft.post, metadata: persistedDraft.metadata };
+      const completedRun = await safeFinishRun(
+        { status: 'completed', postId: persistedDraft.post.id },
+        null,
+        'RUN_COMPLETION_PERSIST_FAILED'
+      );
+      return {
+        status: 'completed',
+        post: persistedDraft.post,
+        metadata: persistedDraft.metadata,
+        ...(completedRun ? {} : { auditWarnings })
+      };
     }
     if (persistedDraft) {
       if (!isPersistedDraftResult(persistedDraft)) {
@@ -432,6 +455,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       const completedResult = {
         postId: persistedDraft.post.id,
         slug: persistedDraft.post.slug,
+        topicId: persistedDraft.topicId,
         qualityScore: persistedDraft.qualityScore ?? persistedDraft.metadata.quality_score ?? null
       };
       await updateStage('completed', completedResult);
@@ -486,7 +510,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       storedTopic = persistedTopic.topic;
     } else {
-      const createdTopic = await topicRepository.createTopic(selectedTopic);
+      const createdTopic = await topicRepository.createTopic({
+        ...selectedTopic,
+        generationRunId: runId
+      });
       storedTopic = { ...selectedTopic, ...createdTopic };
       if (!isPersistedTopicResult({ topic: storedTopic })) {
         await stopForRecovery(
@@ -782,6 +809,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     } else {
       draft = await draftRepository.createAIDraft({
+        generationRunId: runId,
         post: {
           title: currentArticle.title,
           slug: currentArticle.slug,
@@ -827,11 +855,18 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       topicId,
       qualityScore: currentReview.score
     };
+    if (!isPersistedDraftResult(persistedDraftResult)) {
+      await stopForRecovery(
+        'side_effect_persistence_failed',
+        'Das KI-Draft-Repository lieferte kein vollständig persistierbares Ergebnis.'
+      );
+    }
     if (!existingDraft) await updateStage('draft_creation', persistedDraftResult);
     await topicRepository.markTopicUsed(topicId);
     await updateStage('completed', {
       postId: draft.post.id,
       slug: draft.post.slug,
+      topicId,
       qualityScore: currentReview.score
     });
     const completedRun = await safeFinishRun(
