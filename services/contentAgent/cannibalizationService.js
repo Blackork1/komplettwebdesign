@@ -5,6 +5,13 @@ function normalizeWords(value) {
     .match(/[\p{L}\p{N}]+/gu) || [];
 }
 
+function requireCandidate(candidate) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new TypeError('Der Kandidat muss als Objekt übergeben werden.');
+  }
+  return candidate;
+}
+
 function normalizePhrase(value) {
   return normalizeWords(value).join(' ');
 }
@@ -35,20 +42,20 @@ function inventoryEntries(inventory) {
   return Object.values(inventory).flatMap((value) => Array.isArray(value) ? value : []);
 }
 
-function calculateTitleOverlap(leftTitle, rightTitle) {
-  const leftWords = new Set(normalizeWords(leftTitle));
-  const rightWords = new Set(normalizeWords(rightTitle));
-  const shorterSize = Math.min(leftWords.size, rightWords.size);
-  if (!shorterSize) return 0;
+function calculateTitleOverlap(candidateTitle, existingTitle) {
+  const candidateWords = new Set(normalizeWords(candidateTitle));
+  const existingWords = new Set(normalizeWords(existingTitle));
+  if (!candidateWords.size) return 0;
 
   let matches = 0;
-  for (const word of leftWords) {
-    if (rightWords.has(word)) matches += 1;
+  for (const word of candidateWords) {
+    if (existingWords.has(word)) matches += 1;
   }
-  return matches / shorterSize;
+  return matches / candidateWords.size;
 }
 
-export function calculateCannibalizationRisk(candidate = {}, inventory = []) {
+export function calculateCannibalizationRisk(candidate, inventory = []) {
+  requireCandidate(candidate);
   const entries = inventoryEntries(inventory);
   const candidateSlug = normalizeSlug(candidate.slug);
   const candidateKeyword = normalizePhrase(primaryKeywordOf(candidate));

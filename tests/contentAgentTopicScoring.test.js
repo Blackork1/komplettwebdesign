@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import { calculateCannibalizationRisk } from '../services/contentAgent/cannibalizationService.js';
 import { buildSiteInventory } from '../services/contentAgent/siteInventoryService.js';
@@ -58,6 +59,25 @@ test('best topic selection is stable on ties and excludes risks above four', () 
   assert.equal(selectBestTopic([excluded]), null);
 });
 
+test('missing single candidates fail clearly while a missing candidate collection is empty', () => {
+  assert.throws(
+    () => calculateCannibalizationRisk(null, []),
+    (error) => error instanceof TypeError && /Kandidat muss als Objekt/.test(error.message)
+  );
+  assert.throws(
+    () => scoreTopic(null),
+    (error) => error instanceof TypeError && /Kandidat muss als Objekt/.test(error.message)
+  );
+  assert.equal(selectBestTopic(null), null);
+});
+
+test('site inventory rejects a null dependency bag with a clear contract error', async () => {
+  await assert.rejects(
+    () => buildSiteInventory(null),
+    (error) => error instanceof TypeError && /Abhängigkeiten müssen als Objekt/.test(error.message)
+  );
+});
+
 test('exact normalized slug or primary keyword matches have maximum risk', () => {
   const inventory = {
     blogPosts: [{
@@ -102,6 +122,27 @@ test('exactly seventy percent title-word overlap reaches the cluster risk thresh
   };
 
   assert.equal(calculateCannibalizationRisk(candidate, [existing]), 6);
+});
+
+test('title-word overlap is directional and uses the candidate title as denominator', () => {
+  const cluster = 'Ärzte-Webdesign';
+  const shortExisting = { title: 'Webdesign', slug: 'webdesign', contentCluster: cluster };
+  const longExisting = {
+    title: 'Webdesign für Ärzte Kosten Berlin',
+    slug: 'webdesign-aerzte-kosten-berlin',
+    contentCluster: cluster
+  };
+
+  assert.equal(calculateCannibalizationRisk({
+    title: 'Webdesign für Ärzte Kosten Berlin',
+    slug: 'neuer-langer-titel',
+    contentCluster: cluster
+  }, [shortExisting]), 0);
+  assert.equal(calculateCannibalizationRisk({
+    title: 'Webdesign',
+    slug: 'neuer-kurzer-titel',
+    contentCluster: cluster
+  }, [longExisting]), 6);
 });
 
 test('title overlap below seventy percent or from another cluster has no deterministic risk', () => {
@@ -231,4 +272,45 @@ test('site inventory loads sources in parallel and only exposes compact public c
   assert.equal(JSON.stringify(inventory).includes('Darf nicht'), false);
   assert.equal(JSON.stringify(inventory).includes('interne Kalkulation'), false);
   assert.equal(JSON.stringify(inventory).includes('intern@example.com'), false);
+});
+
+test('article metadata remains available for cannibalization checks on the built inventory', async () => {
+  const inventory = await buildSiteInventory({
+    loadBlogPosts: async () => [{
+      title: 'Local SEO für Ärzte: Kosten und Sichtbarkeit',
+      slug: 'local-seo-aerzte',
+      excerpt: 'Lokale Praxen sichtbar machen.',
+      content: '<h2>Lokale Auffindbarkeit</h2>',
+      category: 'SEO',
+      description: 'SEO für Arztpraxen.',
+      primary_keyword: 'Local SEO für Ärzte',
+      content_cluster: 'Lokale Sichtbarkeit'
+    }],
+    loadGuides: async () => [],
+    loadServicePages: async () => [],
+    loadIndustries: async () => [],
+    getVisiblePackages: async () => []
+  });
+
+  assert.equal(calculateCannibalizationRisk({
+    title: 'Local SEO für Arztpraxen',
+    slug: 'local-seo-arztpraxen',
+    primaryKeyword: 'local seo für ärzte'
+  }, inventory), 10);
+  assert.ok(calculateCannibalizationRisk({
+    title: 'Local SEO für Ärzte mit Kosten',
+    slug: 'local-seo-kosten-aerzte',
+    primaryKeyword: 'SEO-Kosten für Praxen',
+    contentCluster: 'lokale sichtbarkeit'
+  }, inventory) >= 6);
+});
+
+test('default blog inventory query keeps legacy posts through a narrow metadata left join', () => {
+  const source = readFileSync(new URL('../services/contentAgent/siteInventoryService.js', import.meta.url), 'utf8');
+
+  assert.match(source, /SELECT\s+p\.title,\s*p\.slug,\s*p\.excerpt,\s*p\.content,\s*p\.category,\s*p\.description,/);
+  assert.match(source, /m\.primary_keyword,\s*m\.content_cluster/);
+  assert.match(source, /FROM posts p\s+LEFT JOIN content_post_metadata m ON m\.post_id = p\.id/);
+  assert.match(source, /WHERE p\.published = TRUE/);
+  assert.doesNotMatch(source, /SELECT\s+p\.\*/);
 });

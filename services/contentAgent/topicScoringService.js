@@ -2,7 +2,15 @@ function clamp(value) {
   return Math.min(10, Math.max(0, Number(value) || 0));
 }
 
+function requireCandidate(candidate) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new TypeError('Der Kandidat muss als Objekt übergeben werden.');
+  }
+  return candidate;
+}
+
 export function scoreTopic(candidate) {
+  requireCandidate(candidate);
   const base =
     clamp(candidate.businessValue) * 0.30 +
     clamp(candidate.searchOpportunity) * 0.25 +
@@ -20,7 +28,11 @@ export function scoreTopic(candidate) {
 }
 
 export function selectBestTopic(candidates = []) {
-  return candidates
+  const normalizedCandidates = candidates ?? [];
+  if (!Array.isArray(normalizedCandidates)) {
+    throw new TypeError('Die Themenkandidaten müssen als Array übergeben werden.');
+  }
+  return normalizedCandidates
     .map(scoreTopic)
     .filter((candidate) => candidate.eligible)
     .reduce((best, candidate) => (
