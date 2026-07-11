@@ -91,6 +91,14 @@ export const ImageIdeaSchema = z.object({
   filename: z.string().regex(ASCII_WEBP_FILENAME, 'Der Bilddateiname muss ein ASCII-Slug mit der Endung .webp sein.')
 }).strict();
 
+export const SourceReferenceSchema = z.object({
+  title: NonEmptyString,
+  url: z.string().url().regex(/^https:\/\//, 'Quellen müssen HTTPS verwenden.'),
+  publisher: NonEmptyString.nullish(),
+  publishedAt: z.string().regex(ISO_DATE, 'Das Veröffentlichungsdatum muss YYYY-MM-DD verwenden.').nullish(),
+  retrievedAt: z.string().regex(ISO_DATE, 'Das Abrufdatum muss YYYY-MM-DD verwenden.').nullish()
+}).strict();
+
 export const SeoBriefSchema = z.object({
   topic: NonEmptyString,
   workingTitle: NonEmptyString,
@@ -108,8 +116,17 @@ export const SeoBriefSchema = z.object({
   internalLinks: z.array(InternalLinkSchema).min(2).max(8),
   faqQuestions: z.array(NonEmptyString).min(5).max(7),
   sourceRequirements: SourceRequirementSchema,
+  sourceReferences: z.array(SourceReferenceSchema).min(2).max(6).nullish(),
   imageIdea: ImageIdeaSchema
-}).strict();
+}).strict().superRefine((brief, context) => {
+  if (brief.sourceRequirements.requiresCurrentSources && !brief.sourceReferences) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['sourceReferences'],
+      message: 'Aktuelle Themen benötigen zwei bis sechs belastbare Quellen.'
+    });
+  }
+});
 
 export const FaqItemSchema = z.object({
   question: NonEmptyString,
@@ -132,14 +149,6 @@ export const ArticleLeadSchema = z.object({
     z.literal('blog_mid'),
     z.literal('blog_final')
   ])
-}).strict();
-
-export const SourceReferenceSchema = z.object({
-  title: NonEmptyString,
-  url: z.string().url().regex(/^https:\/\//, 'Quellen müssen HTTPS verwenden.'),
-  publisher: NonEmptyString,
-  publishedAt: z.string().regex(ISO_DATE, 'Das Veröffentlichungsdatum muss YYYY-MM-DD verwenden.'),
-  retrievedAt: z.string().regex(ISO_DATE, 'Das Abrufdatum muss YYYY-MM-DD verwenden.')
 }).strict();
 
 export const ArticleSelfCheckSchema = z.object({

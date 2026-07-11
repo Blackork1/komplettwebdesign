@@ -1,6 +1,7 @@
-import { buildBrandPolicy } from './brandPolicy.js';
+import { buildBrandPolicy, pickPromptInput } from './brandPolicy.js';
 
 export const promptVersion = '2026-07-10.1';
+const SEO_BRIEF_INPUT_KEYS = ['topic', 'inventory', 'internalLinks', 'sourceReferences', 'pricingContext'];
 
 export function buildSeoBriefPrompt(input) {
   return {
@@ -10,6 +11,6 @@ export function buildSeoBriefPrompt(input) {
       'Plane Suchintention, Zielgruppe, Leserproblem, Geschäftsziel, Gliederung, lokale Beispiele und eine sinnvolle Länge ohne künstliche Textverlängerung.',
       'Wähle genau fünf bis sieben FAQ-Fragen und ausschließlich freigegebene interne Links; markiere zeitkritische Aussagen als quellenpflichtig.'
     ].join('\n'),
-    user: JSON.stringify(input)
+    user: JSON.stringify(pickPromptInput(input, SEO_BRIEF_INPUT_KEYS))
   };
 }

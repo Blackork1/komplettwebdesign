@@ -1,5 +1,14 @@
 export const promptVersion = '2026-07-10.1';
 
+export function pickPromptInput(input, allowedKeys) {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
+  const result = {};
+  for (const key of allowedKeys) {
+    if (source[key] !== undefined) result[key] = source[key];
+  }
+  return result;
+}
+
 export function buildBrandPolicy() {
   return [
     'Du arbeitest für Komplett Webdesign aus Berlin. Schreibe auf Deutsch im professionellen Du-Ton und verwende korrekte Umlaute.',

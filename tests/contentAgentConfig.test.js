@@ -6,6 +6,7 @@ import {
   ReviewOutputSchema,
   RiskSchema,
   SeoBriefSchema,
+  SourceReferenceSchema,
   TopicCandidatesSchema
 } from '../services/contentAgent/articleSchemas.js';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
@@ -221,6 +222,42 @@ test('SEO brief accepts only approved links and rejects unknown nested fields', 
     ...validSeoBrief,
     outline: [{ ...validSeoBrief.outline[0], extra: true }, ...validSeoBrief.outline.slice(1)]
   }).success, false);
+});
+
+test('source references akzeptieren echte Minimal-Citations ohne erfundene Metadaten', () => {
+  const minimalSource = {
+    title: 'Offizielle Dokumentation',
+    url: 'https://example.com/dokumentation'
+  };
+
+  assert.equal(SourceReferenceSchema.safeParse(minimalSource).success, true);
+  assert.deepEqual(SourceReferenceSchema.parse(minimalSource), minimalSource);
+});
+
+test('SEO brief führt zwei bis sechs Quellen für aktuelle Themen bis zum Writer mit', () => {
+  const currentBrief = {
+    ...validSeoBrief,
+    sourceRequirements: {
+      requiresCurrentSources: true,
+      requiredTopics: ['Aktueller Standard']
+    }
+  };
+  const sourceReferences = [
+    { title: 'Primärquelle A', url: 'https://example.com/quelle-a' },
+    { title: 'Primärquelle B', url: 'https://example.org/quelle-b' }
+  ];
+
+  assert.equal(SeoBriefSchema.safeParse(currentBrief).success, false);
+  assert.equal(SeoBriefSchema.safeParse({ ...currentBrief, sourceReferences }).success, true);
+  assert.equal(SeoBriefSchema.safeParse({ ...currentBrief, sourceReferences: sourceReferences.slice(0, 1) }).success, false);
+  assert.equal(SeoBriefSchema.safeParse({
+    ...currentBrief,
+    sourceReferences: Array.from({ length: 7 }, (_, index) => ({
+      title: `Primärquelle ${index + 1}`,
+      url: `https://example.com/quelle-${index + 1}`
+    }))
+  }).success, false);
+  assert.equal(SeoBriefSchema.safeParse(validSeoBrief).success, true);
 });
 
 test('article output enforces strict objects, ASCII slug, HTML length and FAQ count', () => {

@@ -32,6 +32,18 @@ import {
   promptVersion as articleRepairPromptVersion
 } from './prompts/articleRepairPrompt.js';
 
+export class OpenAIContentResponseError extends Error {
+  constructor({ code, responseId, message }) {
+    const safeResponseId = typeof responseId === 'string'
+      ? responseId.replace(/[\r\n]/g, '').slice(0, 128)
+      : null;
+    super(`${message} Response-ID: ${safeResponseId || 'unbekannt'}.`);
+    this.name = 'OpenAIContentResponseError';
+    this.code = code;
+    this.responseId = safeResponseId;
+  }
+}
+
 function normalizeText(value) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
 }
@@ -52,6 +64,44 @@ function copyAnnotationField(target, annotation, camelName, snakeName) {
   if (target[camelName]) return;
   const value = normalizeText(annotation[camelName] ?? annotation[snakeName]);
   if (value) target[camelName] = value;
+}
+
+function containsRefusal(response) {
+  return (Array.isArray(response?.output) ? response.output : []).some((item) => (
+    item?.type === 'message' &&
+    Array.isArray(item.content) &&
+    item.content.some((block) => block?.type === 'refusal')
+  ));
+}
+
+function assertCompletedResponse(response) {
+  if (containsRefusal(response)) {
+    throw new OpenAIContentResponseError({
+      code: 'OPENAI_RESPONSE_REFUSED',
+      responseId: response?.id,
+      message: 'OpenAI hat die angeforderte Ausgabe abgelehnt.'
+    });
+  }
+
+  const errorByStatus = {
+    failed: ['OPENAI_RESPONSE_FAILED', 'OpenAI konnte die Antwort nicht erzeugen.'],
+    incomplete: ['OPENAI_RESPONSE_INCOMPLETE', 'OpenAI lieferte nur eine unvollständige Antwort.']
+  };
+  const statusError = errorByStatus[response?.status];
+  if (statusError) {
+    throw new OpenAIContentResponseError({
+      code: statusError[0],
+      responseId: response?.id,
+      message: statusError[1]
+    });
+  }
+  if (response?.status !== 'completed') {
+    throw new OpenAIContentResponseError({
+      code: 'OPENAI_RESPONSE_NOT_COMPLETED',
+      responseId: response?.id,
+      message: 'OpenAI lieferte keine abgeschlossene Antwort.'
+    });
+  }
 }
 
 export function extractWebSources(response) {
@@ -101,11 +151,26 @@ export function createOpenAIContentService({ apiKey, config, client = null }) {
       ],
       text: { format: zodTextFormat(schema, schemaName) }
     });
-    if (!response.output_parsed) {
-      throw new Error('OpenAI lieferte kein strukturiertes Ergebnis.');
+    assertCompletedResponse(response);
+    if (response.output_parsed == null) {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_MISSING',
+        responseId: response.id,
+        message: 'OpenAI lieferte kein strukturiertes Ergebnis.'
+      });
+    }
+    let value;
+    try {
+      value = schema.parse(response.output_parsed);
+    } catch {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_INVALID',
+        responseId: response.id,
+        message: 'OpenAI lieferte ein schemawidriges strukturiertes Ergebnis.'
+      });
     }
     return {
-      value: response.output_parsed,
+      value,
       responseId: response.id,
       usage: response.usage || {},
       promptVersion
@@ -133,6 +198,7 @@ export function createOpenAIContentService({ apiKey, config, client = null }) {
       ],
       tools: [{ type: 'web_search' }]
     });
+    assertCompletedResponse(response);
     const sources = extractWebSources(response);
     if (sources.length < 2) {
       throw new Error('Aktuelle Quellen reichen für einen Artikel nicht aus.');
