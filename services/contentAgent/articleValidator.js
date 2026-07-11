@@ -43,7 +43,14 @@ const ALLOWED_CLASSES = new Set([
   'lead'
 ]);
 
-const BOOTSTRAP_CLASS_PATTERN = /^(?:container(?:-|$)|row$|col(?:-|$)|g[xy]?-[0-9]|d-|flex-|justify-content-|align-items-|align-self-|text-|bg-|border(?:-|$)|rounded(?:-|$)|m[trblxy]?-[0-9]|p[trblxy]?-[0-9]|btn(?:-|$)|alert(?:-|$)|table(?:-|$)|list-group(?:-|$)|fw-|fs-|lh-|position-|(?:top|bottom|start|end)-|[wh]-)/;
+const BOOTSTRAP_BREAKPOINT = '(?:sm|md|lg|xl|xxl)';
+const BOOTSTRAP_CLASS_PATTERNS = [
+  /^(?:container(?:-|$)|row$|col(?:-|$)|g[xy]?-[0-9]|d-|flex-|justify-content-|align-items-|align-self-|text-|bg-|border(?:-|$)|rounded(?:-|$)|btn(?:-|$)|alert(?:-|$)|table(?:-|$)|list-group(?:-|$)|fw-|fs-|lh-|position-|(?:top|bottom|start|end)-|[wh]-)/,
+  new RegExp(`^offset-(?:${BOOTSTRAP_BREAKPOINT}-)?[0-9]+$`),
+  new RegExp(`^(?:gap|row-gap|column-gap)-(?:${BOOTSTRAP_BREAKPOINT}-)?[0-9]+$`),
+  new RegExp(`^order-(?:${BOOTSTRAP_BREAKPOINT}-)?(?:[0-9]+|first|last)$`),
+  new RegExp(`^[mp][trblxy]?-(?:${BOOTSTRAP_BREAKPOINT}-)?(?:[0-9]+|auto)$`)
+];
 
 function createIssue(code, message, details = {}) {
   return { code, message, ...details };
@@ -51,6 +58,20 @@ function createIssue(code, message, details = {}) {
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+function isBootstrapClass(className) {
+  return BOOTSTRAP_CLASS_PATTERNS.some((pattern) => pattern.test(className));
+}
+
+function normalizedVisibleText(element) {
+  if (!element) return '';
+  if (element.type === 'text') return normalizeText(element.data);
+
+  return (element.children || [])
+    .map((child) => normalizedVisibleText(child))
+    .filter(Boolean)
+    .join(' ');
 }
 
 function hasOuterBootstrapContainer($) {
@@ -85,16 +106,18 @@ function extractFaqInspection($) {
       : answerElements[index];
     const question = normalizeText($(questionElement).attr('data-faq-question'));
     const answer = normalizeText(answerElement ? $(answerElement).attr('data-faq-answer') : '');
-    const visibleQuestionText = normalizeText($(questionElement).text());
-    const visibleAnswerText = normalizeText(answerElement ? $(answerElement).text() : '');
+    const visibleQuestionText = normalizedVisibleText(questionElement);
+    const visibleAnswerText = normalizedVisibleText(answerElement);
+    const visibleTextMatches = answerElement === questionElement
+      ? visibleQuestionText === normalizeText(`${question} ${answer}`)
+      : visibleQuestionText === question && visibleAnswerText === answer;
 
     return {
       question,
       answer,
       visible: question !== ''
         && answer !== ''
-        && visibleQuestionText.includes(question)
-        && visibleAnswerText.includes(answer)
+        && visibleTextMatches
     };
   });
 
@@ -117,24 +140,25 @@ export function validateArticle(article = {}, context = {}) {
   const html = typeof article.contentHtml === 'string' ? article.contentHtml : '';
   const sanitizedHtml = sanitizeArticleHtml(html);
   const issues = [];
-  const $ = cheerio.load(html, null, false);
+  const $raw = cheerio.load(html, null, false);
+  const $sanitized = cheerio.load(sanitizedHtml, null, false);
 
-  if ($('h1').length > 0) {
+  if ($raw('h1').length > 0) {
     issues.push(createIssue('h1_forbidden', 'Artikel-HTML darf keine H1 enthalten.'));
   }
-  if ($('script').length > 0) {
+  if ($raw('script').length > 0) {
     issues.push(createIssue('script_forbidden', 'Artikel-HTML darf keine Skripte enthalten.'));
   }
   if (/<%|%>/.test(html)) {
     issues.push(createIssue('ejs_forbidden', 'Artikel-HTML darf kein EJS enthalten.'));
   }
-  if ($('[style], style').length > 0) {
+  if ($raw('[style], style').length > 0) {
     issues.push(createIssue('inline_style_forbidden', 'Artikel-HTML darf keine Inline-Styles enthalten.'));
   }
-  if ($('img').length > 0) {
+  if ($raw('img').length > 0) {
     issues.push(createIssue('image_forbidden', 'Artikel-HTML darf keine Bilder enthalten.'));
   }
-  if (hasOuterBootstrapContainer($)) {
+  if (hasOuterBootstrapContainer($sanitized)) {
     issues.push(createIssue('outer_container_forbidden', 'Artikel-HTML darf keinen äußeren Bootstrap-Container enthalten.'));
   }
 
@@ -167,25 +191,25 @@ export function validateArticle(article = {}, context = {}) {
     issues.push(createIssue('slug_duplicate', 'Der Slug ist bereits vorhanden.'));
   }
 
-  const ctaElements = $('[data-track="cta"]').toArray();
+  const ctaElements = $sanitized('[data-track="cta"]').toArray();
   if (ctaElements.length !== CTA_LOCATIONS.length) {
     issues.push(createIssue('cta_count_invalid', 'Artikel-HTML muss genau drei getrackte CTA-Elemente enthalten.'));
   }
 
-  const ctaLocations = ctaElements.map((element) => $(element).attr('data-cta-location') || '');
+  const ctaLocations = ctaElements.map((element) => $sanitized(element).attr('data-cta-location') || '');
   if (ctaLocations.length === CTA_LOCATIONS.length
       && ctaLocations.some((location, index) => location !== CTA_LOCATIONS[index])) {
     issues.push(createIssue('cta_locations_invalid', 'CTA-Elemente müssen in der Reihenfolge blog_early, blog_mid und blog_final erscheinen.'));
   }
 
   if (ctaElements.some((element) => {
-    const location = $(element).attr('data-cta-location') || '';
-    return $(element).attr('data-cta-name') !== `${location}_contact`;
+    const location = $sanitized(element).attr('data-cta-location') || '';
+    return $sanitized(element).attr('data-cta-name') !== `${location}_contact`;
   })) {
     issues.push(createIssue('cta_tracking_invalid', 'Jeder CTA benötigt einen zur Position passenden Trackingnamen.'));
   }
 
-  const faqInspection = extractFaqInspection($);
+  const faqInspection = extractFaqInspection($sanitized);
   const jsonFaqs = normalizedFaqJson(article.faqJson);
   if (faqInspection.questionCount < 5
       || faqInspection.questionCount > 7
@@ -208,8 +232,8 @@ export function validateArticle(article = {}, context = {}) {
     .map((value) => typeof value === 'string' ? value : value?.url)
     .filter((value) => typeof value === 'string'));
   const allowedExternalUrls = new Set(sourceUrlsFromContext(context));
-  $('a[href]').each((_, element) => {
-    const href = $(element).attr('href');
+  $sanitized('a[href]').each((_, element) => {
+    const href = $sanitized(element).attr('href');
     if (/^https?:\/\//i.test(href || '')) {
       if (!allowedExternalUrls.has(href)) {
         issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
@@ -222,11 +246,11 @@ export function validateArticle(article = {}, context = {}) {
   });
 
   const reportedClasses = new Set();
-  $('[class]').each((_, element) => {
-    for (const className of ($(element).attr('class') || '').split(/\s+/).filter(Boolean)) {
+  $sanitized('[class]').each((_, element) => {
+    for (const className of ($sanitized(element).attr('class') || '').split(/\s+/).filter(Boolean)) {
       if (ALLOWED_CLASSES.has(className) || reportedClasses.has(className)) continue;
       reportedClasses.add(className);
-      const bootstrapClass = BOOTSTRAP_CLASS_PATTERN.test(className);
+      const bootstrapClass = isBootstrapClass(className);
       issues.push(createIssue(
         bootstrapClass ? 'bootstrap_class_unknown' : 'class_forbidden',
         bootstrapClass

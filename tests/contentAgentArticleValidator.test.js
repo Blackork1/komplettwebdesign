@@ -239,3 +239,48 @@ test('validator rejects style elements from the original HTML', () => {
   assert.ok(result.issues.some((issue) => issue.code === 'inline_style_forbidden'));
   assert.doesNotMatch(result.sanitizedHtml, /<style\b/i);
 });
+
+test('validator rejects CTA elements that disappear from sanitized HTML', () => {
+  const buttonCtaHtml = (location) => (
+    `<button class="btn btn-primary" data-track="cta" data-cta-name="${location}_contact" data-cta-location="${location}">`
+      + 'Beratung anfragen</button>'
+  );
+  let html = validHtml();
+  for (const location of ['blog_early', 'blog_mid', 'blog_final']) {
+    html = html.replace(ctaHtml(location), buttonCtaHtml(location));
+  }
+
+  const result = validateArticle(validArticle({ contentHtml: html }), validContext);
+
+  assert.equal(result.passed, false);
+  assert.ok(result.issues.some((issue) => issue.code === 'cta_count_invalid'));
+  assert.doesNotMatch(result.sanitizedHtml, /data-track="cta"/);
+});
+
+test('validator requires exact normalized visible FAQ text without additions', () => {
+  const html = validHtml().replace(
+    '<p>Schritt 2 wird verständlich und konkret erklärt.</p>',
+    '<p>Schritt 2 wird verständlich und konkret erklärt. Sichtbarer Zusatz.</p>'
+  );
+
+  const result = validateArticle(validArticle({ contentHtml: html }), validContext);
+
+  assert.ok(result.issues.some((issue) => issue.code === 'faq_mismatch'));
+});
+
+test('validator recognizes additional Bootstrap utility families as unknown Bootstrap classes', () => {
+  for (const className of ['offset-md-2', 'gap-3', 'order-lg-2', 'mt-md-4']) {
+    const result = validateArticle(validArticle({
+      contentHtml: validHtml().replace('class="lead"', `class="lead ${className}"`)
+    }), validContext);
+
+    assert.ok(
+      result.issues.some((issue) => issue.code === 'bootstrap_class_unknown' && issue.className === className),
+      `Bootstrap-Klasse wurde nicht eindeutig erkannt: ${className}`
+    );
+    assert.equal(
+      result.issues.some((issue) => issue.code === 'class_forbidden' && issue.className === className),
+      false
+    );
+  }
+});
