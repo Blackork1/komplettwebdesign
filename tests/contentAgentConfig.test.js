@@ -246,6 +246,27 @@ test('article output rejects obvious H1 and outer Bootstrap containers', () => {
   }
 });
 
+test('article output rejects a self-closing H1 element', () => {
+  assert.equal(ArticleOutputSchema.safeParse({
+    ...validArticle,
+    contentHtml: `<h1/>${'x'.repeat(5000)}`
+  }).success, false);
+});
+
+test('article output ignores comments before an outer Bootstrap container', () => {
+  assert.equal(ArticleOutputSchema.safeParse({
+    ...validArticle,
+    contentHtml: `<!--Kommentar--><div class="container">${'x'.repeat(5000)}</div>`
+  }).success, false);
+});
+
+test('article output does not mistake data-class for a class attribute', () => {
+  assert.equal(ArticleOutputSchema.safeParse({
+    ...validArticle,
+    contentHtml: `<section data-class="container">${'x'.repeat(5000)}</section>`
+  }).success, true);
+});
+
 test('article output requires truthful structural self-check flags', () => {
   for (const flag of ['noH1', 'noOuterBootstrapContainer']) {
     assert.equal(ArticleOutputSchema.safeParse({
