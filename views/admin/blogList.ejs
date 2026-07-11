@@ -16,6 +16,7 @@
         <th class="admin-table-th-wide">Titel</th>
         <th class="admin-table-th-spacious">Kategorie</th>
         <th class="admin-table-th-spacious">Featured</th>
+        <th class="admin-table-th-spacious">Status</th>
         <th class="admin-table-th-spacious">Erstellt am</th>
         <th class="admin-table-th-spacious">Aktionen</th>
       </tr>
@@ -27,11 +28,17 @@
           <td><%= p.title %></td>
           <td><%= p.category || '-' %></td>
           <td><%= p.featured ? 'Ja' : 'Nein' %></td>
+          <td><%= p.workflow_status || (p.published ? 'published' : 'draft') %></td>
           <td><%= new Date(p.created_at).toLocaleDateString('de-DE') %></td>
           <td>
             <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary admin-inline-action">
               Bearbeiten
             </a>
+            <% if (p.content_format === 'static_html') { %>
+              <a href="/admin/blog/<%= p.id %>/preview" class="btn btn-sm btn-outline-secondary admin-inline-action">
+                Vorschau
+              </a>
+            <% } %>
             <form action="/admin/blog/<%= p.id %>/delete"
                   method="POST" class="d-inline admin-inline-block"
                   onsubmit="return confirm('Artikel wirklich löschen?');">

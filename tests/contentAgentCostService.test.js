@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   assertMonthlyBudget,
+  ContentBudgetLimitError,
   estimateTextCost,
   getMonthlyContentCost,
   getPersistedStageResult,
@@ -102,7 +103,9 @@ test('assertMonthlyBudget erlaubt die exakte Grenze und blockiert Überschreitun
   assert.doesNotThrow(() => assertMonthlyBudget({ spent: 24.90, estimatedNext: 0.10, limit: 25 }));
   assert.throws(
     () => assertMonthlyBudget({ spent: 24.90, estimatedNext: 0.11, limit: 25 }),
-    /Monatliches Content-Agent-Budget erreicht\./
+    (error) => error instanceof ContentBudgetLimitError
+      && error.code === 'CONTENT_BUDGET_LIMIT_REACHED'
+      && error.retryable === false
   );
 });
 

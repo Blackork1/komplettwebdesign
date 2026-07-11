@@ -1,5 +1,14 @@
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
 
+export class LeaseLostError extends Error {
+  constructor(message = 'Die Content-Job-Lease wurde verloren.') {
+    super(message);
+    this.name = 'LeaseLostError';
+    this.code = 'CONTENT_JOB_LEASE_LOST';
+    this.retryable = false;
+  }
+}
+
 function validDate(value) {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -29,6 +38,8 @@ export function createContentWorker(dependencies = {}) {
   const pollMs = Number(dependencies.pollMs) || 5_000;
   const heartbeatMs = Number(dependencies.heartbeatMs) || 30_000;
   const leaseMinutes = Number(dependencies.leaseMinutes) || 30;
+  const leaseRenewMs = Number(dependencies.leaseRenewMs)
+    || Math.max(1_000, Math.floor(leaseMinutes * 60_000 / 3));
   const stopTimeoutMs = Number(dependencies.stopTimeoutMs) || DEFAULT_STOP_TIMEOUT_MS;
   const now = dependencies.now || (() => new Date());
   const setIntervalFn = dependencies.setIntervalFn || setInterval;
@@ -40,8 +51,14 @@ export function createContentWorker(dependencies = {}) {
   const recoverExpiredJobs = requiredFunction(dependencies.recoverExpiredJobs, 'recoverExpiredJobs');
   const claimNextJob = requiredFunction(dependencies.claimNextJob, 'claimNextJob');
   const handleJob = requiredFunction(dependencies.handleJob, 'handleJob');
+  const renewJobLease = requiredFunction(dependencies.renewJobLease, 'renewJobLease');
   const completeJob = requiredFunction(dependencies.completeJob, 'completeJob');
   const failJob = requiredFunction(dependencies.failJob, 'failJob');
+  const retryOrFailJob = requiredFunction(dependencies.retryOrFailJob, 'retryOrFailJob');
+  const markJobNeedsManualAttention = requiredFunction(
+    dependencies.markJobNeedsManualAttention,
+    'markJobNeedsManualAttention'
+  );
 
   const startedAt = now();
   let lastJobAt = null;
@@ -60,18 +77,60 @@ export function createContentWorker(dependencies = {}) {
     const claim = await claimNextJob(workerId);
     if (!claim) return null;
 
+    let leaseValid = true;
+    let renewalPromise = null;
+    const renewLease = () => {
+      if (!leaseValid || renewalPromise) return renewalPromise;
+      renewalPromise = Promise.resolve()
+        .then(() => renewJobLease(claim))
+        .then((renewed) => {
+          if (!renewed) leaseValid = false;
+          return renewed;
+        })
+        .catch(() => {
+          leaseValid = false;
+          return null;
+        })
+        .finally(() => { renewalPromise = null; });
+      return renewalPromise;
+    };
+    const leaseTimer = setIntervalFn(renewLease, leaseRenewMs);
+    const leaseGuard = async () => {
+      if (renewalPromise) await renewalPromise;
+      if (!leaseValid) throw new LeaseLostError();
+      return true;
+    };
+
     let result;
     try {
-      result = await handleJob(claim);
+      result = await handleJob(claim, { leaseGuard });
+      await leaseGuard();
     } catch (error) {
-      const failed = await failJob(claim, error);
+      clearIntervalFn(leaseTimer);
+      if (renewalPromise) await renewalPromise;
       lastJobAt = now();
-      if (!failed) return { status: 'lease_lost' };
-      return { status: 'failed' };
+      if (!leaseValid || error instanceof LeaseLostError || error?.code === 'CONTENT_JOB_LEASE_LOST') {
+        return { status: 'lease_lost' };
+      }
+      const terminal = error?.retryable === false
+        ? await failJob(claim, error)
+        : await retryOrFailJob(claim, error, {
+          backoffSeconds: Math.min(3_600, 30 * (2 ** Math.max(0, claim.attempts - 1)))
+        });
+      if (!terminal) return { status: 'lease_lost' };
+      return { status: terminal.status || 'failed' };
     }
 
-    const completed = await completeJob(claim);
+    clearIntervalFn(leaseTimer);
+    if (renewalPromise) await renewalPromise;
     lastJobAt = now();
+    if (!leaseValid) return { status: 'lease_lost' };
+    if (result?.status === 'needs_manual_attention') {
+      const manual = await markJobNeedsManualAttention(claim, result);
+      if (!manual) return { status: 'lease_lost' };
+      return result;
+    }
+    const completed = await completeJob(claim);
     if (!completed) return { status: 'lease_lost' };
     return result;
   }

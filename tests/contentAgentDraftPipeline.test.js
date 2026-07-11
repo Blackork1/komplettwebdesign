@@ -9,6 +9,7 @@ import {
 } from '../services/contentAgent/contentImageService.js';
 import { validateArticle as validateRealArticle } from '../services/contentAgent/articleValidator.js';
 import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
+import { ContentBudgetLimitError } from '../services/contentAgent/contentCostService.js';
 
 const usage = { input_tokens: 1_000, output_tokens: 500 };
 
@@ -655,7 +656,12 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
     }
   }, db);
 
-  assert.deepEqual(result, { post: postRow, metadata: metadataRow });
+  assert.deepEqual(result, {
+    post: postRow,
+    metadata: metadataRow,
+    created: true,
+    referencedImagePublicId: null
+  });
   assert.deepEqual(db.events.map(({ sql }) => sql), [
     'CONNECT',
     'BEGIN',
@@ -688,8 +694,8 @@ test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und g
   };
   const metadataRow = { post_id: 53, quality_score: 93, primary_keyword: topic.primaryKeyword };
   const db = createTransactionalDb([
-    {}, { rows: [postRow] }, { rows: [metadataRow] }, {},
-    {}, { rows: [postRow] }, { rows: [metadataRow] }, {}
+    {}, { rows: [{ ...postRow, _created: true }] }, { rows: [metadataRow] }, {},
+    {}, { rows: [{ ...postRow, _created: false }] }, { rows: [metadataRow] }, {}
   ]);
   const input = {
     generationRunId: 72,
@@ -711,8 +717,13 @@ test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und g
     metadata: { ...input.metadata, quality_score: 80 }
   }, db);
 
-  assert.deepEqual(first, { post: postRow, metadata: metadataRow });
-  assert.deepEqual(second, first);
+  assert.deepEqual(first, {
+    post: postRow,
+    metadata: metadataRow,
+    created: true,
+    referencedImagePublicId: null
+  });
+  assert.deepEqual(second, { ...first, created: false });
   const postCalls = db.events.filter(({ sql }) => /^INSERT INTO posts/i.test(sql));
   const metadataCalls = db.events.filter(({ sql }) => /^INSERT INTO content_post_metadata/i.test(sql));
   assert.equal(postCalls.length, 2);
@@ -749,6 +760,111 @@ test('BlogPostModel.createAIDraft rollt bei einem Metadatenfehler zurück', asyn
   }, db), error);
 
   assert.deepEqual(db.events.map(({ sql }) => sql).slice(-2), ['ROLLBACK', 'RELEASE']);
+});
+
+test('BlogPostModel kennzeichnet Insert oder Konflikt und liest KI-Drafts über generation_run_id', async () => {
+  const postRow = {
+    id: 54,
+    generation_run_id: 74,
+    hero_public_id: 'blog_images/referenziert',
+    _created: false
+  };
+  const metadataRow = { post_id: 54, quality_score: 90 };
+  const writeDb = createTransactionalDb([{}, { rows: [postRow] }, { rows: [metadataRow] }, {}]);
+  const write = await BlogPostModel.createAIDraft({
+    generationRunId: 74,
+    post: { title: article.title, content: article.contentHtml },
+    metadata: { quality_score: 90 }
+  }, writeDb);
+
+  assert.equal(write.created, false);
+  assert.equal(write.referencedImagePublicId, 'blog_images/referenziert');
+  assert.match(writeDb.events[2].sql, /\(xmax = 0\) AS _created/i);
+
+  const readDb = {
+    async query(sql, params) {
+      assert.match(sql, /WHERE p\.generation_run_id = \$1/i);
+      assert.deepEqual(params, [74]);
+      return { rows: [{ ...postRow, metadata: metadataRow }] };
+    }
+  };
+  const read = await BlogPostModel.findAIDraftByGenerationRunId(74, readDb);
+  assert.equal(read.post.id, 54);
+  assert.deepEqual(read.metadata, metadataRow);
+});
+
+test('unklarer Draft-Commit wird per generation_run_id aufgelöst ohne referenziertes Bild zu löschen', async () => {
+  const commitError = new Error('Verbindung nach COMMIT unterbrochen');
+  const deleted = [];
+  const existing = {
+    ...persistedDraft,
+    post: { ...persistedDraft.post, hero_public_id: 'blog_images/article-run' }
+  };
+  const harness = createDependencies({
+    draftRepository: {
+      async createAIDraft() { throw commitError; },
+      async findAIDraftByGenerationRunId() { return existing; }
+    },
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 302 }, harness.dependencies);
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.id, existing.post.id);
+  assert.deepEqual(deleted, []);
+});
+
+test('Konflikt-Draft mit anderer Public-ID bereinigt ausschließlich das neue unreferenzierte Bild', async () => {
+  const deleted = [];
+  const existing = {
+    ...persistedDraft,
+    created: false,
+    referencedImagePublicId: 'blog_images/bestehend',
+    post: { ...persistedDraft.post, hero_public_id: 'blog_images/bestehend' }
+  };
+  const harness = createDependencies({
+    draftRepository: { async createAIDraft() { return existing; } },
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async deleteImage({ publicId }) { deleted.push(publicId); return { status: 'completed', publicId }; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 303 }, harness.dependencies);
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(deleted, ['blog_images/article-run']);
+  assert.equal(result.post.hero_public_id, 'blog_images/bestehend');
+});
+
+test('Cleanupfehler beim Konflikt-Draft gefährdet den referenzierten Entwurf nicht und bleibt auditiert', async () => {
+  const existing = {
+    ...persistedDraft,
+    created: false,
+    referencedImagePublicId: 'blog_images/bestehend',
+    post: { ...persistedDraft.post, hero_public_id: 'blog_images/bestehend' }
+  };
+  const harness = createDependencies({
+    draftRepository: { async createAIDraft() { return existing; } },
+    imageService: {
+      ...createDependencies().dependencies.imageService,
+      async deleteImage({ publicId }) {
+        throw new ContentImageError('Cleanup fehlgeschlagen.', {
+          code: 'IMAGE_CLEANUP_FAILED',
+          audit: { cleanup: { status: 'failed', publicId, code: 'IMAGE_CLEANUP_FAILED' } }
+        });
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 304 }, harness.dependencies);
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.hero_public_id, 'blog_images/bestehend');
+  const cleanup = harness.stageUpdates.find(({ stageId }) => stageId === 'image_cleanup');
+  assert.equal(cleanup.stageResult.status, 'failed');
+  assert.equal(cleanup.stageResult.publicId, 'blog_images/article-run');
 });
 
 test('runDraftPipeline erstellt nach bestandener Validierung und Review einen unveröffentlichten KI-Entwurf', async () => {
@@ -916,7 +1032,7 @@ test('Reparaturen sind begrenzt und werden mit eindeutigen IDs erneut validiert 
 
 test('jede kostenpflichtige Stufe reserviert vor dem Aufruf das Monatsbudget', async () => {
   let topicCalls = 0;
-  const budgetError = new Error('Monatliches Content-Agent-Budget erreicht.');
+  const budgetError = new ContentBudgetLimitError();
   const harness = createDependencies({
     openaiService: {
       ...createDependencies().dependencies.openaiService,
@@ -929,12 +1045,35 @@ test('jede kostenpflichtige Stufe reserviert vor dem Aufruf das Monatsbudget', a
     }
   });
 
-  await assert.rejects(runDraftPipeline({ runId: 10 }, harness.dependencies), budgetError);
+  const result = await runDraftPipeline({ runId: 10 }, harness.dependencies);
 
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'budget_limit_reached');
   assert.equal(topicCalls, 0);
   assert.equal(harness.imageCalls.length, 0);
   assert.equal(harness.createdDrafts.length, 0);
-  assert.equal(harness.finishCalls.at(-1).status, 'failed');
+  assert.equal(harness.finishCalls.at(-1).status, 'needs_manual_attention');
+});
+
+test('verlorene Lease stoppt vor dem ersten Provideraufruf und ohne Runabschluss', async () => {
+  let topicCalls = 0;
+  const leaseError = new Error('Lease verloren');
+  leaseError.code = 'CONTENT_JOB_LEASE_LOST';
+  const harness = createDependencies({
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      async createTopicCandidates() { topicCalls += 1; return operation({ candidates: [topic] }, 'resp-topic')(); }
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 301, leaseGuard: async () => { throw leaseError; } }, harness.dependencies),
+    leaseError
+  );
+  assert.equal(topicCalls, 0);
+  assert.equal(harness.imageCalls.length, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+  assert.equal(harness.finishCalls.length, 0);
 });
 
 test('ein Draftfehler nach erfolgreichem Upload bereinigt das injizierte Bild', async () => {

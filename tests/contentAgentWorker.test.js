@@ -6,7 +6,8 @@ import { promisify } from 'node:util';
 
 import {
   createContentWorker,
-  isHeartbeatFresh
+  isHeartbeatFresh,
+  LeaseLostError
 } from '../services/contentAgent/workerService.js';
 import {
   berlinDateKey,
@@ -44,6 +45,7 @@ function createWorkerHarness(overrides = {}) {
     pollMs: 5_000,
     heartbeatMs: 30_000,
     leaseMinutes: 30,
+    leaseRenewMs: 60_000,
     setIntervalFn(callback, milliseconds) {
       const timer = { callback };
       calls.push(['interval', milliseconds, timer]);
@@ -54,8 +56,11 @@ function createWorkerHarness(overrides = {}) {
     async recoverExpiredJobs(minutes) { calls.push(['recover', minutes]); },
     async claimNextJob(workerId) { calls.push(['claim', workerId]); return claim; },
     async handleJob(job) { calls.push(['handle', job]); return { status: 'completed' }; },
+    async renewJobLease(job) { calls.push(['renew', job]); return { id: job.id }; },
     async completeJob(job) { calls.push(['complete', job]); return { id: job.id }; },
     async failJob(job, error) { calls.push(['fail', job, error]); return { id: job.id }; },
+    async retryOrFailJob(job, error, options) { calls.push(['retry', job, error, options]); return { id: job.id, status: 'queued' }; },
+    async markJobNeedsManualAttention(job, reason) { calls.push(['manual', job, reason]); return { id: job.id }; },
     ...overrides
   };
   return { worker: createContentWorker(dependencies), calls, claim };
@@ -145,7 +150,7 @@ test('ein unabhängiger Heartbeat läuft während langer Jobs weiter ohne erneut
   gate.resolve();
   await worker.whenIdle();
   await worker.stop();
-  assert.equal(calls.filter(([type]) => type === 'clear').length, 2);
+  assert.equal(calls.filter(([type]) => type === 'clear').length, 3);
 });
 
 test('langsame Heartbeats sind nicht reentrant und gehören zum Worker-Idle-Zustand', async () => {
@@ -250,12 +255,144 @@ test('verlorene Lease beim erfolgreichen Handler liefert lease_lost ohne zweiten
 test('verlorene Lease beim Fehlerpfad liefert lease_lost ohne unsicheren Wiederholungsabschluss', async () => {
   const { worker, calls } = createWorkerHarness({
     async handleJob(job) { calls.push(['handle', job]); throw new Error('Providerfehler'); },
-    async failJob(job, error) { calls.push(['fail', job, error]); return null; }
+    async retryOrFailJob(job, error, options) { calls.push(['retry', job, error, options]); return null; }
   });
 
   assert.deepEqual(await worker.processOnce(), { status: 'lease_lost' });
-  assert.equal(calls.filter(([type]) => type === 'fail').length, 1);
+  assert.equal(calls.filter(([type]) => type === 'retry').length, 1);
   assert.equal(calls.filter(([type]) => type === 'complete').length, 0);
+});
+
+test('Worker erneuert die Job-Lease während handleJob und reicht einen Fence-Guard durch', async () => {
+  const gate = deferred();
+  let guard;
+  const { worker, calls } = createWorkerHarness({
+    async handleJob(job, context) {
+      calls.push(['handle', job]);
+      guard = context.leaseGuard;
+      await gate.promise;
+      await guard();
+      return { status: 'completed' };
+    }
+  });
+
+  const processing = worker.processOnce();
+  await new Promise((resolve) => setImmediate(resolve));
+  const leaseTimer = calls.find(([, milliseconds]) => milliseconds === 60_000)?.[2];
+  assert.ok(leaseTimer);
+  await leaseTimer.callback();
+  assert.equal(calls.filter(([type]) => type === 'renew').length, 1);
+  gate.resolve();
+  assert.equal((await processing).status, 'completed');
+  assert.equal(calls.some(([type]) => type === 'clear'), true);
+});
+
+test('verlorene Lease stoppt den Guard und verhindert alle terminalen Queueupdates', async () => {
+  const gate = deferred();
+  const { worker, calls } = createWorkerHarness({
+    async renewJobLease(job) { calls.push(['renew', job]); return null; },
+    async handleJob(job, { leaseGuard }) {
+      calls.push(['handle', job]);
+      await gate.promise;
+      await leaseGuard();
+      return { status: 'completed' };
+    }
+  });
+
+  const processing = worker.processOnce();
+  await new Promise((resolve) => setImmediate(resolve));
+  const leaseTimer = calls.find(([, milliseconds]) => milliseconds === 60_000)?.[2];
+  await leaseTimer.callback();
+  gate.resolve();
+
+  assert.deepEqual(await processing, { status: 'lease_lost' });
+  assert.equal(calls.some(([type]) => ['complete', 'fail', 'retry', 'manual'].includes(type)), false);
+});
+
+test('needs_manual_attention erhält einen eigenen Queuezustand statt completed', async () => {
+  const { worker, calls } = createWorkerHarness({
+    async handleJob(job) {
+      calls.push(['handle', job]);
+      return { status: 'needs_manual_attention', code: 'budget_limit_reached' };
+    }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'needs_manual_attention');
+  assert.equal(calls.filter(([type]) => type === 'manual').length, 1);
+  assert.equal(calls.filter(([type]) => type === 'complete').length, 0);
+});
+
+test('temporäre Handlerfehler werden gefenct mit Backoff erneut eingeplant', async () => {
+  const { worker, calls } = createWorkerHarness({
+    async handleJob(job) { calls.push(['handle', job]); throw new Error('ECONNRESET'); }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  assert.equal(calls.filter(([type]) => type === 'retry').length, 1);
+  assert.equal(calls.filter(([type]) => type === 'fail').length, 0);
+  assert.equal(calls.find(([type]) => type === 'retry')[3].backoffSeconds > 0, true);
+});
+
+test('LeaseLostError ist explizit nicht retrybar', () => {
+  const error = new LeaseLostError();
+  assert.equal(error.code, 'CONTENT_JOB_LEASE_LOST');
+  assert.equal(error.retryable, false);
+});
+
+test('Worker-Retry verwendet denselben Run und setzt nach persistierter kostenpflichtiger Stufe ohne Doppelaufruf fort', async () => {
+  const claims = [
+    { id: 77, job_type: 'generate_weekly_draft', locked_by: 'worker-retry', attempts: 1, payload_json: {} },
+    { id: 77, job_type: 'generate_weekly_draft', locked_by: 'worker-retry', attempts: 2, payload_json: {} }
+  ];
+  const runs = new Map();
+  const runIds = [];
+  let providerCalls = 0;
+  let draftWrites = 0;
+  const handler = createProductionJobHandler({
+    async createRun({ jobId }) {
+      if (!runs.has(jobId)) runs.set(jobId, { id: 501, stages: {} });
+      const run = runs.get(jobId);
+      runIds.push(run.id);
+      return run;
+    },
+    async runPipeline({ runId, leaseGuard }) {
+      await leaseGuard();
+      const run = runs.get(77);
+      if (!run.stages.article_generation) {
+        providerCalls += 1;
+        run.stages.article_generation = { responseId: 'resp-einmalig' };
+        throw new Error('temporärer Datenbankfehler nach Stage-Persistenz');
+      }
+      await leaseGuard();
+      draftWrites += 1;
+      return { status: 'completed', post: { id: 901, published: false } };
+    },
+    pipelineDependencies: {}
+  });
+  const terminal = [];
+  const worker = createContentWorker({
+    enabled: true,
+    workerId: 'worker-retry',
+    leaseRenewMs: 60_000,
+    setIntervalFn() { return {}; },
+    clearIntervalFn() {},
+    async upsertHeartbeat() {},
+    async recoverExpiredJobs() {},
+    async claimNextJob() { return claims.shift() || null; },
+    async renewJobLease(claim) { return claim; },
+    handleJob: handler,
+    async completeJob(claim) { terminal.push(['completed', claim.attempts]); return { status: 'completed' }; },
+    async failJob() { throw new Error('nicht erwartet'); },
+    async retryOrFailJob(claim) { terminal.push(['queued', claim.attempts]); return { status: 'queued' }; },
+    async markJobNeedsManualAttention() { throw new Error('nicht erwartet'); }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  assert.equal((await worker.processOnce()).status, 'completed');
+  assert.deepEqual(runIds, [501, 501]);
+  assert.equal(providerCalls, 1);
+  assert.equal(draftWrites, 1);
+  assert.deepEqual(terminal, [['queued', 1], ['completed', 2]]);
 });
 
 test('berlinDateKey verwendet das konfigurierte Ortsdatum statt Server-UTC', () => {
@@ -452,6 +589,34 @@ test('der Produktions-Jobhandler überlässt Pipelinefehler ohne zweiten Runabsc
   assert.deepEqual(finishCalls, []);
 });
 
+test('der Produktions-Jobhandler reicht den Lease-Fence bis in die Pipeline durch', async () => {
+  const leaseGuard = async () => true;
+  let pipelineInput;
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 71 }; },
+    async runPipeline(input) { pipelineInput = input; return { status: 'completed' }; },
+    pipelineDependencies: {}
+  });
+
+  await handler(
+    { id: 15, job_type: 'generate_weekly_draft', payload_json: {} },
+    { leaseGuard }
+  );
+  assert.equal(pipelineInput.leaseGuard, leaseGuard);
+});
+
+test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { throw new Error('darf nicht starten'); },
+    async runPipeline() { throw new Error('darf nicht starten'); },
+    pipelineDependencies: {}
+  });
+  await assert.rejects(
+    handler({ id: 16, job_type: 'unbekannt', payload_json: {} }),
+    (error) => error.retryable === false && error.code === 'CONTENT_JOB_TYPE_UNSUPPORTED'
+  );
+});
+
 test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Repositories oder Models', async () => {
   const workerSource = await readFile(new URL('../scripts/contentWorker.js', import.meta.url), 'utf8');
   const healthSource = await readFile(new URL('../scripts/contentWorkerHealthcheck.js', import.meta.url), 'utf8');
@@ -480,8 +645,11 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
       upsertWorkerHeartbeat: async (...args) => recordDb(...args),
       recoverExpiredJobs: async (...args) => recordDb(...args),
       claimNextJob: async (...args) => { recordDb(...args); return null; },
+      renewJobLease: async (...args) => recordDb(...args),
       completeJob: async (...args) => recordDb(...args),
       failJob: async (...args) => recordDb(...args),
+      retryOrFailJob: async (...args) => recordDb(...args),
+      markJobNeedsManualAttention: async (...args) => recordDb(...args),
       enqueueJob: async (...args) => recordDb(...args)
     },
     runRepository: {
@@ -502,7 +670,8 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
       getPersistedStageResult: async ({ db }) => { dbArguments.push(db); return null; }
     },
     BlogPostModel: {
-      async createAIDraft(_input, db) { dbArguments.push(db); return {}; }
+      async createAIDraft(_input, db) { dbArguments.push(db); return {}; },
+      async findAIDraftByGenerationRunId(_runId, db) { dbArguments.push(db); return null; }
     },
     createPricingRepository(db) { dbArguments.push(db); return { bound: true }; },
     createPricingService(repository) { return { repository, getVisiblePackages: async () => [] }; },
@@ -540,6 +709,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   await runtime.pipelineDependencies.costService.settleMonthlyBudget({});
   await runtime.pipelineDependencies.costService.getPersistedStageResult({});
   await runtime.pipelineDependencies.draftRepository.createAIDraft({});
+  await runtime.pipelineDependencies.draftRepository.findAIDraftByGenerationRunId(1);
   await runtime.pipelineDependencies.inventoryService.buildSiteInventory();
   await runtime.worker.processOnce();
   await runtime.jobRepository.enqueueJob({});

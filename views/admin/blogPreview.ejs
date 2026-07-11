@@ -1,0 +1,15 @@
+<%- include('../partials/admin_header') %>
+
+<div class="container my-5">
+  <div class="alert alert-warning" role="status">
+    Geschützte Entwurfsvorschau – dieser Beitrag ist nicht öffentlich sichtbar.
+  </div>
+  <article>
+    <h1 class="mb-4"><%= post.title %></h1>
+    <div class="blog-content"><%- renderedContent %></div>
+  </article>
+  <a href="/admin/blog/<%= post.id %>/edit" class="btn btn-primary mt-4">Entwurf bearbeiten</a>
+  <a href="/admin/blog" class="btn btn-secondary mt-4">Zur Übersicht</a>
+</div>
+
+<%- include('../partials/admin_footer') %>

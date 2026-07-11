@@ -31,3 +31,16 @@ test('content agent migration ergänzt idempotente generation_run_id-Verknüpfun
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_posts_generation_run_id\s+ON posts \(generation_run_id\)/i);
   assert.doesNotMatch(sql, /generation_run_id[^;]*NOT NULL/i);
 });
+
+test('Migration erzwingt genau einen wiederaufnehmbaren Run pro Queuejob und repariert Bestandsduplikate', () => {
+  assert.match(sql, /ROW_NUMBER\(\) OVER \(PARTITION BY job_id/i);
+  assert.match(sql, /UPDATE content_runs[\s\S]*SET job_id = NULL[\s\S]*WHERE run_rank > 1/i);
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_runs_job_id\s+ON content_runs \(job_id\)/i);
+});
+
+test('Migration synchronisiert Publikationszustände und kennt manuelle Queuezustände', () => {
+  assert.match(sql, /published = TRUE[\s\S]*workflow_status = 'published'/i);
+  assert.match(sql, /published = FALSE[\s\S]*workflow_status = 'published'/i);
+  assert.match(sql, /posts_publication_workflow_consistent/i);
+  assert.match(sql, /needs_manual_attention/i);
+});

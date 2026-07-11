@@ -1,6 +1,7 @@
 // controllers/adminBlogController.js
 import BlogPostModel from '../models/BlogPostModel.js';
 import { v2 as cloudinary } from 'cloudinary';
+import { sanitizeArticleHtml } from '../services/contentAgent/articleSanitizer.js';
 
 /* ---------- Hilfsfunktion: Buffer → Cloudinary ---------- */
 function uploadBufferToCloudinary(buffer, folder = 'blog_images') {
@@ -63,7 +64,8 @@ export async function createPost(req, res) {
       category,
       featured: !!featured,
       description,
-      faq_json 
+      faq_json,
+      published: req.body.published === 'on'
     });
 
     res.redirect('/admin/blog');
@@ -107,7 +109,10 @@ export async function updatePost(req, res) {
       category: req.body.category,
       featured: req.body.featured !== undefined ? !!req.body.featured : undefined,
       image_url: hero_image,         // oder hero_image – je nach Spalte
-      hero_public_id
+      hero_public_id,
+      published: req.body.publication_control === '1'
+        ? req.body.published === 'on'
+        : undefined
     });
 
     res.redirect('/admin/blog');
@@ -136,9 +141,26 @@ export async function deletePost(req, res) {
 }
 
 export async function listAdminPosts(req, res) {
-  const posts = await BlogPostModel.findAll();      // oder findAllAdmin()
+  const posts = await BlogPostModel.findAllAdmin();
   res.render('admin/blogList', {
     title: 'Blog-Verwaltung',
     posts
+  });
+}
+
+export async function previewPost(req, res) {
+  const post = await BlogPostModel.findById(req.params.id);
+  if (!post) return res.status(404).send('Post nicht gefunden');
+  if (post.content_format !== 'static_html') {
+    return res.status(400).send('Die sichere Vorschau ist nur für statische HTML-Entwürfe verfügbar.');
+  }
+  const renderedContent = sanitizeArticleHtml(post.content)
+    .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  return res.render('admin/blogPreview', {
+    title: `Vorschau: ${post.title}`,
+    post,
+    renderedContent
   });
 }

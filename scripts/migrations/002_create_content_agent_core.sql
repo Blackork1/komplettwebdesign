@@ -27,6 +27,26 @@ ALTER TABLE posts
   ALTER COLUMN content_format SET DEFAULT 'legacy_ejs',
   ALTER COLUMN content_format SET NOT NULL;
 
+UPDATE posts
+SET workflow_status = CASE
+      WHEN published = TRUE THEN 'published'
+      WHEN generated_by_ai = TRUE THEN 'needs_review'
+      ELSE 'draft'
+    END,
+    published_at = CASE
+      WHEN published = TRUE THEN COALESCE(published_at, created_at, NOW())
+      ELSE NULL
+    END
+WHERE (published = TRUE AND (workflow_status <> 'published' OR published_at IS NULL))
+   OR (published = FALSE AND (workflow_status = 'published' OR published_at IS NOT NULL));
+
+ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_publication_workflow_consistent;
+ALTER TABLE posts ADD CONSTRAINT posts_publication_workflow_consistent CHECK (
+  (published = TRUE AND workflow_status = 'published' AND published_at IS NOT NULL)
+  OR
+  (published = FALSE AND workflow_status <> 'published' AND published_at IS NULL)
+);
+
 CREATE TABLE IF NOT EXISTS content_jobs (
   id BIGSERIAL PRIMARY KEY,
   job_type VARCHAR(64) NOT NULL,
@@ -45,6 +65,10 @@ CREATE TABLE IF NOT EXISTS content_jobs (
   UNIQUE (idempotency_key)
 );
 CREATE INDEX IF NOT EXISTS idx_content_jobs_claim ON content_jobs (status, run_after, created_at);
+ALTER TABLE content_jobs DROP CONSTRAINT IF EXISTS content_jobs_status_valid;
+ALTER TABLE content_jobs ADD CONSTRAINT content_jobs_status_valid CHECK (
+  status IN ('queued', 'running', 'completed', 'failed', 'needs_manual_attention')
+);
 
 CREATE TABLE IF NOT EXISTS content_topics (
   id BIGSERIAL PRIMARY KEY,
@@ -84,6 +108,24 @@ CREATE TABLE IF NOT EXISTS content_runs (
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   finished_at TIMESTAMPTZ
 );
+
+WITH ranked_runs AS (
+  SELECT id,
+         ROW_NUMBER() OVER (PARTITION BY job_id
+           ORDER BY (post_id IS NOT NULL) DESC,
+                    (SELECT COUNT(*) FROM jsonb_object_keys(stage_results_json)) DESC,
+                    id ASC
+         ) AS run_rank
+  FROM content_runs
+  WHERE job_id IS NOT NULL
+)
+UPDATE content_runs
+SET job_id = NULL
+FROM ranked_runs
+WHERE run_rank > 1
+  AND content_runs.id = ranked_runs.id;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_runs_job_id
+  ON content_runs (job_id);
 
 ALTER TABLE content_topics
   ADD COLUMN IF NOT EXISTS generation_run_id BIGINT REFERENCES content_runs(id) ON DELETE SET NULL;

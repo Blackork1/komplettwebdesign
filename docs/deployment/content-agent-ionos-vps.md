@@ -329,7 +329,7 @@ Nach dem terminalen Jobstatus müssen genau ein zugehöriger, unveröffentlichte
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "WITH latest AS (SELECT id FROM content_jobs WHERE idempotency_key LIKE '\''release-check:%'\'' ORDER BY id DESC LIMIT 1) SELECT j.id AS job_id, j.status AS job_status, r.id AS run_id, r.status AS run_status, p.id AS post_id, p.published, p.workflow_status, p.content_format, (p.content ~* '\''<h1[ >]'\'') AS contains_h1, (p.content LIKE '\''%<\\%%'\'') AS contains_ejs FROM latest l JOIN content_jobs j ON j.id = l.id LEFT JOIN content_runs r ON r.job_id = j.id LEFT JOIN posts p ON p.id = r.post_id;"'
 ```
 
-Erwartet sind genau eine Ergebniszeile, `published = false`, `workflow_status = needs_review`, `content_format = static_html`, `contains_h1 = false` und `contains_ejs = false`. Den Entwurf zusätzlich in der vorhandenen Admin-Vorschau öffnen: Er muss ohne EJS-Auswertung, ohne zweite H1 und ohne Veröffentlichung rendern.
+Erwartet sind genau eine Ergebniszeile, `published = false`, `workflow_status = needs_review`, `content_format = static_html`, `contains_h1 = false` und `contains_ejs = false`. Der Entwurf erscheint trotz fehlender Veröffentlichung unter `/admin/blog`. Über „Vorschau“ oder direkt über `/admin/blog/<POST_ID>/preview` öffnet sich die admin-geschützte, mit `noindex` ausgelieferte statische Vorschau. Sie wertet niemals EJS aus, sanitisiert den Inhalt und rendert genau eine H1.
 
 ## 10. Normaler Rückfall ohne Datenbank-Restore
 

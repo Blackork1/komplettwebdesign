@@ -17,20 +17,23 @@ export default class BlogPostModel {
     published = true,
     description = '',                   // optional, falls im Formular
     faq_json = []                       // optional, falls im Formular
-  }) {
+  }, db = pool) {
     if (!slug) {
       slug = slugify(title, { lower: true, strict: true });
     }
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `INSERT INTO posts
          (title, slug, excerpt, content,
           image_url, hero_public_id,
           category, featured, published, description, faq_json,
+          workflow_status, published_at,
           created_at, updated_at)
        VALUES
          ($1, $2, $3, $4,
           $5, $6,
           $7, $8, $9, $10, $11,
+          CASE WHEN $9 THEN 'published' ELSE 'draft' END,
+          CASE WHEN $9 THEN NOW() ELSE NULL END,
           NOW(), NOW())
        RETURNING *`,
       [
@@ -68,7 +71,7 @@ export default class BlogPostModel {
           )
           ON CONFLICT (generation_run_id) DO UPDATE
           SET generation_run_id = EXCLUDED.generation_run_id
-          RETURNING *
+          RETURNING *, (xmax = 0) AS _created
         `,
         [
           post.title,
@@ -88,7 +91,7 @@ export default class BlogPostModel {
           normalizedGenerationRunId
         ]
       );
-      const createdPost = postRows[0];
+      const { _created: inserted, ...createdPost } = postRows[0];
 
       const { rows: metadataRows } = await client.query(
         `
@@ -130,9 +133,14 @@ export default class BlogPostModel {
       );
 
       await client.query('COMMIT');
-      return { post: createdPost, metadata: metadataRows[0] };
+      return {
+        post: createdPost,
+        metadata: metadataRows[0],
+        created: inserted !== false,
+        referencedImagePublicId: createdPost.hero_public_id || null
+      };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try { await client.query('ROLLBACK'); } catch { /* COMMIT-Ausgang kann unklar sein. */ }
       throw error;
     } finally {
       client.release();
@@ -149,8 +157,15 @@ export default class BlogPostModel {
     return rows;
   }
 
-  static async findPage({ limit = 10, offset = 0 } = {}) {
-    const { rows } = await pool.query(
+  static async findAllAdmin(db = pool) {
+    const { rows } = await db.query(
+      `SELECT * FROM posts ORDER BY created_at DESC`
+    );
+    return rows;
+  }
+
+  static async findPage({ limit = 10, offset = 0 } = {}, db = pool) {
+    const { rows } = await db.query(
       `SELECT * FROM posts
        WHERE published = true
        ORDER BY created_at DESC
@@ -229,21 +244,55 @@ export default class BlogPostModel {
     return rows[0] ?? null;
   }
 
+  static async findAIDraftByGenerationRunId(generationRunId, db = pool) {
+    const normalized = Number(generationRunId);
+    if (!Number.isInteger(normalized) || normalized <= 0) {
+      throw new TypeError('generationRunId muss eine positive Ganzzahl sein.');
+    }
+    const { rows } = await db.query(
+      `
+        SELECT p.*, to_jsonb(m) AS metadata
+        FROM posts p
+        LEFT JOIN content_post_metadata m ON m.post_id = p.id
+        WHERE p.generation_run_id = $1
+          AND p.generated_by_ai = TRUE
+          AND p.published = FALSE
+        LIMIT 1
+      `,
+      [normalized]
+    );
+    const row = rows[0];
+    if (!row) return null;
+    const { metadata, ...post } = row;
+    return { post, metadata: metadata || null };
+  }
+
   /* ---------- UPDATE ---------- */
-  static async update(id, data) {
+  static async update(id, data, db = pool) {
     const fields = [];
     const values = [];
     let i = 1;
 
+    const publicationRequested = typeof data.published === 'boolean';
     for (const [key, val] of Object.entries(data)) {
       if (val === undefined) continue;
+      if (key === 'workflow_status' || key === 'published_at') continue;
       fields.push(`${key} = $${i++}`);
       values.push(val);
+    }
+    if (publicationRequested) {
+      if (data.published) {
+        fields.push("workflow_status = 'published'");
+        fields.push('published_at = COALESCE(published_at, NOW())');
+      } else {
+        fields.push("workflow_status = CASE WHEN generated_by_ai THEN 'needs_review' ELSE 'draft' END");
+        fields.push('published_at = NULL');
+      }
     }
     if (!fields.length) return this.findById(id);
 
     values.push(id);
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `UPDATE posts SET ${fields.join(', ')}, updated_at = NOW()
        WHERE id = $${i}
        RETURNING *`,

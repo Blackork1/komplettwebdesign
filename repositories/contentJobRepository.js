@@ -125,6 +125,24 @@ export async function completeJob(claim, db = pool) {
   return rows[0] || null;
 }
 
+export async function renewJobLease(claim, db = pool) {
+  const lease = leaseParameters(claim);
+  const { rows } = await db.query(
+    `
+      UPDATE content_jobs
+      SET locked_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
+      RETURNING *
+    `,
+    lease
+  );
+  return rows[0] || null;
+}
+
 export async function failJob(claim, error, db = pool) {
   const lease = leaseParameters(claim);
   const { rows } = await db.query(
@@ -145,6 +163,57 @@ export async function failJob(claim, error, db = pool) {
     [...lease, sanitizeErrorMessage(error)]
   );
 
+  return rows[0] || null;
+}
+
+export async function retryOrFailJob(claim, error, {
+  backoffSeconds = 30
+} = {}, db = pool) {
+  const lease = leaseParameters(claim);
+  const normalizedBackoff = Math.min(86_400, Math.max(1, Number(backoffSeconds) || 30));
+  const { rows } = await db.query(
+    `
+      UPDATE content_jobs
+      SET status = CASE WHEN attempts < max_attempts THEN 'queued' ELSE 'failed' END,
+          last_error = $4,
+          run_after = CASE
+            WHEN attempts < max_attempts THEN NOW() + ($5 * INTERVAL '1 second')
+            ELSE run_after
+          END,
+          locked_at = NULL,
+          locked_by = NULL,
+          finished_at = CASE WHEN attempts < max_attempts THEN NULL ELSE NOW() END,
+          updated_at = NOW()
+      WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
+      RETURNING *
+    `,
+    [...lease, sanitizeErrorMessage(error), normalizedBackoff]
+  );
+  return rows[0] || null;
+}
+
+export async function markJobNeedsManualAttention(claim, reason = {}, db = pool) {
+  const lease = leaseParameters(claim);
+  const { rows } = await db.query(
+    `
+      UPDATE content_jobs
+      SET status = 'needs_manual_attention',
+          last_error = $4,
+          locked_at = NULL,
+          locked_by = NULL,
+          finished_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
+      RETURNING *
+    `,
+    [...lease, sanitizeErrorMessage(reason?.message || reason?.code || reason)]
+  );
   return rows[0] || null;
 }
 

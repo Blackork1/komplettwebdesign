@@ -9,6 +9,11 @@ export async function createRun({
     `
       INSERT INTO content_runs (job_id, status, current_stage)
       VALUES ($1, 'running', $2)
+      ON CONFLICT (job_id) DO UPDATE
+      SET status = 'running',
+          current_stage = content_runs.current_stage,
+          stage_results_json = content_runs.stage_results_json,
+          finished_at = NULL
       RETURNING *
     `,
     [jobId, currentStage]

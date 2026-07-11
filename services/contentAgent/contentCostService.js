@@ -1,5 +1,14 @@
 import pool from '../../util/db.js';
 
+export class ContentBudgetLimitError extends Error {
+  constructor(message = 'Monatliches Content-Agent-Budget erreicht.') {
+    super(message);
+    this.name = 'ContentBudgetLimitError';
+    this.code = 'CONTENT_BUDGET_LIMIT_REACHED';
+    this.retryable = false;
+  }
+}
+
 function nonNegativeNumber(value, name) {
   const number = Number(value ?? 0);
   if (!Number.isFinite(number) || number < 0) {
@@ -21,7 +30,7 @@ export function assertMonthlyBudget({ spent = 0, estimatedNext = 0, limit }) {
   const normalizedNext = nonNegativeNumber(estimatedNext, 'estimatedNext');
   const normalizedLimit = nonNegativeNumber(limit, 'limit');
   if (normalizedSpent + normalizedNext > normalizedLimit + Number.EPSILON) {
-    throw new Error('Monatliches Content-Agent-Budget erreicht.');
+    throw new ContentBudgetLimitError();
   }
 }
 

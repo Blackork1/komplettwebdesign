@@ -11,6 +11,13 @@ function required(value, name) {
   return value;
 }
 
+function permanentJobError(message, code) {
+  const error = new Error(message);
+  error.code = code;
+  error.retryable = false;
+  return error;
+}
+
 export function berlinDateKey(date = new Date(), timezone = 'Europe/Berlin') {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
@@ -60,9 +67,9 @@ export function createProductionJobHandler({
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
-  return async function handleJob(claim) {
+  return async function handleJob(claim, { leaseGuard } = {}) {
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
-      throw new Error('Nicht unterstützter Content-Jobtyp.');
+      throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
     }
 
     const run = await createRun({ jobId: claim.id });
@@ -70,6 +77,7 @@ export function createProductionJobHandler({
     const result = await runPipeline({
       ...(claim.payload_json || {}),
       runId: run.id,
+      ...(typeof leaseGuard === 'function' ? { leaseGuard } : {}),
       currentDate: berlinDateKey(now(), timezone)
     }, pipelineDependencies);
     if (!['completed', 'needs_manual_attention'].includes(result?.status)) {
@@ -129,8 +137,11 @@ function bindRepositories(database, modules) {
   const jobRepository = {
     enqueueJob: (input) => modules.jobRepository.enqueueJob(input, database),
     claimNextJob: (workerId) => modules.jobRepository.claimNextJob(workerId, database),
+    renewJobLease: (claim) => modules.jobRepository.renewJobLease(claim, database),
     completeJob: (claim) => modules.jobRepository.completeJob(claim, database),
     failJob: (claim, error) => modules.jobRepository.failJob(claim, error, database),
+    retryOrFailJob: (claim, error, options) => modules.jobRepository.retryOrFailJob(claim, error, options, database),
+    markJobNeedsManualAttention: (claim, reason) => modules.jobRepository.markJobNeedsManualAttention(claim, reason, database),
     recoverExpiredJobs: (minutes) => modules.jobRepository.recoverExpiredJobs(minutes, database),
     upsertWorkerHeartbeat: (input) => modules.jobRepository.upsertWorkerHeartbeat(input, database)
   };
@@ -187,7 +198,8 @@ export function createProductionRuntime({
     validateArticle: modules.validateArticle,
     imageService: modules.createContentImageService({ config, openai, cloudinary: modules.cloudinary }),
     draftRepository: {
-      createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database)
+      createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database),
+      findAIDraftByGenerationRunId: (runId) => modules.BlogPostModel.findAIDraftByGenerationRunId(runId, database)
     }
   };
   const handleJob = createProductionJobHandler({
@@ -208,9 +220,12 @@ export function createProductionRuntime({
     upsertHeartbeat: repositories.jobRepository.upsertWorkerHeartbeat,
     recoverExpiredJobs: repositories.jobRepository.recoverExpiredJobs,
     claimNextJob: repositories.jobRepository.claimNextJob,
+    renewJobLease: repositories.jobRepository.renewJobLease,
     handleJob,
     completeJob: repositories.jobRepository.completeJob,
-    failJob: repositories.jobRepository.failJob
+    failJob: repositories.jobRepository.failJob,
+    retryOrFailJob: repositories.jobRepository.retryOrFailJob,
+    markJobNeedsManualAttention: repositories.jobRepository.markJobNeedsManualAttention
   });
 
   return { worker, pipelineDependencies, jobRepository: repositories.jobRepository };

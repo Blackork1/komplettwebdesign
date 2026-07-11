@@ -6,6 +6,7 @@ import {
   TopicCandidateSchema,
   TopicCandidatesSchema
 } from './articleSchemas.js';
+import { ContentBudgetLimitError } from './contentCostService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -250,13 +251,19 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   required(imageService.deleteImage, 'imageService.deleteImage');
 
   const runId = input.runId;
+  const leaseGuard = typeof input.leaseGuard === 'function' ? input.leaseGuard : async () => true;
   const modelResults = [];
   const auditWarnings = [];
   let uploadedImage = null;
   let imageCreatedThisRun = false;
   let draftPersisted = false;
 
+  async function assertLease() {
+    return leaseGuard();
+  }
+
   async function updateStage(currentStage, stageResult = {}, extra = {}) {
+    await assertLease();
     return runRepository.updateRunStage(runId, {
       currentStage,
       stageId: extra.stageId || currentStage,
@@ -294,6 +301,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     failureCode = 'RUN_FINISH_AUDIT_FAILED'
   ) {
     try {
+      await assertLease();
       const result = await runRepository.finishRun(runId, payload);
       if (result) return result;
       recordAuditWarning(primaryError, failureCode, { status: payload.status });
@@ -310,6 +318,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   }
 
   async function reserve(stageId, stage) {
+    await assertLease();
     return costService.reserveMonthlyBudget({
       runId,
       stageId,
@@ -355,7 +364,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     if (reservation.created !== true) {
       return recoverProviderStage(stageId, stage, reservation);
     }
+    await assertLease();
     const result = await operation(operationInput);
+    await assertLease();
     const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
     await costService.settleMonthlyBudget({
       runId,
@@ -378,6 +389,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   }
 
   async function finishManual(code, message) {
+    await assertLease();
     await runRepository.finishRun(runId, {
       status: 'needs_manual_attention',
       errorReport: { code, message }
@@ -420,6 +432,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   }
 
   try {
+    await assertLease();
     const persistedCompleted = await readPersistedStage('completed');
     const persistedDraft = await readPersistedStage('draft_creation');
     if (persistedCompleted) {
@@ -510,6 +523,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       storedTopic = persistedTopic.topic;
     } else {
+      await assertLease();
       const createdTopic = await topicRepository.createTopic({
         ...selectedTopic,
         generationRunId: runId
@@ -689,6 +703,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
 
+    await assertLease();
     const imageReservation = await costService.reserveMonthlyBudget({
       runId,
       stageId: 'image_generation',
@@ -734,12 +749,14 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       };
     } else {
       try {
+        await assertLease();
         uploadedImage = await imageService.generateAndUploadImage({
           prompt: currentArticle.imagePrompt,
           filename: currentArticle.imageFilename,
           runId
         });
         imageCreatedThisRun = true;
+        await assertLease();
         await costService.settleMonthlyBudget({
           runId,
           stageId: 'image_generation',
@@ -786,6 +803,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
 
     const existingDraft = await readPersistedStage('draft_creation');
     let draft;
+    const topicId = storedTopic?.id || selectedTopic.id;
     if (existingDraft) {
       if (!isPersistedDraftResult(existingDraft)) {
         await stopForRecovery(
@@ -808,7 +826,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         await safeUpdateStage('image_cleanup', cleanupResult, {}, null);
       }
     } else {
-      draft = await draftRepository.createAIDraft({
+      await assertLease();
+      const draftInput = {
         generationRunId: runId,
         post: {
           title: currentArticle.title,
@@ -845,10 +864,38 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           quality_report_json: currentReview,
           generation_metadata_json: generationMetadata(modelResults)
         }
-      });
+      };
+      try {
+        draft = await draftRepository.createAIDraft(draftInput);
+      } catch (draftError) {
+        if (typeof draftRepository.findAIDraftByGenerationRunId !== 'function') throw draftError;
+        const recovered = await draftRepository.findAIDraftByGenerationRunId(runId);
+        if (!recovered?.post?.id || !recovered?.metadata) throw draftError;
+        draft = {
+          ...recovered,
+          topicId: recovered.topicId ?? topicId,
+          qualityScore: recovered.qualityScore ?? recovered.metadata.quality_score ?? currentReview.score,
+          created: false,
+          referencedImagePublicId: recovered.post.hero_public_id || null
+        };
+      }
+      await assertLease();
     }
     draftPersisted = true;
-    const topicId = storedTopic?.id || selectedTopic.id;
+    const referencedPublicId = draft.referencedImagePublicId || draft.post?.hero_public_id || null;
+    if (imageCreatedThisRun && uploadedImage?.publicId !== referencedPublicId && draft.created === false) {
+      let cleanupResult;
+      try {
+        cleanupResult = await imageService.deleteImage({ publicId: uploadedImage.publicId });
+      } catch (cleanupError) {
+        cleanupResult = cleanupError.audit?.cleanup || {
+          status: 'failed',
+          publicId: uploadedImage.publicId,
+          code: 'IMAGE_CLEANUP_FAILED'
+        };
+      }
+      await safeUpdateStage('image_cleanup', cleanupResult, {}, null);
+    }
     const persistedDraftResult = {
       post: draft.post,
       metadata: draft.metadata,
@@ -862,6 +909,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
     if (!existingDraft) await updateStage('draft_creation', persistedDraftResult);
+    await assertLease();
     await topicRepository.markTopicUsed(topicId);
     await updateStage('completed', {
       postId: draft.post.id,
@@ -895,6 +943,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       await safeUpdateStage('image_cleanup', cleanupResult, {}, error);
     }
+    if (error instanceof ContentBudgetLimitError || error?.code === 'CONTENT_BUDGET_LIMIT_REACHED') {
+      return finishManual('budget_limit_reached', 'Das konfigurierte Monatsbudget ist erreicht.');
+    }
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
     await safeFinishRun({
       status: 'failed',
       errorReport: { code: 'pipeline_failed', message: error.message }

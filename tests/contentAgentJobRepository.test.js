@@ -6,7 +6,10 @@ import {
   completeJob,
   enqueueJob,
   failJob,
+  markJobNeedsManualAttention,
+  renewJobLease,
   recoverExpiredJobs,
+  retryOrFailJob,
   upsertWorkerHeartbeat
 } from '../repositories/contentJobRepository.js';
 import {
@@ -498,4 +501,59 @@ test('upsertWorkerHeartbeat aktualisiert den benannten Worker und gibt dessen Ze
     '2026-07-11T08:45:00.000Z',
     '1.0.0'
   ]);
+});
+
+test('renewJobLease erneuert ausschließlich den weiterhin gefencten laufenden Claim', async () => {
+  const renewed = { id: 9, status: 'running', locked_by: 'worker-1', attempts: 2 };
+  const db = createQueryRecorder([{ rows: [renewed] }]);
+
+  assert.equal(await renewJobLease({ id: 9, locked_by: 'worker-1', attempts: 2 }, db), renewed);
+  assert.match(db.calls[0].sql, /SET locked_at = NOW\(\), updated_at = NOW\(\)/i);
+  assert.match(db.calls[0].sql, /id = \$1[\s\S]*locked_by = \$2[\s\S]*attempts = \$3[\s\S]*status = 'running'/i);
+  assert.deepEqual(db.calls[0].params, [9, 'worker-1', 2]);
+});
+
+test('retryOrFailJob queued temporäre Fehler mit Backoff und exhausted Fehler terminal', async () => {
+  const queued = { id: 9, status: 'queued', attempts: 2, max_attempts: 3 };
+  const failed = { id: 10, status: 'failed', attempts: 3, max_attempts: 3 };
+  const db = createQueryRecorder([{ rows: [queued] }, { rows: [failed] }]);
+
+  assert.equal(await retryOrFailJob(
+    { id: 9, locked_by: 'worker-1', attempts: 2 },
+    new Error('temporär'),
+    { backoffSeconds: 45 },
+    db
+  ), queued);
+  assert.equal(await retryOrFailJob(
+    { id: 10, locked_by: 'worker-1', attempts: 3 },
+    new Error('weiterhin kaputt'),
+    { backoffSeconds: 45 },
+    db
+  ), failed);
+  assert.match(db.calls[0].sql, /status = CASE WHEN attempts < max_attempts THEN 'queued' ELSE 'failed' END/i);
+  assert.match(db.calls[0].sql, /run_after = CASE[\s\S]*NOW\(\) \+ \(\$5 \* INTERVAL '1 second'\)/i);
+  assert.deepEqual(db.calls[0].params.slice(0, 3), [9, 'worker-1', 2]);
+});
+
+test('markJobNeedsManualAttention persistiert einen eigenen gefencten Terminalzustand', async () => {
+  const row = { id: 11, status: 'needs_manual_attention' };
+  const db = createQueryRecorder([{ rows: [row] }]);
+
+  assert.equal(await markJobNeedsManualAttention(
+    { id: 11, locked_by: 'worker-2', attempts: 1 },
+    { code: 'budget_limit_reached', message: 'Budget erreicht' },
+    db
+  ), row);
+  assert.match(db.calls[0].sql, /SET status = 'needs_manual_attention'/i);
+  assert.deepEqual(db.calls[0].params.slice(0, 3), [11, 'worker-2', 1]);
+});
+
+test('createRun liefert pro job_id atomar denselben wiederaufnehmbaren Lauf', async () => {
+  const existing = { id: 88, job_id: 7, stage_results_json: { article_generation: { ok: true } } };
+  const db = createQueryRecorder([{ rows: [existing] }, { rows: [existing] }]);
+
+  assert.equal(await createRun({ jobId: 7 }, db), existing);
+  assert.equal(await createRun({ jobId: 7 }, db), existing);
+  assert.match(db.calls[0].sql, /ON CONFLICT \(job_id\) DO UPDATE/i);
+  assert.match(db.calls[0].sql, /stage_results_json = content_runs\.stage_results_json/i);
 });

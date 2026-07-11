@@ -6,7 +6,8 @@ import {
   createPost,
   editPostForm,
   updatePost,
-  deletePost
+  deletePost,
+  previewPost
 } from '../controllers/adminBlogController.js';
 
 import { isAdmin } from '../middleware/auth.js';
@@ -32,6 +33,7 @@ router.get ('/admin/blog/new',         isAdmin, newPostForm);
 router.post('/admin/blog/new',         isAdmin, upload.single('hero_image'), createPost);
 
 router.get ('/admin/blog/:id/edit',    isAdmin, editPostForm);
+router.get ('/admin/blog/:id/preview', isAdmin, previewPost);
 router.post('/admin/blog/:id/edit',    isAdmin, upload.single('hero_image'), updatePost);
 
 router.post('/admin/blog/:id/delete',  isAdmin, deletePost);
