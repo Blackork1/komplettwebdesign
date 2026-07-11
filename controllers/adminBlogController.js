@@ -144,8 +144,13 @@ export async function deletePost(req, res) {
 
     res.redirect('/admin/blog');
   } catch (err) {
+    if (err?.code === 'BLOG_POST_DELETE_RESTRICTED') {
+      return res.status(409).send(
+        'Artikel mit Veröffentlichungsprotokoll dürfen aus Auditgründen nicht gelöscht werden.'
+      );
+    }
     console.error('deletePost-Fehler:', err);
-    res.status(500).send('Fehler beim Löschen');
+    return res.status(500).send('Fehler beim Löschen');
   }
 }
 

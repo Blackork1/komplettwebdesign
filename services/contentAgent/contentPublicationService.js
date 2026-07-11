@@ -1,5 +1,11 @@
-import { FaqItemSchema } from './articleSchemas.js';
+import { isDeepStrictEqual } from 'node:util';
+import {
+  FaqItemSchema,
+  InternalLinkSchema,
+  ReviewOutputSchema
+} from './articleSchemas.js';
 import { validateArticle as validateArticleDefault } from './articleValidator.js';
+import { buildFocusedRiskReport } from './riskReportService.js';
 import { createContentPublishEventRepository } from '../../repositories/contentPublishEventRepository.js';
 import pool from '../../util/db.js';
 
@@ -111,21 +117,54 @@ function assertSafeImageUrl(value) {
   }
 }
 
-function hasBlockingRisk(metadata) {
+function parsePersistedQualityReport(metadata, qualityScore) {
   const report = metadata?.quality_report_json;
-  if (!report || typeof report !== 'object' || Array.isArray(report)) return true;
-  const focused = report.focusedReview;
-  if (!focused || typeof focused !== 'object' || Array.isArray(focused)) return true;
-  if (focused.blocked !== false
-      || !Array.isArray(focused.items)
-      || !Array.isArray(focused.riskFlags)) return true;
-  if (focused.items.some((item) => (
-    !item || typeof item !== 'object' || item.blocking === true
-  ))) return true;
-  if (focused.riskFlags.length > 0) return true;
-  const risks = report.risks;
-  if (!risks || typeof risks !== 'object' || Array.isArray(risks)) return true;
-  return Object.values(risks).some((active) => active !== false);
+  if (!report || typeof report !== 'object' || Array.isArray(report)) {
+    throw publicationError(
+      'CONTENT_DRAFT_VALIDATION_FAILED',
+      'Der persistierte Qualitätsbericht ist unvollständig.',
+      [{ code: 'quality_report_invalid', field: 'qualityReport' }]
+    );
+  }
+  const { focusedReview, ...reviewCandidate } = report;
+  const parsed = ReviewOutputSchema.safeParse(reviewCandidate);
+  const focusedComplete = focusedReview
+    && typeof focusedReview === 'object'
+    && !Array.isArray(focusedReview)
+    && focusedReview.blocked === false
+    && Array.isArray(focusedReview.items)
+    && focusedReview.items.every((item) => item && typeof item === 'object')
+    && Array.isArray(focusedReview.riskFlags)
+    && focusedReview.riskFlags.length === 0
+    && Number.isInteger(focusedReview.sourceCount)
+    && focusedReview.sourceCount >= 0;
+  if (!parsed.success
+      || parsed.data.passed !== true
+      || parsed.data.requiresManualReview !== false
+      || parsed.data.score !== qualityScore
+      || Object.values(parsed.data.risks).some((active) => active !== false)
+      || !focusedComplete) {
+    throw publicationError(
+      'CONTENT_DRAFT_VALIDATION_FAILED',
+      'Der persistierte Qualitätsbericht ist unvollständig oder widersprüchlich.',
+      [{ code: 'quality_report_invalid', field: 'qualityReport' }]
+    );
+  }
+  return { review: parsed.data, focusedReview };
+}
+
+function parsePersistedInternalLinks(metadata) {
+  const parsed = InternalLinkSchema.array().min(2).max(8).safeParse(
+    metadata?.internal_links_json
+  );
+  if (!parsed.success) {
+    throw publicationError(
+      'CONTENT_DRAFT_VALIDATION_FAILED',
+      'Die persistierte interne Linkfreigabe ist unvollständig.',
+      [{ code: 'internal_links_invalid', field: 'internalLinks' }]
+    );
+  }
+  return parsed.data;
 }
 
 function persistedArticle(draft) {
@@ -138,17 +177,14 @@ function persistedArticle(draft) {
       [{ code: 'quality_score_invalid', field: 'qualityScore' }]
     );
   }
-  if (hasBlockingRisk(metadata)) {
-    throw publicationError(
-      'CONTENT_DRAFT_VALIDATION_FAILED',
-      'Der Entwurf enthält noch blockierende Prüfstellen.',
-      [{ code: 'risk_review_blocking', field: 'riskReview' }]
-    );
-  }
+  const qualityReport = parsePersistedQualityReport(metadata, score);
+  const allowedInternalLinks = parsePersistedInternalLinks(metadata);
   assertSafeImageUrl(post.image_url);
   const contentHtml = requiredPersistedText(post.content, 'contentHtml', MAX_CONTENT_LENGTH);
   return {
     qualityScore: score,
+    allowedInternalLinks,
+    ...qualityReport,
     article: {
       title: requiredPersistedText(post.title, 'title', 255),
       shortDescription: requiredPersistedText(post.excerpt, 'shortDescription', 500),
@@ -191,8 +227,15 @@ export function createContentPublicationService({
   async function loadValidatedDraft(postId, client) {
     const draft = await repository.getDraftWithMetadataForUpdate(postId, client);
     assertDraftState(draft);
-    const { article, qualityScore } = persistedArticle(draft);
-    const context = await repository.getValidationContext(postId, draft, client);
+    const {
+      article,
+      qualityScore,
+      allowedInternalLinks,
+      review,
+      focusedReview
+    } = persistedArticle(draft);
+    const persistedContext = await repository.getValidationContext(postId, draft, client);
+    const context = { ...persistedContext, allowedInternalLinks };
     const validation = await validateArticle(article, context);
     if (validation?.passed !== true
         || typeof validation?.sanitizedHtml !== 'string'
@@ -201,6 +244,19 @@ export function createContentPublicationService({
         'CONTENT_DRAFT_VALIDATION_FAILED',
         'Die erneute Inhaltsprüfung ist fehlgeschlagen.',
         Array.isArray(validation?.issues) ? validation.issues : []
+      );
+    }
+    const derivedFocusedReview = buildFocusedRiskReport({
+      article: { ...article, risk: review.risks },
+      review,
+      validation,
+      sources: context.sourceReferences
+    });
+    if (!isDeepStrictEqual(derivedFocusedReview, focusedReview)) {
+      throw publicationError(
+        'CONTENT_DRAFT_VALIDATION_FAILED',
+        'Der persistierte Risikobericht widerspricht der erneuten Prüfung.',
+        [{ code: 'risk_review_inconsistent', field: 'riskReview' }]
       );
     }
     return { draft, qualityScore };
@@ -229,9 +285,13 @@ export function createContentPublicationService({
           qualityScore,
           admin: normalizedAdmin
         }, client);
-        const settings = event
-          ? await repository.incrementManualApprovals(client)
-          : await repository.getSettings(client);
+        if (!event) {
+          throw publicationError(
+            'CONTENT_DRAFT_NOT_PUBLISHABLE',
+            'Für diesen Review-Entwurf besteht bereits eine manuelle Entscheidung.'
+          );
+        }
+        const settings = await repository.incrementManualApprovals(client);
         if (!settings) throw new Error('Content-Agent-Einstellungen fehlen.');
         return { post, event, settings };
       });

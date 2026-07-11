@@ -8,6 +8,17 @@ const faqItems = Array.from({ length: 5 }, (_, index) => ({
   question: `Wie funktioniert Schritt ${index + 1}?`,
   answer: `Schritt ${index + 1} wird verständlich erklärt.`
 }));
+const safeRisks = {
+  currentClaims: false,
+  legalClaims: false,
+  privacyClaims: false,
+  softwareVersionClaims: false,
+  staticPrices: false
+};
+const internalLinks = [
+  { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
+  { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
+];
 
 function validDraft(overrides = {}) {
   const base = {
@@ -32,11 +43,18 @@ function validDraft(overrides = {}) {
     },
     metadata: {
       quality_score: 92,
-      internal_links_json: ['/kontakt'],
+      internal_links_json: internalLinks,
       source_references_json: [],
       quality_report_json: {
-        risks: {},
-        focusedReview: { blocked: false, items: [], riskFlags: [] }
+        passed: true,
+        score: 92,
+        summary: 'Der Entwurf hat die Prüfung bestanden.',
+        strengths: ['Klare Struktur'],
+        issues: [],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: safeRisks,
+        focusedReview: { blocked: false, items: [], riskFlags: [], sourceCount: 0 }
       }
     }
   };
@@ -64,7 +82,7 @@ function harness({ draft = validDraft(), validation, failAt } = {}) {
     },
     async getValidationContext(postId, current, transaction) {
       calls.push(['context', postId, current, transaction]);
-      return { existingSlugs: ['anderer-slug'], allowedInternalLinks: ['/kontakt'], sourceReferences: [] };
+      return { existingSlugs: ['anderer-slug'], allowedInternalLinks: current.metadata.internal_links_json, sourceReferences: [] };
     },
     async publishDraft(postId, transaction) {
       calls.push(['publish', postId, transaction]);
@@ -159,13 +177,14 @@ test('persistierter Draft wird vollständig revalidiert und erst danach veröffe
     contentHtml: '<section><h2>Inhalt</h2><p>Sicherer Inhalt</p></section>'
   });
   assert.deepEqual(inspectedContext.existingSlugs, ['anderer-slug']);
+  assert.deepEqual(inspectedContext.allowedInternalLinks, internalLinks);
   assert.equal(result.post.published, true);
   assert.equal(result.settings.manual_approvals_count, 1);
   assert.equal(calls.includes('COMMIT'), true);
   assert.equal(calls.includes('ROLLBACK'), false);
 });
 
-test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten, Score und persistierte Risiken', async () => {
+test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten und Score', async () => {
   const variants = [
     validDraft({ post: { published: true, workflow_status: 'published' } }),
     validDraft({ post: { generated_by_ai: false } }),
@@ -173,12 +192,7 @@ test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten, Score un
     validDraft({ post: { workflow_status: 'rejected' } }),
     validDraft({ post: { image_url: 'javascript:alert(1)' } }),
     validDraft({ post: { image_alt: '' } }),
-    validDraft({ metadata: { quality_score: 79 } }),
-    validDraft({ metadata: { quality_report_json: { focusedReview: { blocked: true, items: [] } } } }),
-    validDraft({ metadata: { quality_report_json: { focusedReview: { blocked: false, items: [{ blocking: true }] } } } }),
-    validDraft({ metadata: { quality_report_json: { risks: { legalClaims: true }, focusedReview: { blocked: false, items: [], riskFlags: [] } } } }),
-    validDraft({ metadata: { quality_report_json: { risks: {}, focusedReview: { blocked: false, items: 'ungültig', riskFlags: [] } } } }),
-    validDraft({ metadata: { quality_report_json: { risks: {}, focusedReview: { items: [], riskFlags: [] } } } })
+    validDraft({ metadata: { quality_score: 79 } })
   ];
 
   for (const current of variants) {
@@ -189,6 +203,63 @@ test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten, Score un
     );
     assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
     assert.equal(calls.includes('ROLLBACK'), true);
+  }
+});
+
+test('unvollständige oder widersprüchliche Quality-Reports blockieren fail-closed', async () => {
+  const validReport = validDraft().metadata.quality_report_json;
+  const variants = [
+    { ...validReport, passed: false },
+    { ...validReport, score: 91 },
+    { ...validReport, requiresManualReview: true },
+    { ...validReport, risks: { ...safeRisks, staticPrices: true } },
+    { ...validReport, risks: { ...safeRisks, staticPrices: undefined } },
+    { ...validReport, risks: { currentClaims: false } },
+    { ...validReport, focusedReview: { blocked: false, items: [], riskFlags: [] } },
+    { ...validReport, focusedReview: { ...validReport.focusedReview, blocked: true } },
+    { ...validReport, focusedReview: { ...validReport.focusedReview, items: 'ungültig' } },
+    {
+      ...validReport,
+      issues: [{
+        code: 'fachliche_pruefung',
+        severity: 'warning',
+        message: 'Aussage prüfen.',
+        repairInstruction: 'Aussage anhand einer Quelle prüfen.',
+        blocking: true,
+        sectionHeading: null,
+        evidenceExcerpt: null,
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: true
+      }],
+      focusedReview: { ...validReport.focusedReview, blocked: false, items: [] }
+    }
+  ];
+
+  for (const report of variants) {
+    const { service, calls } = harness({
+      draft: validDraft({ metadata: { quality_report_json: report } })
+    });
+    await assert.rejects(
+      service.publishDraftManually({ postId: 9, admin, confirmed: true }),
+      (error) => error.code === 'CONTENT_DRAFT_VALIDATION_FAILED'
+    );
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+    assert.equal(calls.includes('ROLLBACK'), true);
+  }
+});
+
+test('fehlende, leere oder malformed persistierte Internal-Link-Allowlists blockieren ohne globalen Fallback', async () => {
+  for (const allowedLinks of [undefined, null, [], ['/kontakt'], [{ url: '/nicht-freigegeben' }]]) {
+    const { service, calls } = harness({
+      draft: validDraft({ metadata: { internal_links_json: allowedLinks } })
+    });
+    await assert.rejects(
+      service.publishDraftManually({ postId: 9, admin, confirmed: true }),
+      (error) => error.code === 'CONTENT_DRAFT_VALIDATION_FAILED'
+    );
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'context'), false);
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
   }
 });
 
@@ -222,20 +293,22 @@ test('Event- oder Zählerfehler rollt die manuelle Veröffentlichung vollständi
   }
 });
 
-test('ein bereits vorhandenes manuelles Ereignis veröffentlicht ohne zweite Zählung', async () => {
+test('ein bereits vorhandenes manuelles Ereignis bei needs_review ist ein Konflikt und rollt den Post zurück', async () => {
   const { service, repository, calls } = harness();
   repository.insertManualEvent = async (input, transaction) => {
     calls.push(['manual-event-existing', input, transaction]);
     return null;
   };
 
-  const result = await service.publishDraftManually({ postId: 9, admin, confirmed: true });
+  await assert.rejects(
+    service.publishDraftManually({ postId: 9, admin, confirmed: true }),
+    (error) => error.code === 'CONTENT_DRAFT_NOT_PUBLISHABLE'
+  );
 
-  assert.equal(result.post.published, true);
-  assert.equal(result.event, null);
-  assert.equal(result.settings.manual_approvals_count, 0);
   assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
-  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'settings'), true);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'settings'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(calls.includes('COMMIT'), false);
 });
 
 test('Ablehnung verlangt Bestätigung, bleibt unveröffentlicht und speichert nur einen bereinigten begrenzten Grund', async () => {

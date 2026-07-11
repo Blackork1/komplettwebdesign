@@ -1,4 +1,3 @@
-import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import pool from '../util/db.js';
 
 function splitDraftRow(row) {
@@ -15,6 +14,7 @@ export function createContentPublishEventRepository(db = pool) {
   return {
     async getDraftWithMetadataForUpdate(postId, client) {
       const target = queryTarget(client, db);
+      await target.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
       const { rows } = await target.query(`
         SELECT p.*, to_jsonb(m) AS metadata
         FROM posts p
@@ -34,10 +34,7 @@ export function createContentPublishEventRepository(db = pool) {
       const metadata = current?.metadata || {};
       return {
         existingSlugs: rows.map(({ slug }) => slug).filter(Boolean),
-        allowedInternalLinks: Array.isArray(metadata.internal_links_json)
-          && metadata.internal_links_json.length > 0
-          ? metadata.internal_links_json
-          : CONTENT_AGENT_LINKS,
+        allowedInternalLinks: metadata.internal_links_json,
         sourceReferences: Array.isArray(metadata.source_references_json)
           ? metadata.source_references_json
           : []

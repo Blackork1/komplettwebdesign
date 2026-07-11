@@ -21,10 +21,102 @@ import {
   settleMonthlyBudget
 } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
+import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
 import BlogPostModel from '../models/BlogPostModel.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
 const resetAllowed = process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true';
+
+const publishRisks = {
+  currentClaims: false,
+  legalClaims: false,
+  privacyClaims: false,
+  softwareVersionClaims: false,
+  staticPrices: false
+};
+
+function publishableFaq() {
+  return Array.from({ length: 5 }, (_, index) => ({
+    question: `Wie funktioniert Schritt ${index + 1}?`,
+    answer: `Schritt ${index + 1} wird verständlich erklärt.`
+  }));
+}
+
+function publishableHtml(faqItems) {
+  const faqHtml = faqItems.map(({ question, answer }) => (
+    `<div data-faq-question="${question}" data-faq-answer="${answer}">${question} ${answer}</div>`
+  )).join('');
+  return `<section>
+    <h2>Sicher veröffentlichen</h2>
+    <p>Der Beitrag wurde vollständig redaktionell geprüft.</p>
+    <a href="/kontakt" data-track="cta" data-cta-location="blog_early" data-cta-name="blog_early_contact">Früh beraten lassen</a>
+    <p>Weitere Hinweise für die sichere Umsetzung.</p>
+    <a href="/pakete" data-track="cta" data-cta-location="blog_mid" data-cta-name="blog_mid_contact">Pakete ansehen</a>
+    ${faqHtml}
+    <a href="/kontakt" data-track="cta" data-cta-location="blog_final" data-cta-name="blog_final_contact">Abschlussberatung anfragen</a>
+  </section>`;
+}
+
+function publishQualityReport(score) {
+  return {
+    passed: true,
+    score,
+    summary: 'Der Entwurf hat die Prüfung bestanden.',
+    strengths: ['Klare Struktur'],
+    issues: [],
+    recommendedActions: [],
+    requiresManualReview: false,
+    risks: publishRisks,
+    focusedReview: { blocked: false, items: [], riskFlags: [], sourceCount: 0 }
+  };
+}
+
+async function insertPublishableDraft(pool, suffix, score = 92) {
+  const faq = publishableFaq();
+  const post = await pool.query(`
+    INSERT INTO posts (
+      title, slug, excerpt, content, image_url, category, published, description,
+      faq_json, workflow_status, meta_title, meta_description, og_title,
+      og_description, image_alt, content_format, generated_by_ai
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, 'Webdesign', FALSE, $6,
+      $7::jsonb, 'needs_review', $8, $9, $10,
+      $11, $12, 'static_html', TRUE
+    )
+    RETURNING *
+  `, [
+    `Sicherer KI-Entwurf ${suffix}`,
+    `sicherer-ki-entwurf-${suffix}`,
+    'Eine sichere Kurzbeschreibung des geprüften Artikels.',
+    publishableHtml(faq),
+    `https://example.test/${suffix}.webp`,
+    'Eine sichere Beschreibung für Suchmaschinen und Leserinnen und Leser.',
+    JSON.stringify(faq),
+    'Sicherer Meta Title mit passender Länge für Berlin',
+    'Diese Meta Description erklärt kleinen Unternehmen verständlich und konkret den sicheren Inhalt dieses Blogartikels.',
+    'Sicherer OG-Titel',
+    'Sichere OG-Beschreibung',
+    'Sicheres Beitragsbild'
+  ]);
+  const internalLinks = [
+    { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
+    { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
+  ];
+  await pool.query(`
+    INSERT INTO content_post_metadata (
+      post_id, primary_keyword, secondary_keywords, search_intent, target_audience,
+      content_cluster, business_goal, cta_type, internal_links_json,
+      source_references_json, quality_score, quality_report_json
+    )
+    VALUES (
+      $1, 'Sicher veröffentlichen', '[]'::jsonb, 'commercial', 'Kleine Unternehmen',
+      'Webdesign', 'Beratungsanfragen', 'contact', $2::jsonb,
+      '[]'::jsonb, $3, $4::jsonb
+    )
+  `, [post.rows[0].id, JSON.stringify(internalLinks), score, JSON.stringify(publishQualityReport(score))]);
+  return post.rows[0];
+}
 
 test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau einen Run', {
   skip: !connectionString || !resetAllowed
@@ -125,6 +217,86 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     const republished = await BlogPostModel.update(manual.id, { published: true }, pool);
     assert.equal(republished.workflow_status, 'published');
     assert.ok(republished.published_at);
+
+    await pool.query('UPDATE content_agent_settings SET manual_approvals_count = 0 WHERE id = 1');
+    const publicationAdmin = await pool.query("SELECT id, username FROM admins WHERE username = 'migration-admin'");
+    const publishable = await insertPublishableDraft(pool, 'parallel');
+    const publicationService = createContentPublicationService({ db: pool });
+    const publicationOutcomes = await Promise.allSettled([
+      publicationService.publishDraftManually({ postId: publishable.id, admin: publicationAdmin.rows[0], confirmed: true }),
+      publicationService.publishDraftManually({ postId: publishable.id, admin: publicationAdmin.rows[0], confirmed: true })
+    ]);
+    assert.deepEqual(
+      publicationOutcomes.map(({ status }) => status).sort(),
+      ['fulfilled', 'rejected']
+    );
+    assert.equal(
+      publicationOutcomes.find(({ status }) => status === 'rejected').reason.code,
+      'CONTENT_DRAFT_NOT_PUBLISHABLE'
+    );
+    const publicationState = await pool.query(`
+      SELECT p.published, p.workflow_status,
+             (SELECT COUNT(*)::int FROM content_publish_events WHERE post_id = p.id AND decision = 'manual') AS event_count,
+             (SELECT manual_approvals_count FROM content_agent_settings WHERE id = 1) AS approval_count
+      FROM posts p WHERE p.id = $1
+    `, [publishable.id]);
+    assert.deepEqual(publicationState.rows[0], {
+      published: true,
+      workflow_status: 'published',
+      event_count: 1,
+      approval_count: 1
+    });
+
+    await assert.rejects(
+      pool.query("UPDATE content_publish_events SET policy_version = 'mutated' WHERE post_id = $1", [publishable.id]),
+      /unveränderlich/i
+    );
+    await assert.rejects(
+      pool.query('DELETE FROM content_publish_events WHERE post_id = $1', [publishable.id]),
+      /unveränderlich/i
+    );
+    await assert.rejects(
+      BlogPostModel.delete(publishable.id, pool),
+      (error) => error.code === 'BLOG_POST_DELETE_RESTRICTED'
+    );
+    await assert.rejects(
+      pool.query('DELETE FROM posts WHERE id = $1', [publishable.id]),
+      (error) => error.code === '23503'
+        && error.constraint === 'content_publish_events_post_id_fkey'
+    );
+
+    const inconsistent = await insertPublishableDraft(pool, 'existing-event');
+    await pool.query(`
+      INSERT INTO content_publish_events (
+        post_id, decision, policy_version, quality_score, admin_id, admin_username
+      ) VALUES ($1, 'manual', 'manual-v1', 92, $2, $3)
+    `, [inconsistent.id, publicationAdmin.rows[0].id, publicationAdmin.rows[0].username]);
+    await assert.rejects(
+      publicationService.publishDraftManually({ postId: inconsistent.id, admin: publicationAdmin.rows[0], confirmed: true }),
+      (error) => error.code === 'CONTENT_DRAFT_NOT_PUBLISHABLE'
+    );
+    const rolledBack = await pool.query(`
+      SELECT published, workflow_status,
+             (SELECT manual_approvals_count FROM content_agent_settings WHERE id = 1) AS approval_count
+      FROM posts WHERE id = $1
+    `, [inconsistent.id]);
+    assert.deepEqual(rolledBack.rows[0], {
+      published: false,
+      workflow_status: 'needs_review',
+      approval_count: 1
+    });
+
+    await runContentAgentMigration(pool);
+    const publishEventDeleteRule = await pool.query(`
+      SELECT rc.delete_rule
+      FROM information_schema.referential_constraints rc
+      WHERE rc.constraint_name = 'content_publish_events_post_id_fkey'
+    `);
+    assert.equal(publishEventDeleteRule.rows[0].delete_rule, 'RESTRICT');
+    assert.equal(
+      (await pool.query('SELECT COUNT(*)::int AS count FROM content_publish_events')).rows[0].count,
+      2
+    );
 
     const job = await enqueueJob({
       jobType: 'generate_manual_draft',

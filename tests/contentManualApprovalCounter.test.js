@@ -17,23 +17,56 @@ function sqlClient(results = []) {
   };
 }
 
+function publicationReadClient() {
+  const calls = [];
+  return {
+    calls,
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (/^LOCK TABLE posts/i.test(normalized)) return { rows: [] };
+      if (/^SELECT p\.\*/i.test(normalized)) {
+        return { rows: [{ id: 9, metadata: { quality_score: 92 } }] };
+      }
+      if (/^SELECT slug FROM posts/i.test(normalized)) {
+        return { rows: [{ slug: 'anderer-entwurf' }] };
+      }
+      return { rows: [] };
+    }
+  };
+}
+
 test('Repository sperrt den persistierten Post und bindet Metadata und Slugkontext an dieselbe Transaktion', async () => {
-  const client = sqlClient([
-    { rows: [{ id: 9, metadata: { quality_score: 92 } }] },
-    { rows: [{ slug: 'anderer-entwurf' }] }
-  ]);
+  const client = publicationReadClient();
   const repository = createContentPublishEventRepository();
 
   const draft = await repository.getDraftWithMetadataForUpdate(9, client);
   const context = await repository.getValidationContext(9, draft, client);
 
   assert.equal(draft.post.id, 9);
-  assert.match(client.calls[0].sql, /FROM posts p JOIN content_post_metadata m ON m\.post_id = p\.id/i);
-  assert.match(client.calls[0].sql, /WHERE p\.id = \$1/i);
-  assert.match(client.calls[0].sql, /FOR UPDATE OF p/i);
-  assert.deepEqual(client.calls[0].params, [9]);
-  assert.match(client.calls[1].sql, /WHERE id <> \$1/i);
+  assert.equal(client.calls[0].sql, 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+  assert.match(client.calls[1].sql, /FROM posts p JOIN content_post_metadata m ON m\.post_id = p\.id/i);
+  assert.match(client.calls[1].sql, /WHERE p\.id = \$1/i);
+  assert.match(client.calls[1].sql, /FOR UPDATE OF p/i);
+  assert.deepEqual(client.calls[1].params, [9]);
+  assert.match(client.calls[2].sql, /WHERE id <> \$1/i);
   assert.deepEqual(context.existingSlugs, ['anderer-entwurf']);
+  assert.deepEqual(context.allowedInternalLinks, undefined);
+});
+
+test('Publikation verwendet dieselbe globale Lock-Reihenfolge wie der Drafteditor', async () => {
+  const client = publicationReadClient();
+  const repository = createContentPublishEventRepository();
+
+  const draft = await repository.getDraftWithMetadataForUpdate(9, client);
+  await repository.getValidationContext(9, draft, client);
+
+  assert.deepEqual(client.calls.slice(0, 3).map(({ sql }) => sql), [
+    'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE',
+    client.calls[1].sql,
+    'SELECT slug FROM posts WHERE id <> $1 ORDER BY id'
+  ]);
+  assert.match(client.calls[1].sql, /FOR UPDATE OF p$/i);
 });
 
 test('manuelles Event ist per Partial-Unique-Insert genau einmal anlegbar und enthält keine Rohinhalte', async () => {
@@ -133,7 +166,30 @@ test('zwei parallele Doppel-Clicks erzeugen nur eine Veröffentlichung, ein Even
       workflow_status: 'needs_review',
       generation_run_id: 21
     },
-    metadata: { quality_score: 92, quality_report_json: { risks: {}, focusedReview: { blocked: false, items: [], riskFlags: [] } } },
+    metadata: {
+      quality_score: 92,
+      internal_links_json: [
+        { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
+        { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
+      ],
+      quality_report_json: {
+        passed: true,
+        score: 92,
+        summary: 'Bestanden.',
+        strengths: [],
+        issues: [],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: {
+          currentClaims: false,
+          legalClaims: false,
+          privacyClaims: false,
+          softwareVersionClaims: false,
+          staticPrices: false
+        },
+        focusedReview: { blocked: false, items: [], riskFlags: [], sourceCount: 0 }
+      }
+    },
     events: 0,
     approvals: 0
   };
@@ -164,7 +220,7 @@ test('zwei parallele Doppel-Clicks erzeugen nur eine Veröffentlichung, ein Even
       releases.set(client, unlock);
       return { post: { ...state.post }, metadata: state.metadata };
     },
-    async getValidationContext() { return { existingSlugs: [], allowedInternalLinks: [], sourceReferences: [] }; },
+    async getValidationContext() { return { existingSlugs: [], allowedInternalLinks: state.metadata.internal_links_json, sourceReferences: [] }; },
     async publishDraft() {
       if (state.post.published || state.post.workflow_status !== 'needs_review') return null;
       state.post = { ...state.post, published: true, workflow_status: 'published' };

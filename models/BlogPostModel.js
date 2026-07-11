@@ -305,12 +305,41 @@ export default class BlogPostModel {
   }
 
   /* ---------- DELETE ---------- */
-  static async delete(id) {
-    const { rows } = await pool.query(
-      `DELETE FROM posts WHERE id = $1 RETURNING *`,
-      [id]
-    );
-    return rows[0];
+  static async delete(id, db = pool) {
+    try {
+      const { rows } = await db.query(`
+        DELETE FROM posts p
+        WHERE p.id = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM content_publish_events e WHERE e.post_id = p.id
+          )
+        RETURNING p.*
+      `, [id]);
+      if (rows[0]) return rows[0];
+
+      const state = await db.query(`
+        SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1) AS post_exists,
+               EXISTS(SELECT 1 FROM content_publish_events WHERE post_id = $1)
+                 AS publish_event_exists
+      `, [id]);
+      if (state.rows[0]?.post_exists && state.rows[0]?.publish_event_exists) {
+        throw Object.assign(
+          new Error('Artikel mit Veröffentlichungsprotokoll dürfen nicht gelöscht werden.'),
+          { code: 'BLOG_POST_DELETE_RESTRICTED' }
+        );
+      }
+      return null;
+    } catch (error) {
+      if (error?.code === 'BLOG_POST_DELETE_RESTRICTED') throw error;
+      if (error?.code === '23503'
+          && error?.constraint === 'content_publish_events_post_id_fkey') {
+        throw Object.assign(
+          new Error('Artikel mit Veröffentlichungsprotokoll dürfen nicht gelöscht werden.'),
+          { code: 'BLOG_POST_DELETE_RESTRICTED' }
+        );
+      }
+      throw error;
+    }
   }
 }
 

@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS content_agent_setting_revisions (
 
 CREATE TABLE IF NOT EXISTS content_publish_events (
   id BIGSERIAL PRIMARY KEY,
-  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE RESTRICT,
   run_id BIGINT REFERENCES content_runs(id) ON DELETE SET NULL,
   decision VARCHAR(24) NOT NULL,
   policy_version VARCHAR(40) NOT NULL,
@@ -76,6 +76,12 @@ CREATE TABLE IF NOT EXISTS content_publish_events (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_manual_post
   ON content_publish_events (post_id) WHERE decision = 'manual';
+
+ALTER TABLE content_publish_events
+  DROP CONSTRAINT IF EXISTS content_publish_events_post_id_fkey;
+ALTER TABLE content_publish_events
+  ADD CONSTRAINT content_publish_events_post_id_fkey
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE RESTRICT;
 
 CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation()
 RETURNS TRIGGER AS $$

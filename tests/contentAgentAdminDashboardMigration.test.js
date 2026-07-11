@@ -23,4 +23,6 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   assert.match(sql, /CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation/i);
   assert.match(sql, /BEFORE UPDATE OR DELETE ON content_publish_events/i);
   assert.match(sql, /RAISE EXCEPTION[^;]*unveränderlich/i);
+  assert.match(sql, /DROP CONSTRAINT IF EXISTS content_publish_events_post_id_fkey/i);
+  assert.match(sql, /FOREIGN KEY \(post_id\) REFERENCES posts\(id\) ON DELETE RESTRICT/i);
 });

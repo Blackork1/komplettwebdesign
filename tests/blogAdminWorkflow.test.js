@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as cheerio from 'cheerio';
 
 import BlogPostModel from '../models/BlogPostModel.js';
-import { previewPost, updatePost } from '../controllers/adminBlogController.js';
+import { deletePost, previewPost, updatePost } from '../controllers/adminBlogController.js';
 import { isAdmin } from '../middleware/auth.js';
 import { readFileSync } from 'node:fs';
 
@@ -14,6 +14,19 @@ function queryDb(rows = []) {
     async query(sql, params = []) {
       calls.push({ sql: sql.replace(/\s+/g, ' ').trim(), params });
       return { rows };
+    }
+  };
+}
+
+function sequenceDb(results = []) {
+  const calls = [];
+  return {
+    calls,
+    async query(sql, params = []) {
+      calls.push({ sql: sql.replace(/\s+/g, ' ').trim(), params });
+      const next = results.shift();
+      if (next instanceof Error) throw next;
+      return next || { rows: [] };
     }
   };
 }
@@ -127,6 +140,58 @@ test('der alte Blogeditor zeigt für KI-Entwürfe keinen Veröffentlichungsschal
   const editView = readFileSync(new URL('../views/admin/editPost.ejs', import.meta.url), 'utf8');
   assert.match(editView, /if \(!\(post\.generated_by_ai && !post\.published\)\)/);
   assert.match(editView, /Content-Agent-Review/);
+});
+
+test('BlogPostModel verweigert das Löschen eines Posts mit Publish-Events fachlich', async () => {
+  const db = sequenceDb([
+    { rows: [] },
+    { rows: [{ post_exists: true, publish_event_exists: true }] }
+  ]);
+
+  await assert.rejects(
+    BlogPostModel.delete(9, db),
+    (error) => error.code === 'BLOG_POST_DELETE_RESTRICTED'
+  );
+
+  assert.match(db.calls[0].sql, /DELETE FROM posts/i);
+  assert.match(db.calls[0].sql, /NOT EXISTS[\s\S]*content_publish_events/i);
+  assert.match(db.calls[1].sql, /EXISTS[\s\S]*content_publish_events/i);
+});
+
+test('BlogPostModel mappt auch ein FK-Race beim Löschen auf den fachlichen Konflikt', async () => {
+  const foreignKeyError = Object.assign(new Error('interner FK-Name'), {
+    code: '23503',
+    constraint: 'content_publish_events_post_id_fkey'
+  });
+  const db = sequenceDb([foreignKeyError]);
+
+  await assert.rejects(
+    BlogPostModel.delete(9, db),
+    (error) => error.code === 'BLOG_POST_DELETE_RESTRICTED'
+      && !error.message.includes('content_publish_events_post_id_fkey')
+  );
+});
+
+test('Legacy-Delete antwortet bei Publish-Events mit sicherem 409 statt Datenbank-500', async () => {
+  const originalDelete = BlogPostModel.delete;
+  BlogPostModel.delete = async () => {
+    throw Object.assign(new Error('interner Datenbankkontext'), {
+      code: 'BLOG_POST_DELETE_RESTRICTED'
+    });
+  };
+  const res = {
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; }
+  };
+  try {
+    await deletePost({ params: { id: '9' } }, res);
+  } finally {
+    BlogPostModel.delete = originalDelete;
+  }
+
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /Veröffentlichungsprotokoll/i);
+  assert.doesNotMatch(res.body, /interner Datenbankkontext/i);
 });
 
 test('alle Legacy-Blogformulare senden das CSRF-Token', () => {
