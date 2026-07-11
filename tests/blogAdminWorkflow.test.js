@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import * as cheerio from 'cheerio';
 
 import BlogPostModel from '../models/BlogPostModel.js';
-import { previewPost } from '../controllers/adminBlogController.js';
+import { previewPost, updatePost } from '../controllers/adminBlogController.js';
 import { isAdmin } from '../middleware/auth.js';
+import { readFileSync } from 'node:fs';
 
 function queryDb(rows = []) {
   const calls = [];
@@ -89,4 +90,52 @@ test('statische Adminvorschau wertet kein EJS aus, sanitisiert und setzt noindex
   assert.equal($('script').length, 0);
   assert.equal($('[onclick]').length, 0);
   assert.match($.text(), /<%= globalThis/);
+});
+
+test('der alte Blogeditor verweigert das Veröffentlichen eines KI-Entwurfs', async () => {
+  const originalFind = BlogPostModel.findById;
+  const originalUpdate = BlogPostModel.update;
+  let updateCalls = 0;
+  BlogPostModel.findById = async () => ({
+    id: 8,
+    generated_by_ai: true,
+    published: false
+  });
+  BlogPostModel.update = async () => { updateCalls += 1; };
+  const res = {
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; }
+  };
+  try {
+    await updatePost({
+      params: { id: '8' },
+      body: { publication_control: '1', published: 'on' }
+    }, res);
+  } finally {
+    BlogPostModel.findById = originalFind;
+    BlogPostModel.update = originalUpdate;
+  }
+
+  assert.equal(updateCalls, 0);
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /\/admin\/content-agent\/drafts\/8\/edit/);
+});
+
+test('der alte Blogeditor zeigt für KI-Entwürfe keinen Veröffentlichungsschalter', () => {
+  const editView = readFileSync(new URL('../views/admin/editPost.ejs', import.meta.url), 'utf8');
+  assert.match(editView, /if \(!\(post\.generated_by_ai && !post\.published\)\)/);
+  assert.match(editView, /Content-Agent-Review/);
+});
+
+test('alle Legacy-Blogformulare senden das CSRF-Token', () => {
+  for (const relativePath of [
+    '../views/admin/newPost.ejs',
+    '../views/admin/editPost.ejs',
+    '../views/admin/blogList.ejs'
+  ]) {
+    const view = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+    const formCount = (view.match(/<form\b/gi) || []).length;
+    const tokenCount = (view.match(/name=["']_csrf["']/gi) || []).length;
+    assert.equal(tokenCount, formCount, `CSRF-Feld fehlt in ${relativePath}`);
+  }
 });

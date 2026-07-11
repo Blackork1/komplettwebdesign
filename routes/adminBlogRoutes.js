@@ -11,6 +11,7 @@ import {
 } from '../controllers/adminBlogController.js';
 
 import { isAdmin } from '../middleware/auth.js';
+import { verifyCsrfToken } from '../middleware/csrf.js';
 
 
 import multer from 'multer';
@@ -30,13 +31,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
 router.get ('/admin/blog/new',         isAdmin, newPostForm);
-router.post('/admin/blog/new',         isAdmin, upload.single('hero_image'), createPost);
+router.post('/admin/blog/new',         isAdmin, upload.single('hero_image'), verifyCsrfToken, createPost);
 
 router.get ('/admin/blog/:id/edit',    isAdmin, editPostForm);
 router.get ('/admin/blog/:id/preview', isAdmin, previewPost);
-router.post('/admin/blog/:id/edit',    isAdmin, upload.single('hero_image'), updatePost);
+router.post('/admin/blog/:id/edit',    isAdmin, upload.single('hero_image'), verifyCsrfToken, updatePost);
 
-router.post('/admin/blog/:id/delete',  isAdmin, deletePost);
+router.post('/admin/blog/:id/delete',  isAdmin, verifyCsrfToken, deletePost);
 
 router.get('/admin/blog', isAdmin,listAdminPosts);  
 

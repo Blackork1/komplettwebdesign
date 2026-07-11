@@ -5,6 +5,7 @@
   <h1 class="mb-4">Neuen Blog-Artikel anlegen</h1>
 
   <form action="/admin/blog/new" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
 
     <!-- Titel -->
     <div class="mb-3">

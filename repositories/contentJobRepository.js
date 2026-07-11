@@ -88,10 +88,34 @@ export async function enqueueJob({
       payload,
       runAfter,
       normalizeMaxAttempts(maxAttempts),
-      jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule'
+      (jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule')
+        || (jobType === 'generate_manual_draft' && payload?.source === 'admin_manual')
     ]
   );
 
+  return rows[0] || null;
+}
+
+export async function retryContentJobForAdmin({ jobId, hardMaxAttempts }, db = pool) {
+  const cap = Math.min(5, Math.max(1, Number(hardMaxAttempts) || 1));
+  const { rows } = await db.query(
+    `
+      UPDATE content_jobs
+      SET status = 'queued',
+          max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+          run_after = NOW(),
+          locked_at = NULL,
+          locked_by = NULL,
+          last_error = NULL,
+          finished_at = NULL,
+          updated_at = NOW()
+      WHERE id = $1
+        AND status IN ('failed', 'needs_manual_attention')
+        AND attempts < $2
+      RETURNING *
+    `,
+    [jobId, cap]
+  );
   return rows[0] || null;
 }
 

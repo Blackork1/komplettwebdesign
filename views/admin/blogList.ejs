@@ -42,6 +42,7 @@
             <form action="/admin/blog/<%= p.id %>/delete"
                   method="POST" class="d-inline admin-inline-block"
                   onsubmit="return confirm('Artikel wirklich löschen?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
               <button class="btn btn-sm btn-danger admin-inline-block">Löschen</button>
             </form>
           </td>

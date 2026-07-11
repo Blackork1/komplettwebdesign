@@ -89,6 +89,15 @@ export async function updatePost(req, res) {
     const current = await BlogPostModel.findById(id);
     if (!current) return res.status(404).send('Post nicht gefunden');
 
+    const publishRequested = req.body.publication_control === '1'
+      && req.body.published === 'on';
+    if (current.generated_by_ai === true && current.published !== true && publishRequested) {
+      return res.status(409).send(
+        `KI-Entwürfe müssen im Content-Agent-Review veröffentlicht werden: `
+        + `/admin/content-agent/drafts/${encodeURIComponent(id)}/edit`
+      );
+    }
+
     let hero_image, hero_public_id;
 
     /* falls neues Bild hochgeladen wurde */

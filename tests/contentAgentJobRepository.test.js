@@ -230,6 +230,23 @@ test('der Wochen-Scheduler prüft die operative Pause atomar im idempotenten Ins
   assert.equal(db.calls[0].params[5], true);
 });
 
+test('auch manuelle Admin-Entwürfe prüfen die operative Pause atomar im Insert', async () => {
+  const db = createQueryRecorder([{ rows: [] }]);
+
+  assert.equal(await enqueueJob({
+    jobType: 'generate_manual_draft',
+    idempotencyKey: 'manual:admin-test',
+    payload: { source: 'admin_manual', forced_mode: 'review' },
+    maxAttempts: 3
+  }, db), null);
+
+  assert.equal(db.calls[0].params[5], true);
+  assert.match(
+    db.calls[0].sql,
+    /WHERE \$6 = FALSE OR EXISTS \( SELECT 1 FROM content_agent_settings settings WHERE settings\.id = 1 AND settings\.agent_enabled = TRUE \)/i
+  );
+});
+
 test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 9, status: 'failed' }] }]);
   const claim = { id: 9, locked_by: 'worker-1', attempts: 3 };
