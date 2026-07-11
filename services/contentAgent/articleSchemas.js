@@ -1,11 +1,30 @@
 import { z } from 'zod';
+import { CONTENT_AGENT_LINKS } from '../../data/contentAgentLinks.js';
 
 const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ASCII_WEBP_FILENAME = /^[a-z0-9]+(?:-[a-z0-9]+)*\.webp$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const APPROVED_INTERNAL_LINK_URLS = CONTENT_AGENT_LINKS.map(({ url }) => url);
 
 const NonEmptyString = z.string().trim().min(1);
 const Score = z.number().min(0).max(10);
+
+function containsH1(html) {
+  return /<\s*\/?\s*h1(?:\s|>)/i.test(html);
+}
+
+function hasOuterBootstrapContainer(html) {
+  const openingTag = html.match(/^\s*<[a-z][a-z0-9-]*\b([^>]*)>/i);
+  if (!openingTag) return false;
+
+  const classAttribute = openingTag[1].match(/\bclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  const classNames = classAttribute?.slice(1).find((value) => value !== undefined);
+  if (!classNames) return false;
+
+  return classNames.split(/\s+/).some((className) => (
+    className === 'container' || className.startsWith('container-')
+  ));
+}
 
 export const RiskSchema = z.object({
   currentClaims: z.boolean(),
@@ -50,7 +69,9 @@ export const OutlineItemSchema = z.object({
 }).strict();
 
 export const InternalLinkSchema = z.object({
-  url: z.string().regex(/^\/[a-z0-9\-_/]*$/, 'Interne Links müssen freigegebene relative ASCII-Pfade sein.'),
+  url: z.enum(APPROVED_INTERNAL_LINK_URLS, {
+    errorMap: () => ({ message: 'Der interne Link ist nicht freigegeben.' })
+  }),
   label: NonEmptyString,
   purpose: NonEmptyString
 }).strict();
@@ -119,8 +140,8 @@ export const SourceReferenceSchema = z.object({
 
 export const ArticleSelfCheckSchema = z.object({
   searchIntentFulfilled: z.boolean(),
-  noH1: z.boolean(),
-  noOuterBootstrapContainer: z.boolean(),
+  noH1: z.literal(true),
+  noOuterBootstrapContainer: z.literal(true),
   noInventedPricesOrServices: z.boolean(),
   faqMatchesHtml: z.boolean(),
   approvedLinksOnly: z.boolean()
@@ -134,7 +155,10 @@ export const ArticleOutputSchema = z.object({
   ogTitle: NonEmptyString,
   ogDescription: NonEmptyString,
   slug: z.string().regex(ASCII_SLUG, 'Der Slug muss ausschließlich ASCII-Kleinbuchstaben, Ziffern und Bindestriche enthalten.'),
-  contentHtml: z.string().min(5000),
+  contentHtml: z.string()
+    .min(5000)
+    .refine((html) => !containsH1(html), 'Artikel-HTML darf keine H1 enthalten.')
+    .refine((html) => !hasOuterBootstrapContainer(html), 'Artikel-HTML darf keinen äußeren Bootstrap-Container enthalten.'),
   faqJson: z.array(FaqItemSchema).min(5).max(7),
   category: NonEmptyString,
   imagePrompt: NonEmptyString,

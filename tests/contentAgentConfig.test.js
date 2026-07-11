@@ -129,6 +129,14 @@ const validReview = {
   risks: validRisk
 };
 
+const validReviewIssue = {
+  code: 'generic_language',
+  severity: 'warning',
+  message: 'Ein Abschnitt bleibt zu allgemein.',
+  repairInstruction: 'Ergänze ein konkretes Beispiel für einen lokalen Betrieb.',
+  blocking: false
+};
+
 test('config defaults to drafts in Europe Berlin', () => {
   const config = getContentAgentConfig({});
   assert.equal(config.publishMode, 'draft');
@@ -197,6 +205,24 @@ test('SEO brief enforces word, outline, internal-link and FAQ boundaries', () =>
   }
 });
 
+test('SEO brief accepts only approved links and rejects unknown nested fields', () => {
+  for (const url of ['/nicht-freigegeben', '//kontakt']) {
+    const invalid = {
+      ...validSeoBrief,
+      internalLinks: [
+        { ...validSeoBrief.internalLinks[0], url },
+        validSeoBrief.internalLinks[1]
+      ]
+    };
+    assert.equal(SeoBriefSchema.safeParse(invalid).success, false);
+  }
+
+  assert.equal(SeoBriefSchema.safeParse({
+    ...validSeoBrief,
+    outline: [{ ...validSeoBrief.outline[0], extra: true }, ...validSeoBrief.outline.slice(1)]
+  }).success, false);
+});
+
 test('article output enforces strict objects, ASCII slug, HTML length and FAQ count', () => {
   assert.equal(ArticleOutputSchema.safeParse(validArticle).success, true);
   assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, slug: 'website-für-berlin' }).success, false);
@@ -204,6 +230,29 @@ test('article output enforces strict objects, ASCII slug, HTML length and FAQ co
   assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, faqJson: validArticle.faqJson.slice(0, 4) }).success, false);
   assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, faqJson: [...validArticle.faqJson, validArticle.faqJson[0], validArticle.faqJson[0], validArticle.faqJson[0]] }).success, false);
   assert.equal(ArticleOutputSchema.safeParse({ ...validArticle, qualitySelfCheck: { ...validArticle.qualitySelfCheck, extra: true } }).success, false);
+});
+
+test('article output rejects obvious H1 and outer Bootstrap containers', () => {
+  assert.equal(ArticleOutputSchema.safeParse({
+    ...validArticle,
+    contentHtml: `<h1>Unzulässige Hauptüberschrift</h1>${'x'.repeat(5000)}`
+  }).success, false);
+
+  for (const containerClass of ['container', 'container-fluid', 'container-lg']) {
+    assert.equal(ArticleOutputSchema.safeParse({
+      ...validArticle,
+      contentHtml: `<div class="${containerClass}">${'x'.repeat(5000)}</div>`
+    }).success, false);
+  }
+});
+
+test('article output requires truthful structural self-check flags', () => {
+  for (const flag of ['noH1', 'noOuterBootstrapContainer']) {
+    assert.equal(ArticleOutputSchema.safeParse({
+      ...validArticle,
+      qualitySelfCheck: { ...validArticle.qualitySelfCheck, [flag]: false }
+    }).success, false);
+  }
 });
 
 test('risk and review outputs reject missing, mistyped and unknown risk flags', () => {
@@ -214,4 +263,8 @@ test('risk and review outputs reject missing, mistyped and unknown risk flags', 
   assert.equal(ReviewOutputSchema.safeParse(validReview).success, true);
   assert.equal(ReviewOutputSchema.safeParse({ ...validReview, score: 101 }).success, false);
   assert.equal(ReviewOutputSchema.safeParse({ ...validReview, extra: true }).success, false);
+  assert.equal(ReviewOutputSchema.safeParse({
+    ...validReview,
+    issues: [{ ...validReviewIssue, extra: true }]
+  }).success, false);
 });
