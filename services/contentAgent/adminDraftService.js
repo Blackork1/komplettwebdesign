@@ -4,6 +4,7 @@ import { FaqItemSchema } from './articleSchemas.js';
 import { validateArticle as validateArticleDefault } from './articleValidator.js';
 
 const MAX_CONTENT_LENGTH = 250_000;
+export const ADMIN_EDIT_HISTORY_LIMIT = 50;
 const EDITABLE_FIELDS = Object.freeze([
   'title',
   'shortDescription',
@@ -45,7 +46,11 @@ function requiredText(value, field, maxLength) {
 
 function normalizeAdmin(admin) {
   const id = Number(admin?.id);
-  const username = String(admin?.username || '').trim().slice(0, 255);
+  const normalizedUsername = String(admin?.username || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const username = [...normalizedUsername].slice(0, 255).join('');
   if (!Number.isSafeInteger(id) || id < 1 || !username) {
     throw draftError(
       'CONTENT_DRAFT_VALIDATION_FAILED',
@@ -54,6 +59,11 @@ function normalizeAdmin(admin) {
     );
   }
   return { id, username };
+}
+
+export function capAdminEditHistory(existingHistory, currentEntry) {
+  const existing = Array.isArray(existingHistory) ? existingHistory : [];
+  return [...existing.slice(-(ADMIN_EDIT_HISTORY_LIMIT - 1)), currentEntry];
 }
 
 function parseFaqJson(value) {
@@ -207,14 +217,32 @@ export function createAdminDraftRepository(db = pool) {
                 COALESCE(generation_metadata_json, '{}'::jsonb)
                   || jsonb_build_object('lastAdminEdit', $2::jsonb),
                 '{adminEditHistory}',
-                COALESCE(generation_metadata_json -> 'adminEditHistory', '[]'::jsonb)
-                  || jsonb_build_array($2::jsonb),
+                COALESCE((
+                  SELECT jsonb_agg(history.entries -> positions.position ORDER BY positions.position)
+                  FROM LATERAL (
+                    SELECT CASE
+                      WHEN jsonb_typeof(COALESCE(
+                        generation_metadata_json -> 'adminEditHistory',
+                        '[]'::jsonb
+                      )) = 'array'
+                        THEN COALESCE(
+                          generation_metadata_json -> 'adminEditHistory',
+                          '[]'::jsonb
+                        )
+                      ELSE '[]'::jsonb
+                    END AS entries
+                  ) AS history
+                  CROSS JOIN LATERAL generate_series(
+                    GREATEST(jsonb_array_length(history.entries) - ($3::integer - 1), 0),
+                    jsonb_array_length(history.entries) - 1
+                  ) AS positions(position)
+                ), '[]'::jsonb) || jsonb_build_array($2::jsonb),
                 true
               ),
               updated_at = NOW()
           WHERE post_id = $1
           RETURNING *
-        `, [postId, audit]);
+        `, [postId, audit, ADMIN_EDIT_HISTORY_LIMIT]);
         if (!metadataResult.rows[0]) {
           throw draftError('CONTENT_DRAFT_NOT_FOUND', 'Metadaten des KI-Entwurfs fehlen.');
         }

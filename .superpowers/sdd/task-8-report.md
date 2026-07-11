@@ -81,3 +81,24 @@ Lokale, nicht versionierte Evidenz:
 - Der echte authentifizierte Adminflow mit PostgreSQL wurde nicht im Browser verändert oder gespeichert, damit keine Live-Daten betroffen sind. Controller, Route, CSRF, Repositorytransaktion und vollständiges EJS-Rendering sind automatisiert beziehungsweise über isolierte Fixtures geprüft.
 - Die PostgreSQL-Integration bleibt ohne freigegebene Reset-Testdatenbank übersprungen und muss im vorgesehenen opt-in Lauf ausgeführt werden.
 - Die Adminvorschau entfernt bewusst öffentliche Footer-/Formular-/Trackinglogik. Damit bleibt das sichtbare Bloglayout realitätsnah, während side-effecting Bereiche absichtlich nicht Bestandteil der Vorschau sind.
+
+## Review-Fix
+
+Die beiden Important-Findings aus dem Task-8-Review wurden in einem separaten TDD-Zyklus behoben:
+
+- `adminEditHistory` besitzt ein festes Cap von 50 Einträgen. Beim nächsten Edit werden die letzten 49 vorhandenen Einträge in ihrer bisherigen chronologischen Reihenfolge übernommen und der aktuelle Edit als neuester Eintrag angehängt. Die SQL-Indexserie ist auf höchstens 49 Positionen begrenzt; eine bestehende übergroße oder nicht-arrayförmige Historie wird deterministisch reduziert beziehungsweise sicher ersetzt. `lastAdminEdit` bleibt unabhängig davon aktuell.
+- Adminnamen werden vor dem Audit kontrollzeichenfrei und whitespace-normalisiert sowie auf 255 Unicode-Zeichen begrenzt.
+- Nicht zu Überschriften gehörende Preview-IDs werden vor der Heading-ID-Erzeugung reserviert. Dadurch bleibt `pruefung-gesamter-artikel` exklusiv beim allgemeinen Wrapper; echte gleichnamige H2/H3 erhalten deterministisch `pruefung-gesamter-artikel-2`, `-3` und so weiter.
+- Bei bereits persistierten alten Risk-Ankern wird das exakte Ziel zusätzlich über Abschnitt und Evidenzausschnitt verifiziert. Damit treffen Checklistenlinks auch bei der reservierten ID und doppelten echten Überschriften weiterhin die richtige Fundstelle.
+
+Review-Fix-Nachweis:
+
+```text
+RED: node --test tests/contentAgentAdminDraftService.test.js tests/contentAgentPreview.test.js
+→ 12 bestanden, 4 gezielt fehlgeschlagen
+
+GREEN: node --test tests/contentAgentAdminDraftService.test.js tests/contentAgentPreview.test.js
+→ 16 bestanden, 0 fehlgeschlagen
+```
+
+Das Desktop-/Mobil-Fixture wurde nach dem Markup-Fix erneut ausgeführt. Duplicate-IDs, fehlende Labels, horizontaler Overflow, Console-Fehler, Requestfehler und Preview-Side-Effects blieben jeweils bei null.

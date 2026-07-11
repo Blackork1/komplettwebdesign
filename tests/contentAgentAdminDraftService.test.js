@@ -5,6 +5,7 @@ import {
   createAdminDraftRepository,
   createAdminDraftService
 } from '../services/contentAgent/adminDraftService.js';
+import * as adminDraftModule from '../services/contentAgent/adminDraftService.js';
 
 const admin = { id: 7, username: 'redaktion' };
 const faqItems = Array.from({ length: 5 }, (_, index) => ({
@@ -219,4 +220,53 @@ test('Repository rollt Poständerung zurück, wenn das Metadata-Update fehlschl�
   );
   assert.equal(calls.includes('ROLLBACK'), true);
   assert.equal(calls.includes('COMMIT'), false);
+});
+
+test('Admin-Edit-Historie behält höchstens die letzten 49 alten Einträge und hängt den neuen chronologisch an', () => {
+  assert.equal(typeof adminDraftModule.capAdminEditHistory, 'function');
+  const existing = Array.from({ length: 75 }, (_, index) => ({ sequence: index + 1 }));
+  const current = { sequence: 76 };
+
+  const bounded = adminDraftModule.capAdminEditHistory(existing, current);
+
+  assert.equal(bounded.length, 50);
+  assert.deepEqual(bounded.map(({ sequence }) => sequence), Array.from({ length: 50 }, (_, index) => index + 27));
+});
+
+test('Metadata-UPDATE begrenzt auch eine bestehende übergroße JSONB-Historie mit einer bounded Indexserie', async () => {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (/^SELECT id FROM posts WHERE id = \$1/i.test(normalized)) return { rows: [{ id: 3 }] };
+      if (/^SELECT id FROM posts WHERE slug = \$1/i.test(normalized)) return { rows: [] };
+      if (/^UPDATE posts/i.test(normalized)) return { rows: [{ id: 3, published: false }] };
+      if (/^UPDATE content_post_metadata/i.test(normalized)) return { rows: [{ post_id: 3 }] };
+      return { rows: [] };
+    },
+    release() {}
+  };
+  const repository = createAdminDraftRepository({ async connect() { return client; } });
+
+  await repository.updateDraftTransaction({ postId: 3, article: validInput({ faqJson: faqItems }), admin });
+
+  const metadataUpdate = calls.find(({ sql }) => /^UPDATE content_post_metadata/i.test(sql));
+  assert.deepEqual(metadataUpdate.params.slice(2), [50]);
+  assert.match(metadataUpdate.sql, /generate_series/i);
+  assert.match(metadataUpdate.sql, /jsonb_array_length/i);
+  assert.match(metadataUpdate.sql, /ORDER BY[^)]*position/i);
+});
+
+test('Adminname wird für Auditdaten kontrollzeichenfrei normalisiert und auf 255 Zeichen begrenzt', async () => {
+  const { service, updates } = harness({
+    validation(article) { return { passed: true, sanitizedHtml: article.contentHtml, issues: [] }; }
+  });
+  const unsafeAdmin = { id: 7, username: `  Redaktion\n\t${'x'.repeat(300)}\u0000  ` };
+
+  await service.updateDraft({ postId: 3, input: validInput(), admin: unsafeAdmin });
+
+  assert.equal(updates[0].admin.username.length, 255);
+  assert.doesNotMatch(updates[0].admin.username, /[\u0000-\u001f\u007f]/);
+  assert.match(updates[0].admin.username, /^Redaktion x+/);
 });

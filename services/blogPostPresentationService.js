@@ -7,6 +7,13 @@ import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
+const RESERVED_PREVIEW_IDS = Object.freeze([
+  'hero',
+  'blog-detail-title',
+  'focused-risk-heading',
+  'blog-next-title',
+  GENERAL_ANCHOR
+]);
 
 function presentationError(code, message) {
   return Object.assign(new Error(message), { code });
@@ -65,19 +72,32 @@ function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
 
 function riskAnchorsForHtml(html) {
   const $ = cheerio.load(html, null, false);
-  const counts = new Map();
+  const usedIds = new Set(RESERVED_PREVIEW_IDS);
   const entries = [];
+
+  $('[id]').not('h2, h3').each((_, element) => {
+    const id = String($(element).attr('id') || '');
+    if (/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(id)) usedIds.add(id);
+  });
+
   $('h2, h3').each((index, element) => {
     const section = $(element).text().replace(/\s+/g, ' ').trim().slice(0, 180);
     if (!section) return;
     const base = slugify(section.replace(/[<>]/g, ' '), { lower: true, strict: true, locale: 'de' })
       || `abschnitt-${index + 1}`;
-    const occurrence = (counts.get(base) || 0) + 1;
-    counts.set(base, occurrence);
+    const baseAnchor = `pruefung-${base}`;
+    let anchor = baseAnchor;
+    let suffix = 2;
+    while (usedIds.has(anchor)) {
+      anchor = `${baseAnchor}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(anchor);
     entries.push({
       element,
       section,
-      anchor: `pruefung-${base}${occurrence > 1 ? `-${occurrence}` : ''}`
+      body: `${section} ${$(element).nextUntil('h2, h3').text()}`.replace(/\s+/g, ' ').trim(),
+      anchor
     });
   });
   return { $, entries };
@@ -92,8 +112,20 @@ function prepareRiskReview(html, rawRiskReview) {
     const item = rawItem && typeof rawItem === 'object' ? rawItem : {};
     const requestedAnchor = String(item.anchor || '');
     const requestedSection = String(item.section || '').replace(/\s+/g, ' ').trim().slice(0, 180);
-    const target = entryByAnchor.get(requestedAnchor);
-    const anchor = target && target.section === requestedSection ? target.anchor : GENERAL_ANCHOR;
+    const excerpt = typeof item.excerpt === 'string'
+      ? item.excerpt.replace(/\s+/g, ' ').trim().slice(0, 280)
+      : '';
+    const exactTarget = entryByAnchor.get(requestedAnchor);
+    const exactTargetMatches = exactTarget
+      && exactTarget.section === requestedSection
+      && (!excerpt || exactTarget.body.includes(excerpt));
+    const evidenceTargets = excerpt
+      ? entries.filter(({ section, body }) => section === requestedSection && body.includes(excerpt))
+      : [];
+    const target = exactTargetMatches
+      ? exactTarget
+      : evidenceTargets.length === 1 ? evidenceTargets[0] : null;
+    const anchor = target ? target.anchor : GENERAL_ANCHOR;
     if (target && !usedAnchors.has(anchor)) {
       $(target.element).attr('id', anchor);
       usedAnchors.add(anchor);
@@ -102,7 +134,7 @@ function prepareRiskReview(html, rawRiskReview) {
       code: String(item.code || 'review_issue').slice(0, 120),
       severity: ['info', 'warning', 'error'].includes(item.severity) ? item.severity : 'warning',
       section: target && target.section === requestedSection ? target.section : 'Gesamter Artikel',
-      excerpt: typeof item.excerpt === 'string' ? item.excerpt.slice(0, 280) : null,
+      excerpt: excerpt || null,
       reason: String(item.reason || item.message || 'Prüfstelle redaktionell bewerten.').slice(0, 500),
       instruction: String(item.instruction || 'Prüfstelle fachlich prüfen.').slice(0, 500),
       verificationType: ['none', 'source', 'date', 'price', 'version', 'legal', 'privacy'].includes(item.verificationType)

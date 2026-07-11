@@ -174,3 +174,66 @@ test('Legacy-EJS wird ausschließlich im öffentlichen legacy_ejs-Pfad ausgefüh
   }), (error) => error.code === 'CONTENT_POST_NOT_FOUND');
   assert.equal(globalThis.__unknownFormatPayload, undefined);
 });
+
+test('reservierter Gesamtartikel-Wrapper kollidiert nicht mit echten gleichnamigen Überschriften', async () => {
+  const collisionPost = post({
+    content: [
+      '<h2>Gesamter Artikel</h2><p>Erste konkrete Fundstelle.</p>',
+      '<h2>Gesamter Artikel</h2><p>Zweite konkrete Fundstelle.</p>'
+    ].join('')
+  });
+  const collisionReview = {
+    blocked: true,
+    items: [
+      {
+        code: 'first', section: 'Gesamter Artikel', anchor: 'pruefung-gesamter-artikel',
+        excerpt: 'Erste konkrete Fundstelle.', reason: 'Erste prüfen.', instruction: 'Erste prüfen.', blocking: true
+      },
+      {
+        code: 'second', section: 'Gesamter Artikel', anchor: 'pruefung-gesamter-artikel-2',
+        excerpt: 'Zweite konkrete Fundstelle.', reason: 'Zweite prüfen.', instruction: 'Zweite prüfen.', blocking: true
+      }
+    ]
+  };
+  const model = buildBlogPostPageModel({
+    post: collisionPost,
+    metadata: { quality_report_json: { focusedReview: collisionReview } },
+    previewMode: true,
+    canonicalBaseUrl: 'https://example.test',
+    pricing: {}
+  });
+  const assetUrl = (file) => `/${file}?v=test`;
+  const html = await ejs.renderFile(blogViewPath, {
+    ...model,
+    asset: assetUrl,
+    assetVersion: 'test',
+    canonicalBaseUrl: 'https://example.test',
+    csrfToken: 'csrf',
+    cssAsset: assetUrl,
+    currentPathname: '/admin/content-agent/drafts/12/preview',
+    currentSearch: '',
+    escapeJsonForHtml,
+    footerNavigation: [],
+    headerCta: null,
+    headerNavigation: [],
+    jsAsset: assetUrl,
+    lng: 'de',
+    trackingContext: {}
+  });
+  const $ = cheerio.load(html);
+  const ids = $('[id]').toArray().map((element) => $(element).attr('id'));
+  const links = $('.content-agent-risk-checklist a').toArray();
+
+  assert.equal(ids.length, new Set(ids).size);
+  assert.equal($('#pruefung-gesamter-artikel').prop('tagName'), 'DIV');
+  assert.equal($('#pruefung-gesamter-artikel-2').next('p').text(), 'Erste konkrete Fundstelle.');
+  assert.equal($('#pruefung-gesamter-artikel-3').next('p').text(), 'Zweite konkrete Fundstelle.');
+  assert.deepEqual(links.map((element) => $(element).attr('href')), [
+    '#pruefung-gesamter-artikel-2',
+    '#pruefung-gesamter-artikel-3'
+  ]);
+  assert.deepEqual(links.map((element) => $($(element).attr('href')).next('p').text()), [
+    'Erste konkrete Fundstelle.',
+    'Zweite konkrete Fundstelle.'
+  ]);
+});
