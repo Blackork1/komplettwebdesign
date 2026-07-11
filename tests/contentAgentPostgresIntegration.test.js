@@ -22,10 +22,16 @@ import {
 } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
+import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
+import { evaluateContentAgentPgResetGuard } from './helpers/contentAgentPostgresTestGuard.js';
 import BlogPostModel from '../models/BlogPostModel.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
-const resetAllowed = process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true';
+const resetGuard = evaluateContentAgentPgResetGuard({
+  connectionString,
+  allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
+  explicitMarker: process.env.CONTENT_AGENT_PG_TEST_DATABASE_MARKER
+});
 
 const publishRisks = {
   currentClaims: false,
@@ -118,10 +124,31 @@ async function insertPublishableDraft(pool, suffix, score = 92) {
   return post.rows[0];
 }
 
+async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000) {
+  let timeout;
+  try {
+    const outcomes = await Promise.race([
+      Promise.allSettled(operations),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`${label}: Paralleloperationen haben das Zeitlimit überschritten.`)), timeoutMs);
+      })
+    ]);
+    for (const outcome of outcomes) {
+      if (outcome.status !== 'rejected') continue;
+      assert.notEqual(outcome.reason?.code, '40P01', `${label}: PostgreSQL-Deadlock`);
+      assert.notEqual(outcome.reason?.code, '55P03', `${label}: Lock-Timeout`);
+      assert.notEqual(outcome.reason?.code, '57014', `${label}: Statement abgebrochen`);
+    }
+    return outcomes;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau einen Run', {
-  skip: !connectionString || !resetAllowed
+  skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
-  const pool = new pg.Pool({ connectionString });
+  const pool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
   try {
     await pool.query('DROP TABLE IF EXISTS content_provider_state, content_post_revisions, content_post_audits, content_publish_events, content_agent_setting_revisions, content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, admins, users CASCADE');
     await pool.query(`
@@ -296,6 +323,47 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal(
       (await pool.query('SELECT COUNT(*)::int AS count FROM content_publish_events')).rows[0].count,
       2
+    );
+
+    const regenerationRepository = createDraftRegenerationRepository(pool);
+    const textRaceDraft = await insertPublishableDraft(pool, 'text-race');
+    const textRace = await settleWithoutPostLockFailure([
+      publicationService.publishDraftManually({
+        postId: textRaceDraft.id,
+        admin: publicationAdmin.rows[0],
+        confirmed: true
+      }),
+      regenerationRepository.updateGeneratedFields({
+        postId: textRaceDraft.id,
+        article: { metaTitle: 'Sicherer Meta Title mit passender Länge für Berlin' },
+        allowedFields: ['metaTitle']
+      })
+    ], 'Publication gegen Textregeneration');
+    assert.equal(textRace[0].status, 'fulfilled');
+    assert.equal(
+      (await pool.query('SELECT published FROM posts WHERE id = $1', [textRaceDraft.id])).rows[0].published,
+      true
+    );
+
+    const imageRaceDraft = await insertPublishableDraft(pool, 'image-race');
+    const imageRace = await settleWithoutPostLockFailure([
+      publicationService.publishDraftManually({
+        postId: imageRaceDraft.id,
+        admin: publicationAdmin.rows[0],
+        confirmed: true
+      }),
+      regenerationRepository.updateGeneratedImage({
+        postId: imageRaceDraft.id,
+        imageUrl: 'https://example.test/image-race-new.webp',
+        publicId: 'blog_images/image-race-new',
+        imageAlt: 'Neues sicheres Beitragsbild',
+        expectedOldPublicId: null
+      })
+    ], 'Publication gegen Bildregeneration');
+    assert.equal(imageRace[0].status, 'fulfilled');
+    assert.equal(
+      (await pool.query('SELECT published FROM posts WHERE id = $1', [imageRaceDraft.id])).rows[0].published,
+      true
     );
 
     const job = await enqueueJob({

@@ -104,6 +104,14 @@ test('separate Testdatenbank belegt Migration zweimal und wird vollständig aufg
   assert.match(guide, /Basistabellen[^\n]*`users`[^\n]*`posts`/i);
 });
 
+test('destruktiver PostgreSQL-Integrationstest verlangt Freigabe und Testmarker', () => {
+  assert.match(guide, /CONTENT_AGENT_PG_TEST_URL/);
+  assert.match(guide, /CONTENT_AGENT_PG_TEST_ALLOW_RESET=true/);
+  assert.match(guide, /CONTENT_AGENT_PG_TEST_DATABASE_MARKER/);
+  assert.match(guide, /Datenbankname[^\n]*(?:test|testing)/i);
+  assert.match(guide, /Produktionsdatenbank[^\n]*(?:nie|nicht)/i);
+});
+
 test('Testmigration und geprüftes Backup liegen vor jeder Produktionsmigration', () => {
   const testDatabasePosition = guide.indexOf('TEST_DB_CONTAINER=');
   const backupPosition = guide.indexOf('BACKUP_FILE=');

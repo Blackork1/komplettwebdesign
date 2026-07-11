@@ -901,6 +901,7 @@ export function createDraftRegenerationRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const locked = await client.query(`
           SELECT id
           FROM posts
@@ -953,6 +954,7 @@ export function createDraftRegenerationRepository(db = pool) {
       let lockedOldPublicId = null;
       try {
         await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const locked = await client.query(`
           SELECT p.id, p.hero_public_id
           FROM posts p

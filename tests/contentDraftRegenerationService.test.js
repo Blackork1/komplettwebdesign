@@ -856,6 +856,7 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
       calls.push({ sql: normalized, params });
       if (normalized === 'BEGIN' || normalized === 'COMMIT') return { rows: [] };
       if (normalized === 'ROLLBACK') return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.\*, to_jsonb\(m\)/i.test(normalized)) return { rows: [] };
       if (/SELECT (?:p\.)?id(?:, (?:p\.)?hero_public_id)?/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
         return { rows: [{ id: 19, hero_public_id: 'blog_images/alt' }] };
@@ -881,6 +882,11 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
 
   const lock = calls.find(({ sql }) => /FOR UPDATE/i.test(sql));
   const update = calls.find(({ sql }) => /^UPDATE posts/i.test(sql));
+  assert.deepEqual(calls.slice(0, 3).map(({ sql }) => sql), [
+    'BEGIN',
+    'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE',
+    lock.sql
+  ]);
   assert.match(lock.sql, /generated_by_ai = TRUE/i);
   assert.match(lock.sql, /published = FALSE/i);
   assert.match(lock.sql, /content_format = 'static_html'/i);
@@ -896,6 +902,7 @@ test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock',
       const normalized = sql.replace(/\s+/g, ' ').trim();
       calls.push({ sql: normalized, params });
       if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
         return { rows: [{ id: 19, hero_public_id: 'blog_images/konkurrenz' }] };
       }
@@ -918,6 +925,12 @@ test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock',
 
   assert.equal(result.casMismatch, true);
   assert.equal(result.currentPublicId, 'blog_images/konkurrenz');
+  const rowLock = calls.find(({ sql }) => /FOR UPDATE/i.test(sql));
+  assert.deepEqual(calls.slice(0, 3).map(({ sql }) => sql), [
+    'BEGIN',
+    'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE',
+    rowLock.sql
+  ]);
   assert.equal(calls.some(({ sql }) => /^UPDATE posts/i.test(sql)), false);
 });
 
@@ -928,6 +941,7 @@ test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädika
       const normalized = sql.replace(/\s+/g, ' ').trim();
       calls.push({ sql: normalized, params });
       if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
         return { rows: [{ id: 19, hero_public_id: null }] };
       }

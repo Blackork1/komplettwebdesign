@@ -247,6 +247,15 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 
 Beide Migrationsläufe müssen `Content-Agent-Migration 002 erfolgreich.` melden. Schlägt Export, Wiederherstellung, einer der beiden Läufe oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
+Der destruktive Node-Integrationstest besitzt zusätzlich eine eigene dreifache Sperre: `CONTENT_AGENT_PG_TEST_URL` muss gesetzt sein, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true` muss den Reset ausdrücklich freigeben und der tatsächliche Datenbankname muss `test` oder `testing` als abgegrenzten Namensteil enthalten. Abweichende CI-Namen benötigen `CONTENT_AGENT_PG_TEST_DATABASE_MARKER`; dessen Wert muss im Datenbanknamen vorkommen. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor eine Verbindung oder ein `DROP TABLE` ausgeführt wird.
+
+```bash
+CONTENT_AGENT_PG_TEST_URL="$CONTENT_AGENT_PG_TEST_URL" \
+CONTENT_AGENT_PG_TEST_ALLOW_RESET=true \
+CONTENT_AGENT_PG_TEST_DATABASE_MARKER="${CONTENT_AGENT_PG_TEST_DATABASE_MARKER:-}" \
+node --test tests/contentAgentPostgresIntegration.test.js
+```
+
 ## 7. Produktionsbackup erstellen, prüfen und erst danach migrieren
 
 Erst nach der erfolgreichen Testdatenbankprüfung folgt das vollständige Produktionsbackup. Das Custom-Format erhält Struktur und Datenbankinhalte. `umask 077`, Verzeichnisrechte `700` und Dateirechte `600` verhindern, dass andere lokale Benutzer das Backup lesen. Das Backup enthält sensible Produktionsdaten und darf nicht in Git oder in einen öffentlich erreichbaren Ordner gelangen.
