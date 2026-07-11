@@ -179,6 +179,69 @@ function persistedImage(value) {
     : null;
 }
 
+function persistedOrphanCleanupIntent(value) {
+  return value
+    && typeof value === 'object'
+    && value.kind === 'image_orphan_cleanup_intent'
+    && typeof value.publicId === 'string'
+    && value.publicId.length > 0
+    && ['image_concurrent_update', 'image_commit_not_applied'].includes(value.reason)
+    ? value
+    : null;
+}
+
+function persistedOrphanCleanupOutcome(value, expectedStatus) {
+  return value
+    && typeof value === 'object'
+    && value.kind === 'image_orphan_cleanup_outcome'
+    && value.status === expectedStatus
+    && typeof value.publicId === 'string'
+    && value.publicId.length > 0
+    ? value
+    : null;
+}
+
+async function loadOrphanCleanupRecovery({ run, stageId }, dependencies) {
+  const intentStageId = `${stageId}:orphan_cleanup`;
+  const deletedStageId = `${intentStageId}:deleted`;
+  const failedStageId = `${intentStageId}:failed`;
+  const rawIntent = await dependencies.costService.getPersistedStageResult({
+    runId: run.id,
+    stageId: intentStageId
+  });
+  const rawDeleted = await dependencies.costService.getPersistedStageResult({
+    runId: run.id,
+    stageId: deletedStageId
+  });
+  const rawFailed = await dependencies.costService.getPersistedStageResult({
+    runId: run.id,
+    stageId: failedStageId
+  });
+  if (rawIntent == null && rawDeleted == null && rawFailed == null) return null;
+
+  const intent = persistedOrphanCleanupIntent(rawIntent);
+  const deleted = rawDeleted == null
+    ? null
+    : persistedOrphanCleanupOutcome(rawDeleted, 'deleted');
+  const failed = rawFailed == null
+    ? null
+    : persistedOrphanCleanupOutcome(rawFailed, 'failed');
+  const outcomeMatches = (outcome) => !outcome || outcome.publicId === intent?.publicId;
+  if (!intent || !outcomeMatches(deleted) || !outcomeMatches(failed)) {
+    return manualProviderResult(
+      'image_cleanup_state_uncertain',
+      'Der persistierte Orphan-Cleanup-Zustand ist unvollständig oder widersprüchlich. Das Bild wird weder angewendet noch gelöscht.'
+    );
+  }
+  return {
+    cleanupRecovery: {
+      intent,
+      deleted: Boolean(deleted),
+      previousFailure: failed
+    }
+  };
+}
+
 function providerFailureIsSafeToRetry(error) {
   return error?.safeToRetry === true
     || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
@@ -434,6 +497,8 @@ async function runTextRegeneration(context, dependencies) {
 
 async function loadImageResult(context, dependencies) {
   const { run, runtimeSnapshot, draft, stageId } = context;
+  const cleanupRecovery = await loadOrphanCleanupRecovery({ run, stageId }, dependencies);
+  if (cleanupRecovery) return cleanupRecovery;
   const rawPersisted = await dependencies.costService.getPersistedStageResult({
     runId: run.id,
     stageId
@@ -551,9 +616,137 @@ async function cleanupGeneratedImage({ runId, stageId, publicId, suffix }, depen
   return cleanup;
 }
 
+async function persistOrphanCleanupOutcome({ runId, stageId, publicId, status, code }, dependencies) {
+  await dependencies.assertLease();
+  await dependencies.runRepository.updateRunStage(runId, {
+    currentStage: stageId,
+    stageId: `${stageId}:orphan_cleanup:${status === 'deleted' ? 'deleted' : 'failed'}`,
+    stageResult: {
+      kind: 'image_orphan_cleanup_outcome',
+      status,
+      publicId,
+      ...(code ? { code } : {})
+    }
+  });
+}
+
+async function resumeOrphanCleanup({ runId, stageId, draft, recovery }, dependencies) {
+  const { intent, deleted } = recovery;
+  const currentPublicId = draft.post.hero_public_id ?? null;
+  if (currentPublicId === intent.publicId) {
+    return {
+      uncertain: true,
+      code: 'image_cleanup_reference_conflict',
+      message: 'Der als Orphan markierte Upload ist inzwischen im Entwurf referenziert. Er wird nicht gelöscht oder erneut angewendet.'
+    };
+  }
+  if (deleted) return { completed: true, alreadyDeleted: true };
+
+  await dependencies.assertLease();
+  try {
+    await dependencies.imageService.deleteImage({ publicId: intent.publicId });
+  } catch (error) {
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+    try {
+      await persistOrphanCleanupOutcome({
+        runId,
+        stageId,
+        publicId: intent.publicId,
+        status: 'failed',
+        code: error?.code || 'IMAGE_CLEANUP_FAILED'
+      }, dependencies);
+    } catch (auditError) {
+      if (auditError?.code === 'CONTENT_JOB_LEASE_LOST') throw auditError;
+    }
+    return { completed: false, deleteFailed: true };
+  }
+
+  try {
+    await persistOrphanCleanupOutcome({
+      runId,
+      stageId,
+      publicId: intent.publicId,
+      status: 'deleted'
+    }, dependencies);
+  } catch (error) {
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+    return {
+      uncertain: true,
+      code: 'image_cleanup_audit_uncertain',
+      message: 'Der Orphan wurde gelöscht, der dauerhafte Cleanup-Abschluss ist jedoch unklar. Der Upload wird niemals erneut angewendet.'
+    };
+  }
+  return { completed: true };
+}
+
+async function invalidateAndCleanupOrphan({
+  runId,
+  stageId,
+  draft,
+  publicId,
+  reason,
+  expectedOldPublicId,
+  currentPublicId
+}, dependencies) {
+  if (!publicId || currentPublicId === publicId) {
+    return {
+      uncertain: true,
+      code: 'image_cleanup_reference_conflict',
+      message: 'Der neue Upload ist nicht eindeutig als unreferenzierter Orphan bestätigt und wird deshalb nicht gelöscht.'
+    };
+  }
+  const intent = {
+    kind: 'image_orphan_cleanup_intent',
+    publicId,
+    reason,
+    expectedOldPublicId: expectedOldPublicId ?? null,
+    currentPublicId: currentPublicId ?? null
+  };
+  try {
+    await dependencies.assertLease();
+    await dependencies.runRepository.updateRunStage(runId, {
+      currentStage: stageId,
+      stageId: `${stageId}:orphan_cleanup`,
+      stageResult: intent
+    });
+  } catch (error) {
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+    return {
+      uncertain: true,
+      code: 'image_cleanup_invalidation_uncertain',
+      message: 'Die dauerhafte Orphan-Markierung ist unklar. Der Upload wird weder gelöscht noch erneut angewendet.'
+    };
+  }
+  return resumeOrphanCleanup({
+    runId,
+    stageId,
+    draft,
+    recovery: { intent, deleted: false }
+  }, dependencies);
+}
+
 async function runImageRegeneration(context, dependencies) {
   const { run, draft, postId, stageId } = context;
   const image = await loadImageResult(context, dependencies);
+  if (image?.cleanupRecovery) {
+    const cleanup = await resumeOrphanCleanup({
+      runId: run.id,
+      stageId,
+      draft,
+      recovery: image.cleanupRecovery
+    }, dependencies);
+    const intent = image.cleanupRecovery.intent;
+    return finishManual({
+      runId: run.id,
+      postId,
+      code: cleanup.code || intent.reason,
+      message: cleanup.message || (
+        intent.reason === 'image_commit_not_applied'
+          ? 'Der nicht übernommene Bild-Upload bleibt dauerhaft invalidiert; ausschließlich sein sicherer Orphan-Cleanup wurde fortgesetzt.'
+          : 'Der konkurrierende Bildzustand bleibt erhalten; ausschließlich der sichere Orphan-Cleanup wurde fortgesetzt.'
+      )
+    }, dependencies.runRepository, dependencies.assertLease);
+  }
   if (image?.manual) {
     return finishManual({
       runId: run.id,
@@ -578,7 +771,7 @@ async function runImageRegeneration(context, dependencies) {
       imageUrl: image.imageUrl,
       publicId: image.publicId,
       imageAlt: image.imageAlt || draft.post.image_alt || '',
-      expectedOldPublicId: draft.post.hero_public_id || null
+      expectedOldPublicId: image.previousPublicId ?? null
     });
   } catch (error) {
     if (error?.code !== 'CONTENT_IMAGE_COMMIT_UNCERTAIN') throw error;
@@ -601,17 +794,20 @@ async function runImageRegeneration(context, dependencies) {
       }, dependencies.runRepository, dependencies.assertLease);
     }
     if (reconciled.state === 'not_committed') {
-      await cleanupGeneratedImage({
+      const cleanup = await invalidateAndCleanupOrphan({
         runId: run.id,
         stageId,
+        draft,
         publicId: image.publicId,
-        suffix: 'orphan_cleanup'
+        reason: 'image_commit_not_applied',
+        expectedOldPublicId: image.previousPublicId ?? null,
+        currentPublicId: reconciled.currentPublicId ?? reconciled.post?.hero_public_id ?? null
       }, dependencies);
       return finishManual({
         runId: run.id,
         postId,
-        code: 'image_commit_not_applied',
-        message: 'Der Datenbank-Commit des neuen Beitragsbildes wurde nicht ausgeführt; der eindeutige neue Orphan wurde bereinigt.'
+        code: cleanup.code || 'image_commit_not_applied',
+        message: cleanup.message || 'Der Datenbank-Commit des neuen Beitragsbildes wurde nicht ausgeführt; der Upload bleibt dauerhaft invalidiert und wird ausschließlich als Orphan bereinigt.'
       }, dependencies.runRepository, dependencies.assertLease);
     }
     update = {
@@ -623,17 +819,20 @@ async function runImageRegeneration(context, dependencies) {
   }
 
   if (update?.casMismatch) {
-    await cleanupGeneratedImage({
+    const cleanup = await invalidateAndCleanupOrphan({
       runId: run.id,
       stageId,
+      draft,
       publicId: image.publicId,
-      suffix: 'orphan_cleanup'
+      reason: 'image_concurrent_update',
+      expectedOldPublicId: image.previousPublicId ?? null,
+      currentPublicId: update.currentPublicId ?? null
     }, dependencies);
     return finishManual({
       runId: run.id,
       postId,
-      code: 'image_concurrent_update',
-      message: 'Das Beitragsbild wurde zwischenzeitlich geändert. Das konkurrierende Bild bleibt erhalten; nur der eindeutige neue Orphan wurde bereinigt.'
+      code: cleanup.code || 'image_concurrent_update',
+      message: cleanup.message || 'Das Beitragsbild wurde zwischenzeitlich geändert. Das konkurrierende Bild bleibt erhalten; der Upload bleibt dauerhaft invalidiert und wird ausschließlich als Orphan bereinigt.'
     }, dependencies.runRepository, dependencies.assertLease);
   }
 

@@ -520,14 +520,19 @@ test('erfolgreiche Bildregeneration aktualisiert OpenAI- und Cloudinary-Status g
 
 test('Bild-Retry verwendet persistiertes Uploadresultat und erzeugt kein zweites Bild', async () => {
   const deps = dependencies();
-  deps.costService.getPersistedStageResult = async () => ({
-    imageUrl: 'https://example.test/persistiert.webp',
-    publicId: 'blog_images/persistiert',
-    bytes: 456,
-    imageAlt: 'Persistiertes Bild',
-    actualCost: 0.041,
-    reservationMonth: '2026-07'
-  });
+  deps.costService.getPersistedStageResult = async ({ stageId }) => (
+    stageId === 'regenerate_image:19'
+      ? {
+        imageUrl: 'https://example.test/persistiert.webp',
+        publicId: 'blog_images/persistiert',
+        bytes: 456,
+        imageAlt: 'Persistiertes Bild',
+        previousPublicId: 'blog_images/alt',
+        actualCost: 0.041,
+        reservationMonth: '2026-07'
+      }
+      : null
+  );
   deps.costService.reserveMonthlyBudget = async (payload) => {
     deps.calls.push(['reserve', payload]);
     return { created: false, status: 'reserved', reservationMonth: '2026-07' };
@@ -618,6 +623,194 @@ test('ambiger nicht erfolgter Bildcommit bereinigt nur den neuen Orphan', async 
     deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
     ['blog_images/neu']
   );
+});
+
+function retryableImageScenario({
+  currentPublicId = 'blog_images/alt',
+  concurrentPublicId = 'blog_images/konkurrenz',
+  commitState = 'cas_mismatch',
+  deleteFailures = 0,
+  failAfterCleanupIntent = false,
+  uncertainCleanupIntent = false
+} = {}) {
+  const deps = dependencies();
+  const stages = new Map();
+  let remainingDeleteFailures = deleteFailures;
+  let cleanupIntentFailurePending = failAfterCleanupIntent;
+  let uncertainCleanupIntentPending = uncertainCleanupIntent;
+  let actualCurrentPublicId = currentPublicId;
+  let concurrencyPending = commitState === 'cas_mismatch';
+
+  deps.draftRepository.getDraftWithMetadata = async () => draft({
+    hero_public_id: actualCurrentPublicId,
+    image_url: `https://example.test/${actualCurrentPublicId.split('/').at(-1)}.webp`
+  });
+  deps.costService.getPersistedStageResult = async ({ stageId }) => stages.get(stageId) ?? null;
+  deps.costService.reserveMonthlyBudget = async (payload) => {
+    deps.calls.push(['reserve', payload]);
+    return {
+      created: !stages.has('regenerate_image:19'),
+      status: stages.has('regenerate_image:19') ? 'settled' : 'reserved',
+      reservationMonth: '2026-07'
+    };
+  };
+  deps.runRepository.updateRunStage = async (runId, payload) => {
+    deps.calls.push(['stage', runId, payload]);
+    if (payload.stageId === 'regenerate_image:19:orphan_cleanup' && uncertainCleanupIntentPending) {
+      uncertainCleanupIntentPending = false;
+      throw new Error('Cleanup-Intent-Commit unklar');
+    }
+    if (!stages.has(payload.stageId)) stages.set(payload.stageId, structuredClone(payload.stageResult));
+    if (payload.stageId === 'regenerate_image:19:orphan_cleanup' && cleanupIntentFailurePending) {
+      cleanupIntentFailurePending = false;
+      throw Object.assign(new Error('Crash nach Cleanup-Intent'), {
+        code: 'CONTENT_JOB_LEASE_LOST',
+        retryable: false
+      });
+    }
+  };
+  deps.draftRepository.updateGeneratedImage = async (payload) => {
+    deps.calls.push(['updateImage', payload]);
+    if (commitState === 'not_committed') {
+      throw Object.assign(new Error('COMMIT nicht ausgeführt'), {
+        code: 'CONTENT_IMAGE_COMMIT_UNCERTAIN',
+        lockedOldPublicId: 'blog_images/alt'
+      });
+    }
+    if (concurrencyPending) {
+      concurrencyPending = false;
+      actualCurrentPublicId = concurrentPublicId;
+    }
+    if (payload.expectedOldPublicId !== actualCurrentPublicId) {
+      return {
+        committed: false,
+        casMismatch: true,
+        currentPublicId: actualCurrentPublicId,
+        post: null
+      };
+    }
+    actualCurrentPublicId = payload.publicId;
+    return {
+      committed: true,
+      oldPublicId: payload.expectedOldPublicId,
+      post: draft({ hero_public_id: actualCurrentPublicId }).post
+    };
+  };
+  deps.draftRepository.reconcileGeneratedImage = async () => ({
+    state: 'not_committed',
+    currentPublicId: actualCurrentPublicId,
+    post: draft({ hero_public_id: actualCurrentPublicId }).post
+  });
+  deps.imageService.deleteImage = async (payload) => {
+    deps.calls.push(['deleteImage', payload]);
+    if (remainingDeleteFailures > 0) {
+      remainingDeleteFailures -= 1;
+      throw Object.assign(new Error('Orphan-Cleanup fehlgeschlagen'), {
+        code: 'IMAGE_CLEANUP_FAILED'
+      });
+    }
+    return { status: 'completed', publicId: payload.publicId };
+  };
+
+  return { deps, stages, currentPublicId: () => actualCurrentPublicId };
+}
+
+test('derselbe CAS-Mismatch-Retry behält Basis A und wendet Upload B niemals auf Konkurrenzbild C an', async () => {
+  const scenario = retryableImageScenario();
+
+  const first = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+  const second = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(first.code, 'image_concurrent_update');
+  assert.equal(second.code, 'image_concurrent_update');
+  assert.equal(scenario.currentPublicId(), 'blog_images/konkurrenz');
+  assert.deepEqual(
+    scenario.deps.calls.filter(([type]) => type === 'updateImage').map(([, value]) => value.expectedOldPublicId),
+    ['blog_images/alt']
+  );
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'settle').length, 1);
+  assert.equal(scenario.deps.calls.some(([type, value]) => (
+    type === 'deleteImage' && value.publicId === 'blog_images/konkurrenz'
+  )), false);
+});
+
+test('derselbe image_commit_not_applied-Retry bleibt invalidiert und wendet Upload B nie nachträglich an', async () => {
+  const scenario = retryableImageScenario({
+    currentPublicId: 'blog_images/alt',
+    commitState: 'not_committed'
+  });
+
+  const first = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+  const second = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(first.code, 'image_commit_not_applied');
+  assert.equal(second.code, 'image_commit_not_applied');
+  assert.equal(scenario.currentPublicId(), 'blog_images/alt');
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'updateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'settle').length, 1);
+});
+
+test('Retry nach Crash hinter durable Cleanup-Intent führt ausschließlich Orphan-Cleanup fort', async () => {
+  const scenario = retryableImageScenario({ failAfterCleanupIntent: true });
+
+  await assert.rejects(
+    runDraftRegenerationJob(input('regenerate_image'), scenario.deps),
+    (error) => error.code === 'CONTENT_JOB_LEASE_LOST'
+  );
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'deleteImage').length, 0);
+
+  const retry = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(retry.code, 'image_concurrent_update');
+  assert.equal(scenario.currentPublicId(), 'blog_images/konkurrenz');
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'updateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'settle').length, 1);
+  assert.deepEqual(
+    scenario.deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/neu']
+  );
+});
+
+test('Retry nach Orphan-Deletefehler wiederholt nur das Cleanup und behält Konkurrenzbild C', async () => {
+  const scenario = retryableImageScenario({ deleteFailures: 1 });
+
+  const first = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+  const second = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(first.code, 'image_concurrent_update');
+  assert.equal(second.code, 'image_concurrent_update');
+  assert.equal(scenario.currentPublicId(), 'blog_images/konkurrenz');
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'updateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'settle').length, 1);
+  assert.deepEqual(
+    scenario.deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/neu', 'blog_images/neu']
+  );
+});
+
+test('unklarer Cleanup-Intent-Commit löscht und appliziert nichts; Retry bleibt durch CAS-Basis A sicher', async () => {
+  const scenario = retryableImageScenario({ uncertainCleanupIntent: true });
+
+  const first = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(first.code, 'image_cleanup_invalidation_uncertain');
+  assert.equal(scenario.currentPublicId(), 'blog_images/konkurrenz');
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'deleteImage').length, 0);
+
+  const second = await runDraftRegenerationJob(input('regenerate_image'), scenario.deps);
+
+  assert.equal(second.code, 'image_concurrent_update');
+  assert.equal(scenario.currentPublicId(), 'blog_images/konkurrenz');
+  assert.deepEqual(
+    scenario.deps.calls.filter(([type]) => type === 'updateImage').map(([, value]) => value.expectedOldPublicId),
+    ['blog_images/alt', 'blog_images/alt']
+  );
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'generateImage').length, 1);
+  assert.equal(scenario.deps.calls.filter(([type]) => type === 'settle').length, 2);
 });
 
 test('fehlgeschlagener Bildabgleich bleibt manuell und löscht keine Cloudinarydatei', async () => {
