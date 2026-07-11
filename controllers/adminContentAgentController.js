@@ -5,6 +5,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_SETTINGS_VERSION_CONFLICT',
   'CONTENT_AUTOPUBLISH_NOT_READY',
   'CONTENT_DRAFT_NOT_PUBLISHABLE',
+  'CONTENT_DRAFT_NOT_REJECTABLE',
   'CONTENT_JOB_NOT_RETRYABLE'
 ]);
 
@@ -13,6 +14,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_SETTINGS_VERSION_CONFLICT: 'Die Einstellungen wurden zwischenzeitlich geändert.',
   CONTENT_AUTOPUBLISH_NOT_READY: 'Direktveröffentlichung ist noch nicht freigegeben.',
   CONTENT_DRAFT_NOT_PUBLISHABLE: 'Der Entwurf kann in diesem Zustand nicht veröffentlicht werden.',
+  CONTENT_DRAFT_NOT_REJECTABLE: 'Der Entwurf kann in diesem Zustand nicht abgelehnt werden.',
   CONTENT_JOB_NOT_RETRYABLE: 'Der Job kann in diesem Zustand nicht fortgesetzt werden.',
   CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.'
 });
@@ -53,6 +55,10 @@ function optionalBoolean(value, fieldName) {
   throw Object.assign(new Error(`Ungültiger Wert für ${fieldName}.`), {
     code: 'CONTENT_SETTINGS_VALIDATION_FAILED'
   });
+}
+
+function criticalConfirmation(value) {
+  return value === true || value === 'true';
 }
 
 function settingsPatch(body = {}) {
@@ -390,7 +396,7 @@ export function createAdminContentAgentController(dependencies) {
         args: () => [{
           postId: positiveId(req.params.id),
           admin: adminFromRequest(req),
-          confirmed: optionalBoolean(req.body?.confirmed, 'confirmed') === true
+          confirmed: criticalConfirmation(req.body?.confirmed)
         }],
         redirect: '/admin/content-agent/drafts?published=1',
         res,
@@ -402,7 +408,12 @@ export function createAdminContentAgentController(dependencies) {
       return actionCapability({
         capability: publicationService,
         method: 'rejectDraft',
-        args: () => [{ postId: positiveId(req.params.id), admin: adminFromRequest(req), reason: req.body?.reason }],
+        args: () => [{
+          postId: positiveId(req.params.id),
+          admin: adminFromRequest(req),
+          confirmed: criticalConfirmation(req.body?.confirmed),
+          reason: req.body?.reason
+        }],
         redirect: '/admin/content-agent/drafts?rejected=1',
         res,
         next

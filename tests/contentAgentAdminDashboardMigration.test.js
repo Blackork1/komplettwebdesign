@@ -20,4 +20,7 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_post_revisions/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_provider_state/i);
   assert.match(sql, /REFERENCES admins\(id\)/i);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation/i);
+  assert.match(sql, /BEFORE UPDATE OR DELETE ON content_publish_events/i);
+  assert.match(sql, /RAISE EXCEPTION[^;]*unveränderlich/i);
 });

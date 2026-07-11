@@ -292,9 +292,12 @@ export default class BlogPostModel {
     if (!fields.length) return this.findById(id);
 
     values.push(id);
+    const publicationGuard = data.published === true
+      ? ' AND (generated_by_ai = FALSE OR published = TRUE)'
+      : '';
     const { rows } = await db.query(
       `UPDATE posts SET ${fields.join(', ')}, updated_at = NOW()
-       WHERE id = $${i}
+       WHERE id = $${i}${publicationGuard}
        RETURNING *`,
       values
     );

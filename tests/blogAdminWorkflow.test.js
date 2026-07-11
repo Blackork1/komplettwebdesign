@@ -38,6 +38,8 @@ test('manuelles Update leitet den Veröffentlichungszustand konsistent ab', asyn
   await BlogPostModel.update(2, { published: true }, publishDb);
   assert.match(publishDb.calls[0].sql, /workflow_status = 'published'/i);
   assert.match(publishDb.calls[0].sql, /published_at = COALESCE\(published_at, NOW\(\)\)/i);
+  assert.match(publishDb.calls[0].sql, /generated_by_ai = FALSE OR published = TRUE/i);
+  assert.doesNotMatch(publishDb.calls[0].sql, /reviewed_by/i);
 });
 
 test('Adminliste liest alle Beiträge, öffentliche Queries bleiben auf published begrenzt', async () => {

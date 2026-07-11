@@ -161,7 +161,7 @@ test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmod
   }
 });
 
-test('Drafteditor bietet vier getrennte CSRF-Regenerationsformulare ohne Publishaktion', async () => {
+test('Drafteditor bietet vier Regenerationen und getrennte bestätigte Publish-/Reject-Aktionen', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
     ...baseLocals,
     draft: {
@@ -189,8 +189,12 @@ test('Drafteditor bietet vier getrennte CSRF-Regenerationsformulare ohne Publish
   ]) {
     assert.match(html, new RegExp(`method="post" action="/admin/content-agent/drafts/19/${action}"`));
   }
-  assert.equal((html.match(/name="_csrf"/g) || []).length >= 5, true);
-  assert.doesNotMatch(html, /action="[^"]*\/publish"/);
+  assert.equal((html.match(/name="_csrf"/g) || []).length >= 7, true);
+  assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/publish"/);
+  assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/reject"/);
+  assert.equal((html.match(/name="confirmed" value="true"/g) || []).length, 2);
+  assert.match(html, /name="reason"[^>]*maxlength="500"[^>]*required/);
+  assert.match(html, /data-confirm="[^"]*(?:veröffentlichen|ablehnen)/i);
 });
 
 test('Adminnavigation und Dashboard führen sichtbar zum Content-Agenten', async () => {

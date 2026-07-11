@@ -81,3 +81,9 @@ test('der Content-Agent-Router ist in der Anwendung explizit gemountet', () => {
   assert.match(indexSource, /import adminContentAgentRoutes from ['"]\.\/routes\/adminContentAgentRoutes\.js['"]/);
   assert.match(indexSource, /app\.use\(adminContentAgentRoutes\)/);
 });
+
+test('der Produktionsrouter injiziert den echten Publikationsservice', () => {
+  assert.match(routes, /import \{ createContentPublicationService \} from ['"]\.\.\/services\/contentAgent\/contentPublicationService\.js['"]/);
+  assert.match(routes, /const publicationService = createContentPublicationService\(\)/);
+  assert.match(routes, /publicationService,/);
+});

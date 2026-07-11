@@ -77,6 +77,18 @@ CREATE TABLE IF NOT EXISTS content_publish_events (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_manual_post
   ON content_publish_events (post_id) WHERE decision = 'manual';
 
+CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Content-Publish-Ereignisse sind unveränderlich.';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS content_publish_events_immutable ON content_publish_events;
+CREATE TRIGGER content_publish_events_immutable
+  BEFORE UPDATE OR DELETE ON content_publish_events
+  FOR EACH ROW EXECUTE FUNCTION prevent_content_publish_event_mutation();
+
 CREATE TABLE IF NOT EXISTS content_post_audits (
   id BIGSERIAL PRIMARY KEY,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,

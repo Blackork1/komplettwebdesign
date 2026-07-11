@@ -100,6 +100,33 @@
     </div>
   </form>
 
+  <section class="content-agent-panel mt-4" aria-labelledby="draft-decision-heading">
+    <div class="content-agent-panel__head">
+      <div>
+        <p class="content-agent-eyebrow">Redaktionelle Entscheidung</p>
+        <h2 id="draft-decision-heading">Entwurf abschließen</h2>
+      </div>
+      <span class="content-agent-status is-warning">Bestätigung erforderlich</span>
+    </div>
+    <p class="content-agent-quiet">Vor der Veröffentlichung werden alle gespeicherten Inhalte, Bilddaten, Qualitätswerte und Risikohinweise erneut serverseitig geprüft.</p>
+    <div class="content-agent-editor__grid">
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish" data-confirm="Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <button class="btn btn-success" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Geprüft veröffentlichen</button>
+      </form>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reject" data-confirm="Diesen KI-Entwurf mit dem angegebenen Grund ablehnen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <div class="content-agent-field">
+          <label for="draft-rejection-reason">Ablehnungsgrund</label>
+          <textarea id="draft-rejection-reason" class="form-control" name="reason" maxlength="500" required rows="3"></textarea>
+        </div>
+        <button class="btn btn-outline-danger mt-3" type="submit"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Entwurf ablehnen</button>
+      </form>
+    </div>
+  </section>
+
   <section class="content-agent-panel mt-4" aria-labelledby="draft-regeneration-heading">
     <div class="content-agent-panel__head">
       <div>

@@ -344,6 +344,84 @@ test('ungültige Aktions-IDs verwenden ebenfalls die gemeinsame Fehlerabbildung'
   assert.equal(res.statusCode, 400);
 });
 
+test('Publish- und Reject-Controller akzeptieren nur die literale kritische Bestätigung', async () => {
+  const publishInputs = [];
+  const rejectInputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    publicationService: {
+      async publishDraftManually(input) {
+        publishInputs.push(input);
+        if (input.confirmed !== true) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
+        }
+      },
+      async rejectDraft(input) {
+        rejectInputs.push(input);
+        if (input.confirmed !== true) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
+        }
+      }
+    }
+  }));
+
+  for (const confirmed of ['on', '1', 'false', undefined]) {
+    const publishRes = response();
+    await controller.publishDraftAction({
+      params: { id: '9' },
+      body: { confirmed },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, publishRes, assert.fail);
+    assert.equal(publishRes.statusCode, 400);
+  }
+
+  const publishRes = response();
+  await controller.publishDraftAction({
+    params: { id: '9' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, publishRes, assert.fail);
+  assert.equal(publishRes.redirectedTo, '/admin/content-agent/drafts?published=1');
+  assert.deepEqual(publishInputs.at(-1), {
+    postId: 9,
+    admin: { id: 7, username: 'redaktion' },
+    confirmed: true
+  });
+
+  const rejectRes = response();
+  await controller.rejectDraftAction({
+    params: { id: '9' },
+    body: { confirmed: 'true', reason: 'Fachlich nicht passend' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, rejectRes, assert.fail);
+  assert.equal(rejectRes.redirectedTo, '/admin/content-agent/drafts?rejected=1');
+  assert.deepEqual(rejectInputs.at(-1), {
+    postId: 9,
+    admin: { id: 7, username: 'redaktion' },
+    confirmed: true,
+    reason: 'Fachlich nicht passend'
+  });
+});
+
+test('Ablehnungskonflikt wird als 409 ohne interne Details ausgegeben', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    publicationService: {
+      async rejectDraft() {
+        throw Object.assign(new Error('interner Status'), { code: 'CONTENT_DRAFT_NOT_REJECTABLE' });
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.rejectDraftAction({
+    params: { id: '9' },
+    body: { confirmed: 'true', reason: 'Grund' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.doesNotMatch(res.body, /interner Status/);
+});
+
 test('Bestehende Inhalte rendert ein sicheres Präsentationsmodell statt 501', async () => {
   const rows = [{ id: 5, title: 'Artikel', content: '<p>Rohinhalt</p>' }];
   const safeItems = [{ id: 5, title: 'Artikel' }];
