@@ -2,13 +2,20 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import pool from '../util/db.js';
 
+const MIGRATIONS = [
+  './migrations/002_create_content_agent_core.sql',
+  './migrations/003_create_content_agent_admin_dashboard.sql'
+];
+
 export async function runContentAgentMigration(db = pool) {
-  const sql = await readFile(new URL('./migrations/002_create_content_agent_core.sql', import.meta.url), 'utf8');
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    await client.query("SELECT pg_advisory_xact_lock(hashtext('kwd_content_agent_migration_002'))");
-    await client.query(sql);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('kwd_content_agent_migrations'))");
+    for (const migration of MIGRATIONS) {
+      const sql = await readFile(new URL(migration, import.meta.url), 'utf8');
+      await client.query(sql);
+    }
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');

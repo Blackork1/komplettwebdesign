@@ -31,9 +31,14 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
 }, async () => {
   const pool = new pg.Pool({ connectionString });
   try {
-    await pool.query('DROP TABLE IF EXISTS content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, users CASCADE');
+    await pool.query('DROP TABLE IF EXISTS content_provider_state, content_post_revisions, content_post_audits, content_publish_events, content_agent_setting_revisions, content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, admins, users CASCADE');
     await pool.query(`
       CREATE TABLE users (id SERIAL PRIMARY KEY);
+      CREATE TABLE admins (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL DEFAULT ''
+      );
       CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -53,10 +58,41 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       INSERT INTO posts (title, slug, content, published)
       VALUES ('Alt veröffentlicht', 'alt-veroeffentlicht', '<p>Alt</p>', TRUE),
              ('Alter Entwurf', 'alter-entwurf', '<p>Entwurf</p>', FALSE);
+      INSERT INTO admins (username) VALUES ('migration-admin');
     `);
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const settings = await pool.query('SELECT * FROM content_agent_settings WHERE id = 1');
+    assert.equal(settings.rows[0].agent_enabled, false);
+    assert.equal(settings.rows[0].operating_mode, 'review');
+    assert.deepEqual(settings.rows[0].schedule_weekdays, [1, 4]);
+
+    const adminForeignKeys = await pool.query(`
+      SELECT tc.table_name
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+       AND tc.constraint_schema = kcu.constraint_schema
+      JOIN information_schema.constraint_column_usage ccu
+        ON tc.constraint_name = ccu.constraint_name
+       AND tc.constraint_schema = ccu.constraint_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND kcu.column_name = 'admin_id'
+        AND ccu.table_name = 'admins'
+        AND tc.table_name IN (
+          'content_agent_setting_revisions',
+          'content_publish_events',
+          'content_post_revisions'
+        )
+      ORDER BY tc.table_name
+    `);
+    assert.deepEqual(adminForeignKeys.rows.map(({ table_name }) => table_name), [
+      'content_agent_setting_revisions',
+      'content_post_revisions',
+      'content_publish_events'
+    ]);
 
     await pool.query('ALTER TABLE content_jobs DROP CONSTRAINT content_jobs_status_valid');
     await pool.query(`

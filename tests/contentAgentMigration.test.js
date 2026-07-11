@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js';
+
 const sql = readFileSync(
   new URL('../scripts/migrations/002_create_content_agent_core.sql', import.meta.url),
   'utf8'
@@ -44,4 +46,31 @@ test('Migration synchronisiert Publikationszustände und kennt manuelle Queuezus
   assert.match(sql, /posts_publication_workflow_consistent/i);
   assert.match(sql, /needs_manual_attention/i);
   assert.match(sql, /cancelled/i);
+});
+
+test('Migrationsrunner führt 002 und 003 sequenziell unter einer Transaktionssperre aus', async () => {
+  const queries = [];
+  let released = false;
+  const client = {
+    async query(statement) {
+      queries.push(statement);
+    },
+    release() {
+      released = true;
+    }
+  };
+  const db = {
+    async connect() {
+      return client;
+    }
+  };
+
+  await runContentAgentMigration(db);
+
+  assert.equal(queries[0], 'BEGIN');
+  assert.equal(queries[1], "SELECT pg_advisory_xact_lock(hashtext('kwd_content_agent_migrations'))");
+  assert.match(queries[2], /CREATE TABLE IF NOT EXISTS content_jobs/i);
+  assert.match(queries[3], /CREATE TABLE IF NOT EXISTS content_publish_events/i);
+  assert.equal(queries[4], 'COMMIT');
+  assert.equal(released, true);
 });
