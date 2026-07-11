@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const blogControllerSource = readFileSync(new URL('../controllers/blogController.js', import.meta.url), 'utf8');
+const blogPresentationSource = readFileSync(new URL('../services/blogPostPresentationService.js', import.meta.url), 'utf8');
 const ratgeberControllerSource = readFileSync(new URL('../controllers/ratgeberController.js', import.meta.url), 'utf8');
 const faqControllerSource = readFileSync(new URL('../controllers/faqController.js', import.meta.url), 'utf8');
 const chatControllerSource = readFileSync(new URL('../controllers/chatController.js', import.meta.url), 'utf8');
@@ -12,8 +13,9 @@ test('Blog controller renders pricing tokens before public output', () => {
   assert.match(blogControllerSource, /pricingTokenRenderer\.js/);
   assert.match(blogControllerSource, /renderPricingTokens\(rawPosts/);
   assert.match(blogControllerSource, /renderPricingTokens\(rawFeaturedPosts/);
-  assert.match(blogControllerSource, /renderPricingTokens\(rawPost/);
-  assert.match(blogControllerSource, /renderPricingTokens\(renderDbEjs/);
+  assert.match(blogControllerSource, /buildBlogPostPageModel/);
+  assert.match(blogPresentationSource, /renderPricingTokens\(rawPost/);
+  assert.match(blogPresentationSource, /renderPricingTokens\(renderDbEjs/);
 });
 
 test('Ratgeber controller uses the DB pricing token renderer for guides and blog teasers', () => {

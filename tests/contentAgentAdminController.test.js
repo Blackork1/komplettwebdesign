@@ -321,3 +321,25 @@ test('nicht-string Fehlercodes werfen nicht in der Statusabbildung', async () =>
 
   assert.equal(forwarded, unknown);
 });
+
+test('malformed FAQ-JSON aus dem Draftservice wird als sicherer 400-Fehler ausgegeben', async () => {
+  const internal = Object.assign(new SyntaxError('Unexpected token < in JSON at position 0'), {
+    code: 'CONTENT_DRAFT_VALIDATION_FAILED',
+    issues: [{ code: 'faq_json_invalid' }]
+  });
+  const controller = createAdminContentAgentController(baseDependencies({
+    draftService: { async updateDraft() { throw internal; } }
+  }));
+  const res = response();
+  let forwarded;
+
+  await controller.updateDraftAction({
+    params: { id: '3' },
+    body: { faqJson: '<nicht-json>' },
+    session: { user: { id: 7, username: 'admin' } }
+  }, res, (error) => { forwarded = error; });
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(forwarded, undefined);
+  assert.doesNotMatch(res.body, /Unexpected token|position 0|nicht-json/i);
+});

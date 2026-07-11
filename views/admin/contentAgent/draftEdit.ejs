@@ -1,0 +1,105 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const item = typeof draft !== 'undefined' && draft ? draft : {};
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+
+<div class="content-agent-page content-agent-editor">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Redaktion · KI-Entwurf #<%= item.id || '' %></p>
+      <h1 class="admin-page-title mb-1"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Entwurf bearbeiten</h1>
+      <p class="content-agent-lead">Speichern aktualisiert ausschließlich den unveröffentlichten Entwurf. Eine Veröffentlichung ist eine getrennte Aktion.</p>
+    </div>
+    <div class="content-agent-actions">
+      <a href="/admin/content-agent/drafts" class="btn btn-outline-secondary">Zur Entwurfsliste</a>
+      <a href="/admin/content-agent/drafts/<%= item.id %>/preview" class="btn btn-outline-primary">Frontendvorschau</a>
+    </div>
+  </header>
+
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
+
+  <% if (typeof saved !== 'undefined' && saved === true) { %>
+    <div class="alert alert-success" role="status">Der unveröffentlichte Entwurf wurde sicher gespeichert.</div>
+  <% } %>
+  <% if (typeof queued !== 'undefined' && queued === true) { %>
+    <div class="alert alert-info" role="status">Die gewünschte Neugenerierung wurde eingeplant.</div>
+  <% } %>
+
+  <% if (item.editorRiskReview) { %>
+    <%- include('_riskChecklist', { riskReview: item.editorRiskReview }) %>
+  <% } %>
+
+  <form method="post" action="/admin/content-agent/drafts/<%= item.id %>" class="content-agent-panel content-agent-editor__form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+
+    <section class="content-agent-editor__section" aria-labelledby="editor-content-heading">
+      <div class="content-agent-panel__head">
+        <div><p class="content-agent-eyebrow">Inhalt</p><h2 id="editor-content-heading">Titel und Kurzbeschreibung</h2></div>
+        <span class="content-agent-status is-warning">Unveröffentlicht</span>
+      </div>
+      <div class="content-agent-editor__grid">
+        <div class="content-agent-field content-agent-field--wide">
+          <label for="draft-title">Titel</label>
+          <input id="draft-title" class="form-control" type="text" name="title" maxlength="255" value="<%= item.title || '' %>" required>
+        </div>
+        <div class="content-agent-field content-agent-field--wide">
+          <label for="draft-description">Kurzbeschreibung</label>
+          <textarea id="draft-description" class="form-control" name="shortDescription" rows="3" maxlength="500" required><%= item.shortDescription || '' %></textarea>
+        </div>
+        <div class="content-agent-field content-agent-field--wide">
+          <label for="draft-slug">Slug</label>
+          <div class="input-group"><span class="input-group-text">/blog/</span><input id="draft-slug" class="form-control" type="text" name="slug" maxlength="255" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="<%= item.slug || '' %>" required></div>
+          <small>ASCII-Kleinbuchstaben, Ziffern und Bindestriche. Der aktuelle Entwurf wird bei der Eindeutigkeitsprüfung ausgeschlossen.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-agent-editor__section" aria-labelledby="editor-meta-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Suchdarstellung</p><h2 id="editor-meta-heading">Meta- und Open-Graph-Daten</h2></div></div>
+      <div class="content-agent-editor__grid">
+        <div class="content-agent-field">
+          <div class="content-agent-field__label"><label for="draft-meta-title">Meta Title</label><span><strong id="meta-title-count">0</strong>/60</span></div>
+          <input id="draft-meta-title" class="form-control" type="text" name="metaTitle" minlength="50" maxlength="60" value="<%= item.metaTitle || '' %>" data-count-target="meta-title-count" required>
+        </div>
+        <div class="content-agent-field">
+          <div class="content-agent-field__label"><label for="draft-meta-description">Meta Description</label><span><strong id="meta-description-count">0</strong>/160</span></div>
+          <textarea id="draft-meta-description" class="form-control" name="metaDescription" minlength="100" maxlength="160" rows="3" data-count-target="meta-description-count" required><%= item.metaDescription || '' %></textarea>
+        </div>
+        <div class="content-agent-field">
+          <label for="draft-og-title">OG-Titel</label>
+          <input id="draft-og-title" class="form-control" type="text" name="ogTitle" maxlength="255" value="<%= item.ogTitle || '' %>" required>
+        </div>
+        <div class="content-agent-field">
+          <label for="draft-og-description">OG-Beschreibung</label>
+          <textarea id="draft-og-description" class="form-control" name="ogDescription" maxlength="500" rows="3" required><%= item.ogDescription || '' %></textarea>
+        </div>
+        <div class="content-agent-field content-agent-field--wide">
+          <label for="draft-image-alt">Bild-Alt-Text</label>
+          <input id="draft-image-alt" class="form-control" type="text" name="imageAlt" maxlength="500" value="<%= item.imageAlt || '' %>" required>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-agent-editor__section" aria-labelledby="editor-article-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Statisches HTML</p><h2 id="editor-article-heading">Artikel und FAQ</h2></div><p class="content-agent-quiet mb-0">EJS, Skripte, Inline-Events und nicht freigegebene Links werden serverseitig abgelehnt.</p></div>
+      <div class="content-agent-field content-agent-field--wide">
+        <label for="draft-content-html">Artikel-HTML</label>
+        <textarea id="draft-content-html" class="form-control content-agent-code-field" name="contentHtml" rows="24" spellcheck="false" required><%= item.contentHtml || '' %></textarea>
+      </div>
+      <div class="content-agent-field content-agent-field--wide">
+        <label for="draft-faq-json">FAQ-JSON</label>
+        <textarea id="draft-faq-json" class="form-control content-agent-code-field" name="faqJson" rows="16" spellcheck="false" required><%= item.faqJsonText || '[]' %></textarea>
+        <small>Fünf bis sieben Fragen; sichtbare FAQ und JSON müssen in Reihenfolge und Inhalt übereinstimmen.</small>
+      </div>
+    </section>
+
+    <div class="content-agent-editor__actions">
+      <p><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Speichern veröffentlicht den Beitrag nicht.</p>
+      <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Unveröffentlicht speichern</button>
+    </div>
+  </form>
+</div>
+
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<%- include('../../partials/admin_footer') %>

@@ -32,9 +32,9 @@
     "admin.css": {
       "source": "admin.css",
       "output": "admin.min.css",
-      "href": "/admin.min.css?v=a627aae26f45",
-      "hash": "a627aae26f45",
-      "bytes": 37048
+      "href": "/admin.min.css?v=d97ea9a5ef89",
+      "hash": "d97ea9a5ef89",
+      "bytes": 39516
     },
     "assets/css/bundle.css": {
       "source": "assets/css/bundle.css",
@@ -46,9 +46,9 @@
     "blog.css": {
       "source": "blog.css",
       "output": "blog.min.css",
-      "href": "/blog.min.css?v=fcf97c2e216e",
-      "hash": "fcf97c2e216e",
-      "bytes": 5440
+      "href": "/blog.min.css?v=763f83a4397c",
+      "hash": "763f83a4397c",
+      "bytes": 6904
     },
     "booking-widget.css": {
       "source": "booking-widget.css",

@@ -13,6 +13,8 @@
   const hasOgImage = /property=["']og:image["']/i.test(seoExtraText);
   const hasOgType = /property=["']og:type["']/i.test(seoExtraText);
   const hasTwitterCard = /name=["']twitter:card["']/i.test(seoExtraText);
+  const hasRobots = /name=["']robots["']/i.test(seoExtraText);
+  const trackingDisabled = typeof disableTracking !== 'undefined' && disableTracking === true;
   const siteBase = (canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const pageCanonical = canonicalUrl || `${siteBase}/`;
   const defaultOgImage = (typeof ogImage !== 'undefined' && typeof ogImage === 'string' && ogImage.trim())
@@ -36,7 +38,9 @@
   <title><%= pageTitle %></title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="<%= pageDescription %>" />
+  <% if (!hasRobots) { %>
   <meta name="robots" content="<%= robots || 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1' %>" />
+  <% } %>
   <% if (typeof keywords === 'string' && keywords.trim()) { %>
   <meta name="keywords" content="<%= keywords %>" />
   <% } %>
@@ -142,6 +146,7 @@
   <link rel="stylesheet" href="<%= cssAsset(cssFile) %>" />
   <% }) %>
 
+  <% if (!trackingDisabled) { %>
   <!-- Stripe lazy loader (wie bei dir) -->
   <script>
     window.ensureStripe = function(pk) {
@@ -165,6 +170,7 @@
       passive: false
     });
   </script>
+  <% } %>
 
   <!-- Favicon / Manifest -->
   <link rel="icon" type="image/png" sizes="16x16" href="/images/icon16.png" />
@@ -195,6 +201,7 @@
   <% });
   } %>
 
+  <% if (!trackingDisabled) { %>
   <!-- =========================================================
        DSGVO-SICHER / BASIC CONSENT MODE
        - Default denied VOR jeglichem Google-Script
@@ -279,4 +286,5 @@
       })();
     };
   </script>
+  <% } %>
 </head>

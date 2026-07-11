@@ -1,61 +1,10 @@
-import ejs from 'ejs';
 import BlogPostModel from '../models/BlogPostModel.js';
-import { isoOffset } from '../util/date.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
-import { sanitizeArticleHtml } from '../services/contentAgent/articleSanitizer.js';
+import { buildBlogPostPageModel } from '../services/blogPostPresentationService.js';
 
 const BLOG_PAGE_SIZE = 10;
 
-
-function renderDbEjs(template, locals = {}) {
-  try {
-    return ejs.render(template || '', locals, {
-      rmWhitespace: true,
-      filename: 'db://post-content' // nur für bessere Fehlermeldungen
-    });
-  } catch (err) {
-    console.error('EJS-Renderfehler im DB-Content:', err);
-    return template || '';
-  }
-}
-
-function stripHtml(html) {
-  return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function demoteContentH1(html) {
-  return String(html || '')
-    .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
-    .replace(/<\/h1>/gi, '</h2>');
-}
-
-function renderStaticContent(content, pricing) {
-  return sanitizeArticleHtml(renderPricingTokens(content, pricing));
-}
-
-function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
-  const legacyLocals = {
-    post: { ...post, description: post.description },
-    modifiedISO,
-    publishedISO,
-    og_image: post.image_url,
-    locale: 'de_DE',
-    helpers: {
-      date: d => new Date(d).toLocaleDateString('de-DE')
-    }
-  };
-
-  return demoteContentH1(normalizeLegacyPublicCopy(
-    renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing)
-  ));
-}
-
-function renderPostContent(post, context) {
-  return post.content_format === 'static_html'
-    ? renderStaticContent(post.content, context.pricing)
-    : renderLegacyContent(post, context);
-}
 
 function parseNonNegativeInteger(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
@@ -125,128 +74,10 @@ export async function listPostsPage(req, res) {
 export async function showPost(req, res) {
   const rawPost = await BlogPostModel.findBySlug(req.params.slug);
   if (!rawPost) return res.status(404).send('Artikel nicht gefunden');
-
-  const pricing = res.locals.packagePricing || {};
-  const postWithPricing = renderPricingTokens(rawPost, pricing);
-  const post = rawPost.content_format === 'static_html'
-    ? postWithPricing
-    : normalizeLegacyPublicCopy(postWithPricing);
-
-  const publishedISO = isoOffset(post.created_at);      // ergibt z.B. 2025-08-19T12:00:00+02:00
-  const modifiedISO = isoOffset(post.updated_at);      // echte Zeit mit Offset
-
-  // FAQ robust: JSONB (Array) ODER Text, der JSON enthält
-  let faqArray = [];
-  if (Array.isArray(post.faq_json)) {
-    faqArray = post.faq_json;
-  } else if (typeof post.faq_json === 'string' && post.faq_json.trim().startsWith('[')) {
-    try { faqArray = JSON.parse(post.faq_json); } catch { faqArray = []; }
-  }
-
-  const renderedContent = renderPostContent(post, {
-    modifiedISO,
-    pricing,
-    publishedISO
-  });
-
-  // Beschreibung/Excerpt bestimmen (DB-Excerpt bevorzugt)
-  let desc = (post.excerpt && post.excerpt.trim()) || (post.excerpt && post.excerpt.trim()) || '';
-  if (!desc) {
-    const textOnly = stripHtml(renderedContent);
-    desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
-  }
-
-  const pageTitle = post.meta_title || post.title;
-  const metaDescription = post.meta_description || post.description || desc;
-  const ogTitle = post.og_title || post.title;
-  const ogDescription = post.og_description || metaDescription;
-
-  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
-  const canonicalUrl = base ? `${base}/blog/${post.slug}` : `/blog/${post.slug}`;
-  const organizationId = `${base}/#organization`;
-
-  const structuredDataBlocks = [
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "@id": organizationId,
-      "name": "Komplett Webdesign",
-      "url": `${base}/`,
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${base}/images/LogoTransparent.webp`
-      }
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Startseite", "item": `${base}/` },
-        { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${base}/blog` },
-        { "@type": "ListItem", "position": 3, "name": post.title, "item": canonicalUrl }
-      ]
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": pageTitle,
-      "description": metaDescription,
-      "url": canonicalUrl,
-      "mainEntityOfPage": canonicalUrl,
-      "image": {
-        "@type": "ImageObject",
-        "url": post.image_url || '',
-        "width": 1200,
-        "height": 675
-      },
-      "author": { "@id": organizationId },
-      "publisher": { "@id": organizationId },
-      "datePublished": publishedISO,
-      "dateModified": modifiedISO
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": faqArray
-    }
-  ];
-
-  // Ausschließlich attributsicheres Meta-Markup; JSON-LD läuft über structuredDataBlocks.
-  const seoExtra = `
-  <link rel="canonical" href="${ejs.escapeXML(canonicalUrl)}">
-  <!-- Open Graph -->
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="${ejs.escapeXML(ogTitle)}">
-  <meta property="og:description" content="${ejs.escapeXML(ogDescription)}">
-  <meta property="og:url" content="${ejs.escapeXML(canonicalUrl)}">
-  <meta property="og:site_name" content="Komplett Webdesign">
-  <meta property="og:locale" content="de_DE">
-  <meta property="og:image" content="${ejs.escapeXML(post.image_url || '')}">
-  <meta property="og:image:alt" content="${ejs.escapeXML(post.image_alt || post.title)}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="675">
-  <meta property="article:published_time" content="${publishedISO}">
-  <meta property="article:modified_time" content="${modifiedISO}">
-  `;
-
-  res.render('blog/show', {
-    title: pageTitle,
-    description: metaDescription,
-    excerpt: desc,
-    ogTitle,
-    ogDescription,
-    ogImage: post.image_url,
-    canonicalUrl,
-    slug: post.slug,
-
-    // Daten für die View
-    post: { ...post, description: desc, faq_json: faqArray },
-    publishedISO,
-    modifiedISO,
-    renderedContent,
-    structuredDataBlocks,
-
-    // Head-Injektion
-    seoExtra
-  });
+  return res.render('blog/show', buildBlogPostPageModel({
+    post: rawPost,
+    pricing: res.locals.packagePricing || {},
+    canonicalBaseUrl: res.locals.canonicalBaseUrl,
+    previewMode: false
+  }));
 }

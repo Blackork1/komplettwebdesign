@@ -10,6 +10,7 @@ import { showPost } from '../controllers/blogController.js';
 import { escapeJsonForHtml } from '../util/security.js';
 
 const controllerSource = readFileSync(new URL('../controllers/blogController.js', import.meta.url), 'utf8');
+const presentationSource = readFileSync(new URL('../services/blogPostPresentationService.js', import.meta.url), 'utf8');
 const viewSource = readFileSync(new URL('../views/blog/show.ejs', import.meta.url), 'utf8');
 const blogViewPath = fileURLToPath(new URL('../views/blog/show.ejs', import.meta.url));
 
@@ -92,13 +93,15 @@ async function renderCompleteBlogPage(controllerLocals) {
   });
 }
 
-test('Controller trennt statisches HTML ausdrücklich vom Legacy-EJS-Pfad', () => {
-  assert.match(controllerSource, /post\.content_format === 'static_html'/);
-  assert.match(controllerSource, /sanitizeArticleHtml/);
-  assert.match(controllerSource, /renderDbEjs/);
-  assert.match(controllerSource, /post\.meta_title \|\| post\.title/);
-  assert.match(controllerSource, /post\.meta_description \|\| post\.description/);
-  assert.match(controllerSource, /structuredDataBlocks/);
+test('gemeinsames Viewmodel trennt statisches HTML ausdrücklich vom Legacy-EJS-Pfad', () => {
+  assert.match(controllerSource, /buildBlogPostPageModel/);
+  assert.match(presentationSource, /post\.content_format === 'static_html'/);
+  assert.match(presentationSource, /post\.content_format === 'legacy_ejs'/);
+  assert.match(presentationSource, /sanitizeArticleHtml/);
+  assert.match(presentationSource, /renderDbEjs/);
+  assert.match(presentationSource, /post\.meta_title \|\| post\.title/);
+  assert.match(presentationSource, /post\.meta_description \|\| post\.description/);
+  assert.match(presentationSource, /structuredDataBlocks/);
   assert.doesNotMatch(controllerSource, /const seoExtra = `[\s\S]*?<script type="application\/ld\+json">/);
 });
 
@@ -143,14 +146,15 @@ test('Legacybeiträge rendern EJS, zentrale Preistokens und stufen eine Inhalts-
   assert.match($('.rg-article-body').text(), /ab 1\.234 €/);
 });
 
-test('unbekanntes und null content_format bleiben rückwärtskompatibel im Legacy-EJS-Pfad', async () => {
+test('unbekanntes und null content_format bleiben fail-closed und führen kein Legacy-EJS aus', async () => {
   for (const contentFormat of [null, 'zukünftiges_format']) {
-    const locals = await renderControllerPost(postFixture({
-      content_format: contentFormat,
-      content: '<section><p><%= post.title %></p></section>'
-    }));
-    assert.match(locals.renderedContent, /Sicherer Blogbeitrag/);
-    assert.doesNotMatch(locals.renderedContent, /<%=/);
+    await assert.rejects(
+      renderControllerPost(postFixture({
+        content_format: contentFormat,
+        content: '<section><p><%= post.title %></p></section>'
+      })),
+      (error) => error.code === 'CONTENT_POST_NOT_FOUND'
+    );
   }
 });
 

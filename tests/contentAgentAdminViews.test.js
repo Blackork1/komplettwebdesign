@@ -172,3 +172,40 @@ test('Adminnavigation und Dashboard führen sichtbar zum Content-Agenten', async
   assert.match(adminDashboard, /href="\/admin\/content-agent"/);
   assert.match(adminDashboard, /Content-Agent/);
 });
+
+test('Entwurfseditor enthält alle allowlist-Felder, CSRF und escaped HTML/FAQ mit Zählern', async () => {
+  const draft = {
+    id: 17,
+    title: '<script>titel</script>',
+    shortDescription: 'Kurzbeschreibung',
+    slug: 'sicherer-entwurf',
+    metaTitle: 'Sicherer Meta Title mit passender Länge für Berlin',
+    metaDescription: 'Diese Meta Description erklärt den Entwurf ausreichend lang, konkret und sicher für kleine Unternehmen in Berlin.',
+    ogTitle: 'OG-Titel',
+    ogDescription: 'OG-Beschreibung',
+    imageAlt: 'Alt-Text',
+    contentHtml: '<section><h2>HTML</h2><script>alert(1)</script></section>',
+    faqJsonText: '[{"question":"<img src=x>","answer":"Antwort"}]',
+    riskReview: null
+  };
+  const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
+    ...baseLocals,
+    draft,
+    saved: false,
+    queued: false
+  });
+
+  for (const name of [
+    'title', 'shortDescription', 'slug', 'metaTitle', 'metaDescription',
+    'ogTitle', 'ogDescription', 'imageAlt', 'contentHtml', 'faqJson'
+  ]) {
+    assert.match(html, new RegExp(`name="${name}"`));
+  }
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /id="meta-title-count">0<\/strong>\/60/);
+  assert.match(html, /id="meta-description-count">0<\/strong>\/160/);
+  assert.match(html, /&lt;script&gt;titel&lt;\/script&gt;/);
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.match(html, /&lt;img src=x&gt;/);
+  assert.doesNotMatch(html, /name="published"|name="workflow_status"/);
+});

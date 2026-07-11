@@ -137,7 +137,7 @@ export function createAdminContentAgentController(dependencies) {
     draftService,
     publicationService,
     revisionService,
-    previewService
+    blogPostPresentation
   } = dependencies;
 
   return {
@@ -206,24 +206,48 @@ export function createAdminContentAgentController(dependencies) {
       }
     },
 
-    draftPreviewPage(req, res, next) {
-      return renderCapability({
-        capability: previewService,
-        method: 'renderDraftPreview',
-        args: () => [positiveId(req.params.id), req, res],
-        res,
-        next
-      });
+    async draftPreviewPage(req, res, next) {
+      if (typeof draftService?.getDraftForReview !== 'function'
+          || typeof blogPostPresentation?.buildBlogPostPageModel !== 'function') {
+        return unavailable(res);
+      }
+      try {
+        const draft = await draftService.getDraftForReview(positiveId(req.params.id));
+        const model = blogPostPresentation.buildBlogPostPageModel({
+          post: draft.post,
+          metadata: draft.metadata,
+          pricing: res.locals?.packagePricing || {},
+          canonicalBaseUrl: res.locals?.canonicalBaseUrl,
+          previewMode: true,
+          riskReview: draft.riskReview
+        });
+        res.set('X-Robots-Tag', 'noindex, nofollow');
+        return res.render('blog/show', model);
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
     },
 
-    draftEditPage(req, res, next) {
-      return renderCapability({
-        capability: draftService,
-        method: 'renderDraftEdit',
-        args: () => [positiveId(req.params.id), req, res],
-        res,
-        next
-      });
+    async draftEditPage(req, res, next) {
+      if (typeof draftService?.getDraftForReview !== 'function') return unavailable(res);
+      try {
+        const draft = await draftService.getDraftForReview(positiveId(req.params.id));
+        const editorRiskReview = draft.riskReview && typeof draft.riskReview === 'object'
+          ? {
+              ...draft.riskReview,
+              items: Array.isArray(draft.riskReview.items)
+                ? draft.riskReview.items.map((item) => ({ ...item, anchor: 'draft-content-html' }))
+                : []
+            }
+          : null;
+        return res.render('admin/contentAgent/draftEdit', {
+          draft: { ...draft, editorRiskReview },
+          saved: req.query?.saved === '1',
+          queued: req.query?.queued === '1'
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
     },
 
     revisionEditPage(req, res, next) {

@@ -1,4 +1,9 @@
 <!-- views/blog/show.ejs -->
+<%
+  const isPreview = typeof previewMode !== 'undefined' && previewMode === true;
+  const commentsEnabled = typeof showComments === 'undefined' || showComments === true;
+  const previewRiskReview = typeof riskReview !== 'undefined' ? riskReview : null;
+%>
 <%- include('../partials/head', { title, description, seoExtra, ogImage, canonicalUrl, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
 
@@ -6,6 +11,20 @@
 <link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 
 <main class="rg-page blog-page blog-detail-page" id="hero">
+  <% if (isPreview) { %>
+  <aside class="content-agent-preview-banner" role="status" aria-label="Geschützte Entwurfsvorschau">
+    <div class="container content-agent-preview-banner__inner">
+      <div>
+        <strong>Unveröffentlichte Vorschau</strong>
+        <span>Nur im geschützten Adminbereich sichtbar · Suchmaschinen sind ausgeschlossen.</span>
+      </div>
+      <div class="content-agent-preview-banner__actions">
+        <a href="<%= previewReturnUrl %>" class="btn btn-secondary">Zur Entwurfsliste</a>
+        <a href="<%= previewEditUrl %>" class="btn btn-primary">Entwurf bearbeiten</a>
+      </div>
+    </div>
+  </aside>
+  <% } %>
   <section class="rg-detail-hero blog-detail-hero unified-hero" aria-labelledby="blog-detail-title">
     <div class="container rg-detail-hero-inner unified-hero__grid">
       <div class="rg-detail-copy unified-hero__copy">
@@ -24,7 +43,7 @@
 
         <div class="rg-detail-meta blog-detail-meta">
           <span>
-            Veröffentlicht am
+            <%= isPreview ? 'Entwurf erstellt am' : 'Veröffentlicht am' %>
             <time datetime="<%= new Date(post.created_at).toISOString() %>"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></time>
           </span>
         </div>
@@ -43,10 +62,14 @@
 
   <div class="container rg-detail-layout">
     <article class="rg-article" aria-label="Blogartikel Inhalt">
-      <div class="rg-article-body">
+      <% if (isPreview && previewRiskReview) { %>
+        <%- include('../admin/contentAgent/_riskChecklist', { riskReview: previewRiskReview }) %>
+      <% } %>
+      <div class="rg-article-body" <% if (isPreview) { %>id="pruefung-gesamter-artikel"<% } %>>
         <%- renderedContent %>
       </div>
 
+      <% if (commentsEnabled) { %>
       <section id="blog-comments" class="comment-section" data-post-slug="<%= post.slug %>" data-recaptcha-sitekey="<%= process.env.RECAPTCHA_SITEKEY || '' %>">
         <div class="comment-section-head">
           <div>
@@ -103,6 +126,7 @@
           <p class="text-muted" data-empty-state>Sei die erste Person, die einen Kommentar hinterlässt.</p>
         </div>
       </section>
+      <% } %>
     </article>
 
     <aside class="rg-detail-side" aria-label="Newsletter und nächste Schritte">
@@ -111,9 +135,13 @@
           <p class="rg-panel-eyebrow">Newsletter</p>
           <h3>Neue Blogartikel direkt ins Postfach</h3>
           <p>Kurze Tipps zu Webdesign, Performance und SEO mit Fokus auf kleine Unternehmen in Berlin.</p>
+          <% if (!isPreview) { %>
           <div class="rg-newsletter-form">
             <%- include('../partials/newsletter_form') %>
           </div>
+          <% } else { %>
+          <p class="content-agent-preview-note">Formulare und Tracking sind in der Vorschau deaktiviert.</p>
+          <% } %>
         </section>
 
         <section class="rg-other-guides" aria-labelledby="blog-next-title">
@@ -133,6 +161,14 @@
     </aside>
   </div>
 </main>
+<% if (commentsEnabled) { %>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/blog-comments.js') : '/js/blog-comments.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<% } %>
 
+<% if (isPreview) { %>
+  <footer class="content-agent-preview-footer">
+    <div class="container">Geschützte redaktionelle Vorschau · Keine Formulare, Kommentare oder Trackingaufrufe.</div>
+  </footer>
+<% } else { %>
 <%- include('../partials/footer') %>
+<% } %>
