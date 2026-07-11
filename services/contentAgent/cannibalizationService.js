@@ -25,7 +25,13 @@ function normalizeSlug(value) {
 }
 
 function titleOf(item) {
-  return item?.title ?? item?.proposedTitle ?? item?.proposed_title ?? item?.topic ?? '';
+  return item?.title ??
+    item?.suggestedTitle ??
+    item?.suggested_title ??
+    item?.proposedTitle ??
+    item?.proposed_title ??
+    item?.topic ??
+    '';
 }
 
 function primaryKeywordOf(item) {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
+import { TopicCandidateSchema } from '../services/contentAgent/articleSchemas.js';
 import { calculateCannibalizationRisk } from '../services/contentAgent/cannibalizationService.js';
 import { buildSiteInventory } from '../services/contentAgent/siteInventoryService.js';
 import { scoreTopic, selectBestTopic } from '../services/contentAgent/topicScoringService.js';
@@ -107,6 +108,40 @@ test('same cluster and at least seventy percent normalized title overlap has ris
   };
 
   assert.equal(calculateCannibalizationRisk(candidate, inventory), 6);
+});
+
+test('schema topic candidates use suggestedTitle for title-overlap risk', () => {
+  const candidate = TopicCandidateSchema.parse({
+    topic: 'Mehr qualifizierte Anfragen für lokale Praxen',
+    suggestedTitle: 'Webdesign für Ärzte Kosten Berlin',
+    slug: 'webdesign-aerzte-kosten-neu',
+    primaryKeyword: 'Praxiswebsite optimieren',
+    secondaryKeywords: ['Website für Arztpraxen'],
+    contentCluster: 'Ärzte-Webdesign',
+    searchIntent: 'informational-commercial',
+    targetAudience: 'Arztpraxen in Berlin',
+    source: 'seed',
+    readerProblem: 'Die Praxiswebsite erzeugt zu wenige Anfragen.',
+    concreteReaderBenefit: 'Leser verstehen Kosten und wichtige Webdesign-Bausteine.',
+    businessGoal: 'Qualifizierte Beratungsanfragen',
+    ctaType: 'contact',
+    requiresCurrentSources: false,
+    businessValue: 9,
+    searchOpportunity: 8,
+    problemPurchaseProximity: 9,
+    internalLinkPotential: 8,
+    clusterFit: 9,
+    localRelevance: 9,
+    cannibalizationRisk: 0
+  });
+  const inventory = [{
+    title: 'Webdesign für Ärzte: Kosten in Berlin im Überblick',
+    slug: 'webdesign-aerzte-kosten-berlin',
+    contentCluster: 'Ärzte-Webdesign'
+  }];
+
+  assert.equal('title' in candidate, false);
+  assert.ok(calculateCannibalizationRisk(candidate, inventory) >= 6);
 });
 
 test('exactly seventy percent title-word overlap reaches the cluster risk threshold', () => {
