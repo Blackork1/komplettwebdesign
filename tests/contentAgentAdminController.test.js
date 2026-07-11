@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createAdminContentAgentController } from '../controllers/adminContentAgentController.js';
+import {
+  contentAgentStatus,
+  createAdminContentAgentController
+} from '../controllers/adminContentAgentController.js';
 import { retryContentJobForAdmin } from '../repositories/contentJobRepository.js';
 
 function response() {
@@ -182,4 +185,44 @@ test('ungültige Aktions-IDs verwenden ebenfalls die gemeinsame Fehlerabbildung'
   await controller.publishDraftAction({ params: { id: '../3' }, body: {} }, res, assert.fail);
 
   assert.equal(res.statusCode, 400);
+});
+
+test('Bestehende Inhalte rendert ein sicheres Präsentationsmodell statt 501', async () => {
+  const rows = [{ id: 5, title: 'Artikel', content: '<p>Rohinhalt</p>' }];
+  const safeItems = [{ id: 5, title: 'Artikel' }];
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: { async listExistingContent() { return rows; } },
+    presentation: {
+      buildExistingContentListPresentation(input) {
+        assert.equal(input, rows);
+        return safeItems;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.existingContentPage({}, res, assert.fail);
+
+  assert.deepEqual(res.rendered, {
+    view: 'admin/contentAgent/existingContent',
+    locals: { existingContent: safeItems }
+  });
+});
+
+test('nicht-string Fehlercodes werfen nicht in der Statusabbildung', async () => {
+  assert.equal(contentAgentStatus({ code: 42 }), 500);
+
+  const unknown = Object.assign(new Error('Unbekannt'), { code: { value: 'kaputt' } });
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: { async getSettings() { throw unknown; } }
+  }));
+  let forwarded;
+
+  await controller.updateSettingsAction(
+    { body: {}, session: { user: {} } },
+    response(),
+    (error) => { forwarded = error; }
+  );
+
+  assert.equal(forwarded, unknown);
 });

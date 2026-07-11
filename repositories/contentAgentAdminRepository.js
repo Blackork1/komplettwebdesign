@@ -81,6 +81,17 @@ export function createContentAgentAdminRepository(db = pool) {
       return rows;
     },
 
+    async listExistingContent() {
+      const { rows } = await db.query(`
+        SELECT id, title, slug, updated_at
+        FROM posts
+        WHERE published = TRUE
+        ORDER BY updated_at DESC
+        LIMIT 100
+      `);
+      return rows;
+    },
+
     async listJobs(limit = 100) {
       const { rows } = await db.query(`
         SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,

@@ -18,9 +18,10 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
 });
 
 export function contentAgentStatus(error) {
-  if (error?.code?.endsWith('_NOT_FOUND')) return 404;
-  if (CONFLICT_CODES.has(error?.code)) return 409;
-  if (error?.code?.includes('VALIDATION') || error?.code === 'CONTENT_CONFIRMATION_REQUIRED') {
+  const code = typeof error?.code === 'string' ? error.code : '';
+  if (code.endsWith('_NOT_FOUND')) return 404;
+  if (CONFLICT_CODES.has(code)) return 409;
+  if (code.includes('VALIDATION') || code === 'CONTENT_CONFIRMATION_REQUIRED') {
     return 400;
   }
   return 500;
@@ -162,9 +163,9 @@ export function createAdminContentAgentController(dependencies) {
     },
 
     async existingContentPage(req, res, next) {
-      if (typeof adminRepository.listExistingContent !== 'function') return unavailable(res);
       try {
-        const existingContent = await adminRepository.listExistingContent();
+        const rows = await adminRepository.listExistingContent();
+        const existingContent = presentation.buildExistingContentListPresentation(rows);
         return res.render('admin/contentAgent/existingContent', { existingContent });
       } catch (error) {
         return sendKnownError(error, res, next);

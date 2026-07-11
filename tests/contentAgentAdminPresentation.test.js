@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildDashboardPresentation,
   buildDraftListPresentation,
+  buildExistingContentListPresentation,
   buildJobListPresentation,
   buildTechnologyPresentation
 } from '../services/contentAgent/adminPresentationService.js';
@@ -105,4 +106,20 @@ test('Providerfehler bleibt bei identischen Erfolgs- und Fehlerzeitstempeln sich
   assert.equal(presentation.providers[0].healthy, false);
   assert.equal(presentation.providers[0].statusLabel, 'Fehler gemeldet');
   assert.equal(presentation.providers[0].lastErrorCode, 'RATE_LIMIT');
+});
+
+test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
+  assert.deepEqual(buildExistingContentListPresentation([{
+    id: 4,
+    title: 'Artikel',
+    slug: 'artikel',
+    updated_at: '2026-07-11T12:00:00.000Z',
+    content: '<p>Rohinhalt</p>',
+    payload_json: { geheim: true }
+  }]), [{
+    id: 4,
+    title: 'Artikel',
+    slug: 'artikel',
+    updatedAt: '2026-07-11T12:00:00.000Z'
+  }]);
 });

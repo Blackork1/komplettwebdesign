@@ -1,0 +1,27 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Entwürfe</h1>
+  <%- include('_navigation') %>
+
+  <% if (!drafts.length) { %>
+    <p class="text-muted">Derzeit sind keine KI-Entwürfe zur Prüfung vorhanden.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>Titel</th><th>Status</th><th>Qualität</th></tr></thead>
+        <tbody>
+          <% drafts.forEach((draft) => { %>
+            <tr>
+              <td><%= draft.title %></td>
+              <td><%= draft.workflowStatus %></td>
+              <td><%= draft.qualityScore ?? 0 %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/admin_footer') %>

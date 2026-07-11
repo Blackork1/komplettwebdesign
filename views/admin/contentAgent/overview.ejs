@@ -1,0 +1,35 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Übersicht</h1>
+  <%- include('_navigation') %>
+
+  <div class="row g-3">
+    <div class="col-md-6 col-xl-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Betriebsmodus</h2>
+        <p class="mb-0"><%= dashboard.modeLabel %></p>
+      </div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Worker</h2>
+        <p class="mb-0"><%= dashboard.worker.label %></p>
+      </div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Monatsbudget</h2>
+        <p class="mb-0"><%= dashboard.budget.usedEur.toFixed(2) %> von <%= dashboard.budget.limitEur.toFixed(2) %> Euro</p>
+      </div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Manuelle Freigaben</h2>
+        <p class="mb-0"><%= dashboard.approvals.current %> von <%= dashboard.approvals.required %></p>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/admin_footer') %>

@@ -1,0 +1,27 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Bestehende Inhalte</h1>
+  <%- include('_navigation') %>
+
+  <% if (!existingContent.length) { %>
+    <p class="text-muted">Es sind keine veröffentlichten Artikel vorhanden.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>Titel</th><th>Slug</th><th>Aktualisiert</th></tr></thead>
+        <tbody>
+          <% existingContent.forEach((item) => { %>
+            <tr>
+              <td><%= item.title %></td>
+              <td><%= item.slug %></td>
+              <td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/admin_footer') %>

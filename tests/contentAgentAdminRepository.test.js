@@ -79,3 +79,16 @@ test('Technikstatus liest nur persistierte Zustände und führt keine Provider-P
   assert.match(db.calls[0].sql, /content_worker_state/i);
   assert.match(db.calls[1].sql, /content_provider_state/i);
 });
+
+test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  const rows = await repository.listExistingContent();
+
+  assert.equal(rows[0].id, 11);
+  const sql = db.calls[0].sql;
+  assert.match(sql, /FROM posts/i);
+  assert.match(sql, /published = TRUE/i);
+  assert.doesNotMatch(sql, /\bcontent\b|stage_results_json|payload_json|openai_response_ids_json/i);
+});

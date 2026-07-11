@@ -1,0 +1,24 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Technik</h1>
+  <%- include('_navigation') %>
+
+  <p><strong>Worker:</strong> <%= technology.worker.label %></p>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Wert</th><th>Konfiguration</th><th>Quelle</th></tr></thead>
+      <tbody>
+        <% Object.entries(technology.technical || {}).forEach(([key, item]) => { %>
+          <tr>
+            <td><%= key %></td>
+            <td><%= item.value %></td>
+            <td><%= item.source %><%= item.restartRequired ? ' · Neustart erforderlich' : '' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../../partials/admin_footer') %>

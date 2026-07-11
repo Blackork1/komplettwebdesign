@@ -94,6 +94,15 @@ export function buildDraftListPresentation(rows = []) {
   }));
 }
 
+export function buildExistingContentListPresentation(rows = []) {
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    updatedAt: row.updated_at
+  }));
+}
+
 export function buildJobListPresentation(rows = []) {
   return rows.map((row) => ({
     id: row.id,

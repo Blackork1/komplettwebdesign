@@ -1,0 +1,20 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Zeitplan</h1>
+  <%- include('_navigation') %>
+
+  <dl class="row">
+    <dt class="col-sm-4">Agent</dt><dd class="col-sm-8"><%= settings.agent_enabled ? 'Aktiv' : 'Deaktiviert' %></dd>
+    <dt class="col-sm-4">Modus</dt><dd class="col-sm-8"><%= settings.operating_mode %></dd>
+    <dt class="col-sm-4">Wochentage</dt><dd class="col-sm-8"><%= settings.schedule_weekdays.join(', ') %></dd>
+    <dt class="col-sm-4">Uhrzeit</dt><dd class="col-sm-8"><%= String(settings.schedule_time).slice(0, 5) %> Uhr</dd>
+    <dt class="col-sm-4">Zeitzone</dt><dd class="col-sm-8"><%= settings.timezone %></dd>
+    <dt class="col-sm-4">Monatsbudget</dt><dd class="col-sm-8"><%= (settings.monthly_budget_cents / 100).toFixed(2) %> Euro</dd>
+    <dt class="col-sm-4">Mindestscore</dt><dd class="col-sm-8"><%= settings.auto_publish_min_score %></dd>
+    <dt class="col-sm-4">Maximale Versuche</dt><dd class="col-sm-8"><%= settings.maximum_attempts %></dd>
+  </dl>
+  <p class="text-muted">Die Bearbeitungsoberfläche wird im nächsten Cockpit-Schritt ergänzt.</p>
+</div>
+
+<%- include('../../partials/admin_footer') %>

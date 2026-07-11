@@ -1,0 +1,28 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="container py-4">
+  <h1 class="mb-3">Content-Agent – Jobs</h1>
+  <%- include('_navigation') %>
+
+  <% if (!jobs.length) { %>
+    <p class="text-muted">Es sind noch keine Content-Agent-Jobs vorhanden.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>ID</th><th>Typ</th><th>Status</th><th>Versuche</th></tr></thead>
+        <tbody>
+          <% jobs.forEach((job) => { %>
+            <tr>
+              <td><%= job.id %></td>
+              <td><%= job.jobType %></td>
+              <td><%= job.statusLabel %></td>
+              <td><%= job.attempts ?? 0 %> / <%= job.maxAttempts ?? 0 %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/admin_footer') %>
