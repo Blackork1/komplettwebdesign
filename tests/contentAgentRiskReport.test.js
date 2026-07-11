@@ -205,3 +205,154 @@ test('Prüflisten-Partial rendert ohne Bericht einen sicheren Leerzustand', asyn
 
   assert.equal(html.trim(), '');
 });
+
+test('Riskflags aus dem finalen Review werden mit Artikel-Riskflags vereinigt', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Technik</h2><p>Der Artikel selbst meldet kein Versionsrisiko.</p>',
+      risk: { currentClaims: true, softwareVersionClaims: false }
+    },
+    review: {
+      issues: [],
+      risks: { currentClaims: false, softwareVersionClaims: true }
+    }
+  });
+
+  assert.deepEqual(report.riskFlags, ['currentClaims', 'softwareVersionClaims']);
+  assert.equal(report.items.some(({ code, blocking }) => code === 'risk_software_version_claims' && blocking), true);
+});
+
+test('eine beliebige date-Prüfung dedupliziert kein currentClaims-Riskflag', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Veröffentlichung</h2><p>Der Artikel wurde im Januar erstellt.</p>',
+      risk: { currentClaims: true }
+    },
+    review: {
+      issues: [{
+        code: 'publication_metadata',
+        severity: 'info',
+        message: 'Veröffentlichungsdatum dokumentieren.',
+        repairInstruction: 'Redaktionsdatum ergänzen.',
+        sectionHeading: 'Veröffentlichung',
+        evidenceExcerpt: 'Der Artikel wurde im Januar erstellt.',
+        verificationType: 'date'
+      }]
+    }
+  });
+
+  assert.equal(report.items.length, 2);
+  assert.equal(report.items.some(({ code }) => code === 'risk_current_claims'), true);
+});
+
+test('eine codebasierte date-Vermutung ohne explizite sichere Zuordnung bleibt redaktionell', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Veröffentlichung</h2><p>Redaktioneller Termin.</p>',
+      risk: { currentClaims: true }
+    },
+    review: {
+      issues: [{
+        code: 'update_date_note',
+        message: 'Termin notieren.',
+        repairInstruction: 'Termin redaktionell einordnen.',
+        sectionHeading: 'Veröffentlichung',
+        evidenceExcerpt: 'Redaktioneller Termin.'
+      }]
+    }
+  });
+
+  assert.equal(report.items[0].verificationType, 'none');
+  assert.equal(report.items.some(({ code }) => code === 'risk_current_claims'), true);
+});
+
+test('sektionfremde oder erfundene Ausschnitte werden nicht als konkrete Fundstelle ausgegeben', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Abschnitt A</h2><p>Aussage A.</p><h2>Abschnitt B</h2><p>Aussage B.</p>',
+      risk: { privacyClaims: true }
+    },
+    review: {
+      issues: [{
+        code: 'privacy_claim',
+        message: 'Datenschutzaussage prüfen.',
+        repairInstruction: 'Fundstelle prüfen.',
+        sectionHeading: 'Abschnitt A',
+        evidenceExcerpt: 'Aussage B.',
+        verificationType: 'privacy'
+      }, {
+        code: 'privacy_statement',
+        message: 'Weitere Datenschutzaussage prüfen.',
+        repairInstruction: 'Weitere Fundstelle prüfen.',
+        sectionHeading: 'Abschnitt B',
+        evidenceExcerpt: 'Erfundene Aussage.',
+        verificationType: 'privacy'
+      }]
+    }
+  });
+
+  assert.equal(report.items[0].section, 'Gesamter Artikel');
+  assert.equal(report.items[0].excerpt, null);
+  assert.equal(report.items[1].section, 'Gesamter Artikel');
+  assert.equal(report.items[1].excerpt, null);
+  assert.equal(report.items.some(({ code }) => code === 'risk_privacy_claims'), true);
+});
+
+test('doppelte Überschriften ohne eindeutigen sektionalen Ausschnitt fallen auf den Gesamtartikel zurück', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Prüfung</h2><p>Erste Stelle.</p><h2>Prüfung</h2><p>Zweite Stelle.</p>'
+    },
+    review: {
+      issues: [{
+        code: 'quality_check',
+        message: 'Prüfung einordnen.',
+        repairInstruction: 'Konkrete Stelle bestimmen.',
+        sectionHeading: 'Prüfung'
+      }]
+    }
+  });
+
+  assert.equal(report.items[0].section, 'Gesamter Artikel');
+  assert.equal(report.items[0].anchor, 'pruefung-gesamter-artikel');
+});
+
+test('Analyse begrenzt HTML, Überschriften, Abschnittstext und normalisierte Anweisungen', () => {
+  const headings = Array.from({ length: 70 }, (_, index) => (
+    `<h2>Abschnitt ${index + 1}</h2><p>Beleg ${index + 1}.</p>`
+  )).join('');
+  const lateHtml = `<p>${'x'.repeat(300_000)}</p><h2>Später Abschnitt</h2><p>Später Beleg.</p>`;
+  const longSection = `<h2>Langer Abschnitt</h2><p>${'a'.repeat(21_000)} Schlussbeleg.</p>`;
+  const longText = `Anfang ${'wort '.repeat(2_000)} Ende`;
+
+  const headingBound = buildFocusedRiskReport({
+    article: { contentHtml: headings },
+    review: { issues: [{ sectionHeading: 'Abschnitt 70', evidenceExcerpt: 'Beleg 70.', message: longText, repairInstruction: longText }] }
+  });
+  const htmlBound = buildFocusedRiskReport({
+    article: { contentHtml: lateHtml },
+    review: { issues: [{ sectionHeading: 'Später Abschnitt', evidenceExcerpt: 'Später Beleg.', message: 'Prüfen.' }] }
+  });
+  const sectionBound = buildFocusedRiskReport({
+    article: { contentHtml: longSection },
+    review: { issues: [{ sectionHeading: 'Langer Abschnitt', evidenceExcerpt: 'Schlussbeleg.', message: 'Prüfen.' }] }
+  });
+
+  assert.equal(headingBound.items[0].section, 'Gesamter Artikel');
+  assert.equal(headingBound.items[0].reason.length <= 500, true);
+  assert.equal(headingBound.items[0].instruction.length <= 500, true);
+  assert.equal(htmlBound.items[0].section, 'Gesamter Artikel');
+  assert.equal(sectionBound.items[0].section, 'Gesamter Artikel');
+  assert.equal(sectionBound.items[0].excerpt, null);
+});
+
+test('ein exakt 280 Zeichen langer sektionaler Ausschnitt bleibt vollständig erhalten', () => {
+  const evidenceExcerpt = 'ä'.repeat(280);
+  const report = buildFocusedRiskReport({
+    article: { contentHtml: `<h2>Grenze</h2><p>${evidenceExcerpt}</p>` },
+    review: { issues: [{ sectionHeading: 'Grenze', evidenceExcerpt, message: 'Grenze prüfen.' }] }
+  });
+
+  assert.equal(report.items[0].excerpt, evidenceExcerpt);
+  assert.equal(report.items[0].excerpt.length, 280);
+});

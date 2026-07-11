@@ -107,3 +107,45 @@ Das neue Partial wird in Task 7 bewusst noch nicht in die öffentliche beziehung
 
 - Der echte PostgreSQL-Integrationstest bleibt ohne ausdrücklich freigegebene zurücksetzbare Testdatenbank erwartungsgemäß übersprungen. Task 7 ändert kein Datenbankschema.
 - Bis Task 8 das Partial und die serverseitigen Zielanker in die Vorschau einbindet, ist der Bericht korrekt persistiert und separat sicher renderbar, aber noch nicht Bestandteil der frontendnahen Artikelvorschau.
+
+## Review-Fix: konservative Riskflag- und Fundstellenzuordnung
+
+Die Important-Funde des Task-7-Reviews wurden in einem getrennten TDD-Zyklus behoben.
+
+### RED
+
+```text
+node --test tests/contentAgentRiskReport.test.js
+9 bestanden, 6 fehlgeschlagen
+```
+
+Bestätigte Ursachen:
+
+- aktive Flags wurden nur aus `article.risk`, nicht aus dem finalen `review.risks` gelesen,
+- ein beliebiges passendes `verificationType` genügte zur Riskflag-Deduplizierung,
+- unbekannte Codes mit Datumsbegriffen wurden heuristisch und zu großzügig als `date` eingestuft,
+- ein artikelweit vorhandener, aber sektionfremder Ausschnitt blieb fälschlich an der angeforderten Überschrift,
+- doppelte Überschriften ohne eindeutigen Ausschnitt fielen willkürlich auf die erste Fundstelle,
+- HTML, Überschriften, Abschnittstexte und normalisierte Anweisungen waren für die Analyse nicht begrenzt.
+
+### GREEN
+
+```text
+Review-Fix-Unit: 15 bestanden, 0 fehlgeschlagen
+Fokussierte Task-7-Suite: 132 bestanden, 0 fehlgeschlagen
+Gesamtsuite mit OPENAI_API_KEY=test-key: 771 bestanden, 1 übersprungen, 0 fehlgeschlagen
+CSS-Build: 41 Quelldateien gebaut, Manifest unverändert
+git diff --check: ohne Befund
+```
+
+### Korrekturen
+
+- Der Bericht bildet eine stabile Union aller aktiven Flags aus `article.risk` und dem finalen `review.risks`; ein `false` in einer Quelle hebt ein `true` in der anderen nicht auf.
+- Jedes bekannte Riskflag besitzt eine explizite Allowlist zulässiger Issuecodes und Prüfarten. Eine Deduplizierung erfolgt nur, wenn Code und Prüfart zur selben Risikokategorie gehören.
+- Zusätzlich muss die Überschrift exakt im begrenzten Artikel vorkommen und der Belegausschnitt eindeutig innerhalb genau dieses H2-/H3-Abschnitts gefunden werden.
+- Fehlt eine dieser Bedingungen, bleibt der allgemeine blockierende Flag-Prüfpunkt sichtbar. Unbekannte Riskflags werden grundsätzlich nicht durch Modell-Issues dedupliziert.
+- Die frühere regexbasierte Prüfart-Vermutung wurde entfernt. Fehlende oder unbekannte Prüfarten bleiben konservativ `none`.
+- Sektionfremde, erfundene und nicht eindeutige Ausschnitte werden verworfen und auf `Gesamter Artikel` zurückgestuft.
+- Doppelte Überschriften benötigen einen Ausschnitt, der genau einer Fundstelle zugeordnet werden kann. Ohne eindeutigen Beleg wird keine erste Fundstelle geraten.
+- Die Analyse ist auf 250.000 HTML-Zeichen, 64 H2-/H3-Überschriften und 20.000 normalisierte Zeichen je Abschnitt begrenzt. Überschriften bleiben auf 180, Begründungen und Prüfanweisungen auf 500 Zeichen begrenzt.
+- Die bestehende Ausschnittgrenze bleibt unverändert korrekt: exakt 280 Zeichen werden vollständig erhalten, längere Eingaben werden deterministisch auf 280 Zeichen begrenzt.

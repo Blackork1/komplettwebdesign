@@ -3,6 +3,13 @@ import slugify from 'slugify';
 
 const GENERAL_SECTION = 'Gesamter Artikel';
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
+const MAX_HTML_LENGTH = 250_000;
+const MAX_HEADINGS = 64;
+const MAX_HEADING_LENGTH = 180;
+const MAX_SECTION_LENGTH = 20_000;
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_INSTRUCTION_LENGTH = 500;
+const MAX_RISK_KEY_LENGTH = 120;
 const VERIFICATION_TYPES = new Set([
   'none',
   'source',
@@ -17,6 +24,8 @@ const RISK_DEFINITIONS = Object.freeze([
   {
     key: 'currentClaims',
     code: 'risk_current_claims',
+    issueCodes: ['current_claim', 'current_claims', 'current_statement', 'time_sensitive_claim'],
+    issueVerificationTypes: ['date', 'source'],
     verificationType: 'date',
     sourceRequired: true,
     reason: 'Der Artikel enthält zeitbezogene oder aktuelle Aussagen.',
@@ -25,6 +34,8 @@ const RISK_DEFINITIONS = Object.freeze([
   {
     key: 'legalClaims',
     code: 'risk_legal_claims',
+    issueCodes: ['legal_claim', 'legal_claims', 'legal_statement', 'legal_compliance_claim'],
+    issueVerificationTypes: ['legal'],
     verificationType: 'legal',
     sourceRequired: true,
     reason: 'Der Artikel enthält rechtliche Aussagen.',
@@ -33,6 +44,15 @@ const RISK_DEFINITIONS = Object.freeze([
   {
     key: 'privacyClaims',
     code: 'risk_privacy_claims',
+    issueCodes: [
+      'privacy_claim',
+      'privacy_claims',
+      'privacy_statement',
+      'cookie_claim',
+      'consent_claim',
+      'data_protection_claim'
+    ],
+    issueVerificationTypes: ['privacy'],
     verificationType: 'privacy',
     sourceRequired: true,
     reason: 'Der Artikel enthält Datenschutz- oder Einwilligungsaussagen.',
@@ -41,6 +61,14 @@ const RISK_DEFINITIONS = Object.freeze([
   {
     key: 'softwareVersionClaims',
     code: 'risk_software_version_claims',
+    issueCodes: [
+      'software_version_claim',
+      'software_version_claims',
+      'version_claim',
+      'product_version_claim',
+      'current_feature_claim'
+    ],
+    issueVerificationTypes: ['version'],
     verificationType: 'version',
     sourceRequired: true,
     reason: 'Der Artikel enthält Aussagen zu Softwareversionen oder aktuellen Funktionen.',
@@ -49,6 +77,15 @@ const RISK_DEFINITIONS = Object.freeze([
   {
     key: 'staticPrices',
     code: 'risk_static_prices',
+    issueCodes: [
+      'static_price',
+      'static_prices',
+      'static_price_forbidden',
+      'price_claim',
+      'pricing_claim',
+      'review_static_price_risk'
+    ],
+    issueVerificationTypes: ['price'],
     verificationType: 'price',
     sourceRequired: false,
     reason: 'Der Artikel enthält einen deterministischen Preishinweis.',
@@ -58,12 +95,13 @@ const RISK_DEFINITIONS = Object.freeze([
 
 const RISK_BY_KEY = new Map(RISK_DEFINITIONS.map((definition) => [definition.key, definition]));
 
-function normalizeText(value) {
-  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+function normalizeText(value, maxLength = MAX_MESSAGE_LENGTH) {
+  if (typeof value !== 'string') return '';
+  return value.slice(0, maxLength).replace(/\s+/g, ' ').trim();
 }
 
 function normalizeCode(value, fallback) {
-  const code = normalizeText(value);
+  const code = normalizeText(value, 120);
   return /^[A-Za-z0-9_.:-]{1,120}$/.test(code) ? code : fallback;
 }
 
@@ -73,17 +111,22 @@ function sectionSlug(heading, index) {
 }
 
 function extractArticleSections(html) {
-  const $ = cheerio.load(typeof html === 'string' ? html : '', null, false);
+  const boundedHtml = typeof html === 'string' ? html.slice(0, MAX_HTML_LENGTH) : '';
+  const $ = cheerio.load(boundedHtml, null, false);
   const counts = new Map();
   const sections = [];
 
   $('h2, h3').each((index, element) => {
-    const heading = normalizeText($(element).text());
+    if (sections.length >= MAX_HEADINGS) return false;
+    const heading = normalizeText($(element).text(), MAX_HEADING_LENGTH);
     if (!heading) return;
     const base = sectionSlug(heading, index);
     const occurrence = (counts.get(base) || 0) + 1;
     counts.set(base, occurrence);
-    const body = normalizeText(`${heading} ${$(element).nextUntil('h2, h3').text()}`);
+    const body = normalizeText(
+      `${heading} ${$(element).nextUntil('h2, h3').text()}`,
+      MAX_SECTION_LENGTH
+    );
     sections.push({
       heading,
       body,
@@ -91,31 +134,25 @@ function extractArticleSections(html) {
     });
   });
 
-  return {
-    visibleText: normalizeText($.root().text()),
-    sections
-  };
-}
-
-function inferVerificationType(code) {
-  const normalized = String(code || '').toLowerCase();
-  if (/privacy|datenschutz|cookie|consent|einwilligung/.test(normalized)) return 'privacy';
-  if (/legal|recht|gesetz/.test(normalized)) return 'legal';
-  if (/price|preis|pricing|cost/.test(normalized)) return 'price';
-  if (/version|software|product/.test(normalized)) return 'version';
-  if (/date|current|aktuell|year|jahr/.test(normalized)) return 'date';
-  if (/source|quelle|citation|beleg/.test(normalized)) return 'source';
-  return 'none';
+  return { sections };
 }
 
 function resolveSection({ requestedHeading, evidence, articleSections }) {
   const candidates = articleSections.sections.filter(({ heading }) => heading === requestedHeading);
-  if (candidates.length === 0) return { section: GENERAL_SECTION, anchor: GENERAL_ANCHOR };
-  const matchingEvidence = evidence
-    ? candidates.find(({ body }) => body.includes(evidence))
-    : null;
-  const match = matchingEvidence || candidates[0];
-  return { section: match.heading, anchor: match.anchor };
+  if (candidates.length === 0) {
+    return { section: GENERAL_SECTION, anchor: GENERAL_ANCHOR, verified: false };
+  }
+  if (evidence) {
+    const matches = candidates.filter(({ body }) => body.includes(evidence));
+    if (matches.length !== 1) {
+      return { section: GENERAL_SECTION, anchor: GENERAL_ANCHOR, verified: false };
+    }
+    return { section: matches[0].heading, anchor: matches[0].anchor, verified: true };
+  }
+  if (candidates.length !== 1) {
+    return { section: GENERAL_SECTION, anchor: GENERAL_ANCHOR, verified: false };
+  }
+  return { section: candidates[0].heading, anchor: candidates[0].anchor, verified: false };
 }
 
 function normalizeIssue(rawIssue, index, origin, articleSections) {
@@ -124,56 +161,60 @@ function normalizeIssue(rawIssue, index, origin, articleSections) {
     : {};
   const fallbackCode = `${origin}_issue_${index + 1}`;
   const code = normalizeCode(issue.code, fallbackCode);
-  const message = normalizeText(issue.message);
-  const instruction = normalizeText(issue.repairInstruction)
+  const message = normalizeText(issue.message, MAX_MESSAGE_LENGTH);
+  const instruction = normalizeText(issue.repairInstruction, MAX_INSTRUCTION_LENGTH)
     || message
     || 'Prüfstelle redaktionell bewerten und die erforderliche Korrektur festlegen.';
-  const requestedHeading = normalizeText(issue.sectionHeading);
-  const candidateExcerpt = normalizeText(issue.evidenceExcerpt).slice(0, 280).trimEnd();
-  const excerpt = candidateExcerpt && articleSections.visibleText.includes(candidateExcerpt)
-    ? candidateExcerpt
-    : null;
+  const requestedHeading = normalizeText(issue.sectionHeading, MAX_HEADING_LENGTH);
+  const candidateExcerpt = normalizeText(issue.evidenceExcerpt, 280);
   const location = resolveSection({
     requestedHeading,
-    evidence: excerpt,
+    evidence: candidateExcerpt,
     articleSections
   });
   const explicitVerificationType = normalizeText(issue.verificationType);
   const verificationType = VERIFICATION_TYPES.has(explicitVerificationType)
     ? explicitVerificationType
-    : inferVerificationType(code);
+    : 'none';
   const severity = ['info', 'warning', 'error'].includes(issue.severity)
     ? issue.severity
     : origin === 'validation' ? 'error' : 'warning';
 
   return {
-    code,
-    severity,
-    section: location.section,
-    excerpt,
-    reason: message || instruction,
-    instruction,
-    verificationType,
-    sourceRequired: issue.sourceRequired === true,
-    blocking: origin === 'validation'
-      || issue.autoPublishBlocking === true
-      || issue.blocking === true,
-    anchor: location.anchor
+    item: {
+      code,
+      severity,
+      section: location.section,
+      excerpt: location.verified ? candidateExcerpt : null,
+      reason: message || instruction,
+      instruction,
+      verificationType,
+      sourceRequired: issue.sourceRequired === true,
+      blocking: origin === 'validation'
+        || issue.autoPublishBlocking === true
+        || issue.blocking === true,
+      anchor: location.anchor
+    },
+    locationVerified: location.verified
   };
 }
 
 function humanizeRiskKey(key) {
-  return normalizeText(String(key || '')
+  const humanized = String(key || '')
     .replace(/[_-]+/g, ' ')
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2'))
-    .toLowerCase() || 'unbekannt';
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase();
+  return normalizeText(humanized, MAX_RISK_KEY_LENGTH) || 'unbekannt';
 }
 
 function unknownRiskDefinition(key) {
-  const label = humanizeRiskKey(key);
+  const boundedKey = String(key).slice(0, MAX_RISK_KEY_LENGTH);
+  const label = humanizeRiskKey(boundedKey);
   return {
     key,
-    code: `risk_${slugify(String(key), { lower: true, strict: true }) || 'unknown'}`,
+    code: `risk_${slugify(boundedKey, { lower: true, strict: true }) || 'unknown'}`,
+    issueCodes: [],
+    issueVerificationTypes: [],
     verificationType: 'none',
     sourceRequired: false,
     reason: `Der Artikel meldet das zusätzliche Risiko „${label}“.`,
@@ -181,9 +222,12 @@ function unknownRiskDefinition(key) {
   };
 }
 
-function activeRiskDefinitions(risk) {
-  if (!risk || typeof risk !== 'object' || Array.isArray(risk)) return [];
-  const activeKeys = Object.keys(risk).filter((key) => risk[key] === true);
+function activeRiskDefinitions(...riskObjects) {
+  const activeKeys = [...new Set(riskObjects.flatMap((risk) => (
+    risk && typeof risk === 'object' && !Array.isArray(risk)
+      ? Object.keys(risk).filter((key) => risk[key] === true)
+      : []
+  )))];
   const known = RISK_DEFINITIONS.filter(({ key }) => activeKeys.includes(key));
   const unknown = activeKeys
     .filter((key) => !RISK_BY_KEY.has(key))
@@ -196,22 +240,22 @@ export function buildFocusedRiskReport({ article = {}, review = {}, validation =
   const articleSections = extractArticleSections(article?.contentHtml);
   const reviewIssues = Array.isArray(review?.issues) ? review.issues : [];
   const validationIssues = Array.isArray(validation?.issues) ? validation.issues : [];
-  const items = [
+  const normalizedIssues = [
     ...reviewIssues.map((issue, index) => normalizeIssue(issue, index, 'review', articleSections)),
     ...validationIssues.map((issue, index) => normalizeIssue(issue, index, 'validation', articleSections))
   ];
-  const riskDefinitions = activeRiskDefinitions(article?.risk);
+  const items = normalizedIssues.map(({ item }) => item);
+  const riskDefinitions = activeRiskDefinitions(article?.risk, review?.risks);
 
   for (const definition of riskDefinitions) {
-    const locatedItem = definition.verificationType === 'none'
-      ? null
-      : items.find((item) => (
-        item.verificationType === definition.verificationType
-        && item.section !== GENERAL_SECTION
-      ));
-    if (locatedItem) {
-      locatedItem.blocking = true;
-      locatedItem.sourceRequired ||= definition.sourceRequired;
+    const locatedIssue = normalizedIssues.find(({ item, locationVerified }) => (
+      locationVerified
+      && definition.issueCodes.includes(item.code)
+      && definition.issueVerificationTypes.includes(item.verificationType)
+    ));
+    if (locatedIssue) {
+      locatedIssue.item.blocking = true;
+      locatedIssue.item.sourceRequired ||= definition.sourceRequired;
       continue;
     }
     items.push({
