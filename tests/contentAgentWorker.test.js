@@ -92,6 +92,33 @@ test('processOnce schreibt auch im Leerlauf Heartbeat, erholt Leases und claimt 
   assert.deepEqual(calls.map(([type]) => type), ['heartbeat', 'recover', 'claim']);
 });
 
+test('start wartet den ersten Heartbeat ab, bevor der Scheduler sicher starten kann', async () => {
+  const heartbeatGate = deferred();
+  const { worker, calls } = createWorkerHarness({
+    async upsertHeartbeat(input) {
+      calls.push(['heartbeat', input]);
+      await heartbeatGate.promise;
+    },
+    async claimNextJob(workerId) { calls.push(['claim', workerId]); return null; }
+  });
+  let started = false;
+  const starting = worker.start().then((result) => {
+    started = true;
+    return result;
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(started, false);
+  assert.equal(calls.filter(([type]) => type === 'heartbeat').length, 1);
+
+  heartbeatGate.resolve();
+  assert.equal(await starting, true);
+  await worker.whenIdle();
+  assert.equal(calls.filter(([type]) => type === 'heartbeat').length, 1);
+  assert.equal(calls.filter(([type]) => type === 'claim').length, 1);
+  await worker.stop();
+});
+
 test('processOnce verarbeitet und finalisiert genau einen Job mit dem vollständigen Claim', async () => {
   const { worker, calls, claim } = createWorkerHarness();
 
@@ -628,6 +655,53 @@ test('der Produktions-Jobhandler reicht den Lease-Fence bis in die Pipeline durc
     { leaseGuard }
   );
   assert.equal(pipelineInput.leaseGuard, leaseGuard);
+});
+
+test('der Produktions-Jobhandler bewahrt beim Retry den ersten Snapshot und baut Abhängigkeiten daraus', async () => {
+  let persistedSnapshot = null;
+  const createRunInputs = [];
+  const pipelineCalls = [];
+  const settings = [
+    { settings_version: 3, timezone: 'Europe/Berlin' },
+    { settings_version: 4, timezone: 'UTC' }
+  ];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    now: () => new Date('2026-07-31T22:30:00.000Z'),
+    async getSettings() { return settings.shift(); },
+    resolveRuntimeConfig({ settings: current }) {
+      return { settingsVersion: current.settings_version, timezone: current.timezone };
+    },
+    createJobSnapshot({ runtimeConfig }) {
+      return { ...runtimeConfig };
+    },
+    async createRun(input) {
+      createRunInputs.push(input);
+      persistedSnapshot ||= structuredClone(input.runtimeSnapshot);
+      return { id: 91, runtime_snapshot_json: structuredClone(persistedSnapshot) };
+    },
+    createPipelineDependencies(snapshot) {
+      return { snapshot: structuredClone(snapshot) };
+    },
+    async runPipeline(input, dependencies) {
+      pipelineCalls.push({ input, dependencies });
+      return { status: 'completed' };
+    }
+  });
+  const claim = { id: 44, job_type: 'generate_weekly_draft', payload_json: {} };
+
+  await handler({ ...claim, attempts: 1 });
+  await handler({ ...claim, attempts: 2 });
+
+  assert.deepEqual(createRunInputs.map(({ runtimeSnapshot }) => runtimeSnapshot), [
+    { settingsVersion: 3, timezone: 'Europe/Berlin' },
+    { settingsVersion: 4, timezone: 'UTC' }
+  ]);
+  assert.deepEqual(pipelineCalls.map(({ dependencies }) => dependencies.snapshot), [
+    { settingsVersion: 3, timezone: 'Europe/Berlin' },
+    { settingsVersion: 3, timezone: 'Europe/Berlin' }
+  ]);
+  assert.deepEqual(pipelineCalls.map(({ input }) => input.currentDate), ['2026-08-01', '2026-08-01']);
 });
 
 test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () => {

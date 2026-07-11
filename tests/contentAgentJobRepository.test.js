@@ -10,6 +10,7 @@ import {
   renewJobLease,
   recoverExpiredJobs,
   retryOrFailJob,
+  updateContentSchedulerState,
   upsertWorkerHeartbeat
 } from '../repositories/contentJobRepository.js';
 import {
@@ -95,6 +96,10 @@ test('claimNextJob reserviert atomar genau einen Job in derselben Transaktion', 
   const claimCall = db.events[2];
   assert.match(claimCall.sql, /^WITH candidate AS \(/i);
   assert.match(claimCall.sql, /WHERE status = 'queued' AND run_after <= NOW\(\)/i);
+  assert.match(
+    claimCall.sql,
+    /AND EXISTS \( SELECT 1 FROM content_agent_settings settings WHERE settings\.id = 1 AND settings\.agent_enabled = TRUE \)/i
+  );
   assert.match(claimCall.sql, /ORDER BY run_after, created_at/i);
   assert.match(claimCall.sql, /FOR UPDATE SKIP LOCKED/i);
   assert.match(claimCall.sql, /LIMIT 1\s*\) UPDATE content_jobs AS job/i);
@@ -202,6 +207,27 @@ test('enqueueJob normalisiert maxAttempts als sicheren PostgreSQL-Integer', asyn
   }, db);
 
   assert.deepEqual(db.calls.map((call) => call.params[4]), [1, 3, 2147483647, 5]);
+});
+
+test('der Wochen-Scheduler prüft die operative Pause atomar im idempotenten Insert', async () => {
+  const db = createQueryRecorder([{ rows: [] }]);
+
+  assert.equal(await enqueueJob({
+    jobType: 'generate_weekly_draft',
+    idempotencyKey: 'weekly:2026-07-13:18:00:Europe/Berlin',
+    payload: {
+      source: 'weekly-schedule',
+      schedule_slot: 'weekly:2026-07-13:18:00:Europe/Berlin'
+    },
+    maxAttempts: 3
+  }, db), null);
+
+  assert.match(
+    db.calls[0].sql,
+    /WHERE \$6 = FALSE OR EXISTS \( SELECT 1 FROM content_agent_settings settings WHERE settings\.id = 1 AND settings\.agent_enabled = TRUE \)/i
+  );
+  assert.match(db.calls[0].sql, /ON CONFLICT \(idempotency_key\)/i);
+  assert.equal(db.calls[0].params[5], true);
 });
 
 test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials', async () => {
@@ -501,6 +527,24 @@ test('upsertWorkerHeartbeat aktualisiert den benannten Worker und gibt dessen Ze
     '2026-07-11T08:45:00.000Z',
     '1.0.0'
   ]);
+});
+
+test('updateContentSchedulerState schreibt Tick, Slot und bereinigten Fehler zum Workerzustand', async () => {
+  const row = { worker_name: 'content-worker', last_scheduled_slot: 'weekly:slot' };
+  const db = createQueryRecorder([{ rows: [row] }]);
+  const tickAt = new Date('2026-07-13T16:00:20.000Z');
+
+  assert.equal(await updateContentSchedulerState({
+    lastSchedulerTickAt: tickAt,
+    lastScheduledSlot: 'weekly:slot',
+    lastSchedulerError: null
+  }, db), row);
+  assert.match(db.calls[0].sql, /UPDATE content_worker_state/i);
+  assert.match(db.calls[0].sql, /last_scheduler_tick_at = \$2/i);
+  assert.match(db.calls[0].sql, /last_scheduled_slot = \$3/i);
+  assert.match(db.calls[0].sql, /last_scheduler_error = \$4/i);
+  assert.match(db.calls[0].sql, /WHERE worker_name = \$1/i);
+  assert.deepEqual(db.calls[0].params, ['content-worker', tickAt, 'weekly:slot', null]);
 });
 
 test('renewJobLease erneuert ausschließlich den weiterhin gefencten laufenden Claim', async () => {

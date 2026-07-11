@@ -6,6 +6,11 @@ const CLAIM_NEXT_JOB_SQL = `
     SELECT id
     FROM content_jobs
     WHERE status = 'queued' AND run_after <= NOW()
+      AND EXISTS (
+        SELECT 1
+        FROM content_agent_settings settings
+        WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+      )
     ORDER BY run_after, created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1
@@ -67,12 +72,24 @@ export async function enqueueJob({
         run_after,
         max_attempts
       )
-      VALUES ($1, $2, $3, COALESCE($4, NOW()), COALESCE($5, 3))
+      SELECT $1, $2, $3, COALESCE($4, NOW()), COALESCE($5, 3)
+      WHERE $6 = FALSE OR EXISTS (
+        SELECT 1
+        FROM content_agent_settings settings
+        WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+      )
       ON CONFLICT (idempotency_key) DO UPDATE
       SET idempotency_key = content_jobs.idempotency_key
       RETURNING content_jobs.*
     `,
-    [jobType, idempotencyKey, payload, runAfter, normalizeMaxAttempts(maxAttempts)]
+    [
+      jobType,
+      idempotencyKey,
+      payload,
+      runAfter,
+      normalizeMaxAttempts(maxAttempts),
+      jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule'
+    ]
   );
 
   return rows[0] || null;
@@ -271,5 +288,30 @@ export async function upsertWorkerHeartbeat({
     [workerName, workerId, startedAt, lastJobAt, version]
   );
 
+  return rows[0] || null;
+}
+
+export async function updateContentSchedulerState({
+  lastSchedulerTickAt,
+  lastScheduledSlot = null,
+  lastSchedulerError = null,
+  workerName = 'content-worker'
+}, db = pool) {
+  const { rows } = await db.query(
+    `
+      UPDATE content_worker_state
+      SET last_scheduler_tick_at = $2,
+          last_scheduled_slot = $3,
+          last_scheduler_error = $4
+      WHERE worker_name = $1
+      RETURNING *
+    `,
+    [
+      workerName,
+      lastSchedulerTickAt,
+      lastScheduledSlot,
+      lastSchedulerError === null ? null : sanitizeErrorMessage(lastSchedulerError)
+    ]
+  );
   return rows[0] || null;
 }

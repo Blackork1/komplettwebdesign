@@ -69,8 +69,8 @@ export function createContentWorker(dependencies = {}) {
   let activePromise = null;
   let heartbeatPromise = null;
 
-  async function executeOnce() {
-    await writeHeartbeat();
+  async function executeOnce({ heartbeatAlreadyWritten = false } = {}) {
+    if (!heartbeatAlreadyWritten) await writeHeartbeat();
     await recoverExpiredJobs(leaseMinutes);
     if (stopping) return null;
 
@@ -135,11 +135,11 @@ export function createContentWorker(dependencies = {}) {
     return result;
   }
 
-  function processOnce() {
+  function beginProcess(options) {
     if (!enabled || stopping) return Promise.resolve(null);
     if (activePromise) return activePromise;
 
-    const current = executeOnce();
+    const current = executeOnce(options);
     activePromise = current.finally(() => {
       if (activePromise === wrapped) activePromise = null;
     });
@@ -147,8 +147,12 @@ export function createContentWorker(dependencies = {}) {
     return wrapped;
   }
 
-  function pollSafely() {
-    processOnce().catch(() => {
+  function processOnce() {
+    return beginProcess();
+  }
+
+  function pollSafely(options) {
+    beginProcess(options).catch(() => {
       logger.error?.('Content-Worker-Zyklus fehlgeschlagen.');
     });
   }
@@ -181,9 +185,16 @@ export function createContentWorker(dependencies = {}) {
   async function start() {
     if (!enabled || running || stopping) return false;
     running = true;
+    try {
+      await writeHeartbeat();
+    } catch (error) {
+      running = false;
+      throw error;
+    }
+    if (stopping) return false;
     pollTimer = setIntervalFn(pollSafely, pollMs);
     heartbeatTimer = setIntervalFn(heartbeatSafely, heartbeatMs);
-    pollSafely();
+    pollSafely({ heartbeatAlreadyWritten: true });
     return true;
   }
 

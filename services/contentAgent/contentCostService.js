@@ -1,4 +1,5 @@
 import pool from '../../util/db.js';
+import { DateTime } from 'luxon';
 
 export class ContentBudgetLimitError extends Error {
   constructor(message = 'Monatliches Content-Agent-Budget erreicht.') {
@@ -34,10 +35,15 @@ export function assertMonthlyBudget({ spent = 0, estimatedNext = 0, limit }) {
   }
 }
 
-function monthContext(now) {
-  const current = new Date(now ?? Date.now());
-  if (Number.isNaN(current.getTime())) throw new TypeError('now muss ein gültiges Datum sein.');
-  const reservationMonth = `${current.getUTCFullYear()}-${String(current.getUTCMonth() + 1).padStart(2, '0')}`;
+export function monthKey(now = new Date(), timezone = 'UTC') {
+  const current = now instanceof Date ? now : new Date(now ?? Date.now());
+  const local = DateTime.fromJSDate(current, { zone: timezone });
+  if (!local.isValid) throw new TypeError('now und timezone müssen ein gültiges Datum und eine IANA-Zeitzone ergeben.');
+  return local.toFormat('yyyy-MM');
+}
+
+function monthContext(now, timezone = 'UTC') {
+  const reservationMonth = monthKey(now, timezone);
   return {
     reservationMonth,
     lockKey: `content-agent-budget:${reservationMonth}`
@@ -90,8 +96,8 @@ const MONTHLY_SPEND_SQL = `
     AND budget.value->>'reservationMonth' = $2
 `;
 
-export async function getMonthlyContentCost({ now = new Date(), db = pool } = {}) {
-  const context = monthContext(now);
+export async function getMonthlyContentCost({ now = new Date(), timezone = 'UTC', db = pool } = {}) {
+  const context = monthContext(now, timezone);
   const { rows } = await db.query(
     MONTHLY_SPEND_SQL,
     [`budget:${context.reservationMonth}:%`, context.reservationMonth]
@@ -107,11 +113,10 @@ async function rollbackQuietly(client) {
   }
 }
 
-async function beginBudgetTransaction(db, context) {
+async function beginBudgetTransaction(db) {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [context.lockKey]);
     return client;
   } catch (error) {
     await rollbackQuietly(client);
@@ -120,19 +125,23 @@ async function beginBudgetTransaction(db, context) {
   }
 }
 
+async function lockBudgetMonth(client, context) {
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [context.lockKey]);
+}
+
 export async function reserveMonthlyBudget({
   runId,
   stageId,
   estimatedCost,
   limit,
   now = new Date(),
+  timezone = 'UTC',
   db = pool
 }) {
   const cost = nonNegativeNumber(estimatedCost, 'estimatedCost');
   const normalizedLimit = nonNegativeNumber(limit, 'limit');
-  const context = monthContext(now);
-  const key = reservationKey(context.reservationMonth, stageId);
-  const client = await beginBudgetTransaction(db, context);
+  const context = monthContext(now, timezone);
+  const client = await beginBudgetTransaction(db);
   try {
     const { rows: runRows } = await client.query(
       'SELECT stage_results_json, cost_estimate FROM content_runs WHERE id = $1 FOR UPDATE',
@@ -143,6 +152,7 @@ export async function reserveMonthlyBudget({
     const existingEntry = existingReservationEntry(run.stage_results_json, stageId);
     if (existingEntry) {
       const [existingKey, existing] = existingEntry;
+      await lockBudgetMonth(client, contextFromReservationMonth(existing.reservationMonth));
       await client.query('COMMIT');
       return {
         ...existing,
@@ -150,6 +160,9 @@ export async function reserveMonthlyBudget({
         reservationKey: existingKey
       };
     }
+
+    await lockBudgetMonth(client, context);
+    const key = reservationKey(context.reservationMonth, stageId);
 
     const { rows: sumRows } = await client.query(
       MONTHLY_SPEND_SQL,
@@ -197,12 +210,13 @@ export async function settleMonthlyBudget({
   const cost = nonNegativeNumber(actualCost, 'actualCost');
   const context = contextFromReservationMonth(reservationMonth);
   const key = reservationKey(context.reservationMonth, stageId);
-  const client = await beginBudgetTransaction(db, context);
+  const client = await beginBudgetTransaction(db);
   try {
     const { rows: runRows } = await client.query(
       'SELECT stage_results_json, cost_estimate FROM content_runs WHERE id = $1 FOR UPDATE',
       [runId]
     );
+    await lockBudgetMonth(client, context);
     const reservation = runRows[0]?.stage_results_json?.[key];
     if (!reservation) throw new Error('Für diese Content-Agent-Stufe existiert keine Budgetreservierung.');
     if (reservation.status === 'settled') {
@@ -248,12 +262,13 @@ export async function releaseMonthlyBudgetReservation({
 }) {
   const context = contextFromReservationMonth(reservationMonth);
   const key = reservationKey(context.reservationMonth, stageId);
-  const client = await beginBudgetTransaction(db, context);
+  const client = await beginBudgetTransaction(db);
   try {
     const { rows: runRows } = await client.query(
       'SELECT stage_results_json, cost_estimate FROM content_runs WHERE id = $1 FOR UPDATE',
       [runId]
     );
+    await lockBudgetMonth(client, context);
     const reservation = runRows[0]?.stage_results_json?.[key];
     if (!reservation) {
       await client.query('COMMIT');

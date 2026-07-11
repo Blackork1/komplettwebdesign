@@ -61,9 +61,14 @@ export function createWeeklyScheduler({
 export function createProductionJobHandler({
   timezone = 'Europe/Berlin',
   now = () => new Date(),
+  technicalConfig,
+  getSettings,
+  resolveRuntimeConfig,
+  createJobSnapshot,
   createRun,
   runPipeline,
-  pipelineDependencies
+  pipelineDependencies,
+  createPipelineDependencies
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
@@ -72,14 +77,31 @@ export function createProductionJobHandler({
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
     }
 
-    const run = await createRun({ jobId: claim.id });
+    const snapshotEnabled = typeof getSettings === 'function'
+      && typeof resolveRuntimeConfig === 'function'
+      && typeof createJobSnapshot === 'function';
+    let runtimeSnapshot;
+    if (snapshotEnabled) {
+      const settings = await getSettings();
+      const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
+      runtimeSnapshot = createJobSnapshot({ runtimeConfig, claim, now: now() });
+    }
+    const run = await createRun({
+      jobId: claim.id,
+      ...(snapshotEnabled ? { runtimeSnapshot } : {})
+    });
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
+    const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
+    const jobDependencies = typeof createPipelineDependencies === 'function'
+      ? await createPipelineDependencies(persistedSnapshot)
+      : pipelineDependencies;
+    const jobTimezone = persistedSnapshot?.timezone || timezone;
     const result = await runPipeline({
       ...(claim.payload_json || {}),
       runId: run.id,
       ...(typeof leaseGuard === 'function' ? { leaseGuard } : {}),
-      currentDate: berlinDateKey(now(), timezone)
-    }, pipelineDependencies);
+      currentDate: berlinDateKey(now(), jobTimezone)
+    }, jobDependencies);
     if (!['completed', 'needs_manual_attention'].includes(result?.status)) {
       throw new Error('Content-Agent-Pipeline lieferte keinen terminalen Status.');
     }
@@ -143,7 +165,8 @@ function bindRepositories(database, modules) {
     retryOrFailJob: (claim, error, options) => modules.jobRepository.retryOrFailJob(claim, error, options, database),
     markJobNeedsManualAttention: (claim, reason) => modules.jobRepository.markJobNeedsManualAttention(claim, reason, database),
     recoverExpiredJobs: (minutes) => modules.jobRepository.recoverExpiredJobs(minutes, database),
-    upsertWorkerHeartbeat: (input) => modules.jobRepository.upsertWorkerHeartbeat(input, database)
+    upsertWorkerHeartbeat: (input) => modules.jobRepository.upsertWorkerHeartbeat(input, database),
+    updateContentSchedulerState: (input) => modules.jobRepository.updateContentSchedulerState(input, database)
   };
   const runRepository = {
     createRun: (input) => modules.runRepository.createRun(input, database),
@@ -166,6 +189,22 @@ function bindRepositories(database, modules) {
   return { jobRepository, runRepository, topicRepository, costService };
 }
 
+function jobConfigFromSnapshot(technicalConfig, snapshot) {
+  if (!snapshot) return technicalConfig;
+  return Object.freeze({
+    ...technicalConfig,
+    operatingMode: snapshot.operatingMode,
+    monthlyCostLimitEur: snapshot.monthlyCostLimitEur,
+    autoPublishMinScore: snapshot.autoPublishMinScore,
+    maxAttempts: snapshot.maxAttempts,
+    autoPublishEffective: snapshot.autoPublishEffective,
+    timezone: snapshot.timezone,
+    contentModel: snapshot.contentModel,
+    reviewModel: snapshot.reviewModel,
+    imageModel: snapshot.imageModel
+  });
+}
+
 export function createProductionRuntime({
   config,
   env = process.env,
@@ -179,32 +218,61 @@ export function createProductionRuntime({
   const repositories = bindRepositories(database, modules);
   const pricingRepository = modules.createPricingRepository(database);
   const pricingService = modules.createPricingService(pricingRepository, { cache: false });
-  const openai = new modules.OpenAI({ apiKey: env.OPENAI_API_KEY });
   modules.cloudinary.config({
     cloud_name: env.CLOUDINARY_CLOUD_NAME,
     api_key: env.CLOUDINARY_API_KEY,
     api_secret: env.CLOUDINARY_API_SECRET
   });
 
-  const pipelineDependencies = {
-    config,
-    inventoryService: {
-      buildSiteInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService))
-    },
-    openaiService: modules.createOpenAIContentService({ apiKey: env.OPENAI_API_KEY, config }),
-    topicScoringService: { selectBestTopic: modules.selectBestTopic },
-    topicRepository: repositories.topicRepository,
-    runRepository: repositories.runRepository,
-    costService: repositories.costService,
-    validateArticle: modules.validateArticle,
-    imageService: modules.createContentImageService({ config, openai, cloudinary: modules.cloudinary }),
-    draftRepository: {
-      createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database),
-      findAIDraftByGenerationRunId: (runId) => modules.BlogPostModel.findAIDraftByGenerationRunId(runId, database)
-    }
-  };
+  function createPipelineDependencies(snapshot = null) {
+    const jobConfig = jobConfigFromSnapshot(config, snapshot);
+    const openai = new modules.OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const jobCostService = {
+      ...repositories.costService,
+      getMonthlyContentCost: (input = {}) => repositories.costService.getMonthlyContentCost({
+        ...input,
+        timezone: jobConfig.timezone
+      }),
+      reserveMonthlyBudget: (input) => repositories.costService.reserveMonthlyBudget({
+        ...input,
+        timezone: jobConfig.timezone
+      })
+    };
+    return {
+      config: jobConfig,
+      inventoryService: {
+        buildSiteInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService))
+      },
+      openaiService: modules.createOpenAIContentService({ apiKey: env.OPENAI_API_KEY, config: jobConfig }),
+      topicScoringService: { selectBestTopic: modules.selectBestTopic },
+      topicRepository: repositories.topicRepository,
+      runRepository: repositories.runRepository,
+      costService: jobCostService,
+      validateArticle: modules.validateArticle,
+      imageService: modules.createContentImageService({
+        config: jobConfig,
+        openai,
+        cloudinary: modules.cloudinary
+      }),
+      draftRepository: {
+        createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database),
+        findAIDraftByGenerationRunId: (runId) => modules.BlogPostModel.findAIDraftByGenerationRunId(runId, database)
+      }
+    };
+  }
+  const snapshotRuntimeAvailable = typeof modules.settingsRepository?.getContentAgentSettings === 'function'
+    && typeof modules.runtimeConfigService?.resolveContentAgentRuntimeConfig === 'function'
+    && typeof modules.runtimeConfigService?.createContentAgentJobSnapshot === 'function';
+  const pipelineDependencies = snapshotRuntimeAvailable ? null : createPipelineDependencies();
   const handleJob = createProductionJobHandler({
     timezone: config.timezone,
+    technicalConfig: config,
+    ...(snapshotRuntimeAvailable ? {
+      getSettings: () => modules.settingsRepository.getContentAgentSettings(database),
+      resolveRuntimeConfig: modules.runtimeConfigService.resolveContentAgentRuntimeConfig,
+      createJobSnapshot: modules.runtimeConfigService.createContentAgentJobSnapshot,
+      createPipelineDependencies
+    } : {}),
     createRun: repositories.runRepository.createRun,
     runPipeline: modules.runDraftPipeline,
     pipelineDependencies
@@ -229,7 +297,14 @@ export function createProductionRuntime({
     markJobNeedsManualAttention: repositories.jobRepository.markJobNeedsManualAttention
   });
 
-  return { worker, pipelineDependencies, jobRepository: repositories.jobRepository };
+  return {
+    worker,
+    pipelineDependencies,
+    jobRepository: repositories.jobRepository,
+    getSettings: snapshotRuntimeAvailable
+      ? () => modules.settingsRepository.getContentAgentSettings(database)
+      : null
+  };
 }
 
 export function createShutdownController({
@@ -281,10 +356,10 @@ export async function loadProductionModules() {
   const [
     openaiModule,
     cloudinaryModule,
-    cronModule,
     blogPostModule,
     jobRepository,
     runRepository,
+    settingsRepository,
     topicRepository,
     costService,
     validatorModule,
@@ -295,14 +370,16 @@ export async function loadProductionModules() {
     topicScoringModule,
     pricingRepositoryModule,
     pricingServiceModule,
-    databaseModule
+    databaseModule,
+    runtimeConfigService,
+    schedulerService
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
-    import('node-cron'),
     import('../models/BlogPostModel.js'),
     import('../repositories/contentJobRepository.js'),
     import('../repositories/contentRunRepository.js'),
+    import('../repositories/contentAgentSettingsRepository.js'),
     import('../repositories/contentTopicRepository.js'),
     import('../services/contentAgent/contentCostService.js'),
     import('../services/contentAgent/articleValidator.js'),
@@ -313,15 +390,17 @@ export async function loadProductionModules() {
     import('../services/contentAgent/topicScoringService.js'),
     import('../repositories/pricingRepository.js'),
     import('../services/pricingService.js'),
-    import('../util/db.js')
+    import('../util/db.js'),
+    import('../services/contentAgent/runtimeConfigService.js'),
+    import('../services/contentAgent/contentSchedulerService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
     cloudinary: cloudinaryModule.v2,
-    cronClient: cronModule.default,
     BlogPostModel: blogPostModule.default,
     jobRepository,
     runRepository,
+    settingsRepository,
     topicRepository,
     costService,
     validateArticle: validatorModule.validateArticle,
@@ -332,7 +411,9 @@ export async function loadProductionModules() {
     selectBestTopic: topicScoringModule.selectBestTopic,
     createPricingRepository: pricingRepositoryModule.createPricingRepository,
     createPricingService: pricingServiceModule.createPricingService,
-    database: databaseModule.default
+    database: databaseModule.default,
+    runtimeConfigService,
+    schedulerService
   };
 }
 
@@ -352,27 +433,28 @@ export async function startContentWorker({
 
   const loaded = modules || await loadProductionModules();
   const activeDatabase = database || loaded.database;
-  const activeCron = cronClient || loaded.cronClient;
   try {
-    const { worker, jobRepository } = createProductionRuntime({
+    const { worker, jobRepository, getSettings } = createProductionRuntime({
       config,
       env,
       database: activeDatabase,
       modules: loaded,
       logger
     });
-    const scheduler = createWeeklyScheduler({
-      enabled: config.enabled,
-      schedule: config.schedule,
-      timezone: config.timezone,
-      maxAttempts: config.maxAttempts,
-      cronClient: activeCron,
-      enqueueJob: jobRepository.enqueueJob,
-      logger
+    required(loaded.schedulerService?.createDynamicContentScheduler, 'schedulerService.createDynamicContentScheduler');
+    required(loaded.schedulerService?.runContentSchedulerTick, 'schedulerService.runContentSchedulerTick');
+    required(getSettings, 'getContentAgentSettings');
+    const scheduler = loaded.schedulerService.createDynamicContentScheduler({
+      tick: () => loaded.schedulerService.runContentSchedulerTick({
+        getSettings,
+        enqueueJob: jobRepository.enqueueJob,
+        updateSchedulerState: jobRepository.updateContentSchedulerState
+      })
     });
     const shutdown = createShutdownController({ scheduler, worker, pool: activeDatabase, logger });
     installShutdownHandlers(shutdown, processTarget);
     await worker.start();
+    scheduler.start();
     return { enabled: true, config, worker, scheduler, shutdown };
   } catch (error) {
     await activeDatabase.end().catch(() => {});

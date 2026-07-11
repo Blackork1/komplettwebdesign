@@ -3,12 +3,13 @@ import { sanitizeErrorReport } from './contentErrorSanitizer.js';
 
 export async function createRun({
   jobId,
-  currentStage = 'inventory'
+  currentStage = 'inventory',
+  runtimeSnapshot = {}
 }, db = pool) {
   const { rows } = await db.query(
     `
-      INSERT INTO content_runs (job_id, status, current_stage)
-      VALUES ($1, 'running', $2)
+      INSERT INTO content_runs (job_id, status, current_stage, runtime_snapshot_json)
+      VALUES ($1, 'running', $2, $3::jsonb)
       ON CONFLICT (job_id) DO UPDATE
       SET status = 'running',
           current_stage = content_runs.current_stage,
@@ -16,7 +17,7 @@ export async function createRun({
           finished_at = NULL
       RETURNING *
     `,
-    [jobId, currentStage]
+    [jobId, currentStage, runtimeSnapshot]
   );
 
   return rows[0] || null;

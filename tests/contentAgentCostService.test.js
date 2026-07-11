@@ -7,10 +7,17 @@ import {
   estimateTextCost,
   getMonthlyContentCost,
   getPersistedStageResult,
+  monthKey,
   releaseMonthlyBudgetReservation,
   reserveMonthlyBudget,
   settleMonthlyBudget
 } from '../services/contentAgent/contentCostService.js';
+
+test('Monatsbudget verwendet die Zeitzone des Job-Snapshots', () => {
+  const now = new Date('2026-07-31T22:30:00.000Z');
+  assert.equal(monthKey(now, 'Europe/Berlin'), '2026-08');
+  assert.equal(monthKey(now, 'UTC'), '2026-07');
+});
 
 function createConcurrentBudgetDb(initialCosts = {}) {
   const runs = new Map(Object.entries(initialCosts).map(([id, cost]) => [Number(id), {
@@ -137,6 +144,24 @@ test('getMonthlyContentCost summiert Läufe ab dem ersten Kalendertag des Monats
   assert.equal(calls[0].params.includes('2026-07'), true);
 });
 
+test('getMonthlyContentCost bindet den lokalen Snapshot-Monat an die Abfrage', async () => {
+  const calls = [];
+  const db = {
+    async query(sql, params) {
+      calls.push({ sql, params });
+      return { rows: [{ spent: 0 }] };
+    }
+  };
+
+  await getMonthlyContentCost({
+    now: new Date('2026-07-31T22:30:00.000Z'),
+    timezone: 'Europe/Berlin',
+    db
+  });
+
+  assert.deepEqual(calls[0].params, ['budget:2026-08:%', '2026-08']);
+});
+
 test('reserveMonthlyBudget serialisiert konkurrierende Reservierungen monatsbezogen', async () => {
   const db = createConcurrentBudgetDb({ 1: 0, 2: 0, 99: 24.8 });
   const common = {
@@ -202,6 +227,22 @@ test('Reservierung und Abrechnung sind pro runId und stageId idempotent', async 
   });
 });
 
+test('eine neue Reservierung verwendet den Monat der Snapshot-Zeitzone', async () => {
+  const db = createConcurrentBudgetDb({ 17: 0 });
+  const result = await reserveMonthlyBudget({
+    runId: 17,
+    stageId: 'article_generation',
+    estimatedCost: 0.5,
+    limit: 25,
+    now: new Date('2026-07-31T22:30:00.000Z'),
+    timezone: 'Europe/Berlin',
+    db
+  });
+
+  assert.equal(result.reservationMonth, '2026-08');
+  assert.equal(result.reservationKey, 'budget:2026-08:article_generation');
+});
+
 test('Reservierung bleibt über Monatswechsel an Monat und Lock gebunden', async () => {
   const db = createConcurrentBudgetDb({ 21: 0 });
   const july = await reserveMonthlyBudget({
@@ -264,6 +305,10 @@ test('dieselbe Stufe erhält beim Retry nach Monatswechsel keine zweite Reservie
   assert.equal(
     Object.hasOwn(db.runs.get(23).stage_results_json, 'budget:2026-08:article_generation'),
     false
+  );
+  assert.deepEqual(
+    db.events.filter(({ sql }) => /pg_advisory_xact_lock/.test(sql)).map(({ params }) => params[0]),
+    ['content-agent-budget:2026-07', 'content-agent-budget:2026-07']
   );
 });
 
@@ -336,6 +381,9 @@ test('ein Advisory-Lockfehler rollt zurück und gibt den Client frei', async () 
         async query(sql) {
           const normalized = sql.replace(/\s+/g, ' ').trim();
           events.push(normalized);
+          if (/SELECT stage_results_json, cost_estimate FROM content_runs/i.test(normalized)) {
+            return { rows: [{ stage_results_json: {}, cost_estimate: 0 }] };
+          }
           if (/pg_advisory_xact_lock/i.test(normalized)) throw new Error('Lock fehlgeschlagen');
           return { rows: [] };
         },
