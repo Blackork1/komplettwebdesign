@@ -1,5 +1,5 @@
 <!-- views/blog/show.ejs -->
-<%- include('../partials/head', { title, description, seoExtra }) %>
+<%- include('../partials/head', { title, description, seoExtra, ogImage, canonicalUrl }) %>
 <%- include('../partials/header') %>
 
 <link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
@@ -36,7 +36,7 @@
       </div>
 
       <figure class="rg-detail-media blog-hero__media unified-hero__media-frame">
-        <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="eager" fetchpriority="high">
+        <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.image_alt || post.title %>" loading="eager" fetchpriority="high">
       </figure>
     </div>
   </section>

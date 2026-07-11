@@ -1,8 +1,9 @@
 import ejs from 'ejs';
 import BlogPostModel from '../models/BlogPostModel.js';
-import { isoOffset, isoAtNoon } from '../util/date.js';
+import { isoOffset } from '../util/date.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
+import { sanitizeArticleHtml } from '../services/contentAgent/articleSanitizer.js';
 
 const BLOG_PAGE_SIZE = 10;
 
@@ -27,6 +28,33 @@ function demoteContentH1(html) {
   return String(html || '')
     .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
     .replace(/<\/h1>/gi, '</h2>');
+}
+
+function renderStaticContent(content, pricing) {
+  return sanitizeArticleHtml(renderPricingTokens(content, pricing));
+}
+
+function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
+  const legacyLocals = {
+    post: { ...post, description: post.description },
+    modifiedISO,
+    publishedISO,
+    og_image: post.image_url,
+    locale: 'de_DE',
+    helpers: {
+      date: d => new Date(d).toLocaleDateString('de-DE')
+    }
+  };
+
+  return demoteContentH1(normalizeLegacyPublicCopy(
+    renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing)
+  ));
+}
+
+function renderPostContent(post, context) {
+  return post.content_format === 'static_html'
+    ? renderStaticContent(post.content, context.pricing)
+    : renderLegacyContent(post, context);
 }
 
 function parseNonNegativeInteger(value, fallback = 0) {
@@ -96,11 +124,14 @@ export async function listPostsPage(req, res) {
 
 export async function showPost(req, res) {
   const rawPost = await BlogPostModel.findBySlug(req.params.slug);
-  const post = normalizeLegacyPublicCopy(renderPricingTokens(rawPost, res.locals.packagePricing || {}));
-  if (!post) return res.status(404).send('Artikel nicht gefunden');
+  if (!rawPost) return res.status(404).send('Artikel nicht gefunden');
 
+  const pricing = res.locals.packagePricing || {};
+  const postWithPricing = renderPricingTokens(rawPost, pricing);
+  const post = rawPost.content_format === 'static_html'
+    ? postWithPricing
+    : normalizeLegacyPublicCopy(postWithPricing);
 
-  // EJS im Content rendern; im Template sind post.* und helpers verfügbar
   const publishedISO = isoOffset(post.created_at);      // ergibt z.B. 2025-08-19T12:00:00+02:00
   const modifiedISO = isoOffset(post.updated_at);      // echte Zeit mit Offset
 
@@ -112,16 +143,11 @@ export async function showPost(req, res) {
     try { faqArray = JSON.parse(post.faq_json); } catch { faqArray = []; }
   }
 
-  const renderedContent = demoteContentH1(normalizeLegacyPublicCopy(renderPricingTokens(renderDbEjs(post.content, {
-    post: { ...post, description: post.description }, // erlaubt <%= post.description %> im DB-Content
+  const renderedContent = renderPostContent(post, {
     modifiedISO,
-    publishedISO,
-    og_image: post.image_url,
-    locale: 'de_DE',
-    helpers: {
-      date: d => new Date(d).toLocaleDateString('de-DE')
-    }
-  }), res.locals.packagePricing || {})));
+    pricing,
+    publishedISO
+  });
 
   // Beschreibung/Excerpt bestimmen (DB-Excerpt bevorzugt)
   let desc = (post.excerpt && post.excerpt.trim()) || (post.excerpt && post.excerpt.trim()) || '';
@@ -130,21 +156,26 @@ export async function showPost(req, res) {
     desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
   }
 
+  const pageTitle = post.meta_title || post.title;
+  const metaDescription = post.meta_description || post.description || desc;
+  const ogTitle = post.og_title || post.title;
+  const ogDescription = post.og_description || metaDescription;
+
   const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/blog/${post.slug}` : `/blog/${post.slug}`;
 
   // --- SEO Head-Block zusammenbauen (als String) ---
   const seoExtra = `
-  <link rel="canonical" href="${canonicalUrl}">
+  <link rel="canonical" href="${ejs.escapeXML(canonicalUrl)}">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="${ejs.escapeXML(post.title)}">
-  <meta property="og:description" content="${ejs.escapeXML(post.description)}">
-  <meta property="og:url" content="${canonicalUrl}">
+  <meta property="og:title" content="${ejs.escapeXML(ogTitle)}">
+  <meta property="og:description" content="${ejs.escapeXML(ogDescription)}">
+  <meta property="og:url" content="${ejs.escapeXML(canonicalUrl)}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:locale" content="de_DE">
   <meta property="og:image" content="${ejs.escapeXML(post.image_url || '')}">
-  <meta property="og:image:alt" content="Hero Bild für ${ejs.escapeXML(post.title)}">
+  <meta property="og:image:alt" content="${ejs.escapeXML(post.image_alt || post.title)}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="675">
   <meta property="article:published_time" content="${publishedISO}">
@@ -168,8 +199,8 @@ export async function showPost(req, res) {
   ${JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": post.title,
-    "description": post.description,
+    "headline": pageTitle,
+    "description": metaDescription,
     "url": canonicalUrl,
     "mainEntityOfPage": canonicalUrl,
     "image": {
@@ -200,17 +231,17 @@ export async function showPost(req, res) {
   `;
 
   res.render('blog/show', {
-    // SEO/OG Variablen EXPLIZIT fürs Template
-    title: post.title,
-    description: post.description,
+    title: pageTitle,
+    description: metaDescription,
     excerpt: desc,
-    og_image: post.image_url,
-    og_url: canonicalUrl,
+    ogTitle,
+    ogDescription,
+    ogImage: post.image_url,
+    canonicalUrl,
     slug: post.slug,
-    post: post,
 
     // Daten für die View
-    post: { ...post, description: desc, faq_json: faqArray}, // damit <%= post.description %> auch in Views geht
+    post: { ...post, description: desc, faq_json: faqArray },
     publishedISO,
     modifiedISO,
     renderedContent,
