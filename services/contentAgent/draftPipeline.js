@@ -1,24 +1,29 @@
+import { resolvePricingToken } from '../../util/pricingTokenRenderer.js';
+
+const CURRENT_RISK_FIELDS = [
+  'currentClaims',
+  'legalClaims',
+  'privacyClaims',
+  'softwareVersionClaims'
+];
+const PRICING_TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
+const STATIC_PRICE_PATTERN = /(?:\b\d[\d.,\s]*\s*(?:EUR|€)(?!\w)|\bEUR\s*\d[\d.,\s]*)/i;
+
 function required(value, name) {
   if (!value) throw new TypeError(`Die Abhängigkeit ${name} wird benötigt.`);
   return value;
 }
 
 function textRates(config, stage) {
-  if (stage === 'review') {
-    return {
-      inputRate: config.reviewInputCostPerMtok,
-      outputRate: config.reviewOutputCostPerMtok
-    };
-  }
-  return {
-    inputRate: config.contentInputCostPerMtok,
-    outputRate: config.contentOutputCostPerMtok
-  };
+  return stage === 'review'
+    ? { inputRate: config.reviewInputCostPerMtok, outputRate: config.reviewOutputCostPerMtok }
+    : { inputRate: config.contentInputCostPerMtok, outputRate: config.contentOutputCostPerMtok };
 }
 
-function estimatedTextStageCost(config, stage) {
-  if (stage === 'review') return Number(config.estimatedReviewStageCostEur ?? 0.25);
-  return Number(config.estimatedContentStageCostEur ?? 0.50);
+function reservationAmount(config, stage) {
+  return stage === 'review'
+    ? Number(config.reviewStageReservationEur ?? 0.25)
+    : Number(config.contentStageReservationEur ?? 0.50);
 }
 
 function generationMetadata(results) {
@@ -28,25 +33,122 @@ function generationMetadata(results) {
   };
 }
 
-function validateSourceReferences(sources) {
+function inspectSourceReferences(sources, { required: sourcesRequired = false } = {}) {
+  const raw = Array.isArray(sources) ? sources : [];
+  if (raw.length > 6) {
+    return { valid: false, code: 'too_many_sources', sources: [] };
+  }
+
   const validated = [];
   const seenUrls = new Set();
-  for (const source of Array.isArray(sources) ? sources : []) {
+  let malformed = false;
+  for (const source of raw) {
     const title = typeof source?.title === 'string' ? source.title.replace(/\s+/g, ' ').trim() : '';
-    if (!title) continue;
     try {
-      const url = new URL(source.url);
-      if (url.protocol !== 'https:') continue;
+      const url = new URL(source?.url);
+      if (!title || url.protocol !== 'https:') {
+        malformed = true;
+        continue;
+      }
       url.hash = '';
       const normalizedUrl = url.toString();
-      if (seenUrls.has(normalizedUrl)) continue;
+      if (seenUrls.has(normalizedUrl)) {
+        malformed = true;
+        continue;
+      }
       seenUrls.add(normalizedUrl);
       validated.push({ ...source, title, url: normalizedUrl });
     } catch {
-      // Schemawidrige Quellen werden nicht in den Artikelkontext übernommen.
+      malformed = true;
     }
   }
-  return validated;
+
+  const validCount = validated.length >= 2 && validated.length <= 6;
+  return {
+    valid: !malformed && (!sourcesRequired || validCount),
+    code: malformed ? 'invalid_sources' : (!validCount && sourcesRequired ? 'insufficient_sources' : null),
+    sources: validated
+  };
+}
+
+function articleRequiresSources(article) {
+  return CURRENT_RISK_FIELDS.some((field) => article?.risk?.[field] === true);
+}
+
+function briefingRequiresSources(briefing) {
+  return briefing?.sourceRequirements?.requiresCurrentSources === true;
+}
+
+function reviewRequiresSources(review) {
+  return CURRENT_RISK_FIELDS.some((field) => review?.risks?.[field] === true);
+}
+
+function articlePricingText(article) {
+  return JSON.stringify({
+    title: article?.title,
+    shortDescription: article?.shortDescription,
+    metaTitle: article?.metaTitle,
+    metaDescription: article?.metaDescription,
+    ogTitle: article?.ogTitle,
+    ogDescription: article?.ogDescription,
+    contentHtml: article?.contentHtml,
+    faqJson: article?.faqJson,
+    imageAlt: article?.imageAlt
+  });
+}
+
+function extractPricingTokens(html, pricingContext) {
+  const known = [];
+  const unknown = [];
+  for (const match of String(html || '').matchAll(PRICING_TOKEN_PATTERN)) {
+    const token = match[1].trim();
+    const normalized = `{{${token}}}`;
+    if (resolvePricingToken(token, { visiblePackages: pricingContext }).known) known.push(normalized);
+    else unknown.push(normalized);
+  }
+  return { known: known.sort(), unknown: unknown.sort() };
+}
+
+function pricingIssue(code, message, repairInstruction) {
+  return { code, severity: 'error', message, repairInstruction, blocking: true };
+}
+
+function pricingLockIssue(tokens) {
+  return {
+    code: 'pricing_tokens_locked',
+    severity: 'info',
+    message: `Zentrale Pricing-Tokens sind unveränderlich: ${tokens.join(', ') || 'keine'}.`,
+    repairInstruction: 'Bewahre exakt dieselben zentral freigegebenen Pricing-Tokens; erfinde, entferne oder ersetze keine Pricing-Tokens.',
+    blocking: false
+  };
+}
+
+function inspectPricing(article, pricingContext, lockedTokens, enforceLock) {
+  const issues = [];
+  const persistedText = articlePricingText(article);
+  const tokens = extractPricingTokens(persistedText, pricingContext);
+  if (STATIC_PRICE_PATTERN.test(persistedText) || article?.risk?.staticPrices === true) {
+    issues.push(pricingIssue(
+      'static_price_forbidden',
+      'Artikel dürfen keine statischen Euro- oder EUR-Preise enthalten.',
+      'Entferne statische Preise und nutze ausschließlich bereits vorhandene zentrale Pricing-Tokens.'
+    ));
+  }
+  if (tokens.unknown.length > 0) {
+    issues.push(pricingIssue(
+      'pricing_token_unknown',
+      'Der Artikel enthält nicht freigegebene oder erfundene Pricing-Tokens.',
+      'Entferne unbekannte Tokens; nutze ausschließlich die im Ausgangsartikel vorhandenen zentralen Pricing-Tokens.'
+    ));
+  }
+  if (enforceLock && JSON.stringify(tokens.known) !== JSON.stringify(lockedTokens)) {
+    issues.push(pricingIssue(
+      'pricing_tokens_changed',
+      'Eine Reparatur hat zentrale Pricing-Tokens erfunden, entfernt oder verändert.',
+      'Stelle exakt die zentralen Pricing-Tokens des Ausgangsartikels wieder her.'
+    ));
+  }
+  return { issues, knownTokens: tokens.known };
 }
 
 export async function runDraftPipeline(input = {}, dependencies = {}) {
@@ -60,7 +162,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   const validateArticle = required(dependencies.validateArticle, 'validateArticle');
   const imageService = required(dependencies.imageService, 'imageService');
   const draftRepository = required(dependencies.draftRepository, 'draftRepository');
-  const deleteUploadedImage = required(dependencies.deleteUploadedImage, 'deleteUploadedImage');
+  required(imageService.generateAndUploadImage, 'imageService.generateAndUploadImage');
+  required(imageService.deleteImage, 'imageService.deleteImage');
+
   const runId = input.runId;
   const modelResults = [];
   let uploadedImage = null;
@@ -72,33 +176,30 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       stageId: extra.stageId || currentStage,
       stageResult,
       tokenUsage: extra.tokenUsage || {},
-      costEstimate: extra.costEstimate || 0,
+      costEstimate: 0,
       responseIds: extra.responseIds || [],
       selectedTopicId: extra.selectedTopicId || null
     });
   }
 
-  async function checkBudget(estimatedNext) {
-    const spent = await costService.getMonthlyContentCost();
-    costService.assertMonthlyBudget({
-      spent,
-      estimatedNext,
+  async function reserve(stageId, stage) {
+    return costService.reserveMonthlyBudget({
+      runId,
+      stageId,
+      estimatedCost: reservationAmount(config, stage),
       limit: config.monthlyCostLimitEur
     });
   }
 
   async function paidTextOperation({ stage, stageId = stage, operation, input: operationInput }) {
-    await checkBudget(estimatedTextStageCost(config, stage));
+    await reserve(stageId, stage);
     const result = await operation(operationInput);
-    const costEstimate = costService.estimateTextCost({
-      usage: result.usage,
-      ...textRates(config, stage)
-    });
+    const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
+    await costService.settleMonthlyBudget({ runId, stageId, actualCost });
     modelResults.push(result);
     await updateStage(stage, result.value, {
       stageId,
       tokenUsage: result.usage,
-      costEstimate,
       responseIds: result.responseId ? [result.responseId] : []
     });
     return result.value;
@@ -112,15 +213,50 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     return { status: 'needs_manual_attention', post: null, code };
   }
 
+  async function requireValidSources(sources, code = 'insufficient_sources') {
+    const inspection = inspectSourceReferences(sources, { required: true });
+    if (inspection.valid) return { ok: true, sources: inspection.sources };
+    return {
+      ok: false,
+      result: await finishManual(
+        inspection.code || code,
+        inspection.code === 'too_many_sources'
+          ? 'Aktuelle Themen dürfen höchstens sechs validierte Quellen verwenden.'
+          : 'Aktuelle Themen benötigen zwei bis sechs eindeutige validierte HTTPS-Quellen.'
+      )
+    };
+  }
+
+  async function validateOptionalSourceBoundary(sources, authoritativeSources) {
+    if (!Array.isArray(sources) || sources.length === 0) return null;
+    const inspection = inspectSourceReferences(sources, { required: true });
+    if (inspection.valid) {
+      const authoritativeUrls = new Set(authoritativeSources.map(({ url }) => url));
+      const allResearched = inspection.sources.every(({ url }) => authoritativeUrls.has(url));
+      if (allResearched) return null;
+      return finishManual(
+        'invented_sources',
+        'Modellquellen müssen aus der validierten Quellenrecherche stammen.'
+      );
+    }
+    return finishManual(
+      inspection.code || 'invalid_sources',
+      inspection.code === 'too_many_sources'
+        ? 'Am Pipeline-Rand sind höchstens sechs Quellen zulässig.'
+        : 'Quellen am Pipeline-Rand müssen eindeutig, benannt und per HTTPS erreichbar sein.'
+    );
+  }
+
   try {
     const inventory = await inventoryService.buildSiteInventory();
+    const pricingContext = inventory.packages || [];
     await updateStage('inventory', {
       counts: {
         blogPosts: inventory.blogPosts?.length || 0,
         guides: inventory.guides?.length || 0,
         servicePages: inventory.servicePages?.length || 0,
         industries: inventory.industries?.length || 0,
-        packages: inventory.packages?.length || 0
+        packages: pricingContext.length
       }
     });
 
@@ -162,10 +298,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         await updateStage('source_research', { passed: false, sourceCount: 0 });
         return finishManual('insufficient_sources', error.message);
       }
-      sourceReferences = validateSourceReferences(sourceReferences);
-      if (sourceReferences.length < 2) {
-        return finishManual('insufficient_sources', 'Aktuelle Themen benötigen mindestens zwei validierte Quellen.');
-      }
+      const requiredSources = await requireValidSources(sourceReferences);
+      if (!requiredSources.ok) return requiredSources.result;
+      sourceReferences = requiredSources.sources;
     }
 
     const briefing = await paidTextOperation({
@@ -176,36 +311,63 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         inventory,
         internalLinks: inventory.approvedLinks || [],
         sourceReferences,
-        pricingContext: inventory.packages || []
+        pricingContext
       }
     });
+    const invalidBriefSources = await validateOptionalSourceBoundary(briefing.sourceReferences, sourceReferences);
+    if (invalidBriefSources) return invalidBriefSources;
+    if (briefingRequiresSources(briefing)) {
+      const requiredSources = await requireValidSources(sourceReferences);
+      if (!requiredSources.ok) return requiredSources.result;
+      sourceReferences = requiredSources.sources;
+    }
+
     let currentArticle = await paidTextOperation({
       stage: 'article_generation',
       operation: openaiService.generateArticle,
-      input: {
-        briefing,
-        pricingContext: inventory.packages || []
-      }
+      input: { briefing, pricingContext }
     });
+    const invalidArticleSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
+    if (invalidArticleSources) return invalidArticleSources;
+    if (articleRequiresSources(currentArticle)) {
+      const requiredSources = await requireValidSources(sourceReferences);
+      if (!requiredSources.ok) return requiredSources.result;
+      sourceReferences = requiredSources.sources;
+    }
 
     const validationContext = {
       existingSlugs: inventory.blogPosts || [],
       allowedInternalLinks: inventory.approvedLinks || [],
       sourceReferences
     };
-    let validation = validateArticle(currentArticle, validationContext);
-    await updateStage('validation', {
-      passed: validation.passed,
-      issues: validation.issues
-    });
+    const initialPricing = inspectPricing(currentArticle, pricingContext, [], false);
+    const lockedPricingTokens = initialPricing.knownTokens;
 
+    function validateCurrentArticle({ enforcePricingLock }) {
+      const base = validateArticle(currentArticle, validationContext);
+      const pricing = inspectPricing(currentArticle, pricingContext, lockedPricingTokens, enforcePricingLock);
+      return {
+        ...base,
+        passed: base.passed && pricing.issues.length === 0,
+        issues: [...base.issues, ...pricing.issues]
+      };
+    }
+
+    let validation = validateCurrentArticle({ enforcePricingLock: false });
+    await updateStage('validation', { passed: validation.passed, issues: validation.issues });
+
+    const reviewableArticle = () => ({ ...currentArticle, contentHtml: validation.sanitizedHtml });
     let currentReview = null;
     if (validation.passed) {
       currentReview = await paidTextOperation({
         stage: 'review',
         operation: openaiService.reviewArticle,
-        input: { briefing, article: currentArticle, sourceReferences }
+        input: { briefing, article: reviewableArticle(), sourceReferences }
       });
+      if (reviewRequiresSources(currentReview)) {
+        const requiredSources = await requireValidSources(sourceReferences);
+        if (!requiredSources.ok) return requiredSources.result;
+      }
     }
 
     let revision = 0;
@@ -221,9 +383,20 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         stage: 'repair',
         stageId: `repair:${revision}`,
         operation: openaiService.repairArticle,
-        input: { briefing, article: currentArticle, issues }
+        input: {
+          briefing,
+          article: reviewableArticle(),
+          issues: [...issues, pricingLockIssue(lockedPricingTokens)]
+        }
       });
-      validation = validateArticle(currentArticle, validationContext);
+      const invalidRepairSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
+      if (invalidRepairSources) return invalidRepairSources;
+      if (articleRequiresSources(currentArticle)) {
+        const requiredSources = await requireValidSources(sourceReferences);
+        if (!requiredSources.ok) return requiredSources.result;
+      }
+
+      validation = validateCurrentArticle({ enforcePricingLock: true });
       await updateStage('validation', {
         passed: validation.passed,
         issues: validation.issues
@@ -234,8 +407,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           stage: 'review',
           stageId: `review:${revision}`,
           operation: openaiService.reviewArticle,
-          input: { briefing, article: currentArticle, sourceReferences }
+          input: { briefing, article: reviewableArticle(), sourceReferences }
         });
+        if (reviewRequiresSources(currentReview)) {
+          const requiredSources = await requireValidSources(sourceReferences);
+          if (!requiredSources.ok) return requiredSources.result;
+        }
       } else {
         currentReview = null;
       }
@@ -250,19 +427,49 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
 
-    await checkBudget(config.imageCostEur);
-    uploadedImage = await imageService.generateAndUploadImage({
-      prompt: currentArticle.imagePrompt,
-      filename: currentArticle.imageFilename
+    await costService.reserveMonthlyBudget({
+      runId,
+      stageId: 'image_generation',
+      estimatedCost: config.imageCostEur,
+      limit: config.monthlyCostLimitEur
     });
-    await updateStage('image_generation', {
-      bytes: uploadedImage.bytes
-    }, { costEstimate: config.imageCostEur });
-    await updateStage('cloudinary_upload', {
-      imageUrl: uploadedImage.imageUrl,
-      publicId: uploadedImage.publicId,
-      bytes: uploadedImage.bytes
-    });
+    try {
+      uploadedImage = await imageService.generateAndUploadImage({
+        prompt: currentArticle.imagePrompt,
+        filename: currentArticle.imageFilename,
+        runId
+      });
+      await costService.settleMonthlyBudget({
+        runId,
+        stageId: 'image_generation',
+        actualCost: config.imageCostEur
+      });
+      await updateStage('image_generation', uploadedImage.audit?.imageGeneration || {
+        status: 'completed',
+        costIncurred: true
+      });
+      await updateStage('cloudinary_upload', {
+        ...(uploadedImage.audit?.upload || { status: 'completed' }),
+        imageUrl: uploadedImage.imageUrl,
+        publicId: uploadedImage.publicId,
+        bytes: uploadedImage.bytes
+      });
+    } catch (error) {
+      await costService.settleMonthlyBudget({
+        runId,
+        stageId: 'image_generation',
+        actualCost: config.imageCostEur
+      });
+      const audit = error.audit || {};
+      await updateStage('image_generation', audit.imageGeneration || {
+        status: 'failed',
+        costIncurred: true,
+        code: 'IMAGE_GENERATION_FAILED'
+      });
+      await updateStage('cloudinary_upload', audit.upload || { status: 'not_started' });
+      if (audit.cleanup) await updateStage('image_cleanup', audit.cleanup);
+      throw error;
+    }
 
     const draft = await draftRepository.createAIDraft({
       post: {
@@ -302,21 +509,25 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     });
     draftPersisted = true;
-    await updateStage('draft_creation', {
-      postId: draft.post.id,
-      qualityScore: currentReview.score
-    });
+    await updateStage('draft_creation', { postId: draft.post.id, qualityScore: currentReview.score });
     await topicRepository.markTopicUsed(storedTopic?.id || selectedTopic.id);
+    await updateStage('completed', { postId: draft.post.id, qualityScore: currentReview.score });
     await runRepository.finishRun(runId, { status: 'completed', postId: draft.post.id });
 
     return { status: 'completed', ...draft };
   } catch (error) {
     if (uploadedImage?.publicId && !draftPersisted) {
+      let cleanupResult;
       try {
-        await deleteUploadedImage(uploadedImage.publicId);
-      } catch {
-        // Der ursprüngliche Pipelinefehler bleibt maßgeblich.
+        cleanupResult = await imageService.deleteImage({ publicId: uploadedImage.publicId });
+      } catch (cleanupError) {
+        cleanupResult = cleanupError.audit?.cleanup || {
+          status: 'failed',
+          publicId: uploadedImage.publicId,
+          code: 'IMAGE_CLEANUP_FAILED'
+        };
       }
+      await updateStage('image_cleanup', cleanupResult);
     }
     await runRepository.finishRun(runId, {
       status: 'failed',

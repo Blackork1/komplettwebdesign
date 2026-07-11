@@ -28,6 +28,8 @@ export function getContentAgentConfig(env = process.env) {
     reviewModel: env.OPENAI_REVIEW_MODEL || 'gpt-5.4-mini',
     imageModel: env.OPENAI_IMAGE_MODEL || 'gpt-image-2',
     monthlyCostLimitEur: decimal(env.CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR, 25),
+    contentStageReservationEur: decimal(env.CONTENT_AGENT_CONTENT_STAGE_RESERVATION_EUR, 0.50),
+    reviewStageReservationEur: decimal(env.CONTENT_AGENT_REVIEW_STAGE_RESERVATION_EUR, 0.25),
     contentInputCostPerMtok: decimal(env.OPENAI_CONTENT_INPUT_COST_PER_MTOK, 2.50),
     contentOutputCostPerMtok: decimal(env.OPENAI_CONTENT_OUTPUT_COST_PER_MTOK, 15),
     reviewInputCostPerMtok: decimal(env.OPENAI_REVIEW_INPUT_COST_PER_MTOK, 0.75),

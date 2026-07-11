@@ -145,6 +145,8 @@ test('config defaults to drafts in Europe Berlin', () => {
   assert.equal(config.maxTopicCandidates, 8);
   assert.equal(config.autoPublishEnabled, false);
   assert.equal(config.monthlyCostLimitEur, 25);
+  assert.equal(config.contentStageReservationEur, 0.5);
+  assert.equal(config.reviewStageReservationEur, 0.25);
   assert.equal(Object.isFrozen(config), true);
 });
 
@@ -155,7 +157,9 @@ test('config parses overrides and clamps bounded integers', () => {
     CONTENT_AGENT_MAX_TOPIC_CANDIDATES: '99',
     CONTENT_AGENT_MAX_REVISIONS: '-2',
     CONTENT_AGENT_WORKER_POLL_MS: '250',
-    CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR: '-1'
+    CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR: '-1',
+    CONTENT_AGENT_CONTENT_STAGE_RESERVATION_EUR: '0.75',
+    CONTENT_AGENT_REVIEW_STAGE_RESERVATION_EUR: '0.30'
   });
 
   assert.equal(config.enabled, true);
@@ -164,6 +168,8 @@ test('config parses overrides and clamps bounded integers', () => {
   assert.equal(config.maxRevisions, 0);
   assert.equal(config.workerPollMs, 1000);
   assert.equal(config.monthlyCostLimitEur, 25);
+  assert.equal(config.contentStageReservationEur, 0.75);
+  assert.equal(config.reviewStageReservationEur, 0.30);
 });
 
 test('mark profile and links expose stable approved context', () => {
