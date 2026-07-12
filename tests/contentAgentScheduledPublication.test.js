@@ -344,6 +344,28 @@ test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async (
   assert.equal(calls.includes('COMMIT'), true);
 });
 
+test('nicht terminierter Reviewentwurf erhält bei manueller Freigabe atomar Termin und Publish-Job', async () => {
+  const { service, calls, state } = harness({ scheduledAt: null });
+
+  const result = await service.approveForSchedule({
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  });
+
+  assert.equal(result.post.workflow_status, 'approved_scheduled');
+  assert.equal(result.post.scheduled_at.toISOString(), futureSlot.toISOString());
+  assert.equal(result.post.approved_review_version, 2);
+  assert.equal(result.post.approved_by_admin_id, admin.id);
+  assert.equal(result.job.run_after.toISOString(), futureSlot.toISOString());
+  assert.equal(state.post.published, false);
+  assert.deepEqual(
+    calls.filter(Array.isArray).map(([name]) => name).filter((name) => ['approve', 'job'].includes(name)),
+    ['approve', 'job']
+  );
+});
+
 test('Auto-Systemfreigabe plant nach bestandenen Gates ohne Admin und ohne frühe Veröffentlichung', async () => {
   const { service, calls, state } = harness();
   let leaseChecks = 0;

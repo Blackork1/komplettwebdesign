@@ -137,7 +137,7 @@
       </form>
       <% } %>
       <% if (reviewActions.canReschedule === true) { %>
-      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="<%= reviewActions.canApproveScheduled === true ? 'Diesen Entwurf freigeben und einen anderen Veröffentlichungstermin wählen?' : 'Den Veröffentlichungstermin verbindlich verschieben?' %>">
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="<%= reviewActions.rescheduleRequiresApproval === true ? (item.scheduledAtLocal ? 'Diesen Entwurf freigeben und einen anderen Veröffentlichungstermin wählen?' : 'Diesen Entwurf freigeben und einen Veröffentlichungstermin festlegen?') : 'Den Veröffentlichungstermin verbindlich verschieben?' %>">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <div class="content-agent-field">
@@ -145,7 +145,7 @@
           <input id="draft-scheduled-at-local" class="form-control" type="datetime-local" name="scheduled_at_local" required>
           <small>Die Eingabe wird serverseitig in der konfigurierten IANA-Zeitzone geprüft und muss strikt in der Zukunft liegen.</small>
         </div>
-        <button class="btn btn-outline-primary mt-3" type="submit"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> <%= reviewActions.canApproveScheduled === true ? 'Freigeben und anderen Termin wählen' : 'Termin verschieben' %></button>
+        <button class="btn btn-outline-primary mt-3" type="submit"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> <%= reviewActions.rescheduleRequiresApproval === true ? (item.scheduledAtLocal ? 'Freigeben und anderen Termin wählen' : 'Freigeben und Termin festlegen') : 'Termin verschieben' %></button>
       </form>
       <% } %>
       <% if (reviewActions.canRetryNotification === true) { %>

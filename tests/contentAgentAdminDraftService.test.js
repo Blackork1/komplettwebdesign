@@ -240,11 +240,12 @@ test('getDraftForReview leitet Aktionen ausschließlich aus dem serverseitigen Z
     canApproveScheduled: false,
     canPublishNow: true,
     canReschedule: true,
+    rescheduleRequiresApproval: true,
     canRetryNotification: true
   });
 });
 
-test('ein nicht terminierter Entwurf wird nicht als verpasster Slot behandelt', async () => {
+test('ein nicht terminierter Reviewentwurf kann sicher freigegeben und terminiert werden', async () => {
   const current = draft({
     post: { ...draft().post, scheduled_at: null }
   });
@@ -255,7 +256,8 @@ test('ein nicht terminierter Entwurf wird nicht als verpasster Slot behandelt', 
   assert.deepEqual(result.actions, {
     canApproveScheduled: false,
     canPublishNow: false,
-    canReschedule: false,
+    canReschedule: true,
+    rescheduleRequiresApproval: true,
     canRetryNotification: false
   });
 });
@@ -277,7 +279,8 @@ test('ein exakt fälliger Termin gilt serverseitig noch nicht als verpasst', asy
   const result = await service.getDraftForReview(3);
 
   assert.equal(result.actions.canPublishNow, false);
-  assert.equal(result.actions.canReschedule, false);
+  assert.equal(result.actions.canReschedule, true);
+  assert.equal(result.actions.rescheduleRequiresApproval, true);
 });
 
 test('zukünftiger Reviewentwurf kann alternativ freigegeben und neu terminiert werden', async () => {
@@ -296,12 +299,14 @@ test('zukünftiger Reviewentwurf kann alternativ freigegeben und neu terminiert 
 
   assert.equal(result.actions.canApproveScheduled, true);
   assert.equal(result.actions.canReschedule, true);
+  assert.equal(result.actions.rescheduleRequiresApproval, true);
 });
 
 test('Mailretry-Flag erlaubt nur ausgeschöpfte, eindeutig temporäre SMTP-Fehler', async () => {
   const basePost = { ...draft().post, scheduled_at: null };
   const cases = [
     [{ status: 'failed', attempts: 6, last_error_code: 'smtp_etimedout' }, true],
+    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_esmtpfrom' }, true],
     [{ status: 'failed', attempts: 6, last_error_code: 'outcome_uncertain' }, false],
     [{ status: 'failed', attempts: 6, last_error_code: 'smtp_outcome_uncertain' }, false],
     [{ status: 'failed', attempts: 6, last_error_code: 'smtp_rejected' }, true],

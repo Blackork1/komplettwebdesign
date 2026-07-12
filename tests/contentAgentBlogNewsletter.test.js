@@ -91,7 +91,17 @@ function createDeliveryDatabase({ delivery, subscriber, failSentCommit = false }
         const retryable = params.find((value) => typeof value === 'boolean') === true;
         mutable.status = retryable ? 'queued' : 'failed';
         mutable.locked_by = null;
-        mutable.last_error_code = params.find((value) => value === 'outcome_uncertain') || null;
+        mutable.last_error_code = params.find((value) => (
+          typeof value === 'string'
+          && (value === 'outcome_uncertain' || value.startsWith('smtp_'))
+        )) || null;
+        if (retryable) {
+          const delayMs = params.find((value) => Number.isFinite(value) && value >= 300_000);
+          mutable.next_attempt_at = delayMs
+            ? new Date('2026-07-12T10:00:00.000Z').getTime() + delayMs
+            : mutable.next_attempt_at;
+          mutable.next_attempt_at = new Date(mutable.next_attempt_at);
+        }
         return { rows: [structuredClone(mutable)] };
       }
       throw new Error(`Unerwartetes SQL im Zustellungstest: ${normalized}`);
@@ -327,6 +337,76 @@ test('Mehrdeutiger SMTP-Ausgang wird terminal gespeichert und niemals automatisc
     (error) => error.retryable === false
   );
   assert.equal(sendNewsletterMail.mock.callCount(), 1);
+});
+
+test('eindeutige Newsletter-5xx-Ablehnung wird automatisch bis Versuch sechs wiederholt', async () => {
+  const { createBlogNewsletterService } = await import('../services/contentAgent/blogNewsletterService.js');
+  const smtpFailure = Object.assign(new Error('Empfänger vor DATA abgelehnt'), {
+    code: 'EENVELOPE',
+    command: 'RCPT TO',
+    responseCode: 550
+  });
+  const subscriber = {
+    id: 77,
+    email: 'leser@example.de',
+    active: true,
+    unsubscribe_token: 'sicheres-token'
+  };
+  const retryableDatabase = createDeliveryDatabase({ delivery: queuedDelivery(), subscriber });
+  const retryableService = createBlogNewsletterService({
+    database: retryableDatabase,
+    sendNewsletterMail: async () => { throw smtpFailure; }
+  });
+
+  await assert.rejects(
+    () => retryableService.sendNewsletterDelivery({ deliveryId: 9, leaseGuard: async () => true }),
+    (error) => error.retryable === true && error.code === 'CONTENT_NEWSLETTER_SMTP_FAILED'
+  );
+  assert.equal(retryableDatabase.state.status, 'queued');
+  assert.equal(retryableDatabase.state.last_error_code, 'smtp_rejected');
+
+  const exhaustedDatabase = createDeliveryDatabase({
+    delivery: { ...queuedDelivery(), attempts: 5 },
+    subscriber
+  });
+  const exhaustedService = createBlogNewsletterService({
+    database: exhaustedDatabase,
+    sendNewsletterMail: async () => { throw smtpFailure; }
+  });
+  await assert.rejects(
+    () => exhaustedService.sendNewsletterDelivery({ deliveryId: 9, leaseGuard: async () => true }),
+    (error) => error.retryable === false && error.code === 'CONTENT_NEWSLETTER_SMTP_REJECTED'
+  );
+  assert.equal(exhaustedDatabase.state.status, 'failed');
+  assert.equal(exhaustedDatabase.state.attempts, 6);
+  assert.equal(exhaustedDatabase.state.last_error_code, 'smtp_rejected');
+});
+
+test('fehlendes SMTP_FROM bleibt auch beim Newsletter eindeutig ungesendet und retrybar', async () => {
+  const { createBlogNewsletterService } = await import('../services/contentAgent/blogNewsletterService.js');
+  const { sendPublishedBlogNewsletterMail } = await import('../services/mailService.js');
+  const smtp = { sendMail: mock.fn(async () => ({ messageId: 'darf-nicht-senden' })) };
+  const database = createDeliveryDatabase({
+    delivery: queuedDelivery(),
+    subscriber: {
+      id: 77,
+      email: 'leser@example.de',
+      active: true,
+      unsubscribe_token: 'sicheres-token'
+    }
+  });
+  const service = createBlogNewsletterService({
+    database,
+    sendNewsletterMail: (input) => sendPublishedBlogNewsletterMail({ ...input, from: '' }, smtp)
+  });
+
+  await assert.rejects(
+    () => service.sendNewsletterDelivery({ deliveryId: 9, leaseGuard: async () => true }),
+    (error) => error.retryable === true && error.code === 'CONTENT_NEWSLETTER_SMTP_FAILED'
+  );
+  assert.equal(database.state.status, 'queued');
+  assert.equal(database.state.last_error_code, 'smtp_esmtpfrom');
+  assert.equal(smtp.sendMail.mock.callCount(), 0);
 });
 
 test('nach Crash verbliebenes sending wird ohne erneuten SMTP-Versand outcome_uncertain', async () => {

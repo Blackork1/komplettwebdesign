@@ -77,7 +77,11 @@ function technicalSenderAddress(value) {
         || /[\r\n]/.test(sender)
         || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender)
     ) {
-        throw new TypeError("SMTP_FROM muss eine gültige technische Absenderadresse enthalten.");
+        const error = new TypeError("SMTP_FROM muss eine gültige technische Absenderadresse enthalten.");
+        error.code = "ESMTPFROM";
+        error.command = "CONFIG";
+        error.smtpOutcome = "safely_unsent";
+        throw error;
     }
     return sender;
 }

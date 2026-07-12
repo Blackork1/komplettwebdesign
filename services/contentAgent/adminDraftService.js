@@ -136,7 +136,8 @@ export function deriveDraftReviewActions(post = {}, notification = null, now = n
   return {
     canApproveScheduled: needsReview && isFuture,
     canPublishNow: needsReview && isMissed,
-    canReschedule: (needsReview && (isFuture || isMissed)) || approved,
+    canReschedule: needsReview || (approved && hasSchedule),
+    rescheduleRequiresApproval: needsReview,
     canRetryNotification: isAdminNotificationManuallyRetryable(notification)
   };
 }

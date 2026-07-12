@@ -212,11 +212,26 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
       canApproveScheduled: true,
       canPublishNow: false,
       canReschedule: true,
+      rescheduleRequiresApproval: true,
       canRetryNotification: false
     } }
   });
   assert.match(chooseOtherSlotHtml, /drafts\/19\/reschedule/);
   assert.match(chooseOtherSlotHtml, /Freigeben und anderen Termin wählen/);
+
+  const setInitialSlotHtml = await renderFile(viewPath, {
+    ...locals,
+    draft: { ...baseDraft, scheduledAtLocal: '', scheduledAtLabel: 'Noch nicht terminiert', actions: {
+      canApproveScheduled: false,
+      canPublishNow: false,
+      canReschedule: true,
+      rescheduleRequiresApproval: true,
+      canRetryNotification: false
+    } }
+  });
+  assert.match(setInitialSlotHtml, /drafts\/19\/reschedule/);
+  assert.match(setInitialSlotHtml, /Freigeben und Termin festlegen/);
+  assert.doesNotMatch(setInitialSlotHtml, /Freigeben und jetzt veröffentlichen/);
 
   const missedHtml = await renderFile(viewPath, {
     ...locals,
@@ -224,6 +239,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
       canApproveScheduled: false,
       canPublishNow: true,
       canReschedule: true,
+      rescheduleRequiresApproval: true,
       canRetryNotification: true
     } }
   });

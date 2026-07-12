@@ -100,6 +100,9 @@ test('SMTP-Klassifikation unterscheidet sichere Ablehnungen, Verbindungsaufbau u
   assert.equal(classifySmtpFailure({ responseCode: 550, command: 'DATA' }), 'retryable_rejected');
   assert.equal(classifySmtpFailure({ code: 'ECONNREFUSED' }), 'retryable');
   assert.equal(classifySmtpFailure({ code: 'EDNS' }), 'retryable');
+  assert.equal(classifySmtpFailure({
+    code: 'ESMTPFROM', command: 'CONFIG', smtpOutcome: 'safely_unsent'
+  }), 'retryable');
   assert.equal(classifySmtpFailure({ code: 'ETIMEDOUT', command: 'CONN' }), 'retryable');
   assert.equal(classifySmtpFailure({ code: 'ETIMEDOUT', command: 'DATA' }), 'outcome_uncertain');
   assert.equal(classifySmtpFailure({ code: 'ECONNRESET' }), 'outcome_uncertain');
@@ -185,17 +188,59 @@ test('sendContentAgentReviewMail verwirft unsichere Bild- und Editor-URLs', asyn
 });
 
 test('neue Mailfunktionen brechen ohne gültiges SMTP_FROM vor dem Transport ab', async () => {
+  const {
+    sendContentAgentReviewMail,
+    sendPublishedBlogNewsletterMail
+  } = await import('../services/mailService.js');
+  const smtp = { sendMail: mock.fn(async () => ({ messageId: 'darf-nicht-senden' })) };
+  for (const from of ['', 'keine-adresse']) {
+    for (const send of [
+      () => sendContentAgentReviewMail({
+        from,
+        to: 'redaktion@example.de',
+        article: { id: 51, title: 'Entwurf' },
+        editorUrl: 'https://cms.example.de/admin/content-agent/drafts/51/edit'
+      }, smtp),
+      () => sendPublishedBlogNewsletterMail({
+        from,
+        to: 'leser@example.de',
+        unsubscribeToken: 'sicheres-token',
+        post: { slug: 'sicherer-artikel' }
+      }, smtp)
+    ]) {
+      await assert.rejects(send(), (error) => (
+        error instanceof TypeError
+        && error.code === 'ESMTPFROM'
+        && error.command === 'CONFIG'
+        && error.smtpOutcome === 'safely_unsent'
+      ));
+    }
+  }
+  assert.equal(smtp.sendMail.mock.callCount(), 0);
+});
+
+test('fehlendes SMTP_FROM bleibt eindeutig ungesendet und wird bis Versuch sechs wiederholt', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
   const { sendContentAgentReviewMail } = await import('../services/mailService.js');
   const smtp = { sendMail: mock.fn(async () => ({ messageId: 'darf-nicht-senden' })) };
+  const sendReviewMail = (input) => sendContentAgentReviewMail({ ...input, from: '' }, smtp);
+
+  const retryable = createDeliveryDatabase(queuedDelivery());
   await assert.rejects(
-    sendContentAgentReviewMail({
-      from: '',
-      to: 'redaktion@example.de',
-      article: { id: 51, title: 'Entwurf' },
-      editorUrl: 'https://cms.example.de/admin/content-agent/drafts/51/edit'
-    }, smtp),
-    /SMTP_FROM/
+    () => sendAdminReviewNotification({ deliveryId: 7 }, { database: retryable, sendReviewMail }),
+    (error) => error.retryable === true
   );
+  assert.equal(retryable.state.status, 'queued');
+  assert.equal(retryable.state.last_error_code, 'smtp_esmtpfrom');
+
+  const exhausted = createDeliveryDatabase(queuedDelivery(5));
+  await assert.rejects(
+    () => sendAdminReviewNotification({ deliveryId: 7 }, { database: exhausted, sendReviewMail }),
+    (error) => error.retryable === false && error.code === 'CONTENT_ADMIN_NOTIFICATION_SMTP_EXHAUSTED'
+  );
+  assert.equal(exhausted.state.status, 'failed');
+  assert.equal(exhausted.state.attempts, 6);
+  assert.equal(exhausted.state.last_error_code, 'smtp_esmtpfrom');
   assert.equal(smtp.sendMail.mock.callCount(), 0);
 });
 

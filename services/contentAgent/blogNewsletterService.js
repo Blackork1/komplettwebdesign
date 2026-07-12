@@ -427,12 +427,14 @@ export function createBlogNewsletterService({
         }
       } catch (error) {
         const classification = classifySmtpFailure(error);
-        const canRetry = classification === 'retryable' && Number(sending.attempts) < 6;
+        const safelyUnsent = classification === 'retryable'
+          || classification === 'retryable_rejected';
+        const canRetry = safelyUnsent && Number(sending.attempts) < 6;
         const attemptIndex = Math.max(0, Number(sending.attempts) - 1);
         const retryDelayMs = canRetry ? ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex] : null;
         const persistedCode = classification === 'outcome_uncertain'
           ? 'outcome_uncertain'
-          : classification === 'smtp_rejected' ? 'smtp_rejected' : safeSmtpCode(error);
+          : classification === 'retryable_rejected' ? 'smtp_rejected' : safeSmtpCode(error);
         await client.query('BEGIN');
         transactionOpen = true;
         const persisted = (await client.query(
@@ -456,7 +458,7 @@ export function createBlogNewsletterService({
         if (classification === 'outcome_uncertain') throw outcomeUncertainError();
         if (!canRetry) {
           throw permanentError(
-            classification === 'smtp_rejected'
+            classification === 'retryable_rejected'
               ? 'CONTENT_NEWSLETTER_SMTP_REJECTED'
               : 'CONTENT_NEWSLETTER_SMTP_EXHAUSTED',
             'Die Newsletter-Zustellung ist dauerhaft fehlgeschlagen.'

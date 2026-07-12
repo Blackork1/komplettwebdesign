@@ -34,6 +34,10 @@ function smtpErrorCode(error) {
 }
 
 export function classifySmtpFailure(error) {
+  if (error?.smtpOutcome === 'safely_unsent'
+      && String(error?.command || '').trim().toUpperCase() === 'CONFIG') {
+    return 'retryable';
+  }
   const responseCode = Number(error?.responseCode);
   if (Number.isInteger(responseCode) && responseCode >= 400 && responseCode < 500) {
     return 'retryable';
