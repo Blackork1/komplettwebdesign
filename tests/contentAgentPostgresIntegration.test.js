@@ -64,7 +64,8 @@ test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderun
         schedule_weekdays SMALLINT[] NOT NULL,
         schedule_time TIME NOT NULL,
         timezone VARCHAR(80) NOT NULL,
-        generation_lead_hours SMALLINT NOT NULL
+        generation_lead_hours SMALLINT NOT NULL,
+        schedule_revision BIGINT NOT NULL DEFAULT 1
       );
       CREATE TABLE content_agent_setting_revisions (
         id BIGSERIAL PRIMARY KEY,
@@ -79,6 +80,16 @@ test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderun
         notification_type VARCHAR(40) NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      CREATE TABLE content_agent_schedule_revisions (
+        revision BIGINT PRIMARY KEY,
+        effective_at TIMESTAMPTZ NOT NULL,
+        agent_enabled BOOLEAN NOT NULL,
+        schedule_weekdays SMALLINT[] NOT NULL,
+        schedule_time TIME NOT NULL,
+        timezone VARCHAR(120) NOT NULL,
+        generation_lead_hours SMALLINT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
       INSERT INTO content_agent_settings
         (id, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours)
       VALUES (1, TRUE, ARRAY[1,4]::SMALLINT[], '19:00', 'Europe/Berlin', 4);
@@ -90,26 +101,52 @@ test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderun
         '{"agent_enabled":true,"schedule_weekdays":[1,4],"schedule_time":"19:00","timezone":"Europe/Berlin","generation_lead_hours":4}',
         NOW() - INTERVAL '2 days'
       );
+      INSERT INTO content_agent_schedule_revisions
+        (revision, effective_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours)
+      VALUES (1, NOW(), TRUE, ARRAY[1,4]::SMALLINT[], '19:00', 'Europe/Berlin', 4);
     `);
     const migration006 = await readFile(
       new URL('../scripts/migrations/006_add_schedule_revisions_and_admin_review_lookup.sql', import.meta.url),
       'utf8'
     );
     await pool.query(migration006);
+    await pool.query(`
+      INSERT INTO content_agent_schedule_revisions
+        (revision, effective_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours)
+      VALUES
+        (3, NOW() - INTERVAL '1 day', FALSE, ARRAY[1,4]::SMALLINT[], '19:00', 'Europe/Berlin', 4),
+        (4, NOW() - INTERVAL '12 hours', TRUE, ARRAY[1,4]::SMALLINT[], '20:00', 'Europe/Berlin', 4);
+      INSERT INTO content_agent_setting_revisions
+        (changed_keys, previous_values_json, new_values_json, created_at)
+      VALUES (
+        ARRAY['agent_enabled', 'schedule_time'],
+        '{"agent_enabled":false,"schedule_weekdays":[1,4],"schedule_time":"19:00","timezone":"Europe/Berlin","generation_lead_hours":4}',
+        '{"agent_enabled":true,"schedule_weekdays":[1,4],"schedule_time":"20:00","timezone":"Europe/Berlin","generation_lead_hours":4}',
+        NOW() - INTERVAL '12 hours'
+      );
+      UPDATE content_agent_settings
+      SET agent_enabled = TRUE,
+          schedule_time = '20:00',
+          schedule_revision = 4
+      WHERE id = 1;
+    `);
     await pool.query(migration006);
     const revisions = await pool.query(`
-      SELECT revision, effective_at, schedule_time::text
+      SELECT revision, effective_at, schedule_time::text, agent_enabled
       FROM content_agent_schedule_revisions
       ORDER BY revision
     `);
     assert.deepEqual(revisions.rows.map((row) => [row.revision, row.schedule_time]), [
       ['1', '18:00:00'],
-      ['2', '19:00:00']
+      ['2', '19:00:00'],
+      ['3', '19:00:00'],
+      ['4', '20:00:00']
     ]);
+    assert.equal(revisions.rows[2].agent_enabled, false);
     assert.ok(revisions.rows[0].effective_at.getTime() <= Date.now() - (9 * 24 * 60 * 60 * 1000));
     assert.equal((await pool.query(
       'SELECT schedule_revision FROM content_agent_settings WHERE id = 1'
-    )).rows[0].schedule_revision, '2');
+    )).rows[0].schedule_revision, '4');
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

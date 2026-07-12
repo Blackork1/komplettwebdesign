@@ -44,6 +44,10 @@ WITH schedule_change_history AS (
     'generation_lead_hours'
   ]::TEXT[]
 ),
+existing_revision_state AS (
+  SELECT COUNT(*) AS revision_count
+  FROM content_agent_schedule_revisions
+),
 first_schedule_change AS (
   SELECT id, created_at, previous_values_json
   FROM schedule_change_history
@@ -109,8 +113,14 @@ SELECT normalized.revision,
        normalized.timezone,
        normalized.generation_lead_hours
 FROM normalized_snapshots normalized
-WHERE NOT EXISTS (SELECT 1 FROM content_agent_schedule_revisions)
-ON CONFLICT (revision) DO NOTHING;
+WHERE (SELECT revision_count FROM existing_revision_state) <= 1
+ON CONFLICT (revision) DO UPDATE SET
+  effective_at = EXCLUDED.effective_at,
+  agent_enabled = EXCLUDED.agent_enabled,
+  schedule_weekdays = EXCLUDED.schedule_weekdays,
+  schedule_time = EXCLUDED.schedule_time,
+  timezone = EXCLUDED.timezone,
+  generation_lead_hours = EXCLUDED.generation_lead_hours;
 
 UPDATE content_agent_settings
 SET schedule_revision = COALESCE(
