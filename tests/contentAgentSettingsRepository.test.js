@@ -222,3 +222,75 @@ test('Erstellungsvorlauf und Adminadresse werden serverseitig validiert', async 
     );
   }
 });
+
+test('Adminadresse akzeptiert eine normale und eine Plus-Adresse', async () => {
+  for (const [input, expected] of [
+    ['kontakt@komplettwebdesign.de', 'kontakt@komplettwebdesign.de'],
+    [' Redaktion+Blog@Example.de ', 'redaktion+blog@example.de']
+  ]) {
+    const updated = await updateWith(currentSettings, { adminNotificationEmail: input });
+    assert.equal(updated.admin_notification_email, expected);
+  }
+});
+
+test('Adminadresse verwirft doppelte und abschließende Punkte im Localpart', async () => {
+  for (const adminNotificationEmail of [
+    'a..b@example.com',
+    'a.@example.com'
+  ]) {
+    await assert.rejects(
+      () => updateWith(currentSettings, { adminNotificationEmail }),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+});
+
+test('Adminadresse verwirft führende und abschließende Domain-Bindestriche', async () => {
+  for (const adminNotificationEmail of [
+    'redaktion@-example.de',
+    'redaktion@example-.de'
+  ]) {
+    await assert.rejects(
+      () => updateWith(currentSettings, { adminNotificationEmail }),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+});
+
+test('Adminadresse verwirft leere Domainlabels', async () => {
+  for (const adminNotificationEmail of [
+    'redaktion@example..de',
+    'redaktion@example.de.'
+  ]) {
+    await assert.rejects(
+      () => updateWith(currentSettings, { adminNotificationEmail }),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+});
+
+test('Adminadresse verwirft eingebetteten Whitespace und Steuerzeichen', async () => {
+  for (const adminNotificationEmail of [
+    'reda ktion@example.de',
+    'redaktion@exam\tple.de',
+    'redaktion@example.\nde'
+  ]) {
+    await assert.rejects(
+      () => updateWith(currentSettings, { adminNotificationEmail }),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+});
+
+test('Adminadresse verwirft zu lange Local- und Domainteile', async () => {
+  for (const adminNotificationEmail of [
+    `${'a'.repeat(65)}@example.de`,
+    `redaktion@${'a'.repeat(64)}.de`,
+    `redaktion@${Array.from({ length: 25 }, () => 'abcdefghij').join('.')}`
+  ]) {
+    await assert.rejects(
+      () => updateWith(currentSettings, { adminNotificationEmail }),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+});

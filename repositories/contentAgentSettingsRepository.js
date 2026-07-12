@@ -6,9 +6,28 @@ function validationError(message) {
   });
 }
 
+const DOT_ATOM_LOCAL_PART = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/i;
+const DOMAIN_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
+
+function isValidNotificationMailbox(email) {
+  const mailboxParts = email.split('@');
+  if (mailboxParts.length !== 2) return false;
+
+  const [localPart, domain] = mailboxParts;
+  if (localPart.length > 64
+      || domain.length > 253
+      || !DOT_ATOM_LOCAL_PART.test(localPart)) {
+    return false;
+  }
+
+  const domainLabels = domain.split('.');
+  return domainLabels.length >= 2
+    && domainLabels.every((label) => DOMAIN_LABEL.test(label));
+}
+
 function normalizeNotificationEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
-  if (email.length > 320 || !/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email)) {
+  if (!isValidNotificationMailbox(email)) {
     throw validationError('Ungültige Admin-Benachrichtigungsadresse.');
   }
   return email;
