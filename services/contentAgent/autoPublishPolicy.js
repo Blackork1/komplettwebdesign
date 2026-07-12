@@ -61,12 +61,14 @@ function validFocusedReport(report) {
     && report.sourceCount >= 0;
 }
 
-function validValidation(validation) {
+function validValidation(validation, post) {
   return hasOnlyKeys(validation, VALIDATION_KEYS)
     && validation.passed === true
     && Array.isArray(validation.issues)
     && validation.issues.length === 0
-    && isNonEmptyString(validation.sanitizedHtml);
+    && isNonEmptyString(validation.sanitizedHtml)
+    && isNonEmptyString(post?.content, 250_000)
+    && validation.sanitizedHtml === post.content;
 }
 
 function validDraftState(post) {
@@ -102,7 +104,12 @@ function inspectSources(metadata, review, focusedReview) {
   if (!Array.isArray(sources)) return { valid: false, required: false };
   const sourceRequired = review.issues.some((issue) => issue.sourceRequired === true)
     || focusedReview.items.some((item) => item.sourceRequired === true);
-  if (sources.length === 0) return { valid: !sourceRequired, required: sourceRequired };
+  if (sources.length === 0) {
+    return {
+      valid: !sourceRequired && focusedReview.sourceCount === 0,
+      required: sourceRequired
+    };
+  }
   const parsed = SourceReferenceSchema.array().min(2).max(6).safeParse(sources);
   if (!parsed.success) return { valid: false, required: sourceRequired };
   const normalizedUrls = parsed.data.map(({ url }) => {
@@ -139,7 +146,7 @@ export function evaluateAutoPublish({ snapshot, post, metadata, validation, risk
   if (!InternalLinkSchema.array().min(2).max(8).safeParse(metadata?.internal_links_json).success) {
     addReason(reasons, 'internal_links_invalid');
   }
-  if (!validValidation(validation)) addReason(reasons, 'validation_failed');
+  if (!validValidation(validation, post)) addReason(reasons, 'validation_failed');
 
   const persistedReport = metadata?.quality_report_json;
   if (!persistedReport || typeof persistedReport !== 'object' || Array.isArray(persistedReport)) {

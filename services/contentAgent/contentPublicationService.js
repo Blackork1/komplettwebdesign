@@ -107,6 +107,19 @@ function assertDraftState(draft, conflictCode = 'CONTENT_DRAFT_NOT_PUBLISHABLE')
   }
 }
 
+function assertPublishedAutoState(draft) {
+  const { post } = draft || {};
+  if (post?.generated_by_ai !== true
+      || post.published !== true
+      || post.workflow_status !== 'published'
+      || post.content_format !== 'static_html') {
+    throw publicationError(
+      'CONTENT_AUTO_EVENT_CONFLICT',
+      'Das automatische Veröffentlichungsereignis widerspricht dem Postzustand.'
+    );
+  }
+}
+
 function assertSafeImageUrl(value) {
   const candidate = requiredPersistedText(value, 'imageUrl', MAX_IMAGE_URL_LENGTH);
   try {
@@ -228,9 +241,10 @@ export function createContentPublicationService({
     }
   }
 
-  async function loadValidatedDraft(postId, client, lockedDraft = null) {
+  async function loadValidatedDraft(postId, client, lockedDraft = null, { allowPublished = false } = {}) {
     const draft = lockedDraft || await repository.getDraftWithMetadataForUpdate(postId, client);
-    assertDraftState(draft);
+    if (allowPublished) assertPublishedAutoState(draft);
+    else assertDraftState(draft);
     const {
       article,
       qualityScore,
@@ -290,38 +304,80 @@ export function createContentPublicationService({
     return Number.isInteger(score) && score >= 0 && score <= 100 ? score : 0;
   }
 
-  async function persistAutoEvent({ draft, postId, runId, decision, snapshot }, client) {
-    const eventInput = {
+  function expectedAutoContext(snapshot) {
+    return {
+      action: 'auto_publish_policy',
+      settingsVersion: Number.isSafeInteger(Number(snapshot?.settingsVersion))
+        ? Number(snapshot.settingsVersion)
+        : null,
+      source: typeof snapshot?.source === 'string' ? snapshot.source : 'unknown',
+      forcedMode: snapshot?.forcedMode === 'review' ? 'review' : null
+    };
+  }
+
+  function autoEventConflict() {
+    return publicationError(
+      'CONTENT_AUTO_EVENT_CONFLICT',
+      'Das vorhandene automatische Veröffentlichungsereignis ist widersprüchlich.'
+    );
+  }
+
+  function assertAutoEventContract(event, expected) {
+    const reasons = eventReasons(event);
+    if (!event
+        || Number(event.post_id) !== Number(expected.postId)
+        || Number(event.run_id) !== Number(expected.runId)
+        || event.policy_version !== expected.policyVersion
+        || event.decision !== expected.decision
+        || Number(event.quality_score) !== Number(expected.qualityScore)
+        || !isDeepStrictEqual(reasons, expected.reasons)
+        || !isDeepStrictEqual(event.context_json, expected.context)) {
+      throw autoEventConflict();
+    }
+    return event;
+  }
+
+  function baseAutoEventInput({ draft, postId, runId, snapshot }) {
+    return {
       postId,
       runId,
+      policyVersion: AUTO_PUBLISH_POLICY_VERSION,
+      qualityScore: safeQualityScore(draft),
+      context: expectedAutoContext(snapshot)
+    };
+  }
+
+  function assertAutoRun(draft, runId) {
+    const generationRunId = Number(draft?.post?.generation_run_id);
+    if (!Number.isSafeInteger(generationRunId) || generationRunId !== runId) {
+      throw publicationError(
+        'CONTENT_AUTO_RUN_CONFLICT',
+        'Der KI-Entwurf gehört nicht zum angegebenen Content-Agent-Lauf.'
+      );
+    }
+  }
+
+  async function persistAutoEvent({ draft, postId, runId, decision, snapshot }, client) {
+    const eventInput = {
+      ...baseAutoEventInput({ draft, postId, runId, snapshot }),
       decision: decision.allowed ? 'allowed' : 'blocked',
       policyVersion: decision.policyVersion,
-      qualityScore: safeQualityScore(draft),
       reasons: decision.reasons,
-      context: {
-        action: 'auto_publish_policy',
-        settingsVersion: Number.isSafeInteger(Number(snapshot?.settingsVersion))
-          ? Number(snapshot.settingsVersion)
-          : null,
-        source: typeof snapshot?.source === 'string' ? snapshot.source : 'unknown',
-        forcedMode: snapshot?.forcedMode === 'review' ? 'review' : null
-      }
+      context: expectedAutoContext(snapshot)
     };
     const inserted = await repository.insertAutoEvent(eventInput, client);
-    if (inserted) return inserted;
+    if (inserted) return assertAutoEventContract(inserted, eventInput);
     const existing = await repository.getAutoEvent({
       runId,
       policyVersion: decision.policyVersion
     }, client);
-    if (!existing
-        || Number(existing.post_id) !== Number(postId)
-        || existing.decision !== eventInput.decision) {
+    if (!existing) {
       throw publicationError(
         'CONTENT_AUTO_EVENT_UNCERTAIN',
         'Die automatische Veröffentlichungsentscheidung konnte nicht eindeutig gespeichert werden.'
       );
     }
-    return existing;
+    return assertAutoEventContract(existing, eventInput);
   }
 
   return {
@@ -414,22 +470,65 @@ export function createContentPublicationService({
         if (!lockedDraft?.post) {
           throw publicationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
         }
+        assertAutoRun(lockedDraft, normalizedRunId);
         const existingEvent = await repository.getAutoEvent({
           runId: normalizedRunId,
           policyVersion: AUTO_PUBLISH_POLICY_VERSION
         }, client);
         if (existingEvent) {
+          if (!['allowed', 'blocked'].includes(existingEvent.decision)
+              || !Array.isArray(existingEvent.reasons_json)
+              || existingEvent.reasons_json.some((reason) => typeof reason !== 'string' || !reason)) {
+            throw autoEventConflict();
+          }
+          const allowPublished = existingEvent.decision === 'allowed';
+          if (allowPublished) assertPublishedAutoState(lockedDraft);
+          else assertDraftState(lockedDraft, 'CONTENT_AUTO_EVENT_CONFLICT');
+          let expectedDecision;
+          try {
+            const validatedExisting = await loadValidatedDraft(
+              normalizedPostId,
+              client,
+              lockedDraft,
+              { allowPublished }
+            );
+            expectedDecision = evaluateAutoPublish({
+              snapshot,
+              post: allowPublished ? {
+                ...validatedExisting.draft.post,
+                published: false,
+                workflow_status: 'needs_review'
+              } : validatedExisting.draft.post,
+              metadata: validatedExisting.draft.metadata,
+              validation: validatedExisting.validation,
+              riskReport: validatedExisting.riskReport
+            });
+          } catch (error) {
+            if (allowPublished || !String(error?.code || '').startsWith('CONTENT_DRAFT_')) throw error;
+            expectedDecision = {
+              allowed: false,
+              policyVersion: AUTO_PUBLISH_POLICY_VERSION,
+              reasons: ['draft_revalidation_failed']
+            };
+          }
+          const expectedEvent = {
+            ...baseAutoEventInput({
+              draft: lockedDraft,
+              postId: normalizedPostId,
+              runId: normalizedRunId,
+              snapshot
+            }),
+            decision: expectedDecision.allowed ? 'allowed' : 'blocked',
+            reasons: expectedDecision.reasons
+          };
+          assertAutoEventContract(existingEvent, expectedEvent);
+          if (expectedDecision.allowed !== allowPublished) throw autoEventConflict();
           const decision = eventDecision(existingEvent);
-          const alreadyPublished = decision.allowed
-            && lockedDraft.post.generated_by_ai === true
-            && lockedDraft.post.published === true
-            && lockedDraft.post.workflow_status === 'published'
-            && lockedDraft.post.content_format === 'static_html';
           return {
             post: lockedDraft.post,
             event: existingEvent,
             decision,
-            reviewRequired: !alreadyPublished
+            reviewRequired: !allowPublished
           };
         }
 

@@ -61,6 +61,7 @@ function safeInput(overrides = {}) {
       faq_json: faq,
       image_url: 'https://example.test/image.webp',
       image_alt: 'Unternehmerin plant ihre Website',
+      content: '<section><h2>Sicher</h2></section>',
       content_format: 'static_html',
       generated_by_ai: true,
       published: false,
@@ -158,6 +159,23 @@ test('aktuelle Validierung muss vollständig, ohne Issues und unverändert sanit
   ]) {
     assert.ok(evaluateAutoPublish(safeInput({ validation })).reasons.includes('validation_failed'));
   }
+  for (const post of [
+    { content: '' },
+    { content: undefined },
+    { content: '<section><h2>Persistiert</h2></section>' }
+  ]) {
+    assert.ok(evaluateAutoPublish(safeInput({ post })).reasons.includes('validation_failed'));
+  }
+});
+
+test('Policy verlangt exakte Inhaltsgleichheit zwischen persistiertem Post und Sanitizer-Ergebnis', () => {
+  const decision = evaluateAutoPublish(safeInput({
+    post: { content: '<section><h2>Persistiert</h2></section>' },
+    validation: { sanitizedHtml: '<section><h2>Verändert</h2></section>' }
+  }));
+
+  assert.equal(decision.allowed, false);
+  assert.ok(decision.reasons.includes('validation_failed'));
 });
 
 test('exakter Draftzustand, HTTPS-Bild und Alt-Text sind zwingend', () => {
@@ -263,4 +281,19 @@ test('quellenpflichtige Aussagen verlangen zwei bis sechs eindeutige erlaubte HT
       riskReport: { ...withRequirement.riskReport, sourceCount: invalidSources.length }
     })).allowed, false);
   }
+});
+
+test('SourceCount stimmt auch ohne Quellen exakt mit der validierten Quellenanzahl überein', () => {
+  assert.equal(evaluateAutoPublish(safeInput({
+    riskReport: { sourceCount: 1 },
+    metadata: {
+      quality_report_json: {
+        ...safeInput().metadata.quality_report_json,
+        focusedReview: {
+          ...safeInput().metadata.quality_report_json.focusedReview,
+          sourceCount: 1
+        }
+      }
+    }
+  })).allowed, false);
 });

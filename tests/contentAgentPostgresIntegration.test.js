@@ -22,6 +22,7 @@ import {
 } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
+import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
 import { evaluateContentAgentPgResetGuard } from './helpers/contentAgentPostgresTestGuard.js';
 import BlogPostModel from '../models/BlogPostModel.js';
@@ -274,6 +275,89 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       approval_count: 1
     });
 
+    const autoJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key)
+      VALUES ('generate_manual_draft', 'completed', 'pg-auto-publish-once')
+      RETURNING id
+    `);
+    const autoSnapshot = {
+      operatingMode: 'auto_publish',
+      forcedMode: null,
+      autoPublishEffective: true,
+      manualApprovalsCount: 8,
+      autoPublishMinScore: 90,
+      settingsVersion: 1,
+      source: 'postgres-integration'
+    };
+    const autoRun = await createRun({
+      jobId: autoJob.rows[0].id,
+      runtimeSnapshot: autoSnapshot
+    }, pool);
+    const autoDraft = await insertPublishableDraft(pool, 'auto-once');
+    await pool.query(
+      'UPDATE posts SET generation_run_id = $2 WHERE id = $1',
+      [autoDraft.id, autoRun.id]
+    );
+
+    const firstAuto = await publicationService.publishDraftAutomatically({
+      postId: autoDraft.id,
+      runId: autoRun.id,
+      snapshot: autoSnapshot
+    });
+    const retryAuto = await publicationService.publishDraftAutomatically({
+      postId: autoDraft.id,
+      runId: autoRun.id,
+      snapshot: autoSnapshot
+    });
+    assert.equal(firstAuto.event.id, retryAuto.event.id);
+    assert.equal(firstAuto.post.published, true);
+    assert.equal(retryAuto.post.published, true);
+
+    const publishEventRepository = createContentPublishEventRepository(pool);
+    const conflictingBlocked = await publishEventRepository.insertAutoEvent({
+      postId: autoDraft.id,
+      runId: autoRun.id,
+      decision: 'blocked',
+      policyVersion: 'auto-v1',
+      qualityScore: 92,
+      reasons: ['forced_review'],
+      context: {
+        action: 'auto_publish_policy', settingsVersion: 1,
+        source: 'postgres-integration', forcedMode: 'review'
+      }
+    }, pool);
+    assert.equal(conflictingBlocked, null);
+
+    const autoState = await pool.query(`
+      SELECT p.published, p.workflow_status,
+             (SELECT COUNT(*)::int FROM content_publish_events
+              WHERE run_id = $2 AND policy_version = 'auto-v1') AS event_count,
+             (SELECT manual_approvals_count FROM content_agent_settings WHERE id = 1) AS approval_count
+      FROM posts p WHERE p.id = $1
+    `, [autoDraft.id, autoRun.id]);
+    assert.deepEqual(autoState.rows[0], {
+      published: true,
+      workflow_status: 'published',
+      event_count: 1,
+      approval_count: 1
+    });
+
+    await assert.rejects(
+      publicationService.publishDraftAutomatically({
+        postId: autoDraft.id,
+        runId: autoRun.id,
+        snapshot: { ...autoSnapshot, operatingMode: 'review', forcedMode: 'review' }
+      }),
+      (error) => error.code === 'CONTENT_AUTO_EVENT_CONFLICT'
+    );
+    assert.equal(
+      (await pool.query(`
+        SELECT COUNT(*)::int AS count FROM content_publish_events
+        WHERE run_id = $1 AND policy_version = 'auto-v1'
+      `, [autoRun.id])).rows[0].count,
+      1
+    );
+
     await assert.rejects(
       pool.query("UPDATE content_publish_events SET policy_version = 'mutated' WHERE post_id = $1", [publishable.id]),
       /unveränderlich/i
@@ -322,7 +406,7 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal(publishEventDeleteRule.rows[0].delete_rule, 'RESTRICT');
     assert.equal(
       (await pool.query('SELECT COUNT(*)::int AS count FROM content_publish_events')).rows[0].count,
-      2
+      3
     );
 
     const regenerationRepository = createDraftRegenerationRepository(pool);

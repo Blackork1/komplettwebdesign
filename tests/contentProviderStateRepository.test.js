@@ -65,7 +65,7 @@ function providerPipelineDependencies(openaiOperation, providerResults) {
     },
     topicScoringService: { selectBestTopic() { return null; } },
     topicRepository: { async createTopic() {}, async markTopicUsed() {} },
-    runRepository: { async updateRunStage() {}, async finishRun() { return {}; } },
+    runRepository: { async updateRunStage() { return {}; }, async finishRun() { return {}; } },
     costService: {
       async reserveMonthlyBudget() {
         return { created: true, status: 'reserved', reservationMonth: '2026-07' };

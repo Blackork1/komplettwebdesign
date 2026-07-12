@@ -24,7 +24,15 @@ const autoSnapshot = {
   forcedMode: null,
   autoPublishEffective: true,
   manualApprovalsCount: 8,
-  autoPublishMinScore: 90
+  autoPublishMinScore: 90,
+  settingsVersion: 4,
+  source: 'manual'
+};
+const autoContext = {
+  action: 'auto_publish_policy',
+  settingsVersion: 4,
+  source: 'manual',
+  forcedMode: null
 };
 
 function validDraft(overrides = {}) {
@@ -407,7 +415,7 @@ test('forced review und spätere Revalidierungsblocker speichern blocked und las
     const { service, calls } = harness({ validation: current.validation });
     const result = await service.publishDraftAutomatically({
       postId: 9,
-      runId: 22,
+      runId: 21,
       snapshot: current.snapshot || autoSnapshot
     });
 
@@ -423,7 +431,7 @@ test('Auto-Eventfehler rollt vor jeder öffentlichen Änderung vollständig zur�
   const { service, calls } = harness({ failAt: 'auto-event' });
 
   await assert.rejects(
-    service.publishDraftAutomatically({ postId: 9, runId: 23, snapshot: autoSnapshot }),
+    service.publishDraftAutomatically({ postId: 9, runId: 21, snapshot: autoSnapshot }),
     /Auto-Event fehlgeschlagen/
   );
 
@@ -433,22 +441,23 @@ test('Auto-Eventfehler rollt vor jeder öffentlichen Änderung vollständig zur�
 });
 
 test('bestehendes blockiertes Auto-Event wird beim Retry weder dupliziert noch veröffentlicht', async () => {
+  const forcedSnapshot = { ...autoSnapshot, forcedMode: 'review', operatingMode: 'review' };
   const existingAutoEvent = {
     id: 55,
     post_id: 9,
-    run_id: 24,
+    run_id: 21,
     decision: 'blocked',
     policy_version: 'auto-v1',
     quality_score: 92,
-    reasons_json: ['risk_privacyClaims'],
-    context_json: { action: 'auto_publish_policy' }
+    reasons_json: ['forced_review', 'mode_review'],
+    context_json: { ...autoContext, forcedMode: 'review' }
   };
   const { service, calls } = harness({ existingAutoEvent });
 
   const result = await service.publishDraftAutomatically({
     postId: 9,
-    runId: 24,
-    snapshot: autoSnapshot
+    runId: 21,
+    snapshot: forcedSnapshot
   });
 
   assert.equal(result.event.id, 55);
@@ -461,12 +470,12 @@ test('Retry nach unklarem Commit erkennt vorhandenes allowed-Event und bereits v
   const existingAutoEvent = {
     id: 56,
     post_id: 9,
-    run_id: 25,
+    run_id: 21,
     decision: 'allowed',
     policy_version: 'auto-v1',
     quality_score: 92,
     reasons_json: [],
-    context_json: { action: 'auto_publish_policy' }
+    context_json: autoContext
   };
   const publishedDraft = validDraft({
     post: { published: true, workflow_status: 'published' }
@@ -475,7 +484,7 @@ test('Retry nach unklarem Commit erkennt vorhandenes allowed-Event und bereits v
 
   const result = await service.publishDraftAutomatically({
     postId: 9,
-    runId: 25,
+    runId: 21,
     snapshot: autoSnapshot
   });
 
@@ -485,4 +494,54 @@ test('Retry nach unklarem Commit erkennt vorhandenes allowed-Event und bereits v
   assert.equal(calls.filter((entry) => Array.isArray(entry) && entry[0] === 'auto-event').length, 0);
   assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
   assert.equal(calls.includes('COMMIT'), true);
+});
+
+test('automatische Veröffentlichung verweigert einen Draft aus einem anderen Generation-Run vor Event und Update', async () => {
+  const { service, calls } = harness();
+
+  await assert.rejects(
+    service.publishDraftAutomatically({ postId: 9, runId: 22, snapshot: autoSnapshot }),
+    (error) => error.code === 'CONTENT_AUTO_RUN_CONFLICT'
+  );
+
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'auto-event'), false);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+});
+
+test('bestehende Auto-Events müssen vollständig zu Run, Policy, Post, Score, Kontext und Postzustand passen', async () => {
+  const baseEvent = {
+    id: 57,
+    post_id: 9,
+    run_id: 21,
+    decision: 'allowed',
+    policy_version: 'auto-v1',
+    quality_score: 92,
+    reasons_json: [],
+    context_json: autoContext
+  };
+  const publishedDraft = validDraft({ post: { published: true, workflow_status: 'published' } });
+  const variants = [
+    { event: { ...baseEvent, post_id: 10 }, draft: publishedDraft },
+    { event: { ...baseEvent, run_id: 20 }, draft: publishedDraft },
+    { event: { ...baseEvent, policy_version: 'auto-v0' }, draft: publishedDraft },
+    { event: { ...baseEvent, quality_score: 91 }, draft: publishedDraft },
+    { event: { ...baseEvent, reasons_json: ['unexpected'] }, draft: publishedDraft },
+    { event: { ...baseEvent, context_json: { ...autoContext, settingsVersion: 3 } }, draft: publishedDraft },
+    { event: baseEvent, draft: validDraft() },
+    {
+      event: { ...baseEvent, decision: 'blocked', reasons_json: ['forced_review'] },
+      draft: publishedDraft
+    }
+  ];
+
+  for (const { event, draft: currentDraft } of variants) {
+    const { service, calls } = harness({ draft: currentDraft, existingAutoEvent: event });
+    await assert.rejects(
+      service.publishDraftAutomatically({ postId: 9, runId: 21, snapshot: autoSnapshot }),
+      (error) => error.code === 'CONTENT_AUTO_EVENT_CONFLICT'
+    );
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'auto-event'), false);
+    assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  }
 });

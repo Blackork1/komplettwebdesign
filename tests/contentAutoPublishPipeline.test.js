@@ -26,8 +26,9 @@ const snapshot = {
   autoPublishMinScore: 90
 };
 
-function harness({ publicationResult, publicationError, completed, autoStage } = {}) {
+function harness({ publicationResult, publicationError, completed, autoStage, nullStageIds = [] } = {}) {
   const calls = [];
+  const nullStages = new Set(nullStageIds);
   const stages = new Map([['draft_creation', draft]]);
   if (autoStage) stages.set('auto_publish:auto-v1', autoStage);
   if (completed) stages.set('completed', completed);
@@ -43,6 +44,7 @@ function harness({ publicationResult, publicationError, completed, autoStage } =
     runRepository: {
       async updateRunStage(runId, input) {
         calls.push(['stage', runId, input]);
+        if (nullStages.has(input.stageId)) return null;
         if (!stages.has(input.stageId)) stages.set(input.stageId, structuredClone(input.stageResult));
         return input;
       },
@@ -68,7 +70,7 @@ function harness({ publicationResult, publicationError, completed, autoStage } =
       }
     }
   };
-  return { dependencies, calls, stages };
+  return { dependencies, calls, stages, nullStages };
 }
 
 test('blockierte Auto-Entscheidung ist erfolgreicher Review-Fallback mit persistierter Policy-Stage', async () => {
@@ -169,4 +171,54 @@ test('completed-Recovery verwendet den finalen Post der Auto-Stage', async () =>
   assert.equal(result.post.published, true);
   assert.equal(result.post.workflow_status, 'published');
   assert.equal(current.calls.some(([type]) => type === 'publication'), false);
+});
+
+test('null beim Auto-Stage-Write verhindert completed und Retry reconciled Event plus veröffentlichten Post', async () => {
+  const published = { ...draft.post, published: true, workflow_status: 'published' };
+  const publicationResult = {
+    post: published,
+    event: { id: 75, decision: 'allowed', policy_version: 'auto-v1' },
+    decision: { allowed: true, policyVersion: 'auto-v1', reasons: [] },
+    reviewRequired: false
+  };
+  const current = harness({ publicationResult, nullStageIds: ['auto_publish:auto-v1'] });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 93 }, current.dependencies),
+    (error) => error.code === 'CONTENT_STAGE_PERSISTENCE_FAILED'
+  );
+  assert.equal(current.stages.has('auto_publish:auto-v1'), false);
+  assert.equal(current.stages.has('completed'), false);
+  assert.equal(current.calls.some(([type, , input]) => type === 'finish' && input?.status === 'completed'), false);
+
+  current.nullStages.delete('auto_publish:auto-v1');
+  const result = await runDraftPipeline({ runId: 93 }, current.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.published, true);
+  assert.equal(current.stages.get('auto_publish:auto-v1').eventId, 75);
+  assert.equal(current.calls.filter(([type]) => type === 'publication').length, 2);
+});
+
+test('null beim completed-Stage-Write ist ein technischer Fehler und kein erfolgreicher Runabschluss', async () => {
+  const published = { ...draft.post, published: true, workflow_status: 'published' };
+  const current = harness({
+    nullStageIds: ['completed'],
+    publicationResult: {
+      post: published,
+      event: { id: 76, decision: 'allowed', policy_version: 'auto-v1' },
+      decision: { allowed: true, policyVersion: 'auto-v1', reasons: [] },
+      reviewRequired: false
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 94 }, current.dependencies),
+    (error) => error.code === 'CONTENT_STAGE_PERSISTENCE_FAILED'
+  );
+
+  assert.equal(current.stages.has('auto_publish:auto-v1'), true);
+  assert.equal(current.stages.has('completed'), false);
+  assert.equal(current.calls.some(([type, , input]) => type === 'finish' && input?.status === 'completed'), false);
+  assert.equal(current.calls.some(([type, , input]) => type === 'finish' && input?.status === 'failed'), true);
 });

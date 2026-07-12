@@ -317,7 +317,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
 
   async function updateStage(currentStage, stageResult = {}, extra = {}) {
     await assertLease();
-    return runRepository.updateRunStage(runId, {
+    const persisted = await runRepository.updateRunStage(runId, {
       currentStage,
       stageId: extra.stageId || currentStage,
       stageResult,
@@ -326,6 +326,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       responseIds: extra.responseIds || [],
       selectedTopicId: extra.selectedTopicId || null
     });
+    if (!persisted || typeof persisted !== 'object') {
+      throw Object.assign(
+        new Error(`Die Pipeline-Stage ${extra.stageId || currentStage} konnte nicht persistiert werden.`),
+        { code: 'CONTENT_STAGE_PERSISTENCE_FAILED', retryable: true }
+      );
+    }
+    return persisted;
   }
 
   function recordAuditWarning(primaryError, code, details = {}) {
