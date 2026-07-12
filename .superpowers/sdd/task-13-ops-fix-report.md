@@ -66,6 +66,13 @@ Der dokumentierte VPS-Ablauf entscheidet jetzt fail-closed über Datenbankschema
 - `npm run build`: erfolgreich; 41 CSS-Quelldateien, Manifest unverändert.
 - `git diff --check`: ohne Befund.
 
+### Letzte Worker-Fences
+
+- Auch der kontrollierte Abbruch eines ungültigen oder veralteten Regelsnapshots prüft unmittelbar vor `finishRun` den Lease-Fence. Ein `false` oder ein geworfener Leaseverlust verhindert damit jeden Abschluss durch einen veralteten Worker.
+- Bei permanent fehlgeschlagener Entwurfsregeneration gilt ein fehlendes Ergebnis oder Fehler von `finishRun` nicht mehr als sicher terminal. Der Worker meldet stattdessen redigiert `CONTENT_RUN_FINISH_FAILED` mit `retryable=true`; ein geworfener interner Abschlussfehler bleibt ausschließlich als `cause` für die technische Diagnose erhalten.
+- TDD: 3 erwartete RED-Fehler, danach 58/58 fokussierte Tests bestanden.
+- Gesamtsuite: 947 bestanden, 0 fehlgeschlagen, 1 PostgreSQL-Opt-in-Test übersprungen. Build, Dry-Run und `git diff --check` bestanden.
+
 ## Bewusste Grenze
 
 Die Shellabläufe wurden syntaktisch, semantisch und mit ausführbaren Stubs geprüft, aber nicht gegen den echten IONOS-VPS, Docker-Daemon oder die Produktionsdatenbank ausgeführt. Der destruktive PostgreSQL-Test bleibt ohne ausdrücklich freigegebene Testdatenbank sicher übersprungen.
