@@ -69,3 +69,20 @@ Der dokumentierte VPS-Ablauf entscheidet jetzt fail-closed über Datenbankschema
 ## Bewusste Grenze
 
 Die Shellabläufe wurden syntaktisch, semantisch und mit ausführbaren Stubs geprüft, aber nicht gegen den echten IONOS-VPS, Docker-Daemon oder die Produktionsdatenbank ausgeführt. Der destruktive PostgreSQL-Test bleibt ohne ausdrücklich freigegebene Testdatenbank sicher übersprungen.
+
+## Ergänzung: unveränderliche Regel- und Linkbasis pro Job
+
+- Das zentrale Regelmanifest versioniert alle Prompt-, Schema-, Validator-, Scoring-, Risiko-, Auto-Publishing- und Linknormalisierungsregeln und bindet sie über kanonisches JSON sowie SHA-256 an den ersten Runtime-Snapshot.
+- Vor dem ersten Generierungsrun wird das vertrauenswürdige Linkinventar aus derselben Produktionsdatenbank und derselben Normalisierung geladen. Der Run wird erst danach angelegt; Fehler führen somit zu keinem Run und keinem Provideraufruf.
+- Die sortierte, deduplizierte Linkbasis ist auf 5.000 Links, 2.048 Zeichen je Link und insgesamt 250.000 Snapshot-Bytes begrenzt. Manifest und Linkarray sind im Prozess eingefroren und in PostgreSQL mit ihren Hashes persistiert.
+- Retries lesen zuerst den bestehenden Run. Sie laden weder Live-Einstellungen noch ein neues Linkinventar und verwenden ausschließlich den ersten Snapshot sowie die persistierte Inventarstage.
+- Ein fehlender, manipulierter oder zur aktuellen Regelversion unpassender Snapshot beendet einen nichtterminalen Lauf kontrolliert mit `needs_manual_attention`, bevor Provider oder neue Prompts geladen werden.
+- SEO-Briefing und Artikelvalidator erhalten ausschließlich die Snapshotlinks. Ein Briefing mit einem Link außerhalb dieser Basis wird vor der Artikelerstellung gestoppt.
+
+### Verifikation der Ergänzung
+
+- 150 fokussierte Snapshot-, Pipeline-, Worker-, Repository- und Providerstatus-Tests bestanden.
+- `OPENAI_API_KEY=test-key npm test`: 944 bestanden, 0 fehlgeschlagen, 1 vorhandener PostgreSQL-Opt-in-Test übersprungen.
+- `OPENAI_API_KEY=test-key npm run content-agent:dry-run`: `externalCalls=0`, `articleValid=true`, `qualityScore=90`, `publishMode=draft`.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien, Manifest unverändert.
+- `git diff --check`: ohne Befund.
