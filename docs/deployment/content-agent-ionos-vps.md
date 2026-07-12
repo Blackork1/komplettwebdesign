@@ -60,6 +60,7 @@ services:
       context: ./server
       labels:
         org.opencontainers.image.revision: "${APP_REVISION:-unknown}"
+        de.komplettwebdesign.content-worker.contract: "dashboard-v1"
 ```
 
 Alle weiteren vorhandenen `app`-Einträge bleiben direkt darunter unverändert, insbesondere `env_file`, `networks` mit `default` und `proxy`, `expose: 3000`, Upload-/Download-Volumes und Traefik-Labels. Der explizite Image-Name sorgt dafür, dass `app` und `content-worker` exakt dasselbe lokal gebaute Image verwenden. Das OCI-Label wird beim Deployment mit dem tatsächlich gebauten Git-Commit belegt. Ein manuelles Build ohne `APP_REVISION` bleibt absichtlich als `unknown` erkennbar und wird bei einem späteren Rollback nicht fälschlich einem Checkout-Stand zugeordnet.
@@ -308,7 +309,7 @@ Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker ni
 
 ### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`
 
-Vor jedem späteren Release den Agenten im Dashboard pausieren. Das folgende Skript erzwingt zusätzlich `agent_enabled=false` und `operating_mode=review` in PostgreSQL, bevor es laufende Jobs prüft. Dadurch kann der Worker nach dem Commit keinen neuen Job mehr übernehmen. Ein bereits parallel begonnener Claim wird durch die zweite Prüfung nach dem kontrollierten Worker-Stopp erkannt. Das Skript aktiviert den Agenten nach dem Deploy nicht wieder; die bewusste Freigabe im Review-Modus erfolgt erst nach der technischen Kontrolle im Dashboard.
+Vor jedem späteren Release den Agenten im Dashboard pausieren. Das folgende Skript liest vor jeder schreibenden Abfrage ausschließlich `to_regclass` und `information_schema.columns`. Es unterscheidet damit das Dashboard-Schema (`agent_enabled` und `operating_mode`), das Legacy-002-Schema (`schedule_enabled` und `auto_publish_enabled`) sowie einen echten First Deploy ohne beide Content-Agent-Tabellen. Partielle oder unbekannte Kombinationen brechen ab. Erst danach führt es genau die zum erkannten Schema passende Pause-Abfrage aus; keine SQL-Abfrage referenziert eine möglicherweise nicht vorhandene Spalte. Dadurch kann der Worker keinen neuen Job mehr übernehmen. Ein bereits parallel begonnener Claim wird durch die zweite Prüfung nach dem kontrollierten Worker-Stopp erkannt. Das Skript aktiviert den Agenten nach dem Deploy nicht wieder; die bewusste Freigabe im Review-Modus erfolgt erst nach der technischen Kontrolle im Dashboard.
 
 Die manuell verwaltete Datei zuerst sichern und das Zielverzeichnis schützen:
 
@@ -329,10 +330,115 @@ set -Eeuo pipefail
 ROOT="/apps/komplettwebdesign"
 COMPOSE_FILE="$ROOT/docker-compose.yml"
 REPO_DIR="$ROOT/server"
+CURRENT_WORKER_CONTRACT="dashboard-v1"
+MIN_DASHBOARD_WORKER_REVISION="726df921b2285498eeca228588f8ec63945dd5fa"
+OPERATION_LOCK="$ROOT/data/content-agent-deploy.lock"
+ROLLBACK_METADATA_TMP=""
+DRY_RUN_OUTPUT_FILE=""
 
 fail() {
   printf '%s\n' "$1" >&2
   exit 1
+}
+
+cleanup() {
+  local command_status=$?
+  [[ -z "${ROLLBACK_METADATA_TMP:-}" ]] || rm -f "$ROLLBACK_METADATA_TMP"
+  [[ -z "${DRY_RUN_OUTPUT_FILE:-}" ]] || rm -f "$DRY_RUN_OUTPUT_FILE"
+  return "$command_status"
+}
+trap cleanup EXIT
+
+acquire_operation_lock() {
+  local lock_file="$1"
+  command -v flock >/dev/null 2>&1 || fail "Linux-Werkzeug flock fehlt."
+  exec 9>"$lock_file"
+  chmod 600 "$lock_file"
+  flock -n 9 || fail "Deploy oder Rollback läuft bereits."
+}
+
+classify_content_schema_state() {
+  case "$1" in
+    "1|1|1|0|1|1") printf 'dashboard\n' ;;
+    "1|0|0|1|1|1") printf 'legacy002\n' ;;
+    "0|0|0|0|0|0") printf 'first_deploy\n' ;;
+    *) return 1 ;;
+  esac
+}
+
+read_content_schema_facts() {
+  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -AtF "|" -c "SELECT (to_regclass('\''public.content_agent_settings'\'') IS NOT NULL)::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''agent_enabled'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''operating_mode'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''schedule_enabled'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''auto_publish_enabled'\'')::int, (to_regclass('\''public.content_jobs'\'') IS NOT NULL)::int;"'
+}
+
+pause_content_agent() {
+  case "$1" in
+    dashboard)
+      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      test "$PAUSED_STATE" = "false|review"
+      ;;
+    legacy002)
+      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET schedule_enabled = FALSE, auto_publish_enabled = FALSE, updated_at = NOW() WHERE id = 1 RETURNING schedule_enabled::text || '\''|'\'' || auto_publish_enabled::text;"')"
+      test "$PAUSED_STATE" = "false|false"
+      ;;
+    first_deploy)
+      printf 'Erster Deploy: Content-Agent-Tabellen sind noch nicht vorhanden.\n'
+      ;;
+    *) fail "Unbekannter Content-Agent-Datenbankzustand." ;;
+  esac
+}
+
+is_dashboard_worker_compatible() {
+  local contract="$1"
+  local commit="$2"
+  local rollback_ref="$3"
+  [[ "$contract" == "$CURRENT_WORKER_CONTRACT" ]] || return 1
+  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$rollback_ref" =~ ^refs/deploy-rollbacks/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]] || return 1
+  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit"
+}
+
+wait_for_app_health() {
+  local container_id=""
+  local status=""
+  local consecutive_successes=0
+
+  for attempt in $(seq 1 60); do
+    container_id="$(docker compose -f "$COMPOSE_FILE" ps -q app)"
+    status="$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || true)"
+    if [[ -n "$container_id" && "$status" == "running" ]] && docker compose -f "$COMPOSE_FILE" exec -T app node -e 'const http=require("node:http");const request=http.get({host:"localhost",port:3000,path:"/health",timeout:3000},response=>{let body="";response.setEncoding("utf8");response.on("data",chunk=>body+=chunk);response.on("end",()=>process.exit(response.statusCode===200&&body.trim()==="ok"?0:1));});request.on("timeout",()=>request.destroy(new Error("timeout")));request.on("error",()=>process.exit(1));'; then
+      consecutive_successes=$((consecutive_successes + 1))
+      if (( consecutive_successes >= 3 )); then
+        return 0
+      fi
+    else
+      consecutive_successes=0
+    fi
+    sleep 2
+  done
+
+  docker compose -f "$COMPOSE_FILE" ps app >&2 || true
+  docker compose -f "$COMPOSE_FILE" logs --tail=100 app >&2 || true
+  fail "App-Endpunkt /health war nicht dreimal hintereinander erfolgreich."
+}
+
+validate_dry_run_output() {
+  node - "$1" <<'NODE'
+const { readFileSync } = require('node:fs');
+const lines = readFileSync(process.argv[2], 'utf8').split(/\r?\n/).filter(Boolean);
+let result = null;
+for (let index = lines.length - 1; index >= 0; index -= 1) {
+  try {
+    const candidate = JSON.parse(lines[index]);
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      result = candidate;
+      break;
+    }
+  } catch {}
+}
+if (!result || result.externalCalls !== 0 || result.articleValid !== true || result.publishMode !== 'draft') {
+  process.exit(1);
+}
+NODE
 }
 
 wait_for_service() {
@@ -369,33 +475,24 @@ cd "$ROOT"
 test -f "$COMPOSE_FILE"
 test -f "$ROOT/.env"
 test -e "$REPO_DIR/.git"
+mkdir -p "$ROOT/data"
+acquire_operation_lock "$OPERATION_LOCK"
 docker compose -f "$COMPOSE_FILE" config --quiet
 if ! git config --global --get-all safe.directory | grep -Fxq "$REPO_DIR"; then
   git config --global --add safe.directory "$REPO_DIR"
 fi
 
-SETTINGS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_agent_settings'\'')::text, '\'''\'');"')"
-CONTENT_JOBS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_jobs'\'')::text, '\'''\'');"')"
-
-case "$SETTINGS_TABLE:$CONTENT_JOBS_TABLE" in
-  content_agent_settings:content_jobs)
-    PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
-    test "$PAUSED_STATE" = "false|review"
-    ;;
-  :)
-    printf 'Erster Deploy: Content-Agent-Tabellen sind noch nicht vorhanden.\n'
-    ;;
-  *)
-    fail "Unbekannter oder inkonsistenter Content-Agent-Datenbankzustand."
-    ;;
-esac
+PRE_DEPLOY_SCHEMA_FACTS="$(read_content_schema_facts)" || fail "Content-Agent-Schema konnte nicht gelesen werden."
+PRE_DEPLOY_SCHEMA_STATE="$(classify_content_schema_state "$PRE_DEPLOY_SCHEMA_FACTS")" || fail "Unbekannter oder partieller Content-Agent-Datenbankzustand: $PRE_DEPLOY_SCHEMA_FACTS"
+printf 'Content-Agent-Schema vor Migration: %s (%s)\n' "$PRE_DEPLOY_SCHEMA_STATE" "$PRE_DEPLOY_SCHEMA_FACTS"
+pause_content_agent "$PRE_DEPLOY_SCHEMA_STATE"
 
 running_job_count() {
-  case "$CONTENT_JOBS_TABLE" in
-    content_jobs)
+  case "$PRE_DEPLOY_SCHEMA_STATE" in
+    dashboard|legacy002)
       docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
       ;;
-    "")
+    first_deploy)
       printf '0\n'
       ;;
     *)
@@ -445,7 +542,14 @@ DEPLOY_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 ROLLBACK_DIR="$ROOT/data/rollbacks"
 mkdir -p "$ROLLBACK_DIR"
 chmod 700 "$ROLLBACK_DIR"
+APP_CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps --all -q app)"
 RUNNING_APP_CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps --status running -q app)"
+if [[ -n "$APP_CONTAINER_ID" && -z "$RUNNING_APP_CONTAINER_ID" ]]; then
+  fail "App-Container existiert, läuft aber nicht; kein First Deploy und kein sicherer Snapshot."
+fi
+if [[ -n "$RUNNING_APP_CONTAINER_ID" && "$RUNNING_APP_CONTAINER_ID" != "$APP_CONTAINER_ID" ]]; then
+  fail "App-Containerzustand ist inkonsistent oder der Service ist skaliert."
+fi
 if [[ -n "$RUNNING_APP_CONTAINER_ID" ]]; then
   RUNNING_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$RUNNING_APP_CONTAINER_ID")"
   if ! [[ "$RUNNING_IMAGE_ID" =~ ^sha256:[0-9a-f]{64}$ ]]; then
@@ -467,20 +571,37 @@ if [[ -n "$RUNNING_APP_CONTAINER_ID" ]]; then
   test "$TAGGED_ROLLBACK_IMAGE_ID" = "$RUNNING_IMAGE_ID"
 
   RUNNING_IMAGE_REVISION="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$RUNNING_IMAGE_ID" 2>/dev/null || true)"
+  RUNNING_WORKER_CONTRACT="$(docker image inspect --format '{{index .Config.Labels "de.komplettwebdesign.content-worker.contract"}}' "$RUNNING_IMAGE_ID" 2>/dev/null || true)"
+  if [[ "$RUNNING_WORKER_CONTRACT" != "$CURRENT_WORKER_CONTRACT" ]]; then
+    RUNNING_WORKER_CONTRACT="unknown"
+  fi
   ROLLBACK_COMMIT="unknown"
   ROLLBACK_REF="unknown"
+  ROLLBACK_WORKER_COMPATIBILITY="unknown"
   if [[ "$RUNNING_IMAGE_REVISION" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "${RUNNING_IMAGE_REVISION}^{commit}" 2>/dev/null; then
     ROLLBACK_COMMIT="$RUNNING_IMAGE_REVISION"
     ROLLBACK_REF="refs/deploy-rollbacks/$DEPLOY_ID"
     git check-ref-format "$ROLLBACK_REF"
     git update-ref "$ROLLBACK_REF" "$ROLLBACK_COMMIT"
+    if is_dashboard_worker_compatible "$RUNNING_WORKER_CONTRACT" "$ROLLBACK_COMMIT" "$ROLLBACK_REF"; then
+      ROLLBACK_WORKER_COMPATIBILITY="compatible"
+    else
+      ROLLBACK_WORKER_COMPATIBILITY="incompatible"
+    fi
   else
     printf 'Image-Revision ist unbekannt, ungültig oder lokal nicht verfügbar; Rollback bleibt image-only.\n' >&2
   fi
 
-  printf 'ROLLBACK_IMAGE=%s\nROLLBACK_IMAGE_ID=%s\nROLLBACK_COMMIT=%s\nROLLBACK_REF=%s\n' \
-    "$ROLLBACK_IMAGE" "$RUNNING_IMAGE_ID" "$ROLLBACK_COMMIT" "$ROLLBACK_REF" > "$ROLLBACK_METADATA"
-  chmod 600 "$ROLLBACK_METADATA"
+  ROLLBACK_METADATA_TMP="$(mktemp "$ROLLBACK_DIR/.rollback-${DEPLOY_ID}.tmp.XXXXXX")"
+  printf 'ROLLBACK_IMAGE=%s\nROLLBACK_IMAGE_ID=%s\nROLLBACK_COMMIT=%s\nROLLBACK_REF=%s\nROLLBACK_SCHEMA_STATE=%s\nROLLBACK_WORKER_CONTRACT=%s\nROLLBACK_WORKER_COMPATIBILITY=%s\n' \
+    "$ROLLBACK_IMAGE" "$RUNNING_IMAGE_ID" "$ROLLBACK_COMMIT" "$ROLLBACK_REF" \
+    "$PRE_DEPLOY_SCHEMA_STATE" "$RUNNING_WORKER_CONTRACT" "$ROLLBACK_WORKER_COMPATIBILITY" > "$ROLLBACK_METADATA_TMP"
+  chmod 600 "$ROLLBACK_METADATA_TMP"
+  mv -nT "$ROLLBACK_METADATA_TMP" "$ROLLBACK_METADATA"
+  if [[ -e "$ROLLBACK_METADATA_TMP" ]]; then
+    fail "Rollback-Metadaten existieren bereits; atomarer Publish abgebrochen."
+  fi
+  ROLLBACK_METADATA_TMP=""
   test -s "$ROLLBACK_METADATA"
   printf 'Rollback-Metadaten: %s\n' "$ROLLBACK_METADATA"
 else
@@ -501,14 +622,28 @@ docker compose -f "$COMPOSE_FILE" build --no-cache app
 docker image inspect komplettwebdesign-app:local >/dev/null
 BUILT_IMAGE_REVISION="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' komplettwebdesign-app:local)"
 test "$BUILT_IMAGE_REVISION" = "$DEPLOY_COMMIT"
+BUILT_WORKER_CONTRACT="$(docker image inspect --format '{{index .Config.Labels "de.komplettwebdesign.content-worker.contract"}}' komplettwebdesign-app:local)"
+test "$BUILT_WORKER_CONTRACT" = "$CURRENT_WORKER_CONTRACT"
 
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
-docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run
+DRY_RUN_OUTPUT_FILE="$(mktemp "$ROOT/data/.content-agent-dry-run.XXXXXX")"
+if ! docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run > "$DRY_RUN_OUTPUT_FILE" 2>&1; then
+  cat "$DRY_RUN_OUTPUT_FILE" >&2
+  fail "Content-Agent-Dry-Run ist fehlgeschlagen."
+fi
+cat "$DRY_RUN_OUTPUT_FILE"
+validate_dry_run_output "$DRY_RUN_OUTPUT_FILE" || fail "Dry-Run-Ergebnis verletzt den sicheren Vertrag."
+rm -f "$DRY_RUN_OUTPUT_FILE"
+DRY_RUN_OUTPUT_FILE=""
 
 docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
-wait_for_service app running
+wait_for_app_health
 wait_for_service content-worker healthy
+if [[ "${KWD_CHECK_EXTERNAL_HEALTH:-false}" == "true" ]]; then
+  command -v curl >/dev/null 2>&1 || fail "Optionaler externer Healthcheck verlangt curl."
+  curl --fail --silent --show-error --max-time 10 https://www.komplettwebdesign.de/health | grep -Fxq ok
+fi
 docker compose -f "$COMPOSE_FILE" ps postgres app content-worker
 docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
 docker compose -f "$COMPOSE_FILE" logs --tail=100 app content-worker
@@ -523,11 +658,15 @@ bash -n deploy/deploy.sh
 ./deploy/deploy.sh
 ```
 
-Das Skript bricht bei einem unbekannten Datenbankzustand, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, dem Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build und Migration weiter und wird erst beim finalen Recreate ersetzt.
+Das Skript benötigt auf dem Linux-VPS `flock` und hält eine gemeinsame, nicht blockierende Sperre für Deploy und Rollback während des gesamten Ablaufs. Es bricht bei einem parallelen Betriebsbefehl, einem unbekannten Datenbankzustand, einem vorhandenen aber gestoppten App-Container, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, einem nicht eindeutig sicheren Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build und Migration weiter und wird erst beim finalen Recreate ersetzt.
 
 Vor `git fetch`, `git reset` und Build ermittelt das Skript den tatsächlich laufenden App-Container und liest dessen exakte `.Image`-SHA aus. Nur diese SHA erhält einen unveränderlichen Rollback-Tag; der bewegliche Tag `komplettwebdesign-app:local` ist ausdrücklich keine Snapshot-Quelle. Nach einem fehlgeschlagenen Build kann `komplettwebdesign-app:local` bereits ersetzt sein, obwohl das neue Image nie produktiv gestartet wurde; der nächste Rollback verweist trotzdem auf das richtige laufende Image.
 
-Die OCI-Revision des exakten laufenden Images wird nur akzeptiert, wenn sie aus 40 hexadezimalen Zeichen besteht und der Commit im lokalen Repository wirklich vorhanden ist. Dann schützt `refs/deploy-rollbacks/<DEPLOY_ID>` den Commit vor Git-Garbage-Collection. Ein älteres, nicht gelabeltes Image bleibt vollständig als Image-Rollback nutzbar, wird aber ehrlich mit Commit und Ref `unknown` erfasst; eine Code-/Image-Ausrichtung wird dann nicht behauptet. Die Metadatendatei speichert Tag, exakte Image-ID, Commit und Ref mit Modus `600`. Beim ersten Deploy ohne laufenden App-Container ist ausdrücklich kein Image-Rollback möglich. Nach dem Checkout exportiert das Skript den Zielcommit als `APP_REVISION`, baut das gemeinsame Image genau einmal über `app` und prüft das resultierende Label; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Der begrenzte Health-Wait berücksichtigt die 45-sekündige Worker-Startphase. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
+Die OCI-Revision des exakten laufenden Images wird nur akzeptiert, wenn sie aus 40 hexadezimalen Zeichen besteht und der Commit im lokalen Repository wirklich vorhanden ist. Dann schützt `refs/deploy-rollbacks/<DEPLOY_ID>` den Commit vor Git-Garbage-Collection. Für den Worker gilt zusätzlich der explizite OCI-Contract `dashboard-v1` und der erste bekannte kompatible Worker-Commit `726df921b2285498eeca228588f8ec63945dd5fa`: Nur wenn Contract und `git merge-base --is-ancestor` passen, wird der alte Worker als kompatibel markiert. Ein älteres, nicht gelabeltes Image bleibt vollständig als App-Image-Rollback nutzbar, wird aber ehrlich mit Commit, Ref oder Worker-Contract `unknown` erfasst; eine Code-/Image-/Worker-Ausrichtung wird dann nicht behauptet.
+
+Die Metadatendatei speichert Tag, exakte Image-ID, Commit, Ref, erkannten Schema-Ausgangszustand, Worker-Contract und explizite Worker-Kompatibilität. Sie entsteht zunächst als Datei mit Modus `600` und wird unter der gemeinsamen Sperre per `mv -nT` atomar und ohne Überschreiben veröffentlicht. Beim ersten Deploy ohne jeden App-Container ist ausdrücklich kein Image-Rollback möglich; ein vorhandener, aber nicht laufender App-Container ist dagegen ein Abbruch. Nach dem Checkout exportiert das Skript den Zielcommit als `APP_REVISION`, baut das gemeinsame Image genau einmal über `app` und prüft Revision und Contract im resultierenden Image.
+
+Der Dry-Run wird vollständig in einer geschützten temporären Datei erfasst. Ein Node-Validator sucht rückwärts die letzte syntaktisch gültige JSON-Zeile und akzeptiert ausschließlich `externalCalls === 0`, `articleValid === true` und `publishMode === "draft"`. Nach dem Recreate muss der interne Endpunkt `http://localhost:3000/health` aus dem App-Container dreimal hintereinander innerhalb des begrenzten Fensters Status 200 und den Text `ok` liefern. Wird das Skript bewusst mit `KWD_CHECK_EXTERNAL_HEALTH=true` gestartet, verlangt es zusätzlich `curl` und prüft den öffentlichen Traefik-Pfad. Der Worker muss danach separat `healthy` werden. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
 
 ## 8. Erst die App, dann den Worker starten
 
@@ -585,7 +724,9 @@ Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf f
 
 Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig. Aktive Jobs vor dem Stop über Logs und Datenbank beobachten und möglichst bis zu einem terminalen Status `completed` oder `failed` laufen lassen; ein Generierungslauf soll nicht mitten in einem externen Aufruf abgebrochen werden.
 
-Bei einem fehlerhaften Release werden Image und – sofern die geprüfte OCI-Revision belegt ist – Code gemeinsam auf den in einer geprüften Metadatendatei festgehaltenen Stand zurückgesetzt. Bei einem älteren Image ohne belegte Revision erfolgt ehrlich nur der Image-Rollback. Das Rollback-Image enthält den alten Code bereits; deshalb wird beim Rollback ausdrücklich **nicht neu gebaut**. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
+Bei einem fehlerhaften Release wird das geprüfte App-Image auf den in der Metadatendatei festgehaltenen Stand zurückgesetzt. Code und Worker werden nur dann gemeinsam zurückgesetzt beziehungsweise gestartet, wenn Dashboard-Schema, OCI-Contract, gespeicherter Ref und Git-Abstammung den konkreten alten Release nachweislich als kompatibel ausweisen. Legacy- und unbekannte Images erhalten ausschließlich einen Image-only-Rollback der App; der Worker bleibt gestoppt, `CONTENT_AGENT_ENABLED=false`, die Datenbank bleibt passend zu ihrem tatsächlich erkannten Schema pausiert und der Git-Checkout unverändert. Das Rollback-Image enthält den alten App-Code bereits; deshalb wird beim Rollback ausdrücklich **nicht neu gebaut**.
+
+Das Datenbankschema bleibt forward-only und wird nicht destruktiv zurückgerollt. Daraus folgt ausdrücklich **keine pauschale Rückwärtskompatibilität älterer Releases**. Kompatibilität ist release-spezifisch und muss über Schemaerkennung, OCI-Contract, Git-Abstammung und den erfolgreichen App-Healthcheck belegt werden. Notwendige Schemankorrekturen erfolgen als neue vorwärtsgerichtete Migration.
 
 Den folgenden Block als `/apps/komplettwebdesign/deploy/rollback.sh` speichern. Das Skript erwartet den vom Deploy ausgegebenen absoluten Pfad zur geschützten Rollback-Metadatendatei als einziges Argument:
 
@@ -598,10 +739,95 @@ COMPOSE_FILE="$ROOT/docker-compose.yml"
 REPO_DIR="$ROOT/server"
 ROLLBACK_DIR="$ROOT/data/rollbacks"
 ROLLBACK_METADATA="${1:?Aufruf: rollback.sh /apps/komplettwebdesign/data/rollbacks/rollback-….env}"
+CURRENT_WORKER_CONTRACT="dashboard-v1"
+MIN_DASHBOARD_WORKER_REVISION="726df921b2285498eeca228588f8ec63945dd5fa"
+OPERATION_LOCK="$ROOT/data/content-agent-deploy.lock"
 
 fail() {
   printf '%s\n' "$1" >&2
   exit 1
+}
+
+acquire_operation_lock() {
+  local lock_file="$1"
+  command -v flock >/dev/null 2>&1 || fail "Linux-Werkzeug flock fehlt."
+  exec 9>"$lock_file"
+  chmod 600 "$lock_file"
+  flock -n 9 || fail "Deploy oder Rollback läuft bereits."
+}
+
+classify_content_schema_state() {
+  case "$1" in
+    "1|1|1|0|1|1") printf 'dashboard\n' ;;
+    "1|0|0|1|1|1") printf 'legacy002\n' ;;
+    "0|0|0|0|0|0") printf 'first_deploy\n' ;;
+    *) return 1 ;;
+  esac
+}
+
+read_content_schema_facts() {
+  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -AtF "|" -c "SELECT (to_regclass('\''public.content_agent_settings'\'') IS NOT NULL)::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''agent_enabled'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''operating_mode'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''schedule_enabled'\'')::int, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''auto_publish_enabled'\'')::int, (to_regclass('\''public.content_jobs'\'') IS NOT NULL)::int;"'
+}
+
+pause_content_agent() {
+  case "$1" in
+    dashboard)
+      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      test "$PAUSED_STATE" = "false|review"
+      ;;
+    legacy002)
+      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET schedule_enabled = FALSE, auto_publish_enabled = FALSE, updated_at = NOW() WHERE id = 1 RETURNING schedule_enabled::text || '\''|'\'' || auto_publish_enabled::text;"')"
+      test "$PAUSED_STATE" = "false|false"
+      ;;
+    first_deploy) printf 'Keine Content-Agent-Tabellen zu pausieren.\n' ;;
+    *) fail "Unbekannter Content-Agent-Datenbankzustand." ;;
+  esac
+}
+
+is_dashboard_worker_compatible() {
+  local contract="$1"
+  local commit="$2"
+  local rollback_ref="$3"
+  [[ "$contract" == "$CURRENT_WORKER_CONTRACT" ]] || return 1
+  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$rollback_ref" =~ ^refs/deploy-rollbacks/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]] || return 1
+  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit"
+}
+
+recreate_rollback_services() {
+  case "$1" in
+    true)
+      docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
+      ;;
+    false)
+      docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app
+      ;;
+    *) fail "Unbekannte Worker-Kompatibilitätsentscheidung." ;;
+  esac
+}
+
+wait_for_app_health() {
+  local container_id=""
+  local status=""
+  local consecutive_successes=0
+
+  for attempt in $(seq 1 60); do
+    container_id="$(docker compose -f "$COMPOSE_FILE" ps -q app)"
+    status="$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || true)"
+    if [[ -n "$container_id" && "$status" == "running" ]] && docker compose -f "$COMPOSE_FILE" exec -T app node -e 'const http=require("node:http");const request=http.get({host:"localhost",port:3000,path:"/health",timeout:3000},response=>{let body="";response.setEncoding("utf8");response.on("data",chunk=>body+=chunk);response.on("end",()=>process.exit(response.statusCode===200&&body.trim()==="ok"?0:1));});request.on("timeout",()=>request.destroy(new Error("timeout")));request.on("error",()=>process.exit(1));'; then
+      consecutive_successes=$((consecutive_successes + 1))
+      if (( consecutive_successes >= 3 )); then
+        return 0
+      fi
+    else
+      consecutive_successes=0
+    fi
+    sleep 2
+  done
+
+  docker compose -f "$COMPOSE_FILE" ps app >&2 || true
+  docker compose -f "$COMPOSE_FILE" logs --tail=100 app >&2 || true
+  fail "App-Endpunkt /health war nicht dreimal hintereinander erfolgreich."
 }
 
 wait_for_service() {
@@ -634,6 +860,10 @@ wait_for_service() {
   fail "Dienst $service wurde nicht rechtzeitig $expected."
 }
 
+cd "$ROOT"
+test -d "$ROOT/data"
+acquire_operation_lock "$OPERATION_LOCK"
+
 test -f "$ROLLBACK_METADATA"
 test ! -L "$ROLLBACK_METADATA"
 ROLLBACK_METADATA="$(realpath -- "$ROLLBACK_METADATA")"
@@ -646,15 +876,21 @@ METADATA_MODE="$(stat -c '%a' "$ROLLBACK_METADATA")"
 METADATA_OWNER="$(stat -c '%u' "$ROLLBACK_METADATA")"
 test "$METADATA_MODE" = "600"
 test "$METADATA_OWNER" = "$(id -u)"
-test "$(wc -l < "$ROLLBACK_METADATA" | tr -d ' ')" = "4"
+test "$(wc -l < "$ROLLBACK_METADATA" | tr -d ' ')" = "7"
 sed -n '1p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$'
 sed -n '2p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_IMAGE_ID=sha256:[0-9a-f]{64}$'
 sed -n '3p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_COMMIT=(unknown|[0-9a-f]{40})$'
 sed -n '4p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_REF=(unknown|refs\/deploy-rollbacks\/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12})$'
+sed -n '5p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_SCHEMA_STATE=(dashboard|legacy002|first_deploy)$'
+sed -n '6p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_WORKER_CONTRACT=(dashboard-v1|unknown)$'
+sed -n '7p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_WORKER_COMPATIBILITY=(compatible|incompatible|unknown)$'
 ROLLBACK_IMAGE="$(sed -n '1s/^ROLLBACK_IMAGE=//p' "$ROLLBACK_METADATA")"
 ROLLBACK_IMAGE_ID="$(sed -n '2s/^ROLLBACK_IMAGE_ID=//p' "$ROLLBACK_METADATA")"
 ROLLBACK_COMMIT="$(sed -n '3s/^ROLLBACK_COMMIT=//p' "$ROLLBACK_METADATA")"
 ROLLBACK_REF="$(sed -n '4s/^ROLLBACK_REF=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_SCHEMA_STATE="$(sed -n '5s/^ROLLBACK_SCHEMA_STATE=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_WORKER_CONTRACT="$(sed -n '6s/^ROLLBACK_WORKER_CONTRACT=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_WORKER_COMPATIBILITY="$(sed -n '7s/^ROLLBACK_WORKER_COMPATIBILITY=//p' "$ROLLBACK_METADATA")"
 
 if ! [[ "$ROLLBACK_IMAGE" =~ ^komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]]; then
   fail "Rollback-Image ist ungültig."
@@ -675,7 +911,6 @@ else
   fi
 fi
 
-cd "$ROOT"
 test -f "$COMPOSE_FILE"
 test -f "$ROOT/.env"
 test -e "$REPO_DIR/.git"
@@ -687,11 +922,28 @@ if ! git config --global --get-all safe.directory | grep -Fxq "$REPO_DIR"; then
   git config --global --add safe.directory "$REPO_DIR"
 fi
 
-PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
-test "$PAUSED_STATE" = "false|review"
+CURRENT_SCHEMA_FACTS="$(read_content_schema_facts)" || fail "Content-Agent-Schema konnte nicht gelesen werden."
+CURRENT_SCHEMA_STATE="$(classify_content_schema_state "$CURRENT_SCHEMA_FACTS")" || fail "Unbekannter oder partieller Content-Agent-Datenbankzustand: $CURRENT_SCHEMA_FACTS"
+printf 'Content-Agent-Schema beim Rollback: %s; vor Deploy: %s\n' "$CURRENT_SCHEMA_STATE" "$ROLLBACK_SCHEMA_STATE"
+pause_content_agent "$CURRENT_SCHEMA_STATE"
+
+ROLLBACK_WORKER_ALLOWED=false
+if [[ "$ROLLBACK_WORKER_COMPATIBILITY" == "compatible" ]]; then
+  if [[ "$CURRENT_SCHEMA_STATE" == "dashboard" ]] && is_dashboard_worker_compatible "$ROLLBACK_WORKER_CONTRACT" "$ROLLBACK_COMMIT" "$ROLLBACK_REF"; then
+    ROLLBACK_WORKER_ALLOWED=true
+  else
+    printf 'Worker-Rollback bleibt aus: Dashboard-Schema, Contract oder Git-Abstammung ist nicht sicher kompatibel.\n' >&2
+  fi
+fi
 
 running_job_count() {
-  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+  case "$CURRENT_SCHEMA_STATE" in
+    dashboard|legacy002)
+      docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+      ;;
+    first_deploy) printf '0\n' ;;
+    *) fail "Unbekannter Zustand der Jobtabelle." ;;
+  esac
 }
 
 RUNNING_JOB_COUNT="$(running_job_count)"
@@ -712,7 +964,7 @@ if ! [[ "$POST_STOP_RUNNING_JOB_COUNT" =~ ^[0-9]+$ && "$POST_STOP_RUNNING_JOB_CO
   fail "Jobstatus nach Worker-Stopp ist nicht sicher leer."
 fi
 
-if [[ "$ROLLBACK_COMMIT" != "unknown" ]]; then
+if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]; then
   cd "$REPO_DIR"
   git check-ref-format "$ROLLBACK_REF"
   RESOLVED_ROLLBACK_COMMIT="$(git rev-parse --verify "${ROLLBACK_REF}^{commit}")"
@@ -720,24 +972,33 @@ if [[ "$ROLLBACK_COMMIT" != "unknown" ]]; then
   git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
   git reset --hard "$ROLLBACK_REF"
 else
-  printf 'Image-only-Rollback: Image-Revision ist unbekannt; Git-Checkout bleibt unverändert.\n' >&2
+  printf 'Image-only-Rollback: App wird zurückgesetzt; Worker bleibt wegen unbekannter oder inkompatibler Revision gestoppt. Git-Checkout bleibt unverändert.\n' >&2
 fi
 cd "$ROOT"
 docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local
 docker image inspect komplettwebdesign-app:local >/dev/null
 
-if grep -Fxq 'CONTENT_AGENT_ENABLED=false' "$ROOT/.env"; then
-  sed -i 's/^CONTENT_AGENT_ENABLED=false$/CONTENT_AGENT_ENABLED=true/' "$ROOT/.env"
-elif ! grep -Fxq 'CONTENT_AGENT_ENABLED=true' "$ROOT/.env"; then
+if ! grep -Eq '^CONTENT_AGENT_ENABLED=(true|false)$' "$ROOT/.env"; then
   fail "CONTENT_AGENT_ENABLED fehlt oder besitzt einen unbekannten Wert."
+fi
+if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]; then
+  sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=true/' "$ROOT/.env"
+else
+  sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=false/' "$ROOT/.env"
 fi
 chmod 600 "$ROOT/.env"
 
-docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
-wait_for_service app running
-wait_for_service content-worker healthy
+recreate_rollback_services "$ROLLBACK_WORKER_ALLOWED"
+wait_for_app_health
+if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]; then
+  wait_for_service content-worker healthy
+  docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
+fi
+if [[ "${KWD_CHECK_EXTERNAL_HEALTH:-false}" == "true" ]]; then
+  command -v curl >/dev/null 2>&1 || fail "Optionaler externer Healthcheck verlangt curl."
+  curl --fail --silent --show-error --max-time 10 https://www.komplettwebdesign.de/health | grep -Fxq ok
+fi
 docker compose -f "$COMPOSE_FILE" ps app content-worker
-docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
 docker compose -f "$COMPOSE_FILE" logs --tail=100 app content-worker
 ```
 
@@ -750,7 +1011,7 @@ bash -n deploy/rollback.sh
 ./deploy/rollback.sh /apps/komplettwebdesign/data/rollbacks/rollback-YYYYMMDDTHHMMSSZ-aaaaaaaaaaaa.env
 ```
 
-Die Datei wird ohne `source` auf reguläre Datei, Pfad, Eigentümer, Modus `600`, exakt vier positionsgebundene Werte und sichere Formate geprüft. Zusätzlich muss der unveränderliche Tag weiterhin exakt auf die gespeicherte Image-ID zeigen. Sind Commit und geschützter Ref belegt, muss der Ref genau auf diesen Commit auflösen; erst dann wird der Checkout zurückgesetzt. Stehen beide Werte auf `unknown`, erfolgt ausdrücklich ein Image-only-Rollback mit Warnung und der Checkout bleibt unverändert. In beiden Fällen wird das unveränderliche Rollback-Image auf `komplettwebdesign-app:local` zurückgetaggt, niemals neu gebaut, und App sowie Worker werden gemeinsam neu erzeugt. Der Agent bleibt nach dem Rollback in PostgreSQL deaktiviert und im Review-Modus. War das technische Hardgate in `.env` auf `false` gesetzt, stellt das Skript es auf `true`; anschließend werden beide Dienste begrenzt auf `running` beziehungsweise `healthy` geprüft.
+Die Datei wird ohne `source` auf reguläre Datei, Pfad, Eigentümer, Modus `600`, exakt sieben positionsgebundene Werte und sichere Formate geprüft. Zusätzlich muss der unveränderliche Tag weiterhin exakt auf die gespeicherte Image-ID zeigen. Der aktuelle Datenbankzustand wird erneut über dieselbe Schema-State-Machine erkannt und mit der jeweils gültigen Spaltenmenge pausiert. Nur eine als `compatible` gespeicherte und erneut über Dashboard-Schema, `dashboard-v1`, geschützten Ref und Git-Abstammung bestätigte Revision darf Checkout und Worker zurücksetzen. Andernfalls erfolgt ausdrücklich ein App-Image-only-Rollback mit Warnung; Git bleibt unverändert, der Worker gestoppt und das technische Gate wird auf `false` gesetzt. Das App-Image wird immer auf `komplettwebdesign-app:local` zurückgetaggt und niemals neu gebaut. Der interne App-Endpunkt muss danach erneut dreimal stabil erfolgreich sein; nur im kompatiblen Pfad werden zusätzlich Worker, Worker-Healthcheck und `CONTENT_AGENT_ENABLED=true` aktiviert.
 
 `-t 600` entspricht `stop_grace_period: 10m`. Der Worker erhält `SIGTERM`, stoppt Polling und Scheduler und wartet nach seiner ersten internen 30-Sekunden-Drainphase weiter auf den aktiven Job. Erst nach 600 Sekunden würde Docker hart beenden. Ist ein Job dann noch aktiv, den Stop nach Möglichkeit abbrechen und die Ursache untersuchen; nur im Notfall den harten Abbruch in Kauf nehmen.
 

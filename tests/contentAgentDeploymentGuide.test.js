@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { parse as parseYaml } from 'yaml';
 
@@ -28,6 +30,20 @@ function parsedService(yaml, serviceName) {
   return document.services[serviceName];
 }
 
+function namedShellFunction(block, name) {
+  const expression = new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\(\\) \\{\\n([\\s\\S]*?)^\\}(?=\\n\\n)`, 'm');
+  const match = block.match(expression);
+  assert.ok(match, `Shell-Funktion ${name} fehlt`);
+  return `${name}() {\n${match[1]}}`;
+}
+
+function runBash(script, { env = {} } = {}) {
+  return spawnSync('bash', ['-c', script], {
+    encoding: 'utf8',
+    env: { ...process.env, ...env }
+  });
+}
+
 const bashBlocks = fencedBlocks('bash');
 const yamlBlocks = fencedBlocks('yaml');
 
@@ -42,6 +58,10 @@ test('App und Worker verwenden exakt dasselbe benannte Image, Worker bleibt inte
     app.build.labels['org.opencontainers.image.revision'],
     '${APP_REVISION:-unknown}',
     'das gebaute Image muss den tatsächlich gebauten Git-Stand tragen'
+  );
+  assert.equal(
+    app.build.labels['de.komplettwebdesign.content-worker.contract'],
+    'dashboard-v1'
   );
   assert.equal(worker.image, app.image);
   assert.equal(worker.stop_grace_period, '10m');
@@ -208,14 +228,13 @@ test('Deploy sichert die exakte Image-SHA des laufenden App-Containers vor Reset
   assert.match(deploy, /ROLLBACK_IMAGE_ID=%s/);
   assert.match(deploy, /ROLLBACK_COMMIT=%s/);
   assert.match(deploy, /ROLLBACK_REF=%s/);
-  assert.match(deploy, /chmod 600 "\$ROLLBACK_METADATA"/);
+  assert.match(deploy, /chmod 600 "\$ROLLBACK_METADATA_TMP"/);
   assert.match(deploy, /docker image inspect "\$ROLLBACK_IMAGE"/);
   assert.match(deploy, /kein laufender App-Container für einen Image-Rollback/i);
   assert.ok(workerGuard >= 0 && stop > workerGuard);
   assert.match(deploy.slice(workerGuard, stop), /WORKER_CONTAINER_ID/);
-  assert.match(deploy, /case "\$SETTINGS_TABLE:\$CONTENT_JOBS_TABLE" in/);
-  assert.match(deploy, /content_agent_settings:content_jobs\)/);
-  assert.match(deploy, /Unbekannter oder inkonsistenter Content-Agent-Datenbankzustand/);
+  assert.match(deploy, /classify_content_schema_state/);
+  assert.match(deploy, /Unbekannter oder partieller Content-Agent-Datenbankzustand/);
   assert.match(deploy, /test "\$PAUSED_STATE" = "false\|review"/);
   assert.match(deploy, /POST_STOP_RUNNING_JOB_COUNT/);
   assert.match(guide, /chmod 700 deploy\/deploy\.sh[\s\S]*bash -n deploy\/deploy\.sh/);
@@ -240,6 +259,205 @@ test('Deploy bindet nur eine belegte Image-Revision an einen geschützten Rollba
   assert.match(guide, /fehlgeschlagenen Build[^\n]*(?:local|lokalen Tag|beweglichen Tag)/i);
 });
 
+test('ausführbare Schema-State-Machine trennt Dashboard, Legacy 002, First Deploy und unbekannt', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const classifier = namedShellFunction(deploy, 'classify_content_schema_state');
+  const pause = namedShellFunction(deploy, 'pause_content_agent');
+  const cases = [
+    ['1|1|1|0|1|1', 'dashboard', 0],
+    ['1|0|0|1|1|1', 'legacy002', 0],
+    ['0|0|0|0|0|0', 'first_deploy', 0],
+    ['1|1|0|1|1|1', '', 1],
+    ['0|0|0|0|0|1', '', 1]
+  ];
+
+  for (const [facts, expected, status] of cases) {
+    const result = runBash(`${classifier}\nclassify_content_schema_state '${facts}'`);
+    assert.equal(result.status, status, `unerwarteter Status für ${facts}: ${result.stderr}`);
+    assert.equal(result.stdout.trim(), expected);
+  }
+
+  const directory = mkdtempSync(join(tmpdir(), 'kwd-schema-state-'));
+  try {
+    const dockerStub = `
+fail() { return 1; }
+docker() {
+  printf '%s\\n' "$*" >> "$CAPTURE"
+  case "$*" in
+    *"SET agent_enabled = FALSE"*) printf 'false|review\\n' ;;
+    *"SET schedule_enabled = FALSE"*) printf 'false|false\\n' ;;
+    *) return 1 ;;
+  esac
+}
+`;
+    const dashboardCapture = join(directory, 'dashboard.log');
+    const dashboard = runBash(`${dockerStub}\n${pause}\npause_content_agent dashboard`, {
+      env: { CAPTURE: dashboardCapture }
+    });
+    assert.equal(dashboard.status, 0, dashboard.stderr);
+    const dashboardSql = readFileSync(dashboardCapture, 'utf8');
+    assert.match(dashboardSql, /agent_enabled = FALSE/);
+    assert.match(dashboardSql, /operating_mode/);
+    assert.doesNotMatch(dashboardSql, /schedule_enabled/);
+
+    const legacyCapture = join(directory, 'legacy.log');
+    const legacy = runBash(`${dockerStub}\n${pause}\npause_content_agent legacy002`, {
+      env: { CAPTURE: legacyCapture }
+    });
+    assert.equal(legacy.status, 0, legacy.stderr);
+    const legacySql = readFileSync(legacyCapture, 'utf8');
+    assert.match(legacySql, /schedule_enabled = FALSE/);
+    assert.match(legacySql, /auto_publish_enabled = FALSE/);
+    assert.doesNotMatch(legacySql, /agent_enabled/);
+
+    const firstCapture = join(directory, 'first.log');
+    const first = runBash(`${dockerStub}\n${pause}\npause_content_agent first_deploy`, {
+      env: { CAPTURE: firstCapture }
+    });
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.stdout.trim(), 'Erster Deploy: Content-Agent-Tabellen sind noch nicht vorhanden.');
+    assert.throws(() => readFileSync(firstCapture, 'utf8'));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+
+  assert.match(deploy, /information_schema\.columns/);
+  assert.match(deploy, /PRE_DEPLOY_SCHEMA_STATE/);
+  assert.match(deploy, /ROLLBACK_SCHEMA_STATE=%s/);
+  assert.match(deploy, /legacy002[\s\S]*schedule_enabled = FALSE[\s\S]*auto_publish_enabled = FALSE/);
+  assert.match(deploy, /dashboard[\s\S]*agent_enabled = FALSE/);
+  assert.match(deploy, /operating_mode =/);
+});
+
+test('Worker-Rollback verlangt OCI-Contract und Git-Abstammung vom kompatiblen Mindeststand', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const compatibility = namedShellFunction(deploy, 'is_dashboard_worker_compatible');
+  const constants = [
+    'CURRENT_WORKER_CONTRACT="dashboard-v1"',
+    'MIN_DASHBOARD_WORKER_REVISION="726df921b2285498eeca228588f8ec63945dd5fa"'
+  ].join('\n');
+  const knownCommit = 'a'.repeat(40);
+  const knownRef = 'refs/deploy-rollbacks/20260712T120000Z-' + 'b'.repeat(12);
+  const gitStub = 'git() { [[ "$*" == "merge-base --is-ancestor $MIN_DASHBOARD_WORKER_REVISION ' + knownCommit + '" ]]; }';
+
+  const compatible = runBash(`${constants}\n${gitStub}\n${compatibility}\nis_dashboard_worker_compatible dashboard-v1 ${knownCommit} ${knownRef}`);
+  assert.equal(compatible.status, 0, compatible.stderr);
+  for (const values of [
+    `legacy ${knownCommit} ${knownRef}`,
+    `dashboard-v1 unknown unknown`,
+    `dashboard-v1 ${knownCommit} unknown`
+  ]) {
+    const result = runBash(`${constants}\n${gitStub}\n${compatibility}\nis_dashboard_worker_compatible ${values}`);
+    assert.notEqual(result.status, 0, `${values} darf keinen Worker starten`);
+  }
+
+  const rollback = blockContaining(bashBlocks, /ROLLBACK_METADATA="\$\{1:/, 'Rollback-Block');
+  const recreate = namedShellFunction(rollback, 'recreate_rollback_services');
+  assert.match(rollback, /ROLLBACK_WORKER_COMPATIBILITY/);
+  assert.match(rollback, /CONTENT_AGENT_ENABLED=false/);
+  assert.match(rollback, /Image-only-Rollback[\s\S]*app(?:\s|"|$)/i);
+  assert.doesNotMatch(rollback.match(/Image-only-Rollback[\s\S]*?fi/)?.[0] || '', /app content-worker/);
+
+  const directory = mkdtempSync(join(tmpdir(), 'kwd-worker-rollback-'));
+  try {
+    const capture = join(directory, 'docker.log');
+    const dockerStub = `
+fail() { return 1; }
+docker() { printf '%s\\n' "$*" >> "$CAPTURE"; }
+COMPOSE_FILE=/tmp/docker-compose.yml
+`;
+    const appOnly = runBash(`${dockerStub}\n${recreate}\nrecreate_rollback_services false`, {
+      env: { CAPTURE: capture }
+    });
+    assert.equal(appOnly.status, 0, appOnly.stderr);
+    const appOnlyCommand = readFileSync(capture, 'utf8');
+    assert.match(appOnlyCommand, /force-recreate app$/m);
+    assert.doesNotMatch(appOnlyCommand, /content-worker/);
+
+    writeFileSync(capture, '');
+    const withWorker = runBash(`${dockerStub}\n${recreate}\nrecreate_rollback_services true`, {
+      env: { CAPTURE: capture }
+    });
+    assert.equal(withWorker.status, 0, withWorker.stderr);
+    assert.match(readFileSync(capture, 'utf8'), /force-recreate app content-worker$/m);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('App-Healthcheck prüft /health stabil und bricht bei dauerhaftem Fehler begrenzt ab', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const waitForApp = namedShellFunction(deploy, 'wait_for_app_health');
+  const harness = `
+fail() { return 1; }
+sleep() { :; }
+docker() {
+  case "$*" in
+    *"ps -q app"*) printf 'app-container\\n' ;;
+    *"inspect --format {{.State.Status}}"*) printf 'running\\n' ;;
+    *"exec -T app node -e"*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+${waitForApp}
+wait_for_app_health
+`;
+  const result = runBash(harness);
+  assert.notEqual(result.status, 0);
+  assert.match(waitForApp, /localhost/);
+  assert.match(waitForApp, /\/health/);
+  assert.match(waitForApp, /consecutive|SUCCESS|success/i);
+});
+
+test('gemeinsame flock-Sperre scheitert bei belegtem Lock fail-closed', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const acquireLock = namedShellFunction(deploy, 'acquire_operation_lock');
+  const directory = mkdtempSync(join(tmpdir(), 'kwd-deploy-lock-'));
+  try {
+    const result = runBash(`
+fail() { return 1; }
+flock() { return 1; }
+${acquireLock}
+acquire_operation_lock '${join(directory, 'operation.lock')}'
+`);
+    assert.notEqual(result.status, 0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+
+  const rollback = blockContaining(bashBlocks, /ROLLBACK_METADATA="\$\{1:/, 'Rollback-Block');
+  assert.match(deploy, /flock -n/);
+  assert.match(rollback, /flock -n/);
+  assert.match(deploy, /mv -nT/);
+});
+
+test('Dry-Run-Validator findet das letzte JSON nach Logs und prüft alle Sicherheitsfelder', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const validator = namedShellFunction(deploy, 'validate_dry_run_output');
+  const directory = mkdtempSync(join(tmpdir(), 'kwd-dry-run-'));
+  try {
+    const output = join(directory, 'dry-run.log');
+    writeFileSync(output, 'npm log\n{"externalCalls":0,"articleValid":true,"publishMode":"draft"}\n');
+    const valid = runBash(`${validator}\nvalidate_dry_run_output '${output}'`);
+    assert.equal(valid.status, 0, valid.stderr);
+
+    writeFileSync(output, 'log\n{"externalCalls":1,"articleValid":true,"publishMode":"draft"}\n');
+    const invalid = runBash(`${validator}\nvalidate_dry_run_output '${output}'`);
+    assert.notEqual(invalid.status, 0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('vorhandener aber nicht laufender App-Container ist kein First Deploy', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const all = deploy.indexOf('APP_CONTAINER_ID=');
+  const running = deploy.indexOf('RUNNING_APP_CONTAINER_ID=');
+  const stoppedGuard = deploy.indexOf('App-Container existiert, läuft aber nicht');
+  const firstDeploy = deploy.indexOf('kein laufender App-Container für einen Image-Rollback');
+  assert.ok(all >= 0 && running > all && stoppedGuard > running && firstDeploy > stoppedGuard);
+});
+
 test('Deploy und Rollback warten begrenzt auf running beziehungsweise healthy', () => {
   const cases = [
     [/git reset --hard origin\/main/, 'Deploy'],
@@ -248,7 +466,7 @@ test('Deploy und Rollback warten begrenzt auf running beziehungsweise healthy', 
   for (const [pattern, name] of cases) {
     const block = blockContaining(bashBlocks, pattern, `${name}-Block`);
     const recreate = block.indexOf('up -d --no-deps --force-recreate app content-worker');
-    const wait = block.indexOf('wait_for_service app running');
+    const wait = block.indexOf('wait_for_app_health', recreate);
     const workerWait = block.indexOf('wait_for_service content-worker healthy');
     const healthcheck = block.indexOf('content-worker npm run content-agent:healthcheck');
     assert.ok(recreate >= 0 && wait > recreate && workerWait > wait && healthcheck > workerWait);
@@ -264,12 +482,12 @@ test('Rollback parst Metadaten ohne source und setzt Code nur bei belegtem Ref z
   const mode = rollback.indexOf('METADATA_MODE=');
   const contentValidation = rollback.indexOf("grep -Eq '^ROLLBACK_IMAGE=");
   const parse = rollback.indexOf('ROLLBACK_IMAGE="$(sed -n');
-  const pause = rollback.indexOf('PAUSED_STATE=');
+  const pause = rollback.indexOf('pause_content_agent "$CURRENT_SCHEMA_STATE"');
   const stop = rollback.indexOf('stop -t 600 content-worker');
-  const conditionalReset = rollback.indexOf('if [[ "$ROLLBACK_COMMIT" != "unknown" ]]');
   const reset = rollback.indexOf('git reset --hard "$ROLLBACK_REF"');
+  const conditionalReset = rollback.lastIndexOf('if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]', reset);
   const image = rollback.indexOf('docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local');
-  const recreate = rollback.indexOf('up -d --no-deps --force-recreate app content-worker');
+  const recreate = rollback.indexOf('recreate_rollback_services "$ROLLBACK_WORKER_ALLOWED"');
 
   assert.ok(mode >= 0 && contentValidation > mode && parse > contentValidation);
   assert.ok(pause > parse && stop > pause && conditionalReset > stop && reset > conditionalReset);
@@ -288,7 +506,7 @@ test('Rollback parst Metadaten ohne source und setzt Code nur bei belegtem Ref z
   assert.doesNotMatch(rollback, /docker compose[^\n]*\bbuild\b/);
   assert.match(rollback, /CONTENT_AGENT_ENABLED=false/);
   assert.match(rollback, /CONTENT_AGENT_ENABLED=true/);
-  assert.match(guide, /Rollback-Image enthält den alten Code/i);
+  assert.match(guide, /Rollback-Image enthält den alten App-Code/i);
   assert.match(guide, /Datenbank[^\n]*(?:forward-only|vorwärts)/i);
 });
 
@@ -358,12 +576,13 @@ test('technische Hardgates sind vollständig, Betriebswerte liegen in PostgreSQL
   assert.match(guide, /Search Console[^\n]*Plan C/i);
 });
 
-test('Rollout bleibt Review-first und Rollback trennt Code/Image von vorwärtskompatibler Datenbank', () => {
+test('Rollout bleibt Review-first und Rollback verlangt release-spezifische Datenbankkompatibilität', () => {
   assert.match(guide, /deaktiviert[^\n]*Review-Modus/i);
   assert.match(guide, /acht[^\n]*(?:Freigaben|manuelle)/i);
   assert.match(guide, /(?:Score|Mindestscore)[^\n]*90/i);
   assert.match(guide, /manuellen Entwurf/i);
   assert.match(guide, /Vorschau/i);
-  assert.match(guide, /Code[^\n]*(?:Image|Release)[^\n]*zurück/i);
+  assert.match(guide, /Code und Worker[^\n]*nur dann[^\n]*zurück/i);
   assert.match(guide, /Datenbank[^\n]*(?:vorwärts|forward-only|nicht destruktiv)/i);
+  assert.match(guide, /keine pauschale Rückwärtskompatibilität/i);
 });
