@@ -6,7 +6,7 @@ import {
   buildAllowedInternalLinksFromInventory,
   validateContentRuleSnapshot
 } from '../services/contentAgent/contentRuleManifest.js';
-import { createContentWorker } from '../services/contentAgent/workerService.js';
+import { createContentWorker, LeaseLostError } from '../services/contentAgent/workerService.js';
 
 const GENERATION_JOB_TYPES = new Set(['generate_weekly_draft', 'generate_manual_draft']);
 const REGENERATION_JOB_TYPES = new Set([
@@ -38,6 +38,31 @@ function assertFinishedRun(value) {
     throw error;
   }
   return value;
+}
+
+async function assertActiveLease(leaseGuard) {
+  if (typeof leaseGuard !== 'function') return;
+  const active = await leaseGuard();
+  if (active === false) throw new LeaseLostError();
+}
+
+function runFinishFailed(cause) {
+  if (cause?.code === 'CONTENT_RUN_FINISH_FAILED' && cause?.retryable === true) return cause;
+  const error = new Error(
+    'Der Content-Agent-Lauf konnte nicht sicher abgeschlossen werden.',
+    cause ? { cause } : undefined
+  );
+  error.code = 'CONTENT_RUN_FINISH_FAILED';
+  error.retryable = true;
+  return error;
+}
+
+async function finishRunOrRetry(finishRun, runId, payload) {
+  try {
+    return assertFinishedRun(await finishRun(runId, payload));
+  } catch (error) {
+    throw runFinishFailed(error);
+  }
 }
 
 export function berlinDateKey(date = new Date(), timezone = 'Europe/Berlin') {
@@ -150,6 +175,7 @@ export function createProductionJobHandler({
       if (!validation.valid) {
         required(finishRun, 'finishRun');
         const code = validation.code || 'CONTENT_RUNTIME_SNAPSHOT_INVALID';
+        await assertActiveLease(leaseGuard);
         assertFinishedRun(await finishRun(run.id, {
           status: 'needs_manual_attention',
           postId: null,
@@ -210,7 +236,7 @@ export function createProductionJobHandler({
         if (error?.retryable === false && !isLeaseLoss) {
           required(finishRun, 'finishRun');
           if (typeof leaseGuard === 'function') await leaseGuard();
-          await finishRun(run.id, {
+          await finishRunOrRetry(finishRun, run.id, {
             status: 'failed',
             postId: null,
             errorReport: {

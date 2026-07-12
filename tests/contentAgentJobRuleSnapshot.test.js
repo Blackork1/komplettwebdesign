@@ -153,6 +153,49 @@ test('Manifest-Mismatch eines nichtterminalen Runs endet vor Dependencies und Pr
   }]);
 });
 
+test('Manifest-Mismatch terminalisiert nach Leaseverlust niemals durch einen veralteten Worker', async () => {
+  const current = bindContentRulesToSnapshot({
+    baseSnapshot: runtimeConfig(),
+    allowedInternalLinks: ['/kontakt'],
+    requireAllowedInternalLinks: true
+  });
+  const stale = {
+    ...current,
+    ruleManifest: { ...current.ruleManifest, articleWriterPrompt: 'alte-regel' }
+  };
+
+  for (const leaseGuard of [
+    async () => false,
+    async () => {
+      throw Object.assign(new Error('Lease verloren'), {
+        code: 'CONTENT_JOB_LEASE_LOST',
+        retryable: false
+      });
+    }
+  ]) {
+    let finishCalls = 0;
+    const handler = createProductionJobHandler({
+      technicalConfig: { enabled: true },
+      enforceRuleSnapshot: true,
+      async findRunByJobId() {
+        return { id: 91, status: 'running', runtime_snapshot_json: stale, stage_results_json: {} };
+      },
+      async getSettings() { assert.fail('Retry darf keine Live-Einstellungen laden.'); },
+      resolveRuntimeConfig() { assert.fail('Retry darf keine Live-Konfiguration auflösen.'); },
+      createJobSnapshot() { assert.fail('Retry darf den Snapshot nicht ersetzen.'); },
+      async createRun() { assert.fail('Vorhandener Run darf nicht neu angelegt werden.'); },
+      async finishRun() { finishCalls += 1; return { id: 91 }; },
+      async runPipeline() { assert.fail('Provider darf nicht aufgerufen werden.'); }
+    });
+
+    await assert.rejects(
+      handler({ ...claim, attempts: 2 }, { leaseGuard }),
+      (error) => error?.code === 'CONTENT_JOB_LEASE_LOST' && error?.retryable === false
+    );
+    assert.equal(finishCalls, 0);
+  }
+});
+
 test('Jobconfig übernimmt Link- und Regelbasis niemals aus der technischen Live-Konfiguration', () => {
   const stored = bindContentRulesToSnapshot({
     baseSnapshot: { enabled: true, autoPublishEffective: false },

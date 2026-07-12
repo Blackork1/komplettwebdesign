@@ -996,7 +996,10 @@ test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als f
     async createRun() {
       return { id: 88, runtime_snapshot_json: { operatingMode: 'review', timezone: 'Europe/Berlin' } };
     },
-    async finishRun(runId, payload) { finishCalls.push([runId, payload]); },
+    async finishRun(runId, payload) {
+      finishCalls.push([runId, payload]);
+      return { id: runId, ...payload };
+    },
     async runPipeline() { assert.fail('nicht erwartet'); },
     createRegenerationDependencies() { return {}; },
     async runRegenerationJob() { throw permanent; }
@@ -1019,6 +1022,51 @@ test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als f
       message: 'Entwurf nicht mehr verfügbar'
     }
   }]]);
+});
+
+test('fehlender Abschluss eines permanenten Regenerationsfehlers wird technisch retrybar', async () => {
+  const permanent = Object.assign(new Error('Entwurf nicht mehr verfügbar'), {
+    code: 'CONTENT_DRAFT_NOT_FOUND',
+    retryable: false
+  });
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 88 }; },
+    async finishRun() { return null; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createRegenerationDependencies() { return {}; },
+    async runRegenerationJob() { throw permanent; }
+  });
+
+  await assert.rejects(
+    handler({ id: 51, job_type: 'regenerate_article', payload_json: { post_id: 19 } }),
+    (error) => error?.code === 'CONTENT_RUN_FINISH_FAILED'
+      && error?.retryable === true
+      && error !== permanent
+  );
+});
+
+test('geworfener Abschlussfehler einer permanenten Regeneration wird redigiert technisch retrybar', async () => {
+  const permanent = Object.assign(new Error('Entwurf nicht mehr verfügbar'), {
+    code: 'CONTENT_DRAFT_NOT_FOUND',
+    retryable: false
+  });
+  const databaseError = new Error('password=geheim host=intern');
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 88 }; },
+    async finishRun() { throw databaseError; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createRegenerationDependencies() { return {}; },
+    async runRegenerationJob() { throw permanent; }
+  });
+
+  await assert.rejects(
+    handler({ id: 51, job_type: 'regenerate_article', payload_json: { post_id: 19 } }),
+    (error) => error?.code === 'CONTENT_RUN_FINISH_FAILED'
+      && error?.retryable === true
+      && error?.cause === databaseError
+      && !error.message.includes('geheim')
+      && error !== permanent
+  );
 });
 
 test('retrybarer Regenerationsfehler lässt den Run für denselben Retry offen', async () => {
