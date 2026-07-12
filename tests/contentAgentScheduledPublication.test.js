@@ -17,7 +17,8 @@ function harness({
   scheduledAt = futureSlot,
   reviewVersion = 2,
   approvedReviewVersion = null,
-  publicationVersion = 1
+  publicationVersion = 1,
+  expireDuringValidation = false
 } = {}) {
   const calls = [];
   const jobs = new Map();
@@ -56,6 +57,9 @@ function harness({
   const publicationService = {
     async revalidateDraftForPublication({ postId, client: transaction, workflowStatuses }) {
       calls.push(['validate', postId, transaction, workflowStatuses]);
+      if (expireDuringValidation) {
+        clock.value = new Date('2026-07-12T11:00:00.001Z');
+      }
       if (!workflowStatuses.includes(state.post.workflow_status)) {
         throw publicationError('CONTENT_DRAFT_NOT_PUBLISHABLE');
       }
@@ -75,6 +79,10 @@ function harness({
     },
     async approveDraftForSchedule(input, transaction) {
       calls.push(['approve', input, transaction]);
+      if (input.allowMissedSlot !== true
+          && input.scheduledAt.getTime() <= clock.value.getTime()) {
+        return { post: null, scheduleExpired: true };
+      }
       if (state.post.workflow_status !== 'needs_review'
           || state.post.review_version !== input.reviewVersion
           || state.post.publication_version !== input.publicationVersion) return null;
@@ -220,6 +228,25 @@ test('Freigabe verlangt Bestätigung und einen strikt zukünftigen Termin', asyn
     );
     assert.equal(calls.includes('CONNECT'), false);
   }
+});
+
+test('initiale Freigabe mappt einen während Lock und Validierung abgelaufenen Termin eindeutig', async () => {
+  const { service, calls, jobs, state } = harness({ expireDuringValidation: true });
+
+  await assert.rejects(
+    service.approveForSchedule({
+      postId: 3,
+      scheduledAt: futureSlot,
+      admin,
+      confirmed: true
+    }),
+    (error) => error.code === 'CONTENT_SCHEDULE_MUST_BE_FUTURE'
+  );
+
+  assert.equal(calls.includes('CONNECT'), true);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(jobs.size, 0);
+  assert.equal(state.post.workflow_status, 'needs_review');
 });
 
 test('Sofortveröffentlichung ist ausschließlich nach einem verpassten Slot möglich', async () => {

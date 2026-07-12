@@ -249,13 +249,20 @@ export function createScheduledPublicationService({
           }
         }
       } else {
-        post = await repository.approveDraftForSchedule({
+        const approval = await repository.approveDraftForSchedule({
           postId: normalizedPostId,
           scheduledAt: normalizedScheduledAt,
           reviewVersion,
           publicationVersion,
           adminId: normalizedAdmin.id
         }, client);
+        if (approval?.scheduleExpired === true) {
+          throw scheduledPublicationError(
+            'CONTENT_SCHEDULE_MUST_BE_FUTURE',
+            'Der Veröffentlichungstermin ist während der Freigabe abgelaufen.'
+          );
+        }
+        post = approval?.post || approval;
         if (!post) {
           throw scheduledPublicationError(
             'CONTENT_APPROVAL_STALE',
@@ -309,7 +316,8 @@ export function createScheduledPublicationService({
         scheduledAt: missedAt,
         reviewVersion: approvalVersion,
         publicationVersion,
-        adminId: normalizedAdmin.id
+        adminId: normalizedAdmin.id,
+        allowMissedSlot: true
       }, client);
       if (!approvedPost) {
         throw scheduledPublicationError(

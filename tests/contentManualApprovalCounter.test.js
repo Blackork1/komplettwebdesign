@@ -164,7 +164,9 @@ test('geplante Freigabe und Veröffentlichung verwenden enge Versions-Compare-an
   assert.match(client.calls[0].sql, /workflow_status = 'needs_review'/i);
   assert.match(client.calls[0].sql, /review_version = \$3/i);
   assert.match(client.calls[0].sql, /publication_version = \$4/i);
-  assert.deepEqual(client.calls[0].params, [9, scheduledAt, 2, 1, 7]);
+  assert.match(client.calls[0].sql, /\$2 > NOW\(\)/i);
+  assert.match(client.calls[0].sql, /\$2 > clock_timestamp\(\)/i);
+  assert.deepEqual(client.calls[0].params, [9, scheduledAt, 2, 1, 7, false]);
 
   assert.match(client.calls[1].sql, /workflow_status = 'published'/i);
   assert.match(client.calls[1].sql, /publication_version = publication_version \+ 1/i);
@@ -173,6 +175,24 @@ test('geplante Freigabe und Veröffentlichung verwenden enge Versions-Compare-an
   assert.match(client.calls[1].sql, /publication_version = \$3/i);
   assert.match(client.calls[1].sql, /scheduled_at = \$4/i);
   assert.match(client.calls[1].sql, /scheduled_at <= NOW\(\)/i);
+});
+
+test('initialer Approval-CAS meldet einen nach der Vorprüfung abgelaufenen Termin eindeutig', async () => {
+  const databaseNow = new Date('2026-07-13T16:00:00.001Z');
+  const client = sqlClient([{ rows: [{ approval_database_now: databaseNow }] }]);
+  const repository = createContentPublishEventRepository();
+
+  const result = await repository.approveDraftForSchedule({
+    postId: 9,
+    scheduledAt: new Date('2026-07-13T16:00:00.000Z'),
+    reviewVersion: 2,
+    publicationVersion: 1,
+    adminId: 7
+  }, client);
+
+  assert.deepEqual(result, { post: null, scheduleExpired: true });
+  assert.match(client.calls[0].sql, /\$2 > NOW\(\)/i);
+  assert.match(client.calls[0].sql, /clock_timestamp\(\)/i);
 });
 
 test('geplantes manuelles Publish-Event bindet Freigabe- und Publikationsversion unveränderlich', async () => {

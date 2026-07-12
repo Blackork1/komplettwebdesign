@@ -65,27 +65,56 @@ export function createContentPublishEventRepository(db = pool) {
       scheduledAt,
       reviewVersion,
       publicationVersion,
-      adminId
+      adminId,
+      allowMissedSlot = false
     }, client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
-        UPDATE posts
-        SET workflow_status = 'approved_scheduled',
-            scheduled_at = $2,
-            approved_review_version = review_version,
-            approved_at = NOW(),
-            approved_by_admin_id = $5,
-            updated_at = NOW()
-        WHERE id = $1
-          AND generated_by_ai = TRUE
-          AND published = FALSE
-          AND workflow_status = 'needs_review'
-          AND content_format = 'static_html'
-          AND review_version = $3
-          AND publication_version = $4
-        RETURNING *
-      `, [postId, scheduledAt, reviewVersion, publicationVersion, adminId]);
-      return rows[0] || null;
+        WITH updated AS (
+          UPDATE posts
+          SET workflow_status = 'approved_scheduled',
+              scheduled_at = $2,
+              approved_review_version = review_version,
+              approved_at = NOW(),
+              approved_by_admin_id = $5,
+              updated_at = NOW()
+          WHERE id = $1
+            AND generated_by_ai = TRUE
+            AND published = FALSE
+            AND workflow_status = 'needs_review'
+            AND content_format = 'static_html'
+            AND review_version = $3
+            AND publication_version = $4
+            AND ($6 = TRUE OR (
+              $2 > NOW()
+              AND $2 > clock_timestamp()
+            ))
+          RETURNING posts.*
+        )
+        SELECT updated.*, approval_clock.database_now AS approval_database_now
+        FROM (SELECT clock_timestamp() AS database_now) AS approval_clock
+        LEFT JOIN updated ON TRUE
+      `, [
+        postId,
+        scheduledAt,
+        reviewVersion,
+        publicationVersion,
+        adminId,
+        allowMissedSlot === true
+      ]);
+      const row = rows[0] || null;
+      if (!row) return null;
+      const { approval_database_now: databaseNowValue, ...post } = row;
+      if (post.id) return post;
+      const databaseNow = new Date(databaseNowValue);
+      const requestedSchedule = new Date(scheduledAt);
+      if (allowMissedSlot !== true
+          && !Number.isNaN(databaseNow.getTime())
+          && !Number.isNaN(requestedSchedule.getTime())
+          && requestedSchedule.getTime() <= databaseNow.getTime()) {
+        return { post: null, scheduleExpired: true };
+      }
+      return null;
     },
 
     async rescheduleApprovedDraft({
