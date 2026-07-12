@@ -182,7 +182,7 @@ Die neue Migration wird idempotent und unter derselben Advisory-Sperre wie die b
 Neue Felder:
 
 - `generation_lead_hours SMALLINT NOT NULL DEFAULT 4`, beschränkt auf 1 bis 48;
-- `admin_notification_email VARCHAR(320)`, serverseitig als einzelne gültige E-Mailadresse geprüft;
+- `admin_notification_email VARCHAR(320) NOT NULL DEFAULT 'kontakt@komplettwebdesign.de'`, serverseitig als einzelne gültige E-Mailadresse geprüft;
 - `newsletter_blog_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE`.
 
 Der Newsletter-Schalter darf nur aktiviert werden, wenn `manual_approvals_count >= 8` gilt. Der vorhandene technische Auto-Publish-Schalter bleibt davon unabhängig.
