@@ -449,11 +449,15 @@ export function createContentPublicationService({
       });
     },
 
-    async rejectDraft({ postId, admin, reason, confirmed } = {}) {
+    async rejectDraft({ postId, expectedReviewVersion, admin, reason, confirmed } = {}) {
       if (confirmed !== true) {
         throw publicationError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
       }
       const normalizedPostId = positiveDatabaseId(postId, 'postId');
+      const normalizedExpectedReviewVersion = positiveDatabaseId(
+        expectedReviewVersion,
+        'expectedReviewVersion'
+      );
       const normalizedAdmin = normalizeAdmin(admin);
       const normalizedReason = normalizeBoundedText(
         reason,
@@ -464,6 +468,12 @@ export function createContentPublicationService({
       return withTransaction(async (client) => {
         const draft = await repository.getDraftWithMetadataForUpdate(normalizedPostId, client);
         assertDraftState(draft, 'CONTENT_DRAFT_NOT_REJECTABLE');
+        if (Number(draft.post.review_version) !== normalizedExpectedReviewVersion) {
+          throw publicationError(
+            'CONTENT_REVIEW_VERSION_STALE',
+            'Der Entwurf wurde seit dem Öffnen verändert.'
+          );
+        }
         const qualityScore = Number(draft.metadata?.quality_score);
         const safeScore = Number.isInteger(qualityScore) && qualityScore >= 0 && qualityScore <= 100
           ? qualityScore

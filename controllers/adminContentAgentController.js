@@ -602,6 +602,7 @@ export function createAdminContentAgentController(dependencies) {
         method: 'rejectDraft',
         args: () => [{
           postId: positiveId(req.params.id),
+          expectedReviewVersion: strictPositiveInteger(req.body?.expected_review_version),
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed),
           reason: req.body?.reason

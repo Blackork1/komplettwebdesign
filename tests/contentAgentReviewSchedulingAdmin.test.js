@@ -477,7 +477,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(approveHtml, /name="schedule_timezone" value="Europe\/Berlin"/);
   assert.match(approveHtml, /name="schedule_revision" value="7"/);
   assert.match(approveHtml, /name="reviewVersion" value="2"/);
-  assert.equal((approveHtml.match(/name="expected_review_version" value="2"/g) || []).length, 1);
+  assert.equal((approveHtml.match(/name="expected_review_version" value="2"/g) || []).length, 2);
   assert.doesNotMatch(approveHtml, /drafts\/19\/publish-now/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/reschedule/);
 
@@ -524,7 +524,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(missedHtml, /drafts\/19\/publish-now/);
   assert.match(missedHtml, /drafts\/19\/reschedule/);
   assert.match(missedHtml, /drafts\/19\/notification\/retry/);
-  assert.equal((missedHtml.match(/name="expected_review_version" value="2"/g) || []).length, 2);
+  assert.equal((missedHtml.match(/name="expected_review_version" value="2"/g) || []).length, 3);
   assert.equal((missedHtml.match(/name="expected_scheduled_at" value="2026-07-13T16:00:00\.000Z"/g) || []).length, 2);
   assert.equal((missedHtml.match(/name="expected_approved_review_version" value="null"/g) || []).length, 2);
   assert.doesNotMatch(missedHtml, /Date\.now|new Date\s*\(/);

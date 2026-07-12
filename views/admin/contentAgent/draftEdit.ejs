@@ -170,6 +170,7 @@
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reject" data-confirm="Diesen KI-Entwurf mit dem angegebenen Grund ablehnen?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="expected_review_version" value="<%= item.reviewVersion || '' %>">
         <div class="content-agent-field">
           <label for="draft-rejection-reason">Ablehnungsgrund</label>
           <textarea id="draft-rejection-reason" class="form-control" name="reason" maxlength="500" required rows="3"></textarea>

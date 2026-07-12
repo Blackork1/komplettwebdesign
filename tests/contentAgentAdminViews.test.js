@@ -312,7 +312,8 @@ test('Drafteditor bietet vier Regenerationen ohne alten direkten Publish-Bypass'
       ogDescription: 'OG-Beschreibung',
       imageAlt: 'Bildbeschreibung',
       contentHtml: '<section><h2>Artikel</h2></section>',
-      faqJsonText: '[]'
+      faqJsonText: '[]',
+      reviewVersion: 2
     },
     saved: false,
     queued: false
@@ -329,6 +330,7 @@ test('Drafteditor bietet vier Regenerationen ohne alten direkten Publish-Bypass'
   assert.equal((html.match(/name="_csrf"/g) || []).length >= 6, true);
   assert.doesNotMatch(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/publish"/);
   assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/reject"/);
+  assert.match(html, /action="\/admin\/content-agent\/drafts\/19\/reject"[\s\S]*name="expected_review_version" value="2"/);
   assert.equal((html.match(/name="confirmed" value="true"/g) || []).length, 1);
   assert.match(html, /name="reason"[^>]*maxlength="500"[^>]*required/);
   assert.match(html, /data-confirm="[^"]*(?:veröffentlichen|ablehnen)/i);

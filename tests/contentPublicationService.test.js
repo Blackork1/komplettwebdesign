@@ -56,6 +56,7 @@ function validDraft(overrides = {}) {
       generated_by_ai: true,
       published: false,
       workflow_status: 'needs_review',
+      review_version: 2,
       generation_run_id: 21,
       scheduled_at: '2026-07-13T16:00:00.000Z'
     },
@@ -384,12 +385,24 @@ test('ein bereits vorhandenes manuelles Ereignis bei needs_review ist ein Konfli
 test('Ablehnung verlangt Bestätigung, bleibt unveröffentlicht und speichert nur einen bereinigten begrenzten Grund', async () => {
   const { service, calls } = harness();
   await assert.rejects(
-    service.rejectDraft({ postId: 9, admin, reason: 'nicht passend', confirmed: 'true' }),
+    service.rejectDraft({
+      postId: 9,
+      expectedReviewVersion: 2,
+      admin,
+      reason: 'nicht passend',
+      confirmed: 'true'
+    }),
     (error) => error.code === 'CONTENT_CONFIRMATION_REQUIRED'
   );
 
   const unsafeReason = `  Fachlich\n\tnoch prüfen\u0000 ${'x'.repeat(800)} `;
-  const result = await service.rejectDraft({ postId: 9, admin, reason: unsafeReason, confirmed: true });
+  const result = await service.rejectDraft({
+    postId: 9,
+    expectedReviewVersion: 2,
+    admin,
+    reason: unsafeReason,
+    confirmed: true
+  });
   const eventCall = calls.find((entry) => Array.isArray(entry) && entry[0] === 'reject-event');
 
   assert.equal(result.post.published, false);
@@ -400,11 +413,52 @@ test('Ablehnung verlangt Bestätigung, bleibt unveröffentlicht und speichert nu
   assert.equal(calls.includes('COMMIT'), true);
 });
 
+test('veraltete Reviewversion verhindert Ablehnungsstatus und Ablehnungsereignis unter dem Postlock', async () => {
+  const { service, calls } = harness({
+    draft: validDraft({ post: { review_version: 3 } })
+  });
+
+  await assert.rejects(service.rejectDraft({
+    postId: 9,
+    expectedReviewVersion: 2,
+    admin,
+    reason: 'Veralteter Tab',
+    confirmed: true
+  }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+
+  const operations = calls.filter(Array.isArray).map(([name]) => name);
+  assert.equal(operations.includes('lock'), true);
+  assert.equal(operations.includes('reject'), false);
+  assert.equal(operations.includes('reject-event'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(calls.includes('COMMIT'), false);
+});
+
+test('Ablehnung verlangt eine positive erwartete Reviewversion vor Transaktionsbeginn', async () => {
+  for (const expectedReviewVersion of [undefined, null, 0, -1, '2x']) {
+    const { service, calls } = harness();
+    await assert.rejects(service.rejectDraft({
+      postId: 9,
+      expectedReviewVersion,
+      admin,
+      reason: 'Fachlich nicht passend',
+      confirmed: true
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+    assert.equal(calls.includes('CONNECT'), false);
+  }
+});
+
 test('fehlgeschlagenes Ablehnungsereignis rollt die Statusänderung zurück', async () => {
   const { service, calls } = harness({ failAt: 'event' });
 
   await assert.rejects(
-    service.rejectDraft({ postId: 9, admin, reason: 'Fachlich nicht passend', confirmed: true }),
+    service.rejectDraft({
+      postId: 9,
+      expectedReviewVersion: 2,
+      admin,
+      reason: 'Fachlich nicht passend',
+      confirmed: true
+    }),
     /Event fehlgeschlagen/
   );
 

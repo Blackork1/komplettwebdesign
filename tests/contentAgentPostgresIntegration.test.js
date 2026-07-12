@@ -782,6 +782,23 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
       approval_count: 1
     });
 
+    const rejectable = await insertPublishableDraft(pool, 'manual-reject-version');
+    const rejected = await publicationService.rejectDraft({
+      postId: rejectable.id,
+      expectedReviewVersion: Number(rejectable.review_version),
+      admin: publicationAdmin.rows[0],
+      reason: 'Fachlich nicht passend',
+      confirmed: true
+    });
+    assert.equal(rejected.post.workflow_status, 'rejected');
+    assert.equal(rejected.post.published, false);
+    assert.equal((await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM content_publish_events
+      WHERE post_id = $1
+        AND decision = 'blocked'
+    `, [rejectable.id])).rows[0].count, 1);
+
     const autoJob = await pool.query(`
       INSERT INTO content_jobs (job_type, status, idempotency_key)
       VALUES ('generate_manual_draft', 'completed', 'pg-auto-publish-once')
@@ -928,7 +945,7 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
     assert.equal(publishEventDeleteRule.rows[0].delete_rule, 'RESTRICT');
     assert.equal(
       (await pool.query('SELECT COUNT(*)::int AS count FROM content_publish_events')).rows[0].count,
-      3
+      4
     );
 
     const regenerationRepository = createDraftRegenerationRepository(pool);
@@ -1288,6 +1305,13 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
           updated_at = NOW()
       WHERE id = $1
     `, [generated.post.id]);
+    await assert.rejects(publicationService.rejectDraft({
+      postId: generated.post.id,
+      expectedReviewVersion: renderedReviewVersion,
+      admin: publicationAdmin.rows[0],
+      reason: 'Veralteter Ablehnungstab',
+      confirmed: true
+    }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
     await assert.rejects(scheduledPublicationService.approveForSchedule({
       postId: generated.post.id,
       scheduledAt,

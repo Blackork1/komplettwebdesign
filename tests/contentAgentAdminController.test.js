@@ -526,16 +526,41 @@ test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', asy
   const rejectRes = response();
   await controller.rejectDraftAction({
     params: { id: '9' },
-    body: { confirmed: 'true', reason: 'Fachlich nicht passend' },
+    body: { confirmed: 'true', expected_review_version: '2', reason: 'Fachlich nicht passend' },
     session: { user: { id: 7, username: 'redaktion' } }
   }, rejectRes, assert.fail);
   assert.equal(rejectRes.redirectedTo, '/admin/content-agent/drafts?rejected=1');
   assert.deepEqual(rejectInputs.at(-1), {
     postId: 9,
+    expectedReviewVersion: 2,
     admin: { id: 7, username: 'redaktion' },
     confirmed: true,
     reason: 'Fachlich nicht passend'
   });
+});
+
+test('Reject-Controller lehnt fehlende oder manipulierte Reviewversionen vor dem Serviceaufruf ab', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    publicationService: {
+      async rejectDraft() { calls += 1; }
+    }
+  }));
+
+  for (const expectedReviewVersion of [undefined, '', '0', '-1', '01', '1.0', '2x']) {
+    const res = response();
+    await controller.rejectDraftAction({
+      params: { id: '9' },
+      body: {
+        confirmed: 'true',
+        expected_review_version: expectedReviewVersion,
+        reason: 'Fachlich nicht passend'
+      },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+  }
+  assert.equal(calls, 0);
 });
 
 test('manueller Mailretry übergibt die authentifizierte Adminidentität an den Auditpfad', async () => {
@@ -603,7 +628,7 @@ test('Ablehnungskonflikt wird als 409 ohne interne Details ausgegeben', async ()
 
   await controller.rejectDraftAction({
     params: { id: '9' },
-    body: { confirmed: 'true', reason: 'Grund' },
+    body: { confirmed: 'true', expected_review_version: '2', reason: 'Grund' },
     session: { user: { id: 7, username: 'redaktion' } }
   }, res, assert.fail);
 
