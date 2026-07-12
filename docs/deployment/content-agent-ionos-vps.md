@@ -2,17 +2,20 @@
 
 Diese Anleitung ergänzt das bestehende Compose-Projekt `komplettwebdesign` um genau einen internen `content-worker`. Sie ist **keine vollständige Ersatzdatei** für die vorhandene `docker-compose.yml`.
 
-Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Am Worker werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI und Cloudinary.
+Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Die öffentliche Website läuft weiterhin ausschließlich über `app` und dessen Traefik-Anbindung. Der `content-worker` bleibt intern: An ihm werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI und Cloudinary.
 
 ## 1. Projektpfad und Ausgangslage prüfen
 
-Die folgenden Befehle werden im Verzeichnis mit der vorhandenen `docker-compose.yml` ausgeführt. Wegen des bestehenden Build-Kontexts `./server` ist das auf dem VPS vermutlich die übergeordnete Ebene, die den Unterordner `server/` enthält, zum Beispiel `/home/webadmin/apps/komplettwebdesign`. Liegt das Repository oder die Compose-Datei an einem anderen Ort, muss der `cd`-Pfad angepasst werden.
+Der feste Betriebsordner ist `/apps/komplettwebdesign`. Ausschließlich `server/` wird per Git automatisch aktualisiert; sein vollständiger Pfad ist `/apps/komplettwebdesign/server`. Die Dateien `.env`, `docker-compose.yml` und `deploy/deploy.sh` werden manuell gepflegt und vor jeder Änderung gesichert. Ihre vollständigen Pfade sind `/apps/komplettwebdesign/.env`, `/apps/komplettwebdesign/docker-compose.yml` und `/apps/komplettwebdesign/deploy/deploy.sh`; sie dürfen nicht durch einen Checkout im Unterordner `server/` überschrieben werden.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
+cd /apps/komplettwebdesign
 pwd
 test -f docker-compose.yml
+test -f .env
+test -f deploy/deploy.sh
 test -d ./server
+chmod 600 .env
 docker compose version
 docker compose config --quiet
 df -h . /var/lib/docker 2>/dev/null || df -h .
@@ -26,7 +29,7 @@ docker system df
 Diese Prüfung läuft im Quellordner mit der `package.json`, laut Compose also in `./server`. Das verwendete `test-key` ist nur ein nicht geheimes Test-Dummy; echte Zugangsdaten gehören weder in die Shell-Historie noch in Logs.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign/server
+cd /apps/komplettwebdesign/server
 node --test tests/contentAgentDeploymentGuide.test.js
 npm run build
 OPENAI_API_KEY=test-key npm test
@@ -121,18 +124,28 @@ Der Worker erhält bewusst keine `build`-Anweisung: `docker compose build app` b
 
 ## 4. Content-Agent-Konfiguration in `.env` ergänzen
 
-Die vorhandenen Zugangsdaten für OpenAI, Cloudinary und PostgreSQL bleiben unverändert in der bereits genutzten `.env`; ihre Werte werden hier absichtlich nicht abgedruckt. Nur die folgenden Plan-A-Werte ergänzen oder vorhandene Einträge entsprechend ändern:
+Die vorhandenen Zugangsdaten für OpenAI, Cloudinary und PostgreSQL bleiben unverändert in der bereits genutzten `.env`; ihre Werte werden hier absichtlich nicht abgedruckt. Vor der Bearbeitung `umask 077` setzen, eine geschützte Sicherung anlegen und die Datei anschließend wieder auf Modus `600` setzen:
+
+```bash
+cd /apps/komplettwebdesign
+umask 077
+cp -p .env ".env.before-content-agent-$(date +%Y%m%d-%H%M%S)"
+chmod 600 .env ".env.before-content-agent-"*
+```
+
+Nur die folgenden technischen Start- und Sicherheitswerte ergänzen oder entsprechend ändern:
 
 ```dotenv
 CONTENT_AGENT_ENABLED=true
-CONTENT_AGENT_PUBLISH_MODE=draft
-CONTENT_AGENT_SCHEDULE=0 9 * * 1
-CONTENT_AGENT_TIMEZONE=Europe/Berlin
+CONTENT_AGENT_AUTOPUBLISH_ENABLED=false
 CONTENT_AGENT_MAX_TOPIC_CANDIDATES=8
 CONTENT_AGENT_MAX_REVISIONS=2
-CONTENT_AGENT_MAX_ATTEMPTS=3
-CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR=25
-CONTENT_AGENT_AUTOPUBLISH_ENABLED=false
+CONTENT_AGENT_MAX_ATTEMPTS=5
+CONTENT_AGENT_MONTHLY_COST_LIMIT_EUR=100
+CONTENT_AGENT_CONTENT_STAGE_RESERVATION_EUR=0.50
+CONTENT_AGENT_REVIEW_STAGE_RESERVATION_EUR=0.25
+CONTENT_AGENT_WORKER_POLL_MS=5000
+CONTENT_AGENT_JOB_LEASE_MINUTES=30
 OPENAI_CONTENT_MODEL=gpt-5.4
 OPENAI_REVIEW_MODEL=gpt-5.4-mini
 OPENAI_IMAGE_MODEL=gpt-image-2
@@ -143,7 +156,11 @@ OPENAI_REVIEW_OUTPUT_COST_PER_MTOK=4.50
 OPENAI_IMAGE_COST_EUR=0.041
 ```
 
-`CONTENT_AGENT_PUBLISH_MODE=draft` und insbesondere `CONTENT_AGENT_AUTOPUBLISH_ENABLED=false` sind für Plan A verbindlich: Beiträge werden nicht automatisch veröffentlicht. Die Kostensätze sind Konfigurationswerte und müssen vor dem Livebetrieb mit dem eigenen OpenAI-Vertrag und der aktuellen OpenAI-Preisseite abgeglichen werden. Zusätzlich ist im OpenAI-Projekt ein providerseitiges Projektbudget als äußere Kostengrenze zu setzen; dabei auch prüfen, ob der Anbieter es als harte Grenze oder als Warnschwelle umsetzt. Die interne Monatsgrenze von 25 EUR ersetzt diese providerseitige Grenze nicht.
+`CONTENT_AGENT_ENABLED=true` ist nur das technische Prozess-Gate: Es erlaubt dem Worker zu starten, aktiviert aber noch keine Jobübernahme. Die Migration setzt den PostgreSQL-Betriebszustand zunächst auf `agent_enabled=false` und `operating_mode=review`. Die PostgreSQL-Betriebswerte sind danach maßgeblich. Ihre Standardtermine sind Montag und Donnerstag um 18:00 Uhr in `Europe/Berlin`. Die alten Umgebungsvariablen `CONTENT_AGENT_PUBLISH_MODE`, `CONTENT_AGENT_SCHEDULE` und `CONTENT_AGENT_TIMEZONE` sind nur noch veraltete Bootstrap-Fallbacks und werden für diesen Rollout nicht gesetzt.
+
+`CONTENT_AGENT_AUTOPUBLISH_ENABLED=false` ist das zusätzliche technische Auto-Publish-Gate. Selbst eine spätere Dashboard-Einstellung kann dieses Gate nicht übersteuern. Modelle, Kostensätze und Budgetwerte sind vom Betreiber gesetzte Konfigurationswerte, keine Aussage über derzeit gültige OpenAI-Preise. Vor dem Livebetrieb müssen Modellzugriff und Kostensätze mit dem eigenen OpenAI-Vertrag und der aktuellen offiziellen OpenAI-Preisseite abgeglichen und geprüft werden. Zusätzlich ist im OpenAI-Projekt ein providerseitiges Projektbudget als äußere Kostengrenze zu setzen; dabei auch prüfen, ob der Anbieter es als harte Grenze oder als Warnschwelle umsetzt. Die interne Monatsgrenze ersetzt diese providerseitige Grenze nicht.
+
+In `.env` bleiben außerdem nur die Namen der bereits vorhandenen Geheimnisse relevant: `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` und `SESSION_SECRET`. Ihre Werte werden weder in diese Anleitung noch in Tickets, Git, Shell-Ausgaben oder Chatnachrichten kopiert.
 
 Für Plan A ist kein Search-Console-API-Zugang erforderlich; die Search Console folgt erst in Plan C.
 
@@ -152,7 +169,7 @@ Für Plan A ist kein Search-Console-API-Zugang erforderlich; die Search Console 
 Zuerst die bearbeitete Compose-Datei erneut prüfen. Die Befehle danach bauen nur `app`; der Worker verwendet dasselbe explizit benannte App-Image.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
+cd /apps/komplettwebdesign
 docker compose config --quiet
 docker compose build app
 docker image inspect komplettwebdesign-app:local >/dev/null
@@ -167,7 +184,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 ```bash
 (
   set -Eeuo pipefail
-  cd /home/webadmin/apps/komplettwebdesign
+  cd /apps/komplettwebdesign
   umask 077
 
   TEST_DB_CONTAINER=""
@@ -261,7 +278,7 @@ node --test tests/contentAgentPostgresIntegration.test.js
 Erst nach der erfolgreichen Testdatenbankprüfung folgt das vollständige Produktionsbackup. Das Custom-Format erhält Struktur und Datenbankinhalte. `umask 077`, Verzeichnisrechte `700` und Dateirechte `600` verhindern, dass andere lokale Benutzer das Backup lesen. Das Backup enthält sensible Produktionsdaten und darf nicht in Git oder in einen öffentlich erreichbaren Ordner gelangen.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
+cd /apps/komplettwebdesign
 umask 077
 mkdir -p ./data/backups
 chmod 700 ./data/backups
@@ -286,6 +303,96 @@ docker compose run --rm app npm run content-agent:dry-run
 ```
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
+
+### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`
+
+Vor jedem späteren Release den Agenten im Dashboard pausieren. Das folgende Skript erzwingt zusätzlich `agent_enabled=false` und `operating_mode=review` in PostgreSQL, bevor es laufende Jobs prüft. Dadurch kann der Worker nach dem Commit keinen neuen Job mehr übernehmen. Ein bereits parallel begonnener Claim wird durch die zweite Prüfung nach dem kontrollierten Worker-Stopp erkannt. Das Skript aktiviert den Agenten nach dem Deploy nicht wieder; die bewusste Freigabe im Review-Modus erfolgt erst nach der technischen Kontrolle im Dashboard.
+
+Die manuell verwaltete Datei zuerst sichern, dann den folgenden Block vollständig als `/apps/komplettwebdesign/deploy/deploy.sh` speichern und nur für den Eigentümer ausführbar machen:
+
+```bash
+cd /apps/komplettwebdesign
+umask 077
+mkdir -p deploy
+test ! -f deploy/deploy.sh || cp -p deploy/deploy.sh "deploy/deploy.sh.before-$(date +%Y%m%d-%H%M%S)"
+chmod 700 deploy
+chmod 700 deploy/deploy.sh
+```
+
+```bash
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="/apps/komplettwebdesign"
+COMPOSE_FILE="$ROOT/docker-compose.yml"
+
+cd "$ROOT"
+test -f "$COMPOSE_FILE"
+test -f "$ROOT/.env"
+test -d "$ROOT/server"
+docker compose -f "$COMPOSE_FILE" config --quiet
+
+SETTINGS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_agent_settings'\'')::text, '\'''\'');"')"
+CONTENT_JOBS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_jobs'\'')::text, '\'''\'');"')"
+
+if [[ "$SETTINGS_TABLE" == "content_agent_settings" ]]; then
+  PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+  test "$PAUSED_STATE" = "false|review"
+fi
+
+running_job_count() {
+  if [[ "$CONTENT_JOBS_TABLE" != "content_jobs" ]]; then
+    printf '0\n'
+    return
+  fi
+  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+}
+
+RUNNING_JOB_COUNT="$(running_job_count)"
+if ! [[ "$RUNNING_JOB_COUNT" =~ ^[0-9]+$ ]]; then
+  printf 'Laufende Jobs konnten nicht sicher bestimmt werden. Abbruch.\n' >&2
+  exit 1
+fi
+if [[ "$RUNNING_JOB_COUNT" != "0" ]]; then
+  printf 'Noch %s Job(s) aktiv. Agent bleibt pausiert; später erneut ausführen.\n' "$RUNNING_JOB_COUNT" >&2
+  exit 1
+fi
+
+docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker
+
+POST_STOP_RUNNING_JOB_COUNT="$(running_job_count)"
+if ! [[ "$POST_STOP_RUNNING_JOB_COUNT" =~ ^[0-9]+$ ]]; then
+  printf 'Jobstatus nach Worker-Stopp ist unbekannt. Abbruch.\n' >&2
+  exit 1
+fi
+if [[ "$POST_STOP_RUNNING_JOB_COUNT" != "0" ]]; then
+  printf 'Nach Worker-Stopp ist noch ein Job aktiv. Nicht migrieren; Ursache untersuchen.\n' >&2
+  exit 1
+fi
+
+umask 077
+mkdir -p "$ROOT/data/backups"
+chmod 700 "$ROOT/data/backups"
+BACKUP_FILE="$ROOT/data/backups/komplettwebdesign-before-deploy-$(date +%Y%m%d-%H%M%S).dump"
+docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$BACKUP_FILE"
+chmod 600 "$BACKUP_FILE"
+test -s "$BACKUP_FILE"
+docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
+
+docker compose -f "$COMPOSE_FILE" build --no-cache app
+docker image inspect komplettwebdesign-app:local >/dev/null
+
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run
+
+docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
+docker compose -f "$COMPOSE_FILE" ps postgres app content-worker
+docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
+docker compose -f "$COMPOSE_FILE" logs --tail=100 app content-worker
+```
+
+Das Skript bricht bei einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, dem Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Es baut das gemeinsame Image genau einmal über `app`; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
 
 ## 8. Erst die App, dann den Worker starten
 
@@ -323,29 +430,30 @@ docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB
 
 Das Alter sollte deutlich unter 90 Sekunden liegen.
 
-## 9. Kontrollierter Plan-A-Abnahmelauf
+## 9. Kontrollierter Review-first-Abnahmelauf
 
-Der Dry-Run verursacht null externe Aufrufe. Einen echten Queuejob erst nach bestätigten API-Berechtigungen, Kostensätzen und Budgets bewusst einplanen, da er OpenAI- und Cloudinary-Kosten verursacht. Für den Abnahmelauf eine einmalige Idempotenz-ID verwenden:
+Der Agent startet deaktiviert im Review-Modus. Nach Deploy und Healthcheck im Admin-Dashboard zuerst prüfen, dass `agent_enabled=false`, `operating_mode=review`, Montag und Donnerstag um 18:00 Uhr, `Europe/Berlin` sowie das beabsichtigte Monatsbudget angezeigt werden. Erst danach den Agenten im Dashboard aktivieren; der Betriebsmodus bleibt dabei ausdrücklich `review` und das technische Auto-Publish-Gate weiterhin `false`.
+
+Der Dry-Run verursacht null externe Aufrufe. Einen echten Queuejob erst nach bestätigten API-Berechtigungen, verifizierten Kostensätzen und Budgets bewusst einplanen, da er OpenAI- und Cloudinary-Kosten verursacht. Auf der Content-Agent-Übersicht über die vorgesehene Schaltfläche genau einen manuellen Entwurf anlegen. In den Jobs und Workerlogs beobachten, bis dieser Job `completed` oder `failed` ist:
 
 ```bash
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "INSERT INTO content_jobs (job_type, idempotency_key, payload_json, max_attempts) VALUES ('\''generate_manual_draft'\'', '\''release-check:'\'' || to_char(clock_timestamp(), '\''YYYYMMDDHH24MISSMS'\''), '\''{\"source\":\"release-check\"}'\''::jsonb, 3) RETURNING id, idempotency_key;"'
+cd /apps/komplettwebdesign
+docker compose logs --tail=100 content-worker
 docker compose logs -f content-worker
 ```
 
-Nach dem terminalen Jobstatus müssen genau ein zugehöriger, unveröffentlichter Beitrag und sein Format geprüft werden:
+Den fertigen Entwurf unter `/admin/content-agent/drafts` öffnen. Die Schaltfläche „Vorschau“ führt auf `/admin/content-agent/drafts/<POST_ID>/preview`; diese Route ist admin-geschützt und liefert die Vorschau mit `noindex` aus. Die Darstellung wertet niemals EJS aus, sanitisiert den statischen HTML-Inhalt und rendert genau eine H1. Inhalt, Bild, Quellen, Metadaten, FAQ, Risikohinweise und Qualitätsbewertung prüfen, erst danach im Review veröffentlichen oder mit Begründung ablehnen.
 
-```bash
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "WITH latest AS (SELECT id FROM content_jobs WHERE idempotency_key LIKE '\''release-check:%'\'' ORDER BY id DESC LIMIT 1) SELECT j.id AS job_id, j.status AS job_status, r.id AS run_id, r.status AS run_status, p.id AS post_id, p.published, p.workflow_status, p.content_format, (p.content ~* '\''<h1[ >]'\'') AS contains_h1, (p.content LIKE '\''%<\\%%'\'') AS contains_ejs FROM latest l JOIN content_jobs j ON j.id = l.id LEFT JOIN content_runs r ON r.job_id = j.id LEFT JOIN posts p ON p.id = r.post_id;"'
-```
-
-Erwartet sind genau eine Ergebniszeile, `published = false`, `workflow_status = needs_review`, `content_format = static_html`, `contains_h1 = false` und `contains_ejs = false`. Der Entwurf erscheint trotz fehlender Veröffentlichung unter `/admin/blog`. Über „Vorschau“ oder direkt über `/admin/blog/<POST_ID>/preview` öffnet sich die admin-geschützte, mit `noindex` ausgelieferte statische Vorschau. Sie wertet niemals EJS aus, sanitisiert den Inhalt und rendert genau eine H1.
+Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf frühestens nach acht manuellen Freigaben, einem konfigurierten Mindestscore von 90 und einer bewussten fachlichen Entscheidung erwogen werden. Dann zuerst `CONTENT_AGENT_AUTOPUBLISH_ENABLED=true` manuell in `.env` setzen, App und Worker neu erzeugen und erst anschließend den Betriebsmodus im Dashboard auf `auto_publish` umstellen. Bis alle drei Gates erfüllt sind, bleibt jeder erzeugte Beitrag ein Review-Entwurf.
 
 ## 10. Normaler Rückfall ohne Datenbank-Restore
 
 Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig. Aktive Jobs vor dem Stop über Logs und Datenbank beobachten und möglichst bis zu einem terminalen Status `completed` oder `failed` laufen lassen; ein Generierungslauf soll nicht mitten in einem externen Aufruf abgebrochen werden.
 
+Bei einem fehlerhaften Release Code und Image auf den zuletzt bekannten, geprüften Release-Stand zurücksetzen, das gemeinsame Image erneut bauen und ausschließlich `app` und `content-worker` neu erzeugen. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
+
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
+cd /apps/komplettwebdesign
 docker compose logs --tail=100 content-worker
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'') ORDER BY id;"'
 docker compose stop -t 600 content-worker
@@ -367,7 +475,7 @@ Ein Datenbank-Restore ist **kein normaler Rollback**. Er ist eine getrennte, bew
 Beim Wiederanlauf reicht `docker compose start` nicht: Ein gestoppter Container behält seine alte Umgebung. `CONTENT_AGENT_ENABLED=true` setzen und den Worker zwingend neu erzeugen. Vorher zurückgebliebene Jobs und Queue-Einträge prüfen; keinen Ersatzjob anlegen, solange ein alter Job noch `running` oder wieder `queued` ist.
 
 ```bash
-cd /home/webadmin/apps/komplettwebdesign
+cd /apps/komplettwebdesign
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'', '\''failed'\'') ORDER BY id DESC LIMIT 20;"'
 sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=true/' .env
 docker compose up -d --force-recreate content-worker
@@ -403,15 +511,15 @@ docker compose run --rm app npm run migrate:content-agent
 
 ### Zeitzone oder Ausführungszeit ist falsch
 
-Der Cron-Ausdruck läuft ausdrücklich in `Europe/Berlin`. Hostzeit und die im Worker verwendete IANA-Zeitzone prüfen:
+Zeitplan und IANA-Zeitzone werden in PostgreSQL gepflegt. Zuerst die Dashboard-Einstellung und anschließend den tatsächlich gespeicherten Betriebswert prüfen; die Hostzeitzone ist dafür nicht maßgeblich:
 
 ```bash
 date
 timedatectl status
-docker compose exec -T content-worker node -e 'const z=process.env.CONTENT_AGENT_TIMEZONE; console.log(z, new Intl.DateTimeFormat("de-DE", {dateStyle:"full", timeStyle:"long", timeZone:z}).format(new Date()))'
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT agent_enabled, schedule_weekdays, schedule_time, timezone FROM content_agent_settings WHERE id = 1;"'
 ```
 
-Bei einer Korrektur der `.env` nur den Worker mit `docker compose up -d --force-recreate content-worker` neu erzeugen.
+Erwartet sind im Ausgangszustand die Wochentage `{1,4}`, `18:00:00` und `Europe/Berlin`. Korrekturen ausschließlich über das Content-Agent-Dashboard speichern und danach Schedulerstatus sowie Workerlogs kontrollieren; dafür ist kein Container-Recreate notwendig.
 
 ### OpenAI-API hat keine Berechtigung
 
