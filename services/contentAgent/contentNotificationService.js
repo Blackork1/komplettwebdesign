@@ -52,6 +52,7 @@ function notDueError(retryAt) {
   const error = new Error('Die Admin-Prüfmail ist noch nicht zur erneuten Zustellung fällig.');
   error.code = 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE';
   error.retryable = true;
+  error.doesNotConsumeAttempt = true;
   error.retryAt = retryAt;
   return error;
 }

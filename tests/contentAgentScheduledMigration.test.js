@@ -54,3 +54,12 @@ test('migration 004 constrains and deduplicates notification deliveries', async 
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_scheduled_publication[\s\S]*ON content_publish_events[\s\S]*publicationVersion[\s\S]*WHERE decision = 'manual'/i);
   assert.match(sql, /CREATE INDEX IF NOT EXISTS idx_content_notification_deliveries_claim[\s\S]*WHERE status IN \('queued', 'failed'\)/i);
 });
+
+test('migration 004 hebt offene Bestandsjobs für Admin-Prüfmails auf sechs Versuche an', async () => {
+  const sql = await readFile(migrationUrl, 'utf8');
+
+  assert.match(
+    sql,
+    /UPDATE content_jobs[\s\S]*SET max_attempts = GREATEST\(max_attempts, 6\)[\s\S]*job_type = 'send_admin_review_notification'[\s\S]*status IN \('queued', 'running'\)[\s\S]*max_attempts < 6/i
+  );
+});

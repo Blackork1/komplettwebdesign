@@ -54,6 +54,7 @@ export function createContentWorker(dependencies = {}) {
   const renewJobLease = requiredFunction(dependencies.renewJobLease, 'renewJobLease');
   const completeJob = requiredFunction(dependencies.completeJob, 'completeJob');
   const failJob = requiredFunction(dependencies.failJob, 'failJob');
+  const rescheduleJobWithoutAttemptConsumption = dependencies.rescheduleJobWithoutAttemptConsumption;
   const retryOrFailJob = requiredFunction(dependencies.retryOrFailJob, 'retryOrFailJob');
   const markJobNeedsManualAttention = requiredFunction(
     dependencies.markJobNeedsManualAttention,
@@ -112,12 +113,23 @@ export function createContentWorker(dependencies = {}) {
       if (!leaseValid || error instanceof LeaseLostError || error?.code === 'CONTENT_JOB_LEASE_LOST') {
         return { status: 'lease_lost' };
       }
-      const terminal = error?.retryable === false
-        ? await failJob(claim, error)
-        : await retryOrFailJob(claim, error, {
-          retryAt: error?.retryAt || null,
-          backoffSeconds: Math.min(3_600, 30 * (2 ** Math.max(0, claim.attempts - 1)))
-        });
+      let terminal;
+      if (
+        error?.code === 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE'
+        && error?.doesNotConsumeAttempt === true
+      ) {
+        terminal = await requiredFunction(
+          rescheduleJobWithoutAttemptConsumption,
+          'rescheduleJobWithoutAttemptConsumption'
+        )(claim, error, { retryAt: error?.retryAt || null });
+      } else {
+        terminal = error?.retryable === false
+          ? await failJob(claim, error)
+          : await retryOrFailJob(claim, error, {
+            retryAt: error?.retryAt || null,
+            backoffSeconds: Math.min(3_600, 30 * (2 ** Math.max(0, claim.attempts - 1)))
+          });
+      }
       if (!terminal) return { status: 'lease_lost' };
       return { status: terminal.status || 'failed' };
     }

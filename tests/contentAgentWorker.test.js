@@ -63,6 +63,10 @@ function createWorkerHarness(overrides = {}) {
     async renewJobLease(job) { calls.push(['renew', job]); return { id: job.id }; },
     async completeJob(job) { calls.push(['complete', job]); return { id: job.id }; },
     async failJob(job, error) { calls.push(['fail', job, error]); return { id: job.id }; },
+    async rescheduleJobWithoutAttemptConsumption(job, error, options) {
+      calls.push(['reschedule_without_attempt', job, error, options]);
+      return { id: job.id, status: 'queued' };
+    },
     async retryOrFailJob(job, error, options) { calls.push(['retry', job, error, options]); return { id: job.id, status: 'queued' }; },
     async markJobNeedsManualAttention(job, reason) { calls.push(['manual', job, reason]); return { id: job.id }; },
     ...overrides
@@ -404,6 +408,127 @@ test('Worker reicht eine explizite Retryzeit lease-sicher an das Repository weit
   assert.equal(retry[3].retryAt, retryAt);
   assert.equal(retry[3].backoffSeconds, 30);
   assert.deepEqual(retry[1], claim);
+});
+
+test('NOT_DUE wird lease-sicher ohne Verbrauch des Jobversuchs neu eingeplant', async () => {
+  const retryAt = new Date('2026-07-12T22:00:00.000Z');
+  const notDue = Object.assign(new Error('Zustellung noch nicht fällig'), {
+    code: 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE',
+    retryable: true,
+    doesNotConsumeAttempt: true,
+    retryAt
+  });
+  const { worker, calls, claim } = createWorkerHarness({
+    async handleJob(job) { calls.push(['handle', job]); throw notDue; }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  const reschedule = calls.find(([type]) => type === 'reschedule_without_attempt');
+  assert.deepEqual(reschedule?.[1], claim);
+  assert.equal(reschedule?.[2], notDue);
+  assert.deepEqual(reschedule?.[3], { retryAt });
+  assert.equal(calls.some(([type]) => type === 'retry'), false);
+  assert.equal(calls.some(([type]) => type === 'fail'), false);
+});
+
+test('nur explizites NOT_DUE darf einen Jobversuch zurückgeben', async () => {
+  const retryAt = new Date('2026-07-12T22:00:00.000Z');
+  const otherError = Object.assign(new Error('Anderer Fehler'), {
+    code: 'CONTENT_OTHER_RETRY',
+    retryable: true,
+    doesNotConsumeAttempt: true,
+    retryAt
+  });
+  const { worker, calls } = createWorkerHarness({
+    async handleJob(job) { calls.push(['handle', job]); throw otherError; }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  assert.equal(calls.some(([type]) => type === 'reschedule_without_attempt'), false);
+  assert.equal(calls.filter(([type]) => type === 'retry').length, 1);
+});
+
+test('Crash nach Delivery-Retry-Commit bewahrt den sechsten Jobclaim für den sechsten SMTP-Versuch', async () => {
+  const retryAt = new Date('2026-07-13T10:00:00.000Z');
+  let currentNow = new Date('2026-07-12T22:00:00.000Z');
+  const delivery = { attempts: 5, nextAttemptAt: retryAt };
+  const job = {
+    id: 77,
+    job_type: 'send_admin_review_notification',
+    status: 'running',
+    attempts: 5,
+    max_attempts: 6,
+    locked_by: 'abgestürzter-worker',
+    run_after: new Date('2026-07-12T21:00:00.000Z'),
+    payload_json: { deliveryId: 7 }
+  };
+  let reschedules = 0;
+  let smtpCalls = 0;
+
+  const worker = createContentWorker({
+    enabled: true,
+    workerId: 'recovery-worker',
+    workerName: 'content-worker',
+    version: 'test',
+    leaseMinutes: 30,
+    setIntervalFn(callback) { return { callback }; },
+    clearIntervalFn() {},
+    async upsertHeartbeat() {},
+    async recoverExpiredJobs() {
+      if (job.status === 'running' && job.locked_by === 'abgestürzter-worker') {
+        job.status = 'queued';
+        job.locked_by = null;
+      }
+      return [];
+    },
+    async claimNextJob(workerId) {
+      if (job.status !== 'queued' || currentNow < job.run_after) return null;
+      job.status = 'running';
+      job.attempts += 1;
+      job.locked_by = workerId;
+      return { ...job };
+    },
+    async handleJob() {
+      if (currentNow < delivery.nextAttemptAt) {
+        throw Object.assign(new Error('Noch nicht fällig'), {
+          code: 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE',
+          retryable: true,
+          doesNotConsumeAttempt: true,
+          retryAt: delivery.nextAttemptAt
+        });
+      }
+      smtpCalls += 1;
+      delivery.attempts += 1;
+      return { status: 'completed' };
+    },
+    async renewJobLease(claim) { return claim.attempts === job.attempts ? { ...job } : null; },
+    async completeJob() { job.status = 'completed'; job.locked_by = null; return { ...job }; },
+    async failJob() { job.status = 'failed'; return { ...job }; },
+    async retryOrFailJob() { job.status = 'queued'; job.locked_by = null; return { ...job }; },
+    async rescheduleJobWithoutAttemptConsumption(claim, error, { retryAt: scheduledAt }) {
+      assert.equal(claim.attempts, 6);
+      assert.equal(error.doesNotConsumeAttempt, true);
+      assert.equal(scheduledAt, retryAt);
+      job.status = 'queued';
+      job.attempts -= 1;
+      job.locked_by = null;
+      job.run_after = scheduledAt;
+      reschedules += 1;
+      return { ...job };
+    },
+    async markJobNeedsManualAttention() { throw new Error('nicht erwartet'); }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  assert.equal(job.attempts, 5);
+  assert.equal(reschedules, 1);
+  assert.equal(smtpCalls, 0);
+
+  currentNow = retryAt;
+  assert.deepEqual(await worker.processOnce(), { status: 'completed' });
+  assert.equal(job.attempts, 6);
+  assert.equal(delivery.attempts, 6);
+  assert.equal(smtpCalls, 1);
 });
 
 test('LeaseLostError ist explizit nicht retrybar', () => {

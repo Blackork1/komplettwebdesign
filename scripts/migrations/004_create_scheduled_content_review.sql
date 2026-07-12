@@ -126,6 +126,13 @@ ALTER TABLE posts
     )
   );
 
+UPDATE content_jobs
+SET max_attempts = GREATEST(max_attempts, 6),
+    updated_at = NOW()
+WHERE job_type = 'send_admin_review_notification'
+  AND status IN ('queued', 'running')
+  AND max_attempts < 6;
+
 CREATE TABLE IF NOT EXISTS content_notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
   notification_type VARCHAR(40) NOT NULL,

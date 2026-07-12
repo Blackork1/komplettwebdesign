@@ -246,6 +246,7 @@ test('eine zu frühe Zustellung sendet nicht und behält next_attempt_at als ret
     canonicalBaseUrl: 'https://cms.example.de'
   }), (error) => {
     assert.equal(error.retryable, true);
+    assert.equal(error.doesNotConsumeAttempt, true);
     assert.equal(error.retryAt.getTime(), retryAt.getTime());
     return true;
   });

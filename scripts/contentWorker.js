@@ -310,6 +310,9 @@ function bindRepositories(database, modules) {
     renewJobLease: (claim) => modules.jobRepository.renewJobLease(claim, database),
     completeJob: (claim) => modules.jobRepository.completeJob(claim, database),
     failJob: (claim, error) => modules.jobRepository.failJob(claim, error, database),
+    rescheduleJobWithoutAttemptConsumption: (claim, error, options) => (
+      modules.jobRepository.rescheduleJobWithoutAttemptConsumption(claim, error, options, database)
+    ),
     retryOrFailJob: (claim, error, options) => modules.jobRepository.retryOrFailJob(claim, error, options, database),
     markJobNeedsManualAttention: (claim, reason) => modules.jobRepository.markJobNeedsManualAttention(claim, reason, database),
     recoverExpiredJobs: (minutes) => modules.jobRepository.recoverExpiredJobs(minutes, database),
@@ -473,6 +476,7 @@ export function createProductionRuntime({
     handleJob,
     completeJob: repositories.jobRepository.completeJob,
     failJob: repositories.jobRepository.failJob,
+    rescheduleJobWithoutAttemptConsumption: repositories.jobRepository.rescheduleJobWithoutAttemptConsumption,
     retryOrFailJob: repositories.jobRepository.retryOrFailJob,
     markJobNeedsManualAttention: repositories.jobRepository.markJobNeedsManualAttention
   });

@@ -236,6 +236,36 @@ test('Admin-Prüfmailjobs erlauben den initialen Versuch und fünf echte Wiederh
   }, db), row);
 
   assert.equal(db.calls[0].params[4], 6);
+  assert.match(
+    db.calls[0].sql,
+    /ON CONFLICT \(idempotency_key\) DO UPDATE SET max_attempts = CASE[\s\S]*content_jobs\.job_type = 'send_admin_review_notification'[\s\S]*EXCLUDED\.job_type = 'send_admin_review_notification'[\s\S]*GREATEST\(content_jobs\.max_attempts, EXCLUDED\.max_attempts\)[\s\S]*ELSE content_jobs\.max_attempts END/i
+  );
+});
+
+test('NOT_DUE-Reschedule gibt exakt den gefencten Claimversuch ohne Unterlauf zurück', async () => {
+  const { rescheduleJobWithoutAttemptConsumption } = await import('../repositories/contentJobRepository.js');
+  assert.equal(typeof rescheduleJobWithoutAttemptConsumption, 'function');
+  const retryAt = new Date('2026-07-13T10:00:00.000Z');
+  const row = { id: 9, status: 'queued', attempts: 5, run_after: retryAt };
+  const db = createQueryRecorder([{ rows: [row] }]);
+  const claim = { id: 9, locked_by: 'worker-not-due', attempts: 6 };
+
+  assert.equal(await rescheduleJobWithoutAttemptConsumption(
+    claim,
+    new Error('Noch nicht fällig'),
+    { retryAt },
+    db
+  ), row);
+
+  assert.match(db.calls[0].sql, /SET status = 'queued', attempts = attempts - 1/i);
+  assert.match(db.calls[0].sql, /run_after = \$5/i);
+  assert.match(db.calls[0].sql, /locked_at = NULL[\s\S]*locked_by = NULL[\s\S]*finished_at = NULL/i);
+  assert.match(
+    db.calls[0].sql,
+    /WHERE id = \$1[\s\S]*locked_by = \$2[\s\S]*attempts = \$3[\s\S]*status = 'running'[\s\S]*attempts > 0/i
+  );
+  assert.deepEqual(db.calls[0].params.slice(0, 3), [9, 'worker-not-due', 6]);
+  assert.equal(db.calls[0].params[4], retryAt);
 });
 
 test('der Wochen-Scheduler prüft die operative Pause atomar im idempotenten Insert', async () => {

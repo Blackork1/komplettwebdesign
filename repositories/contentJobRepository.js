@@ -88,7 +88,13 @@ export async function enqueueJob({
         WHERE settings.id = 1 AND settings.agent_enabled = TRUE
       )
       ON CONFLICT (idempotency_key) DO UPDATE
-      SET idempotency_key = content_jobs.idempotency_key
+      SET max_attempts = CASE
+            WHEN content_jobs.job_type = 'send_admin_review_notification'
+              AND EXCLUDED.job_type = 'send_admin_review_notification'
+              THEN GREATEST(content_jobs.max_attempts, EXCLUDED.max_attempts)
+            ELSE content_jobs.max_attempts
+          END,
+          idempotency_key = content_jobs.idempotency_key
       RETURNING content_jobs.*
     `,
     [
@@ -278,6 +284,36 @@ export async function retryOrFailJob(claim, error, {
       RETURNING *
     `,
     [...lease, sanitizeErrorMessage(error), normalizedBackoff, normalizedRetryAt]
+  );
+  return rows[0] || null;
+}
+
+export async function rescheduleJobWithoutAttemptConsumption(claim, error, {
+  retryAt
+} = {}, db = pool) {
+  const lease = leaseParameters(claim);
+  if (!(retryAt instanceof Date) || Number.isNaN(retryAt.getTime())) {
+    throw new TypeError('Für die versuchsneutrale Neueinplanung wird eine gültige Retryzeit benötigt.');
+  }
+  const { rows } = await db.query(
+    `
+      UPDATE content_jobs
+      SET status = 'queued',
+          attempts = attempts - 1,
+          last_error = $4,
+          run_after = $5,
+          locked_at = NULL,
+          locked_by = NULL,
+          finished_at = NULL,
+          updated_at = NOW()
+      WHERE id = $1
+        AND locked_by = $2
+        AND attempts = $3
+        AND status = 'running'
+        AND attempts > 0
+      RETURNING *
+    `,
+    [...lease, sanitizeErrorMessage(error), retryAt]
   );
   return rows[0] || null;
 }
