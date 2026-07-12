@@ -1,5 +1,6 @@
 import pool from '../util/db.js';
 import bcrypt from 'bcrypt';
+import { safeContentAgentReturnTo } from '../middleware/auth.js';
 
 export function loginForm(req, res) {
     res.render('auth/login', { title: "Login", error: null });
@@ -17,7 +18,9 @@ export async function login(req, res) {
     }
 
     req.session.user = { is: user.id, username: user.username, isAdmin: true };
-    res.redirect('/admin');
+    const returnTo = safeContentAgentReturnTo(req.session.contentAgentReturnTo);
+    delete req.session.contentAgentReturnTo;
+    return res.redirect(returnTo || '/admin');
 }
 
 export function logout(req, res) {
