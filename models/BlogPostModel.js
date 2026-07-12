@@ -142,7 +142,7 @@ export default class BlogPostModel {
         ]
       );
 
-      if (inserted !== false && adminNotificationEmail) {
+      if (inserted !== false) {
         const reviewVersion = Number(createdPost.review_version) || 1;
         const qualityReport = metadataRows[0]?.quality_report_json
           || metadata.quality_report_json
@@ -167,12 +167,18 @@ export default class BlogPostModel {
           },
           client
         });
-        await enqueueAdminReviewNotificationJob({
+        if (!Number.isSafeInteger(Number(delivery?.id)) || Number(delivery.id) <= 0) {
+          throw new Error('Admin-Outbox konnte nicht angelegt werden.');
+        }
+        const notificationJob = await enqueueAdminReviewNotificationJob({
           deliveryId: delivery?.id,
           postId: createdPost.id,
           generationRunId: normalizedGenerationRunId,
           reviewVersion
         }, client);
+        if (!Number.isSafeInteger(Number(notificationJob?.id)) || Number(notificationJob.id) <= 0) {
+          throw new Error('Admin-Mailjob konnte nicht angelegt werden.');
+        }
       }
 
       await client.query('COMMIT');

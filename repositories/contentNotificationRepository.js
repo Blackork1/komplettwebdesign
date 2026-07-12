@@ -13,6 +13,30 @@ function requiredClient(client) {
   return client;
 }
 
+const DOT_ATOM_LOCAL_PART = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/i;
+const DOMAIN_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
+
+function normalizeRecipientEmail(value) {
+  const email = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  const mailboxParts = email.split('@');
+  if (mailboxParts.length !== 2) {
+    throw new TypeError('Eine gültige Adminadresse wird für die Benachrichtigung benötigt.');
+  }
+
+  const [localPart, domain] = mailboxParts;
+  const domainLabels = domain.split('.');
+  if (
+    localPart.length > 64
+    || domain.length > 253
+    || !DOT_ATOM_LOCAL_PART.test(localPart)
+    || domainLabels.length < 2
+    || domainLabels.some((label) => !DOMAIN_LABEL.test(label))
+  ) {
+    throw new TypeError('Eine gültige Adminadresse wird für die Benachrichtigung benötigt.');
+  }
+  return email;
+}
+
 function boundedAdminReviewPayload(payload, { postId, reviewVersion }) {
   const source = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
   return {
@@ -39,10 +63,7 @@ export async function createAdminReviewDelivery({
   const normalizedPostId = positiveInteger(postId, 'postId');
   const normalizedGenerationRunId = positiveInteger(generationRunId, 'generationRunId');
   const reviewVersion = positiveInteger(payload?.reviewVersion, 'payload.reviewVersion');
-  const normalizedRecipientEmail = typeof recipientEmail === 'string' ? recipientEmail.trim() : '';
-  if (!normalizedRecipientEmail) {
-    throw new TypeError('recipientEmail wird für die Admin-Benachrichtigung benötigt.');
-  }
+  const normalizedRecipientEmail = normalizeRecipientEmail(recipientEmail);
   const idempotencyKey = `admin-review:${normalizedGenerationRunId}:${reviewVersion}`;
   const payloadSnapshot = boundedAdminReviewPayload(payload, {
     postId: normalizedPostId,

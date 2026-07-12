@@ -804,6 +804,7 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     }, pool);
     const firstDraft = await BlogPostModel.createAIDraft({
       generationRunId: firstRun.id,
+      adminNotificationEmail: 'redaktion@example.de',
       post: {
         title: 'KI-Entwurf',
         slug: 'ki-entwurf',
@@ -828,6 +829,14 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal(sameDraft.created, false);
     assert.equal(sameDraft.post.id, firstDraft.post.id);
     assert.equal(sameDraft.referencedImagePublicId, 'blog_images/erstes');
+    assert.equal((await pool.query(
+      "SELECT COUNT(*)::int AS count FROM content_notification_deliveries WHERE post_id = $1 AND notification_type = 'admin_review'",
+      [firstDraft.post.id]
+    )).rows[0].count, 1);
+    assert.equal((await pool.query(
+      "SELECT COUNT(*)::int AS count FROM content_jobs WHERE job_type = 'send_admin_review_notification' AND payload_json->>'postId' = $1",
+      [String(firstDraft.post.id)]
+    )).rows[0].count, 1);
     assert.ok(await renewJobLease(firstClaim, pool));
     assert.equal((await retryOrFailJob(firstClaim, new Error('temporär'), { backoffSeconds: 1 }, pool)).status, 'queued');
     await pool.query('UPDATE content_jobs SET run_after = NOW() WHERE id = $1', [job.id]);

@@ -763,6 +763,7 @@ test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und g
   const first = await BlogPostModel.createAIDraft(input, db);
   const second = await BlogPostModel.createAIDraft({
     ...input,
+    adminNotificationEmail: undefined,
     post: { ...input.post, title: 'Schwächerer Retry-Titel' },
     metadata: { ...input.metadata, quality_score: 80 }
   }, db);
@@ -794,6 +795,78 @@ test('BlogPostModel.createAIDraft verlangt eine positive generationRunId vor dem
     /generationRunId/i
   );
   assert.equal(connects, 0);
+});
+
+test('BlogPostModel.createAIDraft rollt neue Entwürfe ohne gültige Adminadresse zurück', async () => {
+  for (const adminNotificationEmail of [undefined, '', 'keine-e-mail']) {
+    const db = createTransactionalDb([
+      {},
+      { rows: [{ id: 55, review_version: 1, _created: true }] },
+      { rows: [{ post_id: 55, quality_score: 90 }] },
+      {},
+      {}
+    ]);
+
+    await assert.rejects(BlogPostModel.createAIDraft({
+      generationRunId: 75,
+      adminNotificationEmail,
+      post: { title: article.title, content: article.contentHtml },
+      metadata: { quality_score: 90 }
+    }, db), /Admin.*adresse|recipientEmail/i);
+
+    const transactionEvents = db.events.map(({ sql }) => sql);
+    assert.equal(transactionEvents.includes('COMMIT'), false);
+    assert.deepEqual(transactionEvents.slice(-2), ['ROLLBACK', 'RELEASE']);
+  }
+});
+
+test('BlogPostModel.createAIDraft rollt bei einem Outbox-Insertfehler zurück', async () => {
+  const error = new Error('Outbox-Insert fehlgeschlagen');
+  const db = createTransactionalDb([
+    {},
+    { rows: [{ id: 56, review_version: 1, _created: true }] },
+    { rows: [{ post_id: 56, quality_score: 90 }] },
+    { error },
+    {}
+  ]);
+
+  await assert.rejects(BlogPostModel.createAIDraft({
+    generationRunId: 76,
+    adminNotificationEmail: 'redaktion@example.de',
+    post: { title: article.title, content: article.contentHtml },
+    metadata: { quality_score: 90 }
+  }, db), error);
+
+  const transactionEvents = db.events.map(({ sql }) => sql);
+  assert.equal(transactionEvents.includes('COMMIT'), false);
+  assert.deepEqual(transactionEvents.slice(-2), ['ROLLBACK', 'RELEASE']);
+});
+
+test('BlogPostModel.createAIDraft rollt bei einem Job-Insertfehler zurück', async () => {
+  for (const jobResult of [
+    { error: new Error('Job-Insert fehlgeschlagen') },
+    { rows: [] }
+  ]) {
+    const db = createTransactionalDb([
+      {},
+      { rows: [{ id: 57, review_version: 1, _created: true }] },
+      { rows: [{ post_id: 57, quality_score: 90 }] },
+      { rows: [{ id: 87, post_id: 57 }] },
+      jobResult,
+      {}
+    ]);
+
+    await assert.rejects(BlogPostModel.createAIDraft({
+      generationRunId: 77,
+      adminNotificationEmail: 'redaktion@example.de',
+      post: { title: article.title, content: article.contentHtml },
+      metadata: { quality_score: 90 }
+    }, db), /Job-Insert|Mailjob/i);
+
+    const transactionEvents = db.events.map(({ sql }) => sql);
+    assert.equal(transactionEvents.includes('COMMIT'), false);
+    assert.deepEqual(transactionEvents.slice(-2), ['ROLLBACK', 'RELEASE']);
+  }
 });
 
 test('BlogPostModel.createAIDraft rollt bei einem Metadatenfehler zurück', async () => {
