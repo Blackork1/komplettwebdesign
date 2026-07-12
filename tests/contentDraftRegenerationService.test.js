@@ -548,6 +548,33 @@ test('Bildregeneration persistiert vor dem Postupdate und löscht das alte Bild 
   assert.ok(order.indexOf('updateImage') < order.indexOf('deleteImage'));
   assert.deepEqual(deps.calls.find(([type]) => type === 'deleteImage')[1], { publicId: 'blog_images/alt' });
   assert.equal(deps.calls.find(([type]) => type === 'stage')[2].stageId, 'regenerate_image:19');
+  assert.equal(deps.calls.find(([type]) => type === 'updateImage')[1].expectedReviewVersion, 2);
+  assert.equal(deps.calls.find(([type]) => type === 'stage')[2].stageResult.reviewVersionBefore, 2);
+});
+
+test('parallele Textbearbeitung nach dem Bildupload verhindert das Bildupdate und bereinigt den Orphan', async () => {
+  const deps = dependencies();
+  deps.draftRepository.updateGeneratedImage = async (payload) => {
+    deps.calls.push(['updateImage', payload]);
+    return {
+      committed: false,
+      casMismatch: true,
+      currentPublicId: 'blog_images/alt',
+      currentReviewVersion: 3,
+      post: { ...draft().post, review_version: 3 }
+    };
+  };
+
+  const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_concurrent_update');
+  assert.equal(deps.calls.find(([type]) => type === 'updateImage')[1].expectedReviewVersion, 2);
+  assert.deepEqual(
+    deps.calls.filter(([type]) => type === 'deleteImage').map(([, value]) => value.publicId),
+    ['blog_images/neu']
+  );
+  assert.equal(deps.calls.find(([type]) => type === 'finish')[2].status, 'needs_manual_attention');
 });
 
 test('Bildfehlerpfad prüft die Lease unmittelbar vor dem Settlement', async () => {
@@ -617,6 +644,7 @@ test('Bild-Retry verwendet persistiertes Uploadresultat und erzeugt kein zweites
         bytes: 456,
         imageAlt: 'Persistiertes Bild',
         previousPublicId: 'blog_images/alt',
+        reviewVersionBefore: 2,
         actualCost: 0.041,
         reservationMonth: '2026-07'
       }
@@ -1108,7 +1136,8 @@ test('Bildrepository wiederholt einen bereits übernommenen Public-ID-CAS ohne V
     imageUrl: 'https://example.test/neu.webp',
     publicId: 'blog_images/neu',
     imageAlt: 'Neu',
-    expectedOldPublicId: 'blog_images/alt'
+    expectedOldPublicId: 'blog_images/alt',
+    expectedReviewVersion: 2
   };
 
   const first = await repository.updateGeneratedImage(payload);
@@ -1129,7 +1158,7 @@ test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock',
       if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
       if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
-        return { rows: [{ id: 19, hero_public_id: 'blog_images/konkurrenz' }] };
+        return { rows: [{ id: 19, hero_public_id: 'blog_images/alt', review_version: 3 }] };
       }
       throw new Error(`Unerwartete Query: ${normalized}`);
     },
@@ -1145,11 +1174,13 @@ test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock',
     imageUrl: 'https://example.test/neu.webp',
     publicId: 'blog_images/neu',
     imageAlt: 'Neu',
-    expectedOldPublicId: 'blog_images/alt'
+    expectedOldPublicId: 'blog_images/alt',
+    expectedReviewVersion: 2
   });
 
   assert.equal(result.casMismatch, true);
-  assert.equal(result.currentPublicId, 'blog_images/konkurrenz');
+  assert.equal(result.currentPublicId, 'blog_images/alt');
+  assert.equal(result.currentReviewVersion, 3);
   const rowLock = calls.find(({ sql }) => /FOR UPDATE/i.test(sql));
   assert.deepEqual(calls.slice(0, 3).map(({ sql }) => sql), [
     'BEGIN',
@@ -1168,7 +1199,7 @@ test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädika
       if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
       if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) {
-        return { rows: [{ id: 19, hero_public_id: null }] };
+        return { rows: [{ id: 19, hero_public_id: null, review_version: 2 }] };
       }
       if (/^UPDATE posts/i.test(normalized)) {
         return { rows: [{
@@ -1196,13 +1227,16 @@ test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädika
     imageUrl: 'https://example.test/neu.webp',
     publicId: 'blog_images/neu',
     imageAlt: 'Neu',
-    expectedOldPublicId: null
+    expectedOldPublicId: null,
+    expectedReviewVersion: 2
   });
 
   const update = calls.find(({ sql }) => /^UPDATE posts/i.test(sql));
   assert.equal(result.committed, true);
   assert.match(update.sql, /hero_public_id IS NOT DISTINCT FROM \$5/i);
+  assert.match(update.sql, /review_version = \$6/i);
   assert.equal(update.params[4], null);
+  assert.equal(update.params[5], 2);
   const setClause = update.sql.match(/SET (.+) WHERE/i)?.[1] || '';
   assert.match(setClause, /review_version\s*=\s*review_version\s*\+\s*1/i);
   assert.match(setClause, /workflow_status\s*=\s*'needs_review'/i);

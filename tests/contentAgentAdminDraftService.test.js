@@ -48,6 +48,7 @@ function draft(overrides = {}) {
 
 function validInput(overrides = {}) {
   return {
+    reviewVersion: '2',
     title: 'Sicherer Entwurf',
     shortDescription: 'Kurze Beschreibung',
     slug: 'sicherer-entwurf',
@@ -143,7 +144,41 @@ test('Slugprüfung schließt den aktuellen Post aus und die Schreib-API verwende
     'ogDescription', 'ogTitle', 'shortDescription', 'slug', 'title'
   ].sort());
   assert.deepEqual(updates[0].admin, admin);
+  assert.equal(updates[0].expectedReviewVersion, 2);
   assert.equal('published' in updates[0].article, false);
+});
+
+test('zwei Editor-Tabs überschreiben sich dank Reviewversions-CAS nicht', async () => {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (/^SELECT id/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
+        return { rows: [{ id: 3, review_version: 3 }] };
+      }
+      if (/^SELECT id FROM posts WHERE slug/i.test(normalized)) return { rows: [] };
+      if (/^UPDATE posts/i.test(normalized)) return { rows: [] };
+      return { rows: [] };
+    },
+    release() {}
+  };
+  const repository = createAdminDraftRepository({ async connect() { return client; } });
+
+  await assert.rejects(
+    repository.updateDraftTransaction({
+      postId: 3,
+      article: validInput({ faqJson: faqItems }),
+      admin,
+      expectedReviewVersion: 2
+    }),
+    { code: 'CONTENT_DRAFT_EDIT_CONFLICT' }
+  );
+  const update = calls.find(({ sql }) => /^UPDATE posts/i.test(sql));
+  assert.match(update.sql, /review_version\s*=\s*\$12/i);
+  assert.equal(update.params[11], 2);
+  assert.equal(calls.some(({ sql }) => /^UPDATE content_post_metadata/i.test(sql)), false);
+  assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), false);
 });
 
 test('getDraftForReview liefert Editorwerte und serialisiertes FAQ ohne Roh-Mass-Assignment', async () => {

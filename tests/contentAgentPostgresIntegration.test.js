@@ -152,7 +152,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–005 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -209,6 +209,27 @@ test('echtes PostgreSQL: Migrationen 002–005 und Generate→Notify→Approve�
     assert.equal(settings.rows[0].generation_lead_hours, 4);
     assert.equal(settings.rows[0].admin_notification_email, 'kontakt@komplettwebdesign.de');
     assert.equal(settings.rows[0].newsletter_blog_notifications_enabled, false);
+    assert.equal(settings.rows[0].schedule_revision, '1');
+    const scheduleRevisions = await pool.query(`
+      SELECT revision, agent_enabled, schedule_weekdays, schedule_time::text, timezone,
+             generation_lead_hours, effective_at
+      FROM content_agent_schedule_revisions
+      ORDER BY revision
+    `);
+    assert.equal(scheduleRevisions.rows.length, 1);
+    assert.equal(scheduleRevisions.rows[0].revision, '1');
+    assert.ok(scheduleRevisions.rows[0].effective_at instanceof Date);
+    const latestDeliveryIndex = await pool.query(`
+      SELECT indexdef
+      FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND indexname = 'idx_content_notification_deliveries_post_type_latest'
+    `);
+    assert.equal(latestDeliveryIndex.rows.length, 1);
+    assert.match(
+      latestDeliveryIndex.rows[0].indexdef,
+      /\(post_id, notification_type, created_at DESC, id DESC\)/i
+    );
 
     const scheduledColumns = await pool.query(`
       SELECT review_version, approved_review_version, approved_at,
@@ -270,6 +291,21 @@ test('echtes PostgreSQL: Migrationen 002–005 und Generate→Notify→Approve�
       RETURNING id
     `, [reviewPost.rows[0].id]);
     assert.ok(delivery.rows[0].id);
+    await pool.query('SET enable_seqscan = off');
+    const latestDeliveryPlan = await pool.query(`
+      EXPLAIN (COSTS OFF)
+      SELECT id, status
+      FROM content_notification_deliveries
+      WHERE post_id = $1
+        AND notification_type = 'admin_review'
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1
+    `, [reviewPost.rows[0].id]);
+    await pool.query('RESET enable_seqscan');
+    assert.match(
+      latestDeliveryPlan.rows.map((row) => row['QUERY PLAN']).join('\n'),
+      /idx_content_notification_deliveries_post_type_latest/i
+    );
     await assert.rejects(
       pool.query(`
         INSERT INTO content_notification_deliveries (
@@ -812,7 +848,8 @@ test('echtes PostgreSQL: Migrationen 002–005 und Generate→Notify→Approve�
         imageUrl: 'https://example.test/image-race-new.webp',
         publicId: 'blog_images/image-race-new',
         imageAlt: 'Neues sicheres Beitragsbild',
-        expectedOldPublicId: null
+        expectedOldPublicId: null,
+        expectedReviewVersion: Number(imageRaceDraft.review_version)
       })
     ], 'Publication gegen Bildregeneration');
     assert.equal(imageRace[0].status, 'fulfilled');

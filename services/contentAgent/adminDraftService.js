@@ -30,6 +30,14 @@ function positivePostId(value) {
   return postId;
 }
 
+function positiveReviewVersion(value) {
+  const version = Number(value);
+  if (!Number.isSafeInteger(version) || version < 1) {
+    throw draftError('CONTENT_DRAFT_VALIDATION_FAILED', 'Die Reviewversion des Entwurfs ist ungültig.');
+  }
+  return version;
+}
+
 function requireConfirmation(confirmed) {
   if (confirmed !== true) {
     throw draftError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
@@ -192,7 +200,7 @@ export function createAdminDraftRepository(db = pool) {
       };
     },
 
-    async updateDraftTransaction({ postId, article, admin }) {
+    async updateDraftTransaction({ postId, article, admin, expectedReviewVersion }) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
@@ -243,6 +251,7 @@ export function createAdminDraftRepository(db = pool) {
             AND generated_by_ai = TRUE
             AND published = FALSE
             AND content_format = 'static_html'
+            AND review_version = $12
           RETURNING *
         `, [
           postId,
@@ -255,10 +264,14 @@ export function createAdminDraftRepository(db = pool) {
           article.ogDescription,
           article.imageAlt,
           JSON.stringify(article.faqJson),
-          article.contentHtml
+          article.contentHtml,
+          expectedReviewVersion
         ]);
         if (!postResult.rows[0]) {
-          throw draftError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
+          throw draftError(
+            'CONTENT_DRAFT_EDIT_CONFLICT',
+            'Der KI-Entwurf wurde zwischenzeitlich geändert.'
+          );
         }
 
         const audit = JSON.stringify({
@@ -468,6 +481,7 @@ export function createAdminDraftService({
         imageAlt: post.image_alt || '',
         faqJsonText: JSON.stringify(Array.isArray(post.faq_json) ? post.faq_json : [], null, 2),
         contentHtml: post.content || '',
+        reviewVersion: Number(post.review_version),
         riskReview: metadata.quality_report_json?.focusedReview || null,
         actions: deriveDraftReviewActions(post, notification, now())
       };
@@ -479,6 +493,7 @@ export function createAdminDraftService({
         throw draftError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
       }
       const normalizedAdmin = normalizeAdmin(admin);
+      const expectedReviewVersion = positiveReviewVersion(input?.reviewVersion);
       const article = normalizeDraftInput(input);
       const context = await repository.getValidationContext(postId, current);
       const validation = validateArticle(article, context);
@@ -492,7 +507,8 @@ export function createAdminDraftService({
       return repository.updateDraftTransaction({
         postId,
         article: { ...article, contentHtml: validation.sanitizedHtml },
-        admin: normalizedAdmin
+        admin: normalizedAdmin,
+        expectedReviewVersion
       });
     },
 

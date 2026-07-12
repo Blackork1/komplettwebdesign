@@ -563,6 +563,12 @@ async function loadImageResult(context, dependencies) {
   if (rawPersisted !== null && rawPersisted !== undefined) {
     const image = persistedImage(rawPersisted);
     if (!image) return null;
+    if (!positiveReviewVersion(image.reviewVersionBefore)) {
+      return manualProviderResult(
+        'provider_stage_version_fence_missing',
+        'Das persistierte Bildproviderergebnis besitzt keinen sicheren Reviewversions-Fence.'
+      );
+    }
     const actualCost = Number.isFinite(Number(image.actualCost))
       ? Number(image.actualCost)
       : Number(runtimeSnapshot.imageCostEur || 0);
@@ -621,10 +627,17 @@ async function loadImageResult(context, dependencies) {
     bytes: Number(uploaded.bytes) || 0,
     imageAlt: currentArticle.imageAlt,
     previousPublicId: draft.post.hero_public_id || null,
+    reviewVersionBefore: positiveReviewVersion(draft.post.review_version),
     actualCost,
     reservationMonth: reservation.reservationMonth,
     audit: uploaded.audit || {}
   };
+  if (!result.reviewVersionBefore) {
+    return manualProviderResult(
+      'provider_stage_version_fence_missing',
+      'Der Entwurf besitzt keine gültige Reviewversion für die Bildregeneration.'
+    );
+  }
   try {
     await dependencies.runRepository.updateRunStage(run.id, {
       currentStage: stageId,
@@ -828,7 +841,8 @@ async function runImageRegeneration(context, dependencies) {
       imageUrl: image.imageUrl,
       publicId: image.publicId,
       imageAlt: image.imageAlt || draft.post.image_alt || '',
-      expectedOldPublicId: image.previousPublicId ?? null
+      expectedOldPublicId: image.previousPublicId ?? null,
+      expectedReviewVersion: image.reviewVersionBefore
     });
   } catch (error) {
     if (error?.code !== 'CONTENT_IMAGE_COMMIT_UNCERTAIN') throw error;
@@ -1087,7 +1101,14 @@ export function createDraftRegenerationRepository(db = pool) {
       }
     },
 
-    async updateGeneratedImage({ postId, imageUrl, publicId, imageAlt, expectedOldPublicId }) {
+    async updateGeneratedImage({
+      postId,
+      imageUrl,
+      publicId,
+      imageAlt,
+      expectedOldPublicId,
+      expectedReviewVersion
+    }) {
       const client = await db.connect();
       let commitStarted = false;
       let lockedOldPublicId = null;
@@ -1095,7 +1116,7 @@ export function createDraftRegenerationRepository(db = pool) {
         await client.query('BEGIN');
         await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const locked = await client.query(`
-          SELECT p.id, p.hero_public_id
+          SELECT p.id, p.hero_public_id, p.review_version
           FROM posts p
           WHERE p.id = $1
             AND p.generated_by_ai = TRUE
@@ -1108,6 +1129,14 @@ export function createDraftRegenerationRepository(db = pool) {
         }
         lockedOldPublicId = locked.rows[0].hero_public_id ?? null;
         const expected = expectedOldPublicId ?? null;
+        const currentReviewVersion = Number(locked.rows[0].review_version);
+        const expectedVersion = positiveReviewVersion(expectedReviewVersion);
+        if (!expectedVersion) {
+          throw regenerationError(
+            'CONTENT_REGENERATION_VALIDATION_FAILED',
+            'Die erwartete Reviewversion für das Beitragsbild fehlt.'
+          );
+        }
         if (lockedOldPublicId === publicId) {
           await client.query('COMMIT');
           return {
@@ -1117,12 +1146,13 @@ export function createDraftRegenerationRepository(db = pool) {
             post: locked.rows[0]
           };
         }
-        if (lockedOldPublicId !== expected) {
+        if (lockedOldPublicId !== expected || currentReviewVersion !== expectedVersion) {
           await client.query('COMMIT');
           return {
             committed: false,
             casMismatch: true,
             currentPublicId: lockedOldPublicId,
+            currentReviewVersion,
             post: locked.rows[0]
           };
         }
@@ -1142,10 +1172,17 @@ export function createDraftRegenerationRepository(db = pool) {
             AND published = FALSE
             AND content_format = 'static_html'
             AND hero_public_id IS NOT DISTINCT FROM $5
+            AND review_version = $6
           RETURNING *
-        `, [postId, imageUrl, publicId, imageAlt, expected]);
+        `, [postId, imageUrl, publicId, imageAlt, expected, expectedVersion]);
         if (!rows[0]) {
-          throw regenerationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
+          return {
+            committed: false,
+            casMismatch: true,
+            currentPublicId: lockedOldPublicId,
+            currentReviewVersion,
+            post: locked.rows[0]
+          };
         }
         commitStarted = true;
         await client.query('COMMIT');
