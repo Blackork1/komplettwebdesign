@@ -489,6 +489,7 @@ export function createScheduledPublicationService({
           runAfter: normalizedScheduledAt
         }, client);
         if (!job) throw new Error('Der automatische Veröffentlichungsjob konnte nicht angelegt werden.');
+        await assertActiveLease(leaseGuard);
         return {
           post: current,
           event,
@@ -543,6 +544,7 @@ export function createScheduledPublicationService({
         assertAutoEvent(event, expectedEvent);
       }
       if (!decision.allowed) {
+        await assertActiveLease(leaseGuard);
         return {
           post: current,
           event,
@@ -590,6 +592,7 @@ export function createScheduledPublicationService({
         runAfter: normalizedScheduledAt
       }, client);
       if (!job) throw new Error('Der automatische Veröffentlichungsjob konnte nicht angelegt werden.');
+      await assertActiveLease(leaseGuard);
       return {
         post,
         event,

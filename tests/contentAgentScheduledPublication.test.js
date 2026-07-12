@@ -330,13 +330,14 @@ test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async (
 
 test('Auto-Systemfreigabe plant nach bestandenen Gates ohne Admin und ohne frühe Veröffentlichung', async () => {
   const { service, calls, state } = harness();
+  let leaseChecks = 0;
 
   const result = await service.approveAutomaticallyForSchedule({
     postId: 3,
     runId: 21,
     scheduledAt: futureSlot,
     snapshot: autoSnapshot,
-    leaseGuard: async () => true
+    leaseGuard: async () => { leaseChecks += 1; return true; }
   });
 
   assert.equal(result.decision.allowed, true);
@@ -348,17 +349,19 @@ test('Auto-Systemfreigabe plant nach bestandenen Gates ohne Admin und ohne früh
   assert.equal(state.approvals, 0);
   assert.equal(state.event, null);
   assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
+  assert.equal(leaseChecks, 5);
 });
 
 test('blockierte Auto-Systemfreigabe bleibt needs_review und legt keinen Publish-Job an', async () => {
   const { service, jobs, state } = harness();
+  let leaseChecks = 0;
 
   const result = await service.approveAutomaticallyForSchedule({
     postId: 3,
     runId: 21,
     scheduledAt: futureSlot,
     snapshot: { ...autoSnapshot, manualApprovalsCount: 7 },
-    leaseGuard: async () => true
+    leaseGuard: async () => { leaseChecks += 1; return true; }
   });
 
   assert.equal(result.decision.allowed, false);
@@ -368,6 +371,69 @@ test('blockierte Auto-Systemfreigabe bleibt needs_review und legt keinen Publish
   assert.equal(result.job, null);
   assert.equal(jobs.size, 0);
   assert.equal(state.approvals, 0);
+  assert.equal(leaseChecks, 3);
+});
+
+test('Leaseverlust direkt nach dem blockierten Auto-Event erzwingt Rollback vor Commit', async () => {
+  const { service, calls } = harness();
+  const leaseError = Object.assign(publicationError('CONTENT_JOB_LEASE_LOST'), {
+    retryable: false
+  });
+  let leaseChecks = 0;
+
+  await assert.rejects(
+    service.approveAutomaticallyForSchedule({
+      postId: 3,
+      runId: 21,
+      scheduledAt: futureSlot,
+      snapshot: { ...autoSnapshot, manualApprovalsCount: 7 },
+      leaseGuard: async () => {
+        leaseChecks += 1;
+        if (leaseChecks === 3) throw leaseError;
+        return true;
+      }
+    }),
+    leaseError
+  );
+
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'auto-event'), true);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'approve'), false);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'job'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(calls.includes('COMMIT'), false);
+});
+
+test('Leaseverlust direkt nach Auto-Approval und Job-Enqueue rollt alle Writes vor Commit zurück', async () => {
+  const { service, calls } = harness();
+  const leaseError = Object.assign(publicationError('CONTENT_JOB_LEASE_LOST'), {
+    retryable: false
+  });
+  let leaseChecks = 0;
+
+  await assert.rejects(
+    service.approveAutomaticallyForSchedule({
+      postId: 3,
+      runId: 21,
+      scheduledAt: futureSlot,
+      snapshot: autoSnapshot,
+      leaseGuard: async () => {
+        leaseChecks += 1;
+        if (leaseChecks === 5) throw leaseError;
+        return true;
+      }
+    }),
+    leaseError
+  );
+
+  for (const operation of ['auto-event', 'approve', 'job']) {
+    assert.equal(
+      calls.some((entry) => Array.isArray(entry) && entry[0] === operation),
+      true,
+      operation
+    );
+  }
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(calls.includes('COMMIT'), false);
 });
 
 test('Auto-Systemfreigabe bindet den Serviceparameter exakt an publicationAt aus dem Snapshot', async () => {
