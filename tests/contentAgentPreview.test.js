@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import * as cheerio from 'cheerio';
 import ejs from 'ejs';
 
@@ -9,6 +10,10 @@ import { buildBlogPostPageModel } from '../services/blogPostPresentationService.
 import { escapeJsonForHtml } from '../util/security.js';
 
 const blogViewPath = fileURLToPath(new URL('../views/blog/show.ejs', import.meta.url));
+const adminCss = readFileSync(new URL('../public/admin.css', import.meta.url), 'utf8');
+const scheduleView = readFileSync(new URL('../views/admin/contentAgent/schedule.ejs', import.meta.url), 'utf8');
+const draftsView = readFileSync(new URL('../views/admin/contentAgent/drafts.ejs', import.meta.url), 'utf8');
+const editorView = readFileSync(new URL('../views/admin/contentAgent/draftEdit.ejs', import.meta.url), 'utf8');
 
 function post(overrides = {}) {
   return {
@@ -236,4 +241,25 @@ test('reservierter Gesamtartikel-Wrapper kollidiert nicht mit echten gleichnamig
     'Erste konkrete Fundstelle.',
     'Zweite konkrete Fundstelle.'
   ]);
+});
+
+test('Zeitplan, Entwurfsliste und Editor besitzen responsive Verträge für alle Prüfgrößen', () => {
+  assert.match(adminCss, /\.content-agent-page\s*\{[\s\S]*?min-width:\s*0;/);
+  assert.match(adminCss, /\.content-agent-page\s*\{[\s\S]*?overflow-x:\s*clip;/);
+  assert.match(adminCss, /@media \(max-width: 1180px\)/);
+  assert.match(adminCss, /@media \(max-width: 900px\)/);
+  assert.match(adminCss, /@media \(max-width: 767\.98px\)/);
+  assert.match(adminCss, /\.content-agent-page :where\(a, button, input, select, textarea\):focus-visible/);
+  assert.match(adminCss, /\.content-agent-card-actions[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(adminCss, /\.content-agent-editor__actions[\s\S]*?flex-wrap:\s*wrap/);
+
+  assert.match(scheduleView, /Erstellungsvorlauf in Stunden/);
+  assert.match(scheduleView, /Veröffentlichungszeit/);
+  assert.match(draftsView, /is-<%= draft\.reviewState %>/);
+  assert.match(draftsView, />Verpasst</);
+  assert.match(editorView, /reviewActions\.canApproveScheduled/);
+  assert.match(editorView, /reviewActions\.canPublishNow/);
+  assert.match(editorView, /reviewActions\.canReschedule/);
+  assert.match(editorView, /Freigeben und jetzt veröffentlichen/);
+  assert.match(editorView, /Verschieben/i);
 });

@@ -22,6 +22,8 @@ import {
 } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
+import { sendAdminReviewNotification } from '../services/contentAgent/contentNotificationService.js';
+import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
 import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
 import { evaluateContentAgentPgResetGuard } from './helpers/contentAgentPostgresTestGuard.js';
@@ -146,7 +148,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau einen Run', {
+test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const pool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
@@ -618,6 +620,8 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       VALUES ('generate_manual_draft', 'completed', 'pg-auto-publish-once')
       RETURNING id
     `);
+    const autoScheduledAt = new Date(Date.now() + 60_000);
+    const autoStartedAt = new Date(Date.now() - 1_000);
     const autoSnapshot = {
       operatingMode: 'auto_publish',
       forcedMode: null,
@@ -625,6 +629,8 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       manualApprovalsCount: 8,
       autoPublishMinScore: 90,
       settingsVersion: 1,
+      publicationAt: autoScheduledAt.toISOString(),
+      startedAt: autoStartedAt.toISOString(),
       source: 'postgres-integration'
     };
     const autoRun = await createRun({
@@ -633,23 +639,30 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     }, pool);
     const autoDraft = await insertPublishableDraft(pool, 'auto-once');
     await pool.query(
-      'UPDATE posts SET generation_run_id = $2 WHERE id = $1',
-      [autoDraft.id, autoRun.id]
+      'UPDATE posts SET generation_run_id = $2, scheduled_at = $3 WHERE id = $1',
+      [autoDraft.id, autoRun.id, autoScheduledAt]
     );
 
-    const firstAuto = await publicationService.publishDraftAutomatically({
+    const autoScheduledService = createScheduledPublicationService({ db: pool });
+    const firstAuto = await autoScheduledService.approveAutomaticallyForSchedule({
       postId: autoDraft.id,
       runId: autoRun.id,
-      snapshot: autoSnapshot
+      scheduledAt: autoScheduledAt.toISOString(),
+      snapshot: autoSnapshot,
+      leaseGuard: async () => true
     });
-    const retryAuto = await publicationService.publishDraftAutomatically({
+    const retryAuto = await autoScheduledService.approveAutomaticallyForSchedule({
       postId: autoDraft.id,
       runId: autoRun.id,
-      snapshot: autoSnapshot
+      scheduledAt: autoScheduledAt.toISOString(),
+      snapshot: autoSnapshot,
+      leaseGuard: async () => true
     });
     assert.equal(firstAuto.event.id, retryAuto.event.id);
-    assert.equal(firstAuto.post.published, true);
-    assert.equal(retryAuto.post.published, true);
+    assert.equal(firstAuto.post.published, false);
+    assert.equal(firstAuto.post.workflow_status, 'approved_scheduled');
+    assert.equal(retryAuto.post.published, false);
+    assert.equal(retryAuto.job.id, firstAuto.job.id);
 
     const publishEventRepository = createContentPublishEventRepository(pool);
     const conflictingBlocked = await publishEventRepository.insertAutoEvent({
@@ -660,8 +673,10 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       qualityScore: 92,
       reasons: ['forced_review'],
       context: {
-        action: 'auto_publish_policy', settingsVersion: 1,
-        source: 'postgres-integration', forcedMode: 'review'
+        action: 'auto_schedule_policy', settingsVersion: 1,
+        source: 'postgres-integration', forcedMode: 'review',
+        approvalVersion: 1, publicationVersion: 1,
+        scheduledAt: autoScheduledAt.toISOString()
       }
     }, pool);
     assert.equal(conflictingBlocked, null);
@@ -674,19 +689,21 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       FROM posts p WHERE p.id = $1
     `, [autoDraft.id, autoRun.id]);
     assert.deepEqual(autoState.rows[0], {
-      published: true,
-      workflow_status: 'published',
+      published: false,
+      workflow_status: 'approved_scheduled',
       event_count: 1,
       approval_count: 1
     });
 
     await assert.rejects(
-      publicationService.publishDraftAutomatically({
+      autoScheduledService.approveAutomaticallyForSchedule({
         postId: autoDraft.id,
         runId: autoRun.id,
-        snapshot: { ...autoSnapshot, operatingMode: 'review', forcedMode: 'review' }
+        scheduledAt: autoScheduledAt.toISOString(),
+        snapshot: { ...autoSnapshot, operatingMode: 'review', forcedMode: 'review' },
+        leaseGuard: async () => true
       }),
-      (error) => error.code === 'CONTENT_AUTO_EVENT_CONFLICT'
+      (error) => error.code === 'CONTENT_APPROVAL_STALE'
     );
     assert.equal(
       (await pool.query(`
@@ -837,17 +854,32 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       "SELECT COUNT(*)::int AS count FROM content_jobs WHERE job_type = 'send_admin_review_notification' AND payload_json->>'postId' = $1",
       [String(firstDraft.post.id)]
     )).rows[0].count, 1);
+    await pool.query(`
+      UPDATE content_jobs
+      SET run_after = NOW() + INTERVAL '1 hour'
+      WHERE job_type = 'send_admin_review_notification'
+        AND payload_json ->> 'postId' = $1
+        AND status = 'queued'
+    `, [String(firstDraft.post.id)]);
     assert.ok(await renewJobLease(firstClaim, pool));
     assert.equal((await retryOrFailJob(firstClaim, new Error('temporär'), { backoffSeconds: 1 }, pool)).status, 'queued');
     await pool.query('UPDATE content_jobs SET run_after = NOW() WHERE id = $1', [job.id]);
 
     const secondClaim = await claimNextJob('pg-worker', pool);
+    assert.equal(secondClaim.id, job.id);
     const resumedRun = await createRun({ jobId: job.id }, pool);
     assert.equal(resumedRun.id, firstRun.id);
     assert.deepEqual(resumedRun.stage_results_json.article_generation, { responseId: 'resp-einmalig' });
     assert.equal((await completeJob(secondClaim, pool)).status, 'completed');
     const counts = await pool.query('SELECT COUNT(*)::int AS count FROM content_runs WHERE job_id = $1', [job.id]);
     assert.equal(counts.rows[0].count, 1);
+    await pool.query(`
+      UPDATE content_jobs
+      SET status = 'completed', finished_at = NOW(), updated_at = NOW()
+      WHERE job_type = 'send_admin_review_notification'
+        AND payload_json ->> 'postId' = $1
+        AND status = 'queued'
+    `, [String(firstDraft.post.id)]);
 
     const safeJob = await enqueueJob({
       jobType: 'generate_manual_draft',
@@ -935,6 +967,17 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       }
     });
 
+    const dueJobIds = await pool.query(`
+      SELECT id, job_type, payload_json
+      FROM content_jobs
+      WHERE status = 'queued' AND run_after <= NOW()
+      ORDER BY run_after, id
+    `);
+    assert.deepEqual(dueJobIds.rows, [{
+      id: safeJob.id,
+      job_type: 'generate_manual_draft',
+      payload_json: { mode: 'safe-provider-retry' }
+    }]);
     assert.equal((await worker.processOnce()).status, 'queued');
     await pool.query('UPDATE content_jobs SET run_after = NOW() WHERE id = $1', [safeJob.id]);
     const secondWorkerResult = await worker.processOnce();
@@ -957,6 +1000,148 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     const ambiguousState = await pool.query('SELECT status FROM content_jobs WHERE id = $1', [ambiguousJob.id]);
     assert.equal(ambiguousState.rows[0].status, 'needs_manual_attention');
     assert.equal(timers.size, 0);
+
+    await pool.query(`
+      UPDATE content_agent_settings
+      SET manual_approvals_count = 0,
+          newsletter_blog_notifications_enabled = FALSE
+      WHERE id = 1
+    `);
+    const scheduledGenerationJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key)
+      VALUES ('generate_manual_draft', 'completed', 'pg-scheduled-review-e2e')
+      RETURNING id
+    `);
+    const scheduledRun = await createRun({
+      jobId: scheduledGenerationJob.rows[0].id,
+      runtimeSnapshot: { operatingMode: 'review', source: 'postgres-scheduled-e2e' }
+    }, pool);
+    const scheduledAt = new Date(Date.now() + 1_500);
+    const scheduledFaq = publishableFaq();
+    const generated = await BlogPostModel.createAIDraft({
+      generationRunId: scheduledRun.id,
+      scheduledAt: scheduledAt.toISOString(),
+      adminNotificationEmail: 'redaktion@example.de',
+      post: {
+        title: 'Terminierter PostgreSQL-End-to-End-Entwurf',
+        slug: 'terminierter-postgresql-end-to-end-entwurf',
+        excerpt: 'Dieser Entwurf belegt den gesamten terminierten Reviewablauf.',
+        content: publishableHtml(scheduledFaq),
+        hero_image: 'https://example.test/scheduled-e2e.webp',
+        hero_public_id: 'blog_images/scheduled-e2e',
+        category: 'Webdesign',
+        faq_json: scheduledFaq,
+        meta_title: 'Sicherer Meta Title mit passender Länge für Berlin',
+        meta_description: 'Dieser kontrollierte Integrationstest belegt den sicheren terminierten Review- und Veröffentlichungsablauf vollständig.',
+        og_title: 'Terminierter Reviewablauf',
+        og_description: 'Integrationstest für die geplante Veröffentlichung.',
+        image_alt: 'Terminierter redaktioneller Reviewablauf',
+        published: false,
+        workflow_status: 'needs_review',
+        content_format: 'static_html',
+        generated_by_ai: true
+      },
+      metadata: {
+        primary_keyword: 'Terminierter Reviewablauf',
+        secondary_keywords: [],
+        search_intent: 'commercial',
+        target_audience: 'Kleine Unternehmen',
+        content_cluster: 'Webdesign',
+        business_goal: 'Beratungsanfragen',
+        cta_type: 'contact',
+        internal_links_json: [
+          { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
+          { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
+        ],
+        source_references_json: [],
+        quality_score: 92,
+        quality_report_json: publishQualityReport(92)
+      }
+    }, pool);
+    assert.equal(generated.post.workflow_status, 'needs_review');
+    assert.equal(generated.post.published, false);
+
+    const adminDelivery = await pool.query(`
+      SELECT id FROM content_notification_deliveries
+      WHERE post_id = $1 AND notification_type = 'admin_review'
+    `, [generated.post.id]);
+    let adminMailCalls = 0;
+    const notification = await sendAdminReviewNotification({
+      deliveryId: adminDelivery.rows[0].id,
+      leaseGuard: async () => true
+    }, {
+      database: pool,
+      canonicalBaseUrl: 'https://www.komplettwebdesign.de',
+      async sendReviewMail() {
+        adminMailCalls += 1;
+        return { messageId: 'pg-scheduled-review-e2e' };
+      }
+    });
+    assert.equal(notification.status, 'completed');
+    assert.equal(adminMailCalls, 1);
+
+    const scheduledPublicationService = createScheduledPublicationService({ db: pool });
+    const approval = await scheduledPublicationService.approveForSchedule({
+      postId: generated.post.id,
+      scheduledAt,
+      admin: publicationAdmin.rows[0],
+      confirmed: true
+    });
+    assert.equal(approval.post.workflow_status, 'approved_scheduled');
+    assert.equal(approval.post.published, false);
+    const beforeDue = await pool.query(
+      'SELECT published, workflow_status FROM posts WHERE id = $1',
+      [generated.post.id]
+    );
+    assert.deepEqual(beforeDue.rows[0], {
+      published: false,
+      workflow_status: 'approved_scheduled'
+    });
+
+    const publicationJob = await pool.query(`
+      SELECT payload_json
+      FROM content_jobs
+      WHERE job_type = 'publish_approved_post'
+        AND payload_json ->> 'postId' = $1
+    `, [String(generated.post.id)]);
+    await new Promise((resolve) => setTimeout(
+      resolve,
+      Math.max(0, scheduledAt.getTime() - Date.now() + 150)
+    ));
+    const publicationInput = {
+      ...publicationJob.rows[0].payload_json,
+      leaseGuard: async () => true
+    };
+    const firstScheduledPublication = await scheduledPublicationService.publishApprovedPost(publicationInput);
+    const repeatedScheduledPublication = await scheduledPublicationService.publishApprovedPost(publicationInput);
+    assert.equal(firstScheduledPublication.post.published, true);
+    assert.equal(repeatedScheduledPublication.alreadyPublished, true);
+
+    const scheduledState = await pool.query(`
+      SELECT p.published, p.workflow_status,
+             d.status AS notification_status,
+             (SELECT COUNT(*)::int FROM content_publish_events e
+              WHERE e.post_id = p.id AND e.decision = 'manual') AS event_count,
+             (SELECT manual_approvals_count FROM content_agent_settings WHERE id = 1) AS approval_count,
+             (SELECT COUNT(*)::int FROM content_jobs j
+              WHERE j.job_type = 'send_blog_newsletter'
+                AND j.payload_json ->> 'postId' = p.id::text) AS newsletter_job_count,
+             (SELECT COUNT(*)::int FROM content_notification_deliveries n
+              WHERE n.post_id = p.id AND n.notification_type = 'newsletter_article') AS newsletter_delivery_count
+      FROM posts p
+      JOIN content_notification_deliveries d
+        ON d.post_id = p.id AND d.notification_type = 'admin_review'
+      WHERE p.id = $1
+    `, [generated.post.id]);
+    assert.deepEqual(scheduledState.rows[0], {
+      published: true,
+      workflow_status: 'published',
+      notification_status: 'sent',
+      event_count: 1,
+      approval_count: 1,
+      newsletter_job_count: 0,
+      newsletter_delivery_count: 0
+    });
   } finally {
     await pool.end();
   }

@@ -88,12 +88,49 @@ test('PostgreSQL-Healthcheck bewahrt die Compose-Escapes und App wartet auf heal
 });
 
 test('Anleitung verwendet den echten Rootpfad und trennt automatisch aktualisierten Code von manuellen Dateien', () => {
-  assert.match(guide, /\/apps\/komplettwebdesign\/server/);
+  assert.match(guide, /webadmin@ubuntu:~\/apps\/komplettwebdesign\$/);
+  assert.match(guide, /~\/apps\/komplettwebdesign\/server/);
   assert.match(guide, /ausschließlich[^\n]*`server\/`[^\n]*(?:Git|automatisch)/i);
   for (const file of ['`.env`', '`docker-compose.yml`', '`deploy/deploy.sh`']) {
     assert.match(guide, new RegExp(`${file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\n]*manuell`, 'i'));
   }
   assert.doesNotMatch(guide, /\/home\/webadmin\/apps\/komplettwebdesign/);
+  const containerPathMentions = guide.match(/(?<![~}A-Za-z0-9_$])\/apps\/komplettwebdesign/g) || [];
+  assert.equal(containerPathMentions.length, 1, '/apps darf ausschließlich als Containerpfad vorkommen');
+  assert.match(guide, /Webhook-Container[^\n]*`\/apps\/komplettwebdesign`/i);
+});
+
+test('Rollout dokumentiert Migration 004, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
+  assert.match(guide, /002[^\n]*003[^\n]*004/i);
+  assert.match(guide, /004_create_scheduled_content_review\.sql/);
+  assert.match(guide, /vier Stunden[^\n]*Veröffentlichung/i);
+  assert.match(guide, /Admin[^\n]*(?:Prüfmail|Benachrichtigung)/i);
+  assert.match(guide, /Freigeben[^\n]*geplanten Termin/i);
+  assert.match(guide, /Freigeben und jetzt veröffentlichen/i);
+  assert.match(guide, /Verschieben[^\n]*Termin/i);
+  assert.match(guide, /Newsletter[^\n]*deaktiviert[^\n]*acht/i);
+  for (const checkpoint of [
+    'needs_review',
+    'approved_scheduled',
+    'publish_approved_post',
+    'manual_approvals_count',
+    'content_publish_events'
+  ]) assert.match(guide, new RegExp(checkpoint));
+});
+
+test('Dry-Run belegt terminierten Review und simulierte Benachrichtigung ohne externe Aufrufe', () => {
+  const result = spawnSync(process.execPath, ['scripts/contentAgentDryRun.js'], {
+    cwd: new URL('..', import.meta.url),
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH, NODE_ENV: 'test', OPENAI_API_KEY: 'test-key' }
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.externalCalls, 0);
+  assert.equal(report.articleValid, true);
+  assert.equal(report.publishMode, 'draft');
+  assert.equal(report.scheduledReview, true);
+  assert.equal(report.notificationSimulated, true);
 });
 
 test('alle kopierbaren Bash-Blöcke sind syntaktisch gültig und Compose gibt keine Konfiguration aus', () => {
@@ -484,11 +521,11 @@ test('Dry-Run-Validator findet das letzte JSON nach Logs und prüft alle Sicherh
   const directory = mkdtempSync(join(tmpdir(), 'kwd-dry-run-'));
   try {
     const output = join(directory, 'dry-run.log');
-    writeFileSync(output, 'npm log\n{"externalCalls":0,"articleValid":true,"publishMode":"draft"}\n');
+    writeFileSync(output, 'npm log\n{"externalCalls":0,"articleValid":true,"publishMode":"draft","scheduledReview":true,"notificationSimulated":true}\n');
     const valid = runBash(`${validator}\nvalidate_dry_run_output '${output}'`);
     assert.equal(valid.status, 0, valid.stderr);
 
-    writeFileSync(output, 'log\n{"externalCalls":1,"articleValid":true,"publishMode":"draft"}\n');
+    writeFileSync(output, 'log\n{"externalCalls":1,"articleValid":true,"publishMode":"draft","scheduledReview":true,"notificationSimulated":true}\n');
     const invalid = runBash(`${validator}\nvalidate_dry_run_output '${output}'`);
     assert.notEqual(invalid.status, 0);
   } finally {

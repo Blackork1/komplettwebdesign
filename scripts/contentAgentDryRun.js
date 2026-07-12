@@ -171,9 +171,15 @@ function localOperation(value, responseId) {
 
 function createDryRunDependencies(adapterMonitor, configureAdapters) {
   const stageResults = new Map();
+  const simulation = {
+    scheduledReview: false,
+    notificationSimulated: false
+  };
   const dependencies = {
     config: {
       publishMode: 'draft',
+      publicationAt: '2026-07-13T16:00:00.000Z',
+      adminNotificationEmail: 'redaktion@dry-run.invalid',
       maxTopicCandidates: 1,
       maxRevisions: 0,
       monthlyCostLimitEur: 0,
@@ -249,10 +255,21 @@ function createDryRunDependencies(adapterMonitor, configureAdapters) {
     },
     draftRepository: {
       async createAIDraft(input) {
+        simulation.scheduledReview = Boolean(
+          input?.scheduledAt
+          && input?.post?.published === false
+          && input?.post?.workflow_status === 'needs_review'
+        );
+        simulation.notificationSimulated = Boolean(
+          input?.adminNotificationEmail
+          && input?.generationRunId
+          && simulation.scheduledReview
+        );
         return {
           post: {
             id: 41,
             ...input.post,
+            scheduled_at: input.scheduledAt,
             published: false,
             workflow_status: 'needs_review',
             content_format: 'static_html',
@@ -280,6 +297,7 @@ function createDryRunDependencies(adapterMonitor, configureAdapters) {
     dependencies.validateArticle,
     { label: 'validateArticle' }
   );
+  dependencies.dryRunSimulation = simulation;
   return dependencies;
 }
 
@@ -314,7 +332,12 @@ export async function runContentAgentDryRun({
     simulatedAdapterCalls: adapterMonitor.simulatedAdapterCalls,
     articleValid: validation.passed,
     qualityScore: result.metadata?.quality_score ?? 0,
-    publishMode: dependencies.config.publishMode
+    publishMode: dependencies.config.publishMode,
+    scheduledReview: dependencies.dryRunSimulation.scheduledReview
+      && result.post?.published === false
+      && result.post?.workflow_status === 'needs_review'
+      && result.post?.scheduled_at === dependencies.config.publicationAt,
+    notificationSimulated: dependencies.dryRunSimulation.notificationSimulated
   };
 }
 

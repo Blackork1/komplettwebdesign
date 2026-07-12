@@ -140,7 +140,7 @@
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish-now" data-confirm="Der geplante Termin ist verpasst. Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
-        <button class="btn btn-success" type="submit"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Jetzt veröffentlichen</button>
+        <button class="btn btn-success" type="submit"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Freigeben und jetzt veröffentlichen</button>
       </form>
       <% } %>
       <% if (reviewActions.canReschedule === true) { %>

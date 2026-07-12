@@ -511,6 +511,9 @@ body {
   --content-agent-green: #187548;
   --content-agent-amber: #a85f00;
   position: relative;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
   color: var(--content-agent-ink);
 }
 
@@ -574,6 +577,7 @@ body {
 .content-agent-job__action {
   display: flex;
   flex-wrap: wrap;
+  flex-wrap: wrap;
   gap: 0.65rem;
 }
 
@@ -594,7 +598,7 @@ body {
   --bs-btn-hover-border-color: #084c89;
 }
 
-.content-agent-page :where(a, button, input, select):focus-visible {
+.content-agent-page :where(a, button, input, select, textarea):focus-visible {
   outline: 3px solid rgba(233, 74, 27, 0.35);
   outline-offset: 2px;
 }
@@ -2109,7 +2113,8 @@ body {
   position: sticky;
   bottom: 0;
   z-index: 4;
-  display: flex;
+      display: flex;
+      flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
