@@ -365,13 +365,63 @@ test('recoverExpiredJobs trennt Wiederholungen von endgültigen Fehlern und lös
   const result = await recoverExpiredJobs(30, db);
 
   assert.equal(result, recovered);
-  assert.match(db.calls[0].sql, /WHERE status = 'running'/i);
-  assert.match(db.calls[0].sql, /locked_at < NOW\(\) - \(\$1 \* INTERVAL '1 minute'\)/i);
-  assert.match(db.calls[0].sql, /CASE WHEN attempts < max_attempts THEN 'queued' ELSE 'failed' END/i);
+  assert.match(db.calls[0].sql, /WHERE job\.status = 'running'/i);
+  assert.match(db.calls[0].sql, /job\.locked_at < NOW\(\) - \(\$1 \* INTERVAL '1 minute'\)/i);
+  assert.match(db.calls[0].sql, /WHEN job\.attempts < job\.max_attempts THEN 'queued'[\s\S]*ELSE 'failed'/i);
   assert.match(db.calls[0].sql, /locked_at = NULL/i);
   assert.match(db.calls[0].sql, /locked_by = NULL/i);
-  assert.match(db.calls[0].sql, /finished_at = CASE WHEN attempts < max_attempts THEN NULL ELSE NOW\(\) END/i);
+  assert.match(db.calls[0].sql, /finished_at = CASE[\s\S]*WHEN job\.attempts < job\.max_attempts THEN NULL[\s\S]*ELSE NOW\(\)/i);
   assert.deepEqual(db.calls[0].params, [30]);
+});
+
+test('Recovery gibt Jobversuch sechs für eine künftig fällige queued Delivery zurück', async () => {
+  const nextAttemptAt = new Date('2026-07-13T10:00:00.000Z');
+  const recovered = {
+    id: 77,
+    job_type: 'send_admin_review_notification',
+    status: 'queued',
+    attempts: 5,
+    max_attempts: 6,
+    run_after: nextAttemptAt,
+    locked_at: null,
+    locked_by: null,
+    payload_json: { deliveryId: 7 }
+  };
+  const db = createQueryRecorder([{ rows: [recovered] }]);
+
+  assert.deepEqual(await recoverExpiredJobs(30, db), [recovered]);
+
+  const sql = db.calls[0].sql;
+  assert.match(sql, /LEFT JOIN content_notification_deliveries AS delivery/i);
+  assert.match(sql, /delivery\.id::text = job\.payload_json\s*->>\s*'deliveryId'/i);
+  assert.doesNotMatch(sql, /\(job\.payload_json\s*->>\s*'deliveryId'\)::(?:bigint|integer|numeric)/i);
+  assert.match(sql, /expired\.delivery_status IN \('queued', 'sending'\)[\s\S]*THEN 'queued'/i);
+  assert.match(sql, /attempts = CASE[\s\S]*GREATEST\(job\.attempts - 1, 0\)/i);
+  assert.match(sql, /delivery_status = 'queued'[\s\S]*GREATEST\(job\.run_after, expired\.delivery_next_attempt_at\)/i);
+  assert.match(sql, /locked_at = NULL[\s\S]*locked_by = NULL/i);
+  assert.equal(recovered.run_after, nextAttemptAt);
+});
+
+test('Recovery lässt Jobversuch sechs für eine sending Delivery genau einmal zur Klärung laufen', async () => {
+  const recovered = {
+    id: 78,
+    job_type: 'send_admin_review_notification',
+    status: 'queued',
+    attempts: 5,
+    max_attempts: 6,
+    locked_at: null,
+    locked_by: null,
+    payload_json: { deliveryId: 8 }
+  };
+  const db = createQueryRecorder([{ rows: [recovered] }]);
+
+  assert.deepEqual(await recoverExpiredJobs(30, db), [recovered]);
+
+  const sql = db.calls[0].sql;
+  assert.match(sql, /delivery_status = 'sending'[\s\S]*THEN NOW\(\)/i);
+  assert.match(sql, /finished_at = CASE[\s\S]*delivery_status IN \('queued', 'sending'\)[\s\S]*THEN NULL/i);
+  assert.match(sql, /ELSE CASE[\s\S]*job\.attempts < job\.max_attempts[\s\S]*THEN 'queued'[\s\S]*ELSE 'failed'/i);
+  assert.equal(recovered.attempts, 5);
 });
 
 test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zurück', async () => {

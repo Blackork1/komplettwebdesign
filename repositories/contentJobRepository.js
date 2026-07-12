@@ -343,21 +343,58 @@ export async function markJobNeedsManualAttention(claim, reason = {}, db = pool)
 export async function recoverExpiredJobs(leaseMinutes, db = pool) {
   const { rows } = await db.query(
     `
-      UPDATE content_jobs
+      WITH expired AS (
+        SELECT job.id,
+               delivery.status AS delivery_status,
+               delivery.next_attempt_at AS delivery_next_attempt_at
+        FROM content_jobs AS job
+        LEFT JOIN content_notification_deliveries AS delivery
+          ON job.job_type = 'send_admin_review_notification'
+          AND delivery.id::text = job.payload_json ->> 'deliveryId'
+        WHERE job.status = 'running'
+          AND job.locked_at < NOW() - ($1 * INTERVAL '1 minute')
+        FOR UPDATE OF job
+      )
+      UPDATE content_jobs AS job
       SET status = CASE
-            WHEN attempts < max_attempts THEN 'queued'
-            ELSE 'failed'
+            WHEN job.job_type = 'send_admin_review_notification'
+              AND expired.delivery_status IN ('queued', 'sending')
+              THEN 'queued'
+            ELSE CASE
+              WHEN job.attempts < job.max_attempts THEN 'queued'
+              ELSE 'failed'
+            END
+          END,
+          attempts = CASE
+            WHEN job.job_type = 'send_admin_review_notification'
+              AND expired.delivery_status IN ('queued', 'sending')
+              THEN GREATEST(job.attempts - 1, 0)
+            ELSE job.attempts
+          END,
+          run_after = CASE
+            WHEN job.job_type = 'send_admin_review_notification'
+              AND expired.delivery_status = 'queued'
+              THEN GREATEST(job.run_after, expired.delivery_next_attempt_at)
+            WHEN job.job_type = 'send_admin_review_notification'
+              AND expired.delivery_status = 'sending'
+              THEN NOW()
+            ELSE job.run_after
           END,
           locked_at = NULL,
           locked_by = NULL,
           finished_at = CASE
-            WHEN attempts < max_attempts THEN NULL
-            ELSE NOW()
+            WHEN job.job_type = 'send_admin_review_notification'
+              AND expired.delivery_status IN ('queued', 'sending')
+              THEN NULL
+            ELSE CASE
+              WHEN job.attempts < job.max_attempts THEN NULL
+              ELSE NOW()
+            END
           END,
           updated_at = NOW()
-      WHERE status = 'running'
-        AND locked_at < NOW() - ($1 * INTERVAL '1 minute')
-      RETURNING *
+      FROM expired
+      WHERE job.id = expired.id
+      RETURNING job.*
     `,
     [leaseMinutes]
   );

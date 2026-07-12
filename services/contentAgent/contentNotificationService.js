@@ -33,6 +33,22 @@ function smtpErrorCode(error) {
   return `smtp_${code || 'error'}`;
 }
 
+export function classifySmtpFailure(error) {
+  const responseCode = Number(error?.responseCode);
+  if (Number.isInteger(responseCode) && responseCode >= 400 && responseCode < 500) {
+    return 'retryable';
+  }
+  if (Number.isInteger(responseCode) && responseCode >= 500) {
+    return 'smtp_rejected';
+  }
+
+  const code = String(error?.code || '').toUpperCase();
+  const command = String(error?.command || '').trim().toUpperCase();
+  if (code === 'ECONNREFUSED' || code === 'EDNS') return 'retryable';
+  if (code === 'ETIMEDOUT' && command === 'CONN') return 'retryable';
+  return 'outcome_uncertain';
+}
+
 function retryableSmtpError(error, retryAt) {
   const wrapped = new Error('Die Admin-Prüfmail konnte vorübergehend nicht versendet werden.', { cause: error });
   wrapped.code = 'CONTENT_ADMIN_NOTIFICATION_SMTP_FAILED';
@@ -44,6 +60,13 @@ function retryableSmtpError(error, retryAt) {
 function terminalSmtpError(error) {
   const wrapped = new Error('Die Admin-Prüfmail ist nach sechs Zustellversuchen fehlgeschlagen.', { cause: error });
   wrapped.code = 'CONTENT_ADMIN_NOTIFICATION_SMTP_EXHAUSTED';
+  wrapped.retryable = false;
+  return wrapped;
+}
+
+function rejectedSmtpError(error) {
+  const wrapped = new Error('Der SMTP-Server hat die Admin-Prüfmail dauerhaft abgelehnt.', { cause: error });
+  wrapped.code = 'CONTENT_ADMIN_NOTIFICATION_SMTP_REJECTED';
   wrapped.retryable = false;
   return wrapped;
 }
@@ -246,29 +269,43 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
         throw Object.assign(new Error('Der SMTP-Transport bestätigte den Versand nicht.'), { code: 'ENORESULT' });
       }
     } catch (error) {
-      const canRetry = Number(sending.attempts) < 6;
+      const classification = classifySmtpFailure(error);
+      const canRetry = classification === 'retryable' && Number(sending.attempts) < 6;
       const attemptIndex = Math.max(0, Number(sending.attempts) - 1);
-      const retryAt = canRetry
-        ? new Date(now().getTime() + ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex])
-        : null;
+      const retryDelayMs = canRetry ? ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex] : null;
+      const persistedErrorCode = classification === 'outcome_uncertain'
+        ? 'outcome_uncertain'
+        : classification === 'smtp_rejected'
+          ? 'smtp_rejected'
+          : smtpErrorCode(error);
       await client.query('BEGIN');
       transactionOpen = true;
       const retried = await client.query(
         `
           UPDATE content_notification_deliveries
-          SET status = CASE WHEN attempts < 6 THEN 'queued' ELSE 'failed' END,
-              next_attempt_at = CASE WHEN attempts < 6 THEN $2 ELSE next_attempt_at END,
+          SET status = CASE WHEN $3::boolean THEN 'queued' ELSE 'failed' END,
+              next_attempt_at = CASE
+                WHEN $3::boolean THEN NOW() + ($2 * INTERVAL '1 millisecond')
+                ELSE next_attempt_at
+              END,
               locked_at = NULL,
               locked_by = NULL,
-              last_error_code = $3,
+              last_error_code = $4,
               updated_at = NOW()
           WHERE id = $1
             AND status = 'sending'
-            AND attempts = $4
-            AND locked_by = $5
+            AND attempts = $5
+            AND locked_by = $6
           RETURNING *
         `,
-        [normalizedDeliveryId, retryAt, smtpErrorCode(error), sending.attempts, deliveryLockId]
+        [
+          normalizedDeliveryId,
+          retryDelayMs,
+          canRetry,
+          persistedErrorCode,
+          sending.attempts,
+          deliveryLockId
+        ]
       );
       if (!retried.rows[0]) {
         throw permanentDeliveryError(
@@ -278,7 +315,18 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
       }
       await client.query('COMMIT');
       transactionOpen = false;
-      throw canRetry ? retryableSmtpError(error, retryAt) : terminalSmtpError(error);
+      if (classification === 'outcome_uncertain') throw outcomeUncertainError(error);
+      if (classification === 'smtp_rejected') throw rejectedSmtpError(error);
+      if (!canRetry) throw terminalSmtpError(error);
+
+      const retryAt = new Date(retried.rows[0].next_attempt_at);
+      if (Number.isNaN(retryAt.getTime())) {
+        throw permanentDeliveryError(
+          'Der SMTP-Retrytermin konnte nicht aus der Datenbank übernommen werden.',
+          'CONTENT_ADMIN_NOTIFICATION_RETRY_AT_INVALID'
+        );
+      }
+      throw retryableSmtpError(error, retryAt);
     }
 
     let sentPersistenceError = null;

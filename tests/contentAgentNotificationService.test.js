@@ -8,7 +8,8 @@ function normalizeSql(sql) {
 
 function createDeliveryDatabase(delivery, {
   failCommitNumber = null,
-  loseSentUpdate = false
+  loseSentUpdate = false,
+  databaseNow = new Date('2026-07-12T10:00:00.000Z')
 } = {}) {
   let state = structuredClone(delivery);
   let transactionState = null;
@@ -39,7 +40,9 @@ function createDeliveryDatabase(delivery, {
       }
       const mutableState = transactionState || state;
       if (/SELECT[\s\S]*FROM content_notification_deliveries/i.test(normalized)) {
-        return { rows: [structuredClone(mutableState)], rowCount: 1 };
+        const selected = structuredClone(mutableState);
+        if (databaseNow) selected.database_now = new Date(databaseNow);
+        return { rows: [selected], rowCount: 1 };
       }
       if (/SET status = 'sending'/i.test(normalized)) {
         mutableState.status = 'sending';
@@ -57,15 +60,24 @@ function createDeliveryDatabase(delivery, {
       }
       if (/SET status = 'failed'/i.test(normalized)) {
         mutableState.status = 'failed';
-        mutableState.last_error_code = params.find((value) => value === 'outcome_uncertain') || null;
+        mutableState.last_error_code = params.find((value) => (
+          value === 'outcome_uncertain' || value === 'smtp_rejected'
+        )) || null;
         mutableState.locked_by = null;
         return { rows: [structuredClone(mutableState)], rowCount: 1 };
       }
       if (/SET status = CASE/i.test(normalized)) {
-        mutableState.status = mutableState.attempts < 6 ? 'queued' : 'failed';
-        mutableState.last_error_code = params.find((value) => typeof value === 'string' && value.startsWith('smtp_')) || null;
-        if (mutableState.attempts < 6) {
-          mutableState.next_attempt_at = params.find((value) => value instanceof Date) || null;
+        const canRetry = params.find((value) => typeof value === 'boolean') === true;
+        mutableState.status = canRetry ? 'queued' : 'failed';
+        mutableState.last_error_code = params.find((value) => (
+          typeof value === 'string'
+          && (value.startsWith('smtp_') || value === 'outcome_uncertain')
+        )) || null;
+        if (canRetry) {
+          const explicitDate = params.find((value) => value instanceof Date);
+          const delayMs = params.find((value) => Number.isFinite(value) && value >= 300_000);
+          mutableState.next_attempt_at = explicitDate
+            || (databaseNow && delayMs ? new Date(new Date(databaseNow).getTime() + delayMs) : null);
         }
         mutableState.locked_by = null;
         return { rows: [structuredClone(mutableState)], rowCount: 1 };
@@ -80,6 +92,18 @@ function createDeliveryDatabase(delivery, {
     async connect() { return client; }
   };
 }
+
+test('SMTP-Klassifikation unterscheidet sichere Ablehnungen, Verbindungsaufbau und unklare Ausgänge', async () => {
+  const { classifySmtpFailure } = await import('../services/contentAgent/contentNotificationService.js');
+
+  assert.equal(classifySmtpFailure({ responseCode: 421, command: 'DATA' }), 'retryable');
+  assert.equal(classifySmtpFailure({ responseCode: 550, command: 'DATA' }), 'smtp_rejected');
+  assert.equal(classifySmtpFailure({ code: 'ECONNREFUSED' }), 'retryable');
+  assert.equal(classifySmtpFailure({ code: 'EDNS' }), 'retryable');
+  assert.equal(classifySmtpFailure({ code: 'ETIMEDOUT', command: 'CONN' }), 'retryable');
+  assert.equal(classifySmtpFailure({ code: 'ETIMEDOUT', command: 'DATA' }), 'outcome_uncertain');
+  assert.equal(classifySmtpFailure({ code: 'ECONNRESET' }), 'outcome_uncertain');
+});
 
 function queuedDelivery(attempts = 0) {
   return {
@@ -160,7 +184,7 @@ test('sendContentAgentReviewMail verwirft unsichere Bild- und Editor-URLs', asyn
 test('SMTP failure keeps delivery retryable without changing the post', async () => {
   const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
   const database = createDeliveryDatabase(queuedDelivery());
-  const smtpError = Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' });
+  const smtpError = Object.assign(new Error('timeout'), { code: 'ETIMEDOUT', command: 'CONN' });
   const sendReviewMail = mock.fn(async () => { throw smtpError; });
 
   await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
@@ -177,6 +201,82 @@ test('SMTP failure keeps delivery retryable without changing the post', async ()
   assert.equal(database.state.status, 'queued');
   assert.equal(database.state.attempts, 1);
   assert.equal(database.queries.some(({ sql }) => /UPDATE posts/i.test(sql)), false);
+});
+
+test('Timeout während DATA wird outcome_uncertain und niemals automatisch wiederholt', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const database = createDeliveryDatabase(queuedDelivery());
+  const sendReviewMail = mock.fn(async () => {
+    throw Object.assign(new Error('Verbindung während DATA verloren'), {
+      code: 'ETIMEDOUT',
+      command: 'DATA'
+    });
+  });
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail,
+    now: () => new Date('2026-07-12T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => (
+    error.retryable === false
+    && error.code === 'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN'
+  ));
+
+  assert.equal(sendReviewMail.mock.callCount(), 1);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
+});
+
+test('permanente SMTP-Ablehnung wird sofort als smtp_rejected terminalisiert', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const database = createDeliveryDatabase(queuedDelivery());
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail: async () => {
+      throw Object.assign(new Error('Mailbox nicht verfügbar'), {
+        code: 'EENVELOPE',
+        command: 'RCPT TO',
+        responseCode: 550
+      });
+    },
+    now: () => new Date('2026-07-12T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => (
+    error.retryable === false
+    && error.code === 'CONTENT_ADMIN_NOTIFICATION_SMTP_REJECTED'
+  ));
+
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'smtp_rejected');
+});
+
+test('temporäre SMTP-Ablehnung berechnet den Retrytermin ausschließlich aus der Datenbankzeit', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const databaseNow = new Date('2026-07-12T10:00:00.000Z');
+  const database = createDeliveryDatabase(queuedDelivery(), { databaseNow });
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail: async () => {
+      throw Object.assign(new Error('Greylisting'), {
+        code: 'EENVELOPE',
+        command: 'DATA',
+        responseCode: 451
+      });
+    },
+    now: () => new Date('2030-01-01T00:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => (
+    error.retryable === true
+    && error.retryAt?.toISOString() === '2026-07-12T10:05:00.000Z'
+  ));
+
+  assert.equal(database.state.next_attempt_at.toISOString(), '2026-07-12T10:05:00.000Z');
+  const retryQuery = database.queries.find(({ sql }) => /SET status = CASE/i.test(sql));
+  assert.match(retryQuery.sql, /NOW\(\) \+ \(\$2 \* INTERVAL '1 millisecond'\)/i);
+  assert.equal(retryQuery.params.some((value) => value instanceof Date), false);
 });
 
 test('already sent delivery does not send twice', async () => {
@@ -209,7 +309,7 @@ test('fünf Wiederholungen warten exakt 5m, 15m, 1h, 4h und 12h; erst Versuch se
     const now = new Date('2026-07-12T10:00:00.000Z');
     await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
       database,
-      sendReviewMail: async () => { throw Object.assign(new Error('SMTP nicht erreichbar'), { code: 'ECONNECTION' }); },
+      sendReviewMail: async () => { throw Object.assign(new Error('SMTP nicht erreichbar'), { code: 'ECONNREFUSED' }); },
       now: () => now,
       canonicalBaseUrl: 'https://cms.example.de'
     }), (error) => {
@@ -225,7 +325,7 @@ test('fünf Wiederholungen warten exakt 5m, 15m, 1h, 4h und 12h; erst Versuch se
   const database = createDeliveryDatabase(queuedDelivery(5));
   await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
     database,
-    sendReviewMail: async () => { throw Object.assign(new Error('SMTP weiterhin nicht erreichbar'), { code: 'ECONNECTION' }); },
+    sendReviewMail: async () => { throw Object.assign(new Error('SMTP weiterhin nicht erreichbar'), { code: 'ECONNREFUSED' }); },
     now: () => new Date('2026-07-13T10:00:00.000Z'),
     canonicalBaseUrl: 'https://cms.example.de'
   }), (error) => error.retryable === false);

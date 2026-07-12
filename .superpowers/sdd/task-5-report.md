@@ -245,3 +245,91 @@ OPENAI_API_KEY=test-key node --test tests/contentAgent*.test.js
 ```
 
 `git diff --check` blieb sauber.
+
+---
+
+## Finaler Reviewfix: sichere SMTP-Klassifikation, crashfeste Recovery und Datenbankzeit
+
+### Behobene Findings
+
+- SMTP-Fehler werden nun durch `classifySmtpFailure()` rein und deterministisch klassifiziert. Explizite 4xx-Ablehnungen, `ECONNREFUSED`, `EDNS` und `ETIMEDOUT` bei `command = CONN` sind sicher retrybar. Ein Timeout während `DATA` sowie Verbindungsverluste ohne sicheren Prä-Annahme-Nachweis enden dagegen sofort als `failed/outcome_uncertain` mit `retryable = false`.
+- Permanente 5xx-Ablehnungen werden unabhängig vom Versuchszähler sofort als `failed/smtp_rejected` terminalisiert und liefern `CONTENT_ADMIN_NOTIFICATION_SMTP_REJECTED` mit `retryable = false`.
+- Retryabstände werden mit `NOW() + ($2 * INTERVAL '1 millisecond')` in der Datenbank berechnet. Der Service übernimmt ausschließlich das gespeicherte `RETURNING next_attempt_at`; eine abweichende Worker-Uhr beeinflusst den persistierten Abstand nicht mehr.
+- `recoverExpiredJobs()` sperrt die abgelaufenen Jobzeilen in einer CTE und verknüpft Admin-Mailjobs über `payload_json.deliveryId` mit ihrer Delivery. Bei einer `queued` Delivery wird der durch den Claim verbrauchte Versuch mit `GREATEST(attempts - 1, 0)` zurückgegeben und `run_after` auf mindestens `delivery.next_attempt_at` gesetzt. Bei `sending` wird der Versuch ebenfalls zurückgegeben und der Job sofort erneut fällig, damit der Handler die Delivery genau einmal ohne weiteren SMTP-Aufruf als `outcome_uncertain` terminalisiert.
+- Der Delivery-Join vergleicht `delivery.id::text` mit dem JSON-Wert und castet niemals fremde Payloaddaten. Nichtnumerische oder übergroße Werte können deshalb keinen Castfehler verursachen und die Recovery anderer Jobs nicht abbrechen.
+- Für alle anderen Jobtypen bleibt die bisherige Entscheidung `attempts < max_attempts` unverändert. Locks und `finished_at` werden auf den Recoverypfaden weiterhin atomar bereinigt.
+
+### RED
+
+Nach Ergänzung der reinen SMTP-Klassifikationstests, der Serviceintegration für `DATA`-Timeout, 5xx-Ablehnung und Datenbankzeit sowie der beiden Recoveryverträge:
+
+```text
+node --test tests/contentAgentNotificationService.test.js tests/contentAgentJobRepository.test.js
+```
+
+Ergebnis vor den Produktionsänderungen:
+
+```text
+tests 42
+pass 36
+fail 6
+```
+
+Die sechs erwarteten Fehler belegten die fehlende reine Klassifikation, die fälschlich retrybaren unklaren beziehungsweise permanent abgelehnten SMTP-Ausgänge, die aus der Worker-Uhr berechnete Retryzeit sowie die beiden nicht deliverybewussten Recoveryfälle `running attempt 6/max 6 + queued future Delivery` und `running attempt 6/max 6 + sending Delivery`.
+
+Der Join gegen potenziell ungültige Delivery-IDs erhielt danach einen eigenen RED/GREEN-Vertrag:
+
+```text
+node --test --test-name-pattern='künftig fällige queued Delivery' tests/contentAgentJobRepository.test.js
+
+RED: tests 1, pass 0, fail 1
+GREEN: tests 1, pass 1, fail 0
+```
+
+Der RED-Lauf beanstandete den möglichen `::bigint`-Cast der JSON-Payload; GREEN vergleicht die sicher typisierte Delivery-ID als Text und enthält keinen Payloadcast mehr.
+
+### GREEN – isolierte Findings
+
+```text
+node --test tests/contentAgentNotificationService.test.js
+tests 14
+pass 14
+fail 0
+
+node --test tests/contentAgentJobRepository.test.js
+tests 28
+pass 28
+fail 0
+```
+
+### GREEN – Task 1, 4 und 5
+
+```text
+OPENAI_API_KEY=test-key node --test tests/contentAgentScheduledMigration.test.js tests/contentAgentMigration.test.js tests/contentAgentPostgresIntegration.test.js tests/contentAgentDraftPipeline.test.js tests/blogContentFormat.test.js tests/contentAgentNotificationRepository.test.js tests/contentAgentNotificationService.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js
+```
+
+Ergebnis:
+
+```text
+tests 200
+pass 199
+fail 0
+skipped 1
+```
+
+### GREEN – vollständige Content-Agent-Suite
+
+```text
+OPENAI_API_KEY=test-key node --test tests/contentAgent*.test.js
+```
+
+Ergebnis:
+
+```text
+tests 427
+pass 426
+fail 0
+skipped 1
+```
+
+Der einzige Skip ist weiterhin die absichtlich geschützte PostgreSQL-Integration, weil keine PostgreSQL-Testdatenbank konfiguriert war.
