@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 import { renderFile } from 'ejs';
 
 import * as controllerModule from '../controllers/adminContentAgentController.js';
@@ -203,6 +204,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
     } }
   });
   assert.match(approveHtml, /drafts\/19\/approve-scheduled/);
+  assert.match(approveHtml, /data-confirm-scheduled-at/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/publish-now/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/reschedule/);
 
@@ -230,6 +232,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
     } }
   });
   assert.match(setInitialSlotHtml, /drafts\/19\/reschedule/);
+  assert.match(setInitialSlotHtml, /data-confirm-scheduled-at/);
   assert.match(setInitialSlotHtml, /Freigeben und Termin festlegen/);
   assert.doesNotMatch(setInitialSlotHtml, /Freigeben und jetzt veröffentlichen/);
 
@@ -247,6 +250,91 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(missedHtml, /drafts\/19\/reschedule/);
   assert.match(missedHtml, /drafts\/19\/notification\/retry/);
   assert.doesNotMatch(missedHtml, /Date\.now|new Date\s*\(/);
+});
+
+function runConfirmScript({ forms, confirmResult = true }) {
+  const questions = [];
+  const script = forms.script;
+  const formList = forms.items;
+  vm.runInNewContext(script, {
+    Date,
+    document: {
+      querySelectorAll(selector) {
+        return selector === '[data-confirm]' ? formList : [];
+      },
+      getElementById() { return null; }
+    },
+    window: {
+      confirm(question) {
+        questions.push(question);
+        return confirmResult;
+      }
+    }
+  });
+  return questions;
+}
+
+function confirmForm({ question, scheduledValue, scheduleAware = true }) {
+  let submitHandler;
+  let validityChecks = 0;
+  const field = {
+    value: scheduledValue,
+    reportValidity() { validityChecks += 1; return false; }
+  };
+  return {
+    form: {
+      getAttribute(name) {
+        if (name === 'data-confirm') return question;
+        if (name === 'data-confirm-scheduled-at') return scheduleAware ? 'true' : null;
+        return null;
+      },
+      querySelector(selector) {
+        return selector === 'input[name="scheduled_at_local"]' ? field : null;
+      },
+      addEventListener(name, handler) {
+        if (name === 'submit') submitHandler = handler;
+      }
+    },
+    submit() {
+      let prevented = false;
+      submitHandler({ preventDefault() { prevented = true; } });
+      return { prevented, validityChecks };
+    }
+  };
+}
+
+test('Terminbestätigung zeigt den im selben Formular gewählten lokalen Termin deutsch an', async () => {
+  const script = await readFile(new URL('../public/js/admin-content-agent.js', import.meta.url), 'utf8');
+  const scheduled = confirmForm({
+    question: 'Diesen Entwurf freigeben und terminieren?',
+    scheduledValue: '2026-07-13T18:00'
+  });
+  const unrelated = confirmForm({
+    question: 'Diesen Job fortsetzen?',
+    scheduledValue: '',
+    scheduleAware: false
+  });
+  const questions = runConfirmScript({ forms: { script, items: [scheduled.form, unrelated.form] } });
+
+  assert.equal(scheduled.submit().prevented, false);
+  assert.match(questions[0], /Montag, 13\. Juli 2026 um 18:00 Uhr/);
+  assert.equal(unrelated.submit().prevented, false);
+  assert.equal(questions[1], 'Diesen Job fortsetzen?');
+});
+
+test('Terminbestätigung verhindert fehlende oder unmögliche lokale Eingaben ohne irreführenden Dialog', async () => {
+  const script = await readFile(new URL('../public/js/admin-content-agent.js', import.meta.url), 'utf8');
+  for (const scheduledValue of ['', '2026-02-30T18:00', 'nicht-lesbar']) {
+    const scheduled = confirmForm({
+      question: 'Diesen Entwurf freigeben und terminieren?',
+      scheduledValue
+    });
+    const questions = runConfirmScript({ forms: { script, items: [scheduled.form] } });
+    const result = scheduled.submit();
+    assert.equal(result.prevented, true, scheduledValue);
+    assert.equal(result.validityChecks, 1, scheduledValue);
+    assert.deepEqual(questions, [], scheduledValue);
+  }
 });
 
 test('alle vier neuen Routen sind admin- und CSRF-geschützt', async () => {

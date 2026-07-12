@@ -122,7 +122,7 @@
     <p><strong>Geplanter Termin:</strong> <%= item.scheduledAtLabel || 'Noch nicht terminiert' %></p>
     <div class="content-agent-editor__grid">
       <% if (reviewActions.canApproveScheduled === true) { %>
-      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/approve-scheduled" data-confirm="Diesen geprüften KI-Entwurf für den angezeigten Termin freigeben?">
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/approve-scheduled" data-confirm="Diesen geprüften KI-Entwurf für den angezeigten Termin freigeben?" data-confirm-scheduled-at>
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <input type="hidden" name="scheduled_at_local" value="<%= item.scheduledAtLocal || '' %>">
@@ -137,7 +137,7 @@
       </form>
       <% } %>
       <% if (reviewActions.canReschedule === true) { %>
-      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="<%= reviewActions.rescheduleRequiresApproval === true ? (item.scheduledAtLocal ? 'Diesen Entwurf freigeben und einen anderen Veröffentlichungstermin wählen?' : 'Diesen Entwurf freigeben und einen Veröffentlichungstermin festlegen?') : 'Den Veröffentlichungstermin verbindlich verschieben?' %>">
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="<%= reviewActions.rescheduleRequiresApproval === true ? (item.scheduledAtLocal ? 'Diesen Entwurf freigeben und einen anderen Veröffentlichungstermin wählen?' : 'Diesen Entwurf freigeben und einen Veröffentlichungstermin festlegen?') : 'Den Veröffentlichungstermin verbindlich verschieben?' %>" data-confirm-scheduled-at>
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <div class="content-agent-field">
