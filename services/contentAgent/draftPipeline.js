@@ -390,20 +390,27 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     }
   }
 
-  async function safeFinishRun(
-    payload,
-    primaryError,
-    failureCode = 'RUN_FINISH_AUDIT_FAILED'
-  ) {
+  function runFinishError(payload, cause = null) {
+    const error = Object.assign(
+      new Error(`Der Content-Agent-Lauf konnte nicht als ${payload.status} abgeschlossen werden.`),
+      { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
+    );
+    if (cause) error.cause = cause;
+    return error;
+  }
+
+  async function finishRunRequired(payload) {
+    await assertLease();
     try {
-      await assertLease();
       const result = await runRepository.finishRun(runId, payload);
-      if (result) return result;
-      recordAuditWarning(primaryError, failureCode, { status: payload.status });
-      return null;
-    } catch {
-      recordAuditWarning(primaryError, failureCode, { status: payload.status });
-      return null;
+      if (!result || typeof result !== 'object' || Array.isArray(result)) throw runFinishError(payload);
+      return result;
+    } catch (error) {
+      if (error?.code === 'CONTENT_JOB_LEASE_LOST'
+        || (error?.code === 'CONTENT_RUN_FINISH_FAILED' && error?.retryable === true)) {
+        throw error;
+      }
+      throw runFinishError(payload, error);
     }
   }
 
@@ -517,8 +524,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   }
 
   async function finishManual(code, message) {
-    await assertLease();
-    await runRepository.finishRun(runId, {
+    await finishRunRequired({
       status: 'needs_manual_attention',
       errorReport: { code, message }
     });
@@ -629,18 +635,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       } : {})
     };
     await updateStage('completed', completedResult);
-    const completedRun = await safeFinishRun(
-      { status: 'completed', postId: draft.post.id },
-      null,
-      'RUN_COMPLETION_PERSIST_FAILED'
-    );
+    await finishRunRequired({ status: 'completed', postId: draft.post.id });
     return {
       status: 'completed',
       ...draft,
       post: publication.post,
       metadata: publication.metadata,
-      ...(publication.autoPublishResult ? { reviewRequired: publication.reviewRequired } : {}),
-      ...(completedRun ? {} : { auditWarnings })
+      ...(publication.autoPublishResult ? { reviewRequired: publication.reviewRequired } : {})
     };
   }
 
@@ -661,17 +662,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         );
       }
       draftPersisted = true;
-      const completedRun = await safeFinishRun(
-        { status: 'completed', postId: persistedDraft.post.id },
-        null,
-        'RUN_COMPLETION_PERSIST_FAILED'
-      );
+      await finishRunRequired({ status: 'completed', postId: persistedDraft.post.id });
       return {
         status: 'completed',
         post: persistedAutoPublish?.post || persistedDraft.post,
         metadata: persistedDraft.metadata,
-        ...(persistedAutoPublish ? { reviewRequired: persistedAutoPublish.reviewRequired } : {}),
-        ...(completedRun ? {} : { auditWarnings })
+        ...(persistedAutoPublish ? { reviewRequired: persistedAutoPublish.reviewRequired } : {})
       };
     }
     if (persistedDraft) {
@@ -1180,10 +1176,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         || referencedDraftPublicId !== uploadedImage.publicId;
       if (!uploadedImageIsUnreferenced) {
         if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-        await safeFinishRun({
+        await finishRunRequired({
           status: 'failed',
           errorReport: { code: 'pipeline_failed', message: error.message }
-        }, error);
+        });
         throw error;
       }
       let cleanupResult;
@@ -1202,10 +1198,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       return finishManual('budget_limit_reached', 'Das konfigurierte Monatsbudget ist erreicht.');
     }
     if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    await safeFinishRun({
+    await finishRunRequired({
       status: 'failed',
       errorReport: { code: 'pipeline_failed', message: error.message }
-    }, error);
+    });
     if (auditWarnings.length > 0) error.auditWarnings = auditWarnings;
     throw error;
   }

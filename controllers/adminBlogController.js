@@ -14,6 +14,21 @@ function uploadBufferToCloudinary(buffer, folder = 'blog_images') {
   });
 }
 
+function isUnpublishedAiDraft(post) {
+  return post?.generated_by_ai === true && post?.published !== true;
+}
+
+function contentAgentDraftUrl(postId) {
+  return `/admin/content-agent/drafts/${encodeURIComponent(postId)}/edit`;
+}
+
+function rejectLegacyAiDraft(res, postId) {
+  return res.status(409).send(
+    `KI-Entwürfe dürfen ausschließlich im Content-Agent-Review geändert oder abgelehnt werden: `
+    + contentAgentDraftUrl(postId)
+  );
+}
+
 /* ---------- GET /admin/blog/new ---------- */
 export function newPostForm(req, res) {
   res.render('admin/newPost', { title: "Neuen Blog-Artikel anlegen" });           // dein Formular-Template
@@ -79,6 +94,9 @@ export async function createPost(req, res) {
 export async function editPostForm(req, res) {
   const post = await BlogPostModel.findById(req.params.id);
   if (!post) return res.status(404).send('Post nicht gefunden');
+  if (isUnpublishedAiDraft(post)) {
+    return res.redirect(contentAgentDraftUrl(post.id));
+  }
   res.render('admin/editPost', { title: "Bestehenden Blog-Post bearbeiten", post });
 }
 
@@ -89,14 +107,7 @@ export async function updatePost(req, res) {
     const current = await BlogPostModel.findById(id);
     if (!current) return res.status(404).send('Post nicht gefunden');
 
-    const publishRequested = req.body.publication_control === '1'
-      && req.body.published === 'on';
-    if (current.generated_by_ai === true && current.published !== true && publishRequested) {
-      return res.status(409).send(
-        `KI-Entwürfe müssen im Content-Agent-Review veröffentlicht werden: `
-        + `/admin/content-agent/drafts/${encodeURIComponent(id)}/edit`
-      );
-    }
+    if (isUnpublishedAiDraft(current)) return rejectLegacyAiDraft(res, id);
 
     let hero_image, hero_public_id;
 
@@ -134,6 +145,9 @@ export async function updatePost(req, res) {
 /* ---------- POST /admin/blog/:id/delete ---------- */
 export async function deletePost(req, res) {
   try {
+    const current = await BlogPostModel.findById(req.params.id);
+    if (!current) return res.status(404).send('Post nicht gefunden');
+    if (isUnpublishedAiDraft(current)) return rejectLegacyAiDraft(res, req.params.id);
     const deleted = await BlogPostModel.delete(req.params.id);
     if (!deleted) return res.status(404).send('Post nicht gefunden');
 

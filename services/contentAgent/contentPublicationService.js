@@ -482,29 +482,44 @@ export function createContentPublicationService({
             throw autoEventConflict();
           }
           const allowPublished = existingEvent.decision === 'allowed';
-          if (allowPublished) assertPublishedAutoState(lockedDraft);
-          else assertDraftState(lockedDraft, 'CONTENT_AUTO_EVENT_CONFLICT');
+          if (allowPublished) {
+            assertPublishedAutoState(lockedDraft);
+            const committedEvent = {
+              ...baseAutoEventInput({
+                draft: lockedDraft,
+                postId: normalizedPostId,
+                runId: normalizedRunId,
+                snapshot
+              }),
+              decision: 'allowed',
+              reasons: []
+            };
+            assertAutoEventContract(existingEvent, committedEvent);
+            return {
+              post: lockedDraft.post,
+              event: existingEvent,
+              decision: eventDecision(existingEvent),
+              reviewRequired: false
+            };
+          }
+          assertDraftState(lockedDraft, 'CONTENT_AUTO_EVENT_CONFLICT');
           let expectedDecision;
           try {
             const validatedExisting = await loadValidatedDraft(
               normalizedPostId,
               client,
               lockedDraft,
-              { allowPublished }
+              { allowPublished: false }
             );
             expectedDecision = evaluateAutoPublish({
               snapshot,
-              post: allowPublished ? {
-                ...validatedExisting.draft.post,
-                published: false,
-                workflow_status: 'needs_review'
-              } : validatedExisting.draft.post,
+              post: validatedExisting.draft.post,
               metadata: validatedExisting.draft.metadata,
               validation: validatedExisting.validation,
               riskReport: validatedExisting.riskReport
             });
           } catch (error) {
-            if (allowPublished || !String(error?.code || '').startsWith('CONTENT_DRAFT_')) throw error;
+            if (!String(error?.code || '').startsWith('CONTENT_DRAFT_')) throw error;
             expectedDecision = {
               allowed: false,
               policyVersion: AUTO_PUBLISH_POLICY_VERSION,
@@ -522,13 +537,13 @@ export function createContentPublicationService({
             reasons: expectedDecision.reasons
           };
           assertAutoEventContract(existingEvent, expectedEvent);
-          if (expectedDecision.allowed !== allowPublished) throw autoEventConflict();
+          if (expectedDecision.allowed) throw autoEventConflict();
           const decision = eventDecision(existingEvent);
           return {
             post: lockedDraft.post,
             event: existingEvent,
             decision,
-            reviewRequired: !allowPublished
+            reviewRequired: true
           };
         }
 

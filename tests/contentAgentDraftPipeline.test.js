@@ -2239,7 +2239,7 @@ test('completed-Recovery verlangt exakt passende Post-, Slug-, Topic- und Qualit
   }
 });
 
-test('completed-Recovery versucht finishRun erneut und behält Fehler als Auditwarnung', async () => {
+test('completed-Recovery bleibt bei geworfenem finishRun-Fehler retrybar', async () => {
   const base = createDependencies();
   const finishCalls = [];
   const harness = createDependencies({
@@ -2262,11 +2262,11 @@ test('completed-Recovery versucht finishRun erneut und behält Fehler als Auditw
     }
   });
 
-  const result = await runDraftPipeline({ runId: 288 }, harness.dependencies);
-
-  assert.equal(result.status, 'completed');
-  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed']);
-  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
+  await assert.rejects(
+    runDraftPipeline({ runId: 288 }, harness.dependencies),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
+  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed', 'failed']);
   assert.equal(harness.budgetReservations.length, 0);
   assert.equal(harness.createdDrafts.length, 0);
 });
@@ -2546,7 +2546,7 @@ test('Settlement- und Bildauditfehler verdecken den primären Providerfehler nic
   assert.equal(providerError.auditWarnings.some(({ code }) => code === 'STAGE_AUDIT_FAILED'), true);
 });
 
-test('Fehler nach Draft und completed-Stage liefert erfolgreichen Status mit Auditwarnung', async () => {
+test('Fehler nach Draft und completed-Stage bleibt bei fehlgeschlagenem Runabschluss retrybar', async () => {
   const finishCalls = [];
   const harness = createDependencies({
     runRepository: {
@@ -2559,15 +2559,15 @@ test('Fehler nach Draft und completed-Stage liefert erfolgreichen Status mit Aud
     }
   });
 
-  const result = await runDraftPipeline({ runId: 243 }, harness.dependencies);
-
-  assert.equal(result.status, 'completed');
+  await assert.rejects(
+    runDraftPipeline({ runId: 243 }, harness.dependencies),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
   assert.equal(harness.createdDrafts.length, 1);
-  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
-  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed']);
+  assert.deepEqual(finishCalls.map(({ status }) => status), ['completed', 'failed']);
 });
 
-test('fehlende Abschlusszeile liefert completed mit persistierter Warnung', async () => {
+test('fehlende Abschlusszeile verhindert einen terminalen Pipelineerfolg', async () => {
   const harness = createDependencies({
     runRepository: {
       async updateRunStage(runId, update) { return { runId, ...update }; },
@@ -2575,10 +2575,25 @@ test('fehlende Abschlusszeile liefert completed mit persistierter Warnung', asyn
     }
   });
 
-  const result = await runDraftPipeline({ runId: 244 }, harness.dependencies);
+  await assert.rejects(
+    runDraftPipeline({ runId: 244 }, harness.dependencies),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
+});
 
-  assert.equal(result.status, 'completed');
-  assert.equal(result.auditWarnings.some(({ code }) => code === 'RUN_COMPLETION_PERSIST_FAILED'), true);
+test('fehlende Abschlusszeile verhindert needs_manual_attention als Queue-Terminalzustand', async () => {
+  const harness = createDependencies({
+    topicScoringService: { selectBestTopic: () => null },
+    runRepository: {
+      async updateRunStage(runId, update) { return { runId, ...update }; },
+      async finishRun() { return null; }
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 245 }, harness.dependencies),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
 });
 
 test('persistierter Bildupload mit null Bytes wird nicht wiederverwendet', async () => {

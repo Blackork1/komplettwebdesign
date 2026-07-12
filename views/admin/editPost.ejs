@@ -3,6 +3,21 @@
 <div class="container my-5">
   <h1 class="mb-4">Blog-Artikel bearbeiten</h1>
 
+  <% if (post.generated_by_ai && !post.published) { %>
+    <div class="alert alert-info" role="status">
+      Unveröffentlichte KI-Entwürfe werden ausschließlich im Content-Agent bearbeitet, geprüft und abgelehnt.
+    </div>
+    <a href="/admin/content-agent/drafts/<%= post.id %>/edit" class="btn btn-primary">Im Content-Agent bearbeiten</a>
+    <a href="/admin/content-agent/drafts/<%= post.id %>/preview" class="btn btn-secondary">Sichere Vorschau</a>
+    <form action="/admin/content-agent/drafts/<%= post.id %>/reject"
+          method="POST" class="d-inline"
+          onsubmit="return confirm('KI-Entwurf wirklich ablehnen?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+      <input type="hidden" name="confirmed" value="true">
+      <input type="hidden" name="reason" value="Im Blog-Adminbereich abgelehnt.">
+      <button class="btn btn-danger">Ablehnen</button>
+    </form>
+  <% } else { %>
   <!-- ─ Form: Update ─ -->
   <form action="/admin/blog/<%= post.id %>/edit"
         method="POST"
@@ -45,20 +60,12 @@
       </label>
     </div>
 
-    <% if (!(post.generated_by_ai && !post.published)) { %>
-      <input type="hidden" name="publication_control" value="1">
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="published" name="published"
-               <%= post.published ? 'checked' : '' %>>
-        <label class="form-check-label" for="published">Artikel veröffentlicht</label>
-      </div>
-    <% } else { %>
-      <div class="alert alert-info" role="status">
-        Dieser KI-Entwurf wird ausschließlich im
-        <a href="/admin/content-agent/drafts/<%= post.id %>/edit">Content-Agent-Review</a>
-        veröffentlicht.
-      </div>
-    <% } %>
+    <input type="hidden" name="publication_control" value="1">
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="published" name="published"
+             <%= post.published ? 'checked' : '' %>>
+      <label class="form-check-label" for="published">Artikel veröffentlicht</label>
+    </div>
 
     <!-- Inhalt -->
     <div class="mb-3">
@@ -96,6 +103,7 @@
       <i class="bi bi-trash me-1"></i> Artikel löschen
     </button>
   </form>
+  <% } %>
 </div>
 
 <%- include('../partials/admin_footer') %>

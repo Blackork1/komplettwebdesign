@@ -291,13 +291,36 @@ async function finishManual(
   runRepository,
   assertLease = async () => true
 ) {
-  await assertLease();
-  await runRepository.finishRun(runId, {
+  await finishRunRequired(runRepository, runId, {
     status: 'needs_manual_attention',
     postId,
     errorReport: { code, message, ...(issues.length ? { issues } : {}) }
-  });
+  }, assertLease);
   return { status: 'needs_manual_attention', code, post: null };
+}
+
+function runFinishError(status, cause = null) {
+  const error = Object.assign(
+    new Error(`Der Content-Agent-Lauf konnte nicht als ${status} abgeschlossen werden.`),
+    { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
+  );
+  if (cause) error.cause = cause;
+  return error;
+}
+
+async function finishRunRequired(runRepository, runId, payload, assertLease = async () => true) {
+  await assertLease();
+  try {
+    const result = await runRepository.finishRun(runId, payload);
+    if (!result || typeof result !== 'object' || Array.isArray(result)) throw runFinishError(payload.status);
+    return result;
+  } catch (error) {
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST'
+      || (error?.code === 'CONTENT_RUN_FINISH_FAILED' && error?.retryable === true)) {
+      throw error;
+    }
+    throw runFinishError(payload.status, error);
+  }
 }
 
 async function recordProvider(dependencies, input) {
@@ -486,12 +509,11 @@ async function runTextRegeneration(context, dependencies) {
     article: candidate,
     allowedFields
   });
-  await dependencies.assertLease();
-  await dependencies.runRepository.finishRun(run.id, {
+  await finishRunRequired(dependencies.runRepository, run.id, {
     status: 'completed',
     postId,
     errorReport: {}
-  });
+  }, dependencies.assertLease);
   return { status: 'completed', ...updated };
 }
 
@@ -848,12 +870,11 @@ async function runImageRegeneration(context, dependencies) {
     }, dependencies);
   }
 
-  await dependencies.assertLease();
-  await dependencies.runRepository.finishRun(run.id, {
+  await finishRunRequired(dependencies.runRepository, run.id, {
     status: 'completed',
     postId,
     errorReport: {}
-  });
+  }, dependencies.assertLease);
   return { status: 'completed', post: update.post };
 }
 

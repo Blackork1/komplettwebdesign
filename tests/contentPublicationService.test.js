@@ -496,6 +496,38 @@ test('Retry nach unklarem Commit erkennt vorhandenes allowed-Event und bereits v
   assert.equal(calls.includes('COMMIT'), true);
 });
 
+test('bereits committed allowed-Event bleibt trotz später deaktiviertem Technikgate maßgeblich', async () => {
+  const existingAutoEvent = {
+    id: 58,
+    post_id: 9,
+    run_id: 21,
+    decision: 'allowed',
+    policy_version: 'auto-v1',
+    quality_score: 92,
+    reasons_json: [],
+    context_json: autoContext
+  };
+  const publishedDraft = validDraft({ post: { published: true, workflow_status: 'published' } });
+  const { service, calls } = harness({ draft: publishedDraft, existingAutoEvent });
+
+  const result = await service.publishDraftAutomatically({
+    postId: 9,
+    runId: 21,
+    snapshot: {
+      ...autoSnapshot,
+      autoPublishEnabled: false,
+      autoPublishEffective: false
+    }
+  });
+
+  assert.equal(result.event.id, 58);
+  assert.equal(result.post.published, true);
+  assert.equal(result.reviewRequired, false);
+  assert.equal(calls.filter((entry) => Array.isArray(entry) && entry[0] === 'auto-event').length, 0);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(calls.includes('COMMIT'), true);
+});
+
 test('automatische Veröffentlichung verweigert einen Draft aus einem anderen Generation-Run vor Event und Update', async () => {
   const { service, calls } = harness();
 

@@ -191,7 +191,10 @@ function dependencies(overrides = {}) {
     },
     runRepository: {
       async updateRunStage(runId, payload) { calls.push(['stage', runId, payload]); },
-      async finishRun(runId, payload) { calls.push(['finish', runId, payload]); }
+      async finishRun(runId, payload) {
+        calls.push(['finish', runId, payload]);
+        return { id: runId, ...payload };
+      }
     },
     validateArticle(candidate) {
       calls.push(['validate', candidate]);
@@ -401,6 +404,44 @@ test('Budgetgrenze pausiert den Regenerationsjob zur manuellen Prüfung', async 
   assert.equal(result.status, 'needs_manual_attention');
   assert.equal(result.code, 'CONTENT_BUDGET_LIMIT_REACHED');
   assert.equal(deps.calls.filter(([type]) => type === 'repair').length, 0);
+});
+
+test('Regeneration wird ohne persistierten manuellen Runabschluss nicht terminal', async () => {
+  const deps = dependencies();
+  deps.costService.reserveMonthlyBudget = async () => {
+    throw Object.assign(new Error('Budget erreicht'), {
+      code: 'CONTENT_BUDGET_LIMIT_REACHED',
+      retryable: false
+    });
+  };
+  deps.runRepository.finishRun = async () => null;
+
+  await assert.rejects(
+    runDraftRegenerationJob(input('regenerate_metadata'), deps),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
+});
+
+test('Regeneration wird ohne persistierten erfolgreichen Runabschluss nicht terminal', async () => {
+  const deps = dependencies();
+  deps.runRepository.finishRun = async () => null;
+
+  await assert.rejects(
+    runDraftRegenerationJob(input('regenerate_article'), deps),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
+});
+
+test('geworfener Runabschlussfehler der Regeneration bleibt retrybar', async () => {
+  const deps = dependencies();
+  deps.runRepository.finishRun = async () => { throw new Error('Datenbank kurz nicht verfügbar'); };
+
+  await assert.rejects(
+    runDraftRegenerationJob(input('regenerate_image'), deps),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED'
+      && error.retryable === true
+      && error.cause?.message === 'Datenbank kurz nicht verfügbar'
+  );
 });
 
 test('Leaseverlust stoppt vor Provider und Postupdate ohne Runabschluss', async () => {

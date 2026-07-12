@@ -26,14 +26,21 @@ const snapshot = {
   autoPublishMinScore: 90
 };
 
-function harness({ publicationResult, publicationError, completed, autoStage, nullStageIds = [] } = {}) {
+function harness({
+  publicationResult,
+  publicationError,
+  completed,
+  autoStage,
+  nullStageIds = [],
+  runtimeSnapshot = snapshot
+} = {}) {
   const calls = [];
   const nullStages = new Set(nullStageIds);
   const stages = new Map([['draft_creation', draft]]);
   if (autoStage) stages.set('auto_publish:auto-v1', autoStage);
   if (completed) stages.set('completed', completed);
   const dependencies = {
-    config: snapshot,
+    config: runtimeSnapshot,
     inventoryService: { async buildSiteInventory() { assert.fail('Inventar darf beim Draft-Retry nicht laufen.'); } },
     openaiService: {},
     topicScoringService: {},
@@ -198,6 +205,33 @@ test('null beim Auto-Stage-Write verhindert completed und Retry reconciled Event
   assert.equal(result.post.published, true);
   assert.equal(current.stages.get('auto_publish:auto-v1').eventId, 75);
   assert.equal(current.calls.filter(([type]) => type === 'publication').length, 2);
+});
+
+test('Retry persistiert nach committed Veröffentlichung fehlende Auto- und Completed-Stages auch bei späterem Technik-Aus', async () => {
+  const published = { ...draft.post, published: true, workflow_status: 'published' };
+  const disabledSnapshot = {
+    ...snapshot,
+    autoPublishEnabled: false,
+    autoPublishEffective: false
+  };
+  const current = harness({
+    runtimeSnapshot: disabledSnapshot,
+    publicationResult: {
+      post: published,
+      event: { id: 77, decision: 'allowed', policy_version: 'auto-v1' },
+      decision: { allowed: true, policyVersion: 'auto-v1', reasons: [] },
+      reviewRequired: false
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 95 }, current.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.post.published, true);
+  assert.equal(current.stages.get('auto_publish:auto-v1').eventId, 77);
+  assert.equal(current.stages.get('completed').published, true);
+  assert.equal(current.calls.filter(([type]) => type === 'publication').length, 1);
+  assert.equal(current.calls.find(([type]) => type === 'publication')[1].snapshot, disabledSnapshot);
 });
 
 test('null beim completed-Stage-Write ist ein technischer Fehler und kein erfolgreicher Runabschluss', async () => {

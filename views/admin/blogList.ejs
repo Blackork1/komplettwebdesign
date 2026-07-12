@@ -31,20 +31,29 @@
           <td><%= p.workflow_status || (p.published ? 'published' : 'draft') %></td>
           <td><%= new Date(p.created_at).toLocaleDateString('de-DE') %></td>
           <td>
-            <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary admin-inline-action">
-              Bearbeiten
-            </a>
-            <% if (p.content_format === 'static_html') { %>
-              <a href="/admin/blog/<%= p.id %>/preview" class="btn btn-sm btn-outline-secondary admin-inline-action">
-                Vorschau
-              </a>
+            <% if (p.generated_by_ai && !p.published) { %>
+              <a href="/admin/content-agent/drafts/<%= p.id %>/edit" class="btn btn-sm btn-primary admin-inline-action">Im Content-Agent bearbeiten</a>
+              <a href="/admin/content-agent/drafts/<%= p.id %>/preview" class="btn btn-sm btn-outline-secondary admin-inline-action">Vorschau</a>
+              <form action="/admin/content-agent/drafts/<%= p.id %>/reject"
+                    method="POST" class="d-inline admin-inline-block"
+                    onsubmit="return confirm('KI-Entwurf wirklich ablehnen?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                <input type="hidden" name="confirmed" value="true">
+                <input type="hidden" name="reason" value="Im Blog-Adminbereich abgelehnt.">
+                <button class="btn btn-sm btn-danger admin-inline-block">Ablehnen</button>
+              </form>
+            <% } else { %>
+              <a href="/admin/blog/<%= p.id %>/edit" class="btn btn-sm btn-primary admin-inline-action">Bearbeiten</a>
+              <% if (p.content_format === 'static_html') { %>
+                <a href="/admin/blog/<%= p.id %>/preview" class="btn btn-sm btn-outline-secondary admin-inline-action">Vorschau</a>
+              <% } %>
+              <form action="/admin/blog/<%= p.id %>/delete"
+                    method="POST" class="d-inline admin-inline-block"
+                    onsubmit="return confirm('Artikel wirklich löschen?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                <button class="btn btn-sm btn-danger admin-inline-block">Löschen</button>
+              </form>
             <% } %>
-            <form action="/admin/blog/<%= p.id %>/delete"
-                  method="POST" class="d-inline admin-inline-block"
-                  onsubmit="return confirm('Artikel wirklich löschen?');">
-              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-              <button class="btn btn-sm btn-danger admin-inline-block">Löschen</button>
-            </form>
           </td>
         </tr>
       <% }) %>

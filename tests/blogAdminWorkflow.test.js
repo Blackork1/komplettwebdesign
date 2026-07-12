@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as cheerio from 'cheerio';
 
 import BlogPostModel from '../models/BlogPostModel.js';
-import { deletePost, previewPost, updatePost } from '../controllers/adminBlogController.js';
+import { deletePost, editPostForm, previewPost, updatePost } from '../controllers/adminBlogController.js';
 import { isAdmin } from '../middleware/auth.js';
 import { readFileSync } from 'node:fs';
 
@@ -107,7 +107,26 @@ test('statische Adminvorschau wertet kein EJS aus, sanitisiert und setzt noindex
   assert.match($.text(), /<%= globalThis/);
 });
 
-test('der alte Blogeditor verweigert das Veröffentlichen eines KI-Entwurfs', async () => {
+test('der alte Blogeditor leitet unveröffentlichte KI-Entwürfe zum Content-Agent um', async () => {
+  const originalFind = BlogPostModel.findById;
+  BlogPostModel.findById = async () => ({ id: 8, generated_by_ai: true, published: false });
+  const res = {
+    redirect(url) { this.redirectedTo = url; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    render() { this.rendered = true; }
+  };
+  try {
+    await editPostForm({ params: { id: '8' } }, res);
+  } finally {
+    BlogPostModel.findById = originalFind;
+  }
+
+  assert.equal(res.redirectedTo, '/admin/content-agent/drafts/8/edit');
+  assert.equal(res.rendered, undefined);
+});
+
+test('der alte Blogeditor verweigert jede Änderung eines unveröffentlichten KI-Entwurfs', async () => {
   const originalFind = BlogPostModel.findById;
   const originalUpdate = BlogPostModel.update;
   let updateCalls = 0;
@@ -124,7 +143,8 @@ test('der alte Blogeditor verweigert das Veröffentlichen eines KI-Entwurfs', as
   try {
     await updatePost({
       params: { id: '8' },
-      body: { publication_control: '1', published: 'on' }
+      body: { title: 'Manipulierter Titel', content: '<script>unsicher</script>' },
+      file: { buffer: Buffer.from('nicht hochladen') }
     }, res);
   } finally {
     BlogPostModel.findById = originalFind;
@@ -136,10 +156,35 @@ test('der alte Blogeditor verweigert das Veröffentlichen eines KI-Entwurfs', as
   assert.match(res.body, /\/admin\/content-agent\/drafts\/8\/edit/);
 });
 
-test('der alte Blogeditor zeigt für KI-Entwürfe keinen Veröffentlichungsschalter', () => {
-  const editView = readFileSync(new URL('../views/admin/editPost.ejs', import.meta.url), 'utf8');
-  assert.match(editView, /if \(!\(post\.generated_by_ai && !post\.published\)\)/);
-  assert.match(editView, /Content-Agent-Review/);
+test('die Legacy-Blogliste bietet für KI-Entwürfe nur Content-Agent-Aktionen an', () => {
+  const listView = readFileSync(new URL('../views/admin/blogList.ejs', import.meta.url), 'utf8');
+  assert.match(listView, /p\.generated_by_ai && !p\.published/);
+  assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/edit/);
+  assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/preview/);
+  assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/reject/);
+  assert.match(listView, /else/);
+});
+
+test('Legacy-Delete verweigert unveröffentlichte KI-Entwürfe vor dem Model-Delete', async () => {
+  const originalFind = BlogPostModel.findById;
+  const originalDelete = BlogPostModel.delete;
+  let deleteCalls = 0;
+  BlogPostModel.findById = async () => ({ id: 8, generated_by_ai: true, published: false });
+  BlogPostModel.delete = async () => { deleteCalls += 1; };
+  const res = {
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; }
+  };
+  try {
+    await deletePost({ params: { id: '8' } }, res);
+  } finally {
+    BlogPostModel.findById = originalFind;
+    BlogPostModel.delete = originalDelete;
+  }
+
+  assert.equal(deleteCalls, 0);
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /\/admin\/content-agent\/drafts\/8\/edit/);
 });
 
 test('BlogPostModel verweigert das Löschen eines Posts mit Publish-Events fachlich', async () => {
@@ -173,7 +218,9 @@ test('BlogPostModel mappt auch ein FK-Race beim Löschen auf den fachlichen Konf
 });
 
 test('Legacy-Delete antwortet bei Publish-Events mit sicherem 409 statt Datenbank-500', async () => {
+  const originalFind = BlogPostModel.findById;
   const originalDelete = BlogPostModel.delete;
+  BlogPostModel.findById = async () => ({ id: 9, generated_by_ai: false, published: false });
   BlogPostModel.delete = async () => {
     throw Object.assign(new Error('interner Datenbankkontext'), {
       code: 'BLOG_POST_DELETE_RESTRICTED'
@@ -186,6 +233,7 @@ test('Legacy-Delete antwortet bei Publish-Events mit sicherem 409 statt Datenban
   try {
     await deletePost({ params: { id: '9' } }, res);
   } finally {
+    BlogPostModel.findById = originalFind;
     BlogPostModel.delete = originalDelete;
   }
 
