@@ -945,7 +945,13 @@ export function createDraftRegenerationRepository(db = pool) {
         });
         const { rows } = await client.query(`
           UPDATE posts
-          SET ${assignments.join(', ')}, updated_at = NOW()
+          SET ${assignments.join(', ')},
+              review_version = review_version + 1,
+              workflow_status = 'needs_review',
+              approved_review_version = NULL,
+              approved_at = NULL,
+              approved_by_admin_id = NULL,
+              updated_at = NOW()
           WHERE id = $1
             AND generated_by_ai = TRUE
             AND published = FALSE
@@ -1013,6 +1019,11 @@ export function createDraftRegenerationRepository(db = pool) {
           SET image_url = $2,
               hero_public_id = $3,
               image_alt = $4,
+              review_version = review_version + 1,
+              workflow_status = 'needs_review',
+              approved_review_version = NULL,
+              approved_at = NULL,
+              approved_by_admin_id = NULL,
               updated_at = NOW()
           WHERE id = $1
             AND generated_by_ai = TRUE

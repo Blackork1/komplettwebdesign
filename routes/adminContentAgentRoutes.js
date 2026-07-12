@@ -18,6 +18,7 @@ import {
 import { validateContentAgentSettingsTransition } from '../services/contentAgent/runtimeConfigService.js';
 import { createAdminDraftService } from '../services/contentAgent/adminDraftService.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
+import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
 import { createContentRevisionService } from '../services/contentAgent/contentRevisionService.js';
 import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
 import * as blogPostPresentation from '../services/blogPostPresentationService.js';
@@ -44,6 +45,10 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/regenerate-faq', isAdmin, verifyCsrfToken, controller.regenerateFaqAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-metadata', isAdmin, verifyCsrfToken, controller.regenerateMetadataAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-article', isAdmin, verifyCsrfToken, controller.regenerateDraftAction);
+  router.post('/admin/content-agent/drafts/:id/approve-scheduled', isAdmin, verifyCsrfToken, controller.approveScheduledAction);
+  router.post('/admin/content-agent/drafts/:id/publish-now', isAdmin, verifyCsrfToken, controller.publishNowAction);
+  router.post('/admin/content-agent/drafts/:id/reschedule', isAdmin, verifyCsrfToken, controller.rescheduleDraftAction);
+  router.post('/admin/content-agent/drafts/:id/notification/retry', isAdmin, verifyCsrfToken, controller.retryDraftNotificationAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
   router.post('/admin/content-agent/existing-content/:id/revision', isAdmin, verifyCsrfToken, controller.createRevisionAction);
   router.get('/admin/content-agent/revisions/:id/edit', isAdmin, controller.revisionEditPage);
@@ -55,6 +60,7 @@ export function createAdminContentAgentRouter(controller) {
 const technicalConfig = getContentAgentTechnicalConfig();
 const draftService = createAdminDraftService();
 const publicationService = createContentPublicationService();
+const scheduledPublicationService = createScheduledPublicationService();
 const revisionService = createContentRevisionService({
   repository: createContentRevisionRepository(pool)
 });
@@ -74,6 +80,7 @@ const controller = createAdminContentAgentController({
   validateSettingsTransition: validateContentAgentSettingsTransition,
   draftService,
   publicationService,
+  scheduledPublicationService,
   revisionService,
   blogPostPresentation
 });

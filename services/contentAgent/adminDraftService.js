@@ -22,6 +22,20 @@ function draftError(code, message, issues = []) {
   return Object.assign(new Error(message), { code, issues });
 }
 
+function positivePostId(value) {
+  const postId = Number(value);
+  if (!Number.isSafeInteger(postId) || postId < 1) {
+    throw draftError('CONTENT_ACTION_VALIDATION_FAILED', 'Die Entwurfs-ID ist ungültig.');
+  }
+  return postId;
+}
+
+function requireConfirmation(confirmed) {
+  if (confirmed !== true) {
+    throw draftError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
+  }
+}
+
 function isEditableDraft(record) {
   const post = record?.post;
   return Boolean(
@@ -104,17 +118,45 @@ function normalizeDraftInput(input = {}) {
 
 function splitDraftRow(row) {
   if (!row) return null;
-  const { metadata, ...post } = row;
-  return { post, metadata: metadata || null };
+  const { metadata, notification, ...post } = row;
+  return { post, metadata: metadata || null, notification: notification || null };
+}
+
+export function deriveDraftReviewActions(post = {}, notification = null, now = new Date()) {
+  const currentTime = now instanceof Date ? now.getTime() : new Date(now).getTime();
+  const scheduledTime = new Date(post.scheduled_at).getTime();
+  const hasSchedule = post.scheduled_at !== null
+    && post.scheduled_at !== undefined
+    && post.scheduled_at !== ''
+    && !Number.isNaN(scheduledTime);
+  const isFuture = hasSchedule && scheduledTime > currentTime;
+  const isMissed = hasSchedule && scheduledTime < currentTime;
+  const needsReview = post.workflow_status === 'needs_review' && post.published === false;
+  const approved = post.workflow_status === 'approved_scheduled' && post.published === false;
+  return {
+    canApproveScheduled: needsReview && isFuture,
+    canPublishNow: needsReview && isMissed,
+    canReschedule: (needsReview && isMissed) || approved,
+    canRetryNotification: notification?.status === 'failed'
+  };
 }
 
 export function createAdminDraftRepository(db = pool) {
   return {
     async getDraftWithMetadata(postId) {
       const { rows } = await db.query(`
-        SELECT p.*, to_jsonb(m) AS metadata
+        SELECT p.*, to_jsonb(m) AS metadata, to_jsonb(notification) AS notification
         FROM posts p
         LEFT JOIN content_post_metadata m ON m.post_id = p.id
+        LEFT JOIN LATERAL (
+          SELECT delivery.id, delivery.status, delivery.attempts,
+                 delivery.last_error_code, delivery.updated_at
+          FROM content_notification_deliveries delivery
+          WHERE delivery.post_id = p.id
+            AND delivery.notification_type = 'admin_review'
+          ORDER BY delivery.created_at DESC, delivery.id DESC
+          LIMIT 1
+        ) notification ON TRUE
         WHERE p.id = $1
           AND p.generated_by_ai = TRUE
           AND p.published = FALSE
@@ -182,6 +224,11 @@ export function createAdminDraftRepository(db = pool) {
               image_alt = $9,
               faq_json = $10::jsonb,
               content = $11,
+              review_version = review_version + 1,
+              workflow_status = 'needs_review',
+              approved_review_version = NULL,
+              approved_at = NULL,
+              approved_by_admin_id = NULL,
               updated_at = NOW()
           WHERE id = $1
             AND generated_by_ai = TRUE
@@ -254,13 +301,77 @@ export function createAdminDraftRepository(db = pool) {
       } finally {
         client.release();
       }
+    },
+
+    async retryAdminReviewNotificationTransaction({ postId }) {
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const { rows } = await client.query(`
+          WITH candidate_delivery AS (
+            SELECT delivery.id
+            FROM content_notification_deliveries delivery
+            WHERE delivery.post_id = $1
+              AND delivery.notification_type = 'admin_review'
+            ORDER BY delivery.created_at DESC, delivery.id DESC
+            FOR UPDATE
+            LIMIT 1
+          ), reset_delivery AS (
+            UPDATE content_notification_deliveries delivery
+            SET status = 'queued',
+                attempts = 0,
+                next_attempt_at = NOW(),
+                locked_at = NULL,
+                locked_by = NULL,
+                last_error_code = NULL,
+                sent_at = NULL,
+                updated_at = NOW()
+            FROM candidate_delivery candidate
+            WHERE delivery.id = candidate.id
+              AND delivery.status = 'failed'
+            RETURNING delivery.id
+          ), reset_job AS (
+            UPDATE content_jobs job
+            SET status = 'queued',
+                attempts = 0,
+                max_attempts = GREATEST(max_attempts, 6),
+                run_after = NOW(),
+                locked_at = NULL,
+                locked_by = NULL,
+                last_error = NULL,
+                finished_at = NULL,
+                updated_at = NOW()
+            FROM reset_delivery delivery
+            WHERE job.job_type = 'send_admin_review_notification'
+              AND job.payload_json ->> 'deliveryId' = delivery.id::text
+              AND job.payload_json ->> 'postId' = $1::text
+              AND job.status IN ('failed', 'needs_manual_attention')
+            RETURNING job.*, delivery.id AS delivery_id
+          )
+          SELECT * FROM reset_job
+        `, [postId]);
+        if (!rows[0]) {
+          throw draftError(
+            'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
+            'Für diesen Entwurf gibt es keine fehlgeschlagene Admin-Benachrichtigung.'
+          );
+        }
+        await client.query('COMMIT');
+        return rows[0];
+      } catch (error) {
+        try { await client.query('ROLLBACK'); } catch { /* ursprünglichen Fehler erhalten */ }
+        throw error;
+      } finally {
+        client.release();
+      }
     }
   };
 }
 
 export function createAdminDraftService({
   repository = createAdminDraftRepository(),
-  validateArticle = validateArticleDefault
+  validateArticle = validateArticleDefault,
+  now = () => new Date()
 } = {}) {
   return {
     async getDraftForReview(postId) {
@@ -268,10 +379,11 @@ export function createAdminDraftService({
       if (!isEditableDraft(current)) {
         throw draftError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
       }
-      const { post, metadata = {} } = current;
+      const { post, metadata = {}, notification = null } = current;
       return {
         post,
         metadata,
+        notification,
         id: post.id,
         title: post.title || '',
         shortDescription: post.excerpt || '',
@@ -283,7 +395,8 @@ export function createAdminDraftService({
         imageAlt: post.image_alt || '',
         faqJsonText: JSON.stringify(Array.isArray(post.faq_json) ? post.faq_json : [], null, 2),
         contentHtml: post.content || '',
-        riskReview: metadata.quality_report_json?.focusedReview || null
+        riskReview: metadata.quality_report_json?.focusedReview || null,
+        actions: deriveDraftReviewActions(post, notification, now())
       };
     },
 
@@ -308,6 +421,13 @@ export function createAdminDraftService({
         article: { ...article, contentHtml: validation.sanitizedHtml },
         admin: normalizedAdmin
       });
+    },
+
+    async retryAdminReviewNotification({ postId, confirmed }) {
+      requireConfirmation(confirmed);
+      return repository.retryAdminReviewNotificationTransaction({
+        postId: positivePostId(postId)
+      });
     }
   };
 }
@@ -315,3 +435,4 @@ export function createAdminDraftService({
 const defaultService = createAdminDraftService();
 export const getDraftForReview = defaultService.getDraftForReview;
 export const updateDraft = defaultService.updateDraft;
+export const retryAdminReviewNotification = defaultService.retryAdminReviewNotification;

@@ -78,6 +78,10 @@ function draft(overrides = {}) {
       generated_by_ai: true,
       published: false,
       workflow_status: 'needs_review',
+      review_version: 2,
+      approved_review_version: null,
+      approved_at: null,
+      approved_by_admin_id: null,
       content_format: 'static_html',
       ...overrides
     },
@@ -903,7 +907,16 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
         return { rows: [{ id: 19, hero_public_id: 'blog_images/alt' }] };
       }
       if (/UPDATE posts/i.test(normalized)) {
-        return { rows: [{ id: 19, published: false, workflow_status: 'needs_review', content_format: 'static_html' }] };
+        return { rows: [{
+          id: 19,
+          published: false,
+          workflow_status: 'needs_review',
+          review_version: 3,
+          approved_review_version: null,
+          approved_at: null,
+          approved_by_admin_id: null,
+          content_format: 'static_html'
+        }] };
       }
       if (/SELECT \* FROM content_post_metadata/i.test(normalized)) return { rows: [{ post_id: 19 }] };
       throw new Error(`Unerwartete Query: ${normalized}`);
@@ -934,6 +947,11 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
   assert.match(update.sql, /meta_title =/i);
   const setClause = update.sql.match(/SET (.+) WHERE/i)?.[1] || '';
   assert.doesNotMatch(setClause, /published\s*=|slug\s*=|content_format\s*=/i);
+  assert.match(setClause, /review_version\s*=\s*review_version\s*\+\s*1/i);
+  assert.match(setClause, /workflow_status\s*=\s*'needs_review'/i);
+  assert.match(setClause, /approved_review_version\s*=\s*NULL/i);
+  assert.match(setClause, /approved_at\s*=\s*NULL/i);
+  assert.match(setClause, /approved_by_admin_id\s*=\s*NULL/i);
 });
 
 test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock', async () => {
@@ -987,7 +1005,16 @@ test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädika
         return { rows: [{ id: 19, hero_public_id: null }] };
       }
       if (/^UPDATE posts/i.test(normalized)) {
-        return { rows: [{ id: 19, hero_public_id: 'blog_images/neu', published: false }] };
+        return { rows: [{
+          id: 19,
+          hero_public_id: 'blog_images/neu',
+          published: false,
+          workflow_status: 'needs_review',
+          review_version: 3,
+          approved_review_version: null,
+          approved_at: null,
+          approved_by_admin_id: null
+        }] };
       }
       throw new Error(`Unerwartete Query: ${normalized}`);
     },
@@ -1010,4 +1037,10 @@ test('Bildrepository führt das passende NULL-CAS zusätzlich im UPDATE-Prädika
   assert.equal(result.committed, true);
   assert.match(update.sql, /hero_public_id IS NOT DISTINCT FROM \$5/i);
   assert.equal(update.params[4], null);
+  const setClause = update.sql.match(/SET (.+) WHERE/i)?.[1] || '';
+  assert.match(setClause, /review_version\s*=\s*review_version\s*\+\s*1/i);
+  assert.match(setClause, /workflow_status\s*=\s*'needs_review'/i);
+  assert.match(setClause, /approved_review_version\s*=\s*NULL/i);
+  assert.match(setClause, /approved_at\s*=\s*NULL/i);
+  assert.match(setClause, /approved_by_admin_id\s*=\s*NULL/i);
 });

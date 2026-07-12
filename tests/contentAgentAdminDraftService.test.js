@@ -30,7 +30,11 @@ function draft(overrides = {}) {
       content_format: 'static_html',
       generated_by_ai: true,
       published: false,
-      workflow_status: 'needs_review'
+      workflow_status: 'needs_review',
+      review_version: 2,
+      approved_review_version: null,
+      approved_at: null,
+      approved_by_admin_id: null
     },
     metadata: {
       internal_links_json: ['/kontakt'],
@@ -153,7 +157,7 @@ test('getDraftForReview liefert Editorwerte und serialisiertes FAQ ohne Roh-Mass
   assert.equal(Object.hasOwn(result, 'published'), false);
 });
 
-test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und publiziert nie', async () => {
+test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und widerruft jede Freigabe', async () => {
   const calls = [];
   const client = {
     async query(sql, params = []) {
@@ -161,7 +165,17 @@ test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und 
       calls.push({ sql: normalized, params });
       if (/^SELECT id FROM posts WHERE id = \$1/i.test(normalized)) return { rows: [{ id: 3 }] };
       if (/^SELECT id FROM posts WHERE slug = \$1/i.test(normalized)) return { rows: [] };
-      if (/^UPDATE posts/i.test(normalized)) return { rows: [{ id: 3, published: false }] };
+      if (/^UPDATE posts/i.test(normalized)) {
+        return { rows: [{
+          id: 3,
+          published: false,
+          workflow_status: 'needs_review',
+          review_version: 3,
+          approved_review_version: null,
+          approved_at: null,
+          approved_by_admin_id: null
+        }] };
+      }
       if (/^UPDATE content_post_metadata/i.test(normalized)) return { rows: [{ post_id: 3 }] };
       return { rows: [] };
     },
@@ -182,7 +196,18 @@ test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und 
   const metadataUpdate = calls.find(({ sql }) => /^UPDATE content_post_metadata/i.test(sql));
   assert.ok(postUpdate);
   assert.ok(metadataUpdate);
-  assert.doesNotMatch(postUpdate.sql.split(/\sWHERE\s/i)[0], /published\s*=|workflow_status\s*=|generated_by_ai\s*=/i);
+  const setClause = postUpdate.sql.split(/\sWHERE\s/i)[0];
+  assert.doesNotMatch(setClause, /published\s*=|generated_by_ai\s*=/i);
+  assert.match(setClause, /review_version\s*=\s*review_version\s*\+\s*1/i);
+  assert.match(setClause, /workflow_status\s*=\s*'needs_review'/i);
+  assert.match(setClause, /approved_review_version\s*=\s*NULL/i);
+  assert.match(setClause, /approved_at\s*=\s*NULL/i);
+  assert.match(setClause, /approved_by_admin_id\s*=\s*NULL/i);
+  assert.equal(result.post.workflow_status, 'needs_review');
+  assert.equal(result.post.review_version, 3);
+  assert.equal(result.post.approved_review_version, null);
+  assert.equal(result.post.approved_at, null);
+  assert.equal(result.post.approved_by_admin_id, null);
   assert.match(metadataUpdate.sql, /lastAdminEdit/);
   assert.match(metadataUpdate.sql, /adminEditHistory/);
   assert.deepEqual(JSON.parse(metadataUpdate.params[1]), {
@@ -196,6 +221,63 @@ test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und 
   });
   assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), true);
   assert.equal(calls.some(({ sql }) => sql === 'ROLLBACK'), false);
+});
+
+test('getDraftForReview leitet Aktionen ausschließlich aus dem serverseitigen Zustand ab', async () => {
+  const current = draft({
+    post: {
+      ...draft().post,
+      workflow_status: 'needs_review',
+      scheduled_at: new Date('2026-07-12T09:00:00.000Z')
+    },
+    notification: { status: 'failed' }
+  });
+  const { service } = harness({ current });
+
+  const result = await service.getDraftForReview(3);
+
+  assert.deepEqual(result.actions, {
+    canApproveScheduled: false,
+    canPublishNow: true,
+    canReschedule: true,
+    canRetryNotification: true
+  });
+});
+
+test('ein nicht terminierter Entwurf wird nicht als verpasster Slot behandelt', async () => {
+  const current = draft({
+    post: { ...draft().post, scheduled_at: null }
+  });
+  const { service } = harness({ current });
+
+  const result = await service.getDraftForReview(3);
+
+  assert.deepEqual(result.actions, {
+    canApproveScheduled: false,
+    canPublishNow: false,
+    canReschedule: false,
+    canRetryNotification: false
+  });
+});
+
+test('ein exakt fälliger Termin gilt serverseitig noch nicht als verpasst', async () => {
+  const current = draft({
+    post: {
+      ...draft().post,
+      scheduled_at: new Date('2026-07-12T10:00:00.000Z')
+    }
+  });
+  const service = createAdminDraftService({
+    repository: {
+      async getDraftWithMetadata() { return current; }
+    },
+    now: () => new Date('2026-07-12T10:00:00.000Z')
+  });
+
+  const result = await service.getDraftForReview(3);
+
+  assert.equal(result.actions.canPublishNow, false);
+  assert.equal(result.actions.canReschedule, false);
 });
 
 test('Repository rollt Poständerung zurück, wenn das Metadata-Update fehlschlägt', async () => {
@@ -269,4 +351,51 @@ test('Adminname wird für Auditdaten kontrollzeichenfrei normalisiert und auf 25
   assert.equal(updates[0].admin.username.length, 255);
   assert.doesNotMatch(updates[0].admin.username, /[\u0000-\u001f\u007f]/);
   assert.match(updates[0].admin.username, /^Redaktion x+/);
+});
+
+test('manueller Admin-Mailretry setzt Zustellung und passenden Job atomar zurück', async () => {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (/^WITH candidate_delivery/i.test(normalized)) {
+        return { rows: [{ id: 41, delivery_id: 9, status: 'queued', attempts: 0 }] };
+      }
+      return { rows: [] };
+    },
+    release() { calls.push({ sql: 'RELEASE', params: [] }); }
+  };
+  const repository = createAdminDraftRepository({ async connect() { return client; } });
+
+  const result = await repository.retryAdminReviewNotificationTransaction({ postId: 3 });
+
+  assert.equal(result.delivery_id, 9);
+  const retry = calls.find(({ sql }) => /^WITH candidate_delivery/i.test(sql));
+  assert.deepEqual(retry.params, [3]);
+  assert.match(retry.sql, /notification_type = 'admin_review'/i);
+  const candidateSql = retry.sql.match(/candidate_delivery AS \((.*?)\), reset_delivery AS/is)?.[1] || '';
+  assert.doesNotMatch(candidateSql, /status = 'failed'/i);
+  assert.match(retry.sql, /reset_delivery AS[\s\S]*delivery\.status = 'failed'/i);
+  assert.match(retry.sql, /UPDATE content_notification_deliveries/i);
+  assert.match(retry.sql, /UPDATE content_jobs/i);
+  assert.match(retry.sql, /job_type = 'send_admin_review_notification'/i);
+  assert.match(retry.sql, /payload_json\s*->>\s*'deliveryId'/i);
+  assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), true);
+});
+
+test('manueller Admin-Mailretry verlangt vor dem Transaktionsstart die literale Bestätigung', async () => {
+  let connects = 0;
+  const repository = createAdminDraftRepository({
+    async connect() { connects += 1; throw new Error('darf nicht verbinden'); }
+  });
+  const service = createAdminDraftService({ repository, validateArticle: () => ({}) });
+
+  for (const confirmed of [undefined, false, 'true', 'on', 1]) {
+    await assert.rejects(
+      service.retryAdminReviewNotification({ postId: 3, confirmed }),
+      (error) => error.code === 'CONTENT_CONFIRMATION_REQUIRED'
+    );
+  }
+  assert.equal(connects, 0);
 });

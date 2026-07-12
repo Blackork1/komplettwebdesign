@@ -2,6 +2,7 @@
 <%
   const item = typeof draft !== 'undefined' && draft ? draft : {};
   const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const reviewActions = item.actions && typeof item.actions === 'object' ? item.actions : {};
 %>
 
 <div class="content-agent-page content-agent-editor">
@@ -24,6 +25,15 @@
   <% } %>
   <% if (typeof queued !== 'undefined' && queued === true) { %>
     <div class="alert alert-info" role="status">Die gewünschte Neugenerierung wurde eingeplant.</div>
+  <% } %>
+  <% if (typeof approved !== 'undefined' && approved === true) { %>
+    <div class="alert alert-success" role="status">Der geprüfte Entwurf wurde für den geplanten Termin freigegeben.</div>
+  <% } %>
+  <% if (typeof rescheduled !== 'undefined' && rescheduled === true) { %>
+    <div class="alert alert-success" role="status">Der Veröffentlichungstermin wurde sicher verschoben.</div>
+  <% } %>
+  <% if (typeof notificationRetried !== 'undefined' && notificationRetried === true) { %>
+    <div class="alert alert-info" role="status">Die fehlgeschlagene Admin-Benachrichtigung wurde erneut eingeplant.</div>
   <% } %>
 
   <% if (item.editorRiskReview) { %>
@@ -109,12 +119,49 @@
       <span class="content-agent-status is-warning">Bestätigung erforderlich</span>
     </div>
     <p class="content-agent-quiet">Vor der Veröffentlichung werden alle gespeicherten Inhalte, Bilddaten, Qualitätswerte und Risikohinweise erneut serverseitig geprüft.</p>
+    <p><strong>Geplanter Termin:</strong> <%= item.scheduledAtLabel || 'Noch nicht terminiert' %></p>
     <div class="content-agent-editor__grid">
+      <% if (typeof item.actions === 'undefined') { %>
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish" data-confirm="Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <button class="btn btn-success" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Geprüft veröffentlichen</button>
       </form>
+      <% } %>
+      <% if (reviewActions.canApproveScheduled === true) { %>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/approve-scheduled" data-confirm="Diesen geprüften KI-Entwurf für den angezeigten Termin freigeben?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="scheduled_at_local" value="<%= item.scheduledAtLocal || '' %>">
+        <button class="btn btn-success" type="submit"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Für Termin freigeben</button>
+      </form>
+      <% } %>
+      <% if (reviewActions.canPublishNow === true) { %>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish-now" data-confirm="Der geplante Termin ist verpasst. Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <button class="btn btn-success" type="submit"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Jetzt veröffentlichen</button>
+      </form>
+      <% } %>
+      <% if (reviewActions.canReschedule === true) { %>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="Den Veröffentlichungstermin verbindlich verschieben?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <div class="content-agent-field">
+          <label for="draft-scheduled-at-local">Neuer lokaler Veröffentlichungstermin</label>
+          <input id="draft-scheduled-at-local" class="form-control" type="datetime-local" name="scheduled_at_local" required>
+          <small>Die Eingabe wird serverseitig in der konfigurierten IANA-Zeitzone geprüft und muss strikt in der Zukunft liegen.</small>
+        </div>
+        <button class="btn btn-outline-primary mt-3" type="submit"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Termin verschieben</button>
+      </form>
+      <% } %>
+      <% if (reviewActions.canRetryNotification === true) { %>
+      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/notification/retry" data-confirm="Die fehlgeschlagene Admin-Benachrichtigung wirklich erneut einplanen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <button class="btn btn-outline-primary" type="submit"><i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i> Admin-Mail erneut versuchen</button>
+      </form>
+      <% } %>
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reject" data-confirm="Diesen KI-Entwurf mit dem angegebenen Grund ablehnen?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">

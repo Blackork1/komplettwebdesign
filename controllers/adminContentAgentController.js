@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { DateTime, IANAZone } from 'luxon';
 
 const CONFLICT_CODES = new Set([
   'CONTENT_AGENT_DISABLED',
@@ -8,6 +9,9 @@ const CONFLICT_CODES = new Set([
   'CONTENT_DRAFT_NOT_PUBLISHABLE',
   'CONTENT_DRAFT_NOT_REJECTABLE',
   'CONTENT_JOB_NOT_RETRYABLE',
+  'CONTENT_APPROVAL_STALE',
+  'CONTENT_PUBLICATION_SLOT_NOT_MISSED',
+  'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
   'CONTENT_REVISION_CONFLICT',
   'CONTENT_REVISION_STALE'
 ]);
@@ -21,6 +25,11 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_DRAFT_NOT_REJECTABLE: 'Der Entwurf kann in diesem Zustand nicht abgelehnt werden.',
   CONTENT_JOB_NOT_RETRYABLE: 'Der Job kann in diesem Zustand nicht fortgesetzt werden.',
   CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.',
+  CONTENT_SCHEDULE_INVALID: 'Der Veröffentlichungstermin oder die konfigurierte Zeitzone ist ungültig.',
+  CONTENT_SCHEDULE_MUST_BE_FUTURE: 'Der Veröffentlichungstermin muss strikt in der Zukunft liegen.',
+  CONTENT_APPROVAL_STALE: 'Die Freigabe ist durch eine zwischenzeitliche Änderung veraltet.',
+  CONTENT_PUBLICATION_SLOT_NOT_MISSED: 'Die Sofortveröffentlichung ist nur nach einem verpassten Termin möglich.',
+  CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE: 'Für diesen Entwurf gibt es keine fehlgeschlagene Admin-Benachrichtigung.',
   CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.'
 });
@@ -29,10 +38,66 @@ export function contentAgentStatus(error) {
   const code = typeof error?.code === 'string' ? error.code : '';
   if (code.endsWith('_NOT_FOUND')) return 404;
   if (CONFLICT_CODES.has(code)) return 409;
-  if (code.includes('VALIDATION') || code === 'CONTENT_CONFIRMATION_REQUIRED') {
+  if (code.includes('VALIDATION')
+      || code === 'CONTENT_CONFIRMATION_REQUIRED'
+      || code === 'CONTENT_SCHEDULE_INVALID'
+      || code === 'CONTENT_SCHEDULE_MUST_BE_FUTURE') {
     return 400;
   }
   return 500;
+}
+
+function scheduleError(code, message) {
+  return Object.assign(new Error(message), { code });
+}
+
+export function parseFutureLocalDateTime(value, timezone, now = new Date()) {
+  const localValue = typeof value === 'string' ? value.trim() : '';
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(localValue)
+      || !IANAZone.isValidZone(timezone)) {
+    throw scheduleError(
+      'CONTENT_SCHEDULE_INVALID',
+      'Der lokale Veröffentlichungstermin oder die Zeitzone ist ungültig.'
+    );
+  }
+  const parsed = DateTime.fromFormat(localValue, "yyyy-LL-dd'T'HH:mm", {
+    zone: timezone,
+    setZone: true,
+    locale: 'de'
+  });
+  if (!parsed.isValid || parsed.toFormat("yyyy-LL-dd'T'HH:mm") !== localValue) {
+    throw scheduleError(
+      'CONTENT_SCHEDULE_INVALID',
+      'Der lokale Veröffentlichungstermin existiert in der konfigurierten Zeitzone nicht.'
+    );
+  }
+  const scheduledAt = parsed.toUTC().toJSDate();
+  const current = now instanceof Date ? now : new Date(now);
+  if (Number.isNaN(current.getTime()) || scheduledAt.getTime() <= current.getTime()) {
+    throw scheduleError(
+      'CONTENT_SCHEDULE_MUST_BE_FUTURE',
+      'Der Veröffentlichungstermin muss strikt in der Zukunft liegen.'
+    );
+  }
+  return scheduledAt;
+}
+
+function scheduledDraftPresentation(draft, timezone) {
+  const rawScheduledAt = draft?.post?.scheduled_at;
+  const scheduledAt = new Date(rawScheduledAt);
+  if (rawScheduledAt === null
+      || rawScheduledAt === undefined
+      || rawScheduledAt === ''
+      || Number.isNaN(scheduledAt.getTime())
+      || !IANAZone.isValidZone(timezone)) {
+    return { ...draft, scheduledAtLocal: '', scheduledAtLabel: 'Noch nicht terminiert' };
+  }
+  const local = DateTime.fromJSDate(scheduledAt, { zone: timezone });
+  return {
+    ...draft,
+    scheduledAtLocal: local.toFormat("yyyy-LL-dd'T'HH:mm"),
+    scheduledAtLabel: `${local.toFormat('dd.LL.yyyy, HH:mm')} Uhr (${timezone})`
+  };
 }
 
 function sendKnownError(error, res, next) {
@@ -174,7 +239,9 @@ export function createAdminContentAgentController(dependencies) {
     draftService,
     publicationService,
     revisionService,
-    blogPostPresentation
+    blogPostPresentation,
+    scheduledPublicationService,
+    now = () => new Date()
   } = dependencies;
 
   async function requireAdminEnqueueEnabled() {
@@ -325,7 +392,10 @@ export function createAdminContentAgentController(dependencies) {
     async draftEditPage(req, res, next) {
       if (typeof draftService?.getDraftForReview !== 'function') return unavailable(res);
       try {
-        const draft = await draftService.getDraftForReview(positiveId(req.params.id));
+        const [draft, settings] = await Promise.all([
+          draftService.getDraftForReview(positiveId(req.params.id)),
+          settingsRepository.getSettings()
+        ]);
         const editorRiskReview = draft.riskReview && typeof draft.riskReview === 'object'
           ? {
               ...draft.riskReview,
@@ -335,9 +405,15 @@ export function createAdminContentAgentController(dependencies) {
             }
           : null;
         return res.render('admin/contentAgent/draftEdit', {
-          draft: { ...draft, editorRiskReview },
+          draft: scheduledDraftPresentation(
+            { ...draft, editorRiskReview },
+            settings?.timezone || runtimeConfig.timezone || 'UTC'
+          ),
           saved: req.query?.saved === '1',
-          queued: req.query?.queued === '1'
+          queued: req.query?.queued === '1',
+          approved: req.query?.approved === '1',
+          rescheduled: req.query?.rescheduled === '1',
+          notificationRetried: req.query?.notification_retried === '1'
         });
       } catch (error) {
         return sendKnownError(error, res, next);
@@ -452,6 +528,75 @@ export function createAdminContentAgentController(dependencies) {
           reason: req.body?.reason
         }],
         redirect: '/admin/content-agent/drafts?rejected=1',
+        res,
+        next
+      });
+    },
+
+    async approveScheduledAction(req, res, next) {
+      if (typeof scheduledPublicationService?.approveForSchedule !== 'function') return unavailable(res);
+      try {
+        const settings = await settingsRepository.getSettings();
+        await scheduledPublicationService.approveForSchedule({
+          postId: positiveId(req.params.id),
+          scheduledAt: parseFutureLocalDateTime(
+            req.body?.scheduled_at_local,
+            settings?.timezone,
+            now()
+          ),
+          admin: adminFromRequest(req),
+          confirmed: criticalConfirmation(req.body?.confirmed)
+        });
+        return res.redirect(`/admin/content-agent/drafts/${req.params.id}/edit?approved=1`);
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    publishNowAction(req, res, next) {
+      return actionCapability({
+        capability: scheduledPublicationService,
+        method: 'publishNowAfterMissedSlot',
+        args: () => [{
+          postId: positiveId(req.params.id),
+          admin: adminFromRequest(req),
+          confirmed: criticalConfirmation(req.body?.confirmed)
+        }],
+        redirect: '/admin/content-agent/drafts?published=1',
+        res,
+        next
+      });
+    },
+
+    async rescheduleDraftAction(req, res, next) {
+      if (typeof scheduledPublicationService?.approveForSchedule !== 'function') return unavailable(res);
+      try {
+        const settings = await settingsRepository.getSettings();
+        await scheduledPublicationService.approveForSchedule({
+          postId: positiveId(req.params.id),
+          scheduledAt: parseFutureLocalDateTime(
+            req.body?.scheduled_at_local,
+            settings?.timezone,
+            now()
+          ),
+          admin: adminFromRequest(req),
+          confirmed: criticalConfirmation(req.body?.confirmed)
+        });
+        return res.redirect(`/admin/content-agent/drafts/${req.params.id}/edit?rescheduled=1`);
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    retryDraftNotificationAction(req, res, next) {
+      return actionCapability({
+        capability: draftService,
+        method: 'retryAdminReviewNotification',
+        args: () => [{
+          postId: positiveId(req.params.id),
+          confirmed: criticalConfirmation(req.body?.confirmed)
+        }],
+        redirect: `/admin/content-agent/drafts/${req.params.id}/edit?notification_retried=1`,
         res,
         next
       });
