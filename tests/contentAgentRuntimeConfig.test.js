@@ -38,6 +38,9 @@ const settings = Object.freeze({
   monthly_budget_cents: 15000,
   auto_publish_min_score: 80,
   maximum_attempts: 9,
+  generation_lead_hours: 4,
+  admin_notification_email: 'redaktion@example.de',
+  newsletter_blog_notifications_enabled: true,
   manual_approvals_count: 8,
   settings_version: 2
 });
@@ -50,6 +53,9 @@ test('Runtime begrenzt Dashboardwerte durch .env-Hardcaps', () => {
   assert.equal(runtime.maxAttempts, 5);
   assert.equal(runtime.autoPublishMinScore, 90);
   assert.equal(runtime.autoPublishEffective, false);
+  assert.equal(runtime.generationLeadHours, 4);
+  assert.equal(runtime.adminNotificationEmail, 'redaktion@example.de');
+  assert.equal(runtime.newsletterBlogNotificationsEnabled, true);
   assert.equal(Object.isFrozen(runtime), true);
 });
 
@@ -152,6 +158,9 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     monthlyCostLimitEur: 100,
     autoPublishMinScore: 94,
     maxAttempts: 5,
+    generationLeadHours: 4,
+    adminNotificationEmail: 'redaktion@example.de',
+    newsletterBlogNotificationsEnabled: true,
     manualApprovalsCount: 8,
     autoPublishEffective: true,
     timezone: 'Europe/Berlin',

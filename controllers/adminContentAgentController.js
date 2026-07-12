@@ -4,6 +4,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_AGENT_DISABLED',
   'CONTENT_SETTINGS_VERSION_CONFLICT',
   'CONTENT_AUTOPUBLISH_NOT_READY',
+  'CONTENT_NEWSLETTER_NOT_READY',
   'CONTENT_DRAFT_NOT_PUBLISHABLE',
   'CONTENT_DRAFT_NOT_REJECTABLE',
   'CONTENT_JOB_NOT_RETRYABLE',
@@ -15,6 +16,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_AGENT_DISABLED: 'Der Content-Agent ist deaktiviert.',
   CONTENT_SETTINGS_VERSION_CONFLICT: 'Die Einstellungen wurden zwischenzeitlich geändert.',
   CONTENT_AUTOPUBLISH_NOT_READY: 'Direktveröffentlichung ist noch nicht freigegeben.',
+  CONTENT_NEWSLETTER_NOT_READY: 'Newsletter-Benachrichtigungen sind noch nicht freigegeben.',
   CONTENT_DRAFT_NOT_PUBLISHABLE: 'Der Entwurf kann in diesem Zustand nicht veröffentlicht werden.',
   CONTENT_DRAFT_NOT_REJECTABLE: 'Der Entwurf kann in diesem Zustand nicht abgelehnt werden.',
   CONTENT_JOB_NOT_RETRYABLE: 'Der Job kann in diesem Zustand nicht fortgesetzt werden.',
@@ -89,6 +91,20 @@ function settingsPatch(body = {}) {
   if (Object.hasOwn(body, 'maximum_attempts')) {
     patch.maximumAttempts = Number(body.maximum_attempts);
   }
+  if (Object.hasOwn(body, 'generation_lead_hours')) {
+    patch.generationLeadHours = Number(body.generation_lead_hours);
+  }
+  if (Object.hasOwn(body, 'admin_notification_email')) {
+    patch.adminNotificationEmail = body.admin_notification_email;
+  }
+  if (Object.hasOwn(body, 'newsletter_blog_notifications_enabled')) {
+    patch.newsletterBlogNotificationsEnabled = optionalBoolean(
+      body.newsletter_blog_notifications_enabled,
+      'newsletter_blog_notifications_enabled'
+    );
+  } else if (body.settings_form_scope === 'schedule') {
+    patch.newsletterBlogNotificationsEnabled = false;
+  }
   return patch;
 }
 
@@ -102,7 +118,11 @@ function transitionTarget(current, patch) {
     timezone: patch.timezone ?? current.timezone,
     monthly_budget_cents: patch.monthlyBudgetCents ?? current.monthly_budget_cents,
     auto_publish_min_score: patch.autoPublishMinScore ?? current.auto_publish_min_score,
-    maximum_attempts: patch.maximumAttempts ?? current.maximum_attempts
+    maximum_attempts: patch.maximumAttempts ?? current.maximum_attempts,
+    generation_lead_hours: patch.generationLeadHours ?? current.generation_lead_hours,
+    admin_notification_email: patch.adminNotificationEmail ?? current.admin_notification_email,
+    newsletter_blog_notifications_enabled: patch.newsletterBlogNotificationsEnabled
+      ?? current.newsletter_blog_notifications_enabled
   };
 }
 
@@ -248,7 +268,11 @@ export function createAdminContentAgentController(dependencies) {
     async schedulePage(req, res, next) {
       try {
         const settings = await settingsRepository.getSettings();
-        return res.render('admin/contentAgent/schedule', { settings, technical: technicalPresentation });
+        return res.render('admin/contentAgent/schedule', {
+          settings,
+          schedule: presentation.buildSchedulePresentation(settings),
+          technical: technicalPresentation
+        });
       } catch (error) {
         return sendKnownError(error, res, next);
       }

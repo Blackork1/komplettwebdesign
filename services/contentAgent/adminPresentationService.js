@@ -152,6 +152,19 @@ export function buildDashboardPresentation(data = {}, now = new Date()) {
   };
 }
 
+export function buildSchedulePresentation(settings = {}) {
+  const approvals = Math.max(0, Number(settings.manual_approvals_count) || 0);
+  const requiredApprovals = 8;
+  return {
+    generationLeadHours: Number(settings.generation_lead_hours) || 4,
+    newsletterApprovals: {
+      current: Math.min(approvals, requiredApprovals),
+      required: requiredApprovals,
+      ready: approvals >= requiredApprovals
+    }
+  };
+}
+
 export function buildTechnologyPresentation(config = {}, state = {}) {
   const technical = Object.fromEntries(TECHNICAL_KEYS
     .filter((key) => config[key] && typeof config[key] === 'object')

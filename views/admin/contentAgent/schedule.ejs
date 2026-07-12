@@ -2,11 +2,20 @@
 <%
   const safeSettings = settings || {};
   const safeTechnical = typeof technical !== 'undefined' && technical ? technical : {};
+  const safeSchedule = typeof schedule !== 'undefined' && schedule ? schedule : {};
   const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
   const selectedDays = Array.isArray(safeSettings.schedule_weekdays) ? safeSettings.schedule_weekdays.map(Number) : [];
   const weekdays = [[1, 'Montag'], [2, 'Dienstag'], [3, 'Mittwoch'], [4, 'Donnerstag'], [5, 'Freitag'], [6, 'Samstag'], [7, 'Sonntag']];
   const approvalCount = Number(safeSettings.manual_approvals_count || 0);
   const technicalAutoPublish = safeTechnical.autoPublishEnabled?.value === true;
+  const newsletterApprovals = safeSchedule.newsletterApprovals || {
+    current: Math.min(Math.max(approvalCount, 0), 8),
+    required: 8,
+    ready: approvalCount >= 8
+  };
+  const generationLeadHours = Number(
+    safeSchedule.generationLeadHours || safeSettings.generation_lead_hours || 4
+  );
 %>
 <div class="content-agent-page">
   <header class="content-agent-pagehead"><div><p class="content-agent-eyebrow">Betriebseinstellungen</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Zeitplan &amp; Modus</h1><p class="content-agent-lead">Sichere Laufzeitwerte werden ohne Container-Neustart wirksam.</p></div><span class="content-agent-saved-state"><i class="fa-solid fa-database" aria-hidden="true"></i> Gespeichert in PostgreSQL</span></header>
@@ -31,12 +40,17 @@
         <fieldset class="content-agent-weekdays"><legend>Wochentage</legend><div>
           <% weekdays.forEach(([value, label]) => { %><label><input type="checkbox" name="schedule_weekdays" value="<%= value %>" <%= selectedDays.includes(value) ? 'checked' : '' %>><span><%= label %></span></label><% }) %>
         </div></fieldset>
-        <div class="row g-3"><div class="col-sm-5"><label class="form-label" for="schedule-time">Gemeinsame Uhrzeit</label><input class="form-control" id="schedule-time" type="time" name="schedule_time" value="<%= String(safeSettings.schedule_time || '').slice(0, 5) %>" required></div><div class="col-sm-7"><label class="form-label" for="schedule-timezone">Zeitzone</label><input class="form-control" id="schedule-timezone" type="text" name="timezone" value="<%= safeSettings.timezone || 'Europe/Berlin' %>" autocomplete="off" required><div class="form-text">Gültige IANA-Zeitzone, zum Beispiel Europe/Berlin.</div></div></div>
-        <div class="content-agent-schedule-note"><i class="fa-regular fa-clock" aria-hidden="true"></i><p><strong>Standard: Montag und Donnerstag um 18:00 Uhr.</strong><br>Sommer- und Winterzeit werden anhand der gewählten Zeitzone berücksichtigt.</p></div>
+        <div class="row g-3"><div class="col-sm-4"><label class="form-label" for="schedule-time">Veröffentlichungszeit</label><input class="form-control" id="schedule-time" type="time" name="schedule_time" value="<%= String(safeSettings.schedule_time || '').slice(0, 5) %>" required></div><div class="col-sm-4"><label class="form-label" for="generation-lead-hours">Erstellungsvorlauf in Stunden</label><input class="form-control" id="generation-lead-hours" type="number" name="generation_lead_hours" min="1" max="48" value="<%= generationLeadHours %>" required><div class="form-text">Der Entwurf wird <%= generationLeadHours %> Stunden vor der Veröffentlichung erzeugt.</div></div><div class="col-sm-4"><label class="form-label" for="schedule-timezone">Zeitzone</label><input class="form-control" id="schedule-timezone" type="text" name="timezone" value="<%= safeSettings.timezone || 'Europe/Berlin' %>" autocomplete="off" required><div class="form-text">Gültige IANA-Zeitzone, zum Beispiel Europe/Berlin.</div></div></div>
+        <div class="content-agent-schedule-note"><i class="fa-regular fa-clock" aria-hidden="true"></i><p><strong>Die gewählte Uhrzeit ist die Veröffentlichungszeit.</strong><br>Der Erstellungsvorlauf bestimmt, wie viele Stunden vorher der Entwurf zur Prüfung bereitsteht. Sommer- und Winterzeit werden anhand der gewählten Zeitzone berücksichtigt.</p></div>
+      </section>
+
+      <section class="content-agent-panel content-agent-settings-wide" aria-labelledby="notifications-heading">
+        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">03 · Benachrichtigungen</p><h2 id="notifications-heading">Redaktion und Newsletter</h2></div></div>
+        <div class="content-agent-limit-grid"><div><label class="form-label" for="admin-notification-email">Admin-Benachrichtigungsadresse</label><input class="form-control" id="admin-notification-email" type="email" name="admin_notification_email" value="<%= safeSettings.admin_notification_email || '' %>" maxlength="320" required><div class="form-text">Neue Entwürfe werden ausschließlich an diese redaktionelle Adresse gemeldet.</div></div><div><label class="form-label" for="newsletter-notifications">Newsletter bei neuem Blogartikel</label><select class="form-select" id="newsletter-notifications" name="newsletter_blog_notifications_enabled" <%= newsletterApprovals.ready ? '' : 'disabled' %>><option value="false" <%= safeSettings.newsletter_blog_notifications_enabled ? '' : 'selected' %>>Deaktiviert</option><option value="true" <%= safeSettings.newsletter_blog_notifications_enabled ? 'selected' : '' %>>Aktiviert</option></select><div class="form-text"><%= newsletterApprovals.current %> / <%= newsletterApprovals.required %> erfolgreiche manuelle Veröffentlichungen. Vor acht Veröffentlichungen bleibt der Newsletter gesperrt.</div></div></div>
       </section>
 
       <section class="content-agent-panel content-agent-settings-wide" aria-labelledby="limits-heading">
-        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">03 · Sicherheitsgrenzen</p><h2 id="limits-heading">Budget und Qualität</h2></div><span class="content-agent-readonly">Technisch begrenzt durch .env</span></div>
+        <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">04 · Sicherheitsgrenzen</p><h2 id="limits-heading">Budget und Qualität</h2></div><span class="content-agent-readonly">Technisch begrenzt durch .env</span></div>
         <div class="content-agent-limit-grid"><div><label class="form-label" for="monthly-budget">Monatsbudget in Cent</label><div class="input-group"><input class="form-control" id="monthly-budget" type="number" name="monthly_budget_cents" min="0" max="<%= Number(safeTechnical.monthlyCostLimitEur?.value || 0) * 100 || '' %>" step="1" value="<%= safeSettings.monthly_budget_cents || 0 %>" required><span class="input-group-text">Cent</span></div><div class="form-text">Aktuell <%= (Number(safeSettings.monthly_budget_cents || 0) / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) %> €.</div></div><div><label class="form-label" for="minimum-score">Auto-Publish-Mindestscore</label><div class="input-group"><input class="form-control" id="minimum-score" type="number" name="auto_publish_min_score" min="90" max="100" value="<%= safeSettings.auto_publish_min_score || 90 %>" required><span class="input-group-text">/ 100</span></div><div class="form-text">Werte unter 90 werden serverseitig abgelehnt.</div></div><div><label class="form-label" for="maximum-attempts">Maximale Jobversuche</label><input class="form-control" id="maximum-attempts" type="number" name="maximum_attempts" min="1" max="<%= safeTechnical.maxAttempts?.value || 5 %>" value="<%= safeSettings.maximum_attempts || 3 %>" required><div class="form-text">Die technische Obergrenze kann hier nicht überschritten werden.</div></div></div>
       </section>
     </div>

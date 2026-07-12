@@ -21,6 +21,10 @@ export function resolveContentAgentRuntimeConfig({ technicalConfig, settings }) 
     monthlyCostLimitEur: budget,
     maxAttempts: attempts,
     autoPublishMinScore: score,
+    generationLeadHours: Number(settings.generation_lead_hours),
+    adminNotificationEmail: String(settings.admin_notification_email),
+    newsletterBlogNotificationsEnabled:
+      settings.newsletter_blog_notifications_enabled === true,
     manualApprovalsCount: Number(settings.manual_approvals_count),
     settingsVersion: Number(settings.settings_version),
     autoPublishEffective: technicalConfig.autoPublishEnabled === true
@@ -46,6 +50,9 @@ export function createContentAgentJobSnapshot({
       monthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,
       autoPublishMinScore: runtimeConfig.autoPublishMinScore,
       maxAttempts: runtimeConfig.maxAttempts,
+      generationLeadHours: runtimeConfig.generationLeadHours,
+      adminNotificationEmail: runtimeConfig.adminNotificationEmail,
+      newsletterBlogNotificationsEnabled: runtimeConfig.newsletterBlogNotificationsEnabled,
       manualApprovalsCount: runtimeConfig.manualApprovalsCount,
       autoPublishEffective: runtimeConfig.autoPublishEffective,
       timezone: runtimeConfig.timezone,

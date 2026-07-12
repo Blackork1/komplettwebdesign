@@ -48,6 +48,9 @@ const settings = {
   monthly_budget_cents: 5000,
   auto_publish_min_score: 90,
   maximum_attempts: 3,
+  generation_lead_hours: 4,
+  admin_notification_email: 'redaktion@example.de',
+  newsletter_blog_notifications_enabled: false,
   manual_approvals_count: 3,
   settings_version: 7
 };
@@ -132,6 +135,29 @@ test('Zeitplan akzeptiert Centbeträge und Erfolgsmeldung ist über sicheren Vie
   assert.match(scheduleHtml, /name="monthly_budget_cents"[^>]*step="1"[^>]*value="1250"/);
   assert.match(successHtml, /Der Entwurfsjob wurde sicher eingeplant/);
   assert.doesNotMatch(neutralHtml, /Der Entwurfsjob wurde sicher eingeplant/);
+});
+
+test('Zeitplan erklärt Veröffentlichungszeit, Vorlauf, Adminadresse und Newsletter-Sperre', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('schedule.ejs')), {
+    ...baseLocals,
+    settings: { ...settings, manual_approvals_count: 0 },
+    schedule: {
+      generationLeadHours: 4,
+      newsletterApprovals: { current: 0, required: 8, ready: false }
+    },
+    technical: {
+      autoPublishEnabled: { value: false },
+      monthlyCostLimitEur: { value: 100 },
+      maxAttempts: { value: 5 }
+    }
+  });
+
+  assert.match(html, /name="generation_lead_hours"[^>]*min="1"[^>]*max="48"[^>]*value="4"/);
+  assert.match(html, /name="admin_notification_email"[^>]*value="redaktion@example\.de"/);
+  assert.match(html, /name="newsletter_blog_notifications_enabled"[^>]*disabled/);
+  assert.match(html, /0\s*\/\s*8/);
+  assert.match(html, /Veröffentlichungszeit/i);
+  assert.match(html, /vier Stunden vorher|Erstellungsvorlauf/i);
 });
 
 test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmodels erreichbar', async () => {

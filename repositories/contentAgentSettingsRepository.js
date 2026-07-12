@@ -6,6 +6,14 @@ function validationError(message) {
   });
 }
 
+function normalizeNotificationEmail(value) {
+  const email = String(value ?? '').trim().toLowerCase();
+  if (email.length > 320 || !/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email)) {
+    throw validationError('Ungültige Admin-Benachrichtigungsadresse.');
+  }
+  return email;
+}
+
 function normalizeSettingsPatch(current, patch = {}) {
   const weekdaysInput = patch.scheduleWeekdays ?? current.schedule_weekdays;
   if (!Array.isArray(weekdaysInput)) {
@@ -49,6 +57,30 @@ function normalizeSettingsPatch(current, patch = {}) {
     throw validationError('Ungültige Anzahl maximaler Versuche.');
   }
 
+  const generationLeadHours = Number(
+    patch.generationLeadHours ?? current.generation_lead_hours
+  );
+  if (!Number.isInteger(generationLeadHours)
+      || generationLeadHours < 1
+      || generationLeadHours > 48) {
+    throw validationError('Der Erstellungsvorlauf muss zwischen 1 und 48 Stunden liegen.');
+  }
+
+  const adminNotificationEmail = normalizeNotificationEmail(
+    patch.adminNotificationEmail ?? current.admin_notification_email
+  );
+  const newsletterBlogNotificationsEnabled = patch.newsletterBlogNotificationsEnabled
+    ?? current.newsletter_blog_notifications_enabled;
+  if (typeof newsletterBlogNotificationsEnabled !== 'boolean') {
+    throw validationError('Ungültiger Newsletter-Schalter.');
+  }
+  if (patch.newsletterBlogNotificationsEnabled === true
+      && Number(current.manual_approvals_count) < 8) {
+    throw Object.assign(new Error('Newsletter-Freigabe noch nicht erreicht.'), {
+      code: 'CONTENT_NEWSLETTER_NOT_READY'
+    });
+  }
+
   return {
     agentEnabled: patch.agentEnabled ?? current.agent_enabled,
     operatingMode,
@@ -57,7 +89,10 @@ function normalizeSettingsPatch(current, patch = {}) {
     timezone,
     monthlyBudgetCents,
     autoPublishMinScore,
-    maximumAttempts
+    maximumAttempts,
+    generationLeadHours,
+    adminNotificationEmail,
+    newsletterBlogNotificationsEnabled
   };
 }
 
@@ -70,7 +105,10 @@ function changedKeys(current, next) {
     timezone: next.timezone,
     monthly_budget_cents: next.monthly_budget_cents,
     auto_publish_min_score: next.auto_publish_min_score,
-    maximum_attempts: next.maximum_attempts
+    maximum_attempts: next.maximum_attempts,
+    generation_lead_hours: next.generation_lead_hours,
+    admin_notification_email: next.admin_notification_email,
+    newsletter_blog_notifications_enabled: next.newsletter_blog_notifications_enabled
   };
   const previous = {
     ...current,
@@ -109,8 +147,10 @@ export async function updateContentAgentSettings({ expectedVersion, patch, admin
       SET agent_enabled = $1, operating_mode = $2, schedule_weekdays = $3,
           schedule_time = $4, timezone = $5, monthly_budget_cents = $6,
           auto_publish_min_score = $7, maximum_attempts = $8,
+          generation_lead_hours = $9, admin_notification_email = $10,
+          newsletter_blog_notifications_enabled = $11,
           settings_version = settings_version + 1, updated_at = NOW()
-      WHERE id = 1 AND settings_version = $9
+      WHERE id = 1 AND settings_version = $12
       RETURNING *
     `, [
       next.agentEnabled,
@@ -121,6 +161,9 @@ export async function updateContentAgentSettings({ expectedVersion, patch, admin
       next.monthlyBudgetCents,
       next.autoPublishMinScore,
       next.maximumAttempts,
+      next.generationLeadHours,
+      next.adminNotificationEmail,
+      next.newsletterBlogNotificationsEnabled,
       Number(expectedVersion)
     ]);
 

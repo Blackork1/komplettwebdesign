@@ -7,6 +7,7 @@ import {
 } from '../controllers/adminContentAgentController.js';
 import { retryContentJobForAdmin } from '../repositories/contentJobRepository.js';
 import { validateContentAgentSettingsTransition } from '../services/contentAgent/runtimeConfigService.js';
+import * as adminPresentation from '../services/contentAgent/adminPresentationService.js';
 
 function response() {
   return {
@@ -184,6 +185,9 @@ test('Einstellungsupdate prüft Transition und technische Hardgates vor dem Spei
     monthly_budget_cents: 2500,
     auto_publish_min_score: 90,
     maximum_attempts: 3,
+    generation_lead_hours: 4,
+    admin_notification_email: 'kontakt@komplettwebdesign.de',
+    newsletter_blog_notifications_enabled: false,
     manual_approvals_count: 8,
     settings_version: 4
   };
@@ -196,7 +200,14 @@ test('Einstellungsupdate prüft Transition und technische Hardgates vor dem Spei
     validateSettingsTransition(input) { calls.push(['validate', input]); return input.next; }
   }));
   const req = {
-    body: { settings_version: '4', operating_mode: 'auto_publish', auto_publish_min_score: '92' },
+    body: {
+      settings_version: '4',
+      operating_mode: 'auto_publish',
+      auto_publish_min_score: '92',
+      generation_lead_hours: '6',
+      admin_notification_email: ' Redaktion@Example.de ',
+      newsletter_blog_notifications_enabled: 'true'
+    },
     session: { user: { is: 7, username: 'admin' } }
   };
   const res = response();
@@ -210,7 +221,67 @@ test('Einstellungsupdate prüft Transition und technische Hardgates vor dem Spei
   assert.equal(calls[2][0], 'update');
   assert.equal(calls[2][1].expectedVersion, 4);
   assert.deepEqual(calls[2][1].admin, { id: 7, username: 'admin' });
+  assert.equal(calls[2][1].patch.generationLeadHours, 6);
+  assert.equal(calls[2][1].patch.adminNotificationEmail, ' Redaktion@Example.de ');
+  assert.equal(calls[2][1].patch.newsletterBlogNotificationsEnabled, true);
   assert.equal(res.redirectedTo, '/admin/content-agent/schedule?saved=1');
+});
+
+test('Newsletter-Sperre wird als sicherer Konflikt ausgegeben', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return { settings_version: 4 }; },
+      async updateSettings() {
+        throw Object.assign(new Error('interne Freigabedetails'), {
+          code: 'CONTENT_NEWSLETTER_NOT_READY'
+        });
+      }
+    },
+    validateSettingsTransition({ next }) { return next; }
+  }));
+  const res = response();
+
+  await controller.updateSettingsAction({
+    body: { settings_version: '4', newsletter_blog_notifications_enabled: 'true' },
+    session: { user: { id: 7, username: 'admin' } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /Newsletter/);
+  assert.doesNotMatch(res.body, /interne Freigabedetails/);
+});
+
+test('Zeitplanpräsentation begrenzt den Newsletter-Fortschritt sicher auf acht', () => {
+  assert.equal(typeof adminPresentation.buildSchedulePresentation, 'function');
+  assert.deepEqual(adminPresentation.buildSchedulePresentation({
+    manual_approvals_count: 12,
+    generation_lead_hours: 4
+  }), {
+    generationLeadHours: 4,
+    newsletterApprovals: { current: 8, required: 8, ready: true }
+  });
+});
+
+test('Zeitplanseite erhält die vorbereitete Newsletter-Gate-Präsentation', async () => {
+  const settings = { manual_approvals_count: 3, generation_lead_hours: 4 };
+  const schedule = {
+    generationLeadHours: 4,
+    newsletterApprovals: { current: 3, required: 8, ready: false }
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: { async getSettings() { return settings; } },
+    presentation: {
+      buildSchedulePresentation(input) {
+        assert.equal(input, settings);
+        return schedule;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.schedulePage({}, res, assert.fail);
+
+  assert.equal(res.rendered.locals.schedule, schedule);
 });
 
 test('vollständiges Zeitplanformular behandelt fehlende Wochentage als leere Auswahl', async () => {
