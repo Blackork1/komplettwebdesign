@@ -256,7 +256,9 @@ test('öffentliche und Admin-Queries reichen neue Postfelder unverändert durch'
     meta_description: 'SEO-Beschreibung',
     og_title: 'OG-Titel',
     og_description: 'OG-Beschreibung',
-    content_format: 'static_html'
+    content_format: 'static_html',
+    scheduled_at: new Date('2026-07-13T16:00:00.000Z'),
+    review_version: 1
   });
   pool.query = async () => ({ rows: [row] });
 
@@ -271,6 +273,8 @@ test('öffentliche und Admin-Queries reichen neue Postfelder unverändert durch'
       assert.equal(result.meta_title, 'SEO-Titel');
       assert.equal(result.og_description, 'OG-Beschreibung');
       assert.equal(result.image_alt, 'Passender Alternativtext');
+      assert.equal(result.scheduled_at.toISOString(), '2026-07-13T16:00:00.000Z');
+      assert.equal(result.review_version, 1);
     }
   } finally {
     pool.query = originalQuery;

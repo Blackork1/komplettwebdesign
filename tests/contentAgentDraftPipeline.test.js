@@ -610,17 +610,34 @@ test('deleteImage akzeptiert nur explizite ok- oder not-found-Ergebnisse', async
 });
 
 test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder und speichert atomar', async () => {
-  const postRow = { id: 51, published: false, workflow_status: 'needs_review', content_format: 'static_html', generated_by_ai: true };
+  const scheduledAt = new Date('2026-07-13T16:00:00.000Z');
+  const postRow = {
+    id: 51,
+    published: false,
+    workflow_status: 'needs_review',
+    content_format: 'static_html',
+    generated_by_ai: true,
+    scheduled_at: scheduledAt,
+    review_version: 1,
+    _created: true
+  };
   const metadataRow = { post_id: 51, quality_score: 91 };
+  const deliveryRow = { id: 81, post_id: 51, notification_type: 'admin_review' };
+  const notificationJob = { id: 82, job_type: 'send_admin_review_notification' };
+  const { _created, ...persistedPost } = postRow;
   const db = createTransactionalDb([
     {},
     { rows: [postRow] },
     { rows: [metadataRow] },
+    { rows: [deliveryRow] },
+    { rows: [notificationJob] },
     {}
   ]);
 
   const result = await BlogPostModel.createAIDraft({
     generationRunId: 71,
+    scheduledAt: scheduledAt.toISOString(),
+    adminNotificationEmail: 'redaktion@example.de',
     post: {
       title: article.title,
       slug: article.slug,
@@ -659,7 +676,7 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
   }, db);
 
   assert.deepEqual(result, {
-    post: postRow,
+    post: persistedPost,
     metadata: metadataRow,
     created: true,
     referencedImagePublicId: null
@@ -669,6 +686,8 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
     'BEGIN',
     db.events[2].sql,
     db.events[3].sql,
+    db.events[4].sql,
+    db.events[5].sql,
     'COMMIT',
     'RELEASE'
   ]);
@@ -676,12 +695,36 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
   assert.match(db.events[2].sql, /faq_json, workflow_status, meta_title/i);
   assert.match(db.events[2].sql, /image_alt, content_format, generated_by_ai/i);
   assert.match(db.events[2].sql, /generation_run_id/i);
+  assert.match(db.events[2].sql, /scheduled_at/i);
   assert.match(db.events[2].sql, /ON CONFLICT \(generation_run_id\) DO UPDATE SET generation_run_id = EXCLUDED\.generation_run_id/i);
   assert.match(db.events[2].sql, /false, false, \$8, \$9, 'needs_review'/i);
-  assert.equal(db.events[2].params.at(-1), 71);
+  assert.equal(db.events[2].params.includes(scheduledAt.toISOString()), true);
+  assert.equal(db.events[2].params.includes(71), true);
   assert.equal(db.events[2].params.includes(article.metaDescription), true);
   assert.match(db.events[3].sql, /INSERT INTO content_post_metadata/i);
   assert.match(db.events[3].sql, /ON CONFLICT \(post_id\) DO UPDATE SET post_id = EXCLUDED\.post_id/i);
+  assert.match(db.events[4].sql, /INSERT INTO content_notification_deliveries/i);
+  assert.equal(db.events[4].params[0], 51);
+  assert.equal(db.events[4].params[1], 'redaktion@example.de');
+  assert.deepEqual(Object.keys(db.events[4].params[3]).sort(), [
+    'editorPath',
+    'imageUrl',
+    'postId',
+    'qualityScore',
+    'reviewVersion',
+    'riskSummary',
+    'scheduledAt',
+    'shortDescription',
+    'title'
+  ]);
+  assert.equal(db.events[4].params[3].reviewVersion, 1);
+  assert.equal(db.events[4].params[3].editorPath, '/admin/content-agent/drafts/51/edit');
+  assert.match(db.events[5].sql, /INSERT INTO content_jobs/i);
+  assert.deepEqual(db.events[5].params.slice(0, 3), [
+    'send_admin_review_notification',
+    'send-admin-review:71:1',
+    { deliveryId: 81, postId: 51, generationRunId: 71 }
+  ]);
 });
 
 test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und geprüfte Metadaten zurück', async () => {
@@ -695,12 +738,17 @@ test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und g
     generated_by_ai: true
   };
   const metadataRow = { post_id: 53, quality_score: 93, primary_keyword: topic.primaryKeyword };
+  const deliveryRow = { id: 83, post_id: 53, notification_type: 'admin_review' };
+  const notificationJob = { id: 84, job_type: 'send_admin_review_notification' };
   const db = createTransactionalDb([
-    {}, { rows: [{ ...postRow, _created: true }] }, { rows: [metadataRow] }, {},
+    {}, { rows: [{ ...postRow, _created: true }] }, { rows: [metadataRow] },
+    { rows: [deliveryRow] }, { rows: [notificationJob] }, {},
     {}, { rows: [{ ...postRow, _created: false }] }, { rows: [metadataRow] }, {}
   ]);
   const input = {
     generationRunId: 72,
+    scheduledAt: '2026-07-20T15:00:00.000Z',
+    adminNotificationEmail: 'redaktion@example.de',
     post: {
       title: article.title,
       slug: article.slug,
@@ -733,6 +781,8 @@ test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und g
   assert.equal(postCalls.every(({ sql }) => /ON CONFLICT \(generation_run_id\)/i.test(sql)), true);
   assert.equal(metadataCalls.every(({ sql }) => /ON CONFLICT \(post_id\)/i.test(sql)), true);
   assert.equal(metadataCalls.every(({ sql }) => !/quality_score = EXCLUDED\.quality_score/i.test(sql)), true);
+  assert.equal(db.events.filter(({ sql }) => /^INSERT INTO content_notification_deliveries/i.test(sql)).length, 1);
+  assert.equal(db.events.filter(({ sql }) => /^INSERT INTO content_jobs/i.test(sql)).length, 1);
 });
 
 test('BlogPostModel.createAIDraft verlangt eine positive generationRunId vor dem Connect', async () => {
@@ -2304,10 +2354,13 @@ test('completed-Recovery bleibt bei geworfenem finishRun-Fehler retrybar', async
   assert.equal(harness.createdDrafts.length, 0);
 });
 
-test('Pipeline übergibt die Run-ID an Topic- und Draft-Upserts', async () => {
+test('Pipeline übergibt Run-ID, Veröffentlichungstermin und Snapshot-Mailadresse an den Draft-Upsert', async () => {
+  const draftInputs = [];
   const generationRunIds = { topic: [], draft: [] };
   const base = createDependencies();
+  base.dependencies.config.adminNotificationEmail = 'redaktion@example.de';
   const harness = createDependencies({
+    config: base.dependencies.config,
     topicRepository: {
       async createTopic(value) {
         generationRunIds.topic.push(value.generationRunId);
@@ -2317,16 +2370,22 @@ test('Pipeline übergibt die Run-ID an Topic- und Draft-Upserts', async () => {
     },
     draftRepository: {
       async createAIDraft(input) {
+        draftInputs.push(input);
         generationRunIds.draft.push(input.generationRunId);
         return base.dependencies.draftRepository.createAIDraft(input);
       }
     }
   });
 
-  const result = await runDraftPipeline({ runId: 289 }, harness.dependencies);
+  const result = await runDraftPipeline({
+    runId: 289,
+    publication_at: '2026-07-20T15:00:00.000Z'
+  }, harness.dependencies);
 
   assert.equal(result.status, 'completed');
   assert.deepEqual(generationRunIds, { topic: [289], draft: [289] });
+  assert.equal(draftInputs[0].scheduledAt, '2026-07-20T15:00:00.000Z');
+  assert.equal(draftInputs[0].adminNotificationEmail, 'redaktion@example.de');
 });
 
 test('Crash vor Stage-Persistenz verwendet vorhandene Topic- und Draftzeilen derselben Run-ID', async () => {

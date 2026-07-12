@@ -1086,6 +1086,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       });
       const draftInput = {
         generationRunId: runId,
+        scheduledAt: input.publication_at ?? null,
+        adminNotificationEmail: config.adminNotificationEmail,
         post: {
           title: currentArticle.title,
           slug: currentArticle.slug,

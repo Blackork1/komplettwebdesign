@@ -2,6 +2,8 @@
 /* eslint-disable camelcase */
 import pool from '../util/db.js';              // dein pg-Pool (ES-Export)
 import slugify from 'slugify';
+import { enqueueAdminReviewNotificationJob } from '../repositories/contentJobRepository.js';
+import { createAdminReviewDelivery } from '../repositories/contentNotificationRepository.js';
 
 export default class BlogPostModel {
   /* ---------- CREATE ---------- */
@@ -45,7 +47,13 @@ export default class BlogPostModel {
     return rows[0];
   }
 
-  static async createAIDraft({ generationRunId, post = {}, metadata = {} }, db = pool) {
+  static async createAIDraft({
+    generationRunId,
+    scheduledAt = null,
+    adminNotificationEmail = null,
+    post = {},
+    metadata = {}
+  }, db = pool) {
     const normalizedGenerationRunId = Number(generationRunId);
     if (!Number.isInteger(normalizedGenerationRunId) || normalizedGenerationRunId <= 0) {
       throw new TypeError('generationRunId muss eine positive Ganzzahl sein.');
@@ -61,13 +69,14 @@ export default class BlogPostModel {
             title, slug, excerpt, content, image_url, hero_public_id, category,
             featured, published, description, faq_json, workflow_status,
             meta_title, meta_description, og_title, og_description, image_alt,
-            content_format, generated_by_ai, generation_run_id, created_at, updated_at
+            content_format, generated_by_ai, generation_run_id, scheduled_at,
+            created_at, updated_at
           )
           VALUES (
             $1, $2, $3, $4, $5, $6, $7,
             false, false, $8, $9, 'needs_review',
             $10, $11, $12, $13, $14,
-            'static_html', true, $15, NOW(), NOW()
+            'static_html', true, $15, $16, NOW(), NOW()
           )
           ON CONFLICT (generation_run_id) DO UPDATE
           SET generation_run_id = EXCLUDED.generation_run_id
@@ -88,7 +97,8 @@ export default class BlogPostModel {
           post.og_title || null,
           post.og_description || null,
           post.image_alt || null,
-          normalizedGenerationRunId
+          normalizedGenerationRunId,
+          scheduledAt || null
         ]
       );
       const { _created: inserted, ...createdPost } = postRows[0];
@@ -131,6 +141,39 @@ export default class BlogPostModel {
           JSON.stringify(metadata.generation_metadata_json || {})
         ]
       );
+
+      if (inserted !== false && adminNotificationEmail) {
+        const reviewVersion = Number(createdPost.review_version) || 1;
+        const qualityReport = metadataRows[0]?.quality_report_json
+          || metadata.quality_report_json
+          || {};
+        const persistedScheduledAt = createdPost.scheduled_at ?? scheduledAt ?? null;
+        const delivery = await createAdminReviewDelivery({
+          postId: createdPost.id,
+          recipientEmail: adminNotificationEmail,
+          generationRunId: normalizedGenerationRunId,
+          payload: {
+            postId: createdPost.id,
+            title: createdPost.title ?? post.title ?? '',
+            shortDescription: createdPost.excerpt ?? post.excerpt ?? '',
+            imageUrl: createdPost.image_url ?? post.hero_image ?? null,
+            qualityScore: Number(metadataRows[0]?.quality_score ?? metadata.quality_score) || 0,
+            riskSummary: qualityReport.focusedReview ?? null,
+            scheduledAt: persistedScheduledAt instanceof Date
+              ? persistedScheduledAt.toISOString()
+              : persistedScheduledAt,
+            editorPath: `/admin/content-agent/drafts/${createdPost.id}/edit`,
+            reviewVersion
+          },
+          client
+        });
+        await enqueueAdminReviewNotificationJob({
+          deliveryId: delivery?.id,
+          postId: createdPost.id,
+          generationRunId: normalizedGenerationRunId,
+          reviewVersion
+        }, client);
+      }
 
       await client.query('COMMIT');
       return {

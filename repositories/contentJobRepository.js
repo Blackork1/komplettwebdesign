@@ -104,6 +104,37 @@ export async function enqueueJob({
   return rows[0] || null;
 }
 
+export async function enqueueAdminReviewNotificationJob({
+  deliveryId,
+  postId,
+  generationRunId,
+  reviewVersion
+}, db = pool) {
+  const normalizedDeliveryId = Number(deliveryId);
+  const normalizedPostId = Number(postId);
+  const normalizedGenerationRunId = Number(generationRunId);
+  const normalizedReviewVersion = Number(reviewVersion);
+  if (
+    !Number.isSafeInteger(normalizedDeliveryId) || normalizedDeliveryId <= 0
+    || !Number.isSafeInteger(normalizedPostId) || normalizedPostId <= 0
+    || !Number.isSafeInteger(normalizedGenerationRunId) || normalizedGenerationRunId <= 0
+    || !Number.isSafeInteger(normalizedReviewVersion) || normalizedReviewVersion <= 0
+  ) {
+    throw new TypeError('Für den Admin-Mailjob werden positive IDs und eine positive Reviewversion benötigt.');
+  }
+
+  return enqueueJob({
+    jobType: 'send_admin_review_notification',
+    idempotencyKey: `send-admin-review:${normalizedGenerationRunId}:${normalizedReviewVersion}`,
+    payload: {
+      deliveryId: normalizedDeliveryId,
+      postId: normalizedPostId,
+      generationRunId: normalizedGenerationRunId
+    },
+    maxAttempts: 5
+  }, db);
+}
+
 export async function retryContentJobForAdmin({ jobId, hardMaxAttempts }, db = pool) {
   const cap = Math.min(5, Math.max(1, Number(hardMaxAttempts) || 1));
   const { rows } = await db.query(
