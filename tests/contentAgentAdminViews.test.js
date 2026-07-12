@@ -44,6 +44,7 @@ const dashboard = {
     jobType: 'generate_manual_draft',
     status: 'failed',
     statusLabel: 'Endgültig fehlgeschlagen',
+    canRetry: true,
     attempts: 3,
     maxAttempts: 5,
     lastError: '<script>fehler</script>',
@@ -245,6 +246,42 @@ test('Mailretry wird ohne serverseitige Retryfreigabe nicht gerendert', async ()
   });
 
   assert.doesNotMatch(html, /notification\/retry/);
+});
+
+test('Jobliste rendert fehlgeschlagene Jobs ohne explizites canRetry fail-closed', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 77,
+      jobType: 'send_admin_review_notification',
+      status: 'failed',
+      statusLabel: 'Endgültig fehlgeschlagen',
+      attempts: 1,
+      maxAttempts: 6,
+      lastSafeStageLabel: 'Noch keine Stufe'
+    }]
+  });
+
+  assert.doesNotMatch(html, /jobs\/77\/retry|Job fortsetzen/);
+});
+
+test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
+    ...baseLocals,
+    status: 'published',
+    drafts: [{
+      ...dashboard.drafts[0],
+      reviewState: 'published',
+      reviewStateLabel: 'Veröffentlicht',
+      published: true,
+      notification: {
+        ...dashboard.drafts[0].notification,
+        canRetry: false
+      }
+    }]
+  });
+
+  assert.doesNotMatch(html, /notification\/retry|Mail erneut senden/);
 });
 
 test('Drafteditor bietet vier Regenerationen und getrennte bestätigte Publish-/Reject-Aktionen', async () => {

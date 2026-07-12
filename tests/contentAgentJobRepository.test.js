@@ -10,6 +10,7 @@ import {
   markJobNeedsManualAttention,
   renewJobLease,
   recoverExpiredJobs,
+  retryContentJobForAdmin,
   retryOrFailJob,
   updateContentSchedulerState,
   upsertWorkerHeartbeat
@@ -240,6 +241,27 @@ test('Admin-Prüfmailjobs erlauben den initialen Versuch und fünf echte Wiederh
     db.calls[0].sql,
     /ON CONFLICT \(idempotency_key\) DO UPDATE SET max_attempts = CASE[\s\S]*content_jobs\.job_type = 'send_admin_review_notification'[\s\S]*EXCLUDED\.job_type = 'send_admin_review_notification'[\s\S]*GREATEST\(content_jobs\.max_attempts, EXCLUDED\.max_attempts\)[\s\S]*ELSE content_jobs\.max_attempts END/i
   );
+});
+
+test('generischer Admin-Retry schließt Prüfmailjobs atomar im Update-CAS aus', async () => {
+  const db = {
+    calls: [],
+    async query(sql, params) {
+      const normalized = normalizeSql(sql);
+      this.calls.push({ sql: normalized, params });
+      return /job_type <> 'send_admin_review_notification'/i.test(normalized)
+        ? { rows: [] }
+        : { rows: [{ id: 23, job_type: 'send_admin_review_notification', status: 'queued' }] };
+    }
+  };
+
+  const result = await retryContentJobForAdmin({ jobId: 23, hardMaxAttempts: 5 }, db);
+
+  assert.equal(result, null);
+  assert.equal(db.calls.length, 1);
+  assert.match(db.calls[0].sql, /^UPDATE content_jobs/i);
+  assert.match(db.calls[0].sql, /job_type <> 'send_admin_review_notification'/i);
+  assert.doesNotMatch(db.calls[0].sql, /^SELECT|;\s*SELECT/i);
 });
 
 test('NOT_DUE-Reschedule gibt exakt den gefencten Claimversuch ohne Unterlauf zurück', async () => {

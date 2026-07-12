@@ -80,7 +80,7 @@ function berlinDateTime(value) {
     ? DateTime.fromJSDate(value)
     : DateTime.fromISO(String(value), { setZone: true });
   return instant.isValid
-    ? instant.setZone('Europe/Berlin').setLocale('de').toFormat('dd.LL.yyyy, HH:mm \'Uhr\'')
+    ? instant.setZone('Europe/Berlin').setLocale('de').toFormat('dd.LL.yyyy, HH:mm \'Uhr\' (ZZZZ)')
     : null;
 }
 
@@ -101,7 +101,7 @@ export function deriveReviewState(post = {}, now) {
   return 'needs_review';
 }
 
-function notificationPresentation(row = {}) {
+function notificationPresentation(row = {}, editable = false) {
   const status = row.notification_status || null;
   const attempts = Number(row.notification_attempts || 0);
   const lastErrorCode = safeErrorCode(row.notification_last_error_code);
@@ -117,7 +117,7 @@ function notificationPresentation(row = {}) {
     lastAttemptAt: row.notification_updated_at || null,
     lastAttemptAtLabel: berlinDateTime(row.notification_updated_at),
     lastErrorCode,
-    canRetry: isAdminNotificationManuallyRetryable(notification)
+    canRetry: editable && isAdminNotificationManuallyRetryable(notification)
   };
 }
 
@@ -145,6 +145,9 @@ function presentProvider(provider = {}) {
 export function buildDraftListPresentation(rows = [], now = new Date()) {
   return rows.map((row) => {
     const reviewState = deriveReviewState(row, now);
+    const editable = row.generated_by_ai === true
+      && row.published === false
+      && row.content_format === 'static_html';
     return {
       id: row.id,
       title: row.title,
@@ -165,7 +168,7 @@ export function buildDraftListPresentation(rows = [], now = new Date()) {
         ? null
         : Number(row.approved_review_version),
       publicationVersion: Number(row.publication_version || 0),
-      notification: notificationPresentation(row),
+      notification: notificationPresentation(row, editable),
       primaryKeyword: row.primary_keyword || '-',
       contentCluster: row.content_cluster || '-',
       qualityScore: Number(row.quality_score || 0),

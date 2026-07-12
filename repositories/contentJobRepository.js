@@ -188,6 +188,7 @@ export async function retryContentJobForAdmin({ jobId, hardMaxAttempts }, db = p
           finished_at = NULL,
           updated_at = NOW()
       WHERE id = $1
+        AND job_type <> 'send_admin_review_notification'
         AND status IN ('failed', 'needs_manual_attention')
         AND attempts < $2
       RETURNING *

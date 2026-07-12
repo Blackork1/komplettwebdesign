@@ -488,12 +488,6 @@ export function createAdminContentAgentController(dependencies) {
     async retryJobAction(req, res, next) {
       try {
         const jobId = positiveId(req.params.id);
-        if (typeof adminRepository.getJobType === 'function'
-            && await adminRepository.getJobType(jobId) === 'send_admin_review_notification') {
-          throw Object.assign(new Error('Admin-Mailretry ist nur am Entwurf erlaubt.'), {
-            code: 'CONTENT_JOB_NOT_RETRYABLE'
-          });
-        }
         const job = await jobRepository.retryContentJobForAdmin({
           jobId,
           hardMaxAttempts: runtimeConfig.maxAttempts

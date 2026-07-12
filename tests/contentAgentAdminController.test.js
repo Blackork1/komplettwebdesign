@@ -466,7 +466,7 @@ test('Admin-Retry setzt denselben Job per Compare-and-Set fort', async () => {
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].params, [23, 5]);
   assert.match(calls[0].sql, /^UPDATE content_jobs/i);
-  assert.match(calls[0].sql, /WHERE id = \$1 AND status IN \('failed', 'needs_manual_attention'\) AND attempts < \$2/i);
+  assert.match(calls[0].sql, /WHERE id = \$1 AND job_type <> 'send_admin_review_notification' AND status IN \('failed', 'needs_manual_attention'\) AND attempts < \$2/i);
   assert.doesNotMatch(calls[0].sql, /INSERT INTO|content_runs/i);
 });
 
@@ -481,21 +481,25 @@ test('Retry-Aktion meldet einen verlorenen Zustandsvergleich als Konflikt', asyn
   assert.equal(res.statusCode, 409);
 });
 
-test('generischer Jobretry ist für Admin-Review-Mails serverseitig gesperrt', async () => {
+test('Jobretry verlässt sich ohne optionalen Jobtyphelfer ausschließlich auf den atomaren CAS', async () => {
   let retryCalls = 0;
+  const adminRepository = new Proxy({}, {
+    get(_target, property) {
+      if (property === 'getJobType') throw new Error('optionaler Jobtyphelfer darf nicht gelesen werden');
+      return undefined;
+    }
+  });
   const controller = createAdminContentAgentController(baseDependencies({
-    adminRepository: {
-      async getJobType() { return 'send_admin_review_notification'; }
-    },
+    adminRepository,
     jobRepository: {
-      async retryContentJobForAdmin() { retryCalls += 1; return { id: 19 }; }
+      async retryContentJobForAdmin() { retryCalls += 1; return null; }
     }
   }));
   const res = response();
 
   await controller.retryJobAction({ params: { id: '19' } }, res, assert.fail);
 
-  assert.equal(retryCalls, 0);
+  assert.equal(retryCalls, 1);
   assert.equal(res.statusCode, 409);
 });
 

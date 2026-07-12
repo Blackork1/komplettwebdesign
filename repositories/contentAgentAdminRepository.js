@@ -36,7 +36,8 @@ export function createContentAgentAdminRepository(db = pool) {
         getMonthlyContentCost({ now, timezone, db }),
         db.query(`
           SELECT p.id, p.title, p.slug, p.excerpt, p.image_url,
-                 p.workflow_status, p.published, p.scheduled_at, p.published_at,
+                 p.workflow_status, p.published, p.generated_by_ai, p.content_format,
+                 p.generation_run_id, p.scheduled_at, p.published_at,
                  p.review_version, p.approved_review_version, p.publication_version,
                  p.created_at,
                  notification.notification_status,
@@ -92,7 +93,8 @@ export function createContentAgentAdminRepository(db = pool) {
       const normalizedStatus = normalizeReviewStatusFilter(status);
       const { rows } = await db.query(`
         SELECT p.id, p.title, p.slug, p.excerpt, p.image_url, p.workflow_status,
-               p.published, p.scheduled_at, p.published_at,
+               p.published, p.generated_by_ai, p.content_format,
+               p.generation_run_id, p.scheduled_at, p.published_at,
                p.review_version, p.approved_review_version, p.publication_version,
                p.created_at, m.primary_keyword, m.content_cluster,
                m.quality_score,
@@ -111,7 +113,7 @@ export function createContentAgentAdminRepository(db = pool) {
                notification.notification_sent_at
         FROM posts p
         JOIN content_post_metadata m ON m.post_id = p.id
-        LEFT JOIN content_runs r ON r.post_id = p.id
+        LEFT JOIN content_runs r ON r.id = p.generation_run_id
         LEFT JOIN LATERAL (
           SELECT delivery.status AS notification_status,
                  delivery.attempts AS notification_attempts,
@@ -185,14 +187,6 @@ export function createContentAgentAdminRepository(db = pool) {
         LIMIT $1
       `, [normalizeLimit(limit)]);
       return rows;
-    },
-
-    async getJobType(jobId) {
-      const { rows } = await db.query(
-        'SELECT job_type FROM content_jobs WHERE id = $1',
-        [jobId]
-      );
-      return rows[0]?.job_type || null;
     },
 
     async getTechnologyState() {

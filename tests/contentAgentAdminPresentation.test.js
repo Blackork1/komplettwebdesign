@@ -43,6 +43,8 @@ test('Draftpräsentation zeigt Berlin-Zeit, Versionen und nur einen sicheren Mai
   const [draft] = buildDraftListPresentation([{
     id: 11,
     title: 'Terminierter Entwurf',
+    generated_by_ai: true,
+    content_format: 'static_html',
     workflow_status: 'needs_review',
     published: false,
     scheduled_at: '2026-07-12T09:15:00.000Z',
@@ -57,7 +59,7 @@ test('Draftpräsentation zeigt Berlin-Zeit, Versionen und nur einen sicheren Mai
   }], new Date('2026-07-12T08:00:00.000Z'));
 
   assert.equal(draft.reviewState, 'needs_review');
-  assert.equal(draft.scheduledAtLabel, '12.07.2026, 11:15 Uhr');
+  assert.equal(draft.scheduledAtLabel, '12.07.2026, 11:15 Uhr (MESZ)');
   assert.equal(draft.reviewVersion, 4);
   assert.equal(draft.approvalVersion, 3);
   assert.equal(draft.publicationVersion, 2);
@@ -66,11 +68,50 @@ test('Draftpräsentation zeigt Berlin-Zeit, Versionen und nur einen sicheren Mai
     statusLabel: 'Versand fehlgeschlagen',
     attempts: 6,
     lastAttemptAt: '2026-07-12T08:30:00.000Z',
-    lastAttemptAtLabel: '12.07.2026, 10:30 Uhr',
+    lastAttemptAtLabel: '12.07.2026, 10:30 Uhr (MESZ)',
     lastErrorCode: 'smtp_etimedout',
     canRetry: true
   });
   assert.doesNotMatch(JSON.stringify(draft), /passwort|notification_last_error/);
+});
+
+test('Berliner Rückstellungsstunde zeigt beide 02:30-Instants eindeutig an', () => {
+  const drafts = buildDraftListPresentation([
+    {
+      generated_by_ai: true,
+      content_format: 'static_html',
+      workflow_status: 'needs_review',
+      published: false,
+      scheduled_at: '2026-10-25T00:30:00.000Z'
+    },
+    {
+      generated_by_ai: true,
+      content_format: 'static_html',
+      workflow_status: 'needs_review',
+      published: false,
+      scheduled_at: '2026-10-25T01:30:00.000Z'
+    }
+  ], new Date('2026-10-24T12:00:00.000Z'));
+
+  assert.equal(drafts[0].scheduledAtLabel, '25.10.2026, 02:30 Uhr (MESZ)');
+  assert.equal(drafts[1].scheduledAtLabel, '25.10.2026, 02:30 Uhr (MEZ)');
+  assert.notEqual(drafts[0].scheduledAtLabel, drafts[1].scheduledAtLabel);
+});
+
+test('veröffentlichte Posts geben selbst bei temporärem Deliveryfehler keinen Mailretry frei', () => {
+  const [draft] = buildDraftListPresentation([{
+    generated_by_ai: true,
+    content_format: 'static_html',
+    workflow_status: 'published',
+    published: true,
+    published_at: '2026-07-12T09:00:00.000Z',
+    notification_status: 'failed',
+    notification_attempts: 6,
+    notification_last_error_code: 'smtp_etimedout'
+  }], new Date('2026-07-12T10:00:00.000Z'));
+
+  assert.equal(draft.reviewState, 'published');
+  assert.equal(draft.notification.canRetry, false);
 });
 
 test('Mailretry bleibt für unklare, abgelehnte und nicht ausgeschöpfte Zustellungen gesperrt', () => {
@@ -84,6 +125,8 @@ test('Mailretry bleibt für unklare, abgelehnte und nicht ausgeschöpfte Zustell
   ];
   for (const [code, status, attempts] of deliveries) {
     const [draft] = buildDraftListPresentation([{
+      generated_by_ai: true,
+      content_format: 'static_html',
       workflow_status: 'needs_review',
       published: false,
       notification_status: status,

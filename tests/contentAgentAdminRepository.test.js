@@ -24,9 +24,6 @@ function createQueryRecorder() {
       if (/FROM posts p/i.test(normalized) || /FROM posts WHERE/i.test(normalized)) {
         return { rows: [{ id: 11, title: 'Entwurf' }] };
       }
-      if (/^SELECT job_type FROM content_jobs/i.test(normalized)) {
-        return { rows: [{ job_type: 'send_admin_review_notification' }] };
-      }
       if (/FROM content_jobs/i.test(normalized)) return { rows: [{ id: 7, status: 'failed' }] };
       if (/FROM content_provider_state/i.test(normalized)) return { rows: [{ provider_name: 'openai' }] };
       return { rows: [] };
@@ -152,15 +149,31 @@ test('Statusfilter wird streng gewhitelistet und verwendet nur feste SQL-Prädik
   }
 });
 
-test('Jobtypprüfung lädt ausschließlich die unveränderliche Typkennung', async () => {
-  const db = createQueryRecorder();
+test('mehrere historische Runs vervielfachen einen Draft nicht', async () => {
+  const db = {
+    calls: [],
+    async query(sql, params = []) {
+      const normalized = normalizeSql(sql);
+      this.calls.push({ sql: normalized, params });
+      const historicalRuns = [
+        { id: 31, post_id: 11, cost_estimate: '8.00' },
+        { id: 32, post_id: 11, cost_estimate: '1.25' }
+      ];
+      const rows = /r\.id = p\.generation_run_id/i.test(normalized)
+        ? [{ id: 11, generation_run_id: 32, cost_estimate: historicalRuns[1].cost_estimate }]
+        : historicalRuns.map((run) => ({ id: 11, cost_estimate: run.cost_estimate }));
+      return { rows };
+    }
+  };
   const repository = createContentAgentAdminRepository(db);
 
-  const jobType = await repository.getJobType(7);
+  const rows = await repository.listDrafts({
+    status: 'review',
+    now: new Date('2026-07-12T09:00:00.000Z')
+  });
 
-  const call = db.calls[0];
-  assert.equal(jobType, 'send_admin_review_notification');
-  assert.match(call.sql, /^SELECT job_type FROM content_jobs WHERE id = \$1$/i);
-  assert.deepEqual(call.params, [7]);
-  assert.doesNotMatch(call.sql, /payload_json|last_error|runtime_snapshot/i);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].cost_estimate, '1.25');
+  assert.match(db.calls[0].sql, /LEFT JOIN content_runs r ON r\.id = p\.generation_run_id/i);
+  assert.doesNotMatch(db.calls[0].sql, /content_runs r ON r\.post_id = p\.id/i);
 });
