@@ -21,6 +21,7 @@ function harness({
 } = {}) {
   const calls = [];
   const jobs = new Map();
+  const clock = { value: now };
   const state = {
     post: {
       id: 3,
@@ -88,12 +89,23 @@ function harness({
       };
       return { ...state.post };
     },
+    async rescheduleApprovedDraft(input, transaction) {
+      calls.push(['reschedule', input, transaction]);
+      if (state.post.workflow_status !== 'approved_scheduled'
+          || state.post.approved_review_version !== input.approvalVersion
+          || state.post.review_version !== input.approvalVersion
+          || state.post.publication_version !== input.publicationVersion
+          || state.post.approved_by_admin_id !== input.adminId) return null;
+      state.post = { ...state.post, scheduled_at: input.scheduledAt };
+      return { ...state.post };
+    },
     async publishApprovedDraft(input, transaction) {
       calls.push(['publish', input, transaction]);
       if (state.post.workflow_status !== 'approved_scheduled'
           || state.post.approved_review_version !== input.approvalVersion
           || state.post.review_version !== input.approvalVersion
-          || state.post.publication_version !== input.publicationVersion) return null;
+          || state.post.publication_version !== input.publicationVersion
+          || state.post.scheduled_at.getTime() !== input.scheduledAt.getTime()) return null;
       state.post = {
         ...state.post,
         published: true,
@@ -114,7 +126,8 @@ function harness({
         context_json: {
           action: 'scheduled_manual_publish',
           approvalVersion: input.approvalVersion,
-          publicationVersion: input.publicationVersion
+          publicationVersion: input.publicationVersion,
+          scheduledAt: input.scheduledAt?.toISOString() || null
         },
         admin_id: input.admin.id,
         admin_username: input.admin.username
@@ -141,7 +154,7 @@ function harness({
   };
   async function enqueuePublicationJob(input, transaction) {
     calls.push(['job', input, transaction]);
-    const key = `${input.postId}:${input.approvalVersion}:${input.publicationVersion}`;
+    const key = `${input.postId}:${input.approvalVersion}:${input.publicationVersion}:${input.runAfter.toISOString()}`;
     if (!jobs.has(key)) {
       jobs.set(key, {
         id: jobs.size + 1,
@@ -150,7 +163,8 @@ function harness({
         payload_json: {
           postId: input.postId,
           approvalVersion: input.approvalVersion,
-          publicationVersion: input.publicationVersion
+          publicationVersion: input.publicationVersion,
+          scheduledAt: input.runAfter.toISOString()
         }
       });
     }
@@ -162,9 +176,10 @@ function harness({
       repository,
       publicationService,
       enqueuePublicationJob,
-      now: () => now
+      now: () => clock.value
     }),
     calls,
+    clock,
     jobs,
     state
   };
@@ -238,6 +253,43 @@ test('wiederholte Freigabe erzeugt keinen zweiten Veröffentlichungsjob', async 
   assert.equal(jobs.size, 1);
 });
 
+test('reine Terminverschiebung erzeugt einen neuen Job und macht den alten Termin-Snapshot stale', async () => {
+  const shiftedSlot = new Date('2026-07-12T12:00:00.000Z');
+  const { service, jobs, clock, calls, state } = harness();
+
+  const oldApproval = await service.approveForSchedule({
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  });
+  const shiftedApproval = await service.approveForSchedule({
+    postId: 3,
+    scheduledAt: shiftedSlot,
+    admin,
+    confirmed: true
+  });
+
+  assert.notEqual(oldApproval.job.id, shiftedApproval.job.id);
+  assert.equal(jobs.size, 2);
+  assert.equal(shiftedApproval.post.scheduled_at.toISOString(), shiftedSlot.toISOString());
+  assert.equal(shiftedApproval.job.payload_json.scheduledAt, shiftedSlot.toISOString());
+
+  clock.value = new Date('2026-07-12T11:30:00.000Z');
+  await assert.rejects(
+    service.publishApprovedPost({
+      postId: 3,
+      approvalVersion: 2,
+      publicationVersion: 1,
+      scheduledAt: futureSlot,
+      leaseGuard: async () => true
+    }),
+    (error) => error.code === 'CONTENT_APPROVAL_STALE'
+  );
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(state.post.published, false);
+});
+
 test('fällige Veröffentlichung lehnt veraltete Freigabe- und Publikationsversionen ab', async () => {
   for (const versions of [
     { approvalVersion: 1, publicationVersion: 1 },
@@ -249,7 +301,12 @@ test('fällige Veröffentlichung lehnt veraltete Freigabe- und Publikationsversi
       approvedReviewVersion: 2
     });
     await assert.rejects(
-      service.publishApprovedPost({ postId: 3, ...versions, leaseGuard: async () => true }),
+      service.publishApprovedPost({
+        postId: 3,
+        ...versions,
+        scheduledAt: missedSlot,
+        leaseGuard: async () => true
+      }),
       (error) => error.code === 'CONTENT_APPROVAL_STALE'
     );
     assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
@@ -270,6 +327,7 @@ test('Leaseverlust vor der Mutation verhindert Veröffentlichung, Event und Zäh
       postId: 3,
       approvalVersion: 2,
       publicationVersion: 1,
+      scheduledAt: missedSlot,
       leaseGuard: async () => {
         leaseChecks += 1;
         if (leaseChecks === 2) throw leaseError;
@@ -284,6 +342,66 @@ test('Leaseverlust vor der Mutation verhindert Veröffentlichung, Event und Zäh
   assert.equal(state.post.published, false);
 });
 
+test('Worker-Veröffentlichung verlangt einen funktionsfähigen Lease-Guard fail-closed', async () => {
+  for (const leaseGuard of [undefined, null, true, {}, async () => undefined, async () => false]) {
+    const { service, calls } = harness({
+      workflowStatus: 'approved_scheduled',
+      scheduledAt: missedSlot,
+      approvedReviewVersion: 2
+    });
+    await assert.rejects(
+      service.publishApprovedPost({
+        postId: 3,
+        approvalVersion: 2,
+        publicationVersion: 1,
+        scheduledAt: missedSlot,
+        leaseGuard
+      }),
+      (error) => ['CONTENT_JOB_LEASE_REQUIRED', 'CONTENT_JOB_LEASE_LOST'].includes(error.code)
+        && error.retryable === false
+    );
+    assert.equal(calls.includes('CONNECT'), false);
+  }
+});
+
+test('Worker-Veröffentlichung prüft die Lease erneut unmittelbar vor Event und Zähler', async () => {
+  for (const { loseAt, forbiddenOperation } of [
+    { loseAt: 4, forbiddenOperation: 'event' },
+    { loseAt: 5, forbiddenOperation: 'increment' }
+  ]) {
+    const { service, calls } = harness({
+      workflowStatus: 'approved_scheduled',
+      scheduledAt: missedSlot,
+      approvedReviewVersion: 2
+    });
+    let leaseChecks = 0;
+    const leaseError = Object.assign(publicationError('CONTENT_JOB_LEASE_LOST'), {
+      retryable: false
+    });
+
+    await assert.rejects(
+      service.publishApprovedPost({
+        postId: 3,
+        approvalVersion: 2,
+        publicationVersion: 1,
+        scheduledAt: missedSlot,
+        leaseGuard: async () => {
+          leaseChecks += 1;
+          if (leaseChecks === loseAt) throw leaseError;
+          return true;
+        }
+      }),
+      leaseError
+    );
+
+    assert.equal(
+      calls.some((entry) => Array.isArray(entry) && entry[0] === forbiddenOperation),
+      false
+    );
+    assert.equal(calls.includes('ROLLBACK'), true);
+  }
+});
+
 test('Wiederholung nach erfolgreichem Commit zählt dieselbe Freigabe exakt einmal', async () => {
   const { service, state } = harness({
     workflowStatus: 'approved_scheduled',
@@ -294,6 +412,7 @@ test('Wiederholung nach erfolgreichem Commit zählt dieselbe Freigabe exakt einm
     postId: 3,
     approvalVersion: 2,
     publicationVersion: 1,
+    scheduledAt: missedSlot,
     leaseGuard: async () => true
   };
 

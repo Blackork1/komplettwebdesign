@@ -155,7 +155,8 @@ test('geplante Freigabe und Veröffentlichung verwenden enge Versions-Compare-an
   await repository.publishApprovedDraft({
     postId: 9,
     approvalVersion: 2,
-    publicationVersion: 1
+    publicationVersion: 1,
+    scheduledAt
   }, client);
 
   assert.match(client.calls[0].sql, /workflow_status = 'approved_scheduled'/i);
@@ -170,6 +171,7 @@ test('geplante Freigabe und Veröffentlichung verwenden enge Versions-Compare-an
   assert.match(client.calls[1].sql, /approved_review_version = \$2/i);
   assert.match(client.calls[1].sql, /review_version = \$2/i);
   assert.match(client.calls[1].sql, /publication_version = \$3/i);
+  assert.match(client.calls[1].sql, /scheduled_at = \$4/i);
   assert.match(client.calls[1].sql, /scheduled_at <= NOW\(\)/i);
 });
 
@@ -183,6 +185,7 @@ test('geplantes manuelles Publish-Event bindet Freigabe- und Publikationsversion
     qualityScore: 92,
     approvalVersion: 2,
     publicationVersion: 1,
+    scheduledAt: new Date('2026-07-13T16:00:00.000Z'),
     admin
   }, client);
 
@@ -192,7 +195,8 @@ test('geplantes manuelles Publish-Event bindet Freigabe- und Publikationsversion
   assert.deepEqual(JSON.parse(call.params[3]), {
     action: 'scheduled_manual_publish',
     approvalVersion: 2,
-    publicationVersion: 1
+    publicationVersion: 1,
+    scheduledAt: '2026-07-13T16:00:00.000Z'
   });
   assert.doesNotMatch(JSON.stringify(call.params), /contentHtml|api[_-]?key|<section/i);
 });
@@ -212,11 +216,12 @@ test('Publish-Job ist über Post und Versionen dedupliziert und exakt zum Slot f
   assert.equal(await enqueueApprovedPublicationJob(input, db), row);
 
   assert.equal(db.calls[0].params[0], 'publish_approved_post');
-  assert.equal(db.calls[0].params[1], 'publish-approved:9:2:1');
+  assert.equal(db.calls[0].params[1], 'publish-approved:9:2:1:1783958400000');
   assert.deepEqual(db.calls[0].params[2], {
     postId: 9,
     approvalVersion: 2,
-    publicationVersion: 1
+    publicationVersion: 1,
+    scheduledAt: '2026-07-13T16:00:00.000Z'
   });
   assert.equal(db.calls[0].params[3], scheduledAt);
   assert.equal(db.calls[1].params[1], db.calls[0].params[1]);

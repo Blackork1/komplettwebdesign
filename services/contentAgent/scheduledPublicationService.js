@@ -69,7 +69,12 @@ function assertApprovalVersions(post, approvalVersion, publicationVersion) {
   }
 }
 
-function assertCommittedEvent(event, { postId, approvalVersion, publicationVersion }) {
+function assertCommittedEvent(event, {
+  postId,
+  approvalVersion,
+  publicationVersion,
+  scheduledAt
+}) {
   const context = event?.context_json;
   if (!event
       || Number(event.post_id) !== postId
@@ -77,7 +82,8 @@ function assertCommittedEvent(event, { postId, approvalVersion, publicationVersi
       || event.policy_version !== 'manual-scheduled-v1'
       || context?.action !== 'scheduled_manual_publish'
       || Number(context?.approvalVersion) !== approvalVersion
-      || Number(context?.publicationVersion) !== publicationVersion) {
+      || Number(context?.publicationVersion) !== publicationVersion
+      || context?.scheduledAt !== scheduledAt.toISOString()) {
     throw scheduledPublicationError(
       'CONTENT_APPROVAL_STALE',
       'Die gespeicherte Veröffentlichungsentscheidung passt nicht zu den Jobversionen.'
@@ -89,7 +95,7 @@ function assertCommittedEvent(event, { postId, approvalVersion, publicationVersi
 async function assertActiveLease(leaseGuard) {
   if (typeof leaseGuard !== 'function') return true;
   const active = await leaseGuard();
-  if (active === false) {
+  if (active !== true) {
     const error = scheduledPublicationError(
       'CONTENT_JOB_LEASE_LOST',
       'Die Content-Job-Lease wurde verloren.'
@@ -98,6 +104,16 @@ async function assertActiveLease(leaseGuard) {
     throw error;
   }
   return true;
+}
+
+function requireLeaseGuard(leaseGuard) {
+  if (typeof leaseGuard === 'function') return;
+  const error = scheduledPublicationError(
+    'CONTENT_JOB_LEASE_REQUIRED',
+    'Für die Worker-Veröffentlichung wird eine aktive Job-Lease benötigt.'
+  );
+  error.retryable = false;
+  throw error;
 }
 
 async function rollbackQuietly(client) {
@@ -130,6 +146,7 @@ export function createScheduledPublicationService({
     postId,
     approvalVersion,
     publicationVersion,
+    scheduledAt,
     approvedPost,
     qualityScore,
     admin,
@@ -140,7 +157,8 @@ export function createScheduledPublicationService({
     const post = await repository.publishApprovedDraft({
       postId,
       approvalVersion,
-      publicationVersion
+      publicationVersion,
+      scheduledAt
     }, client);
     if (!post) {
       throw scheduledPublicationError(
@@ -148,12 +166,14 @@ export function createScheduledPublicationService({
         'Der freigegebene Entwurf wurde unmittelbar vor der Veröffentlichung verändert.'
       );
     }
+    await assertActiveLease(leaseGuard);
     const event = await repository.insertScheduledManualEvent({
       postId,
       runId: approvedPost.generation_run_id || null,
       qualityScore,
       approvalVersion,
       publicationVersion,
+      scheduledAt,
       admin
     }, client);
     if (!event) {
@@ -162,6 +182,7 @@ export function createScheduledPublicationService({
         'Für diese Veröffentlichung besteht bereits eine manuelle Entscheidung.'
       );
     }
+    await assertActiveLease(leaseGuard);
     const settings = await repository.incrementManualApprovals(client);
     if (!settings) throw new Error('Content-Agent-Einstellungen fehlen.');
     await assertActiveLease(leaseGuard);
@@ -203,15 +224,30 @@ export function createScheduledPublicationService({
           'CONTENT_APPROVAL_STALE',
           'Der gespeicherte Veröffentlichungstermin ist ungültig.'
         );
-        if (currentSchedule.getTime() !== normalizedScheduledAt.getTime()
-            || Number(current.approved_review_version) !== reviewVersion
+        if (Number(current.approved_review_version) !== reviewVersion
             || Number(current.approved_by_admin_id) !== normalizedAdmin.id) {
           throw scheduledPublicationError(
             'CONTENT_APPROVAL_STALE',
             'Der Entwurf besitzt bereits eine abweichende Freigabe.'
           );
         }
-        post = current;
+        if (currentSchedule.getTime() === normalizedScheduledAt.getTime()) {
+          post = current;
+        } else {
+          post = await repository.rescheduleApprovedDraft({
+            postId: normalizedPostId,
+            scheduledAt: normalizedScheduledAt,
+            approvalVersion: reviewVersion,
+            publicationVersion,
+            adminId: normalizedAdmin.id
+          }, client);
+          if (!post) {
+            throw scheduledPublicationError(
+              'CONTENT_APPROVAL_STALE',
+              'Der freigegebene Entwurf wurde während der Terminverschiebung verändert.'
+            );
+          }
+        }
       } else {
         post = await repository.approveDraftForSchedule({
           postId: normalizedPostId,
@@ -291,6 +327,7 @@ export function createScheduledPublicationService({
         postId: normalizedPostId,
         approvalVersion,
         publicationVersion,
+        scheduledAt: missedAt,
         approvedPost,
         qualityScore: validated.qualityScore,
         admin: normalizedAdmin,
@@ -304,6 +341,7 @@ export function createScheduledPublicationService({
     postId,
     approvalVersion,
     publicationVersion,
+    scheduledAt,
     leaseGuard
   } = {}) {
     const normalizedPostId = positiveDatabaseInteger(postId, 'postId');
@@ -315,6 +353,12 @@ export function createScheduledPublicationService({
       publicationVersion,
       'publicationVersion'
     );
+    const normalizedScheduledAt = normalizeDate(
+      scheduledAt,
+      'CONTENT_ACTION_VALIDATION_FAILED',
+      'Der Termin-Snapshot des Veröffentlichungsjobs ist ungültig.'
+    );
+    requireLeaseGuard(leaseGuard);
     await assertActiveLease(leaseGuard);
 
     return withTransaction(async (client) => {
@@ -327,7 +371,13 @@ export function createScheduledPublicationService({
         throw scheduledPublicationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
       }
       if (lockedPost.published === true && lockedPost.workflow_status === 'published') {
-        if (Number(lockedPost.publication_version) !== normalizedPublicationVersion + 1) {
+        const committedScheduledAt = normalizeDate(
+          lockedPost.scheduled_at,
+          'CONTENT_APPROVAL_STALE',
+          'Der gespeicherte Veröffentlichungstermin ist ungültig.'
+        );
+        if (Number(lockedPost.publication_version) !== normalizedPublicationVersion + 1
+            || committedScheduledAt.getTime() !== normalizedScheduledAt.getTime()) {
           throw scheduledPublicationError(
             'CONTENT_APPROVAL_STALE',
             'Die Publikationsversion ist veraltet.'
@@ -341,7 +391,8 @@ export function createScheduledPublicationService({
           {
             postId: normalizedPostId,
             approvalVersion: normalizedApprovalVersion,
-            publicationVersion: normalizedPublicationVersion
+            publicationVersion: normalizedPublicationVersion,
+            scheduledAt: normalizedScheduledAt
           }
         );
         const settings = await repository.getSettings(client);
@@ -360,6 +411,12 @@ export function createScheduledPublicationService({
         'CONTENT_APPROVAL_STALE',
         'Der gespeicherte Veröffentlichungstermin ist ungültig.'
       );
+      if (scheduledAt.getTime() !== normalizedScheduledAt.getTime()) {
+        throw scheduledPublicationError(
+          'CONTENT_APPROVAL_STALE',
+          'Der Termin-Snapshot des Veröffentlichungsjobs ist veraltet.'
+        );
+      }
       if (scheduledAt.getTime() > now().getTime()) {
         const error = scheduledPublicationError(
           'CONTENT_PUBLICATION_NOT_DUE',
@@ -390,6 +447,7 @@ export function createScheduledPublicationService({
         postId: normalizedPostId,
         approvalVersion: normalizedApprovalVersion,
         publicationVersion: normalizedPublicationVersion,
+        scheduledAt: normalizedScheduledAt,
         approvedPost: lockedPost,
         qualityScore: validated.qualityScore,
         admin: normalizeAdmin(approvingAdmin),

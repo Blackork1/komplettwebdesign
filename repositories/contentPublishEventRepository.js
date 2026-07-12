@@ -88,7 +88,39 @@ export function createContentPublishEventRepository(db = pool) {
       return rows[0] || null;
     },
 
-    async publishApprovedDraft({ postId, approvalVersion, publicationVersion }, client) {
+    async rescheduleApprovedDraft({
+      postId,
+      scheduledAt,
+      approvalVersion,
+      publicationVersion,
+      adminId
+    }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        UPDATE posts
+        SET scheduled_at = $2,
+            updated_at = NOW()
+        WHERE id = $1
+          AND generated_by_ai = TRUE
+          AND published = FALSE
+          AND workflow_status = 'approved_scheduled'
+          AND content_format = 'static_html'
+          AND approved_review_version = $3
+          AND review_version = $3
+          AND publication_version = $4
+          AND approved_by_admin_id = $5
+          AND $2 > NOW()
+        RETURNING *
+      `, [postId, scheduledAt, approvalVersion, publicationVersion, adminId]);
+      return rows[0] || null;
+    },
+
+    async publishApprovedDraft({
+      postId,
+      approvalVersion,
+      publicationVersion,
+      scheduledAt
+    }, client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
         UPDATE posts
@@ -106,9 +138,10 @@ export function createContentPublishEventRepository(db = pool) {
           AND approved_review_version = $2
           AND review_version = $2
           AND publication_version = $3
+          AND scheduled_at = $4
           AND scheduled_at <= NOW()
         RETURNING *
-      `, [postId, approvalVersion, publicationVersion]);
+      `, [postId, approvalVersion, publicationVersion, scheduledAt]);
       return rows[0] || null;
     },
 
@@ -154,13 +187,15 @@ export function createContentPublishEventRepository(db = pool) {
       qualityScore,
       approvalVersion,
       publicationVersion,
+      scheduledAt,
       admin
     }, client) {
       const target = queryTarget(client, db);
       const context = JSON.stringify({
         action: 'scheduled_manual_publish',
         approvalVersion,
-        publicationVersion
+        publicationVersion,
+        scheduledAt: scheduledAt.toISOString()
       });
       const { rows } = await target.query(`
         INSERT INTO content_publish_events (
@@ -288,6 +323,7 @@ export const getDraftWithMetadataForUpdate = defaultRepository.getDraftWithMetad
 export const getValidationContext = defaultRepository.getValidationContext;
 export const publishDraft = defaultRepository.publishDraft;
 export const approveDraftForSchedule = defaultRepository.approveDraftForSchedule;
+export const rescheduleApprovedDraft = defaultRepository.rescheduleApprovedDraft;
 export const publishApprovedDraft = defaultRepository.publishApprovedDraft;
 export const rejectDraft = defaultRepository.rejectDraft;
 export const insertManualEvent = defaultRepository.insertManualEvent;

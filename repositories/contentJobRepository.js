@@ -162,11 +162,12 @@ export async function enqueueApprovedPublicationJob({
 
   return enqueueJob({
     jobType: 'publish_approved_post',
-    idempotencyKey: `publish-approved:${normalizedPostId}:${normalizedApprovalVersion}:${normalizedPublicationVersion}`,
+    idempotencyKey: `publish-approved:${normalizedPostId}:${normalizedApprovalVersion}:${normalizedPublicationVersion}:${normalizedRunAfter.getTime()}`,
     payload: {
       postId: normalizedPostId,
       approvalVersion: normalizedApprovalVersion,
-      publicationVersion: normalizedPublicationVersion
+      publicationVersion: normalizedPublicationVersion,
+      scheduledAt: normalizedRunAfter.toISOString()
     },
     runAfter: normalizedRunAfter,
     maxAttempts: 3
