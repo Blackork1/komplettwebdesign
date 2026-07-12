@@ -126,22 +126,39 @@ export function createContentPublishEventRepository(db = pool) {
     }, client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
-        UPDATE posts
-        SET scheduled_at = $2,
-            updated_at = NOW()
-        WHERE id = $1
-          AND generated_by_ai = TRUE
-          AND published = FALSE
-          AND workflow_status = 'approved_scheduled'
-          AND content_format = 'static_html'
-          AND approved_review_version = $3
-          AND review_version = $3
-          AND publication_version = $4
-          AND approved_by_admin_id = $5
-          AND $2 > NOW()
-        RETURNING *
+        WITH updated AS (
+          UPDATE posts
+          SET scheduled_at = $2,
+              updated_at = NOW()
+          WHERE id = $1
+            AND generated_by_ai = TRUE
+            AND published = FALSE
+            AND workflow_status = 'approved_scheduled'
+            AND content_format = 'static_html'
+            AND approved_review_version = $3
+            AND review_version = $3
+            AND publication_version = $4
+            AND approved_by_admin_id = $5
+            AND $2 > NOW()
+            AND $2 > clock_timestamp()
+          RETURNING posts.*
+        )
+        SELECT updated.*, reschedule_clock.database_now AS reschedule_database_now
+        FROM (SELECT clock_timestamp() AS database_now) AS reschedule_clock
+        LEFT JOIN updated ON TRUE
       `, [postId, scheduledAt, approvalVersion, publicationVersion, adminId]);
-      return rows[0] || null;
+      const row = rows[0] || null;
+      if (!row) return null;
+      const { reschedule_database_now: databaseNowValue, ...post } = row;
+      if (post.id) return post;
+      const databaseNow = new Date(databaseNowValue);
+      const requestedSchedule = new Date(scheduledAt);
+      if (!Number.isNaN(databaseNow.getTime())
+          && !Number.isNaN(requestedSchedule.getTime())
+          && requestedSchedule.getTime() <= databaseNow.getTime()) {
+        return { post: null, scheduleExpired: true };
+      }
+      return null;
     },
 
     async publishApprovedDraft({

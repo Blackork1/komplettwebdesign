@@ -18,11 +18,15 @@ function harness({
   reviewVersion = 2,
   approvedReviewVersion = null,
   publicationVersion = 1,
-  expireDuringValidation = false
+  expireDuringValidation = false,
+  expireOnValidationCall = null
 } = {}) {
   const calls = [];
   const jobs = new Map();
   const clock = { value: now };
+  const expirationValidationCall = expireOnValidationCall
+    ?? (expireDuringValidation ? 1 : null);
+  let validationCalls = 0;
   const state = {
     post: {
       id: 3,
@@ -57,8 +61,9 @@ function harness({
   const publicationService = {
     async revalidateDraftForPublication({ postId, client: transaction, workflowStatuses }) {
       calls.push(['validate', postId, transaction, workflowStatuses]);
-      if (expireDuringValidation) {
-        clock.value = new Date('2026-07-12T11:00:00.001Z');
+      validationCalls += 1;
+      if (validationCalls === expirationValidationCall) {
+        clock.value = new Date('2026-07-12T12:00:00.001Z');
       }
       if (!workflowStatuses.includes(state.post.workflow_status)) {
         throw publicationError('CONTENT_DRAFT_NOT_PUBLISHABLE');
@@ -99,6 +104,9 @@ function harness({
     },
     async rescheduleApprovedDraft(input, transaction) {
       calls.push(['reschedule', input, transaction]);
+      if (input.scheduledAt.getTime() <= clock.value.getTime()) {
+        return { post: null, scheduleExpired: true };
+      }
       if (state.post.workflow_status !== 'approved_scheduled'
           || state.post.approved_review_version !== input.approvalVersion
           || state.post.review_version !== input.approvalVersion
@@ -315,6 +323,31 @@ test('reine Terminverschiebung erzeugt einen neuen Job und macht den alten Termi
   );
   assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
   assert.equal(state.post.published, false);
+});
+
+test('Terminverschiebung mappt einen während Lock und Revalidierung abgelaufenen Slot eindeutig', async () => {
+  const shiftedSlot = new Date('2026-07-12T12:00:00.000Z');
+  const { service, jobs, calls, state } = harness({ expireOnValidationCall: 2 });
+
+  await service.approveForSchedule({
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  });
+  await assert.rejects(
+    service.approveForSchedule({
+      postId: 3,
+      scheduledAt: shiftedSlot,
+      admin,
+      confirmed: true
+    }),
+    (error) => error.code === 'CONTENT_SCHEDULE_MUST_BE_FUTURE'
+  );
+
+  assert.equal(jobs.size, 1);
+  assert.equal(state.post.scheduled_at.toISOString(), futureSlot.toISOString());
+  assert.equal(calls.includes('ROLLBACK'), true);
 });
 
 test('fällige Veröffentlichung lehnt veraltete Freigabe- und Publikationsversionen ab', async () => {

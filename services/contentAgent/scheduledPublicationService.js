@@ -234,13 +234,20 @@ export function createScheduledPublicationService({
         if (currentSchedule.getTime() === normalizedScheduledAt.getTime()) {
           post = current;
         } else {
-          post = await repository.rescheduleApprovedDraft({
+          const reschedule = await repository.rescheduleApprovedDraft({
             postId: normalizedPostId,
             scheduledAt: normalizedScheduledAt,
             approvalVersion: reviewVersion,
             publicationVersion,
             adminId: normalizedAdmin.id
           }, client);
+          if (reschedule?.scheduleExpired === true) {
+            throw scheduledPublicationError(
+              'CONTENT_SCHEDULE_MUST_BE_FUTURE',
+              'Der Veröffentlichungstermin ist während der Verschiebung abgelaufen.'
+            );
+          }
+          post = reschedule?.post || reschedule;
           if (!post) {
             throw scheduledPublicationError(
               'CONTENT_APPROVAL_STALE',

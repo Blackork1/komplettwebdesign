@@ -195,6 +195,25 @@ test('initialer Approval-CAS meldet einen nach der Vorprüfung abgelaufenen Term
   assert.match(client.calls[0].sql, /clock_timestamp\(\)/i);
 });
 
+test('Reschedule-CAS prüft die Wandzeit und meldet einen nach Revalidierung abgelaufenen Termin', async () => {
+  const scheduledAt = new Date('2026-07-13T16:00:00.000Z');
+  const databaseNow = new Date('2026-07-13T16:00:00.001Z');
+  const client = sqlClient([{ rows: [{ reschedule_database_now: databaseNow }] }]);
+  const repository = createContentPublishEventRepository();
+
+  const result = await repository.rescheduleApprovedDraft({
+    postId: 9,
+    scheduledAt,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    adminId: 7
+  }, client);
+
+  assert.deepEqual(result, { post: null, scheduleExpired: true });
+  assert.match(client.calls[0].sql, /\$2 > NOW\(\)/i);
+  assert.match(client.calls[0].sql, /\$2 > clock_timestamp\(\)/i);
+});
+
 test('geplantes manuelles Publish-Event bindet Freigabe- und Publikationsversion unveränderlich', async () => {
   const client = sqlClient([{ rows: [{ id: 33, decision: 'manual' }] }]);
   const repository = createContentPublishEventRepository();
