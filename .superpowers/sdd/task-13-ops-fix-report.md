@@ -36,6 +36,14 @@ Der dokumentierte VPS-Ablauf entscheidet jetzt fail-closed über Datenbankschema
 - Beim Rollback wird die Kompatibilität erneut geprüft. Legacy oder unbekannt führt zu App-only, gestopptem Worker, unverändertem Git-Checkout und `CONTENT_AGENT_ENABLED=false`.
 - Das Schema bleibt forward-only; ältere Releases gelten nicht pauschal als rückwärtskompatibel.
 
+### Geschützter Ref als verbindlicher Beleg
+
+- Vor jeder positiven Worker-Entscheidung löst der gemeinsame Helper `${ROLLBACK_REF}^{commit}` mit `git rev-parse --verify` auf.
+- Das Ergebnis muss exakt 40 hexadezimale Zeichen besitzen und exakt dem gespeicherten `ROLLBACK_COMMIT` entsprechen.
+- Ein fehlender, gelöschter oder auf einen anderen Commit verschobener Ref liefert kontrolliert `false`; `set -e` bricht den App-Rollback nicht ab.
+- Der ausführbare Harness belegt für fehlenden und abweichenden Ref jeweils die App-only-Entscheidung: Ausschließlich `app` wird neu erstellt und kein Workerbefehl ausgegeben. Der bestehende Vertrag für das exakte Zurücktaggen der gespeicherten Image-ID bleibt zusätzlich grün.
+- Die spätere doppelte Ref-Auflösung wurde entfernt. Nur der bereits vollständig geprüfte Workerpfad setzt den Checkout direkt auf den exakten Metadaten-Commit zurück.
+
 ## Prozess- und Dateisicherheit
 
 - Deploy und Rollback benötigen Linux-`flock` und verwenden dieselbe nicht blockierende Sperrdatei während des gesamten Ablaufs.
