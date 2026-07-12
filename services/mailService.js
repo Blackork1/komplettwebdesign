@@ -51,6 +51,100 @@ function safeHtml(value = "") {
         .replace(/'/g, "&#39;");
 }
 
+function secureHttpsUrl(value) {
+    try {
+        const url = new URL(String(value || ""));
+        if (url.protocol !== "https:" || url.username || url.password) return "";
+        return url.toString();
+    } catch {
+        return "";
+    }
+}
+
+function canonicalContentEditorUrl(value, articleId) {
+    const normalizedId = Number(articleId);
+    if (!Number.isSafeInteger(normalizedId) || normalizedId <= 0) return "";
+    const secureUrl = secureHttpsUrl(value);
+    if (!secureUrl) return "";
+    const url = new URL(secureUrl);
+    return `${url.origin}/admin/content-agent/drafts/${normalizedId}/edit`;
+}
+
+function contentReviewDate(value) {
+    if (!value) return "Noch nicht terminiert";
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "Noch nicht terminiert";
+    return date.toLocaleString("de-DE", {
+        timeZone: "Europe/Berlin",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function contentRiskSummary(value) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (!value || typeof value !== "object") return "Keine Risikohinweise hinterlegt";
+    const items = Array.isArray(value.items) ? value.items : [];
+    if (items.length === 0) {
+        return value.blocked === true ? "Prüfung erforderlich" : "Keine besonderen Risiken erkannt";
+    }
+    return items.map((item) => {
+        if (typeof item === "string") return item;
+        return item?.message || item?.code || "Prüfung erforderlich";
+    }).join(", ");
+}
+
+export async function sendContentAgentReviewMail({
+    to,
+    article = {},
+    scheduledAt = null,
+    editorUrl = ""
+} = {}, transport = transporter) {
+    const articleId = article.id ?? article.postId;
+    const canonicalEditorUrl = canonicalContentEditorUrl(editorUrl, articleId);
+    const imageUrl = secureHttpsUrl(article.imageUrl);
+    const title = safeHtml(article.title || "Unbenannter Entwurf");
+    const shortDescription = safeHtml(article.shortDescription || "Keine Kurzbeschreibung hinterlegt");
+    const qualityScore = Number.isFinite(Number(article.qualityScore))
+        ? safeHtml(String(Number(article.qualityScore)))
+        : "–";
+    const riskSummary = safeHtml(contentRiskSummary(article.riskSummary));
+    const scheduledLabel = safeHtml(contentReviewDate(scheduledAt));
+    const subject = "Neuer Content-Entwurf zur Prüfung";
+    const imageHtml = imageUrl
+        ? `<p style="margin:20px 0;"><img src="${safeHtml(imageUrl)}" alt="Vorschau zum Content-Entwurf" style="display:block;width:100%;max-width:620px;height:auto;border-radius:12px;" /></p>`
+        : "";
+    const bodyHtml = `
+        <p>Ein neuer Content-Entwurf wartet auf die redaktionelle Prüfung.</p>
+        <h2 style="margin:20px 0 8px 0;color:#0b2a46;">${title}</h2>
+        <p>${shortDescription}</p>
+        ${imageHtml}
+        <p>
+          <strong>Qualitätsscore:</strong> ${qualityScore}<br>
+          <strong>Geplanter Zeitpunkt:</strong> ${scheduledLabel}<br>
+          <strong>Risikohinweis:</strong> ${riskSummary}
+        </p>
+    `;
+
+    return transport.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        html: renderBrandEmail({
+            locale: "de",
+            subject,
+            headline: "Content-Entwurf prüfen",
+            preheader: "Ein neuer Entwurf wartet auf Ihre Prüfung.",
+            bodyHtml,
+            ctaLabel: canonicalEditorUrl ? "Entwurf im Adminbereich prüfen" : "",
+            ctaUrl: canonicalEditorUrl
+        })
+    });
+}
+
 function newsletterUnsubscribeUrl(unsubscribeToken = "") {
     const token = String(unsubscribeToken || "").trim();
     if (!token) return "";

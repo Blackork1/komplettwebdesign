@@ -115,6 +115,7 @@ export function createContentWorker(dependencies = {}) {
       const terminal = error?.retryable === false
         ? await failJob(claim, error)
         : await retryOrFailJob(claim, error, {
+          retryAt: error?.retryAt || null,
           backoffSeconds: Math.min(3_600, 30 * (2 ** Math.max(0, claim.attempts - 1)))
         });
       if (!terminal) return { status: 'lease_lost' };

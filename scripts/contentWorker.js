@@ -16,7 +16,13 @@ const REGENERATION_JOB_TYPES = new Set([
   'regenerate_image'
 ]);
 const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
-const SUPPORTED_JOB_TYPES = new Set([...GENERATION_JOB_TYPES, ...REGENERATION_JOB_TYPES, ...AUDIT_JOB_TYPES]);
+const NOTIFICATION_JOB_TYPES = new Set(['send_admin_review_notification']);
+const SUPPORTED_JOB_TYPES = new Set([
+  ...GENERATION_JOB_TYPES,
+  ...REGENERATION_JOB_TYPES,
+  ...AUDIT_JOB_TYPES,
+  ...NOTIFICATION_JOB_TYPES
+]);
 
 function required(value, name) {
   if (!value) throw new TypeError(`Die Produktionsabhängigkeit ${name} wird benötigt.`);
@@ -94,13 +100,28 @@ export function createProductionJobHandler({
   runRegenerationJob,
   createRegenerationDependencies,
   runAuditJob,
-  createAuditDependencies
+  createAuditDependencies,
+  sendAdminReviewNotification
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
   return async function handleJob(claim, { leaseGuard } = {}) {
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
+    }
+    if (NOTIFICATION_JOB_TYPES.has(claim.job_type)) {
+      required(sendAdminReviewNotification, 'sendAdminReviewNotification');
+      const deliveryId = Number(claim.payload_json?.deliveryId);
+      if (!Number.isSafeInteger(deliveryId) || deliveryId <= 0) {
+        throw permanentJobError(
+          'Der Admin-Mailjob enthält keine gültige Zustellungs-ID.',
+          'CONTENT_ADMIN_NOTIFICATION_DELIVERY_ID_INVALID'
+        );
+      }
+      return sendAdminReviewNotification({
+        deliveryId,
+        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+      });
     }
 
     const snapshotEnabled = typeof getSettings === 'function'
@@ -429,6 +450,11 @@ export function createProductionRuntime({
     runRegenerationJob: modules.runDraftRegenerationJob,
     runAuditJob: modules.runExistingContentAuditJob,
     createAuditDependencies,
+    sendAdminReviewNotification: (input) => modules.sendAdminReviewNotification(input, {
+      database,
+      sendReviewMail: modules.sendContentAgentReviewMail,
+      canonicalBaseUrl: env.CANONICAL_BASE_URL || env.BASE_URL || null
+    }),
     pipelineDependencies
   });
   const worker = createContentWorker({
@@ -531,7 +557,9 @@ export async function loadProductionModules() {
     regenerationService,
     publicationService,
     auditService,
-    auditRepositoryModule
+    auditRepositoryModule,
+    notificationServiceModule,
+    mailServiceModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -556,7 +584,9 @@ export async function loadProductionModules() {
     import('../services/contentAgent/draftRegenerationService.js'),
     import('../services/contentAgent/contentPublicationService.js'),
     import('../services/contentAgent/legacyAuditService.js'),
-    import('../repositories/contentAuditRepository.js')
+    import('../repositories/contentAuditRepository.js'),
+    import('../services/contentAgent/contentNotificationService.js'),
+    import('../services/mailService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -583,7 +613,9 @@ export async function loadProductionModules() {
     createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository,
     createContentPublicationService: publicationService.createContentPublicationService,
     runExistingContentAuditJob: auditService.runExistingContentAuditJob,
-    createContentAuditRepository: auditRepositoryModule.createContentAuditRepository
+    createContentAuditRepository: auditRepositoryModule.createContentAuditRepository,
+    sendAdminReviewNotification: notificationServiceModule.sendAdminReviewNotification,
+    sendContentAgentReviewMail: mailServiceModule.sendContentAgentReviewMail
   };
 }
 

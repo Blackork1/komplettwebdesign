@@ -610,6 +610,23 @@ test('retryOrFailJob queued temporäre Fehler mit Backoff und exhausted Fehler t
   assert.deepEqual(db.calls[0].params.slice(0, 3), [9, 'worker-1', 2]);
 });
 
+test('retryOrFailJob bevorzugt eine gültige explizite Retryzeit und behält den Lease-Fence', async () => {
+  const queued = { id: 9, status: 'queued', attempts: 2, max_attempts: 5 };
+  const db = createQueryRecorder([{ rows: [queued] }]);
+  const retryAt = new Date('2026-07-12T11:00:00.000Z');
+
+  assert.equal(await retryOrFailJob(
+    { id: 9, locked_by: 'worker-mail', attempts: 2 },
+    new Error('SMTP vorübergehend nicht erreichbar'),
+    { retryAt, backoffSeconds: 45 },
+    db
+  ), queued);
+
+  assert.match(db.calls[0].sql, /COALESCE\(\s*\$6::timestamptz,\s*NOW\(\) \+ \(\$5 \* INTERVAL '1 second'\)\s*\)/i);
+  assert.match(db.calls[0].sql, /id = \$1[\s\S]*locked_by = \$2[\s\S]*attempts = \$3[\s\S]*status = 'running'/i);
+  assert.equal(db.calls[0].params[5], retryAt);
+});
+
 test('markJobNeedsManualAttention persistiert einen eigenen gefencten Terminalzustand', async () => {
   const row = { id: 11, status: 'needs_manual_attention' };
   const db = createQueryRecorder([{ rows: [row] }]);

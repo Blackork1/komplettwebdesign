@@ -389,6 +389,23 @@ test('temporäre Handlerfehler werden gefenct mit Backoff erneut eingeplant', as
   assert.equal(calls.find(([type]) => type === 'retry')[3].backoffSeconds > 0, true);
 });
 
+test('Worker reicht eine explizite Retryzeit lease-sicher an das Repository weiter', async () => {
+  const retryAt = new Date('2026-07-12T10:15:00.000Z');
+  const retryable = Object.assign(new Error('SMTP vorübergehend nicht erreichbar'), {
+    retryable: true,
+    retryAt
+  });
+  const { worker, calls, claim } = createWorkerHarness({
+    async handleJob(job) { calls.push(['handle', job]); throw retryable; }
+  });
+
+  assert.equal((await worker.processOnce()).status, 'queued');
+  const retry = calls.find(([type]) => type === 'retry');
+  assert.equal(retry[3].retryAt, retryAt);
+  assert.equal(retry[3].backoffSeconds, 30);
+  assert.deepEqual(retry[1], claim);
+});
+
 test('LeaseLostError ist explizit nicht retrybar', () => {
   const error = new LeaseLostError();
   assert.equal(error.code, 'CONTENT_JOB_LEASE_LOST');
@@ -833,6 +850,28 @@ test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () 
   );
 });
 
+test('der Produktionshandler dispatcht Admin-Prüfmails ohne Generierungs- oder Veröffentlichungslogik', async () => {
+  const calls = [];
+  const leaseGuard = async () => true;
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für eine Prüfmail darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für eine Prüfmail darf keine Generierung starten.'); },
+    async sendAdminReviewNotification(input) {
+      calls.push(input);
+      return { status: 'completed', deliveryId: input.deliveryId };
+    }
+  });
+
+  const result = await handler({
+    id: 72,
+    job_type: 'send_admin_review_notification',
+    payload_json: { deliveryId: 81, postId: 51, generationRunId: 71 }
+  }, { leaseGuard });
+
+  assert.deepEqual(result, { status: 'completed', deliveryId: 81 });
+  assert.deepEqual(calls, [{ deliveryId: 81, leaseGuard }]);
+});
+
 test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence aus', async () => {
   const calls = [];
   const leaseGuard = async () => calls.push('lease');
@@ -1128,6 +1167,8 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.runDraftRegenerationJob, 'function');
   assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
   assert.equal(typeof modules.createContentPublicationService, 'function');
+  assert.equal(typeof modules.sendAdminReviewNotification, 'function');
+  assert.equal(typeof modules.sendContentAgentReviewMail, 'function');
 });
 
 test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Repositories oder Models', async () => {

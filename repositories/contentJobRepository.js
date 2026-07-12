@@ -247,17 +247,24 @@ export async function failJob(claim, error, db = pool) {
 }
 
 export async function retryOrFailJob(claim, error, {
+  retryAt = null,
   backoffSeconds = 30
 } = {}, db = pool) {
   const lease = leaseParameters(claim);
   const normalizedBackoff = Math.min(86_400, Math.max(1, Number(backoffSeconds) || 30));
+  const normalizedRetryAt = retryAt instanceof Date && !Number.isNaN(retryAt.getTime())
+    ? retryAt
+    : null;
   const { rows } = await db.query(
     `
       UPDATE content_jobs
       SET status = CASE WHEN attempts < max_attempts THEN 'queued' ELSE 'failed' END,
           last_error = $4,
           run_after = CASE
-            WHEN attempts < max_attempts THEN NOW() + ($5 * INTERVAL '1 second')
+            WHEN attempts < max_attempts THEN COALESCE(
+              $6::timestamptz,
+              NOW() + ($5 * INTERVAL '1 second')
+            )
             ELSE run_after
           END,
           locked_at = NULL,
@@ -270,7 +277,7 @@ export async function retryOrFailJob(claim, error, {
         AND status = 'running'
       RETURNING *
     `,
-    [...lease, sanitizeErrorMessage(error), normalizedBackoff]
+    [...lease, sanitizeErrorMessage(error), normalizedBackoff, normalizedRetryAt]
   );
   return rows[0] || null;
 }
