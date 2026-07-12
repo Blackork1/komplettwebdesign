@@ -108,6 +108,8 @@ test('Rollout dokumentiert Migration 004 bis 006, den terminierten Reviewfluss u
   assert.match(guide, /idx_content_notification_deliveries_post_type_latest/);
   assert.equal((guide.match(/schedule_revision = settings\.schedule_revision \+ CASE WHEN current_settings\.agent_enabled THEN 1 ELSE 0 END/g) || []).length, 2);
   assert.equal((guide.match(/INSERT INTO content_agent_schedule_revisions/g) || []).length, 2);
+  assert.equal((guide.match(/INSERT INTO content_agent_setting_revisions/g) || []).length, 2);
+  assert.equal((guide.match(/changed_keys[^\n]*agent_enabled[^\n]*operating_mode/g) || []).length, 2);
   assert.match(guide, /vier Stunden[^\n]*Veröffentlichung/i);
   assert.match(guide, /Admin[^\n]*(?:Prüfmail|Benachrichtigung)/i);
   assert.match(guide, /Freigeben[^\n]*geplanten Termin/i);
