@@ -206,6 +206,18 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.doesNotMatch(approveHtml, /drafts\/19\/publish-now/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/reschedule/);
 
+  const chooseOtherSlotHtml = await renderFile(viewPath, {
+    ...locals,
+    draft: { ...baseDraft, actions: {
+      canApproveScheduled: true,
+      canPublishNow: false,
+      canReschedule: true,
+      canRetryNotification: false
+    } }
+  });
+  assert.match(chooseOtherSlotHtml, /drafts\/19\/reschedule/);
+  assert.match(chooseOtherSlotHtml, /Freigeben und anderen Termin wählen/);
+
   const missedHtml = await renderFile(viewPath, {
     ...locals,
     draft: { ...baseDraft, actions: {

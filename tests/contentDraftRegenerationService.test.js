@@ -248,6 +248,8 @@ test('drei Textregenerationen erzwingen Review und aktualisieren ausschließlich
     assert.equal(result.post.published, false);
     assert.equal(result.post.workflow_status, 'needs_review');
     assert.deepEqual(update.allowedFields, allowedFields);
+    assert.equal(update.expectedReviewVersion, 2);
+    assert.equal(update.commitKey, `12:${jobType}:19`);
     assert.equal(update.article.contentHtml, '<section><h2>Neu</h2><p>Sicher</p></section>');
     assert.equal(Object.hasOwn(update.article, 'published'), false);
     assert.deepEqual(
@@ -284,6 +286,7 @@ test('persistiertes Textresultat wird vor Budget und Provider wiederverwendet', 
       responseId: 'resp-persisted',
       usage: { input_tokens: 100, output_tokens: 200 },
       promptVersion: 'repair-v1',
+      reviewVersionBefore: 2,
       actualCost: 0.04,
       reservationMonth: '2026-07'
     };
@@ -446,6 +449,47 @@ test('geworfener Runabschlussfehler der Regeneration bleibt retrybar', async () 
       && error.retryable === true
       && error.cause?.message === 'Datenbank kurz nicht verfügbar'
   );
+});
+
+test('Textregeneration erhöht review_version nach Post-Commit und fehlgeschlagenem finishRun nur einmal', async () => {
+  let persistedStage = null;
+  let reviewVersion = 2;
+  let committedKey = null;
+  let finishCalls = 0;
+  const deps = dependencies();
+  deps.costService.getPersistedStageResult = async () => persistedStage;
+  deps.runRepository.updateRunStage = async (_runId, payload) => {
+    persistedStage = structuredClone(payload.stageResult);
+  };
+  deps.draftRepository.getDraftWithMetadata = async () => draft({
+    post: { ...draft().post, review_version: reviewVersion }
+  });
+  deps.draftRepository.updateGeneratedFields = async (payload) => {
+    deps.calls.push(['updateFields', payload]);
+    if (payload.commitKey !== committedKey) {
+      committedKey = payload.commitKey;
+      reviewVersion += 1;
+    }
+    return { post: { ...draft().post, review_version: reviewVersion }, metadata: draft().metadata };
+  };
+  deps.runRepository.finishRun = async (runId, payload) => {
+    finishCalls += 1;
+    if (finishCalls === 1) return null;
+    return { id: runId, ...payload };
+  };
+
+  await assert.rejects(
+    runDraftRegenerationJob(input('regenerate_article'), deps),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED'
+  );
+  const result = await runDraftRegenerationJob(input('regenerate_article'), deps);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(reviewVersion, 3);
+  assert.equal(deps.calls.filter(([type]) => type === 'repair').length, 1);
+  assert.equal(deps.calls.filter(([type]) => type === 'updateFields').length, 2);
+  assert.equal(persistedStage.reviewVersionBefore, 2);
+  assert.equal(deps.calls.filter(([type]) => type === 'updateFields')[1][1].expectedReviewVersion, 2);
 });
 
 test('Leaseverlust stoppt vor Provider und Postupdate ohne Runabschluss', async () => {
@@ -903,6 +947,16 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
       if (normalized === 'ROLLBACK') return { rows: [] };
       if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
       if (/SELECT p\.\*, to_jsonb\(m\)/i.test(normalized)) return { rows: [] };
+      if (/regeneration_commit/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
+        return { rows: [{
+          id: 19,
+          generated_by_ai: true,
+          published: false,
+          content_format: 'static_html',
+          review_version: 2,
+          regeneration_commit: null
+        }] };
+      }
       if (/SELECT (?:p\.)?id(?:, (?:p\.)?hero_public_id)?/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
         return { rows: [{ id: 19, hero_public_id: 'blog_images/alt' }] };
       }
@@ -918,6 +972,7 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
           content_format: 'static_html'
         }] };
       }
+      if (/^UPDATE content_post_metadata/i.test(normalized)) return { rows: [{ post_id: 19 }] };
       if (/SELECT \* FROM content_post_metadata/i.test(normalized)) return { rows: [{ post_id: 19 }] };
       throw new Error(`Unerwartete Query: ${normalized}`);
     },
@@ -931,7 +986,9 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
   await repository.updateGeneratedFields({
     postId: 19,
     allowedFields: ['metaTitle'],
-    article: article({ published: true, slug: 'darf-nicht-geschrieben-werden' })
+    article: article({ published: true, slug: 'darf-nicht-geschrieben-werden' }),
+    expectedReviewVersion: 2,
+    commitKey: '12:regenerate_metadata:19'
   });
 
   const lock = calls.find(({ sql }) => /FOR UPDATE/i.test(sql));
@@ -944,6 +1001,7 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
   assert.match(lock.sql, /generated_by_ai = TRUE/i);
   assert.match(lock.sql, /published = FALSE/i);
   assert.match(lock.sql, /content_format = 'static_html'/i);
+  assert.deepEqual(lock.params, [19]);
   assert.match(update.sql, /meta_title =/i);
   const setClause = update.sql.match(/SET (.+) WHERE/i)?.[1] || '';
   assert.doesNotMatch(setClause, /published\s*=|slug\s*=|content_format\s*=/i);
@@ -952,6 +1010,114 @@ test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste
   assert.match(setClause, /approved_review_version\s*=\s*NULL/i);
   assert.match(setClause, /approved_at\s*=\s*NULL/i);
   assert.match(setClause, /approved_by_admin_id\s*=\s*NULL/i);
+});
+
+test('Textrepository erkennt denselben dauerhaften Run-/Stage-Commit ohne zweiten Versionssprung', async () => {
+  const calls = [];
+  let post = {
+    id: 19,
+    generated_by_ai: true,
+    published: false,
+    content_format: 'static_html',
+    workflow_status: 'approved_scheduled',
+    review_version: 2,
+    approved_review_version: 2,
+    approved_at: new Date('2026-07-12T08:00:00.000Z'),
+    approved_by_admin_id: 7,
+    meta_title: 'Alt'
+  };
+  let commitMarker = null;
+  const metadata = { post_id: 19, generation_metadata_json: {} };
+  const client = {
+    async query(sql, params = []) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
+      if (/SELECT p\.\*[\s\S]*regeneration_commit/i.test(normalized)) {
+        return { rows: [{ ...post, regeneration_commit: commitMarker }] };
+      }
+      if (/^SELECT id FROM posts/i.test(normalized)) return { rows: [{ ...post }] };
+      if (/^UPDATE posts/i.test(normalized)) {
+        post = {
+          ...post,
+          meta_title: params[1],
+          review_version: post.review_version + 1,
+          workflow_status: 'needs_review',
+          approved_review_version: null,
+          approved_at: null,
+          approved_by_admin_id: null
+        };
+        return { rows: [{ ...post }] };
+      }
+      if (/^UPDATE content_post_metadata/i.test(normalized)) {
+        commitMarker = JSON.parse(params.at(-1));
+        metadata.generation_metadata_json = { lastRegenerationCommit: commitMarker };
+        return { rows: [{ ...metadata }] };
+      }
+      if (/^SELECT \* FROM content_post_metadata/i.test(normalized)) {
+        return { rows: [{ ...metadata }] };
+      }
+      throw new Error(`Unerwartete Query: ${normalized}`);
+    },
+    release() {}
+  };
+  const repository = createDraftRegenerationRepository({
+    async connect() { return client; },
+    async query() { return { rows: [] }; }
+  });
+  const payload = {
+    postId: 19,
+    allowedFields: ['metaTitle'],
+    article: article({ metaTitle: 'Neu' }),
+    expectedReviewVersion: 2,
+    commitKey: '12:regenerate_metadata:19'
+  };
+
+  const first = await repository.updateGeneratedFields(payload);
+  const retry = await repository.updateGeneratedFields(payload);
+
+  assert.equal(first.post.review_version, 3);
+  assert.equal(retry.post.review_version, 3);
+  assert.equal(retry.idempotent, true);
+  assert.equal(calls.filter(({ sql }) => /^UPDATE posts/i.test(sql)).length, 1);
+  assert.equal(calls.filter(({ sql }) => /^UPDATE content_post_metadata/i.test(sql)).length, 1);
+});
+
+test('Bildrepository wiederholt einen bereits übernommenen Public-ID-CAS ohne Versionssprung', async () => {
+  const calls = [];
+  let post = { id: 19, hero_public_id: 'blog_images/alt', review_version: 2 };
+  const client = {
+    async query(sql) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push(normalized);
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
+      if (/SELECT p\.id, p\.hero_public_id/i.test(normalized)) return { rows: [{ ...post }] };
+      if (/^UPDATE posts/i.test(normalized)) {
+        post = { ...post, hero_public_id: 'blog_images/neu', review_version: 3 };
+        return { rows: [{ ...post }] };
+      }
+      throw new Error(`Unerwartete Query: ${normalized}`);
+    },
+    release() {}
+  };
+  const repository = createDraftRegenerationRepository({ async connect() { return client; } });
+  const payload = {
+    postId: 19,
+    imageUrl: 'https://example.test/neu.webp',
+    publicId: 'blog_images/neu',
+    imageAlt: 'Neu',
+    expectedOldPublicId: 'blog_images/alt'
+  };
+
+  const first = await repository.updateGeneratedImage(payload);
+  const retry = await repository.updateGeneratedImage(payload);
+
+  assert.equal(first.post.review_version, 3);
+  assert.equal(retry.idempotent, true);
+  assert.equal(retry.post.review_version, 3);
+  assert.equal(calls.filter((sql) => /^UPDATE posts/i.test(sql)).length, 1);
 });
 
 test('Bildrepository aktualisiert nur mit NULL-sicherem Altbild-CAS unter Lock', async () => {

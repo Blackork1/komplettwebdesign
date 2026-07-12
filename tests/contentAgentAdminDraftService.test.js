@@ -230,7 +230,7 @@ test('getDraftForReview leitet Aktionen ausschließlich aus dem serverseitigen Z
       workflow_status: 'needs_review',
       scheduled_at: new Date('2026-07-12T09:00:00.000Z')
     },
-    notification: { status: 'failed' }
+    notification: { status: 'failed', attempts: 6, last_error_code: 'smtp_etimedout' }
   });
   const { service } = harness({ current });
 
@@ -278,6 +278,49 @@ test('ein exakt fälliger Termin gilt serverseitig noch nicht als verpasst', asy
 
   assert.equal(result.actions.canPublishNow, false);
   assert.equal(result.actions.canReschedule, false);
+});
+
+test('zukünftiger Reviewentwurf kann alternativ freigegeben und neu terminiert werden', async () => {
+  const current = draft({
+    post: {
+      ...draft().post,
+      scheduled_at: new Date('2026-07-13T16:00:00.000Z')
+    }
+  });
+  const service = createAdminDraftService({
+    repository: { async getDraftWithMetadata() { return current; } },
+    now: () => new Date('2026-07-12T10:00:00.000Z')
+  });
+
+  const result = await service.getDraftForReview(3);
+
+  assert.equal(result.actions.canApproveScheduled, true);
+  assert.equal(result.actions.canReschedule, true);
+});
+
+test('Mailretry-Flag erlaubt nur ausgeschöpfte, eindeutig temporäre SMTP-Fehler', async () => {
+  const basePost = { ...draft().post, scheduled_at: null };
+  const cases = [
+    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_etimedout' }, true],
+    [{ status: 'failed', attempts: 6, last_error_code: 'outcome_uncertain' }, false],
+    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_outcome_uncertain' }, false],
+    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_rejected' }, false],
+    [{ status: 'failed', attempts: 5, last_error_code: 'smtp_etimedout' }, false],
+    [{ status: 'sent', attempts: 1, last_error_code: null }, false],
+    [{ status: 'sending', attempts: 1, last_error_code: null }, false]
+  ];
+
+  for (const [notification, expected] of cases) {
+    const service = createAdminDraftService({
+      repository: {
+        async getDraftWithMetadata() {
+          return draft({ post: basePost, notification });
+        }
+      }
+    });
+    const result = await service.getDraftForReview(3);
+    assert.equal(result.actions.canRetryNotification, expected, JSON.stringify(notification));
+  }
 });
 
 test('Repository rollt Poständerung zurück, wenn das Metadata-Update fehlschlägt', async () => {
@@ -377,6 +420,10 @@ test('manueller Admin-Mailretry setzt Zustellung und passenden Job atomar zurüc
   const candidateSql = retry.sql.match(/candidate_delivery AS \((.*?)\), reset_delivery AS/is)?.[1] || '';
   assert.doesNotMatch(candidateSql, /status = 'failed'/i);
   assert.match(retry.sql, /reset_delivery AS[\s\S]*delivery\.status = 'failed'/i);
+  assert.match(retry.sql, /delivery\.attempts\s*=\s*6/i);
+  assert.match(retry.sql, /last_error_code\s*~\s*'\^smtp_\[a-z0-9_\]\+\$'/i);
+  assert.match(retry.sql, /last_error_code\s*<>\s*'smtp_rejected'/i);
+  assert.match(retry.sql, /last_error_code\s+NOT LIKE\s+'%uncertain%'/i);
   assert.match(retry.sql, /UPDATE content_notification_deliveries/i);
   assert.match(retry.sql, /UPDATE content_jobs/i);
   assert.match(retry.sql, /job_type = 'send_admin_review_notification'/i);
@@ -398,4 +445,30 @@ test('manueller Admin-Mailretry verlangt vor dem Transaktionsstart die literale 
     );
   }
   assert.equal(connects, 0);
+});
+
+test('Mailretry-Service blockiert outcome_uncertain, sent und sending vor jeder Mutation', async () => {
+  for (const notification of [
+    { status: 'failed', attempts: 6, last_error_code: 'outcome_uncertain' },
+    { status: 'sent', attempts: 1, last_error_code: null },
+    { status: 'sending', attempts: 1, last_error_code: null }
+  ]) {
+    let mutations = 0;
+    const repository = {
+      async getDraftWithMetadata() {
+        return draft({ notification });
+      },
+      async retryAdminReviewNotificationTransaction() {
+        mutations += 1;
+        return { id: 1 };
+      }
+    };
+    const service = createAdminDraftService({ repository });
+
+    await assert.rejects(
+      service.retryAdminReviewNotification({ postId: 3, confirmed: true }),
+      (error) => error.code === 'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE'
+    );
+    assert.equal(mutations, 0, JSON.stringify(notification));
+  }
 });

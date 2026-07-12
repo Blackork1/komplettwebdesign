@@ -136,9 +136,18 @@ export function deriveDraftReviewActions(post = {}, notification = null, now = n
   return {
     canApproveScheduled: needsReview && isFuture,
     canPublishNow: needsReview && isMissed,
-    canReschedule: (needsReview && isMissed) || approved,
-    canRetryNotification: notification?.status === 'failed'
+    canReschedule: (needsReview && (isFuture || isMissed)) || approved,
+    canRetryNotification: isAdminNotificationManuallyRetryable(notification)
   };
+}
+
+export function isAdminNotificationManuallyRetryable(notification) {
+  const errorCode = String(notification?.last_error_code || '');
+  return notification?.status === 'failed'
+    && Number(notification?.attempts) === 6
+    && /^smtp_[a-z0-9_]+$/.test(errorCode)
+    && errorCode !== 'smtp_rejected'
+    && !errorCode.includes('uncertain');
 }
 
 export function createAdminDraftRepository(db = pool) {
@@ -329,6 +338,10 @@ export function createAdminDraftRepository(db = pool) {
             FROM candidate_delivery candidate
             WHERE delivery.id = candidate.id
               AND delivery.status = 'failed'
+              AND delivery.attempts = 6
+              AND delivery.last_error_code ~ '^smtp_[a-z0-9_]+$'
+              AND delivery.last_error_code <> 'smtp_rejected'
+              AND delivery.last_error_code NOT LIKE '%uncertain%'
             RETURNING delivery.id
           ), reset_job AS (
             UPDATE content_jobs job
@@ -425,8 +438,17 @@ export function createAdminDraftService({
 
     async retryAdminReviewNotification({ postId, confirmed }) {
       requireConfirmation(confirmed);
+      const normalizedPostId = positivePostId(postId);
+      const current = await repository.getDraftWithMetadata(normalizedPostId);
+      if (!isEditableDraft(current)
+          || !isAdminNotificationManuallyRetryable(current.notification)) {
+        throw draftError(
+          'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
+          'Für diesen Entwurf gibt es keine eindeutig wiederholbare Admin-Benachrichtigung.'
+        );
+      }
       return repository.retryAdminReviewNotificationTransaction({
-        postId: positivePostId(postId)
+        postId: normalizedPostId
       });
     }
   };

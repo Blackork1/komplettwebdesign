@@ -86,6 +86,23 @@ function positivePostId(value) {
   return postId;
 }
 
+function positiveReviewVersion(value) {
+  const version = Number(value);
+  return Number.isSafeInteger(version) && version > 0 ? version : null;
+}
+
+function normalizeCommitKey(value) {
+  const key = typeof value === 'string' ? value.trim() : '';
+  if (!/^[1-9]\d*:regenerate_(?:article|metadata|faq):[1-9]\d*$/.test(key)
+      || key.length > 180) {
+    throw regenerationError(
+      'CONTENT_REGENERATION_VALIDATION_FAILED',
+      'Der dauerhafte Regenerations-Commit-Fence ist ungültig.'
+    );
+  }
+  return key;
+}
+
 function normalizeFaq(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -369,6 +386,13 @@ async function loadTextResult({
   if (rawPersisted !== null && rawPersisted !== undefined) {
     const envelope = providerEnvelope(rawPersisted);
     if (!envelope) return null;
+    const reviewVersionBefore = positiveReviewVersion(envelope.reviewVersionBefore);
+    if (!reviewVersionBefore) {
+      return manualProviderResult(
+        'provider_stage_version_fence_missing',
+        'Das persistierte Providerergebnis besitzt keinen sicheren Reviewversions-Fence.'
+      );
+    }
     const actualCost = Number.isFinite(Number(envelope.actualCost))
       ? Number(envelope.actualCost)
       : dependencies.costService.estimateTextCost({
@@ -384,7 +408,7 @@ async function loadTextResult({
       reservationMonth: envelope.reservationMonth
     }, dependencies);
     await recordProvider(dependencies, { providerName: 'openai', success: true });
-    return envelope.value;
+    return { generated: envelope.value, reviewVersionBefore };
   }
 
   await dependencies.assertLease();
@@ -435,9 +459,16 @@ async function loadTextResult({
     responseId: result.responseId ?? null,
     usage: result.usage || {},
     promptVersion: result.promptVersion || 'unknown',
+    reviewVersionBefore: positiveReviewVersion(draft.post.review_version),
     actualCost,
     reservationMonth: reservation.reservationMonth
   };
+  if (!envelope.reviewVersionBefore) {
+    return manualProviderResult(
+      'provider_stage_version_fence_missing',
+      'Der Entwurf besitzt keine gültige Reviewversion für die Regeneration.'
+    );
+  }
   try {
     await dependencies.runRepository.updateRunStage(run.id, {
       currentStage: stageId,
@@ -460,26 +491,26 @@ async function loadTextResult({
     actualCost
   });
   await recordProvider(dependencies, { providerName: 'openai', success: true });
-  return envelope.value;
+  return { generated: envelope.value, reviewVersionBefore: envelope.reviewVersionBefore };
 }
 
 async function runTextRegeneration(context, dependencies) {
   const { claim, run, runtimeSnapshot, draft, postId, stageId } = context;
-  const generated = await loadTextResult({
+  const loaded = await loadTextResult({
     stageId,
     run,
     runtimeSnapshot,
     draft,
     jobType: claim.job_type
   }, dependencies);
-  if (generated?.manual) {
+  if (loaded?.manual) {
     return finishManual({
       runId: run.id,
       postId,
-      ...generated.manual
+      ...loaded.manual
     }, dependencies.runRepository, dependencies.assertLease);
   }
-  if (!generated) {
+  if (!loaded) {
     return finishManual({
       runId: run.id,
       postId,
@@ -487,6 +518,8 @@ async function runTextRegeneration(context, dependencies) {
       message: 'Die Regenerationsstufe kann ohne eindeutig persistiertes Providerergebnis nicht sicher wiederholt werden.'
     }, dependencies.runRepository, dependencies.assertLease);
   }
+
+  const { generated, reviewVersionBefore } = loaded;
 
   const allowedFields = TEXT_REGENERATION_FIELDS[claim.job_type];
   const candidate = mergeAllowedFields(currentArticleFromDraft(draft), generated, allowedFields);
@@ -507,7 +540,9 @@ async function runTextRegeneration(context, dependencies) {
   const updated = await dependencies.draftRepository.updateGeneratedFields({
     postId,
     article: candidate,
-    allowedFields
+    allowedFields,
+    expectedReviewVersion: reviewVersionBefore,
+    commitKey: `${run.id}:${stageId}`
   });
   await finishRunRequired(dependencies.runRepository, run.id, {
     status: 'completed',
@@ -914,26 +949,70 @@ export function createDraftRegenerationRepository(db = pool) {
       };
     },
 
-    async updateGeneratedFields({ postId, article, allowedFields }) {
+    async updateGeneratedFields({
+      postId,
+      article,
+      allowedFields,
+      expectedReviewVersion,
+      commitKey
+    }) {
       const uniqueFields = [...new Set(allowedFields || [])];
       if (!uniqueFields.length || uniqueFields.some((field) => !POST_FIELD_MAP[field])) {
         throw regenerationError('CONTENT_REGENERATION_VALIDATION_FAILED', 'Ungültige Feldfreigabe.');
       }
+      const normalizedExpectedVersion = positiveReviewVersion(expectedReviewVersion);
+      if (!normalizedExpectedVersion) {
+        throw regenerationError(
+          'CONTENT_REGENERATION_VALIDATION_FAILED',
+          'Die erwartete Reviewversion ist ungültig.'
+        );
+      }
+      const normalizedCommitKey = normalizeCommitKey(commitKey);
       const client = await db.connect();
       try {
         await client.query('BEGIN');
         await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const locked = await client.query(`
-          SELECT id
-          FROM posts
-          WHERE id = $1
-            AND generated_by_ai = TRUE
-            AND published = FALSE
-            AND content_format = 'static_html'
-          FOR UPDATE
+          SELECT p.*,
+                 m.generation_metadata_json -> 'lastRegenerationCommit'
+                   AS regeneration_commit
+          FROM posts p
+          JOIN content_post_metadata m ON m.post_id = p.id
+          WHERE p.id = $1
+            AND p.generated_by_ai = TRUE
+            AND p.published = FALSE
+            AND p.content_format = 'static_html'
+          FOR UPDATE OF p, m
         `, [postId]);
         if (!locked.rows[0]) {
           throw regenerationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
+        }
+        const { regeneration_commit: existingCommit, ...lockedPost } = locked.rows[0];
+        if (existingCommit?.commitKey === normalizedCommitKey) {
+          if (existingCommit.kind !== 'text_regeneration_commit'
+              || Number(existingCommit.reviewVersionBefore) !== normalizedExpectedVersion
+              || Number(existingCommit.reviewVersionAfter) !== Number(lockedPost.review_version)) {
+            throw regenerationError(
+              'CONTENT_REGENERATION_COMMIT_FENCE_INVALID',
+              'Der dauerhafte Regenerations-Commit-Fence ist widersprüchlich.'
+            );
+          }
+          const metadataResult = await client.query(
+            'SELECT * FROM content_post_metadata WHERE post_id = $1',
+            [postId]
+          );
+          await client.query('COMMIT');
+          return {
+            post: lockedPost,
+            metadata: metadataResult.rows[0] || null,
+            idempotent: true
+          };
+        }
+        if (Number(lockedPost.review_version) !== normalizedExpectedVersion) {
+          throw regenerationError(
+            'CONTENT_REGENERATION_STALE',
+            'Der Entwurf wurde seit Beginn der Regeneration verändert.'
+          );
         }
 
         const params = [postId];
@@ -943,6 +1022,8 @@ export function createDraftRegenerationRepository(db = pool) {
           params.push(value);
           return `${mapping.column} = $${params.length}${mapping.json ? '::jsonb' : ''}`;
         });
+        params.push(normalizedExpectedVersion);
+        const expectedVersionParameter = params.length;
         const { rows } = await client.query(`
           UPDATE posts
           SET ${assignments.join(', ')},
@@ -956,15 +1037,46 @@ export function createDraftRegenerationRepository(db = pool) {
             AND generated_by_ai = TRUE
             AND published = FALSE
             AND content_format = 'static_html'
+            AND review_version = $${expectedVersionParameter}
           RETURNING *
         `, params);
         if (!rows[0]) {
           throw regenerationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
         }
-        const metadataResult = await client.query(
-          'SELECT * FROM content_post_metadata WHERE post_id = $1',
-          [postId]
-        );
+        const commitMarker = JSON.stringify({
+          kind: 'text_regeneration_commit',
+          commitKey: normalizedCommitKey,
+          postId,
+          reviewVersionBefore: normalizedExpectedVersion,
+          reviewVersionAfter: Number(rows[0].review_version),
+          allowedFields: uniqueFields
+        });
+        const metadataResult = await client.query(`
+          UPDATE content_post_metadata
+          SET generation_metadata_json = jsonb_set(
+                CASE
+                  WHEN jsonb_typeof(generation_metadata_json) = 'object'
+                    THEN generation_metadata_json
+                  ELSE '{}'::jsonb
+                END,
+                '{lastRegenerationCommit}',
+                $3::jsonb,
+                TRUE
+              ),
+              updated_at = NOW()
+          WHERE post_id = $1
+            AND COALESCE(
+              generation_metadata_json #>> '{lastRegenerationCommit,commitKey}',
+              ''
+            ) <> $2::text
+          RETURNING *
+        `, [postId, normalizedCommitKey, commitMarker]);
+        if (!metadataResult.rows[0]) {
+          throw regenerationError(
+            'CONTENT_REGENERATION_COMMIT_FENCE_INVALID',
+            'Der Regenerations-Commit-Fence konnte nicht atomar gespeichert werden.'
+          );
+        }
         await client.query('COMMIT');
         return { post: rows[0], metadata: metadataResult.rows[0] || null };
       } catch (error) {
