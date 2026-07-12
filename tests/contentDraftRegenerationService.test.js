@@ -947,7 +947,7 @@ test('fehlgeschlagener Bildabgleich bleibt manuell und löscht keine Cloudinaryd
   assert.equal(deps.calls.filter(([type]) => type === 'deleteImage').length, 0);
 });
 
-test('Cleanupfehler macht den bestätigten neuen Bildzustand nicht rückgängig', async () => {
+test('Cleanupfehler behält den bestätigten neuen Bildzustand, bleibt aber retrybar zur manuellen Prüfung', async () => {
   const deps = dependencies();
   deps.imageService.deleteImage = async (payload) => {
     deps.calls.push(['deleteImage', payload]);
@@ -958,11 +958,44 @@ test('Cleanupfehler macht den bestätigten neuen Bildzustand nicht rückgängig'
 
   const result = await runDraftRegenerationJob(input('regenerate_image'), deps);
 
-  assert.equal(result.status, 'completed');
-  assert.equal(result.post.hero_public_id, 'blog_images/neu');
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'image_previous_cleanup_failed');
   assert.equal(deps.calls.some(([type, , payload]) => (
     type === 'stage' && payload.stageId === 'regenerate_image:19:cleanup'
   )), true);
+});
+
+test('defensiver Bild-CAS-Mismatch beendet die Transaktion vor der Clientfreigabe', async () => {
+  const calls = [];
+  const client = {
+    async query(sql) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      calls.push(normalized);
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (normalized === 'LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE') return { rows: [] };
+      if (/SELECT p\.id, p\.hero_public_id, p\.review_version/i.test(normalized)) {
+        return { rows: [{ id: 19, hero_public_id: 'blog_images/alt', review_version: 2 }] };
+      }
+      if (/^UPDATE posts/i.test(normalized)) return { rows: [] };
+      throw new Error(`Unerwartete Query: ${normalized}`);
+    },
+    release() { calls.push('RELEASE'); }
+  };
+  const repository = createDraftRegenerationRepository({ async connect() { return client; } });
+
+  const result = await repository.updateGeneratedImage({
+    postId: 19,
+    imageUrl: 'https://example.test/neu.webp',
+    publicId: 'blog_images/neu',
+    imageAlt: 'Neu',
+    expectedOldPublicId: 'blog_images/alt',
+    expectedReviewVersion: 2
+  });
+
+  assert.equal(result.casMismatch, true);
+  assert.ok(calls.indexOf('COMMIT') > calls.findIndex((sql) => /^UPDATE posts/i.test(sql)));
+  assert.ok(calls.indexOf('RELEASE') > calls.indexOf('COMMIT'));
+  assert.equal(calls.includes('ROLLBACK'), false);
 });
 
 test('Repository prüft Eignung im Update-Transaction erneut und verwendet feste Feldallowlists', async () => {

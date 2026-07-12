@@ -85,6 +85,8 @@ test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestät
       session: { user: { id: 7, username: 'redaktion' } }
     }, res, assert.fail);
     assert.equal(calls.at(-1).scheduledAt.toISOString(), '2026-07-13T16:00:00.000Z');
+    assert.equal(calls.at(-1).expectedScheduleRevision, 7);
+    assert.equal(calls.at(-1).expectedTimezone, 'Europe/Berlin');
     assert.equal(calls.at(-1).confirmed, true);
     assert.deepEqual(calls.at(-1).admin, { id: 7, username: 'redaktion' });
   }

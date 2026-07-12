@@ -11,6 +11,12 @@ test('Migration 006 ist additiv, idempotent und versioniert Zeitpläne mit eigen
   assert.match(sql, /effective_at\s+TIMESTAMPTZ\s+NOT NULL/i);
   assert.match(sql, /schedule_weekdays[\s\S]*schedule_time[\s\S]*timezone[\s\S]*generation_lead_hours/i);
   assert.doesNotMatch(sql, /DROP TABLE|TRUNCATE|DELETE FROM/i);
+  assert.match(sql, /content_agent_setting_revisions/i);
+  assert.match(sql, /changed_keys\s*&&\s*ARRAY\[/i);
+  assert.match(sql, /previous_values_json/i);
+  assert.match(sql, /new_values_json/i);
+  assert.match(sql, /ROW_NUMBER\(\)\s+OVER\s*\(\s*ORDER BY created_at, id\s*\)/i);
+  assert.match(sql, /NOW\(\)\s*-\s*INTERVAL '8 days'/i);
 });
 
 test('Migration 006 ergänzt exakt den LATERAL-kompatiblen neuesten Admin-Review-Index', async () => {

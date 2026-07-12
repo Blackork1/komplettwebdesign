@@ -131,7 +131,12 @@ export function findDueGenerationSlotsForRevisions({ revisions, now = new Date()
     for (const slot of findDueGenerationSlots({ settings: revision, now })) {
       const generationMillis = Date.parse(slot.generationAt);
       if (generationMillis < revision.effectiveMillis || generationMillis >= nextEffectiveMillis) continue;
-      unique.set(slot.key, { ...slot, scheduleRevision: Number(revision.schedule_revision) });
+      if (!unique.has(slot.localDate)) {
+        unique.set(slot.localDate, {
+          ...slot,
+          scheduleRevision: Number(revision.schedule_revision)
+        });
+      }
     }
   });
   return [...unique.values()]

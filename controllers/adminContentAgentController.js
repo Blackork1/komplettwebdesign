@@ -582,6 +582,8 @@ export function createAdminContentAgentController(dependencies) {
             timezone,
             now()
           ),
+          expectedScheduleRevision: Number(req.body?.schedule_revision),
+          expectedTimezone: timezone,
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         });
@@ -618,6 +620,8 @@ export function createAdminContentAgentController(dependencies) {
             timezone,
             now()
           ),
+          expectedScheduleRevision: Number(req.body?.schedule_revision),
+          expectedTimezone: timezone,
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         });

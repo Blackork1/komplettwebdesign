@@ -379,7 +379,11 @@ read_content_schema_facts() {
 pause_content_agent() {
   case "$1" in
     dashboard)
-      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      if test "$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''schedule_revision'\'') AND to_regclass('\''public.content_agent_schedule_revisions'\'') IS NOT NULL;"')" = "t"; then
+        PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "WITH current_settings AS (SELECT * FROM content_agent_settings WHERE id = 1 FOR UPDATE), updated AS (UPDATE content_agent_settings settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', schedule_revision = settings.schedule_revision + CASE WHEN current_settings.agent_enabled THEN 1 ELSE 0 END, settings_version = settings.settings_version + 1, updated_at = NOW() FROM current_settings WHERE settings.id = current_settings.id RETURNING settings.*, current_settings.agent_enabled AS was_enabled), revision AS (INSERT INTO content_agent_schedule_revisions (revision, effective_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours) SELECT schedule_revision, updated_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours FROM updated WHERE was_enabled ON CONFLICT (revision) DO NOTHING) SELECT agent_enabled::text || '\''|'\'' || operating_mode FROM updated;"')"
+      else
+        PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      fi
       test "$PAUSED_STATE" = "false|review"
       ;;
     legacy002)
@@ -787,7 +791,11 @@ read_content_schema_facts() {
 pause_content_agent() {
   case "$1" in
     dashboard)
-      PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      if test "$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_agent_settings'\'' AND column_name = '\''schedule_revision'\'') AND to_regclass('\''public.content_agent_schedule_revisions'\'') IS NOT NULL;"')" = "t"; then
+        PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "WITH current_settings AS (SELECT * FROM content_agent_settings WHERE id = 1 FOR UPDATE), updated AS (UPDATE content_agent_settings settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', schedule_revision = settings.schedule_revision + CASE WHEN current_settings.agent_enabled THEN 1 ELSE 0 END, settings_version = settings.settings_version + 1, updated_at = NOW() FROM current_settings WHERE settings.id = current_settings.id RETURNING settings.*, current_settings.agent_enabled AS was_enabled), revision AS (INSERT INTO content_agent_schedule_revisions (revision, effective_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours) SELECT schedule_revision, updated_at, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours FROM updated WHERE was_enabled ON CONFLICT (revision) DO NOTHING) SELECT agent_enabled::text || '\''|'\'' || operating_mode FROM updated;"')"
+      else
+        PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+      fi
       test "$PAUSED_STATE" = "false|review"
       ;;
     legacy002)

@@ -37,6 +37,22 @@ function publicationReadClient() {
   };
 }
 
+test('Zeitplan-Snapshot wird unter Settings-Share-Lock verglichen', async () => {
+  const client = sqlClient([{ rows: [{ schedule_revision: '7', timezone: 'Europe/Berlin' }] }]);
+  const repository = createContentPublishEventRepository();
+
+  assert.equal(await repository.assertScheduleSettingsSnapshot({
+    scheduleRevision: 7,
+    timezone: 'Europe/Berlin'
+  }, client), true);
+  assert.match(client.calls[0].sql, /FROM content_agent_settings/i);
+  assert.match(client.calls[0].sql, /FOR SHARE/i);
+  assert.equal(await repository.assertScheduleSettingsSnapshot({
+    scheduleRevision: 8,
+    timezone: 'Europe\/Berlin'
+  }, sqlClient([{ rows: [{ schedule_revision: '7', timezone: 'Europe/Berlin' }] }])), false);
+});
+
 test('Repository sperrt den persistierten Post und bindet Metadata und Slugkontext an dieselbe Transaktion', async () => {
   const client = publicationReadClient();
   const repository = createContentPublishEventRepository();

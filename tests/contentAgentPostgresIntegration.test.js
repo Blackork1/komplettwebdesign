@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 
 import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js';
@@ -38,6 +39,82 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
+});
+
+test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderungen ohne Doppelseed', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_agent_settings (
+        id SMALLINT PRIMARY KEY,
+        agent_enabled BOOLEAN NOT NULL,
+        schedule_weekdays SMALLINT[] NOT NULL,
+        schedule_time TIME NOT NULL,
+        timezone VARCHAR(80) NOT NULL,
+        generation_lead_hours SMALLINT NOT NULL
+      );
+      CREATE TABLE content_agent_setting_revisions (
+        id BIGSERIAL PRIMARY KEY,
+        changed_keys TEXT[] NOT NULL,
+        previous_values_json JSONB NOT NULL,
+        new_values_json JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL
+      );
+      CREATE TABLE content_notification_deliveries (
+        id BIGSERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL,
+        notification_type VARCHAR(40) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      INSERT INTO content_agent_settings
+        (id, agent_enabled, schedule_weekdays, schedule_time, timezone, generation_lead_hours)
+      VALUES (1, TRUE, ARRAY[1,4]::SMALLINT[], '19:00', 'Europe/Berlin', 4);
+      INSERT INTO content_agent_setting_revisions
+        (changed_keys, previous_values_json, new_values_json, created_at)
+      VALUES (
+        ARRAY['schedule_time'],
+        '{"agent_enabled":true,"schedule_weekdays":[1,4],"schedule_time":"18:00","timezone":"Europe/Berlin","generation_lead_hours":4}',
+        '{"agent_enabled":true,"schedule_weekdays":[1,4],"schedule_time":"19:00","timezone":"Europe/Berlin","generation_lead_hours":4}',
+        NOW() - INTERVAL '2 days'
+      );
+    `);
+    const migration006 = await readFile(
+      new URL('../scripts/migrations/006_add_schedule_revisions_and_admin_review_lookup.sql', import.meta.url),
+      'utf8'
+    );
+    await pool.query(migration006);
+    await pool.query(migration006);
+    const revisions = await pool.query(`
+      SELECT revision, effective_at, schedule_time::text
+      FROM content_agent_schedule_revisions
+      ORDER BY revision
+    `);
+    assert.deepEqual(revisions.rows.map((row) => [row.revision, row.schedule_time]), [
+      ['1', '18:00:00'],
+      ['2', '19:00:00']
+    ]);
+    assert.ok(revisions.rows[0].effective_at.getTime() <= Date.now() - (7 * 24 * 60 * 60 * 1000));
+    assert.equal((await pool.query(
+      'SELECT schedule_revision FROM content_agent_settings WHERE id = 1'
+    )).rows[0].schedule_revision, '2');
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
 });
 
 const publishRisks = {
@@ -219,6 +296,7 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
     assert.equal(scheduleRevisions.rows.length, 1);
     assert.equal(scheduleRevisions.rows[0].revision, '1');
     assert.ok(scheduleRevisions.rows[0].effective_at instanceof Date);
+    assert.ok(scheduleRevisions.rows[0].effective_at.getTime() <= Date.now() - (7 * 24 * 60 * 60 * 1000));
     const latestDeliveryIndex = await pool.query(`
       SELECT indexdef
       FROM pg_indexes
@@ -1169,6 +1247,8 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
     const approval = await scheduledPublicationService.approveForSchedule({
       postId: generated.post.id,
       scheduledAt,
+      expectedScheduleRevision: Number(settings.rows[0].schedule_revision),
+      expectedTimezone: settings.rows[0].timezone,
       admin: publicationAdmin.rows[0],
       confirmed: true
     });

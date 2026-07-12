@@ -7,6 +7,10 @@ const admin = { id: 7, username: 'redaktion' };
 const now = new Date('2026-07-12T10:00:00.000Z');
 const futureSlot = new Date('2026-07-12T11:00:00.000Z');
 const missedSlot = new Date('2026-07-12T09:00:00.000Z');
+const manualScheduleSnapshot = Object.freeze({
+  expectedScheduleRevision: 7,
+  expectedTimezone: 'Europe/Berlin'
+});
 const autoSnapshot = {
   operatingMode: 'auto_publish',
   forcedMode: null,
@@ -53,7 +57,8 @@ function harness({
   expireDuringValidation = false,
   expireOnValidationCall = null,
   newsletterEnabled = false,
-  manualApprovals = null
+  manualApprovals = null,
+  scheduleSnapshotMatches = true
 } = {}) {
   const calls = [];
   const jobs = new Map();
@@ -164,6 +169,10 @@ function harness({
     }
   };
   const repository = {
+    async assertScheduleSettingsSnapshot(input, transaction) {
+      calls.push(['scheduleSnapshot', input, transaction]);
+      return scheduleSnapshotMatches;
+    },
     async getDraftWithMetadataForUpdate(postId, transaction) {
       calls.push(['lock', postId, transaction]);
       return {
@@ -322,10 +331,32 @@ function harness({
   };
 }
 
+test('manuelle Terminfreigabe prüft Zeitplanrevision und Zeitzone atomar in ihrer Transaktion', async () => {
+  const { service, calls, jobs, state } = harness({ scheduleSnapshotMatches: false });
+
+  await assert.rejects(service.approveForSchedule({
+    postId: 3,
+    scheduledAt: futureSlot,
+    expectedScheduleRevision: 7,
+    expectedTimezone: 'Europe/Berlin',
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_SCHEDULE_SETTINGS_STALE' });
+
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'scheduleSnapshot'), true);
+  const operations = calls.filter(Array.isArray).map(([name]) => name);
+  assert.ok(operations.indexOf('validate') < operations.indexOf('scheduleSnapshot'));
+  assert.equal(operations.includes('approve'), false);
+  assert.equal(calls.includes('ROLLBACK'), true);
+  assert.equal(jobs.size, 0);
+  assert.equal(state.post.workflow_status, 'needs_review');
+});
+
 test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async () => {
   const { service, calls, state } = harness();
 
   const result = await service.approveForSchedule({
+    ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: futureSlot,
     admin,
@@ -348,6 +379,7 @@ test('nicht terminierter Reviewentwurf erhält bei manueller Freigabe atomar Ter
   const { service, calls, state } = harness({ scheduledAt: null });
 
   const result = await service.approveForSchedule({
+    ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: futureSlot,
     admin,
@@ -552,6 +584,7 @@ test('initiale Freigabe mappt einen während Lock und Validierung abgelaufenen T
 
   await assert.rejects(
     service.approveForSchedule({
+      ...manualScheduleSnapshot,
       postId: 3,
       scheduledAt: futureSlot,
       admin,
@@ -588,7 +621,13 @@ test('Sofortveröffentlichung ist ausschließlich nach einem verpassten Slot mö
 
 test('wiederholte Freigabe erzeugt keinen zweiten Veröffentlichungsjob', async () => {
   const { service, jobs } = harness();
-  const input = { postId: 3, scheduledAt: futureSlot, admin, confirmed: true };
+  const input = {
+    ...manualScheduleSnapshot,
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  };
 
   const first = await service.approveForSchedule(input);
   const second = await service.approveForSchedule(input);
@@ -602,12 +641,14 @@ test('reine Terminverschiebung erzeugt einen neuen Job und macht den alten Termi
   const { service, jobs, clock, calls, state } = harness();
 
   const oldApproval = await service.approveForSchedule({
+    ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: futureSlot,
     admin,
     confirmed: true
   });
   const shiftedApproval = await service.approveForSchedule({
+    ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: shiftedSlot,
     admin,
@@ -639,6 +680,7 @@ test('Terminverschiebung mappt einen während Lock und Revalidierung abgelaufene
   const { service, jobs, calls, state } = harness({ expireOnValidationCall: 2 });
 
   await service.approveForSchedule({
+    ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: futureSlot,
     admin,
@@ -646,6 +688,7 @@ test('Terminverschiebung mappt einen während Lock und Revalidierung abgelaufene
   });
   await assert.rejects(
     service.approveForSchedule({
+      ...manualScheduleSnapshot,
       postId: 3,
       scheduledAt: shiftedSlot,
       admin,

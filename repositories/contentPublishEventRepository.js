@@ -12,6 +12,18 @@ function queryTarget(client, fallback) {
 
 export function createContentPublishEventRepository(db = pool) {
   return {
+    async assertScheduleSettingsSnapshot({ scheduleRevision, timezone }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        SELECT schedule_revision, timezone
+        FROM content_agent_settings
+        WHERE id = 1
+        FOR SHARE
+      `);
+      return Number(rows[0]?.schedule_revision) === Number(scheduleRevision)
+        && rows[0]?.timezone === timezone;
+    },
+
     async getDraftWithMetadataForUpdate(postId, client) {
       const target = queryTarget(client, db);
       await target.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');

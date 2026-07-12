@@ -50,6 +50,17 @@ function normalizeDate(value, code, message) {
   return date;
 }
 
+function normalizeTimezone(value) {
+  const timezone = typeof value === 'string' ? value.trim() : '';
+  if (!timezone || !Intl.supportedValuesOf('timeZone').includes(timezone)) {
+    throw scheduledPublicationError(
+      'CONTENT_ACTION_VALIDATION_FAILED',
+      'Die erwartete Zeitplan-Zeitzone ist ungültig.'
+    );
+  }
+  return timezone;
+}
+
 function normalizeCanonicalAutoDate(value) {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
@@ -291,7 +302,14 @@ export function createScheduledPublicationService({
     return { post, event, settings, publicationSource, newsletter };
   }
 
-  async function approveForSchedule({ postId, scheduledAt, admin, confirmed } = {}) {
+  async function approveForSchedule({
+    postId,
+    scheduledAt,
+    expectedScheduleRevision,
+    expectedTimezone,
+    admin,
+    confirmed
+  } = {}) {
     requireConfirmation(confirmed);
     const normalizedPostId = positiveDatabaseInteger(postId, 'postId');
     const normalizedAdmin = normalizeAdmin(admin);
@@ -306,6 +324,11 @@ export function createScheduledPublicationService({
         'Der Veröffentlichungstermin muss in der Zukunft liegen.'
       );
     }
+    const normalizedScheduleRevision = positiveDatabaseInteger(
+      expectedScheduleRevision,
+      'expectedScheduleRevision'
+    );
+    const normalizedTimezone = normalizeTimezone(expectedTimezone);
 
     return withTransaction(async (client) => {
       const validated = await publicationService.revalidateDraftForPublication({
@@ -313,6 +336,16 @@ export function createScheduledPublicationService({
         client,
         workflowStatuses: ['needs_review', 'approved_scheduled']
       });
+      const scheduleMatches = await repository.assertScheduleSettingsSnapshot({
+        scheduleRevision: normalizedScheduleRevision,
+        timezone: normalizedTimezone
+      }, client);
+      if (scheduleMatches !== true) {
+        throw scheduledPublicationError(
+          'CONTENT_SCHEDULE_SETTINGS_STALE',
+          'Der Zeitplan wurde seit dem Öffnen des Entwurfs geändert.'
+        );
+      }
       const current = validated.draft.post;
       const reviewVersion = positiveDatabaseInteger(current.review_version, 'reviewVersion');
       const publicationVersion = positiveDatabaseInteger(

@@ -911,12 +911,20 @@ async function runImageRegeneration(context, dependencies) {
     ? image.previousPublicId
     : update.oldPublicId;
   if (cleanupPublicId && cleanupPublicId !== image.publicId) {
-    await cleanupGeneratedImage({
+    const cleanup = await cleanupGeneratedImage({
       runId: run.id,
       stageId,
       publicId: cleanupPublicId,
       suffix: 'cleanup'
     }, dependencies);
+    if (cleanup?.status !== 'completed') {
+      return finishManual({
+        runId: run.id,
+        postId,
+        code: 'image_previous_cleanup_failed',
+        message: 'Das neue Beitragsbild ist sicher gespeichert, das ersetzte Cloudinary-Bild konnte jedoch noch nicht bereinigt werden.'
+      }, dependencies.runRepository, dependencies.assertLease);
+    }
   }
 
   await finishRunRequired(dependencies.runRepository, run.id, {
@@ -1176,6 +1184,7 @@ export function createDraftRegenerationRepository(db = pool) {
           RETURNING *
         `, [postId, imageUrl, publicId, imageAlt, expected, expectedVersion]);
         if (!rows[0]) {
+          await client.query('COMMIT');
           return {
             committed: false,
             casMismatch: true,

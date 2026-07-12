@@ -106,6 +106,8 @@ test('Rollout dokumentiert Migration 004 bis 006, den terminierten Reviewfluss u
   assert.match(guide, /005_upgrade_admin_notification_retry_index\.sql/);
   assert.match(guide, /006_add_schedule_revisions_and_admin_review_lookup\.sql/);
   assert.match(guide, /idx_content_notification_deliveries_post_type_latest/);
+  assert.equal((guide.match(/schedule_revision = settings\.schedule_revision \+ CASE WHEN current_settings\.agent_enabled THEN 1 ELSE 0 END/g) || []).length, 2);
+  assert.equal((guide.match(/INSERT INTO content_agent_schedule_revisions/g) || []).length, 2);
   assert.match(guide, /vier Stunden[^\n]*Veröffentlichung/i);
   assert.match(guide, /Admin[^\n]*(?:Prüfmail|Benachrichtigung)/i);
   assert.match(guide, /Freigeben[^\n]*geplanten Termin/i);
