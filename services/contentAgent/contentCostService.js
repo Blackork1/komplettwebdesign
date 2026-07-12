@@ -94,6 +94,7 @@ const MONTHLY_SPEND_SQL = `
   CROSS JOIN LATERAL jsonb_each(stage_results_json) AS budget(key, value)
   WHERE budget.key LIKE $1
     AND budget.value->>'reservationMonth' = $2
+    AND budget.value->>'status' IN ('reserved', 'settled')
 `;
 
 export async function getMonthlyContentCost({ now = new Date(), timezone = 'UTC', db = pool } = {}) {

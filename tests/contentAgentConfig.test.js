@@ -214,6 +214,22 @@ test('technische Präsentation ist schreibgeschützt und enthält niemals Secret
   assert.doesNotMatch(serialized, /sk-geheim|postgres:\/\/geheim|openaiApiKey|databaseUrl/i);
 });
 
+test('Providerkonfiguration wird ausschließlich als Boolescher Zustand dargestellt', () => {
+  const config = getContentAgentTechnicalConfig({
+    OPENAI_API_KEY: 'sk-geheim',
+    CLOUDINARY_CLOUD_NAME: 'cloud',
+    CLOUDINARY_API_KEY: 'key',
+    CLOUDINARY_API_SECRET: 'secret'
+  });
+  assert.equal(config.openaiConfigured, true);
+  assert.equal(config.cloudinaryConfigured, true);
+  const presentation = buildTechnicalConfigPresentation({ technicalConfig: config });
+  assert.equal(presentation.openaiConfigured.value, true);
+  assert.equal(presentation.cloudinaryConfigured.value, true);
+  assert.doesNotMatch(JSON.stringify(presentation), /sk-geheim|"cloud"|"secret"/);
+  assert.equal(getContentAgentTechnicalConfig({ CLOUDINARY_CLOUD_NAME: 'cloud' }).cloudinaryConfigured, false);
+});
+
 test('mark profile and links expose stable approved context', () => {
   assert.equal(CONTENT_AGENT_PROFILE.brandName, 'Komplett Webdesign');
   assert.equal(CONTENT_AGENT_PROFILE.tone.address, 'Du');

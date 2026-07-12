@@ -43,7 +43,9 @@ const TECHNICAL_KEYS = Object.freeze([
   'reviewOutputCostPerMtok',
   'imageCostEur',
   'workerPollMs',
-  'jobLeaseMinutes'
+  'jobLeaseMinutes',
+  'openaiConfigured',
+  'cloudinaryConfigured'
 ]);
 
 function safeError(value) {
@@ -142,7 +144,7 @@ export function buildDashboardPresentation(data = {}, now = new Date()) {
     },
     budget: {
       usedEur: Number(data.budgetUsed || 0),
-      limitEur: Number(data.settings?.monthly_budget_cents || 0) / 100
+      limitEur: Number(data.budgetLimitEur ?? Number(data.settings?.monthly_budget_cents || 0) / 100)
     },
     approvals: { current: approvals, required: 8, ready: approvals >= 8 },
     drafts: buildDraftListPresentation(data.drafts || []),

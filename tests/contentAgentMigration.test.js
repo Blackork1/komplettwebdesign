@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js';
+const runnerSource = readFileSync(new URL('../scripts/runContentAgentMigration.js', import.meta.url), 'utf8');
 
 const sql = readFileSync(
   new URL('../scripts/migrations/002_create_content_agent_core.sql', import.meta.url),
@@ -73,4 +74,9 @@ test('Migrationsrunner führt 002 und 003 sequenziell unter einer Transaktionssp
   assert.match(queries[3], /CREATE TABLE IF NOT EXISTS content_publish_events/i);
   assert.equal(queries[4], 'COMMIT');
   assert.equal(released, true);
+});
+
+test('Migrationsrunner benennt beide ausgeführten Migrationen in Statusmeldungen', () => {
+  assert.match(runnerSource, /Migration 002 \+ 003 erfolgreich/);
+  assert.match(runnerSource, /Migration 002 \+ 003 fehlgeschlagen/);
 });

@@ -61,6 +61,15 @@ test('Dashboardstatus basiert ausschließlich auf dem persistierten Worker-Heart
   assert.equal(active.approvals.ready, true);
 });
 
+test('Dashboard zeigt die bereits technisch gekappte Budgetgrenze', () => {
+  const result = buildDashboardPresentation({
+    settings: { agent_enabled: true, monthly_budget_cents: 5000 },
+    budgetUsed: 4.5,
+    budgetLimitEur: 25
+  });
+  assert.deepEqual(result.budget, { usedEur: 4.5, limitEur: 25 });
+});
+
 test('Technikpräsentation übernimmt nur redigierte Werte und bleibt schreibgeschützt', () => {
   const presentation = buildTechnologyPresentation({
     contentModel: { value: 'gpt-content', source: '.env', editable: false, restartRequired: true },

@@ -33,11 +33,11 @@ const entryFile = process.argv[1]
 if (currentFile === entryFile) {
   runContentAgentMigration()
     .then(async () => {
-      console.log('Content-Agent-Migration 002 erfolgreich.');
+      console.log('Content-Agent-Migration 002 + 003 erfolgreich.');
       await pool.end();
     })
     .catch(async (error) => {
-      console.error('Content-Agent-Migration 002 fehlgeschlagen:', error.message);
+      console.error('Content-Agent-Migration 002 + 003 fehlgeschlagen:', error.message);
       await pool.end();
       process.exitCode = 1;
     });

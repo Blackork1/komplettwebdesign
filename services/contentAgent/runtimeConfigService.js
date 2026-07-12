@@ -65,6 +65,35 @@ export function validateContentAgentSettingsTransition({ current, next, technica
     );
   }
 
+  if (current.agent_enabled !== true && next.agent_enabled === true && technicalConfig.enabled !== true) {
+    throw Object.assign(
+      new Error('Der Content-Agent kann bei technischem Not-Aus nicht aktiviert werden.'),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+
+  const budgetCents = Number(next.monthly_budget_cents);
+  const hardBudgetCents = Math.floor(Number(technicalConfig.monthlyCostLimitEur) * 100);
+  if (Object.hasOwn(next, 'monthly_budget_cents')
+      && (!Number.isSafeInteger(budgetCents) || budgetCents < 0
+        || !Number.isSafeInteger(hardBudgetCents) || budgetCents > hardBudgetCents)) {
+    throw Object.assign(
+      new Error('Das Monatsbudget überschreitet die technische Obergrenze.'),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+
+  const maximumAttempts = Number(next.maximum_attempts);
+  const hardMaximumAttempts = Number(technicalConfig.maxAttempts);
+  if (Object.hasOwn(next, 'maximum_attempts')
+      && (!Number.isInteger(maximumAttempts) || maximumAttempts < 1
+        || !Number.isInteger(hardMaximumAttempts) || maximumAttempts > hardMaximumAttempts)) {
+    throw Object.assign(
+      new Error('Die Anzahl der Versuche überschreitet die technische Obergrenze.'),
+      { code: 'CONTENT_SETTINGS_VALIDATION_FAILED' }
+    );
+  }
+
   if (next.operating_mode !== 'auto_publish') return next;
 
   if (

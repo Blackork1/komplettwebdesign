@@ -6,6 +6,7 @@ import {
   createAdminContentAgentController
 } from '../controllers/adminContentAgentController.js';
 import { retryContentJobForAdmin } from '../repositories/contentJobRepository.js';
+import { validateContentAgentSettingsTransition } from '../services/contentAgent/runtimeConfigService.js';
 
 function response() {
   return {
@@ -22,11 +23,54 @@ function baseDependencies(overrides = {}) {
     adminRepository: {},
     settingsRepository: {},
     jobRepository: {},
-    runtimeConfig: { maxAttempts: 3, autoPublishEnabled: false },
+    runtimeConfig: { enabled: true, maxAttempts: 3, monthlyCostLimitEur: 25, autoPublishEnabled: false },
     presentation: {},
     ...overrides
   };
 }
+
+test('technischer Not-Aus sperrt manuelle Entwürfe und Bestandsaudits zentral', async () => {
+  for (const action of ['enqueueManualDraftAction', 'enqueueAuditAction']) {
+    let queueCalls = 0;
+    const controller = createAdminContentAgentController(baseDependencies({
+      runtimeConfig: { enabled: false, maxAttempts: 3, monthlyCostLimitEur: 25 },
+      settingsRepository: { async getSettings() { return { agent_enabled: true }; } },
+      jobRepository: { async enqueueJob() { queueCalls += 1; } },
+      revisionService: { async enqueueAudit() { queueCalls += 1; } }
+    }));
+    const res = response();
+    await controller[action]({ session: { user: { id: 7, username: 'admin' } } }, res, assert.fail);
+    assert.equal(queueCalls, 0, `${action} darf keinen Job anlegen`);
+    assert.equal(res.statusCode, 409);
+  }
+});
+
+test('Dashboard-Aktivierung und Werte oberhalb technischer Hardcaps werden vor DB-Schreibzugriff abgelehnt', async () => {
+  const current = {
+    agent_enabled: false, operating_mode: 'review', schedule_weekdays: [1, 4],
+    schedule_time: '18:00:00', timezone: 'Europe/Berlin', monthly_budget_cents: 2500,
+    auto_publish_min_score: 90, maximum_attempts: 3, manual_approvals_count: 0, settings_version: 4
+  };
+  for (const { runtimeConfig, body } of [
+    { runtimeConfig: { enabled: false, monthlyCostLimitEur: 25, maxAttempts: 3 }, body: { agent_enabled: 'true' } },
+    { runtimeConfig: { enabled: true, monthlyCostLimitEur: 25, maxAttempts: 3 }, body: { monthly_budget_cents: '2501' } },
+    { runtimeConfig: { enabled: true, monthlyCostLimitEur: 25, maxAttempts: 3 }, body: { maximum_attempts: '4' } }
+  ]) {
+    let writes = 0;
+    const controller = createAdminContentAgentController(baseDependencies({
+      runtimeConfig,
+      settingsRepository: {
+        async getSettings() { return current; },
+        async updateSettings() { writes += 1; }
+      },
+      validateSettingsTransition: (input) => validateContentAgentSettingsTransition(input)
+    }));
+    const res = response();
+    await controller.updateSettingsAction({ body: { settings_version: '4', ...body }, session: { user: {} } }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+    assert.equal(writes, 0);
+  }
+});
 
 test('manuelle Erstellung erzwingt admin_manual und review', async () => {
   const jobs = [];

@@ -15,12 +15,12 @@ function createQueryRecorder() {
       const normalized = normalizeSql(sql);
       calls.push({ sql: normalized, params });
       if (/FROM content_agent_settings/i.test(normalized)) {
-        return { rows: [{ agent_enabled: true, monthly_budget_cents: 2500, manual_approvals_count: 4 }] };
+        return { rows: [{ agent_enabled: true, timezone: 'Europe/Berlin', monthly_budget_cents: 2500, manual_approvals_count: 4 }] };
       }
       if (/FROM content_worker_state/i.test(normalized)) {
         return { rows: [{ worker_name: 'content-worker', heartbeat_at: '2026-07-11T10:00:00.000Z' }] };
       }
-      if (/SUM\(cost_estimate\)/i.test(normalized)) return { rows: [{ used: '1.25' }] };
+      if (/jsonb_each\(stage_results_json\)/i.test(normalized)) return { rows: [{ spent: '1.25' }] };
       if (/FROM posts p/i.test(normalized) || /FROM posts WHERE/i.test(normalized)) {
         return { rows: [{ id: 11, title: 'Entwurf' }] };
       }
@@ -35,12 +35,17 @@ test('Dashboardabfragen laden keine Rohpayloads, Artikel oder Modellantworten', 
   const db = createQueryRecorder();
   const repository = createContentAgentAdminRepository(db);
 
-  const overview = await repository.getOverview();
+  const overview = await repository.getOverview({
+    technicalMonthlyCostLimitEur: 20,
+    now: new Date('2026-07-31T22:30:00.000Z')
+  });
   await repository.listDrafts();
   await repository.listJobs();
   await repository.getTechnologyState();
 
-  const sql = db.calls.map((call) => call.sql).join(' ');
+  const sql = db.calls
+    .filter(({ sql: statement }) => !/jsonb_each\(stage_results_json\)/i.test(statement))
+    .map((call) => call.sql).join(' ');
   assert.doesNotMatch(
     sql,
     /stage_results_json|openai_response_ids_json|payload_json|runtime_snapshot_json|seo_brief_json|generation_metadata_json/i
@@ -53,7 +58,13 @@ test('Dashboardabfragen laden keine Rohpayloads, Artikel oder Modellantworten', 
   assert.match(sql, /content_worker_state/i);
   assert.match(sql, /content_agent_settings/i);
   assert.equal(overview.budgetUsed, 1.25);
+  assert.equal(overview.budgetLimitEur, 20);
   assert.equal(overview.approvals, 4);
+  const budgetCall = db.calls.find(({ sql }) => /jsonb_each\(stage_results_json\)/i.test(sql));
+  assert.deepEqual(budgetCall.params, ['budget:2026-08:%', '2026-08']);
+  assert.match(budgetCall.sql, /status' = 'settled'[\s\S]*actualCost[\s\S]*reservedCost/i);
+  assert.match(budgetCall.sql, /status' IN \('reserved', 'settled'\)/i);
+  assert.doesNotMatch(budgetCall.sql, /payload_json|openai_response_ids_json|runtime_snapshot_json/i);
 });
 
 test('Jobliste begrenzt die Ergebniszahl serverseitig auf 1 bis 200', async () => {

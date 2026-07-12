@@ -157,14 +157,19 @@ export function createAdminContentAgentController(dependencies) {
     blogPostPresentation
   } = dependencies;
 
-  async function enqueueRegeneration(jobType, req) {
-    const postId = positiveId(req.params.id);
+  async function requireAdminEnqueueEnabled() {
     const settings = await settingsRepository.getSettings();
     if (runtimeConfig.enabled !== true || settings.agent_enabled !== true) {
       throw Object.assign(new Error('Content-Agent deaktiviert.'), {
         code: 'CONTENT_AGENT_DISABLED'
       });
     }
+    return settings;
+  }
+
+  async function enqueueRegeneration(jobType, req) {
+    const postId = positiveId(req.params.id);
+    const settings = await requireAdminEnqueueEnabled();
     if (typeof draftService?.getDraftForReview !== 'function') {
       throw Object.assign(new Error('Entwurfsprüfung nicht verfügbar.'), {
         code: 'CONTENT_DRAFT_NOT_FOUND'
@@ -206,7 +211,9 @@ export function createAdminContentAgentController(dependencies) {
   return {
     async overviewPage(req, res, next) {
       try {
-        const data = await adminRepository.getOverview();
+        const data = await adminRepository.getOverview({
+          technicalMonthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur
+        });
         return res.render('admin/contentAgent/overview', {
           dashboard: presentation.buildDashboardPresentation(data),
           settings: data.settings,
@@ -346,12 +353,7 @@ export function createAdminContentAgentController(dependencies) {
 
     async enqueueManualDraftAction(req, res, next) {
       try {
-        const settings = await settingsRepository.getSettings();
-        if (settings.agent_enabled !== true) {
-          throw Object.assign(new Error('Content-Agent deaktiviert.'), {
-            code: 'CONTENT_AGENT_DISABLED'
-          });
-        }
+        const settings = await requireAdminEnqueueEnabled();
         const job = await jobRepository.enqueueJob({
           jobType: 'generate_manual_draft',
           idempotencyKey: `manual:${randomUUID()}`,
@@ -447,7 +449,12 @@ export function createAdminContentAgentController(dependencies) {
       return regenerationAction('regenerate_article', req, res, next);
     },
 
-    enqueueAuditAction(req, res, next) {
+    async enqueueAuditAction(req, res, next) {
+      try {
+        await requireAdminEnqueueEnabled();
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
       return actionCapability({
         capability: revisionService,
         method: 'enqueueAudit',

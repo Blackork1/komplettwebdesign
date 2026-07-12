@@ -108,6 +108,20 @@ test('Transitionvalidierung lehnt einen vollständigen Zeitplan ohne Wochentag a
   }), (error) => error.code === 'CONTENT_SETTINGS_VALIDATION_FAILED');
 });
 
+test('Transitionvalidierung erzwingt technischen Hauptschalter, Budget und Versuchsgrenze', () => {
+  const current = { agent_enabled: false, operating_mode: 'review', manual_approvals_count: 0 };
+  for (const { next, technicalConfig: hardcaps } of [
+    { next: { ...current, agent_enabled: true }, technicalConfig: { enabled: false, monthlyCostLimitEur: 25, maxAttempts: 3 } },
+    { next: { ...current, monthly_budget_cents: 2501 }, technicalConfig: { enabled: true, monthlyCostLimitEur: 25, maxAttempts: 3 } },
+    { next: { ...current, maximum_attempts: 4 }, technicalConfig: { enabled: true, monthlyCostLimitEur: 25, maxAttempts: 3 } }
+  ]) {
+    assert.throws(
+      () => validateContentAgentSettingsTransition({ current, next, technicalConfig: hardcaps }),
+      (error) => error.code === 'CONTENT_SETTINGS_VALIDATION_FAILED'
+    );
+  }
+});
+
 test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () => {
   const runtimeConfig = resolveContentAgentRuntimeConfig({
     technicalConfig: { ...technicalConfig, autoPublishEnabled: true },

@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { getMonthlyContentCost } from '../services/contentAgent/contentCostService.js';
 
 const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
@@ -9,27 +10,25 @@ function normalizeLimit(value) {
 
 export function createContentAgentAdminRepository(db = pool) {
   return {
-    async getOverview() {
-      const [settings, worker, budget, drafts, jobs] = await Promise.all([
-        db.query(`
+    async getOverview({ technicalMonthlyCostLimitEur = Infinity, now = new Date() } = {}) {
+      const settings = await db.query(`
           SELECT id, agent_enabled, operating_mode, schedule_weekdays, schedule_time,
                  timezone, monthly_budget_cents, maximum_attempts,
                  auto_publish_enabled, auto_publish_min_score,
                  manual_approvals_count, settings_version, updated_at
           FROM content_agent_settings
           WHERE id = 1
-        `),
+        `);
+      const currentSettings = settings.rows[0] || null;
+      const timezone = currentSettings?.timezone || 'UTC';
+      const [worker, budgetUsed, drafts, jobs] = await Promise.all([
         db.query(`
           SELECT worker_name, heartbeat_at, started_at, last_job_at, version,
                  last_scheduler_tick_at, last_scheduler_error, last_scheduled_slot
           FROM content_worker_state
           WHERE worker_name = $1
         `, ['content-worker']),
-        db.query(`
-          SELECT COALESCE(SUM(cost_estimate), 0) AS used
-          FROM content_runs
-          WHERE started_at >= date_trunc('month', NOW())
-        `),
+        getMonthlyContentCost({ now, timezone, db }),
         db.query(`
           SELECT id, title, slug, excerpt, image_url, workflow_status, created_at
           FROM posts
@@ -47,12 +46,17 @@ export function createContentAgentAdminRepository(db = pool) {
           LIMIT $1
         `, [OVERVIEW_JOB_LIMIT])
       ]);
-      const currentSettings = settings.rows[0] || null;
+      const databaseLimitEur = Number(currentSettings?.monthly_budget_cents || 0) / 100;
+      const technicalLimit = Number(technicalMonthlyCostLimitEur);
+      const budgetLimitEur = Number.isFinite(technicalLimit)
+        ? Math.min(databaseLimitEur, Math.max(0, technicalLimit))
+        : databaseLimitEur;
 
       return {
         settings: currentSettings,
         worker: worker.rows[0] || null,
-        budgetUsed: Number(budget.rows[0]?.used || 0),
+        budgetUsed: Number(budgetUsed || 0),
+        budgetLimitEur,
         drafts: drafts.rows,
         jobs: jobs.rows,
         approvals: Number(currentSettings?.manual_approvals_count || 0)

@@ -14,6 +14,10 @@ function decimal(value, fallback) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+function configured(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 export function getContentAgentTechnicalConfig(env = process.env) {
   return Object.freeze({
     enabled: boolean(env.CONTENT_AGENT_ENABLED, false),
@@ -36,7 +40,11 @@ export function getContentAgentTechnicalConfig(env = process.env) {
     reviewOutputCostPerMtok: decimal(env.OPENAI_REVIEW_OUTPUT_COST_PER_MTOK, 4.50),
     imageCostEur: decimal(env.OPENAI_IMAGE_COST_EUR, 0.041),
     workerPollMs: integer(env.CONTENT_AGENT_WORKER_POLL_MS, 5000, 1000, 60000),
-    jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180)
+    jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180),
+    openaiConfigured: configured(env.OPENAI_API_KEY),
+    cloudinaryConfigured: configured(env.CLOUDINARY_CLOUD_NAME)
+      && configured(env.CLOUDINARY_API_KEY)
+      && configured(env.CLOUDINARY_API_SECRET)
   });
 }
 
@@ -62,7 +70,9 @@ const PRESENTED_TECHNICAL_KEYS = Object.freeze([
   'reviewOutputCostPerMtok',
   'imageCostEur',
   'workerPollMs',
-  'jobLeaseMinutes'
+  'jobLeaseMinutes',
+  'openaiConfigured',
+  'cloudinaryConfigured'
 ]);
 
 export function buildTechnicalConfigPresentation(input = {}) {
