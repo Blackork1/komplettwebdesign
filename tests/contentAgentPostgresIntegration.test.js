@@ -21,6 +21,7 @@ import {
   settleMonthlyBudget
 } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
+import { createProductionJobHandler } from '../scripts/contentWorker.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
 import { sendAdminReviewNotification } from '../services/contentAgent/contentNotificationService.js';
 import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
@@ -1061,26 +1062,58 @@ test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve�
     assert.equal(generated.post.workflow_status, 'needs_review');
     assert.equal(generated.post.published, false);
 
-    const adminDelivery = await pool.query(`
-      SELECT id FROM content_notification_deliveries
-      WHERE post_id = $1 AND notification_type = 'admin_review'
-    `, [generated.post.id]);
     let adminMailCalls = 0;
-    const notification = await sendAdminReviewNotification({
-      deliveryId: adminDelivery.rows[0].id,
-      leaseGuard: async () => true
-    }, {
-      database: pool,
-      canonicalBaseUrl: 'https://www.komplettwebdesign.de',
-      async sendReviewMail() {
-        adminMailCalls += 1;
-        return { messageId: 'pg-scheduled-review-e2e' };
-      }
-    });
-    assert.equal(notification.status, 'completed');
-    assert.equal(adminMailCalls, 1);
-
     const scheduledPublicationService = createScheduledPublicationService({ db: pool });
+    const e2eHandler = createProductionJobHandler({
+      createRun: (input) => createRun(input, pool),
+      async runPipeline() {
+        throw new Error('Im terminierten E2E-Pfad darf keine Generierung dispatcht werden.');
+      },
+      sendAdminReviewNotification: (input) => sendAdminReviewNotification(input, {
+        database: pool,
+        canonicalBaseUrl: 'https://www.komplettwebdesign.de',
+        async sendReviewMail() {
+          adminMailCalls += 1;
+          return { messageId: 'pg-scheduled-review-e2e' };
+        }
+      }),
+      publishApprovedPost: (input) => scheduledPublicationService.publishApprovedPost(input)
+    });
+    const e2eTimers = new Set();
+    const e2eWorker = createContentWorker({
+      enabled: true,
+      workerId: 'pg-scheduled-e2e-worker',
+      workerName: 'pg-scheduled-e2e-worker',
+      version: 'test',
+      leaseMinutes: 5,
+      leaseRenewMs: 30_000,
+      setIntervalFn(callback) {
+        const handle = { callback };
+        e2eTimers.add(handle);
+        return handle;
+      },
+      clearIntervalFn(handle) { e2eTimers.delete(handle); },
+      upsertHeartbeat: (input) => upsertWorkerHeartbeat(input, pool),
+      recoverExpiredJobs: (minutes) => recoverExpiredJobs(minutes, pool),
+      claimNextJob: (workerId) => claimNextJob(workerId, pool),
+      renewJobLease: (claim) => renewJobLease(claim, pool),
+      completeJob: (claim) => completeJob(claim, pool),
+      failJob: (claim, error) => failJob(claim, error, pool),
+      retryOrFailJob: (claim, error, options) => retryOrFailJob(claim, error, options, pool),
+      markJobNeedsManualAttention: (claim, reason) => markJobNeedsManualAttention(claim, reason, pool),
+      handleJob: e2eHandler
+    });
+
+    const notificationResult = await e2eWorker.processOnce();
+    assert.equal(notificationResult.status, 'completed');
+    assert.equal(adminMailCalls, 1);
+    assert.equal((await pool.query(`
+      SELECT status FROM content_jobs
+      WHERE job_type = 'send_admin_review_notification'
+        AND payload_json ->> 'postId' = $1
+    `, [String(generated.post.id)])).rows[0].status, 'completed');
+    assert.equal(await e2eWorker.processOnce(), null);
+
     const approval = await scheduledPublicationService.approveForSchedule({
       postId: generated.post.id,
       scheduledAt,
@@ -1097,6 +1130,7 @@ test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve�
       published: false,
       workflow_status: 'approved_scheduled'
     });
+    assert.equal(await e2eWorker.processOnce(), null);
 
     const publicationJob = await pool.query(`
       SELECT payload_json
@@ -1108,14 +1142,18 @@ test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve�
       resolve,
       Math.max(0, scheduledAt.getTime() - Date.now() + 150)
     ));
-    const publicationInput = {
-      ...publicationJob.rows[0].payload_json,
-      leaseGuard: async () => true
-    };
-    const firstScheduledPublication = await scheduledPublicationService.publishApprovedPost(publicationInput);
-    const repeatedScheduledPublication = await scheduledPublicationService.publishApprovedPost(publicationInput);
-    assert.equal(firstScheduledPublication.post.published, true);
-    assert.equal(repeatedScheduledPublication.alreadyPublished, true);
+    assert.deepEqual(Object.keys(publicationJob.rows[0].payload_json).sort(), [
+      'approvalVersion', 'postId', 'publicationVersion', 'scheduledAt'
+    ]);
+    const publicationResult = await e2eWorker.processOnce();
+    assert.equal(publicationResult.status, 'completed');
+    assert.equal((await pool.query(`
+      SELECT status FROM content_jobs
+      WHERE job_type = 'publish_approved_post'
+        AND payload_json ->> 'postId' = $1
+    `, [String(generated.post.id)])).rows[0].status, 'completed');
+    assert.equal(await e2eWorker.processOnce(), null);
+    assert.equal(e2eTimers.size, 0);
 
     const scheduledState = await pool.query(`
       SELECT p.published, p.workflow_status,
