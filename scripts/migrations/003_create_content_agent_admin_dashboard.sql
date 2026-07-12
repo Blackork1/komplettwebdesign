@@ -131,11 +131,13 @@ CREATE TABLE IF NOT EXISTS content_post_revisions (
   admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
   admin_username VARCHAR(255),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   approved_at TIMESTAMPTZ,
   CHECK (status IN ('draft', 'approved', 'rejected'))
 );
 ALTER TABLE content_post_revisions
-  ADD COLUMN IF NOT EXISTS revision_version INTEGER NOT NULL DEFAULT 1;
+  ADD COLUMN IF NOT EXISTS revision_version INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 UPDATE content_post_revisions
 SET snapshot_json = jsonb_build_object(
       'base', '{}'::jsonb,
@@ -162,7 +164,8 @@ WITH ranked_group_drafts AS (
   SELECT revision.id,
          ROW_NUMBER() OVER (
            PARTITION BY audit.job_id, audit.post_id, audit.audit_type
-           ORDER BY revision.created_at DESC, revision.id DESC,
+           ORDER BY revision.updated_at DESC,
+                    revision.created_at DESC, revision.id DESC,
                     audit.created_at DESC, audit.id DESC
          ) AS position
   FROM content_post_revisions revision
@@ -170,7 +173,9 @@ WITH ranked_group_drafts AS (
   WHERE revision.status = 'draft' AND audit.job_id IS NOT NULL
 )
 UPDATE content_post_revisions revision
-SET status = 'rejected'
+SET status = 'rejected',
+    revision_version = revision.revision_version + 1,
+    updated_at = NOW()
 WHERE revision.id IN (
   SELECT id FROM ranked_group_drafts WHERE position > 1
 );
@@ -197,7 +202,7 @@ SELECT grouped.job_id, grouped.post_id, grouped.audit_type,
              WHERE draft.audit_id = candidate.id AND draft.status = 'draft'
            ) DESC,
            (
-             SELECT MAX(draft.created_at) FROM content_post_revisions draft
+             SELECT MAX(draft.updated_at) FROM content_post_revisions draft
              WHERE draft.audit_id = candidate.id AND draft.status = 'draft'
            ) DESC NULLS LAST,
            candidate.created_at DESC,
@@ -222,6 +227,26 @@ JOIN content_audit_dedupe_survivors survivor
 WHERE revision.audit_id = current_audit.id
   AND current_audit.id <> survivor.survivor_id;
 
+WITH ranked_audit_drafts AS (
+  SELECT revision.id,
+         ROW_NUMBER() OVER (
+           PARTITION BY revision.audit_id
+           ORDER BY revision.updated_at DESC,
+                    revision.created_at DESC,
+                    revision.id DESC
+         ) AS position
+  FROM content_post_revisions revision
+  WHERE revision.audit_id IS NOT NULL
+    AND revision.status = 'draft'
+)
+UPDATE content_post_revisions revision
+SET status = 'rejected',
+    revision_version = revision.revision_version + 1,
+    updated_at = NOW()
+WHERE revision.id IN (
+  SELECT id FROM ranked_audit_drafts WHERE position > 1
+);
+
 UPDATE content_post_audits audit
 SET status = CASE
   WHEN EXISTS (
@@ -234,7 +259,11 @@ SET status = CASE
   ) THEN 'resolved'
   ELSE audit.status
 END
-WHERE audit.id IN (SELECT survivor_id FROM content_audit_dedupe_survivors);
+WHERE EXISTS (
+  SELECT 1 FROM content_post_revisions revision
+  WHERE revision.audit_id = audit.id
+    AND revision.status IN ('draft', 'approved')
+);
 
 DELETE FROM content_post_audits losing
 USING content_audit_dedupe_survivors survivor

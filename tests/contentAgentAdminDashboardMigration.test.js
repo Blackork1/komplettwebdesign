@@ -25,7 +25,8 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   const dropAuditIndex = sql.indexOf('DROP INDEX IF EXISTS ux_content_post_audits_job_post_type');
   const dropDraftIndex = sql.indexOf('DROP INDEX IF EXISTS ux_content_post_revisions_draft_audit');
   const rejectDuplicateDrafts = sql.indexOf('WITH ranked_group_drafts AS');
-  const repoint = sql.lastIndexOf('UPDATE content_post_revisions revision');
+  const repoint = sql.indexOf('SET audit_id = survivor.survivor_id');
+  const globalDraftConsolidation = sql.indexOf('WITH ranked_audit_drafts AS');
   const updateSurvivorStatus = sql.indexOf('UPDATE content_post_audits audit');
   const deleteDuplicate = sql.indexOf('DELETE FROM content_post_audits losing');
   const uniqueAudit = sql.indexOf('CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type');
@@ -34,10 +35,12 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   assert.ok(dropDraftIndex > dropAuditIndex);
   assert.ok(rejectDuplicateDrafts > dropDraftIndex);
   assert.ok(repoint > rejectDuplicateDrafts);
-  assert.ok(updateSurvivorStatus > repoint);
+  assert.ok(globalDraftConsolidation > repoint);
+  assert.ok(updateSurvivorStatus > globalDraftConsolidation);
   assert.ok(deleteDuplicate > updateSurvivorStatus);
   assert.ok(uniqueAudit > deleteDuplicate);
   assert.ok(uniqueDraft > uniqueAudit);
+  assert.match(sql, /PARTITION BY revision\.audit_id[\s\S]*revision\.updated_at DESC[\s\S]*revision\.created_at DESC[\s\S]*revision\.id DESC/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_provider_state/i);
   assert.match(sql, /REFERENCES admins\(id\)/i);
   assert.match(sql, /CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation/i);

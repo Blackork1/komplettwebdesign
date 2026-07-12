@@ -260,6 +260,56 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     `, [duplicateJob.rows[0].id]);
     assert.deepEqual(secondPass.rows[0], { audit_count: 1, revision_count: 2 });
 
+    const nullJobAudit = await pool.query(`
+      INSERT INTO content_post_audits (post_id, job_id, audit_type, score, status)
+      VALUES ($1, NULL, 'legacy_null_job', 60, 'open') RETURNING id
+    `, [publishedPost.rows[0].id]);
+    await pool.query('DROP INDEX ux_content_post_revisions_draft_audit');
+    await pool.query(`
+      INSERT INTO content_post_revisions (
+        post_id, audit_id, snapshot_json, status, created_at, updated_at, approved_at
+      ) VALUES
+        ($1, $2, $3::jsonb, 'draft', '2026-02-01T00:00:00Z', '2026-02-02T00:00:00Z', NULL),
+        ($1, $2, $3::jsonb, 'draft', '2026-02-03T00:00:00Z', '2026-02-04T00:00:00Z', NULL),
+        ($1, $2, $3::jsonb, 'approved', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z')
+    `, [publishedPost.rows[0].id, nullJobAudit.rows[0].id, snapshot]);
+    await runContentAgentMigration(pool);
+    const nullJobState = await pool.query(`
+      SELECT audit.status,
+             COUNT(*) FILTER (WHERE revision.status = 'draft')::int AS draft_count,
+             COUNT(*) FILTER (WHERE revision.status = 'rejected')::int AS rejected_count,
+             COUNT(*) FILTER (WHERE revision.status = 'approved')::int AS approved_count,
+             MIN(revision.revision_version) FILTER (WHERE revision.status = 'rejected')::int AS rejected_version,
+             BOOL_AND(revision.audit_id = audit.id) AS all_repointed
+      FROM content_post_audits audit
+      JOIN content_post_revisions revision ON revision.audit_id = audit.id
+      WHERE audit.id = $1
+      GROUP BY audit.id, audit.status
+    `, [nullJobAudit.rows[0].id]);
+    assert.deepEqual(nullJobState.rows[0], {
+      status: 'revision_created',
+      draft_count: 1,
+      rejected_count: 1,
+      approved_count: 1,
+      rejected_version: 2,
+      all_repointed: true
+    });
+    const nullJobBeforeRerun = await pool.query(`
+      SELECT id, status, revision_version, updated_at
+      FROM content_post_revisions WHERE audit_id = $1 ORDER BY id
+    `, [nullJobAudit.rows[0].id]);
+    await runContentAgentMigration(pool);
+    const nullJobAfterRerun = await pool.query(`
+      SELECT id, status, revision_version, updated_at
+      FROM content_post_revisions WHERE audit_id = $1 ORDER BY id
+    `, [nullJobAudit.rows[0].id]);
+    assert.deepEqual(nullJobAfterRerun.rows, nullJobBeforeRerun.rows);
+    const nullJobDraftIndex = await pool.query(`
+      SELECT indexdef FROM pg_indexes
+      WHERE schemaname = current_schema() AND indexname = 'ux_content_post_revisions_draft_audit'
+    `);
+    assert.match(nullJobDraftIndex.rows[0].indexdef, /CREATE UNIQUE INDEX/i);
+
     const adminForeignKeys = await pool.query(`
       SELECT tc.table_name
       FROM information_schema.table_constraints tc

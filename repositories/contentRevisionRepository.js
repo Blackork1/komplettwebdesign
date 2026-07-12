@@ -100,7 +100,9 @@ export function createContentRevisionRepository(db = pool) {
     async updateDraftRevision({ revisionId, snapshot, expectedVersion }) {
       const { rows } = await db.query(`
         UPDATE content_post_revisions
-        SET snapshot_json = $2::jsonb, revision_version = revision_version + 1
+        SET snapshot_json = $2::jsonb,
+            revision_version = revision_version + 1,
+            updated_at = NOW()
         WHERE id = $1 AND status = 'draft' AND revision_version = $3
         RETURNING *
       `, [revisionId, JSON.stringify(snapshot), expectedVersion]);
@@ -156,7 +158,8 @@ export function createContentRevisionRepository(db = pool) {
         }
         const { rows: approvedRevisions } = await client.query(`
           UPDATE content_post_revisions
-          SET status = 'approved', admin_id = $2, admin_username = $3, approved_at = NOW()
+          SET status = 'approved', admin_id = $2, admin_username = $3,
+              approved_at = NOW(), updated_at = NOW()
           WHERE id = $1 AND status = 'draft' AND revision_version = $4
           RETURNING id
         `, [revisionId, admin.id, admin.username, expectedVersion]);
