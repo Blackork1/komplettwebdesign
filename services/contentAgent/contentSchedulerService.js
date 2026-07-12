@@ -15,30 +15,42 @@ function scheduleTime(value) {
   return { hour, minute, normalized };
 }
 
-function firstValidScheduledMinute(local, hour, minute) {
+function firstValidScheduledDateTime(localDate, timezone, hour, minute) {
+  const date = DateTime.fromISO(String(localDate), { zone: timezone });
+  if (!date.isValid || date.toISODate() !== localDate) {
+    throw new TypeError('Ungültiges lokales Veröffentlichungsdatum.');
+  }
   const requestedMinute = hour * 60 + minute;
   for (let minuteOfDay = requestedMinute; minuteOfDay < 24 * 60; minuteOfDay += 1) {
     const candidateHour = Math.floor(minuteOfDay / 60);
     const candidateMinute = minuteOfDay % 60;
     const candidate = DateTime.fromObject({
-      year: local.year,
-      month: local.month,
-      day: local.day,
+      year: date.year,
+      month: date.month,
+      day: date.day,
       hour: candidateHour,
       minute: candidateMinute
-    }, { zone: local.zoneName });
+    }, { zone: timezone });
     if (
       candidate.isValid
-      && candidate.year === local.year
-      && candidate.month === local.month
-      && candidate.day === local.day
+      && candidate.year === date.year
+      && candidate.month === date.month
+      && candidate.day === date.day
       && candidate.hour === candidateHour
       && candidate.minute === candidateMinute
     ) {
-      return minuteOfDay;
+      return candidate;
     }
   }
-  return null;
+  throw new TypeError('Für den Veröffentlichungstag existiert keine gültige lokale Uhrzeit.');
+}
+
+function generationLeadHours(value) {
+  const normalized = Number(value);
+  if (!Number.isInteger(normalized) || normalized < 1 || normalized > 48) {
+    throw new TypeError('Der Generierungsvorlauf muss zwischen 1 und 48 Stunden liegen.');
+  }
+  return normalized;
 }
 
 export function getLocalScheduleContext({ now = new Date(), timezone }) {
@@ -55,33 +67,55 @@ export function buildScheduledJobIdentity({ localDate, localTime, timezone }) {
   return `weekly:${localDate}:${localTime}:${timezone}`;
 }
 
-export function findDueScheduleSlot({ settings, now = new Date(), graceMinutes = 5 }) {
-  if (settings?.agent_enabled !== true) return null;
-  const local = localDateTime(now, settings.timezone);
-  if (!Array.isArray(settings.schedule_weekdays) || !settings.schedule_weekdays.includes(local.weekday)) {
-    return null;
-  }
-
+export function buildPublicationSlot({ settings, localDate }) {
   const { hour, minute, normalized } = scheduleTime(settings.schedule_time);
-  const scheduledMinute = firstValidScheduledMinute(local, hour, minute);
-  const currentMinute = local.hour * 60 + local.minute;
-  const age = scheduledMinute === null ? Number.POSITIVE_INFINITY : currentMinute - scheduledMinute;
-  const normalizedGrace = Number(graceMinutes);
-  if (!Number.isFinite(normalizedGrace) || normalizedGrace <= 0 || age < 0 || age >= normalizedGrace) {
-    return null;
-  }
-
-  const localDate = local.toISODate();
-  return {
+  const leadHours = generationLeadHours(settings.generation_lead_hours);
+  const publication = firstValidScheduledDateTime(
     localDate,
-    localTime: normalized,
-    timezone: settings.timezone,
+    settings.timezone,
+    hour,
+    minute
+  );
+  return {
     key: buildScheduledJobIdentity({
       localDate,
       localTime: normalized,
       timezone: settings.timezone
-    })
+    }),
+    publicationAt: publication.toUTC().toISO(),
+    generationAt: publication.minus({ hours: leadHours }).toUTC().toISO(),
+    localDate,
+    localTime: normalized,
+    timezone: settings.timezone
   };
+}
+
+export function findDueGenerationSlot({ settings, now = new Date() }) {
+  if (settings?.agent_enabled !== true) return null;
+  if (!Array.isArray(settings.schedule_weekdays) || settings.schedule_weekdays.length === 0) {
+    return null;
+  }
+
+  const local = localDateTime(now, settings.timezone);
+  const leadHours = generationLeadHours(settings.generation_lead_hours);
+  const nowMillis = local.toMillis();
+  const firstCandidate = local.startOf('day').minus({ days: 7 });
+  const futureDays = Math.ceil(leadHours / 24) + 1;
+  let latest = null;
+  let latestGenerationMillis = Number.NEGATIVE_INFINITY;
+
+  for (let offset = 0; offset <= 7 + futureDays; offset += 1) {
+    const publicationDate = firstCandidate.plus({ days: offset });
+    if (!settings.schedule_weekdays.includes(publicationDate.weekday)) continue;
+    const slot = buildPublicationSlot({ settings, localDate: publicationDate.toISODate() });
+    const generationMillis = Date.parse(slot.generationAt);
+    if (generationMillis <= nowMillis && generationMillis > latestGenerationMillis) {
+      latest = slot;
+      latestGenerationMillis = generationMillis;
+    }
+  }
+
+  return latest;
 }
 
 export async function runContentSchedulerTick({
@@ -94,7 +128,7 @@ export async function runContentSchedulerTick({
   let slot = null;
   try {
     const settings = await getSettings();
-    slot = findDueScheduleSlot({ settings, now: tickAt });
+    slot = findDueGenerationSlot({ settings, now: tickAt });
     await updateSchedulerState({
       lastSchedulerTickAt: tickAt,
       lastScheduledSlot: slot?.key || null,
@@ -103,8 +137,15 @@ export async function runContentSchedulerTick({
     if (!slot) return null;
     return await enqueueJob({
       jobType: 'generate_weekly_draft',
-      idempotencyKey: slot.key,
-      payload: { source: 'weekly-schedule', schedule_slot: slot.key },
+      idempotencyKey: `generate:${slot.key}`,
+      payload: {
+        source: 'weekly-schedule',
+        schedule_slot: slot.key,
+        publication_at: slot.publicationAt,
+        publication_local_date: slot.localDate,
+        publication_local_time: slot.localTime,
+        publication_timezone: slot.timezone
+      },
       maxAttempts: settings.maximum_attempts
     });
   } catch (error) {

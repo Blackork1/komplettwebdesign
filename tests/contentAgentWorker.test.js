@@ -14,7 +14,6 @@ import {
   createProductionJobHandler,
   createProductionRuntime,
   createShutdownController,
-  createWeeklyScheduler,
   loadProductionModules,
   startContentWorker
 } from '../scripts/contentWorker.js';
@@ -457,49 +456,6 @@ test('berlinDateKey verwendet das konfigurierte Ortsdatum statt Server-UTC', () 
 
   assert.equal(berlinDateKey(instant, 'Europe/Berlin'), '2026-01-05');
   assert.equal(berlinDateKey(instant, 'UTC'), '2026-01-04');
-});
-
-test('der Wochenplan enqueued idempotent genau den Berliner Wochen-Draft', async () => {
-  const scheduled = [];
-  const enqueued = [];
-  const scheduler = createWeeklyScheduler({
-    enabled: true,
-    schedule: '0 9 * * 1',
-    timezone: 'Europe/Berlin',
-    maxAttempts: 4,
-    now: () => new Date('2026-01-04T23:30:00.000Z'),
-    cronClient: {
-      schedule(expression, callback, options) {
-        scheduled.push({ expression, callback, options });
-        return { stop() { scheduled.push({ stopped: true }); } };
-      }
-    },
-    async enqueueJob(input) { enqueued.push(input); }
-  });
-
-  assert.equal(scheduled.length, 1);
-  assert.deepEqual(scheduled[0].options, { timezone: 'Europe/Berlin' });
-  await scheduled[0].callback();
-  assert.deepEqual(enqueued, [{
-    jobType: 'generate_weekly_draft',
-    idempotencyKey: 'weekly-draft:2026-01-05',
-    payload: { source: 'weekly-schedule' },
-    maxAttempts: 4
-  }]);
-  scheduler.stop();
-  assert.equal(scheduled.at(-1).stopped, true);
-});
-
-test('der Wochenplan startet bei deaktiviertem Worker nicht', () => {
-  let scheduleCalls = 0;
-  const scheduler = createWeeklyScheduler({
-    enabled: false,
-    cronClient: { schedule() { scheduleCalls += 1; } },
-    enqueueJob: async () => {}
-  });
-
-  assert.equal(scheduler, null);
-  assert.equal(scheduleCalls, 0);
 });
 
 test('Shutdown schließt den Pool nach vollständig geleertem Worker sofort und idempotent', async () => {
@@ -1400,11 +1356,9 @@ test('das Dry-Run-Skript benötigt keine DB-, OpenAI- oder Cloudinary-Zugangsdat
 });
 
 test('der deaktivierte Entrypoint startet weder Scheduler noch Datenbankzugriff', async () => {
-  let cronCalls = 0;
   let databaseCalls = 0;
   const result = await startContentWorker({
     env: {},
-    cronClient: { schedule() { cronCalls += 1; } },
     database: {
       query() { databaseCalls += 1; },
       connect() { databaseCalls += 1; },
@@ -1415,7 +1369,6 @@ test('der deaktivierte Entrypoint startet weder Scheduler noch Datenbankzugriff'
   });
 
   assert.equal(result.enabled, false);
-  assert.equal(cronCalls, 0);
   assert.equal(databaseCalls, 0);
 });
 

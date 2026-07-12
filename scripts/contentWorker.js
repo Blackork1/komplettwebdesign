@@ -76,35 +76,6 @@ export function berlinDateKey(date = new Date(), timezone = 'Europe/Berlin') {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-export function createWeeklyScheduler({
-  enabled,
-  schedule = '0 9 * * 1',
-  timezone = 'Europe/Berlin',
-  maxAttempts = 3,
-  now = () => new Date(),
-  cronClient,
-  enqueueJob,
-  logger = console
-} = {}) {
-  if (enabled !== true) return null;
-  required(cronClient?.schedule, 'cronClient.schedule');
-  required(enqueueJob, 'enqueueJob');
-
-  return cronClient.schedule(schedule, async () => {
-    try {
-      const date = berlinDateKey(now(), timezone);
-      await enqueueJob({
-        jobType: 'generate_weekly_draft',
-        idempotencyKey: `weekly-draft:${date}`,
-        payload: { source: 'weekly-schedule' },
-        maxAttempts
-      });
-    } catch {
-      logger.error?.('Content-Worker konnte den Wochen-Draft nicht einplanen.');
-    }
-  }, { timezone });
-}
-
 export function createProductionJobHandler({
   timezone = 'Europe/Berlin',
   now = () => new Date(),
@@ -620,7 +591,6 @@ export async function startContentWorker({
   env = process.env,
   database,
   logger = console,
-  cronClient,
   processTarget = process,
   modules
 } = {}) {

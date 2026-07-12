@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import {
   buildScheduledJobIdentity,
   createDynamicContentScheduler,
-  findDueScheduleSlot,
   getLocalScheduleContext,
   runContentSchedulerTick
 } from '../services/contentAgent/contentSchedulerService.js';
@@ -14,21 +13,11 @@ const berlinSettings = Object.freeze({
   schedule_weekdays: [1, 4],
   schedule_time: '18:00',
   timezone: 'Europe/Berlin',
+  generation_lead_hours: 4,
   maximum_attempts: 3
 });
 
-test('Montag und Donnerstag 18 Uhr erzeugen kanonische Berliner Slots', () => {
-  assert.equal(
-    findDueScheduleSlot({
-      settings: berlinSettings,
-      now: new Date('2026-07-13T16:00:20.000Z')
-    }).key,
-    'weekly:2026-07-13:18:00:Europe/Berlin'
-  );
-  assert.equal(findDueScheduleSlot({
-    settings: berlinSettings,
-    now: new Date('2026-07-14T16:00:20.000Z')
-  }), null);
+test('Veröffentlichungsslots erhalten eine kanonische Identität', () => {
   assert.equal(
     buildScheduledJobIdentity({
       localDate: '2026-07-16',
@@ -37,52 +26,6 @@ test('Montag und Donnerstag 18 Uhr erzeugen kanonische Berliner Slots', () => {
     }),
     'weekly:2026-07-16:18:00:Europe/Berlin'
   );
-});
-
-test('das fünfminütige Nachholfenster schließt Minute fünf aus', () => {
-  assert.ok(findDueScheduleSlot({
-    settings: berlinSettings,
-    now: new Date('2026-07-13T16:04:59.999Z')
-  }));
-  assert.equal(findDueScheduleSlot({
-    settings: berlinSettings,
-    now: new Date('2026-07-13T16:05:00.000Z')
-  }), null);
-});
-
-test('eine nicht existente Frühlingszeit läuft am nächsten gültigen Zeitpunkt desselben Tages', () => {
-  const settings = {
-    ...berlinSettings,
-    schedule_weekdays: [7],
-    schedule_time: '02:30'
-  };
-
-  const slot = findDueScheduleSlot({
-    settings,
-    now: new Date('2026-03-29T01:00:20.000Z')
-  });
-
-  assert.equal(slot.key, 'weekly:2026-03-29:02:30:Europe/Berlin');
-  assert.equal(slot.localTime, '02:30');
-});
-
-test('beide Vorkommen einer doppelten Herbstzeit ergeben denselben idempotenten Slot', () => {
-  const settings = {
-    ...berlinSettings,
-    schedule_weekdays: [7],
-    schedule_time: '02:30'
-  };
-  const first = findDueScheduleSlot({
-    settings,
-    now: new Date('2026-10-25T00:30:20.000Z')
-  });
-  const second = findDueScheduleSlot({
-    settings,
-    now: new Date('2026-10-25T01:30:20.000Z')
-  });
-
-  assert.equal(first.key, 'weekly:2026-10-25:02:30:Europe/Berlin');
-  assert.equal(second.key, first.key);
 });
 
 test('der lokale Kontext validiert die IANA-Zeitzone und liefert den UTC-Minutenanfang', () => {
@@ -121,25 +64,46 @@ test('ein Scheduler-Tick respektiert die operative Pause und aktualisiert trotzd
   }]);
 });
 
-test('ein fälliger Scheduler-Tick enqueued mit kanonischem Idempotenzschlüssel', async () => {
+test('ein fälliger Scheduler-Tick enqueued den vollständigen Veröffentlichungsslot', async () => {
   const enqueued = [];
   const result = await runContentSchedulerTick({
     getSettings: async () => berlinSettings,
     enqueueJob: async (input) => { enqueued.push(input); return { id: 41, ...input }; },
     updateSchedulerState: async () => {},
-    now: () => new Date('2026-07-13T16:02:20.000Z')
+    now: () => new Date('2026-07-13T12:02:20.000Z')
   });
 
   assert.equal(result.id, 41);
   assert.deepEqual(enqueued, [{
     jobType: 'generate_weekly_draft',
-    idempotencyKey: 'weekly:2026-07-13:18:00:Europe/Berlin',
+    idempotencyKey: 'generate:weekly:2026-07-13:18:00:Europe/Berlin',
     payload: {
       source: 'weekly-schedule',
-      schedule_slot: 'weekly:2026-07-13:18:00:Europe/Berlin'
+      schedule_slot: 'weekly:2026-07-13:18:00:Europe/Berlin',
+      publication_at: '2026-07-13T16:00:00.000Z',
+      publication_local_date: '2026-07-13',
+      publication_local_time: '18:00',
+      publication_timezone: 'Europe/Berlin'
     },
     maxAttempts: 3
   }]);
+});
+
+test('wiederholte Ticks verwenden denselben Idempotenzschlüssel', async () => {
+  const enqueued = [];
+  const dependencies = {
+    getSettings: async () => berlinSettings,
+    enqueueJob: async (input) => { enqueued.push(input); return input; },
+    updateSchedulerState: async () => {},
+    now: () => new Date('2026-07-13T12:02:20.000Z')
+  };
+
+  await runContentSchedulerTick(dependencies);
+  await runContentSchedulerTick(dependencies);
+
+  assert.equal(enqueued.length, 2);
+  assert.equal(enqueued[0].idempotencyKey, enqueued[1].idempotencyKey);
+  assert.equal(enqueued[0].idempotencyKey, 'generate:weekly:2026-07-13:18:00:Europe/Berlin');
 });
 
 test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustand und wirft weiter', async () => {
@@ -149,7 +113,7 @@ test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustan
     getSettings: async () => berlinSettings,
     enqueueJob: async () => { throw failure; },
     updateSchedulerState: async (state) => { states.push(state); },
-    now: () => new Date('2026-07-13T16:00:20.000Z')
+    now: () => new Date('2026-07-13T12:00:20.000Z')
   }), failure);
 
   assert.equal(states.length, 2);

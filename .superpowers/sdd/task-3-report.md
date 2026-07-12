@@ -1,115 +1,101 @@
-# Task 3: Dynamischer Scheduler und unveränderliche Job-Snapshots
+# Task 3: Veröffentlichungsslots und vorgezogene Generierung
 
-## Ergebnis
+## Umfang
 
-Umgesetzt sind ein Luxon-basierter dynamischer Scheduler, kanonische Wochen-Slots, DST-sichere Ausführung, ein fünfminütiges Nachholfenster, atomare operative Pausen für Scheduler-Inserts und Queue-Claims sowie unveränderliche Runtime-Snapshots pro Job. Provider- und Pipelineabhängigkeiten entstehen pro Job aus dem persistierten Snapshot. Budgetmonate und Advisory Locks verwenden die Snapshot-Zeitzone beziehungsweise bei Retries den bereits gespeicherten Reservierungsmonat.
-
-## TDD-Nachweise
-
-### RED
-
-1. `node --test tests/contentAgentScheduler.test.js tests/contentAgentRunSnapshot.test.js`
-   - 0 bestanden, 2 fehlgeschlagen.
-   - Erwartete Ursachen: `contentSchedulerService.js` fehlte; `createRun` übergab und speicherte keinen Runtime-Snapshot.
-2. `node --test tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js tests/contentAgentCostService.test.js`
-   - 39 bestanden, 3 fehlgeschlagen.
-   - Erwartete Ursachen: `monthKey` und `updateContentSchedulerState` fehlten; der Produktionshandler übergab keinen Snapshot an `createRun`.
-3. `node --test tests/contentAgentCostService.test.js`
-   - 13 bestanden, 1 fehlgeschlagen.
-   - Erwartete Ursache: Ein Retry im August sperrte fälschlich August statt des persistierten Reservierungsmonats Juli.
-4. `node --test tests/contentAgentScheduler.test.js`
-   - 8 bestanden, 1 fehlgeschlagen.
-   - Erwartete Ursache: Ein fehlgeschlagener Enqueue persistierte noch keinen Schedulerfehler.
-5. `node --test tests/contentAgentWorker.test.js`
-   - 40 bestanden, 1 fehlgeschlagen.
-   - Erwartete Ursache: `worker.start()` wartete den ersten Heartbeat noch nicht ab.
-6. `node --test tests/contentAgentJobRepository.test.js`
-   - 20 bestanden, 1 fehlgeschlagen.
-   - Erwartete Ursache: Der geplante Insert prüfte die operative Pause noch nicht innerhalb desselben SQL-Statements.
-
-### GREEN
-
-1. Neue Scheduler- und Snapshot-Tests: 9/9 bestanden.
-2. Worker-, Repository- und Kostenintegration: 74/74 bestanden.
-3. Finale fokussierte Task-3-Suite:
-   - `node --test tests/contentAgentScheduler.test.js tests/contentAgentRunSnapshot.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js tests/contentAgentCostService.test.js`
-   - 86/86 bestanden, 0 fehlgeschlagen.
-4. Gesamtsuite:
-   - `OPENAI_API_KEY=test-key npm test`
-   - 708 bestanden, 0 fehlgeschlagen, 1 übersprungen.
-   - Übersprungen wurde ausschließlich die vorhandene echte PostgreSQL-Integration, weil keine Testdatenbank verfügbar war.
-5. Syntax und Diff:
-   - `node --check` für alle sechs geänderten Produktionsdateien erfolgreich.
-   - `git diff --check` erfolgreich.
-
-## Geänderte Dateien
+Bearbeitet wurden ausschließlich die in Task 3 vorgesehenen Produktiv- und Testdateien:
 
 - `services/contentAgent/contentSchedulerService.js`
-- `repositories/contentJobRepository.js`
-- `repositories/contentRunRepository.js`
-- `services/contentAgent/workerService.js`
-- `services/contentAgent/contentCostService.js`
 - `scripts/contentWorker.js`
+- `tests/contentAgentScheduledSlots.test.js`
 - `tests/contentAgentScheduler.test.js`
-- `tests/contentAgentRunSnapshot.test.js`
 - `tests/contentAgentWorker.test.js`
-- `tests/contentAgentJobRepository.test.js`
-- `tests/contentAgentCostService.test.js`
-- `.superpowers/sdd/task-3-report.md`
 
-## Selbstreview
+## RED
 
-- `content_jobs.idempotency_key` bleibt die Duplikatsicherung; geplante Inserts behalten `ON CONFLICT (idempotency_key)`.
-- Der Claim behält `FOR UPDATE SKIP LOCKED` und sämtliche Lease-Fences.
-- Die operative Pause wird im Scheduler-Tick berücksichtigt und zusätzlich atomar im geplanten Insert sowie in der Claim-Kandidatenauswahl geprüft.
-- `CONTENT_AGENT_ENABLED=false` beendet den Entrypoint weiterhin vor Datenbank- oder Schedulerzugriff.
-- Der Heartbeat läuft unabhängig von der operativen Pause; der erste Heartbeat wird vor dem sofortigen Schedulerstart abgewartet.
-- `createRun` verändert `runtime_snapshot_json` beim Konflikt nicht. Der Handler verwendet für Retry-Pipeline und Provider ausschließlich den zurückgegebenen ersten Snapshot.
-- Persistierte kostenpflichtige Stufen bleiben idempotent. Ein Retry sperrt den gespeicherten Reservierungsmonat und berechnet ihn nicht neu.
-- Frühjahrslücke, doppelte Herbstzeit, kanonischer Schlüssel und Nachholfenster sind abgedeckt.
-- Der bestehende Cron-Helfer bleibt für Kompatibilität exportiert; der Produktionsstart verwendet den dynamischen Datenbank-Scheduler. Dry-Run- und Worker-Verträge bleiben grün.
+Zuerst wurden Tests für folgende fachliche Verträge ergänzt beziehungsweise umgestellt:
 
-## Sorgen
+- Veröffentlichung um 18:00 Uhr bei vier Stunden Generierungsvorlauf;
+- Vorlauf über den lokalen Tageswechsel;
+- erste gültige lokale Minute in der Sommerzeitlücke;
+- stabiler Slot und früherer realer Zeitpunkt in der doppelten Herbststunde;
+- Nachholung nach einem Worker-Neustart, auch bei bereits vergangener Veröffentlichung;
+- gleicher Idempotenzschlüssel bei wiederholten Scheduler-Ticks;
+- vollständiger Queuepayload des Veröffentlichungsslots.
 
-- `npm test` ohne `OPENAI_API_KEY` scheitert bereits in `tests/securityRegression.test.js`, weil ein bestehender globaler OpenAI-Client beim Import einen Schlüssel verlangt. Mit `OPENAI_API_KEY=test-key` ist die Gesamtsuite grün; diese taskfremde Datei wurde nicht geändert.
-- Die echte PostgreSQL-Integration war in dieser Umgebung übersprungen. SQL-Verträge sind durch fokussierte Query-Tests abgesichert, aber ein Lauf gegen eine reale Testdatenbank bleibt als zusätzliche Integrationsprüfung sinnvoll.
+Ausgeführter Befehl:
 
-## Commit
+```bash
+node --test tests/contentAgentScheduledSlots.test.js tests/contentAgentScheduler.test.js tests/contentAgentWorker.test.js
+```
 
-- Branch: `codex/content-agent-admin-dashboard`
-- Betreff: `feat: schedule content jobs from database settings`
-- Der endgültige Commit-Hash steht im Task-Handoff, da ein Commit seinen eigenen Hash nicht in seinem Inhalt referenzieren kann.
+Beobachtetes Ergebnis vor der Implementierung:
 
-## Review-Fix: Vollständiger technischer Job-Snapshot
+- Exitcode: `1`
+- 55 Tests bestanden.
+- 4 Tests schlugen fehl.
+- Der neue Test konnte die noch nicht vorhandenen Exporte `buildPublicationSlot` und `findDueGenerationSlot` nicht importieren.
+- Die umgestellten Scheduler-Tests erhielten keinen Job um 14:00 Uhr, weil der vorhandene Scheduler 18:00 Uhr weiterhin als Generierungszeit behandelte.
+- Damit waren die Fehler erwartungsgemäß auf die fehlende Task-3-Funktionalität begrenzt.
 
-### Befund
+## GREEN
 
-`jobConfigFromSnapshot` ergänzte den persistierten Snapshot bisher mit der jeweils aktuellen technischen Konfiguration. Nach einem Worker-Neustart konnten dadurch neue Werte für Themenanzahl, Revisionen, Reservierungsbeträge, Tokenpreise und Bildkosten in einen Retry gelangen.
+Implementiert wurden:
 
-### RED
+- `buildPublicationSlot({ settings, localDate })` mit Luxon;
+- `findDueGenerationSlot({ settings, now })` für den zuletzt fälligen Slot;
+- Berechnung von `generationAt` als realer Veröffentlichungszeitpunkt minus `generation_lead_hours`;
+- stabile Slot-Identität aus lokalem Datum, lokaler Wunschzeit und IANA-Zeitzone;
+- DST-Lückenbehandlung über die erste gültige lokale Minute ab der Wunschzeit;
+- eindeutige Behandlung der doppelten Herbststunde über den früheren realen Zeitpunkt und denselben Slot-Schlüssel;
+- Catch-up innerhalb des letzten Wochenzyklus sowie Erkennung vorgezogener Slots bis zu 48 Stunden im Voraus;
+- vollständiger Queuepayload mit Veröffentlichungszeitpunkt und lokaler Darstellung;
+- Idempotenzschlüssel `generate:<slot-id>`;
+- Beibehaltung des dynamischen Minutentakts;
+- Entfernung des ungenutzten, widersprüchlichen Legacy-Cron-Wochenplans aus dem Worker.
 
-- Befehl: `node --test tests/contentAgentRunSnapshot.test.js tests/contentAgentWorker.test.js tests/contentAgentCostService.test.js tests/contentAgentRuntimeConfig.test.js`
-- Ergebnis: 61 bestanden, 1 fehlgeschlagen.
-- Erwartetes Rot: `die Produktionsruntime verwendet nach Neustart ausschließlich die vollständige erste Jobconfig`.
-- Der zweite Lauf verwendete erwartungsgemäß fälschlich die geänderten Werte für `maxTopicCandidates`, `maxRevisions`, beide Reservierungsbeträge, alle vier Tokenpreise und `imageCostEur`.
+Erneut ausgeführter fokussierter Befehl:
 
-### GREEN
+```bash
+node --test tests/contentAgentScheduledSlots.test.js tests/contentAgentScheduler.test.js tests/contentAgentWorker.test.js
+```
 
-- Derselbe Review-Befehl: 62/62 bestanden, 0 fehlgeschlagen.
-- Relevante fokussierte Task-3-Suite:
-  - `node --test tests/contentAgentScheduler.test.js tests/contentAgentRunSnapshot.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js tests/contentAgentCostService.test.js tests/contentAgentRuntimeConfig.test.js`
-  - 92/92 bestanden, 0 fehlgeschlagen.
-- Gesamtsuite: `OPENAI_API_KEY=test-key npm test` mit 709 bestanden, 0 fehlgeschlagen und 1 vorhandenem PostgreSQL-Skip.
-- `git diff --check`: erfolgreich.
+Ergebnis:
 
-### Änderung und Selbstreview
+- Exitcode: `0`
+- 64 Tests bestanden.
+- 0 Tests fehlgeschlagen.
 
-- `createContentAgentJobSnapshot` speichert nun zusätzlich `maxTopicCandidates`, `maxRevisions`, beide Reservierungsbeträge, alle vier Tokenpreise und `imageCostEur`.
-- Modelle, `maxAttempts`, `monthlyCostLimitEur`, Zeitzone und die neuen Werte werden im Regressionstest einzeln geprüft.
-- `jobConfigFromSnapshot` rekonstruiert die Pipelinekonfiguration aus dem persistierten Snapshot, nicht mehr durch Überschreiben einer aktuellen `.env`-Konfiguration.
-- Nur die aktuellen absoluten Kill-Gates `enabled` und `autoPublishEnabled` bleiben separat wirksam; `autoPublishEnabled` kann den gespeicherten Effektivzustand nur weiter einschränken.
+## Regressionstest
 
-### Fix-Commit
+Der erste vollständige Lauf mit `npm test` ergab 964 bestandene, einen übersprungenen und einen fehlgeschlagenen Test. Der einzelne Fehler entstand taskfremd beim Import von `util/openai.js`, weil in der lokalen Testumgebung kein `OPENAI_API_KEY` gesetzt war.
 
-- Betreff: `fix: preserve complete content job runtime snapshots`
-- Der endgültige Hash steht im Task-Handoff.
+Der vollständige Lauf wurde deshalb mit einem reinen Dummy-Testwert wiederholt:
+
+```bash
+OPENAI_API_KEY=test npm test
+```
+
+Ergebnis:
+
+- Exitcode: `0`
+- 965 Tests bestanden.
+- 0 Tests fehlgeschlagen.
+- 1 Test wurde übersprungen.
+
+Es wurden dabei keine externen OpenAI-Aufrufe ausgeführt.
+
+## Selbstprüfung
+
+- Die geforderten Interfaces und exakt benannten Payloadfelder sind vorhanden.
+- Die Vorlaufgrenzen von 1 bis 48 Stunden werden defensiv geprüft.
+- Das lokale Wunschdatum und die lokale Wunschzeit bleiben im Slot erhalten, auch wenn eine DST-Lücke den realen Veröffentlichungszeitpunkt verschiebt.
+- Ein bereits vergangener `publicationAt` wird unverändert an den Generierungsjob weitergereicht.
+- Wiederholte Ticks erzeugen denselben Queue-Idempotenzschlüssel; die vorhandene Queue-Deduplizierung verhindert doppelte Jobs.
+- Der dynamische 60-Sekunden-Timer wurde nicht entfernt oder verändert.
+- Es gibt keine verbliebenen Verwendungen von `createWeeklyScheduler`, `findDueScheduleSlot` oder `cronClient` im Task-3-Pfad.
+- `git diff --check` meldet keine Formatierungsfehler.
+- Sämtliche neuen deutschsprachigen Texte verwenden korrekte Umlaute und deutsche Grammatik.
+
+## Bedenken
+
+Keine blockierenden Bedenken. `findDueGenerationSlot` liefert entsprechend seiner singulären Schnittstelle den zuletzt fälligen Slot aus dem aktuellen Wochenzyklus; die Queue-Idempotenz übernimmt die Genau-einmal-Anlage bei wiederholten Ticks und Neustarts.
