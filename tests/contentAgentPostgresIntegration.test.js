@@ -151,7 +151,7 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
 }, async () => {
   const pool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
   try {
-    await pool.query('DROP TABLE IF EXISTS content_provider_state, content_post_revisions, content_post_audits, content_publish_events, content_agent_setting_revisions, content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, admins, users CASCADE');
+    await pool.query('DROP TABLE IF EXISTS content_notification_deliveries, content_provider_state, content_post_revisions, content_post_audits, content_publish_events, content_agent_setting_revisions, content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, admins, users CASCADE');
     await pool.query(`
       CREATE TABLE users (id SERIAL PRIMARY KEY);
       CREATE TABLE admins (
@@ -188,6 +188,84 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal(settings.rows[0].agent_enabled, false);
     assert.equal(settings.rows[0].operating_mode, 'review');
     assert.deepEqual(settings.rows[0].schedule_weekdays, [1, 4]);
+    assert.equal(settings.rows[0].generation_lead_hours, 4);
+    assert.equal(settings.rows[0].admin_notification_email, 'kontakt@komplettwebdesign.de');
+    assert.equal(settings.rows[0].newsletter_blog_notifications_enabled, false);
+
+    const scheduledColumns = await pool.query(`
+      SELECT review_version, approved_review_version, approved_at,
+             approved_by_admin_id, publication_version
+      FROM posts WHERE slug = 'alter-entwurf'
+    `);
+    assert.deepEqual(scheduledColumns.rows[0], {
+      review_version: 1,
+      approved_review_version: null,
+      approved_at: null,
+      approved_by_admin_id: null,
+      publication_version: 1
+    });
+
+    await assert.rejects(
+      pool.query('UPDATE content_agent_settings SET generation_lead_hours = 0 WHERE id = 1'),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_agent_settings_generation_lead_hours_valid'
+    );
+    await assert.rejects(
+      pool.query('UPDATE content_agent_settings SET newsletter_blog_notifications_enabled = TRUE WHERE id = 1'),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_agent_settings_newsletter_gate_valid'
+    );
+
+    const reviewPost = await pool.query("SELECT id FROM posts WHERE slug = 'alter-entwurf'");
+    const reviewAdmin = await pool.query("SELECT id FROM admins WHERE username = 'migration-admin'");
+    await pool.query(`
+      UPDATE posts
+      SET workflow_status = 'approved_scheduled',
+          scheduled_at = '2026-07-13T16:00:00Z',
+          approved_review_version = review_version,
+          approved_at = NOW(),
+          approved_by_admin_id = $2
+      WHERE id = $1
+    `, [reviewPost.rows[0].id, reviewAdmin.rows[0].id]);
+    await assert.rejects(
+      pool.query('UPDATE posts SET scheduled_at = NULL WHERE id = $1', [reviewPost.rows[0].id]),
+      (error) => error.code === '23514'
+        && error.constraint === 'posts_publication_workflow_consistent'
+    );
+    await pool.query(`
+      UPDATE posts
+      SET workflow_status = 'draft',
+          scheduled_at = NULL,
+          approved_review_version = NULL,
+          approved_at = NULL,
+          approved_by_admin_id = NULL
+      WHERE id = $1
+    `, [reviewPost.rows[0].id]);
+
+    const delivery = await pool.query(`
+      INSERT INTO content_notification_deliveries (
+        notification_type, post_id, recipient_email, idempotency_key, payload_json
+      ) VALUES ('admin_review', $1, 'kontakt@komplettwebdesign.de', 'admin-review:test:1', '{}'::jsonb)
+      RETURNING id
+    `, [reviewPost.rows[0].id]);
+    assert.ok(delivery.rows[0].id);
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_email, idempotency_key, payload_json
+        ) VALUES ('ungültig', $1, 'kontakt@komplettwebdesign.de', 'invalid-type:test:1', '{}'::jsonb)
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_notification_deliveries_type_valid'
+    );
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_email, idempotency_key, payload_json
+        ) VALUES ('admin_review', $1, 'kontakt@komplettwebdesign.de', 'admin-review:test:1', '{}'::jsonb)
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23505'
+    );
 
     const preexistingIndexes = await pool.query(`
       SELECT indexname FROM pg_indexes
