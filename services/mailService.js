@@ -153,6 +153,88 @@ export async function sendContentAgentReviewMail({
     });
 }
 
+function canonicalPublicOrigin() {
+    for (const candidate of [
+        process.env.CANONICAL_BASE_URL,
+        process.env.BASE_URL,
+        "https://komplettwebdesign.de"
+    ]) {
+        try {
+            const url = new URL(String(candidate || ""));
+            if (url.protocol === "https:" && !url.username && !url.password) return url.origin;
+        } catch {
+            // Die nächste kanonische Quelle wird geprüft.
+        }
+    }
+    return "https://komplettwebdesign.de";
+}
+
+function plainMailText(value = "") {
+    return String(value ?? "")
+        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ")
+        .replace(/\r\n?/g, "\n")
+        .trim();
+}
+
+export async function sendPublishedBlogNewsletterMail({
+    to,
+    unsubscribeToken,
+    post = {}
+} = {}, transport = transporter) {
+    const token = String(unsubscribeToken || "").trim();
+    const slug = String(post.slug || "").trim();
+    if (!token
+        || token.length > 512
+        || /[\u0000-\u001f\u007f]/.test(token)
+        || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)) {
+        throw new TypeError("Für den Blog-Newsletter fehlen sichere Versanddaten.");
+    }
+    const origin = canonicalPublicOrigin();
+    const articleUrl = `${origin}/blog/${encodeURIComponent(slug)}`;
+    const unsubscribeUrl = `${origin}/newsletter/unsubscribe/${encodeURIComponent(token)}`;
+    const rawTitle = plainMailText(post.title || "Neuer Blogartikel").replace(/\n+/g, " ");
+    const rawDescription = plainMailText(post.shortDescription || "Der neue Artikel ist jetzt verfügbar.");
+    const title = safeHtml(rawTitle);
+    const shortDescription = safeHtml(rawDescription);
+    const imageUrl = secureHttpsUrl(post.imageUrl);
+    const subject = contentMailSubjectTitle(`Neu im Blog: ${rawTitle}`).slice(0, 250);
+    const imageHtml = imageUrl
+        ? `<p style="margin:20px 0;"><img src="${safeHtml(imageUrl)}" alt="${title}" style="display:block;width:100%;max-width:620px;height:auto;border-radius:12px;" /></p>`
+        : "";
+    const bodyHtml = `
+      <p>Ein neuer Beitrag von Komplett Webdesign ist erschienen.</p>
+      <h2 style="margin:20px 0 8px 0;color:#0b2a46;">${title}</h2>
+      <p>${shortDescription}</p>
+      ${imageHtml}
+      <p><a href="${articleUrl}">Artikel im Blog lesen</a></p>
+      <p>Du möchtest keine Blog-Neuigkeiten mehr erhalten? <a href="${unsubscribeUrl}">Newsletter abbestellen</a>.</p>
+    `;
+    const text = [
+        rawTitle,
+        "",
+        rawDescription,
+        "",
+        `Artikel lesen: ${articleUrl}`,
+        `Newsletter abbestellen: ${unsubscribeUrl}`
+    ].join("\n");
+
+    return transport.sendMail({
+        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        to,
+        subject,
+        text,
+        html: renderBrandEmail({
+            locale: "de",
+            subject: safeHtml(subject),
+            headline: "Neu im Blog",
+            preheader: safeHtml(rawDescription.slice(0, 180)),
+            bodyHtml,
+            ctaLabel: "Artikel lesen",
+            ctaUrl: articleUrl
+        })
+    });
+}
+
 function newsletterUnsubscribeUrl(unsubscribeToken = "") {
     const token = String(unsubscribeToken || "").trim();
     if (!token) return "";

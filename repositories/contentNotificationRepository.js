@@ -52,6 +52,18 @@ function boundedAdminReviewPayload(payload, { postId, reviewVersion }) {
   };
 }
 
+function boundedNewsletterPayload(payload, { postId, publicationVersion }) {
+  const source = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+  return {
+    postId,
+    publicationVersion,
+    title: String(source.title ?? '').slice(0, 500),
+    shortDescription: String(source.shortDescription ?? '').slice(0, 1_000),
+    imageUrl: source.imageUrl ? String(source.imageUrl).slice(0, 2_000) : null,
+    slug: String(source.slug ?? '').slice(0, 500)
+  };
+}
+
 export async function createAdminReviewDelivery({
   postId,
   recipientEmail,
@@ -85,6 +97,52 @@ export async function createAdminReviewDelivery({
       RETURNING *
     `,
     [normalizedPostId, normalizedRecipientEmail, idempotencyKey, payloadSnapshot]
+  );
+
+  return rows[0] || null;
+}
+
+export async function createNewsletterArticleDelivery({
+  postId,
+  subscriberId,
+  recipientEmail,
+  publicationVersion,
+  payload,
+  client
+}) {
+  const transactionClient = requiredClient(client);
+  const normalizedPostId = positiveInteger(postId, 'postId');
+  const normalizedSubscriberId = positiveInteger(subscriberId, 'subscriberId');
+  const normalizedPublicationVersion = positiveInteger(publicationVersion, 'publicationVersion');
+  const normalizedRecipientEmail = normalizeRecipientEmail(recipientEmail);
+  const idempotencyKey = `newsletter-delivery:${normalizedPostId}:${normalizedPublicationVersion}:${normalizedSubscriberId}`;
+  const payloadSnapshot = boundedNewsletterPayload(payload, {
+    postId: normalizedPostId,
+    publicationVersion: normalizedPublicationVersion
+  });
+
+  const { rows } = await transactionClient.query(
+    `
+      INSERT INTO content_notification_deliveries (
+        notification_type,
+        post_id,
+        recipient_id,
+        recipient_email,
+        idempotency_key,
+        payload_json
+      )
+      VALUES ('newsletter_article', $1, $2, $3, $4, $5)
+      ON CONFLICT (idempotency_key) DO UPDATE
+      SET idempotency_key = content_notification_deliveries.idempotency_key
+      RETURNING *
+    `,
+    [
+      normalizedPostId,
+      normalizedSubscriberId,
+      normalizedRecipientEmail,
+      idempotencyKey,
+      payloadSnapshot
+    ]
   );
 
   return rows[0] || null;

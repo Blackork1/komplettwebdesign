@@ -51,7 +51,9 @@ function harness({
   approvalSource = 'manual',
   revalidationError = null,
   expireDuringValidation = false,
-  expireOnValidationCall = null
+  expireOnValidationCall = null,
+  newsletterEnabled = false,
+  manualApprovals = null
 } = {}) {
   const calls = [];
   const jobs = new Map();
@@ -111,7 +113,7 @@ function harness({
         }
       }
       : null,
-    approvals: workflowStatus === 'published' && approvalSource === 'manual' ? 1 : 0
+    approvals: manualApprovals ?? (workflowStatus === 'published' && approvalSource === 'manual' ? 1 : 0)
   };
   const client = {
     async query(sql) {
@@ -266,11 +268,19 @@ function harness({
     async incrementManualApprovals(transaction) {
       calls.push(['increment', transaction]);
       state.approvals += 1;
-      return { id: 1, manual_approvals_count: state.approvals };
+      return {
+        id: 1,
+        manual_approvals_count: state.approvals,
+        newsletter_blog_notifications_enabled: newsletterEnabled
+      };
     },
     async getSettings(transaction) {
       calls.push(['settings', transaction]);
-      return { id: 1, manual_approvals_count: state.approvals };
+      return {
+        id: 1,
+        manual_approvals_count: state.approvals,
+        newsletter_blog_notifications_enabled: newsletterEnabled
+      };
     }
   };
   async function enqueuePublicationJob(input, transaction) {
@@ -291,12 +301,17 @@ function harness({
     }
     return jobs.get(key);
   }
+  async function queuePublishedArticleNewsletter(input, transaction) {
+    calls.push(['newsletter', input, transaction]);
+    return { status: 'queued' };
+  }
   return {
     service: createScheduledPublicationService({
       db,
       repository,
       publicationService,
       enqueuePublicationJob,
+      queuePublishedArticleNewsletter,
       now: () => clock.value
     }),
     calls,
@@ -755,6 +770,44 @@ test('Wiederholung nach erfolgreichem Commit zählt dieselbe Freigabe exakt einm
   assert.equal(retry.alreadyPublished, true);
   assert.equal(state.approvals, 1);
   assert.equal(state.event.context_json.publicationVersion, 1);
+});
+
+test('erfolgreiche Publikation enqueued den Newsletter erst nach persistierter Aktivierung und der achten Veröffentlichung', async () => {
+  const locked = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    newsletterEnabled: true,
+    manualApprovals: 6
+  });
+  await locked.service.publishApprovedPost({
+    postId: 3,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    scheduledAt: missedSlot,
+    leaseGuard: async () => true
+  });
+  assert.equal(locked.calls.some((entry) => Array.isArray(entry) && entry[0] === 'newsletter'), false);
+
+  const ready = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    newsletterEnabled: true,
+    manualApprovals: 7
+  });
+  await ready.service.publishApprovedPost({
+    postId: 3,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    scheduledAt: missedSlot,
+    leaseGuard: async () => true
+  });
+  const newsletterCall = ready.calls.find((entry) => Array.isArray(entry) && entry[0] === 'newsletter');
+  assert.equal(newsletterCall[1].postId, 3);
+  assert.equal(newsletterCall[1].publicationVersion, 1);
+  assert.equal(newsletterCall[1].settings.manual_approvals_count, 8);
+  assert.equal(newsletterCall[2] !== undefined, true);
 });
 
 test('fällige Auto-Veröffentlichung nutzt das Auto-Event und erhöht den manuellen Zähler nie', async () => {

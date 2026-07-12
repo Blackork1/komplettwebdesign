@@ -1104,7 +1104,7 @@ test('der Publish-Dispatch verlangt einen funktionsfähigen Lease-Guard', async 
   }
 });
 
-test('Newsletter-Jobtypen sind ohne vorweggenommenen Versand injizierbar und erzeugen keinen Generierungsrun', async () => {
+test('Newsletter-Jobtypen validieren strikte Payloads, verlangen eine Lease und erzeugen keinen Generierungsrun', async () => {
   const calls = [];
   const leaseGuard = async () => true;
   const handler = createProductionJobHandler({
@@ -1117,7 +1117,7 @@ test('Newsletter-Jobtypen sind ohne vorweggenommenen Versand injizierbar und erz
   const first = await handler({
     id: 76,
     job_type: 'send_blog_newsletter',
-    payload_json: { postId: 51 }
+    payload_json: { postId: 51, publicationVersion: 2, cursor: 0 }
   }, { leaseGuard });
   const second = await handler({
     id: 77,
@@ -1128,9 +1128,28 @@ test('Newsletter-Jobtypen sind ohne vorweggenommenen Versand injizierbar und erz
   assert.equal(first.status, 'completed');
   assert.equal(second.status, 'completed');
   assert.deepEqual(calls, [
-    ['newsletter', { postId: 51, leaseGuard }],
+    ['newsletter', { postId: 51, publicationVersion: 2, cursor: 0, leaseGuard }],
     ['delivery', { deliveryId: 10, leaseGuard }]
   ]);
+
+  for (const claim of [
+    { job_type: 'send_blog_newsletter', payload_json: { postId: 51 } },
+    { job_type: 'send_blog_newsletter', payload_json: { postId: 51, publicationVersion: 2, cursor: 0, extra: true } },
+    { job_type: 'send_blog_newsletter_delivery', payload_json: { deliveryId: '10' } }
+  ]) {
+    await assert.rejects(
+      handler({ id: 78, ...claim }, { leaseGuard }),
+      (error) => error.code === 'CONTENT_NEWSLETTER_JOB_PAYLOAD_INVALID' && error.retryable === false
+    );
+  }
+  await assert.rejects(
+    handler({
+      id: 79,
+      job_type: 'send_blog_newsletter_delivery',
+      payload_json: { deliveryId: 10 }
+    }),
+    (error) => error.code === 'CONTENT_JOB_LEASE_REQUIRED' && error.retryable === false
+  );
 });
 
 test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence aus', async () => {
@@ -1428,6 +1447,7 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.runDraftRegenerationJob, 'function');
   assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
   assert.equal(typeof modules.createContentPublicationService, 'function');
+  assert.equal(typeof modules.createBlogNewsletterService, 'function');
   assert.equal(typeof modules.sendAdminReviewNotification, 'function');
   assert.equal(typeof modules.sendContentAgentReviewMail, 'function');
 });
@@ -1457,6 +1477,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   const dbArguments = [];
   let publicationServiceDependencies;
   let scheduledPublicationServiceDependencies;
+  let blogNewsletterServiceDependencies;
   const recordDb = (...args) => {
     dbArguments.push(args.at(-1));
     return { id: 1, locked_by: 'worker', attempts: 1 };
@@ -1518,6 +1539,14 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
       publicationServiceDependencies = dependencies;
       return { revalidateDraftForPublication: async () => ({}) };
     },
+    createBlogNewsletterService(dependencies) {
+      blogNewsletterServiceDependencies = dependencies;
+      return {
+        queuePublishedArticleNewsletter: async () => ({ status: 'queued' }),
+        preparePublishedArticleNewsletter: async () => ({ status: 'prepared' }),
+        sendNewsletterDelivery: async () => ({ status: 'completed' })
+      };
+    },
     createScheduledPublicationService(dependencies) {
       scheduledPublicationServiceDependencies = dependencies;
       return {
@@ -1564,6 +1593,8 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   assert.equal(publicationServiceDependencies.db, database);
   assert.equal(publicationServiceDependencies.validateArticle, modules.validateArticle);
   assert.equal(scheduledPublicationServiceDependencies.db, database);
+  assert.equal(blogNewsletterServiceDependencies.database, database);
+  assert.equal(typeof scheduledPublicationServiceDependencies.queuePublishedArticleNewsletter, 'function');
   assert.equal(
     scheduledPublicationServiceDependencies.publicationService.revalidateDraftForPublication instanceof Function,
     true

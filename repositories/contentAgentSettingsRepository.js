@@ -94,7 +94,8 @@ function normalizeSettingsPatch(current, patch = {}) {
     throw validationError('Ungültiger Newsletter-Schalter.');
   }
   if (patch.newsletterBlogNotificationsEnabled === true
-      && Number(current.manual_approvals_count) < 8) {
+      && (!Number.isSafeInteger(Number(current.manual_approvals_count))
+        || Number(current.manual_approvals_count) < 8)) {
     throw Object.assign(new Error('Newsletter-Freigabe noch nicht erreicht.'), {
       code: 'CONTENT_NEWSLETTER_NOT_READY'
     });

@@ -52,6 +52,12 @@ function positiveDatabasePayloadInteger(value) {
     && value <= MAX_DATABASE_ID;
 }
 
+function positiveSafePayloadInteger(value) {
+  return typeof value === 'number'
+    && Number.isSafeInteger(value)
+    && value > 0;
+}
+
 function canonicalIsoTimestamp(value) {
   if (typeof value !== 'string'
       || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return null;
@@ -79,6 +85,30 @@ function publicationJobPayload(claim) {
     approvalVersion: payload.approvalVersion,
     publicationVersion: payload.publicationVersion,
     scheduledAt
+  };
+}
+
+function newsletterJobPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  if (claim.job_type === 'send_blog_newsletter_delivery') {
+    if (Object.keys(payload).length !== 1
+        || !Object.hasOwn(payload, 'deliveryId')
+        || !positiveSafePayloadInteger(payload.deliveryId)) return null;
+    return { deliveryId: payload.deliveryId };
+  }
+  const allowedKeys = new Set(['postId', 'publicationVersion', 'cursor']);
+  if (Object.keys(payload).some((key) => !allowedKeys.has(key))
+      || Object.keys(payload).length !== 3
+      || !positiveDatabasePayloadInteger(payload.postId)
+      || !positiveDatabasePayloadInteger(payload.publicationVersion)
+      || typeof payload.cursor !== 'number'
+      || !Number.isSafeInteger(payload.cursor)
+      || payload.cursor < 0) return null;
+  return {
+    postId: payload.postId,
+    publicationVersion: payload.publicationVersion,
+    cursor: payload.cursor
   };
 }
 
@@ -191,6 +221,12 @@ export function createProductionJobHandler({
       return { ...publication, status: 'completed' };
     }
     if (NEWSLETTER_JOB_TYPES.has(claim.job_type)) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für den Newsletter-Job wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
       const handler = claim.job_type === 'send_blog_newsletter'
         ? sendBlogNewsletter
         : sendBlogNewsletterDelivery;
@@ -200,8 +236,8 @@ export function createProductionJobHandler({
           'CONTENT_NEWSLETTER_HANDLER_UNAVAILABLE'
         );
       }
-      const payload = claim.payload_json;
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      const payload = newsletterJobPayload(claim);
+      if (!payload) {
         throw permanentJobError(
           'Der Newsletter-Job enthält keinen gültigen Payload.',
           'CONTENT_NEWSLETTER_JOB_PAYLOAD_INVALID'
@@ -209,7 +245,7 @@ export function createProductionJobHandler({
       }
       const result = await handler({
         ...payload,
-        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+        leaseGuard
       });
       return { ...result, status: 'completed' };
     }
@@ -468,10 +504,18 @@ export function createProductionRuntime({
       validateArticle: modules.validateArticle
     })
     : null;
+  const blogNewsletterService = typeof modules.createBlogNewsletterService === 'function'
+    ? modules.createBlogNewsletterService({ database })
+    : null;
   const scheduledPublicationService = typeof modules.createScheduledPublicationService === 'function'
     ? modules.createScheduledPublicationService({
       db: database,
-      ...(contentPublicationService ? { publicationService: contentPublicationService } : {})
+      ...(contentPublicationService ? { publicationService: contentPublicationService } : {}),
+      ...(blogNewsletterService ? {
+        queuePublishedArticleNewsletter: (input, client) => (
+          blogNewsletterService.queuePublishedArticleNewsletter(input, client)
+        )
+      } : {})
     })
     : null;
 
@@ -556,6 +600,12 @@ export function createProductionRuntime({
     }),
     publishApprovedPost: scheduledPublicationService
       ? (input) => scheduledPublicationService.publishApprovedPost(input)
+      : null,
+    sendBlogNewsletter: blogNewsletterService
+      ? (input) => blogNewsletterService.preparePublishedArticleNewsletter(input)
+      : null,
+    sendBlogNewsletterDelivery: blogNewsletterService
+      ? (input) => blogNewsletterService.sendNewsletterDelivery(input)
       : null,
     pipelineDependencies
   });
@@ -663,7 +713,8 @@ export async function loadProductionModules() {
     auditRepositoryModule,
     notificationServiceModule,
     mailServiceModule,
-    scheduledPublicationModule
+    scheduledPublicationModule,
+    blogNewsletterModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -691,7 +742,8 @@ export async function loadProductionModules() {
     import('../repositories/contentAuditRepository.js'),
     import('../services/contentAgent/contentNotificationService.js'),
     import('../services/mailService.js'),
-    import('../services/contentAgent/scheduledPublicationService.js')
+    import('../services/contentAgent/scheduledPublicationService.js'),
+    import('../services/contentAgent/blogNewsletterService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -718,6 +770,7 @@ export async function loadProductionModules() {
     createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository,
     createContentPublicationService: publicationService.createContentPublicationService,
     createScheduledPublicationService: scheduledPublicationModule.createScheduledPublicationService,
+    createBlogNewsletterService: blogNewsletterModule.createBlogNewsletterService,
     runExistingContentAuditJob: auditService.runExistingContentAuditJob,
     createContentAuditRepository: auditRepositoryModule.createContentAuditRepository,
     sendAdminReviewNotification: notificationServiceModule.sendAdminReviewNotification,

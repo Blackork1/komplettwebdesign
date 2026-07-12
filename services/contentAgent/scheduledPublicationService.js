@@ -4,6 +4,7 @@ import pool from '../../util/db.js';
 import { createContentPublishEventRepository } from '../../repositories/contentPublishEventRepository.js';
 import { enqueueApprovedPublicationJob } from '../../repositories/contentJobRepository.js';
 import { createContentPublicationService } from './contentPublicationService.js';
+import { queuePublishedArticleNewsletter as queuePublishedArticleNewsletterJob } from './blogNewsletterService.js';
 import {
   AUTO_PUBLISH_POLICY_VERSION,
   evaluateAutoPublish
@@ -204,6 +205,7 @@ export function createScheduledPublicationService({
   repository = createContentPublishEventRepository(db),
   publicationService = createContentPublicationService({ db, repository }),
   enqueuePublicationJob = enqueueApprovedPublicationJob,
+  queuePublishedArticleNewsletter = queuePublishedArticleNewsletterJob,
   now = () => new Date()
 } = {}) {
   async function withTransaction(operation) {
@@ -274,7 +276,19 @@ export function createScheduledPublicationService({
     }
     if (!settings) throw new Error('Content-Agent-Einstellungen fehlen.');
     await assertActiveLease(leaseGuard);
-    return { post, event, settings, publicationSource };
+    let newsletter = null;
+    if (settings.newsletter_blog_notifications_enabled === true
+        && Number(settings.manual_approvals_count) >= 8) {
+      newsletter = await queuePublishedArticleNewsletter({
+        postId,
+        publicationVersion,
+        settings,
+        post,
+        leaseGuard
+      }, client);
+      await assertActiveLease(leaseGuard);
+    }
+    return { post, event, settings, publicationSource, newsletter };
   }
 
   async function approveForSchedule({ postId, scheduledAt, admin, confirmed } = {}) {
@@ -754,11 +768,24 @@ export function createScheduledPublicationService({
         const settings = await repository.getSettings(client);
         if (!settings) throw new Error('Content-Agent-Einstellungen fehlen.');
         await assertActiveLease(leaseGuard);
+        let newsletter = null;
+        if (settings.newsletter_blog_notifications_enabled === true
+            && Number(settings.manual_approvals_count) >= 8) {
+          newsletter = await queuePublishedArticleNewsletter({
+            postId: normalizedPostId,
+            publicationVersion: normalizedPublicationVersion,
+            settings,
+            post: lockedPost,
+            leaseGuard
+          }, client);
+          await assertActiveLease(leaseGuard);
+        }
         return {
           post: lockedPost,
           event: approval.event,
           settings,
           publicationSource: approval.publicationSource,
+          newsletter,
           alreadyPublished: true
         };
       }
