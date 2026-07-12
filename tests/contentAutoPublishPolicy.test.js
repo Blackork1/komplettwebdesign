@@ -47,7 +47,9 @@ function safeInput(overrides = {}) {
       forcedMode: null,
       autoPublishEffective: true,
       manualApprovalsCount: 8,
-      autoPublishMinScore: 90
+      autoPublishMinScore: 90,
+      publicationAt: '2026-07-13T16:00:00.000Z',
+      startedAt: '2026-07-12T10:00:00.000Z'
     },
     post: {
       id: 19,
@@ -65,7 +67,8 @@ function safeInput(overrides = {}) {
       content_format: 'static_html',
       generated_by_ai: true,
       published: false,
-      workflow_status: 'needs_review'
+      workflow_status: 'needs_review',
+      scheduled_at: '2026-07-13T16:00:00.000Z'
     },
     metadata: {
       quality_score: 94,
@@ -114,6 +117,19 @@ test('Policy erzwingt den höheren Snapshot-Mindestscore und mindestens 90', () 
   assert.ok(evaluateAutoPublish(safeInput({
     metadata: { quality_score: 89, quality_report_json: { ...safeInput().metadata.quality_report_json, score: 89 } }
   })).reasons.includes('quality_score_too_low'));
+});
+
+test('Policy verlangt einen kanonischen zukünftigen und unveränderten Publikationssnapshot', () => {
+  for (const input of [
+    { snapshot: { publicationAt: null } },
+    { snapshot: { publicationAt: '2026-07-13T18:00:00+02:00' } },
+    { snapshot: { publicationAt: '2026-07-12T09:59:59.999Z' } },
+    { post: { scheduled_at: '2026-07-14T16:00:00.000Z' } }
+  ]) {
+    const decision = evaluateAutoPublish(safeInput(input));
+    assert.equal(decision.allowed, false);
+    assert.ok(decision.reasons.includes('publication_schedule_invalid'));
+  }
 });
 
 test('jeder deterministische Risikoflag blockiert einzeln', () => {

@@ -25,6 +25,8 @@ const autoSnapshot = {
   autoPublishEffective: true,
   manualApprovalsCount: 8,
   autoPublishMinScore: 90,
+  publicationAt: '2026-07-13T16:00:00.000Z',
+  startedAt: '2026-07-12T10:00:00.000Z',
   settingsVersion: 4,
   source: 'manual'
 };
@@ -54,7 +56,8 @@ function validDraft(overrides = {}) {
       generated_by_ai: true,
       published: false,
       workflow_status: 'needs_review',
-      generation_run_id: 21
+      generation_run_id: 21,
+      scheduled_at: '2026-07-13T16:00:00.000Z'
     },
     metadata: {
       quality_score: 92,

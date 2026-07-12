@@ -251,7 +251,7 @@ function isPersistedDraftResult(value) {
   );
 }
 
-function isPersistedAutoPublishResult(value, draft) {
+function isPersistedAutoScheduleResult(value, draft) {
   const post = value?.post;
   const allowed = value?.decision === 'allowed';
   const blocked = value?.decision === 'blocked';
@@ -260,6 +260,8 @@ function isPersistedAutoPublishResult(value, draft) {
     && typeof value === 'object'
     && Number.isInteger(Number(value.eventId))
     && Number(value.eventId) > 0
+    && ((allowed && Number.isInteger(Number(value.jobId)) && Number(value.jobId) > 0)
+      || (blocked && value.jobId === null))
     && (allowed || blocked)
     && value.policyVersion === AUTO_PUBLISH_POLICY_VERSION
     && Array.isArray(value.reasons)
@@ -271,7 +273,8 @@ function isPersistedAutoPublishResult(value, draft) {
     && post.content_format === 'static_html'
     && (
       (allowed && value.reviewRequired === false
-        && post.published === true && post.workflow_status === 'published')
+        && post.published === false && post.workflow_status === 'approved_scheduled'
+        && post.approved_by_admin_id == null)
       || (blocked && value.reviewRequired === true
         && post.published === false && post.workflow_status === 'needs_review')
     )
@@ -321,7 +324,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     : null;
   const publicationService = dependencies.publicationService || null;
   if (publicationService) {
-    required(publicationService.publishDraftAutomatically, 'publicationService.publishDraftAutomatically');
+    required(
+      publicationService.approveAutomaticallyForSchedule,
+      'publicationService.approveAutomaticallyForSchedule'
+    );
   }
   required(imageService.generateAndUploadImage, 'imageService.generateAndUploadImage');
   required(imageService.deleteImage, 'imageService.deleteImage');
@@ -592,7 +598,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     );
   }
 
-  async function applyAutoPublish(draft, persistedAutoPublish = null) {
+  async function applyAutoSchedule(draft, persistedAutoSchedule = null) {
     if (!publicationService) {
       return {
         post: draft.post,
@@ -602,53 +608,58 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       };
     }
     await assertLease();
-    const publication = await publicationService.publishDraftAutomatically({
+    const publication = await publicationService.approveAutomaticallyForSchedule({
       postId: draft.post.id,
       runId,
+      scheduledAt: config.publicationAt,
       snapshot: config,
       leaseGuard: assertLease
     });
-    const autoPublishResult = {
+    const autoScheduleResult = {
       post: publication?.post,
       eventId: publication?.event?.id,
+      jobId: publication?.job?.id ?? null,
       decision: publication?.event?.decision,
       policyVersion: publication?.decision?.policyVersion,
       reasons: publication?.decision?.reasons,
-      reviewRequired: publication?.reviewRequired
+      reviewRequired: publication?.reviewRequired,
+      scheduledAt: config.publicationAt ?? null
     };
-    if (!isPersistedAutoPublishResult(autoPublishResult, draft)) {
+    if (!isPersistedAutoScheduleResult(autoScheduleResult, draft)) {
       await stopForRecovery(
-        'auto_publish_result_invalid',
-        'Die automatische Veröffentlichungsentscheidung ist unvollständig oder widersprüchlich.'
+        'auto_schedule_result_invalid',
+        'Die automatische Terminfreigabe ist unvollständig oder widersprüchlich.'
       );
     }
-    if (persistedAutoPublish) {
-      if (!isPersistedAutoPublishResult(persistedAutoPublish, draft)
-          || persistedAutoPublish.eventId !== autoPublishResult.eventId
-          || persistedAutoPublish.decision !== autoPublishResult.decision
-          || persistedAutoPublish.reviewRequired !== autoPublishResult.reviewRequired
-          || JSON.stringify(persistedAutoPublish.reasons) !== JSON.stringify(autoPublishResult.reasons)
-          || persistedAutoPublish.post.published !== autoPublishResult.post.published) {
+    if (persistedAutoSchedule) {
+      if (!isPersistedAutoScheduleResult(persistedAutoSchedule, draft)
+          || persistedAutoSchedule.eventId !== autoScheduleResult.eventId
+          || persistedAutoSchedule.jobId !== autoScheduleResult.jobId
+          || persistedAutoSchedule.decision !== autoScheduleResult.decision
+          || persistedAutoSchedule.reviewRequired !== autoScheduleResult.reviewRequired
+          || JSON.stringify(persistedAutoSchedule.reasons) !== JSON.stringify(autoScheduleResult.reasons)
+          || persistedAutoSchedule.post.workflow_status !== autoScheduleResult.post.workflow_status
+          || persistedAutoSchedule.post.published !== autoScheduleResult.post.published) {
         await stopForRecovery(
-          'auto_publish_recovery_conflict',
-          'Die persistierte Veröffentlichungsentscheidung widerspricht dem aktuellen Retry-Ergebnis.'
+          'auto_schedule_recovery_conflict',
+          'Die persistierte Terminfreigabe widerspricht dem aktuellen Retry-Ergebnis.'
         );
       }
     } else {
-      await updateStage('auto_publish', autoPublishResult, {
-        stageId: `auto_publish:${AUTO_PUBLISH_POLICY_VERSION}`
+      await updateStage('auto_schedule', autoScheduleResult, {
+        stageId: `auto_schedule:${AUTO_PUBLISH_POLICY_VERSION}`
       });
     }
     return {
-      post: autoPublishResult.post,
+      post: autoScheduleResult.post,
       metadata: draft.metadata,
-      reviewRequired: autoPublishResult.reviewRequired,
-      autoPublishResult
+      reviewRequired: autoScheduleResult.reviewRequired,
+      autoPublishResult: autoScheduleResult
     };
   }
 
   async function completeDraft(draft, persistedAutoPublish = null) {
-    const publication = await applyAutoPublish(draft, persistedAutoPublish);
+    const publication = await applyAutoSchedule(draft, persistedAutoPublish);
     if (draft.topicId != null) await topicRepository.markTopicUsed(draft.topicId);
     const completedResult = {
       postId: draft.post.id,
@@ -677,11 +688,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     const persistedCompleted = await readPersistedStage('completed');
     const persistedDraft = await readPersistedStage('draft_creation');
     const persistedAutoPublish = publicationService
-      ? await readPersistedStage(`auto_publish:${AUTO_PUBLISH_POLICY_VERSION}`)
+      ? await readPersistedStage(`auto_schedule:${AUTO_PUBLISH_POLICY_VERSION}`)
       : null;
     if (persistedCompleted) {
       if (!isPersistedDraftResult(persistedDraft)
-        || (publicationService && !isPersistedAutoPublishResult(persistedAutoPublish, persistedDraft))
+        || (publicationService && !isPersistedAutoScheduleResult(persistedAutoPublish, persistedDraft))
         || !isPersistedCompletedResult(persistedCompleted, persistedDraft, persistedAutoPublish)) {
         await stopForRecovery(
           'side_effect_recovery_result_missing',
@@ -1086,7 +1097,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       });
       const draftInput = {
         generationRunId: runId,
-        scheduledAt: input.publication_at ?? null,
+        scheduledAt: config.publicationAt ?? input.publication_at ?? null,
         adminNotificationEmail: config.adminNotificationEmail,
         post: {
           title: currentArticle.title,

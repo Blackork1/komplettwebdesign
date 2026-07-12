@@ -15,6 +15,7 @@ import {
   createProductionRuntime,
   createShutdownController,
   loadProductionModules,
+  SUPPORTED_JOB_TYPES,
   startContentWorker
 } from '../scripts/contentWorker.js';
 import {
@@ -997,6 +998,141 @@ test('der Produktionshandler dispatcht Admin-Prüfmails ohne Generierungs- oder 
   assert.deepEqual(calls, [{ deliveryId: 81, leaseGuard }]);
 });
 
+test('der Produktionshandler unterstützt alle geplanten Non-Generation-Jobtypen', () => {
+  for (const jobType of [
+    'send_admin_review_notification',
+    'publish_approved_post',
+    'send_blog_newsletter',
+    'send_blog_newsletter_delivery'
+  ]) {
+    assert.equal(SUPPORTED_JOB_TYPES.has(jobType), true, jobType);
+  }
+});
+
+test('der Produktionshandler dispatcht fällige Veröffentlichungen ohne Generierungsrun mit vollständigem Snapshot', async () => {
+  const calls = [];
+  const leaseGuard = async () => true;
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für eine fällige Veröffentlichung darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für eine fällige Veröffentlichung darf keine Generierung starten.'); },
+    async publishApprovedPost(input) {
+      calls.push(input);
+      return { post: { id: input.postId, published: true } };
+    }
+  });
+
+  const result = await handler({
+    id: 73,
+    job_type: 'publish_approved_post',
+    payload_json: {
+      postId: 51,
+      approvalVersion: 4,
+      publicationVersion: 2,
+      scheduledAt: '2026-07-13T16:00:00.000Z'
+    }
+  }, { leaseGuard });
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(calls, [{
+    postId: 51,
+    approvalVersion: 4,
+    publicationVersion: 2,
+    scheduledAt: '2026-07-13T16:00:00.000Z',
+    leaseGuard
+  }]);
+});
+
+test('der Publish-Dispatch lehnt fehlende, typfalsche und nicht kanonische Snapshots permanent ab', async () => {
+  const valid = {
+    postId: 51,
+    approvalVersion: 4,
+    publicationVersion: 2,
+    scheduledAt: '2026-07-13T16:00:00.000Z'
+  };
+  const invalidPayloads = [
+    { ...valid, postId: undefined },
+    { ...valid, postId: '51' },
+    { ...valid, approvalVersion: 0 },
+    { ...valid, publicationVersion: 2.5 },
+    { ...valid, scheduledAt: new Date(valid.scheduledAt) },
+    { ...valid, scheduledAt: '2026-07-13T18:00:00+02:00' },
+    { ...valid, scheduledAt: 'ungültig' },
+    { ...valid, postID: 51 }
+  ];
+  let publications = 0;
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Ein ungültiger Publish-Job darf keinen Run anlegen.'); },
+    async runPipeline() { assert.fail('Ein ungültiger Publish-Job darf keine Pipeline starten.'); },
+    async publishApprovedPost() { publications += 1; }
+  });
+
+  for (const payload_json of invalidPayloads) {
+    await assert.rejects(
+      handler(
+        { id: 74, job_type: 'publish_approved_post', payload_json },
+        { leaseGuard: async () => true }
+      ),
+      (error) => error.code === 'CONTENT_PUBLICATION_JOB_PAYLOAD_INVALID'
+        && error.retryable === false
+    );
+  }
+  assert.equal(publications, 0);
+});
+
+test('der Publish-Dispatch verlangt einen funktionsfähigen Lease-Guard', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Publish-Jobs dürfen keinen Run anlegen.'); },
+    async runPipeline() { assert.fail('Publish-Jobs dürfen keine Pipeline starten.'); },
+    async publishApprovedPost() { assert.fail('Ohne Lease darf nicht publiziert werden.'); }
+  });
+  const claim = {
+    id: 75,
+    job_type: 'publish_approved_post',
+    payload_json: {
+      postId: 51,
+      approvalVersion: 4,
+      publicationVersion: 2,
+      scheduledAt: '2026-07-13T16:00:00.000Z'
+    }
+  };
+
+  for (const context of [undefined, {}, { leaseGuard: true }]) {
+    await assert.rejects(
+      handler(claim, context),
+      (error) => error.code === 'CONTENT_JOB_LEASE_REQUIRED' && error.retryable === false
+    );
+  }
+});
+
+test('Newsletter-Jobtypen sind ohne vorweggenommenen Versand injizierbar und erzeugen keinen Generierungsrun', async () => {
+  const calls = [];
+  const leaseGuard = async () => true;
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Newsletter-Jobs dürfen keinen Run anlegen.'); },
+    async runPipeline() { assert.fail('Newsletter-Jobs dürfen keine Pipeline starten.'); },
+    async sendBlogNewsletter(input) { calls.push(['newsletter', input]); return { newsletterId: 9 }; },
+    async sendBlogNewsletterDelivery(input) { calls.push(['delivery', input]); return { deliveryId: 10 }; }
+  });
+
+  const first = await handler({
+    id: 76,
+    job_type: 'send_blog_newsletter',
+    payload_json: { postId: 51 }
+  }, { leaseGuard });
+  const second = await handler({
+    id: 77,
+    job_type: 'send_blog_newsletter_delivery',
+    payload_json: { deliveryId: 10 }
+  }, { leaseGuard });
+
+  assert.equal(first.status, 'completed');
+  assert.equal(second.status, 'completed');
+  assert.deepEqual(calls, [
+    ['newsletter', { postId: 51, leaseGuard }],
+    ['delivery', { deliveryId: 10, leaseGuard }]
+  ]);
+});
+
 test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence aus', async () => {
   const calls = [];
   const leaseGuard = async () => calls.push('lease');
@@ -1320,6 +1456,7 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   };
   const dbArguments = [];
   let publicationServiceDependencies;
+  let scheduledPublicationServiceDependencies;
   const recordDb = (...args) => {
     dbArguments.push(args.at(-1));
     return { id: 1, locked_by: 'worker', attempts: 1 };
@@ -1379,7 +1516,14 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
     createContentImageService: () => ({}),
     createContentPublicationService(dependencies) {
       publicationServiceDependencies = dependencies;
-      return { publishDraftAutomatically: async () => ({ decision: 'blocked' }) };
+      return { revalidateDraftForPublication: async () => ({}) };
+    },
+    createScheduledPublicationService(dependencies) {
+      scheduledPublicationServiceDependencies = dependencies;
+      return {
+        approveAutomaticallyForSchedule: async () => ({ decision: { allowed: false } }),
+        publishApprovedPost: async () => ({ post: { published: true } })
+      };
     },
     runDraftPipeline: async () => ({ status: 'completed' }),
     validateArticle: () => ({ passed: true }),
@@ -1413,9 +1557,17 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   assert.ok(dbArguments.length >= 16);
   assert.equal(dbArguments.every((value) => value === database), true);
   assert.ok(database.queries.length >= 4);
-  assert.equal(runtime.pipelineDependencies.publicationService.publishDraftAutomatically instanceof Function, true);
+  assert.equal(
+    runtime.pipelineDependencies.publicationService.approveAutomaticallyForSchedule instanceof Function,
+    true
+  );
   assert.equal(publicationServiceDependencies.db, database);
   assert.equal(publicationServiceDependencies.validateArticle, modules.validateArticle);
+  assert.equal(scheduledPublicationServiceDependencies.db, database);
+  assert.equal(
+    scheduledPublicationServiceDependencies.publicationService.revalidateDraftForPublication instanceof Function,
+    true
+  );
 });
 
 test('der Healthcheck bewertet den Heartbeat mit Datenbankzeit', async () => {

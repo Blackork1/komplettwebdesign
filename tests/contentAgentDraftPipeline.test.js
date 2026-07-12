@@ -2462,6 +2462,68 @@ test('Pipeline übergibt Run-ID, Veröffentlichungstermin und Snapshot-Mailadres
   assert.equal(draftInputs[0].adminNotificationEmail, 'redaktion@example.de');
 });
 
+test('Auto-Modus plant nach der Generierung ausschließlich den unveränderlichen Snapshot-Termin', async () => {
+  const publicationAt = '2026-07-20T15:00:00.000Z';
+  const approvals = [];
+  const draftInputs = [];
+  let generatedDraft = null;
+  const base = createDependencies();
+  const config = {
+    ...base.dependencies.config,
+    operatingMode: 'auto_publish',
+    forcedMode: null,
+    autoPublishEffective: true,
+    manualApprovalsCount: 8,
+    autoPublishMinScore: 90,
+    publicationAt,
+    startedAt: '2026-07-12T10:00:00.000Z'
+  };
+  const harness = createDependencies({
+    config,
+    draftRepository: {
+      async createAIDraft(input) {
+        draftInputs.push(input);
+        const created = await base.dependencies.draftRepository.createAIDraft(input);
+        generatedDraft = {
+          ...created,
+          post: { ...created.post, scheduled_at: input.scheduledAt }
+        };
+        return generatedDraft;
+      }
+    },
+    publicationService: {
+      async approveAutomaticallyForSchedule(input) {
+        approvals.push(input);
+        return {
+          post: {
+            ...generatedDraft.post,
+            published: false,
+            workflow_status: 'approved_scheduled',
+            content_format: 'static_html',
+            generated_by_ai: true,
+            scheduled_at: input.scheduledAt,
+            approved_by_admin_id: null
+          },
+          event: { id: 91, decision: 'allowed', policy_version: 'auto-v1' },
+          decision: { allowed: true, policyVersion: 'auto-v1', reasons: [] },
+          reviewRequired: false,
+          job: { id: 92, job_type: 'publish_approved_post' }
+        };
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({
+    runId: 291,
+    publication_at: '2026-07-21T15:00:00.000Z'
+  }, harness.dependencies);
+
+  assert.equal(draftInputs[0].scheduledAt, publicationAt);
+  assert.equal(approvals[0].scheduledAt, publicationAt);
+  assert.equal(result.post.published, false);
+  assert.equal(result.post.workflow_status, 'approved_scheduled');
+});
+
 test('Crash vor Stage-Persistenz verwendet vorhandene Topic- und Draftzeilen derselben Run-ID', async () => {
   const topics = new Map([[290, { ...topic, id: 170, generation_run_id: 290 }]]);
   const drafts = new Map([[290, {

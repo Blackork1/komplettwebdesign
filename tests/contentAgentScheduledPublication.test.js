@@ -7,6 +7,36 @@ const admin = { id: 7, username: 'redaktion' };
 const now = new Date('2026-07-12T10:00:00.000Z');
 const futureSlot = new Date('2026-07-12T11:00:00.000Z');
 const missedSlot = new Date('2026-07-12T09:00:00.000Z');
+const autoSnapshot = {
+  operatingMode: 'auto_publish',
+  forcedMode: null,
+  autoPublishEffective: true,
+  manualApprovalsCount: 8,
+  autoPublishMinScore: 90,
+  publicationAt: futureSlot.toISOString(),
+  startedAt: now.toISOString(),
+  settingsVersion: 3,
+  source: 'weekly-schedule'
+};
+const autoRisks = {
+  currentClaims: false,
+  legalClaims: false,
+  privacyClaims: false,
+  softwareVersionClaims: false,
+  staticPrices: false
+};
+const autoFocusedReview = { blocked: false, items: [], riskFlags: [], sourceCount: 0 };
+const autoQualityReport = {
+  passed: true,
+  score: 94,
+  summary: 'Alle Prüfungen bestanden.',
+  strengths: ['Sicherer Inhalt'],
+  issues: [],
+  recommendedActions: [],
+  requiresManualReview: false,
+  risks: autoRisks,
+  focusedReview: autoFocusedReview
+};
 
 function publicationError(code, message = code) {
   return Object.assign(new Error(message), { code });
@@ -18,6 +48,8 @@ function harness({
   reviewVersion = 2,
   approvedReviewVersion = null,
   publicationVersion = 1,
+  approvalSource = 'manual',
+  revalidationError = null,
   expireDuringValidation = false,
   expireOnValidationCall = null
 } = {}) {
@@ -30,6 +62,20 @@ function harness({
   const state = {
     post: {
       id: 3,
+      title: 'Sicherer Artikel',
+      excerpt: 'Eine konkrete Kurzbeschreibung für kleine Unternehmen.',
+      slug: 'sicherer-artikel',
+      meta_title: 'Sicherer Webdesign-Artikel für kleine Unternehmen',
+      meta_description: 'Der Artikel erklärt kleinen Unternehmen konkret, wie sie ihr Webdesign sicher und strukturiert planen.',
+      og_title: 'Sicherer Webdesign-Artikel',
+      og_description: 'Konkrete Webdesign-Hinweise für kleine Unternehmen.',
+      faq_json: Array.from({ length: 5 }, (_, index) => ({
+        question: `Wie funktioniert Schritt ${index + 1}?`,
+        answer: `Schritt ${index + 1} wird nachvollziehbar erklärt.`
+      })),
+      image_url: 'https://example.test/image.webp',
+      image_alt: 'Unternehmerin plant ihre Website',
+      content: '<section><h2>Sicher</h2></section>',
       generated_by_ai: true,
       published: workflowStatus === 'published',
       workflow_status: workflowStatus,
@@ -37,13 +83,35 @@ function harness({
       review_version: reviewVersion,
       approved_review_version: approvedReviewVersion,
       approved_at: approvedReviewVersion === null ? null : new Date('2026-07-12T08:00:00.000Z'),
-      approved_by_admin_id: approvedReviewVersion === null ? null : admin.id,
+      approved_by_admin_id: approvedReviewVersion === null || approvalSource === 'auto'
+        ? null
+        : admin.id,
       publication_version: publicationVersion,
       generation_run_id: 21,
       content_format: 'static_html'
     },
     event: null,
-    approvals: workflowStatus === 'published' ? 1 : 0
+    autoEvent: approvedReviewVersion !== null && approvalSource === 'auto'
+      ? {
+        id: 41,
+        post_id: 3,
+        run_id: 21,
+        decision: 'allowed',
+        policy_version: 'auto-v1',
+        quality_score: 94,
+        reasons_json: [],
+        context_json: {
+          action: 'auto_schedule_policy',
+          settingsVersion: 3,
+          source: 'weekly-schedule',
+          forcedMode: null,
+          approvalVersion: reviewVersion,
+          publicationVersion,
+          scheduledAt: scheduledAt.toISOString()
+        }
+      }
+      : null,
+    approvals: workflowStatus === 'published' && approvalSource === 'manual' ? 1 : 0
   };
   const client = {
     async query(sql) {
@@ -68,9 +136,27 @@ function harness({
       if (!workflowStatuses.includes(state.post.workflow_status)) {
         throw publicationError('CONTENT_DRAFT_NOT_PUBLISHABLE');
       }
+      if (revalidationError) throw revalidationError;
       return {
-        draft: { post: { ...state.post }, metadata: { quality_score: 92 } },
-        qualityScore: 92
+        draft: {
+          post: { ...state.post },
+          metadata: {
+            quality_score: 94,
+            internal_links_json: [
+              { url: '/kontakt', label: 'Kontakt', purpose: 'Beratung' },
+              { url: '/pakete', label: 'Pakete', purpose: 'Angebot' }
+            ],
+            source_references_json: [],
+            quality_report_json: autoQualityReport
+          }
+        },
+        qualityScore: 94,
+        validation: {
+          passed: true,
+          issues: [],
+          sanitizedHtml: state.post.content
+        },
+        riskReport: autoFocusedReview
       };
     }
   };
@@ -158,6 +244,25 @@ function harness({
       calls.push(['admin', adminId, transaction]);
       return adminId === admin.id ? admin : null;
     },
+    async insertAutoEvent(input, transaction) {
+      calls.push(['auto-event', input, transaction]);
+      if (state.autoEvent) return null;
+      state.autoEvent = {
+        id: 41,
+        post_id: input.postId,
+        run_id: input.runId,
+        decision: input.decision,
+        policy_version: input.policyVersion,
+        quality_score: input.qualityScore,
+        reasons_json: input.reasons,
+        context_json: input.context
+      };
+      return state.autoEvent;
+    },
+    async getAutoEvent(input, transaction) {
+      calls.push(['auto-event-read', input, transaction]);
+      return state.autoEvent;
+    },
     async incrementManualApprovals(transaction) {
       calls.push(['increment', transaction]);
       state.approvals += 1;
@@ -221,6 +326,106 @@ test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async (
   assert.ok(operations.indexOf('validate') < operations.indexOf('approve'));
   assert.ok(operations.indexOf('approve') < operations.indexOf('job'));
   assert.equal(calls.includes('COMMIT'), true);
+});
+
+test('Auto-Systemfreigabe plant nach bestandenen Gates ohne Admin und ohne frühe Veröffentlichung', async () => {
+  const { service, calls, state } = harness();
+
+  const result = await service.approveAutomaticallyForSchedule({
+    postId: 3,
+    runId: 21,
+    scheduledAt: futureSlot,
+    snapshot: autoSnapshot,
+    leaseGuard: async () => true
+  });
+
+  assert.equal(result.decision.allowed, true);
+  assert.equal(result.post.workflow_status, 'approved_scheduled');
+  assert.equal(result.post.published, false);
+  assert.equal(result.post.approved_by_admin_id, null);
+  assert.equal(result.job.run_after.toISOString(), futureSlot.toISOString());
+  assert.equal(state.autoEvent.context_json.action, 'auto_schedule_policy');
+  assert.equal(state.approvals, 0);
+  assert.equal(state.event, null);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
+});
+
+test('blockierte Auto-Systemfreigabe bleibt needs_review und legt keinen Publish-Job an', async () => {
+  const { service, jobs, state } = harness();
+
+  const result = await service.approveAutomaticallyForSchedule({
+    postId: 3,
+    runId: 21,
+    scheduledAt: futureSlot,
+    snapshot: { ...autoSnapshot, manualApprovalsCount: 7 },
+    leaseGuard: async () => true
+  });
+
+  assert.equal(result.decision.allowed, false);
+  assert.ok(result.decision.reasons.includes('manual_approvals_too_low'));
+  assert.equal(result.post.workflow_status, 'needs_review');
+  assert.equal(result.reviewRequired, true);
+  assert.equal(result.job, null);
+  assert.equal(jobs.size, 0);
+  assert.equal(state.approvals, 0);
+});
+
+test('Auto-Systemfreigabe bindet den Serviceparameter exakt an publicationAt aus dem Snapshot', async () => {
+  const shiftedSlot = new Date('2026-07-12T12:00:00.000Z');
+  const { service, jobs, state } = harness();
+
+  await assert.rejects(
+    service.approveAutomaticallyForSchedule({
+      postId: 3,
+      runId: 21,
+      scheduledAt: shiftedSlot,
+      snapshot: autoSnapshot,
+      leaseGuard: async () => true
+    }),
+    (error) => error.code === 'CONTENT_APPROVAL_STALE'
+  );
+
+  assert.equal(state.post.workflow_status, 'needs_review');
+  assert.equal(state.autoEvent, null);
+  assert.equal(jobs.size, 0);
+});
+
+test('fehlender publicationAt bleibt ein begründeter Review-Fallback statt eines technischen Fehlers', async () => {
+  const { service, jobs, state } = harness({ scheduledAt: null });
+
+  const result = await service.approveAutomaticallyForSchedule({
+    postId: 3,
+    runId: 21,
+    scheduledAt: null,
+    snapshot: { ...autoSnapshot, publicationAt: null },
+    leaseGuard: async () => true
+  });
+
+  assert.equal(result.decision.allowed, false);
+  assert.ok(result.decision.reasons.includes('publication_schedule_invalid'));
+  assert.equal(result.post.workflow_status, 'needs_review');
+  assert.equal(jobs.size, 0);
+  assert.equal(state.autoEvent.context_json.scheduledAt, null);
+});
+
+test('fachlich fehlgeschlagene Revalidierung bleibt im Auto-Modus needs_review mit Grund', async () => {
+  const { service, jobs, state } = harness({
+    revalidationError: publicationError('CONTENT_DRAFT_VALIDATION_FAILED')
+  });
+
+  const result = await service.approveAutomaticallyForSchedule({
+    postId: 3,
+    runId: 21,
+    scheduledAt: futureSlot,
+    snapshot: autoSnapshot,
+    leaseGuard: async () => true
+  });
+
+  assert.equal(result.decision.allowed, false);
+  assert.ok(result.decision.reasons.includes('draft_revalidation_failed'));
+  assert.equal(result.post.workflow_status, 'needs_review');
+  assert.equal(jobs.size, 0);
+  assert.equal(state.approvals, 0);
 });
 
 test('Freigabe verlangt Bestätigung und einen strikt zukünftigen Termin', async () => {
@@ -484,4 +689,55 @@ test('Wiederholung nach erfolgreichem Commit zählt dieselbe Freigabe exakt einm
   assert.equal(retry.alreadyPublished, true);
   assert.equal(state.approvals, 1);
   assert.equal(state.event.context_json.publicationVersion, 1);
+});
+
+test('fällige Auto-Veröffentlichung nutzt das Auto-Event und erhöht den manuellen Zähler nie', async () => {
+  const { service, state, calls } = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    approvalSource: 'auto'
+  });
+  const input = {
+    postId: 3,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    scheduledAt: missedSlot,
+    leaseGuard: async () => true
+  };
+
+  const first = await service.publishApprovedPost(input);
+  const retry = await service.publishApprovedPost(input);
+
+  assert.equal(first.post.published, true);
+  assert.equal(first.publicationSource, 'auto');
+  assert.equal(retry.alreadyPublished, true);
+  assert.equal(state.approvals, 0);
+  assert.equal(state.event, null);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
+});
+
+test('Auto-Veröffentlichung ohne passendes unveränderliches Auto-Event bleibt fail-closed', async () => {
+  const { service, state, calls } = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    approvalSource: 'auto'
+  });
+  state.autoEvent.context_json.scheduledAt = futureSlot.toISOString();
+
+  await assert.rejects(
+    service.publishApprovedPost({
+      postId: 3,
+      approvalVersion: 2,
+      publicationVersion: 1,
+      scheduledAt: missedSlot,
+      leaseGuard: async () => true
+    }),
+    (error) => error.code === 'CONTENT_APPROVAL_STALE'
+  );
+
+  assert.equal(state.post.published, false);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'increment'), false);
 });

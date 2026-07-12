@@ -47,6 +47,9 @@ export function createContentAgentJobSnapshot({
       forcedMode: claim?.payload_json?.forced_mode || null,
       source: claim?.payload_json?.source || 'unknown',
       scheduleSlot: claim?.payload_json?.schedule_slot || null,
+      publicationAt: typeof claim?.payload_json?.publication_at === 'string'
+        ? claim.payload_json.publication_at
+        : null,
       monthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,
       autoPublishMinScore: runtimeConfig.autoPublishMinScore,
       maxAttempts: runtimeConfig.maxAttempts,

@@ -88,6 +88,24 @@ function validImage(post) {
   }
 }
 
+function canonicalIsoTimestamp(value) {
+  if (typeof value !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) || date.toISOString() !== value ? null : value;
+}
+
+function validPublicationSchedule(snapshot, post) {
+  const publicationAt = canonicalIsoTimestamp(snapshot?.publicationAt);
+  const startedAt = canonicalIsoTimestamp(snapshot?.startedAt);
+  if (!publicationAt || !startedAt) return false;
+  if (new Date(publicationAt).getTime() <= new Date(startedAt).getTime()) return false;
+  const persisted = post?.scheduled_at instanceof Date
+    ? post.scheduled_at.toISOString()
+    : post?.scheduled_at;
+  return persisted === publicationAt;
+}
+
 function validPostFields(post) {
   return isNonEmptyString(post?.title, 255)
     && isNonEmptyString(post?.excerpt, 500)
@@ -141,6 +159,7 @@ export function evaluateAutoPublish({ snapshot, post, metadata, validation, risk
     addReason(reasons, 'quality_score_too_low');
   }
   if (!validDraftState(post)) addReason(reasons, 'draft_state_invalid');
+  if (!validPublicationSchedule(snapshot, post)) addReason(reasons, 'publication_schedule_invalid');
   if (!validImage(post)) addReason(reasons, 'image_incomplete');
   if (!validPostFields(post)) addReason(reasons, 'article_fields_invalid');
   if (!InternalLinkSchema.array().min(2).max(8).safeParse(metadata?.internal_links_json).success) {

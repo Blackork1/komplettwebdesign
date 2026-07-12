@@ -143,7 +143,8 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
       payload_json: {
         forced_mode: 'review',
         source: 'admin_manual',
-        schedule_slot: 'weekly:2026-07-13:18:00:Europe/Berlin'
+        schedule_slot: 'weekly:2026-07-13:18:00:Europe/Berlin',
+        publication_at: '2026-07-13T16:00:00.000Z'
       }
     },
     now: new Date('2026-07-11T10:15:30.000Z')
@@ -155,6 +156,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     forcedMode: 'review',
     source: 'admin_manual',
     scheduleSlot: 'weekly:2026-07-13:18:00:Europe/Berlin',
+    publicationAt: '2026-07-13T16:00:00.000Z',
     monthlyCostLimitEur: 100,
     autoPublishMinScore: 94,
     maxAttempts: 5,
