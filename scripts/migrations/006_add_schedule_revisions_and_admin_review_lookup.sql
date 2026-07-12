@@ -53,8 +53,8 @@ first_schedule_change AS (
 revision_snapshots AS (
   SELECT 1::BIGINT AS revision,
          LEAST(
-           NOW() - INTERVAL '8 days',
-           COALESCE(first_change.created_at - INTERVAL '1 microsecond', NOW() - INTERVAL '8 days')
+           NOW() - INTERVAL '10 days',
+           COALESCE(first_change.created_at - INTERVAL '1 microsecond', NOW() - INTERVAL '10 days')
          ) AS effective_at,
          COALESCE(first_change.previous_values_json, to_jsonb(settings)) AS snapshot_json
   FROM content_agent_settings settings

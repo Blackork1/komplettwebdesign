@@ -280,6 +280,35 @@ test('Zeitplanwechsel zwischen zwei Generierungszeitpunkten erzeugt nur einen Sl
   assert.equal(monday[0].payload.schedule_revision, 1);
 });
 
+test('späterer Vorlaufwechsel verliert keinen Slot, wenn der neue Zeitpunkt schon verpasst ist', async () => {
+  const enqueued = [];
+  await runContentSchedulerTick({
+    getSettings: async () => ({
+      ...berlinSettings,
+      generation_lead_hours: 8,
+      schedule_revision: 2
+    }),
+    getScheduleRevisions: async () => [{
+      ...berlinSettings,
+      schedule_revision: 1,
+      effective_at: new Date('2026-07-01T00:00:00.000Z')
+    }, {
+      ...berlinSettings,
+      generation_lead_hours: 8,
+      schedule_revision: 2,
+      effective_at: new Date('2026-07-13T11:00:00.000Z')
+    }],
+    enqueueJob: async (input) => { enqueued.push(input); return input; },
+    updateSchedulerState: async () => {},
+    now: () => new Date('2026-07-13T12:05:00.000Z')
+  });
+
+  const monday = enqueued.filter(({ payload }) => payload.publication_local_date === '2026-07-13');
+  assert.equal(monday.length, 1);
+  assert.equal(monday[0].payload.schedule_revision, 1);
+  assert.equal(monday[0].payload.publication_local_time, '18:00');
+});
+
 test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustand und wirft weiter', async () => {
   const states = [];
   const failure = new Error('Datenbank vorübergehend nicht erreichbar');

@@ -106,7 +106,7 @@ test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderun
       ['1', '18:00:00'],
       ['2', '19:00:00']
     ]);
-    assert.ok(revisions.rows[0].effective_at.getTime() <= Date.now() - (7 * 24 * 60 * 60 * 1000));
+    assert.ok(revisions.rows[0].effective_at.getTime() <= Date.now() - (9 * 24 * 60 * 60 * 1000));
     assert.equal((await pool.query(
       'SELECT schedule_revision FROM content_agent_settings WHERE id = 1'
     )).rows[0].schedule_revision, '2');
@@ -296,7 +296,7 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
     assert.equal(scheduleRevisions.rows.length, 1);
     assert.equal(scheduleRevisions.rows[0].revision, '1');
     assert.ok(scheduleRevisions.rows[0].effective_at instanceof Date);
-    assert.ok(scheduleRevisions.rows[0].effective_at.getTime() <= Date.now() - (7 * 24 * 60 * 60 * 1000));
+    assert.ok(scheduleRevisions.rows[0].effective_at.getTime() <= Date.now() - (9 * 24 * 60 * 60 * 1000));
     const latestDeliveryIndex = await pool.query(`
       SELECT indexdef
       FROM pg_indexes

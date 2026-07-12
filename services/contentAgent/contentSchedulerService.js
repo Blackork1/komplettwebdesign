@@ -90,7 +90,7 @@ export function buildPublicationSlot({ settings, localDate }) {
   };
 }
 
-export function findDueGenerationSlots({ settings, now = new Date() }) {
+function findGenerationSlots({ settings, now = new Date(), includeFuture = false }) {
   if (settings?.agent_enabled !== true) return [];
   if (!Array.isArray(settings.schedule_weekdays) || settings.schedule_weekdays.length === 0) {
     return [];
@@ -108,10 +108,14 @@ export function findDueGenerationSlots({ settings, now = new Date() }) {
     if (!settings.schedule_weekdays.includes(publicationDate.weekday)) continue;
     const slot = buildPublicationSlot({ settings, localDate: publicationDate.toISODate() });
     const generationMillis = Date.parse(slot.generationAt);
-    if (generationMillis <= nowMillis) due.push(slot);
+    if (includeFuture || generationMillis <= nowMillis) due.push(slot);
   }
 
   return due.sort((left, right) => Date.parse(left.generationAt) - Date.parse(right.generationAt));
+}
+
+export function findDueGenerationSlots({ settings, now = new Date() }) {
+  return findGenerationSlots({ settings, now, includeFuture: false });
 }
 
 export function findDueGenerationSlot(input) {
@@ -125,21 +129,47 @@ export function findDueGenerationSlotsForRevisions({ revisions, now = new Date()
     .filter(({ effectiveMillis }) => Number.isFinite(effectiveMillis))
     .sort((left, right) => left.effectiveMillis - right.effectiveMillis
       || Number(left.schedule_revision) - Number(right.schedule_revision));
-  const unique = new Map();
+  const selectedByDate = new Map();
   ordered.forEach((revision, index) => {
-    const nextEffectiveMillis = ordered[index + 1]?.effectiveMillis ?? Number.POSITIVE_INFINITY;
-    for (const slot of findDueGenerationSlots({ settings: revision, now })) {
-      const generationMillis = Date.parse(slot.generationAt);
-      if (generationMillis < revision.effectiveMillis || generationMillis >= nextEffectiveMillis) continue;
-      if (!unique.has(slot.localDate)) {
-        unique.set(slot.localDate, {
+    const candidates = new Map(
+      findGenerationSlots({ settings: revision, now, includeFuture: true })
+        .map((slot) => [slot.localDate, {
           ...slot,
           scheduleRevision: Number(revision.schedule_revision)
-        });
+        }])
+    );
+    const localDates = new Set([...selectedByDate.keys(), ...candidates.keys()]);
+    for (const localDate of localDates) {
+      const current = selectedByDate.get(localDate) || null;
+      const candidate = candidates.get(localDate) || null;
+      const currentGeneration = current ? Date.parse(current.generationAt) : null;
+      const candidateGeneration = candidate ? Date.parse(candidate.generationAt) : null;
+
+      if (index === 0) {
+        if (candidate && candidateGeneration >= revision.effectiveMillis) {
+          selectedByDate.set(localDate, candidate);
+        }
+        continue;
+      }
+      if (!current) {
+        if (candidate && candidateGeneration >= revision.effectiveMillis) {
+          selectedByDate.set(localDate, candidate);
+        }
+        continue;
+      }
+      if (!candidate) {
+        if (currentGeneration >= revision.effectiveMillis) selectedByDate.delete(localDate);
+        continue;
+      }
+      if (currentGeneration >= revision.effectiveMillis
+          && candidateGeneration >= revision.effectiveMillis) {
+        selectedByDate.set(localDate, candidate);
       }
     }
   });
-  return [...unique.values()]
+  const nowMillis = (now instanceof Date ? now : new Date(now)).getTime();
+  return [...selectedByDate.values()]
+    .filter((slot) => Date.parse(slot.generationAt) <= nowMillis)
     .sort((left, right) => Date.parse(left.generationAt) - Date.parse(right.generationAt));
 }
 
