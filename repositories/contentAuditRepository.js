@@ -20,11 +20,13 @@ export function createContentAuditRepository(db = pool) {
 
     async listTrustedInternalUrls() {
       const { rows } = await db.query(`
-        SELECT '/blog/' || slug AS url, 'blog' AS type FROM posts WHERE published = TRUE
-        UNION SELECT '/ratgeber/' || slug, 'guide' FROM ratgeber WHERE published = TRUE
-        UNION SELECT '/leistungen/' || slug, 'service' FROM leistungen_pages WHERE is_published = TRUE
-        UNION SELECT '/branchen/' || slug, 'industry' FROM industries
-        ORDER BY url
+        SELECT url, type FROM (
+          SELECT '/blog/' || slug AS url, 'blog' AS type FROM posts WHERE published = TRUE
+          UNION SELECT '/ratgeber/' || slug, 'guide' FROM ratgeber WHERE published = TRUE
+          UNION SELECT '/leistungen/' || slug, 'service' FROM leistungen_pages WHERE is_published = TRUE
+          UNION SELECT '/branchen/' || slug, 'industry' FROM industries
+        ) trusted_urls
+        ORDER BY url LIMIT 5000
       `);
       return rows;
     },

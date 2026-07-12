@@ -64,7 +64,8 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
     const before = visibleText.slice(Math.max(0, match.index - 30), match.index).toLocaleLowerCase('de-DE');
     const after = visibleText.slice(match.index + 4, match.index + 35).toLocaleLowerCase('de-DE');
     return !(/(?:seit|gegründet|gegruendet|eröffnet|eroeffnet)\s*$/u.test(before)
-      || (/von\s*$/u.test(before) && /^\s*(?:bis|[-–])\s*(?:19|20)\d{2}\b/u.test(after))
+      || /^\s*(?:gegründet|gegruendet|eröffnet|eroeffnet)\b/u.test(after)
+      || /^\s*(?:bis|[-–])\s*(?:19|20)\d{2}\b/u.test(after)
       || /(?:19|20)\d{2}\s*(?:bis|[-–])\s*$/u.test(before));
   }).map((match) => Number(match[0])))]
     .sort((a, b) => a - b);

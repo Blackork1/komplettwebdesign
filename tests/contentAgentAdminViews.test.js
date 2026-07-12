@@ -271,6 +271,7 @@ test('Revisionseditor escaped Legacy-Inhalt, sperrt ihn und schützt die Freigab
   assert.match(html, /name="content"[^>]*readonly/);
   assert.match(html, /name="confirmed" value="true"/);
   assert.match(html, /name="revision_version" value="4"/);
+  assert.match(html, /name="expected_revision_version" value="4"/);
   assert.match(html, /name="_csrf" value="csrf-test"/);
   assert.match(html, /&lt;% globalThis\.ausgefuehrt = true %&gt;/);
   assert.doesNotMatch(html, /<script>(?:Titel|alert\(1\)|faq)<\/script>/);

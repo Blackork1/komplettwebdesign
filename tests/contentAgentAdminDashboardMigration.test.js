@@ -22,6 +22,10 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   assert.match(sql, /revision_version INTEGER NOT NULL DEFAULT 1/i);
   assert.match(sql, /jsonb_typeof\(snapshot_json\) = 'object'/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_revisions_draft_audit/i);
+  const repoint = sql.indexOf('UPDATE content_post_revisions revision');
+  const deleteDuplicate = sql.indexOf('DELETE FROM content_post_audits duplicate');
+  const uniqueAudit = sql.indexOf('CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type');
+  assert.ok(repoint > 0 && deleteDuplicate > repoint && uniqueAudit > deleteDuplicate);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_provider_state/i);
   assert.match(sql, /REFERENCES admins\(id\)/i);
   assert.match(sql, /CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation/i);

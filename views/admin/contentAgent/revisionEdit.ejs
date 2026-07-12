@@ -38,7 +38,7 @@
     <h2>Geprüfte Revision übernehmen</h2>
     <p>Vor dem Update wird die Livefassung unter Sperre exakt mit Slug, Format, Zeitstempel und Hash verglichen und die Revision erneut validiert.</p>
     <form method="post" action="/admin/content-agent/revisions/<%= item.id %>/publish" data-confirm="Diese Revision jetzt in den veröffentlichten Artikel übernehmen?">
-      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true">
+      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true"><input type="hidden" name="expected_revision_version" value="<%= item.revision_version || 1 %>">
       <button class="btn btn-success" type="submit">Ausdrücklich freigeben</button>
     </form>
   </section>

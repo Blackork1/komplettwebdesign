@@ -114,6 +114,13 @@ function positiveId(value) {
   return id;
 }
 
+function strictPositiveInteger(value) {
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) {
+    throw Object.assign(new Error('Ungültige Versionsnummer.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+  }
+  return positiveId(value);
+}
+
 async function renderCapability({ capability, method, args, res, next }) {
   if (typeof capability?.[method] !== 'function') return unavailable(res);
   try {
@@ -483,6 +490,7 @@ export function createAdminContentAgentController(dependencies) {
         method: 'approveRevision',
         args: () => [{
           revisionId: positiveId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_revision_version),
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         }],

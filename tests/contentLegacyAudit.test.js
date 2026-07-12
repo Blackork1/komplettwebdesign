@@ -58,6 +58,22 @@ test('Bestandsaudit erkennt unvollständige FAQ und ausgeschriebene Europreise, 
   assert.equal(codes.includes('stale_year'), false);
 });
 
+test('Jahresprüfung ignoriert Gründung und abgeschlossene Bereiche, meldet aber alte Preise, Fristen und Versionen', () => {
+  const base = {
+    id: 20, title: 'Historie', slug: 'historie', excerpt: '', content_format: 'legacy_ejs',
+    meta_title: 'Meta', meta_description: 'Beschreibung', image_alt: 'Alt',
+    faq_json: Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index}?`, answer: 'Antwort' }))
+  };
+  for (const content of ['<p>1999 gegründet.</p>', '<p>Gegründet 1999.</p>', '<p>Seit 1999.</p>', '<p>1999-2005.</p>', '<p>1999–2005.</p>']) {
+    const result = auditExistingPost({ post: { ...base, content }, inventory: [], currentYear: 2026 });
+    assert.equal(result.findings.some(({ code }) => code === 'stale_year'), false, content);
+  }
+  for (const content of ['<p>Preise 2024</p>', '<p>Aktuell 2024</p>', '<p>Frist bis 2024</p>', '<p>Version 2024</p>']) {
+    const result = auditExistingPost({ post: { ...base, content }, inventory: [], currentYear: 2026 });
+    assert.ok(result.findings.some(({ code }) => code === 'stale_year'), content);
+  }
+});
+
 test('Bestandsaudit normalisiert vertrauenswürdige Links und meldet unbekannte sowie unsichere Ziele begrenzt', () => {
   const result = auditExistingPost({
     post: {

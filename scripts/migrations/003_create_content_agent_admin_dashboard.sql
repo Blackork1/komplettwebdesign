@@ -111,9 +111,6 @@ CREATE TABLE IF NOT EXISTS content_post_audits (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (status IN ('open', 'revision_created', 'resolved'))
 );
-CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type
-  ON content_post_audits (job_id, post_id, audit_type)
-  WHERE job_id IS NOT NULL;
 UPDATE content_post_audits
 SET findings_json = jsonb_build_array(findings_json)
 WHERE jsonb_typeof(findings_json) <> 'array';
@@ -158,6 +155,31 @@ ALTER TABLE content_post_revisions ADD CONSTRAINT content_post_revisions_snapsho
   jsonb_typeof(snapshot_json -> 'base') = 'object'
   AND jsonb_typeof(snapshot_json -> 'fields') = 'object'
 );
+UPDATE content_post_revisions revision
+SET audit_id = survivor.id
+FROM content_post_audits duplicate
+JOIN LATERAL (
+  SELECT candidate.id
+  FROM content_post_audits candidate
+  WHERE candidate.job_id = duplicate.job_id
+    AND candidate.post_id = duplicate.post_id
+    AND candidate.audit_type = duplicate.audit_type
+  ORDER BY candidate.created_at DESC, candidate.id DESC
+  LIMIT 1
+) survivor ON TRUE
+WHERE revision.audit_id = duplicate.id
+  AND duplicate.job_id IS NOT NULL
+  AND duplicate.id <> survivor.id;
+DELETE FROM content_post_audits duplicate
+USING content_post_audits survivor
+WHERE duplicate.job_id IS NOT NULL
+  AND survivor.job_id = duplicate.job_id
+  AND survivor.post_id = duplicate.post_id
+  AND survivor.audit_type = duplicate.audit_type
+  AND (survivor.created_at, survivor.id) > (duplicate.created_at, duplicate.id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type
+  ON content_post_audits (job_id, post_id, audit_type)
+  WHERE job_id IS NOT NULL;
 WITH ranked_drafts AS (
   SELECT id, ROW_NUMBER() OVER (PARTITION BY audit_id ORDER BY created_at, id) AS position
   FROM content_post_revisions WHERE audit_id IS NOT NULL AND status = 'draft'

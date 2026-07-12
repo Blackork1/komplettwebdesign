@@ -188,15 +188,40 @@ test('validator requires five to seven visible FAQ and exact JSON content', () =
   assert.ok(hiddenAnswer.issues.some((issue) => issue.code === 'faq_mismatch'));
 });
 
-test('validator compares internal and external hrefs exactly with their supplied context', () => {
+test('validator normalisiert vertrauenswürdige interne Links und prüft externe Quellen weiterhin exakt', () => {
   const result = validateArticle(validArticle({
     contentHtml: validHtml()
       .replace('href="/kontakt"', 'href="/kontakt?quelle=blog"')
       .replace('href="https://example.com/quellen/artikel"', 'href="https://example.com/quellen/artikel#abschnitt"')
   }), validContext);
 
-  assert.ok(result.issues.some((issue) => issue.code === 'internal_link_forbidden'));
+  assert.equal(result.issues.some((issue) => issue.code === 'internal_link_forbidden'), false);
   assert.ok(result.issues.some((issue) => issue.code === 'external_link_forbidden'));
+});
+
+test('validator akzeptiert Kontaktquery, Hash und kanonische absolute URL, blockiert aber URL-Bypässe', () => {
+  for (const target of [
+    '/kontakt?utm_source=blog',
+    '/kontakt#formular',
+    'https://komplettwebdesign.de/kontakt?utm_source=blog',
+    'https://www.komplettwebdesign.de/kontakt#formular'
+  ]) {
+    const result = validateArticle(validArticle({ contentHtml: validHtml().replaceAll('href="/kontakt"', `href="${target}"`) }), validContext);
+    assert.equal(result.issues.some((issue) => ['internal_link_forbidden', 'cta_contact_target_invalid', 'link_scheme_forbidden'].includes(issue.code)), false, target);
+  }
+  for (const target of [
+    '//evil.example/kontakt',
+    'http://www.komplettwebdesign.de/kontakt',
+    'https://user:pass@www.komplettwebdesign.de/kontakt',
+    'https://evil.example/kontakt',
+    '/%2e%2e/kontakt',
+    '/\\evil.example/kontakt',
+    'javascript:alert(1)',
+    'data:text/html,schlecht'
+  ]) {
+    const result = validateArticle(validArticle({ contentHtml: validHtml().replaceAll('href="/kontakt"', `href="${target}"`) }), validContext);
+    assert.ok(result.issues.some((issue) => ['external_link_forbidden', 'cta_contact_target_invalid', 'link_scheme_forbidden'].includes(issue.code)), target);
+  }
 });
 
 test('source reference context takes precedence for exact external-link approval', () => {

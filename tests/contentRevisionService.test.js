@@ -148,10 +148,11 @@ test('Freigabe benötigt Bestätigung und delegiert die atomare Sperrtransaktion
   });
 
   await assert.rejects(
-    service.approveRevision({ revisionId: 3, confirmed: false, admin: { id: 1, username: 'admin' } }),
+    service.approveRevision({ revisionId: 3, expectedVersion: 1, confirmed: false, admin: { id: 1, username: 'admin' } }),
     (error) => error.code === 'CONTENT_CONFIRMATION_REQUIRED'
   );
   assert.equal(approvals.length, 0);
-  await service.approveRevision({ revisionId: 3, confirmed: true, admin: { id: 1, username: 'admin' } });
+  await service.approveRevision({ revisionId: 3, expectedVersion: 1, confirmed: true, admin: { id: 1, username: 'admin' } });
   assert.equal(approvals.length, 1);
+  assert.equal(approvals[0].expectedVersion, 1);
 });

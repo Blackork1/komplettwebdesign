@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
+import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 
 const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CTA_LOCATIONS = ['blog_early', 'blog_mid', 'blog_final'];
@@ -90,14 +91,6 @@ function normalizedVisibleText(element) {
     .join(' ');
 }
 
-function hasForbiddenLinkScheme(href) {
-  const candidate = typeof href === 'string' ? href.trim() : '';
-  if (candidate.startsWith('//')) return true;
-
-  const scheme = candidate.match(/^([a-z][a-z0-9+.-]*):/i)?.[1];
-  return Boolean(scheme && !/^https?$/i.test(scheme));
-}
-
 function hasOuterBootstrapContainer($) {
   const topLevelContent = $.root().contents().toArray().filter((node) => {
     if (node.type === 'comment') return false;
@@ -186,7 +179,9 @@ export function validateArticle(article = {}, context = {}) {
   const forbiddenLinkHrefs = new Set();
   $raw('a[href]').each((_, element) => {
     const href = $raw(element).attr('href');
-    if (!hasForbiddenLinkScheme(href) || forbiddenLinkHrefs.has(href)) return;
+    const normalized = normalizeInternalHref(href);
+    if (normalized.kind !== 'unsafe' && normalized.kind !== 'invalid') return;
+    if (forbiddenLinkHrefs.has(href)) return;
 
     forbiddenLinkHrefs.add(href);
     issues.push(createIssue(
@@ -246,6 +241,15 @@ export function validateArticle(article = {}, context = {}) {
   })) {
     issues.push(createIssue('cta_tracking_invalid', 'Jeder CTA benötigt einen zur Position passenden Trackingnamen.'));
   }
+  if (ctaElements.some((element) => {
+    const target = $sanitized(element).is('a[href]')
+      ? $sanitized(element).attr('href')
+      : $sanitized(element).find('a[href]').first().attr('href');
+    const normalized = normalizeInternalHref(target);
+    return normalized.kind !== 'internal' || normalized.path !== '/kontakt';
+  })) {
+    issues.push(createIssue('cta_contact_target_invalid', 'Jeder CTA muss auf den normalisierten Kontaktpfad führen.'));
+  }
 
   const faqInspection = extractFaqInspection($sanitized);
   const jsonFaqs = normalizedFaqJson(article.faqJson);
@@ -266,20 +270,17 @@ export function validateArticle(article = {}, context = {}) {
     issues.push(createIssue('faq_mismatch', 'Sichtbare FAQ und FAQ-JSON müssen in Reihenfolge und Inhalt übereinstimmen.'));
   }
 
-  const allowedInternalLinks = new Set((Array.isArray(context.allowedInternalLinks) ? context.allowedInternalLinks : [])
-    .map((value) => typeof value === 'string' ? value : value?.url)
-    .filter((value) => typeof value === 'string'));
+  const allowedInternalLinks = normalizeTrustedInternalPaths(context.allowedInternalLinks);
   const allowedExternalUrls = new Set(sourceUrlsFromContext(context));
   $sanitized('a[href]').each((_, element) => {
     const href = $sanitized(element).attr('href');
-    if (hasForbiddenLinkScheme(href)) {
-      return;
-    }
-    if (/^https?:\/\//i.test(href || '')) {
+    const normalized = normalizeInternalHref(href);
+    if (normalized.kind === 'unsafe' || normalized.kind === 'invalid') return;
+    if (normalized.kind === 'external') {
       if (!allowedExternalUrls.has(href)) {
         issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
       }
-    } else if (!allowedInternalLinks.has(href)) {
+    } else if (!allowedInternalLinks.has(normalized.path)) {
       issues.push(createIssue('internal_link_forbidden', `Der interne Link ${href} ist nicht freigegeben.`));
     }
   });

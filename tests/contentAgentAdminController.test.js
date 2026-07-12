@@ -415,16 +415,24 @@ test('Revisionsfreigabe akzeptiert ausschließlich die literale Bestätigung tru
   for (const confirmed of ['on', '1', 'false', undefined]) {
     const res = response();
     await controller.publishRevisionAction({
-      params: { id: '3' }, body: { confirmed }, session: { user: { id: 7, username: 'admin' } }
+      params: { id: '3' }, body: { confirmed, expected_revision_version: '4' }, session: { user: { id: 7, username: 'admin' } }
     }, res, assert.fail);
     assert.equal(res.statusCode, 400);
   }
   const res = response();
   await controller.publishRevisionAction({
-    params: { id: '3' }, body: { confirmed: 'true' }, session: { user: { id: 7, username: 'admin' } }
+    params: { id: '3' }, body: { confirmed: 'true', expected_revision_version: '4' }, session: { user: { id: 7, username: 'admin' } }
   }, res, assert.fail);
   assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?published=1');
   assert.equal(inputs.at(-1).confirmed, true);
+  assert.equal(inputs.at(-1).expectedVersion, 4);
+  for (const invalidVersion of ['0', '01', '1.0', '1e2', 'on', undefined]) {
+    const invalidRes = response();
+    await controller.publishRevisionAction({
+      params: { id: '3' }, body: { confirmed: 'true', expected_revision_version: invalidVersion }, session: { user: { id: 7, username: 'admin' } }
+    }, invalidRes, assert.fail);
+    assert.equal(invalidRes.statusCode, 400);
+  }
 });
 
 test('Ablehnungskonflikt wird als 409 ohne interne Details ausgegeben', async () => {

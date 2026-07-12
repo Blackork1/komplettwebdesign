@@ -18,7 +18,7 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
   const calls = [];
   const post = changedPost || livePost;
   const revision = {
-    id: 3, post_id: 7, audit_id: 5, status: revisionStatus,
+    id: 3, post_id: 7, audit_id: 5, status: revisionStatus, revision_version: 4,
     snapshot_json: createRevisionSnapshot(livePost)
   };
   const client = {
@@ -32,9 +32,10 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
       if (normalized.startsWith('SELECT * FROM content_post_revisions')) return { rows: [revision] };
       if (normalized.startsWith('SELECT * FROM content_post_audits')) return { rows: [{ id: 5, post_id: 7, status: 'revision_created' }] };
       if (normalized.startsWith('SELECT slug FROM posts')) return { rows: [] };
-      if (normalized.startsWith("SELECT '/kontakt' AS url")) return { rows: [{ url: '/kontakt' }, { url: '/blog/artikel' }] };
+      if (normalized.startsWith('SELECT url FROM (')) return { rows: [{ url: '/kontakt' }, { url: '/blog/artikel' }] };
       if (normalized.startsWith('UPDATE posts SET')) return { rows: [{ ...post, ...revision.snapshot_json.fields, slug: post.slug, published: true }] };
-      if (normalized.startsWith('UPDATE content_post_')) return { rows: [] };
+      if (normalized.startsWith('UPDATE content_post_revisions')) return { rows: [{ id: 3 }] };
+      if (normalized.startsWith('UPDATE content_post_audits')) return { rows: [] };
       throw new Error(`Unerwartetes SQL: ${normalized}`);
     },
     release() { calls.push('RELEASE'); }
@@ -47,6 +48,7 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
 
 const approvalInput = {
   revisionId: 3,
+  expectedVersion: 4,
   admin: { id: 1, username: 'admin' },
   currentHash: liveHashForPost,
   validateSnapshot: async () => true
@@ -69,6 +71,16 @@ test('Freigabe sperrt Tabelle, Post, Revision und Audit in dieser Reihenfolge un
   assert.doesNotMatch(assignments, /(?:^|,)\s*(?:slug|published|published_at)\s*=/i);
   assert.ok(calls.includes('COMMIT'));
   assert.equal(calls.includes('ROLLBACK'), false);
+});
+
+test('älterer Tab darf nach einer Speicherung nicht mehr freigeben und schreibt nichts live', async () => {
+  const { repository, calls } = approvalHarness();
+  await assert.rejects(
+    repository.approveRevisionTransaction({ ...approvalInput, expectedVersion: 3 }),
+    (error) => error.code === 'CONTENT_REVISION_CONFLICT'
+  );
+  assert.ok(calls.includes('ROLLBACK'));
+  assert.equal(calls.some((sql) => sql.startsWith('UPDATE posts SET')), false);
 });
 
 test('veraltete Livebasis rollt zurück, ohne den Post zu schreiben', async () => {

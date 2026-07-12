@@ -16,16 +16,18 @@ const POST_COLUMNS = `
 
 async function trustedValidationContext(postId, client) {
   const [slugs, links] = await Promise.all([
-    client.query(`SELECT slug FROM posts WHERE id <> $1`, [postId]),
+    client.query(`SELECT slug FROM posts WHERE id <> $1 ORDER BY id LIMIT 5000`, [postId]),
     client.query(`
-      SELECT '/kontakt' AS url
-      UNION SELECT '/pakete'
-      UNION SELECT '/webdesign-berlin'
-      UNION SELECT '/blog/' || slug FROM posts WHERE published = TRUE
-      UNION SELECT '/ratgeber/' || slug FROM ratgeber WHERE published = TRUE
-      UNION SELECT '/leistungen/' || slug FROM leistungen_pages WHERE is_published = TRUE
-      UNION SELECT '/branchen/' || slug FROM industries
-      ORDER BY url
+      SELECT url FROM (
+        SELECT '/kontakt' AS url
+        UNION SELECT '/pakete'
+        UNION SELECT '/webdesign-berlin'
+        UNION SELECT '/blog/' || slug FROM posts WHERE published = TRUE
+        UNION SELECT '/ratgeber/' || slug FROM ratgeber WHERE published = TRUE
+        UNION SELECT '/leistungen/' || slug FROM leistungen_pages WHERE is_published = TRUE
+        UNION SELECT '/branchen/' || slug FROM industries
+      ) trusted_urls
+      ORDER BY url LIMIT 5000
     `)
   ]);
   return {
@@ -105,7 +107,7 @@ export function createContentRevisionRepository(db = pool) {
       return rows[0] || null;
     },
 
-    async approveRevisionTransaction({ revisionId, admin, currentHash, validateSnapshot }) {
+    async approveRevisionTransaction({ revisionId, expectedVersion, admin, currentHash, validateSnapshot }) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
@@ -120,6 +122,9 @@ export function createContentRevisionRepository(db = pool) {
         `, [revisionId]);
         const revision = revisions[0];
         if (!revision || revision.status !== 'draft') throw conflict('CONTENT_REVISION_CONFLICT', 'Die Revision wurde bereits bearbeitet.');
+        if (Number(revision.revision_version) !== Number(expectedVersion)) {
+          throw conflict('CONTENT_REVISION_CONFLICT', 'Die angezeigte Revision wurde zwischenzeitlich verändert.');
+        }
         const { rows: audits } = await client.query(`
           SELECT * FROM content_post_audits
           WHERE id = $1 AND post_id = $2 AND status = 'revision_created'
@@ -149,11 +154,13 @@ export function createContentRevisionRepository(db = pool) {
         if (!updatedPosts[0] || updatedPosts[0].published !== true || updatedPosts[0].slug !== base.slug) {
           throw conflict('CONTENT_REVISION_CONFLICT', 'Der Livebeitrag konnte nicht sicher aktualisiert werden.');
         }
-        await client.query(`
+        const { rows: approvedRevisions } = await client.query(`
           UPDATE content_post_revisions
           SET status = 'approved', admin_id = $2, admin_username = $3, approved_at = NOW()
-          WHERE id = $1 AND status = 'draft'
-        `, [revisionId, admin.id, admin.username]);
+          WHERE id = $1 AND status = 'draft' AND revision_version = $4
+          RETURNING id
+        `, [revisionId, admin.id, admin.username, expectedVersion]);
+        if (!approvedRevisions[0]) throw conflict('CONTENT_REVISION_CONFLICT', 'Die Revision wurde zwischenzeitlich verändert.');
         await client.query(`UPDATE content_post_audits SET status = 'resolved' WHERE id = $1`, [revision.audit_id]);
         await client.query('COMMIT');
         return { post: updatedPosts[0], revisionId };

@@ -242,12 +242,17 @@ export function createContentRevisionService({
       return updated;
     },
 
-    async approveRevision({ revisionId, confirmed, admin } = {}) {
+    async approveRevision({ revisionId, expectedVersion, confirmed, admin } = {}) {
       if (confirmed !== true) throw revisionError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
       const id = positiveId(revisionId, 'revisionId');
+      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {
+        throw revisionError('CONTENT_ACTION_VALIDATION_FAILED', 'expectedVersion ist ungültig.');
+      }
+      const version = expectedVersion;
       const normalizedAdmin = normalizeAdmin(admin);
       return repository.approveRevisionTransaction({
         revisionId: id,
+        expectedVersion: version,
         admin: normalizedAdmin,
         currentHash: liveHashForPost,
         validateSnapshot: (snapshot, context) => assertSnapshotValid(snapshot, validateArticle, context)
