@@ -245,3 +245,31 @@ test('Entwurfseditor enthält alle allowlist-Felder, CSRF und escaped HTML/FAQ m
   assert.match(html, /&lt;img src=x&gt;/);
   assert.doesNotMatch(html, /name="published"|name="workflow_status"/);
 });
+
+test('Revisionseditor escaped Legacy-Inhalt, sperrt ihn und schützt die Freigabe mit CSRF', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('revisionEdit.ejs')), {
+    ...baseLocals,
+    revision: {
+      id: 8,
+      status: 'draft',
+      snapshot_json: {
+        base: {
+          slug: 'bestand',
+          content_format: 'legacy_ejs',
+          updated_at: '2026-07-12T10:00:00.000Z'
+        },
+        fields: {
+          title: '<script>Titel</script>',
+          content: '<% globalThis.ausgefuehrt = true %><script>alert(1)</script>',
+          faq_json: [{ question: '</textarea><script>faq</script>', answer: 'Antwort' }]
+        }
+      }
+    },
+    saved: false
+  });
+  assert.match(html, /name="content"[^>]*readonly/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /&lt;% globalThis\.ausgefuehrt = true %&gt;/);
+  assert.doesNotMatch(html, /<script>(?:Titel|alert\(1\)|faq)<\/script>/);
+});

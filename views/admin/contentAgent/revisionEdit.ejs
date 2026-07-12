@@ -1,0 +1,46 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const item = typeof revision !== 'undefined' && revision ? revision : {};
+  const snapshot = item.snapshot_json || {};
+  const base = snapshot.base || {};
+  const fields = snapshot.fields || {};
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const isLegacy = base.content_format === 'legacy_ejs';
+%>
+<div class="content-agent-page content-agent-editor">
+  <header class="content-agent-pagehead">
+    <div><p class="content-agent-eyebrow">Bestandsrevision #<%= item.id || '' %></p><h1 class="admin-page-title mb-1">Veröffentlichten Artikel sicher überarbeiten</h1><p class="content-agent-lead">Die Livefassung bleibt bis zur ausdrücklichen Freigabe unverändert. Slug und Veröffentlichungsstatus sind gesperrt.</p></div>
+    <a href="/admin/content-agent/existing-content" class="btn btn-outline-secondary">Zur Bestandsliste</a>
+  </header>
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
+  <% if (saved === true) { %><div class="alert alert-success" role="status">Die Revision wurde gespeichert; der Liveartikel blieb unverändert.</div><% } %>
+  <div class="content-agent-notice"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><div><strong>Geschützte Basis</strong><p><code>/blog/<%= base.slug || '' %></code> · Format <code><%= base.content_format || '' %></code> · Stand <%= base.updated_at ? new Date(base.updated_at).toLocaleString('de-DE') : '–' %></p></div></div>
+
+  <form method="post" action="/admin/content-agent/revisions/<%= item.id %>" class="content-agent-panel content-agent-editor__form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="content-agent-editor__grid">
+      <div class="content-agent-field content-agent-field--wide"><label for="revision-title">Titel</label><input id="revision-title" class="form-control" name="title" maxlength="255" value="<%= fields.title || '' %>" required></div>
+      <div class="content-agent-field content-agent-field--wide"><label for="revision-excerpt">Kurzbeschreibung</label><textarea id="revision-excerpt" class="form-control" name="excerpt" maxlength="500" rows="3"><%= fields.excerpt || '' %></textarea></div>
+      <div class="content-agent-field"><label for="revision-meta-title">Meta Title</label><input id="revision-meta-title" class="form-control" name="meta_title" maxlength="255" value="<%= fields.meta_title || '' %>"></div>
+      <div class="content-agent-field"><label for="revision-meta-description">Meta Description</label><textarea id="revision-meta-description" class="form-control" name="meta_description" maxlength="500" rows="3"><%= fields.meta_description || '' %></textarea></div>
+      <div class="content-agent-field"><label for="revision-og-title">OG-Titel</label><input id="revision-og-title" class="form-control" name="og_title" maxlength="255" value="<%= fields.og_title || '' %>"></div>
+      <div class="content-agent-field"><label for="revision-og-description">OG-Beschreibung</label><textarea id="revision-og-description" class="form-control" name="og_description" maxlength="500" rows="3"><%= fields.og_description || '' %></textarea></div>
+      <div class="content-agent-field"><label for="revision-image-url">Bild-URL</label><input id="revision-image-url" class="form-control" name="image_url" maxlength="2048" value="<%= fields.image_url || '' %>"></div>
+      <div class="content-agent-field"><label for="revision-image-alt">Bild-Alt-Text</label><input id="revision-image-alt" class="form-control" name="image_alt" maxlength="500" value="<%= fields.image_alt || '' %>"></div>
+      <div class="content-agent-field content-agent-field--wide"><label for="revision-content">Artikelinhalt</label><textarea id="revision-content" class="form-control content-agent-code-field" name="content" rows="24" spellcheck="false" <%= isLegacy ? 'readonly' : '' %>><%= fields.content || '' %></textarea><small><%= isLegacy ? 'Legacy-EJS wird niemals ausgeführt und bleibt in Revisionen unveränderlich.' : 'Statisches HTML wird beim Speichern und Freigeben erneut bereinigt und validiert.' %></small></div>
+      <div class="content-agent-field content-agent-field--wide"><label for="revision-faq">FAQ-JSON</label><textarea id="revision-faq" class="form-control content-agent-code-field" name="faq_json" rows="12" spellcheck="false"><%= JSON.stringify(fields.faq_json || [], null, 2) %></textarea></div>
+    </div>
+    <div class="content-agent-editor__actions"><p>Speichern verändert keinen veröffentlichten Inhalt.</p><button class="btn btn-primary" type="submit">Revision speichern</button></div>
+  </form>
+
+  <section class="content-agent-panel mt-4">
+    <h2>Geprüfte Revision übernehmen</h2>
+    <p>Vor dem Update wird die Livefassung unter Sperre exakt mit Slug, Format, Zeitstempel und Hash verglichen und die Revision erneut validiert.</p>
+    <form method="post" action="/admin/content-agent/revisions/<%= item.id %>/publish" data-confirm="Diese Revision jetzt in den veröffentlichten Artikel übernehmen?">
+      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true">
+      <button class="btn btn-success" type="submit">Ausdrücklich freigeben</button>
+    </form>
+  </section>
+</div>
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<%- include('../../partials/admin_footer') %>

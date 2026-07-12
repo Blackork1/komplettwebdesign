@@ -83,10 +83,27 @@ export function createContentAgentAdminRepository(db = pool) {
 
     async listExistingContent() {
       const { rows } = await db.query(`
-        SELECT id, title, slug, updated_at
-        FROM posts
-        WHERE published = TRUE
-        ORDER BY updated_at DESC
+        SELECT p.id, p.title, p.slug, p.updated_at,
+               audit.id AS audit_id, audit.score AS audit_score,
+               audit.status AS audit_status, audit.findings_json,
+               revision.id AS revision_id, revision.status AS revision_status
+        FROM posts p
+        LEFT JOIN LATERAL (
+          SELECT a.id, a.score, a.status, a.findings_json
+          FROM content_post_audits a
+          WHERE a.post_id = p.id
+          ORDER BY a.created_at DESC, a.id DESC
+          LIMIT 1
+        ) audit ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT r.id, r.status
+          FROM content_post_revisions r
+          WHERE r.post_id = p.id AND r.status = 'draft'
+          ORDER BY r.created_at DESC, r.id DESC
+          LIMIT 1
+        ) revision ON TRUE
+        WHERE p.published = TRUE
+        ORDER BY p.updated_at DESC
         LIMIT 100
       `);
       return rows;

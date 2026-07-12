@@ -11,7 +11,8 @@ const REGENERATION_JOB_TYPES = new Set([
   'regenerate_faq',
   'regenerate_image'
 ]);
-const SUPPORTED_JOB_TYPES = new Set([...GENERATION_JOB_TYPES, ...REGENERATION_JOB_TYPES]);
+const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
+const SUPPORTED_JOB_TYPES = new Set([...GENERATION_JOB_TYPES, ...REGENERATION_JOB_TYPES, ...AUDIT_JOB_TYPES]);
 
 function required(value, name) {
   if (!value) throw new TypeError(`Die Produktionsabhängigkeit ${name} wird benötigt.`);
@@ -78,7 +79,9 @@ export function createProductionJobHandler({
   pipelineDependencies,
   createPipelineDependencies,
   runRegenerationJob,
-  createRegenerationDependencies
+  createRegenerationDependencies,
+  runAuditJob,
+  createAuditDependencies
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
@@ -104,7 +107,20 @@ export function createProductionJobHandler({
     const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
-    if (REGENERATION_JOB_TYPES.has(claim.job_type)) {
+    if (AUDIT_JOB_TYPES.has(claim.job_type)) {
+      required(runAuditJob, 'runAuditJob');
+      required(createAuditDependencies, 'createAuditDependencies');
+      result = await runAuditJob({
+        claim,
+        run,
+        runtimeSnapshot: persistedSnapshot,
+        currentYear: Number(berlinDateKey(now(), jobTimezone).slice(0, 4)),
+        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+      }, await createAuditDependencies(persistedSnapshot));
+      required(finishRun, 'finishRun');
+      if (typeof leaseGuard === 'function') await leaseGuard();
+      await finishRun(run.id, { status: 'completed', postId: null });
+    } else if (REGENERATION_JOB_TYPES.has(claim.job_type)) {
       required(runRegenerationJob, 'runRegenerationJob');
       required(createRegenerationDependencies, 'createRegenerationDependencies');
       const regenerationDependencies = await createRegenerationDependencies(persistedSnapshot);
@@ -310,6 +326,11 @@ export function createProductionRuntime({
       draftRepository: modules.createDraftRegenerationRepository(database)
     };
   }
+  function createAuditDependencies() {
+    return {
+      auditRepository: modules.createContentAuditRepository(database)
+    };
+  }
   const snapshotRuntimeAvailable = typeof modules.settingsRepository?.getContentAgentSettings === 'function'
     && typeof modules.runtimeConfigService?.resolveContentAgentRuntimeConfig === 'function'
     && typeof modules.runtimeConfigService?.createContentAgentJobSnapshot === 'function';
@@ -328,6 +349,8 @@ export function createProductionRuntime({
     finishRun: repositories.runRepository.finishRun,
     runPipeline: modules.runDraftPipeline,
     runRegenerationJob: modules.runDraftRegenerationJob,
+    runAuditJob: modules.runExistingContentAuditJob,
+    createAuditDependencies,
     pipelineDependencies
   });
   const worker = createContentWorker({
@@ -428,7 +451,9 @@ export async function loadProductionModules() {
     runtimeConfigService,
     schedulerService,
     regenerationService,
-    publicationService
+    publicationService,
+    auditService,
+    auditRepositoryModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -451,7 +476,9 @@ export async function loadProductionModules() {
     import('../services/contentAgent/runtimeConfigService.js'),
     import('../services/contentAgent/contentSchedulerService.js'),
     import('../services/contentAgent/draftRegenerationService.js'),
-    import('../services/contentAgent/contentPublicationService.js')
+    import('../services/contentAgent/contentPublicationService.js'),
+    import('../services/contentAgent/legacyAuditService.js'),
+    import('../repositories/contentAuditRepository.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -476,7 +503,9 @@ export async function loadProductionModules() {
     schedulerService,
     runDraftRegenerationJob: regenerationService.runDraftRegenerationJob,
     createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository,
-    createContentPublicationService: publicationService.createContentPublicationService
+    createContentPublicationService: publicationService.createContentPublicationService,
+    runExistingContentAuditJob: auditService.runExistingContentAuditJob,
+    createContentAuditRepository: auditRepositoryModule.createContentAuditRepository
   };
 }
 

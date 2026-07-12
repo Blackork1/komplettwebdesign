@@ -99,7 +99,15 @@ export function buildExistingContentListPresentation(rows = []) {
     id: row.id,
     title: row.title,
     slug: row.slug,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    ...(Object.hasOwn(row, 'audit_id') ? {
+      auditId: row.audit_id || null,
+      auditScore: row.audit_score === null || row.audit_score === undefined ? null : Number(row.audit_score),
+      auditStatus: row.audit_status || null,
+      findings: Array.isArray(row.findings_json) ? row.findings_json : [],
+      revisionId: row.revision_id || null,
+      revisionStatus: row.revision_status || null
+    } : {})
   }));
 }
 

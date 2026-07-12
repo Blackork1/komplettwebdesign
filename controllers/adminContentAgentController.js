@@ -6,7 +6,9 @@ const CONFLICT_CODES = new Set([
   'CONTENT_AUTOPUBLISH_NOT_READY',
   'CONTENT_DRAFT_NOT_PUBLISHABLE',
   'CONTENT_DRAFT_NOT_REJECTABLE',
-  'CONTENT_JOB_NOT_RETRYABLE'
+  'CONTENT_JOB_NOT_RETRYABLE',
+  'CONTENT_REVISION_CONFLICT',
+  'CONTENT_REVISION_STALE'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -16,7 +18,9 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_DRAFT_NOT_PUBLISHABLE: 'Der Entwurf kann in diesem Zustand nicht veröffentlicht werden.',
   CONTENT_DRAFT_NOT_REJECTABLE: 'Der Entwurf kann in diesem Zustand nicht abgelehnt werden.',
   CONTENT_JOB_NOT_RETRYABLE: 'Der Job kann in diesem Zustand nicht fortgesetzt werden.',
-  CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.'
+  CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.',
+  CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
+  CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.'
 });
 
 export function contentAgentStatus(error) {
@@ -43,7 +47,7 @@ function unavailable(res) {
 
 function adminFromRequest(req) {
   return {
-    id: req.session?.user?.is ?? req.session?.user?.id ?? null,
+    id: req.session?.user?.id ?? req.session?.user?.is ?? null,
     username: String(req.session?.user?.username || '')
   };
 }

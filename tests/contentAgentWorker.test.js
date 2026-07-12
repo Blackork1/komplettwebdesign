@@ -877,6 +877,27 @@ test('nicht unterstützte Jobtypen sind permanente Fehler ohne Retry', async () 
   );
 });
 
+test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence aus', async () => {
+  const calls = [];
+  const leaseGuard = async () => calls.push('lease');
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 88, runtime_snapshot_json: { timezone: 'Europe/Berlin' } }; },
+    async finishRun(runId, payload) { calls.push(['finish', runId, payload]); },
+    async runPipeline() { assert.fail('Audit darf keine Generierung starten.'); },
+    createAuditDependencies() { return { auditRepository: true }; },
+    async runAuditJob(context, dependencies) {
+      calls.push(['audit', context, dependencies]);
+      return { status: 'completed', audited: 2 };
+    }
+  });
+
+  const result = await handler({ id: 51, job_type: 'audit_existing_posts', payload_json: {} }, { leaseGuard });
+  assert.equal(result.audited, 2);
+  assert.equal(calls.find(([type]) => type === 'audit')[1].run.id, 88);
+  assert.equal(calls.find(([type]) => type === 'audit')[1].leaseGuard, leaseGuard);
+  assert.deepEqual(calls.at(-1), ['finish', 88, { status: 'completed', postId: null }]);
+});
+
 test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben Run und Snapshot', async () => {
   const persistedSnapshot = {
     operatingMode: 'review',

@@ -111,6 +111,9 @@ CREATE TABLE IF NOT EXISTS content_post_audits (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (status IN ('open', 'revision_created', 'resolved'))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type
+  ON content_post_audits (job_id, post_id, audit_type)
+  WHERE job_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS content_post_revisions (
   id BIGSERIAL PRIMARY KEY,

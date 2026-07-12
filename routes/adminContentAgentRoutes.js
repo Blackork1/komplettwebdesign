@@ -18,6 +18,8 @@ import {
 import { validateContentAgentSettingsTransition } from '../services/contentAgent/runtimeConfigService.js';
 import { createAdminDraftService } from '../services/contentAgent/adminDraftService.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
+import { createContentRevisionService } from '../services/contentAgent/contentRevisionService.js';
+import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
 import * as blogPostPresentation from '../services/blogPostPresentationService.js';
 import * as presentation from '../services/contentAgent/adminPresentationService.js';
 import pool from '../util/db.js';
@@ -53,6 +55,9 @@ export function createAdminContentAgentRouter(controller) {
 const technicalConfig = getContentAgentTechnicalConfig();
 const draftService = createAdminDraftService();
 const publicationService = createContentPublicationService();
+const revisionService = createContentRevisionService({
+  repository: createContentRevisionRepository(pool)
+});
 const controller = createAdminContentAgentController({
   adminRepository: createContentAgentAdminRepository(pool),
   settingsRepository: {
@@ -69,6 +74,7 @@ const controller = createAdminContentAgentController({
   validateSettingsTransition: validateContentAgentSettingsTransition,
   draftService,
   publicationService,
+  revisionService,
   blogPostPresentation
 });
 
