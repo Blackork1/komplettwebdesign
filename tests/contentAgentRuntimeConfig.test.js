@@ -5,6 +5,10 @@ import {
   resolveContentAgentRuntimeConfig,
   validateContentAgentSettingsTransition
 } from '../services/contentAgent/runtimeConfigService.js';
+import {
+  CONTENT_AGENT_RULE_MANIFEST,
+  CONTENT_AGENT_RULE_MANIFEST_HASH
+} from '../services/contentAgent/contentRuleManifest.js';
 
 const technicalConfig = Object.freeze({
   enabled: true,
@@ -140,7 +144,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
   });
 
   assert.deepEqual(snapshot, {
-    version: 1,
+    version: 2,
     operatingMode: 'review',
     forcedMode: 'review',
     source: 'admin_manual',
@@ -164,7 +168,9 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     reviewModel: 'review-model',
     imageModel: 'image-model',
     settingsVersion: 2,
-    startedAt: '2026-07-11T10:15:30.000Z'
+    startedAt: '2026-07-11T10:15:30.000Z',
+    ruleManifest: CONTENT_AGENT_RULE_MANIFEST,
+    ruleManifestHash: CONTENT_AGENT_RULE_MANIFEST_HASH
   });
   assert.equal(Object.isFrozen(snapshot), true);
 });

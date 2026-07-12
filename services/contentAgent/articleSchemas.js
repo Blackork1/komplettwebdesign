@@ -1,4 +1,6 @@
 import { z } from 'zod';
+
+export const ARTICLE_SCHEMA_VERSION = 'article-schema-v1';
 import * as cheerio from 'cheerio';
 import { CONTENT_AGENT_LINKS } from '../../data/contentAgentLinks.js';
 

@@ -187,7 +187,8 @@ function createDependencies(overrides = {}) {
       contentOutputCostPerMtok: 15,
       reviewInputCostPerMtok: 0.75,
       reviewOutputCostPerMtok: 4.5,
-      imageCostEur: 0.041
+      imageCostEur: 0.041,
+      allowedInternalLinks: ['/kontakt', '/website-tester']
     },
     inventoryService: {
       async buildSiteInventory() {
@@ -1215,6 +1216,37 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.equal(harness.reviewInputs[0].article.contentHtml.endsWith('<!-- sanitized -->'), true);
   assert.equal(harness.events.at(-2).stageId, 'completed');
   assert.deepEqual(harness.events.at(-1), { type: 'finish', status: 'completed' });
+  const inventoryStage = harness.stageUpdates.find(({ stageId }) => stageId === 'inventory');
+  assert.deepEqual(inventoryStage.stageResult.inventory.approvedLinks, [{ url: '/kontakt' }]);
+});
+
+test('Pipeline-Retry verwendet persistiertes Inventar und ausschließlich die unveränderlichen Snapshotlinks', async () => {
+  const persistedInventory = {
+    inventory: {
+      blogPosts: [], guides: [], servicePages: [], industries: [], packages: [],
+      approvedLinks: [{ url: '/live-inventar-darf-nicht-entscheiden' }]
+    },
+    counts: { blogPosts: 0, guides: 0, servicePages: 0, industries: 0, packages: 0 }
+  };
+  const base = createDependencies();
+  let briefInput;
+  base.dependencies.inventoryService = {
+    async buildSiteInventory() { assert.fail('Persistierte Inventarstage muss den Live-Reload verhindern.'); }
+  };
+  base.dependencies.config.allowedInternalLinks = ['/kontakt'];
+  base.dependencies.costService.getPersistedStageResult = async ({ stageId }) => (
+    stageId === 'inventory' ? persistedInventory : null
+  );
+  base.dependencies.openaiService.createSeoBrief = async (input) => {
+    briefInput = structuredClone(input);
+    return operation(seoBrief, 'resp-brief')();
+  };
+
+  const result = await runDraftPipeline({ runId: 990 }, base.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(briefInput.internalLinks, ['/kontakt']);
+  assert.deepEqual(base.stageUpdates.some(({ stageId }) => stageId === 'inventory'), false);
 });
 
 test('Pipeline persistiert fokussierte Review-Fundstellen additiv zum kompatiblen Qualitätsbericht', async () => {
@@ -1337,7 +1369,8 @@ test('Reparaturen sind begrenzt und werden mit eindeutigen IDs erneut validiert 
       contentOutputCostPerMtok: 15,
       reviewInputCostPerMtok: 0.75,
       reviewOutputCostPerMtok: 4.5,
-      imageCostEur: 0.041
+      imageCostEur: 0.041,
+      allowedInternalLinks: ['/kontakt']
     },
     openaiService: {
       createTopicCandidates: operation({ candidates: [topic] }, 'resp-topic'),

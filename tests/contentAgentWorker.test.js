@@ -1071,16 +1071,16 @@ test('Produktionsruntime bindet Regenerationsrepository an die aktive Datenbank 
       async enqueueJob() {}, async updateContentSchedulerState() {}
     },
     runRepository: {
-      async createRun(_input, db) {
+      async createRun(input, db) {
         boundDatabases.push(db);
-        return { id: 91, runtime_snapshot_json: { operatingMode: 'review', timezone: 'Europe/Berlin' } };
+        return { id: 91, status: 'running', runtime_snapshot_json: input.runtimeSnapshot };
       },
       async updateRunStage() {}, async finishRun() {}
     },
     settingsRepository: { async getContentAgentSettings() { return { settings_version: 1 }; } },
     runtimeConfigService: {
       resolveContentAgentRuntimeConfig() { return { operatingMode: 'review', timezone: 'Europe/Berlin' }; },
-      createContentAgentJobSnapshot({ runtimeConfig }) { return runtimeConfig; }
+      createContentAgentJobSnapshot
     },
     providerStateRepository: { async recordProviderResult() {} },
     topicRepository: { async createTopic() {}, async markTopicUsed() {} },

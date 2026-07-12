@@ -1,3 +1,5 @@
+export const TOPIC_SCORING_VERSION = 'topic-scoring-v1';
+
 function clamp(value) {
   return Math.min(10, Math.max(0, Number(value) || 0));
 }

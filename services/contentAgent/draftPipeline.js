@@ -9,6 +9,7 @@ import {
 import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
+import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -197,6 +198,29 @@ function isPersistedTopicResult(value) {
   );
 }
 
+function isPersistedInventoryResult(value) {
+  const inventory = value?.inventory;
+  const counts = value?.counts;
+  const fields = ['blogPosts', 'guides', 'servicePages', 'industries', 'packages', 'approvedLinks'];
+  if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory)
+      || !counts || typeof counts !== 'object' || Array.isArray(counts)
+      || fields.some((field) => !Array.isArray(inventory[field]))) return false;
+  if (JSON.stringify(value).length > 2_000_000) return false;
+  return Number(counts.blogPosts) === inventory.blogPosts.length
+    && Number(counts.guides) === inventory.guides.length
+    && Number(counts.servicePages) === inventory.servicePages.length
+    && Number(counts.industries) === inventory.industries.length
+    && Number(counts.packages) === inventory.packages.length;
+}
+
+function internalLinksWithinSnapshot(links, allowedInternalLinks) {
+  const allowed = normalizeTrustedInternalPaths(allowedInternalLinks);
+  return Array.isArray(links) && links.every((link) => {
+    const normalized = normalizeInternalHref(link?.url);
+    return normalized.kind === 'internal' && allowed.has(normalized.path);
+  });
+}
+
 function isPersistedDraftResult(value) {
   const post = value?.post;
   const topicId = Number(value?.topicId);
@@ -303,6 +327,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   required(imageService.deleteImage, 'imageService.deleteImage');
 
   const runId = input.runId;
+  const snapshotInternalLinks = Array.isArray(config.allowedInternalLinks)
+    ? config.allowedInternalLinks
+    : [];
   const leaseGuard = typeof input.leaseGuard === 'function' ? input.leaseGuard : async () => true;
   const modelResults = [];
   const auditWarnings = [];
@@ -681,17 +708,31 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       return await completeDraft(persistedDraft, persistedAutoPublish);
     }
 
-    const inventory = await inventoryService.buildSiteInventory();
-    const pricingContext = inventory.packages || [];
-    await updateStage('inventory', {
-      counts: {
-        blogPosts: inventory.blogPosts?.length || 0,
-        guides: inventory.guides?.length || 0,
-        servicePages: inventory.servicePages?.length || 0,
-        industries: inventory.industries?.length || 0,
-        packages: pricingContext.length
+    const persistedInventory = await readPersistedStage('inventory');
+    let inventoryResult = persistedInventory;
+    if (persistedInventory && !isPersistedInventoryResult(persistedInventory)) {
+      return finishManual(
+        'inventory_recovery_invalid',
+        'Die persistierte Inventarstage ist unvollständig oder zu groß.'
+      );
+    }
+    if (!inventoryResult) {
+      const liveInventory = await inventoryService.buildSiteInventory();
+      const counts = {
+        blogPosts: liveInventory.blogPosts?.length || 0,
+        guides: liveInventory.guides?.length || 0,
+        servicePages: liveInventory.servicePages?.length || 0,
+        industries: liveInventory.industries?.length || 0,
+        packages: liveInventory.packages?.length || 0
+      };
+      inventoryResult = { inventory: liveInventory, counts };
+      if (!isPersistedInventoryResult(inventoryResult)) {
+        return finishManual('inventory_invalid', 'Das geladene Seiteninventar ist unvollständig oder zu groß.');
       }
-    });
+      await updateStage('inventory', inventoryResult);
+    }
+    const inventory = inventoryResult.inventory;
+    const pricingContext = inventory.packages || [];
 
     const topicCandidates = await paidTextOperation({
       stage: 'topic_research',
@@ -766,13 +807,19 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       input: {
         topic: selectedTopic,
         inventory,
-        internalLinks: inventory.approvedLinks || [],
+        internalLinks: snapshotInternalLinks,
         sourceReferences,
         pricingContext
       }
     });
     const invalidBriefSources = await validateOptionalSourceBoundary(briefing.sourceReferences, sourceReferences);
     if (invalidBriefSources) return invalidBriefSources;
+    if (!internalLinksWithinSnapshot(briefing.internalLinks, snapshotInternalLinks)) {
+      return finishManual(
+        'brief_internal_links_invalid',
+        'Das SEO-Briefing enthält interne Links außerhalb des unveränderlichen Jobsnapshots.'
+      );
+    }
     if (briefingRequiresSources(briefing)) {
       const requiredSources = await requireValidSources(sourceReferences);
       if (!requiredSources.ok) return requiredSources.result;
@@ -801,7 +848,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
 
     const validationContext = {
       existingSlugs: inventory.blogPosts || [],
-      allowedInternalLinks: inventory.approvedLinks || [],
+      allowedInternalLinks: snapshotInternalLinks,
       sourceReferences
     };
     const initialPricing = inspectPricing(currentArticle, pricingContext, [], false);

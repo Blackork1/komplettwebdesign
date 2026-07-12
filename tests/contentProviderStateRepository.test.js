@@ -52,9 +52,17 @@ function providerPipelineDependencies(openaiOperation, providerResults) {
       monthlyCostLimitEur: 25,
       contentStageReservationEur: 0.5,
       contentInputCostPerMtok: 2.5,
-      contentOutputCostPerMtok: 15
+      contentOutputCostPerMtok: 15,
+      allowedInternalLinks: ['/kontakt']
     },
-    inventoryService: { async buildSiteInventory() { return { packages: [], approvedLinks: [] }; } },
+    inventoryService: {
+      async buildSiteInventory() {
+        return {
+          blogPosts: [], guides: [], servicePages: [], industries: [],
+          packages: [], approvedLinks: [{ url: '/kontakt' }]
+        };
+      }
+    },
     openaiService: {
       createTopicCandidates: openaiOperation,
       researchCurrentSources() {},

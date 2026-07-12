@@ -1,6 +1,7 @@
 const CORE_INTERNAL_PATHS = Object.freeze([
   '/kontakt', '/pakete', '/webdesign-berlin', '/blog', '/ratgeber', '/leistungen', '/branchen'
 ]);
+export const INTERNAL_LINK_NORMALIZATION_VERSION = 'trusted-links-v1';
 const CANONICAL_HOSTS = new Set(['komplettwebdesign.de', 'www.komplettwebdesign.de']);
 
 function normalizedPath(url) {

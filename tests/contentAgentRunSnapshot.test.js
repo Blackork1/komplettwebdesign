@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createRun } from '../repositories/contentRunRepository.js';
+import { createRun, findRunByJobId } from '../repositories/contentRunRepository.js';
 
 function createRunDb() {
   let stored = null;
@@ -49,4 +49,18 @@ test('Retry bewahrt den ersten Runtime-Snapshot', async () => {
     db.calls[0].sql,
     /DO UPDATE[\s\S]*runtime_snapshot_json\s*=/i
   );
+});
+
+test('Run-Lookup bindet job_id ausschließlich an die injizierte Produktionsdatenbank', async () => {
+  const calls = [];
+  const db = {
+    async query(sql, params) {
+      calls.push({ sql, params });
+      return { rows: [{ id: 9, job_id: params[0], runtime_snapshot_json: { immutable: true } }] };
+    }
+  };
+  const run = await findRunByJobId(77, db);
+  assert.equal(run.job_id, 77);
+  assert.deepEqual(calls[0].params, [77]);
+  assert.match(calls[0].sql, /WHERE job_id = \$1/);
 });

@@ -1,3 +1,5 @@
+import { bindContentRulesToSnapshot } from './contentRuleManifest.js';
+
 export function resolveContentAgentRuntimeConfig({ technicalConfig, settings }) {
   const budget = Math.min(
     Number(technicalConfig.monthlyCostLimitEur),
@@ -27,33 +29,43 @@ export function resolveContentAgentRuntimeConfig({ technicalConfig, settings }) 
   });
 }
 
-export function createContentAgentJobSnapshot({ runtimeConfig, claim, now = new Date() }) {
-  return Object.freeze({
-    version: 1,
-    operatingMode: claim?.payload_json?.forced_mode || runtimeConfig.operatingMode,
-    forcedMode: claim?.payload_json?.forced_mode || null,
-    source: claim?.payload_json?.source || 'unknown',
-    scheduleSlot: claim?.payload_json?.schedule_slot || null,
-    monthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,
-    autoPublishMinScore: runtimeConfig.autoPublishMinScore,
-    maxAttempts: runtimeConfig.maxAttempts,
-    manualApprovalsCount: runtimeConfig.manualApprovalsCount,
-    autoPublishEffective: runtimeConfig.autoPublishEffective,
-    timezone: runtimeConfig.timezone,
-    maxTopicCandidates: runtimeConfig.maxTopicCandidates,
-    maxRevisions: runtimeConfig.maxRevisions,
-    contentStageReservationEur: runtimeConfig.contentStageReservationEur,
-    reviewStageReservationEur: runtimeConfig.reviewStageReservationEur,
-    contentInputCostPerMtok: runtimeConfig.contentInputCostPerMtok,
-    contentOutputCostPerMtok: runtimeConfig.contentOutputCostPerMtok,
-    reviewInputCostPerMtok: runtimeConfig.reviewInputCostPerMtok,
-    reviewOutputCostPerMtok: runtimeConfig.reviewOutputCostPerMtok,
-    imageCostEur: runtimeConfig.imageCostEur,
-    contentModel: runtimeConfig.contentModel,
-    reviewModel: runtimeConfig.reviewModel,
-    imageModel: runtimeConfig.imageModel,
-    settingsVersion: runtimeConfig.settingsVersion,
-    startedAt: now.toISOString()
+export function createContentAgentJobSnapshot({
+  runtimeConfig,
+  claim,
+  now = new Date(),
+  allowedInternalLinks,
+  requireAllowedInternalLinks = false
+}) {
+  return bindContentRulesToSnapshot({
+    baseSnapshot: {
+      version: 2,
+      operatingMode: claim?.payload_json?.forced_mode || runtimeConfig.operatingMode,
+      forcedMode: claim?.payload_json?.forced_mode || null,
+      source: claim?.payload_json?.source || 'unknown',
+      scheduleSlot: claim?.payload_json?.schedule_slot || null,
+      monthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,
+      autoPublishMinScore: runtimeConfig.autoPublishMinScore,
+      maxAttempts: runtimeConfig.maxAttempts,
+      manualApprovalsCount: runtimeConfig.manualApprovalsCount,
+      autoPublishEffective: runtimeConfig.autoPublishEffective,
+      timezone: runtimeConfig.timezone,
+      maxTopicCandidates: runtimeConfig.maxTopicCandidates,
+      maxRevisions: runtimeConfig.maxRevisions,
+      contentStageReservationEur: runtimeConfig.contentStageReservationEur,
+      reviewStageReservationEur: runtimeConfig.reviewStageReservationEur,
+      contentInputCostPerMtok: runtimeConfig.contentInputCostPerMtok,
+      contentOutputCostPerMtok: runtimeConfig.contentOutputCostPerMtok,
+      reviewInputCostPerMtok: runtimeConfig.reviewInputCostPerMtok,
+      reviewOutputCostPerMtok: runtimeConfig.reviewOutputCostPerMtok,
+      imageCostEur: runtimeConfig.imageCostEur,
+      contentModel: runtimeConfig.contentModel,
+      reviewModel: runtimeConfig.reviewModel,
+      imageModel: runtimeConfig.imageModel,
+      settingsVersion: runtimeConfig.settingsVersion,
+      startedAt: now.toISOString()
+    },
+    allowedInternalLinks,
+    requireAllowedInternalLinks
   });
 }
 

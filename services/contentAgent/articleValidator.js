@@ -2,6 +2,8 @@ import * as cheerio from 'cheerio';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 
+export const ARTICLE_VALIDATOR_VERSION = 'article-validator-v1';
+
 const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CTA_LOCATIONS = ['blog_early', 'blog_mid', 'blog_final'];
 const MIN_META_TITLE_LENGTH = 50;

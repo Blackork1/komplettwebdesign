@@ -2,6 +2,10 @@ import { hostname } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { getContentAgentConfig } from '../services/contentAgent/config.js';
+import {
+  buildAllowedInternalLinksFromInventory,
+  validateContentRuleSnapshot
+} from '../services/contentAgent/contentRuleManifest.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 
 const GENERATION_JOB_TYPES = new Set(['generate_weekly_draft', 'generate_manual_draft']);
@@ -83,6 +87,9 @@ export function createProductionJobHandler({
   getSettings,
   resolveRuntimeConfig,
   createJobSnapshot,
+  findRunByJobId,
+  enforceRuleSnapshot = false,
+  loadInitialInventory,
   createRun,
   finishRun,
   runPipeline,
@@ -103,18 +110,59 @@ export function createProductionJobHandler({
     const snapshotEnabled = typeof getSettings === 'function'
       && typeof resolveRuntimeConfig === 'function'
       && typeof createJobSnapshot === 'function';
+    const generationJob = GENERATION_JOB_TYPES.has(claim.job_type);
+    let initialInventory = null;
     let runtimeSnapshot;
-    if (snapshotEnabled) {
-      const settings = await getSettings();
-      const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
-      runtimeSnapshot = createJobSnapshot({ runtimeConfig, claim, now: now() });
+    let run = snapshotEnabled && typeof findRunByJobId === 'function'
+      ? await findRunByJobId(claim.id)
+      : null;
+    if (!run) {
+      if (snapshotEnabled) {
+        const settings = await getSettings();
+        const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
+        let allowedInternalLinks;
+        if (generationJob && enforceRuleSnapshot) {
+          required(loadInitialInventory, 'loadInitialInventory');
+          initialInventory = await loadInitialInventory();
+          allowedInternalLinks = buildAllowedInternalLinksFromInventory(initialInventory);
+        }
+        runtimeSnapshot = createJobSnapshot({
+          runtimeConfig,
+          claim,
+          now: now(),
+          ...(generationJob && enforceRuleSnapshot ? {
+            allowedInternalLinks,
+            requireAllowedInternalLinks: true
+          } : {})
+        });
+      }
+      run = await createRun({
+        jobId: claim.id,
+        ...(snapshotEnabled ? { runtimeSnapshot } : {})
+      });
     }
-    const run = await createRun({
-      jobId: claim.id,
-      ...(snapshotEnabled ? { runtimeSnapshot } : {})
-    });
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
     const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
+    if (snapshotEnabled && enforceRuleSnapshot && run.status !== 'completed') {
+      const validation = validateContentRuleSnapshot(persistedSnapshot, {
+        requireAllowedInternalLinks: generationJob
+      });
+      if (!validation.valid) {
+        required(finishRun, 'finishRun');
+        const code = validation.code || 'CONTENT_RUNTIME_SNAPSHOT_INVALID';
+        assertFinishedRun(await finishRun(run.id, {
+          status: 'needs_manual_attention',
+          postId: null,
+          errorReport: {
+            code,
+            message: code === 'CONTENT_RULE_MANIFEST_MISMATCH'
+              ? 'Der gespeicherte Regelsnapshot passt nicht zur aktuellen Content-Agent-Version.'
+              : 'Der gespeicherte Runtime-Snapshot ist unvollständig oder ungültig.'
+          }
+        }));
+        return { status: 'needs_manual_attention', post: null, code };
+      }
+    }
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
     if (AUDIT_JOB_TYPES.has(claim.job_type)) {
@@ -175,7 +223,7 @@ export function createProductionJobHandler({
       }
     } else {
       const jobDependencies = typeof createPipelineDependencies === 'function'
-        ? await createPipelineDependencies(persistedSnapshot)
+        ? await createPipelineDependencies(persistedSnapshot, initialInventory)
         : pipelineDependencies;
       result = await runPipeline({
         ...(claim.payload_json || {}),
@@ -251,6 +299,9 @@ function bindRepositories(database, modules) {
     updateContentSchedulerState: (input) => modules.jobRepository.updateContentSchedulerState(input, database)
   };
   const runRepository = {
+    findRunByJobId: typeof modules.runRepository.findRunByJobId === 'function'
+      ? (jobId) => modules.runRepository.findRunByJobId(jobId, database)
+      : async () => null,
     createRun: (input) => modules.runRepository.createRun(input, database),
     updateRunStage: (runId, input) => modules.runRepository.updateRunStage(runId, input, database),
     finishRun: (runId, input) => modules.runRepository.finishRun(runId, input, database)
@@ -271,7 +322,7 @@ function bindRepositories(database, modules) {
   return { jobRepository, runRepository, topicRepository, costService };
 }
 
-function jobConfigFromSnapshot(technicalConfig, snapshot) {
+export function jobConfigFromSnapshot(technicalConfig, snapshot) {
   if (!snapshot) return technicalConfig;
   return Object.freeze({
     ...snapshot,
@@ -301,7 +352,7 @@ export function createProductionRuntime({
     api_secret: env.CLOUDINARY_API_SECRET
   });
 
-  function createPipelineDependencies(snapshot = null) {
+  function createPipelineDependencies(snapshot = null, initialInventory = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
     const openai = new modules.OpenAI({ apiKey: env.OPENAI_API_KEY });
     const jobCostService = {
@@ -324,7 +375,8 @@ export function createProductionRuntime({
     return {
       config: jobConfig,
       inventoryService: {
-        buildSiteInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService))
+        buildSiteInventory: () => initialInventory
+          || modules.buildSiteInventory(inventoryLoaders(database, pricingService))
       },
       openaiService: modules.createOpenAIContentService({ apiKey: env.OPENAI_API_KEY, config: jobConfig }),
       topicScoringService: { selectBestTopic: modules.selectBestTopic },
@@ -368,6 +420,9 @@ export function createProductionRuntime({
       getSettings: () => modules.settingsRepository.getContentAgentSettings(database),
       resolveRuntimeConfig: modules.runtimeConfigService.resolveContentAgentRuntimeConfig,
       createJobSnapshot: modules.runtimeConfigService.createContentAgentJobSnapshot,
+      findRunByJobId: repositories.runRepository.findRunByJobId,
+      enforceRuleSnapshot: true,
+      loadInitialInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService)),
       createPipelineDependencies,
       createRegenerationDependencies
     } : {}),

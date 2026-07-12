@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio';
 import slugify from 'slugify';
 
+export const RISK_REPORT_VERSION = 'focused-risk-v1';
+
 const GENERAL_SECTION = 'Gesamter Artikel';
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const MAX_HTML_LENGTH = 250_000;

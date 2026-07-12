@@ -1,6 +1,14 @@
 import pool from '../util/db.js';
 import { sanitizeErrorReport } from './contentErrorSanitizer.js';
 
+export async function findRunByJobId(jobId, db = pool) {
+  const { rows } = await db.query(
+    'SELECT * FROM content_runs WHERE job_id = $1 LIMIT 1',
+    [jobId]
+  );
+  return rows[0] || null;
+}
+
 export async function createRun({
   jobId,
   currentStage = 'inventory',

@@ -183,7 +183,8 @@ function createDryRunDependencies(adapterMonitor, configureAdapters) {
       contentOutputCostPerMtok: 0,
       reviewInputCostPerMtok: 0,
       reviewOutputCostPerMtok: 0,
-      imageCostEur: 0
+      imageCostEur: 0,
+      allowedInternalLinks: ['/kontakt']
     },
     inventoryService: {
       async buildSiteInventory() {
