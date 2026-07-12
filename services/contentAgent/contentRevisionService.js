@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import * as cheerio from 'cheerio';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { validateArticle as defaultValidateArticle } from './articleValidator.js';
 import { createContentRevisionRepository } from '../../repositories/contentRevisionRepository.js';
+import { FaqItemSchema } from './articleSchemas.js';
+import { normalizeInternalHref } from './trustedInternalLinkService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -113,6 +114,36 @@ function normalizePatch(input = {}) {
   return patch;
 }
 
+function assertRequiredFields(fields) {
+  for (const key of ['title', 'excerpt', 'content', 'meta_title', 'meta_description', 'og_title', 'og_description', 'image_alt']) {
+    const value = fields?.[key];
+    if (typeof value !== 'string' || !value.trim() || value.length > MAX_FIELD_LENGTHS[key]) {
+      throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', `${key} fehlt oder ist ungültig.`);
+    }
+  }
+  const faq = FaqItemSchema.array().min(5).max(7).safeParse(fields?.faq_json);
+  if (!faq.success || faq.data.some((item) => item.question.length > 300 || item.answer.length > 5_000)) {
+    throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Die FAQ müssen fünf bis sieben gültige, begrenzte Frage-Antwort-Objekte enthalten.');
+  }
+  const imageUrl = String(fields?.image_url || '').trim();
+  if (!imageUrl || imageUrl.length > MAX_FIELD_LENGTHS.image_url) {
+    throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Die Bild-URL ist nicht sicher freigegeben.');
+  }
+  let safeImage = false;
+  if (imageUrl.startsWith('/')) {
+    const normalized = normalizeInternalHref(imageUrl);
+    safeImage = normalized.kind === 'internal'
+      && normalized.path.startsWith('/uploads/')
+      && !/[\s%\\]/.test(imageUrl);
+  } else {
+    try {
+      const url = new URL(imageUrl);
+      safeImage = url.protocol === 'https:' && !url.username && !url.password;
+    } catch { safeImage = false; }
+  }
+  if (!safeImage) throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Die Bild-URL ist nicht sicher freigegeben.');
+}
+
 function validationArticle(snapshot) {
   return {
     title: snapshot.fields.title,
@@ -128,12 +159,8 @@ function validationArticle(snapshot) {
   };
 }
 
-function internalLinksFromHtml(html) {
-  const $ = cheerio.load(String(html || ''), null, false);
-  return [...new Set($('a[href]').toArray().map((node) => $(node).attr('href')).filter((href) => href?.startsWith('/')))];
-}
-
 async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
+  assertRequiredFields(snapshot?.fields);
   if (snapshot?.base?.content_format === 'legacy_ejs') return;
   if (snapshot?.base?.content_format !== 'static_html') {
     throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Das Inhaltsformat ist nicht freigegeben.');
@@ -146,7 +173,7 @@ async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
   const validation = await validateArticle(validationArticle(snapshot), {
     ...context,
     existingSlugs: (context.existingSlugs || []).filter((slug) => slug !== snapshot.base.slug),
-    allowedInternalLinks: internalLinksFromHtml(content)
+    allowedInternalLinks: Array.isArray(context.allowedInternalLinks) ? context.allowedInternalLinks : []
   });
   if (validation?.passed !== true || validation.sanitizedHtml !== content) {
     throw revisionError(
@@ -197,6 +224,10 @@ export function createContentRevisionService({
       const revision = await repository.getRevisionForEdit(id);
       if (!revision) throw revisionError('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
       if (revision.status !== 'draft') throw revisionError('CONTENT_REVISION_CONFLICT', 'Nur Entwurfsrevisionen sind bearbeitbar.');
+      const expectedVersion = Number(input?.revision_version);
+      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1 || expectedVersion !== Number(revision.revision_version)) {
+        throw revisionError('CONTENT_REVISION_CONFLICT', 'Die Revision wurde in einem anderen Browserfenster verändert.');
+      }
       const snapshot = structuredClone(revision.snapshot_json);
       const patch = normalizePatch(input);
       if (snapshot.base.content_format === 'legacy_ejs'
@@ -206,7 +237,7 @@ export function createContentRevisionService({
       }
       Object.assign(snapshot.fields, patch);
       await assertSnapshotValid(snapshot, validateArticle, revision.validation_context || {});
-      const updated = await repository.updateDraftRevision({ revisionId: id, snapshot });
+      const updated = await repository.updateDraftRevision({ revisionId: id, snapshot, expectedVersion });
       if (!updated) throw revisionError('CONTENT_REVISION_CONFLICT', 'Die Revision wurde zwischenzeitlich verändert.');
       return updated;
     },

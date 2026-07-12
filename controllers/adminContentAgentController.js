@@ -484,7 +484,7 @@ export function createAdminContentAgentController(dependencies) {
         args: () => [{
           revisionId: positiveId(req.params.id),
           admin: adminFromRequest(req),
-          confirmed: optionalBoolean(req.body?.confirmed, 'confirmed') === true
+          confirmed: criticalConfirmation(req.body?.confirmed)
         }],
         redirect: '/admin/content-agent/existing-content?published=1',
         res,

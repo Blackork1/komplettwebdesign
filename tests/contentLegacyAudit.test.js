@@ -41,6 +41,40 @@ test('Bestandsaudit erkennt lokale Befunde deterministisch und schließt den eig
   ]));
 });
 
+test('Bestandsaudit erkennt unvollständige FAQ und ausgeschriebene Europreise, aber keine klar historischen Jahre', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 1, title: 'Unser Betrieb', slug: 'betrieb', excerpt: 'Seit 1999 in Berlin',
+      content: '<p>Von 1999 bis 2005 entstand unser Standort. Das Paket kostet 900 Euro.</p><a href="/kontakt">Kontakt</a>',
+      content_format: 'legacy_ejs', meta_title: 'Meta', meta_description: 'Beschreibung', image_alt: 'Alt',
+      faq_json: Array.from({ length: 4 }, (_, index) => ({ question: `Frage ${index}?`, answer: 'Antwort' }))
+    },
+    inventory: [{ url: '/kontakt' }],
+    currentYear: 2026
+  });
+  const codes = result.findings.map(({ code }) => code);
+  assert.ok(codes.includes('missing_faq'));
+  assert.ok(codes.includes('static_price'));
+  assert.equal(codes.includes('stale_year'), false);
+});
+
+test('Bestandsaudit normalisiert vertrauenswürdige Links und meldet unbekannte sowie unsichere Ziele begrenzt', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 1, title: 'Links 2025', slug: 'links', excerpt: '',
+      content: '<a href="/kontakt?quelle=blog#formular">Kontakt</a><a href="/leistungen/seo/?x=1">SEO</a><a href="/nicht-da">Unbekannt</a><a href="//evil.example/path">Unsicher</a>',
+      content_format: 'static_html', meta_title: 'Meta', meta_description: 'Beschreibung', image_alt: 'Alt', faq_json: Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index}?`, answer: 'Antwort' }))
+    },
+    inventory: [{ url: '/kontakt' }, { url: '/leistungen/seo' }],
+    currentYear: 2026
+  });
+  const byCode = Object.fromEntries(result.findings.map((item) => [item.code, item]));
+  assert.equal(byCode.missing_contact_cta, undefined);
+  assert.equal(byCode.missing_internal_links, undefined);
+  assert.deepEqual(byCode.unknown_internal_link.hrefs, ['/nicht-da']);
+  assert.deepEqual(byCode.broken_internal_link.hrefs, ['//evil.example/path']);
+});
+
 test('Auditjob bleibt lokal, idempotent pro Job/Post/Typ und verändert keine Posts', async () => {
   const persisted = [];
   const uniqueAudits = new Map();

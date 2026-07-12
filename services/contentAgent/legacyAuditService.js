@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { calculateCannibalizationRisk } from './cannibalizationService.js';
+import { buildTrustedInternalPaths, normalizeInternalHref } from './trustedInternalLinkService.js';
 
 export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v1';
 const MAX_AUDIT_POSTS = 500;
@@ -54,23 +55,37 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
   if (!text(post.meta_title)) findings.push(finding('missing_meta_title', 'Der Meta Title fehlt.'));
   if (!text(post.meta_description)) findings.push(finding('missing_meta_description', 'Die Meta Description fehlt.'));
   if (!text(post.image_alt)) findings.push(finding('missing_image_alt', 'Der Bild-Alt-Text fehlt.'));
-  if (faqItems(post.faq_json).length === 0) findings.push(finding('missing_faq', 'Es sind keine strukturierten FAQ hinterlegt.'));
+  if (faqItems(post.faq_json).length < 5) findings.push(finding('missing_faq', 'Es sind weniger als fünf strukturierte FAQ hinterlegt.'));
 
-  const years = [...new Set((visibleText.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number))]
-    .filter((year) => year < Number(currentYear))
+  const yearMatches = [...visibleText.matchAll(/\b(?:19|20)\d{2}\b/g)];
+  const years = [...new Set(yearMatches.filter((match) => {
+    const year = Number(match[0]);
+    if (year >= Number(currentYear)) return false;
+    const before = visibleText.slice(Math.max(0, match.index - 30), match.index).toLocaleLowerCase('de-DE');
+    const after = visibleText.slice(match.index + 4, match.index + 35).toLocaleLowerCase('de-DE');
+    return !(/(?:seit|gegründet|gegruendet|eröffnet|eroeffnet)\s*$/u.test(before)
+      || (/von\s*$/u.test(before) && /^\s*(?:bis|[-–])\s*(?:19|20)\d{2}\b/u.test(after))
+      || /(?:19|20)\d{2}\s*(?:bis|[-–])\s*$/u.test(before));
+  }).map((match) => Number(match[0])))]
     .sort((a, b) => a - b);
   if (years.length) findings.push(finding('stale_year', 'Der Artikel enthält möglicherweise veraltete Jahresangaben.', { years: years.slice(0, 10) }));
-  if (/(?:\b\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?\s*(?:€|EUR)(?:\s|$)|(?:€|EUR)\s*\d)/i.test(visibleText)) {
+  if (/(?:\b\d[\d.\s]*(?:,\d{1,2})?\s*(?:€|EUR\b|Euro\b)|(?:€|EUR\b|Euro\b)\s*\d)/i.test(visibleText)) {
     findings.push(finding('static_price', 'Der Artikel enthält eine statische Preisangabe.'));
   }
 
-  const hrefs = $('a[href]').toArray().map((node) => text($(node).attr('href')));
-  if (!hrefs.some((href) => href === '/kontakt' || href.startsWith('/kontakt?'))) {
+  const hrefs = [...new Set($('a[href]').toArray().map((node) => text($(node).attr('href'))))].slice(0, 100);
+  const inspectedLinks = hrefs.map(normalizeInternalHref);
+  const trustedPaths = new Set(buildTrustedInternalPaths(inventory));
+  if (!inspectedLinks.some((item) => item.kind === 'internal' && item.path === '/kontakt')) {
     findings.push(finding('missing_contact_cta', 'Ein klarer Kontakt-CTA fehlt.'));
   }
-  if (!hrefs.some((href) => href.startsWith('/') && !href.startsWith('//'))) {
+  if (!inspectedLinks.some((item) => item.kind === 'internal' && trustedPaths.has(item.path))) {
     findings.push(finding('missing_internal_links', 'Der Artikel enthält keine gültigen internen Links.'));
   }
+  const brokenHrefs = inspectedLinks.filter((item) => item.kind === 'unsafe' || item.kind === 'invalid').map(({ href }) => href).slice(0, 20);
+  if (brokenHrefs.length) findings.push(finding('broken_internal_link', 'Der Artikel enthält unsichere oder ungültige Linkziele.', { hrefs: brokenHrefs }));
+  const unknownHrefs = inspectedLinks.filter((item) => item.kind === 'internal' && !trustedPaths.has(item.path)).map(({ href }) => href).slice(0, 20);
+  if (unknownHrefs.length) findings.push(finding('unknown_internal_link', 'Der Artikel enthält nicht im Website-Inventar gefundene interne Ziele.', { hrefs: unknownHrefs }));
 
   const comparableInventory = (Array.isArray(inventory) ? inventory : [])
     .filter((entry) => Number(entry?.id) !== Number(post.id))
@@ -99,10 +114,14 @@ export async function runExistingContentAuditJob(input = {}, dependencies = {}) 
   const leaseGuard = typeof input.leaseGuard === 'function' ? input.leaseGuard : async () => {};
   await leaseGuard();
   const posts = (await auditRepository.listPublishedPosts({ limit: MAX_AUDIT_POSTS })).slice(0, MAX_AUDIT_POSTS);
+  const trustedUrls = typeof auditRepository.listTrustedInternalUrls === 'function'
+    ? (await auditRepository.listTrustedInternalUrls()).slice(0, 5_000)
+    : [];
+  const inventory = [...posts, ...trustedUrls];
   let audited = 0;
   for (const post of posts) {
     await leaseGuard();
-    const audit = auditExistingPost({ post, inventory: posts, currentYear: input.currentYear });
+    const audit = auditExistingPost({ post, inventory, currentYear: input.currentYear });
     await auditRepository.createAuditIdempotent({
       postId: Number(post.id),
       jobId: Number(input.claim?.id),

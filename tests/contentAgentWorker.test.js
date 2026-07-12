@@ -882,7 +882,7 @@ test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence
   const leaseGuard = async () => calls.push('lease');
   const handler = createProductionJobHandler({
     async createRun() { return { id: 88, runtime_snapshot_json: { timezone: 'Europe/Berlin' } }; },
-    async finishRun(runId, payload) { calls.push(['finish', runId, payload]); },
+    async finishRun(runId, payload) { calls.push(['finish', runId, payload]); return { id: runId, ...payload }; },
     async runPipeline() { assert.fail('Audit darf keine Generierung starten.'); },
     createAuditDependencies() { return { auditRepository: true }; },
     async runAuditJob(context, dependencies) {
@@ -896,6 +896,37 @@ test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence
   assert.equal(calls.find(([type]) => type === 'audit')[1].run.id, 88);
   assert.equal(calls.find(([type]) => type === 'audit')[1].leaseGuard, leaseGuard);
   assert.deepEqual(calls.at(-1), ['finish', 88, { status: 'completed', postId: null }]);
+});
+
+test('Auditjob wird bei fehlendem Runabschluss technisch retrybar und nie erfolgreich abgeschlossen', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 88 }; },
+    async finishRun() { return null; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createAuditDependencies() { return {}; },
+    async runAuditJob() { return { status: 'completed' }; }
+  });
+  await assert.rejects(
+    handler({ id: 51, job_type: 'audit_existing_posts', payload_json: {} }),
+    (error) => error.code === 'CONTENT_RUN_FINISH_FAILED' && error.retryable === true
+  );
+});
+
+test('permanenter Auditfehler terminalisiert denselben Run gefenct als failed', async () => {
+  const finishes = [];
+  const permanent = Object.assign(new Error('Auditdaten ungültig'), { code: 'CONTENT_AUDIT_INVALID', retryable: false });
+  const handler = createProductionJobHandler({
+    async createRun() { return { id: 88 }; },
+    async finishRun(id, input) { finishes.push([id, input]); return { id, ...input }; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    createAuditDependencies() { return {}; },
+    async runAuditJob() { throw permanent; }
+  });
+  await assert.rejects(handler({ id: 51, job_type: 'audit_existing_posts', payload_json: {} }), permanent);
+  assert.deepEqual(finishes, [[88, {
+    status: 'failed', postId: null,
+    errorReport: { code: 'CONTENT_AUDIT_INVALID', message: 'Auditdaten ungültig' }
+  }]]);
 });
 
 test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben Run und Snapshot', async () => {

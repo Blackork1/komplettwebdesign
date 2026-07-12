@@ -19,6 +19,9 @@ test('Migration 003 ergänzt Dashboard, Revisionen, Audits und Publish-Events', 
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_auto_run_policy[\s\S]*run_id, policy_version[\s\S]*decision IN \('allowed', 'blocked'\)/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_post_audits/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_post_revisions/i);
+  assert.match(sql, /revision_version INTEGER NOT NULL DEFAULT 1/i);
+  assert.match(sql, /jsonb_typeof\(snapshot_json\) = 'object'/i);
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_revisions_draft_audit/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS content_provider_state/i);
   assert.match(sql, /REFERENCES admins\(id\)/i);
   assert.match(sql, /CREATE OR REPLACE FUNCTION prevent_content_publish_event_mutation/i);

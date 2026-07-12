@@ -90,5 +90,6 @@ test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () 
   const sql = db.calls[0].sql;
   assert.match(sql, /FROM posts/i);
   assert.match(sql, /published = TRUE/i);
+  assert.match(sql, /r\.audit_id = audit\.id/i);
   assert.doesNotMatch(sql, /\bcontent\b|stage_results_json|payload_json|openai_response_ids_json/i);
 });

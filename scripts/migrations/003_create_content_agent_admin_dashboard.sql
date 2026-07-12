@@ -114,6 +114,16 @@ CREATE TABLE IF NOT EXISTS content_post_audits (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type
   ON content_post_audits (job_id, post_id, audit_type)
   WHERE job_id IS NOT NULL;
+UPDATE content_post_audits
+SET findings_json = jsonb_build_array(findings_json)
+WHERE jsonb_typeof(findings_json) <> 'array';
+UPDATE content_post_audits
+SET recommended_actions_json = jsonb_build_array(recommended_actions_json)
+WHERE jsonb_typeof(recommended_actions_json) <> 'array';
+ALTER TABLE content_post_audits DROP CONSTRAINT IF EXISTS content_post_audits_findings_array;
+ALTER TABLE content_post_audits ADD CONSTRAINT content_post_audits_findings_array CHECK (jsonb_typeof(findings_json) = 'array');
+ALTER TABLE content_post_audits DROP CONSTRAINT IF EXISTS content_post_audits_actions_array;
+ALTER TABLE content_post_audits ADD CONSTRAINT content_post_audits_actions_array CHECK (jsonb_typeof(recommended_actions_json) = 'array');
 
 CREATE TABLE IF NOT EXISTS content_post_revisions (
   id BIGSERIAL PRIMARY KEY,
@@ -127,6 +137,35 @@ CREATE TABLE IF NOT EXISTS content_post_revisions (
   approved_at TIMESTAMPTZ,
   CHECK (status IN ('draft', 'approved', 'rejected'))
 );
+ALTER TABLE content_post_revisions
+  ADD COLUMN IF NOT EXISTS revision_version INTEGER NOT NULL DEFAULT 1;
+UPDATE content_post_revisions
+SET snapshot_json = jsonb_build_object(
+      'base', '{}'::jsonb,
+      'fields', '{}'::jsonb,
+      'invalid_legacy_snapshot', snapshot_json
+    ),
+    status = 'rejected'
+WHERE jsonb_typeof(snapshot_json) IS DISTINCT FROM 'object'
+   OR jsonb_typeof(snapshot_json -> 'base') IS DISTINCT FROM 'object'
+   OR jsonb_typeof(snapshot_json -> 'fields') IS DISTINCT FROM 'object';
+ALTER TABLE content_post_revisions DROP CONSTRAINT IF EXISTS content_post_revisions_version_valid;
+ALTER TABLE content_post_revisions ADD CONSTRAINT content_post_revisions_version_valid CHECK (revision_version >= 1);
+ALTER TABLE content_post_revisions DROP CONSTRAINT IF EXISTS content_post_revisions_snapshot_object;
+ALTER TABLE content_post_revisions ADD CONSTRAINT content_post_revisions_snapshot_object CHECK (jsonb_typeof(snapshot_json) = 'object');
+ALTER TABLE content_post_revisions DROP CONSTRAINT IF EXISTS content_post_revisions_snapshot_shape;
+ALTER TABLE content_post_revisions ADD CONSTRAINT content_post_revisions_snapshot_shape CHECK (
+  jsonb_typeof(snapshot_json -> 'base') = 'object'
+  AND jsonb_typeof(snapshot_json -> 'fields') = 'object'
+);
+WITH ranked_drafts AS (
+  SELECT id, ROW_NUMBER() OVER (PARTITION BY audit_id ORDER BY created_at, id) AS position
+  FROM content_post_revisions WHERE audit_id IS NOT NULL AND status = 'draft'
+)
+UPDATE content_post_revisions SET status = 'rejected'
+WHERE id IN (SELECT id FROM ranked_drafts WHERE position > 1);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_revisions_draft_audit
+  ON content_post_revisions (audit_id) WHERE audit_id IS NOT NULL AND status = 'draft';
 
 CREATE TABLE IF NOT EXISTS content_provider_state (
   provider_name VARCHAR(80) PRIMARY KEY,

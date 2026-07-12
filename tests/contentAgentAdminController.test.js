@@ -402,6 +402,31 @@ test('Publish- und Reject-Controller akzeptieren nur die literale kritische Best
   });
 });
 
+test('Revisionsfreigabe akzeptiert ausschließlich die literale Bestätigung true', async () => {
+  const inputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async approveRevision(input) {
+        inputs.push(input);
+        if (input.confirmed !== true) throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
+      }
+    }
+  }));
+  for (const confirmed of ['on', '1', 'false', undefined]) {
+    const res = response();
+    await controller.publishRevisionAction({
+      params: { id: '3' }, body: { confirmed }, session: { user: { id: 7, username: 'admin' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+  }
+  const res = response();
+  await controller.publishRevisionAction({
+    params: { id: '3' }, body: { confirmed: 'true' }, session: { user: { id: 7, username: 'admin' } }
+  }, res, assert.fail);
+  assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?published=1');
+  assert.equal(inputs.at(-1).confirmed, true);
+});
+
 test('Ablehnungskonflikt wird als 409 ohne interne Details ausgegeben', async () => {
   const controller = createAdminContentAgentController(baseDependencies({
     publicationService: {

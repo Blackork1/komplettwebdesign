@@ -14,6 +14,26 @@ const POST_COLUMNS = `
   og_title, og_description, faq_json, image_url, image_alt, published, updated_at
 `;
 
+async function trustedValidationContext(postId, client) {
+  const [slugs, links] = await Promise.all([
+    client.query(`SELECT slug FROM posts WHERE id <> $1`, [postId]),
+    client.query(`
+      SELECT '/kontakt' AS url
+      UNION SELECT '/pakete'
+      UNION SELECT '/webdesign-berlin'
+      UNION SELECT '/blog/' || slug FROM posts WHERE published = TRUE
+      UNION SELECT '/ratgeber/' || slug FROM ratgeber WHERE published = TRUE
+      UNION SELECT '/leistungen/' || slug FROM leistungen_pages WHERE is_published = TRUE
+      UNION SELECT '/branchen/' || slug FROM industries
+      ORDER BY url
+    `)
+  ]);
+  return {
+    existingSlugs: slugs.rows.map(({ slug }) => slug),
+    allowedInternalLinks: links.rows.map(({ url }) => url)
+  };
+}
+
 export function createContentRevisionRepository(db = pool) {
   return {
     async enqueueAuditJob({ admin }) {
@@ -32,17 +52,18 @@ export function createContentRevisionRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const { rows: posts } = await client.query(`SELECT ${POST_COLUMNS} FROM posts WHERE id = $1 AND published = TRUE FOR UPDATE`, [postId]);
         if (!posts[0]) throw conflict('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+        const { rows: existing } = await client.query(`
+          SELECT * FROM content_post_revisions WHERE audit_id = $1 AND status = 'draft' LIMIT 1 FOR UPDATE
+        `, [auditId]);
         const { rows: audits } = await client.query(`
           SELECT * FROM content_post_audits
           WHERE id = $1 AND post_id = $2 AND status IN ('open', 'revision_created')
           FOR UPDATE
         `, [auditId, postId]);
         if (!audits[0]) throw conflict('CONTENT_AUDIT_NOT_FOUND', 'Passender offener Auditbefund nicht gefunden.');
-        const { rows: existing } = await client.query(`
-          SELECT * FROM content_post_revisions WHERE audit_id = $1 AND status = 'draft' LIMIT 1
-        `, [auditId]);
         let revision = existing[0];
         if (!revision) {
           const { rows } = await client.query(`
@@ -65,24 +86,22 @@ export function createContentRevisionRepository(db = pool) {
 
     async getRevisionForEdit(revisionId, client = db) {
       const { rows } = await client.query(`
-        SELECT r.*, p.title AS live_title, p.slug AS live_slug,
-               jsonb_build_object(
-                 'existingSlugs', COALESCE((SELECT jsonb_agg(slug) FROM posts WHERE id <> p.id), '[]'::jsonb)
-               ) AS validation_context
+        SELECT r.*, p.title AS live_title, p.slug AS live_slug
         FROM content_post_revisions r
         JOIN posts p ON p.id = r.post_id
         WHERE r.id = $1
       `, [revisionId]);
-      return rows[0] || null;
+      if (!rows[0]) return null;
+      return { ...rows[0], validation_context: await trustedValidationContext(rows[0].post_id, client) };
     },
 
-    async updateDraftRevision({ revisionId, snapshot }) {
+    async updateDraftRevision({ revisionId, snapshot, expectedVersion }) {
       const { rows } = await db.query(`
         UPDATE content_post_revisions
-        SET snapshot_json = $2::jsonb
-        WHERE id = $1 AND status = 'draft'
+        SET snapshot_json = $2::jsonb, revision_version = revision_version + 1
+        WHERE id = $1 AND status = 'draft' AND revision_version = $3
         RETURNING *
-      `, [revisionId, JSON.stringify(snapshot)]);
+      `, [revisionId, JSON.stringify(snapshot), expectedVersion]);
       return rows[0] || null;
     },
 
@@ -90,9 +109,9 @@ export function createContentRevisionRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const { rows: identity } = await client.query(`SELECT post_id FROM content_post_revisions WHERE id = $1`, [revisionId]);
         if (!identity[0]) throw conflict('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
-        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
         const { rows: posts } = await client.query(`SELECT ${POST_COLUMNS} FROM posts WHERE id = $1 FOR UPDATE`, [identity[0].post_id]);
         const post = posts[0];
         if (!post || post.published !== true) throw conflict('CONTENT_REVISION_CONFLICT', 'Der Livebeitrag ist nicht mehr veröffentlicht.');
@@ -114,8 +133,7 @@ export function createContentRevisionRepository(db = pool) {
             || base.live_hash !== currentHash(post)) {
           throw conflict('CONTENT_REVISION_STALE', 'Der Livebeitrag wurde seit Erstellung der Revision verändert.');
         }
-        const contextResult = await client.query(`SELECT slug FROM posts WHERE id <> $1`, [post.id]);
-        await validateSnapshot(revision.snapshot_json, { existingSlugs: contextResult.rows.map(({ slug }) => slug) });
+        await validateSnapshot(revision.snapshot_json, await trustedValidationContext(post.id, client));
         const fields = revision.snapshot_json.fields;
         const { rows: updatedPosts } = await client.query(`
           UPDATE posts SET

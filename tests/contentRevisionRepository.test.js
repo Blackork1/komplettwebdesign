@@ -4,11 +4,12 @@ import assert from 'node:assert/strict';
 import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
 import { createRevisionSnapshot, liveHashForPost } from '../services/contentAgent/contentRevisionService.js';
 
+const validFaq = Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index + 1}?`, answer: 'Antwort' }));
 const livePost = {
   id: 7,
   title: 'Titel', slug: 'artikel', excerpt: 'Kurz', content: '<p>Inhalt</p>',
   content_format: 'legacy_ejs', meta_title: 'Meta', meta_description: 'Beschreibung',
-  og_title: 'OG', og_description: 'OG-Beschreibung', faq_json: [],
+  og_title: 'OG', og_description: 'OG-Beschreibung', faq_json: validFaq,
   image_url: 'https://example.test/bild.webp', image_alt: 'Alt', published: true,
   updated_at: new Date('2026-07-12T10:00:00.000Z')
 };
@@ -31,6 +32,7 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
       if (normalized.startsWith('SELECT * FROM content_post_revisions')) return { rows: [revision] };
       if (normalized.startsWith('SELECT * FROM content_post_audits')) return { rows: [{ id: 5, post_id: 7, status: 'revision_created' }] };
       if (normalized.startsWith('SELECT slug FROM posts')) return { rows: [] };
+      if (normalized.startsWith("SELECT '/kontakt' AS url")) return { rows: [{ url: '/kontakt' }, { url: '/blog/artikel' }] };
       if (normalized.startsWith('UPDATE posts SET')) return { rows: [{ ...post, ...revision.snapshot_json.fields, slug: post.slug, published: true }] };
       if (normalized.startsWith('UPDATE content_post_')) return { rows: [] };
       throw new Error(`Unerwartetes SQL: ${normalized}`);
@@ -88,4 +90,23 @@ test('doppelte Freigabe wird als Konflikt vollständig zurückgerollt', async ()
   );
   assert.ok(calls.includes('ROLLBACK'));
   assert.equal(calls.some((sql) => sql.startsWith('UPDATE posts SET')), false);
+});
+
+test('Revisionsspeicherung verwendet einen atomaren Versionsvergleich', async () => {
+  const calls = [];
+  const repository = createContentRevisionRepository({
+    async query(sql, params) {
+      calls.push({ sql: String(sql).replace(/\s+/g, ' ').trim(), params });
+      return { rows: [{ id: 3, revision_version: 5 }] };
+    }
+  });
+  const result = await repository.updateDraftRevision({
+    revisionId: 3,
+    snapshot: createRevisionSnapshot(livePost),
+    expectedVersion: 4
+  });
+  assert.equal(result.revision_version, 5);
+  assert.match(calls[0].sql, /revision_version = revision_version \+ 1/i);
+  assert.match(calls[0].sql, /status = 'draft' AND revision_version = \$3/i);
+  assert.equal(calls[0].params[2], 4);
 });

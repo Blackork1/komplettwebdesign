@@ -98,7 +98,7 @@ export function createContentAgentAdminRepository(db = pool) {
         LEFT JOIN LATERAL (
           SELECT r.id, r.status
           FROM content_post_revisions r
-          WHERE r.post_id = p.id AND r.status = 'draft'
+          WHERE r.post_id = p.id AND r.audit_id = audit.id AND r.status = 'draft'
           ORDER BY r.created_at DESC, r.id DESC
           LIMIT 1
         ) revision ON TRUE

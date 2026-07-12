@@ -26,6 +26,16 @@ function permanentJobError(message, code) {
   return error;
 }
 
+function assertFinishedRun(value) {
+  if (!value || typeof value !== 'object') {
+    const error = new Error('Der Content-Agent-Lauf konnte nicht sicher abgeschlossen werden.');
+    error.code = 'CONTENT_RUN_FINISH_FAILED';
+    error.retryable = true;
+    throw error;
+  }
+  return value;
+}
+
 export function berlinDateKey(date = new Date(), timezone = 'Europe/Berlin') {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
@@ -110,16 +120,32 @@ export function createProductionJobHandler({
     if (AUDIT_JOB_TYPES.has(claim.job_type)) {
       required(runAuditJob, 'runAuditJob');
       required(createAuditDependencies, 'createAuditDependencies');
-      result = await runAuditJob({
-        claim,
-        run,
-        runtimeSnapshot: persistedSnapshot,
-        currentYear: Number(berlinDateKey(now(), jobTimezone).slice(0, 4)),
-        ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
-      }, await createAuditDependencies(persistedSnapshot));
-      required(finishRun, 'finishRun');
-      if (typeof leaseGuard === 'function') await leaseGuard();
-      await finishRun(run.id, { status: 'completed', postId: null });
+      try {
+        result = await runAuditJob({
+          claim,
+          run,
+          runtimeSnapshot: persistedSnapshot,
+          currentYear: Number(berlinDateKey(now(), jobTimezone).slice(0, 4)),
+          ...(typeof leaseGuard === 'function' ? { leaseGuard } : {})
+        }, await createAuditDependencies(persistedSnapshot));
+        if (result?.status !== 'completed') {
+          throw permanentJobError('Bestandsprüfung lieferte keinen terminalen Status.', 'CONTENT_AUDIT_RESULT_INVALID');
+        }
+        required(finishRun, 'finishRun');
+        if (typeof leaseGuard === 'function') await leaseGuard();
+        assertFinishedRun(await finishRun(run.id, { status: 'completed', postId: null }));
+      } catch (error) {
+        const permanent = error?.retryable === false && error?.code !== 'CONTENT_JOB_LEASE_LOST';
+        if (permanent) {
+          required(finishRun, 'finishRun');
+          if (typeof leaseGuard === 'function') await leaseGuard();
+          assertFinishedRun(await finishRun(run.id, {
+            status: 'failed', postId: null,
+            errorReport: { code: error.code || 'CONTENT_AUDIT_FAILED', message: error.message || 'Bestandsprüfung fehlgeschlagen.' }
+          }));
+        }
+        throw error;
+      }
     } else if (REGENERATION_JOB_TYPES.has(claim.job_type)) {
       required(runRegenerationJob, 'runRegenerationJob');
       required(createRegenerationDependencies, 'createRegenerationDependencies');

@@ -252,6 +252,7 @@ test('Revisionseditor escaped Legacy-Inhalt, sperrt ihn und schützt die Freigab
     revision: {
       id: 8,
       status: 'draft',
+      revision_version: 4,
       snapshot_json: {
         base: {
           slug: 'bestand',
@@ -269,6 +270,7 @@ test('Revisionseditor escaped Legacy-Inhalt, sperrt ihn und schützt die Freigab
   });
   assert.match(html, /name="content"[^>]*readonly/);
   assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /name="revision_version" value="4"/);
   assert.match(html, /name="_csrf" value="csrf-test"/);
   assert.match(html, /&lt;% globalThis\.ausgefuehrt = true %&gt;/);
   assert.doesNotMatch(html, /<script>(?:Titel|alert\(1\)|faq)<\/script>/);

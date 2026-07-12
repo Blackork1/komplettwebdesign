@@ -18,6 +18,17 @@ export function createContentAuditRepository(db = pool) {
       return rows;
     },
 
+    async listTrustedInternalUrls() {
+      const { rows } = await db.query(`
+        SELECT '/blog/' || slug AS url, 'blog' AS type FROM posts WHERE published = TRUE
+        UNION SELECT '/ratgeber/' || slug, 'guide' FROM ratgeber WHERE published = TRUE
+        UNION SELECT '/leistungen/' || slug, 'service' FROM leistungen_pages WHERE is_published = TRUE
+        UNION SELECT '/branchen/' || slug, 'industry' FROM industries
+        ORDER BY url
+      `);
+      return rows;
+    },
+
     async createAuditIdempotent(input) {
       const { rows } = await db.query(`
         WITH inserted AS (

@@ -18,6 +18,7 @@
 
   <form method="post" action="/admin/content-agent/revisions/<%= item.id %>" class="content-agent-panel content-agent-editor__form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="revision_version" value="<%= item.revision_version || 1 %>">
     <div class="content-agent-editor__grid">
       <div class="content-agent-field content-agent-field--wide"><label for="revision-title">Titel</label><input id="revision-title" class="form-control" name="title" maxlength="255" value="<%= fields.title || '' %>" required></div>
       <div class="content-agent-field content-agent-field--wide"><label for="revision-excerpt">Kurzbeschreibung</label><textarea id="revision-excerpt" class="form-control" name="excerpt" maxlength="500" rows="3"><%= fields.excerpt || '' %></textarea></div>
