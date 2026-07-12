@@ -1,39 +1,60 @@
-const DEFAULT_TEST_DATABASE_PATTERN = /(?:^|[_-])(test|testing)(?:$|[_-])/i;
+import { randomUUID } from 'node:crypto';
 
-function databaseNameFromConnectionString(connectionString) {
-  if (typeof connectionString !== 'string' || !connectionString.trim()) return '';
-  try {
-    const url = new URL(connectionString);
-    if (!['postgres:', 'postgresql:'].includes(url.protocol)) return '';
-    return decodeURIComponent(url.pathname.replace(/^\/+/, '')).trim();
-  } catch {
-    return '';
+export const CONTENT_AGENT_PG_TEST_DATABASE_NAME = 'kwd_content_agent_integration_test';
+export const CONTENT_AGENT_PG_TEST_RESET_TOKEN = 'KWDCONTENTAGENT_TEST_RESET_V1';
+
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+const TEMPORARY_CONTAINER_PATTERN = /^kwd-content-agent-pg-test-[a-z0-9-]+$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function invalid(databaseName, reason) {
+  return { allowed: false, databaseName, reason };
+}
+
+export function createContentAgentPgTestSchemaName(uuid = randomUUID()) {
+  if (typeof uuid !== 'string' || !UUID_PATTERN.test(uuid)) {
+    throw new TypeError('Der Schemaname muss aus einer gültigen UUID erzeugt werden.');
   }
+  return `kwd_ca_it_${uuid.replaceAll('-', '').toLowerCase()}`;
 }
 
 export function evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset = false,
-  explicitMarker = ''
+  resetToken = ''
 } = {}) {
-  const databaseName = databaseNameFromConnectionString(connectionString);
-  if (!databaseName) {
-    return { allowed: false, databaseName: '', reason: 'Keine gültige PostgreSQL-Testdatenbank konfiguriert.' };
-  }
-  if (allowReset !== true) {
-    return { allowed: false, databaseName, reason: 'Der destruktive Reset wurde nicht ausdrücklich freigegeben.' };
+  if (typeof connectionString !== 'string' || !connectionString.trim()) {
+    return invalid('', 'Keine gültige PostgreSQL-Testdatenbank konfiguriert.');
   }
 
-  const marker = typeof explicitMarker === 'string' ? explicitMarker.trim() : '';
-  const defaultMarkerMatches = DEFAULT_TEST_DATABASE_PATTERN.test(databaseName);
-  const explicitMarkerMatches = marker.length > 0
-    && databaseName.toLocaleLowerCase('de-DE').includes(marker.toLocaleLowerCase('de-DE'));
-  if (!defaultMarkerMatches && !explicitMarkerMatches) {
-    return {
-      allowed: false,
-      databaseName,
-      reason: 'Der Datenbankname enthält keinen freigegebenen Testmarker.'
-    };
+  let url;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    return invalid('', 'Keine gültige PostgreSQL-Verbindungsadresse konfiguriert.');
   }
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
+    return invalid('', 'Die Verbindungsadresse muss PostgreSQL verwenden.');
+  }
+
+  const databaseName = decodeURIComponent(url.pathname.replace(/^\/+/, '')).trim();
+  if (allowReset !== true) {
+    return invalid(databaseName, 'Die PostgreSQL-Testfreigabe wurde nicht ausdrücklich erteilt.');
+  }
+  if (resetToken !== CONTENT_AGENT_PG_TEST_RESET_TOKEN) {
+    return invalid(databaseName, 'Das PostgreSQL-Test-Token ist ungültig.');
+  }
+  if (databaseName !== CONTENT_AGENT_PG_TEST_DATABASE_NAME) {
+    return invalid(databaseName, 'Der exakte Name der PostgreSQL-Testdatenbank fehlt.');
+  }
+  if (url.search) {
+    return invalid(databaseName, 'Verbindungsoptionen sind für den PostgreSQL-Test nicht erlaubt.');
+  }
+
+  const host = url.hostname;
+  if (!LOOPBACK_HOSTS.has(host) && !TEMPORARY_CONTAINER_PATTERN.test(host)) {
+    return invalid(databaseName, 'Der PostgreSQL-Testhost ist nicht freigegeben.');
+  }
+
   return { allowed: true, databaseName, reason: '' };
 }

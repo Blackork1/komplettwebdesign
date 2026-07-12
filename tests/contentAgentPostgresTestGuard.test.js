@@ -1,47 +1,74 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { evaluateContentAgentPgResetGuard } from './helpers/contentAgentPostgresTestGuard.js';
+import {
+  CONTENT_AGENT_PG_TEST_DATABASE_NAME,
+  CONTENT_AGENT_PG_TEST_RESET_TOKEN,
+  createContentAgentPgTestSchemaName,
+  evaluateContentAgentPgResetGuard
+} from './helpers/contentAgentPostgresTestGuard.js';
 
-test('destruktiver PostgreSQL-Test verlangt Freigabe und eindeutigen Testmarker im Datenbanknamen', () => {
+const integrationSource = readFileSync(
+  new URL('./contentAgentPostgresIntegration.test.js', import.meta.url),
+  'utf8'
+);
+
+function allowedInput(overrides = {}) {
+  return {
+    connectionString: `postgresql://kwd_test@127.0.0.1:5432/${CONTENT_AGENT_PG_TEST_DATABASE_NAME}`,
+    allowReset: true,
+    resetToken: CONTENT_AGENT_PG_TEST_RESET_TOKEN,
+    ...overrides
+  };
+}
+
+test('PostgreSQL-Opt-in verlangt exakten Datenbanknamen, lokalen Testhost und exaktes Token', () => {
   for (const input of [
     {},
-    { connectionString: 'postgresql://localhost/app_test', allowReset: false },
-    { connectionString: 'postgresql://localhost/production', allowReset: true },
-    { connectionString: 'postgresql://localhost/contest', allowReset: true },
-    { connectionString: 'postgresql://localhost/app_test/production', allowReset: true },
-    { connectionString: 'keine-url', allowReset: true }
+    allowedInput({ allowReset: false }),
+    allowedInput({ resetToken: '' }),
+    allowedInput({ resetToken: `${CONTENT_AGENT_PG_TEST_RESET_TOKEN}-falsch` }),
+    allowedInput({ connectionString: 'postgresql://kwd_test@127.0.0.1/production' }),
+    allowedInput({ connectionString: `postgresql://kwd_test@db.example.com/${CONTENT_AGENT_PG_TEST_DATABASE_NAME}` }),
+    allowedInput({ connectionString: `postgresql://kwd_test@127.0.0.1/${CONTENT_AGENT_PG_TEST_DATABASE_NAME}?options=-csearch_path%3Dpublic` }),
+    allowedInput({ connectionString: 'keine-url' })
   ]) {
     const guard = evaluateContentAgentPgResetGuard(input);
     assert.equal(guard.allowed, false, JSON.stringify(input));
-    assert.match(guard.reason, /PostgreSQL|Reset|Testmarker|Datenbank/i);
+    assert.match(guard.reason, /PostgreSQL|Freigabe|Token|Datenbank|Host|Option/i);
   }
 });
 
-test('Standardmarker erlaubt nur test oder testing als abgegrenzten Namensteil', () => {
-  for (const databaseName of ['app_test', 'testing-app', 'app-testing-ci', 'test']) {
-    const guard = evaluateContentAgentPgResetGuard({
-      connectionString: `postgresql://localhost/${databaseName}`,
-      allowReset: true
-    });
-    assert.equal(guard.allowed, true, databaseName);
-    assert.equal(guard.databaseName, databaseName);
+test('nur Loopback oder der streng benannte temporäre Container werden freigegeben', () => {
+  for (const host of ['127.0.0.1', 'localhost', '[::1]', 'kwd-content-agent-pg-test-20260712']) {
+    const guard = evaluateContentAgentPgResetGuard(allowedInput({
+      connectionString: `postgresql://kwd_test@${host}/${CONTENT_AGENT_PG_TEST_DATABASE_NAME}`
+    }));
+    assert.equal(guard.allowed, true, host);
+    assert.equal(guard.databaseName, CONTENT_AGENT_PG_TEST_DATABASE_NAME);
   }
 });
 
-test('expliziter Marker muss im tatsächlichen Datenbanknamen vorkommen', () => {
-  const allowed = evaluateContentAgentPgResetGuard({
-    connectionString: 'postgresql://localhost/content_ci42',
-    allowReset: true,
-    explicitMarker: 'ci42'
-  });
-  const blocked = evaluateContentAgentPgResetGuard({
-    connectionString: 'postgresql://localhost/production',
-    allowReset: true,
-    explicitMarker: 'ci42'
-  });
+test('isolierte Schemanamen werden ausschließlich intern aus UUIDs erzeugt', () => {
+  const first = createContentAgentPgTestSchemaName('11111111-2222-4333-8444-555555555555');
+  const second = createContentAgentPgTestSchemaName('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+  assert.match(first, /^kwd_ca_it_[a-f0-9]{32}$/);
+  assert.notEqual(first, second);
+  assert.throws(() => createContentAgentPgTestSchemaName('public'));
+});
 
-  assert.equal(allowed.allowed, true);
-  assert.equal(blocked.allowed, false);
-  assert.match(blocked.reason, /ci42|Testmarker/i);
+test('PostgreSQL-Harness löscht niemals Tabellen im allgemeinen Schema und räumt sein Zufallsschema auf', () => {
+  assert.doesNotMatch(integrationSource, /DROP TABLE/i);
+  assert.match(integrationSource, /CREATE SCHEMA/);
+  assert.match(integrationSource, /search_path/);
+  assert.match(integrationSource, /DROP SCHEMA/);
+  assert.match(integrationSource, /to_regnamespace/);
+  assert.match(
+    integrationSource,
+    /try \{\s*if \(pool\) await pool\.end\(\);\s*\} finally \{\s*try \{\s*if \(schemaCreated\)/,
+    'Schema-Cleanup muss auch dann laufen, wenn das Schließen des Testpools fehlschlägt'
+  );
+  assert.match(integrationSource, /CONTENT_AGENT_PG_TEST_TOKEN/);
+  assert.doesNotMatch(integrationSource, /CONTENT_AGENT_PG_TEST_DATABASE_MARKER/);
 });

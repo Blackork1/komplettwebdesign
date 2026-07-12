@@ -147,7 +147,7 @@ test('alle kopierbaren Bash-Blöcke sind syntaktisch gültig und Compose gibt ke
   assert.deepEqual([...new Set(configCommands)], ['docker compose config --quiet']);
 });
 
-test('separate Testdatenbank belegt Migration zweimal und wird vollständig aufgeräumt', () => {
+test('separate Testdatenbank belegt Migration und E2E-Test und wird vollständig aufgeräumt', () => {
   const testDatabase = blockContaining(
     bashBlocks,
     /TEST_DB_CONTAINER=/,
@@ -170,7 +170,7 @@ test('separate Testdatenbank belegt Migration zweimal und wird vollständig aufg
   assert.doesNotMatch(testDatabase, /docker compose run --rm app/);
   assert.doesNotMatch(testDatabase, /--env-file/);
   assert.equal((testDatabase.match(/npm run migrate:content-agent/g) || []).length, 2);
-  assert.equal((testDatabase.match(/komplettwebdesign-app:local/g) || []).length, 2);
+  assert.equal((testDatabase.match(/komplettwebdesign-app:local/g) || []).length, 3);
   assert.match(testDatabase, /DB_HOST="\$TEST_DB_CONTAINER"/);
   assert.match(testDatabase, /DB_PORT=5432/);
   assert.match(testDatabase, /DB_USER="\$TEST_DB_USER"/);
@@ -179,12 +179,25 @@ test('separate Testdatenbank belegt Migration zweimal und wird vollständig aufg
   assert.match(guide, /Basistabellen[^\n]*`users`[^\n]*`posts`/i);
 });
 
-test('destruktiver PostgreSQL-Integrationstest verlangt Freigabe und Testmarker', () => {
+test('PostgreSQL-Integrationstest verlangt exakten Datenbanknamen und exaktes Freigabe-Token', () => {
   assert.match(guide, /CONTENT_AGENT_PG_TEST_URL/);
   assert.match(guide, /CONTENT_AGENT_PG_TEST_ALLOW_RESET=true/);
-  assert.match(guide, /CONTENT_AGENT_PG_TEST_DATABASE_MARKER/);
-  assert.match(guide, /Datenbankname[^\n]*(?:test|testing)/i);
+  assert.match(guide, /CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1/);
+  assert.match(guide, /kwd_content_agent_integration_test/);
+  assert.doesNotMatch(guide, /CONTENT_AGENT_PG_TEST_DATABASE_MARKER/);
   assert.match(guide, /Produktionsdatenbank[^\n]*(?:nie|nicht)/i);
+});
+
+test('temporärer pgvector-Container bleibt bis nach dem echten E2E-Test bestehen', () => {
+  const testDatabase = blockContaining(bashBlocks, /TEST_DB_CONTAINER=/, 'Testdatenbank-Migrationsblock');
+  const firstMigration = testDatabase.indexOf('npm run migrate:content-agent');
+  const e2e = testDatabase.indexOf('tests/contentAgentPostgresIntegration.test.js');
+  const cleanup = testDatabase.lastIndexOf('cleanup');
+  assert.ok(firstMigration >= 0 && e2e > firstMigration && cleanup > e2e);
+  assert.match(testDatabase, /TEST_DB_NAME="kwd_content_agent_integration_test"/);
+  assert.match(testDatabase, /CONTENT_AGENT_PG_TEST_URL=/);
+  assert.match(testDatabase, /CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1/);
+  assert.match(testDatabase, /--network "\$TEST_DB_NETWORK"/);
 });
 
 test('Testmigration und geprüftes Backup liegen vor jeder Produktionsmigration', () => {

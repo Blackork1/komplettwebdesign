@@ -27,14 +27,17 @@ import { sendAdminReviewNotification } from '../services/contentAgent/contentNot
 import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
 import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
-import { evaluateContentAgentPgResetGuard } from './helpers/contentAgentPostgresTestGuard.js';
+import {
+  createContentAgentPgTestSchemaName,
+  evaluateContentAgentPgResetGuard
+} from './helpers/contentAgentPostgresTestGuard.js';
 import BlogPostModel from '../models/BlogPostModel.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
 const resetGuard = evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
-  explicitMarker: process.env.CONTENT_AGENT_PG_TEST_DATABASE_MARKER
+  resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
 });
 
 const publishRisks = {
@@ -152,9 +155,21 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
 test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
-  const pool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
   try {
-    await pool.query('DROP TABLE IF EXISTS content_notification_deliveries, content_provider_state, content_post_revisions, content_post_audits, content_publish_events, content_agent_setting_revisions, content_worker_state, content_agent_settings, content_post_metadata, content_topics, content_runs, content_jobs, posts, admins, users CASCADE');
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    const schemaCheck = await pool.query('SELECT current_schema() AS current_schema');
+    assert.equal(schemaCheck.rows[0].current_schema, schemaName);
     await pool.query(`
       CREATE TABLE users (id SERIAL PRIMARY KEY);
       CREATE TABLE admins (
@@ -1181,6 +1196,21 @@ test('echtes PostgreSQL: Migrationen 002–004 und Generate→Notify→Approve�
       newsletter_delivery_count: 0
     });
   } finally {
-    await pool.end();
+    try {
+      if (pool) await pool.end();
+    } finally {
+      try {
+        if (schemaCreated) {
+          await adminPool.query(`DROP SCHEMA "${schemaName}" CASCADE`);
+          const cleanupCheck = await adminPool.query(
+            'SELECT to_regnamespace($1) AS schema_oid',
+            [schemaName]
+          );
+          assert.equal(cleanupCheck.rows[0].schema_oid, null);
+        }
+      } finally {
+        await adminPool.end();
+      }
+    }
   }
 });

@@ -175,9 +175,9 @@ docker compose build app
 docker image inspect komplettwebdesign-app:local >/dev/null
 ```
 
-## 6. Migration zweimal in einer separaten Testdatenbank ausführen
+## 6. Migration und echten E2E-Test in einer separaten Testdatenbank ausführen
 
-Vor jeder Produktionsmigration wird die echte Migration mit dem gebauten App-Image zweimal gegen eine vollständig getrennte Testdatenbank ausgeführt. Der folgende Block exportiert dafür ausschließlich das aktuelle Produktionsschema ohne Daten, Rollen oder Rechte. Damit enthält die Testdatenbank auch die für die Migration notwendigen Basistabellen `users` und `posts`, ohne Produktionsinhalte zu kopieren. Dieser Lesezugriff verändert die Produktionsdatenbank nicht. Danach stellt er das Schema in einem temporären, nicht veröffentlichten `pgvector/pgvector:pg16`-Container auf einem eigenen Docker-Netzwerk wieder her.
+Vor jeder Produktionsmigration wird die echte Migration mit dem gebauten App-Image zweimal gegen eine vollständig getrennte Testdatenbank ausgeführt. Danach läuft der echte PostgreSQL-E2E-Test im selben temporären Container und im selben Docker-Netzwerk. Container und Netzwerk bleiben bis nach diesem Test bestehen. Der folgende Block exportiert dafür ausschließlich das aktuelle Produktionsschema ohne Daten, Rollen oder Rechte. Damit enthält die Testdatenbank auch die für die Migration notwendigen Basistabellen `users` und `posts`, ohne Produktionsinhalte zu kopieren. Dieser Lesezugriff verändert die Produktionsdatenbank nicht. Danach stellt er das Schema in einem temporären, nicht veröffentlichten `pgvector/pgvector:pg16`-Container auf einem eigenen Docker-Netzwerk wieder her.
 
 Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht in die Shell-Historie geschrieben. Die Produktions-`.env` wird weder geladen noch verändert. Die umschließende Subshell begrenzt Variablen und Traps auf diesen Ablauf. `set -Eeuo pipefail` beendet sie bei jedem nicht behandelten Fehler. Der `EXIT`-Trap entfernt Container, Netzwerk und Schemadatei, sichert aber zuerst den ursprünglichen Exitcode und gibt ihn nach dem Cleanup zurück. Dadurch kann die Aufräumroutine einen fehlgeschlagenen Schemaexport, Restore oder Migrationslauf nicht als Erfolg maskieren.
 
@@ -216,10 +216,10 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
   trap 'exit 143' TERM
 
   TEST_DB_SUFFIX="$(date +%Y%m%d%H%M%S)-$$"
-  TEST_DB_CONTAINER="kwd-content-migration-test-$TEST_DB_SUFFIX"
-  TEST_DB_NETWORK="kwd-content-migration-test-$TEST_DB_SUFFIX"
+  TEST_DB_CONTAINER="kwd-content-agent-pg-test-$TEST_DB_SUFFIX"
+  TEST_DB_NETWORK="kwd-content-agent-pg-test-$TEST_DB_SUFFIX"
   TEST_DB_USER="content_migration_test"
-  TEST_DB_NAME="content_migration_test"
+  TEST_DB_NAME="kwd_content_agent_integration_test"
   TEST_DB_PASSWORD="$(tr -d '-' < /proc/sys/kernel/random/uuid)"
   TEST_SCHEMA_FILE="$(mktemp /tmp/kwd-content-schema.XXXXXX)"
 
@@ -254,6 +254,12 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
     -e DB_USER="$TEST_DB_USER" -e DB_PASSWORD="$TEST_DB_PASSWORD" -e DB_NAME="$TEST_DB_NAME" \
     komplettwebdesign-app:local npm run migrate:content-agent
 
+  docker run --rm --network "$TEST_DB_NETWORK" \
+    -e CONTENT_AGENT_PG_TEST_URL="postgresql://${TEST_DB_USER}:${TEST_DB_PASSWORD}@${TEST_DB_CONTAINER}:5432/${TEST_DB_NAME}" \
+    -e CONTENT_AGENT_PG_TEST_ALLOW_RESET=true \
+    -e CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1 \
+    komplettwebdesign-app:local node --test tests/contentAgentPostgresIntegration.test.js
+
   docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
     psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
   cleanup
@@ -261,16 +267,11 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen `Content-Agent-Migration 002 erfolgreich.` melden. Schlägt Export, Wiederherstellung, einer der beiden Läufe oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003 und 004 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
-Der destruktive Node-Integrationstest besitzt zusätzlich eine eigene dreifache Sperre: `CONTENT_AGENT_PG_TEST_URL` muss gesetzt sein, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true` muss den Reset ausdrücklich freigeben und der tatsächliche Datenbankname muss `test` oder `testing` als abgegrenzten Namensteil enthalten. Abweichende CI-Namen benötigen `CONTENT_AGENT_PG_TEST_DATABASE_MARKER`; dessen Wert muss im Datenbanknamen vorkommen. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor eine Verbindung oder ein `DROP TABLE` ausgeführt wird.
+Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
-```bash
-CONTENT_AGENT_PG_TEST_URL="$CONTENT_AGENT_PG_TEST_URL" \
-CONTENT_AGENT_PG_TEST_ALLOW_RESET=true \
-CONTENT_AGENT_PG_TEST_DATABASE_MARKER="${CONTENT_AGENT_PG_TEST_DATABASE_MARKER:-}" \
-node --test tests/contentAgentPostgresIntegration.test.js
-```
+Der E2E-Test löscht keine Tabellen im allgemeinen oder öffentlichen Schema. Für jeden Lauf erzeugt er intern ein zufälliges Schema, setzt den PostgreSQL-`search_path` ausschließlich auf dieses Schema und `pg_catalog` und entfernt das Schema im `finally`-Block vollständig. Anschließend prüft er mit `to_regnamespace`, dass das Schema tatsächlich nicht mehr existiert. So bleiben weder Testtabellen noch ein wiederverwendbarer Schemaname zurück.
 
 ## 7. Produktionsbackup erstellen, prüfen und erst danach migrieren
 
