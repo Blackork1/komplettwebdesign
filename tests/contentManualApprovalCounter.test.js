@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
+import { enqueueApprovedPublicationJob } from '../repositories/contentJobRepository.js';
 import { createContentPublicationService } from '../services/contentAgent/contentPublicationService.js';
 
 const admin = { id: 7, username: 'redaktion' };
@@ -134,6 +135,92 @@ test('Freigabezähler wird ausschließlich durch den atomaren Incrementpfad erh�
   assert.match(client.calls[0].sql, /manual_approvals_count = manual_approvals_count \+ 1/i);
   assert.match(client.calls[0].sql, /WHERE id = 1/i);
   assert.doesNotMatch(client.calls[0].sql, /auto_publish/i);
+});
+
+test('geplante Freigabe und Veröffentlichung verwenden enge Versions-Compare-and-Set-Updates', async () => {
+  const client = sqlClient([
+    { rows: [{ id: 9, workflow_status: 'approved_scheduled' }] },
+    { rows: [{ id: 9, workflow_status: 'published', publication_version: 2 }] }
+  ]);
+  const repository = createContentPublishEventRepository();
+  const scheduledAt = new Date('2026-07-13T16:00:00.000Z');
+
+  await repository.approveDraftForSchedule({
+    postId: 9,
+    scheduledAt,
+    reviewVersion: 2,
+    publicationVersion: 1,
+    adminId: 7
+  }, client);
+  await repository.publishApprovedDraft({
+    postId: 9,
+    approvalVersion: 2,
+    publicationVersion: 1
+  }, client);
+
+  assert.match(client.calls[0].sql, /workflow_status = 'approved_scheduled'/i);
+  assert.match(client.calls[0].sql, /approved_review_version = review_version/i);
+  assert.match(client.calls[0].sql, /workflow_status = 'needs_review'/i);
+  assert.match(client.calls[0].sql, /review_version = \$3/i);
+  assert.match(client.calls[0].sql, /publication_version = \$4/i);
+  assert.deepEqual(client.calls[0].params, [9, scheduledAt, 2, 1, 7]);
+
+  assert.match(client.calls[1].sql, /workflow_status = 'published'/i);
+  assert.match(client.calls[1].sql, /publication_version = publication_version \+ 1/i);
+  assert.match(client.calls[1].sql, /approved_review_version = \$2/i);
+  assert.match(client.calls[1].sql, /review_version = \$2/i);
+  assert.match(client.calls[1].sql, /publication_version = \$3/i);
+  assert.match(client.calls[1].sql, /scheduled_at <= NOW\(\)/i);
+});
+
+test('geplantes manuelles Publish-Event bindet Freigabe- und Publikationsversion unveränderlich', async () => {
+  const client = sqlClient([{ rows: [{ id: 33, decision: 'manual' }] }]);
+  const repository = createContentPublishEventRepository();
+
+  await repository.insertScheduledManualEvent({
+    postId: 9,
+    runId: 21,
+    qualityScore: 92,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    admin
+  }, client);
+
+  const call = client.calls[0];
+  assert.match(call.sql, /'manual', 'manual-scheduled-v1'/i);
+  assert.match(call.sql, /ON CONFLICT \(post_id\) WHERE decision = 'manual' DO NOTHING/i);
+  assert.deepEqual(JSON.parse(call.params[3]), {
+    action: 'scheduled_manual_publish',
+    approvalVersion: 2,
+    publicationVersion: 1
+  });
+  assert.doesNotMatch(JSON.stringify(call.params), /contentHtml|api[_-]?key|<section/i);
+});
+
+test('Publish-Job ist über Post und Versionen dedupliziert und exakt zum Slot fällig', async () => {
+  const scheduledAt = new Date('2026-07-13T16:00:00.000Z');
+  const row = { id: 71, job_type: 'publish_approved_post', run_after: scheduledAt };
+  const db = sqlClient([{ rows: [row] }, { rows: [row] }]);
+  const input = {
+    postId: 9,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    runAfter: scheduledAt
+  };
+
+  assert.equal(await enqueueApprovedPublicationJob(input, db), row);
+  assert.equal(await enqueueApprovedPublicationJob(input, db), row);
+
+  assert.equal(db.calls[0].params[0], 'publish_approved_post');
+  assert.equal(db.calls[0].params[1], 'publish-approved:9:2:1');
+  assert.deepEqual(db.calls[0].params[2], {
+    postId: 9,
+    approvalVersion: 2,
+    publicationVersion: 1
+  });
+  assert.equal(db.calls[0].params[3], scheduledAt);
+  assert.equal(db.calls[1].params[1], db.calls[0].params[1]);
+  assert.match(db.calls[0].sql, /ON CONFLICT \(idempotency_key\)/i);
 });
 
 test('Statusupdates sind enge Compare-and-Set-Operationen und verwenden nie reviewed_by', async () => {

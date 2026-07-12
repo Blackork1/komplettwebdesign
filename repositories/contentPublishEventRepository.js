@@ -60,6 +60,58 @@ export function createContentPublishEventRepository(db = pool) {
       return rows[0] || null;
     },
 
+    async approveDraftForSchedule({
+      postId,
+      scheduledAt,
+      reviewVersion,
+      publicationVersion,
+      adminId
+    }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        UPDATE posts
+        SET workflow_status = 'approved_scheduled',
+            scheduled_at = $2,
+            approved_review_version = review_version,
+            approved_at = NOW(),
+            approved_by_admin_id = $5,
+            updated_at = NOW()
+        WHERE id = $1
+          AND generated_by_ai = TRUE
+          AND published = FALSE
+          AND workflow_status = 'needs_review'
+          AND content_format = 'static_html'
+          AND review_version = $3
+          AND publication_version = $4
+        RETURNING *
+      `, [postId, scheduledAt, reviewVersion, publicationVersion, adminId]);
+      return rows[0] || null;
+    },
+
+    async publishApprovedDraft({ postId, approvalVersion, publicationVersion }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        UPDATE posts
+        SET published = TRUE,
+            workflow_status = 'published',
+            published_at = NOW(),
+            reviewed_at = NOW(),
+            publication_version = publication_version + 1,
+            updated_at = NOW()
+        WHERE id = $1
+          AND generated_by_ai = TRUE
+          AND published = FALSE
+          AND workflow_status = 'approved_scheduled'
+          AND content_format = 'static_html'
+          AND approved_review_version = $2
+          AND review_version = $2
+          AND publication_version = $3
+          AND scheduled_at <= NOW()
+        RETURNING *
+      `, [postId, approvalVersion, publicationVersion]);
+      return rows[0] || null;
+    },
+
     async rejectDraft(postId, client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
@@ -93,6 +145,58 @@ export function createContentPublishEventRepository(db = pool) {
         ON CONFLICT (post_id) WHERE decision = 'manual' DO NOTHING
         RETURNING *
       `, [postId, runId, qualityScore, admin.id, admin.username]);
+      return rows[0] || null;
+    },
+
+    async insertScheduledManualEvent({
+      postId,
+      runId,
+      qualityScore,
+      approvalVersion,
+      publicationVersion,
+      admin
+    }, client) {
+      const target = queryTarget(client, db);
+      const context = JSON.stringify({
+        action: 'scheduled_manual_publish',
+        approvalVersion,
+        publicationVersion
+      });
+      const { rows } = await target.query(`
+        INSERT INTO content_publish_events (
+          post_id, run_id, decision, policy_version, quality_score,
+          reasons_json, context_json, admin_id, admin_username
+        )
+        VALUES (
+          $1, $2, 'manual', 'manual-scheduled-v1', $3,
+          '[]'::jsonb, $4::jsonb, $5, $6
+        )
+        ON CONFLICT (post_id) WHERE decision = 'manual' DO NOTHING
+        RETURNING *
+      `, [postId, runId, qualityScore, context, admin.id, admin.username]);
+      return rows[0] || null;
+    },
+
+    async getScheduledManualEvent({ postId, publicationVersion }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        SELECT *
+        FROM content_publish_events
+        WHERE post_id = $1
+          AND decision = 'manual'
+          AND policy_version = 'manual-scheduled-v1'
+          AND context_json ->> 'publicationVersion' = $2
+        LIMIT 1
+      `, [postId, String(publicationVersion)]);
+      return rows[0] || null;
+    },
+
+    async getApprovingAdmin(adminId, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(
+        'SELECT id, username FROM admins WHERE id = $1',
+        [adminId]
+      );
       return rows[0] || null;
     },
 
@@ -183,8 +287,13 @@ const defaultRepository = createContentPublishEventRepository();
 export const getDraftWithMetadataForUpdate = defaultRepository.getDraftWithMetadataForUpdate;
 export const getValidationContext = defaultRepository.getValidationContext;
 export const publishDraft = defaultRepository.publishDraft;
+export const approveDraftForSchedule = defaultRepository.approveDraftForSchedule;
+export const publishApprovedDraft = defaultRepository.publishApprovedDraft;
 export const rejectDraft = defaultRepository.rejectDraft;
 export const insertManualEvent = defaultRepository.insertManualEvent;
+export const insertScheduledManualEvent = defaultRepository.insertScheduledManualEvent;
+export const getScheduledManualEvent = defaultRepository.getScheduledManualEvent;
+export const getApprovingAdmin = defaultRepository.getApprovingAdmin;
 export const insertRejectionEvent = defaultRepository.insertRejectionEvent;
 export const getAutoEvent = defaultRepository.getAutoEvent;
 export const insertAutoEvent = defaultRepository.insertAutoEvent;

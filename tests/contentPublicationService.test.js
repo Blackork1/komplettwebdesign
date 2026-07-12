@@ -217,6 +217,40 @@ test('persistierter Draft wird vollständig revalidiert und erst danach veröffe
   assert.equal(calls.includes('ROLLBACK'), false);
 });
 
+test('geplante Veröffentlichung kann denselben vollständigen Validator im Freigabezustand verwenden', async () => {
+  let validationCalls = 0;
+  const scheduledDraft = validDraft({
+    post: {
+      workflow_status: 'approved_scheduled',
+      scheduled_at: new Date('2026-07-12T09:00:00.000Z'),
+      review_version: 2,
+      approved_review_version: 2,
+      approved_at: new Date('2026-07-12T08:00:00.000Z'),
+      approved_by_admin_id: 7,
+      publication_version: 1
+    }
+  });
+  const { service, calls } = harness({
+    draft: scheduledDraft,
+    validation(article) {
+      validationCalls += 1;
+      return { passed: true, sanitizedHtml: article.contentHtml, issues: [] };
+    }
+  });
+  const transaction = { query: async () => ({ rows: [] }) };
+
+  const validated = await service.revalidateDraftForPublication({
+    postId: 9,
+    client: transaction,
+    workflowStatuses: ['approved_scheduled']
+  });
+
+  assert.equal(validated.draft.post.workflow_status, 'approved_scheduled');
+  assert.equal(validated.qualityScore, 92);
+  assert.equal(validationCalls, 1);
+  assert.equal(calls.includes('CONNECT'), false);
+});
+
 test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten und Score', async () => {
   const variants = [
     validDraft({ post: { published: true, workflow_status: 'published' } }),

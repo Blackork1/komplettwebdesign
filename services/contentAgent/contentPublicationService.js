@@ -89,14 +89,18 @@ function parsePersistedFaq(value) {
   }
 }
 
-function assertDraftState(draft, conflictCode = 'CONTENT_DRAFT_NOT_PUBLISHABLE') {
+function assertDraftState(
+  draft,
+  conflictCode = 'CONTENT_DRAFT_NOT_PUBLISHABLE',
+  workflowStatuses = ['needs_review']
+) {
   if (!draft?.post) {
     throw publicationError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
   }
   const { post } = draft;
   if (post.generated_by_ai !== true
       || post.published !== false
-      || post.workflow_status !== 'needs_review'
+      || !workflowStatuses.includes(post.workflow_status)
       || post.content_format !== 'static_html') {
     throw publicationError(
       conflictCode,
@@ -241,10 +245,15 @@ export function createContentPublicationService({
     }
   }
 
-  async function loadValidatedDraft(postId, client, lockedDraft = null, { allowPublished = false } = {}) {
+  async function loadValidatedDraft(
+    postId,
+    client,
+    lockedDraft = null,
+    { allowPublished = false, workflowStatuses = ['needs_review'] } = {}
+  ) {
     const draft = lockedDraft || await repository.getDraftWithMetadataForUpdate(postId, client);
     if (allowPublished) assertPublishedAutoState(draft);
-    else assertDraftState(draft);
+    else assertDraftState(draft, 'CONTENT_DRAFT_NOT_PUBLISHABLE', workflowStatuses);
     const {
       article,
       qualityScore,
@@ -381,6 +390,31 @@ export function createContentPublicationService({
   }
 
   return {
+    async revalidateDraftForPublication({
+      postId,
+      client,
+      lockedDraft = null,
+      workflowStatuses = ['needs_review']
+    } = {}) {
+      const normalizedPostId = positiveDatabaseId(postId, 'postId');
+      if (!client || typeof client.query !== 'function') {
+        throw new TypeError('Für die Revalidierung wird eine aktive Datenbanktransaktion benötigt.');
+      }
+      const normalizedStatuses = Array.isArray(workflowStatuses)
+        ? [...new Set(workflowStatuses)]
+        : [];
+      if (normalizedStatuses.length === 0
+          || normalizedStatuses.some((status) => !['needs_review', 'approved_scheduled'].includes(status))) {
+        throw publicationError(
+          'CONTENT_ACTION_VALIDATION_FAILED',
+          'Der angeforderte Veröffentlichungszustand ist ungültig.'
+        );
+      }
+      return loadValidatedDraft(normalizedPostId, client, lockedDraft, {
+        workflowStatuses: normalizedStatuses
+      });
+    },
+
     async publishDraftManually({ postId, admin, confirmed } = {}) {
       if (confirmed !== true) {
         throw publicationError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');

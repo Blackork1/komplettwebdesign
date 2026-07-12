@@ -141,6 +141,38 @@ export async function enqueueAdminReviewNotificationJob({
   }, db);
 }
 
+export async function enqueueApprovedPublicationJob({
+  postId,
+  approvalVersion,
+  publicationVersion,
+  runAfter
+}, db = pool) {
+  const normalizedPostId = Number(postId);
+  const normalizedApprovalVersion = Number(approvalVersion);
+  const normalizedPublicationVersion = Number(publicationVersion);
+  const normalizedRunAfter = runAfter instanceof Date ? runAfter : new Date(runAfter);
+  if (
+    !Number.isSafeInteger(normalizedPostId) || normalizedPostId <= 0
+    || !Number.isSafeInteger(normalizedApprovalVersion) || normalizedApprovalVersion <= 0
+    || !Number.isSafeInteger(normalizedPublicationVersion) || normalizedPublicationVersion <= 0
+    || Number.isNaN(normalizedRunAfter.getTime())
+  ) {
+    throw new TypeError('Für den Veröffentlichungsjob werden positive IDs, Versionen und ein gültiger Termin benötigt.');
+  }
+
+  return enqueueJob({
+    jobType: 'publish_approved_post',
+    idempotencyKey: `publish-approved:${normalizedPostId}:${normalizedApprovalVersion}:${normalizedPublicationVersion}`,
+    payload: {
+      postId: normalizedPostId,
+      approvalVersion: normalizedApprovalVersion,
+      publicationVersion: normalizedPublicationVersion
+    },
+    runAfter: normalizedRunAfter,
+    maxAttempts: 3
+  }, db);
+}
+
 export async function retryContentJobForAdmin({ jobId, hardMaxAttempts }, db = pool) {
   const cap = Math.min(5, Math.max(1, Number(hardMaxAttempts) || 1));
   const { rows } = await db.query(
