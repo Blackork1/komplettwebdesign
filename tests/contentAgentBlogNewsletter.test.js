@@ -329,6 +329,25 @@ test('Mehrdeutiger SMTP-Ausgang wird terminal gespeichert und niemals automatisc
   assert.equal(sendNewsletterMail.mock.callCount(), 1);
 });
 
+test('nach Crash verbliebenes sending wird ohne erneuten SMTP-Versand outcome_uncertain', async () => {
+  const { createBlogNewsletterService } = await import('../services/contentAgent/blogNewsletterService.js');
+  const database = createDeliveryDatabase({
+    delivery: { ...queuedDelivery(), status: 'sending', attempts: 1, locked_by: 'abgestürzter-worker' },
+    subscriber: { id: 77, email: 'leser@example.de', active: true, unsubscribe_token: 'sicheres-token' }
+  });
+  const sendNewsletterMail = mock.fn(async () => ({ messageId: 'doppelte-mail' }));
+  const service = createBlogNewsletterService({ database, sendNewsletterMail });
+
+  await assert.rejects(
+    () => service.sendNewsletterDelivery({ deliveryId: 9, leaseGuard: async () => true }),
+    (error) => error.code === 'CONTENT_NEWSLETTER_OUTCOME_UNCERTAIN' && error.retryable === false
+  );
+
+  assert.equal(sendNewsletterMail.mock.callCount(), 0);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
+});
+
 test('unklares Commit nach bestätigtem SMTP-Versand wird outcome_uncertain statt Doppelversand', async () => {
   const { createBlogNewsletterService } = await import('../services/contentAgent/blogNewsletterService.js');
   const database = createDeliveryDatabase({

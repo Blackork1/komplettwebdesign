@@ -446,6 +446,48 @@ test('Recovery lässt Jobversuch sechs für eine sending Delivery genau einmal z
   assert.equal(recovered.attempts, 5);
 });
 
+test('Recovery behandelt Newsletter-Deliveries delivery-basiert und lässt Admin- sowie normale Jobs unverändert', async () => {
+  const recovered = [
+    { id: 79, job_type: 'send_blog_newsletter_delivery', status: 'queued', attempts: 5 },
+    { id: 80, job_type: 'send_admin_review_notification', status: 'queued', attempts: 5 },
+    { id: 81, job_type: 'send_blog_newsletter', status: 'failed', attempts: 3 }
+  ];
+  const db = createQueryRecorder([{ rows: recovered }]);
+
+  assert.deepEqual(await recoverExpiredJobs(30, db), recovered);
+
+  const sql = db.calls[0].sql;
+  assert.match(
+    sql,
+    /job\.job_type IN \('send_admin_review_notification', 'send_blog_newsletter_delivery'\)/i
+  );
+  assert.match(
+    sql,
+    /job\.job_type = 'send_admin_review_notification'[\s\S]*delivery\.notification_type = 'admin_review'/i
+  );
+  assert.match(
+    sql,
+    /job\.job_type = 'send_blog_newsletter_delivery'[\s\S]*delivery\.notification_type = 'newsletter_article'/i
+  );
+  assert.match(
+    sql,
+    /job\.job_type IN \('send_admin_review_notification', 'send_blog_newsletter_delivery'\)[\s\S]*expired\.delivery_status IN \('queued', 'sending'\)[\s\S]*THEN 'queued'/i
+  );
+  assert.match(sql, /delivery_status = 'queued'[\s\S]*delivery_next_attempt_at/i);
+  assert.match(sql, /delivery_status = 'sending'[\s\S]*THEN NOW\(\)/i);
+  assert.match(sql, /ELSE CASE[\s\S]*job\.attempts < job\.max_attempts[\s\S]*ELSE 'failed'/i);
+});
+
+test('Recovery vergleicht malformed Delivery-IDs ohne riskanten numerischen Cast', async () => {
+  const db = createQueryRecorder([{ rows: [] }]);
+
+  await recoverExpiredJobs(30, db);
+
+  const sql = db.calls[0].sql;
+  assert.match(sql, /delivery\.id::text = job\.payload_json\s*->>\s*'deliveryId'/i);
+  assert.doesNotMatch(sql, /\(job\.payload_json\s*->>\s*'deliveryId'\)::(?:bigint|integer|numeric)/i);
+});
+
 test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zurück', async () => {
   const stageResult = { score: 91 };
   const tokenUsage = { input_tokens: 120, output_tokens: 80 };

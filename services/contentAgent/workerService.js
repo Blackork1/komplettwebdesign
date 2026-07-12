@@ -1,4 +1,8 @@
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
+const ATTEMPT_NEUTRAL_NOT_DUE_CODES = new Set([
+  'CONTENT_ADMIN_NOTIFICATION_NOT_DUE',
+  'CONTENT_NEWSLETTER_NOT_DUE'
+]);
 
 export class LeaseLostError extends Error {
   constructor(message = 'Die Content-Job-Lease wurde verloren.') {
@@ -28,6 +32,14 @@ function requiredFunction(value, name) {
     throw new TypeError(`Die Worker-Abhängigkeit ${name} wird benötigt.`);
   }
   return value;
+}
+
+function isAttemptNeutralNotDue(error) {
+  return ATTEMPT_NEUTRAL_NOT_DUE_CODES.has(error?.code)
+    && error?.retryable === true
+    && error?.doesNotConsumeAttempt === true
+    && error?.retryAt instanceof Date
+    && !Number.isNaN(error.retryAt.getTime());
 }
 
 export function createContentWorker(dependencies = {}) {
@@ -114,14 +126,11 @@ export function createContentWorker(dependencies = {}) {
         return { status: 'lease_lost' };
       }
       let terminal;
-      if (
-        error?.code === 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE'
-        && error?.doesNotConsumeAttempt === true
-      ) {
+      if (isAttemptNeutralNotDue(error)) {
         terminal = await requiredFunction(
           rescheduleJobWithoutAttemptConsumption,
           'rescheduleJobWithoutAttemptConsumption'
-        )(claim, error, { retryAt: error?.retryAt || null });
+        )(claim, error, { retryAt: error.retryAt });
       } else {
         terminal = error?.retryable === false
           ? await failJob(claim, error)

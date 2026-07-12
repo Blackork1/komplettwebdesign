@@ -383,15 +383,22 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
                delivery.next_attempt_at AS delivery_next_attempt_at
         FROM content_jobs AS job
         LEFT JOIN content_notification_deliveries AS delivery
-          ON job.job_type = 'send_admin_review_notification'
+          ON job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
           AND delivery.id::text = job.payload_json ->> 'deliveryId'
+          AND (
+            (job.job_type = 'send_admin_review_notification'
+              AND delivery.notification_type = 'admin_review')
+            OR
+            (job.job_type = 'send_blog_newsletter_delivery'
+              AND delivery.notification_type = 'newsletter_article')
+          )
         WHERE job.status = 'running'
           AND job.locked_at < NOW() - ($1 * INTERVAL '1 minute')
         FOR UPDATE OF job
       )
       UPDATE content_jobs AS job
       SET status = CASE
-            WHEN job.job_type = 'send_admin_review_notification'
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN 'queued'
             ELSE CASE
@@ -400,16 +407,16 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
             END
           END,
           attempts = CASE
-            WHEN job.job_type = 'send_admin_review_notification'
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN GREATEST(job.attempts - 1, 0)
             ELSE job.attempts
           END,
           run_after = CASE
-            WHEN job.job_type = 'send_admin_review_notification'
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status = 'queued'
               THEN GREATEST(job.run_after, expired.delivery_next_attempt_at)
-            WHEN job.job_type = 'send_admin_review_notification'
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status = 'sending'
               THEN NOW()
             ELSE job.run_after
@@ -417,7 +424,7 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
           locked_at = NULL,
           locked_by = NULL,
           finished_at = CASE
-            WHEN job.job_type = 'send_admin_review_notification'
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN NULL
             ELSE CASE
