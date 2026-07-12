@@ -379,6 +379,49 @@ test('Übersicht erhält nur für created=1 eine sichere Erfolgsmeldung', async 
   assert.equal(ignoredRes.rendered.locals.created, false);
 });
 
+test('Draftfilter und Statusableitung erhalten dasselbe serverseitige now', async () => {
+  const instant = new Date('2026-07-12T09:00:00.000Z');
+  const calls = [];
+  const rows = [{ id: 7 }];
+  const drafts = [{ id: 7, reviewState: 'missed' }];
+  const controller = createAdminContentAgentController(baseDependencies({
+    now: () => instant,
+    adminRepository: {
+      async listDrafts(input) { calls.push(['repository', input]); return rows; }
+    },
+    presentation: {
+      buildDraftListPresentation(input, current) {
+        calls.push(['presentation', input, current]);
+        return drafts;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.draftsPage({ query: { status: 'missed' } }, res, assert.fail);
+
+  assert.deepEqual(calls, [
+    ['repository', { status: 'missed', now: instant }],
+    ['presentation', rows, instant]
+  ]);
+  assert.equal(res.rendered.locals.status, 'missed');
+  assert.equal(res.rendered.locals.drafts, drafts);
+});
+
+test('ungültiger Draftfilter wird vor Repositoryzugriff auf review normalisiert', async () => {
+  let received;
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async listDrafts(input) { received = input; return []; }
+    },
+    presentation: { buildDraftListPresentation() { return []; } }
+  }));
+
+  await controller.draftsPage({ query: { status: "published' OR TRUE --" } }, response(), assert.fail);
+
+  assert.equal(received.status, 'review');
+});
+
 test('bekannte Controllerfehler werden explizit abgebildet, unbekannte gehen an next', async () => {
   const conflict = Object.assign(new Error('interner Kontext'), { code: 'CONTENT_SETTINGS_VERSION_CONFLICT' });
   const conflictController = createAdminContentAgentController(baseDependencies({
@@ -435,6 +478,24 @@ test('Retry-Aktion meldet einen verlorenen Zustandsvergleich als Konflikt', asyn
 
   await controller.retryJobAction({ params: { id: '19' } }, res, assert.fail);
 
+  assert.equal(res.statusCode, 409);
+});
+
+test('generischer Jobretry ist für Admin-Review-Mails serverseitig gesperrt', async () => {
+  let retryCalls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async getJobType() { return 'send_admin_review_notification'; }
+    },
+    jobRepository: {
+      async retryContentJobForAdmin() { retryCalls += 1; return { id: 19 }; }
+    }
+  }));
+  const res = response();
+
+  await controller.retryJobAction({ params: { id: '19' } }, res, assert.fail);
+
+  assert.equal(retryCalls, 0);
   assert.equal(res.statusCode, 409);
 });
 

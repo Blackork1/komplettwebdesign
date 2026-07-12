@@ -34,6 +34,12 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.'
 });
 
+const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
+
+function reviewStatusFilter(value) {
+  return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
+}
+
 export function contentAgentStatus(error) {
   const code = typeof error?.code === 'string' ? error.code : '';
   if (code.endsWith('_NOT_FOUND')) return 404;
@@ -298,11 +304,13 @@ export function createAdminContentAgentController(dependencies) {
   return {
     async overviewPage(req, res, next) {
       try {
+        const currentTime = now();
         const data = await adminRepository.getOverview({
-          technicalMonthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur
+          technicalMonthlyCostLimitEur: runtimeConfig.monthlyCostLimitEur,
+          now: currentTime
         });
         return res.render('admin/contentAgent/overview', {
-          dashboard: presentation.buildDashboardPresentation(data),
+          dashboard: presentation.buildDashboardPresentation(data, currentTime),
           settings: data.settings,
           created: req.query?.created === '1'
         });
@@ -313,9 +321,12 @@ export function createAdminContentAgentController(dependencies) {
 
     async draftsPage(req, res, next) {
       try {
-        const rows = await adminRepository.listDrafts();
+        const currentTime = now();
+        const status = reviewStatusFilter(req.query?.status);
+        const rows = await adminRepository.listDrafts({ status, now: currentTime });
         return res.render('admin/contentAgent/drafts', {
-          drafts: presentation.buildDraftListPresentation(rows)
+          drafts: presentation.buildDraftListPresentation(rows, currentTime),
+          status
         });
       } catch (error) {
         return sendKnownError(error, res, next);
@@ -476,8 +487,15 @@ export function createAdminContentAgentController(dependencies) {
 
     async retryJobAction(req, res, next) {
       try {
+        const jobId = positiveId(req.params.id);
+        if (typeof adminRepository.getJobType === 'function'
+            && await adminRepository.getJobType(jobId) === 'send_admin_review_notification') {
+          throw Object.assign(new Error('Admin-Mailretry ist nur am Entwurf erlaubt.'), {
+            code: 'CONTENT_JOB_NOT_RETRYABLE'
+          });
+        }
         const job = await jobRepository.retryContentJobForAdmin({
-          jobId: positiveId(req.params.id),
+          jobId,
           hardMaxAttempts: runtimeConfig.maxAttempts
         });
         if (!job) {

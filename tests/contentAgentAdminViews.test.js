@@ -23,6 +23,20 @@ const dashboard = {
     costEur: 1.24,
     riskBlocked: true,
     riskCount: 3,
+    reviewState: 'needs_review',
+    reviewStateLabel: 'Prüfung offen',
+    scheduledAtLabel: '13.07.2026, 18:00 Uhr',
+    reviewVersion: 4,
+    approvalVersion: null,
+    publicationVersion: 1,
+    notification: {
+      status: 'failed',
+      statusLabel: 'Versand fehlgeschlagen',
+      attempts: 6,
+      lastAttemptAtLabel: '12.07.2026, 10:30 Uhr',
+      lastErrorCode: '<script>smtp_etimedout</script>',
+      canRetry: true
+    },
     createdAt: '2026-07-11T12:00:00.000Z'
   }],
   jobs: [{
@@ -185,6 +199,52 @@ test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmod
     assert.doesNotMatch(html, /<script>(?:bestand|modell|fehler)<\/script>/);
     assert.doesNotMatch(html, /stage_results_json|payload_json|openai_response_ids_json/i);
   }
+});
+
+test('Draftübersicht bietet Statusfilter, Termin- und Maildetails sowie sicheren CSRF-Retry', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
+    ...baseLocals,
+    drafts: dashboard.drafts,
+    status: 'review'
+  });
+
+  for (const [filter, label] of [
+    ['review', 'Prüfung'],
+    ['approved', 'Freigegeben'],
+    ['missed', 'Verpasst'],
+    ['published', 'Veröffentlicht']
+  ]) {
+    assert.match(html, new RegExp(`href="/admin/content-agent/drafts\\?status=${filter}"[^>]*>${label}`));
+  }
+  assert.match(html, /13\.07\.2026, 18:00 Uhr/);
+  assert.match(html, /Reviewversion[\s\S]*4/);
+  assert.match(html, /Freigabeversion[\s\S]*Noch nicht freigegeben/);
+  assert.match(html, /Letzter Mailversuch[\s\S]*12\.07\.2026, 10:30 Uhr/);
+  assert.match(html, /Fehlercode[\s\S]*&lt;script&gt;smtp_etimedout&lt;\/script&gt;/);
+  assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/14\/notification\/retry"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /aria-label="Admin-Benachrichtigung für &lt;script&gt;entwurf&lt;\/script&gt; erneut senden"/);
+  assert.doesNotMatch(html, /<script>smtp_etimedout<\/script>/);
+});
+
+test('Mailretry wird ohne serverseitige Retryfreigabe nicht gerendert', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
+    ...baseLocals,
+    drafts: [{
+      ...dashboard.drafts[0],
+      notification: {
+        status: 'failed',
+        statusLabel: 'Versand unklar',
+        attempts: 6,
+        lastErrorCode: 'outcome_uncertain',
+        canRetry: false
+      }
+    }],
+    status: 'review'
+  });
+
+  assert.doesNotMatch(html, /notification\/retry/);
 });
 
 test('Drafteditor bietet vier Regenerationen und getrennte bestätigte Publish-/Reject-Aktionen', async () => {

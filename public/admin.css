@@ -1060,6 +1060,87 @@ body {
 
 .content-agent-subnav a.is-active { color: var(--content-agent-blue); border-bottom-color: var(--content-agent-blue); }
 
+.content-agent-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.content-agent-filterbar a {
+  padding: 0.48rem 0.8rem;
+  color: var(--content-agent-muted);
+  background: #fff;
+  border: 1px solid var(--content-agent-line);
+  border-radius: 999px;
+  font-size: 0.79rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.content-agent-filterbar a.is-active {
+  color: #fff;
+  background: var(--content-agent-navy);
+  border-color: var(--content-agent-navy);
+}
+
+.content-agent-review-state {
+  padding: 0.2rem 0.42rem;
+  border-radius: 999px;
+  color: #334e63;
+  background: #eaf0f4;
+}
+
+.content-agent-review-state.is-approved_scheduled,
+.content-agent-review-state.is-published { color: #12633c; background: #e4f3ea; }
+.content-agent-review-state.is-missed { color: #8a4d00; background: #fff0d7; }
+
+.content-agent-draft-facts,
+.content-agent-mail-state dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.content-agent-draft-facts dt,
+.content-agent-mail-state dt {
+  color: var(--content-agent-muted);
+  font-size: 0.66rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.content-agent-draft-facts dd,
+.content-agent-mail-state dd {
+  margin: 0.12rem 0 0;
+  color: var(--content-agent-ink);
+  font-size: 0.77rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.content-agent-mail-state {
+  margin: 0.8rem 0;
+  padding: 0.75rem;
+  background: #f3f6f8;
+  border: 1px solid #dce5ea;
+  border-radius: 8px;
+}
+
+.content-agent-mail-state__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  font-size: 0.76rem;
+}
+
+.content-agent-mail-state__head span { color: var(--content-agent-muted); }
+.content-agent-mail-state form { margin: 0; }
+.content-agent-review-summary { font-size: 0.74rem !important; }
+.content-agent-review-item__actions form { margin: 0; }
+
 .content-agent-notice,
 .content-agent-schedule-note {
   display: flex;
@@ -1177,6 +1258,9 @@ body {
   .content-agent-stock-link { align-items: flex-start; flex-direction: column; }
   .content-agent-draft-card { grid-template-columns: 1fr; }
   .content-agent-draft-card__visual { min-height: 10rem; max-height: 12rem; }
+  .content-agent-draft-facts,
+  .content-agent-mail-state dl { grid-template-columns: 1fr; }
+  .content-agent-mail-state__head { align-items: flex-start; flex-direction: column; }
   .content-agent-job { grid-template-columns: 1fr; }
   .content-agent-job__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .content-agent-job__error,

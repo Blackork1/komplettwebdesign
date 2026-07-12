@@ -3,9 +3,14 @@ import { getMonthlyContentCost } from '../services/contentAgent/contentCostServi
 
 const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
+const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
 
 function normalizeLimit(value) {
   return Math.min(200, Math.max(1, Number(value) || 100));
+}
+
+export function normalizeReviewStatusFilter(value) {
+  return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
 }
 
 export function createContentAgentAdminRepository(db = pool) {
@@ -30,10 +35,30 @@ export function createContentAgentAdminRepository(db = pool) {
         `, ['content-worker']),
         getMonthlyContentCost({ now, timezone, db }),
         db.query(`
-          SELECT id, title, slug, excerpt, image_url, workflow_status, created_at
-          FROM posts
-          WHERE generated_by_ai = TRUE AND published = FALSE
-          ORDER BY created_at DESC
+          SELECT p.id, p.title, p.slug, p.excerpt, p.image_url,
+                 p.workflow_status, p.published, p.scheduled_at, p.published_at,
+                 p.review_version, p.approved_review_version, p.publication_version,
+                 p.created_at,
+                 notification.notification_status,
+                 notification.notification_attempts,
+                 notification.notification_last_error_code,
+                 notification.notification_updated_at,
+                 notification.notification_sent_at
+          FROM posts p
+          LEFT JOIN LATERAL (
+            SELECT delivery.status AS notification_status,
+                   delivery.attempts AS notification_attempts,
+                   delivery.last_error_code AS notification_last_error_code,
+                   delivery.updated_at AS notification_updated_at,
+                   delivery.sent_at AS notification_sent_at
+            FROM content_notification_deliveries delivery
+            WHERE delivery.post_id = p.id
+              AND delivery.notification_type = 'admin_review'
+            ORDER BY delivery.created_at DESC, delivery.id DESC
+            LIMIT 1
+          ) notification ON TRUE
+          WHERE p.generated_by_ai = TRUE AND p.published = FALSE
+          ORDER BY p.created_at DESC
           LIMIT $1
         `, [OVERVIEW_DRAFT_LIMIT]),
         db.query(`
@@ -63,9 +88,12 @@ export function createContentAgentAdminRepository(db = pool) {
       };
     },
 
-    async listDrafts() {
+    async listDrafts({ status = 'review', now = new Date() } = {}) {
+      const normalizedStatus = normalizeReviewStatusFilter(status);
       const { rows } = await db.query(`
         SELECT p.id, p.title, p.slug, p.excerpt, p.image_url, p.workflow_status,
+               p.published, p.scheduled_at, p.published_at,
+               p.review_version, p.approved_review_version, p.publication_version,
                p.created_at, m.primary_keyword, m.content_cluster,
                m.quality_score,
                COALESCE((m.quality_report_json #>> '{focusedReview,blocked}')::boolean, FALSE)
@@ -75,13 +103,46 @@ export function createContentAgentAdminRepository(db = pool) {
                    THEN jsonb_array_length(m.quality_report_json #> '{focusedReview,items}')
                  ELSE 0
                END AS risk_count,
-               r.cost_estimate
+               r.cost_estimate,
+               notification.notification_status,
+               notification.notification_attempts,
+               notification.notification_last_error_code,
+               notification.notification_updated_at,
+               notification.notification_sent_at
         FROM posts p
         JOIN content_post_metadata m ON m.post_id = p.id
         LEFT JOIN content_runs r ON r.post_id = p.id
-        WHERE p.generated_by_ai = TRUE AND p.published = FALSE
+        LEFT JOIN LATERAL (
+          SELECT delivery.status AS notification_status,
+                 delivery.attempts AS notification_attempts,
+                 delivery.last_error_code AS notification_last_error_code,
+                 delivery.updated_at AS notification_updated_at,
+                 delivery.sent_at AS notification_sent_at
+          FROM content_notification_deliveries delivery
+          WHERE delivery.post_id = p.id
+            AND delivery.notification_type = 'admin_review'
+          ORDER BY delivery.created_at DESC, delivery.id DESC
+          LIMIT 1
+        ) notification ON TRUE
+        WHERE p.generated_by_ai = TRUE
+          AND (
+            ($2 = 'review'
+              AND p.published = FALSE
+              AND p.workflow_status = 'needs_review'
+              AND (p.scheduled_at IS NULL OR p.scheduled_at >= $1))
+            OR ($2 = 'approved'
+              AND p.published = FALSE
+              AND p.workflow_status = 'approved_scheduled')
+            OR ($2 = 'missed'
+              AND p.published = FALSE
+              AND p.workflow_status = 'needs_review'
+              AND p.scheduled_at < $1)
+            OR ($2 = 'published'
+              AND p.published = TRUE
+              AND p.workflow_status = 'published')
+          )
         ORDER BY p.created_at DESC
-      `);
+      `, [now, normalizedStatus]);
       return rows;
     },
 
@@ -124,6 +185,14 @@ export function createContentAgentAdminRepository(db = pool) {
         LIMIT $1
       `, [normalizeLimit(limit)]);
       return rows;
+    },
+
+    async getJobType(jobId) {
+      const { rows } = await db.query(
+        'SELECT job_type FROM content_jobs WHERE id = $1',
+        [jobId]
+      );
+      return rows[0]?.job_type || null;
     },
 
     async getTechnologyState() {

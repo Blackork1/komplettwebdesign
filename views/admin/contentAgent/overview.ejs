@@ -72,8 +72,10 @@
                 </div>
                 <h3><%= draft.title %></h3>
                 <p><%= draft.riskBlocked ? `${draft.riskCount} konkrete Hinweise prüfen` : (draft.excerpt || 'Bereit für die redaktionelle Prüfung') %></p>
+                <p class="content-agent-review-summary"><strong><%= draft.reviewStateLabel || 'Prüfung offen' %></strong> · <%= draft.scheduledAtLabel || 'Noch nicht terminiert' %> · <%= draft.notification?.statusLabel || 'Noch keine Admin-Mail' %></p>
               </div>
               <div class="content-agent-review-item__actions">
+                <% if (draft.notification?.canRetry === true) { %><form method="post" action="/admin/content-agent/drafts/<%= draft.id %>/notification/retry" data-confirm="Admin-Benachrichtigung wirklich erneut senden?"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true"><button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Admin-Benachrichtigung für <%= draft.title %> erneut senden"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Mailretry</button></form><% } %>
                 <a class="btn btn-sm btn-outline-primary" href="/admin/content-agent/drafts/<%= draft.id %>/preview">Vorschau</a>
                 <a class="btn btn-sm btn-primary" href="/admin/content-agent/drafts/<%= draft.id %>/edit">Prüfen</a>
               </div>

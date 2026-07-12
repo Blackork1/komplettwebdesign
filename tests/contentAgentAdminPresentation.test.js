@@ -6,8 +6,93 @@ import {
   buildDraftListPresentation,
   buildExistingContentListPresentation,
   buildJobListPresentation,
-  buildTechnologyPresentation
+  buildTechnologyPresentation,
+  deriveReviewState
 } from '../services/contentAgent/adminPresentationService.js';
+
+test('Reviewstatus wird ausschließlich aus Post und serverseitigem now abgeleitet', () => {
+  const now = new Date('2026-07-12T09:00:00.000Z');
+  assert.equal(deriveReviewState({
+    workflow_status: 'needs_review',
+    published: false,
+    scheduled_at: '2026-07-12T08:00:00.000Z'
+  }, now), 'missed');
+  assert.equal(deriveReviewState({
+    workflow_status: 'needs_review',
+    published: false,
+    scheduled_at: '2026-07-12T09:00:00.000Z'
+  }, now), 'needs_review');
+  assert.equal(deriveReviewState({
+    workflow_status: 'needs_review',
+    published: false,
+    scheduled_at: null
+  }, now), 'needs_review');
+  assert.equal(deriveReviewState({
+    workflow_status: 'approved_scheduled',
+    published: false,
+    scheduled_at: '2026-07-12T10:00:00.000Z'
+  }, now), 'approved_scheduled');
+  assert.equal(deriveReviewState({
+    workflow_status: 'published',
+    published: true,
+    scheduled_at: '2026-07-12T08:00:00.000Z'
+  }, now), 'published');
+});
+
+test('Draftpräsentation zeigt Berlin-Zeit, Versionen und nur einen sicheren Mailfehlercode', () => {
+  const [draft] = buildDraftListPresentation([{
+    id: 11,
+    title: 'Terminierter Entwurf',
+    workflow_status: 'needs_review',
+    published: false,
+    scheduled_at: '2026-07-12T09:15:00.000Z',
+    review_version: 4,
+    approved_review_version: 3,
+    publication_version: 2,
+    notification_status: 'failed',
+    notification_attempts: 6,
+    notification_last_error_code: 'smtp_etimedout',
+    notification_updated_at: '2026-07-12T08:30:00.000Z',
+    notification_last_error: 'smtp://intern:passwort@example.test'
+  }], new Date('2026-07-12T08:00:00.000Z'));
+
+  assert.equal(draft.reviewState, 'needs_review');
+  assert.equal(draft.scheduledAtLabel, '12.07.2026, 11:15 Uhr');
+  assert.equal(draft.reviewVersion, 4);
+  assert.equal(draft.approvalVersion, 3);
+  assert.equal(draft.publicationVersion, 2);
+  assert.deepEqual(draft.notification, {
+    status: 'failed',
+    statusLabel: 'Versand fehlgeschlagen',
+    attempts: 6,
+    lastAttemptAt: '2026-07-12T08:30:00.000Z',
+    lastAttemptAtLabel: '12.07.2026, 10:30 Uhr',
+    lastErrorCode: 'smtp_etimedout',
+    canRetry: true
+  });
+  assert.doesNotMatch(JSON.stringify(draft), /passwort|notification_last_error/);
+});
+
+test('Mailretry bleibt für unklare, abgelehnte und nicht ausgeschöpfte Zustellungen gesperrt', () => {
+  const deliveries = [
+    ['outcome_uncertain', 'failed', 6],
+    ['smtp_outcome_uncertain', 'failed', 6],
+    ['smtp_rejected', 'failed', 6],
+    ['smtp_etimedout', 'failed', 5],
+    [null, 'sent', 1],
+    [null, 'sending', 1]
+  ];
+  for (const [code, status, attempts] of deliveries) {
+    const [draft] = buildDraftListPresentation([{
+      workflow_status: 'needs_review',
+      published: false,
+      notification_status: status,
+      notification_attempts: attempts,
+      notification_last_error_code: code
+    }], new Date('2026-07-12T08:00:00.000Z'));
+    assert.equal(draft.notification.canRetry, false, `${status}/${attempts}/${code}`);
+  }
+});
 
 test('Jobpräsentation zeigt bereinigte Fehler und letzte sichere Stufe', () => {
   const [job] = buildJobListPresentation([{

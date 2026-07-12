@@ -24,6 +24,9 @@ function createQueryRecorder() {
       if (/FROM posts p/i.test(normalized) || /FROM posts WHERE/i.test(normalized)) {
         return { rows: [{ id: 11, title: 'Entwurf' }] };
       }
+      if (/^SELECT job_type FROM content_jobs/i.test(normalized)) {
+        return { rows: [{ job_type: 'send_admin_review_notification' }] };
+      }
       if (/FROM content_jobs/i.test(normalized)) return { rows: [{ id: 7, status: 'failed' }] };
       if (/FROM content_provider_state/i.test(normalized)) return { rows: [{ provider_name: 'openai' }] };
       return { rows: [] };
@@ -103,4 +106,61 @@ test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () 
   assert.match(sql, /published = TRUE/i);
   assert.match(sql, /r\.audit_id = audit\.id/i);
   assert.doesNotMatch(sql, /\bcontent\b|stage_results_json|payload_json|openai_response_ids_json/i);
+});
+
+test('Draftliste lädt pro Post ausschließlich die neueste Admin-Review-Zustellung', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  await repository.listDrafts({
+    status: 'missed',
+    now: new Date('2026-07-12T09:00:00.000Z')
+  });
+
+  const call = db.calls.find(({ sql }) => /FROM posts p/i.test(sql));
+  assert.match(call.sql, /LEFT JOIN LATERAL \( SELECT delivery\.status AS notification_status/i);
+  assert.match(call.sql, /delivery\.notification_type = 'admin_review'/i);
+  assert.match(call.sql, /ORDER BY delivery\.created_at DESC, delivery\.id DESC LIMIT 1/i);
+  assert.match(call.sql, /notification_last_error_code/i);
+  assert.match(call.sql, /p\.review_version/i);
+  assert.match(call.sql, /p\.approved_review_version/i);
+  assert.deepEqual(call.params, [new Date('2026-07-12T09:00:00.000Z'), 'missed']);
+});
+
+test('Statusfilter wird streng gewhitelistet und verwendet nur feste SQL-Prädikate', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+  const injection = "published' OR TRUE --";
+
+  for (const status of ['review', 'approved', 'missed', 'published', injection]) {
+    await repository.listDrafts({
+      status,
+      now: new Date('2026-07-12T09:00:00.000Z')
+    });
+  }
+
+  const calls = db.calls.filter(({ sql }) => /FROM posts p/i.test(sql));
+  assert.deepEqual(calls.map(({ params }) => params[1]), [
+    'review', 'approved', 'missed', 'published', 'review'
+  ]);
+  for (const call of calls) {
+    assert.doesNotMatch(call.sql, /OR TRUE|--/i);
+    assert.match(call.sql, /\$2 = 'review'/i);
+    assert.match(call.sql, /\$2 = 'approved'/i);
+    assert.match(call.sql, /\$2 = 'missed'/i);
+    assert.match(call.sql, /\$2 = 'published'/i);
+  }
+});
+
+test('Jobtypprüfung lädt ausschließlich die unveränderliche Typkennung', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  const jobType = await repository.getJobType(7);
+
+  const call = db.calls[0];
+  assert.equal(jobType, 'send_admin_review_notification');
+  assert.match(call.sql, /^SELECT job_type FROM content_jobs WHERE id = \$1$/i);
+  assert.deepEqual(call.params, [7]);
+  assert.doesNotMatch(call.sql, /payload_json|last_error|runtime_snapshot/i);
 });
