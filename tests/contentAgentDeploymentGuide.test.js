@@ -38,6 +38,11 @@ test('App und Worker verwenden exakt dasselbe benannte Image, Worker bleibt inte
   const worker = parsedService(workerYaml, 'content-worker');
 
   assert.equal(app.image, 'komplettwebdesign-app:local');
+  assert.equal(
+    app.build.labels['org.opencontainers.image.revision'],
+    '${APP_REVISION:-unknown}',
+    'das gebaute Image muss den tatsächlich gebauten Git-Stand tragen'
+  );
   assert.equal(worker.image, app.image);
   assert.equal(worker.stop_grace_period, '10m');
   assert.deepEqual(worker.networks, ['default']);
@@ -156,7 +161,7 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   const running = deploy.indexOf('RUNNING_JOB_COUNT=');
   const stop = deploy.indexOf('docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker');
   const backup = deploy.indexOf('BACKUP_FILE=');
-  const previous = deploy.indexOf('PREVIOUS_COMMIT=');
+  const snapshot = deploy.indexOf('RUNNING_APP_CONTAINER_ID=');
   const fetch = deploy.indexOf('git fetch --prune origin');
   const reset = deploy.indexOf('git reset --hard origin/main');
   const build = deploy.indexOf('build --no-cache app');
@@ -164,12 +169,12 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   const recreate = deploy.indexOf('up -d --no-deps --force-recreate app content-worker');
 
   assert.ok(pause >= 0 && running > pause && stop > running && backup > stop);
-  assert.ok(previous > backup && fetch > previous && reset > fetch && build > reset);
+  assert.ok(snapshot > backup && fetch > snapshot && reset > fetch && build > reset);
   assert.ok(migration > build && recreate > migration);
   assert.match(deploy, /^REPO_DIR="\$ROOT\/server"$/m);
   assert.match(deploy, /git config --global --add safe\.directory "\$REPO_DIR"/);
   assert.match(deploy, /cd "\$REPO_DIR"/);
-  assert.match(deploy, /\[\[ "\$PREVIOUS_COMMIT" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.match(deploy, /\[\[ "\$DEPLOY_COMMIT" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
   assert.doesNotMatch(deploy.slice(0, recreate), /\bstop\b[^\n]*\bapp\b/);
   assert.match(deploy, /if \[\[ "\$RUNNING_JOB_COUNT" != "0" \]\]; then/);
   assert.equal((deploy.match(/npm run migrate:content-agent/g) || []).length, 2);
@@ -179,22 +184,33 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
-test('Deploy sichert ein unveränderliches Rollback-Image und behandelt den First Deploy explizit', () => {
+test('Deploy sichert die exakte Image-SHA des laufenden App-Containers vor Reset und Build', () => {
   const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
-  const imageExists = deploy.indexOf('if docker image inspect komplettwebdesign-app:local');
-  const rollbackTag = deploy.indexOf('docker image tag komplettwebdesign-app:local "$ROLLBACK_IMAGE"');
-  const metadata = deploy.indexOf('ROLLBACK_METADATA=');
+  const runningContainer = deploy.indexOf('RUNNING_APP_CONTAINER_ID=');
+  const runningImage = deploy.indexOf('RUNNING_IMAGE_ID=');
+  const exactInspect = deploy.indexOf('docker image inspect "$RUNNING_IMAGE_ID"');
+  const rollbackTag = deploy.indexOf('docker image tag "$RUNNING_IMAGE_ID" "$ROLLBACK_IMAGE"');
+  const metadata = deploy.indexOf("printf 'ROLLBACK_IMAGE=%s");
+  const reset = deploy.indexOf('git reset --hard origin/main');
   const build = deploy.indexOf('build --no-cache app');
   const workerGuard = deploy.indexOf('if [[ -n "$WORKER_CONTAINER_ID" ]]');
   const stop = deploy.indexOf('stop -t 600 content-worker');
 
-  assert.ok(imageExists >= 0 && rollbackTag > imageExists && metadata > imageExists);
-  assert.ok(build > rollbackTag && build > metadata);
-  assert.match(deploy, /ROLLBACK_IMAGE="komplettwebdesign-app:rollback-\$\{DEPLOY_TIMESTAMP\}-\$\{SHORT_PREVIOUS_COMMIT\}"/);
-  assert.match(deploy, /printf 'ROLLBACK_COMMIT=%s\\nROLLBACK_IMAGE=%s\\n'/);
+  assert.ok(runningContainer >= 0 && runningImage > runningContainer);
+  assert.ok(exactInspect > runningImage && rollbackTag > exactInspect && metadata > rollbackTag);
+  assert.ok(reset > metadata && build > reset);
+  assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" ps --status running -q app/);
+  assert.match(deploy, /docker inspect --format '\{\{\.Image\}\}' "\$RUNNING_APP_CONTAINER_ID"/);
+  assert.match(deploy, /\[\[ "\$RUNNING_IMAGE_ID" =~ \^sha256:\[0-9a-f\]\{64\}\$ \]\]/);
+  assert.doesNotMatch(deploy, /docker image tag komplettwebdesign-app:local "\$ROLLBACK_IMAGE"/);
+  assert.match(deploy, /Rollback-Image-Tag existiert bereits/);
+  assert.match(deploy, /test "\$TAGGED_ROLLBACK_IMAGE_ID" = "\$RUNNING_IMAGE_ID"/);
+  assert.match(deploy, /ROLLBACK_IMAGE_ID=%s/);
+  assert.match(deploy, /ROLLBACK_COMMIT=%s/);
+  assert.match(deploy, /ROLLBACK_REF=%s/);
   assert.match(deploy, /chmod 600 "\$ROLLBACK_METADATA"/);
   assert.match(deploy, /docker image inspect "\$ROLLBACK_IMAGE"/);
-  assert.match(deploy, /Erster Deploy: kein vorhandenes App-Image für einen Image-Rollback/);
+  assert.match(deploy, /kein laufender App-Container für einen Image-Rollback/i);
   assert.ok(workerGuard >= 0 && stop > workerGuard);
   assert.match(deploy.slice(workerGuard, stop), /WORKER_CONTAINER_ID/);
   assert.match(deploy, /case "\$SETTINGS_TABLE:\$CONTENT_JOBS_TABLE" in/);
@@ -203,6 +219,25 @@ test('Deploy sichert ein unveränderliches Rollback-Image und behandelt den Firs
   assert.match(deploy, /test "\$PAUSED_STATE" = "false\|review"/);
   assert.match(deploy, /POST_STOP_RUNNING_JOB_COUNT/);
   assert.match(guide, /chmod 700 deploy\/deploy\.sh[\s\S]*bash -n deploy\/deploy\.sh/);
+});
+
+test('Deploy bindet nur eine belegte Image-Revision an einen geschützten Rollback-Ref', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const readLabel = deploy.indexOf('org.opencontainers.image.revision');
+  const validateCommit = deploy.indexOf('git cat-file -e "${RUNNING_IMAGE_REVISION}^{commit}"');
+  const updateRef = deploy.indexOf('git update-ref "$ROLLBACK_REF" "$ROLLBACK_COMMIT"');
+  const fetch = deploy.indexOf('git fetch --prune origin');
+  const reset = deploy.indexOf('git reset --hard origin/main');
+  const exportRevision = deploy.indexOf('export APP_REVISION="$DEPLOY_COMMIT"');
+  const build = deploy.indexOf('build --no-cache app');
+
+  assert.ok(readLabel >= 0 && validateCommit > readLabel && updateRef > validateCommit);
+  assert.ok(fetch > updateRef && reset > fetch && exportRevision > reset && build > exportRevision);
+  assert.match(deploy, /ROLLBACK_REF="refs\/deploy-rollbacks\/\$DEPLOY_ID"/);
+  assert.match(deploy, /ROLLBACK_COMMIT="unknown"/);
+  assert.match(deploy, /ROLLBACK_REF="unknown"/);
+  assert.match(deploy, /Image-Revision[^\n]*(?:unbekannt|ungültig|nicht verfügbar)/i);
+  assert.match(guide, /fehlgeschlagenen Build[^\n]*(?:local|lokalen Tag|beweglichen Tag)/i);
 });
 
 test('Deploy und Rollback warten begrenzt auf running beziehungsweise healthy', () => {
@@ -224,26 +259,32 @@ test('Deploy und Rollback warten begrenzt auf running beziehungsweise healthy', 
   }
 });
 
-test('Rollback validiert Metadaten, setzt Code und Image zurück und recreatet beide Dienste ohne Build', () => {
+test('Rollback parst Metadaten ohne source und setzt Code nur bei belegtem Ref zurück', () => {
   const rollback = blockContaining(bashBlocks, /ROLLBACK_METADATA="\$\{1:/, 'Rollback-Block');
   const mode = rollback.indexOf('METADATA_MODE=');
-  const contentValidation = rollback.indexOf("grep -Eq '^ROLLBACK_COMMIT=");
-  const source = rollback.indexOf('. "$ROLLBACK_METADATA"');
+  const contentValidation = rollback.indexOf("grep -Eq '^ROLLBACK_IMAGE=");
+  const parse = rollback.indexOf('ROLLBACK_IMAGE="$(sed -n');
   const pause = rollback.indexOf('PAUSED_STATE=');
   const stop = rollback.indexOf('stop -t 600 content-worker');
-  const reset = rollback.indexOf('git reset --hard "$ROLLBACK_COMMIT"');
+  const conditionalReset = rollback.indexOf('if [[ "$ROLLBACK_COMMIT" != "unknown" ]]');
+  const reset = rollback.indexOf('git reset --hard "$ROLLBACK_REF"');
   const image = rollback.indexOf('docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local');
   const recreate = rollback.indexOf('up -d --no-deps --force-recreate app content-worker');
 
-  assert.ok(mode >= 0 && contentValidation > mode && source > contentValidation);
-  assert.ok(pause > source && stop > pause && reset > stop && image > reset && recreate > image);
+  assert.ok(mode >= 0 && contentValidation > mode && parse > contentValidation);
+  assert.ok(pause > parse && stop > pause && conditionalReset > stop && reset > conditionalReset);
+  assert.ok(image > conditionalReset && recreate > image);
   assert.match(rollback, /test "\$METADATA_MODE" = "600"/);
-  assert.match(rollback, /grep -Eq '\^ROLLBACK_COMMIT=\[0-9a-f\]\{40\}\$'/);
+  assert.doesNotMatch(rollback, /^\. "\$ROLLBACK_METADATA"$/m);
+  assert.match(rollback, /grep -Eq '\^ROLLBACK_COMMIT=\(unknown\|\[0-9a-f\]\{40\}\)\$'/);
+  assert.match(rollback, /grep -Eq '\^ROLLBACK_REF=\(unknown\|refs\\\/deploy-rollbacks\\\//);
   assert.match(rollback, /grep -Eq '\^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-/);
-  assert.match(rollback, /\[\[ "\$ROLLBACK_COMMIT" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.match(rollback, /ROLLBACK_IMAGE_ID/);
   assert.match(rollback, /\[\[ "\$ROLLBACK_IMAGE" =~ \^komplettwebdesign-app:rollback-/);
   assert.match(rollback, /git config --global --add safe\.directory "\$REPO_DIR"/);
   assert.match(rollback, /docker image inspect "\$ROLLBACK_IMAGE"/);
+  assert.match(rollback, /git rev-parse --verify "\$\{ROLLBACK_REF\}\^\{commit\}"/);
+  assert.match(rollback, /Image-only-Rollback/i);
   assert.doesNotMatch(rollback, /docker compose[^\n]*\bbuild\b/);
   assert.match(rollback, /CONTENT_AGENT_ENABLED=false/);
   assert.match(rollback, /CONTENT_AGENT_ENABLED=true/);

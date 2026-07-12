@@ -58,9 +58,11 @@ services:
     image: komplettwebdesign-app:local
     build:
       context: ./server
+      labels:
+        org.opencontainers.image.revision: "${APP_REVISION:-unknown}"
 ```
 
-Alle weiteren vorhandenen `app`-Einträge bleiben direkt darunter unverändert, insbesondere `env_file`, `networks` mit `default` und `proxy`, `expose: 3000`, Upload-/Download-Volumes und Traefik-Labels. Der explizite Image-Name sorgt dafür, dass `app` und `content-worker` exakt dasselbe lokal gebaute Image verwenden.
+Alle weiteren vorhandenen `app`-Einträge bleiben direkt darunter unverändert, insbesondere `env_file`, `networks` mit `default` und `proxy`, `expose: 3000`, Upload-/Download-Volumes und Traefik-Labels. Der explizite Image-Name sorgt dafür, dass `app` und `content-worker` exakt dasselbe lokal gebaute Image verwenden. Das OCI-Label wird beim Deployment mit dem tatsächlich gebauten Git-Commit belegt. Ein manuelles Build ohne `APP_REVISION` bleibt absichtlich als `unknown` erkennbar und wird bei einem späteren Rollback nicht fälschlich einem Checkout-Stand zugeordnet.
 
 ### 3.2 `app.depends_on` auf den PostgreSQL-Healthstatus umstellen
 
@@ -439,10 +441,52 @@ test -s "$BACKUP_FILE"
 docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 
 cd "$REPO_DIR"
-PREVIOUS_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
-if ! [[ "$PREVIOUS_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
-  fail "Bisheriger Commit ist ungültig."
+DEPLOY_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+ROLLBACK_DIR="$ROOT/data/rollbacks"
+mkdir -p "$ROLLBACK_DIR"
+chmod 700 "$ROLLBACK_DIR"
+RUNNING_APP_CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps --status running -q app)"
+if [[ -n "$RUNNING_APP_CONTAINER_ID" ]]; then
+  RUNNING_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$RUNNING_APP_CONTAINER_ID")"
+  if ! [[ "$RUNNING_IMAGE_ID" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+    fail "Image-ID des laufenden App-Containers ist ungültig."
+  fi
+  docker image inspect "$RUNNING_IMAGE_ID" >/dev/null
+
+  RUNNING_IMAGE_HEX="${RUNNING_IMAGE_ID#sha256:}"
+  DEPLOY_ID="${DEPLOY_TIMESTAMP}-${RUNNING_IMAGE_HEX:0:12}"
+  ROLLBACK_IMAGE="komplettwebdesign-app:rollback-${DEPLOY_ID}"
+  ROLLBACK_METADATA="$ROLLBACK_DIR/rollback-${DEPLOY_ID}.env"
+  test ! -e "$ROLLBACK_METADATA"
+  if docker image inspect "$ROLLBACK_IMAGE" >/dev/null 2>&1; then
+    fail "Rollback-Image-Tag existiert bereits; unveränderlichen Snapshot nicht überschreiben."
+  fi
+  docker image tag "$RUNNING_IMAGE_ID" "$ROLLBACK_IMAGE"
+  docker image inspect "$ROLLBACK_IMAGE" >/dev/null
+  TAGGED_ROLLBACK_IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$ROLLBACK_IMAGE")"
+  test "$TAGGED_ROLLBACK_IMAGE_ID" = "$RUNNING_IMAGE_ID"
+
+  RUNNING_IMAGE_REVISION="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$RUNNING_IMAGE_ID" 2>/dev/null || true)"
+  ROLLBACK_COMMIT="unknown"
+  ROLLBACK_REF="unknown"
+  if [[ "$RUNNING_IMAGE_REVISION" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "${RUNNING_IMAGE_REVISION}^{commit}" 2>/dev/null; then
+    ROLLBACK_COMMIT="$RUNNING_IMAGE_REVISION"
+    ROLLBACK_REF="refs/deploy-rollbacks/$DEPLOY_ID"
+    git check-ref-format "$ROLLBACK_REF"
+    git update-ref "$ROLLBACK_REF" "$ROLLBACK_COMMIT"
+  else
+    printf 'Image-Revision ist unbekannt, ungültig oder lokal nicht verfügbar; Rollback bleibt image-only.\n' >&2
+  fi
+
+  printf 'ROLLBACK_IMAGE=%s\nROLLBACK_IMAGE_ID=%s\nROLLBACK_COMMIT=%s\nROLLBACK_REF=%s\n' \
+    "$ROLLBACK_IMAGE" "$RUNNING_IMAGE_ID" "$ROLLBACK_COMMIT" "$ROLLBACK_REF" > "$ROLLBACK_METADATA"
+  chmod 600 "$ROLLBACK_METADATA"
+  test -s "$ROLLBACK_METADATA"
+  printf 'Rollback-Metadaten: %s\n' "$ROLLBACK_METADATA"
+else
+  printf 'Erster Deploy: kein laufender App-Container für einen Image-Rollback.\n'
 fi
+
 git fetch --prune origin
 git rev-parse --verify 'origin/main^{commit}' >/dev/null
 git reset --hard origin/main
@@ -450,28 +494,13 @@ DEPLOY_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
 if ! [[ "$DEPLOY_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
   fail "Deployment-Commit ist ungültig."
 fi
+export APP_REVISION="$DEPLOY_COMMIT"
 cd "$ROOT"
-
-DEPLOY_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-ROLLBACK_DIR="$ROOT/data/rollbacks"
-mkdir -p "$ROLLBACK_DIR"
-chmod 700 "$ROLLBACK_DIR"
-if docker image inspect komplettwebdesign-app:local >/dev/null 2>&1; then
-  SHORT_PREVIOUS_COMMIT="${PREVIOUS_COMMIT:0:12}"
-  ROLLBACK_IMAGE="komplettwebdesign-app:rollback-${DEPLOY_TIMESTAMP}-${SHORT_PREVIOUS_COMMIT}"
-  ROLLBACK_METADATA="$ROLLBACK_DIR/rollback-${DEPLOY_TIMESTAMP}-${SHORT_PREVIOUS_COMMIT}.env"
-  docker image tag komplettwebdesign-app:local "$ROLLBACK_IMAGE"
-  docker image inspect "$ROLLBACK_IMAGE" >/dev/null
-  printf 'ROLLBACK_COMMIT=%s\nROLLBACK_IMAGE=%s\n' "$PREVIOUS_COMMIT" "$ROLLBACK_IMAGE" > "$ROLLBACK_METADATA"
-  chmod 600 "$ROLLBACK_METADATA"
-  test -s "$ROLLBACK_METADATA"
-  printf 'Rollback-Metadaten: %s\n' "$ROLLBACK_METADATA"
-else
-  printf 'Erster Deploy: kein vorhandenes App-Image für einen Image-Rollback.\n'
-fi
 
 docker compose -f "$COMPOSE_FILE" build --no-cache app
 docker image inspect komplettwebdesign-app:local >/dev/null
+BUILT_IMAGE_REVISION="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' komplettwebdesign-app:local)"
+test "$BUILT_IMAGE_REVISION" = "$DEPLOY_COMMIT"
 
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
@@ -496,7 +525,9 @@ bash -n deploy/deploy.sh
 
 Das Skript bricht bei einem unbekannten Datenbankzustand, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, dem Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build und Migration weiter und wird erst beim finalen Recreate ersetzt.
 
-Vor dem Build erhält ein vorhandenes App-Image einen unveränderlichen, eindeutigen Rollback-Tag aus UTC-Zeitstempel und vorherigem Commit. Die zugehörige Metadatendatei wird mit Modus `600` geschrieben. Beim ersten Deploy ohne vorhandenes Image ist ausdrücklich kein Image-Rollback möglich. Das Skript baut das gemeinsame Image genau einmal über `app`; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Der begrenzte Health-Wait berücksichtigt die 45-sekündige Worker-Startphase. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
+Vor `git fetch`, `git reset` und Build ermittelt das Skript den tatsächlich laufenden App-Container und liest dessen exakte `.Image`-SHA aus. Nur diese SHA erhält einen unveränderlichen Rollback-Tag; der bewegliche Tag `komplettwebdesign-app:local` ist ausdrücklich keine Snapshot-Quelle. Nach einem fehlgeschlagenen Build kann `komplettwebdesign-app:local` bereits ersetzt sein, obwohl das neue Image nie produktiv gestartet wurde; der nächste Rollback verweist trotzdem auf das richtige laufende Image.
+
+Die OCI-Revision des exakten laufenden Images wird nur akzeptiert, wenn sie aus 40 hexadezimalen Zeichen besteht und der Commit im lokalen Repository wirklich vorhanden ist. Dann schützt `refs/deploy-rollbacks/<DEPLOY_ID>` den Commit vor Git-Garbage-Collection. Ein älteres, nicht gelabeltes Image bleibt vollständig als Image-Rollback nutzbar, wird aber ehrlich mit Commit und Ref `unknown` erfasst; eine Code-/Image-Ausrichtung wird dann nicht behauptet. Die Metadatendatei speichert Tag, exakte Image-ID, Commit und Ref mit Modus `600`. Beim ersten Deploy ohne laufenden App-Container ist ausdrücklich kein Image-Rollback möglich. Nach dem Checkout exportiert das Skript den Zielcommit als `APP_REVISION`, baut das gemeinsame Image genau einmal über `app` und prüft das resultierende Label; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Der begrenzte Health-Wait berücksichtigt die 45-sekündige Worker-Startphase. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
 
 ## 8. Erst die App, dann den Worker starten
 
@@ -554,7 +585,7 @@ Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf f
 
 Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig. Aktive Jobs vor dem Stop über Logs und Datenbank beobachten und möglichst bis zu einem terminalen Status `completed` oder `failed` laufen lassen; ein Generierungslauf soll nicht mitten in einem externen Aufruf abgebrochen werden.
 
-Bei einem fehlerhaften Release werden Code und Image gemeinsam auf den in einer geprüften Metadatendatei festgehaltenen Stand zurückgesetzt. Das Rollback-Image enthält den alten Code bereits; deshalb wird beim Rollback ausdrücklich **nicht neu gebaut**. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
+Bei einem fehlerhaften Release werden Image und – sofern die geprüfte OCI-Revision belegt ist – Code gemeinsam auf den in einer geprüften Metadatendatei festgehaltenen Stand zurückgesetzt. Bei einem älteren Image ohne belegte Revision erfolgt ehrlich nur der Image-Rollback. Das Rollback-Image enthält den alten Code bereits; deshalb wird beim Rollback ausdrücklich **nicht neu gebaut**. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
 
 Den folgenden Block als `/apps/komplettwebdesign/deploy/rollback.sh` speichern. Das Skript erwartet den vom Deploy ausgegebenen absoluten Pfad zur geschützten Rollback-Metadatendatei als einziges Argument:
 
@@ -615,17 +646,33 @@ METADATA_MODE="$(stat -c '%a' "$ROLLBACK_METADATA")"
 METADATA_OWNER="$(stat -c '%u' "$ROLLBACK_METADATA")"
 test "$METADATA_MODE" = "600"
 test "$METADATA_OWNER" = "$(id -u)"
-test "$(wc -l < "$ROLLBACK_METADATA" | tr -d ' ')" = "2"
-grep -Eq '^ROLLBACK_COMMIT=[0-9a-f]{40}$' "$ROLLBACK_METADATA"
-grep -Eq '^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$' "$ROLLBACK_METADATA"
-. "$ROLLBACK_METADATA"
-: "${ROLLBACK_COMMIT:?}"
-: "${ROLLBACK_IMAGE:?}"
-if ! [[ "$ROLLBACK_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
-  fail "Rollback-Commit ist ungültig."
-fi
+test "$(wc -l < "$ROLLBACK_METADATA" | tr -d ' ')" = "4"
+sed -n '1p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$'
+sed -n '2p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_IMAGE_ID=sha256:[0-9a-f]{64}$'
+sed -n '3p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_COMMIT=(unknown|[0-9a-f]{40})$'
+sed -n '4p' "$ROLLBACK_METADATA" | grep -Eq '^ROLLBACK_REF=(unknown|refs\/deploy-rollbacks\/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12})$'
+ROLLBACK_IMAGE="$(sed -n '1s/^ROLLBACK_IMAGE=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_IMAGE_ID="$(sed -n '2s/^ROLLBACK_IMAGE_ID=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_COMMIT="$(sed -n '3s/^ROLLBACK_COMMIT=//p' "$ROLLBACK_METADATA")"
+ROLLBACK_REF="$(sed -n '4s/^ROLLBACK_REF=//p' "$ROLLBACK_METADATA")"
+
 if ! [[ "$ROLLBACK_IMAGE" =~ ^komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]]; then
   fail "Rollback-Image ist ungültig."
+fi
+if ! [[ "$ROLLBACK_IMAGE_ID" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+  fail "Rollback-Image-ID ist ungültig."
+fi
+if [[ "$ROLLBACK_COMMIT" == "unknown" || "$ROLLBACK_REF" == "unknown" ]]; then
+  if [[ "$ROLLBACK_COMMIT" != "unknown" || "$ROLLBACK_REF" != "unknown" ]]; then
+    fail "Rollback-Commit und Rollback-Ref müssen gemeinsam bekannt oder unbekannt sein."
+  fi
+else
+  if ! [[ "$ROLLBACK_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+    fail "Rollback-Commit ist ungültig."
+  fi
+  if ! [[ "$ROLLBACK_REF" =~ ^refs/deploy-rollbacks/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]]; then
+    fail "Rollback-Ref ist ungültig."
+  fi
 fi
 
 cd "$ROOT"
@@ -634,6 +681,8 @@ test -f "$ROOT/.env"
 test -e "$REPO_DIR/.git"
 docker compose -f "$COMPOSE_FILE" config --quiet
 docker image inspect "$ROLLBACK_IMAGE" >/dev/null
+ACTUAL_ROLLBACK_IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$ROLLBACK_IMAGE")"
+test "$ACTUAL_ROLLBACK_IMAGE_ID" = "$ROLLBACK_IMAGE_ID"
 if ! git config --global --get-all safe.directory | grep -Fxq "$REPO_DIR"; then
   git config --global --add safe.directory "$REPO_DIR"
 fi
@@ -663,9 +712,16 @@ if ! [[ "$POST_STOP_RUNNING_JOB_COUNT" =~ ^[0-9]+$ && "$POST_STOP_RUNNING_JOB_CO
   fail "Jobstatus nach Worker-Stopp ist nicht sicher leer."
 fi
 
-cd "$REPO_DIR"
-git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
-git reset --hard "$ROLLBACK_COMMIT"
+if [[ "$ROLLBACK_COMMIT" != "unknown" ]]; then
+  cd "$REPO_DIR"
+  git check-ref-format "$ROLLBACK_REF"
+  RESOLVED_ROLLBACK_COMMIT="$(git rev-parse --verify "${ROLLBACK_REF}^{commit}")"
+  test "$RESOLVED_ROLLBACK_COMMIT" = "$ROLLBACK_COMMIT"
+  git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
+  git reset --hard "$ROLLBACK_REF"
+else
+  printf 'Image-only-Rollback: Image-Revision ist unbekannt; Git-Checkout bleibt unverändert.\n' >&2
+fi
 cd "$ROOT"
 docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local
 docker image inspect komplettwebdesign-app:local >/dev/null
@@ -694,7 +750,7 @@ bash -n deploy/rollback.sh
 ./deploy/rollback.sh /apps/komplettwebdesign/data/rollbacks/rollback-YYYYMMDDTHHMMSSZ-aaaaaaaaaaaa.env
 ```
 
-Die Datei wird vor dem `source` auf reguläre Datei, Pfad, Eigentümer, Modus `600`, exakt zwei erlaubte Zuweisungen und sichere Werte geprüft. Danach werden Commit und Image nochmals validiert, bevor sie verwendet werden. Der Agent bleibt nach dem Rollback in PostgreSQL deaktiviert und im Review-Modus. War das technische Hardgate in `.env` auf `false` gesetzt, stellt das Skript es auf `true`; in jedem Fall werden anschließend **App und Worker** gemeinsam neu erzeugt und begrenzt auf `running` beziehungsweise `healthy` geprüft.
+Die Datei wird ohne `source` auf reguläre Datei, Pfad, Eigentümer, Modus `600`, exakt vier positionsgebundene Werte und sichere Formate geprüft. Zusätzlich muss der unveränderliche Tag weiterhin exakt auf die gespeicherte Image-ID zeigen. Sind Commit und geschützter Ref belegt, muss der Ref genau auf diesen Commit auflösen; erst dann wird der Checkout zurückgesetzt. Stehen beide Werte auf `unknown`, erfolgt ausdrücklich ein Image-only-Rollback mit Warnung und der Checkout bleibt unverändert. In beiden Fällen wird das unveränderliche Rollback-Image auf `komplettwebdesign-app:local` zurückgetaggt, niemals neu gebaut, und App sowie Worker werden gemeinsam neu erzeugt. Der Agent bleibt nach dem Rollback in PostgreSQL deaktiviert und im Review-Modus. War das technische Hardgate in `.env` auf `false` gesetzt, stellt das Skript es auf `true`; anschließend werden beide Dienste begrenzt auf `running` beziehungsweise `healthy` geprüft.
 
 `-t 600` entspricht `stop_grace_period: 10m`. Der Worker erhält `SIGTERM`, stoppt Polling und Scheduler und wartet nach seiner ersten internen 30-Sekunden-Drainphase weiter auf den aktiven Job. Erst nach 600 Sekunden würde Docker hart beenden. Ist ein Job dann noch aktiv, den Stop nach Möglichkeit abbrechen und die Ursache untersuchen; nur im Notfall den harten Abbruch in Kauf nehmen.
 
