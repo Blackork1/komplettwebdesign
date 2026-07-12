@@ -113,7 +113,8 @@ function harness({
         }
       }
       : null,
-    approvals: manualApprovals ?? (workflowStatus === 'published' && approvalSource === 'manual' ? 1 : 0)
+    approvals: manualApprovals ?? (workflowStatus === 'published' && approvalSource === 'manual' ? 1 : 0),
+    newsletterEnabled
   };
   const client = {
     async query(sql) {
@@ -271,7 +272,7 @@ function harness({
       return {
         id: 1,
         manual_approvals_count: state.approvals,
-        newsletter_blog_notifications_enabled: newsletterEnabled
+        newsletter_blog_notifications_enabled: state.newsletterEnabled
       };
     },
     async getSettings(transaction) {
@@ -279,7 +280,7 @@ function harness({
       return {
         id: 1,
         manual_approvals_count: state.approvals,
-        newsletter_blog_notifications_enabled: newsletterEnabled
+        newsletter_blog_notifications_enabled: state.newsletterEnabled
       };
     }
   };
@@ -808,6 +809,58 @@ test('erfolgreiche Publikation enqueued den Newsletter erst nach persistierter A
   assert.equal(newsletterCall[1].publicationVersion, 1);
   assert.equal(newsletterCall[1].settings.manual_approvals_count, 8);
   assert.equal(newsletterCall[2] !== undefined, true);
+});
+
+test('alreadyPublished-Retry erzeugt keinen zuvor gesperrten Newsletter-Rootjob nach', async () => {
+  const { service, state, calls } = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    newsletterEnabled: false,
+    manualApprovals: 7
+  });
+  const input = {
+    postId: 3,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    scheduledAt: missedSlot,
+    leaseGuard: async () => true
+  };
+
+  const published = await service.publishApprovedPost(input);
+  assert.equal(published.post.published, true);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'newsletter'), false);
+
+  state.newsletterEnabled = true;
+  state.approvals = 12;
+  const retry = await service.publishApprovedPost(input);
+
+  assert.equal(retry.alreadyPublished, true);
+  assert.equal(calls.some((entry) => Array.isArray(entry) && entry[0] === 'newsletter'), false);
+});
+
+test('alreadyPublished-Retry lässt den ursprünglich angelegten Newsletter-Rootjob unverändert', async () => {
+  const { service, calls } = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: missedSlot,
+    approvedReviewVersion: 2,
+    newsletterEnabled: true,
+    manualApprovals: 7
+  });
+  const input = {
+    postId: 3,
+    approvalVersion: 2,
+    publicationVersion: 1,
+    scheduledAt: missedSlot,
+    leaseGuard: async () => true
+  };
+
+  await service.publishApprovedPost(input);
+  const retry = await service.publishApprovedPost(input);
+  const newsletterCalls = calls.filter((entry) => Array.isArray(entry) && entry[0] === 'newsletter');
+
+  assert.equal(retry.alreadyPublished, true);
+  assert.equal(newsletterCalls.length, 1);
 });
 
 test('fällige Auto-Veröffentlichung nutzt das Auto-Event und erhöht den manuellen Zähler nie', async () => {

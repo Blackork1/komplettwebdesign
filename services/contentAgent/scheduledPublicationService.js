@@ -768,24 +768,12 @@ export function createScheduledPublicationService({
         const settings = await repository.getSettings(client);
         if (!settings) throw new Error('Content-Agent-Einstellungen fehlen.');
         await assertActiveLease(leaseGuard);
-        let newsletter = null;
-        if (settings.newsletter_blog_notifications_enabled === true
-            && Number(settings.manual_approvals_count) >= 8) {
-          newsletter = await queuePublishedArticleNewsletter({
-            postId: normalizedPostId,
-            publicationVersion: normalizedPublicationVersion,
-            settings,
-            post: lockedPost,
-            leaseGuard
-          }, client);
-          await assertActiveLease(leaseGuard);
-        }
         return {
           post: lockedPost,
           event: approval.event,
           settings,
           publicationSource: approval.publicationSource,
-          newsletter,
+          newsletter: null,
           alreadyPublished: true
         };
       }
