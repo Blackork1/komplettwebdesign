@@ -50,6 +50,68 @@ function normalizeDate(value, code, message) {
   return date;
 }
 
+function normalizeExpectedNullableDate(value, field) {
+  if (value === null) return null;
+  if (value === undefined) {
+    throw scheduledPublicationError(
+      'CONTENT_ACTION_VALIDATION_FAILED',
+      `${field} fehlt.`
+    );
+  }
+  return normalizeDate(
+    value,
+    'CONTENT_ACTION_VALIDATION_FAILED',
+    `${field} ist ungültig.`
+  );
+}
+
+function normalizeExpectedNullablePositiveInteger(value, field) {
+  if (value === null) return null;
+  if (value === undefined) {
+    throw scheduledPublicationError(
+      'CONTENT_ACTION_VALIDATION_FAILED',
+      `${field} fehlt.`
+    );
+  }
+  return positiveDatabaseInteger(value, field);
+}
+
+function assertExpectedReviewVersion(post, expectedReviewVersion) {
+  if (Number(post?.review_version) !== expectedReviewVersion) {
+    throw scheduledPublicationError(
+      'CONTENT_REVIEW_VERSION_STALE',
+      'Der Entwurf wurde seit dem Öffnen verändert.'
+    );
+  }
+}
+
+function assertExpectedApprovalSnapshot(post, {
+  expectedScheduledAt,
+  expectedApprovedReviewVersion
+}) {
+  const currentScheduledAt = post?.scheduled_at === null
+    || post?.scheduled_at === undefined
+    || post?.scheduled_at === ''
+    ? null
+    : normalizeDate(
+        post.scheduled_at,
+        'CONTENT_APPROVAL_STALE',
+        'Der gespeicherte Veröffentlichungstermin ist ungültig.'
+      );
+  const currentApprovedReviewVersion = post?.approved_review_version === null
+    || post?.approved_review_version === undefined
+    ? null
+    : positiveDatabaseInteger(post.approved_review_version, 'approvedReviewVersion');
+  if ((currentScheduledAt === null) !== (expectedScheduledAt === null)
+      || (currentScheduledAt && currentScheduledAt.getTime() !== expectedScheduledAt.getTime())
+      || currentApprovedReviewVersion !== expectedApprovedReviewVersion) {
+    throw scheduledPublicationError(
+      'CONTENT_APPROVAL_STALE',
+      'Termin oder Freigabe wurden seit dem Öffnen verändert.'
+    );
+  }
+}
+
 function normalizeTimezone(value) {
   const timezone = typeof value === 'string' ? value.trim() : '';
   if (!timezone || !Intl.supportedValuesOf('timeZone').includes(timezone)) {
@@ -302,13 +364,17 @@ export function createScheduledPublicationService({
     return { post, event, settings, publicationSource, newsletter };
   }
 
-  async function approveForSchedule({
+  async function scheduleManually({
     postId,
     scheduledAt,
     expectedScheduleRevision,
     expectedTimezone,
+    expectedReviewVersion,
+    expectedScheduledAt,
+    expectedApprovedReviewVersion,
     admin,
-    confirmed
+    confirmed,
+    requireApprovalSnapshot
   } = {}) {
     requireConfirmation(confirmed);
     const normalizedPostId = positiveDatabaseInteger(postId, 'postId');
@@ -329,6 +395,19 @@ export function createScheduledPublicationService({
       'expectedScheduleRevision'
     );
     const normalizedTimezone = normalizeTimezone(expectedTimezone);
+    const normalizedExpectedReviewVersion = positiveDatabaseInteger(
+      expectedReviewVersion,
+      'expectedReviewVersion'
+    );
+    const normalizedExpectedScheduledAt = requireApprovalSnapshot === true
+      ? normalizeExpectedNullableDate(expectedScheduledAt, 'expectedScheduledAt')
+      : null;
+    const normalizedExpectedApprovedReviewVersion = requireApprovalSnapshot === true
+      ? normalizeExpectedNullablePositiveInteger(
+          expectedApprovedReviewVersion,
+          'expectedApprovedReviewVersion'
+        )
+      : null;
 
     return withTransaction(async (client) => {
       const validated = await publicationService.revalidateDraftForPublication({
@@ -336,6 +415,14 @@ export function createScheduledPublicationService({
         client,
         workflowStatuses: ['needs_review', 'approved_scheduled']
       });
+      const current = validated.draft.post;
+      assertExpectedReviewVersion(current, normalizedExpectedReviewVersion);
+      if (requireApprovalSnapshot === true) {
+        assertExpectedApprovalSnapshot(current, {
+          expectedScheduledAt: normalizedExpectedScheduledAt,
+          expectedApprovedReviewVersion: normalizedExpectedApprovedReviewVersion
+        });
+      }
       const scheduleMatches = await repository.assertScheduleSettingsSnapshot({
         scheduleRevision: normalizedScheduleRevision,
         timezone: normalizedTimezone
@@ -346,7 +433,6 @@ export function createScheduledPublicationService({
           'Der Zeitplan wurde seit dem Öffnen des Entwurfs geändert.'
         );
       }
-      const current = validated.draft.post;
       const reviewVersion = positiveDatabaseInteger(current.review_version, 'reviewVersion');
       const publicationVersion = positiveDatabaseInteger(
         current.publication_version,
@@ -368,6 +454,11 @@ export function createScheduledPublicationService({
         }
         if (currentSchedule.getTime() === normalizedScheduledAt.getTime()) {
           post = current;
+        } else if (requireApprovalSnapshot !== true) {
+          throw scheduledPublicationError(
+            'CONTENT_APPROVAL_STALE',
+            'Der bereits freigegebene Veröffentlichungstermin wurde zwischenzeitlich geändert.'
+          );
         } else {
           const reschedule = await repository.rescheduleApprovedDraft({
             postId: normalizedPostId,
@@ -421,6 +512,14 @@ export function createScheduledPublicationService({
       if (!job) throw new Error('Der Veröffentlichungsjob konnte nicht angelegt werden.');
       return { post, job };
     });
+  }
+
+  function approveForSchedule(input = {}) {
+    return scheduleManually({ ...input, requireApprovalSnapshot: false });
+  }
+
+  function reschedule(input = {}) {
+    return scheduleManually({ ...input, requireApprovalSnapshot: true });
   }
 
   async function approveAutomaticallyForSchedule({
@@ -650,16 +749,40 @@ export function createScheduledPublicationService({
     });
   }
 
-  async function publishNowAfterMissedSlot({ postId, admin, confirmed } = {}) {
+  async function publishNowAfterMissedSlot({
+    postId,
+    expectedReviewVersion,
+    expectedScheduledAt,
+    expectedApprovedReviewVersion,
+    admin,
+    confirmed
+  } = {}) {
     requireConfirmation(confirmed);
     const normalizedPostId = positiveDatabaseInteger(postId, 'postId');
     const normalizedAdmin = normalizeAdmin(admin);
+    const normalizedExpectedReviewVersion = positiveDatabaseInteger(
+      expectedReviewVersion,
+      'expectedReviewVersion'
+    );
+    const normalizedExpectedScheduledAt = normalizeExpectedNullableDate(
+      expectedScheduledAt,
+      'expectedScheduledAt'
+    );
+    const normalizedExpectedApprovedReviewVersion = normalizeExpectedNullablePositiveInteger(
+      expectedApprovedReviewVersion,
+      'expectedApprovedReviewVersion'
+    );
 
     return withTransaction(async (client) => {
       const initial = await publicationService.revalidateDraftForPublication({
         postId: normalizedPostId,
         client,
         workflowStatuses: ['needs_review']
+      });
+      assertExpectedReviewVersion(initial.draft.post, normalizedExpectedReviewVersion);
+      assertExpectedApprovalSnapshot(initial.draft.post, {
+        expectedScheduledAt: normalizedExpectedScheduledAt,
+        expectedApprovedReviewVersion: normalizedExpectedApprovedReviewVersion
       });
       const missedAt = normalizeDate(
         initial.draft.post.scheduled_at,
@@ -880,6 +1003,7 @@ export function createScheduledPublicationService({
 
   return {
     approveForSchedule,
+    reschedule,
     approveAutomaticallyForSchedule,
     publishNowAfterMissedSlot,
     publishApprovedPost
@@ -892,6 +1016,12 @@ export function approveForSchedule(input, dependencies) {
   return dependencies
     ? createScheduledPublicationService(dependencies).approveForSchedule(input)
     : defaultService.approveForSchedule(input);
+}
+
+export function reschedule(input, dependencies) {
+  return dependencies
+    ? createScheduledPublicationService(dependencies).reschedule(input)
+    : defaultService.reschedule(input);
 }
 
 export function approveAutomaticallyForSchedule(input, dependencies) {

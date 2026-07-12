@@ -1281,11 +1281,40 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
     `, [String(generated.post.id)])).rows[0].status, 'completed');
     assert.equal(await e2eWorker.processOnce(), null);
 
+    const renderedReviewVersion = Number(generated.post.review_version);
+    await pool.query(`
+      UPDATE posts
+      SET review_version = review_version + 1,
+          updated_at = NOW()
+      WHERE id = $1
+    `, [generated.post.id]);
+    await assert.rejects(scheduledPublicationService.approveForSchedule({
+      postId: generated.post.id,
+      scheduledAt,
+      expectedScheduleRevision: Number(settings.rows[0].schedule_revision),
+      expectedTimezone: settings.rows[0].timezone,
+      expectedReviewVersion: renderedReviewVersion,
+      admin: publicationAdmin.rows[0],
+      confirmed: true
+    }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+    assert.equal((await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM content_jobs
+      WHERE job_type = 'publish_approved_post'
+        AND payload_json ->> 'postId' = $1
+    `, [String(generated.post.id)])).rows[0].count, 0);
+    assert.equal((await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM content_publish_events
+      WHERE post_id = $1
+    `, [generated.post.id])).rows[0].count, 0);
+
     const approval = await scheduledPublicationService.approveForSchedule({
       postId: generated.post.id,
       scheduledAt,
       expectedScheduleRevision: Number(settings.rows[0].schedule_revision),
       expectedTimezone: settings.rows[0].timezone,
+      expectedReviewVersion: renderedReviewVersion + 1,
       admin: publicationAdmin.rows[0],
       confirmed: true
     });

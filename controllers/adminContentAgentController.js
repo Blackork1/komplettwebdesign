@@ -15,7 +15,8 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVISION_CONFLICT',
   'CONTENT_REVISION_STALE',
   'CONTENT_SCHEDULE_SETTINGS_STALE',
-  'CONTENT_DRAFT_EDIT_CONFLICT'
+  'CONTENT_DRAFT_EDIT_CONFLICT',
+  'CONTENT_REVIEW_VERSION_STALE'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -35,7 +36,8 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.',
   CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
-  CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.'
+  CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
+  CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.'
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
@@ -106,7 +108,15 @@ function scheduledDraftPresentation(draft, settings = {}) {
       scheduledAtLocal: '',
       scheduledAtLabel: 'Noch nicht terminiert',
       scheduleTimezone: timezone || '',
-      scheduleRevision: Number(settings?.schedule_revision) || 0
+      scheduleRevision: Number(settings?.schedule_revision) || 0,
+      expectedScheduledAt: rawScheduledAt === null
+        || rawScheduledAt === undefined
+        || rawScheduledAt === ''
+        ? 'null'
+        : '',
+      expectedApprovedReviewVersion: canonicalNullablePositiveInteger(
+        draft?.post?.approved_review_version
+      )
     };
   }
   const local = DateTime.fromJSDate(scheduledAt, { zone: timezone });
@@ -115,7 +125,11 @@ function scheduledDraftPresentation(draft, settings = {}) {
     scheduledAtLocal: local.toFormat("yyyy-LL-dd'T'HH:mm"),
     scheduledAtLabel: `${local.toFormat('dd.LL.yyyy, HH:mm')} Uhr (${timezone})`,
     scheduleTimezone: timezone,
-    scheduleRevision: Number(settings?.schedule_revision) || 0
+    scheduleRevision: Number(settings?.schedule_revision) || 0,
+    expectedScheduledAt: scheduledAt.toISOString(),
+    expectedApprovedReviewVersion: canonicalNullablePositiveInteger(
+      draft?.post?.approved_review_version
+    )
   };
 }
 
@@ -241,6 +255,34 @@ function strictPositiveInteger(value) {
     throw Object.assign(new Error('Ungültige Versionsnummer.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
   }
   return positiveId(value);
+}
+
+function canonicalNullablePositiveInteger(value) {
+  if (value === null || value === undefined) return 'null';
+  const normalized = Number(value);
+  return Number.isSafeInteger(normalized) && normalized > 0 ? String(normalized) : '';
+}
+
+function strictNullablePositiveInteger(value) {
+  if (value === 'null') return null;
+  return strictPositiveInteger(value);
+}
+
+function strictNullableCanonicalUtcDate(value) {
+  if (value === 'null') return null;
+  if (typeof value !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) {
+    throw Object.assign(new Error('Ungültiger Termin-Snapshot.'), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED'
+    });
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime()) || date.toISOString() !== value) {
+    throw Object.assign(new Error('Ungültiger Termin-Snapshot.'), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED'
+    });
+  }
+  return date;
 }
 
 async function renderCapability({ capability, method, args, res, next }) {
@@ -584,6 +626,7 @@ export function createAdminContentAgentController(dependencies) {
           ),
           expectedScheduleRevision: Number(req.body?.schedule_revision),
           expectedTimezone: timezone,
+          expectedReviewVersion: strictPositiveInteger(req.body?.expected_review_version),
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         });
@@ -599,6 +642,11 @@ export function createAdminContentAgentController(dependencies) {
         method: 'publishNowAfterMissedSlot',
         args: () => [{
           postId: positiveId(req.params.id),
+          expectedReviewVersion: strictPositiveInteger(req.body?.expected_review_version),
+          expectedScheduledAt: strictNullableCanonicalUtcDate(req.body?.expected_scheduled_at),
+          expectedApprovedReviewVersion: strictNullablePositiveInteger(
+            req.body?.expected_approved_review_version
+          ),
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         }],
@@ -609,11 +657,11 @@ export function createAdminContentAgentController(dependencies) {
     },
 
     async rescheduleDraftAction(req, res, next) {
-      if (typeof scheduledPublicationService?.approveForSchedule !== 'function') return unavailable(res);
+      if (typeof scheduledPublicationService?.reschedule !== 'function') return unavailable(res);
       try {
         const settings = await settingsRepository.getSettings();
         const timezone = assertScheduleSnapshot(req.body, settings);
-        await scheduledPublicationService.approveForSchedule({
+        await scheduledPublicationService.reschedule({
           postId: positiveId(req.params.id),
           scheduledAt: parseFutureLocalDateTime(
             req.body?.scheduled_at_local,
@@ -622,6 +670,11 @@ export function createAdminContentAgentController(dependencies) {
           ),
           expectedScheduleRevision: Number(req.body?.schedule_revision),
           expectedTimezone: timezone,
+          expectedReviewVersion: strictPositiveInteger(req.body?.expected_review_version),
+          expectedScheduledAt: strictNullableCanonicalUtcDate(req.body?.expected_scheduled_at),
+          expectedApprovedReviewVersion: strictNullablePositiveInteger(
+            req.body?.expected_approved_review_version
+          ),
           admin: adminFromRequest(req),
           confirmed: criticalConfirmation(req.body?.confirmed)
         });

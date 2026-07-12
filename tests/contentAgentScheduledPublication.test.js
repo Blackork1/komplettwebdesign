@@ -9,7 +9,8 @@ const futureSlot = new Date('2026-07-12T11:00:00.000Z');
 const missedSlot = new Date('2026-07-12T09:00:00.000Z');
 const manualScheduleSnapshot = Object.freeze({
   expectedScheduleRevision: 7,
-  expectedTimezone: 'Europe/Berlin'
+  expectedTimezone: 'Europe/Berlin',
+  expectedReviewVersion: 2
 });
 const autoSnapshot = {
   operatingMode: 'auto_publish',
@@ -339,6 +340,7 @@ test('manuelle Terminfreigabe prüft Zeitplanrevision und Zeitzone atomar in ihr
     scheduledAt: futureSlot,
     expectedScheduleRevision: 7,
     expectedTimezone: 'Europe/Berlin',
+    expectedReviewVersion: 2,
     admin,
     confirmed: true
   }), { code: 'CONTENT_SCHEDULE_SETTINGS_STALE' });
@@ -350,6 +352,167 @@ test('manuelle Terminfreigabe prüft Zeitplanrevision und Zeitzone atomar in ihr
   assert.equal(calls.includes('ROLLBACK'), true);
   assert.equal(jobs.size, 0);
   assert.equal(state.post.workflow_status, 'needs_review');
+});
+
+test('veraltete Reviewversion verhindert Freigabe, Terminverschiebung und Sofortveröffentlichung atomar', async () => {
+  const approval = harness({ reviewVersion: 3 });
+  await assert.rejects(approval.service.approveForSchedule({
+    ...manualScheduleSnapshot,
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+  assert.equal(approval.calls.some((entry) => Array.isArray(entry) && entry[0] === 'approve'), false);
+  assert.equal(approval.jobs.size, 0);
+  assert.equal(approval.state.event, null);
+
+  const reschedule = harness({
+    workflowStatus: 'approved_scheduled',
+    reviewVersion: 3,
+    approvedReviewVersion: 3
+  });
+  await assert.rejects(reschedule.service.reschedule({
+    ...manualScheduleSnapshot,
+    postId: 3,
+    scheduledAt: new Date('2026-07-12T12:00:00.000Z'),
+    expectedScheduledAt: futureSlot,
+    expectedApprovedReviewVersion: 3,
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+  assert.equal(reschedule.calls.some((entry) => Array.isArray(entry) && entry[0] === 'reschedule'), false);
+  assert.equal(reschedule.jobs.size, 0);
+  assert.equal(reschedule.state.event, null);
+
+  const publishNow = harness({ scheduledAt: missedSlot, reviewVersion: 3 });
+  await assert.rejects(publishNow.service.publishNowAfterMissedSlot({
+    postId: 3,
+    expectedReviewVersion: 2,
+    expectedScheduledAt: missedSlot,
+    expectedApprovedReviewVersion: null,
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+  assert.equal(publishNow.calls.some((entry) => Array.isArray(entry)
+    && ['approve', 'publish', 'event', 'job'].includes(entry[0])), false);
+  assert.equal(publishNow.state.post.workflow_status, 'needs_review');
+  assert.equal(publishNow.state.post.published, false);
+});
+
+test('alter Freigabe- oder Terminsnapshot kann Verschiebung und Sofortveröffentlichung nicht zurücksetzen', async () => {
+  const shiftedCurrentSlot = new Date('2026-07-12T11:30:00.000Z');
+  for (const staleSnapshot of [
+    { expectedScheduledAt: futureSlot, expectedApprovedReviewVersion: 2 },
+    { expectedScheduledAt: shiftedCurrentSlot, expectedApprovedReviewVersion: 1 }
+  ]) {
+    const reschedule = harness({
+      workflowStatus: 'approved_scheduled',
+      scheduledAt: shiftedCurrentSlot,
+      approvedReviewVersion: 2
+    });
+    await assert.rejects(reschedule.service.reschedule({
+      ...manualScheduleSnapshot,
+      ...staleSnapshot,
+      postId: 3,
+      scheduledAt: new Date('2026-07-12T13:00:00.000Z'),
+      admin,
+      confirmed: true
+    }), { code: 'CONTENT_APPROVAL_STALE' });
+    assert.equal(reschedule.calls.some((entry) => Array.isArray(entry)
+      && ['reschedule', 'job', 'event'].includes(entry[0])), false);
+    assert.equal(reschedule.state.post.scheduled_at.toISOString(), shiftedCurrentSlot.toISOString());
+  }
+
+  const changedMissedSlot = new Date('2026-07-12T08:30:00.000Z');
+  const publishNow = harness({ scheduledAt: changedMissedSlot });
+  await assert.rejects(publishNow.service.publishNowAfterMissedSlot({
+    postId: 3,
+    expectedReviewVersion: 2,
+    expectedScheduledAt: missedSlot,
+    expectedApprovedReviewVersion: null,
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_APPROVAL_STALE' });
+  assert.equal(publishNow.calls.some((entry) => Array.isArray(entry)
+    && ['approve', 'publish', 'event', 'job'].includes(entry[0])), false);
+  assert.equal(publishNow.state.post.published, false);
+});
+
+test('altes Freigabeformular darf einen bereits verschobenen Termin nicht zurücksetzen', async () => {
+  const shiftedCurrentSlot = new Date('2026-07-12T11:30:00.000Z');
+  const approval = harness({
+    workflowStatus: 'approved_scheduled',
+    scheduledAt: shiftedCurrentSlot,
+    approvedReviewVersion: 2
+  });
+  await assert.rejects(approval.service.approveForSchedule({
+    ...manualScheduleSnapshot,
+    postId: 3,
+    scheduledAt: futureSlot,
+    admin,
+    confirmed: true
+  }), { code: 'CONTENT_APPROVAL_STALE' });
+  assert.equal(approval.calls.some((entry) => Array.isArray(entry)
+    && ['reschedule', 'job', 'event'].includes(entry[0])), false);
+  assert.equal(approval.state.post.scheduled_at.toISOString(), shiftedCurrentSlot.toISOString());
+});
+
+test('manuelle Freigabeaktionen verlangen eine positive erwartete Reviewversion vor Transaktionsbeginn', async () => {
+  for (const expectedReviewVersion of [undefined, null, 0, -1, '2x']) {
+    const scheduled = harness();
+    await assert.rejects(scheduled.service.approveForSchedule({
+      ...manualScheduleSnapshot,
+      expectedReviewVersion,
+      postId: 3,
+      scheduledAt: futureSlot,
+      admin,
+      confirmed: true
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+    assert.equal(scheduled.calls.includes('CONNECT'), false);
+
+    const immediate = harness({ scheduledAt: missedSlot });
+    await assert.rejects(immediate.service.publishNowAfterMissedSlot({
+      postId: 3,
+      expectedReviewVersion,
+      expectedScheduledAt: missedSlot,
+      expectedApprovedReviewVersion: null,
+      admin,
+      confirmed: true
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+    assert.equal(immediate.calls.includes('CONNECT'), false);
+  }
+});
+
+test('Verschiebung und Sofortveröffentlichung verlangen einen vollständigen kanonischen Approval-Snapshot', async () => {
+  const invalidSnapshots = [
+    { expectedScheduledAt: undefined, expectedApprovedReviewVersion: null },
+    { expectedScheduledAt: futureSlot, expectedApprovedReviewVersion: undefined },
+    { expectedScheduledAt: 'kein-datum', expectedApprovedReviewVersion: null },
+    { expectedScheduledAt: futureSlot, expectedApprovedReviewVersion: 0 }
+  ];
+  for (const snapshot of invalidSnapshots) {
+    const scheduled = harness();
+    await assert.rejects(scheduled.service.reschedule({
+      ...manualScheduleSnapshot,
+      ...snapshot,
+      postId: 3,
+      scheduledAt: new Date('2026-07-12T12:00:00.000Z'),
+      admin,
+      confirmed: true
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+    assert.equal(scheduled.calls.includes('CONNECT'), false);
+
+    const immediate = harness({ scheduledAt: missedSlot });
+    await assert.rejects(immediate.service.publishNowAfterMissedSlot({
+      postId: 3,
+      expectedReviewVersion: 2,
+      ...snapshot,
+      admin,
+      confirmed: true
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+    assert.equal(immediate.calls.includes('CONNECT'), false);
+  }
 });
 
 test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async () => {
@@ -375,13 +538,15 @@ test('Freigabe vor dem Termin plant atomar, veröffentlicht aber nicht', async (
   assert.equal(calls.includes('COMMIT'), true);
 });
 
-test('nicht terminierter Reviewentwurf erhält bei manueller Freigabe atomar Termin und Publish-Job', async () => {
+test('nicht terminierter Reviewentwurf erhält bei manueller Verschiebungsaktion atomar Termin und Publish-Job', async () => {
   const { service, calls, state } = harness({ scheduledAt: null });
 
-  const result = await service.approveForSchedule({
+  const result = await service.reschedule({
     ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: futureSlot,
+    expectedScheduledAt: null,
+    expectedApprovedReviewVersion: null,
     admin,
     confirmed: true
   });
@@ -566,9 +731,9 @@ test('fachlich fehlgeschlagene Revalidierung bleibt im Auto-Modus needs_review m
 
 test('Freigabe verlangt Bestätigung und einen strikt zukünftigen Termin', async () => {
   for (const input of [
-    { postId: 3, scheduledAt: futureSlot, admin, confirmed: false },
-    { postId: 3, scheduledAt: missedSlot, admin, confirmed: true },
-    { postId: 3, scheduledAt: now, admin, confirmed: true }
+    { ...manualScheduleSnapshot, postId: 3, scheduledAt: futureSlot, admin, confirmed: false },
+    { ...manualScheduleSnapshot, postId: 3, scheduledAt: missedSlot, admin, confirmed: true },
+    { ...manualScheduleSnapshot, postId: 3, scheduledAt: now, admin, confirmed: true }
   ]) {
     const { service, calls } = harness();
     await assert.rejects(
@@ -602,7 +767,14 @@ test('initiale Freigabe mappt einen während Lock und Validierung abgelaufenen T
 test('Sofortveröffentlichung ist ausschließlich nach einem verpassten Slot möglich', async () => {
   const future = harness({ scheduledAt: futureSlot });
   await assert.rejects(
-    future.service.publishNowAfterMissedSlot({ postId: 3, admin, confirmed: true }),
+    future.service.publishNowAfterMissedSlot({
+      postId: 3,
+      expectedReviewVersion: 2,
+      expectedScheduledAt: futureSlot,
+      expectedApprovedReviewVersion: null,
+      admin,
+      confirmed: true
+    }),
     (error) => error.code === 'CONTENT_PUBLICATION_SLOT_NOT_MISSED'
   );
   assert.equal(future.calls.some((entry) => Array.isArray(entry) && entry[0] === 'publish'), false);
@@ -610,6 +782,9 @@ test('Sofortveröffentlichung ist ausschließlich nach einem verpassten Slot mö
   const missed = harness({ scheduledAt: missedSlot });
   const result = await missed.service.publishNowAfterMissedSlot({
     postId: 3,
+    expectedReviewVersion: 2,
+    expectedScheduledAt: missedSlot,
+    expectedApprovedReviewVersion: null,
     admin,
     confirmed: true
   });
@@ -647,10 +822,12 @@ test('reine Terminverschiebung erzeugt einen neuen Job und macht den alten Termi
     admin,
     confirmed: true
   });
-  const shiftedApproval = await service.approveForSchedule({
+  const shiftedApproval = await service.reschedule({
     ...manualScheduleSnapshot,
     postId: 3,
     scheduledAt: shiftedSlot,
+    expectedScheduledAt: futureSlot,
+    expectedApprovedReviewVersion: 2,
     admin,
     confirmed: true
   });
@@ -687,10 +864,12 @@ test('Terminverschiebung mappt einen während Lock und Revalidierung abgelaufene
     confirmed: true
   });
   await assert.rejects(
-    service.approveForSchedule({
+    service.reschedule({
       ...manualScheduleSnapshot,
       postId: 3,
       scheduledAt: shiftedSlot,
+      expectedScheduledAt: futureSlot,
+      expectedApprovedReviewVersion: 2,
       admin,
       confirmed: true
     }),

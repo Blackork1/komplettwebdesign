@@ -129,6 +129,7 @@
         <input type="hidden" name="scheduled_at_local" value="<%= item.scheduledAtLocal || '' %>">
         <input type="hidden" name="schedule_timezone" value="<%= item.scheduleTimezone || '' %>">
         <input type="hidden" name="schedule_revision" value="<%= item.scheduleRevision || '' %>">
+        <input type="hidden" name="expected_review_version" value="<%= item.reviewVersion || '' %>">
         <button class="btn btn-success" type="submit"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Für Termin freigeben</button>
       </form>
       <% } %>
@@ -136,6 +137,9 @@
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish-now" data-confirm="Der geplante Termin ist verpasst. Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="expected_review_version" value="<%= item.reviewVersion || '' %>">
+        <input type="hidden" name="expected_scheduled_at" value="<%= item.expectedScheduledAt || '' %>">
+        <input type="hidden" name="expected_approved_review_version" value="<%= item.expectedApprovedReviewVersion || '' %>">
         <button class="btn btn-success" type="submit"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Freigeben und jetzt veröffentlichen</button>
       </form>
       <% } %>
@@ -145,6 +149,9 @@
         <input type="hidden" name="confirmed" value="true">
         <input type="hidden" name="schedule_timezone" value="<%= item.scheduleTimezone || '' %>">
         <input type="hidden" name="schedule_revision" value="<%= item.scheduleRevision || '' %>">
+        <input type="hidden" name="expected_review_version" value="<%= item.reviewVersion || '' %>">
+        <input type="hidden" name="expected_scheduled_at" value="<%= item.expectedScheduledAt || '' %>">
+        <input type="hidden" name="expected_approved_review_version" value="<%= item.expectedApprovedReviewVersion || '' %>">
         <div class="content-agent-field">
           <label for="draft-scheduled-at-local">Neuer lokaler Veröffentlichungstermin</label>
           <input id="draft-scheduled-at-local" class="form-control" type="datetime-local" name="scheduled_at_local" required>

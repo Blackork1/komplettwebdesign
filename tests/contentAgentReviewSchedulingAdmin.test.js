@@ -55,11 +55,60 @@ test('lokale Datum-Uhrzeit wird strikt in der konfigurierten IANA-Zeitzone gepar
   }
 });
 
+test('Editor erzeugt kanonische Termin- und Freigabe-Snapshots direkt aus dem geladenen Post', async () => {
+  const states = [
+    {
+      post: { scheduled_at: new Date('2026-07-13T16:00:00.000Z'), approved_review_version: null },
+      expectedScheduledAt: '2026-07-13T16:00:00.000Z',
+      expectedApprovedReviewVersion: 'null'
+    },
+    {
+      post: { scheduled_at: null, approved_review_version: null },
+      expectedScheduledAt: 'null',
+      expectedApprovedReviewVersion: 'null'
+    },
+    {
+      post: { scheduled_at: new Date('2026-07-13T16:00:00.000Z'), approved_review_version: 2 },
+      expectedScheduledAt: '2026-07-13T16:00:00.000Z',
+      expectedApprovedReviewVersion: '2'
+    }
+  ];
+
+  for (const state of states) {
+    const controller = createAdminContentAgentController(dependencies({
+      draftService: {
+        async getDraftForReview() {
+          return {
+            ...state,
+            id: 19,
+            reviewVersion: 2,
+            actions: {},
+            riskReview: null
+          };
+        }
+      }
+    }));
+    const res = response();
+    await controller.draftEditPage({ params: { id: '19' }, query: {} }, res, assert.fail);
+    assert.equal(res.rendered.locals.draft.expectedScheduledAt, state.expectedScheduledAt);
+    assert.equal(
+      res.rendered.locals.draft.expectedApprovedReviewVersion,
+      state.expectedApprovedReviewVersion
+    );
+  }
+});
+
 test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestätigung an Task 6', async () => {
   const calls = [];
   const controller = createAdminContentAgentController(dependencies({
     scheduledPublicationService: {
       async approveForSchedule(input) {
+        calls.push(input);
+        if (input.confirmed !== true) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
+        }
+      },
+      async reschedule(input) {
         calls.push(input);
         if (input.confirmed !== true) {
           throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
@@ -73,7 +122,15 @@ test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestät
       const res = response();
       await controller[action]({
         params: { id: '19' },
-        body: { scheduled_at_local: localFuture, schedule_timezone: 'Europe/Berlin', schedule_revision: '7', confirmed },
+        body: {
+          scheduled_at_local: localFuture,
+          schedule_timezone: 'Europe/Berlin',
+          schedule_revision: '7',
+          expected_review_version: '2',
+          expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+          expected_approved_review_version: 'null',
+          confirmed
+        },
         session: { user: { id: 7, username: 'redaktion' } }
       }, res, assert.fail);
       assert.equal(res.statusCode, 400);
@@ -81,12 +138,25 @@ test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestät
     const res = response();
     await controller[action]({
       params: { id: '19' },
-      body: { scheduled_at_local: localFuture, schedule_timezone: 'Europe/Berlin', schedule_revision: '7', confirmed: 'true' },
+      body: {
+        scheduled_at_local: localFuture,
+        schedule_timezone: 'Europe/Berlin',
+        schedule_revision: '7',
+        expected_review_version: '2',
+        expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+        expected_approved_review_version: 'null',
+        confirmed: 'true'
+      },
       session: { user: { id: 7, username: 'redaktion' } }
     }, res, assert.fail);
     assert.equal(calls.at(-1).scheduledAt.toISOString(), '2026-07-13T16:00:00.000Z');
     assert.equal(calls.at(-1).expectedScheduleRevision, 7);
     assert.equal(calls.at(-1).expectedTimezone, 'Europe/Berlin');
+    assert.equal(calls.at(-1).expectedReviewVersion, 2);
+    if (action === 'rescheduleDraftAction') {
+      assert.equal(calls.at(-1).expectedScheduledAt.toISOString(), '2026-07-13T16:00:00.000Z');
+      assert.equal(calls.at(-1).expectedApprovedReviewVersion, null);
+    }
     assert.equal(calls.at(-1).confirmed, true);
     assert.deepEqual(calls.at(-1).admin, { id: 7, username: 'redaktion' });
   }
@@ -109,6 +179,7 @@ test('Termin-POST lehnt einen seit dem Rendern geänderten Zeitplan fail-closed 
       scheduled_at_local: localFuture,
       schedule_timezone: 'Europe/Berlin',
       schedule_revision: '7',
+      expected_review_version: '2',
       confirmed: 'true'
     },
     session: { user: { id: 7, username: 'redaktion' } }
@@ -160,20 +231,166 @@ test('Sofortveröffentlichung und Mailretry verlangen explizite Bestätigung', a
   }));
 
   for (const action of ['publishNowAction', 'retryDraftNotificationAction']) {
+    const actionBody = action === 'publishNowAction'
+      ? {
+          expected_review_version: '2',
+          expected_scheduled_at: '2026-07-12T09:00:00.000Z',
+          expected_approved_review_version: 'null'
+        }
+      : {};
     const missing = response();
     await controller[action]({
-      params: { id: '19' }, body: {}, session: { user: { id: 7, username: 'redaktion' } }
+      params: { id: '19' }, body: actionBody, session: { user: { id: 7, username: 'redaktion' } }
     }, missing, assert.fail);
     assert.equal(missing.statusCode, 400);
 
     const accepted = response();
     await controller[action]({
-      params: { id: '19' }, body: { confirmed: 'true' }, session: { user: { id: 7, username: 'redaktion' } }
+      params: { id: '19' },
+      body: { ...actionBody, confirmed: 'true' },
+      session: { user: { id: 7, username: 'redaktion' } }
     }, accepted, assert.fail);
   }
 
   assert.equal(publishInputs.at(-1).confirmed, true);
+  assert.equal(publishInputs.at(-1).expectedReviewVersion, 2);
+  assert.equal(publishInputs.at(-1).expectedScheduledAt.toISOString(), '2026-07-12T09:00:00.000Z');
+  assert.equal(publishInputs.at(-1).expectedApprovedReviewVersion, null);
   assert.equal(retryInputs.at(-1).confirmed, true);
+});
+
+test('manuelle Freigabecontroller lehnen fehlende oder manipulierte Reviewversionen vor dem Serviceaufruf ab', async () => {
+  let scheduledCalls = 0;
+  let publishCalls = 0;
+  const controller = createAdminContentAgentController(dependencies({
+    scheduledPublicationService: {
+      async approveForSchedule() { scheduledCalls += 1; },
+      async reschedule() { scheduledCalls += 1; },
+      async publishNowAfterMissedSlot() { publishCalls += 1; }
+    }
+  }));
+
+  for (const expectedReviewVersion of [undefined, '', '0', '-1', '2x', '1.5']) {
+    for (const action of ['approveScheduledAction', 'rescheduleDraftAction']) {
+      const res = response();
+      await controller[action]({
+        params: { id: '19' },
+        body: {
+          scheduled_at_local: localFuture,
+          schedule_timezone: 'Europe/Berlin',
+          schedule_revision: '7',
+          expected_review_version: expectedReviewVersion,
+          expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+          expected_approved_review_version: 'null',
+          confirmed: 'true'
+        },
+        session: { user: { id: 7, username: 'redaktion' } }
+      }, res, assert.fail);
+      assert.equal(res.statusCode, 400);
+    }
+
+    const res = response();
+    await controller.publishNowAction({
+      params: { id: '19' },
+      body: {
+        expected_review_version: expectedReviewVersion,
+        expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+        expected_approved_review_version: 'null',
+        confirmed: 'true'
+      },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+  }
+
+  assert.equal(scheduledCalls, 0);
+  assert.equal(publishCalls, 0);
+});
+
+test('Verschieben und Sofortveröffentlichen validieren den kanonischen Approval-Snapshot vor dem Serviceaufruf', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(dependencies({
+    scheduledPublicationService: {
+      async reschedule() { calls += 1; },
+      async publishNowAfterMissedSlot() { calls += 1; }
+    }
+  }));
+  const invalidSnapshots = [
+    { expected_scheduled_at: undefined, expected_approved_review_version: 'null' },
+    { expected_scheduled_at: '', expected_approved_review_version: 'null' },
+    { expected_scheduled_at: '2026-07-13T16:00:00Z', expected_approved_review_version: 'null' },
+    { expected_scheduled_at: 'null', expected_approved_review_version: undefined },
+    { expected_scheduled_at: 'null', expected_approved_review_version: '' },
+    { expected_scheduled_at: 'null', expected_approved_review_version: '0' }
+  ];
+
+  for (const snapshot of invalidSnapshots) {
+    const rescheduleRes = response();
+    await controller.rescheduleDraftAction({
+      params: { id: '19' },
+      body: {
+        scheduled_at_local: localFuture,
+        schedule_timezone: 'Europe/Berlin',
+        schedule_revision: '7',
+        expected_review_version: '2',
+        ...snapshot,
+        confirmed: 'true'
+      },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, rescheduleRes, assert.fail);
+    assert.equal(rescheduleRes.statusCode, 400);
+
+    const publishRes = response();
+    await controller.publishNowAction({
+      params: { id: '19' },
+      body: { expected_review_version: '2', ...snapshot, confirmed: 'true' },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, publishRes, assert.fail);
+    assert.equal(publishRes.statusCode, 400);
+  }
+  assert.equal(calls, 0);
+});
+
+test('veraltete Reviewversion wird für alle manuellen Freigabeaktionen als 409 ausgegeben', async () => {
+  const stale = Object.assign(new Error('stale'), { code: 'CONTENT_REVIEW_VERSION_STALE' });
+  const controller = createAdminContentAgentController(dependencies({
+    scheduledPublicationService: {
+      async approveForSchedule() { throw stale; },
+      async reschedule() { throw stale; },
+      async publishNowAfterMissedSlot() { throw stale; }
+    }
+  }));
+
+  for (const action of ['approveScheduledAction', 'rescheduleDraftAction']) {
+    const res = response();
+    await controller[action]({
+      params: { id: '19' },
+      body: {
+        scheduled_at_local: localFuture,
+        schedule_timezone: 'Europe/Berlin',
+        schedule_revision: '7',
+        expected_review_version: '2',
+        expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+        expected_approved_review_version: 'null',
+        confirmed: 'true'
+      },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 409);
+  }
+
+  const publishRes = response();
+  await controller.publishNowAction({
+    params: { id: '19' },
+    body: {
+      expected_review_version: '2',
+      expected_scheduled_at: '2026-07-13T16:00:00.000Z',
+      expected_approved_review_version: 'null',
+      confirmed: 'true'
+    },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, publishRes, assert.fail);
+  assert.equal(publishRes.statusCode, 409);
 });
 
 test('alte Job-Snapshots dürfen nach einer Bearbeitung nicht veröffentlichen', async () => {
@@ -230,7 +447,9 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
     scheduledAtLabel: '13.07.2026, 18:00 Uhr (Europe/Berlin)',
     scheduleTimezone: 'Europe/Berlin',
     scheduleRevision: 7,
-    reviewVersion: 2
+    reviewVersion: 2,
+    expectedScheduledAt: '2026-07-13T16:00:00.000Z',
+    expectedApprovedReviewVersion: 'null'
   };
   const locals = {
     title: 'Content-Agent',
@@ -258,6 +477,7 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(approveHtml, /name="schedule_timezone" value="Europe\/Berlin"/);
   assert.match(approveHtml, /name="schedule_revision" value="7"/);
   assert.match(approveHtml, /name="reviewVersion" value="2"/);
+  assert.equal((approveHtml.match(/name="expected_review_version" value="2"/g) || []).length, 1);
   assert.doesNotMatch(approveHtml, /drafts\/19\/publish-now/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/reschedule/);
 
@@ -273,6 +493,8 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   });
   assert.match(chooseOtherSlotHtml, /drafts\/19\/reschedule/);
   assert.match(chooseOtherSlotHtml, /Freigeben und anderen Termin wählen/);
+  assert.match(chooseOtherSlotHtml, /name="expected_scheduled_at" value="2026-07-13T16:00:00\.000Z"/);
+  assert.match(chooseOtherSlotHtml, /name="expected_approved_review_version" value="null"/);
 
   const setInitialSlotHtml = await renderFile(viewPath, {
     ...locals,
@@ -302,7 +524,28 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(missedHtml, /drafts\/19\/publish-now/);
   assert.match(missedHtml, /drafts\/19\/reschedule/);
   assert.match(missedHtml, /drafts\/19\/notification\/retry/);
+  assert.equal((missedHtml.match(/name="expected_review_version" value="2"/g) || []).length, 2);
+  assert.equal((missedHtml.match(/name="expected_scheduled_at" value="2026-07-13T16:00:00\.000Z"/g) || []).length, 2);
+  assert.equal((missedHtml.match(/name="expected_approved_review_version" value="null"/g) || []).length, 2);
   assert.doesNotMatch(missedHtml, /Date\.now|new Date\s*\(/);
+
+  const approvedRescheduleHtml = await renderFile(viewPath, {
+    ...locals,
+    draft: {
+      ...baseDraft,
+      expectedApprovedReviewVersion: '2',
+      actions: {
+        canApproveScheduled: false,
+        canPublishNow: false,
+        canReschedule: true,
+        rescheduleRequiresApproval: false,
+        canRetryNotification: false
+      }
+    }
+  });
+  assert.match(approvedRescheduleHtml, /name="expected_review_version" value="2"/);
+  assert.match(approvedRescheduleHtml, /name="expected_scheduled_at" value="2026-07-13T16:00:00\.000Z"/);
+  assert.match(approvedRescheduleHtml, /name="expected_approved_review_version" value="2"/);
 
   const escapedHtml = await renderFile(viewPath, {
     ...locals,
