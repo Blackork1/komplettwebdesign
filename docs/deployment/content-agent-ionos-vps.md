@@ -308,7 +308,7 @@ Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker ni
 
 Vor jedem späteren Release den Agenten im Dashboard pausieren. Das folgende Skript erzwingt zusätzlich `agent_enabled=false` und `operating_mode=review` in PostgreSQL, bevor es laufende Jobs prüft. Dadurch kann der Worker nach dem Commit keinen neuen Job mehr übernehmen. Ein bereits parallel begonnener Claim wird durch die zweite Prüfung nach dem kontrollierten Worker-Stopp erkannt. Das Skript aktiviert den Agenten nach dem Deploy nicht wieder; die bewusste Freigabe im Review-Modus erfolgt erst nach der technischen Kontrolle im Dashboard.
 
-Die manuell verwaltete Datei zuerst sichern, dann den folgenden Block vollständig als `/apps/komplettwebdesign/deploy/deploy.sh` speichern und nur für den Eigentümer ausführbar machen:
+Die manuell verwaltete Datei zuerst sichern und das Zielverzeichnis schützen:
 
 ```bash
 cd /apps/komplettwebdesign
@@ -316,8 +316,9 @@ umask 077
 mkdir -p deploy
 test ! -f deploy/deploy.sh || cp -p deploy/deploy.sh "deploy/deploy.sh.before-$(date +%Y%m%d-%H%M%S)"
 chmod 700 deploy
-chmod 700 deploy/deploy.sh
 ```
+
+Danach den folgenden Block vollständig als `/apps/komplettwebdesign/deploy/deploy.sh` speichern:
 
 ```bash
 #!/usr/bin/env bash
@@ -325,27 +326,80 @@ set -Eeuo pipefail
 
 ROOT="/apps/komplettwebdesign"
 COMPOSE_FILE="$ROOT/docker-compose.yml"
+REPO_DIR="$ROOT/server"
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+wait_for_service() {
+  local service="$1"
+  local expected="$2"
+  local container_id=""
+  local status=""
+  local health=""
+
+  for attempt in $(seq 1 60); do
+    container_id="$(docker compose -f "$COMPOSE_FILE" ps -q "$service")"
+    if [[ -n "$container_id" ]]; then
+      status="$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || true)"
+      health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || true)"
+      if [[ "$status" == "running" && "$expected" == "running" ]]; then
+        return 0
+      fi
+      if [[ "$status" == "running" && "$expected" == "healthy" && "$health" == "healthy" ]]; then
+        return 0
+      fi
+      if [[ "$status" == "exited" || "$status" == "dead" ]]; then
+        break
+      fi
+    fi
+    sleep 2
+  done
+
+  docker compose -f "$COMPOSE_FILE" ps "$service" >&2 || true
+  docker compose -f "$COMPOSE_FILE" logs --tail=100 "$service" >&2 || true
+  fail "Dienst $service wurde nicht rechtzeitig $expected."
+}
 
 cd "$ROOT"
 test -f "$COMPOSE_FILE"
 test -f "$ROOT/.env"
-test -d "$ROOT/server"
+test -e "$REPO_DIR/.git"
 docker compose -f "$COMPOSE_FILE" config --quiet
+if ! git config --global --get-all safe.directory | grep -Fxq "$REPO_DIR"; then
+  git config --global --add safe.directory "$REPO_DIR"
+fi
 
 SETTINGS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_agent_settings'\'')::text, '\'''\'');"')"
 CONTENT_JOBS_TABLE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT COALESCE(to_regclass('\''public.content_jobs'\'')::text, '\'''\'');"')"
 
-if [[ "$SETTINGS_TABLE" == "content_agent_settings" ]]; then
-  PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
-  test "$PAUSED_STATE" = "false|review"
-fi
+case "$SETTINGS_TABLE:$CONTENT_JOBS_TABLE" in
+  content_agent_settings:content_jobs)
+    PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+    test "$PAUSED_STATE" = "false|review"
+    ;;
+  :)
+    printf 'Erster Deploy: Content-Agent-Tabellen sind noch nicht vorhanden.\n'
+    ;;
+  *)
+    fail "Unbekannter oder inkonsistenter Content-Agent-Datenbankzustand."
+    ;;
+esac
 
 running_job_count() {
-  if [[ "$CONTENT_JOBS_TABLE" != "content_jobs" ]]; then
-    printf '0\n'
-    return
-  fi
-  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+  case "$CONTENT_JOBS_TABLE" in
+    content_jobs)
+      docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+      ;;
+    "")
+      printf '0\n'
+      ;;
+    *)
+      fail "Unbekannter Zustand der Jobtabelle."
+      ;;
+  esac
 }
 
 RUNNING_JOB_COUNT="$(running_job_count)"
@@ -358,7 +412,12 @@ if [[ "$RUNNING_JOB_COUNT" != "0" ]]; then
   exit 1
 fi
 
-docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker
+WORKER_CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps -q content-worker)"
+if [[ -n "$WORKER_CONTAINER_ID" ]]; then
+  docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker
+else
+  printf 'Erster Deploy: kein vorhandener Content-Worker zu stoppen.\n'
+fi
 
 POST_STOP_RUNNING_JOB_COUNT="$(running_job_count)"
 if ! [[ "$POST_STOP_RUNNING_JOB_COUNT" =~ ^[0-9]+$ ]]; then
@@ -379,6 +438,38 @@ chmod 600 "$BACKUP_FILE"
 test -s "$BACKUP_FILE"
 docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 
+cd "$REPO_DIR"
+PREVIOUS_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
+if ! [[ "$PREVIOUS_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  fail "Bisheriger Commit ist ungültig."
+fi
+git fetch --prune origin
+git rev-parse --verify 'origin/main^{commit}' >/dev/null
+git reset --hard origin/main
+DEPLOY_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
+if ! [[ "$DEPLOY_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  fail "Deployment-Commit ist ungültig."
+fi
+cd "$ROOT"
+
+DEPLOY_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+ROLLBACK_DIR="$ROOT/data/rollbacks"
+mkdir -p "$ROLLBACK_DIR"
+chmod 700 "$ROLLBACK_DIR"
+if docker image inspect komplettwebdesign-app:local >/dev/null 2>&1; then
+  SHORT_PREVIOUS_COMMIT="${PREVIOUS_COMMIT:0:12}"
+  ROLLBACK_IMAGE="komplettwebdesign-app:rollback-${DEPLOY_TIMESTAMP}-${SHORT_PREVIOUS_COMMIT}"
+  ROLLBACK_METADATA="$ROLLBACK_DIR/rollback-${DEPLOY_TIMESTAMP}-${SHORT_PREVIOUS_COMMIT}.env"
+  docker image tag komplettwebdesign-app:local "$ROLLBACK_IMAGE"
+  docker image inspect "$ROLLBACK_IMAGE" >/dev/null
+  printf 'ROLLBACK_COMMIT=%s\nROLLBACK_IMAGE=%s\n' "$PREVIOUS_COMMIT" "$ROLLBACK_IMAGE" > "$ROLLBACK_METADATA"
+  chmod 600 "$ROLLBACK_METADATA"
+  test -s "$ROLLBACK_METADATA"
+  printf 'Rollback-Metadaten: %s\n' "$ROLLBACK_METADATA"
+else
+  printf 'Erster Deploy: kein vorhandenes App-Image für einen Image-Rollback.\n'
+fi
+
 docker compose -f "$COMPOSE_FILE" build --no-cache app
 docker image inspect komplettwebdesign-app:local >/dev/null
 
@@ -387,12 +478,25 @@ docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run
 
 docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
+wait_for_service app running
+wait_for_service content-worker healthy
 docker compose -f "$COMPOSE_FILE" ps postgres app content-worker
 docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
 docker compose -f "$COMPOSE_FILE" logs --tail=100 app content-worker
 ```
 
-Das Skript bricht bei einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, dem Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Es baut das gemeinsame Image genau einmal über `app`; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
+Erst nachdem die Datei gespeichert wurde, Rechte und Syntax prüfen und das Skript ausführen:
+
+```bash
+cd /apps/komplettwebdesign
+chmod 700 deploy/deploy.sh
+bash -n deploy/deploy.sh
+./deploy/deploy.sh
+```
+
+Das Skript bricht bei einem unbekannten Datenbankzustand, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, dem Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build und Migration weiter und wird erst beim finalen Recreate ersetzt.
+
+Vor dem Build erhält ein vorhandenes App-Image einen unveränderlichen, eindeutigen Rollback-Tag aus UTC-Zeitstempel und vorherigem Commit. Die zugehörige Metadatendatei wird mit Modus `600` geschrieben. Beim ersten Deploy ohne vorhandenes Image ist ausdrücklich kein Image-Rollback möglich. Das Skript baut das gemeinsame Image genau einmal über `app`; `content-worker` verwendet danach dasselbe Image ohne eigenen Build. Der begrenzte Health-Wait berücksichtigt die 45-sekündige Worker-Startphase. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
 
 ## 8. Erst die App, dann den Worker starten
 
@@ -450,17 +554,147 @@ Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf f
 
 Der normale, schnelle Rückfall deaktiviert nur die neue Funktion. Die App bleibt online; die Website ist nicht vom Workerprozess abhängig. Aktive Jobs vor dem Stop über Logs und Datenbank beobachten und möglichst bis zu einem terminalen Status `completed` oder `failed` laufen lassen; ein Generierungslauf soll nicht mitten in einem externen Aufruf abgebrochen werden.
 
-Bei einem fehlerhaften Release Code und Image auf den zuletzt bekannten, geprüften Release-Stand zurücksetzen, das gemeinsame Image erneut bauen und ausschließlich `app` und `content-worker` neu erzeugen. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
+Bei einem fehlerhaften Release werden Code und Image gemeinsam auf den in einer geprüften Metadatendatei festgehaltenen Stand zurückgesetzt. Das Rollback-Image enthält den alten Code bereits; deshalb wird beim Rollback ausdrücklich **nicht neu gebaut**. Die Datenbank bleibt forward-only und wird nicht destruktiv zurückgerollt: Die Migrationen sind additiv und der ältere Code muss die zusätzlichen Tabellen und Spalten tolerieren. Notwendige Korrekturen erfolgen als neue vorwärtskompatible Migration.
+
+Den folgenden Block als `/apps/komplettwebdesign/deploy/rollback.sh` speichern. Das Skript erwartet den vom Deploy ausgegebenen absoluten Pfad zur geschützten Rollback-Metadatendatei als einziges Argument:
+
+```bash
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="/apps/komplettwebdesign"
+COMPOSE_FILE="$ROOT/docker-compose.yml"
+REPO_DIR="$ROOT/server"
+ROLLBACK_DIR="$ROOT/data/rollbacks"
+ROLLBACK_METADATA="${1:?Aufruf: rollback.sh /apps/komplettwebdesign/data/rollbacks/rollback-….env}"
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+wait_for_service() {
+  local service="$1"
+  local expected="$2"
+  local container_id=""
+  local status=""
+  local health=""
+
+  for attempt in $(seq 1 60); do
+    container_id="$(docker compose -f "$COMPOSE_FILE" ps -q "$service")"
+    if [[ -n "$container_id" ]]; then
+      status="$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null || true)"
+      health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null || true)"
+      if [[ "$status" == "running" && "$expected" == "running" ]]; then
+        return 0
+      fi
+      if [[ "$status" == "running" && "$expected" == "healthy" && "$health" == "healthy" ]]; then
+        return 0
+      fi
+      if [[ "$status" == "exited" || "$status" == "dead" ]]; then
+        break
+      fi
+    fi
+    sleep 2
+  done
+
+  docker compose -f "$COMPOSE_FILE" ps "$service" >&2 || true
+  docker compose -f "$COMPOSE_FILE" logs --tail=100 "$service" >&2 || true
+  fail "Dienst $service wurde nicht rechtzeitig $expected."
+}
+
+test -f "$ROLLBACK_METADATA"
+test ! -L "$ROLLBACK_METADATA"
+ROLLBACK_METADATA="$(realpath -- "$ROLLBACK_METADATA")"
+case "$ROLLBACK_METADATA" in
+  "$ROLLBACK_DIR"/rollback-*.env) ;;
+  *) fail "Rollback-Metadaten liegen außerhalb des geschützten Verzeichnisses." ;;
+esac
+
+METADATA_MODE="$(stat -c '%a' "$ROLLBACK_METADATA")"
+METADATA_OWNER="$(stat -c '%u' "$ROLLBACK_METADATA")"
+test "$METADATA_MODE" = "600"
+test "$METADATA_OWNER" = "$(id -u)"
+test "$(wc -l < "$ROLLBACK_METADATA" | tr -d ' ')" = "2"
+grep -Eq '^ROLLBACK_COMMIT=[0-9a-f]{40}$' "$ROLLBACK_METADATA"
+grep -Eq '^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$' "$ROLLBACK_METADATA"
+. "$ROLLBACK_METADATA"
+: "${ROLLBACK_COMMIT:?}"
+: "${ROLLBACK_IMAGE:?}"
+if ! [[ "$ROLLBACK_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  fail "Rollback-Commit ist ungültig."
+fi
+if ! [[ "$ROLLBACK_IMAGE" =~ ^komplettwebdesign-app:rollback-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]]; then
+  fail "Rollback-Image ist ungültig."
+fi
+
+cd "$ROOT"
+test -f "$COMPOSE_FILE"
+test -f "$ROOT/.env"
+test -e "$REPO_DIR/.git"
+docker compose -f "$COMPOSE_FILE" config --quiet
+docker image inspect "$ROLLBACK_IMAGE" >/dev/null
+if ! git config --global --get-all safe.directory | grep -Fxq "$REPO_DIR"; then
+  git config --global --add safe.directory "$REPO_DIR"
+fi
+
+PAUSED_STATE="$(docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "UPDATE content_agent_settings SET agent_enabled = FALSE, operating_mode = '\''review'\'', updated_at = NOW() WHERE id = 1 RETURNING agent_enabled::text || '\''|'\'' || operating_mode;"')"
+test "$PAUSED_STATE" = "false|review"
+
+running_job_count() {
+  docker compose -f "$COMPOSE_FILE" exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT count(*) FROM content_jobs WHERE status = '\''running'\'';"'
+}
+
+RUNNING_JOB_COUNT="$(running_job_count)"
+if ! [[ "$RUNNING_JOB_COUNT" =~ ^[0-9]+$ ]]; then
+  fail "Laufende Jobs konnten nicht sicher bestimmt werden."
+fi
+if [[ "$RUNNING_JOB_COUNT" != "0" ]]; then
+  fail "Agent ist pausiert, aber ein Job läuft noch. Abschluss abwarten und Rollback erneut starten."
+fi
+
+WORKER_CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps -q content-worker)"
+if [[ -n "$WORKER_CONTAINER_ID" ]]; then
+  docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker
+fi
+
+POST_STOP_RUNNING_JOB_COUNT="$(running_job_count)"
+if ! [[ "$POST_STOP_RUNNING_JOB_COUNT" =~ ^[0-9]+$ && "$POST_STOP_RUNNING_JOB_COUNT" == "0" ]]; then
+  fail "Jobstatus nach Worker-Stopp ist nicht sicher leer."
+fi
+
+cd "$REPO_DIR"
+git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
+git reset --hard "$ROLLBACK_COMMIT"
+cd "$ROOT"
+docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local
+docker image inspect komplettwebdesign-app:local >/dev/null
+
+if grep -Fxq 'CONTENT_AGENT_ENABLED=false' "$ROOT/.env"; then
+  sed -i 's/^CONTENT_AGENT_ENABLED=false$/CONTENT_AGENT_ENABLED=true/' "$ROOT/.env"
+elif ! grep -Fxq 'CONTENT_AGENT_ENABLED=true' "$ROOT/.env"; then
+  fail "CONTENT_AGENT_ENABLED fehlt oder besitzt einen unbekannten Wert."
+fi
+chmod 600 "$ROOT/.env"
+
+docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate app content-worker
+wait_for_service app running
+wait_for_service content-worker healthy
+docker compose -f "$COMPOSE_FILE" ps app content-worker
+docker compose -f "$COMPOSE_FILE" exec -T content-worker npm run content-agent:healthcheck
+docker compose -f "$COMPOSE_FILE" logs --tail=100 app content-worker
+```
+
+Nach dem Speichern Rechte und Syntax prüfen und dann den exakten, zuvor vom Deploy ausgegebenen Metadatenpfad übergeben:
 
 ```bash
 cd /apps/komplettwebdesign
-docker compose logs --tail=100 content-worker
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'') ORDER BY id;"'
-docker compose stop -t 600 content-worker
-sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=false/' .env
-docker compose up -d app
-docker compose ps app content-worker
+chmod 700 deploy/rollback.sh
+bash -n deploy/rollback.sh
+./deploy/rollback.sh /apps/komplettwebdesign/data/rollbacks/rollback-YYYYMMDDTHHMMSSZ-aaaaaaaaaaaa.env
 ```
+
+Die Datei wird vor dem `source` auf reguläre Datei, Pfad, Eigentümer, Modus `600`, exakt zwei erlaubte Zuweisungen und sichere Werte geprüft. Danach werden Commit und Image nochmals validiert, bevor sie verwendet werden. Der Agent bleibt nach dem Rollback in PostgreSQL deaktiviert und im Review-Modus. War das technische Hardgate in `.env` auf `false` gesetzt, stellt das Skript es auf `true`; in jedem Fall werden anschließend **App und Worker** gemeinsam neu erzeugt und begrenzt auf `running` beziehungsweise `healthy` geprüft.
 
 `-t 600` entspricht `stop_grace_period: 10m`. Der Worker erhält `SIGTERM`, stoppt Polling und Scheduler und wartet nach seiner ersten internen 30-Sekunden-Drainphase weiter auf den aktiven Job. Erst nach 600 Sekunden würde Docker hart beenden. Ist ein Job dann noch aktiv, den Stop nach Möglichkeit abbrechen und die Ursache untersuchen; nur im Notfall den harten Abbruch in Kauf nehmen.
 
@@ -472,14 +706,26 @@ Ein Datenbank-Restore ist **kein normaler Rollback**. Er ist eine getrennte, bew
 
 ## 11. Kontrollierter Wiederanlauf nach einem Rückfall
 
-Beim Wiederanlauf reicht `docker compose start` nicht: Ein gestoppter Container behält seine alte Umgebung. `CONTENT_AGENT_ENABLED=true` setzen und den Worker zwingend neu erzeugen. Vorher zurückgebliebene Jobs und Queue-Einträge prüfen; keinen Ersatzjob anlegen, solange ein alter Job noch `running` oder wieder `queued` ist.
+Beim Wiederanlauf reicht `docker compose start` nicht: Ein gestoppter Container behält seine alte Umgebung. `CONTENT_AGENT_ENABLED=true` setzen und App sowie Worker zwingend neu erzeugen. Vorher zurückgebliebene Jobs und Queue-Einträge prüfen; keinen Ersatzjob anlegen, solange ein alter Job noch `running` oder wieder `queued` ist.
 
 ```bash
 cd /apps/komplettwebdesign
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'', '\''failed'\'') ORDER BY id DESC LIMIT 20;"'
 sed -i 's/^CONTENT_AGENT_ENABLED=.*/CONTENT_AGENT_ENABLED=true/' .env
-docker compose up -d --force-recreate content-worker
-docker compose ps content-worker
+docker compose up -d --force-recreate app content-worker
+WORKER_HEALTH=""
+for attempt in $(seq 1 60); do
+  WORKER_ID="$(docker compose ps -q content-worker)"
+  if [[ -n "$WORKER_ID" ]]; then
+    WORKER_HEALTH="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$WORKER_ID" 2>/dev/null || true)"
+    if [[ "$WORKER_HEALTH" == "healthy" ]]; then
+      break
+    fi
+  fi
+  sleep 2
+done
+test "$WORKER_HEALTH" = "healthy"
+docker compose ps app content-worker
 docker compose exec -T content-worker npm run content-agent:healthcheck
 docker compose logs --tail=100 content-worker
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, status, attempts, max_attempts, locked_at, locked_by FROM content_jobs WHERE status IN ('\''queued'\'', '\''running'\'', '\''failed'\'') ORDER BY id DESC LIMIT 20;"'

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { parse as parseYaml } from 'yaml';
 
 const guide = readFileSync(
   new URL('../docs/deployment/content-agent-ionos-vps.md', import.meta.url),
@@ -19,16 +20,12 @@ function blockContaining(blocks, pattern, description) {
   return matches[0];
 }
 
-function serviceBody(yaml, serviceName) {
-  const lines = yaml.split('\n');
-  const start = lines.findIndex((line) => line === `  ${serviceName}:`);
-  assert.notEqual(start, -1, `Service ${serviceName} fehlt im YAML-Block`);
-  const body = [];
-  for (const line of lines.slice(start + 1)) {
-    if (/^  [^\s].*:$/.test(line)) break;
-    body.push(line);
-  }
-  return body.join('\n');
+function parsedService(yaml, serviceName) {
+  const document = parseYaml(yaml);
+  assert.ok(document && typeof document === 'object', 'YAML muss ein Objekt ergeben');
+  assert.ok(document.services && typeof document.services === 'object', 'services fehlt im YAML');
+  assert.ok(document.services[serviceName], `Service ${serviceName} fehlt im YAML-Block`);
+  return document.services[serviceName];
 }
 
 const bashBlocks = fencedBlocks('bash');
@@ -37,17 +34,17 @@ const yamlBlocks = fencedBlocks('yaml');
 test('App und Worker verwenden exakt dasselbe benannte Image, Worker bleibt intern', () => {
   const appYaml = blockContaining(yamlBlocks, /^  app:\n    image:/m, 'app.image-YAML');
   const workerYaml = blockContaining(yamlBlocks, /^  content-worker:\n/m, 'Worker-YAML');
-  const app = serviceBody(appYaml, 'app');
-  const worker = serviceBody(workerYaml, 'content-worker');
-  const appImage = app.match(/^    image: (\S+)$/m)?.[1];
-  const workerImage = worker.match(/^    image: (\S+)$/m)?.[1];
+  const app = parsedService(appYaml, 'app');
+  const worker = parsedService(workerYaml, 'content-worker');
 
-  assert.equal(appImage, 'komplettwebdesign-app:local');
-  assert.equal(workerImage, appImage);
-  assert.match(worker, /^    stop_grace_period: 10m$/m);
-  assert.match(worker, /^    networks:\n      - default$/m);
-  assert.doesNotMatch(worker, /^    (?:ports|expose|labels|build):/m);
-  assert.doesNotMatch(worker, /^      - proxy$/m);
+  assert.equal(app.image, 'komplettwebdesign-app:local');
+  assert.equal(worker.image, app.image);
+  assert.equal(worker.stop_grace_period, '10m');
+  assert.deepEqual(worker.networks, ['default']);
+  for (const forbidden of ['ports', 'expose', 'labels', 'build']) {
+    assert.equal(worker[forbidden], undefined, `Worker darf ${forbidden} nicht enthalten`);
+  }
+  assert.ok(!worker.networks.includes('proxy'));
   assert.match(guide, /öffentliche Website[^\n]*`app`/i);
   assert.match(guide, /`content-worker`[^\n]*(?:intern|keine lokale|nicht öffentlich)/i);
 });
@@ -56,9 +53,13 @@ test('PostgreSQL-Healthcheck bewahrt die Compose-Escapes und App wartet auf heal
   const appDependsYaml = blockContaining(yamlBlocks, /^  app:\n    depends_on:/m, 'app.depends_on-YAML');
   const postgresYaml = blockContaining(yamlBlocks, /^  postgres:\n    healthcheck:/m, 'postgres.healthcheck-YAML');
 
-  assert.match(serviceBody(appDependsYaml, 'app'), /postgres:\n        condition: service_healthy/);
-  assert.match(serviceBody(postgresYaml, 'postgres'), /pg_isready -U \$\$\{POSTGRES_USER\} -d \$\$\{POSTGRES_DB\}/);
-  assert.match(serviceBody(blockContaining(yamlBlocks, /^  content-worker:\n/m, 'Worker-YAML'), 'content-worker'), /postgres:\n        condition: service_healthy/);
+  const app = parsedService(appDependsYaml, 'app');
+  const postgres = parsedService(postgresYaml, 'postgres');
+  const worker = parsedService(blockContaining(yamlBlocks, /^  content-worker:\n/m, 'Worker-YAML'), 'content-worker');
+
+  assert.equal(app.depends_on.postgres.condition, 'service_healthy');
+  assert.equal(postgres.healthcheck.test[1], 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}');
+  assert.equal(worker.depends_on.postgres.condition, 'service_healthy');
 });
 
 test('Anleitung verwendet den echten Rootpfad und trennt automatisch aktualisierten Code von manuellen Dateien', () => {
@@ -149,17 +150,27 @@ test('Dry-Run liegt vor Workerstart und der Start wird anschließend geprüft', 
   assert.match(guide.slice(workerStartPosition), /docker compose logs -f content-worker/);
 });
 
-test('Deploy-Block stoppt bei laufendem Job, sichert, migriert zweimal und recreatet dasselbe Image', () => {
-  const deploy = blockContaining(bashBlocks, /RUNNING_JOB_COUNT=/, 'deploy.sh-Block');
+test('Deploy aktualisiert nur server deterministisch und hält die App bis zum Recreate online', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const pause = deploy.indexOf('PAUSED_STATE=');
   const running = deploy.indexOf('RUNNING_JOB_COUNT=');
   const stop = deploy.indexOf('docker compose -f "$COMPOSE_FILE" stop -t 600 content-worker');
   const backup = deploy.indexOf('BACKUP_FILE=');
+  const previous = deploy.indexOf('PREVIOUS_COMMIT=');
+  const fetch = deploy.indexOf('git fetch --prune origin');
+  const reset = deploy.indexOf('git reset --hard origin/main');
   const build = deploy.indexOf('build --no-cache app');
   const migration = deploy.indexOf('npm run migrate:content-agent');
   const recreate = deploy.indexOf('up -d --no-deps --force-recreate app content-worker');
 
-  assert.ok(running >= 0 && stop > running && backup > stop && build > backup);
+  assert.ok(pause >= 0 && running > pause && stop > running && backup > stop);
+  assert.ok(previous > backup && fetch > previous && reset > fetch && build > reset);
   assert.ok(migration > build && recreate > migration);
+  assert.match(deploy, /^REPO_DIR="\$ROOT\/server"$/m);
+  assert.match(deploy, /git config --global --add safe\.directory "\$REPO_DIR"/);
+  assert.match(deploy, /cd "\$REPO_DIR"/);
+  assert.match(deploy, /\[\[ "\$PREVIOUS_COMMIT" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.doesNotMatch(deploy.slice(0, recreate), /\bstop\b[^\n]*\bapp\b/);
   assert.match(deploy, /if \[\[ "\$RUNNING_JOB_COUNT" != "0" \]\]; then/);
   assert.equal((deploy.match(/npm run migrate:content-agent/g) || []).length, 2);
   assert.match(deploy, /docker image inspect komplettwebdesign-app:local/);
@@ -168,21 +179,89 @@ test('Deploy-Block stoppt bei laufendem Job, sichert, migriert zweimal und recre
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
-test('Rückfall stoppt kontrolliert und Wiederanlauf erzeugt den Worker neu', () => {
-  const rollback = blockContaining(
-    bashBlocks,
-    /CONTENT_AGENT_ENABLED=false/,
-    'Rollback-Block'
-  );
+test('Deploy sichert ein unveränderliches Rollback-Image und behandelt den First Deploy explizit', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const imageExists = deploy.indexOf('if docker image inspect komplettwebdesign-app:local');
+  const rollbackTag = deploy.indexOf('docker image tag komplettwebdesign-app:local "$ROLLBACK_IMAGE"');
+  const metadata = deploy.indexOf('ROLLBACK_METADATA=');
+  const build = deploy.indexOf('build --no-cache app');
+  const workerGuard = deploy.indexOf('if [[ -n "$WORKER_CONTAINER_ID" ]]');
+  const stop = deploy.indexOf('stop -t 600 content-worker');
+
+  assert.ok(imageExists >= 0 && rollbackTag > imageExists && metadata > imageExists);
+  assert.ok(build > rollbackTag && build > metadata);
+  assert.match(deploy, /ROLLBACK_IMAGE="komplettwebdesign-app:rollback-\$\{DEPLOY_TIMESTAMP\}-\$\{SHORT_PREVIOUS_COMMIT\}"/);
+  assert.match(deploy, /printf 'ROLLBACK_COMMIT=%s\\nROLLBACK_IMAGE=%s\\n'/);
+  assert.match(deploy, /chmod 600 "\$ROLLBACK_METADATA"/);
+  assert.match(deploy, /docker image inspect "\$ROLLBACK_IMAGE"/);
+  assert.match(deploy, /Erster Deploy: kein vorhandenes App-Image für einen Image-Rollback/);
+  assert.ok(workerGuard >= 0 && stop > workerGuard);
+  assert.match(deploy.slice(workerGuard, stop), /WORKER_CONTAINER_ID/);
+  assert.match(deploy, /case "\$SETTINGS_TABLE:\$CONTENT_JOBS_TABLE" in/);
+  assert.match(deploy, /content_agent_settings:content_jobs\)/);
+  assert.match(deploy, /Unbekannter oder inkonsistenter Content-Agent-Datenbankzustand/);
+  assert.match(deploy, /test "\$PAUSED_STATE" = "false\|review"/);
+  assert.match(deploy, /POST_STOP_RUNNING_JOB_COUNT/);
+  assert.match(guide, /chmod 700 deploy\/deploy\.sh[\s\S]*bash -n deploy\/deploy\.sh/);
+});
+
+test('Deploy und Rollback warten begrenzt auf running beziehungsweise healthy', () => {
+  const cases = [
+    [/git reset --hard origin\/main/, 'Deploy'],
+    [/ROLLBACK_METADATA="\$\{1:/, 'Rollback']
+  ];
+  for (const [pattern, name] of cases) {
+    const block = blockContaining(bashBlocks, pattern, `${name}-Block`);
+    const recreate = block.indexOf('up -d --no-deps --force-recreate app content-worker');
+    const wait = block.indexOf('wait_for_service app running');
+    const workerWait = block.indexOf('wait_for_service content-worker healthy');
+    const healthcheck = block.indexOf('content-worker npm run content-agent:healthcheck');
+    assert.ok(recreate >= 0 && wait > recreate && workerWait > wait && healthcheck > workerWait);
+    assert.match(block, /for attempt in \$\(seq 1 60\); do/);
+    assert.match(block, /docker inspect --format '\{\{\.State\.Status\}\}'/);
+    assert.match(block, /docker inspect --format '\{\{if \.State\.Health\}\}\{\{\.State\.Health\.Status\}\}\{\{end\}\}'/);
+    assert.match(block, /sleep 2/);
+  }
+});
+
+test('Rollback validiert Metadaten, setzt Code und Image zurück und recreatet beide Dienste ohne Build', () => {
+  const rollback = blockContaining(bashBlocks, /ROLLBACK_METADATA="\$\{1:/, 'Rollback-Block');
+  const mode = rollback.indexOf('METADATA_MODE=');
+  const contentValidation = rollback.indexOf("grep -Eq '^ROLLBACK_COMMIT=");
+  const source = rollback.indexOf('. "$ROLLBACK_METADATA"');
+  const pause = rollback.indexOf('PAUSED_STATE=');
+  const stop = rollback.indexOf('stop -t 600 content-worker');
+  const reset = rollback.indexOf('git reset --hard "$ROLLBACK_COMMIT"');
+  const image = rollback.indexOf('docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local');
+  const recreate = rollback.indexOf('up -d --no-deps --force-recreate app content-worker');
+
+  assert.ok(mode >= 0 && contentValidation > mode && source > contentValidation);
+  assert.ok(pause > source && stop > pause && reset > stop && image > reset && recreate > image);
+  assert.match(rollback, /test "\$METADATA_MODE" = "600"/);
+  assert.match(rollback, /grep -Eq '\^ROLLBACK_COMMIT=\[0-9a-f\]\{40\}\$'/);
+  assert.match(rollback, /grep -Eq '\^ROLLBACK_IMAGE=komplettwebdesign-app:rollback-/);
+  assert.match(rollback, /\[\[ "\$ROLLBACK_COMMIT" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.match(rollback, /\[\[ "\$ROLLBACK_IMAGE" =~ \^komplettwebdesign-app:rollback-/);
+  assert.match(rollback, /git config --global --add safe\.directory "\$REPO_DIR"/);
+  assert.match(rollback, /docker image inspect "\$ROLLBACK_IMAGE"/);
+  assert.doesNotMatch(rollback, /docker compose[^\n]*\bbuild\b/);
+  assert.match(rollback, /CONTENT_AGENT_ENABLED=false/);
+  assert.match(rollback, /CONTENT_AGENT_ENABLED=true/);
+  assert.match(guide, /Rollback-Image enthält den alten Code/i);
+  assert.match(guide, /Datenbank[^\n]*(?:forward-only|vorwärts)/i);
+});
+
+test('Rückfall stoppt kontrolliert und Wiederanlauf erzeugt App und Worker neu', () => {
+  const rollback = blockContaining(bashBlocks, /ROLLBACK_METADATA="\$\{1:/, 'Rollback-Block');
   const restart = blockContaining(
     bashBlocks,
-    /CONTENT_AGENT_ENABLED=true/,
+    /SELECT id, status, attempts, max_attempts, locked_at, locked_by[\s\S]*CONTENT_AGENT_ENABLED=true/,
     'Wiederanlauf-Block'
   );
 
-  assert.match(rollback, /docker compose stop -t 600 content-worker/);
-  assert.doesNotMatch(rollback, /docker compose stop content-worker/);
-  assert.match(restart, /docker compose up -d --force-recreate content-worker/);
+  assert.match(rollback, /stop -t 600 content-worker/);
+  assert.doesNotMatch(rollback, /stop content-worker/);
+  assert.match(restart, /docker compose up -d --force-recreate app content-worker/);
   assert.doesNotMatch(restart, /docker compose start content-worker/);
   assert.match(restart, /docker compose exec -T content-worker npm run content-agent:healthcheck/);
   assert.match(restart, /docker compose logs --tail=100 content-worker/);
