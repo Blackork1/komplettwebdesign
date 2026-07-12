@@ -538,6 +538,26 @@ test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', asy
   });
 });
 
+test('manueller Mailretry übergibt die authentifizierte Adminidentität an den Auditpfad', async () => {
+  let received;
+  const controller = createAdminContentAgentController(baseDependencies({
+    draftService: {
+      async retryAdminReviewNotification(input) { received = input; }
+    }
+  }));
+  const res = response();
+  await controller.retryDraftNotificationAction({
+    params: { id: '9' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+  assert.deepEqual(received, {
+    postId: 9,
+    confirmed: true,
+    admin: { id: 7, username: 'redaktion' }
+  });
+});
+
 test('Revisionsfreigabe akzeptiert ausschließlich die literale Bestätigung true', async () => {
   const inputs = [];
   const controller = createAdminContentAgentController(baseDependencies({

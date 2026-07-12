@@ -412,7 +412,10 @@ test('manueller Admin-Mailretry erzeugt atomar eine neue Delivery mit aktueller 
         last_error_code: 'smtp_rejected'
       }] };
       if (/^SELECT admin_notification_email/i.test(normalized)) {
-        return { rows: [{ admin_notification_email: 'neu@example.de' }] };
+        return { rows: [{
+          admin_notification_email: 'neu@example.de',
+          requested_at: new Date('2026-07-12T10:00:00.000Z')
+        }] };
       }
       if (/^INSERT INTO content_notification_deliveries/i.test(normalized)) {
         return { rows: [{ id: 12, recipient_email: params[1], idempotency_key: params[2] }] };
@@ -426,7 +429,7 @@ test('manueller Admin-Mailretry erzeugt atomar eine neue Delivery mit aktueller 
   };
   const repository = createAdminDraftRepository({ async connect() { return client; } });
 
-  const result = await repository.retryAdminReviewNotificationTransaction({ postId: 3 });
+  const result = await repository.retryAdminReviewNotificationTransaction({ postId: 3, admin });
 
   assert.equal(result.delivery_id, 12);
   const insertedDelivery = calls.find(({ sql }) => /^INSERT INTO content_notification_deliveries/i.test(sql));
@@ -436,6 +439,14 @@ test('manueller Admin-Mailretry erzeugt atomar eine neue Delivery mit aktueller 
   assert.match(insertedDelivery.sql, /ON CONFLICT \(idempotency_key\) DO NOTHING/i);
   assert.match(insertedJob.sql, /send_admin_review_notification/i);
   assert.match(insertedJob.sql, /ON CONFLICT \(idempotency_key\) DO NOTHING/i);
+  const deliveryPayload = JSON.parse(insertedDelivery.params[3]);
+  const jobPayload = JSON.parse(insertedJob.params[1]);
+  assert.deepEqual(deliveryPayload.manualRetryRequestedBy, {
+    adminId: 7,
+    adminUsername: 'redaktion',
+    requestedAt: '2026-07-12T10:00:00.000Z'
+  });
+  assert.deepEqual(jobPayload.manualRetryRequestedBy, deliveryPayload.manualRetryRequestedBy);
   assert.equal(calls.some(({ sql }) => /^UPDATE content_notification_deliveries/i.test(sql)), false);
   assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), true);
 });
@@ -458,7 +469,7 @@ test('manueller Admin-Mailretry verlangt vor dem Transaktionsstart die literale 
 
   for (const confirmed of [undefined, false, 'true', 'on', 1]) {
     await assert.rejects(
-      service.retryAdminReviewNotification({ postId: 3, confirmed }),
+      service.retryAdminReviewNotification({ postId: 3, confirmed, admin }),
       (error) => error.code === 'CONTENT_CONFIRMATION_REQUIRED'
     );
   }
@@ -484,7 +495,7 @@ test('Mailretry-Service blockiert outcome_uncertain, sent und sending vor jeder 
     const service = createAdminDraftService({ repository });
 
     await assert.rejects(
-      service.retryAdminReviewNotification({ postId: 3, confirmed: true }),
+      service.retryAdminReviewNotification({ postId: 3, confirmed: true, admin }),
       (error) => error.code === 'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE'
     );
     assert.equal(mutations, 0, JSON.stringify(notification));

@@ -597,7 +597,8 @@ export function createAdminContentAgentController(dependencies) {
         method: 'retryAdminReviewNotification',
         args: () => [{
           postId: positiveId(req.params.id),
-          confirmed: criticalConfirmation(req.body?.confirmed)
+          confirmed: criticalConfirmation(req.body?.confirmed),
+          admin: adminFromRequest(req)
         }],
         redirect: `/admin/content-agent/drafts/${req.params.id}/edit?notification_retried=1`,
         res,

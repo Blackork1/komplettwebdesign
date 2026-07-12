@@ -6,6 +6,19 @@ const migrationUrl = new URL(
   '../scripts/migrations/004_create_scheduled_content_review.sql',
   import.meta.url
 );
+const retryIndexMigrationUrl = new URL(
+  '../scripts/migrations/005_upgrade_admin_notification_retry_index.sql',
+  import.meta.url
+);
+
+test('Migration 005 erweitert den bestehenden Admin-Mailindex additiv und idempotent', async () => {
+  const sql = await readFile(retryIndexMigrationUrl, 'utf8');
+  assert.match(sql, /DROP INDEX IF EXISTS ux_content_notification_deliveries_admin_review/i);
+  assert.match(sql, /CREATE UNIQUE INDEX ux_content_notification_deliveries_admin_review/i);
+  assert.match(sql, /payload_json\s*->>\s*'reviewVersion'/i);
+  assert.match(sql, /COALESCE\s*\(\s*payload_json\s*->>\s*'manualRetryOfDeliveryId'\s*,\s*'initial'\s*\)/i);
+  assert.doesNotMatch(sql, /DROP TABLE|TRUNCATE|DELETE FROM/i);
+});
 
 test('migration 004 defines scheduled review and notification contracts', async () => {
   const sql = await readFile(migrationUrl, 'utf8');
@@ -49,7 +62,9 @@ test('migration 004 constrains and deduplicates notification deliveries', async 
   assert.match(sql, /ADD CONSTRAINT content_notification_newsletter_payload_valid[\s\S]*publicationVersion/i);
   assert.match(sql, /migration_invalid_admin_review_payload/i);
   assert.match(sql, /migration_invalid_newsletter_article_payload/i);
-  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_notification_deliveries_admin_review[\s\S]*WHERE notification_type = 'admin_review'/i);
+  assert.match(sql, /CREATE UNIQUE INDEX ux_content_notification_deliveries_admin_review[\s\S]*WHERE notification_type = 'admin_review'/i);
+  assert.match(sql, /DROP INDEX IF EXISTS ux_content_notification_deliveries_admin_review/i);
+  assert.match(sql, /COALESCE\s*\(\s*payload_json\s*->>\s*'manualRetryOfDeliveryId'\s*,\s*'initial'\s*\)/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_notification_deliveries_newsletter_article[\s\S]*WHERE notification_type = 'newsletter_article'/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_scheduled_publication[\s\S]*ON content_publish_events[\s\S]*publicationVersion[\s\S]*WHERE decision = 'manual'/i);
   assert.match(sql, /CREATE INDEX IF NOT EXISTS idx_content_notification_deliveries_claim[\s\S]*WHERE status IN \('queued', 'failed'\)/i);

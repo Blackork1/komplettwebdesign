@@ -99,11 +99,11 @@ export function findDueGenerationSlots({ settings, now = new Date() }) {
   const local = localDateTime(now, settings.timezone);
   const leadHours = generationLeadHours(settings.generation_lead_hours);
   const nowMillis = local.toMillis();
-  const firstCandidate = local.startOf('day').minus({ days: 6 });
+  const firstCandidate = local.startOf('day').minus({ days: 7 });
   const futureDays = Math.ceil(leadHours / 24) + 1;
   const due = [];
 
-  for (let offset = 0; offset <= 6 + futureDays; offset += 1) {
+  for (let offset = 0; offset <= 7 + futureDays; offset += 1) {
     const publicationDate = firstCandidate.plus({ days: offset });
     if (!settings.schedule_weekdays.includes(publicationDate.weekday)) continue;
     const slot = buildPublicationSlot({ settings, localDate: publicationDate.toISODate() });

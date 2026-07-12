@@ -311,8 +311,9 @@ export function createAdminDraftRepository(db = pool) {
       }
     },
 
-    async retryAdminReviewNotificationTransaction({ postId }) {
+    async retryAdminReviewNotificationTransaction({ postId, admin }) {
       const normalizedPostId = positivePostId(postId);
+      const normalizedAdmin = normalizeAdmin(admin);
       const client = await db.connect();
       try {
         await client.query('BEGIN');
@@ -347,13 +348,22 @@ export function createAdminDraftRepository(db = pool) {
         }
 
         const settingsResult = await client.query(`
-          SELECT admin_notification_email
+          SELECT admin_notification_email, NOW() AS requested_at
           FROM content_agent_settings
           WHERE id = 1
           FOR SHARE
         `);
         const recipientEmail = String(settingsResult.rows[0]?.admin_notification_email || '').trim().toLowerCase();
         if (!recipientEmail) throw new Error('Die aktuelle Admin-Benachrichtigungsadresse fehlt.');
+        const requestedAt = new Date(settingsResult.rows[0]?.requested_at);
+        if (Number.isNaN(requestedAt.getTime())) {
+          throw new Error('Der Auditzeitpunkt für den Admin-Mailretry fehlt.');
+        }
+        const manualRetryRequestedBy = {
+          adminId: normalizedAdmin.id,
+          adminUsername: normalizedAdmin.username,
+          requestedAt: requestedAt.toISOString()
+        };
 
         const idempotencyKey = `admin-review-retry:${normalizedPostId}:${delivery.id}`;
         const newDeliveryResult = await client.query(`
@@ -373,7 +383,8 @@ export function createAdminDraftRepository(db = pool) {
           idempotencyKey,
           JSON.stringify({
             ...(delivery.payload_json || {}),
-            manualRetryOfDeliveryId: Number(delivery.id)
+            manualRetryOfDeliveryId: Number(delivery.id),
+            manualRetryRequestedBy
           })
         ]);
         const newDelivery = newDeliveryResult.rows[0] || null;
@@ -406,7 +417,8 @@ export function createAdminDraftRepository(db = pool) {
           JSON.stringify({
             deliveryId: Number(newDelivery.id),
             postId: normalizedPostId,
-            manualRetryOfDeliveryId: Number(delivery.id)
+            manualRetryOfDeliveryId: Number(delivery.id),
+            manualRetryRequestedBy
           })
         ]);
         const job = jobResult.rows[0] || null;
@@ -483,9 +495,10 @@ export function createAdminDraftService({
       });
     },
 
-    async retryAdminReviewNotification({ postId, confirmed }) {
+    async retryAdminReviewNotification({ postId, confirmed, admin }) {
       requireConfirmation(confirmed);
       const normalizedPostId = positivePostId(postId);
+      const normalizedAdmin = normalizeAdmin(admin);
       const current = await repository.getDraftWithMetadata(normalizedPostId);
       if (!isEditableDraft(current)
           || !isAdminNotificationManuallyRetryable(current.notification)) {
@@ -495,7 +508,8 @@ export function createAdminDraftService({
         );
       }
       return repository.retryAdminReviewNotificationTransaction({
-        postId: normalizedPostId
+        postId: normalizedPostId,
+        admin: normalizedAdmin
       });
     }
   };

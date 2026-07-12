@@ -276,7 +276,9 @@ ALTER TABLE content_notification_deliveries
 WITH ranked_admin_deliveries AS (
   SELECT id,
          ROW_NUMBER() OVER (
-           PARTITION BY post_id, payload_json ->> 'reviewVersion'
+           PARTITION BY post_id,
+                        payload_json ->> 'reviewVersion',
+                        COALESCE(payload_json ->> 'manualRetryOfDeliveryId', 'initial')
            ORDER BY created_at, id
          ) AS delivery_rank
   FROM content_notification_deliveries
@@ -311,8 +313,13 @@ FROM ranked_newsletter_deliveries ranked
 WHERE delivery.id = ranked.id
   AND ranked.delivery_rank > 1;
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_content_notification_deliveries_admin_review
-  ON content_notification_deliveries (post_id, (payload_json ->> 'reviewVersion'))
+DROP INDEX IF EXISTS ux_content_notification_deliveries_admin_review;
+CREATE UNIQUE INDEX ux_content_notification_deliveries_admin_review
+  ON content_notification_deliveries (
+    post_id,
+    (payload_json ->> 'reviewVersion'),
+    (COALESCE(payload_json ->> 'manualRetryOfDeliveryId', 'initial'))
+  )
   WHERE notification_type = 'admin_review'
     AND status <> 'cancelled'
     AND payload_json ? 'reviewVersion';
