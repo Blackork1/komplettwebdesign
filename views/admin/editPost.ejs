@@ -14,6 +14,7 @@
           onsubmit="return confirm('KI-Entwurf wirklich ablehnen?');">
       <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
       <input type="hidden" name="confirmed" value="true">
+      <input type="hidden" name="expected_review_version" value="<%= post.review_version || '' %>">
       <input type="hidden" name="reason" value="Im Blog-Adminbereich abgelehnt.">
       <button class="btn btn-danger">Ablehnen</button>
     </form>

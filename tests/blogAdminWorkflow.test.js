@@ -6,6 +6,8 @@ import BlogPostModel from '../models/BlogPostModel.js';
 import { deletePost, editPostForm, previewPost, updatePost } from '../controllers/adminBlogController.js';
 import { isAdmin } from '../middleware/auth.js';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { renderFile } from 'ejs';
 
 function queryDb(rows = []) {
   const calls = [];
@@ -162,7 +164,47 @@ test('die Legacy-Blogliste bietet für KI-Entwürfe nur Content-Agent-Aktionen a
   assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/edit/);
   assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/preview/);
   assert.match(listView, /\/admin\/content-agent\/drafts\/<%= p\.id %>\/reject/);
+  assert.match(listView, /name="expected_review_version" value="<%= p\.review_version \|\| '' %>"/);
   assert.match(listView, /else/);
+});
+
+test('Legacy-Blogliste und Legacy-Editor senden beim Reject die gerenderte Reviewversion', async () => {
+  const locals = {
+    title: 'Blog-Admin',
+    currentPathname: '/admin/blog',
+    csrfToken: 'csrf-test',
+    cssAsset: (value) => value,
+    jsAsset: (value) => value
+  };
+  const listHtml = await renderFile(fileURLToPath(new URL('../views/admin/blogList.ejs', import.meta.url)), {
+    ...locals,
+    posts: [{
+      id: 8,
+      title: 'KI-Entwurf',
+      category: 'Webdesign',
+      featured: false,
+      workflow_status: 'needs_review',
+      published: false,
+      generated_by_ai: true,
+      review_version: 4,
+      created_at: '2026-07-12T10:00:00.000Z'
+    }]
+  });
+  const list = cheerio.load(listHtml);
+  assert.equal(
+    list('form[action="/admin/content-agent/drafts/8/reject"] input[name="expected_review_version"]').val(),
+    '4'
+  );
+
+  const editHtml = await renderFile(fileURLToPath(new URL('../views/admin/editPost.ejs', import.meta.url)), {
+    ...locals,
+    post: { id: 8, generated_by_ai: true, published: false, review_version: 4 }
+  });
+  const edit = cheerio.load(editHtml);
+  assert.equal(
+    edit('form[action="/admin/content-agent/drafts/8/reject"] input[name="expected_review_version"]').val(),
+    '4'
+  );
 });
 
 test('Legacy-Delete verweigert unveröffentlichte KI-Entwürfe vor dem Model-Delete', async () => {
