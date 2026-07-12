@@ -29,7 +29,6 @@ const POST_PATHS = [
   '/admin/content-agent/jobs/manual-draft',
   '/admin/content-agent/jobs/:id/retry',
   '/admin/content-agent/drafts/:id',
-  '/admin/content-agent/drafts/:id/publish',
   '/admin/content-agent/drafts/:id/reject',
   '/admin/content-agent/drafts/:id/regenerate-image',
   '/admin/content-agent/drafts/:id/regenerate-faq',
@@ -90,4 +89,9 @@ test('der Produktionsrouter injiziert den echten Publikationsservice', () => {
   assert.match(routes, /import \{ createContentPublicationService \} from ['"]\.\.\/services\/contentAgent\/contentPublicationService\.js['"]/);
   assert.match(routes, /const publicationService = createContentPublicationService\(\)/);
   assert.match(routes, /publicationService,/);
+});
+
+test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
+  assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
+  assert.doesNotMatch(routes, /controller\.publishDraftAction/);
 });

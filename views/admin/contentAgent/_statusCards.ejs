@@ -4,10 +4,8 @@
   const budgetUsed = Number(safeDashboard.budget?.usedEur || 0);
   const budgetLimit = Number(safeDashboard.budget?.limitEur || 0);
   const budgetPercent = budgetLimit > 0 ? Math.min(100, Math.max(0, (budgetUsed / budgetLimit) * 100)) : 0;
-  const scheduleDays = Array.isArray(safeSettings.schedule_weekdays) ? safeSettings.schedule_weekdays : [];
-  const weekdayLabels = { 1: 'Mo.', 2: 'Di.', 3: 'Mi.', 4: 'Do.', 5: 'Fr.', 6: 'Sa.', 7: 'So.' };
-  const scheduleLabel = scheduleDays.map((day) => weekdayLabels[day]).filter(Boolean).join(' + ') || 'Nicht geplant';
-  const scheduleTime = String(safeSettings.schedule_time || '').slice(0, 5);
+  const nextGenerationLabel = safeDashboard.schedule?.nextGenerationLabel || 'Noch nicht berechnet';
+  const nextPublicationLabel = safeDashboard.schedule?.nextPublicationLabel || 'Noch nicht berechnet';
   const openDrafts = Array.isArray(safeDashboard.drafts) ? safeDashboard.drafts.length : 0;
   const blockedDrafts = Array.isArray(safeDashboard.drafts)
     ? safeDashboard.drafts.filter((draft) => draft.riskBlocked).length
@@ -30,9 +28,9 @@
       <i class="fa-regular fa-clock"></i>
     </div>
     <div>
-      <p class="content-agent-metric__label">Nächster Lauf</p>
-      <p class="content-agent-metric__value"><%= scheduleLabel %><%= scheduleTime ? `, ${scheduleTime}` : '' %></p>
-      <p class="content-agent-metric__detail"><%= safeSettings.timezone || 'Zeitzone nicht verfügbar' %></p>
+      <p class="content-agent-metric__label">Nächste Erstellung</p>
+      <p class="content-agent-metric__value"><%= nextGenerationLabel %></p>
+      <p class="content-agent-metric__detail">Veröffentlichung: <%= nextPublicationLabel %></p>
     </div>
   </article>
 

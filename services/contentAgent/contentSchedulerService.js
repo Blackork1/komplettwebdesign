@@ -90,32 +90,32 @@ export function buildPublicationSlot({ settings, localDate }) {
   };
 }
 
-export function findDueGenerationSlot({ settings, now = new Date() }) {
-  if (settings?.agent_enabled !== true) return null;
+export function findDueGenerationSlots({ settings, now = new Date() }) {
+  if (settings?.agent_enabled !== true) return [];
   if (!Array.isArray(settings.schedule_weekdays) || settings.schedule_weekdays.length === 0) {
-    return null;
+    return [];
   }
 
   const local = localDateTime(now, settings.timezone);
   const leadHours = generationLeadHours(settings.generation_lead_hours);
   const nowMillis = local.toMillis();
-  const firstCandidate = local.startOf('day').minus({ days: 7 });
+  const firstCandidate = local.startOf('day').minus({ days: 6 });
   const futureDays = Math.ceil(leadHours / 24) + 1;
-  let latest = null;
-  let latestGenerationMillis = Number.NEGATIVE_INFINITY;
+  const due = [];
 
-  for (let offset = 0; offset <= 7 + futureDays; offset += 1) {
+  for (let offset = 0; offset <= 6 + futureDays; offset += 1) {
     const publicationDate = firstCandidate.plus({ days: offset });
     if (!settings.schedule_weekdays.includes(publicationDate.weekday)) continue;
     const slot = buildPublicationSlot({ settings, localDate: publicationDate.toISODate() });
     const generationMillis = Date.parse(slot.generationAt);
-    if (generationMillis <= nowMillis && generationMillis > latestGenerationMillis) {
-      latest = slot;
-      latestGenerationMillis = generationMillis;
-    }
+    if (generationMillis <= nowMillis) due.push(slot);
   }
 
-  return latest;
+  return due.sort((left, right) => Date.parse(left.generationAt) - Date.parse(right.generationAt));
+}
+
+export function findDueGenerationSlot(input) {
+  return findDueGenerationSlots(input).at(-1) || null;
 }
 
 export async function runContentSchedulerTick({
@@ -128,26 +128,33 @@ export async function runContentSchedulerTick({
   let slot = null;
   try {
     const settings = await getSettings();
-    slot = findDueGenerationSlot({ settings, now: tickAt });
+    const slots = findDueGenerationSlots({ settings, now: tickAt });
+    slot = slots.at(-1) || null;
     await updateSchedulerState({
       lastSchedulerTickAt: tickAt,
       lastScheduledSlot: slot?.key || null,
       lastSchedulerError: null
     });
     if (!slot) return null;
-    return await enqueueJob({
-      jobType: 'generate_weekly_draft',
-      idempotencyKey: `generate:${slot.key}`,
-      payload: {
-        source: 'weekly-schedule',
-        schedule_slot: slot.key,
-        publication_at: slot.publicationAt,
-        publication_local_date: slot.localDate,
-        publication_local_time: slot.localTime,
-        publication_timezone: slot.timezone
-      },
-      maxAttempts: settings.maximum_attempts
-    });
+    let lastResult = null;
+    for (const dueSlot of slots) {
+      slot = dueSlot;
+      const result = await enqueueJob({
+        jobType: 'generate_weekly_draft',
+        idempotencyKey: `generate:${dueSlot.key}`,
+        payload: {
+          source: 'weekly-schedule',
+          schedule_slot: dueSlot.key,
+          publication_at: dueSlot.publicationAt,
+          publication_local_date: dueSlot.localDate,
+          publication_local_time: dueSlot.localTime,
+          publication_timezone: dueSlot.timezone
+        },
+        maxAttempts: settings.maximum_attempts
+      });
+      if (result) lastResult = result;
+    }
+    return lastResult;
   } catch (error) {
     try {
       await updateSchedulerState({

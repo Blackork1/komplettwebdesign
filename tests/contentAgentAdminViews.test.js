@@ -12,6 +12,10 @@ const dashboard = {
   worker: { label: '<script>worker</script>', healthy: false },
   budget: { usedEur: 12.4, limitEur: 50 },
   approvals: { current: 3, required: 8, ready: false },
+  schedule: {
+    nextGenerationLabel: '13.07.2026, 14:00 Uhr (MESZ)',
+    nextPublicationLabel: '13.07.2026, 18:00 Uhr (MESZ)'
+  },
   drafts: [{
     id: 14,
     title: '<script>entwurf</script>',
@@ -26,6 +30,7 @@ const dashboard = {
     reviewState: 'needs_review',
     reviewStateLabel: 'Prüfung offen',
     scheduledAtLabel: '13.07.2026, 18:00 Uhr',
+    generationAtLabel: '13.07.2026, 14:00 Uhr',
     reviewVersion: 4,
     approvalVersion: null,
     publicationVersion: 1,
@@ -158,6 +163,12 @@ test('Zeitplan erklärt Veröffentlichungszeit, Vorlauf, Adminadresse und Newsle
     settings: { ...settings, manual_approvals_count: 0 },
     schedule: {
       generationLeadHours: 4,
+      nextGenerationLabel: '13.07.2026, 14:00 Uhr (MESZ)',
+      nextPublicationLabel: '13.07.2026, 18:00 Uhr (MESZ)',
+      weeklyPreview: [
+        { label: 'Montag: Erstellung 14:00 Uhr · Veröffentlichung 18:00 Uhr' },
+        { label: 'Donnerstag: Erstellung 14:00 Uhr · Veröffentlichung 18:00 Uhr' }
+      ],
       newsletterApprovals: { current: 0, required: 8, ready: false }
     },
     technical: {
@@ -173,6 +184,8 @@ test('Zeitplan erklärt Veröffentlichungszeit, Vorlauf, Adminadresse und Newsle
   assert.match(html, /0\s*\/\s*8/);
   assert.match(html, /Veröffentlichungszeit/i);
   assert.match(html, /vier Stunden vorher|Erstellungsvorlauf/i);
+  assert.match(html, /Montag: Erstellung 14:00 Uhr · Veröffentlichung 18:00 Uhr/);
+  assert.match(html, /Nächste Erstellung[\s\S]*13\.07\.2026, 14:00 Uhr/);
 });
 
 test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmodels erreichbar', async () => {
@@ -218,6 +231,7 @@ test('Draftübersicht bietet Statusfilter, Termin- und Maildetails sowie sichere
     assert.match(html, new RegExp(`href="/admin/content-agent/drafts\\?status=${filter}"[^>]*>${label}`));
   }
   assert.match(html, /13\.07\.2026, 18:00 Uhr/);
+  assert.match(html, /Erstellungszeitpunkt[\s\S]*13\.07\.2026, 14:00 Uhr/);
   assert.match(html, /Reviewversion[\s\S]*4/);
   assert.match(html, /Freigabeversion[\s\S]*Noch nicht freigegeben/);
   assert.match(html, /Letzter Mailversuch[\s\S]*12\.07\.2026, 10:30 Uhr/);
@@ -284,7 +298,7 @@ test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   assert.doesNotMatch(html, /notification\/retry|Mail erneut senden/);
 });
 
-test('Drafteditor bietet vier Regenerationen und getrennte bestätigte Publish-/Reject-Aktionen', async () => {
+test('Drafteditor bietet vier Regenerationen ohne alten direkten Publish-Bypass', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
     ...baseLocals,
     draft: {
@@ -312,10 +326,10 @@ test('Drafteditor bietet vier Regenerationen und getrennte bestätigte Publish-/
   ]) {
     assert.match(html, new RegExp(`method="post" action="/admin/content-agent/drafts/19/${action}"`));
   }
-  assert.equal((html.match(/name="_csrf"/g) || []).length >= 7, true);
-  assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/publish"/);
+  assert.equal((html.match(/name="_csrf"/g) || []).length >= 6, true);
+  assert.doesNotMatch(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/publish"/);
   assert.match(html, /method="post" action="\/admin\/content-agent\/drafts\/19\/reject"/);
-  assert.equal((html.match(/name="confirmed" value="true"/g) || []).length, 2);
+  assert.equal((html.match(/name="confirmed" value="true"/g) || []).length, 1);
   assert.match(html, /name="reason"[^>]*maxlength="500"[^>]*required/);
   assert.match(html, /data-confirm="[^"]*(?:veröffentlichen|ablehnen)/i);
 });

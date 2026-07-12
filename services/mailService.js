@@ -69,6 +69,19 @@ function contentMailSubjectTitle(value) {
         .trim() || "Unbenannter Entwurf";
 }
 
+function technicalSenderAddress(value) {
+    const sender = String(value || "").trim().toLowerCase();
+    if (
+        !sender
+        || sender.length > 320
+        || /[\r\n]/.test(sender)
+        || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender)
+    ) {
+        throw new TypeError("SMTP_FROM muss eine gültige technische Absenderadresse enthalten.");
+    }
+    return sender;
+}
+
 function canonicalContentEditorUrl(value, articleId) {
     const normalizedId = Number(articleId);
     if (!Number.isSafeInteger(normalizedId) || normalizedId <= 0) return "";
@@ -106,11 +119,13 @@ function contentRiskSummary(value) {
 }
 
 export async function sendContentAgentReviewMail({
+    from = process.env.SMTP_FROM,
     to,
     article = {},
     scheduledAt = null,
     editorUrl = ""
 } = {}, transport = transporter) {
+    const sender = technicalSenderAddress(from);
     const articleId = article.id ?? article.postId;
     const canonicalEditorUrl = canonicalContentEditorUrl(editorUrl, articleId);
     const imageUrl = secureHttpsUrl(article.imageUrl);
@@ -138,7 +153,7 @@ export async function sendContentAgentReviewMail({
     `;
 
     return transport.sendMail({
-        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        from: `"Komplett Webdesign" <${sender}>`,
         to,
         subject,
         html: renderBrandEmail({
@@ -177,10 +192,12 @@ function plainMailText(value = "") {
 }
 
 export async function sendPublishedBlogNewsletterMail({
+    from = process.env.SMTP_FROM,
     to,
     unsubscribeToken,
     post = {}
 } = {}, transport = transporter) {
+    const sender = technicalSenderAddress(from);
     const token = String(unsubscribeToken || "").trim();
     const slug = String(post.slug || "").trim();
     if (!token
@@ -219,7 +236,7 @@ export async function sendPublishedBlogNewsletterMail({
     ].join("\n");
 
     return transport.sendMail({
-        from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
+        from: `"Komplett Webdesign" <${sender}>`,
         to,
         subject,
         text,

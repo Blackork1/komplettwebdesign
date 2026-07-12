@@ -118,6 +118,14 @@ test('Rollout dokumentiert Migration 004, den terminierten Reviewfluss und exakt
   ]) assert.match(guide, new RegExp(checkpoint));
 });
 
+test('VPS-Anleitung dokumentiert den vollständigen SMTP-Vertrag und den nötigen Recreate', () => {
+  for (const name of ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM']) {
+    assert.match(guide, new RegExp(`^${name}=`, 'm'));
+  }
+  assert.match(guide, /SMTP_PASS[^\n]*(?:Geheimnis|nicht einchecken|geheim)/i);
+  assert.match(guide, /docker compose up -d --no-deps --force-recreate app content-worker/);
+});
+
 test('Dry-Run belegt terminierten Review und simulierte Benachrichtigung ohne externe Aufrufe', () => {
   const result = spawnSync(process.execPath, ['scripts/contentAgentDryRun.js'], {
     cwd: new URL('..', import.meta.url),

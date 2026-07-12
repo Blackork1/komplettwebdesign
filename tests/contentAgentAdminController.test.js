@@ -253,13 +253,12 @@ test('Newsletter-Sperre wird als sicherer Konflikt ausgegeben', async () => {
 
 test('Zeitplanpräsentation begrenzt den Newsletter-Fortschritt sicher auf acht', () => {
   assert.equal(typeof adminPresentation.buildSchedulePresentation, 'function');
-  assert.deepEqual(adminPresentation.buildSchedulePresentation({
+  const schedule = adminPresentation.buildSchedulePresentation({
     manual_approvals_count: 12,
     generation_lead_hours: 4
-  }), {
-    generationLeadHours: 4,
-    newsletterApprovals: { current: 8, required: 8, ready: true }
   });
+  assert.equal(schedule.generationLeadHours, 4);
+  assert.deepEqual(schedule.newsletterApprovals, { current: 8, required: 8, ready: true });
 });
 
 test('Zeitplanseite erhält die vorbereitete Newsletter-Gate-Präsentation', async () => {
@@ -389,9 +388,14 @@ test('Draftfilter und Statusableitung erhalten dasselbe serverseitige now', asyn
     adminRepository: {
       async listDrafts(input) { calls.push(['repository', input]); return rows; }
     },
+    settingsRepository: {
+      async getSettings() {
+        return { timezone: 'Europe/Berlin', generation_lead_hours: 4 };
+      }
+    },
     presentation: {
-      buildDraftListPresentation(input, current) {
-        calls.push(['presentation', input, current]);
+      buildDraftListPresentation(input, current, schedule) {
+        calls.push(['presentation', input, current, schedule]);
         return drafts;
       }
     }
@@ -402,7 +406,7 @@ test('Draftfilter und Statusableitung erhalten dasselbe serverseitige now', asyn
 
   assert.deepEqual(calls, [
     ['repository', { status: 'missed', now: instant }],
-    ['presentation', rows, instant]
+    ['presentation', rows, instant, { timezone: 'Europe/Berlin', generationLeadHours: 4 }]
   ]);
   assert.equal(res.rendered.locals.status, 'missed');
   assert.equal(res.rendered.locals.drafts, drafts);
@@ -413,6 +417,9 @@ test('ungültiger Draftfilter wird vor Repositoryzugriff auf review normalisiert
   const controller = createAdminContentAgentController(baseDependencies({
     adminRepository: {
       async listDrafts(input) { received = input; return []; }
+    },
+    settingsRepository: {
+      async getSettings() { return { timezone: 'Europe/Berlin', generation_lead_hours: 4 }; }
     },
     presentation: { buildDraftListPresentation() { return []; } }
   }));
@@ -503,38 +510,10 @@ test('Jobretry verlässt sich ohne optionalen Jobtyphelfer ausschließlich auf d
   assert.equal(res.statusCode, 409);
 });
 
-test('spätere Aktionsplatzhalter führen ohne injizierten Service keine Aktion aus', async () => {
-  const controller = createAdminContentAgentController(baseDependencies());
-  const res = response();
-
-  await controller.publishDraftAction({ params: { id: '3' }, body: {} }, res, assert.fail);
-
-  assert.equal(res.statusCode, 501);
-  assert.match(res.body, /noch nicht verfügbar/i);
-});
-
-test('ungültige Aktions-IDs verwenden ebenfalls die gemeinsame Fehlerabbildung', async () => {
-  const controller = createAdminContentAgentController(baseDependencies({
-    publicationService: { async publishDraftManually() { assert.fail('Service darf nicht laufen'); } }
-  }));
-  const res = response();
-
-  await controller.publishDraftAction({ params: { id: '../3' }, body: {} }, res, assert.fail);
-
-  assert.equal(res.statusCode, 400);
-});
-
-test('Publish- und Reject-Controller akzeptieren nur die literale kritische Bestätigung', async () => {
-  const publishInputs = [];
+test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', async () => {
   const rejectInputs = [];
   const controller = createAdminContentAgentController(baseDependencies({
     publicationService: {
-      async publishDraftManually(input) {
-        publishInputs.push(input);
-        if (input.confirmed !== true) {
-          throw Object.assign(new Error('Bestätigung fehlt.'), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
-        }
-      },
       async rejectDraft(input) {
         rejectInputs.push(input);
         if (input.confirmed !== true) {
@@ -543,29 +522,6 @@ test('Publish- und Reject-Controller akzeptieren nur die literale kritische Best
       }
     }
   }));
-
-  for (const confirmed of ['on', '1', 'false', undefined]) {
-    const publishRes = response();
-    await controller.publishDraftAction({
-      params: { id: '9' },
-      body: { confirmed },
-      session: { user: { id: 7, username: 'redaktion' } }
-    }, publishRes, assert.fail);
-    assert.equal(publishRes.statusCode, 400);
-  }
-
-  const publishRes = response();
-  await controller.publishDraftAction({
-    params: { id: '9' },
-    body: { confirmed: 'true' },
-    session: { user: { id: 7, username: 'redaktion' } }
-  }, publishRes, assert.fail);
-  assert.equal(publishRes.redirectedTo, '/admin/content-agent/drafts?published=1');
-  assert.deepEqual(publishInputs.at(-1), {
-    postId: 9,
-    admin: { id: 7, username: 'redaktion' },
-    confirmed: true
-  });
 
   const rejectRes = response();
   await controller.rejectDraftAction({

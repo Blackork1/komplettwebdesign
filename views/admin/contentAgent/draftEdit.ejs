@@ -121,13 +121,6 @@
     <p class="content-agent-quiet">Vor der Veröffentlichung werden alle gespeicherten Inhalte, Bilddaten, Qualitätswerte und Risikohinweise erneut serverseitig geprüft.</p>
     <p><strong>Geplanter Termin:</strong> <%= item.scheduledAtLabel || 'Noch nicht terminiert' %></p>
     <div class="content-agent-editor__grid">
-      <% if (typeof item.actions === 'undefined') { %>
-      <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/publish" data-confirm="Diesen geprüften KI-Entwurf jetzt veröffentlichen?">
-        <input type="hidden" name="_csrf" value="<%= csrf %>">
-        <input type="hidden" name="confirmed" value="true">
-        <button class="btn btn-success" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Geprüft veröffentlichen</button>
-      </form>
-      <% } %>
       <% if (reviewActions.canApproveScheduled === true) { %>
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/approve-scheduled" data-confirm="Diesen geprüften KI-Entwurf für den angezeigten Termin freigeben?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">

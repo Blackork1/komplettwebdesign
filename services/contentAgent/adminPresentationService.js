@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { sanitizeErrorMessage } from '../../repositories/contentErrorSanitizer.js';
 import { isAdminNotificationManuallyRetryable } from './adminDraftService.js';
+import { buildPublicationSlot } from './contentSchedulerService.js';
 import { isHeartbeatFresh } from './workerService.js';
 
 const STAGE_LABELS = Object.freeze({
@@ -84,6 +85,47 @@ function berlinDateTime(value) {
     : null;
 }
 
+const WEEKDAY_LABELS = Object.freeze({
+  1: 'Montag',
+  2: 'Dienstag',
+  3: 'Mittwoch',
+  4: 'Donnerstag',
+  5: 'Freitag',
+  6: 'Samstag',
+  7: 'Sonntag'
+});
+
+function configuredScheduleSlots(settings = {}, now = new Date()) {
+  const timezone = String(settings.timezone || 'Europe/Berlin');
+  const current = DateTime.fromJSDate(now instanceof Date ? now : new Date(now), { zone: timezone });
+  if (!current.isValid || !Array.isArray(settings.schedule_weekdays)) return [];
+  const configuredDays = [...new Set(settings.schedule_weekdays.map(Number))]
+    .filter((weekday) => WEEKDAY_LABELS[weekday])
+    .sort((left, right) => left - right);
+  const slots = [];
+  for (const weekday of configuredDays) {
+    for (let offset = 0; offset <= 13; offset += 1) {
+      const localDate = current.startOf('day').plus({ days: offset });
+      if (localDate.weekday !== weekday) continue;
+      try {
+        slots.push(buildPublicationSlot({ settings, localDate: localDate.toISODate() }));
+      } catch {
+        // Ungültige, noch nicht gespeicherte Eingaben erzeugen keine irreführende Vorschau.
+      }
+    }
+  }
+  return slots;
+}
+
+function localScheduleLabel(value, timezone) {
+  const instant = value instanceof Date
+    ? DateTime.fromJSDate(value)
+    : DateTime.fromISO(String(value || ''), { setZone: true });
+  return instant.isValid
+    ? instant.setZone(timezone).setLocale('de').toFormat('dd.LL.yyyy, HH:mm \'Uhr\' (ZZZZ)')
+    : null;
+}
+
 export function deriveReviewState(post = {}, now) {
   const current = now instanceof Date ? now : new Date(now);
   const scheduledAt = new Date(post.scheduled_at);
@@ -142,7 +184,9 @@ function presentProvider(provider = {}) {
   };
 }
 
-export function buildDraftListPresentation(rows = [], now = new Date()) {
+export function buildDraftListPresentation(rows = [], now = new Date(), schedule = {}) {
+  const generationLeadHours = Number(schedule.generationLeadHours);
+  const timezone = String(schedule.timezone || 'Europe/Berlin');
   return rows.map((row) => {
     const reviewState = deriveReviewState(row, now);
     const editable = row.generated_by_ai === true
@@ -160,6 +204,20 @@ export function buildDraftListPresentation(rows = [], now = new Date()) {
       reviewStateLabel: REVIEW_STATE_LABELS[reviewState],
       scheduledAt: row.scheduled_at || null,
       scheduledAtLabel: berlinDateTime(row.scheduled_at),
+      generationAtLabel: Number.isInteger(generationLeadHours)
+        && generationLeadHours >= 1
+        && generationLeadHours <= 48
+        && row.scheduled_at
+        ? localScheduleLabel(
+            (row.scheduled_at instanceof Date
+              ? DateTime.fromJSDate(row.scheduled_at)
+              : DateTime.fromISO(String(row.scheduled_at), { setZone: true }))
+              .minus({ hours: generationLeadHours })
+              .toUTC()
+              .toISO(),
+            timezone
+          )
+        : null,
       publishedAt: row.published_at || null,
       publishedAtLabel: berlinDateTime(row.published_at),
       reviewVersion: Number(row.review_version || 0),
@@ -239,16 +297,43 @@ export function buildDashboardPresentation(data = {}, now = new Date()) {
       limitEur: Number(data.budgetLimitEur ?? Number(data.settings?.monthly_budget_cents || 0) / 100)
     },
     approvals: { current: approvals, required: 8, ready: approvals >= 8 },
-    drafts: buildDraftListPresentation(data.drafts || [], now),
+    schedule: buildSchedulePresentation(data.settings || {}, now),
+    drafts: buildDraftListPresentation(data.drafts || [], now, {
+      timezone: data.settings?.timezone || 'Europe/Berlin',
+      generationLeadHours: Number(data.settings?.generation_lead_hours)
+    }),
     jobs: buildJobListPresentation(data.jobs || [])
   };
 }
 
-export function buildSchedulePresentation(settings = {}) {
+export function buildSchedulePresentation(settings = {}, now = new Date()) {
   const approvals = Math.max(0, Number(settings.manual_approvals_count) || 0);
   const requiredApprovals = 8;
+  const timezone = String(settings.timezone || 'Europe/Berlin');
+  const current = now instanceof Date ? now : new Date(now);
+  const slots = configuredScheduleSlots(settings, current);
+  const nextSlot = slots
+    .filter((slot) => Date.parse(slot.generationAt) > current.getTime())
+    .sort((left, right) => Date.parse(left.generationAt) - Date.parse(right.generationAt))[0] || null;
+  const previewSlots = [...new Map(slots.map((slot) => [
+    DateTime.fromISO(slot.localDate, { zone: timezone }).weekday,
+    slot
+  ])).values()].sort((left, right) => (
+    DateTime.fromISO(left.localDate, { zone: timezone }).weekday
+    - DateTime.fromISO(right.localDate, { zone: timezone }).weekday
+  ));
   return {
     generationLeadHours: Number(settings.generation_lead_hours) || 4,
+    nextGenerationLabel: nextSlot ? localScheduleLabel(nextSlot.generationAt, timezone) : null,
+    nextPublicationLabel: nextSlot ? localScheduleLabel(nextSlot.publicationAt, timezone) : null,
+    weeklyPreview: previewSlots.map((slot) => {
+      const generation = DateTime.fromISO(slot.generationAt, { setZone: true }).setZone(timezone);
+      const publication = DateTime.fromISO(slot.publicationAt, { setZone: true }).setZone(timezone);
+      return {
+        weekday: Number(DateTime.fromISO(slot.localDate, { zone: timezone }).weekday),
+        label: `${WEEKDAY_LABELS[DateTime.fromISO(slot.localDate, { zone: timezone }).weekday]}: Erstellung ${generation.toFormat('HH:mm')} Uhr · Veröffentlichung ${publication.toFormat('HH:mm')} Uhr`
+      };
+    }),
     newsletterApprovals: {
       current: Math.min(approvals, requiredApprovals),
       required: requiredApprovals,

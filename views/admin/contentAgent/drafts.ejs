@@ -41,6 +41,7 @@
               <p><%= draft.excerpt || 'Keine Kurzbeschreibung vorhanden.' %></p>
               <dl class="content-agent-draft-facts">
                 <div><dt>Veröffentlichungstermin</dt><dd><%= draft.scheduledAtLabel || 'Noch nicht terminiert' %></dd></div>
+                <div><dt>Erstellungszeitpunkt</dt><dd><%= draft.generationAtLabel || 'Nicht berechenbar' %></dd></div>
                 <% if (draft.publishedAtLabel) { %><div><dt>Veröffentlicht am</dt><dd><%= draft.publishedAtLabel %></dd></div><% } %>
                 <div><dt>Reviewversion</dt><dd><%= draft.reviewVersion || '–' %></dd></div>
                 <div><dt>Freigabeversion</dt><dd><%= draft.approvalVersion || 'Noch nicht freigegeben' %></dd></div>

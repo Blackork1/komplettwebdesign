@@ -323,9 +323,15 @@ export function createAdminContentAgentController(dependencies) {
       try {
         const currentTime = now();
         const status = reviewStatusFilter(req.query?.status);
-        const rows = await adminRepository.listDrafts({ status, now: currentTime });
+        const [rows, settings] = await Promise.all([
+          adminRepository.listDrafts({ status, now: currentTime }),
+          settingsRepository.getSettings()
+        ]);
         return res.render('admin/contentAgent/drafts', {
-          drafts: presentation.buildDraftListPresentation(rows, currentTime),
+          drafts: presentation.buildDraftListPresentation(rows, currentTime, {
+            timezone: settings?.timezone || 'Europe/Berlin',
+            generationLeadHours: Number(settings?.generation_lead_hours)
+          }),
           status
         });
       } catch (error) {
@@ -348,7 +354,7 @@ export function createAdminContentAgentController(dependencies) {
         const settings = await settingsRepository.getSettings();
         return res.render('admin/contentAgent/schedule', {
           settings,
-          schedule: presentation.buildSchedulePresentation(settings),
+          schedule: presentation.buildSchedulePresentation(settings, now()),
           technical: technicalPresentation
         });
       } catch (error) {
@@ -509,21 +515,6 @@ export function createAdminContentAgentController(dependencies) {
         method: 'updateDraft',
         args: () => [{ postId: positiveId(req.params.id), input: req.body, admin: adminFromRequest(req) }],
         redirect: `/admin/content-agent/drafts/${req.params.id}/edit?saved=1`,
-        res,
-        next
-      });
-    },
-
-    publishDraftAction(req, res, next) {
-      return actionCapability({
-        capability: publicationService,
-        method: 'publishDraftManually',
-        args: () => [{
-          postId: positiveId(req.params.id),
-          admin: adminFromRequest(req),
-          confirmed: criticalConfirmation(req.body?.confirmed)
-        }],
-        redirect: '/admin/content-agent/drafts?published=1',
         res,
         next
       });

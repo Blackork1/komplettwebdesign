@@ -304,7 +304,7 @@ test('Mailretry-Flag erlaubt nur ausgeschöpfte, eindeutig temporäre SMTP-Fehle
     [{ status: 'failed', attempts: 6, last_error_code: 'smtp_etimedout' }, true],
     [{ status: 'failed', attempts: 6, last_error_code: 'outcome_uncertain' }, false],
     [{ status: 'failed', attempts: 6, last_error_code: 'smtp_outcome_uncertain' }, false],
-    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_rejected' }, false],
+    [{ status: 'failed', attempts: 6, last_error_code: 'smtp_rejected' }, true],
     [{ status: 'failed', attempts: 5, last_error_code: 'smtp_etimedout' }, false],
     [{ status: 'sent', attempts: 1, last_error_code: null }, false],
     [{ status: 'sending', attempts: 1, last_error_code: null }, false]
@@ -396,14 +396,29 @@ test('Adminname wird für Auditdaten kontrollzeichenfrei normalisiert und auf 25
   assert.match(updates[0].admin.username, /^Redaktion x+/);
 });
 
-test('manueller Admin-Mailretry setzt Zustellung und passenden Job atomar zurück', async () => {
+test('manueller Admin-Mailretry erzeugt atomar eine neue Delivery mit aktueller Adresse und neuem Job', async () => {
   const calls = [];
   const client = {
     async query(sql, params = []) {
       const normalized = sql.replace(/\s+/g, ' ').trim();
       calls.push({ sql: normalized, params });
-      if (/^WITH candidate_delivery/i.test(normalized)) {
-        return { rows: [{ id: 41, delivery_id: 9, status: 'queued', attempts: 0 }] };
+      if (/^SELECT id FROM posts/i.test(normalized)) return { rows: [{ id: 3 }] };
+      if (/^SELECT delivery\./i.test(normalized)) return { rows: [{
+        id: 9,
+        idempotency_key: 'admin-review:17:2',
+        payload_json: { postId: 3, reviewVersion: 2 },
+        status: 'failed',
+        attempts: 6,
+        last_error_code: 'smtp_rejected'
+      }] };
+      if (/^SELECT admin_notification_email/i.test(normalized)) {
+        return { rows: [{ admin_notification_email: 'neu@example.de' }] };
+      }
+      if (/^INSERT INTO content_notification_deliveries/i.test(normalized)) {
+        return { rows: [{ id: 12, recipient_email: params[1], idempotency_key: params[2] }] };
+      }
+      if (/^INSERT INTO content_jobs/i.test(normalized)) {
+        return { rows: [{ id: 41, delivery_id: 12, status: 'queued', attempts: 0 }] };
       }
       return { rows: [] };
     },
@@ -413,22 +428,25 @@ test('manueller Admin-Mailretry setzt Zustellung und passenden Job atomar zurüc
 
   const result = await repository.retryAdminReviewNotificationTransaction({ postId: 3 });
 
-  assert.equal(result.delivery_id, 9);
-  const retry = calls.find(({ sql }) => /^WITH candidate_delivery/i.test(sql));
-  assert.deepEqual(retry.params, [3]);
-  assert.match(retry.sql, /notification_type = 'admin_review'/i);
-  const candidateSql = retry.sql.match(/candidate_delivery AS \((.*?)\), reset_delivery AS/is)?.[1] || '';
-  assert.doesNotMatch(candidateSql, /status = 'failed'/i);
-  assert.match(retry.sql, /reset_delivery AS[\s\S]*delivery\.status = 'failed'/i);
-  assert.match(retry.sql, /delivery\.attempts\s*=\s*6/i);
-  assert.match(retry.sql, /last_error_code\s*~\s*'\^smtp_\[a-z0-9_\]\+\$'/i);
-  assert.match(retry.sql, /last_error_code\s*<>\s*'smtp_rejected'/i);
-  assert.match(retry.sql, /last_error_code\s+NOT LIKE\s+'%uncertain%'/i);
-  assert.match(retry.sql, /UPDATE content_notification_deliveries/i);
-  assert.match(retry.sql, /UPDATE content_jobs/i);
-  assert.match(retry.sql, /job_type = 'send_admin_review_notification'/i);
-  assert.match(retry.sql, /payload_json\s*->>\s*'deliveryId'/i);
+  assert.equal(result.delivery_id, 12);
+  const insertedDelivery = calls.find(({ sql }) => /^INSERT INTO content_notification_deliveries/i.test(sql));
+  const insertedJob = calls.find(({ sql }) => /^INSERT INTO content_jobs/i.test(sql));
+  assert.equal(insertedDelivery.params[1], 'neu@example.de');
+  assert.equal(insertedDelivery.params[2], 'admin-review-retry:3:9');
+  assert.match(insertedDelivery.sql, /ON CONFLICT \(idempotency_key\) DO NOTHING/i);
+  assert.match(insertedJob.sql, /send_admin_review_notification/i);
+  assert.match(insertedJob.sql, /ON CONFLICT \(idempotency_key\) DO NOTHING/i);
+  assert.equal(calls.some(({ sql }) => /^UPDATE content_notification_deliveries/i.test(sql)), false);
   assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), true);
+});
+
+test('paralleler manueller Mailretry wird durch eine Postsperre und die Vorgänger-ID dedupliziert', async () => {
+  const source = await (await import('node:fs/promises')).readFile(
+    new URL('../services/contentAgent/adminDraftService.js', import.meta.url),
+    'utf8'
+  );
+  assert.match(source, /SELECT id\s+FROM posts[\s\S]*FOR UPDATE/i);
+  assert.match(source, /admin-review-retry:\$\{normalizedPostId\}:\$\{delivery\.id\}/);
 });
 
 test('manueller Admin-Mailretry verlangt vor dem Transaktionsstart die literale Bestätigung', async () => {

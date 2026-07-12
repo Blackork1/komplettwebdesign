@@ -6,9 +6,52 @@ import {
   buildDraftListPresentation,
   buildExistingContentListPresentation,
   buildJobListPresentation,
+  buildSchedulePresentation,
   buildTechnologyPresentation,
   deriveReviewState
 } from '../services/contentAgent/adminPresentationService.js';
+
+test('Zeitplanvorschau zeigt nächste Erstellung und Veröffentlichung eindeutig in Berlinzeit', () => {
+  const result = buildSchedulePresentation({
+    agent_enabled: true,
+    schedule_weekdays: [1, 4],
+    schedule_time: '18:00:00',
+    timezone: 'Europe/Berlin',
+    generation_lead_hours: 4,
+    manual_approvals_count: 0
+  }, new Date('2026-07-12T10:00:00.000Z'));
+
+  assert.match(result.nextGenerationLabel, /13\.07\.2026, 14:00 Uhr/);
+  assert.match(result.nextPublicationLabel, /13\.07\.2026, 18:00 Uhr/);
+  assert.deepEqual(result.weeklyPreview.map((item) => item.label), [
+    'Montag: Erstellung 14:00 Uhr · Veröffentlichung 18:00 Uhr',
+    'Donnerstag: Erstellung 14:00 Uhr · Veröffentlichung 18:00 Uhr'
+  ]);
+});
+
+test('Zeitplanvorschau springt nach verpasster Erstellung auf den nächsten Wochen-Slot', () => {
+  const result = buildSchedulePresentation({
+    agent_enabled: true,
+    schedule_weekdays: [1],
+    schedule_time: '18:00:00',
+    timezone: 'Europe/Berlin',
+    generation_lead_hours: 4
+  }, new Date('2026-07-13T13:00:00.000Z'));
+
+  assert.match(result.nextGenerationLabel, /20\.07\.2026, 14:00 Uhr/);
+  assert.match(result.nextPublicationLabel, /20\.07\.2026, 18:00 Uhr/);
+});
+
+test('Entwurfsliste berechnet den Erstellungszeitpunkt serverseitig', () => {
+  const [draft] = buildDraftListPresentation([{
+    id: 7,
+    scheduled_at: '2026-07-13T16:00:00.000Z'
+  }], new Date('2026-07-12T10:00:00.000Z'), {
+    timezone: 'Europe/Berlin',
+    generationLeadHours: 4
+  });
+  assert.match(draft.generationAtLabel, /13\.07\.2026, 14:00 Uhr/);
+});
 
 test('Reviewstatus wird ausschließlich aus Post und serverseitigem now abgeleitet', () => {
   const now = new Date('2026-07-12T09:00:00.000Z');
@@ -118,7 +161,6 @@ test('Mailretry bleibt für unklare, abgelehnte und nicht ausgeschöpfte Zustell
   const deliveries = [
     ['outcome_uncertain', 'failed', 6],
     ['smtp_outcome_uncertain', 'failed', 6],
-    ['smtp_rejected', 'failed', 6],
     ['smtp_etimedout', 'failed', 5],
     [null, 'sent', 1],
     [null, 'sending', 1]

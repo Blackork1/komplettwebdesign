@@ -19,6 +19,7 @@ export function createContentAgentAdminRepository(db = pool) {
       const settings = await db.query(`
           SELECT id, agent_enabled, operating_mode, schedule_weekdays, schedule_time,
                  timezone, monthly_budget_cents, maximum_attempts,
+                 generation_lead_hours,
                  auto_publish_enabled, auto_publish_min_score,
                  manual_approvals_count, settings_version, updated_at
           FROM content_agent_settings

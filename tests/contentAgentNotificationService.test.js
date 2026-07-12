@@ -97,7 +97,7 @@ test('SMTP-Klassifikation unterscheidet sichere Ablehnungen, Verbindungsaufbau u
   const { classifySmtpFailure } = await import('../services/contentAgent/contentNotificationService.js');
 
   assert.equal(classifySmtpFailure({ responseCode: 421, command: 'DATA' }), 'retryable');
-  assert.equal(classifySmtpFailure({ responseCode: 550, command: 'DATA' }), 'smtp_rejected');
+  assert.equal(classifySmtpFailure({ responseCode: 550, command: 'DATA' }), 'retryable_rejected');
   assert.equal(classifySmtpFailure({ code: 'ECONNREFUSED' }), 'retryable');
   assert.equal(classifySmtpFailure({ code: 'EDNS' }), 'retryable');
   assert.equal(classifySmtpFailure({ code: 'ETIMEDOUT', command: 'CONN' }), 'retryable');
@@ -133,6 +133,7 @@ test('sendContentAgentReviewMail rendert maskierte Entwurfsdaten im Brandtemplat
   const smtp = { sendMail: mock.fn(async (mail) => ({ messageId: 'mail-1', mail })) };
 
   await sendContentAgentReviewMail({
+    from: 'technik@example.de',
     to: 'redaktion@example.de',
     article: {
       id: 51,
@@ -148,6 +149,7 @@ test('sendContentAgentReviewMail rendert maskierte Entwurfsdaten im Brandtemplat
 
   const mail = smtp.sendMail.mock.calls[0].arguments[0];
   assert.equal(mail.to, 'redaktion@example.de');
+  assert.equal(mail.from, '"Komplett Webdesign" <technik@example.de>');
   assert.equal(mail.subject, 'Neuer Blogartikel zur Prüfung: Artikel & <Sicherheit>');
   assert.match(mail.html, /Komplett Webdesign/);
   assert.match(mail.html, /Artikel &amp; &lt;Sicherheit&gt;/);
@@ -164,6 +166,7 @@ test('sendContentAgentReviewMail verwirft unsichere Bild- und Editor-URLs', asyn
   const smtp = { sendMail: mock.fn(async (mail) => ({ messageId: 'mail-2', mail })) };
 
   await sendContentAgentReviewMail({
+    from: 'technik@example.de',
     to: 'redaktion@example.de',
     article: {
       id: 51,
@@ -179,6 +182,21 @@ test('sendContentAgentReviewMail verwirft unsichere Bild- und Editor-URLs', asyn
   assert.doesNotMatch(mail.html, /unsicher\.webp|javascript:/i);
   assert.doesNotMatch(mail.html, /<img/i);
   assert.doesNotMatch(mail.html, /href="[^"]*admin\/content-agent/i);
+});
+
+test('neue Mailfunktionen brechen ohne gültiges SMTP_FROM vor dem Transport ab', async () => {
+  const { sendContentAgentReviewMail } = await import('../services/mailService.js');
+  const smtp = { sendMail: mock.fn(async () => ({ messageId: 'darf-nicht-senden' })) };
+  await assert.rejects(
+    sendContentAgentReviewMail({
+      from: '',
+      to: 'redaktion@example.de',
+      article: { id: 51, title: 'Entwurf' },
+      editorUrl: 'https://cms.example.de/admin/content-agent/drafts/51/edit'
+    }, smtp),
+    /SMTP_FROM/
+  );
+  assert.equal(smtp.sendMail.mock.callCount(), 0);
 });
 
 test('SMTP failure keeps delivery retryable without changing the post', async () => {
@@ -228,7 +246,7 @@ test('Timeout während DATA wird outcome_uncertain und niemals automatisch wiede
   assert.equal(database.state.last_error_code, 'outcome_uncertain');
 });
 
-test('permanente SMTP-Ablehnung wird sofort als smtp_rejected terminalisiert', async () => {
+test('eindeutige SMTP-5xx-Ablehnung wird bis zum sechsten Versuch sicher wiederholt', async () => {
   const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
   const database = createDeliveryDatabase(queuedDelivery());
 
@@ -243,13 +261,24 @@ test('permanente SMTP-Ablehnung wird sofort als smtp_rejected terminalisiert', a
     },
     now: () => new Date('2026-07-12T10:00:00.000Z'),
     canonicalBaseUrl: 'https://cms.example.de'
-  }), (error) => (
-    error.retryable === false
-    && error.code === 'CONTENT_ADMIN_NOTIFICATION_SMTP_REJECTED'
-  ));
+  }), (error) => error.retryable === true);
 
-  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.status, 'queued');
   assert.equal(database.state.last_error_code, 'smtp_rejected');
+
+  const exhausted = createDeliveryDatabase(queuedDelivery(5));
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database: exhausted,
+    sendReviewMail: async () => {
+      throw Object.assign(new Error('Mailbox nicht verfügbar'), {
+        code: 'EENVELOPE', command: 'RCPT TO', responseCode: 550
+      });
+    },
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => error.retryable === false);
+  assert.equal(exhausted.state.status, 'failed');
+  assert.equal(exhausted.state.attempts, 6);
+  assert.equal(exhausted.state.last_error_code, 'smtp_rejected');
 });
 
 test('temporäre SMTP-Ablehnung berechnet den Retrytermin ausschließlich aus der Datenbankzeit', async () => {

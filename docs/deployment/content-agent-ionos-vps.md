@@ -155,13 +155,24 @@ OPENAI_CONTENT_OUTPUT_COST_PER_MTOK=15
 OPENAI_REVIEW_INPUT_COST_PER_MTOK=0.75
 OPENAI_REVIEW_OUTPUT_COST_PER_MTOK=4.50
 OPENAI_IMAGE_COST_EUR=0.041
+SMTP_HOST=smtp.ionos.de
+SMTP_PORT=465
+SMTP_USER=<vollständiger-smtp-benutzername>
+SMTP_PASS=<separates-sicheres-smtp-passwort>
+SMTP_FROM=kontakt@komplettwebdesign.de
+```
+
+`SMTP_PASS` ist ein Geheimnis und darf weder in Git eingecheckt noch in Tickets, Logs oder Chatnachrichten kopiert werden. `SMTP_FROM` ist die technische Absenderadresse für Admin-Prüfmails und Blog-Newsletter; sie muss beim SMTP-Konto als Absender zulässig sein. Nach jeder Änderung an diesen fünf SMTP-Werten müssen App und Worker neu erzeugt werden, weil beide Prozesse die `.env` beim Containerstart laden:
+
+```bash
+docker compose up -d --no-deps --force-recreate app content-worker
 ```
 
 `CONTENT_AGENT_ENABLED=true` ist nur das technische Prozess-Gate: Es erlaubt dem Worker zu starten, aktiviert aber noch keine Jobübernahme. Die Migration setzt den PostgreSQL-Betriebszustand zunächst auf `agent_enabled=false` und `operating_mode=review`. Die PostgreSQL-Betriebswerte sind danach maßgeblich. Ihre Standardtermine sind Montag und Donnerstag um 18:00 Uhr in `Europe/Berlin`. Die alten Umgebungsvariablen `CONTENT_AGENT_PUBLISH_MODE`, `CONTENT_AGENT_SCHEDULE` und `CONTENT_AGENT_TIMEZONE` sind nur noch veraltete Bootstrap-Fallbacks und werden für diesen Rollout nicht gesetzt.
 
 `CONTENT_AGENT_AUTOPUBLISH_ENABLED=false` ist das zusätzliche technische Auto-Publish-Gate. Selbst eine spätere Dashboard-Einstellung kann dieses Gate nicht übersteuern. Modelle, Kostensätze und Budgetwerte sind vom Betreiber gesetzte Konfigurationswerte, keine Aussage über derzeit gültige OpenAI-Preise. Vor dem Livebetrieb müssen Modellzugriff und Kostensätze mit dem eigenen OpenAI-Vertrag und der aktuellen offiziellen OpenAI-Preisseite abgeglichen und geprüft werden. Zusätzlich ist im OpenAI-Projekt ein providerseitiges Projektbudget als äußere Kostengrenze zu setzen; dabei auch prüfen, ob der Anbieter es als harte Grenze oder als Warnschwelle umsetzt. Die interne Monatsgrenze ersetzt diese providerseitige Grenze nicht.
 
-In `.env` bleiben außerdem nur die Namen der bereits vorhandenen Geheimnisse relevant: `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` und `SESSION_SECRET`. Ihre Werte werden weder in diese Anleitung noch in Tickets, Git, Shell-Ausgaben oder Chatnachrichten kopiert.
+In `.env` bleiben außerdem nur die Namen der bereits vorhandenen Geheimnisse relevant: `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `SMTP_PASS`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` und `SESSION_SECRET`. Ihre Werte werden weder in diese Anleitung noch in Tickets, Git, Shell-Ausgaben oder Chatnachrichten kopiert.
 
 Für Plan A ist kein Search-Console-API-Zugang erforderlich; die Search Console folgt erst in Plan C.
 

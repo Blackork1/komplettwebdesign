@@ -375,6 +375,7 @@ test('Blog-Newsletter-Mail enthält escaped HTML und Text sowie nur kanonische A
   process.env.CANONICAL_BASE_URL = 'https://komplettwebdesign.de/?intern=1';
   try {
     await sendPublishedBlogNewsletterMail({
+      from: 'technik@example.de',
       to: 'leser@example.de',
       unsubscribeToken: 'token/mit?zeichen',
       post: {
@@ -390,6 +391,7 @@ test('Blog-Newsletter-Mail enthält escaped HTML und Text sowie nur kanonische A
   }
 
   const mail = transport.sendMail.mock.calls[0].arguments[0];
+  assert.equal(mail.from, '"Komplett Webdesign" <technik@example.de>');
   assert.equal(mail.to, 'leser@example.de');
   assert.match(mail.html, /Titel &amp; &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   assert.doesNotMatch(mail.html, /<script>|<img\s+src=x\s+onerror=|token=geheim|#intern/i);

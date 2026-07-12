@@ -146,7 +146,6 @@ export function isAdminNotificationManuallyRetryable(notification) {
   return notification?.status === 'failed'
     && Number(notification?.attempts) === 6
     && /^smtp_[a-z0-9_]+$/.test(errorCode)
-    && errorCode !== 'smtp_rejected'
     && !errorCode.includes('uncertain');
 }
 
@@ -313,64 +312,112 @@ export function createAdminDraftRepository(db = pool) {
     },
 
     async retryAdminReviewNotificationTransaction({ postId }) {
+      const normalizedPostId = positivePostId(postId);
       const client = await db.connect();
       try {
         await client.query('BEGIN');
-        const { rows } = await client.query(`
-          WITH candidate_delivery AS (
-            SELECT delivery.id
-            FROM content_notification_deliveries delivery
-            WHERE delivery.post_id = $1
-              AND delivery.notification_type = 'admin_review'
-            ORDER BY delivery.created_at DESC, delivery.id DESC
-            FOR UPDATE
-            LIMIT 1
-          ), reset_delivery AS (
-            UPDATE content_notification_deliveries delivery
-            SET status = 'queued',
-                attempts = 0,
-                next_attempt_at = NOW(),
-                locked_at = NULL,
-                locked_by = NULL,
-                last_error_code = NULL,
-                sent_at = NULL,
-                updated_at = NOW()
-            FROM candidate_delivery candidate
-            WHERE delivery.id = candidate.id
-              AND delivery.status = 'failed'
-              AND delivery.attempts = 6
-              AND delivery.last_error_code ~ '^smtp_[a-z0-9_]+$'
-              AND delivery.last_error_code <> 'smtp_rejected'
-              AND delivery.last_error_code NOT LIKE '%uncertain%'
-            RETURNING delivery.id
-          ), reset_job AS (
-            UPDATE content_jobs job
-            SET status = 'queued',
-                attempts = 0,
-                max_attempts = GREATEST(max_attempts, 6),
-                run_after = NOW(),
-                locked_at = NULL,
-                locked_by = NULL,
-                last_error = NULL,
-                finished_at = NULL,
-                updated_at = NOW()
-            FROM reset_delivery delivery
-            WHERE job.job_type = 'send_admin_review_notification'
-              AND job.payload_json ->> 'deliveryId' = delivery.id::text
-              AND job.payload_json ->> 'postId' = $1::text
-              AND job.status IN ('failed', 'needs_manual_attention')
-            RETURNING job.*, delivery.id AS delivery_id
-          )
-          SELECT * FROM reset_job
-        `, [postId]);
-        if (!rows[0]) {
+        const lockedPost = await client.query(`
+          SELECT id
+          FROM posts
+          WHERE id = $1
+            AND generated_by_ai = TRUE
+            AND published = FALSE
+            AND content_format = 'static_html'
+          FOR UPDATE
+        `, [normalizedPostId]);
+        if (!lockedPost.rows[0]) {
+          throw draftError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
+        }
+
+        const deliveryResult = await client.query(`
+          SELECT delivery.*
+          FROM content_notification_deliveries delivery
+          WHERE delivery.post_id = $1
+            AND delivery.notification_type = 'admin_review'
+          ORDER BY delivery.created_at DESC, delivery.id DESC
+          LIMIT 1
+          FOR UPDATE
+        `, [normalizedPostId]);
+        const delivery = deliveryResult.rows[0] || null;
+        if (!isAdminNotificationManuallyRetryable(delivery)) {
           throw draftError(
             'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
             'Für diesen Entwurf gibt es keine fehlgeschlagene Admin-Benachrichtigung.'
           );
         }
+
+        const settingsResult = await client.query(`
+          SELECT admin_notification_email
+          FROM content_agent_settings
+          WHERE id = 1
+          FOR SHARE
+        `);
+        const recipientEmail = String(settingsResult.rows[0]?.admin_notification_email || '').trim().toLowerCase();
+        if (!recipientEmail) throw new Error('Die aktuelle Admin-Benachrichtigungsadresse fehlt.');
+
+        const idempotencyKey = `admin-review-retry:${normalizedPostId}:${delivery.id}`;
+        const newDeliveryResult = await client.query(`
+          INSERT INTO content_notification_deliveries (
+            notification_type,
+            post_id,
+            recipient_email,
+            idempotency_key,
+            payload_json
+          )
+          VALUES ('admin_review', $1, $2, $3, $4::jsonb)
+          ON CONFLICT (idempotency_key) DO NOTHING
+          RETURNING *
+        `, [
+          normalizedPostId,
+          recipientEmail,
+          idempotencyKey,
+          JSON.stringify({
+            ...(delivery.payload_json || {}),
+            manualRetryOfDeliveryId: Number(delivery.id)
+          })
+        ]);
+        const newDelivery = newDeliveryResult.rows[0] || null;
+        if (!newDelivery) {
+          throw draftError(
+            'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
+            'Die Admin-Benachrichtigung wurde bereits erneut eingeplant.'
+          );
+        }
+
+        const jobResult = await client.query(`
+          INSERT INTO content_jobs (
+            job_type,
+            idempotency_key,
+            payload_json,
+            run_after,
+            max_attempts
+          )
+          VALUES (
+            'send_admin_review_notification',
+            $1,
+            $2::jsonb,
+            NOW(),
+            6
+          )
+          ON CONFLICT (idempotency_key) DO NOTHING
+          RETURNING *
+        `, [
+          `send-admin-review-retry:${normalizedPostId}:${delivery.id}`,
+          JSON.stringify({
+            deliveryId: Number(newDelivery.id),
+            postId: normalizedPostId,
+            manualRetryOfDeliveryId: Number(delivery.id)
+          })
+        ]);
+        const job = jobResult.rows[0] || null;
+        if (!job) {
+          throw draftError(
+            'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
+            'Der neue Admin-Mailjob konnte nicht eindeutig eingeplant werden.'
+          );
+        }
         await client.query('COMMIT');
-        return rows[0];
+        return { ...job, delivery_id: Number(newDelivery.id) };
       } catch (error) {
         try { await client.query('ROLLBACK'); } catch { /* ursprünglichen Fehler erhalten */ }
         throw error;

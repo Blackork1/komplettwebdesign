@@ -76,6 +76,18 @@ test('ein fälliger Scheduler-Tick enqueued den vollständigen Veröffentlichung
   assert.equal(result.id, 41);
   assert.deepEqual(enqueued, [{
     jobType: 'generate_weekly_draft',
+    idempotencyKey: 'generate:weekly:2026-07-09:18:00:Europe/Berlin',
+    payload: {
+      source: 'weekly-schedule',
+      schedule_slot: 'weekly:2026-07-09:18:00:Europe/Berlin',
+      publication_at: '2026-07-09T16:00:00.000Z',
+      publication_local_date: '2026-07-09',
+      publication_local_time: '18:00',
+      publication_timezone: 'Europe/Berlin'
+    },
+    maxAttempts: 3
+  }, {
+    jobType: 'generate_weekly_draft',
     idempotencyKey: 'generate:weekly:2026-07-13:18:00:Europe/Berlin',
     payload: {
       source: 'weekly-schedule',
@@ -101,9 +113,48 @@ test('wiederholte Ticks verwenden denselben Idempotenzschlüssel', async () => {
   await runContentSchedulerTick(dependencies);
   await runContentSchedulerTick(dependencies);
 
-  assert.equal(enqueued.length, 2);
-  assert.equal(enqueued[0].idempotencyKey, enqueued[1].idempotencyKey);
-  assert.equal(enqueued[0].idempotencyKey, 'generate:weekly:2026-07-13:18:00:Europe/Berlin');
+  assert.equal(enqueued.length, 4);
+  assert.deepEqual(enqueued.slice(0, 2).map(({ idempotencyKey }) => idempotencyKey),
+    enqueued.slice(2).map(({ idempotencyKey }) => idempotencyKey));
+  assert.equal(enqueued[1].idempotencyKey, 'generate:weekly:2026-07-13:18:00:Europe/Berlin');
+});
+
+test('ein Ausfall von Montag bis Freitag holt Montag und Donnerstag chronologisch nach', async () => {
+  const enqueued = [];
+  await runContentSchedulerTick({
+    getSettings: async () => berlinSettings,
+    enqueueJob: async (input) => { enqueued.push(input); return input; },
+    updateSchedulerState: async () => {},
+    now: () => new Date('2026-07-17T10:00:00.000Z')
+  });
+
+  assert.deepEqual(enqueued.map((job) => job.payload.publication_local_date), [
+    '2026-07-13',
+    '2026-07-16'
+  ]);
+});
+
+test('wiederholte Catch-up-Ticks und Teilkonflikte lassen ältere Slots nicht verhungern', async () => {
+  const attempts = [];
+  const dependencies = {
+    getSettings: async () => berlinSettings,
+    enqueueJob: async (input) => {
+      attempts.push(input.idempotencyKey);
+      return input.payload.publication_local_date === '2026-07-16' ? null : input;
+    },
+    updateSchedulerState: async () => {},
+    now: () => new Date('2026-07-17T10:00:00.000Z')
+  };
+
+  await runContentSchedulerTick(dependencies);
+  await runContentSchedulerTick(dependencies);
+
+  assert.deepEqual(attempts, [
+    'generate:weekly:2026-07-13:18:00:Europe/Berlin',
+    'generate:weekly:2026-07-16:18:00:Europe/Berlin',
+    'generate:weekly:2026-07-13:18:00:Europe/Berlin',
+    'generate:weekly:2026-07-16:18:00:Europe/Berlin'
+  ]);
 });
 
 test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustand und wirft weiter', async () => {
@@ -118,7 +169,7 @@ test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustan
 
   assert.equal(states.length, 2);
   assert.equal(states[0].lastSchedulerError, null);
-  assert.equal(states[1].lastScheduledSlot, 'weekly:2026-07-13:18:00:Europe/Berlin');
+  assert.equal(states[1].lastScheduledSlot, 'weekly:2026-07-09:18:00:Europe/Berlin');
   assert.equal(states[1].lastSchedulerError, failure);
 });
 

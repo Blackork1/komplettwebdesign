@@ -39,7 +39,7 @@ export function classifySmtpFailure(error) {
     return 'retryable';
   }
   if (Number.isInteger(responseCode) && responseCode >= 500) {
-    return 'smtp_rejected';
+    return 'retryable_rejected';
   }
 
   const code = String(error?.code || '').toUpperCase();
@@ -270,12 +270,14 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
       }
     } catch (error) {
       const classification = classifySmtpFailure(error);
-      const canRetry = classification === 'retryable' && Number(sending.attempts) < 6;
+      const safelyUnsent = classification === 'retryable'
+        || classification === 'retryable_rejected';
+      const canRetry = safelyUnsent && Number(sending.attempts) < 6;
       const attemptIndex = Math.max(0, Number(sending.attempts) - 1);
       const retryDelayMs = canRetry ? ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex] : null;
       const persistedErrorCode = classification === 'outcome_uncertain'
         ? 'outcome_uncertain'
-        : classification === 'smtp_rejected'
+        : classification === 'retryable_rejected'
           ? 'smtp_rejected'
           : smtpErrorCode(error);
       await client.query('BEGIN');
@@ -316,7 +318,7 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
       await client.query('COMMIT');
       transactionOpen = false;
       if (classification === 'outcome_uncertain') throw outcomeUncertainError(error);
-      if (classification === 'smtp_rejected') throw rejectedSmtpError(error);
+      if (classification === 'retryable_rejected' && !canRetry) throw rejectedSmtpError(error);
       if (!canRetry) throw terminalSmtpError(error);
 
       const retryAt = new Date(retried.rows[0].next_attempt_at);
