@@ -180,6 +180,77 @@ test('wiederholte Catch-up-Ticks und Teilkonflikte lassen ältere Slots nicht ve
   ]);
 });
 
+test('Zeitplanrevisionen erzeugen nach Uhrzeit-, Zonen- oder Wochentagswechsel keine historischen Doppelslots', async () => {
+  const changes = [
+    { schedule_time: '19:00', timezone: 'Europe/Berlin', schedule_weekdays: [1, 4] },
+    { schedule_time: '18:00', timezone: 'UTC', schedule_weekdays: [1, 4] },
+    { schedule_time: '18:00', timezone: 'Europe/Berlin', schedule_weekdays: [1] }
+  ];
+
+  for (const changed of changes) {
+    const enqueued = [];
+    const revisions = [{
+      ...berlinSettings,
+      schedule_revision: 1,
+      effective_at: new Date('2026-07-01T00:00:00.000Z')
+    }, {
+      ...berlinSettings,
+      ...changed,
+      schedule_revision: 2,
+      effective_at: new Date('2026-07-12T12:00:00.000Z')
+    }];
+    await runContentSchedulerTick({
+      getSettings: async () => ({ ...revisions[1] }),
+      getScheduleRevisions: async () => revisions,
+      enqueueJob: async (input) => { enqueued.push(input); return input; },
+      updateSchedulerState: async () => {},
+      now: () => new Date('2026-07-13T16:05:00.000Z')
+    });
+
+    const changedHistoricalSlots = enqueued.filter(({ payload }) => (
+      payload.publication_local_date < '2026-07-12'
+      && (
+        payload.publication_local_time !== '18:00'
+        || payload.publication_timezone !== 'Europe/Berlin'
+        || !berlinSettings.schedule_weekdays.includes(
+          new Date(`${payload.publication_local_date}T12:00:00.000Z`).getUTCDay() || 7
+        )
+      )
+    ));
+    assert.deepEqual(changedHistoricalSlots, [], JSON.stringify(changed));
+    assert.equal(new Set(enqueued.map(({ idempotencyKey }) => idempotencyKey)).size, enqueued.length);
+  }
+});
+
+test('unveränderte Revision holt Worker-Ausfälle nach und wiederholte Ticks bleiben idempotent', async () => {
+  const attempts = [];
+  const revision = {
+    ...berlinSettings,
+    schedule_revision: 4,
+    effective_at: new Date('2026-07-01T00:00:00.000Z')
+  };
+  const dependencies = {
+    getSettings: async () => revision,
+    getScheduleRevisions: async () => [revision],
+    enqueueJob: async (input) => { attempts.push(input); return input; },
+    updateSchedulerState: async () => {},
+    now: () => new Date('2026-07-17T10:00:00.000Z')
+  };
+
+  await runContentSchedulerTick(dependencies);
+  await runContentSchedulerTick(dependencies);
+
+  assert.deepEqual(attempts.slice(0, 2).map(({ payload }) => payload.publication_local_date), [
+    '2026-07-13',
+    '2026-07-16'
+  ]);
+  assert.deepEqual(
+    attempts.slice(0, 2).map(({ idempotencyKey }) => idempotencyKey),
+    attempts.slice(2).map(({ idempotencyKey }) => idempotencyKey)
+  );
+  assert.deepEqual(attempts.map(({ payload }) => payload.schedule_revision), [4, 4, 4, 4]);
+});
+
 test('ein fehlgeschlagener Scheduler-Tick persistiert einen knappen Fehlerzustand und wirft weiter', async () => {
   const states = [];
   const failure = new Error('Datenbank vorübergehend nicht erreichbar');

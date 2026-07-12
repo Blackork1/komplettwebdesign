@@ -100,10 +100,12 @@ test('Anleitung verwendet den echten Rootpfad und trennt automatisch aktualisier
   assert.match(guide, /Webhook-Container[^\n]*`\/apps\/komplettwebdesign`/i);
 });
 
-test('Rollout dokumentiert Migration 004 und 005, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
-  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005/i);
+test('Rollout dokumentiert Migration 004 bis 006, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
+  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005[^\n]*006/i);
   assert.match(guide, /004_create_scheduled_content_review\.sql/);
   assert.match(guide, /005_upgrade_admin_notification_retry_index\.sql/);
+  assert.match(guide, /006_add_schedule_revisions_and_admin_review_lookup\.sql/);
+  assert.match(guide, /idx_content_notification_deliveries_post_type_latest/);
   assert.match(guide, /vier Stunden[^\n]*Veröffentlichung/i);
   assert.match(guide, /Admin[^\n]*(?:Prüfmail|Benachrichtigung)/i);
   assert.match(guide, /Freigeben[^\n]*geplanten Termin/i);

@@ -42,6 +42,7 @@
 
   <form method="post" action="/admin/content-agent/drafts/<%= item.id %>" class="content-agent-panel content-agent-editor__form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="reviewVersion" value="<%= item.reviewVersion || '' %>">
 
     <section class="content-agent-editor__section" aria-labelledby="editor-content-heading">
       <div class="content-agent-panel__head">
@@ -126,6 +127,8 @@
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <input type="hidden" name="scheduled_at_local" value="<%= item.scheduledAtLocal || '' %>">
+        <input type="hidden" name="schedule_timezone" value="<%= item.scheduleTimezone || '' %>">
+        <input type="hidden" name="schedule_revision" value="<%= item.scheduleRevision || '' %>">
         <button class="btn btn-success" type="submit"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Für Termin freigeben</button>
       </form>
       <% } %>
@@ -140,6 +143,8 @@
       <form method="post" action="/admin/content-agent/drafts/<%= item.id %>/reschedule" data-confirm="<%= reviewActions.rescheduleRequiresApproval === true ? (item.scheduledAtLocal ? 'Diesen Entwurf freigeben und einen anderen Veröffentlichungstermin wählen?' : 'Diesen Entwurf freigeben und einen Veröffentlichungstermin festlegen?') : 'Den Veröffentlichungstermin verbindlich verschieben?' %>" data-confirm-scheduled-at>
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="schedule_timezone" value="<%= item.scheduleTimezone || '' %>">
+        <input type="hidden" name="schedule_revision" value="<%= item.scheduleRevision || '' %>">
         <div class="content-agent-field">
           <label for="draft-scheduled-at-local">Neuer lokaler Veröffentlichungstermin</label>
           <input id="draft-scheduled-at-local" class="form-control" type="datetime-local" name="scheduled_at_local" required>

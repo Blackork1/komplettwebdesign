@@ -278,7 +278,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004 und 005 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005 und 006 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
 Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
@@ -300,7 +300,7 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql` und `005_upgrade_admin_notification_retry_index.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex, ohne bestehende Zustellhistorie zu löschen. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung von Migration 002 + 003 + 004 + 005 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql` und `006_add_schedule_revisions_and_admin_review_lookup.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung von Migration 002 + 003 + 004 + 005 + 006 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
 docker compose run --rm app npm run migrate:content-agent

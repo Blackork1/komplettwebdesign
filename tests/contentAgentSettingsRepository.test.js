@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  getContentAgentScheduleRevisions,
   getContentAgentSettings,
   updateContentAgentSettings
 } from '../repositories/contentAgentSettingsRepository.js';
@@ -19,7 +20,8 @@ const currentSettings = Object.freeze({
   admin_notification_email: 'kontakt@komplettwebdesign.de',
   newsletter_blog_notifications_enabled: false,
   manual_approvals_count: 4,
-  settings_version: 3
+  settings_version: 3,
+  schedule_revision: 2
 });
 
 function settingsClient(current = currentSettings) {
@@ -70,6 +72,17 @@ test('Settings werden aus der kanonischen Einzelzeile gelesen', async () => {
 
   assert.equal(await getContentAgentSettings(db), currentSettings);
   assert.match(calls[0].sql, /content_agent_settings\s+WHERE id = 1/i);
+});
+
+test('Scheduler liest die persistierten Revisionen chronologisch mit eigener Versionsnummer', async () => {
+  const calls = [];
+  const rows = [{ schedule_revision: '1', effective_at: new Date('2026-07-01T00:00:00Z') }];
+  const result = await getContentAgentScheduleRevisions({
+    async query(sql) { calls.push(sql); return { rows }; }
+  });
+  assert.equal(result, rows);
+  assert.match(calls[0], /revision AS schedule_revision/i);
+  assert.match(calls[0], /ORDER BY effective_at, revision/i);
 });
 
 test('Settings-Update verlangt die erwartete Version', async () => {
@@ -163,6 +176,43 @@ test('Settings-Update normalisiert Werte und schreibt eine Adminrevision', async
   assert.deepEqual(revision.values.slice(4), [7, 'admin']);
   assert.match(calls.at(-1).sql, /COMMIT/);
   assert.equal(released, true);
+});
+
+test('nur relevante Zeitplanänderungen erzeugen eine neue wirksame Schedule-Revision', async () => {
+  const calls = [];
+  const client = settingsClient(currentSettings);
+  const originalQuery = client.query.bind(client);
+  client.query = async (sql, values = []) => {
+    calls.push({ sql, values });
+    const result = await originalQuery(sql, values);
+    if (/UPDATE content_agent_settings/i.test(sql)) {
+      result.rows[0].schedule_revision = /schedule_revision\s*=\s*schedule_revision\s*\+\s*1/i.test(sql)
+        ? 3
+        : 2;
+      result.rows[0].updated_at = new Date('2026-07-12T12:00:00.000Z');
+    }
+    return result;
+  };
+  const db = { async connect() { return client; } };
+
+  await updateContentAgentSettings({
+    expectedVersion: 3,
+    patch: { scheduleTime: '19:00' },
+    admin: { id: 1, username: 'admin' }
+  }, db);
+  const scheduleInsert = calls.find(({ sql }) => /INSERT INTO content_agent_schedule_revisions/i.test(sql));
+  assert.ok(scheduleInsert);
+  assert.deepEqual(scheduleInsert.values.slice(0, 6), [
+    3, new Date('2026-07-12T12:00:00.000Z'), false, [1, 4], '19:00', 'Europe/Berlin'
+  ]);
+
+  calls.length = 0;
+  await updateContentAgentSettings({
+    expectedVersion: 3,
+    patch: { monthlyBudgetCents: 3000 },
+    admin: { id: 1, username: 'admin' }
+  }, db);
+  assert.equal(calls.some(({ sql }) => /INSERT INTO content_agent_schedule_revisions/i.test(sql)), false);
 });
 
 test('Ungültige Kalenderwerte brechen die Transaktion ab', async () => {

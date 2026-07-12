@@ -636,6 +636,10 @@ export function createProductionRuntime({
     jobRepository: repositories.jobRepository,
     getSettings: snapshotRuntimeAvailable
       ? () => modules.settingsRepository.getContentAgentSettings(database)
+      : null,
+    getScheduleRevisions: snapshotRuntimeAvailable
+      && typeof modules.settingsRepository.getContentAgentScheduleRevisions === 'function'
+      ? () => modules.settingsRepository.getContentAgentScheduleRevisions(database)
       : null
   };
 }
@@ -794,7 +798,7 @@ export async function startContentWorker({
   const loaded = modules || await loadProductionModules();
   const activeDatabase = database || loaded.database;
   try {
-    const { worker, jobRepository, getSettings } = createProductionRuntime({
+    const { worker, jobRepository, getSettings, getScheduleRevisions } = createProductionRuntime({
       config,
       env,
       database: activeDatabase,
@@ -807,6 +811,7 @@ export async function startContentWorker({
     const scheduler = loaded.schedulerService.createDynamicContentScheduler({
       tick: () => loaded.schedulerService.runContentSchedulerTick({
         getSettings,
+        getScheduleRevisions,
         enqueueJob: jobRepository.enqueueJob,
         updateSchedulerState: jobRepository.updateContentSchedulerState
       })

@@ -26,7 +26,7 @@ function dependencies(overrides = {}) {
   return {
     adminRepository: {},
     settingsRepository: {
-      async getSettings() { return { timezone: 'Europe/Berlin' }; }
+      async getSettings() { return { timezone: 'Europe/Berlin', schedule_revision: 7 }; }
     },
     jobRepository: {},
     runtimeConfig: { enabled: true, maxAttempts: 3 },
@@ -73,7 +73,7 @@ test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestät
       const res = response();
       await controller[action]({
         params: { id: '19' },
-        body: { scheduled_at_local: localFuture, confirmed },
+        body: { scheduled_at_local: localFuture, schedule_timezone: 'Europe/Berlin', schedule_revision: '7', confirmed },
         session: { user: { id: 7, username: 'redaktion' } }
       }, res, assert.fail);
       assert.equal(res.statusCode, 400);
@@ -81,13 +81,58 @@ test('Freigeben und Verschieben übergeben den UTC-Termin samt literaler Bestät
     const res = response();
     await controller[action]({
       params: { id: '19' },
-      body: { scheduled_at_local: localFuture, confirmed: 'true' },
+      body: { scheduled_at_local: localFuture, schedule_timezone: 'Europe/Berlin', schedule_revision: '7', confirmed: 'true' },
       session: { user: { id: 7, username: 'redaktion' } }
     }, res, assert.fail);
     assert.equal(calls.at(-1).scheduledAt.toISOString(), '2026-07-13T16:00:00.000Z');
     assert.equal(calls.at(-1).confirmed, true);
     assert.deepEqual(calls.at(-1).admin, { id: 7, username: 'redaktion' });
   }
+});
+
+test('Termin-POST lehnt einen seit dem Rendern geänderten Zeitplan fail-closed mit 409 ab', async () => {
+  let approvals = 0;
+  const controller = createAdminContentAgentController(dependencies({
+    settingsRepository: {
+      async getSettings() { return { timezone: 'UTC', schedule_revision: 8 }; }
+    },
+    scheduledPublicationService: {
+      async approveForSchedule() { approvals += 1; }
+    }
+  }));
+  const res = response();
+  await controller.approveScheduledAction({
+    params: { id: '19' },
+    body: {
+      scheduled_at_local: localFuture,
+      schedule_timezone: 'Europe/Berlin',
+      schedule_revision: '7',
+      confirmed: 'true'
+    },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+  assert.equal(res.statusCode, 409);
+  assert.equal(approvals, 0);
+});
+
+test('veraltetes Editorformular liefert im Controller 409 und überschreibt nichts', async () => {
+  let received;
+  const controller = createAdminContentAgentController(dependencies({
+    draftService: {
+      async updateDraft(input) {
+        received = input;
+        throw Object.assign(new Error('stale'), { code: 'CONTENT_DRAFT_EDIT_CONFLICT' });
+      }
+    }
+  }));
+  const res = response();
+  await controller.updateDraftAction({
+    params: { id: '19' },
+    body: { reviewVersion: '2', title: 'Veralteter Tab' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+  assert.equal(res.statusCode, 409);
+  assert.equal(received.input.reviewVersion, '2');
 });
 
 test('Sofortveröffentlichung und Mailretry verlangen explizite Bestätigung', async () => {
@@ -180,7 +225,10 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
     contentHtml: '<section><h2>Artikel</h2></section>',
     faqJsonText: '[]',
     scheduledAtLocal: localFuture,
-    scheduledAtLabel: '13.07.2026, 18:00 Uhr (Europe/Berlin)'
+    scheduledAtLabel: '13.07.2026, 18:00 Uhr (Europe/Berlin)',
+    scheduleTimezone: 'Europe/Berlin',
+    scheduleRevision: 7,
+    reviewVersion: 2
   };
   const locals = {
     title: 'Content-Agent',
@@ -205,6 +253,9 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   });
   assert.match(approveHtml, /drafts\/19\/approve-scheduled/);
   assert.match(approveHtml, /data-confirm-scheduled-at/);
+  assert.match(approveHtml, /name="schedule_timezone" value="Europe\/Berlin"/);
+  assert.match(approveHtml, /name="schedule_revision" value="7"/);
+  assert.match(approveHtml, /name="reviewVersion" value="2"/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/publish-now/);
   assert.doesNotMatch(approveHtml, /drafts\/19\/reschedule/);
 
@@ -250,6 +301,22 @@ test('Editor rendert ausschließlich die durch Serverflags erlaubten Terminaktio
   assert.match(missedHtml, /drafts\/19\/reschedule/);
   assert.match(missedHtml, /drafts\/19\/notification\/retry/);
   assert.doesNotMatch(missedHtml, /Date\.now|new Date\s*\(/);
+
+  const escapedHtml = await renderFile(viewPath, {
+    ...locals,
+    draft: {
+      ...baseDraft,
+      scheduleTimezone: '"><script>alert(1)</script>',
+      actions: {
+        canApproveScheduled: true,
+        canPublishNow: false,
+        canReschedule: false,
+        canRetryNotification: false
+      }
+    }
+  });
+  assert.doesNotMatch(escapedHtml, /value=""><script>/);
+  assert.match(escapedHtml, /value="&amp;#34;&amp;gt;&amp;lt;script&amp;gt;|value="&#34;&gt;&lt;script&gt;/);
 });
 
 function runConfirmScript({ forms, confirmResult = true }) {

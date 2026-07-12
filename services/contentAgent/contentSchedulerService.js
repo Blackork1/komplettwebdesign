@@ -118,8 +118,29 @@ export function findDueGenerationSlot(input) {
   return findDueGenerationSlots(input).at(-1) || null;
 }
 
+export function findDueGenerationSlotsForRevisions({ revisions, now = new Date() }) {
+  if (!Array.isArray(revisions) || revisions.length === 0) return [];
+  const ordered = revisions
+    .map((revision) => ({ ...revision, effectiveMillis: new Date(revision.effective_at).getTime() }))
+    .filter(({ effectiveMillis }) => Number.isFinite(effectiveMillis))
+    .sort((left, right) => left.effectiveMillis - right.effectiveMillis
+      || Number(left.schedule_revision) - Number(right.schedule_revision));
+  const unique = new Map();
+  ordered.forEach((revision, index) => {
+    const nextEffectiveMillis = ordered[index + 1]?.effectiveMillis ?? Number.POSITIVE_INFINITY;
+    for (const slot of findDueGenerationSlots({ settings: revision, now })) {
+      const generationMillis = Date.parse(slot.generationAt);
+      if (generationMillis < revision.effectiveMillis || generationMillis >= nextEffectiveMillis) continue;
+      unique.set(slot.key, { ...slot, scheduleRevision: Number(revision.schedule_revision) });
+    }
+  });
+  return [...unique.values()]
+    .sort((left, right) => Date.parse(left.generationAt) - Date.parse(right.generationAt));
+}
+
 export async function runContentSchedulerTick({
   getSettings,
+  getScheduleRevisions,
   enqueueJob,
   updateSchedulerState,
   now = () => new Date()
@@ -128,7 +149,14 @@ export async function runContentSchedulerTick({
   let slot = null;
   try {
     const settings = await getSettings();
-    const slots = findDueGenerationSlots({ settings, now: tickAt });
+    const revisions = typeof getScheduleRevisions === 'function'
+      ? await getScheduleRevisions()
+      : null;
+    const slots = settings?.agent_enabled !== true
+      ? []
+      : (Array.isArray(revisions) && revisions.length > 0
+          ? findDueGenerationSlotsForRevisions({ revisions, now: tickAt })
+          : findDueGenerationSlots({ settings, now: tickAt }));
     slot = slots.at(-1) || null;
     await updateSchedulerState({
       lastSchedulerTickAt: tickAt,
@@ -148,7 +176,10 @@ export async function runContentSchedulerTick({
           publication_at: dueSlot.publicationAt,
           publication_local_date: dueSlot.localDate,
           publication_local_time: dueSlot.localTime,
-          publication_timezone: dueSlot.timezone
+          publication_timezone: dueSlot.timezone,
+          ...((dueSlot.scheduleRevision || Number(settings.schedule_revision))
+            ? { schedule_revision: dueSlot.scheduleRevision || Number(settings.schedule_revision) }
+            : {})
         },
         maxAttempts: settings.maximum_attempts
       });

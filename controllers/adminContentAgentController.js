@@ -13,7 +13,9 @@ const CONFLICT_CODES = new Set([
   'CONTENT_PUBLICATION_SLOT_NOT_MISSED',
   'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
   'CONTENT_REVISION_CONFLICT',
-  'CONTENT_REVISION_STALE'
+  'CONTENT_REVISION_STALE',
+  'CONTENT_SCHEDULE_SETTINGS_STALE',
+  'CONTENT_DRAFT_EDIT_CONFLICT'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -31,7 +33,9 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_PUBLICATION_SLOT_NOT_MISSED: 'Die Sofortveröffentlichung ist nur nach einem verpassten Termin möglich.',
   CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE: 'Für diesen Entwurf gibt es keine fehlgeschlagene Admin-Benachrichtigung.',
   CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
-  CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.'
+  CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.',
+  CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
+  CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.'
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
@@ -88,7 +92,8 @@ export function parseFutureLocalDateTime(value, timezone, now = new Date()) {
   return scheduledAt;
 }
 
-function scheduledDraftPresentation(draft, timezone) {
+function scheduledDraftPresentation(draft, settings = {}) {
+  const timezone = settings?.timezone;
   const rawScheduledAt = draft?.post?.scheduled_at;
   const scheduledAt = new Date(rawScheduledAt);
   if (rawScheduledAt === null
@@ -96,14 +101,40 @@ function scheduledDraftPresentation(draft, timezone) {
       || rawScheduledAt === ''
       || Number.isNaN(scheduledAt.getTime())
       || !IANAZone.isValidZone(timezone)) {
-    return { ...draft, scheduledAtLocal: '', scheduledAtLabel: 'Noch nicht terminiert' };
+    return {
+      ...draft,
+      scheduledAtLocal: '',
+      scheduledAtLabel: 'Noch nicht terminiert',
+      scheduleTimezone: timezone || '',
+      scheduleRevision: Number(settings?.schedule_revision) || 0
+    };
   }
   const local = DateTime.fromJSDate(scheduledAt, { zone: timezone });
   return {
     ...draft,
     scheduledAtLocal: local.toFormat("yyyy-LL-dd'T'HH:mm"),
-    scheduledAtLabel: `${local.toFormat('dd.LL.yyyy, HH:mm')} Uhr (${timezone})`
+    scheduledAtLabel: `${local.toFormat('dd.LL.yyyy, HH:mm')} Uhr (${timezone})`,
+    scheduleTimezone: timezone,
+    scheduleRevision: Number(settings?.schedule_revision) || 0
   };
+}
+
+function assertScheduleSnapshot(body, settings) {
+  const submittedTimezone = typeof body?.schedule_timezone === 'string'
+    ? body.schedule_timezone.trim()
+    : '';
+  const submittedRevision = Number(body?.schedule_revision);
+  if (!submittedTimezone
+      || submittedTimezone !== settings?.timezone
+      || !Number.isSafeInteger(submittedRevision)
+      || submittedRevision < 1
+      || submittedRevision !== Number(settings?.schedule_revision)) {
+    throw scheduleError(
+      'CONTENT_SCHEDULE_SETTINGS_STALE',
+      'Der Zeitplan wurde zwischenzeitlich geändert.'
+    );
+  }
+  return submittedTimezone;
 }
 
 function sendKnownError(error, res, next) {
@@ -424,7 +455,10 @@ export function createAdminContentAgentController(dependencies) {
         return res.render('admin/contentAgent/draftEdit', {
           draft: scheduledDraftPresentation(
             { ...draft, editorRiskReview },
-            settings?.timezone || runtimeConfig.timezone || 'UTC'
+            {
+              ...settings,
+              timezone: settings?.timezone || runtimeConfig.timezone || 'UTC'
+            }
           ),
           saved: req.query?.saved === '1',
           queued: req.query?.queued === '1',
@@ -540,11 +574,12 @@ export function createAdminContentAgentController(dependencies) {
       if (typeof scheduledPublicationService?.approveForSchedule !== 'function') return unavailable(res);
       try {
         const settings = await settingsRepository.getSettings();
+        const timezone = assertScheduleSnapshot(req.body, settings);
         await scheduledPublicationService.approveForSchedule({
           postId: positiveId(req.params.id),
           scheduledAt: parseFutureLocalDateTime(
             req.body?.scheduled_at_local,
-            settings?.timezone,
+            timezone,
             now()
           ),
           admin: adminFromRequest(req),
@@ -575,11 +610,12 @@ export function createAdminContentAgentController(dependencies) {
       if (typeof scheduledPublicationService?.approveForSchedule !== 'function') return unavailable(res);
       try {
         const settings = await settingsRepository.getSettings();
+        const timezone = assertScheduleSnapshot(req.body, settings);
         await scheduledPublicationService.approveForSchedule({
           postId: positiveId(req.params.id),
           scheduledAt: parseFutureLocalDateTime(
             req.body?.scheduled_at_local,
-            settings?.timezone,
+            timezone,
             now()
           ),
           admin: adminFromRequest(req),

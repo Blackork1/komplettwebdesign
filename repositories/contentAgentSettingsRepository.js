@@ -140,10 +140,37 @@ function changedKeys(current, next) {
     .map(([key]) => key);
 }
 
+const SCHEDULE_KEYS = new Set([
+  'agent_enabled',
+  'schedule_weekdays',
+  'schedule_time',
+  'timezone',
+  'generation_lead_hours'
+]);
+
+function scheduleChanged(current, next) {
+  return changedKeys(current, next).some((key) => SCHEDULE_KEYS.has(key));
+}
+
 export async function getContentAgentSettings(db = pool) {
   const { rows } = await db.query('SELECT * FROM content_agent_settings WHERE id = 1');
   if (!rows[0]) throw new Error('Content-Agent-Einstellungen fehlen.');
   return rows[0];
+}
+
+export async function getContentAgentScheduleRevisions(db = pool) {
+  const { rows } = await db.query(`
+    SELECT revision AS schedule_revision,
+           effective_at,
+           agent_enabled,
+           schedule_weekdays,
+           schedule_time,
+           timezone,
+           generation_lead_hours
+    FROM content_agent_schedule_revisions
+    ORDER BY effective_at, revision
+  `);
+  return rows;
 }
 
 export async function updateContentAgentSettings({ expectedVersion, patch, admin }, db = pool) {
@@ -162,6 +189,22 @@ export async function updateContentAgentSettings({ expectedVersion, patch, admin
     }
 
     const next = normalizeSettingsPatch(current, patch);
+    const hasScheduleChange = scheduleChanged(current, {
+      agent_enabled: next.agentEnabled,
+      operating_mode: next.operatingMode,
+      schedule_weekdays: next.scheduleWeekdays,
+      schedule_time: next.scheduleTime,
+      timezone: next.timezone,
+      monthly_budget_cents: next.monthlyBudgetCents,
+      auto_publish_min_score: next.autoPublishMinScore,
+      maximum_attempts: next.maximumAttempts,
+      generation_lead_hours: next.generationLeadHours,
+      admin_notification_email: next.adminNotificationEmail,
+      newsletter_blog_notifications_enabled: next.newsletterBlogNotificationsEnabled
+    });
+    const scheduleRevisionUpdate = hasScheduleChange
+      ? 'schedule_revision = schedule_revision + 1,'
+      : 'schedule_revision = schedule_revision,';
     const { rows } = await client.query(`
       UPDATE content_agent_settings
       SET agent_enabled = $1, operating_mode = $2, schedule_weekdays = $3,
@@ -169,6 +212,7 @@ export async function updateContentAgentSettings({ expectedVersion, patch, admin
           auto_publish_min_score = $7, maximum_attempts = $8,
           generation_lead_hours = $9, admin_notification_email = $10,
           newsletter_blog_notifications_enabled = $11,
+          ${scheduleRevisionUpdate}
           settings_version = settings_version + 1, updated_at = NOW()
       WHERE id = 1 AND settings_version = $12
       RETURNING *
@@ -191,6 +235,24 @@ export async function updateContentAgentSettings({ expectedVersion, patch, admin
       throw Object.assign(new Error('Versionskonflikt.'), {
         code: 'CONTENT_SETTINGS_VERSION_CONFLICT'
       });
+    }
+
+    if (hasScheduleChange) {
+      await client.query(`
+        INSERT INTO content_agent_schedule_revisions (
+          revision, effective_at, agent_enabled, schedule_weekdays,
+          schedule_time, timezone, generation_lead_hours
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        Number(rows[0].schedule_revision),
+        rows[0].updated_at,
+        rows[0].agent_enabled,
+        rows[0].schedule_weekdays,
+        String(rows[0].schedule_time).slice(0, 5),
+        rows[0].timezone,
+        Number(rows[0].generation_lead_hours)
+      ]);
     }
 
     await client.query(`
