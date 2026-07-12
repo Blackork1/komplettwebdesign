@@ -166,6 +166,56 @@ SET attempts = LEAST(GREATEST(attempts, 0), 5),
     END
 WHERE attempts NOT BETWEEN 0 AND 5;
 
+UPDATE content_notification_deliveries delivery
+SET payload_json = jsonb_set(
+      CASE
+        WHEN jsonb_typeof(delivery.payload_json) = 'object' THEN delivery.payload_json
+        ELSE '{}'::jsonb
+      END,
+      '{reviewVersion}',
+      to_jsonb(post.review_version),
+      TRUE
+    ),
+    status = 'cancelled',
+    last_error_code = COALESCE(
+      delivery.last_error_code,
+      'migration_invalid_admin_review_payload'
+    ),
+    updated_at = NOW()
+FROM posts post
+WHERE delivery.post_id = post.id
+  AND delivery.notification_type = 'admin_review'
+  AND (
+    jsonb_typeof(delivery.payload_json) = 'object'
+    AND jsonb_typeof(delivery.payload_json -> 'reviewVersion') = 'number'
+    AND (delivery.payload_json ->> 'reviewVersion') ~ '^[1-9][0-9]*$'
+  ) IS NOT TRUE;
+
+UPDATE content_notification_deliveries delivery
+SET payload_json = jsonb_set(
+      CASE
+        WHEN jsonb_typeof(delivery.payload_json) = 'object' THEN delivery.payload_json
+        ELSE '{}'::jsonb
+      END,
+      '{publicationVersion}',
+      to_jsonb(post.publication_version),
+      TRUE
+    ),
+    status = 'cancelled',
+    last_error_code = COALESCE(
+      delivery.last_error_code,
+      'migration_invalid_newsletter_article_payload'
+    ),
+    updated_at = NOW()
+FROM posts post
+WHERE delivery.post_id = post.id
+  AND delivery.notification_type = 'newsletter_article'
+  AND (
+    jsonb_typeof(delivery.payload_json) = 'object'
+    AND jsonb_typeof(delivery.payload_json -> 'publicationVersion') = 'number'
+    AND (delivery.payload_json ->> 'publicationVersion') ~ '^[1-9][0-9]*$'
+  ) IS NOT TRUE;
+
 ALTER TABLE content_notification_deliveries
   DROP CONSTRAINT IF EXISTS content_notification_deliveries_type_valid;
 ALTER TABLE content_notification_deliveries
@@ -189,6 +239,32 @@ ALTER TABLE content_notification_deliveries
 ALTER TABLE content_notification_deliveries
   ADD CONSTRAINT content_notification_deliveries_attempts_valid
   CHECK (attempts BETWEEN 0 AND 5);
+
+ALTER TABLE content_notification_deliveries
+  DROP CONSTRAINT IF EXISTS content_notification_admin_payload_valid;
+ALTER TABLE content_notification_deliveries
+  ADD CONSTRAINT content_notification_admin_payload_valid
+  CHECK (
+    notification_type <> 'admin_review'
+    OR (
+      jsonb_typeof(payload_json) = 'object'
+      AND jsonb_typeof(payload_json -> 'reviewVersion') = 'number'
+      AND (payload_json ->> 'reviewVersion') ~ '^[1-9][0-9]*$'
+    ) IS TRUE
+  );
+
+ALTER TABLE content_notification_deliveries
+  DROP CONSTRAINT IF EXISTS content_notification_newsletter_payload_valid;
+ALTER TABLE content_notification_deliveries
+  ADD CONSTRAINT content_notification_newsletter_payload_valid
+  CHECK (
+    notification_type <> 'newsletter_article'
+    OR (
+      jsonb_typeof(payload_json) = 'object'
+      AND jsonb_typeof(payload_json -> 'publicationVersion') = 'number'
+      AND (payload_json ->> 'publicationVersion') ~ '^[1-9][0-9]*$'
+    ) IS TRUE
+  );
 
 WITH ranked_admin_deliveries AS (
   SELECT id,

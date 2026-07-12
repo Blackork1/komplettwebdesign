@@ -43,6 +43,12 @@ test('migration 004 constrains and deduplicates notification deliveries', async 
   assert.match(sql, /notification_type\s+IN\s*\(\s*'admin_review'\s*,\s*'newsletter_article'\s*\)/i);
   assert.match(sql, /status\s+IN\s*\(\s*'queued'\s*,\s*'sending'\s*,\s*'sent'\s*,\s*'failed'\s*,\s*'cancelled'\s*\)/i);
   assert.match(sql, /attempts\s+BETWEEN 0 AND 5/i);
+  assert.match(sql, /DROP CONSTRAINT IF EXISTS content_notification_admin_payload_valid/i);
+  assert.match(sql, /ADD CONSTRAINT content_notification_admin_payload_valid[\s\S]*reviewVersion/i);
+  assert.match(sql, /DROP CONSTRAINT IF EXISTS content_notification_newsletter_payload_valid/i);
+  assert.match(sql, /ADD CONSTRAINT content_notification_newsletter_payload_valid[\s\S]*publicationVersion/i);
+  assert.match(sql, /migration_invalid_admin_review_payload/i);
+  assert.match(sql, /migration_invalid_newsletter_article_payload/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_notification_deliveries_admin_review[\s\S]*WHERE notification_type = 'admin_review'/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_notification_deliveries_newsletter_article[\s\S]*WHERE notification_type = 'newsletter_article'/i);
   assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS ux_content_publish_events_scheduled_publication[\s\S]*ON content_publish_events[\s\S]*publicationVersion[\s\S]*WHERE decision = 'manual'/i);

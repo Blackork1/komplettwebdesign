@@ -58,7 +58,7 @@ function publishableHtml(faqItems) {
     <p>Der Beitrag wurde vollständig redaktionell geprüft.</p>
     <a href="/kontakt" data-track="cta" data-cta-location="blog_early" data-cta-name="blog_early_contact">Früh beraten lassen</a>
     <p>Weitere Hinweise für die sichere Umsetzung.</p>
-    <a href="/pakete" data-track="cta" data-cta-location="blog_mid" data-cta-name="blog_mid_contact">Pakete ansehen</a>
+    <a href="/kontakt" data-track="cta" data-cta-location="blog_mid" data-cta-name="blog_mid_contact">Pakete ansehen</a>
     ${faqHtml}
     <a href="/kontakt" data-track="cta" data-cta-location="blog_final" data-cta-name="blog_final_contact">Abschlussberatung anfragen</a>
   </section>`;
@@ -245,7 +245,10 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     const delivery = await pool.query(`
       INSERT INTO content_notification_deliveries (
         notification_type, post_id, recipient_email, idempotency_key, payload_json
-      ) VALUES ('admin_review', $1, 'kontakt@komplettwebdesign.de', 'admin-review:test:1', '{}'::jsonb)
+      ) VALUES (
+        'admin_review', $1, 'kontakt@komplettwebdesign.de',
+        'admin-review:test:1', '{"reviewVersion": 1}'::jsonb
+      )
       RETURNING id
     `, [reviewPost.rows[0].id]);
     assert.ok(delivery.rows[0].id);
@@ -262,10 +265,146 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       pool.query(`
         INSERT INTO content_notification_deliveries (
           notification_type, post_id, recipient_email, idempotency_key, payload_json
-        ) VALUES ('admin_review', $1, 'kontakt@komplettwebdesign.de', 'admin-review:test:1', '{}'::jsonb)
+        ) VALUES (
+          'admin_review', $1, 'kontakt@komplettwebdesign.de',
+          'admin-review:test:1', '{"reviewVersion": 1}'::jsonb
+        )
       `, [reviewPost.rows[0].id]),
       (error) => error.code === '23505'
     );
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_email, idempotency_key, payload_json
+        ) VALUES (
+          'admin_review', $1, 'kontakt@komplettwebdesign.de',
+          'admin-review:missing-version', '{}'::jsonb
+        )
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_notification_admin_payload_valid'
+    );
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_email, idempotency_key, payload_json
+        ) VALUES (
+          'admin_review', $1, 'kontakt@komplettwebdesign.de',
+          'admin-review:non-positive-version', '{"reviewVersion": 0}'::jsonb
+        )
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_notification_admin_payload_valid'
+    );
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_email, idempotency_key, payload_json
+        ) VALUES (
+          'admin_review', $1, 'kontakt@komplettwebdesign.de',
+          'admin-review:different-key', '{"reviewVersion": 1}'::jsonb
+        )
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23505'
+        && error.constraint === 'ux_content_notification_deliveries_admin_review'
+    );
+    await pool.query(`
+      INSERT INTO content_notification_deliveries (
+        notification_type, post_id, recipient_id, recipient_email,
+        idempotency_key, payload_json
+      ) VALUES (
+        'newsletter_article', $1, 77, 'leser@example.test',
+        'newsletter:test:1', '{"publicationVersion": 1}'::jsonb
+      )
+    `, [reviewPost.rows[0].id]);
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_id, recipient_email,
+          idempotency_key, payload_json
+        ) VALUES (
+          'newsletter_article', $1, 77, 'leser@example.test',
+          'newsletter:different-key', '{"publicationVersion": 1}'::jsonb
+        )
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23505'
+        && error.constraint === 'ux_content_notification_deliveries_newsletter_article'
+    );
+    await assert.rejects(
+      pool.query(`
+        INSERT INTO content_notification_deliveries (
+          notification_type, post_id, recipient_id, recipient_email,
+          idempotency_key, payload_json
+        ) VALUES (
+          'newsletter_article', $1, 77, 'leser@example.test',
+          'newsletter:missing-version', '{}'::jsonb
+        )
+      `, [reviewPost.rows[0].id]),
+      (error) => error.code === '23514'
+        && error.constraint === 'content_notification_newsletter_payload_valid'
+    );
+
+    await pool.query(`
+      ALTER TABLE content_notification_deliveries
+        DROP CONSTRAINT IF EXISTS content_notification_admin_payload_valid,
+        DROP CONSTRAINT IF EXISTS content_notification_newsletter_payload_valid;
+      DROP INDEX ux_content_notification_deliveries_admin_review;
+      DROP INDEX ux_content_notification_deliveries_newsletter_article;
+    `);
+    await pool.query(`
+      INSERT INTO content_notification_deliveries (
+        notification_type, post_id, recipient_id, recipient_email,
+        idempotency_key, payload_json, created_at
+      ) VALUES
+        ('admin_review', $1, NULL, 'kontakt@komplettwebdesign.de',
+         'legacy-admin-invalid', '{}'::jsonb, '2026-01-01T00:00:00Z'),
+        ('newsletter_article', $1, 78, 'alt@example.test',
+         'legacy-newsletter-invalid', '{"publicationVersion": 0}'::jsonb, '2026-01-01T00:00:00Z'),
+        ('admin_review', $1, NULL, 'kontakt@komplettwebdesign.de',
+         'legacy-admin-duplicate-a', '{"reviewVersion": 2}'::jsonb, '2026-01-02T00:00:00Z'),
+        ('admin_review', $1, NULL, 'kontakt@komplettwebdesign.de',
+         'legacy-admin-duplicate-b', '{"reviewVersion": 2}'::jsonb, '2026-01-03T00:00:00Z'),
+        ('newsletter_article', $1, 78, 'alt@example.test',
+         'legacy-newsletter-duplicate-a', '{"publicationVersion": 2}'::jsonb, '2026-01-02T00:00:00Z'),
+        ('newsletter_article', $1, 78, 'alt@example.test',
+         'legacy-newsletter-duplicate-b', '{"publicationVersion": 2}'::jsonb, '2026-01-03T00:00:00Z')
+    `, [reviewPost.rows[0].id]);
+    await runContentAgentMigration(pool);
+    const repairedDeliveries = await pool.query(`
+      SELECT idempotency_key, status, last_error_code,
+             payload_json ->> 'reviewVersion' AS review_version,
+             payload_json ->> 'publicationVersion' AS publication_version
+      FROM content_notification_deliveries
+      WHERE idempotency_key LIKE 'legacy-%'
+      ORDER BY idempotency_key
+    `);
+    assert.deepEqual(repairedDeliveries.rows, [
+      {
+        idempotency_key: 'legacy-admin-duplicate-a', status: 'queued', last_error_code: null,
+        review_version: '2', publication_version: null
+      },
+      {
+        idempotency_key: 'legacy-admin-duplicate-b', status: 'cancelled',
+        last_error_code: 'migration_duplicate_delivery', review_version: '2', publication_version: null
+      },
+      {
+        idempotency_key: 'legacy-admin-invalid', status: 'cancelled',
+        last_error_code: 'migration_invalid_admin_review_payload', review_version: '1', publication_version: null
+      },
+      {
+        idempotency_key: 'legacy-newsletter-duplicate-a', status: 'queued', last_error_code: null,
+        review_version: null, publication_version: '2'
+      },
+      {
+        idempotency_key: 'legacy-newsletter-duplicate-b', status: 'cancelled',
+        last_error_code: 'migration_duplicate_delivery', review_version: null, publication_version: '2'
+      },
+      {
+        idempotency_key: 'legacy-newsletter-invalid', status: 'cancelled',
+        last_error_code: 'migration_invalid_newsletter_article_payload',
+        review_version: null, publication_version: '1'
+      }
+    ]);
 
     const preexistingIndexes = await pool.query(`
       SELECT indexname FROM pg_indexes
@@ -649,6 +788,7 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
       true
     );
 
+    await pool.query('UPDATE content_agent_settings SET agent_enabled = TRUE WHERE id = 1');
     const job = await enqueueJob({
       jobType: 'generate_manual_draft',
       idempotencyKey: 'pg-retry-einmalig',
