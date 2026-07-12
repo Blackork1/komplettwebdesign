@@ -391,10 +391,14 @@ is_dashboard_worker_compatible() {
   local contract="$1"
   local commit="$2"
   local rollback_ref="$3"
+  local resolved_commit=""
   [[ "$contract" == "$CURRENT_WORKER_CONTRACT" ]] || return 1
   [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
   [[ "$rollback_ref" =~ ^refs/deploy-rollbacks/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]] || return 1
-  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit"
+  resolved_commit="$(git rev-parse --verify "${rollback_ref}^{commit}" 2>/dev/null)" || return 1
+  [[ "$resolved_commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$resolved_commit" == "$commit" ]] || return 1
+  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit" || return 1
 }
 
 wait_for_app_health() {
@@ -788,10 +792,14 @@ is_dashboard_worker_compatible() {
   local contract="$1"
   local commit="$2"
   local rollback_ref="$3"
+  local resolved_commit=""
   [[ "$contract" == "$CURRENT_WORKER_CONTRACT" ]] || return 1
   [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
   [[ "$rollback_ref" =~ ^refs/deploy-rollbacks/[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$ ]] || return 1
-  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit"
+  resolved_commit="$(git rev-parse --verify "${rollback_ref}^{commit}" 2>/dev/null)" || return 1
+  [[ "$resolved_commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$resolved_commit" == "$commit" ]] || return 1
+  git merge-base --is-ancestor "$MIN_DASHBOARD_WORKER_REVISION" "$commit" || return 1
 }
 
 recreate_rollback_services() {
@@ -966,11 +974,7 @@ fi
 
 if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]; then
   cd "$REPO_DIR"
-  git check-ref-format "$ROLLBACK_REF"
-  RESOLVED_ROLLBACK_COMMIT="$(git rev-parse --verify "${ROLLBACK_REF}^{commit}")"
-  test "$RESOLVED_ROLLBACK_COMMIT" = "$ROLLBACK_COMMIT"
-  git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
-  git reset --hard "$ROLLBACK_REF"
+  git reset --hard "$ROLLBACK_COMMIT"
 else
   printf 'Image-only-Rollback: App wird zurückgesetzt; Worker bleibt wegen unbekannter oder inkompatibler Revision gestoppt. Git-Checkout bleibt unverändert.\n' >&2
 fi

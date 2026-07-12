@@ -338,7 +338,15 @@ test('Worker-Rollback verlangt OCI-Contract und Git-Abstammung vom kompatiblen M
   ].join('\n');
   const knownCommit = 'a'.repeat(40);
   const knownRef = 'refs/deploy-rollbacks/20260712T120000Z-' + 'b'.repeat(12);
-  const gitStub = 'git() { [[ "$*" == "merge-base --is-ancestor $MIN_DASHBOARD_WORKER_REVISION ' + knownCommit + '" ]]; }';
+  const gitStub = `
+git() {
+  case "$1" in
+    rev-parse) printf '${knownCommit}\\n' ;;
+    merge-base) [[ "$*" == "merge-base --is-ancestor $MIN_DASHBOARD_WORKER_REVISION ${knownCommit}" ]] ;;
+    *) return 1 ;;
+  esac
+}
+`;
 
   const compatible = runBash(`${constants}\n${gitStub}\n${compatibility}\nis_dashboard_worker_compatible dashboard-v1 ${knownCommit} ${knownRef}`);
   assert.equal(compatible.status, 0, compatible.stderr);
@@ -380,9 +388,48 @@ COMPOSE_FILE=/tmp/docker-compose.yml
     });
     assert.equal(withWorker.status, 0, withWorker.stderr);
     assert.match(readFileSync(capture, 'utf8'), /force-recreate app content-worker$/m);
+
+    const refHarness = `
+${constants}
+fail() { return 1; }
+git() {
+  case "$1" in
+    rev-parse)
+      case "$GIT_REF_MODE" in
+        missing) return 1 ;;
+        mismatch) printf '${'c'.repeat(40)}\\n' ;;
+        *) printf '${knownCommit}\\n' ;;
+      esac
+      ;;
+    merge-base) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+docker() { printf '%s\\n' "$*" >> "$CAPTURE"; }
+COMPOSE_FILE=/tmp/docker-compose.yml
+${compatibility}
+${recreate}
+ROLLBACK_WORKER_ALLOWED=false
+if is_dashboard_worker_compatible dashboard-v1 ${knownCommit} ${knownRef}; then
+  ROLLBACK_WORKER_ALLOWED=true
+fi
+recreate_rollback_services "$ROLLBACK_WORKER_ALLOWED"
+`;
+    for (const mode of ['missing', 'mismatch']) {
+      writeFileSync(capture, '');
+      const result = runBash(refHarness, {
+        env: { CAPTURE: capture, GIT_REF_MODE: mode }
+      });
+      assert.equal(result.status, 0, `${mode} darf den App-only-Rollback nicht abbrechen: ${result.stderr}`);
+      const command = readFileSync(capture, 'utf8');
+      assert.match(command, /force-recreate app$/m);
+      assert.doesNotMatch(command, /content-worker/, `${mode} darf keinen Worker neu erstellen`);
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+
+  assert.match(compatibility, /git rev-parse --verify "\$\{rollback_ref\}\^\{commit\}"/);
 });
 
 test('App-Healthcheck prüft /health stabil und bricht bei dauerhaftem Fehler begrenzt ab', () => {
@@ -484,7 +531,7 @@ test('Rollback parst Metadaten ohne source und setzt Code nur bei belegtem Ref z
   const parse = rollback.indexOf('ROLLBACK_IMAGE="$(sed -n');
   const pause = rollback.indexOf('pause_content_agent "$CURRENT_SCHEMA_STATE"');
   const stop = rollback.indexOf('stop -t 600 content-worker');
-  const reset = rollback.indexOf('git reset --hard "$ROLLBACK_REF"');
+  const reset = rollback.indexOf('git reset --hard "$ROLLBACK_COMMIT"');
   const conditionalReset = rollback.lastIndexOf('if [[ "$ROLLBACK_WORKER_ALLOWED" == "true" ]]', reset);
   const image = rollback.indexOf('docker image tag "$ROLLBACK_IMAGE" komplettwebdesign-app:local');
   const recreate = rollback.indexOf('recreate_rollback_services "$ROLLBACK_WORKER_ALLOWED"');
@@ -501,7 +548,7 @@ test('Rollback parst Metadaten ohne source und setzt Code nur bei belegtem Ref z
   assert.match(rollback, /\[\[ "\$ROLLBACK_IMAGE" =~ \^komplettwebdesign-app:rollback-/);
   assert.match(rollback, /git config --global --add safe\.directory "\$REPO_DIR"/);
   assert.match(rollback, /docker image inspect "\$ROLLBACK_IMAGE"/);
-  assert.match(rollback, /git rev-parse --verify "\$\{ROLLBACK_REF\}\^\{commit\}"/);
+  assert.match(rollback, /git rev-parse --verify "\$\{rollback_ref\}\^\{commit\}"/);
   assert.match(rollback, /Image-only-Rollback/i);
   assert.doesNotMatch(rollback, /docker compose[^\n]*\bbuild\b/);
   assert.match(rollback, /CONTENT_AGENT_ENABLED=false/);
