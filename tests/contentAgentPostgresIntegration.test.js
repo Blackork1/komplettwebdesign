@@ -189,6 +189,77 @@ test('echtes PostgreSQL: Bestandsmigration und Worker-Retry verwenden genau eine
     assert.equal(settings.rows[0].operating_mode, 'review');
     assert.deepEqual(settings.rows[0].schedule_weekdays, [1, 4]);
 
+    const preexistingIndexes = await pool.query(`
+      SELECT indexname FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND indexname IN ('ux_content_post_audits_job_post_type', 'ux_content_post_revisions_draft_audit')
+      ORDER BY indexname
+    `);
+    assert.deepEqual(preexistingIndexes.rows.map(({ indexname }) => indexname), [
+      'ux_content_post_audits_job_post_type',
+      'ux_content_post_revisions_draft_audit'
+    ]);
+    const duplicateJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key)
+      VALUES ('audit_existing_posts', 'completed', 'pg-duplicate-audit-migration') RETURNING id
+    `);
+    const publishedPost = await pool.query("SELECT id FROM posts WHERE slug = 'alt-veroeffentlicht'");
+    const firstAudit = await pool.query(`
+      INSERT INTO content_post_audits (post_id, job_id, audit_type, score, status, created_at)
+      VALUES ($1, $2, 'local_content_v1', 70, 'revision_created', '2026-01-02T00:00:00Z') RETURNING id
+    `, [publishedPost.rows[0].id, duplicateJob.rows[0].id]);
+    await pool.query('DROP INDEX ux_content_post_audits_job_post_type');
+    const secondAudit = await pool.query(`
+      INSERT INTO content_post_audits (post_id, job_id, audit_type, score, status, created_at)
+      VALUES ($1, $2, 'local_content_v1', 80, 'open', '2026-01-01T00:00:00Z') RETURNING id
+    `, [publishedPost.rows[0].id, duplicateJob.rows[0].id]);
+    const snapshot = JSON.stringify({ base: {}, fields: {} });
+    await pool.query(`
+      INSERT INTO content_post_revisions (post_id, audit_id, snapshot_json, status, created_at)
+      VALUES
+        ($1, $2, $4::jsonb, 'draft', '2026-01-01T00:00:00Z'),
+        ($1, $3, $4::jsonb, 'draft', '2026-01-03T00:00:00Z')
+    `, [publishedPost.rows[0].id, firstAudit.rows[0].id, secondAudit.rows[0].id, snapshot]);
+
+    await runContentAgentMigration(pool);
+    const deduplicated = await pool.query(`
+      SELECT audit.id, audit.status,
+             COUNT(revision.id)::int AS revision_count,
+             COUNT(*) FILTER (WHERE revision.status = 'draft')::int AS draft_count,
+             COUNT(*) FILTER (WHERE revision.status = 'rejected')::int AS rejected_count,
+             COUNT(*) FILTER (WHERE revision.audit_id = audit.id)::int AS matching_fk_count
+      FROM content_post_audits audit
+      LEFT JOIN content_post_revisions revision ON revision.audit_id = audit.id
+      WHERE audit.job_id = $1 AND audit.post_id = $2 AND audit.audit_type = 'local_content_v1'
+      GROUP BY audit.id, audit.status
+    `, [duplicateJob.rows[0].id, publishedPost.rows[0].id]);
+    assert.equal(deduplicated.rows.length, 1);
+    assert.deepEqual(deduplicated.rows[0], {
+      id: String(secondAudit.rows[0].id),
+      status: 'revision_created',
+      revision_count: 2,
+      draft_count: 1,
+      rejected_count: 1,
+      matching_fk_count: 2
+    });
+    const rebuiltIndexes = await pool.query(`
+      SELECT indexname, indexdef FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND indexname IN ('ux_content_post_audits_job_post_type', 'ux_content_post_revisions_draft_audit')
+      ORDER BY indexname
+    `);
+    assert.equal(rebuiltIndexes.rows.length, 2);
+    assert.ok(rebuiltIndexes.rows.every(({ indexdef }) => /CREATE UNIQUE INDEX/i.test(indexdef)));
+    await runContentAgentMigration(pool);
+    const secondPass = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM content_post_audits WHERE job_id = $1) AS audit_count,
+        (SELECT COUNT(*)::int FROM content_post_revisions revision
+         JOIN content_post_audits audit ON audit.id = revision.audit_id
+         WHERE audit.job_id = $1) AS revision_count
+    `, [duplicateJob.rows[0].id]);
+    assert.deepEqual(secondPass.rows[0], { audit_count: 1, revision_count: 2 });
+
     const adminForeignKeys = await pool.query(`
       SELECT tc.table_name
       FROM information_schema.table_constraints tc

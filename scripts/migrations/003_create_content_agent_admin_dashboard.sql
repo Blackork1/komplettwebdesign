@@ -155,37 +155,97 @@ ALTER TABLE content_post_revisions ADD CONSTRAINT content_post_revisions_snapsho
   jsonb_typeof(snapshot_json -> 'base') = 'object'
   AND jsonb_typeof(snapshot_json -> 'fields') = 'object'
 );
+DROP INDEX IF EXISTS ux_content_post_audits_job_post_type;
+DROP INDEX IF EXISTS ux_content_post_revisions_draft_audit;
+
+WITH ranked_group_drafts AS (
+  SELECT revision.id,
+         ROW_NUMBER() OVER (
+           PARTITION BY audit.job_id, audit.post_id, audit.audit_type
+           ORDER BY revision.created_at DESC, revision.id DESC,
+                    audit.created_at DESC, audit.id DESC
+         ) AS position
+  FROM content_post_revisions revision
+  JOIN content_post_audits audit ON audit.id = revision.audit_id
+  WHERE revision.status = 'draft' AND audit.job_id IS NOT NULL
+)
 UPDATE content_post_revisions revision
-SET audit_id = survivor.id
-FROM content_post_audits duplicate
-JOIN LATERAL (
-  SELECT candidate.id
-  FROM content_post_audits candidate
-  WHERE candidate.job_id = duplicate.job_id
-    AND candidate.post_id = duplicate.post_id
-    AND candidate.audit_type = duplicate.audit_type
-  ORDER BY candidate.created_at DESC, candidate.id DESC
-  LIMIT 1
-) survivor ON TRUE
-WHERE revision.audit_id = duplicate.id
-  AND duplicate.job_id IS NOT NULL
-  AND duplicate.id <> survivor.id;
-DELETE FROM content_post_audits duplicate
-USING content_post_audits survivor
-WHERE duplicate.job_id IS NOT NULL
-  AND survivor.job_id = duplicate.job_id
-  AND survivor.post_id = duplicate.post_id
-  AND survivor.audit_type = duplicate.audit_type
-  AND (survivor.created_at, survivor.id) > (duplicate.created_at, duplicate.id);
+SET status = 'rejected'
+WHERE revision.id IN (
+  SELECT id FROM ranked_group_drafts WHERE position > 1
+);
+
+CREATE TEMP TABLE content_audit_dedupe_survivors (
+  job_id BIGINT NOT NULL,
+  post_id INTEGER NOT NULL,
+  audit_type VARCHAR(64) NOT NULL,
+  survivor_id BIGINT NOT NULL,
+  PRIMARY KEY (job_id, post_id, audit_type)
+) ON COMMIT DROP;
+
+INSERT INTO content_audit_dedupe_survivors (job_id, post_id, audit_type, survivor_id)
+SELECT grouped.job_id, grouped.post_id, grouped.audit_type,
+       (
+         SELECT candidate.id
+         FROM content_post_audits candidate
+         WHERE candidate.job_id = grouped.job_id
+           AND candidate.post_id = grouped.post_id
+           AND candidate.audit_type = grouped.audit_type
+         ORDER BY
+           EXISTS (
+             SELECT 1 FROM content_post_revisions draft
+             WHERE draft.audit_id = candidate.id AND draft.status = 'draft'
+           ) DESC,
+           (
+             SELECT MAX(draft.created_at) FROM content_post_revisions draft
+             WHERE draft.audit_id = candidate.id AND draft.status = 'draft'
+           ) DESC NULLS LAST,
+           candidate.created_at DESC,
+           candidate.id DESC
+         LIMIT 1
+       ) AS survivor_id
+FROM (
+  SELECT job_id, post_id, audit_type
+  FROM content_post_audits
+  WHERE job_id IS NOT NULL
+  GROUP BY job_id, post_id, audit_type
+  HAVING COUNT(*) > 1
+) grouped;
+
+UPDATE content_post_revisions revision
+SET audit_id = survivor.survivor_id
+FROM content_post_audits current_audit
+JOIN content_audit_dedupe_survivors survivor
+  ON survivor.job_id = current_audit.job_id
+ AND survivor.post_id = current_audit.post_id
+ AND survivor.audit_type = current_audit.audit_type
+WHERE revision.audit_id = current_audit.id
+  AND current_audit.id <> survivor.survivor_id;
+
+UPDATE content_post_audits audit
+SET status = CASE
+  WHEN EXISTS (
+    SELECT 1 FROM content_post_revisions revision
+    WHERE revision.audit_id = audit.id AND revision.status = 'draft'
+  ) THEN 'revision_created'
+  WHEN EXISTS (
+    SELECT 1 FROM content_post_revisions revision
+    WHERE revision.audit_id = audit.id AND revision.status = 'approved'
+  ) THEN 'resolved'
+  ELSE audit.status
+END
+WHERE audit.id IN (SELECT survivor_id FROM content_audit_dedupe_survivors);
+
+DELETE FROM content_post_audits losing
+USING content_audit_dedupe_survivors survivor
+WHERE losing.job_id = survivor.job_id
+  AND losing.post_id = survivor.post_id
+  AND losing.audit_type = survivor.audit_type
+  AND losing.id <> survivor.survivor_id;
+
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_audits_job_post_type
   ON content_post_audits (job_id, post_id, audit_type)
   WHERE job_id IS NOT NULL;
-WITH ranked_drafts AS (
-  SELECT id, ROW_NUMBER() OVER (PARTITION BY audit_id ORDER BY created_at, id) AS position
-  FROM content_post_revisions WHERE audit_id IS NOT NULL AND status = 'draft'
-)
-UPDATE content_post_revisions SET status = 'rejected'
-WHERE id IN (SELECT id FROM ranked_drafts WHERE position > 1);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_revisions_draft_audit
   ON content_post_revisions (audit_id) WHERE audit_id IS NOT NULL AND status = 'draft';
 
