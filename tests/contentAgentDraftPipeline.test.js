@@ -725,6 +725,7 @@ test('BlogPostModel.createAIDraft erzwingt unveränderliche KI-Entwurfsfelder un
     'send-admin-review:71:1',
     { deliveryId: 81, postId: 51, generationRunId: 71 }
   ]);
+  assert.equal(db.events[5].params[4], 6);
 });
 
 test('BlogPostModel.createAIDraft gibt bei derselben Run-ID denselben Post und geprüfte Metadaten zurück', async () => {

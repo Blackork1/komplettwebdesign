@@ -131,7 +131,7 @@ export async function enqueueAdminReviewNotificationJob({
       postId: normalizedPostId,
       generationRunId: normalizedGenerationRunId
     },
-    maxAttempts: 5
+    maxAttempts: 6
   }, db);
 }
 

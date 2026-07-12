@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   claimNextJob,
   completeJob,
+  enqueueAdminReviewNotificationJob,
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
@@ -221,6 +222,20 @@ test('enqueueJob normalisiert maxAttempts als sicheren PostgreSQL-Integer', asyn
   }, db);
 
   assert.deepEqual(db.calls.map((call) => call.params[4]), [1, 3, 2147483647, 5]);
+});
+
+test('Admin-Prüfmailjobs erlauben den initialen Versuch und fünf echte Wiederholungen', async () => {
+  const row = { id: 12, job_type: 'send_admin_review_notification', max_attempts: 6 };
+  const db = createQueryRecorder([{ rows: [row] }]);
+
+  assert.equal(await enqueueAdminReviewNotificationJob({
+    deliveryId: 81,
+    postId: 51,
+    generationRunId: 71,
+    reviewVersion: 1
+  }, db), row);
+
+  assert.equal(db.calls[0].params[4], 6);
 });
 
 test('der Wochen-Scheduler prüft die operative Pause atomar im idempotenten Insert', async () => {

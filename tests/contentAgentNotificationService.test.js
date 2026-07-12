@@ -6,40 +6,76 @@ function normalizeSql(sql) {
   return String(sql).replace(/\s+/g, ' ').trim();
 }
 
-function createDeliveryDatabase(delivery) {
-  const state = structuredClone(delivery);
+function createDeliveryDatabase(delivery, {
+  failCommitNumber = null,
+  loseSentUpdate = false
+} = {}) {
+  let state = structuredClone(delivery);
+  let transactionState = null;
+  let transactionNumber = 0;
+  let pendingCommitFailure = failCommitNumber;
   const queries = [];
   const client = {
     async query(sql, params = []) {
       const normalized = normalizeSql(sql);
       queries.push({ sql: normalized, params });
-      if (/^(BEGIN|COMMIT|ROLLBACK)$/i.test(normalized)) return { rows: [], rowCount: 0 };
+      if (/^BEGIN$/i.test(normalized)) {
+        transactionNumber += 1;
+        transactionState = structuredClone(state);
+        return { rows: [], rowCount: 0 };
+      }
+      if (/^COMMIT$/i.test(normalized)) {
+        if (transactionNumber === pendingCommitFailure) {
+          pendingCommitFailure = null;
+          throw new Error('COMMIT-Ergebnis unbekannt');
+        }
+        state = transactionState;
+        transactionState = null;
+        return { rows: [], rowCount: 0 };
+      }
+      if (/^ROLLBACK$/i.test(normalized)) {
+        transactionState = null;
+        return { rows: [], rowCount: 0 };
+      }
+      const mutableState = transactionState || state;
       if (/SELECT[\s\S]*FROM content_notification_deliveries/i.test(normalized)) {
-        return { rows: [structuredClone(state)], rowCount: 1 };
+        return { rows: [structuredClone(mutableState)], rowCount: 1 };
       }
       if (/SET status = 'sending'/i.test(normalized)) {
-        state.status = 'sending';
-        state.attempts += 1;
-        return { rows: [structuredClone(state)], rowCount: 1 };
+        mutableState.status = 'sending';
+        mutableState.attempts += 1;
+        mutableState.locked_by = params.find((value) => typeof value === 'string') || 'delivery-lock';
+        return { rows: [structuredClone(mutableState)], rowCount: 1 };
       }
       if (/SET status = 'sent'/i.test(normalized)) {
-        state.status = 'sent';
-        state.sent_at = params.find((value) => value instanceof Date) || new Date();
-        state.last_error_code = null;
-        return { rows: [structuredClone(state)], rowCount: 1 };
+        if (loseSentUpdate) return { rows: [], rowCount: 0 };
+        mutableState.status = 'sent';
+        mutableState.sent_at = params.find((value) => value instanceof Date) || new Date();
+        mutableState.last_error_code = null;
+        mutableState.locked_by = null;
+        return { rows: [structuredClone(mutableState)], rowCount: 1 };
+      }
+      if (/SET status = 'failed'/i.test(normalized)) {
+        mutableState.status = 'failed';
+        mutableState.last_error_code = params.find((value) => value === 'outcome_uncertain') || null;
+        mutableState.locked_by = null;
+        return { rows: [structuredClone(mutableState)], rowCount: 1 };
       }
       if (/SET status = CASE/i.test(normalized)) {
-        state.status = state.attempts < 5 ? 'queued' : 'failed';
-        state.last_error_code = params.find((value) => typeof value === 'string' && value.startsWith('smtp_')) || null;
-        state.next_attempt_at = params.find((value) => value instanceof Date) || null;
-        return { rows: [structuredClone(state)], rowCount: 1 };
+        mutableState.status = mutableState.attempts < 6 ? 'queued' : 'failed';
+        mutableState.last_error_code = params.find((value) => typeof value === 'string' && value.startsWith('smtp_')) || null;
+        if (mutableState.attempts < 6) {
+          mutableState.next_attempt_at = params.find((value) => value instanceof Date) || null;
+        }
+        mutableState.locked_by = null;
+        return { rows: [structuredClone(mutableState)], rowCount: 1 };
       }
       throw new Error(`Unerwartetes SQL im Test: ${normalized}`);
     },
     release() {}
   };
   return {
-    state,
+    get state() { return state; },
     queries,
     async connect() { return client; }
   };
@@ -53,6 +89,7 @@ function queuedDelivery(attempts = 0) {
     recipient_email: 'redaktion@example.de',
     status: 'queued',
     attempts,
+    next_attempt_at: new Date('2026-07-12T09:00:00.000Z'),
     payload_json: {
       postId: 51,
       title: 'Sicherer Entwurf',
@@ -75,9 +112,9 @@ test('sendContentAgentReviewMail rendert maskierte Entwurfsdaten im Brandtemplat
     to: 'redaktion@example.de',
     article: {
       id: 51,
-      title: '<img src=x onerror=alert(1)>',
+      title: 'Artikel & <Sicherheit>',
       shortDescription: '<script>alert("x")</script>',
-      imageUrl: 'https://cdn.example.test/vorschau.webp?format=auto&width=900',
+      imageUrl: 'https://cdn.example.test/vorschau.webp?token=geheim#intern',
       qualityScore: 91,
       riskSummary: '<b>Prüfen</b>'
     },
@@ -87,13 +124,15 @@ test('sendContentAgentReviewMail rendert maskierte Entwurfsdaten im Brandtemplat
 
   const mail = smtp.sendMail.mock.calls[0].arguments[0];
   assert.equal(mail.to, 'redaktion@example.de');
+  assert.equal(mail.subject, 'Neuer Blogartikel zur Prüfung: Artikel & <Sicherheit>');
   assert.match(mail.html, /Komplett Webdesign/);
-  assert.match(mail.html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(mail.html, /Artikel &amp; &lt;Sicherheit&gt;/);
   assert.match(mail.html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
   assert.doesNotMatch(mail.html, /<script>|<img src=x onerror/i);
-  assert.match(mail.html, /src="https:\/\/cdn\.example\.test\/vorschau\.webp\?format=auto&amp;width=900"/);
+  assert.match(mail.html, /src="https:\/\/cdn\.example\.test\/vorschau\.webp"/);
   assert.match(mail.html, /href="https:\/\/cms\.example\.de\/admin\/content-agent\/drafts\/51\/edit"/);
-  assert.doesNotMatch(mail.html, /session=|token=|#intern/);
+  assert.match(mail.html, /noch nicht öffentlich/i);
+  assert.doesNotMatch(mail.html, /session=|token=|geheim|#intern/);
 });
 
 test('sendContentAgentReviewMail verwirft unsichere Bild- und Editor-URLs', async () => {
@@ -157,7 +196,7 @@ test('already sent delivery does not send twice', async () => {
   assert.equal(database.queries.some(({ sql }) => /SET status = 'sending'/i.test(sql)), false);
 });
 
-test('alle fünf SMTP-Fehler verwenden exakt 5m, 15m, 1h, 4h und 12h', async () => {
+test('fünf Wiederholungen warten exakt 5m, 15m, 1h, 4h und 12h; erst Versuch sechs terminiert', async () => {
   const {
     ADMIN_NOTIFICATION_RETRY_DELAYS_MS,
     sendAdminReviewNotification
@@ -179,8 +218,115 @@ test('alle fünf SMTP-Fehler verwenden exakt 5m, 15m, 1h, 4h und 12h', async () 
       return true;
     });
     assert.equal(database.state.attempts, attempts + 1);
-    assert.equal(database.state.status, attempts < 4 ? 'queued' : 'failed');
+    assert.equal(database.state.status, 'queued');
+    assert.equal(database.state.next_attempt_at.getTime(), now.getTime() + expected[attempts]);
   }
+
+  const database = createDeliveryDatabase(queuedDelivery(5));
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail: async () => { throw Object.assign(new Error('SMTP weiterhin nicht erreichbar'), { code: 'ECONNECTION' }); },
+    now: () => new Date('2026-07-13T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => error.retryable === false);
+  assert.equal(database.state.attempts, 6);
+  assert.equal(database.state.status, 'failed');
+});
+
+test('eine zu frühe Zustellung sendet nicht und behält next_attempt_at als retryAt bei', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const retryAt = new Date('2026-07-12T10:05:00.000Z');
+  const database = createDeliveryDatabase({ ...queuedDelivery(), next_attempt_at: retryAt });
+  const sendReviewMail = mock.fn(async () => ({ messageId: 'darf-nicht-senden' }));
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail,
+    now: () => new Date('2026-07-12T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => {
+    assert.equal(error.retryable, true);
+    assert.equal(error.retryAt.getTime(), retryAt.getTime());
+    return true;
+  });
+
+  assert.equal(sendReviewMail.mock.callCount(), 0);
+  assert.equal(database.state.status, 'queued');
+  assert.equal(database.state.attempts, 0);
+  assert.equal(database.state.next_attempt_at.getTime(), retryAt.getTime());
+});
+
+test('unklares sent-COMMIT wird sofort outcome_uncertain und niemals automatisch erneut gesendet', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const database = createDeliveryDatabase(queuedDelivery(), { failCommitNumber: 2 });
+  const firstSend = mock.fn(async () => {
+    assert.equal(database.state.status, 'sending');
+    assert.equal(database.queries.at(-1).sql, 'COMMIT');
+    return { messageId: 'mail-wurde-an-smtp-übergeben' };
+  });
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail: firstSend,
+    now: () => new Date('2026-07-12T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => error.retryable === false && error.code === 'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN');
+  assert.equal(firstSend.mock.callCount(), 1);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
+
+  const automaticRetry = mock.fn(async () => ({ messageId: 'doppelte-mail' }));
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail: automaticRetry,
+    now: () => new Date('2026-07-12T10:30:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => error.retryable === false);
+
+  assert.equal(automaticRetry.mock.callCount(), 0);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
+});
+
+test('nach einem Prozesscrash verbliebenes sending wird ohne SMTP outcome_uncertain', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const database = createDeliveryDatabase({
+    ...queuedDelivery(1),
+    status: 'sending',
+    locked_by: 'abgestürzter-worker'
+  });
+  const sendReviewMail = mock.fn(async () => ({ messageId: 'doppelte-mail' }));
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail,
+    now: () => new Date('2026-07-12T10:30:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => error.retryable === false && error.code === 'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN');
+
+  assert.equal(sendReviewMail.mock.callCount(), 0);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
+});
+
+test('verlorenes markSent wird sofort outcome_uncertain und niemals retrybar', async () => {
+  const { sendAdminReviewNotification } = await import('../services/contentAgent/contentNotificationService.js');
+  const database = createDeliveryDatabase(queuedDelivery(), { loseSentUpdate: true });
+  const sendReviewMail = mock.fn(async () => ({ messageId: 'mail-ist-versendet' }));
+
+  await assert.rejects(() => sendAdminReviewNotification({ deliveryId: 7 }, {
+    database,
+    sendReviewMail,
+    now: () => new Date('2026-07-12T10:00:00.000Z'),
+    canonicalBaseUrl: 'https://cms.example.de'
+  }), (error) => (
+    error.retryable === false
+    && error.code === 'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN'
+  ));
+
+  assert.equal(sendReviewMail.mock.callCount(), 1);
+  assert.equal(database.state.status, 'failed');
+  assert.equal(database.state.last_error_code, 'outcome_uncertain');
 });
 
 test('erfolgreicher Versand verwendet die kanonische Admin-URL und setzt erst danach sent', async () => {
@@ -202,7 +348,7 @@ test('erfolgreicher Versand verwendet die kanonische Admin-URL und setzt erst da
   assert.deepEqual(result, { status: 'completed', deliveryId: 7 });
   assert.equal(database.state.status, 'sent');
   assert.equal(sendReviewMail.mock.callCount(), 1);
-  assert.equal(leaseChecks, 2);
+  assert.equal(leaseChecks, 1);
   const input = sendReviewMail.mock.calls[0].arguments[0];
   assert.equal(input.editorUrl, 'https://cms.example.de/admin/content-agent/drafts/51/edit');
   assert.equal(input.article.reviewVersion, 1);
@@ -210,4 +356,6 @@ test('erfolgreicher Versand verwendet die kanonische Admin-URL und setzt erst da
   const sendingIndex = database.queries.findIndex(({ sql }) => /SET status = 'sending'/i.test(sql));
   const sentIndex = database.queries.findIndex(({ sql }) => /SET status = 'sent'/i.test(sql));
   assert.ok(sendingIndex >= 0 && sentIndex > sendingIndex);
+  assert.equal(database.queries[sendingIndex + 1].sql, 'COMMIT');
+  assert.equal(database.queries[sentIndex - 1].sql, 'BEGIN');
 });

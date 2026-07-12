@@ -55,10 +55,18 @@ function secureHttpsUrl(value) {
     try {
         const url = new URL(String(value || ""));
         if (url.protocol !== "https:" || url.username || url.password) return "";
+        url.search = "";
+        url.hash = "";
         return url.toString();
     } catch {
         return "";
     }
+}
+
+function contentMailSubjectTitle(value) {
+    return String(value || "Unbenannter Entwurf")
+        .replace(/[\r\n]+/g, " ")
+        .trim() || "Unbenannter Entwurf";
 }
 
 function canonicalContentEditorUrl(value, articleId) {
@@ -113,12 +121,12 @@ export async function sendContentAgentReviewMail({
         : "–";
     const riskSummary = safeHtml(contentRiskSummary(article.riskSummary));
     const scheduledLabel = safeHtml(contentReviewDate(scheduledAt));
-    const subject = "Neuer Content-Entwurf zur Prüfung";
+    const subject = `Neuer Blogartikel zur Prüfung: ${contentMailSubjectTitle(article.title)}`;
     const imageHtml = imageUrl
         ? `<p style="margin:20px 0;"><img src="${safeHtml(imageUrl)}" alt="Vorschau zum Content-Entwurf" style="display:block;width:100%;max-width:620px;height:auto;border-radius:12px;" /></p>`
         : "";
     const bodyHtml = `
-        <p>Ein neuer Content-Entwurf wartet auf die redaktionelle Prüfung.</p>
+        <p>Ein neuer Content-Entwurf wartet auf die redaktionelle Prüfung. Der Artikel ist noch nicht öffentlich.</p>
         <h2 style="margin:20px 0 8px 0;color:#0b2a46;">${title}</h2>
         <p>${shortDescription}</p>
         ${imageHtml}

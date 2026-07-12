@@ -42,7 +42,7 @@ test('migration 004 constrains and deduplicates notification deliveries', async 
 
   assert.match(sql, /notification_type\s+IN\s*\(\s*'admin_review'\s*,\s*'newsletter_article'\s*\)/i);
   assert.match(sql, /status\s+IN\s*\(\s*'queued'\s*,\s*'sending'\s*,\s*'sent'\s*,\s*'failed'\s*,\s*'cancelled'\s*\)/i);
-  assert.match(sql, /attempts\s+BETWEEN 0 AND 5/i);
+  assert.match(sql, /attempts\s+BETWEEN 0 AND 6/i);
   assert.match(sql, /DROP CONSTRAINT IF EXISTS content_notification_admin_payload_valid/i);
   assert.match(sql, /ADD CONSTRAINT content_notification_admin_payload_valid[\s\S]*reviewVersion/i);
   assert.match(sql, /DROP CONSTRAINT IF EXISTS content_notification_newsletter_payload_valid/i);

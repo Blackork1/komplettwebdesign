@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import pool from '../../util/db.js';
 import { sendContentAgentReviewMail } from '../mailService.js';
 
@@ -40,6 +41,31 @@ function retryableSmtpError(error, retryAt) {
   return wrapped;
 }
 
+function terminalSmtpError(error) {
+  const wrapped = new Error('Die Admin-Prüfmail ist nach sechs Zustellversuchen fehlgeschlagen.', { cause: error });
+  wrapped.code = 'CONTENT_ADMIN_NOTIFICATION_SMTP_EXHAUSTED';
+  wrapped.retryable = false;
+  return wrapped;
+}
+
+function notDueError(retryAt) {
+  const error = new Error('Die Admin-Prüfmail ist noch nicht zur erneuten Zustellung fällig.');
+  error.code = 'CONTENT_ADMIN_NOTIFICATION_NOT_DUE';
+  error.retryable = true;
+  error.retryAt = retryAt;
+  return error;
+}
+
+function outcomeUncertainError(cause = null) {
+  const error = new Error(
+    'Der Ausgang des Mailversands ist unklar und benötigt eine manuelle Prüfung.',
+    cause ? { cause } : undefined
+  );
+  error.code = 'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN';
+  error.retryable = false;
+  return error;
+}
+
 function canonicalAdminOrigin(value) {
   const candidates = [
     value,
@@ -76,7 +102,10 @@ function validateDelivery(delivery, deliveryId) {
   if (delivery.notification_type !== 'admin_review') {
     throw permanentDeliveryError('Die Zustellung ist keine Admin-Prüfmail.', 'CONTENT_ADMIN_NOTIFICATION_TYPE_INVALID');
   }
-  if (delivery.status === 'sent') return;
+  if (Number(delivery.id) !== deliveryId) {
+    throw permanentDeliveryError('Die Zustellungs-ID ist inkonsistent.', 'CONTENT_ADMIN_NOTIFICATION_ID_INVALID');
+  }
+  if (delivery.status === 'sent' || delivery.status === 'sending') return;
   if (delivery.status !== 'queued') {
     throw permanentDeliveryError(
       'Die Admin-Mailzustellung ist nicht versandbereit.',
@@ -90,9 +119,6 @@ function validateDelivery(delivery, deliveryId) {
       'Der Zustellungssnapshot passt nicht zum Entwurf.',
       'CONTENT_ADMIN_NOTIFICATION_PAYLOAD_INVALID'
     );
-  }
-  if (Number(delivery.id) !== deliveryId) {
-    throw permanentDeliveryError('Die Zustellungs-ID ist inkonsistent.', 'CONTENT_ADMIN_NOTIFICATION_ID_INVALID');
   }
 }
 
@@ -117,7 +143,7 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
     transactionOpen = true;
     const { rows } = await client.query(
       `
-        SELECT *
+        SELECT *, NOW() AS database_now
         FROM content_notification_deliveries
         WHERE id = $1
           AND notification_type = 'admin_review'
@@ -132,22 +158,58 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
       transactionOpen = false;
       return { status: 'completed', deliveryId: normalizedDeliveryId };
     }
+    if (delivery.status === 'sending') {
+      const uncertain = await client.query(
+        `
+          UPDATE content_notification_deliveries
+          SET status = 'failed',
+              locked_at = NULL,
+              locked_by = NULL,
+              last_error_code = $2,
+              updated_at = NOW()
+          WHERE id = $1
+            AND status = 'sending'
+          RETURNING *
+        `,
+        [normalizedDeliveryId, 'outcome_uncertain']
+      );
+      if (!uncertain.rows[0]) {
+        throw permanentDeliveryError(
+          'Der unklare Mailausgang konnte nicht gespeichert werden.',
+          'CONTENT_ADMIN_NOTIFICATION_OUTCOME_UNCERTAIN_WRITE_LOST'
+        );
+      }
+      await client.query('COMMIT');
+      transactionOpen = false;
+      throw outcomeUncertainError();
+    }
+
+    const databaseNow = new Date(delivery.database_now || now());
+    const nextAttemptAt = new Date(delivery.next_attempt_at);
+    if (!Number.isNaN(nextAttemptAt.getTime()) && nextAttemptAt.getTime() > databaseNow.getTime()) {
+      await client.query('COMMIT');
+      transactionOpen = false;
+      throw notDueError(nextAttemptAt);
+    }
 
     await assertActiveLease(leaseGuard);
+    const deliveryLockId = randomUUID();
     const claimed = await client.query(
       `
         UPDATE content_notification_deliveries
         SET status = 'sending',
             attempts = attempts + 1,
             locked_at = NOW(),
+            locked_by = $3,
             last_error_code = NULL,
             updated_at = NOW()
         WHERE id = $1
           AND status = 'queued'
           AND attempts = $2
+          AND next_attempt_at <= NOW()
         RETURNING *
       `,
-      [normalizedDeliveryId, delivery.attempts]
+      [normalizedDeliveryId, delivery.attempts, deliveryLockId]
     );
     const sending = claimed.rows[0] || null;
     if (!sending) {
@@ -156,6 +218,9 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
         'CONTENT_ADMIN_NOTIFICATION_CLAIM_LOST'
       );
     }
+
+    await client.query('COMMIT');
+    transactionOpen = false;
 
     const article = {
       id: sending.post_id,
@@ -180,17 +245,18 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
         throw Object.assign(new Error('Der SMTP-Transport bestätigte den Versand nicht.'), { code: 'ENORESULT' });
       }
     } catch (error) {
-      await assertActiveLease(leaseGuard);
-      const attemptIndex = Math.min(
-        ADMIN_NOTIFICATION_RETRY_DELAYS_MS.length - 1,
-        Math.max(0, Number(sending.attempts) - 1)
-      );
-      const retryAt = new Date(now().getTime() + ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex]);
+      const canRetry = Number(sending.attempts) < 6;
+      const attemptIndex = Math.max(0, Number(sending.attempts) - 1);
+      const retryAt = canRetry
+        ? new Date(now().getTime() + ADMIN_NOTIFICATION_RETRY_DELAYS_MS[attemptIndex])
+        : null;
+      await client.query('BEGIN');
+      transactionOpen = true;
       const retried = await client.query(
         `
           UPDATE content_notification_deliveries
-          SET status = CASE WHEN attempts < 5 THEN 'queued' ELSE 'failed' END,
-              next_attempt_at = $2,
+          SET status = CASE WHEN attempts < 6 THEN 'queued' ELSE 'failed' END,
+              next_attempt_at = CASE WHEN attempts < 6 THEN $2 ELSE next_attempt_at END,
               locked_at = NULL,
               locked_by = NULL,
               last_error_code = $3,
@@ -198,9 +264,10 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
           WHERE id = $1
             AND status = 'sending'
             AND attempts = $4
+            AND locked_by = $5
           RETURNING *
         `,
-        [normalizedDeliveryId, retryAt, smtpErrorCode(error), sending.attempts]
+        [normalizedDeliveryId, retryAt, smtpErrorCode(error), sending.attempts, deliveryLockId]
       );
       if (!retried.rows[0]) {
         throw permanentDeliveryError(
@@ -210,35 +277,109 @@ export async function sendAdminReviewNotification({ deliveryId, leaseGuard } = {
       }
       await client.query('COMMIT');
       transactionOpen = false;
-      throw retryableSmtpError(error, retryAt);
+      throw canRetry ? retryableSmtpError(error, retryAt) : terminalSmtpError(error);
     }
 
-    await assertActiveLease(leaseGuard);
-    const sentAt = now();
-    const completed = await client.query(
-      `
-        UPDATE content_notification_deliveries
-        SET status = 'sent',
-            sent_at = $2,
-            locked_at = NULL,
-            locked_by = NULL,
-            last_error_code = NULL,
-            updated_at = NOW()
-        WHERE id = $1
-          AND status = 'sending'
-          AND attempts = $3
-        RETURNING *
-      `,
-      [normalizedDeliveryId, sentAt, sending.attempts]
-    );
-    if (!completed.rows[0]) {
-      throw permanentDeliveryError(
-        'Der bestätigte Mailversand konnte nicht gespeichert werden.',
-        'CONTENT_ADMIN_NOTIFICATION_COMPLETE_LOST'
+    let sentPersistenceError = null;
+    try {
+      const sentAt = now();
+      await client.query('BEGIN');
+      transactionOpen = true;
+      const completed = await client.query(
+        `
+          UPDATE content_notification_deliveries
+          SET status = 'sent',
+              sent_at = $2,
+              locked_at = NULL,
+              locked_by = NULL,
+              last_error_code = NULL,
+              updated_at = NOW()
+          WHERE id = $1
+            AND status = 'sending'
+            AND attempts = $3
+            AND locked_by = $4
+          RETURNING *
+        `,
+        [normalizedDeliveryId, sentAt, sending.attempts, deliveryLockId]
       );
+      if (!completed.rows[0]) {
+        throw new Error('Der bestätigte Mailversand konnte nicht gespeichert werden.');
+      }
+      await client.query('COMMIT');
+      transactionOpen = false;
+    } catch (error) {
+      sentPersistenceError = error;
+      if (transactionOpen) {
+        try {
+          await client.query('ROLLBACK');
+        } catch {
+          // Die anschließende Statusabfrage entscheidet den sicheren Ausgang.
+        }
+        transactionOpen = false;
+      }
     }
-    await client.query('COMMIT');
-    transactionOpen = false;
+
+    if (sentPersistenceError) {
+      let reconciledStatus = null;
+      try {
+        await client.query('BEGIN');
+        transactionOpen = true;
+        const currentResult = await client.query(
+          `
+            SELECT status, attempts, locked_by, last_error_code
+            FROM content_notification_deliveries
+            WHERE id = $1
+              AND notification_type = 'admin_review'
+            FOR UPDATE
+          `,
+          [normalizedDeliveryId]
+        );
+        const current = currentResult.rows[0] || null;
+        if (current?.status === 'sent') {
+          reconciledStatus = 'sent';
+        } else if (current?.status === 'sending') {
+          const uncertain = await client.query(
+            `
+              UPDATE content_notification_deliveries
+              SET status = 'failed',
+                  locked_at = NULL,
+                  locked_by = NULL,
+                  last_error_code = $2,
+                  updated_at = NOW()
+              WHERE id = $1
+                AND status = 'sending'
+                AND attempts = $3
+                AND locked_by = $4
+              RETURNING *
+            `,
+            [normalizedDeliveryId, 'outcome_uncertain', sending.attempts, deliveryLockId]
+          );
+          if (!uncertain.rows[0]) throw new Error('Der unklare Mailausgang konnte nicht gespeichert werden.');
+          reconciledStatus = 'outcome_uncertain';
+        } else if (current?.status === 'failed' && current.last_error_code === 'outcome_uncertain') {
+          reconciledStatus = 'outcome_uncertain';
+        } else {
+          throw new Error('Der Mailausgang konnte nicht eindeutig abgeglichen werden.');
+        }
+        await client.query('COMMIT');
+        transactionOpen = false;
+      } catch (error) {
+        if (transactionOpen) {
+          try {
+            await client.query('ROLLBACK');
+          } catch {
+            // Der permanente Fehler verhindert jeden automatischen SMTP-Retry.
+          }
+          transactionOpen = false;
+        }
+        throw outcomeUncertainError(error);
+      }
+      if (reconciledStatus === 'sent') {
+        return { status: 'completed', deliveryId: normalizedDeliveryId };
+      }
+      throw outcomeUncertainError(sentPersistenceError);
+    }
+
     return { status: 'completed', deliveryId: normalizedDeliveryId };
   } catch (error) {
     if (transactionOpen) {

@@ -158,13 +158,13 @@ SET status = 'failed',
 WHERE status NOT IN ('queued', 'sending', 'sent', 'failed', 'cancelled');
 
 UPDATE content_notification_deliveries
-SET attempts = LEAST(GREATEST(attempts, 0), 5),
-    status = CASE WHEN attempts > 5 THEN 'failed' ELSE status END,
+SET attempts = LEAST(GREATEST(attempts, 0), 6),
+    status = CASE WHEN attempts > 6 THEN 'failed' ELSE status END,
     last_error_code = CASE
-      WHEN attempts > 5 THEN COALESCE(last_error_code, 'migration_attempt_limit_exceeded')
+      WHEN attempts > 6 THEN COALESCE(last_error_code, 'migration_attempt_limit_exceeded')
       ELSE last_error_code
     END
-WHERE attempts NOT BETWEEN 0 AND 5;
+WHERE attempts NOT BETWEEN 0 AND 6;
 
 UPDATE content_notification_deliveries delivery
 SET payload_json = jsonb_set(
@@ -238,7 +238,7 @@ ALTER TABLE content_notification_deliveries
   DROP CONSTRAINT IF EXISTS content_notification_deliveries_attempts_valid;
 ALTER TABLE content_notification_deliveries
   ADD CONSTRAINT content_notification_deliveries_attempts_valid
-  CHECK (attempts BETWEEN 0 AND 5);
+  CHECK (attempts BETWEEN 0 AND 6);
 
 ALTER TABLE content_notification_deliveries
   DROP CONSTRAINT IF EXISTS content_notification_admin_payload_valid;
