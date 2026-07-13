@@ -11,6 +11,7 @@ import {
   failJob,
   markJobNeedsManualAttention,
   recoverQualityGateJobForAdmin,
+  recoverQualityGateRuleManifestForAdmin,
   recoverRejectedProviderJobForAdmin,
   recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
@@ -36,6 +37,11 @@ import {
   evaluateContentAgentPgResetGuard
 } from './helpers/contentAgentPostgresTestGuard.js';
 import BlogPostModel from '../models/BlogPostModel.js';
+import {
+  CONTENT_AGENT_RULE_MANIFEST,
+  CONTENT_AGENT_RULE_MANIFEST_HASH,
+  canonicalSha256
+} from '../services/contentAgent/contentRuleManifest.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
 const resetGuard = evaluateContentAgentPgResetGuard({
@@ -401,6 +407,18 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
   let pool;
   let schemaCreated = false;
   try {
+    const previousManifest = {
+      ...CONTENT_AGENT_RULE_MANIFEST,
+      articleRepairPrompt: '2026-07-10.1',
+      articleWriterPrompt: '2026-07-10.1'
+    };
+    const previousSnapshot = {
+      timezone: 'Europe/Berlin',
+      allowedInternalLinks: ['/kontakt'],
+      allowedInternalLinksHash: canonicalSha256(['/kontakt']),
+      ruleManifest: previousManifest,
+      ruleManifestHash: canonicalSha256(previousManifest)
+    };
     await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
     schemaCreated = true;
     pool = new pg.Pool({
@@ -431,6 +449,7 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
         post_id INTEGER,
         cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
         error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         finished_at TIMESTAMPTZ
       );
@@ -448,13 +467,14 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
       )
       INSERT INTO content_runs (
         job_id, status, current_stage, cost_estimate,
-        error_report_json, stage_results_json, finished_at
+        error_report_json, runtime_snapshot_json, stage_results_json, finished_at
       )
       SELECT id,
              'needs_manual_attention',
              'validation',
              0.483309,
              '{"code":"quality_gate_failed"}'::jsonb,
+             $1::jsonb,
              '{
                "budget:2026-07:article_generation": {"status":"settled"},
                "article_generation": {"value":{"title":"Bezahlter Artikel"}},
@@ -474,7 +494,7 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
              NOW()
       FROM job
       RETURNING job_id
-    `);
+    `, [JSON.stringify(previousSnapshot)]);
     const jobId = Number(inserted.rows[0].job_id);
 
     const result = await recoverQualityGateJobForAdmin({
@@ -492,7 +512,8 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
       status: 'queued', attempts: 7, max_attempts: 8, last_error: null
     });
     const run = (await pool.query(`
-      SELECT status, current_stage, post_id, cost_estimate, error_report_json, stage_results_json
+      SELECT status, current_stage, post_id, cost_estimate, error_report_json,
+             runtime_snapshot_json, stage_results_json
       FROM content_runs
       WHERE job_id = $1
     `, [jobId])).rows[0];
@@ -501,6 +522,9 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
     assert.equal(run.post_id, null);
     assert.equal(Number(run.cost_estimate), 0.483309);
     assert.equal(run.error_report_json.code, 'quality_gate_recovery_authorized');
+    assert.deepEqual(run.runtime_snapshot_json.ruleManifest, CONTENT_AGENT_RULE_MANIFEST);
+    assert.equal(run.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+    assert.deepEqual(run.runtime_snapshot_json.allowedInternalLinks, ['/kontakt']);
     assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
     assert.equal(run.stage_results_json['repair:2'].value.title, 'Zweite Reparatur');
     assert.equal(
@@ -513,6 +537,136 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
       adminId: 7,
       baseMaxRevisions: 2
     }, pool), null);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: vorzeitig gestoppter Manifestfehler wird ohne Inhaltsverlust fortgesetzt', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    const previousManifest = {
+      ...CONTENT_AGENT_RULE_MANIFEST,
+      articleRepairPrompt: '2026-07-10.1',
+      articleWriterPrompt: '2026-07-10.1'
+    };
+    const previousHash = canonicalSha256(previousManifest);
+    const previousSnapshot = {
+      timezone: 'Europe/Berlin',
+      allowedInternalLinks: ['/kontakt'],
+      allowedInternalLinksHash: canonicalSha256(['/kontakt']),
+      ruleManifest: previousManifest,
+      ruleManifestHash: previousHash
+    };
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'needs_manual_attention', 8, 8,
+          'CONTENT_RULE_MANIFEST_MISMATCH', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, current_stage, cost_estimate, error_report_json,
+        runtime_snapshot_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'needs_manual_attention',
+             'validation',
+             0.483309,
+             '{"code":"CONTENT_RULE_MANIFEST_MISMATCH"}'::jsonb,
+             $1::jsonb,
+             '{
+               "budget:2026-07:article_generation":{"status":"settled"},
+               "article_generation":{"value":{"title":"Bezahlter Artikel"}},
+               "budget:2026-07:repair:2":{"status":"settled"},
+               "repair:2":{"value":{"title":"Zweite Reparatur"}},
+               "validation:2":{"passed":false,"issues":[{"code":"cta_count_invalid"}]},
+               "quality_gate_recovery:structure_contract:attempt-7":{
+                 "status":"authorized_after_quality_gate",
+                 "stageId":"repair:3",
+                 "baseMaxRevisions":2,
+                 "additionalRevisionCount":1,
+                 "adminId":7
+               }
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id
+    `, [JSON.stringify(previousSnapshot)]);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const result = await recoverQualityGateRuleManifestForAdmin({ jobId, adminId: 9 }, pool);
+
+    assert.equal(result.recoveredStage, 'repair:3');
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 8, max_attempts: 9, last_error: null
+    });
+    const run = (await pool.query(`
+      SELECT cost_estimate, error_report_json, runtime_snapshot_json, stage_results_json
+      FROM content_runs
+      WHERE job_id = $1
+    `, [jobId])).rows[0];
+    assert.equal(Number(run.cost_estimate), 0.483309);
+    assert.equal(run.error_report_json.code, 'content_rule_manifest_recovery_authorized');
+    assert.equal(run.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+    assert.deepEqual(run.runtime_snapshot_json.allowedInternalLinks, ['/kontakt']);
+    assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
+    assert.equal(run.stage_results_json['repair:2'].value.title, 'Zweite Reparatur');
+    const audit = run.stage_results_json['rule_manifest_recovery:quality_gate:attempt-8'];
+    assert.equal(audit.previousManifestHash, previousHash);
+    assert.equal(audit.currentManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+
+    assert.equal(await recoverQualityGateRuleManifestForAdmin({ jobId, adminId: 9 }, pool), null);
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

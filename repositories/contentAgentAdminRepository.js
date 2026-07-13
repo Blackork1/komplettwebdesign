@@ -83,7 +83,8 @@ export function createContentAgentAdminRepository(db = pool) {
                    AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
                  ) AS provider_rejected_schema_repairable,
                  r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
-                 quality_recovery.quality_gate_structure_repairable
+                 quality_recovery.quality_gate_structure_repairable,
+                 quality_recovery.quality_gate_manifest_repairable
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -127,7 +128,22 @@ export function createContentAgentAdminRepository(db = pool) {
                   'bootstrap_class_unknown', 'class_forbidden'
                 )
               )
-            ) AS quality_gate_structure_repairable
+            ) AS quality_gate_structure_repairable,
+            (
+              r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
+              AND r.stage_results_json
+                -> 'quality_gate_recovery:structure_contract:attempt-7'
+                ->> 'status' = 'authorized_after_quality_gate'
+              AND r.stage_results_json
+                -> 'quality_gate_recovery:structure_contract:attempt-7'
+                ->> 'stageId' = 'repair:3'
+              AND NOT (r.stage_results_json ? 'repair:3')
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
+                WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+              )
+            ) AS quality_gate_manifest_repairable
           ) quality_recovery ON TRUE
           ORDER BY j.created_at DESC
           LIMIT $1
@@ -258,7 +274,8 @@ export function createContentAgentAdminRepository(db = pool) {
                  AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
                ) AS provider_rejected_schema_repairable,
                r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
-               quality_recovery.quality_gate_structure_repairable
+               quality_recovery.quality_gate_structure_repairable,
+               quality_recovery.quality_gate_manifest_repairable
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (
@@ -302,7 +319,22 @@ export function createContentAgentAdminRepository(db = pool) {
                 'bootstrap_class_unknown', 'class_forbidden'
               )
             )
-          ) AS quality_gate_structure_repairable
+          ) AS quality_gate_structure_repairable,
+          (
+            r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
+            AND r.stage_results_json
+              -> 'quality_gate_recovery:structure_contract:attempt-7'
+              ->> 'status' = 'authorized_after_quality_gate'
+            AND r.stage_results_json
+              -> 'quality_gate_recovery:structure_contract:attempt-7'
+              ->> 'stageId' = 'repair:3'
+            AND NOT (r.stage_results_json ? 'repair:3')
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
+              WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+            )
+          ) AS quality_gate_manifest_repairable
         ) quality_recovery ON TRUE
         ORDER BY j.created_at DESC
         LIMIT $1

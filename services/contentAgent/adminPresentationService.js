@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import {
   canRecoverQualityGateJob,
+  canRecoverQualityGateRuleManifest,
   canRecoverRejectedProviderJob,
   canRecoverUncertainProviderJob,
   canRetryContentJobManually
@@ -387,6 +388,16 @@ export function buildJobListPresentation(rows = []) {
       openReservationCount: row.open_provider_reservation_count,
       structureRepairable: row.quality_gate_structure_repairable === true
     });
+    const canRecoverQualityGateManifest = canRecoverQualityGateRuleManifest({
+      jobType: row.job_type,
+      status: row.status,
+      attempts: row.attempts,
+      lastError: row.last_error,
+      currentStage: row.current_stage,
+      postId: row.post_id,
+      openReservationCount: row.open_provider_reservation_count,
+      manifestRepairable: row.quality_gate_manifest_repairable === true
+    });
     return {
       id: row.id,
       jobType: row.job_type,
@@ -413,6 +424,10 @@ export function buildJobListPresentation(rows = []) {
       canRecoverQualityGate,
       qualityGateRecoveryActionLabel: canRecoverQualityGate
         ? 'HTML-Struktur gezielt reparieren und erneut prüfen'
+        : null,
+      canRecoverQualityGateManifest,
+      qualityGateManifestRecoveryActionLabel: canRecoverQualityGateManifest
+        ? 'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
         : null,
       isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
       attempts: Number(row.attempts || 0),

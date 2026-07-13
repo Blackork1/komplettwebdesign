@@ -3,6 +3,9 @@ export const PROVIDER_SCHEMA_REPAIR_RETRY_CAP = 6;
 export const REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP = 7;
 export const QUALITY_GATE_RECOVERY_RETRY_CAP = 8;
 export const QUALITY_GATE_RECOVERY_AUDIT_KEY = 'quality_gate_recovery:structure_contract:attempt-7';
+export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP = 9;
+export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY =
+  'rule_manifest_recovery:quality_gate:attempt-8';
 
 const RETRYABLE_JOB_STATUSES = new Set(['failed', 'needs_manual_attention']);
 const ADMIN_REVIEW_NOTIFICATION_JOB = 'send_admin_review_notification';
@@ -95,4 +98,24 @@ export function canRecoverQualityGateJob({
     && postId == null
     && Number(openReservationCount) === 0
     && structureRepairable === true;
+}
+
+export function canRecoverQualityGateRuleManifest({
+  jobType,
+  status,
+  attempts,
+  lastError,
+  currentStage,
+  postId,
+  openReservationCount,
+  manifestRepairable = false
+} = {}) {
+  return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
+    && status === 'needs_manual_attention'
+    && Number(attempts) === QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP - 1
+    && lastError === 'CONTENT_RULE_MANIFEST_MISMATCH'
+    && currentStage === 'validation'
+    && postId == null
+    && Number(openReservationCount) === 0
+    && manifestRepairable === true;
 }

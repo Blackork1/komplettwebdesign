@@ -122,6 +122,16 @@ test('der Produktionsrouter verdrahtet die bestätigte Qualitätswiederaufnahme'
   );
 });
 
+test('der Produktionsrouter verdrahtet die bestätigte Regelstand-Übernahme', () => {
+  assert.match(routes, /recoverQualityGateRuleManifestForAdmin/);
+  assert.match(routes, /jobs\/:id\/recover-rule-manifest/);
+  assert.match(routes, /controller\.recoverQualityGateRuleManifestAction/);
+  assert.match(
+    routes,
+    /recoverQualityGateRuleManifestForAdmin:\s*\(input\)\s*=>\s*recoverQualityGateRuleManifestForAdmin\(input, pool\)/
+  );
+});
+
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
   assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
   assert.doesNotMatch(routes, /controller\.publishDraftAction/);

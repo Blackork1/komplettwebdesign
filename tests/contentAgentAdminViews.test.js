@@ -394,6 +394,38 @@ test('Jobliste erklärt die gezielte Qualitätswiederaufnahme ohne erneute Grund
   assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
 });
 
+test('Jobliste erklärt die sichere Manifestübernahme nach dem kostenfreien Vorabstopp', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 8,
+      maxAttempts: 8,
+      lastSafeStageLabel: 'Qualitätsprüfung',
+      lastError: 'CONTENT_RULE_MANIFEST_MISMATCH',
+      costEur: 0.48,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: false,
+      canRecoverQualityGateManifest: true,
+      qualityGateManifestRecoveryActionLabel:
+        'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-rule-manifest"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Der abgebrochene Versuch hat keinen OpenAI-Aufruf ausgelöst/);
+  assert.match(html, /Themenrecherche, SEO-Briefing und Artikel bleiben erhalten/);
+  assert.match(html, /nächste Strukturreparatur und Prüfung verursachen reguläre OpenAI-Kosten/);
+  assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

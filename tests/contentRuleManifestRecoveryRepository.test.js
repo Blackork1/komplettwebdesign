@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+
 import {
   CONTENT_AGENT_RULE_MANIFEST,
   CONTENT_AGENT_RULE_MANIFEST_HASH,
@@ -20,17 +21,15 @@ function fixture() {
     job_id: 1,
     job_type: 'generate_weekly_draft',
     job_status: 'needs_manual_attention',
-    attempts: 7,
-    max_attempts: 7,
-    last_error: 'quality_gate_failed',
+    attempts: 8,
+    max_attempts: 8,
+    last_error: 'CONTENT_RULE_MANIFEST_MISMATCH',
     run_id: 11,
     run_status: 'needs_manual_attention',
     current_stage: 'validation',
     post_id: null,
-    error_report_json: {
-      code: 'quality_gate_failed',
-      message: 'Der Artikel hat die Qualitätsprüfung nicht bestanden.'
-    },
+    cost_estimate: '0.483309',
+    error_report_json: { code: 'CONTENT_RULE_MANIFEST_MISMATCH' },
     runtime_snapshot_json: {
       timezone: 'Europe/Berlin',
       allowedInternalLinks: ['/kontakt'],
@@ -39,15 +38,20 @@ function fixture() {
       ruleManifestHash: canonicalSha256(previousManifest)
     },
     stage_results_json: {
-      'budget:2026-07:article_generation': { status: 'settled' },
       article_generation: { value: { title: 'Bezahlter Artikel' } },
-      'budget:2026-07:repair:1': { status: 'settled' },
-      'repair:1': { value: { title: 'Reparatur eins' } },
+      'budget:2026-07:article_generation': { status: 'settled' },
+      'repair:2': { value: { title: 'Zweite Reparatur' } },
       'budget:2026-07:repair:2': { status: 'settled' },
-      'repair:2': { value: { title: 'Reparatur zwei' } },
       'validation:2': {
         passed: false,
-        issues: [{ code: 'cta_count_invalid' }, { code: 'faq_count_invalid' }]
+        issues: [{ code: 'cta_count_invalid' }]
+      },
+      'quality_gate_recovery:structure_contract:attempt-7': {
+        status: 'authorized_after_quality_gate',
+        stageId: 'repair:3',
+        baseMaxRevisions: 2,
+        additionalRevisionCount: 1,
+        adminId: 7
       }
     }
   };
@@ -67,7 +71,7 @@ function createDb(row, { failRunUpdate = false } = {}) {
       }
       if (/UPDATE content_runs/i.test(normalized)) {
         runUpdates += 1;
-        if (failRunUpdate) throw new Error('Run-Update fehlgeschlagen');
+        if (failRunUpdate) throw new Error('Snapshot-Update fehlgeschlagen');
         return { rows: [{ id: row.run_id }] };
       }
       if (/UPDATE content_jobs/i.test(normalized)) {
@@ -91,109 +95,76 @@ function createDb(row, { failRunUpdate = false } = {}) {
   };
 }
 
-test('Qualitätsfehler übernimmt protokolliert den aktuellen Regelstand und erhält genau eine dritte Strukturreparatur', async () => {
+test('Manifestfehler übernimmt genau einmal den aktuellen Regelstand ohne Kosten- oder Inhaltsmutation', async () => {
   const module = await import('../repositories/contentJobRepository.js');
-  assert.equal(typeof module.recoverQualityGateJobForAdmin, 'function');
-  const db = createDb(fixture());
+  assert.equal(typeof module.recoverQualityGateRuleManifestForAdmin, 'function');
+  const row = fixture();
+  const previousHash = row.runtime_snapshot_json.ruleManifestHash;
+  const db = createDb(row);
 
-  const result = await module.recoverQualityGateJobForAdmin({
-    jobId: 1,
-    adminId: 7,
-    baseMaxRevisions: 2
-  }, db);
+  const result = await module.recoverQualityGateRuleManifestForAdmin({ jobId: 1, adminId: 9 }, db);
 
-  assert.equal(result.job.max_attempts, 8);
+  assert.equal(result.job.max_attempts, 9);
   assert.equal(result.recoveredStage, 'repair:3');
-  assert.equal(result.auditKey, 'quality_gate_recovery:structure_contract:attempt-7');
+  assert.equal(result.auditKey, 'rule_manifest_recovery:quality_gate:attempt-8');
   assert.equal(db.runUpdates, 1);
   assert.equal(db.jobUpdates, 1);
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.match(runUpdate.sql, /runtime_snapshot_json\s*=/i);
   assert.doesNotMatch(runUpdate.sql, /cost_estimate\s*=/i);
   assert.doesNotMatch(runUpdate.sql, /stage_results_json\s*-/i);
-  assert.match(runUpdate.sql, /runtime_snapshot_json\s*=/i);
-  const previousHash = fixture().runtime_snapshot_json.ruleManifestHash;
   assert.deepEqual(runUpdate.params, [
     11,
-    'quality_gate_recovery:structure_contract:attempt-7',
-    'repair:3',
-    2,
-    7,
+    'rule_manifest_recovery:quality_gate:attempt-8',
     CONTENT_AGENT_RULE_MANIFEST,
     CONTENT_AGENT_RULE_MANIFEST_HASH,
-    previousHash
+    previousHash,
+    9
   ]);
   const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
-  assert.deepEqual(jobUpdate.params, [1, 8, 7]);
+  assert.deepEqual(jobUpdate.params, [1, 9, 8]);
 });
 
 for (const [label, mutate] of [
-  ['offener Reservierung', (row) => {
-    row.stage_results_json['budget:2026-07:review:3'] = { status: 'reserved' };
+  ['manipuliertem alten Manifesthash', (row) => {
+    row.runtime_snapshot_json.ruleManifestHash = '0'.repeat(64);
   }],
-  ['bereits bestandener Validierung', (row) => {
-    row.stage_results_json['validation:2'].passed = true;
+  ['fehlender Qualitätsfreigabe', (row) => {
+    delete row.stage_results_json['quality_gate_recovery:structure_contract:attempt-7'];
   }],
-  ['fehlender zweiter Reparatur', (row) => {
-    delete row.stage_results_json['repair:2'];
+  ['bereits vorhandener dritter Reparatur', (row) => {
+    row.stage_results_json['repair:3'] = { value: { title: 'Schon ausgeführt' } };
   }],
-  ['fehlender Abrechnung der zweiten Reparatur', (row) => {
-    delete row.stage_results_json['budget:2026-07:repair:2'];
+  ['bereits reservierter dritter Reparatur', (row) => {
+    row.stage_results_json['budget:2026-07:repair:3'] = { status: 'reserved' };
   }],
-  ['ausgeschöpftem Sonderversuch', (row) => {
-    row.attempts = 8;
-    row.max_attempts = 8;
+  ['ausgeschöpftem Manifest-Sonderversuch', (row) => {
+    row.attempts = 9;
+    row.max_attempts = 9;
   }]
 ]) {
-  test(`Qualitätswiederaufnahme bleibt bei ${label} gesperrt`, async () => {
+  test(`Manifestwiederaufnahme bleibt bei ${label} gesperrt`, async () => {
     const module = await import('../repositories/contentJobRepository.js');
     const row = fixture();
     mutate(row);
     const db = createDb(row);
-
-    const result = typeof module.recoverQualityGateJobForAdmin === 'function'
-      ? await module.recoverQualityGateJobForAdmin({
-        jobId: 1,
-        adminId: 7,
-        baseMaxRevisions: 2
-      }, db)
+    const result = typeof module.recoverQualityGateRuleManifestForAdmin === 'function'
+      ? await module.recoverQualityGateRuleManifestForAdmin({ jobId: 1, adminId: 9 }, db)
       : null;
-
     assert.equal(result, null);
     assert.equal(db.runUpdates, 0);
     assert.equal(db.jobUpdates, 0);
   });
 }
 
-test('Qualitätswiederaufnahme rollt Schreibfehler vollständig zurück', async () => {
+test('Manifestwiederaufnahme rollt den gesamten Schreibvorgang bei Fehlern zurück', async () => {
   const module = await import('../repositories/contentJobRepository.js');
-  assert.equal(typeof module.recoverQualityGateJobForAdmin, 'function');
+  assert.equal(typeof module.recoverQualityGateRuleManifestForAdmin, 'function');
   const db = createDb(fixture(), { failRunUpdate: true });
-
   await assert.rejects(
-    module.recoverQualityGateJobForAdmin({
-      jobId: 1,
-      adminId: 7,
-      baseMaxRevisions: 2
-    }, db),
-    /Run-Update fehlgeschlagen/
+    module.recoverQualityGateRuleManifestForAdmin({ jobId: 1, adminId: 9 }, db),
+    /Snapshot-Update fehlgeschlagen/
   );
-
   assert.equal(db.jobUpdates, 0);
   assert.equal(db.events.filter(({ sql }) => sql === 'ROLLBACK').length, 1);
-});
-
-test('Qualitätswiederaufnahme lehnt ungültige IDs und Revisionswerte vor Transaktionsbeginn ab', async () => {
-  const module = await import('../repositories/contentJobRepository.js');
-  assert.equal(typeof module.recoverQualityGateJobForAdmin, 'function');
-  const db = createDb(fixture());
-
-  await assert.rejects(
-    module.recoverQualityGateJobForAdmin({ jobId: '1', adminId: 7, baseMaxRevisions: 2 }, db),
-    /positive sichere Ganzzahlen/
-  );
-  await assert.rejects(
-    module.recoverQualityGateJobForAdmin({ jobId: 1, adminId: 7, baseMaxRevisions: 0 }, db),
-    /positive sichere Ganzzahlen/
-  );
-  assert.equal(db.events.length, 0);
 });

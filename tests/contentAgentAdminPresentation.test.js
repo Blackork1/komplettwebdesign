@@ -364,6 +364,50 @@ test('Qualitätswiederaufnahme bleibt mit offener Reservierung oder nach dem Son
   }
 });
 
+test('Manifestfehler nach Qualitätsfreigabe bietet nur die kontrollierte Regelstand-Übernahme an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 8,
+    max_attempts: 8,
+    last_error: 'CONTENT_RULE_MANIFEST_MISMATCH',
+    current_stage: 'validation',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    quality_gate_manifest_repairable: true
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverQualityGate, false);
+  assert.equal(job.canRecoverQualityGateManifest, true);
+  assert.equal(
+    job.qualityGateManifestRecoveryActionLabel,
+    'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
+  );
+});
+
+test('Manifestwiederaufnahme bleibt mit Providerreservierung oder nach Versuch neun gesperrt', () => {
+  for (const input of [
+    { attempts: 8, openReservationCount: 1 },
+    { attempts: 9, openReservationCount: 0 }
+  ]) {
+    const [job] = buildJobListPresentation([{
+      id: 1,
+      job_type: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      attempts: input.attempts,
+      max_attempts: input.attempts,
+      last_error: 'CONTENT_RULE_MANIFEST_MISMATCH',
+      current_stage: 'validation',
+      post_id: null,
+      open_provider_reservation_count: input.openReservationCount,
+      quality_gate_manifest_repairable: true
+    }]);
+    assert.equal(job.canRecoverQualityGateManifest, false);
+  }
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,
