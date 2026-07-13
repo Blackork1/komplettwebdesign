@@ -10,6 +10,7 @@ const guide = readFileSync(
   new URL('../docs/deployment/content-agent-ionos-vps.md', import.meta.url),
   'utf8'
 );
+const ignoreRules = readFileSync(new URL('../.gitignore', import.meta.url), 'utf8');
 
 function fencedBlocks(language) {
   const expression = new RegExp('```' + language + '\\n([\\s\\S]*?)```', 'g');
@@ -100,11 +101,61 @@ test('Anleitung verwendet den echten Rootpfad und trennt automatisch aktualisier
   assert.match(guide, /Webhook-Container[^\n]*`\/apps\/komplettwebdesign`/i);
 });
 
-test('Rollout dokumentiert Migration 004 bis 006, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
-  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005[^\n]*006/i);
+test('Search-Console-Zugang bleibt als geschütztes Docker Secret außerhalb des Server-Repositorys', () => {
+  assert.match(ignoreRules, /^\/secrets\/$/m);
+  assert.match(ignoreRules, /^secrets\/\*\.json$/m);
+
+  const workerYaml = blockContaining(yamlBlocks, /^  content-worker:\n/m, 'Worker-YAML');
+  const document = parseYaml(workerYaml);
+  assert.deepEqual(document.services['content-worker'].secrets, [{
+    source: 'gsc_credentials',
+    target: 'gsc-service-account.json'
+  }]);
+  assert.deepEqual(document.secrets, {
+    gsc_credentials: { file: './secrets/gsc-service-account.json' }
+  });
+
+  assert.match(guide, /~\/apps\/komplettwebdesign\/secrets\/gsc-service-account\.json/);
+  assert.match(guide, /außerhalb[^\n]*automatisch[^\n]*`server\/`/i);
+  assert.match(guide, /umask 077[\s\S]*mkdir -p \.\/secrets[\s\S]*chmod 700 \.\/secrets/);
+  assert.match(guide, /chmod 600 \.\/secrets\/gsc-service-account\.json/);
+  assert.doesNotMatch(guide, /\bcat\b[^\n]*gsc-service-account\.json/i);
+  assert.doesNotMatch(guide, /-----BEGIN PRIVATE KEY-----/);
+});
+
+test('Search-Console-Konfiguration verwendet die Domain-Property und ausschließlich lesenden Zugriff', () => {
+  for (const value of [
+    'SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign.de',
+    'GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json',
+    'CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0'
+  ]) assert.match(guide, new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+
+  assert.match(guide, /https:\/\/www\.googleapis\.com\/auth\/webmasters\.readonly/);
+  assert.match(guide, /Service-Account[^\n]*(?:Search Console|GSC)[^\n]*(?:berechtigt|Berechtigung)/i);
+  assert.match(guide, /Domain-Property[^\n]*`sc-domain:komplettwebdesign\.de`/i);
+  assert.doesNotMatch(guide, /Search Console[^\n]*folgt erst in Plan C/i);
+  assert.match(guide, /Root-`\.env`[^\n]*Root-`docker-compose\.yml`[^\n]*(?:absichtlich|bewusst)[^\n]*nicht verändert/i);
+});
+
+test('Search-Console-Rollout umfasst Migration 007, Recreate, Admin-Sync und sicheren Rückfall', () => {
+  assert.match(guide, /007_create_content_search_metrics\.sql/);
+  assert.match(guide, /docker compose run --rm app npm run migrate:content-agent/);
+  assert.match(guide, /docker compose up -d --no-deps --force-recreate app content-worker/);
+  assert.match(guide, /docker compose logs --tail=100 content-worker/);
+  assert.match(guide, /Search Console jetzt synchronisieren/);
+  assert.match(guide, /technische[^\n]*fachliche[^\n]*Hauptschalter/i);
+  assert.match(guide, /409[^\n]*(?:deaktiviert|pausiert|Hauptschalter)/i);
+  assert.match(guide, /Search-Console-Synchronisierung[^\n]*(?:deaktivierbar|deaktivieren)/i);
+  assert.match(guide, /(?:keine|niemals)[^\n]*(?:automatisch)[^\n]*(?:ändern|veröffentlichen)/i);
+  assert.match(guide, /(?:Kernpipeline|Artikelpipeline)[^\n]*(?:nicht blockieren|unabhängig)/i);
+});
+
+test('Rollout dokumentiert Migration 004 bis 007, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
+  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005[^\n]*006[^\n]*007/i);
   assert.match(guide, /004_create_scheduled_content_review\.sql/);
   assert.match(guide, /005_upgrade_admin_notification_retry_index\.sql/);
   assert.match(guide, /006_add_schedule_revisions_and_admin_review_lookup\.sql/);
+  assert.match(guide, /007_create_content_search_metrics\.sql/);
   assert.match(guide, /idx_content_notification_deliveries_post_type_latest/);
   assert.equal((guide.match(/schedule_revision = settings\.schedule_revision \+ CASE WHEN current_settings\.agent_enabled THEN 1 ELSE 0 END/g) || []).length, 2);
   assert.equal((guide.match(/INSERT INTO content_agent_schedule_revisions/g) || []).length, 2);
@@ -685,7 +736,7 @@ test('technische Hardgates sind vollständig, Betriebswerte liegen in PostgreSQL
   assert.match(guide, /App bleibt online/i);
   assert.match(guide, /additive[^\n]*(?:Spalten|Tabellen)/i);
   assert.match(guide, /destruktiv/i);
-  assert.match(guide, /Search Console[^\n]*Plan C/i);
+  assert.match(guide, /Search-Console-Integration[^\n]*(?:vorbereitet|integriert)/i);
 });
 
 test('Rollout bleibt Review-first und Rollback verlangt release-spezifische Datenbankkompatibilität', () => {

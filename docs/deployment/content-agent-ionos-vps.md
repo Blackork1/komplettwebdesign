@@ -2,7 +2,7 @@
 
 Diese Anleitung ergänzt das bestehende Compose-Projekt `komplettwebdesign` um genau einen internen `content-worker`. Sie ist **keine vollständige Ersatzdatei** für die vorhandene `docker-compose.yml`.
 
-Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Die öffentliche Website läuft weiterhin ausschließlich über `app` und dessen Traefik-Anbindung. Der `content-worker` bleibt intern: An ihm werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI und Cloudinary.
+Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Die öffentliche Website läuft weiterhin ausschließlich über `app` und dessen Traefik-Anbindung. Der `content-worker` bleibt intern: An ihm werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI, Cloudinary und den rein lesenden Search-Console-Zugang.
 
 ## 1. Projektpfad und Ausgangslage prüfen
 
@@ -118,11 +118,46 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
+    secrets:
+      - source: gsc_credentials
+        target: gsc-service-account.json
+
+secrets:
+  gsc_credentials:
+    file: ./secrets/gsc-service-account.json
 ```
 
-Der Worker erhält bewusst keine `build`-Anweisung: `docker compose build app` baut und markiert das gemeinsam verwendete Image `komplettwebdesign-app:local`. Ebenso erhält der Worker keine `ports`, keinen `expose`-Block, keine Traefik-Labels, kein `proxy`-Netzwerk und keine zusätzlichen Volumes.
+Der Worker erhält bewusst keine `build`-Anweisung: `docker compose build app` baut und markiert das gemeinsam verwendete Image `komplettwebdesign-app:local`. Ebenso erhält der Worker keine `ports`, keinen `expose`-Block, keine Traefik-Labels, kein `proxy`-Netzwerk und keine zusätzlichen Volumes. Ausschließlich der Worker erhält das read-only genutzte Google-Credential als Docker Secret; `app` benötigt keinen Zugriff auf die JSON-Datei.
 
 `stop_grace_period: 10m` ist absichtlich länger als die interne erste Drain-Wartezeit von 30 Sekunden. Nach `SIGTERM` stoppt der Worker den Scheduler, nimmt keine neuen Jobs an und wartet bei einem bereits aktiven Job weiter auf dessen Abschluss. Zehn Minuten geben diesem kontrollierten Drain ausreichend Spielraum; dauert ein realer Job regelmäßig länger, müssen Compose-Frist und Stopbefehl gemeinsam entsprechend erhöht werden.
+
+### 3.5 Google-Credential außerhalb des Repositorys vorbereiten
+
+Die heruntergeladene Service-Account-Datei wird später als `~/apps/komplettwebdesign/secrets/gsc-service-account.json` abgelegt. Dieser Ordner liegt außerhalb des automatisch aktualisierten `server/`-Repositorys. Der private JSON-Inhalt und insbesondere der private Schlüssel werden niemals in Git, `.env`, Shellausgaben, Logs, Tickets oder Chatnachrichten kopiert. Auch zur Kontrolle wird die Datei nicht mit `cat` ausgegeben.
+
+Die Root-`.env` und Root-`docker-compose.yml` werden nicht aus dem `server/`-Repository bereitgestellt und wurden in der lokalen Vorbereitung absichtlich nicht verändert. Erst nachdem die JSON-Datei auf dem VPS vorliegt, werden beide Rootdateien nach dieser Anleitung manuell angepasst.
+
+Am Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$` zuerst das geschützte Zielverzeichnis vorbereiten:
+
+```bash
+cd ~/apps/komplettwebdesign
+umask 077
+mkdir -p ./secrets
+chmod 700 ./secrets
+```
+
+Die bereits heruntergeladene JSON-Datei anschließend über einen geschützten Übertragungsweg, beispielsweise SFTP, exakt als `secrets/gsc-service-account.json` hochladen. Danach ausschließlich Existenz, Dateityp und Rechte prüfen, ohne den Inhalt anzuzeigen:
+
+```bash
+test -f ./secrets/gsc-service-account.json
+test ! -L ./secrets/gsc-service-account.json
+chmod 600 ./secrets/gsc-service-account.json
+test "$(stat -c '%a' ./secrets)" = "700"
+test "$(stat -c '%a' ./secrets/gsc-service-account.json)" = "600"
+test -s ./secrets/gsc-service-account.json
+```
+
+Das Service-Account-Konto muss in der Google Search Console bereits für die Property `komplettwebdesign.de` berechtigt sein. Im Backend wird diese Domain-Property exakt als `sc-domain:komplettwebdesign.de` angesprochen. Der verwendete OAuth-Scope ist ausschließlich `https://www.googleapis.com/auth/webmasters.readonly`; die Integration besitzt keine schreibende Search-Console-Berechtigung.
 
 ## 4. Content-Agent-Konfiguration in `.env` ergänzen
 
@@ -160,6 +195,9 @@ SMTP_PORT=465
 SMTP_USER=<vollständiger-smtp-benutzername>
 SMTP_PASS=<separates-sicheres-smtp-passwort>
 SMTP_FROM=kontakt@komplettwebdesign.de
+SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign.de
+GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json
+CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0
 ```
 
 `SMTP_PASS` ist ein Geheimnis und darf weder in Git eingecheckt noch in Tickets, Logs oder Chatnachrichten kopiert werden. `SMTP_FROM` ist die technische Absenderadresse für Admin-Prüfmails und Blog-Newsletter; sie muss beim SMTP-Konto als Absender zulässig sein. Nach jeder Änderung an diesen fünf SMTP-Werten müssen App und Worker neu erzeugt werden, weil beide Prozesse die `.env` beim Containerstart laden:
@@ -174,7 +212,7 @@ docker compose up -d --no-deps --force-recreate app content-worker
 
 In `.env` bleiben außerdem nur die Namen der bereits vorhandenen Geheimnisse relevant: `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `SMTP_PASS`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` und `SESSION_SECRET`. Ihre Werte werden weder in diese Anleitung noch in Tickets, Git, Shell-Ausgaben oder Chatnachrichten kopiert.
 
-Für Plan A ist kein Search-Console-API-Zugang erforderlich; die Search Console folgt erst in Plan C.
+Die Search-Console-Integration ist jetzt vorbereitet. `CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0` plant den getrennten, wöchentlichen Abruf sonntags um 06:00 Uhr in der im Dashboard hinterlegten IANA-Zeitzone. Der Abruf importiert ausschließlich Leistungsdaten und erzeugt redaktionelle Hinweise; er ändert oder veröffentlicht keine Artikel.
 
 ## 5. Konfiguration validieren und Image bauen
 
@@ -278,7 +316,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005 und 006 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006 und 007 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
 Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
@@ -300,7 +338,7 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql` und `006_add_schedule_revisions_and_admin_review_lookup.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung von Migration 002 + 003 + 004 + 005 + 006 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql` und `007_create_content_search_metrics.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung von Migration 002 + 003 + 004 + 005 + 006 + 007 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
 docker compose run --rm app npm run migrate:content-agent
@@ -738,6 +776,24 @@ Den fertigen Entwurf unter `/admin/content-agent/drafts` öffnen. Die Schaltflä
 Die Prüfung gilt erst als vollständig, wenn der fällige Job `publish_approved_post` genau einmal veröffentlicht, genau ein unveränderliches Ereignis in `content_publish_events` vorliegt und `manual_approvals_count` genau um eins erhöht wurde. Der Blog-Newsletter bleibt dabei deaktiviert, bis acht manuelle Freigaben erreicht sind und er danach bewusst im Adminbereich aktiviert wird.
 
 Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf frühestens nach acht manuellen Freigaben, einem konfigurierten Mindestscore von 90 und einer bewussten fachlichen Entscheidung erwogen werden. Dann zuerst `CONTENT_AGENT_AUTOPUBLISH_ENABLED=true` manuell in `.env` setzen, App und Worker neu erzeugen und erst anschließend den Betriebsmodus im Dashboard auf `auto_publish` umstellen. Bis alle drei Gates erfüllt sind, bleibt jeder erzeugte Beitrag ein Review-Entwurf.
+
+### 9.1 Search Console kontrolliert abnehmen
+
+Nach Migration, Recreate und erfolgreichem Worker-Healthcheck im Adminbereich den Reiter „Search Console“ öffnen. Vor dem Funktionstest müssen der technische und fachliche Hauptschalter aktiv sein: `CONTENT_AGENT_ENABLED=true` muss beim Containerstart geladen worden sein und der Content-Agent muss im Dashboard aktiviert sein. Der Betriebsmodus darf weiterhin `review` bleiben.
+
+Mit „Search Console jetzt synchronisieren“ genau einen manuellen Abruf für die letzten 28 abgeschlossenen Tage einplanen. Die Erfolgsmeldung bestätigt nur, dass der Job sicher in die Queue aufgenommen wurde. Anschließend Workerstatus und Logs prüfen:
+
+```bash
+docker compose ps app content-worker postgres
+docker compose exec -T content-worker npm run content-agent:healthcheck
+docker compose logs --tail=100 content-worker
+```
+
+Ein HTTP-Status 409 mit „Der Content-Agent ist deaktiviert“ bedeutet, dass der technische oder fachliche Hauptschalter deaktiviert beziehungsweise pausiert ist; das ist ein sicherer Abbruch und kein Credentialfehler. Ein 409-Hinweis, dass die Synchronisierung nicht eingeplant wurde, kann außerdem bedeuten, dass für denselben Kalendertag bereits ein identischer manueller Abruf vorhanden ist. In beiden Fällen keinen zweiten Ersatzjob erzwingen, sondern Schalter, Queue und Logs prüfen.
+
+Nach erfolgreichem Abschluss zeigt der Reiter aggregierte Suchanfragen, Klicks, Impressionen, CTR, Positionen und rein redaktionelle Optimierungschancen. Keine Search-Console-Auswertung darf automatisch Inhalte ändern oder veröffentlichen. Bestehende Artikel bleiben unverändert, bis ein Mensch eine Empfehlung bewusst redaktionell umsetzt.
+
+Die Artikelpipeline ist von Search Console unabhängig und darf durch eine fehlende oder fehlerhafte GSC-Verbindung nicht blockiert werden. Die Search-Console-Synchronisierung ist jederzeit deaktivierbar: Dazu `SEARCH_CONSOLE_SITE_URL` und `GOOGLE_APPLICATION_CREDENTIALS` in der manuell verwalteten Root-`.env` leeren, App und Worker neu erzeugen und prüfen, dass der Reiter „Nicht konfiguriert“ meldet. Der normale Review-, Generierungs- und Veröffentlichungsablauf bleibt dabei verfügbar; ein Datenbank-Restore ist dafür nicht erforderlich.
 
 ## 10. Normaler Rückfall ohne Datenbank-Restore
 
