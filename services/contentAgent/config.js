@@ -41,6 +41,11 @@ export function getContentAgentTechnicalConfig(env = process.env) {
     imageCostEur: decimal(env.OPENAI_IMAGE_COST_EUR, 0.041),
     workerPollMs: integer(env.CONTENT_AGENT_WORKER_POLL_MS, 5000, 1000, 60000),
     jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180),
+    searchConsoleSiteUrl: env.SEARCH_CONSOLE_SITE_URL || '',
+    googleCredentialsPath: env.GOOGLE_APPLICATION_CREDENTIALS || '',
+    searchConsoleSchedule: env.CONTENT_AGENT_GSC_SCHEDULE || '0 6 * * 0',
+    searchConsoleConfigured: configured(env.SEARCH_CONSOLE_SITE_URL)
+      && configured(env.GOOGLE_APPLICATION_CREDENTIALS),
     openaiConfigured: configured(env.OPENAI_API_KEY),
     cloudinaryConfigured: configured(env.CLOUDINARY_CLOUD_NAME)
       && configured(env.CLOUDINARY_API_KEY)
@@ -71,6 +76,7 @@ const PRESENTED_TECHNICAL_KEYS = Object.freeze([
   'imageCostEur',
   'workerPollMs',
   'jobLeaseMinutes',
+  'searchConsoleConfigured',
   'openaiConfigured',
   'cloudinaryConfigured'
 ]);
