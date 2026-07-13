@@ -409,6 +409,11 @@ export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {
       return null;
     }
 
+    await client.query(
+      'SELECT pg_advisory_xact_lock(hashtext($1))',
+      [`content-agent-budget:${reservation.reservationMonth}`]
+    );
+
     const attempts = Number(state.attempts);
     const auditKey = `provider_recovery:${reservation.reservationMonth}:${reservation.stageId}:attempt-${attempts}`;
     const runResult = await client.query(

@@ -48,6 +48,9 @@ function createRecoveryDb(row, { failRunUpdate = false } = {}) {
       if (normalized === 'BEGIN' || normalized === 'COMMIT' || normalized === 'ROLLBACK') {
         return { rows: [] };
       }
+      if (/pg_advisory_xact_lock\(hashtext\(\$1\)\)/i.test(normalized)) {
+        return { rows: [] };
+      }
       if (/FROM content_jobs AS j JOIN content_runs AS r/i.test(normalized)) {
         return { rows: row ? [structuredClone(row)] : [] };
       }
@@ -101,11 +104,13 @@ test('Providerreservierung wird atomar auditiert und derselbe Job erneut eingere
   assert.equal(db.runUpdates, 1);
   assert.equal(db.jobUpdates, 1);
   assert.deepEqual(db.events.map(({ type }) => type), [
-    'connect', 'query', 'query', 'query', 'query', 'query', 'release'
+    'connect', 'query', 'query', 'query', 'query', 'query', 'query', 'release'
   ]);
   assert.equal(db.events[1].sql, 'BEGIN');
   assert.match(db.events[2].sql, /FOR UPDATE OF j, r/i);
-  assert.equal(db.events[5].sql, 'COMMIT');
+  assert.match(db.events[3].sql, /pg_advisory_xact_lock\(hashtext\(\$1\)\)/i);
+  assert.deepEqual(db.events[3].params, ['content-agent-budget:2026-07']);
+  assert.equal(db.events[6].sql, 'COMMIT');
 
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
   assert.match(runUpdate.sql, /stage_results_json - \$2::text/i);
