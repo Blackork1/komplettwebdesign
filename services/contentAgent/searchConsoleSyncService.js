@@ -5,6 +5,10 @@ const SUPPORTED_HOSTS = new Set([
 ]);
 const CANONICAL_BLOG_PATH = /^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const METRIC_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MAX_CLICKS_OR_IMPRESSIONS = 9_999_999_999.9999;
+const MAX_CTR = 9_999.99999999;
+const MAX_AVERAGE_POSITION = 99_999_999.9999;
+const MAX_DEVICE_LENGTH = 24;
 
 function normalizeAllowedHosts(allowedHosts) {
   return new Set(
@@ -35,7 +39,7 @@ function normalizeMetricDate(value) {
   return value;
 }
 
-function normalizeNumber(value) {
+function normalizeNumber(value, maximum) {
   if (
     typeof value !== 'number'
     && (typeof value !== 'string' || value.trim() === '')
@@ -44,7 +48,11 @@ function normalizeNumber(value) {
   }
 
   const normalized = Number(value);
-  return Number.isFinite(normalized) ? normalized : null;
+  return Number.isFinite(normalized)
+    && normalized >= 0
+    && normalized <= maximum
+    ? normalized
+    : null;
 }
 
 function normalizePage(value, allowedHosts) {
@@ -81,16 +89,17 @@ function normalizeRow(row, allowedHosts) {
   const [date, page, query, device] = row.keys;
   const metricDate = normalizeMetricDate(date);
   const normalizedPage = normalizePage(page, allowedHosts);
-  const clicks = normalizeNumber(row.clicks);
-  const impressions = normalizeNumber(row.impressions);
-  const ctr = normalizeNumber(row.ctr);
-  const averagePosition = normalizeNumber(row.position);
+  const clicks = normalizeNumber(row.clicks, MAX_CLICKS_OR_IMPRESSIONS);
+  const impressions = normalizeNumber(row.impressions, MAX_CLICKS_OR_IMPRESSIONS);
+  const ctr = normalizeNumber(row.ctr, MAX_CTR);
+  const averagePosition = normalizeNumber(row.position, MAX_AVERAGE_POSITION);
 
   if (
     !metricDate
     || !normalizedPage
     || typeof query !== 'string'
     || typeof device !== 'string'
+    || [...device].length > MAX_DEVICE_LENGTH
     || clicks === null
     || impressions === null
     || ctr === null
@@ -113,6 +122,41 @@ function normalizeRow(row, allowedHosts) {
       averagePosition
     }
   };
+}
+
+function aggregateMetrics(metrics) {
+  const aggregates = new Map();
+
+  for (const metric of metrics) {
+    const key = JSON.stringify([
+      metric.metricDate,
+      metric.pageUrl,
+      metric.query,
+      metric.device
+    ]);
+    const existing = aggregates.get(key);
+
+    if (!existing) {
+      aggregates.set(key, {
+        ...metric,
+        weightedPositionTotal: metric.averagePosition * metric.impressions
+      });
+      continue;
+    }
+
+    existing.postId ??= metric.postId;
+    existing.clicks += metric.clicks;
+    existing.impressions += metric.impressions;
+    existing.weightedPositionTotal += metric.averagePosition * metric.impressions;
+  }
+
+  return [...aggregates.values()].map(({ weightedPositionTotal, ...metric }) => ({
+    ...metric,
+    ctr: metric.impressions === 0 ? 0 : metric.clicks / metric.impressions,
+    averagePosition: metric.impressions === 0
+      ? 0
+      : weightedPositionTotal / metric.impressions
+  }));
 }
 
 export function createSearchConsoleSyncService({
@@ -168,10 +212,12 @@ export function createSearchConsoleSyncService({
           normalizedRows.flatMap((row) => row.blogPath ? [row.blogPath] : [])
         )];
         const postIdsByPath = await repository.findPostIdsByCanonicalPaths(blogPaths);
-        const metrics = normalizedRows.map(({ blogPath, metric }) => ({
-          ...metric,
-          postId: blogPath ? (postIdsByPath.get(blogPath) ?? null) : null
-        }));
+        const metrics = aggregateMetrics(
+          normalizedRows.map(({ blogPath, metric }) => ({
+            ...metric,
+            postId: blogPath ? (postIdsByPath.get(blogPath) ?? null) : null
+          }))
+        );
 
         await leaseGuard();
         await repository.upsertSearchMetrics(metrics);

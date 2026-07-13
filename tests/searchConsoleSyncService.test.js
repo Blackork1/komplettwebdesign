@@ -60,7 +60,9 @@ test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vo
     }),
     metricRow({ page: 'http://komplettwebdesign.de/leistungen/?ref=test#kontakt' }),
     metricRow({ page: 'https://komplettwebdesign.de/blog/Technisches-SEO/' }),
-    ...Array.from({ length: 24_996 }, () => metricRow())
+    ...Array.from({ length: 24_996 }, (_, index) => metricRow({
+      query: `webdesign berlin ${index}`
+    }))
   ];
   const pages = [
     firstPage,
@@ -176,6 +178,69 @@ test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vo
   assert.equal(repository.writeCalls[1][1].postId, null);
 });
 
+test('aggregiert normalisierte Conflict-Key-Duplikate vor dem gemeinsamen Upsert', async () => {
+  const duplicateRows = [
+    metricRow({
+      page: 'https://komplettwebdesign.de/blog/anderer-slug/../dedup-slug?quelle=erste',
+      query: 'dedup query',
+      clicks: 2,
+      impressions: 10,
+      ctr: 0.2,
+      position: 4
+    }),
+    metricRow({
+      page: 'https://komplettwebdesign.de/blog/dedup-slug/#abschnitt',
+      query: 'dedup query',
+      clicks: 3,
+      impressions: 30,
+      ctr: 0.1,
+      position: 10
+    }),
+    metricRow({
+      page: 'https://komplettwebdesign.de/blog/dedup-slug?quelle=dritte',
+      query: 'dedup query',
+      clicks: 5,
+      impressions: 0,
+      ctr: 0,
+      position: 99
+    })
+  ];
+  let page = 0;
+  const client = {
+    async querySearchAnalytics() {
+      page += 1;
+      return { rows: page === 1 ? duplicateRows : [] };
+    }
+  };
+  const repository = createRepository({
+    postIds: new Map([['/blog/dedup-slug', 73]])
+  });
+  const service = createSearchConsoleSyncService({
+    client,
+    repository,
+    allowedHosts: ALLOWED_HOSTS
+  });
+
+  await service.syncSearchConsoleRange({
+    startDate: '2026-07-01',
+    endDate: '2026-07-01',
+    leaseGuard: async () => {}
+  });
+
+  assert.deepEqual(repository.pathCalls, [['/blog/dedup-slug']]);
+  assert.deepEqual(repository.writeCalls, [[{
+    postId: 73,
+    metricDate: '2026-07-01',
+    pageUrl: 'https://komplettwebdesign.de/blog/dedup-slug',
+    query: 'dedup query',
+    device: 'DESKTOP',
+    clicks: 10,
+    impressions: 40,
+    ctr: 0.25,
+    averagePosition: 8.5
+  }]]);
+});
+
 test('verwirft jede fehlerhafte API-Zeile einzeln und behält gültige Zeilen', async () => {
   const validStringNumbers = metricRow({
     page: 'https://komplettwebdesign.de/blog/sicherer-slug/?x=1#ziel',
@@ -232,8 +297,8 @@ test('verwirft jede fehlerhafte API-Zeile einzeln und behält gültige Zeilen', 
       pageUrl: 'https://komplettwebdesign.de/blog/sicherer-slug',
       query: 'webdesign berlin',
       device: 'DESKTOP',
-      clicks: 3,
-      impressions: 120,
+      clicks: 6,
+      impressions: 240,
       ctr: 0.025,
       averagePosition: 8.5
     },
@@ -247,19 +312,63 @@ test('verwirft jede fehlerhafte API-Zeile einzeln und behält gültige Zeilen', 
       impressions: 120,
       ctr: 0.025,
       averagePosition: 8.5
-    },
-    {
-      postId: null,
-      metricDate: '2026-07-01',
-      pageUrl: 'https://komplettwebdesign.de/blog/sicherer-slug',
-      query: 'webdesign berlin',
-      device: 'DESKTOP',
-      clicks: 3,
-      impressions: 120,
-      ctr: 0.025,
-      averagePosition: 8.5
     }
   ]);
+});
+
+test('verwirft negative und die exakten Schemaobergrenzen überschreitende Metrikzeilen einzeln', async () => {
+  const numeric14Scale4Max = 9_999_999_999.9999;
+  const numeric12Scale8Max = 9_999.99999999;
+  const numeric12Scale4Max = 99_999_999.9999;
+  const validBoundaryRow = metricRow({
+    query: 'gültige Schemaobergrenzen',
+    device: 'D'.repeat(24),
+    clicks: numeric14Scale4Max,
+    impressions: numeric14Scale4Max,
+    ctr: numeric12Scale8Max,
+    position: numeric12Scale4Max
+  });
+  const invalidRows = [
+    metricRow({ query: 'negative clicks', clicks: -0.0001 }),
+    metricRow({ query: 'negative impressions', impressions: -0.0001 }),
+    metricRow({ query: 'negative ctr', ctr: -0.00000001 }),
+    metricRow({ query: 'negative position', position: -0.0001 }),
+    metricRow({ query: 'clicks über Maximum', clicks: '10000000000' }),
+    metricRow({ query: 'impressions über Maximum', impressions: '10000000000' }),
+    metricRow({ query: 'ctr über Maximum', ctr: '10000' }),
+    metricRow({ query: 'position über Maximum', position: '100000000' }),
+    metricRow({ query: 'device zu lang', device: 'D'.repeat(25) })
+  ];
+  let page = 0;
+  const repository = createRepository();
+  const service = createSearchConsoleSyncService({
+    client: {
+      async querySearchAnalytics() {
+        page += 1;
+        return { rows: page === 1 ? [validBoundaryRow, ...invalidRows] : [] };
+      }
+    },
+    repository,
+    allowedHosts: ALLOWED_HOSTS
+  });
+
+  await service.syncSearchConsoleRange({
+    startDate: '2026-07-01',
+    endDate: '2026-07-01',
+    leaseGuard: async () => {}
+  });
+
+  assert.deepEqual(repository.writeCalls, [[{
+    postId: null,
+    metricDate: '2026-07-01',
+    pageUrl: 'https://komplettwebdesign.de/leistungen',
+    query: 'gültige Schemaobergrenzen',
+    device: 'D'.repeat(24),
+    clicks: numeric14Scale4Max,
+    impressions: numeric14Scale4Max,
+    ctr: 1,
+    averagePosition: numeric12Scale4Max
+  }]]);
 });
 
 test('ein abgelehnter Lease-Guard verhindert die nächste API-Seite und jeden DB-Schreibzugriff', async () => {
