@@ -1606,6 +1606,100 @@ test('Reparaturen sind begrenzt und werden mit eindeutigen IDs erneut validiert 
   );
 });
 
+test('bestätigte Qualitätswiederaufnahme nutzt bezahlte Stufen und erlaubt genau repair:3', async () => {
+  const persistedArticle = (label) => ({
+    ...schemaArticle,
+    contentHtml: `<section><h2>${label}</h2><p>${'Vorhandener hilfreicher Inhalt. '.repeat(210)}</p></section>`
+  });
+  const inventory = {
+    blogPosts: [], guides: [], servicePages: [], industries: [], packages: [], approvedLinks: []
+  };
+  const persistedStages = {
+    inventory: {
+      inventory,
+      counts: { blogPosts: 0, guides: 0, servicePages: 0, industries: 0, packages: 0 }
+    },
+    topic_research: persistedEnvelope({ candidates: [schemaTopic] }, 'resp-topic-paid'),
+    topic_persistence: { topic: { ...schemaTopic, id: 17 } },
+    seo_brief: persistedEnvelope(schemaSeoBrief, 'resp-brief-paid'),
+    article_generation: persistedEnvelope(persistedArticle('Bezahlter Ausgangsartikel'), 'resp-article-paid'),
+    'repair:1': persistedEnvelope(persistedArticle('Bezahlte Reparatur eins'), 'resp-repair-1-paid'),
+    'repair:2': persistedEnvelope(persistedArticle('Bezahlte Reparatur zwei'), 'resp-repair-2-paid'),
+    'quality_gate_recovery:structure_contract:attempt-7': {
+      status: 'authorized_after_quality_gate',
+      stageId: 'repair:3',
+      baseMaxRevisions: 2,
+      additionalRevisionCount: 1,
+      adminId: 7
+    }
+  };
+  const reservations = [];
+  const settlements = [];
+  const paidStageIds = new Set([
+    'topic_research', 'seo_brief', 'article_generation', 'repair:1', 'repair:2'
+  ]);
+  const repairedArticle = createValidatorValidArticle({
+    contentHtml: `${createValidatorValidArticle().contentHtml}<p>Dritte gezielte Strukturreparatur.</p>`
+  });
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async reviewArticle(input) {
+        harness.reviewInputs.push(input);
+        return operation(review, 'resp-review-3')();
+      },
+      async repairArticle(input) {
+        harness.repairInputs.push(input);
+        return operation(repairedArticle, 'resp-repair-3')();
+      }
+    },
+    costService: {
+      async reserveMonthlyBudget(input) {
+        reservations.push(input);
+        if (paidStageIds.has(input.stageId)) {
+          return { created: false, status: 'settled', reservationMonth: '2026-07' };
+        }
+        return { created: true, status: 'reserved', reservationMonth: '2026-07' };
+      },
+      async settleMonthlyBudget(input) {
+        settlements.push(input);
+        return { status: 'settled' };
+      },
+      async getPersistedStageResult({ stageId }) {
+        return persistedStages[stageId] ?? null;
+      },
+      estimateTextCost() { return 0.01; }
+    },
+    validateArticle(value) {
+      const passed = value.contentHtml.includes('Dritte gezielte Strukturreparatur.');
+      return {
+        passed,
+        sanitizedHtml: value.contentHtml,
+        issues: passed ? [] : [{ code: 'html_contract_invalid', message: 'HTML-Vertrag fehlt.' }]
+      };
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 1 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(harness.repairInputs.length, 1);
+  assert.equal(harness.reviewInputs.length, 1);
+  assert.equal(harness.imageCalls.length, 1);
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.equal(reservations.some(({ stageId }) => stageId === 'repair:3'), true);
+  assert.equal(reservations.some(({ stageId }) => stageId === 'review:3'), true);
+  assert.deepEqual(
+    settlements.filter(({ stageId }) => stageId.startsWith('repair')).map(({ stageId }) => stageId),
+    ['repair:3']
+  );
+  assert.deepEqual(
+    harness.stageUpdates.filter(({ currentStage }) => currentStage === 'repair').map(({ stageId }) => stageId),
+    ['repair:3']
+  );
+});
+
 test('jede kostenpflichtige Stufe reserviert vor dem Aufruf das Monatsbudget', async () => {
   let topicCalls = 0;
   const budgetError = new ContentBudgetLimitError();

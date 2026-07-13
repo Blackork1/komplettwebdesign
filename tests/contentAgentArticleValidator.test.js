@@ -96,6 +96,18 @@ test('validator accepts a complete article with approved links, CTA tracking and
   assert.equal(result.sanitizedHtml, sanitizeArticleHtml(validArticle().contentHtml));
 });
 
+test('validator akzeptiert die im gemeinsamen HTML-Vertrag freigegebene Bootstrap-Klasse col-12', () => {
+  const result = validateArticle(validArticle({
+    contentHtml: validHtml().replace('class="col-lg-12"', 'class="col-12"')
+  }), validContext);
+
+  assert.equal(result.passed, true);
+  assert.equal(
+    result.issues.some((issue) => issue.code === 'bootstrap_class_unknown' && issue.className === 'col-12'),
+    false
+  );
+});
+
 test('validator reports every forbidden raw HTML construct before sanitizing it', () => {
   const unsafeHtml = '<!--Kommentar-->\n<div class="container-fluid" style="color:red">'
     + '<h1>Titel</h1><script>alert(1)</script><p><%= secret %></p><img src="bild.webp"></div>';

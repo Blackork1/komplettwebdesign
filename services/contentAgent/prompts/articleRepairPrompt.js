@@ -1,6 +1,7 @@
 import { buildBrandPolicy } from './brandPolicy.js';
+import { buildArticleHtmlContract } from '../articleHtmlContract.js';
 
-export const promptVersion = '2026-07-10.1';
+export const promptVersion = '2026-07-13.2';
 
 export function buildArticleRepairPrompt(input = {}) {
   const repairInput = {
@@ -13,7 +14,8 @@ export function buildArticleRepairPrompt(input = {}) {
     system: [
       buildBrandPolicy(),
       'Repariere ausschließlich die konkret gemeldeten Issues und bewahre alle bereits korrekten Inhalte sowie die Vorgaben des Briefings.',
-      'Der Reparaturkontext besteht ausschließlich aus Briefing, Artikel und konkreten Issues; erfinde keine Fakten, Links, Leistungen, Preise oder Quellen.'
+      'Der Reparaturkontext besteht ausschließlich aus Briefing, Artikel und konkreten Issues; erfinde keine Fakten, Links, Leistungen, Preise oder Quellen.',
+      buildArticleHtmlContract()
     ].join('\n'),
     user: JSON.stringify(repairInput)
   };

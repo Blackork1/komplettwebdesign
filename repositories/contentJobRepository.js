@@ -3,7 +3,9 @@ import {
   ADMIN_CONTENT_JOB_RETRY_CAP,
   providerRecoveryRetryCap,
   PROVIDER_SCHEMA_REPAIR_RETRY_CAP,
-  REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP
+  REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP,
+  QUALITY_GATE_RECOVERY_AUDIT_KEY,
+  QUALITY_GATE_RECOVERY_RETRY_CAP
 } from '../services/contentAgent/contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
@@ -656,6 +658,163 @@ export async function recoverRejectedProviderJobForAdmin({ jobId, adminId } = {}
       runId: state.run_id,
       recoveredStage,
       auditKey
+    };
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+const QUALITY_STRUCTURE_ISSUE_CODES = new Set([
+  'cta_count_invalid',
+  'cta_locations_invalid',
+  'cta_tracking_invalid',
+  'cta_contact_target_invalid',
+  'faq_count_invalid',
+  'faq_mismatch',
+  'bootstrap_class_unknown',
+  'class_forbidden'
+]);
+
+function hasOnlyRepairableQualityIssues(stageResults, validationStageId) {
+  const validation = stageResults?.[validationStageId];
+  const issues = validation?.issues;
+  return validation?.passed === false
+    && Array.isArray(issues)
+    && issues.length > 0
+    && issues.every(({ code }) => QUALITY_STRUCTURE_ISSUE_CODES.has(code));
+}
+
+function validQualityGateRecoveryState(row, baseMaxRevisions) {
+  const lastRepairStageId = `repair:${baseMaxRevisions}`;
+  const lastValidationStageId = `validation:${baseMaxRevisions}`;
+  return row
+    && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
+    && row.job_status === 'needs_manual_attention'
+    && row.last_error === 'quality_gate_failed'
+    && Number(row.attempts) === QUALITY_GATE_RECOVERY_RETRY_CAP - 1
+    && row.run_status === 'needs_manual_attention'
+    && row.current_stage === 'validation'
+    && row.post_id == null
+    && row.error_report_json?.code === 'quality_gate_failed'
+    && !hasOpenProviderReservation(row.stage_results_json)
+    && hasSettledStage(row.stage_results_json, 'article_generation')
+    && hasSettledStage(row.stage_results_json, lastRepairStageId)
+    && hasOnlyRepairableQualityIssues(row.stage_results_json, lastValidationStageId);
+}
+
+export async function recoverQualityGateJobForAdmin({
+  jobId,
+  adminId,
+  baseMaxRevisions
+} = {}, db = pool) {
+  if (
+    !Number.isSafeInteger(jobId) || jobId <= 0
+    || !Number.isSafeInteger(adminId) || adminId <= 0
+    || !Number.isSafeInteger(baseMaxRevisions) || baseMaxRevisions <= 0 || baseMaxRevisions > 4
+  ) {
+    throw new TypeError('Für die Qualitätswiederaufnahme werden positive sichere Ganzzahlen benötigt.');
+  }
+
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const { rows } = await client.query(
+      `
+        SELECT j.id AS job_id,
+               j.job_type,
+               j.status AS job_status,
+               j.attempts,
+               j.max_attempts,
+               j.last_error,
+               r.id AS run_id,
+               r.status AS run_status,
+               r.current_stage,
+               r.post_id,
+               r.error_report_json,
+               r.stage_results_json
+        FROM content_jobs AS j
+        JOIN content_runs AS r ON r.job_id = j.id
+        WHERE j.id = $1
+        FOR UPDATE OF j, r
+      `,
+      [jobId]
+    );
+    const state = rows[0];
+    if (!validQualityGateRecoveryState(state, baseMaxRevisions)
+        || Object.hasOwn(state.stage_results_json, QUALITY_GATE_RECOVERY_AUDIT_KEY)) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const attempts = Number(state.attempts);
+    const recoveredStage = `repair:${baseMaxRevisions + 1}`;
+    const runResult = await client.query(
+      `
+        UPDATE content_runs
+        SET stage_results_json = stage_results_json || jsonb_build_object(
+              $2::text,
+              jsonb_build_object(
+                'status', 'authorized_after_quality_gate',
+                'stageId', $3::text,
+                'baseMaxRevisions', $4::integer,
+                'additionalRevisionCount', 1,
+                'adminId', $5::bigint,
+                'authorizedAt', NOW()
+              )
+            ),
+            error_report_json = jsonb_build_object(
+              'code', 'quality_gate_recovery_authorized',
+              'stage', $3::text,
+              'message', 'Die gezielte zusätzliche HTML-Strukturreparatur wurde durch einen Administrator freigegeben.'
+            ),
+            finished_at = NULL
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND post_id IS NULL
+          AND NOT (stage_results_json ? $2::text)
+        RETURNING id
+      `,
+      [state.run_id, QUALITY_GATE_RECOVERY_AUDIT_KEY, recoveredStage, baseMaxRevisions, adminId]
+    );
+    if (!runResult.rows[0]) {
+      throw new Error('Die Qualitätswiederaufnahme konnte nicht atomar protokolliert werden.');
+    }
+
+    const jobResult = await client.query(
+      `
+        UPDATE content_jobs
+        SET status = 'queued',
+            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            run_after = NOW(),
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            finished_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND last_error = 'quality_gate_failed'
+          AND attempts = $3
+          AND attempts < $2
+        RETURNING *
+      `,
+      [jobId, QUALITY_GATE_RECOVERY_RETRY_CAP, attempts]
+    );
+    if (!jobResult.rows[0]) {
+      throw new Error('Der Qualitätsjob konnte nicht atomar erneut eingereiht werden.');
+    }
+
+    await client.query('COMMIT');
+    return {
+      job: jobResult.rows[0],
+      runId: state.run_id,
+      recoveredStage,
+      auditKey: QUALITY_GATE_RECOVERY_AUDIT_KEY
     };
   } catch (error) {
     if (transactionStarted) await rollbackRecoveryQuietly(client);

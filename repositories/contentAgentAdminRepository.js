@@ -82,7 +82,8 @@ export function createContentAgentAdminRepository(db = pool) {
                    AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
                    AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
                  ) AS provider_rejected_schema_repairable,
-                 r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage
+                 r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
+                 quality_recovery.quality_gate_structure_repairable
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -93,6 +94,41 @@ export function createContentAgentAdminRepository(db = pool) {
             WHERE entry.key ~ '^budget:[0-9]{4}-[0-9]{2}:.+$'
               AND entry.value ->> 'status' = 'reserved'
           ) provider_recovery ON TRUE
+          LEFT JOIN LATERAL (
+            SELECT (
+              r.error_report_json ->> 'code' = 'quality_gate_failed'
+              AND r.stage_results_json ? 'repair:2'
+              AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'false'
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:2$'
+                  AND settled.value ->> 'status' = 'settled'
+              )
+              AND jsonb_array_length(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                    THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                  ELSE '[]'::jsonb
+                END
+              ) > 0
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(
+                  CASE
+                    WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                      THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                    ELSE '[]'::jsonb
+                  END
+                ) AS issue
+                WHERE issue ->> 'code' NOT IN (
+                  'cta_count_invalid', 'cta_locations_invalid', 'cta_tracking_invalid',
+                  'cta_contact_target_invalid', 'faq_count_invalid', 'faq_mismatch',
+                  'bootstrap_class_unknown', 'class_forbidden'
+                )
+              )
+            ) AS quality_gate_structure_repairable
+          ) quality_recovery ON TRUE
           ORDER BY j.created_at DESC
           LIMIT $1
         `, [OVERVIEW_JOB_LIMIT])
@@ -221,7 +257,8 @@ export function createContentAgentAdminRepository(db = pool) {
                  AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
                  AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
                ) AS provider_rejected_schema_repairable,
-               r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage
+               r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
+               quality_recovery.quality_gate_structure_repairable
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (
@@ -232,6 +269,41 @@ export function createContentAgentAdminRepository(db = pool) {
           WHERE entry.key ~ '^budget:[0-9]{4}-[0-9]{2}:.+$'
             AND entry.value ->> 'status' = 'reserved'
         ) provider_recovery ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT (
+            r.error_report_json ->> 'code' = 'quality_gate_failed'
+            AND r.stage_results_json ? 'repair:2'
+            AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'false'
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:2$'
+                AND settled.value ->> 'status' = 'settled'
+            )
+            AND jsonb_array_length(
+              CASE
+                WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                  THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                ELSE '[]'::jsonb
+              END
+            ) > 0
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                    THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                  ELSE '[]'::jsonb
+                END
+              ) AS issue
+              WHERE issue ->> 'code' NOT IN (
+                'cta_count_invalid', 'cta_locations_invalid', 'cta_tracking_invalid',
+                'cta_contact_target_invalid', 'faq_count_invalid', 'faq_mismatch',
+                'bootstrap_class_unknown', 'class_forbidden'
+              )
+            )
+          ) AS quality_gate_structure_repairable
+        ) quality_recovery ON TRUE
         ORDER BY j.created_at DESC
         LIMIT $1
       `, [normalizeLimit(limit)]);

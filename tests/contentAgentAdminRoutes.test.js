@@ -112,6 +112,16 @@ test('der Produktionsrouter verdrahtet die bestätigte Wiederaufnahme abgelehnte
   );
 });
 
+test('der Produktionsrouter verdrahtet die bestätigte Qualitätswiederaufnahme', () => {
+  assert.match(routes, /recoverQualityGateJobForAdmin/);
+  assert.match(routes, /jobs\/:id\/recover-quality-gate/);
+  assert.match(routes, /controller\.recoverQualityGateJobAction/);
+  assert.match(
+    routes,
+    /recoverQualityGateJobForAdmin:\s*\(input\)\s*=>\s*recoverQualityGateJobForAdmin\(input, pool\)/
+  );
+});
+
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
   assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
   assert.doesNotMatch(routes, /controller\.publishDraftAction/);

@@ -94,6 +94,7 @@ test('Jobliste projiziert nur die eindeutige offene Providerreservierung', async
   assert.match(call.sql, /AS provider_pre_execution_schema_rejection/i);
   assert.match(call.sql, /AS provider_rejected_schema_repairable/i);
   assert.match(call.sql, /AS provider_rejected_stage/i);
+  assert.match(call.sql, /AS quality_gate_structure_repairable/i);
   assert.match(call.sql, /entry\.value ->> 'status' = 'reserved'/i);
   const projection = call.sql.match(/^SELECT[\s\S]*?FROM content_jobs/i)?.[0] || '';
   assert.doesNotMatch(projection, /r\.stage_results_json\s*(?:,|AS)/i);

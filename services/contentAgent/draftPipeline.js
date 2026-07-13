@@ -10,6 +10,7 @@ import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
+import { QUALITY_GATE_RECOVERY_AUDIT_KEY } from './contentJobRetryPolicy.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -312,6 +313,18 @@ function markSafeProviderRetry(error) {
   error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
   error.retryable = true;
   return error;
+}
+
+function authorizedQualityRecovery(value, baseMaxRevisions) {
+  return Boolean(
+    value
+    && value.status === 'authorized_after_quality_gate'
+    && value.stageId === `repair:${baseMaxRevisions + 1}`
+    && Number(value.baseMaxRevisions) === Number(baseMaxRevisions)
+    && Number(value.additionalRevisionCount) === 1
+    && Number.isSafeInteger(Number(value.adminId))
+    && Number(value.adminId) > 0
+  );
 }
 
 function providerErrorDiagnostic(error, stage) {
@@ -942,6 +955,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     }
 
+    const qualityRecovery = await readPersistedStage(QUALITY_GATE_RECOVERY_AUDIT_KEY);
+    const maximumRevisions = config.maxRevisions + (
+      authorizedQualityRecovery(qualityRecovery, config.maxRevisions) ? 1 : 0
+    );
     let revision = 0;
     const approved = () => validation.passed
       && currentReview?.passed === true
@@ -949,7 +966,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       && currentReview.requiresManualReview !== true
       && currentReview.risks?.staticPrices !== true;
 
-    while (!approved() && revision < config.maxRevisions) {
+    while (!approved() && revision < maximumRevisions) {
       revision += 1;
       const issues = validation.passed ? [...(currentReview?.issues || [])] : [...validation.issues];
       if (currentReview?.risks?.staticPrices === true) {

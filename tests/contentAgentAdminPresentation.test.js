@@ -321,6 +321,49 @@ test('abgelehnte Artikelerstellung bleibt nach dem Reparaturversuch gesperrt', (
   assert.equal(job.canRecoverRejectedProvider, false);
 });
 
+test('HTML-Vertragsfehler bietet genau eine bestätigte gezielte Qualitätswiederaufnahme an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 7,
+    max_attempts: 7,
+    last_error: 'quality_gate_failed',
+    current_stage: 'validation',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    quality_gate_structure_repairable: true
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverProvider, false);
+  assert.equal(job.canRecoverRejectedProvider, false);
+  assert.equal(job.canRecoverQualityGate, true);
+  assert.equal(job.qualityGateRecoveryActionLabel, 'HTML-Struktur gezielt reparieren und erneut prüfen');
+});
+
+test('Qualitätswiederaufnahme bleibt mit offener Reservierung oder nach dem Sonderversuch gesperrt', () => {
+  for (const input of [
+    { attempts: 7, openReservationCount: 1 },
+    { attempts: 8, openReservationCount: 0 }
+  ]) {
+    const [job] = buildJobListPresentation([{
+      id: 1,
+      job_type: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      attempts: input.attempts,
+      max_attempts: input.attempts,
+      last_error: 'quality_gate_failed',
+      current_stage: 'validation',
+      post_id: null,
+      open_provider_reservation_count: input.openReservationCount,
+      quality_gate_structure_repairable: true
+    }]);
+
+    assert.equal(job.canRecoverQualityGate, false);
+  }
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,

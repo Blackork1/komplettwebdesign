@@ -15,6 +15,7 @@ import { buildWebResearchPrompt } from '../services/contentAgent/prompts/webRese
 import { buildSeoBriefPrompt } from '../services/contentAgent/prompts/seoBriefPrompt.js';
 import { buildArticleWriterPrompt } from '../services/contentAgent/prompts/articleWriterPrompt.js';
 import { buildArticleReviewerPrompt } from '../services/contentAgent/prompts/articleReviewerPrompt.js';
+import { buildArticleRepairPrompt } from '../services/contentAgent/prompts/articleRepairPrompt.js';
 
 const config = {
   contentModel: 'gpt-5.4',
@@ -542,6 +543,32 @@ test('Promptbuilder lassen fehlende optionale Allowlist-Felder weg', () => {
   assert.deepEqual(JSON.parse(buildArticleWriterPrompt({ briefing: validSeoBrief }).user), {
     briefing: validSeoBrief
   });
+});
+
+test('Writer und Repair erhalten denselben exakten HTML-Vertrag für CTA, FAQ und Klassen', () => {
+  const prompts = [
+    buildArticleWriterPrompt({ briefing: validSeoBrief }),
+    buildArticleRepairPrompt({ briefing: validSeoBrief, article: validArticle, issues: [] })
+  ];
+
+  for (const prompt of prompts) {
+    assert.match(prompt.system, /data-track="cta"/);
+    assert.match(prompt.system, /data-cta-name="blog_early_contact"/);
+    assert.match(prompt.system, /data-cta-location="blog_early"/);
+    assert.match(prompt.system, /data-faq-question="EXAKTE_FRAGE"/);
+    assert.match(prompt.system, /data-faq-answer="EXAKTE_ANTWORT"/);
+    assert.match(prompt.system, /col-12/);
+    assert.match(prompt.system, /Verwende ausschließlich diese freigegebenen CSS-Klassen/);
+    assert.match(prompt.system, /Kein Accordion/);
+  }
+  assert.equal(
+    prompts[0].system.match(/VERBINDLICHER ARTIKEL-HTML-VERTRAG/g)?.length,
+    1
+  );
+  assert.equal(
+    prompts[1].system.match(/VERBINDLICHER ARTIKEL-HTML-VERTRAG/g)?.length,
+    1
+  );
 });
 
 test('buildBrandPolicyPrompt ignoriert freie Eingaben und liefert nur die feste Policy', () => {

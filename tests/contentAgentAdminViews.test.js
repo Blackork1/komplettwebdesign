@@ -364,6 +364,36 @@ test('Jobliste erklärt die sichere Fortsetzung nach einer vorab abgelehnten Art
   assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
 });
 
+test('Jobliste erklärt die gezielte Qualitätswiederaufnahme ohne erneute Grundlagenerstellung', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 7,
+      maxAttempts: 7,
+      lastSafeStageLabel: 'Qualitätsprüfung',
+      lastError: 'quality_gate_failed',
+      costEur: 0.48,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: true,
+      qualityGateRecoveryActionLabel: 'HTML-Struktur gezielt reparieren und erneut prüfen'
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-quality-gate"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Themenrecherche, SEO-Briefing und Artikel bleiben erhalten/);
+  assert.match(html, /gezielte dritte Strukturreparatur und die anschließende Prüfung verursachen reguläre OpenAI-Kosten/);
+  assert.match(html, /HTML-Struktur gezielt reparieren und erneut prüfen/);
+  assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

@@ -623,6 +623,59 @@ test('Schemawiederaufnahme verlangt eine literale kritische Bestätigung', async
   assert.equal(res.statusCode, 400);
 });
 
+test('bestätigte Qualitätswiederaufnahme verwendet IDs und technische Revisionsgrenze', async () => {
+  let received;
+  const controller = createAdminContentAgentController(baseDependencies({
+    runtimeConfig: {
+      enabled: true,
+      maxAttempts: 3,
+      maxRevisions: 2,
+      monthlyCostLimitEur: 25,
+      autoPublishEnabled: false
+    },
+    jobRepository: {
+      async recoverQualityGateJobForAdmin(input) {
+        received = input;
+        return { job: { id: 19, status: 'queued' } };
+      }
+    }
+  }));
+  assert.equal(typeof controller.recoverQualityGateJobAction, 'function');
+  const res = response();
+
+  await controller.recoverQualityGateJobAction({
+    params: { id: '19' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+
+  assert.deepEqual(received, { jobId: 19, adminId: 7, baseMaxRevisions: 2 });
+  assert.equal(res.redirectedTo, '/admin/content-agent/jobs?quality-recovery=queued');
+});
+
+test('Qualitätswiederaufnahme verlangt eine literale kritische Bestätigung', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    runtimeConfig: { enabled: true, maxAttempts: 3, maxRevisions: 2 },
+    jobRepository: {
+      async recoverQualityGateJobForAdmin() {
+        calls += 1;
+        return { job: { id: 19 } };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.recoverQualityGateJobAction({
+    params: { id: '19' },
+    body: { confirmed: 'on' },
+    session: { user: { id: 7 } }
+  }, res, assert.fail);
+
+  assert.equal(calls, 0);
+  assert.equal(res.statusCode, 400);
+});
+
 test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', async () => {
   const rejectInputs = [];
   const controller = createAdminContentAgentController(baseDependencies({

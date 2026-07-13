@@ -1,11 +1,15 @@
 import * as cheerio from 'cheerio';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
+import {
+  ALLOWED_ARTICLE_CLASSES,
+  ARTICLE_CTA_LOCATIONS
+} from './articleHtmlContract.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 
 export const ARTICLE_VALIDATOR_VERSION = 'article-validator-v1';
 
 const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const CTA_LOCATIONS = ['blog_early', 'blog_mid', 'blog_final'];
+const CTA_LOCATIONS = ARTICLE_CTA_LOCATIONS;
 const MIN_META_TITLE_LENGTH = 50;
 const MAX_META_TITLE_LENGTH = 60;
 const MIN_META_DESCRIPTION_LENGTH = 100;
@@ -13,38 +17,7 @@ const MAX_META_DESCRIPTION_LENGTH = 160;
 
 // Diese kleine Freigabeliste entspricht den im Content-Agent-Design dokumentierten
 // Artikelklassen. Containerklassen sind nur innerhalb des Fragments zulässig.
-const ALLOWED_CLASSES = new Set([
-  'container',
-  'container-fluid',
-  'container-sm',
-  'container-md',
-  'container-lg',
-  'container-xl',
-  'container-xxl',
-  'row',
-  'col-lg-12',
-  'my-4',
-  'my-5',
-  'mb-3',
-  'mb-4',
-  'mb-5',
-  'mt-4',
-  'p-4',
-  'rounded',
-  'bg-light',
-  'border',
-  'alert',
-  'alert-primary',
-  'table-responsive',
-  'table',
-  'table-striped',
-  'list-group',
-  'list-group-item',
-  'btn',
-  'btn-primary',
-  'btn-secondary',
-  'lead'
-]);
+const ALLOWED_CLASSES = new Set(ALLOWED_ARTICLE_CLASSES);
 
 const BOOTSTRAP_BREAKPOINT = '(?:sm|md|lg|xl|xxl)';
 const BOOTSTRAP_CLASS_PATTERNS = [

@@ -10,6 +10,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_DRAFT_NOT_REJECTABLE',
   'CONTENT_JOB_NOT_RETRYABLE',
   'CONTENT_PROVIDER_RECOVERY_NOT_AVAILABLE',
+  'CONTENT_QUALITY_RECOVERY_NOT_AVAILABLE',
   'CONTENT_APPROVAL_STALE',
   'CONTENT_PUBLICATION_SLOT_NOT_MISSED',
   'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
@@ -31,6 +32,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_DRAFT_NOT_REJECTABLE: 'Der Entwurf kann in diesem Zustand nicht abgelehnt werden.',
   CONTENT_JOB_NOT_RETRYABLE: 'Der Job kann in diesem Zustand nicht fortgesetzt werden.',
   CONTENT_PROVIDER_RECOVERY_NOT_AVAILABLE: 'Die Providerwiederherstellung ist in diesem Zustand nicht mehr verfügbar.',
+  CONTENT_QUALITY_RECOVERY_NOT_AVAILABLE: 'Die Qualitätswiederaufnahme ist in diesem Zustand nicht mehr verfügbar.',
   CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.',
   CONTENT_SCHEDULE_INVALID: 'Der Veröffentlichungstermin oder die konfigurierte Zeitzone ist ungültig.',
   CONTENT_SCHEDULE_MUST_BE_FUTURE: 'Der Veröffentlichungstermin muss strikt in der Zukunft liegen.',
@@ -688,6 +690,30 @@ export function createAdminContentAgentController(dependencies) {
           });
         }
         return res.redirect('/admin/content-agent/jobs?provider-recovery=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async recoverQualityGateJobAction(req, res, next) {
+      try {
+        if (!criticalConfirmation(req.body?.confirmed)) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), {
+            code: 'CONTENT_CONFIRMATION_REQUIRED'
+          });
+        }
+        const admin = adminFromRequest(req);
+        const recovered = await jobRepository.recoverQualityGateJobForAdmin({
+          jobId: positiveId(req.params.id),
+          adminId: positiveId(admin.id),
+          baseMaxRevisions: positiveId(runtimeConfig.maxRevisions)
+        });
+        if (!recovered) {
+          throw Object.assign(new Error('Qualitätswiederaufnahme nicht verfügbar.'), {
+            code: 'CONTENT_QUALITY_RECOVERY_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect('/admin/content-agent/jobs?quality-recovery=queued');
       } catch (error) {
         return sendKnownError(error, res, next);
       }

@@ -10,6 +10,7 @@ import {
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
+  recoverQualityGateJobForAdmin,
   recoverRejectedProviderJobForAdmin,
   recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
@@ -385,6 +386,133 @@ test('echtes PostgreSQL: abgelehntes Artikelschema wird genau einmal ab dem SEO-
       await recoverRejectedProviderJobForAdmin({ jobId, adminId: 7 }, pool),
       null
     );
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukturreparatur', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'needs_manual_attention', 7, 7,
+          'quality_gate_failed', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, current_stage, cost_estimate,
+        error_report_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'needs_manual_attention',
+             'validation',
+             0.483309,
+             '{"code":"quality_gate_failed"}'::jsonb,
+             '{
+               "budget:2026-07:article_generation": {"status":"settled"},
+               "article_generation": {"value":{"title":"Bezahlter Artikel"}},
+               "budget:2026-07:repair:1": {"status":"settled"},
+               "repair:1": {"value":{"title":"Erste Reparatur"}},
+               "budget:2026-07:repair:2": {"status":"settled"},
+               "repair:2": {"value":{"title":"Zweite Reparatur"}},
+               "validation:2": {
+                 "passed":false,
+                 "issues":[
+                   {"code":"cta_count_invalid","message":"CTA-Markierungen fehlen."},
+                   {"code":"faq_mismatch","message":"FAQ-Markierungen fehlen."},
+                   {"code":"bootstrap_class_unknown","message":"col-12 war nicht erlaubt."}
+                 ]
+               }
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id
+    `);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const result = await recoverQualityGateJobForAdmin({
+      jobId,
+      adminId: 7,
+      baseMaxRevisions: 2
+    }, pool);
+
+    assert.equal(result.recoveredStage, 'repair:3');
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 7, max_attempts: 8, last_error: null
+    });
+    const run = (await pool.query(`
+      SELECT status, current_stage, post_id, cost_estimate, error_report_json, stage_results_json
+      FROM content_runs
+      WHERE job_id = $1
+    `, [jobId])).rows[0];
+    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.current_stage, 'validation');
+    assert.equal(run.post_id, null);
+    assert.equal(Number(run.cost_estimate), 0.483309);
+    assert.equal(run.error_report_json.code, 'quality_gate_recovery_authorized');
+    assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
+    assert.equal(run.stage_results_json['repair:2'].value.title, 'Zweite Reparatur');
+    assert.equal(
+      run.stage_results_json['quality_gate_recovery:structure_contract:attempt-7'].stageId,
+      'repair:3'
+    );
+
+    assert.equal(await recoverQualityGateJobForAdmin({
+      jobId,
+      adminId: 7,
+      baseMaxRevisions: 2
+    }, pool), null);
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
