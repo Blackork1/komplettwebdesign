@@ -1,3 +1,5 @@
+import { types } from 'node:util';
+
 import pool from '../util/db.js';
 
 const DEFAULT_LIST_LIMIT = 100;
@@ -47,7 +49,10 @@ function cloneStructuredJsonValue(value, seen = new Set()) {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : INVALID_JSON_VALUE;
   }
-  if (typeof value !== 'object' || seen.has(value)) {
+  if (typeof value !== 'object') {
+    return INVALID_JSON_VALUE;
+  }
+  if (types.isProxy(value) || seen.has(value)) {
     return INVALID_JSON_VALUE;
   }
 

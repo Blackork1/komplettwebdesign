@@ -309,6 +309,64 @@ test('Nicht datenartige oder zyklische JSON-Payloads werden fail-closed abgelehn
   }
 });
 
+test('Direkte und verschachtelte Proxys werden ohne Trap-Ausführung abgelehnt', async (t) => {
+  function createObservedProxy() {
+    const trapCalls = {
+      getPrototypeOf: 0,
+      ownKeys: 0,
+      getOwnPropertyDescriptor: 0,
+      get: 0
+    };
+    const target = { safe: 'Wert' };
+    const proxy = new Proxy(target, {
+      getPrototypeOf() {
+        trapCalls.getPrototypeOf += 1;
+        return Reflect.getPrototypeOf(target);
+      },
+      ownKeys() {
+        trapCalls.ownKeys += 1;
+        return Reflect.ownKeys(target);
+      },
+      getOwnPropertyDescriptor(_target, key) {
+        trapCalls.getOwnPropertyDescriptor += 1;
+        return Reflect.getOwnPropertyDescriptor(target, key);
+      },
+      get(_target, key, receiver) {
+        trapCalls.get += 1;
+        return Reflect.get(target, key, receiver);
+      }
+    });
+    return { proxy, trapCalls };
+  }
+
+  for (const placement of ['direkt', 'verschachtelt']) {
+    await t.test(placement, async () => {
+      const { proxy, trapCalls } = createObservedProxy();
+      const db = createQueryRecorder();
+      const repository = createContentSearchOpportunityRepository(db);
+      const evidenceJson = placement === 'direkt'
+        ? proxy
+        : { nested: ['Wert', { proxy }] };
+
+      await assert.rejects(
+        repository.upsertOpenOpportunities([{
+          ...opportunities[0],
+          evidenceJson
+        }]),
+        /strukturierter JSON-Wert/i
+      );
+
+      assert.deepEqual(trapCalls, {
+        getPrototypeOf: 0,
+        ownKeys: 0,
+        getOwnPropertyDescriptor: 0,
+        get: 0
+      });
+      assert.equal(db.calls.length, 0);
+    });
+  }
+});
+
 test('Repository benötigt eine Datenbank mit query-Funktion', () => {
   assert.throws(
     () => createContentSearchOpportunityRepository({}),
