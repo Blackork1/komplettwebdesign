@@ -56,6 +56,7 @@ const viewCases = [
       searchConsoleConfigured: true,
       searchConsoleProperty: 'komplettwebdesign.de',
       agentEnabled: true,
+      technicalAgentEnabled: true,
       syncQueued: false,
       searchConsole: {
         summary: {},

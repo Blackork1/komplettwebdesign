@@ -1253,7 +1253,7 @@ body {
     border-radius: 8px;
   }
   .content-agent-tabs__link { width: 100%; padding-inline: 0.55rem; font-size: 0.78rem; }
-  .content-agent-tabs__link:last-child { grid-column: 1 / -1; }
+  .content-agent-tabs--odd .content-agent-tabs__link:last-child { grid-column: 1 / -1; }
   .content-agent-panel { padding: 1rem; }
   .content-agent-panel__head { align-items: flex-start; flex-direction: column; }
   .content-agent-review-item { grid-template-columns: 1fr; }

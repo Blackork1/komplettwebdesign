@@ -113,6 +113,28 @@ test('Cockpit enthält bestätigte sechs Reiter und sichere Aktionsformulare', a
   assert.doesNotMatch(script, /fetch\(|XMLHttpRequest|localStorage/);
 });
 
+test('gerade Haupttabanzahl hält das mobile Zweispaltenraster ohne Vollbreiten-Tab', async () => {
+  const [tabs, tabsSource, adminCss] = await Promise.all([
+    renderFile(fileURLToPath(viewUrl('_tabs.ejs')), { activeTab: 'overview' }),
+    readView('_tabs.ejs'),
+    readFile(new URL('../public/admin.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(tabs, /<nav class="content-agent-tabs content-agent-tabs--even"/);
+  assert.match(
+    tabsSource,
+    /contentAgentTabs\.length\s*%\s*2[\s\S]*content-agent-tabs--even[\s\S]*content-agent-tabs--odd/
+  );
+  assert.match(
+    adminCss,
+    /\.content-agent-tabs--odd\s+\.content-agent-tabs__link:last-child\s*\{\s*grid-column:\s*1\s*\/\s*-1;\s*\}/
+  );
+  assert.doesNotMatch(
+    adminCss,
+    /(?:^|\n)\s*\.content-agent-tabs__link:last-child\s*\{[^}]*grid-column:/
+  );
+});
+
 test('Übersicht rendert Layout A zugänglich und escaped dynamische Werte', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('overview.ejs')), {
     ...baseLocals,

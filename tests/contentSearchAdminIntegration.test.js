@@ -179,12 +179,40 @@ test('Controller gibt der View nur sichere Konfiguration, Property, Präsentatio
     searchConsoleProperty: 'komplettwebdesign.de',
     searchConsole: presented,
     agentEnabled: true,
+    technicalAgentEnabled: true,
     syncQueued: true
   });
   assert.doesNotMatch(
     JSON.stringify(res.rendered.locals),
     /google-search-console\.json|googleCredentialsPath|searchConsoleSiteUrl|payload_json|internal/i
   );
+});
+
+test('Controller gibt den technischen Hauptschalter als separaten sicheren Boolean aus', async () => {
+  const controller = createAdminContentAgentController(controllerDependencies({
+    runtimeConfig: {
+      enabled: false,
+      maxAttempts: 3,
+      searchConsoleConfigured: true,
+      googleCredentialsPath: '/run/secrets/google-search-console.json'
+    },
+    adminRepository: {
+      async getSearchConsoleInsights() { return { metrics: [], opportunities: [], provider: null }; }
+    },
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: true }; }
+    },
+    presentation: {
+      buildSearchConsolePresentation() { return {}; }
+    }
+  }));
+  const res = response();
+
+  await controller.searchConsolePage({ query: {} }, res, assert.fail);
+
+  assert.equal(res.rendered.locals.technicalAgentEnabled, false);
+  assert.equal(typeof res.rendered.locals.technicalAgentEnabled, 'boolean');
+  assert.doesNotMatch(JSON.stringify(res.rendered.locals), /google-search-console\.json|googleCredentialsPath/i);
 });
 
 test('manueller Sync verwendet lokales 28-Tage-Fenster, Tages-Deduplizierung und das Versuchshardcap', async () => {
@@ -278,6 +306,7 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
     searchConsoleConfigured: true,
     searchConsoleProperty: 'komplettwebdesign.de<script>property</script>',
     agentEnabled: true,
+    technicalAgentEnabled: true,
     syncQueued: true,
     searchConsole: {
       summary: {
@@ -318,6 +347,7 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
   assert.match(html, /method="post" action="\/admin\/content-agent\/search-console\/sync"/);
   assert.match(html, /name="_csrf" value="&lt;csrf-token&gt;"/);
   assert.match(html, /Search Console jetzt synchronisieren/);
+  assert.doesNotMatch(html, /<button[^>]*type="submit"[^>]*disabled/);
   assert.match(html, /Nur Auswertung|keine Inhaltsänderung/i);
   assert.match(html, /&lt;script&gt;query&lt;\/script&gt;/);
   assert.match(html, /&lt;script&gt;chance&lt;\/script&gt;/);
@@ -329,4 +359,29 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
   const unescapedOutput = source.split('\n').filter((line) => /<%-/.test(line));
   assert.equal(unescapedOutput.every((line) => /<%-\s*include\(/.test(line)), true);
   assert.doesNotMatch(source, /<script(?!\s+src=)[^>]*>/i);
+});
+
+test('Search-Console-View deaktiviert den Sync bei technischem Not-Aus und erklärt den Grund', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl), {
+    title: 'Search Console',
+    currentPathname: '/admin/content-agent/search-console',
+    csrfToken: 'csrf-test',
+    cssAsset: (value) => `/assets/${value}`,
+    jsAsset: (value) => `/assets/${value}`,
+    searchConsoleConfigured: true,
+    searchConsoleProperty: 'komplettwebdesign.de',
+    agentEnabled: true,
+    technicalAgentEnabled: false,
+    syncQueued: false,
+    searchConsole: {
+      summary: {},
+      metrics: [],
+      opportunities: [],
+      provider: { healthy: true, statusLabel: 'Letzter Aufruf erfolgreich' }
+    }
+  });
+
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled[^>]*>/);
+  assert.match(html, /Technischer Hauptschalter[^<]*(?:deaktiviert|ausgeschaltet)/i);
+  assert.doesNotMatch(html, /Google Search Console: Letzter Aufruf erfolgreich/);
 });

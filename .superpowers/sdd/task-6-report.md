@@ -102,3 +102,74 @@ Die zwei vorhandenen, umgebungsabhängigen Tests wurden erwartungsgemäß übers
 - [x] Null-Enqueue ist ein fachlicher Fehler.
 - [x] Die Seite enthält keine Inhaltsänderungs- oder automatische Empfehlungsaktion.
 - [x] Fokus-Tests, Build und vollständige Testsuite sind erfolgreich.
+
+## Review-Korrekturen
+
+Die beiden als wichtig eingestuften Review-Hinweise wurden behoben:
+
+- Die Search-Console-View erhält nun zusätzlich den sicheren Boolean `technicalAgentEnabled`. Bei deaktiviertem technischen Hauptschalter ist der manuelle Abruf sichtbar gesperrt und die Oberfläche erklärt den Grund verständlich. Die bestehende serverseitige POST-Sperre bleibt unverändert erhalten.
+- Die Hauptnavigation kennzeichnet eine gerade beziehungsweise ungerade Tabanzahl explizit. Nur bei einer ungeraden Anzahl spannt der letzte Tab in der mobilen Zweispaltenansicht über beide Spalten; bei sechs Tabs bleibt das Raster gleichmäßig.
+
+### TDD-Nachweis der Review-Korrekturen
+
+Technischer Hauptschalter – RED:
+
+```text
+node --test --test-name-pattern='technischen Hauptschalter|technischem Not-Aus|Controller gibt der View|Search-Console-View zeigt' tests/contentSearchAdminIntegration.test.js
+```
+
+Ergebnis: 4 ausgewählte Tests, 1 bestanden, 3 fehlgeschlagen. Die Fehlschläge belegten den fehlenden View-Boolean, den noch aktiven Button und den fehlenden Hinweis.
+
+Technischer Hauptschalter – GREEN:
+
+```text
+tests 4
+pass 4
+fail 0
+```
+
+Tab-Parität – RED:
+
+```text
+node --test --test-name-pattern='gerade Haupttabanzahl' tests/contentAgentAdminViews.test.js
+```
+
+Ergebnis: 1 ausgewählter Test, 0 bestanden, 1 fehlgeschlagen. Die Navigation besaß noch keine Paritätsklasse.
+
+Tab-Parität – GREEN:
+
+```text
+tests 1
+pass 1
+fail 0
+```
+
+### Abschlussverifikation nach dem Review
+
+Fokussierte Admin-Suite:
+
+```text
+tests 81
+pass 81
+fail 0
+skipped 0
+```
+
+Build:
+
+```text
+npm run build
+```
+
+Ergebnis: Exit-Code 0; 41 CSS-Quelldateien verarbeitet und das Manifest aktualisiert. `public/admin.min.css` und `public/css-asset-manifest.json` wurden ausschließlich durch den Build erzeugt.
+
+Vollständige Testsuite:
+
+```text
+tests 1231
+pass 1229
+fail 0
+skipped 2
+```
+
+Die Änderungen wurden lokal committet und nicht gepusht.

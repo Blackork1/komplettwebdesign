@@ -473,6 +473,7 @@ export function createAdminContentAgentController(dependencies) {
           searchConsoleProperty: SEARCH_CONSOLE_PROPERTY,
           searchConsole: presentation.buildSearchConsolePresentation(data),
           agentEnabled: settings?.agent_enabled === true,
+          technicalAgentEnabled: runtimeConfig.enabled === true,
           syncQueued: req.query?.sync === 'queued'
         });
       } catch (error) {

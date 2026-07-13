@@ -6,7 +6,9 @@
   const safeOpportunities = Array.isArray(safeSearchConsole.opportunities) ? safeSearchConsole.opportunities : [];
   const safeProvider = safeSearchConsole.provider || {};
   const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
-  const syncAvailable = searchConsoleConfigured === true && agentEnabled === true;
+  const syncAvailable = searchConsoleConfigured === true
+    && agentEnabled === true
+    && technicalAgentEnabled === true;
 %>
 
 <div class="content-agent-page">
@@ -38,6 +40,8 @@
 
   <% if (searchConsoleConfigured !== true) { %>
     <div class="content-agent-notice"><i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i><div><strong>Technische Verbindung fehlt</strong><p>Die Search-Console-Konfiguration wird außerhalb des Dashboards eingerichtet. Bis dahin bleiben die gespeicherten Auswertungen lesbar.</p></div></div>
+  <% } else if (technicalAgentEnabled !== true) { %>
+    <div class="content-agent-notice"><i class="fa-solid fa-power-off" aria-hidden="true"></i><div><strong>Technischer Hauptschalter ist deaktiviert</strong><p>Ein manueller Abruf ist erst möglich, wenn der Content-Agent technisch freigegeben ist.</p></div></div>
   <% } else if (agentEnabled !== true) { %>
     <div class="content-agent-notice"><i class="fa-solid fa-pause" aria-hidden="true"></i><div><strong>Content-Agent ist pausiert</strong><p>Ein manueller Abruf ist erst nach der Aktivierung des Agenten möglich.</p></div></div>
   <% } else { %>
