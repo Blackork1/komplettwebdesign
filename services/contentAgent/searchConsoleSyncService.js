@@ -184,6 +184,7 @@ export function createSearchConsoleSyncService({
       }
 
       let startRow = 0;
+      const normalizedRows = [];
 
       while (true) {
         await leaseGuard();
@@ -201,27 +202,27 @@ export function createSearchConsoleSyncService({
         if (rows.length === 0) break;
 
         startRow += rows.length;
-        const normalizedRows = rows.flatMap((row) => {
+        normalizedRows.push(...rows.flatMap((row) => {
           const normalized = normalizeRow(row, normalizedAllowedHosts);
           return normalized ? [normalized] : [];
-        });
-
-        if (normalizedRows.length === 0) continue;
-
-        const blogPaths = [...new Set(
-          normalizedRows.flatMap((row) => row.blogPath ? [row.blogPath] : [])
-        )];
-        const postIdsByPath = await repository.findPostIdsByCanonicalPaths(blogPaths);
-        const metrics = aggregateMetrics(
-          normalizedRows.map(({ blogPath, metric }) => ({
-            ...metric,
-            postId: blogPath ? (postIdsByPath.get(blogPath) ?? null) : null
-          }))
-        );
-
-        await leaseGuard();
-        await repository.upsertSearchMetrics(metrics);
+        }));
       }
+
+      if (normalizedRows.length === 0) return;
+
+      const blogPaths = [...new Set(
+        normalizedRows.flatMap((row) => row.blogPath ? [row.blogPath] : [])
+      )];
+      const postIdsByPath = await repository.findPostIdsByCanonicalPaths(blogPaths);
+      const metrics = aggregateMetrics(
+        normalizedRows.map(({ blogPath, metric }) => ({
+          ...metric,
+          postId: blogPath ? (postIdsByPath.get(blogPath) ?? null) : null
+        }))
+      );
+
+      await leaseGuard();
+      await repository.upsertSearchMetrics(metrics);
     }
   };
 }

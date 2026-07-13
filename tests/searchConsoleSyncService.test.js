@@ -117,17 +117,18 @@ test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vo
     startRow
   })));
   assert.deepEqual(events, [
-    'guard', 'api:0', 'lookup', 'guard', 'write',
-    'guard', 'api:25000', 'lookup', 'guard', 'write',
-    'guard', 'api:25002'
+    'guard', 'api:0',
+    'guard', 'api:25000',
+    'guard', 'api:25002',
+    'lookup', 'guard', 'write'
   ]);
-  assert.equal(repository.writeCalls.length, 2);
-  assert.equal(repository.writeCalls[0].length, 25_000);
-  assert.equal(repository.writeCalls[1].length, 2);
-  assert.deepEqual(repository.pathCalls, [
-    ['/blog/technisches-seo', '/blog/webdesign-2026'],
-    ['/blog/technisches-seo', '/blog/nicht-vorhanden']
-  ]);
+  assert.equal(repository.writeCalls.length, 1);
+  assert.equal(repository.writeCalls[0].length, 25_002);
+  assert.deepEqual(repository.pathCalls, [[
+    '/blog/technisches-seo',
+    '/blog/webdesign-2026',
+    '/blog/nicht-vorhanden'
+  ]]);
   assert.deepEqual(repository.writeCalls[0].slice(0, 4), [
     {
       postId: 41,
@@ -174,8 +175,8 @@ test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vo
       averagePosition: 8.5
     }
   ]);
-  assert.equal(repository.writeCalls[1][0].postId, 41);
-  assert.equal(repository.writeCalls[1][1].postId, null);
+  assert.equal(repository.writeCalls[0][25_000].postId, 41);
+  assert.equal(repository.writeCalls[0][25_001].postId, null);
 });
 
 test('aggregiert normalisierte Conflict-Key-Duplikate vor dem gemeinsamen Upsert', async () => {
@@ -239,6 +240,80 @@ test('aggregiert normalisierte Conflict-Key-Duplikate vor dem gemeinsamen Upsert
     ctr: 0.25,
     averagePosition: 8.5
   }]]);
+});
+
+test('aggregiert denselben normalisierten Conflict-Key über alle API-Seiten vor dem Upsert', async () => {
+  const events = [];
+  const pages = [
+    [
+      metricRow({
+        page: 'https://komplettwebdesign.de/blog/anderer-slug/../seitenwechsel?erste=1',
+        query: 'seitenübergreifend',
+        clicks: 2,
+        impressions: 10,
+        ctr: 0.2,
+        position: 4
+      }),
+      ...Array.from({ length: 24_999 }, (_, index) => metricRow({
+        query: `eindeutig ${index}`
+      }))
+    ],
+    [metricRow({
+      page: 'https://komplettwebdesign.de/blog/seitenwechsel/#zweite-seite',
+      query: 'seitenübergreifend',
+      clicks: 3,
+      impressions: 30,
+      ctr: 0.1,
+      position: 10
+    })],
+    []
+  ];
+  const requests = [];
+  const repository = createRepository({
+    events,
+    postIds: new Map([['/blog/seitenwechsel', 82]])
+  });
+  const service = createSearchConsoleSyncService({
+    client: {
+      async querySearchAnalytics(body) {
+        events.push(`api:${body.startRow}`);
+        requests.push(body);
+        return { rows: pages[requests.length - 1] };
+      }
+    },
+    repository,
+    allowedHosts: ALLOWED_HOSTS
+  });
+
+  await service.syncSearchConsoleRange({
+    startDate: '2026-07-01',
+    endDate: '2026-07-01',
+    leaseGuard: async () => events.push('guard')
+  });
+
+  assert.deepEqual(requests.map((request) => request.startRow), [0, 25_000, 25_001]);
+  assert.deepEqual(events, [
+    'guard', 'api:0',
+    'guard', 'api:25000',
+    'guard', 'api:25001',
+    'lookup', 'guard', 'write'
+  ]);
+  assert.equal(repository.writeCalls.length, 1);
+  assert.equal(repository.writeCalls[0].length, 25_000);
+  assert.deepEqual(
+    repository.writeCalls[0].find((row) => row.query === 'seitenübergreifend'),
+    {
+      postId: 82,
+      metricDate: '2026-07-01',
+      pageUrl: 'https://komplettwebdesign.de/blog/seitenwechsel',
+      query: 'seitenübergreifend',
+      device: 'DESKTOP',
+      clicks: 5,
+      impressions: 40,
+      ctr: 0.125,
+      averagePosition: 8.5
+    }
+  );
 });
 
 test('verwirft jede fehlerhafte API-Zeile einzeln und behält gültige Zeilen', async () => {

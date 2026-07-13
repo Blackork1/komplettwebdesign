@@ -92,3 +92,38 @@ OPENAI_API_KEY=test npm test
 ```
 
 Ergebnis: 1.154 bestanden, 0 fehlgeschlagen, 2 übersprungen.
+
+## Fixbericht zur seitenübergreifenden Aggregation
+
+Der Syncservice sammelt nun alle gültigen normalisierten Zeilen bis zur erfolgreichen leeren Abschlussseite. Erst danach werden Blogpfade einmalig aufgelöst, Conflict-Keys über den gesamten Lauf aggregiert und in genau einer finalen Schreibphase persistiert. Eine identische Wiederholung des Syncs erzeugt damit denselben vollständigen Upsert-Batch, statt frühere Seitenwerte durch spätere Teilwerte zu ersetzen.
+
+- Es gibt weiterhin einen Lease-Guard unmittelbar vor jeder API-Seite.
+- Nach vollständig erfolgreicher Pagination läuft ein weiterer Lease-Guard unmittelbar vor dem einzigen `upsertSearchMetrics`-Aufruf.
+- Vor Abschluss der Pagination wird nichts persistiert.
+- Fachlich gültige Zeilen werden nicht durch eine zusätzliche Servicebegrenzung abgeschnitten.
+- Klicks und Impressionen werden über alle Seiten summiert, CTR wird aus den Gesamtsummen berechnet und die Position wird über alle Impressionen gewichtet.
+- Eine auf irgendeiner Seite gefundene Post-ID bleibt im Gesamtaggregat erhalten.
+
+RED-Kommando:
+
+```bash
+node --test --test-name-pattern='aggregiert denselben normalisierten Conflict-Key über alle API-Seiten' tests/searchConsoleSyncService.test.js
+```
+
+RED-Ergebnis: 0 von 1 Tests bestanden. Der Ereignisverlauf enthielt nach API-Seite 1 und API-Seite 2 jeweils eine eigene `lookup/guard/write`-Phase; dadurch wurde der erste Teilwert später überschrieben.
+
+GREEN-Ergebnis mit demselben Kommando: 1 von 1 Tests bestanden. Der Ereignisverlauf enthält drei geschützte API-Seiten, danach eine Pfadauflösung und genau eine abschließend geschützte Schreibphase.
+
+### Abschlussverifikation
+
+```bash
+node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js
+```
+
+Ergebnis: 12 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+
+```bash
+OPENAI_API_KEY=test npm test
+```
+
+Ergebnis: 1.155 bestanden, 0 fehlgeschlagen, 2 übersprungen.
