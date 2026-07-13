@@ -1180,6 +1180,43 @@ test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueue
   assert.equal(events.filter((event) => event === 'lease').length >= 3, true);
 });
 
+test('ein pausierter Analyse-Enqueue lässt den erfolgreichen Sync bereinigt retrybar', async () => {
+  const events = [];
+  const leaseGuard = async () => { events.push('lease'); return true; };
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('nicht erwartet'); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async syncSearchConsoleRange() { events.push('sync'); },
+    async recordProviderResult(input) {
+      assert.deepEqual(input, { providerName: 'google_search_console', success: true });
+      events.push('provider-success');
+    },
+    async enqueueJob() {
+      events.push('enqueue-paused');
+      return null;
+    }
+  });
+
+  await assert.rejects(handler({
+    id: 85,
+    job_type: 'sync_search_console',
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }, { leaseGuard }), (error) => (
+    error.code === 'CONTENT_GSC_ANALYSIS_ENQUEUE_DEFERRED'
+      && error.retryable === true
+      && !/2026|credentials|token|payload|\.json/i.test(error.message)
+  ));
+
+  assert.deepEqual(events, [
+    'lease',
+    'sync',
+    'lease',
+    'provider-success',
+    'lease',
+    'enqueue-paused'
+  ]);
+});
+
 test('ein fehlgeschlagener Search-Console-Sync zeichnet nur einen generischen Providercode auf', async () => {
   const providerResults = [];
   const syncError = new Error(

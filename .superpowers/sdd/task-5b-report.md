@@ -34,6 +34,30 @@ Ergebnis: 1.217 bestanden, 0 fehlgeschlagen, 2 übersprungen
 
 Zusätzlich bestand `git diff --check` ohne Befund.
 
+## Reviewkorrektur: pausierter Analyse-Enqueue
+
+Der Reviewpfad wurde mit einem atomar abgelehnten Analyse-Enqueue (`enqueueJob` liefert `null`) reproduziert. Der Syncjob darf dann nicht terminal erfolgreich werden. Er wirft jetzt nach dem erneuten Lease-Fence den bereinigten Fehler `CONTENT_GSC_ANALYSIS_ENQUEUE_DEFERRED` mit `retryable: true`. Nach der operativen Wiederaktivierung kann der Sync dadurch idempotent erneut importieren und den Analysejob anlegen. Die Fehlermeldung enthält weder Zeitraum-, Payload- noch Credentialdaten; der bestehende Erfolgsweg bleibt unverändert.
+
+RED:
+
+```text
+node --test --test-name-pattern='pausierter Analyse-Enqueue' tests/contentAgentWorker.test.js
+Ergebnis: 0 bestanden, 1 fehlgeschlagen – erwartete Ablehnung fehlte
+```
+
+GREEN:
+
+```text
+node --test --test-name-pattern='pausierter Analyse-Enqueue' tests/contentAgentWorker.test.js
+Ergebnis: 1 bestanden, 0 fehlgeschlagen
+
+node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js
+Ergebnis: 112 bestanden, 0 fehlgeschlagen
+
+OPENAI_API_KEY=test npm test
+Ergebnis: 1.218 bestanden, 0 fehlgeschlagen, 2 übersprungen
+```
+
 ## Geänderte Dateien
 
 - `scripts/contentWorker.js`

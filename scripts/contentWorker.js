@@ -50,6 +50,13 @@ function permanentJobError(message, code) {
   return error;
 }
 
+function retryableJobError(message, code) {
+  const error = new Error(message);
+  error.code = code;
+  error.retryable = true;
+  return error;
+}
+
 function positiveDatabasePayloadInteger(value) {
   return typeof value === 'number'
     && Number.isSafeInteger(value)
@@ -258,11 +265,17 @@ export function createProductionJobHandler({
           success: true
         });
         await assertActiveLease(leaseGuard);
-        await enqueueJob({
+        const analysisJob = await enqueueJob({
           jobType: 'analyze_search_opportunities',
           idempotencyKey: `gsc-analysis:${payload.startDate}:${payload.endDate}`,
           payload
         });
+        if (!analysisJob) {
+          throw retryableJobError(
+            'Der Search-Console-Analysejob konnte noch nicht eingeplant werden.',
+            'CONTENT_GSC_ANALYSIS_ENQUEUE_DEFERRED'
+          );
+        }
         return { status: 'completed' };
       }
 
