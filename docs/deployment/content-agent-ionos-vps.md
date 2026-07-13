@@ -157,7 +157,7 @@ test "$(stat -c '%a' ./secrets/gsc-service-account.json)" = "600"
 test -s ./secrets/gsc-service-account.json
 ```
 
-Das Service-Account-Konto muss in der Google Search Console bereits für die Property `komplettwebdesign.de` berechtigt sein. Im Backend wird diese Domain-Property exakt als `sc-domain:komplettwebdesign.de` angesprochen. Der verwendete OAuth-Scope ist ausschließlich `https://www.googleapis.com/auth/webmasters.readonly`; die Integration besitzt keine schreibende Search-Console-Berechtigung.
+Das Service-Account-Konto muss in der Google Search Console als eingeschränkter Nutzer für die Property `komplettwebdesign.de` hinzugefügt und bereits berechtigt sein. Eigentümerrechte werden dafür nicht benötigt; uneingeschränkte Nutzerrechte sind ebenfalls nicht erforderlich. Im Backend wird diese Domain-Property exakt als `sc-domain:komplettwebdesign.de` angesprochen. Der verwendete OAuth-Scope ist ausschließlich `https://www.googleapis.com/auth/webmasters.readonly`; die Integration besitzt keine schreibende Search-Console-Berechtigung.
 
 ## 4. Content-Agent-Konfiguration in `.env` ergänzen
 
@@ -200,11 +200,7 @@ GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json
 CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0
 ```
 
-`SMTP_PASS` ist ein Geheimnis und darf weder in Git eingecheckt noch in Tickets, Logs oder Chatnachrichten kopiert werden. `SMTP_FROM` ist die technische Absenderadresse für Admin-Prüfmails und Blog-Newsletter; sie muss beim SMTP-Konto als Absender zulässig sein. Nach jeder Änderung an diesen fünf SMTP-Werten müssen App und Worker neu erzeugt werden, weil beide Prozesse die `.env` beim Containerstart laden:
-
-```bash
-docker compose up -d --no-deps --force-recreate app content-worker
-```
+`SMTP_PASS` ist ein Geheimnis und darf weder in Git eingecheckt noch in Tickets, Logs oder Chatnachrichten kopiert werden. `SMTP_FROM` ist die technische Absenderadresse für Admin-Prüfmails und Blog-Newsletter; sie muss beim SMTP-Konto als Absender zulässig sein. Nach jeder späteren Änderung an den SMTP- oder Search-Console-Werten müssen App und Worker neu erzeugt werden, weil beide Prozesse die `.env` beim Containerstart laden. Beim Erstrollout an dieser Stelle ausdrücklich noch keinen Recreate ausführen: Zuerst die Abschnitte 5 bis 7 mit Image-Build, getrennter Testmigration, geprüftem Produktionsbackup, Produktionsmigration und Dry-Run vollständig abschließen. Der erste gemeinsame Recreate steht danach am Ende von Abschnitt 7.
 
 `CONTENT_AGENT_ENABLED=true` ist nur das technische Prozess-Gate: Es erlaubt dem Worker zu starten, aktiviert aber noch keine Jobübernahme. Die Migration setzt den PostgreSQL-Betriebszustand zunächst auf `agent_enabled=false` und `operating_mode=review`. Die PostgreSQL-Betriebswerte sind danach maßgeblich. Ihre Standardtermine sind Montag und Donnerstag um 18:00 Uhr in `Europe/Berlin`. Die alten Umgebungsvariablen `CONTENT_AGENT_PUBLISH_MODE`, `CONTENT_AGENT_SCHEDULE` und `CONTENT_AGENT_TIMEZONE` sind nur noch veraltete Bootstrap-Fallbacks und werden für diesen Rollout nicht gesetzt.
 
@@ -351,6 +347,17 @@ docker compose run --rm app npm run content-agent:dry-run
 ```
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
+
+Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch startet der Worker erstmals mit Migration 007 und dem geprüften Image:
+
+```bash
+docker compose up -d --no-deps --force-recreate app content-worker
+docker compose ps postgres app content-worker
+docker compose exec -T content-worker npm run content-agent:healthcheck
+docker compose logs --tail=100 app content-worker
+```
+
+Schlägt Recreate, App-Start oder Worker-Healthcheck fehl, den Content-Agent nicht im Dashboard aktivieren. Zuerst Containerstatus und Logs prüfen.
 
 ### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`
 
@@ -724,17 +731,14 @@ Die Metadatendatei speichert Tag, exakte Image-ID, Commit, Ref, erkannten Schema
 
 Der Dry-Run wird vollständig in einer geschützten temporären Datei erfasst. Ein Node-Validator sucht rückwärts die letzte syntaktisch gültige JSON-Zeile und akzeptiert ausschließlich `externalCalls === 0`, `articleValid === true`, `publishMode === "draft"`, `scheduledReview === true` und `notificationSimulated === true`. Nach dem Recreate muss der interne Endpunkt `http://localhost:3000/health` aus dem App-Container dreimal hintereinander innerhalb des begrenzten Fensters Status 200 und den Text `ok` liefern. Wird das Skript bewusst mit `KWD_CHECK_EXTERNAL_HEALTH=true` gestartet, verlangt es zusätzlich `curl` und prüft den öffentlichen Traefik-Pfad. Der Worker muss danach separat `healthy` werden. Nach einem Abbruch den Agenten nicht voreilig reaktivieren, sondern Ursache, Queue und Logs prüfen.
 
-## 8. Erst die App, dann den Worker starten
+## 8. App und Worker nach dem sicheren Recreate prüfen
 
-Die Dienste absichtlich in zwei Schritten hochfahren. Durch `condition: service_healthy` startet die App erst nach einem erfolgreichen PostgreSQL-Healthcheck.
+Der Erstrollout hat App und Worker am Ende von Abschnitt 7 bereits gemeinsam neu erzeugt. Durch `condition: service_healthy` starten beide erst nach einem erfolgreichen PostgreSQL-Healthcheck. An dieser Stelle keinen zweiten Start ausführen, sondern den bereits laufenden Zustand kontrollieren:
 
 ```bash
-docker compose up -d app
 docker compose ps postgres app
 docker compose logs --tail=100 app
-
-docker compose up -d content-worker
-docker compose ps
+docker compose ps content-worker
 docker compose logs --tail=100 content-worker
 ```
 

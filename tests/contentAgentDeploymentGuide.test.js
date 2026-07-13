@@ -131,7 +131,9 @@ test('Search-Console-Konfiguration verwendet die Domain-Property und ausschließ
   ]) assert.match(guide, new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
 
   assert.match(guide, /https:\/\/www\.googleapis\.com\/auth\/webmasters\.readonly/);
-  assert.match(guide, /Service-Account[^\n]*(?:Search Console|GSC)[^\n]*(?:berechtigt|Berechtigung)/i);
+  assert.match(guide, /Service-Account[^\n]*(?:Search Console|GSC)[^\n]*als eingeschränkter Nutzer/i);
+  assert.match(guide, /(?:Eigentümer|Eigentümerrechte)[^\n]*(?:nicht benötigt|nicht erforderlich)/i);
+  assert.match(guide, /uneingeschränkte Nutzerrechte[^\n]*(?:nicht benötigt|nicht erforderlich)/i);
   assert.match(guide, /Domain-Property[^\n]*`sc-domain:komplettwebdesign\.de`/i);
   assert.doesNotMatch(guide, /Search Console[^\n]*folgt erst in Plan C/i);
   assert.match(guide, /Root-`\.env`[^\n]*Root-`docker-compose\.yml`[^\n]*(?:absichtlich|bewusst)[^\n]*nicht verändert/i);
@@ -148,6 +150,36 @@ test('Search-Console-Rollout umfasst Migration 007, Recreate, Admin-Sync und sic
   assert.match(guide, /Search-Console-Synchronisierung[^\n]*(?:deaktivierbar|deaktivieren)/i);
   assert.match(guide, /(?:keine|niemals)[^\n]*(?:automatisch)[^\n]*(?:ändern|veröffentlichen)/i);
   assert.match(guide, /(?:Kernpipeline|Artikelpipeline)[^\n]*(?:nicht blockieren|unabhängig)/i);
+});
+
+test('Erstrollout startet App und Worker erst nach Build, Testmigration, Backup und Produktionsmigration neu', () => {
+  const rolloutStart = guide.indexOf('## 2. Releaseprüfung des Anwendungsstands');
+  const repeatableDeployStart = guide.indexOf('### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`');
+  assert.ok(rolloutStart >= 0 && repeatableDeployStart > rolloutStart);
+  const initialRollout = guide.slice(rolloutStart, repeatableDeployStart);
+
+  const build = initialRollout.indexOf('docker compose build app');
+  const testMigration = initialRollout.indexOf('TEST_DB_CONTAINER=');
+  const backup = initialRollout.indexOf('BACKUP_FILE=');
+  const productionMigration = initialRollout.indexOf(
+    'docker compose run --rm app npm run migrate:content-agent'
+  );
+  const recreates = [
+    ...initialRollout.matchAll(
+      /^docker compose up -d --no-deps --force-recreate app content-worker$/gm
+    )
+  ];
+
+  assert.equal(recreates.length, 1, 'der Erstrollout muss genau einen gemeinsamen Recreate besitzen');
+  const recreate = recreates[0].index;
+  assert.ok(build >= 0 && testMigration > build);
+  assert.ok(backup > testMigration && productionMigration > backup);
+  assert.ok(recreate > productionMigration, 'Recreate darf erst nach der Produktionsmigration erfolgen');
+  assert.match(
+    initialRollout.slice(productionMigration, recreate),
+    /content-agent:dry-run/,
+    'der sichere Dry-Run muss ebenfalls vor dem Recreate liegen'
+  );
 });
 
 test('Rollout dokumentiert Migration 004 bis 007, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
@@ -282,7 +314,9 @@ test('Testmigration und geprüftes Backup liegen vor jeder Produktionsmigration'
 
 test('Dry-Run liegt vor Workerstart und der Start wird anschließend geprüft', () => {
   const dryRunPosition = guide.indexOf('docker compose run --rm app npm run content-agent:dry-run');
-  const workerStartPosition = guide.indexOf('docker compose up -d content-worker');
+  const workerStartPosition = guide.indexOf(
+    'docker compose up -d --no-deps --force-recreate app content-worker'
+  );
 
   assert.ok(dryRunPosition >= 0);
   assert.ok(workerStartPosition > dryRunPosition);
