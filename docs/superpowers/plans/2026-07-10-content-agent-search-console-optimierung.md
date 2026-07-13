@@ -20,12 +20,11 @@
 
 ---
 
-### Task 1: Search-Metriken-Schema
+### Task 1: Search-Metriken-Schema als Migration 007
 
 **Files:**
-- Create: `scripts/migrations/004_create_content_search_metrics.sql`
-- Create: `scripts/runContentSearchMetricsMigration.js`
-- Modify: `package.json`
+- Create: `scripts/migrations/007_create_content_search_metrics.sql`
+- Modify: `scripts/runContentAgentMigration.js`
 - Test: `tests/contentSearchMetricsMigration.test.js`
 
 **Interfaces:**
@@ -82,11 +81,12 @@ CREATE INDEX IF NOT EXISTS idx_content_opportunities_status_score
   ON content_opportunities (status, score DESC, created_at DESC);
 ~~~
 
-- [ ] **Step 4: Runner und npm-Skript ergänzen**
+- [ ] **Step 4: Bestehenden Runner ergänzen**
 
-~~~json
-"migrate:content-search": "node scripts/runContentSearchMetricsMigration.js"
-~~~
+`scripts/runContentAgentMigration.js` lädt nach Migration 006 zusätzlich
+`./migrations/007_create_content_search_metrics.sql`. Erfolgs- und Fehlermeldung
+nennen anschließend reproduzierbar die Migrationen 002 bis 007. Das bestehende
+npm-Skript `migrate:content-agent` bleibt unverändert.
 
 - [ ] **Step 5: Tests und Commit**
 
@@ -94,9 +94,11 @@ Run: `node --test tests/contentSearchMetricsMigration.test.js && npm test`
 Expected: alle Tests PASS.
 
 ~~~bash
-git add scripts/migrations/004_create_content_search_metrics.sql scripts/runContentSearchMetricsMigration.js package.json tests/contentSearchMetricsMigration.test.js
+git add scripts/migrations/007_create_content_search_metrics.sql scripts/runContentAgentMigration.js tests/contentSearchMetricsMigration.test.js
 git commit -m "feat: add search console metrics schema"
 ~~~
+
+Der bestehende Runner `npm run migrate:content-agent` bleibt die einzige Content-Agent-Migrationsschnittstelle. Es wird kein zweiter Migrationsrunner eingeführt.
 
 ### Task 2: Read-only Search-Console-Client
 
@@ -322,9 +324,12 @@ git commit -m "feat: derive content opportunities from search data"
 **Files:**
 - Modify: `services/contentAgent/workerService.js`
 - Modify: `scripts/contentWorker.js`
-- Modify: `repositories/contentAdminRepository.js`
+- Modify: `repositories/contentAgentAdminRepository.js`
 - Modify: `controllers/adminContentAgentController.js`
-- Modify: `views/admin/content_agent_dashboard.ejs`
+- Modify: `routes/adminContentAgentRoutes.js`
+- Create: `views/admin/contentAgent/searchConsole.ejs`
+- Modify: `views/admin/contentAgent/_tabs.ejs`
+- Modify: `services/contentAgent/adminPresentationService.js`
 - Test: `tests/contentSearchAdminIntegration.test.js`
 
 **Interfaces:**
@@ -341,15 +346,15 @@ Expected: FAIL.
 
 - [ ] **Step 3: Workerhandler ergänzen**
 
-`sync_search_console` importiert die letzten 28 finalisierten Tage. Nach Erfolg wird `analyze_search_opportunities` mit Idempotenzschlüssel aus Enddatum und Importlauf angelegt.
+`sync_search_console` importiert die letzten 28 finalisierten Tage. Nach Erfolg wird `analyze_search_opportunities` mit einem stabilen Idempotenzschlüssel aus Enddatum und Syncjob-ID angelegt. Beide Jobtypen laufen außerhalb der kostenpflichtigen Artikelpipeline und benötigen keinen `content_runs`-Datensatz.
 
 - [ ] **Step 4: Cron ergänzen**
 
-Sonntag 06:00 Uhr Europe/Berlin, getrennt vom Artikelcron. Ist Search Console nicht konfiguriert, wird kein Job angelegt und eine einmalige Warnung geloggt.
+Sonntag 06:00 Uhr Europe/Berlin, getrennt vom Artikelcron. Ist Search Console nicht konfiguriert, wird kein Job angelegt und eine einmalige Warnung geloggt. Die bestehende dynamische Artikelplanung bleibt unverändert.
 
 - [ ] **Step 5: Dashboard ergänzen**
 
-Top-Chancen zeigen Belegwerte und erzeugen per Adminaktion einen normalen `generate_manual_draft`- oder `regenerate_metadata`-Job. Keine Empfehlung verändert automatisch Inhalte.
+Die neue geschützte Seite `/admin/content-agent/search-console` zeigt Konfigurationsstatus, letzten Import, Top-Suchanfragen und Top-Chancen mit Belegwerten. Ein CSRF-geschützter Button „Search Console jetzt synchronisieren“ legt einen idempotenten `sync_search_console`-Job an. Chancen erzeugen per ausdrücklicher Adminaktion einen normalen `generate_manual_draft`- oder `regenerate_metadata`-Job. Keine Empfehlung verändert automatisch Inhalte.
 
 - [ ] **Step 6: Tests und Commit**
 
@@ -357,7 +362,7 @@ Run: `node --test tests/contentSearchAdminIntegration.test.js && npm run build &
 Expected: alle Tests und Build PASS.
 
 ~~~bash
-git add services/contentAgent/workerService.js scripts/contentWorker.js repositories/contentAdminRepository.js controllers/adminContentAgentController.js views/admin/content_agent_dashboard.ejs tests/contentSearchAdminIntegration.test.js
+git add scripts/contentWorker.js services/contentAgent/searchConsoleSchedulerService.js repositories/contentAgentAdminRepository.js controllers/adminContentAgentController.js routes/adminContentAgentRoutes.js services/contentAgent/adminPresentationService.js views/admin/contentAgent/searchConsole.ejs views/admin/contentAgent/_tabs.ejs tests/contentSearchAdminIntegration.test.js
 git commit -m "feat: surface search driven content opportunities"
 ~~~
 
@@ -374,7 +379,7 @@ git commit -m "feat: surface search driven content opportunities"
 - [ ] **Step 1: Fehlschlagenden Dokumentationstest erweitern**
 
 ~~~js
-assert.match(guide, /google_search_console:/);
+assert.match(guide, /gsc_credentials:/);
 assert.match(guide, /GOOGLE_APPLICATION_CREDENTIALS/);
 assert.match(guide, /SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign\.de/);
 assert.match(guide, /webmasters\.readonly/);
@@ -388,14 +393,14 @@ Expected: FAIL.
 - [ ] **Step 3: Secret-Einrichtung dokumentieren**
 
 ~~~bash
-cd /home/webadmin/apps/komplettwebdesign
+cd ~/apps/komplettwebdesign
+umask 077
 mkdir -p ./secrets
 chmod 700 ./secrets
-nano ./secrets/google-search-console.json
-chmod 600 ./secrets/google-search-console.json
+chmod 600 ./secrets/gsc-service-account.json
 ~~~
 
-`.gitignore` auf dem Server beziehungsweise im Repository schließt `secrets/*.json` aus.
+Die JSON-Datei wird außerhalb des automatisch aktualisierten `server/`-Repositorys abgelegt. `.gitignore` schließt zusätzlich `secrets/*.json` und `secrets/` aus. Die Anleitung zeigt niemals den privaten JSON-Inhalt und verwendet kein `cat`.
 
 Compose-Ergänzung:
 
@@ -403,19 +408,19 @@ Compose-Ergänzung:
 services:
   content-worker:
     secrets:
-      - google_search_console
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-search-console.json
+      - source: gsc_credentials
+        target: gsc-service-account.json
 
 secrets:
-  google_search_console:
-    file: ./secrets/google-search-console.json
+  gsc_credentials:
+    file: ./secrets/gsc-service-account.json
 ~~~
 
 `.env`:
 
 ~~~dotenv
 SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign.de
+GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json
 CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0
 ~~~
 
@@ -424,8 +429,8 @@ Die Service-Account-E-Mail wird in der Search Console als eingeschränkter Nutze
 - [ ] **Step 4: Migration, Neustart und Prüfung dokumentieren**
 
 ~~~bash
-docker compose run --rm app npm run migrate:content-search
-docker compose up -d content-worker
+docker compose run --rm app npm run migrate:content-agent
+docker compose up -d --no-deps --force-recreate app content-worker
 docker compose logs --tail=100 content-worker
 ~~~
 
@@ -437,7 +442,7 @@ Run: `node --test tests/contentAgentDeploymentGuide.test.js && npm test`
 Expected: alle Tests PASS.
 
 ~~~bash
-git add docs/deployment/content-agent-ionos-vps.md tests/contentAgentDeploymentGuide.test.js
+git add .gitignore docs/deployment/content-agent-ionos-vps.md tests/contentAgentDeploymentGuide.test.js
 git commit -m "docs: add search console VPS setup"
 ~~~
 
