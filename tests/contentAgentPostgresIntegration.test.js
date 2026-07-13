@@ -15,7 +15,7 @@ import {
   retryOrFailJob,
   upsertWorkerHeartbeat
 } from '../repositories/contentJobRepository.js';
-import { createRun, updateRunStage } from '../repositories/contentRunRepository.js';
+import { createRun, finishRun, updateRunStage } from '../repositories/contentRunRepository.js';
 import {
   releaseMonthlyBudgetReservation,
   reserveMonthlyBudget,
@@ -315,6 +315,19 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const finishJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key)
+      VALUES ('generate_manual_draft', 'failed', 'pg-finish-run-casts')
+      RETURNING id
+    `);
+    const failedRun = await createRun({ jobId: finishJob.rows[0].id }, pool);
+    const terminalRun = await finishRun(failedRun.id, {
+      status: 'failed',
+      errorReport: { code: 'TOPIC_PERSISTENCE_FAILED' }
+    }, pool);
+    assert.equal(terminalRun.status, 'failed');
+    assert.equal(terminalRun.current_stage, 'inventory');
 
     const settings = await pool.query('SELECT * FROM content_agent_settings WHERE id = 1');
     assert.equal(settings.rows[0].agent_enabled, false);

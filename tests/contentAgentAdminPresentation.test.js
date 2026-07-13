@@ -182,6 +182,7 @@ test('Mailretry bleibt für unklare, abgelehnte und nicht ausgeschöpfte Zustell
 test('Jobpräsentation zeigt bereinigte Fehler und letzte sichere Stufe', () => {
   const [job] = buildJobListPresentation([{
     id: 7,
+    job_type: 'generate_weekly_draft',
     status: 'failed',
     current_stage: 'image_generation',
     last_error: 'Upload fehlgeschlagen token=sk-abcdefgh12345678\nInterner Stack',
@@ -191,7 +192,20 @@ test('Jobpräsentation zeigt bereinigte Fehler und letzte sichere Stufe', () => 
 
   assert.equal(job.statusLabel, 'Endgültig fehlgeschlagen');
   assert.equal(job.lastSafeStageLabel, 'Bildgenerierung');
+  assert.equal(job.canRetry, true);
   assert.doesNotMatch(job.lastError, /sk-abcdefgh12345678|Interner Stack/);
+});
+
+test('Jobpräsentation blendet den Retry am manuellen Sicherheitslimit aus', () => {
+  const [job] = buildJobListPresentation([{
+    id: 8,
+    job_type: 'generate_weekly_draft',
+    status: 'failed',
+    attempts: 5,
+    max_attempts: 5
+  }]);
+
+  assert.equal(job.canRetry, false);
 });
 
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {

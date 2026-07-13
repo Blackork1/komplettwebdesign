@@ -92,11 +92,11 @@ export async function finishRun(runId, {
   const { rows } = await db.query(
     `
       UPDATE content_runs
-      SET status = $2,
+      SET status = $2::VARCHAR(32),
           post_id = COALESCE($3, post_id),
           error_report_json = $4::jsonb,
           current_stage = CASE
-            WHEN $2 = 'completed' THEN 'completed'
+            WHEN $2::VARCHAR(32) = 'completed' THEN 'completed'::VARCHAR(64)
             ELSE current_stage
           END,
           finished_at = NOW()

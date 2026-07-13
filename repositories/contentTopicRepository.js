@@ -1,5 +1,7 @@
 import pool from '../util/db.js';
 
+export const AI_TOPIC_SOURCE = 'ai_topic_research';
+
 export async function createTopic({
   topic,
   suggestedTitle = null,
@@ -8,7 +10,6 @@ export async function createTopic({
   contentCluster,
   searchIntent,
   targetAudience,
-  source,
   businessValue = 0,
   searchOpportunity = 0,
   problemPurchaseProximity = 0,
@@ -58,7 +59,7 @@ export async function createTopic({
       contentCluster,
       searchIntent,
       targetAudience,
-      source,
+      AI_TOPIC_SOURCE,
       businessValue,
       searchOpportunity,
       problemPurchaseProximity,

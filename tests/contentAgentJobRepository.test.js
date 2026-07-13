@@ -329,6 +329,17 @@ test('generischer Admin-Retry schließt Prüfmailjobs atomar im Update-CAS aus',
   assert.doesNotMatch(db.calls[0].sql, /^SELECT|;\s*SELECT/i);
 });
 
+test('manueller Admin-Retry gewährt nach ausgeschöpften automatischen Versuchen einen kontrollierten Zusatzversuch', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 23, status: 'queued', attempts: 3, max_attempts: 4 }] }]);
+
+  const result = await retryContentJobForAdmin({ jobId: 23, hardMaxAttempts: 3 }, db);
+
+  assert.equal(result.status, 'queued');
+  assert.deepEqual(db.calls[0].params, [23, 5]);
+  assert.match(db.calls[0].sql, /max_attempts = LEAST\(\$2, GREATEST\(max_attempts, attempts \+ 1\)\)/i);
+  assert.match(db.calls[0].sql, /attempts < \$2/i);
+});
+
 test('NOT_DUE-Reschedule gibt exakt den gefencten Claimversuch ohne Unterlauf zurück', async () => {
   const { rescheduleJobWithoutAttemptConsumption } = await import('../repositories/contentJobRepository.js');
   assert.equal(typeof rescheduleJobWithoutAttemptConsumption, 'function');
@@ -609,6 +620,16 @@ test('Laufprotokoll übergibt JSON als Objekte und gibt gespeicherte Zeilen zur�
   assert.deepEqual(db.calls[2].params[3], errorReport);
 });
 
+test('finishRun typisiert den Status für PostgreSQL in Zuweisung und Vergleich eindeutig', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 21, status: 'failed' }] }]);
+
+  await finishRun(21, { status: 'failed', errorReport: { code: 'TOPIC_FAILED' } }, db);
+
+  assert.match(db.calls[0].sql, /SET status = \$2::varchar\(32\)/i);
+  assert.match(db.calls[0].sql, /WHEN \$2::varchar\(32\) = 'completed'/i);
+  assert.match(db.calls[0].sql, /THEN 'completed'::varchar\(64\)/i);
+});
+
 test('updateRunStage trennt Usage nach stageId und verbucht dieselbe ID höchstens einmal', async () => {
   const firstRepair = {
     id: 25,
@@ -741,6 +762,26 @@ test('Themenfunktionen speichern JSON-Arrays als Parameter und markieren die Nut
   assert.match(db.calls[0].sql, /to_jsonb\(\$4::text\[\]\)/i);
   assert.match(db.calls[1].sql, /status = 'used'/i);
   assert.match(db.calls[1].sql, /used_at = NOW\(\)/i);
+});
+
+test('createTopic speichert für KI-Themen ausschließlich die kontrollierte serverseitige Quelle', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 32, source: 'ai_topic_research' }] }]);
+  const descriptiveAiSource = 'Automatisch aus Zielgruppenproblemen, bestehendem Seiteninventar und kaufnaher Suchintention abgeleitet';
+
+  const result = await createTopic({
+    topic: 'Warum bringt meine Website keine Anfragen?',
+    suggestedTitle: 'Warum deine Website keine Anfragen bringt',
+    primaryKeyword: 'Website bringt keine Anfragen',
+    secondaryKeywords: ['Website optimieren'],
+    contentCluster: 'Conversion',
+    searchIntent: 'problem-aware',
+    targetAudience: 'Kleine Unternehmen in Berlin',
+    source: descriptiveAiSource
+  }, db);
+
+  assert.equal(result.source, 'ai_topic_research');
+  assert.equal(db.calls[0].params[7], 'ai_topic_research');
+  assert.ok(descriptiveAiSource.length > 64);
 });
 
 test('createTopic verwendet generation_run_id idempotent ohne bestehende Fachwerte zu überschreiben', async () => {

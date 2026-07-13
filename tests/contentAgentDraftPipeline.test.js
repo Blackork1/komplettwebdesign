@@ -11,6 +11,7 @@ import { validateArticle as validateRealArticle } from '../services/contentAgent
 import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
 import { ContentBudgetLimitError } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
+import { createTopic } from '../repositories/contentTopicRepository.js';
 
 const usage = { input_tokens: 1_000, output_tokens: 500 };
 
@@ -2153,6 +2154,72 @@ test('vollständig schemagültige persistierte Providerwerte bleiben wiederverwe
     generateArticle: 0,
     reviewArticle: 0
   });
+});
+
+test('Retry verwendet eine bezahlte Themenrecherche mit langer KI-Quelle ohne zweiten Provideraufruf', async () => {
+  let topicResearchCalls = 0;
+  const topicInsertCalls = [];
+  const recoveredTopic = {
+    ...schemaTopic,
+    source: 'Automatisch aus bestehenden Seiten, Zielgruppenproblemen und einer kaufnahen Suchintention abgeleitet'
+  };
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createTopicCandidates() {
+        topicResearchCalls += 1;
+        throw new Error('Die bezahlte Themenrecherche darf nicht erneut ausgeführt werden.');
+      }
+    },
+    topicRepository: {
+      async createTopic(value) {
+        const db = {
+          async query(sql, params) {
+            topicInsertCalls.push({ sql, params });
+            return {
+              rows: [{
+                id: 17,
+                topic: value.topic,
+                primary_keyword: value.primaryKeyword,
+                source: params[7],
+                status: 'candidate'
+              }]
+            };
+          }
+        };
+        return createTopic(value, db);
+      },
+      async markTopicUsed() {}
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async reserveMonthlyBudget(input) {
+        if (input.stageId === 'topic_research') {
+          return {
+            created: false,
+            status: 'settled',
+            reservationMonth: '2026-07',
+            reservationKey: 'budget:2026-07:topic_research'
+          };
+        }
+        return base.dependencies.costService.reserveMonthlyBudget(input);
+      },
+      async getPersistedStageResult({ stageId }) {
+        if (stageId === 'topic_research') {
+          return persistedEnvelope({ candidates: [recoveredTopic] }, 'resp-paid-topic');
+        }
+        return null;
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 271 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(topicResearchCalls, 0);
+  assert.equal(topicInsertCalls.length, 1);
+  assert.equal(topicInsertCalls[0].params[7], 'ai_topic_research');
 });
 
 test('Retry nach Topicanlage verwendet topic_persistence statt eine zweite Themenzeile anzulegen', async () => {

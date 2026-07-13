@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { ADMIN_CONTENT_JOB_RETRY_CAP } from '../services/contentAgent/contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
 const CLAIM_NEXT_JOB_SQL = `
@@ -292,8 +293,8 @@ export async function enqueueApprovedPublicationJob({
   }, db);
 }
 
-export async function retryContentJobForAdmin({ jobId, hardMaxAttempts }, db = pool) {
-  const cap = Math.min(5, Math.max(1, Number(hardMaxAttempts) || 1));
+export async function retryContentJobForAdmin({ jobId }, db = pool) {
+  const cap = ADMIN_CONTENT_JOB_RETRY_CAP;
   const { rows } = await db.query(
     `
       UPDATE content_jobs

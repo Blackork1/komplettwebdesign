@@ -631,8 +631,7 @@ export function createAdminContentAgentController(dependencies) {
       try {
         const jobId = positiveId(req.params.id);
         const job = await jobRepository.retryContentJobForAdmin({
-          jobId,
-          hardMaxAttempts: runtimeConfig.maxAttempts
+          jobId
         });
         if (!job) {
           throw Object.assign(new Error('Job kann nicht fortgesetzt werden.'), {

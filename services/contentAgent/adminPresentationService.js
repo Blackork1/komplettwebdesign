@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { canRetryContentJobManually } from './contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from '../../repositories/contentErrorSanitizer.js';
 import { isAdminNotificationManuallyRetryable } from './adminDraftService.js';
 import { buildPublicationSlot } from './contentSchedulerService.js';
@@ -351,8 +352,11 @@ export function buildJobListPresentation(rows = []) {
     jobType: row.job_type,
     status: row.status,
     statusLabel: STATUS_LABELS[row.status] || 'Unbekannter Status',
-    canRetry: row.job_type !== 'send_admin_review_notification'
-      && ['failed', 'needs_manual_attention'].includes(row.status),
+    canRetry: canRetryContentJobManually({
+      jobType: row.job_type,
+      status: row.status,
+      attempts: row.attempts
+    }),
     isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
     attempts: Number(row.attempts || 0),
     maxAttempts: Number(row.max_attempts || 0),
