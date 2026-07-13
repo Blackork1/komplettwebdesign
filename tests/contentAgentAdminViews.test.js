@@ -302,6 +302,37 @@ test('Jobliste rendert fehlgeschlagene Jobs ohne explizites canRetry fail-closed
   assert.doesNotMatch(html, /jobs\/77\/retry|Job fortsetzen/);
 });
 
+test('Jobliste trennt die bestätigte Providerwiederherstellung vom normalen Retry', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 4,
+      maxAttempts: 4,
+      lastSafeStageLabel: 'Themenrecherche',
+      lastError: 'provider_execution_uncertain',
+      costEur: 0.59,
+      canRetry: false,
+      canRecoverProvider: true,
+      providerRecoveryStageLabel: 'SEO-Briefing',
+      providerRecoveryActionLabel: 'Reservierung verwerfen und SEO-Briefing erneut erstellen'
+    }]
+  });
+
+  assert.match(html, /method="post" action="\/admin\/content-agent\/jobs\/1\/recover-provider"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Der frühere OpenAI-Aufruf könnte bereits berechnet worden sein/);
+  assert.match(html, /zusätzliche OpenAI-Kosten verursachen/);
+  assert.match(html, /Reservierung verwerfen und SEO-Briefing erneut erstellen/);
+  assert.match(html, /data-confirm="[^"]*kostenpflichtig erneut ausführen/);
+  assert.doesNotMatch(html, /jobs\/1\/retry|Job fortsetzen/);
+  assert.doesNotMatch(html, /stage_results_json|payload_json|openai_response_ids_json/i);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

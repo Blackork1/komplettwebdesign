@@ -10,6 +10,7 @@ import {
 import {
   enqueueManualSearchConsoleSyncJob,
   enqueueJob,
+  recoverUncertainProviderJobForAdmin,
   retryContentJobForAdmin
 } from '../repositories/contentJobRepository.js';
 import {
@@ -41,6 +42,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);
   router.post('/admin/content-agent/search-console/sync', isAdmin, verifyCsrfToken, controller.syncSearchConsoleAction);
   router.post('/admin/content-agent/jobs/:id/retry', isAdmin, verifyCsrfToken, controller.retryJobAction);
+  router.post('/admin/content-agent/jobs/:id/recover-provider', isAdmin, verifyCsrfToken, controller.recoverProviderJobAction);
   router.post('/admin/content-agent/drafts/:id', isAdmin, verifyCsrfToken, controller.updateDraftAction);
   router.post('/admin/content-agent/drafts/:id/reject', isAdmin, verifyCsrfToken, controller.rejectDraftAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-image', isAdmin, verifyCsrfToken, controller.regenerateImageAction);
@@ -75,7 +77,8 @@ const controller = createAdminContentAgentController({
   jobRepository: {
     enqueueJob: (input) => enqueueJob(input, pool),
     enqueueManualSearchConsoleSyncJob: (input) => enqueueManualSearchConsoleSyncJob(input, pool),
-    retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool)
+    retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool),
+    recoverUncertainProviderJobForAdmin: (input) => recoverUncertainProviderJobForAdmin(input, pool)
   },
   runtimeConfig: technicalConfig,
   technicalPresentation: buildTechnicalConfigPresentation({ technicalConfig }),

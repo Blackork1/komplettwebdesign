@@ -512,6 +512,71 @@ test('Jobretry verlässt sich ohne optionalen Jobtyphelfer ausschließlich auf d
   assert.equal(res.statusCode, 409);
 });
 
+test('Providerwiederherstellung verlangt eine literale kritische Bestätigung', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async recoverUncertainProviderJobForAdmin() {
+        calls += 1;
+        return { job: { id: 19 } };
+      }
+    }
+  }));
+
+  for (const confirmed of [undefined, 'on', '1', 'false', false]) {
+    const res = response();
+    await controller.recoverProviderJobAction({
+      params: { id: '19' },
+      body: { confirmed },
+      session: { user: { id: 7, username: 'redaktion' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body, /Bestätigung fehlt/);
+  }
+  assert.equal(calls, 0);
+});
+
+test('bestätigte Providerwiederherstellung verwendet kanonische Job- und Admin-ID', async () => {
+  let received;
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async recoverUncertainProviderJobForAdmin(input) {
+        received = input;
+        return { job: { id: 19, status: 'queued' } };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.recoverProviderJobAction({
+    params: { id: '19' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+
+  assert.deepEqual(received, { jobId: 19, adminId: 7 });
+  assert.equal(res.redirectedTo, '/admin/content-agent/jobs?provider-recovery=queued');
+});
+
+test('veraltete Providerwiederherstellung wird ohne interne Details als Konflikt ausgegeben', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async recoverUncertainProviderJobForAdmin() { return null; }
+    }
+  }));
+  const res = response();
+
+  await controller.recoverProviderJobAction({
+    params: { id: '19' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7 } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /nicht mehr verfügbar/i);
+  assert.doesNotMatch(res.body, /Providerreservierung|SQL|JSON/i);
+});
+
 test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', async () => {
   const rejectInputs = [];
   const controller = createAdminContentAgentController(baseDependencies({

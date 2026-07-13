@@ -30,6 +30,7 @@ const POST_PATHS = [
   '/admin/content-agent/jobs/manual-draft',
   '/admin/content-agent/search-console/sync',
   '/admin/content-agent/jobs/:id/retry',
+  '/admin/content-agent/jobs/:id/recover-provider',
   '/admin/content-agent/drafts/:id',
   '/admin/content-agent/drafts/:id/reject',
   '/admin/content-agent/drafts/:id/regenerate-image',
@@ -91,6 +92,14 @@ test('der Produktionsrouter injiziert den echten Publikationsservice', () => {
   assert.match(routes, /import \{ createContentPublicationService \} from ['"]\.\.\/services\/contentAgent\/contentPublicationService\.js['"]/);
   assert.match(routes, /const publicationService = createContentPublicationService\(\)/);
   assert.match(routes, /publicationService,/);
+});
+
+test('der Produktionsrouter injiziert die transaktionale Providerwiederherstellung', () => {
+  assert.match(routes, /recoverUncertainProviderJobForAdmin/);
+  assert.match(
+    routes,
+    /recoverUncertainProviderJobForAdmin:\s*\(input\)\s*=>\s*recoverUncertainProviderJobForAdmin\(input, pool\)/
+  );
 });
 
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
