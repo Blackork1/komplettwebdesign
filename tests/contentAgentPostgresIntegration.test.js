@@ -10,6 +10,7 @@ import {
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
+  recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
   renewJobLease,
   retryOrFailJob,
@@ -147,6 +148,126 @@ test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderun
     assert.equal((await pool.query(
       'SELECT schedule_revision FROM content_agent_settings WHERE id = 1'
     )).rows[0].schedule_revision, '4');
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: unklare Providerreservierung wird genau einmal verworfen', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'needs_manual_attention', 4, 4,
+          'provider_execution_uncertain', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, cost_estimate, error_report_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'needs_manual_attention',
+             0.586475,
+             '{"code":"provider_execution_uncertain"}'::jsonb,
+             '{
+               "budget:2026-07:topic_research": {
+                 "status":"settled", "reservationMonth":"2026-07",
+                 "reservedCost":0.5, "actualCost":0.086475
+               },
+               "topic_research": {"value":{"candidates":[]}},
+               "budget:2026-07:seo_brief": {
+                 "status":"reserved", "reservationMonth":"2026-07", "reservedCost":0.5
+               }
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id, id AS run_id
+    `);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const result = await recoverUncertainProviderJobForAdmin({ jobId, adminId: 7 }, pool);
+
+    assert.equal(result.recoveredStage, 'seo_brief');
+    assert.equal(result.reservationMonth, '2026-07');
+    assert.equal(result.reservedCost, 0.5);
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 4, max_attempts: 5, last_error: null
+    });
+    const run = (await pool.query(
+      'SELECT status, post_id, cost_estimate, error_report_json, stage_results_json FROM content_runs WHERE job_id = $1',
+      [jobId]
+    )).rows[0];
+    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.post_id, null);
+    assert.equal(Number(run.cost_estimate), 0.086475);
+    assert.equal(run.error_report_json.code, 'provider_recovery_authorized');
+    assert.deepEqual(run.stage_results_json.topic_research.value.candidates, []);
+    assert.equal(run.stage_results_json['budget:2026-07:seo_brief'], undefined);
+    assert.equal(
+      run.stage_results_json['provider_recovery:2026-07:seo_brief:attempt-4'].status,
+      'abandoned_uncertain'
+    );
+
+    assert.equal(
+      await recoverUncertainProviderJobForAdmin({ jobId, adminId: 7 }, pool),
+      null
+    );
+    const audits = await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM content_runs
+      CROSS JOIN LATERAL jsonb_each(stage_results_json) AS entry(key, value)
+      WHERE job_id = $1 AND entry.key LIKE 'provider_recovery:%'
+    `, [jobId]);
+    assert.equal(audits.rows[0].count, 1);
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

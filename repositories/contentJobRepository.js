@@ -318,6 +318,183 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
   return rows[0] || null;
 }
 
+const PROVIDER_RECOVERY_RESERVATION_KEY = /^budget:(\d{4}-(?:0[1-9]|1[0-2])):(.+)$/;
+
+function singleOpenProviderReservation(stageResults) {
+  if (!stageResults || typeof stageResults !== 'object' || Array.isArray(stageResults)) {
+    return null;
+  }
+  const openEntries = Object.entries(stageResults).filter(([key, value]) => (
+    key.startsWith('budget:') && value?.status === 'reserved'
+  ));
+  if (openEntries.length !== 1) return null;
+  const [key, value] = openEntries[0];
+  const match = PROVIDER_RECOVERY_RESERVATION_KEY.exec(key);
+  const reservationMonth = match?.[1];
+  const stageId = match?.[2]?.trim();
+  const reservedCost = Number(value.reservedCost);
+  if (
+    !reservationMonth
+    || !stageId
+    || value.reservationMonth !== reservationMonth
+    || !Number.isFinite(reservedCost)
+    || reservedCost < 0
+  ) {
+    return null;
+  }
+  return { key, reservationMonth, stageId, reservedCost };
+}
+
+function validProviderRecoveryState(row) {
+  return row
+    && row.job_type !== 'send_admin_review_notification'
+    && row.job_status === 'needs_manual_attention'
+    && row.last_error === 'provider_execution_uncertain'
+    && Number.isSafeInteger(Number(row.attempts))
+    && Number(row.attempts) >= 0
+    && Number(row.attempts) < ADMIN_CONTENT_JOB_RETRY_CAP
+    && row.run_status === 'needs_manual_attention'
+    && row.post_id == null
+    && row.error_report_json?.code === 'provider_execution_uncertain';
+}
+
+async function rollbackRecoveryQuietly(client) {
+  try {
+    await client.query('ROLLBACK');
+  } catch {
+    // Der ursprüngliche Transaktionsfehler bleibt maßgeblich.
+  }
+}
+
+export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {}, db = pool) {
+  if (
+    !Number.isSafeInteger(jobId) || jobId <= 0
+    || !Number.isSafeInteger(adminId) || adminId <= 0
+  ) {
+    throw new TypeError('Für die Providerwiederherstellung werden positive sichere Ganzzahlen benötigt.');
+  }
+
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const { rows } = await client.query(
+      `
+        SELECT j.id AS job_id,
+               j.job_type,
+               j.status AS job_status,
+               j.attempts,
+               j.max_attempts,
+               j.last_error,
+               r.id AS run_id,
+               r.status AS run_status,
+               r.post_id,
+               r.error_report_json,
+               r.stage_results_json,
+               r.cost_estimate
+        FROM content_jobs AS j
+        JOIN content_runs AS r ON r.job_id = j.id
+        WHERE j.id = $1
+        FOR UPDATE OF j, r
+      `,
+      [jobId]
+    );
+    const state = rows[0];
+    const reservation = validProviderRecoveryState(state)
+      ? singleOpenProviderReservation(state.stage_results_json)
+      : null;
+    if (!reservation) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const attempts = Number(state.attempts);
+    const auditKey = `provider_recovery:${reservation.reservationMonth}:${reservation.stageId}:attempt-${attempts}`;
+    const runResult = await client.query(
+      `
+        UPDATE content_runs
+        SET stage_results_json =
+              (stage_results_json - $2::text)
+              || jsonb_build_object(
+                $3::text,
+                jsonb_build_object(
+                  'status', 'abandoned_uncertain',
+                  'stageId', $4::text,
+                  'reservationMonth', $5::text,
+                  'reservedCost', $6::numeric,
+                  'adminId', $7::bigint,
+                  'abandonedAt', NOW()
+                )
+              ),
+            cost_estimate = GREATEST(0, cost_estimate - $6::numeric),
+            error_report_json = jsonb_build_object(
+              'code', 'provider_recovery_authorized',
+              'stage', $4::text,
+              'message', 'Die unklare Providerreservierung wurde durch einen Administrator zur Wiederholung freigegeben.'
+            ),
+            finished_at = NULL
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND post_id IS NULL
+          AND stage_results_json -> $2::text ->> 'status' = 'reserved'
+        RETURNING id
+      `,
+      [
+        state.run_id,
+        reservation.key,
+        auditKey,
+        reservation.stageId,
+        reservation.reservationMonth,
+        reservation.reservedCost,
+        adminId
+      ]
+    );
+    if (!runResult.rows[0]) {
+      throw new Error('Die offene Providerreservierung konnte nicht atomar verworfen werden.');
+    }
+
+    const jobResult = await client.query(
+      `
+        UPDATE content_jobs
+        SET status = 'queued',
+            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            run_after = NOW(),
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            finished_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND last_error = 'provider_execution_uncertain'
+          AND attempts = $3
+          AND attempts < $2
+        RETURNING *
+      `,
+      [jobId, ADMIN_CONTENT_JOB_RETRY_CAP, attempts]
+    );
+    if (!jobResult.rows[0]) {
+      throw new Error('Der Content-Job konnte nicht atomar erneut eingereiht werden.');
+    }
+
+    await client.query('COMMIT');
+    return {
+      job: jobResult.rows[0],
+      runId: state.run_id,
+      recoveredStage: reservation.stageId,
+      reservationMonth: reservation.reservationMonth,
+      reservedCost: reservation.reservedCost,
+      auditKey
+    };
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function claimNextJob(workerId, db = pool) {
   const client = await db.connect();
   let transactionStarted = false;
