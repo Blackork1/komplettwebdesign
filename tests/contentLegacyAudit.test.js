@@ -6,7 +6,7 @@ import {
   runExistingContentAuditJob
 } from '../services/contentAgent/legacyAuditService.js';
 
-test('Bestandsaudit erkennt lokale Befunde deterministisch und schließt den eigenen Post aus', () => {
+test('Bestandsaudit erkennt tatsächliche Ausgabefehler deterministisch und schließt den eigenen Post aus', () => {
   const post = {
     id: 7,
     title: 'Website Kosten 2024',
@@ -28,20 +28,15 @@ test('Bestandsaudit erkennt lokale Befunde deterministisch und schließt den eig
   const second = auditExistingPost({ post, inventory, currentYear: 2026 });
   assert.deepEqual(first, second);
   assert.deepEqual(new Set(first.findings.map(({ code }) => code)), new Set([
-    'duplicate_h1',
     'stale_year',
     'static_price',
-    'missing_meta_title',
-    'missing_meta_description',
-    'missing_image_alt',
-    'missing_faq',
     'missing_contact_cta',
     'missing_internal_links',
     'cannibalization_risk'
   ]));
 });
 
-test('Bestandsaudit erkennt unvollständige FAQ und ausgeschriebene Europreise, aber keine klar historischen Jahre', () => {
+test('Bestandsaudit akzeptiert vier strukturierte FAQ und erkennt ausgeschriebene Europreise, aber keine klar historischen Jahre', () => {
   const result = auditExistingPost({
     post: {
       id: 1, title: 'Unser Betrieb', slug: 'betrieb', excerpt: 'Seit 1999 in Berlin',
@@ -53,9 +48,100 @@ test('Bestandsaudit erkennt unvollständige FAQ und ausgeschriebene Europreise, 
     currentYear: 2026
   });
   const codes = result.findings.map(({ code }) => code);
-  assert.ok(codes.includes('missing_faq'));
+  assert.equal(codes.includes('missing_faq'), false);
+  assert.equal(codes.includes('missing_structured_faq'), false);
   assert.ok(codes.includes('static_price'));
   assert.equal(codes.includes('stale_year'), false);
+});
+
+test('Bestandsaudit bewertet bei Legacyartikeln die öffentliche Ausgabe statt leerer optionaler Datenbankfelder', () => {
+  const inlineFaq = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: Array.from({ length: 4 }, (_, index) => ({
+      '@type': 'Question',
+      name: `Frage ${index + 1}?`,
+      acceptedAnswer: { '@type': 'Answer', text: `Antwort ${index + 1}.` }
+    }))
+  };
+  const result = auditExistingPost({
+    post: {
+      id: 7,
+      title: 'Full-Service Webdesign Berlin',
+      slug: 'full-service-webdesign-in-berlin',
+      excerpt: 'Webdesign für Berliner Unternehmen.',
+      content: [
+        '<h1>Überschrift im Legacyinhalt</h1>',
+        '<img src="/uploads/beispiel.webp" alt="Webdesign auf einem Laptop">',
+        '<h2>Häufige Fragen</h2>',
+        ...inlineFaq.mainEntity.map((item) => `<h3>${item.name}</h3><p>${item.acceptedAnswer.text}</p>`),
+        `<script type="application/ld+json">${JSON.stringify(inlineFaq)}</script>`,
+        '<a href="/kontakt">Kontakt aufnehmen</a>'
+      ].join(''),
+      content_format: 'legacy_ejs',
+      meta_title: '',
+      meta_description: 'Beschreibung',
+      image_url: '/uploads/hero.webp',
+      image_alt: '',
+      faq_json: []
+    },
+    inventory: [{ url: '/kontakt' }],
+    currentYear: 2026
+  });
+  const codes = result.findings.map(({ code }) => code);
+
+  assert.equal(codes.includes('duplicate_h1'), false);
+  assert.equal(codes.includes('missing_meta_title'), false);
+  assert.equal(codes.includes('missing_image_alt'), false);
+  assert.equal(codes.includes('missing_faq'), false);
+  assert.equal(codes.includes('missing_structured_faq'), false);
+});
+
+test('Bestandsaudit meldet nur tatsächlich fehlende Bild-Alt-Attribute und nicht den Hero-Fallback', () => {
+  const base = {
+    id: 8,
+    title: 'Webdesign Berlin',
+    slug: 'webdesign-berlin',
+    excerpt: '',
+    content_format: 'legacy_ejs',
+    meta_title: '',
+    meta_description: 'Beschreibung',
+    image_url: '/uploads/hero.webp',
+    image_alt: '',
+    faq_json: []
+  };
+  const valid = auditExistingPost({
+    post: { ...base, content: '<img src="/uploads/dekorativ.webp" alt=""><a href="/kontakt">Kontakt</a>' },
+    inventory: [{ url: '/kontakt' }]
+  });
+  const invalid = auditExistingPost({
+    post: { ...base, content: '<img src="/uploads/inhalt.webp"><a href="/kontakt">Kontakt</a>' },
+    inventory: [{ url: '/kontakt' }]
+  });
+
+  assert.equal(valid.findings.some(({ code }) => code === 'missing_image_alt'), false);
+  assert.equal(invalid.findings.some(({ code }) => code === 'missing_image_alt'), true);
+});
+
+test('Bestandsaudit meldet sichtbare FAQ nur dann, wenn strukturierte FAQ-Daten tatsächlich fehlen', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 9,
+      title: 'Fragen zum Webdesign',
+      slug: 'fragen-zum-webdesign',
+      excerpt: '',
+      content: '<h2>Häufige Fragen</h2><h3>Was kostet eine Website?</h3><p>Das hängt vom Umfang ab.</p><a href="/kontakt">Kontakt</a>',
+      content_format: 'legacy_ejs',
+      meta_title: '',
+      meta_description: 'Beschreibung',
+      image_alt: '',
+      faq_json: []
+    },
+    inventory: [{ url: '/kontakt' }]
+  });
+
+  assert.equal(result.findings.some(({ code }) => code === 'missing_faq'), false);
+  assert.equal(result.findings.some(({ code }) => code === 'missing_structured_faq'), true);
 });
 
 test('Jahresprüfung ignoriert Gründung und abgeschlossene Bereiche, meldet aber alte Preise, Fristen und Versionen', () => {

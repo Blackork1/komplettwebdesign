@@ -242,7 +242,9 @@ export function buildBlogPostPageModel({
       datePublished: publishedISO,
       dateModified: modifiedISO
     },
-    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqArray }
+    ...(faqArray.length > 0
+      ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqArray }]
+      : [])
   ];
   const robotsMeta = previewMode ? '  <meta name="robots" content="noindex,nofollow">\n' : '';
   const ogType = previewMode ? 'website' : 'article';

@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { calculateCannibalizationRisk } from './cannibalizationService.js';
 import { buildTrustedInternalPaths, normalizeInternalHref } from './trustedInternalLinkService.js';
 
-export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v1';
+export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v2';
 const MAX_AUDIT_POSTS = 500;
 const MAX_CONTENT_LENGTH = 250_000;
 
@@ -22,6 +22,77 @@ function faqItems(value) {
   } catch {
     return [];
   }
+}
+
+function isSchemaType(value, expectedType) {
+  const types = Array.isArray(value) ? value : [value];
+  return types.some((type) => String(type || '').trim() === expectedType);
+}
+
+function faqItemsFromSchema(value) {
+  if (Array.isArray(value)) return value.flatMap(faqItemsFromSchema);
+  if (!value || typeof value !== 'object') return [];
+  const nested = Array.isArray(value['@graph']) ? faqItemsFromSchema(value['@graph']) : [];
+  if (!isSchemaType(value['@type'], 'FAQPage')) return nested;
+  return [...nested, ...(Array.isArray(value.mainEntity) ? value.mainEntity : [])];
+}
+
+function inlineFaqItems($) {
+  return $('script[type="application/ld+json"]').toArray().flatMap((node) => {
+    try {
+      return faqItemsFromSchema(JSON.parse($(node).text()));
+    } catch {
+      return [];
+    }
+  });
+}
+
+function faqQuestion(item) {
+  if (!item || typeof item !== 'object') return '';
+  return text(item.name || item.question).replace(/\s+/g, ' ');
+}
+
+function faqAnswer(item) {
+  if (!item || typeof item !== 'object') return '';
+  const acceptedAnswer = item.acceptedAnswer;
+  return text(item.answer || (acceptedAnswer && typeof acceptedAnswer === 'object' ? acceptedAnswer.text : ''))
+    .replace(/\s+/g, ' ');
+}
+
+function structuredFaqQuestions(post, $, { includeInline = false } = {}) {
+  const questions = new Set();
+  const inlineItems = includeInline ? inlineFaqItems($) : [];
+  for (const item of [...faqItems(post.faq_json), ...inlineItems]) {
+    const question = faqQuestion(item);
+    if (question && faqAnswer(item)) questions.add(question.toLocaleLowerCase('de-DE'));
+  }
+  return questions;
+}
+
+function visibleFaqQuestions($) {
+  const questions = new Set();
+  $('h1, h2, h3, h4, h5, h6').each((_, heading) => {
+    const headingText = $(heading).text().replace(/\s+/g, ' ').trim();
+    if (!/^(?:häufige fragen|faq(?:s)?)(?:\b|\s|:)/iu.test(headingText)) return;
+    const headingLevel = Number(String(heading.tagName || '').slice(1));
+    let sibling = heading.nextSibling;
+    while (sibling) {
+      const siblingTag = String(sibling.tagName || '').toLocaleLowerCase('de-DE');
+      if (/^h[1-6]$/.test(siblingTag) && Number(siblingTag.slice(1)) <= headingLevel) break;
+      const scope = $(sibling);
+      const candidates = /^h[1-6]$/.test(siblingTag)
+        ? scope
+        : scope.find('h1, h2, h3, h4, h5, h6, summary, .accordion-button');
+      candidates.each((__, candidate) => {
+        const candidateText = $(candidate).text().replace(/\s+/g, ' ').trim();
+        if (candidateText && candidateText !== headingText) {
+          questions.add(candidateText.toLocaleLowerCase('de-DE'));
+        }
+      });
+      sibling = sibling.nextSibling;
+    }
+  });
+  return questions;
 }
 
 function keywordOf(post) {
@@ -51,11 +122,34 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
   if (!['legacy_ejs', 'static_html'].includes(contentFormat)) {
     findings.push(finding('unsupported_content_format', 'Das Inhaltsformat kann nicht sicher überarbeitet werden.'));
   }
-  if ($('h1').length > 0) findings.push(finding('duplicate_h1', 'Der Artikel enthält eine zusätzliche H1.'));
-  if (!text(post.meta_title)) findings.push(finding('missing_meta_title', 'Der Meta Title fehlt.'));
-  if (!text(post.meta_description)) findings.push(finding('missing_meta_description', 'Die Meta Description fehlt.'));
-  if (!text(post.image_alt)) findings.push(finding('missing_image_alt', 'Der Bild-Alt-Text fehlt.'));
-  if (faqItems(post.faq_json).length < 5) findings.push(finding('missing_faq', 'Es sind weniger als fünf strukturierte FAQ hinterlegt.'));
+  if (!text(post.meta_title) && !text(post.title)) {
+    findings.push(finding('missing_meta_title', 'Für die öffentliche Seite kann kein Meta Title gebildet werden.'));
+  }
+  if (!text(post.meta_description) && !text(post.description) && !text(post.excerpt) && !text($.root().text())) {
+    findings.push(finding('missing_meta_description', 'Für die öffentliche Seite kann keine Meta Description gebildet werden.'));
+  }
+  const contentImagesWithoutAlt = contentFormat === 'legacy_ejs'
+    ? $('img').toArray().filter((node) => $(node).attr('alt') === undefined)
+    : [];
+  const heroAltMissing = !text(post.image_alt) && !text(post.title);
+  if (heroAltMissing || contentImagesWithoutAlt.length > 0) {
+    findings.push(finding(
+      'missing_image_alt',
+      heroAltMissing
+        ? 'Für das Hero-Bild kann kein Alt-Text gebildet werden.'
+        : 'Mindestens ein Inhaltsbild besitzt kein Alt-Attribut.',
+      { affectedContentImages: contentImagesWithoutAlt.length }
+    ));
+  }
+  const visibleFaqs = visibleFaqQuestions($);
+  const structuredFaqs = structuredFaqQuestions(post, $, { includeInline: contentFormat === 'legacy_ejs' });
+  if (visibleFaqs.size > structuredFaqs.size) {
+    findings.push(finding(
+      'missing_structured_faq',
+      'Die sichtbaren FAQ sind nicht vollständig als strukturierte FAQ-Daten hinterlegt.',
+      { visibleFaqCount: visibleFaqs.size, structuredFaqCount: structuredFaqs.size }
+    ));
+  }
 
   const yearMatches = [...visibleText.matchAll(/\b(?:19|20)\d{2}\b/g)];
   const years = [...new Set(yearMatches.filter((match) => {

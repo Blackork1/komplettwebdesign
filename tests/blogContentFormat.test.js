@@ -189,6 +189,13 @@ test('SEO- und OG-Felder verwenden ihre Fallbacks und werden für den Head passe
   assert.equal(fallbackLocals.ogDescription, 'Öffentliche Beschreibung');
 });
 
+test('Blogseiten geben kein leeres FAQPage-Schema aus', async () => {
+  const locals = await renderControllerPost(postFixture({ faq_json: [] }));
+  const faqSchemas = locals.structuredDataBlocks.filter((block) => block['@type'] === 'FAQPage');
+
+  assert.deepEqual(faqSchemas, []);
+});
+
 test('echter EJS-Gesamtrender schützt Metaattribute und JSON-LD vor gespeicherter Script-Injektion', async () => {
   const scriptBreakout = '</script><script id="xss-probe">';
   const specialCharacters = '< > & \u2028\u2029';
