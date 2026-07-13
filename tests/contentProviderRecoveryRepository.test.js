@@ -66,7 +66,7 @@ function createRecoveryDb(row, { failRunUpdate = false } = {}) {
             id: row.job_id,
             status: 'queued',
             attempts: row.attempts,
-            max_attempts: 5
+            max_attempts: params[1]
           }]
         };
       }
@@ -153,10 +153,6 @@ for (const [label, mutate] of [
   ['mit anderem Laufstatus', (state) => { state.run_status = 'running'; }],
   ['mit abweichendem Laufbericht', (state) => {
     state.error_report_json = { code: 'OPENAI_BAD_REQUEST' };
-  }],
-  ['am Adminlimit', (state) => {
-    state.attempts = 5;
-    state.max_attempts = 5;
   }]
 ]) {
   test(`Providerreservierung bleibt ${label} unverändert`, async () => {
@@ -173,6 +169,42 @@ for (const [label, mutate] of [
     assert.equal(db.events.at(-1).type, 'release');
   });
 }
+
+test('normale unklare Providerreservierung bleibt am Adminlimit gesperrt', async () => {
+  const row = fixture();
+  row.attempts = 5;
+  row.max_attempts = 5;
+  const db = createRecoveryDb(row);
+
+  const result = await recoverUncertainProviderJobForAdmin({ jobId: 1, adminId: 7 }, db);
+
+  assert.equal(result, null);
+  assert.equal(db.runUpdates, 0);
+  assert.equal(db.jobUpdates, 0);
+});
+
+test('bekannter OpenAI-Schemafehler erhält am Adminlimit genau einen Reparaturversuch', async () => {
+  const row = fixture();
+  row.attempts = 5;
+  row.max_attempts = 5;
+  row.error_report_json = {
+    code: 'provider_execution_uncertain',
+    providerDiagnostic: {
+      provider: 'openai',
+      stage: 'seo_brief',
+      code: 'invalid_json_schema',
+      httpStatus: 400
+    }
+  };
+  const db = createRecoveryDb(row);
+
+  const result = await recoverUncertainProviderJobForAdmin({ jobId: 1, adminId: 7 }, db);
+
+  assert.equal(result.job.max_attempts, 6);
+  assert.equal(result.auditKey, 'provider_recovery:2026-07:seo_brief:attempt-5');
+  const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
+  assert.deepEqual(jobUpdate.params, [1, 6, 5]);
+});
 
 test('Providerwiederherstellung rollt bei einem Schreibfehler vollständig zurück', async () => {
   const db = createRecoveryDb(fixture(), { failRunUpdate: true });

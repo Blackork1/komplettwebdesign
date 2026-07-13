@@ -68,7 +68,12 @@ export function createContentAgentAdminRepository(db = pool) {
                  j.last_error, j.created_at, j.updated_at, j.finished_at,
                  r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
                  provider_recovery.open_provider_reservation_count,
-                 provider_recovery.open_provider_stage
+                 provider_recovery.open_provider_stage,
+                 (
+                   r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
+                   AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
+                   AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
+                 ) AS provider_pre_execution_schema_rejection
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -193,7 +198,12 @@ export function createContentAgentAdminRepository(db = pool) {
                j.last_error, j.created_at, j.updated_at, j.finished_at,
                r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
                provider_recovery.open_provider_reservation_count,
-               provider_recovery.open_provider_stage
+               provider_recovery.open_provider_stage,
+               (
+                 r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
+                 AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
+                 AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
+               ) AS provider_pre_execution_schema_rejection
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (

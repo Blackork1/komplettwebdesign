@@ -1,5 +1,8 @@
 import pool from '../util/db.js';
-import { ADMIN_CONTENT_JOB_RETRY_CAP } from '../services/contentAgent/contentJobRetryPolicy.js';
+import {
+  ADMIN_CONTENT_JOB_RETRY_CAP,
+  providerRecoveryRetryCap
+} from '../services/contentAgent/contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
 const CLAIM_NEXT_JOB_SQL = `
@@ -346,13 +349,14 @@ function singleOpenProviderReservation(stageResults) {
 }
 
 function validProviderRecoveryState(row) {
+  const retryCap = providerRecoveryRetryCap(row?.error_report_json);
   return row
     && row.job_type !== 'send_admin_review_notification'
     && row.job_status === 'needs_manual_attention'
     && row.last_error === 'provider_execution_uncertain'
     && Number.isSafeInteger(Number(row.attempts))
     && Number(row.attempts) >= 0
-    && Number(row.attempts) < ADMIN_CONTENT_JOB_RETRY_CAP
+    && Number(row.attempts) < retryCap
     && row.run_status === 'needs_manual_attention'
     && row.post_id == null
     && row.error_report_json?.code === 'provider_execution_uncertain';
@@ -401,6 +405,7 @@ export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {
       [jobId]
     );
     const state = rows[0];
+    const retryCap = providerRecoveryRetryCap(state?.error_report_json);
     const reservation = validProviderRecoveryState(state)
       ? singleOpenProviderReservation(state.stage_results_json)
       : null;
@@ -477,7 +482,7 @@ export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {
           AND attempts < $2
         RETURNING *
       `,
-      [jobId, ADMIN_CONTENT_JOB_RETRY_CAP, attempts]
+      [jobId, retryCap, attempts]
     );
     if (!jobResult.rows[0]) {
       throw new Error('Der Content-Job konnte nicht atomar erneut eingereiht werden.');

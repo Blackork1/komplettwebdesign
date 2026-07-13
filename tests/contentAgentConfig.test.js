@@ -296,6 +296,15 @@ test('source references akzeptieren echte Minimal-Citations ohne erfundene Metad
 
   assert.equal(SourceReferenceSchema.safeParse(minimalSource).success, true);
   assert.deepEqual(SourceReferenceSchema.parse(minimalSource), minimalSource);
+
+  for (const url of [
+    'http://example.com/dokumentation',
+    'https://',
+    'https:// ungültig.example',
+    'keine-url'
+  ]) {
+    assert.equal(SourceReferenceSchema.safeParse({ ...minimalSource, url }).success, false, url);
+  }
 });
 
 test('SEO brief führt zwei bis sechs Quellen für aktuelle Themen bis zum Writer mit', () => {

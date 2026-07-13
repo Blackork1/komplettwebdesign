@@ -11,6 +11,16 @@ const APPROVED_INTERNAL_LINK_URLS = CONTENT_AGENT_LINKS.map(({ url }) => url);
 
 const NonEmptyString = z.string().trim().min(1);
 const Score = z.number().min(0).max(10);
+const HttpsUrlString = z.string()
+  .regex(/^https:\/\/\S+$/, 'Quellen müssen eine gültige HTTPS-URL verwenden.')
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && Boolean(url.hostname);
+    } catch {
+      return false;
+    }
+  }, 'Quellen müssen eine gültige HTTPS-URL verwenden.');
 
 function inspectArticleFragment(html) {
   const $ = cheerio.load(html, null, false);
@@ -95,7 +105,7 @@ export const ImageIdeaSchema = z.object({
 
 export const SourceReferenceSchema = z.object({
   title: NonEmptyString,
-  url: z.string().url().regex(/^https:\/\//, 'Quellen müssen HTTPS verwenden.'),
+  url: HttpsUrlString,
   publisher: NonEmptyString.nullish(),
   publishedAt: z.string().regex(ISO_DATE, 'Das Veröffentlichungsdatum muss YYYY-MM-DD verwenden.').nullish(),
   retrievedAt: z.string().regex(ISO_DATE, 'Das Abrufdatum muss YYYY-MM-DD verwenden.').nullish()

@@ -1172,7 +1172,7 @@ test('ambiger Providertimeout endet manuell und wird nicht als sicher retrybar m
   assert.equal(harness.finishCalls.at(-1).status, 'needs_manual_attention');
 });
 
-test('unklarer Providerfehler persistiert nur sichere Diagnosefelder', async () => {
+test('vor Ausführung abgelehntes OpenAI-Schema gibt die Reservierung frei und endet kontrolliert', async () => {
   const providerError = Object.assign(new Error('Authorization: Bearer sk-vertraulich'), {
     name: 'BadRequestError',
     code: 'invalid_json_schema',
@@ -1182,16 +1182,26 @@ test('unklarer Providerfehler persistiert nur sichere Diagnosefelder', async () 
     prompt: 'vertraulicher Prompt'
   });
   const base = createDependencies();
+  let releaseCalls = 0;
   const harness = createDependencies({
     openaiService: {
       ...base.dependencies.openaiService,
       async createSeoBrief() { throw providerError; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation(input) {
+        releaseCalls += 1;
+        return { ...input, status: 'released' };
+      }
     }
   });
 
   const result = await runDraftPipeline({ runId: 313 }, harness.dependencies);
 
-  assert.equal(result.code, 'provider_execution_uncertain');
+  assert.equal(result.code, 'provider_request_rejected');
+  assert.equal(releaseCalls, 1);
+  assert.notEqual(providerError.retryable, true);
   assert.deepEqual(harness.finishCalls.at(-1).errorReport.providerDiagnostic, {
     provider: 'openai',
     stage: 'seo_brief',

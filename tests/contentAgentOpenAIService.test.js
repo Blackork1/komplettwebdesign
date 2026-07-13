@@ -211,6 +211,11 @@ test('die strukturierten Operationen wählen jeweils passendes Schema, Prompt un
     'article_review',
     'repaired_article'
   ]);
+  assert.doesNotMatch(
+    JSON.stringify(client.requests[0].text.format.schema),
+    /"format":"uri"/,
+    'Das SEO-Briefing darf keine von OpenAI Structured Outputs abgelehnten URI-Formate enthalten.'
+  );
 
   for (const request of client.requests) {
     const system = request.input[0].content;

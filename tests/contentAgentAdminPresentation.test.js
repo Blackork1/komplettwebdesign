@@ -259,6 +259,25 @@ test('Providerwiederherstellung bleibt ohne eindeutige offene Reservierung gespe
   }
 });
 
+test('bekannter OpenAI-Schemafehler bleibt für genau einen Reparaturversuch sichtbar', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 5,
+    max_attempts: 5,
+    last_error: 'provider_execution_uncertain',
+    post_id: null,
+    open_provider_reservation_count: 1,
+    open_provider_stage: 'seo_brief',
+    provider_pre_execution_schema_rejection: true
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverProvider, true);
+  assert.equal(job.providerRecoveryStageLabel, 'SEO-Briefing');
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,

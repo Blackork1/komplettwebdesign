@@ -357,7 +357,8 @@ export function buildJobListPresentation(rows = []) {
       attempts: row.attempts,
       lastError: row.last_error,
       postId: row.post_id,
-      openReservationCount: row.open_provider_reservation_count
+      openReservationCount: row.open_provider_reservation_count,
+      preExecutionSchemaRejection: row.provider_pre_execution_schema_rejection === true
     });
     const providerStage = String(row.open_provider_stage || '').trim();
     const providerStageLabel = STAGE_LABELS[providerStage.split(':')[0]] || 'Providerstufe';
