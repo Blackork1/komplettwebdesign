@@ -45,6 +45,29 @@ test('Providererfolg löscht nur den vorherigen Fehlercode', async () => {
   );
 });
 
+test('Google Search Console ist als fester Providername zugelassen', async () => {
+  const db = createQueryRecorder([{ provider_name: 'google_search_console' }]);
+
+  const result = await recordProviderResult({
+    providerName: 'google_search_console',
+    success: true
+  }, db);
+
+  assert.equal(result.provider_name, 'google_search_console');
+  assert.deepEqual(db.calls[0].params, ['google_search_console', true, null]);
+});
+
+test('freie Providernamen bleiben trotz Search-Console-Erweiterung gesperrt', async () => {
+  const db = createQueryRecorder();
+
+  await assert.rejects(
+    recordProviderResult({ providerName: 'beliebiger_provider', success: true }, db),
+    /Providername ist nicht zulässig/
+  );
+
+  assert.equal(db.calls.length, 0);
+});
+
 function providerPipelineDependencies(openaiOperation, providerResults) {
   return {
     config: {

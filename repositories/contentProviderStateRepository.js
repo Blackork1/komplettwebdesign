@@ -1,7 +1,7 @@
 import pool from '../util/db.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
-const PROVIDERS = new Set(['openai', 'cloudinary']);
+const PROVIDERS = new Set(['openai', 'cloudinary', 'google_search_console']);
 
 function normalizeProviderName(value) {
   const providerName = String(value || '').trim().toLowerCase();
