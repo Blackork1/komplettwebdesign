@@ -18,6 +18,7 @@ import {
   SUPPORTED_JOB_TYPES,
   startContentWorker
 } from '../scripts/contentWorker.js';
+import * as contentWorkerModule from '../scripts/contentWorker.js';
 import {
   checkWorkerHeartbeat,
   runWorkerHealthcheck
@@ -30,8 +31,10 @@ import {
   createContentAgentJobSnapshot,
   resolveContentAgentRuntimeConfig
 } from '../services/contentAgent/runtimeConfigService.js';
+import { runSearchConsoleSchedulerTick } from '../services/contentAgent/searchConsoleSchedulerService.js';
 
 const execFileAsync = promisify(execFile);
+const { SEARCH_CONSOLE_JOB_TYPES } = contentWorkerModule;
 
 function deferred() {
   let resolve;
@@ -720,6 +723,7 @@ test('Shutdown schließt den Pool nach vollständig geleertem Worker sofort und 
   const events = [];
   const shutdown = createShutdownController({
     scheduler: { stop() { events.push('scheduler.stop'); } },
+    searchConsoleScheduler: { stop() { events.push('search-console-scheduler.stop'); } },
     worker: {
       async stop() { events.push('worker.stop'); return { drained: true }; },
       async whenIdle() { events.push('worker.whenIdle'); }
@@ -730,7 +734,12 @@ test('Shutdown schließt den Pool nach vollständig geleertem Worker sofort und 
 
   await Promise.all([shutdown('SIGTERM'), shutdown('SIGINT')]);
 
-  assert.deepEqual(events, ['scheduler.stop', 'worker.stop', 'pool.end']);
+  assert.deepEqual(events, [
+    'scheduler.stop',
+    'search-console-scheduler.stop',
+    'worker.stop',
+    'pool.end'
+  ]);
 });
 
 test('Shutdown lässt den Pool nach Timeout offen und schließt ihn erst bei tatsächlichem Worker-Leerlauf', async () => {
@@ -1122,6 +1131,156 @@ test('der Produktionshandler unterstützt alle geplanten Non-Generation-Jobtypen
   ]) {
     assert.equal(SUPPORTED_JOB_TYPES.has(jobType), true, jobType);
   }
+});
+
+test('der Produktionshandler unterstützt beide Search-Console-Jobtypen als eigene Gruppe', () => {
+  assert.deepEqual([...SEARCH_CONSOLE_JOB_TYPES], [
+    'sync_search_console',
+    'analyze_search_opportunities'
+  ]);
+  for (const jobType of SEARCH_CONSOLE_JOB_TYPES) {
+    assert.equal(SUPPORTED_JOB_TYPES.has(jobType), true, jobType);
+  }
+});
+
+test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueued die Analyse', async () => {
+  const events = [];
+  const leaseGuard = async () => { events.push('lease'); return true; };
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für einen Search-Console-Sync darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für einen Search-Console-Sync darf keine Artikelpipeline starten.'); },
+    async syncSearchConsoleRange(input) {
+      events.push(['sync', input]);
+      await input.leaseGuard();
+    },
+    async recordProviderResult(input) { events.push(['provider', input]); },
+    async enqueueJob(input) { events.push(['enqueue', input]); return { id: 92 }; }
+  });
+
+  const result = await handler({
+    id: 81,
+    job_type: 'sync_search_console',
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }, { leaseGuard });
+
+  assert.deepEqual(result, { status: 'completed' });
+  assert.deepEqual(events.filter(Array.isArray), [
+    ['sync', {
+      startDate: '2026-06-21',
+      endDate: '2026-07-18',
+      leaseGuard
+    }],
+    ['provider', { providerName: 'google_search_console', success: true }],
+    ['enqueue', {
+      jobType: 'analyze_search_opportunities',
+      idempotencyKey: 'gsc-analysis:2026-06-21:2026-07-18',
+      payload: { startDate: '2026-06-21', endDate: '2026-07-18' }
+    }]
+  ]);
+  assert.equal(events.filter((event) => event === 'lease').length >= 3, true);
+});
+
+test('ein fehlgeschlagener Search-Console-Sync zeichnet nur einen generischen Providercode auf', async () => {
+  const providerResults = [];
+  const syncError = new Error(
+    'GOOGLE_APPLICATION_CREDENTIALS=/srv/google-search-console.json token=geheim'
+  );
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('nicht erwartet'); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async syncSearchConsoleRange() { throw syncError; },
+    async recordProviderResult(input) { providerResults.push(input); },
+    async enqueueJob() { assert.fail('Nach einem Syncfehler darf keine Analyse entstehen.'); }
+  });
+
+  await assert.rejects(handler({
+    id: 82,
+    job_type: 'sync_search_console',
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }, { leaseGuard: async () => true }), syncError);
+
+  assert.deepEqual(providerResults, [{
+    providerName: 'google_search_console',
+    success: false,
+    errorCode: 'SEARCH_CONSOLE_SYNC_FAILED'
+  }]);
+  assert.doesNotMatch(JSON.stringify(providerResults), /geheim|credentials|\.json/i);
+});
+
+test('die Search-Opportunity-Analyse liest, baut und upsertet ohne Content-Run', async () => {
+  const leaseGuard = async () => true;
+  const metrics = [{ postId: 11, query: 'webdesign berlin' }];
+  const opportunities = [{ postId: 11, analysisKey: 'chance-11' }];
+  const calls = [];
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für eine Search-Analyse darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für eine Search-Analyse darf keine Artikelpipeline starten.'); },
+    async listAggregatedSearchMetrics(input) {
+      calls.push(['metrics', input]);
+      return metrics;
+    },
+    buildSearchOpportunities(rows, range) {
+      calls.push(['build', rows, range]);
+      return opportunities;
+    },
+    async upsertSearchOpportunities(rows) {
+      calls.push(['upsert', rows]);
+      return rows;
+    }
+  });
+
+  const result = await handler({
+    id: 83,
+    job_type: 'analyze_search_opportunities',
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }, { leaseGuard });
+
+  assert.deepEqual(result, { status: 'completed' });
+  assert.deepEqual(calls, [
+    ['metrics', { startDate: '2026-06-21', endDate: '2026-07-18' }],
+    ['build', metrics, { startDate: '2026-06-21', endDate: '2026-07-18' }],
+    ['upsert', opportunities]
+  ]);
+});
+
+test('Search-Console-Jobs verlangen einen aktiven Lease-Guard und exakt zwei kanonische Datumsfelder', async () => {
+  const valid = { startDate: '2026-06-21', endDate: '2026-07-18' };
+  const invalidPayloads = [
+    null,
+    [],
+    { ...valid, startDate: new Date('2026-06-21T00:00:00.000Z') },
+    { ...valid, startDate: '2026-6-21' },
+    { ...valid, startDate: '2026-02-30' },
+    { ...valid, endDate: '2026-07-18T00:00:00.000Z' },
+    { startDate: '2026-07-19', endDate: '2026-07-18' },
+    { ...valid, credentialsPath: '/srv/geheim.json' }
+  ];
+  let sideEffects = 0;
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('nicht erwartet'); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async syncSearchConsoleRange() { sideEffects += 1; },
+    async recordProviderResult() { sideEffects += 1; },
+    async enqueueJob() { sideEffects += 1; },
+    async listAggregatedSearchMetrics() { sideEffects += 1; return []; },
+    buildSearchOpportunities() { sideEffects += 1; return []; },
+    async upsertSearchOpportunities() { sideEffects += 1; }
+  });
+
+  for (const job_type of SEARCH_CONSOLE_JOB_TYPES) {
+    await assert.rejects(
+      handler({ id: 84, job_type, payload_json: valid }),
+      (error) => error.code === 'CONTENT_JOB_LEASE_REQUIRED' && error.retryable === false
+    );
+    for (const payload_json of invalidPayloads) {
+      await assert.rejects(
+        handler({ id: 84, job_type, payload_json }, { leaseGuard: async () => true }),
+        (error) => error.code === 'CONTENT_SEARCH_CONSOLE_JOB_PAYLOAD_INVALID'
+          && error.retryable === false
+      );
+    }
+  }
+  assert.equal(sideEffects, 0);
 });
 
 test('der Produktionshandler dispatcht fällige Veröffentlichungen ohne Generierungsrun mit vollständigem Snapshot', async () => {
@@ -1565,6 +1724,239 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.createBlogNewsletterService, 'function');
   assert.equal(typeof modules.sendAdminReviewNotification, 'function');
   assert.equal(typeof modules.sendContentAgentReviewMail, 'function');
+  assert.equal(typeof modules.createSearchConsoleClient, 'function');
+  assert.equal(typeof modules.createSearchConsoleSyncService, 'function');
+  assert.equal(typeof modules.createContentSearchMetricsRepository, 'function');
+  assert.equal(typeof modules.createContentSearchOpportunityRepository, 'function');
+  assert.equal(typeof modules.buildContentOpportunities, 'function');
+  assert.equal(typeof modules.searchConsoleSchedulerService?.createSearchConsoleScheduler, 'function');
+});
+
+test('die Produktionsruntime verdrahtet GSC-Client, Repositories und beide frühen Dispatchpfade', async () => {
+  const claims = [{
+    id: 201,
+    job_type: 'sync_search_console',
+    locked_by: 'worker-gsc',
+    attempts: 1,
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }, {
+    id: 202,
+    job_type: 'analyze_search_opportunities',
+    locked_by: 'worker-gsc',
+    attempts: 1,
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  }];
+  const events = [];
+  const database = { async query() { return { rows: [] }; } };
+  const metricRows = [{ postId: 11, query: 'webdesign berlin' }];
+  const opportunities = [{ postId: 11, analysisKey: 'chance-11' }];
+  const modules = {
+    OpenAI: class {},
+    cloudinary: { config() {} },
+    jobRepository: {
+      async upsertWorkerHeartbeat() {},
+      async recoverExpiredJobs() {},
+      async claimNextJob(_workerId, db) { assert.equal(db, database); return claims.shift() || null; },
+      async renewJobLease(claim, db) { assert.equal(db, database); return claim; },
+      async completeJob(claim, db) { assert.equal(db, database); return { ...claim, status: 'completed' }; },
+      async failJob() { assert.fail('nicht erwartet'); },
+      async retryOrFailJob() { assert.fail('nicht erwartet'); },
+      async markJobNeedsManualAttention() { assert.fail('nicht erwartet'); },
+      async enqueueJob(input, db) { events.push(['enqueue', input, db]); return { id: 203 }; }
+    },
+    runRepository: {
+      async createRun() { assert.fail('GSC-Jobs dürfen keinen Content-Run anlegen.'); },
+      async updateRunStage() {},
+      async finishRun() {}
+    },
+    settingsRepository: { async getContentAgentSettings() { return { agent_enabled: true }; } },
+    runtimeConfigService: {
+      resolveContentAgentRuntimeConfig,
+      createContentAgentJobSnapshot
+    },
+    providerStateRepository: {
+      async recordProviderResult(input, db) { events.push(['provider', input, db]); }
+    },
+    topicRepository: { async createTopic() {}, async markTopicUsed() {} },
+    costService: {
+      estimateTextCost() { return 0; },
+      assertMonthlyBudget() {},
+      async getMonthlyContentCost() {},
+      async reserveMonthlyBudget() {},
+      async settleMonthlyBudget() {},
+      async releaseMonthlyBudgetReservation() {},
+      async getPersistedStageResult() {}
+    },
+    createPricingRepository() { return {}; },
+    createPricingService() { return { async getVisiblePackages() { return []; } }; },
+    async runDraftPipeline() { assert.fail('GSC-Jobs dürfen keine Artikelpipeline starten.'); },
+    createSearchConsoleClient(input) {
+      events.push(['client', input]);
+      return { marker: 'client' };
+    },
+    createContentSearchMetricsRepository(db) {
+      events.push(['metrics-repository', db]);
+      return {
+        async findPostIdsByCanonicalPaths() { return new Map(); },
+        async upsertSearchMetrics() {},
+        async listAggregatedMetrics(range) {
+          events.push(['metrics', range]);
+          return metricRows;
+        }
+      };
+    },
+    createContentSearchOpportunityRepository(db) {
+      events.push(['opportunity-repository', db]);
+      return {
+        async upsertOpenOpportunities(rows) {
+          events.push(['opportunities', rows]);
+          return rows;
+        }
+      };
+    },
+    createSearchConsoleSyncService({ client, repository, allowedHosts }) {
+      events.push(['sync-service', client, repository, allowedHosts]);
+      return {
+        async syncSearchConsoleRange(input) {
+          events.push(['sync', input]);
+          await input.leaseGuard();
+        }
+      };
+    },
+    buildContentOpportunities(rows, range) {
+      events.push(['build', rows, range]);
+      return opportunities;
+    }
+  };
+  const runtime = createProductionRuntime({
+    config: {
+      enabled: true,
+      timezone: 'Europe/Berlin',
+      workerPollMs: 5_000,
+      jobLeaseMinutes: 30,
+      searchConsoleSiteUrl: 'sc-domain:komplettwebdesign.de',
+      googleCredentialsPath: '/srv/google-search-console.json'
+    },
+    database,
+    modules
+  });
+
+  assert.equal((await runtime.worker.processOnce()).status, 'completed');
+  assert.equal((await runtime.worker.processOnce()).status, 'completed');
+
+  assert.deepEqual(events.find(([type]) => type === 'client')?.[1], {
+    siteUrl: 'sc-domain:komplettwebdesign.de',
+    credentialsPath: '/srv/google-search-console.json'
+  });
+  assert.equal(events.find(([type]) => type === 'metrics-repository')?.[1], database);
+  assert.equal(events.find(([type]) => type === 'opportunity-repository')?.[1], database);
+  assert.equal(events.some(([type]) => type === 'sync'), true);
+  assert.equal(events.some(([type]) => type === 'metrics'), true);
+  assert.equal(events.some(([type]) => type === 'build'), true);
+  assert.equal(events.some(([type]) => type === 'opportunities'), true);
+  assert.equal(events.filter(([type]) => type === 'provider').length, 1);
+  assert.equal(events.filter(([type]) => type === 'enqueue').length, 1);
+});
+
+test('der Entrypoint startet beide Scheduler erst beim aktiven Worker und stoppt beide sicher', async () => {
+  const events = [];
+  let searchConsoleTick;
+  const database = { async end() { events.push('pool.end'); } };
+  const inertJobRepository = {
+    async upsertWorkerHeartbeat() { events.push('worker.heartbeat'); },
+    async recoverExpiredJobs() {},
+    async claimNextJob() { return null; },
+    async renewJobLease(claim) { return claim; },
+    async completeJob(claim) { return claim; },
+    async failJob(claim) { return claim; },
+    async retryOrFailJob(claim) { return claim; },
+    async markJobNeedsManualAttention(claim) { return claim; },
+    async enqueueJob(input) { events.push(['enqueue', input]); return input; },
+    async updateContentSchedulerState() {}
+  };
+  const modules = {
+    OpenAI: class {},
+    cloudinary: { config() {} },
+    jobRepository: inertJobRepository,
+    runRepository: { async createRun() {}, async updateRunStage() {}, async finishRun() {} },
+    settingsRepository: {
+      async getContentAgentSettings() { return { agent_enabled: false }; }
+    },
+    runtimeConfigService: {
+      resolveContentAgentRuntimeConfig,
+      createContentAgentJobSnapshot
+    },
+    providerStateRepository: { async recordProviderResult() {} },
+    topicRepository: { async createTopic() {}, async markTopicUsed() {} },
+    costService: {
+      estimateTextCost() { return 0; }, assertMonthlyBudget() {},
+      async getMonthlyContentCost() {}, async reserveMonthlyBudget() {}, async settleMonthlyBudget() {},
+      async releaseMonthlyBudgetReservation() {}, async getPersistedStageResult() {}
+    },
+    createPricingRepository() { return {}; },
+    createPricingService() { return {}; },
+    async runDraftPipeline() { return { status: 'completed' }; },
+    createSearchConsoleClient() { return {}; },
+    createContentSearchMetricsRepository() {
+      return {
+        async findPostIdsByCanonicalPaths() { return new Map(); },
+        async upsertSearchMetrics() {},
+        async listAggregatedMetrics() { return []; }
+      };
+    },
+    createContentSearchOpportunityRepository() {
+      return { async upsertOpenOpportunities() { return []; } };
+    },
+    createSearchConsoleSyncService() {
+      return { async syncSearchConsoleRange() {} };
+    },
+    buildContentOpportunities() { return []; },
+    schedulerService: {
+      createDynamicContentScheduler() {
+        return {
+          start() { events.push('article-scheduler.start'); },
+          stop() { events.push('article-scheduler.stop'); }
+        };
+      },
+      async runContentSchedulerTick() {}
+    },
+    searchConsoleSchedulerService: {
+      createSearchConsoleScheduler({ tick }) {
+        searchConsoleTick = tick;
+        return {
+          start() { events.push('search-console-scheduler.start'); },
+          stop() { events.push('search-console-scheduler.stop'); }
+        };
+      },
+      runSearchConsoleSchedulerTick
+    }
+  };
+
+  const result = await startContentWorker({
+    env: {
+      CONTENT_AGENT_ENABLED: 'true',
+      SEARCH_CONSOLE_SITE_URL: 'sc-domain:komplettwebdesign.de',
+      GOOGLE_APPLICATION_CREDENTIALS: '/srv/google-search-console.json'
+    },
+    database,
+    modules,
+    logger: { log() {}, error() {} },
+    processTarget: { on() {}, off() {} }
+  });
+
+  try {
+    assert.equal(typeof searchConsoleTick, 'function');
+    assert.equal(await searchConsoleTick(), null);
+    assert.equal(events.some((event) => Array.isArray(event) && event[0] === 'enqueue'), false);
+    assert.deepEqual(events.filter((event) => typeof event === 'string' && event.endsWith('.start')), [
+      'article-scheduler.start',
+      'search-console-scheduler.start'
+    ]);
+  } finally {
+    await result.shutdown();
+  }
+  assert.equal(events.indexOf('article-scheduler.stop') < events.indexOf('pool.end'), true);
+  assert.equal(events.indexOf('search-console-scheduler.stop') < events.indexOf('pool.end'), true);
 });
 
 test('Worker- und Healthcheck-Import laden weder globalen Pool noch Cron, Repositories oder Models', async () => {

@@ -328,6 +328,26 @@ test('auch manuelle Admin-Entwürfe prüfen die operative Pause atomar im Insert
   );
 });
 
+test('beide GSC-Jobtypen prüfen die operative Pause atomar beim Enqueue', async () => {
+  const db = createQueryRecorder([
+    { rows: [{ id: 72, status: 'queued' }] },
+    { rows: [{ id: 73, status: 'queued' }] }
+  ]);
+
+  for (const jobType of ['sync_search_console', 'analyze_search_opportunities']) {
+    await enqueueJob({
+      jobType,
+      idempotencyKey: `${jobType}:2026-06-21:2026-07-18`,
+      payload: { startDate: '2026-06-21', endDate: '2026-07-18' }
+    }, db);
+  }
+
+  assert.deepEqual(db.calls.map((call) => call.params.at(-1)), [true, true]);
+  for (const call of db.calls) {
+    assert.match(call.sql, /WHERE \$6 = FALSE OR EXISTS/i);
+  }
+});
+
 test('failJob speichert eine begrenzte Fehlermeldung ohne Stack oder Credentials', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 9, status: 'failed' }] }]);
   const claim = { id: 9, locked_by: 'worker-1', attempts: 3 };

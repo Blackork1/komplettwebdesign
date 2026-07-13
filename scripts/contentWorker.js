@@ -22,13 +22,18 @@ export const NEWSLETTER_JOB_TYPES = new Set([
   'send_blog_newsletter',
   'send_blog_newsletter_delivery'
 ]);
+export const SEARCH_CONSOLE_JOB_TYPES = new Set([
+  'sync_search_console',
+  'analyze_search_opportunities'
+]);
 export const SUPPORTED_JOB_TYPES = new Set([
   ...GENERATION_JOB_TYPES,
   ...REGENERATION_JOB_TYPES,
   ...AUDIT_JOB_TYPES,
   ...NOTIFICATION_JOB_TYPES,
   ...PUBLICATION_JOB_TYPES,
-  ...NEWSLETTER_JOB_TYPES
+  ...NEWSLETTER_JOB_TYPES,
+  ...SEARCH_CONSOLE_JOB_TYPES
 ]);
 
 const MAX_DATABASE_ID = 2_147_483_647;
@@ -63,6 +68,29 @@ function canonicalIsoTimestamp(value) {
       || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) || date.toISOString() !== value ? null : value;
+}
+
+function canonicalIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value
+    ? null
+    : value;
+}
+
+function searchConsoleJobPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const keys = Object.keys(payload);
+  if (
+    keys.length !== 2
+    || !Object.hasOwn(payload, 'startDate')
+    || !Object.hasOwn(payload, 'endDate')
+  ) return null;
+  const startDate = canonicalIsoDate(payload.startDate);
+  const endDate = canonicalIsoDate(payload.endDate);
+  if (!startDate || !endDate || startDate > endDate) return null;
+  return { startDate, endDate };
 }
 
 function publicationJobPayload(claim) {
@@ -180,13 +208,72 @@ export function createProductionJobHandler({
   sendAdminReviewNotification,
   publishApprovedPost,
   sendBlogNewsletter,
-  sendBlogNewsletterDelivery
+  sendBlogNewsletterDelivery,
+  syncSearchConsoleRange,
+  listAggregatedSearchMetrics,
+  buildSearchOpportunities,
+  upsertSearchOpportunities,
+  recordProviderResult,
+  enqueueJob
 }) {
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
   return async function handleJob(claim, { leaseGuard } = {}) {
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
+    }
+    if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für Search-Console-Jobs wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
+      const payload = searchConsoleJobPayload(claim);
+      if (!payload) {
+        throw permanentJobError(
+          'Der Search-Console-Job enthält keinen gültigen Zeitraum.',
+          'CONTENT_SEARCH_CONSOLE_JOB_PAYLOAD_INVALID'
+        );
+      }
+      await assertActiveLease(leaseGuard);
+      if (claim.job_type === 'sync_search_console') {
+        required(syncSearchConsoleRange, 'syncSearchConsoleRange');
+        required(recordProviderResult, 'recordProviderResult');
+        required(enqueueJob, 'enqueueJob');
+        try {
+          await syncSearchConsoleRange({ ...payload, leaseGuard });
+        } catch (error) {
+          await assertActiveLease(leaseGuard);
+          await recordProviderResult({
+            providerName: 'google_search_console',
+            success: false,
+            errorCode: 'SEARCH_CONSOLE_SYNC_FAILED'
+          });
+          throw error;
+        }
+        await assertActiveLease(leaseGuard);
+        await recordProviderResult({
+          providerName: 'google_search_console',
+          success: true
+        });
+        await assertActiveLease(leaseGuard);
+        await enqueueJob({
+          jobType: 'analyze_search_opportunities',
+          idempotencyKey: `gsc-analysis:${payload.startDate}:${payload.endDate}`,
+          payload
+        });
+        return { status: 'completed' };
+      }
+
+      required(listAggregatedSearchMetrics, 'listAggregatedSearchMetrics');
+      required(buildSearchOpportunities, 'buildSearchOpportunities');
+      required(upsertSearchOpportunities, 'upsertSearchOpportunities');
+      const metrics = await listAggregatedSearchMetrics(payload);
+      const opportunities = buildSearchOpportunities(metrics, payload);
+      await assertActiveLease(leaseGuard);
+      await upsertSearchOpportunities(opportunities);
+      return { status: 'completed' };
     }
     if (NOTIFICATION_JOB_TYPES.has(claim.job_type)) {
       required(sendAdminReviewNotification, 'sendAdminReviewNotification');
@@ -518,6 +605,32 @@ export function createProductionRuntime({
       } : {})
     })
     : null;
+  const searchConsoleModulesAvailable = [
+    modules.createSearchConsoleClient,
+    modules.createContentSearchMetricsRepository,
+    modules.createContentSearchOpportunityRepository,
+    modules.createSearchConsoleSyncService,
+    modules.buildContentOpportunities
+  ].every((dependency) => typeof dependency === 'function');
+  const searchConsoleClient = searchConsoleModulesAvailable
+    ? modules.createSearchConsoleClient({
+      siteUrl: config.searchConsoleSiteUrl,
+      credentialsPath: config.googleCredentialsPath
+    })
+    : null;
+  const searchMetricsRepository = searchConsoleModulesAvailable
+    ? modules.createContentSearchMetricsRepository(database)
+    : null;
+  const searchOpportunityRepository = searchConsoleModulesAvailable
+    ? modules.createContentSearchOpportunityRepository(database)
+    : null;
+  const searchConsoleSyncService = searchConsoleModulesAvailable
+    ? modules.createSearchConsoleSyncService({
+      client: searchConsoleClient,
+      repository: searchMetricsRepository,
+      allowedHosts: ['komplettwebdesign.de', 'www.komplettwebdesign.de']
+    })
+    : null;
 
   function createPipelineDependencies(snapshot = null, initialInventory = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
@@ -607,6 +720,20 @@ export function createProductionRuntime({
     sendBlogNewsletterDelivery: blogNewsletterService
       ? (input) => blogNewsletterService.sendNewsletterDelivery(input)
       : null,
+    syncSearchConsoleRange: searchConsoleSyncService
+      ? (input) => searchConsoleSyncService.syncSearchConsoleRange(input)
+      : null,
+    listAggregatedSearchMetrics: searchMetricsRepository
+      ? (input) => searchMetricsRepository.listAggregatedMetrics(input)
+      : null,
+    buildSearchOpportunities: searchConsoleModulesAvailable
+      ? modules.buildContentOpportunities
+      : null,
+    upsertSearchOpportunities: searchOpportunityRepository
+      ? (input) => searchOpportunityRepository.upsertOpenOpportunities(input)
+      : null,
+    recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database),
+    enqueueJob: repositories.jobRepository.enqueueJob,
     pipelineDependencies
   });
   const worker = createContentWorker({
@@ -646,6 +773,7 @@ export function createProductionRuntime({
 
 export function createShutdownController({
   scheduler,
+  searchConsoleScheduler,
   worker,
   pool: database,
   logger = console,
@@ -660,6 +788,7 @@ export function createShutdownController({
     shutdownPromise = (async () => {
       let keepalive = null;
       scheduler?.stop();
+      searchConsoleScheduler?.stop();
       try {
         const result = await worker?.stop();
         if (result?.drained === false) {
@@ -718,7 +847,13 @@ export async function loadProductionModules() {
     notificationServiceModule,
     mailServiceModule,
     scheduledPublicationModule,
-    blogNewsletterModule
+    blogNewsletterModule,
+    searchConsoleClientModule,
+    searchConsoleSyncModule,
+    searchMetricsRepositoryModule,
+    searchOpportunityRepositoryModule,
+    searchOpportunityModule,
+    searchConsoleSchedulerModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -747,7 +882,13 @@ export async function loadProductionModules() {
     import('../services/contentAgent/contentNotificationService.js'),
     import('../services/mailService.js'),
     import('../services/contentAgent/scheduledPublicationService.js'),
-    import('../services/contentAgent/blogNewsletterService.js')
+    import('../services/contentAgent/blogNewsletterService.js'),
+    import('../services/contentAgent/searchConsoleClient.js'),
+    import('../services/contentAgent/searchConsoleSyncService.js'),
+    import('../repositories/contentSearchMetricsRepository.js'),
+    import('../repositories/contentSearchOpportunityRepository.js'),
+    import('../services/contentAgent/searchOpportunityService.js'),
+    import('../services/contentAgent/searchConsoleSchedulerService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -778,7 +919,14 @@ export async function loadProductionModules() {
     runExistingContentAuditJob: auditService.runExistingContentAuditJob,
     createContentAuditRepository: auditRepositoryModule.createContentAuditRepository,
     sendAdminReviewNotification: notificationServiceModule.sendAdminReviewNotification,
-    sendContentAgentReviewMail: mailServiceModule.sendContentAgentReviewMail
+    sendContentAgentReviewMail: mailServiceModule.sendContentAgentReviewMail,
+    createSearchConsoleClient: searchConsoleClientModule.createSearchConsoleClient,
+    createSearchConsoleSyncService: searchConsoleSyncModule.createSearchConsoleSyncService,
+    createContentSearchMetricsRepository: searchMetricsRepositoryModule.createContentSearchMetricsRepository,
+    createContentSearchOpportunityRepository:
+      searchOpportunityRepositoryModule.createContentSearchOpportunityRepository,
+    buildContentOpportunities: searchOpportunityModule.buildContentOpportunities,
+    searchConsoleSchedulerService: searchConsoleSchedulerModule
   };
 }
 
@@ -807,6 +955,14 @@ export async function startContentWorker({
     });
     required(loaded.schedulerService?.createDynamicContentScheduler, 'schedulerService.createDynamicContentScheduler');
     required(loaded.schedulerService?.runContentSchedulerTick, 'schedulerService.runContentSchedulerTick');
+    required(
+      loaded.searchConsoleSchedulerService?.createSearchConsoleScheduler,
+      'searchConsoleSchedulerService.createSearchConsoleScheduler'
+    );
+    required(
+      loaded.searchConsoleSchedulerService?.runSearchConsoleSchedulerTick,
+      'searchConsoleSchedulerService.runSearchConsoleSchedulerTick'
+    );
     required(getSettings, 'getContentAgentSettings');
     const scheduler = loaded.schedulerService.createDynamicContentScheduler({
       tick: () => loaded.schedulerService.runContentSchedulerTick({
@@ -816,11 +972,34 @@ export async function startContentWorker({
         updateSchedulerState: jobRepository.updateContentSchedulerState
       })
     });
-    const shutdown = createShutdownController({ scheduler, worker, pool: activeDatabase, logger });
+    const searchConsoleScheduler = loaded.searchConsoleSchedulerService.createSearchConsoleScheduler({
+      tick: () => loaded.searchConsoleSchedulerService.runSearchConsoleSchedulerTick({
+        configured: config.searchConsoleConfigured,
+        schedule: config.searchConsoleSchedule,
+        timezone: config.timezone,
+        getSettings,
+        enqueueJob: jobRepository.enqueueJob
+      })
+    });
+    const shutdown = createShutdownController({
+      scheduler,
+      searchConsoleScheduler,
+      worker,
+      pool: activeDatabase,
+      logger
+    });
     installShutdownHandlers(shutdown, processTarget);
     await worker.start();
     scheduler.start();
-    return { enabled: true, config, worker, scheduler, shutdown };
+    searchConsoleScheduler.start();
+    return {
+      enabled: true,
+      config,
+      worker,
+      scheduler,
+      searchConsoleScheduler,
+      shutdown
+    };
   } catch (error) {
     await activeDatabase.end().catch(() => {});
     throw error;
