@@ -1,122 +1,104 @@
-# Task 6 – Cockpit-Layout A mit fünf Unterreitern
+# Task 6: Geschützte, rein lesende Adminauswertung
 
 ## Ergebnis
 
-Das bestätigte Layout A ist als helle, klare redaktionelle Leitstelle umgesetzt. Die Oberfläche bleibt visuell mit dem bestehenden Komplett-Webdesign-Admin verbunden und verwendet dessen Marineblau und Orange. Weiße, präzise konturierte Arbeitsflächen, eine kompakte Kennzahlenzeile und semantische Statusfarben schaffen eine deutliche Hierarchie ohne die verworfene blasse Dashboardwirkung.
+Die geschützte Adminseite `/admin/content-agent/search-console` ergänzt das bestehende Content-Agent-Cockpit als ruhige redaktionelle Auswertung. Sie zeigt den technischen Konfigurationsstatus ausschließlich als Boolean, die sichere Property `komplettwebdesign.de`, kompakte Kennzahlen sowie zwei responsive Tabellen für aggregierte Suchanfragen und offene Optimierungschancen.
 
-Die fünf Hauptreiter sind:
+Die Seite erhält ausschließlich serverseitig präsentierte Werte. Credentialpfade, technische Search-Console-URL, Rohpayloads, Analyse-Keys sowie Evidence- und Recommendation-JSON werden weder selektiert noch an die View übergeben. Alle dynamischen Texte werden mit EJS `<%=` escaped; die einzigen unescaped EJS-Ausgaben sind bestehende Partials über `<%- include(...) %>`. Es gibt kein Inline-Skript und keine Inhaltsänderungsaktion.
 
-1. Übersicht
-2. Entwürfe
-3. Zeitplan & Modus
-4. Jobs & Protokolle
-5. Technik
+## Repository und Präsentation
 
-Bestehende Inhalte bleiben als klarer Unterbereich der Entwürfe direkt über Übersicht und Entwurfsseite erreichbar.
+- `getSearchConsoleInsights()` lädt drei voneinander getrennte, parametrisierte Abfragen:
+  - höchstens 100 nach Impressionen sortierte, pro Seite und Query aggregierte Metrikzeilen;
+  - höchstens 100 offene Chancen ohne JSON-Spalten;
+  - ausschließlich den letzten Providerstatus für `google_search_console`.
+- Klicks und Impressionen werden mit deutscher Tausendertrennung dargestellt.
+- CTR wird als deutscher Prozentwert mit zwei Nachkommastellen formatiert.
+- Positionen werden mit einer deutschen Nachkommastelle, Scores mit zwei Nachkommastellen formatiert.
+- Seitenwerte werden auf Pfade der erlaubten Property reduziert.
+- Empfehlungstexte entstehen aus einer festen serverseitigen Zuordnung der beiden erlaubten Chancentypen.
+
+## Routen und manueller Sync
+
+- `GET /admin/content-agent/search-console` ist durch `isAdmin` geschützt.
+- `POST /admin/content-agent/search-console/sync` ist durch `isAdmin` und `verifyCsrfToken` geschützt.
+- Der manuelle Sync verlangt:
+  - `searchConsoleConfigured === true`;
+  - den technischen Content-Agent-Hauptschalter;
+  - einen aktivierten Agenten in den gespeicherten Einstellungen.
+- Das Zeitfenster reicht in der konfigurierten Zeitzone von lokalem Heute minus 28 Tage bis zum Vortag.
+- Der Deduplizierungsschlüssel lautet `gsc-manual-sync:<lokales-datum>`.
+- `maxAttempts` ist das Minimum aus gespeichertem Einstellungswert und technischer Obergrenze.
+- Ein Null-Ergebnis beim Enqueue wird als sicherer fachlicher Konflikt behandelt und erzeugt keine Erfolgsmeldung.
 
 ## TDD-Nachweis
 
-Zuerst wurde `tests/contentAgentAdminViews.test.js` angelegt und ausgeführt.
+### RED
 
-RED:
-
-```text
-node --test tests/contentAgentAdminViews.test.js
-0 bestanden, 4 fehlgeschlagen
-```
-
-Die erwarteten Ursachen waren die fehlenden `_tabs.ejs`- und JavaScript-Dateien, fehlendes Layout-A-Markup, noch nicht vorhandene sichere Aktionsformulare sowie fehlende Content-Agent-Einstiege in Hauptnavigation und Admin-Dashboard.
-
-GREEN nach der Implementierung:
+Vor der Produktionsimplementierung:
 
 ```text
-node --test tests/contentAgentAdminViews.test.js \
-  tests/contentAgentAdminFallbackViews.test.js \
-  tests/contentAgentAdminController.test.js \
-  tests/contentAgentAdminRoutes.test.js \
-  tests/blogAdminWorkflow.test.js
-
-28 bestanden, 0 fehlgeschlagen
+node --test tests/contentSearchAdminIntegration.test.js
 ```
 
-Die neuen Renderverträge prüfen zusätzlich dynamische XSS-Testwerte, CSRF-Felder, Admin-POST-Routen, das Fehlen von Rohpayloads und die sichtbaren Einstiege in den Content-Agenten.
-
-## Umgesetzte Oberflächen
-
-- Übersicht mit Modus, Zeitplan, Monatsbudget, offenen Prüfungen, redaktionellem Arbeitsvorrat, Systemstatus, Freigabefortschritt und Jobs mit Handlungsbedarf
-- Entwurfskarten mit Bild, Score, Keyword, Cluster, Kosten, Risikohinweis, Vorschau und Prüfung
-- Bestandsansicht mit sicherer Audit-Aktion und deutlichem Hinweis, dass Liveinhalte unverändert bleiben
-- Zeitplanformular mit Agentstatus, Review-/Auto-Publish-Modus, sieben Wochentagen, Uhrzeit, IANA-Zeitzone, Budget, Mindestscore und Versuchsgrenze
-- sichtbare Einzelvoraussetzungen für Direktveröffentlichung; technische Sperren bleiben serverseitig maßgeblich
-- kompakte Jobprotokolle ohne JSON-Rohdaten sowie CSRF-geschützte Fortsetzung desselben Jobs
-- schreibgeschützte Technikansicht mit Quelle, Neustarthinweis, Versionen, Worker- und Providerstatus
-- eigener Content-Agent-Hauptlink und zusätzlicher Einstieg im bestehenden Admin-Dashboard
-- Bestätigungs-JavaScript ausschließlich über `window.confirm`; keine Fetch-Aufrufe, kein Local Storage und keine fachliche Betriebslogik im Browser
-
-## Sicherheit und Zugänglichkeit
-
-- Alle Werte aus Viewmodels werden mit escaped EJS-Ausgaben gerendert.
-- Es werden keine Secrets, Modellantworten, Stage-Ergebnisse oder Job-Rohpayloads ausgegeben.
-- Jede neue Schreibaktion verwendet eine vorhandene Adminroute, POST und CSRF.
-- Kritische Aktionen erhalten eine rein clientseitige Bestätigung; die serverseitige Prüfung bleibt unverändert.
-- Die Technikansicht ist ausschließlich lesbar und kennzeichnet `.env` sowie erforderliche Neustarts.
-- Die Seiten besitzen jeweils genau eine H1, beschriftete Bereiche und Formulare, `aria-current` für aktive Reiter, einen benannten Fortschrittsbalken und sichtbare Fokuszustände.
-- `prefers-reduced-motion` wird respektiert.
-- Unter 768 Pixeln werden Kennzahlen und Hauptspalten einspaltig; alle fünf Reiter sind ohne verstecktes horizontales Scrollen sichtbar.
-
-## Verifikation
+Ergebnis:
 
 ```text
-Adminregression: 64 bestanden, 0 fehlgeschlagen
-CSS-Build: 41 Quelldateien gebaut, Manifest aktualisiert
-Gesamtsuite: 748 bestanden, 1 PostgreSQL-Opt-in-Test übersprungen, 0 fehlgeschlagen
-git diff --check: ohne Befund
+tests 8
+pass 0
+fail 8
 ```
 
-Die Oberfläche wurde zusätzlich aus EJS mit realistischen sicheren Viewmodels gerendert und in Headless Chrome geprüft:
+Die Fehlschläge betrafen ausschließlich die noch fehlenden Task-6-Verträge: Route, Repositorymethode, Präsentation, Controllermethoden und View.
 
-- Übersicht bei 1440 × 1000 Pixeln
-- Übersicht bei 390 × 844 Pixeln
-- Zeitplan bei 390 × 844 Pixeln
-- keine horizontale Seitenüberbreite bei 390 Pixeln
-- alle fünf Reiter im mobilen Viewport sichtbar
-- genau eine H1 und ein aktiver Hauptreiter
-- keine unbenannten sichtbaren Formularelemente
-- alle gerenderten Formulare als Admin-POST mit CSRF
-
-## Bewusste Abgrenzung
-
-Task 6 ergänzt ausschließlich die sichere Cockpit-Oberfläche. Vorschau-, Bearbeitungs-, Regenerierungs-, Publikations-, Risiko- und Revisionsfachlogik aus Task 7 und später wurde nicht vorweggenommen. Die bereits vorhandenen geschützten Routen und Zwischenviews wurden ausgebaut, ohne GET-Schreibwege oder neue Betriebslogik einzuführen.
-
-## Sorge
-
-Der lokale PostgreSQL-Integrationstest bleibt ohne ausdrücklich freigegebene, zurücksetzbare Testdatenbank erwartungsgemäß übersprungen. Für Task 6 selbst besteht kein offener UI- oder Sicherheitsblocker.
-
-## Review-Fix
-
-Die Reviewfunde wurden in einem eigenen TDD-Zyklus behoben:
-
-- Das vollständige Zeitplanformular sendet nun die eindeutige Markierung `settings_form_scope=schedule`.
-- Fehlt in genau diesem Scope `schedule_weekdays`, erzeugt der Controller bewusst `scheduleWeekdays: []`. Die Transitionvalidierung lehnt den leeren Zeitplan mit `CONTENT_SETTINGS_VALIDATION_FAILED` und HTTP 400 ab.
-- Scope-lose Teilupdates wie der Agent-Schnellschalter bewahren alle nicht übertragenen Zeitplanwerte.
-- Das Monatsbudget akzeptiert mit `step="1"` auch einzelne Centbeträge; der Rendervertrag prüft ausdrücklich 1250 Cent.
-- `?created=1` wird im Controller strikt in einen booleschen Viewlocal übersetzt. Andere Querywerte werden ignoriert und niemals roh ausgegeben.
-- Der aktive Content-Agent-Hauptlink verwendet nun zusätzlich `aria-current="page"`.
-
-RED des Review-Fixes:
+### GREEN – Task-6- und fokussierte Admin-Suite
 
 ```text
-Controller-/Viewverträge: 13 bestanden, 5 fehlgeschlagen
-Runtime-Transitionvertrag: 5 bestanden, 1 fehlgeschlagen
+node --test tests/contentSearchAdminIntegration.test.js tests/contentAgentAdminController.test.js tests/contentAgentAdminRepository.test.js tests/contentAgentAdminPresentation.test.js tests/contentAgentAdminRoutes.test.js tests/contentAgentAdminViews.test.js tests/contentAgentAdminFallbackViews.test.js
 ```
 
-GREEN des Review-Fixes:
+Ergebnis:
 
 ```text
-Runtime-, Controller-, View-, Fallback- und Routentests: 30 bestanden, 0 fehlgeschlagen
-Gesamtsuite: 753 bestanden, 1 PostgreSQL-Opt-in-Test übersprungen, 0 fehlgeschlagen
-CSS-Build: 41 Quelldateien gebaut, Manifest unverändert
-git diff --check: ohne Befund
+tests 78
+pass 78
+fail 0
 ```
 
-Die geänderten Zustände wurden erneut in Headless Chrome geprüft: Desktop zeigt die sichere Erfolgsmeldung und den aktiven Hauptlink; mobil sendet das Zeitplanformular den Scope, `step=1` und 1250 Cent. Beide Viewports besitzen keine horizontale Seitenüberbreite.
+### Build
+
+```text
+npm run build
+```
+
+Ergebnis: Exit-Code 0; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+
+### Vollständige Testsuite
+
+```text
+OPENAI_API_KEY=test npm test
+```
+
+Ergebnis:
+
+```text
+tests 1228
+pass 1226
+fail 0
+skipped 2
+```
+
+Die zwei vorhandenen, umgebungsabhängigen Tests wurden erwartungsgemäß übersprungen.
+
+## Abnahme
+
+- [x] Beide Routen sind adminpflichtig; POST besitzt CSRF-Schutz.
+- [x] Die View erhält nur einen GSC-Konfigurations-Boolean und die sichere Propertyanzeige.
+- [x] Query- und Chancenabfragen sind parametrisiert und auf jeweils 100 Zeilen begrenzt.
+- [x] CTR, Position, Klicks und Impressionen sind serverseitig deutsch formatiert.
+- [x] Dynamische Texte werden ausschließlich über EJS `<%=` escaped.
+- [x] Rohpayloads, Credentialpfade und JSON-Schlüssel gelangen nicht in die View.
+- [x] Der manuelle Sync verwendet das lokale 28-Tage-Fenster, Tages-Deduplizierung und das Retry-Hardcap.
+- [x] Null-Enqueue ist ein fachlicher Fehler.
+- [x] Die Seite enthält keine Inhaltsänderungs- oder automatische Empfehlungsaktion.
+- [x] Fokus-Tests, Build und vollständige Testsuite sind erfolgreich.

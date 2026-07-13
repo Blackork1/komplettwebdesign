@@ -43,6 +43,17 @@ const NOTIFICATION_STATUS_LABELS = Object.freeze({
   cancelled: 'Versand abgebrochen'
 });
 
+const SEARCH_OPPORTUNITY_PRESENTATION = Object.freeze({
+  meta_refresh: Object.freeze({
+    type: 'Meta-Daten prüfen',
+    recommendation: 'Seitentitel und Meta-Beschreibung redaktionell prüfen.'
+  }),
+  content_refresh: Object.freeze({
+    type: 'Inhalt prüfen',
+    recommendation: 'Inhalt für diese Suchanfrage redaktionell vertiefen.'
+  })
+});
+
 const TECHNICAL_KEYS = Object.freeze([
   'enabled',
   'autoPublishEnabled',
@@ -181,6 +192,80 @@ function presentProvider(provider = {}) {
     lastFailureAt: provider.last_failure_at || null,
     lastErrorCode: safeError(provider.last_error_code),
     updatedAt: provider.updated_at || null
+  };
+}
+
+function germanNumber(value, options = {}) {
+  const number = Number(value);
+  return new Intl.NumberFormat('de-DE', options).format(Number.isFinite(number) ? number : 0);
+}
+
+function searchPageLabel(value) {
+  try {
+    const url = new URL(String(value || ''), 'https://komplettwebdesign.de');
+    if (!['http:', 'https:'].includes(url.protocol)) return 'Unbekannte Seite';
+    if (!['komplettwebdesign.de', 'www.komplettwebdesign.de'].includes(url.hostname)) {
+      return 'Unbekannte Seite';
+    }
+    return url.pathname || '/';
+  } catch {
+    return 'Unbekannte Seite';
+  }
+}
+
+export function buildSearchConsolePresentation(data = {}) {
+  const sourceMetrics = Array.isArray(data.metrics) ? data.metrics : [];
+  const sourceOpportunities = Array.isArray(data.opportunities) ? data.opportunities : [];
+  const totalClicks = sourceMetrics.reduce((sum, row) => sum + (Number(row.clicks) || 0), 0);
+  const totalImpressions = sourceMetrics.reduce((sum, row) => sum + (Number(row.impressions) || 0), 0);
+  const countFormat = { maximumFractionDigits: 0 };
+  const percentFormat = { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 };
+
+  const metrics = sourceMetrics.map((row) => ({
+    query: String(row.query || '–'),
+    page: searchPageLabel(row.page_url),
+    clicks: germanNumber(row.clicks, countFormat),
+    impressions: germanNumber(row.impressions, countFormat),
+    ctr: germanNumber(row.ctr, percentFormat),
+    position: germanNumber(row.average_position, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    })
+  }));
+  const opportunities = sourceOpportunities
+    .filter((row) => SEARCH_OPPORTUNITY_PRESENTATION[row.opportunity_type])
+    .map((row) => {
+      const recommendation = SEARCH_OPPORTUNITY_PRESENTATION[row.opportunity_type];
+      return {
+        id: row.id,
+        query: String(row.primary_query || '–'),
+        type: recommendation.type,
+        recommendation: recommendation.recommendation,
+        score: germanNumber(row.score, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })
+      };
+    });
+  const provider = data.provider ? presentProvider(data.provider) : presentProvider();
+
+  return {
+    summary: {
+      queryCount: metrics.length,
+      clicks: germanNumber(totalClicks, countFormat),
+      impressions: germanNumber(totalImpressions, countFormat),
+      ctr: germanNumber(totalImpressions > 0 ? totalClicks / totalImpressions : 0, percentFormat),
+      opportunityCount: opportunities.length
+    },
+    metrics,
+    opportunities,
+    provider: {
+      healthy: provider.healthy,
+      statusLabel: provider.statusLabel,
+      lastSuccessAtLabel: berlinDateTime(provider.lastSuccessAt),
+      lastFailureAtLabel: berlinDateTime(provider.lastFailureAt),
+      lastErrorCode: provider.lastErrorCode
+    }
   };
 }
 

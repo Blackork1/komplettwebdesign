@@ -16,7 +16,9 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVISION_STALE',
   'CONTENT_SCHEDULE_SETTINGS_STALE',
   'CONTENT_DRAFT_EDIT_CONFLICT',
-  'CONTENT_REVIEW_VERSION_STALE'
+  'CONTENT_REVIEW_VERSION_STALE',
+  'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
+  'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -37,10 +39,13 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.',
   CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
   CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
-  CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.'
+  CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
+  CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
+  CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.'
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
+const SEARCH_CONSOLE_PROPERTY = 'komplettwebdesign.de';
 
 function reviewStatusFilter(value) {
   return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
@@ -457,6 +462,24 @@ export function createAdminContentAgentController(dependencies) {
       }
     },
 
+    async searchConsolePage(req, res, next) {
+      try {
+        const [data, settings] = await Promise.all([
+          adminRepository.getSearchConsoleInsights(),
+          settingsRepository.getSettings()
+        ]);
+        return res.render('admin/contentAgent/searchConsole', {
+          searchConsoleConfigured: runtimeConfig.searchConsoleConfigured === true,
+          searchConsoleProperty: SEARCH_CONSOLE_PROPERTY,
+          searchConsole: presentation.buildSearchConsolePresentation(data),
+          agentEnabled: settings?.agent_enabled === true,
+          syncQueued: req.query?.sync === 'queued'
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
     async draftPreviewPage(req, res, next) {
       if (typeof draftService?.getDraftForReview !== 'function'
           || typeof blogPostPresentation?.buildBlogPostPageModel !== 'function') {
@@ -562,6 +585,43 @@ export function createAdminContentAgentController(dependencies) {
           });
         }
         return res.redirect('/admin/content-agent?created=1');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async syncSearchConsoleAction(req, res, next) {
+      try {
+        if (runtimeConfig.searchConsoleConfigured !== true) {
+          throw Object.assign(new Error('Search Console nicht konfiguriert.'), {
+            code: 'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED'
+          });
+        }
+        const settings = await requireAdminEnqueueEnabled();
+        const local = DateTime.fromJSDate(now(), {
+          zone: settings.timezone || runtimeConfig.timezone || 'Europe/Berlin'
+        });
+        if (!local.isValid) {
+          throw scheduleError('CONTENT_SCHEDULE_INVALID', 'Die konfigurierte Zeitzone ist ungültig.');
+        }
+        const job = await jobRepository.enqueueJob({
+          jobType: 'sync_search_console',
+          idempotencyKey: `gsc-manual-sync:${local.toISODate()}`,
+          payload: {
+            startDate: local.minus({ days: 28 }).toISODate(),
+            endDate: local.minus({ days: 1 }).toISODate()
+          },
+          maxAttempts: Math.min(
+            Number(settings.maximum_attempts),
+            Number(runtimeConfig.maxAttempts)
+          )
+        });
+        if (!job) {
+          throw Object.assign(new Error('Search-Console-Synchronisierung nicht eingeplant.'), {
+            code: 'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED'
+          });
+        }
+        return res.redirect('/admin/content-agent/search-console?sync=queued');
       } catch (error) {
         return sendKnownError(error, res, next);
       }

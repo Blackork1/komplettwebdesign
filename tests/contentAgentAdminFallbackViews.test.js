@@ -50,6 +50,22 @@ const viewCases = [
     locals: { jobs: [{ id: 6, jobType: 'generate_manual_draft', statusLabel: 'Eingeplant' }] }
   },
   {
+    name: 'Search Console',
+    file: '../views/admin/contentAgent/searchConsole.ejs',
+    locals: {
+      searchConsoleConfigured: true,
+      searchConsoleProperty: 'komplettwebdesign.de',
+      agentEnabled: true,
+      syncQueued: false,
+      searchConsole: {
+        summary: {},
+        metrics: [],
+        opportunities: [],
+        provider: { healthy: true, statusLabel: 'Letzter Aufruf erfolgreich' }
+      }
+    }
+  },
+  {
     name: 'Technik',
     file: '../views/admin/contentAgent/technology.ejs',
     locals: {
@@ -65,7 +81,7 @@ const viewCases = [
   }
 ];
 
-test('alle sechs Content-Agent-Navigationsseiten rendern im vorhandenen Adminlayout', async () => {
+test('alle sieben Content-Agent-Navigationsseiten rendern im vorhandenen Adminlayout', async () => {
   for (const viewCase of viewCases) {
     const html = await renderFile(fileURLToPath(new URL(viewCase.file, import.meta.url)), {
       title: `Content-Agent – ${viewCase.name}`,
@@ -81,7 +97,7 @@ test('alle sechs Content-Agent-Navigationsseiten rendern im vorhandenen Adminlay
   }
 });
 
-test('jede Zwischenansicht verlinkt alle sechs sicheren Navigationsseiten', async () => {
+test('jede Zwischenansicht verlinkt alle sieben sicheren Navigationsseiten', async () => {
   const html = await renderFile(fileURLToPath(new URL(viewCases[0].file, import.meta.url)), {
     title: 'Content-Agent',
     currentPathname: '/admin/content-agent',
@@ -95,6 +111,7 @@ test('jede Zwischenansicht verlinkt alle sechs sicheren Navigationsseiten', asyn
     '/admin/content-agent/existing-content',
     '/admin/content-agent/schedule',
     '/admin/content-agent/jobs',
+    '/admin/content-agent/search-console',
     '/admin/content-agent/technology'
   ]) {
     assert.match(html, new RegExp(`href=["']${path.replaceAll('/', '\\/')}["']`));

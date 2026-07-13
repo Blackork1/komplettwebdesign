@@ -1,0 +1,77 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const safeSearchConsole = searchConsole || {};
+  const safeSummary = safeSearchConsole.summary || {};
+  const safeMetrics = Array.isArray(safeSearchConsole.metrics) ? safeSearchConsole.metrics : [];
+  const safeOpportunities = Array.isArray(safeSearchConsole.opportunities) ? safeSearchConsole.opportunities : [];
+  const safeProvider = safeSearchConsole.provider || {};
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const syncAvailable = searchConsoleConfigured === true && agentEnabled === true;
+%>
+
+<div class="content-agent-page">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Suchdaten · redaktionelle Auswertung</p>
+      <h1 class="admin-page-title mb-1"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Search Console</h1>
+      <p class="content-agent-lead">
+        <span class="content-agent-status-dot <%= searchConsoleConfigured === true ? 'is-online' : 'is-error' %>" aria-hidden="true"></span>
+        <%= searchConsoleConfigured === true ? 'Konfiguriert' : 'Nicht konfiguriert' %> · Property <%= searchConsoleProperty %>
+      </p>
+    </div>
+    <div class="content-agent-actions">
+      <span class="content-agent-readonly"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Nur Auswertung · keine Inhaltsänderung</span>
+      <form method="post" action="/admin/content-agent/search-console/sync" data-confirm="Search-Console-Daten für die letzten 28 Tage jetzt synchronisieren?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-primary" type="submit" <%= syncAvailable ? '' : 'disabled' %>>
+          <i class="fa-solid fa-rotate" aria-hidden="true"></i> Search Console jetzt synchronisieren
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <%- include('_tabs', { activeTab: 'searchConsole' }) %>
+
+  <% if (syncQueued === true) { %>
+    <div class="alert alert-success" role="status">Die Search-Console-Synchronisierung wurde sicher eingeplant.</div>
+  <% } %>
+
+  <% if (searchConsoleConfigured !== true) { %>
+    <div class="content-agent-notice"><i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i><div><strong>Technische Verbindung fehlt</strong><p>Die Search-Console-Konfiguration wird außerhalb des Dashboards eingerichtet. Bis dahin bleiben die gespeicherten Auswertungen lesbar.</p></div></div>
+  <% } else if (agentEnabled !== true) { %>
+    <div class="content-agent-notice"><i class="fa-solid fa-pause" aria-hidden="true"></i><div><strong>Content-Agent ist pausiert</strong><p>Ein manueller Abruf ist erst nach der Aktivierung des Agenten möglich.</p></div></div>
+  <% } else { %>
+    <div class="content-agent-notice"><span class="content-agent-status-dot <%= safeProvider.healthy ? 'is-online' : 'is-neutral' %>" aria-hidden="true"></span><div><strong>Google Search Console: <%= safeProvider.statusLabel || 'Noch kein Ergebnis' %></strong><p><%= safeProvider.lastSuccessAtLabel ? `Letzter erfolgreicher Abruf: ${safeProvider.lastSuccessAtLabel}` : 'Noch kein erfolgreicher Abruf gespeichert.' %><%= safeProvider.lastErrorCode ? ` · Fehlercode: ${safeProvider.lastErrorCode}` : '' %></p></div></div>
+  <% } %>
+
+  <section class="content-agent-metrics" aria-label="Search-Console-Kennzahlen">
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--info" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Queryzeilen</p><p class="content-agent-metric__value"><%= safeSummary.queryCount || 0 %></p><p class="content-agent-metric__detail">Aggregierte Suchanfragen</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--success" aria-hidden="true"><i class="fa-solid fa-arrow-pointer"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Klicks</p><p class="content-agent-metric__value"><%= safeSummary.clicks || '0' %></p><p class="content-agent-metric__detail">Gesamt-CTR <%= safeSummary.ctr || '0,00 %' %></p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--neutral" aria-hidden="true"><i class="fa-solid fa-eye"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Impressionen</p><p class="content-agent-metric__value"><%= safeSummary.impressions || '0' %></p><p class="content-agent-metric__detail">Sichtkontakte der geladenen Zeilen</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon <%= Number(safeSummary.opportunityCount || 0) > 0 ? 'content-agent-status--warning' : 'content-agent-status--success' %>" aria-hidden="true"><i class="fa-regular fa-lightbulb"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Offene Chancen</p><p class="content-agent-metric__value"><%= safeSummary.opportunityCount || 0 %></p><p class="content-agent-metric__detail">Nur redaktionelle Empfehlungen</p></div></article>
+  </section>
+
+  <section class="content-agent-panel mb-3" aria-labelledby="search-query-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Leistung</p><h2 id="search-query-heading">Aggregierte Suchanfragen</h2></div><span class="content-agent-readonly">Maximal 100 Zeilen</span></div>
+    <% if (!safeMetrics.length) { %>
+      <div class="content-agent-empty"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><div><strong>Noch keine Suchdaten</strong><p>Nach dem ersten erfolgreichen Abruf erscheinen Query, Klicks, Impressionen, CTR und Position hier.</p></div></div>
+    <% } else { %>
+      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Query</th><th scope="col">Seite</th><th scope="col" class="text-end">Klicks</th><th scope="col" class="text-end">Impressionen</th><th scope="col" class="text-end">CTR</th><th scope="col" class="text-end">Position</th></tr></thead><tbody>
+        <% safeMetrics.forEach((row) => { %><tr><td><strong><%= row.query %></strong></td><td><code><%= row.page %></code></td><td class="text-end"><%= row.clicks %></td><td class="text-end"><%= row.impressions %></td><td class="text-end"><%= row.ctr %></td><td class="text-end"><%= row.position %></td></tr><% }) %>
+      </tbody></table></div>
+    <% } %>
+  </section>
+
+  <section class="content-agent-panel" aria-labelledby="search-opportunity-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Redaktionelle Hinweise</p><h2 id="search-opportunity-heading">Offene Optimierungschancen</h2></div><span class="content-agent-readonly">Maximal 100 Hinweise</span></div>
+    <% if (!safeOpportunities.length) { %>
+      <div class="content-agent-empty"><i class="fa-regular fa-circle-check" aria-hidden="true"></i><div><strong>Keine offenen Chancen</strong><p>Derzeit liegen keine datenbasierten redaktionellen Empfehlungen vor.</p></div></div>
+    <% } else { %>
+      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Query</th><th scope="col">Typ</th><th scope="col">Empfehlung</th><th scope="col" class="text-end">Score</th></tr></thead><tbody>
+        <% safeOpportunities.forEach((item) => { %><tr><td><strong><%= item.query %></strong></td><td><span class="content-agent-score"><%= item.type %></span></td><td><%= item.recommendation %></td><td class="text-end"><%= item.score %></td></tr><% }) %>
+      </tbody></table></div>
+    <% } %>
+  </section>
+</div>
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<%- include('../../partials/admin_footer') %>

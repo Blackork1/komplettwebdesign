@@ -83,7 +83,7 @@ const baseLocals = {
   jsAsset: (value) => `/assets/${value}`
 };
 
-test('Cockpit enthält bestätigte fünf Reiter und sichere Aktionsformulare', async () => {
+test('Cockpit enthält bestätigte sechs Reiter und sichere Aktionsformulare', async () => {
   const [overview, tabs, schedule, technology, script] = await Promise.all([
     readView('overview.ejs'),
     renderFile(fileURLToPath(viewUrl('_tabs.ejs')), { activeTab: 'overview' }),
@@ -97,6 +97,7 @@ test('Cockpit enthält bestätigte fünf Reiter und sichere Aktionsformulare', a
   assert.match(tabs, /Entwürfe/);
   assert.match(tabs, /Zeitplan &amp; Modus/);
   assert.match(tabs, /Jobs &amp; Protokolle/);
+  assert.match(tabs, /Search Console/);
   assert.match(tabs, /Technik/);
   assert.match(overview, /Jetzt Entwurf erstellen/);
   assert.match(overview, /name="_csrf"/);

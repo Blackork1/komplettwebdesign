@@ -33,10 +33,12 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/schedule', isAdmin, controller.schedulePage);
   router.get('/admin/content-agent/jobs', isAdmin, controller.jobsPage);
   router.get('/admin/content-agent/technology', isAdmin, controller.technologyPage);
+  router.get('/admin/content-agent/search-console', isAdmin, controller.searchConsolePage);
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);
+  router.post('/admin/content-agent/search-console/sync', isAdmin, verifyCsrfToken, controller.syncSearchConsoleAction);
   router.post('/admin/content-agent/jobs/:id/retry', isAdmin, verifyCsrfToken, controller.retryJobAction);
   router.post('/admin/content-agent/drafts/:id', isAdmin, verifyCsrfToken, controller.updateDraftAction);
   router.post('/admin/content-agent/drafts/:id/reject', isAdmin, verifyCsrfToken, controller.rejectDraftAction);

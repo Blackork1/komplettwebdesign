@@ -190,6 +190,46 @@ export function createContentAgentAdminRepository(db = pool) {
       return rows;
     },
 
+    async getSearchConsoleInsights() {
+      const [metrics, opportunities, provider] = await Promise.all([
+        db.query(`
+          SELECT page_url, query,
+                 SUM(clicks)::double precision AS clicks,
+                 SUM(impressions)::double precision AS impressions,
+                 (SUM(clicks) / NULLIF(SUM(impressions), 0))::double precision AS ctr,
+                 (
+                   SUM(average_position * impressions)
+                   / NULLIF(SUM(impressions), 0)
+                 )::double precision AS average_position
+          FROM content_search_metrics
+          GROUP BY page_url, query
+          ORDER BY SUM(impressions) DESC, page_url ASC, query ASC
+          LIMIT $1
+        `, [100]),
+        db.query(`
+          SELECT id, post_id, opportunity_type, primary_query, score, created_at
+          FROM content_opportunities
+          WHERE status = 'open'
+          ORDER BY score DESC, created_at DESC, id DESC
+          LIMIT $1
+        `, [100]),
+        db.query(`
+          SELECT provider_name, last_success_at, last_failure_at,
+                 last_error_code, updated_at
+          FROM content_provider_state
+          WHERE provider_name = $1
+          ORDER BY updated_at DESC
+          LIMIT 1
+        `, ['google_search_console'])
+      ]);
+
+      return {
+        metrics: metrics.rows,
+        opportunities: opportunities.rows,
+        provider: provider.rows[0] || null
+      };
+    },
+
     async getTechnologyState() {
       const [worker, providers] = await Promise.all([
         db.query(`
