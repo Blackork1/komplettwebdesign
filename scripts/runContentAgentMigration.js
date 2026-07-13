@@ -7,7 +7,8 @@ const MIGRATIONS = [
   './migrations/003_create_content_agent_admin_dashboard.sql',
   './migrations/004_create_scheduled_content_review.sql',
   './migrations/005_upgrade_admin_notification_retry_index.sql',
-  './migrations/006_add_schedule_revisions_and_admin_review_lookup.sql'
+  './migrations/006_add_schedule_revisions_and_admin_review_lookup.sql',
+  './migrations/007_create_content_search_metrics.sql'
 ];
 
 export async function runContentAgentMigration(db = pool) {
@@ -36,11 +37,11 @@ const entryFile = process.argv[1]
 if (currentFile === entryFile) {
   runContentAgentMigration()
     .then(async () => {
-      console.log('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 erfolgreich.');
+      console.log('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 + 007 erfolgreich.');
       await pool.end();
     })
     .catch(async (error) => {
-      console.error('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 fehlgeschlagen:', error.message);
+      console.error('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 + 007 fehlgeschlagen:', error.message);
       await pool.end();
       process.exitCode = 1;
     });

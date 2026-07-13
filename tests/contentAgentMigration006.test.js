@@ -28,8 +28,11 @@ test('Migration 006 ergänzt exakt den LATERAL-kompatiblen neuesten Admin-Review
   assert.doesNotMatch(sql, /DROP INDEX/i);
 });
 
-test('Migrationsrunner führt 006 nach 005 aus und meldet sie im Abschluss', async () => {
+test('Migrationsrunner führt 006 nach 005 und 007 nach 006 aus und meldet alle im Abschluss', async () => {
   const source = await readFile(new URL('../scripts/runContentAgentMigration.js', import.meta.url), 'utf8');
-  assert.match(source, /005_upgrade_admin_notification_retry_index\.sql'[\s\S]*006_add_schedule_revisions_and_admin_review_lookup\.sql'/i);
-  assert.match(source, /002 \+ 003 \+ 004 \+ 005 \+ 006 erfolgreich/i);
+  assert.match(
+    source,
+    /005_upgrade_admin_notification_retry_index\.sql'[\s\S]*006_add_schedule_revisions_and_admin_review_lookup\.sql'[\s\S]*007_create_content_search_metrics\.sql'/i
+  );
+  assert.match(source, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 erfolgreich/i);
 });

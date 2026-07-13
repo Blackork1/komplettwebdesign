@@ -49,7 +49,7 @@ test('Migration synchronisiert Publikationszustände und kennt manuelle Queuezus
   assert.match(sql, /cancelled/i);
 });
 
-test('Migrationsrunner führt 002 bis 006 sequenziell unter einer Transaktionssperre aus', async () => {
+test('Migrationsrunner führt 002 bis 007 sequenziell unter einer Transaktionssperre aus', async () => {
   const queries = [];
   let released = false;
   const client = {
@@ -76,11 +76,13 @@ test('Migrationsrunner führt 002 bis 006 sequenziell unter einer Transaktionssp
   assert.match(queries[5], /DROP INDEX IF EXISTS ux_content_notification_deliveries_admin_review/i);
   assert.match(queries[6], /CREATE TABLE IF NOT EXISTS content_agent_schedule_revisions/i);
   assert.match(queries[6], /idx_content_notification_deliveries_post_type_latest/i);
-  assert.equal(queries[7], 'COMMIT');
+  assert.match(queries[7], /CREATE TABLE IF NOT EXISTS content_search_metrics/i);
+  assert.match(queries[7], /CREATE TABLE IF NOT EXISTS content_opportunities/i);
+  assert.equal(queries[8], 'COMMIT');
   assert.equal(released, true);
 });
 
-test('Migrationsrunner benennt alle fünf ausgeführten Migrationen in Statusmeldungen', () => {
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 erfolgreich/);
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 fehlgeschlagen/);
+test('Migrationsrunner benennt alle sechs ausgeführten Migrationen in Statusmeldungen', () => {
+  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 erfolgreich/);
+  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 fehlgeschlagen/);
 });
