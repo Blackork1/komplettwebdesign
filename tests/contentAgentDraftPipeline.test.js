@@ -1172,6 +1172,41 @@ test('ambiger Providertimeout endet manuell und wird nicht als sicher retrybar m
   assert.equal(harness.finishCalls.at(-1).status, 'needs_manual_attention');
 });
 
+test('unklarer Providerfehler persistiert nur sichere Diagnosefelder', async () => {
+  const providerError = Object.assign(new Error('Authorization: Bearer sk-vertraulich'), {
+    name: 'BadRequestError',
+    code: 'invalid_json_schema',
+    status: 400,
+    requestID: 'req_123',
+    responseId: 'resp_123',
+    prompt: 'vertraulicher Prompt'
+  });
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createSeoBrief() { throw providerError; }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 313 }, harness.dependencies);
+
+  assert.equal(result.code, 'provider_execution_uncertain');
+  assert.deepEqual(harness.finishCalls.at(-1).errorReport.providerDiagnostic, {
+    provider: 'openai',
+    stage: 'seo_brief',
+    errorName: 'BadRequestError',
+    code: 'invalid_json_schema',
+    httpStatus: 400,
+    requestId: 'req_123',
+    responseId: 'resp_123'
+  });
+  assert.doesNotMatch(
+    JSON.stringify(harness.finishCalls.at(-1)),
+    /sk-vertraulich|vertraulicher Prompt/
+  );
+});
+
 test('Bildproviderfehler endet im ersten Jobattempt manuell statt irreführend zu requeueen', async () => {
   const imageError = new ContentImageError('Bildprovider unklar.', {
     code: 'IMAGE_GENERATION_FAILED',

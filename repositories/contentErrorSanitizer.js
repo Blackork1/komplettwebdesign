@@ -35,6 +35,24 @@ function sanitizeIssue(issue) {
   return Object.keys(sanitized).length > 0 ? sanitized : null;
 }
 
+function sanitizeProviderDiagnostic(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const sanitized = {};
+  for (const field of ['provider', 'stage', 'errorName', 'code', 'requestId', 'responseId']) {
+    if (value[field] !== undefined && value[field] !== null) {
+      sanitized[field] = sanitizeDiagnosticString(value[field]);
+    }
+  }
+
+  const httpStatus = Number(value.httpStatus);
+  if (Number.isInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599) {
+    sanitized.httpStatus = httpStatus;
+  }
+
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
 export function sanitizeErrorMessage(error) {
   const message = error instanceof Error ? error.message : error;
   return sanitizeDiagnosticString(message || 'Unbekannter Fehler');
@@ -61,6 +79,9 @@ export function sanitizeErrorReport(report) {
       .map(sanitizeIssue)
       .filter((issue) => issue !== null && issue !== '');
   }
+
+  const providerDiagnostic = sanitizeProviderDiagnostic(report.providerDiagnostic);
+  if (providerDiagnostic) sanitized.providerDiagnostic = providerDiagnostic;
 
   return sanitized;
 }

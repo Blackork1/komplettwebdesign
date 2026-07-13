@@ -308,6 +308,19 @@ function markSafeProviderRetry(error) {
   return error;
 }
 
+function providerErrorDiagnostic(error, stage) {
+  const httpStatus = Number(error?.status ?? error?.statusCode ?? error?.response?.status);
+  return {
+    provider: 'openai',
+    stage,
+    errorName: error?.name || 'Error',
+    code: error?.code || 'OPENAI_REQUEST_FAILED',
+    ...(Number.isInteger(httpStatus) ? { httpStatus } : {}),
+    requestId: error?.requestID ?? error?.request_id ?? null,
+    responseId: error?.responseId ?? error?.response?.id ?? null
+  };
+}
+
 export async function runDraftPipeline(input = {}, dependencies = {}) {
   const config = required(dependencies.config, 'config');
   const inventoryService = required(dependencies.inventoryService, 'inventoryService');
@@ -462,8 +475,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     });
   }
 
-  async function stopForRecovery(code, message) {
-    const result = await finishManual(code, message);
+  async function stopForRecovery(code, message, details = {}) {
+    const result = await finishManual(code, message, details);
     throw new ManualAttentionStop(result);
   }
 
@@ -509,7 +522,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       if (!providerFailureIsSafeToRetry(error)) {
         return stopForRecovery(
           'provider_execution_uncertain',
-          'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.'
+          'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.',
+          { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
         );
       }
       await recordProviderOutcome('openai', false, error?.code || 'OPENAI_REQUEST_FAILED', error);
@@ -556,10 +570,10 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     return result.value;
   }
 
-  async function finishManual(code, message) {
+  async function finishManual(code, message, details = {}) {
     await finishRunRequired({
       status: 'needs_manual_attention',
-      errorReport: { code, message }
+      errorReport: { code, message, ...details }
     });
     return { status: 'needs_manual_attention', post: null, code };
   }
