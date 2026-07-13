@@ -1,5 +1,8 @@
 import { DateTime } from 'luxon';
-import { canRetryContentJobManually } from './contentJobRetryPolicy.js';
+import {
+  canRecoverUncertainProviderJob,
+  canRetryContentJobManually
+} from './contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from '../../repositories/contentErrorSanitizer.js';
 import { isAdminNotificationManuallyRetryable } from './adminDraftService.js';
 import { buildPublicationSlot } from './contentSchedulerService.js';
@@ -347,27 +350,45 @@ export function buildExistingContentListPresentation(rows = []) {
 }
 
 export function buildJobListPresentation(rows = []) {
-  return rows.map((row) => ({
-    id: row.id,
-    jobType: row.job_type,
-    status: row.status,
-    statusLabel: STATUS_LABELS[row.status] || 'Unbekannter Status',
-    canRetry: canRetryContentJobManually({
+  return rows.map((row) => {
+    const canRecoverProvider = canRecoverUncertainProviderJob({
       jobType: row.job_type,
       status: row.status,
-      attempts: row.attempts
-    }),
-    isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
-    attempts: Number(row.attempts || 0),
-    maxAttempts: Number(row.max_attempts || 0),
-    lastError: safeError(row.last_error),
-    postId: row.post_id || null,
-    costEur: Number(row.cost_estimate || 0),
-    lastSafeStageLabel: STAGE_LABELS[String(row.current_stage || '').split(':')[0]] || 'Noch keine Stufe',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    finishedAt: row.finished_at
-  }));
+      attempts: row.attempts,
+      lastError: row.last_error,
+      postId: row.post_id,
+      openReservationCount: row.open_provider_reservation_count
+    });
+    const providerStage = String(row.open_provider_stage || '').trim();
+    const providerStageLabel = STAGE_LABELS[providerStage.split(':')[0]] || 'Providerstufe';
+    return {
+      id: row.id,
+      jobType: row.job_type,
+      status: row.status,
+      statusLabel: STATUS_LABELS[row.status] || 'Unbekannter Status',
+      canRetry: canRetryContentJobManually({
+        jobType: row.job_type,
+        status: row.status,
+        attempts: row.attempts,
+        lastError: row.last_error
+      }),
+      canRecoverProvider,
+      providerRecoveryStageLabel: canRecoverProvider ? providerStageLabel : null,
+      providerRecoveryActionLabel: canRecoverProvider
+        ? `Reservierung verwerfen und ${providerStageLabel} erneut erstellen`
+        : null,
+      isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
+      attempts: Number(row.attempts || 0),
+      maxAttempts: Number(row.max_attempts || 0),
+      lastError: safeError(row.last_error),
+      postId: row.post_id || null,
+      costEur: Number(row.cost_estimate || 0),
+      lastSafeStageLabel: STAGE_LABELS[String(row.current_stage || '').split(':')[0]] || 'Noch keine Stufe',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      finishedAt: row.finished_at
+    };
+  });
 }
 
 export function buildDashboardPresentation(data = {}, now = new Date()) {

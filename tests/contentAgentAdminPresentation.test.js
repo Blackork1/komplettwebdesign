@@ -10,6 +10,9 @@ import {
   buildTechnologyPresentation,
   deriveReviewState
 } from '../services/contentAgent/adminPresentationService.js';
+import {
+  canRetryContentJobManually
+} from '../services/contentAgent/contentJobRetryPolicy.js';
 
 test('Zeitplanvorschau zeigt nächste Erstellung und Veröffentlichung eindeutig in Berlinzeit', () => {
   const result = buildSchedulePresentation({
@@ -206,6 +209,54 @@ test('Jobpräsentation blendet den Retry am manuellen Sicherheitslimit aus', () 
   }]);
 
   assert.equal(job.canRetry, false);
+});
+
+test('unklarer Providerausgang ist kein normaler Adminretry', () => {
+  assert.equal(canRetryContentJobManually({
+    jobType: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 4,
+    lastError: 'provider_execution_uncertain'
+  }), false);
+});
+
+test('Jobpräsentation bietet nur die bestätigte Providerwiederherstellung an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 4,
+    max_attempts: 4,
+    last_error: 'provider_execution_uncertain',
+    post_id: null,
+    open_provider_reservation_count: 1,
+    open_provider_stage: 'seo_brief'
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverProvider, true);
+  assert.equal(job.providerRecoveryStageLabel, 'SEO-Briefing');
+  assert.equal(
+    job.providerRecoveryActionLabel,
+    'Reservierung verwerfen und SEO-Briefing erneut erstellen'
+  );
+});
+
+test('Providerwiederherstellung bleibt ohne eindeutige offene Reservierung gesperrt', () => {
+  for (const openProviderReservationCount of [0, 2]) {
+    const [job] = buildJobListPresentation([{
+      id: 1,
+      job_type: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      attempts: 4,
+      last_error: 'provider_execution_uncertain',
+      post_id: null,
+      open_provider_reservation_count: openProviderReservationCount,
+      open_provider_stage: 'seo_brief'
+    }]);
+    assert.equal(job.canRetry, false);
+    assert.equal(job.canRecoverProvider, false);
+  }
 });
 
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {

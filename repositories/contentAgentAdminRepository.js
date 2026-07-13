@@ -66,9 +66,19 @@ export function createContentAgentAdminRepository(db = pool) {
         db.query(`
           SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,
                  j.last_error, j.created_at, j.updated_at, j.finished_at,
-                 r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status
+                 r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
+                 provider_recovery.open_provider_reservation_count,
+                 provider_recovery.open_provider_stage
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
+          LEFT JOIN LATERAL (
+            SELECT COUNT(*)::int AS open_provider_reservation_count,
+                   MIN(substring(entry.key FROM '^budget:[0-9]{4}-[0-9]{2}:(.+)$'))
+                     AS open_provider_stage
+            FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS entry(key, value)
+            WHERE entry.key ~ '^budget:[0-9]{4}-[0-9]{2}:.+$'
+              AND entry.value ->> 'status' = 'reserved'
+          ) provider_recovery ON TRUE
           ORDER BY j.created_at DESC
           LIMIT $1
         `, [OVERVIEW_JOB_LIMIT])
@@ -181,9 +191,19 @@ export function createContentAgentAdminRepository(db = pool) {
       const { rows } = await db.query(`
         SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,
                j.last_error, j.created_at, j.updated_at, j.finished_at,
-               r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status
+               r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
+               provider_recovery.open_provider_reservation_count,
+               provider_recovery.open_provider_stage
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS open_provider_reservation_count,
+                 MIN(substring(entry.key FROM '^budget:[0-9]{4}-[0-9]{2}:(.+)$'))
+                   AS open_provider_stage
+          FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS entry(key, value)
+          WHERE entry.key ~ '^budget:[0-9]{4}-[0-9]{2}:.+$'
+            AND entry.value ->> 'status' = 'reserved'
+        ) provider_recovery ON TRUE
         ORDER BY j.created_at DESC
         LIMIT $1
       `, [normalizeLimit(limit)]);

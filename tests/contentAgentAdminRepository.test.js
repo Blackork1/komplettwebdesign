@@ -48,7 +48,11 @@ test('Dashboardabfragen laden keine Rohpayloads, Artikel oder Modellantworten', 
     .map((call) => call.sql).join(' ');
   assert.doesNotMatch(
     sql,
-    /stage_results_json|openai_response_ids_json|payload_json|runtime_snapshot_json|seo_brief_json|generation_metadata_json/i
+    /openai_response_ids_json|payload_json|runtime_snapshot_json|seo_brief_json|generation_metadata_json/i
+  );
+  assert.doesNotMatch(
+    sql,
+    /(?:SELECT|,)\s*(?:[a-z]+\.)?stage_results_json\s*(?:,|AS|FROM)/i
   );
   assert.doesNotMatch(sql, /\bSELECT\s+\*/i);
   assert.doesNotMatch(sql, /\bp\.content\b|\bcontent_html\b|\bprompt\b/i);
@@ -76,6 +80,20 @@ test('Jobliste begrenzt die Ergebniszahl serverseitig auf 1 bis 200', async () =
 
   const jobCalls = db.calls.filter(({ sql }) => /FROM content_jobs/i.test(sql));
   assert.deepEqual(jobCalls.map(({ params }) => params), [[200], [1]]);
+});
+
+test('Jobliste projiziert nur die eindeutige offene Providerreservierung', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  await repository.listJobs();
+
+  const call = db.calls.find(({ sql }) => /FROM content_jobs/i.test(sql));
+  assert.match(call.sql, /COUNT\(\*\)::int AS open_provider_reservation_count/i);
+  assert.match(call.sql, /AS open_provider_stage/i);
+  assert.match(call.sql, /entry\.value ->> 'status' = 'reserved'/i);
+  const projection = call.sql.match(/^SELECT[\s\S]*?FROM content_jobs/i)?.[0] || '';
+  assert.doesNotMatch(projection, /r\.stage_results_json\s*(?:,|AS)/i);
 });
 
 test('Technikstatus liest nur persistierte Zustände und führt keine Provider-Probes aus', async () => {

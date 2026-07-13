@@ -309,6 +309,7 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
       WHERE id = $1
         AND job_type <> 'send_admin_review_notification'
         AND status IN ('failed', 'needs_manual_attention')
+        AND COALESCE(last_error, '') <> 'provider_execution_uncertain'
         AND attempts < $2
       RETURNING *
     `,
