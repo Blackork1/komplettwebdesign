@@ -1,6 +1,7 @@
 import pool from '../util/db.js';
 
 const DEFAULT_LIST_LIMIT = 100;
+const INVALID_JSON_VALUE = Symbol('invalid-json-value');
 
 function normalizeLimit(limit) {
   const normalized = limit === undefined ? DEFAULT_LIST_LIMIT : limit;
@@ -10,28 +11,104 @@ function normalizeLimit(limit) {
   return normalized;
 }
 
-function isStructuredJsonValue(value, seen = new Set()) {
-  if (value === null) return true;
-  if (['string', 'boolean'].includes(typeof value)) return true;
-  if (typeof value === 'number') return Number.isFinite(value);
-  if (typeof value !== 'object' || seen.has(value)) return false;
+function hasExecutableToJSON(prototype) {
+  let current = prototype;
+
+  while (current !== null) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, 'toJSON');
+    if (
+      descriptor
+      && (
+        typeof descriptor.value === 'function'
+        || typeof descriptor.get === 'function'
+        || typeof descriptor.set === 'function'
+      )
+    ) {
+      return true;
+    }
+    current = Object.getPrototypeOf(current);
+  }
+
+  return false;
+}
+
+function isArrayIndex(key, length) {
+  const index = Number(key);
+  return Number.isInteger(index)
+    && index >= 0
+    && index < length
+    && String(index) === key;
+}
+
+function cloneStructuredJsonValue(value, seen = new Set()) {
+  if (value === null || ['string', 'boolean'].includes(typeof value)) {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : INVALID_JSON_VALUE;
+  }
+  if (typeof value !== 'object' || seen.has(value)) {
+    return INVALID_JSON_VALUE;
+  }
+
+  const isArray = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  const allowedPrototypes = isArray
+    ? [Array.prototype, null]
+    : [Object.prototype, null];
+  if (!allowedPrototypes.includes(prototype) || hasExecutableToJSON(prototype)) {
+    return INVALID_JSON_VALUE;
+  }
+
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const keys = Reflect.ownKeys(descriptors);
+  if (keys.some((key) => typeof key === 'symbol')) {
+    return INVALID_JSON_VALUE;
+  }
+  const arrayLength = isArray ? descriptors.length?.value : null;
+  if (isArray && !Number.isSafeInteger(arrayLength)) {
+    return INVALID_JSON_VALUE;
+  }
 
   seen.add(value);
-  const isValid = Array.isArray(value)
-    ? value.every((entry) => isStructuredJsonValue(entry, seen))
-    : (
-      [Object.prototype, null].includes(Object.getPrototypeOf(value))
-      && Object.values(value).every((entry) => isStructuredJsonValue(entry, seen))
-    );
+  const clone = isArray ? new Array(arrayLength) : Object.create(null);
+  if (isArray) Object.setPrototypeOf(clone, null);
+
+  for (const key of keys) {
+    const descriptor = descriptors[key];
+    if ('get' in descriptor || 'set' in descriptor) {
+      seen.delete(value);
+      return INVALID_JSON_VALUE;
+    }
+
+    const clonedEntry = cloneStructuredJsonValue(descriptor.value, seen);
+    if (clonedEntry === INVALID_JSON_VALUE) {
+      seen.delete(value);
+      return INVALID_JSON_VALUE;
+    }
+
+    if (isArray) {
+      if (isArrayIndex(key, arrayLength)) clone[key] = clonedEntry;
+    } else if (descriptor.enumerable) {
+      Object.defineProperty(clone, key, {
+        value: clonedEntry,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    }
+  }
+
   seen.delete(value);
-  return isValid;
+  return clone;
 }
 
 function serializeStructuredJson(value, fieldName) {
-  if (!isStructuredJsonValue(value)) {
+  const structuredClone = cloneStructuredJsonValue(value);
+  if (structuredClone === INVALID_JSON_VALUE) {
     throw new TypeError(`${fieldName} muss ein strukturierter JSON-Wert sein.`);
   }
-  return JSON.stringify(value);
+  return JSON.stringify(structuredClone);
 }
 
 function uniqueByAnalysisKey(opportunities) {

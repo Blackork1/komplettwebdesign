@@ -147,6 +147,168 @@ test('Repository akzeptiert nur strukturierte, serialisierbare JSON-Daten', asyn
   assert.equal(db.calls.length, 0);
 });
 
+test('Datenartige JSON-Werte werden ohne Verhaltenscode parametrisiert', async () => {
+  const objectWithoutPrototype = Object.create(null);
+  objectWithoutPrototype.nested = ['Text', true, null, 42.5];
+  const validValues = [
+    { nested: ['Text', false, null, -3.5] },
+    objectWithoutPrototype,
+    ['Text', true, null, 0, { nested: 'Wert' }],
+    'Text',
+    false,
+    null,
+    Number.MAX_VALUE
+  ];
+  const rows = validValues.map((value, index) => ({
+    ...opportunities[0],
+    analysisKey: String(index).padStart(64, 'c'),
+    evidenceJson: value,
+    recommendationJson: value
+  }));
+  const db = createQueryRecorder();
+  const repository = createContentSearchOpportunityRepository(db);
+
+  await repository.upsertOpenOpportunities(rows);
+
+  assert.equal(db.calls.length, 1);
+  assert.deepEqual(db.calls[0].params[5], validValues.map((value) => JSON.stringify(value)));
+  assert.deepEqual(db.calls[0].params[6], validValues.map((value) => JSON.stringify(value)));
+});
+
+test('toJSON, Accessoren und Symbolschlüssel werden ohne Ausführung abgelehnt', async (t) => {
+  const cases = [
+    {
+      name: 'nicht aufzählbare eigene toJSON-Methode',
+      createValue(markExecuted) {
+        return Object.defineProperty({ safe: 'Wert' }, 'toJSON', {
+          value() {
+            markExecuted();
+            return { ersetzt: true };
+          }
+        });
+      }
+    },
+    {
+      name: 'geerbte toJSON-Methode',
+      createValue(markExecuted) {
+        const prototype = Object.defineProperty({}, 'toJSON', {
+          value() {
+            markExecuted();
+            return { ersetzt: true };
+          }
+        });
+        const value = Object.create(prototype);
+        value.safe = 'Wert';
+        return value;
+      }
+    },
+    {
+      name: 'aufzählbarer Getter',
+      createValue(markExecuted) {
+        return Object.defineProperty({ safe: 'Wert' }, 'computed', {
+          enumerable: true,
+          get() {
+            markExecuted();
+            return 'ausgeführt';
+          }
+        });
+      }
+    },
+    {
+      name: 'nicht aufzählbarer Getter',
+      createValue(markExecuted) {
+        return Object.defineProperty({ safe: 'Wert' }, 'computed', {
+          get() {
+            markExecuted();
+            return 'ausgeführt';
+          }
+        });
+      }
+    },
+    {
+      name: 'Setter',
+      createValue(markExecuted) {
+        return Object.defineProperty({ safe: 'Wert' }, 'computed', {
+          enumerable: true,
+          set() {
+            markExecuted();
+          }
+        });
+      }
+    },
+    {
+      name: 'Symbolschlüssel',
+      createValue() {
+        return {
+          safe: 'Wert',
+          [Symbol('nicht-json')]: 'verborgen'
+        };
+      }
+    }
+  ];
+
+  for (const fieldName of ['evidenceJson', 'recommendationJson']) {
+    for (const entry of cases) {
+      await t.test(`${fieldName}: ${entry.name}`, async () => {
+        let executionCount = 0;
+        const value = entry.createValue(() => {
+          executionCount += 1;
+        });
+        const db = createQueryRecorder();
+        const repository = createContentSearchOpportunityRepository(db);
+        let error = null;
+
+        try {
+          await repository.upsertOpenOpportunities([{
+            ...opportunities[0],
+            [fieldName]: value
+          }]);
+        } catch (caughtError) {
+          error = caughtError;
+        }
+
+        assert.match(error?.message || '', /strukturierter JSON-Wert/i);
+        assert.equal(executionCount, 0);
+        assert.equal(db.calls.length, 0);
+      });
+    }
+  }
+});
+
+test('Nicht datenartige oder zyklische JSON-Payloads werden fail-closed abgelehnt', async (t) => {
+  const cyclic = { safe: 'Wert' };
+  cyclic.self = cyclic;
+  const invalidValues = [
+    ['Funktion', () => 42],
+    ['BigInt', 42n],
+    ['NaN', Number.NaN],
+    ['positive Unendlichkeit', Number.POSITIVE_INFINITY],
+    ['negative Unendlichkeit', Number.NEGATIVE_INFINITY],
+    ['Date', new Date('2026-07-13T00:00:00.000Z')],
+    ['Map', new Map([['safe', 'Wert']])],
+    ['Set', new Set(['Wert'])],
+    ['Symbolwert', Symbol('nicht-json')],
+    ['undefined', undefined],
+    ['zyklisches Objekt', cyclic]
+  ];
+
+  for (const [name, value] of invalidValues) {
+    await t.test(name, async () => {
+      const db = createQueryRecorder();
+      const repository = createContentSearchOpportunityRepository(db);
+
+      await assert.rejects(
+        repository.upsertOpenOpportunities([{
+          ...opportunities[0],
+          evidenceJson: value
+        }]),
+        /strukturierter JSON-Wert/i
+      );
+      assert.equal(db.calls.length, 0);
+    });
+  }
+});
+
 test('Repository benötigt eine Datenbank mit query-Funktion', () => {
   assert.throws(
     () => createContentSearchOpportunityRepository({}),
