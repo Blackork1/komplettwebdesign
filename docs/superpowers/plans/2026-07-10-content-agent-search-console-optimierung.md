@@ -68,6 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_content_search_metrics_query_date
 CREATE TABLE IF NOT EXISTS content_opportunities (
   id BIGSERIAL PRIMARY KEY,
   post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+  analysis_key VARCHAR(180) NOT NULL UNIQUE,
   opportunity_type VARCHAR(64) NOT NULL,
   primary_query TEXT,
   score NUMERIC(5,2) NOT NULL,
@@ -75,7 +76,9 @@ CREATE TABLE IF NOT EXISTS content_opportunities (
   recommendation_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   status VARCHAR(32) NOT NULL DEFAULT 'open',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  resolved_at TIMESTAMPTZ
+  resolved_at TIMESTAMPTZ,
+  CHECK (opportunity_type IN ('meta_refresh', 'content_refresh')),
+  CHECK (status IN ('open', 'dismissed', 'resolved'))
 );
 CREATE INDEX IF NOT EXISTS idx_content_opportunities_status_score
   ON content_opportunities (status, score DESC, created_at DESC);
@@ -112,9 +115,9 @@ Der bestehende Runner `npm run migrate:content-agent` bleibt die einzige Content
 **Interfaces:**
 - Produces: `createSearchConsoleClient(options)` mit `querySearchAnalytics(request)` und `isConfigured()`.
 
-- [ ] **Step 1: Fehlschlagenden Clienttest schreiben**
+- [ ] **Step 1: Fehlschlagenden Client- und Konfigurationstest schreiben**
 
-Der Test injiziert einen Authclient mit `request(options)` und prüft URL-Encoding von `sc-domain:komplettwebdesign.de`, POST-Methode, readonly Scope und Requestbody.
+Der Test injiziert eine `authFactory(options)` mit `getClient()` und einem Authclient mit `request(options)`. Er prüft URL-Encoding von `sc-domain:komplettwebdesign.de`, POST-Methode, readonly Scope und Requestbody. Ohne Site-URL oder Credentialpfad meldet `isConfigured()` falsch und führt weder Auth-Factory noch Dateizugriff oder Netzwerkaufruf aus. Die technische Adminpräsentation enthält nur `searchConsoleConfigured`, niemals den Credentialpfad.
 
 - [ ] **Step 2: Test ausführen**
 
@@ -146,9 +149,10 @@ export function createSearchConsoleClient({
     if (!isConfigured()) {
       throw new Error('Search Console ist nicht konfiguriert.');
     }
+    const authOptions = { keyFile: credentialsPath, scopes: [READONLY_SCOPE] };
     const auth = authFactory
-      ? authFactory()
-      : new GoogleAuth({ keyFile: credentialsPath, scopes: [READONLY_SCOPE] });
+      ? authFactory(authOptions)
+      : new GoogleAuth(authOptions);
     const client = await auth.getClient();
     const encodedSite = encodeURIComponent(siteUrl);
     const response = await client.request({
@@ -168,7 +172,9 @@ export function createSearchConsoleClient({
 ~~~js
 searchConsoleSiteUrl: env.SEARCH_CONSOLE_SITE_URL || '',
 googleCredentialsPath: env.GOOGLE_APPLICATION_CREDENTIALS || '',
-searchConsoleSchedule: env.CONTENT_AGENT_GSC_SCHEDULE || '0 6 * * 0'
+searchConsoleSchedule: env.CONTENT_AGENT_GSC_SCHEDULE || '0 6 * * 0',
+searchConsoleConfigured: configured(env.SEARCH_CONSOLE_SITE_URL)
+  && configured(env.GOOGLE_APPLICATION_CREDENTIALS)
 ~~~
 
 - [ ] **Step 6: Tests und Commit**
@@ -181,28 +187,30 @@ git add services/contentAgent/searchConsoleClient.js services/contentAgent/confi
 git commit -m "feat: connect search console read only"
 ~~~
 
-### Task 3: Paginierter Import und normalisierte Speicherung
+### Task 3: URL-sicherer, paginierter und idempotenter Import
 
 **Files:**
 - Create: `repositories/contentSearchMetricsRepository.js`
 - Create: `services/contentAgent/searchConsoleSyncService.js`
-- Test: `tests/searchConsoleSyncService.test.js`
+- Create: `tests/contentSearchMetricsRepository.test.js`
+- Create: `tests/searchConsoleSyncService.test.js`
 
 **Interfaces:**
-- Produces: `syncSearchConsoleRange({ startDate, endDate })`, `upsertSearchMetrics(rows)` und `mapPageUrlToPostId`.
+- Produces: `createContentSearchMetricsRepository(db)` mit `findPostIdsByCanonicalPaths(paths)`, `upsertSearchMetrics(rows)` und `listAggregatedMetrics(input)`.
+- Produces: `createSearchConsoleSyncService({ client, repository, allowedHosts })` mit `syncSearchConsoleRange({ startDate, endDate, leaseGuard })`.
 
-- [ ] **Step 1: Fehlschlagenden Synctest schreiben**
+- [ ] **Step 1: Fehlschlagende Repository- und Synctests schreiben**
 
-Zwei API-Seiten simulieren: erste Seite 25.000 Zeilen, zweite Seite 2 Zeilen, dritte leer. Prüfen, dass `startRow` 0, 25.000 und 25.002 verwendet wird und alle Zeilen gespeichert werden.
+Die Tests belegen Host- und Pfadnormalisierung für `komplettwebdesign.de` und `www.komplettwebdesign.de`, Querystrings, Fragmente, Trailing Slashes und `/blog/:slug`. Fremde Hosts, ungültige Protokolle und nicht kanonische Blogpfade erhalten kein `post_id`. Die API-Seiten enthalten 25.000, 2 und 0 Zeilen; `startRow` ist 0, 25.000 und 25.002.
 
-- [ ] **Step 2: Test ausführen**
+- [ ] **Step 2: Tests ausführen**
 
-Run: `node --test tests/searchConsoleSyncService.test.js`  
-Expected: FAIL.
+Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`  
+Expected: FAIL wegen fehlender Module.
 
 - [ ] **Step 3: Synchronisationsservice implementieren**
 
-Request:
+Jede Anfrage verwendet exakt:
 
 ~~~js
 {
@@ -216,58 +224,42 @@ Request:
 }
 ~~~
 
-Leere Zeilenliste beendet die Pagination. Ein fehlender Post-Match darf als `post_id = null` gespeichert werden, damit neue Inhaltslücken erkennbar bleiben.
+`leaseGuard()` läuft vor jeder externen Seite und vor jeder Schreibphase. Leere Zeilen beenden die Pagination. `startRow` wächst um die tatsächlich empfangene Zeilenzahl. Zeilen mit ungültigem Datum, URL oder Zahlenformat werden verworfen; fehlende Blogzuordnungen werden mit `post_id = null` gespeichert.
 
-- [ ] **Step 4: Repository-Upsert implementieren**
+- [ ] **Step 4: Repository und gewichtete Aggregation implementieren**
 
-~~~sql
-INSERT INTO content_search_metrics (
-  post_id, metric_date, page_url, query, device,
-  clicks, impressions, ctr, average_position, fetched_at
-)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
-ON CONFLICT (metric_date, page_url, query, device)
-DO UPDATE SET
-  post_id = COALESCE(EXCLUDED.post_id, content_search_metrics.post_id),
-  clicks = EXCLUDED.clicks,
-  impressions = EXCLUDED.impressions,
-  ctr = EXCLUDED.ctr,
-  average_position = EXCLUDED.average_position,
-  fetched_at = NOW();
-~~~
+Der Upsert verwendet den Unique-Key `(metric_date, page_url, query, device)` und bewahrt einen bereits bekannten `post_id` mit `COALESCE(EXCLUDED.post_id, content_search_metrics.post_id)`. Aggregierte Werte verwenden `SUM(clicks)`, `SUM(impressions)`, `SUM(clicks) / NULLIF(SUM(impressions), 0)` und eine nach Impressionen gewichtete Position.
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/searchConsoleSyncService.test.js`  
-Expected: Pagination, Normalisierung und Upsert PASS.
+Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`  
+Expected: Pagination, Normalisierung, Lease-Fence, Aggregation und Upsert PASS.
 
 ~~~bash
-git add repositories/contentSearchMetricsRepository.js services/contentAgent/searchConsoleSyncService.js tests/searchConsoleSyncService.test.js
+git add repositories/contentSearchMetricsRepository.js services/contentAgent/searchConsoleSyncService.js tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js
 git commit -m "feat: sync search console performance data"
 ~~~
 
-### Task 4: Datenbasierte Chancenbewertung
+### Task 4: Idempotente, zunächst rein lesende Chancenbewertung
 
 **Files:**
+- Create: `repositories/contentSearchOpportunityRepository.js`
 - Create: `services/contentAgent/searchOpportunityService.js`
-- Modify: `services/contentAgent/topicScoringService.js`
-- Test: `tests/searchOpportunityService.test.js`
+- Create: `tests/contentSearchOpportunityRepository.test.js`
+- Create: `tests/searchOpportunityService.test.js`
 
 **Interfaces:**
-- Produces: `calculateSearchOpportunity(metrics)` und `buildContentOpportunities(metrics, inventory)`.
+- Produces: `calculateSearchOpportunity(metrics)` und `buildContentOpportunities(metrics, range)`.
+- Produces: `createContentSearchOpportunityRepository(db)` mit `upsertOpenOpportunities(opportunities)` und `listOpenOpportunities(limit)`.
 
-- [ ] **Step 1: Fehlschlagende Scoringtests schreiben**
+- [ ] **Step 1: Fehlschlagende Scoring- und Idempotenztests schreiben**
 
-Fixtures:
+Fixtures: Position 12, 500 Impressionen, 1 Prozent CTR ergibt `content_refresh`; Position 4, 2.000 Impressionen, 0,5 Prozent CTR ergibt `meta_refresh`; Position 1, 20 Impressionen, 60 Prozent CTR ergibt keine Chance. Zwei identische Analysen erzeugen denselben `analysis_key`.
 
-- Position 12, 500 Impressionen, 1 Prozent CTR ergibt hohe Inhaltschance.
-- Position 4, 2.000 Impressionen, 0,5 Prozent CTR ergibt hohe Meta-Chance.
-- Position 1, 20 Impressionen, 60 Prozent CTR ergibt keine Priorität.
+- [ ] **Step 2: Tests ausführen**
 
-- [ ] **Step 2: Test ausführen**
-
-Run: `node --test tests/searchOpportunityService.test.js`  
-Expected: FAIL.
+Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`  
+Expected: FAIL wegen fehlender Module.
 
 - [ ] **Step 3: Suchchance exakt implementieren**
 
@@ -275,7 +267,6 @@ Expected: FAIL.
 function impressionScore(impressions) {
   return Math.min(10, Math.log10(Math.max(0, impressions) + 1) * 3);
 }
-
 function positionScore(position) {
   if (position >= 8 && position <= 20) return 10;
   if (position > 20 && position <= 30) return 8;
@@ -283,7 +274,6 @@ function positionScore(position) {
   if (position > 30) return 4;
   return 2;
 }
-
 function ctrGapScore(position, ctr) {
   if (position <= 10 && ctr < 0.01) return 10;
   if (position <= 10 && ctr < 0.03) return 8;
@@ -291,82 +281,112 @@ function ctrGapScore(position, ctr) {
   if (position <= 30 && ctr < 0.015) return 6;
   return 2;
 }
-
 export function calculateSearchOpportunity(metrics) {
-  const score =
-    impressionScore(metrics.impressions) * 0.45 +
-    positionScore(metrics.averagePosition) * 0.35 +
-    ctrGapScore(metrics.averagePosition, metrics.ctr) * 0.20;
+  const score = impressionScore(metrics.impressions) * 0.45
+    + positionScore(metrics.averagePosition) * 0.35
+    + ctrGapScore(metrics.averagePosition, metrics.ctr) * 0.20;
   return Math.round(score * 100) / 100;
 }
 ~~~
 
-- [ ] **Step 4: Opportunity-Typen implementieren**
+- [ ] **Step 4: Nur sichere Empfehlungstypen implementieren**
 
-`meta_refresh` bei Position bis 10 und niedriger CTR; `content_refresh` bei Position 8 bis 20; `new_article` nur, wenn keine passende Seite existiert; `internal_links` bei Position 8 bis 30 und schwacher interner Verlinkung.
+`meta_refresh` gilt für eindeutig zugeordnete Blogposts auf Position bis 10 mit CTR unter 3 Prozent. `content_refresh` gilt für eindeutig zugeordnete Blogposts auf Position 8 bis 20 mit CTR unter 2 Prozent. `new_article` und `internal_links` bleiben bewusst aus, bis Query-zu-Inventar-Matching und ein kanonischer Linkgraph existieren. Der `analysis_key` ist ein stabiler SHA-256-Wert aus Zeitraum, Typ, Post, Seite und Query.
 
-- [ ] **Step 5: Themen-Scoring anbinden**
+- [ ] **Step 5: Tests und Commit**
 
-Search-Console-Score ersetzt `searchOpportunity` nur, wenn belastbare Metriken vorliegen. Geschäftsnutzen, Mindestscore und Kannibalisierungsgrenze bleiben unverändert.
+Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`  
+Expected: Scoring, Filter und idempotenter Upsert PASS.
 
-- [ ] **Step 6: Tests und Commit**
+~~~bash
+git add repositories/contentSearchOpportunityRepository.js services/contentAgent/searchOpportunityService.js tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js
+git commit -m "feat: derive safe search content opportunities"
+~~~
 
-Run: `node --test tests/searchOpportunityService.test.js tests/contentAgentTopicScoring.test.js`  
+### Task 5: Workerdispatch und separater Wochen-Scheduler
+
+**Files:**
+- Create: `services/contentAgent/searchConsoleSchedulerService.js`
+- Create: `tests/contentSearchScheduler.test.js`
+- Modify: `scripts/contentWorker.js`
+- Modify: `repositories/contentJobRepository.js`
+- Modify: `repositories/contentProviderStateRepository.js`
+- Modify: `tests/contentAgentWorker.test.js`
+- Modify: `tests/contentAgentJobRepository.test.js`
+
+**Interfaces:**
+- Produces: Jobtypen `sync_search_console` und `analyze_search_opportunities` ohne `content_runs`.
+- Produces: `createSearchConsoleScheduler({ tick, intervalMs })` und `runSearchConsoleSchedulerTick(input)`.
+
+- [ ] **Step 1: Fehlschlagende Worker- und Schedulertests schreiben**
+
+Prüfen: unkonfiguriert kein Job; Sonntag 06:00 Uhr `Europe/Berlin` genau ein idempotenter Syncjob; wiederholter Tick kein Duplikat; strikte Payloads; aktive Lease; beide Jobtypen umgehen Generierungsrun und Artikelpipeline.
+
+- [ ] **Step 2: Tests ausführen**
+
+Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js`  
+Expected: FAIL für die neuen Jobtypen und den Scheduler.
+
+- [ ] **Step 3: Frühen Workerdispatch implementieren**
+
+`sync_search_console` akzeptiert nur `startDate` und `endDate`, ruft den Syncservice mit Lease auf und legt nach Erfolg `analyze_search_opportunities` mit `gsc-analysis:<startDate>:<endDate>` an. `analyze_search_opportunities` liest aggregierte Metriken, baut Chancen und führt den idempotenten Upsert aus. Beide liefern `{ status: 'completed' }` und werden vor dem allgemeinen Run-/Pipelinepfad behandelt.
+
+- [ ] **Step 4: Scheduler implementieren**
+
+Standard ist `CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0`. Der Dienst validiert dieses Fünf-Feld-Format für Minute, Stunde und Wochentag, verwendet die konfigurierte Zeitzone und legt `gsc-sync:<lokales-Sonntagsdatum>` an. Das Fenster umfasst 28 Tage bis einschließlich des Vortags. Ein fehlender GSC-Konfigurationsstatus bleibt ohne Job und ohne Fehler für die Artikelpipeline.
+
+- [ ] **Step 5: Tests und Commit**
+
+Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js && OPENAI_API_KEY=test npm test`  
 Expected: alle Tests PASS.
 
 ~~~bash
-git add services/contentAgent/searchOpportunityService.js services/contentAgent/topicScoringService.js tests/searchOpportunityService.test.js
-git commit -m "feat: derive content opportunities from search data"
+git add services/contentAgent/searchConsoleSchedulerService.js scripts/contentWorker.js repositories/contentJobRepository.js repositories/contentProviderStateRepository.js tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js
+git commit -m "feat: run search console jobs safely"
 ~~~
 
-### Task 5: Workerjobs und Adminauswertung
+### Task 6: Geschützte, rein lesende Adminauswertung
 
 **Files:**
-- Modify: `services/contentAgent/workerService.js`
-- Modify: `scripts/contentWorker.js`
-- Modify: `repositories/contentAgentAdminRepository.js`
-- Modify: `controllers/adminContentAgentController.js`
-- Modify: `routes/adminContentAgentRoutes.js`
 - Create: `views/admin/contentAgent/searchConsole.ejs`
 - Modify: `views/admin/contentAgent/_tabs.ejs`
+- Modify: `repositories/contentAgentAdminRepository.js`
 - Modify: `services/contentAgent/adminPresentationService.js`
-- Test: `tests/contentSearchAdminIntegration.test.js`
+- Modify: `controllers/adminContentAgentController.js`
+- Modify: `routes/adminContentAgentRoutes.js`
+- Create: `tests/contentSearchAdminIntegration.test.js`
 
 **Interfaces:**
-- Produces: Jobtypen `sync_search_console` und `analyze_search_opportunities` sowie Dashboardtabellen.
+- Produces: GET `/admin/content-agent/search-console` und POST `/admin/content-agent/search-console/sync`.
 
-- [ ] **Step 1: Fehlschlagenden Integrationstest schreiben**
+- [ ] **Step 1: Fehlschlagenden Adminintegrationstest schreiben**
 
-Prüfen: Worker kennt beide Jobtypen; Sonntag-Cron legt einen idempotenten Syncjob an; Dashboard zeigt Query, Klicks, Impressionen, CTR, Position und Empfehlung.
+Prüfen: beide Routen sind adminpflichtig, POST besitzt CSRF-Schutz, Konfigurationsstatus enthält nur ein Boolean, Tabellen zeigen Query, Klicks, Impressionen, CTR, Position und Empfehlung und dynamische Texte werden über EJS escaped.
 
 - [ ] **Step 2: Test ausführen**
 
 Run: `node --test tests/contentSearchAdminIntegration.test.js`  
-Expected: FAIL.
+Expected: FAIL wegen fehlender Route/View.
 
-- [ ] **Step 3: Workerhandler ergänzen**
+- [ ] **Step 3: Repository und Präsentation implementieren**
 
-`sync_search_console` importiert die letzten 28 finalisierten Tage. Nach Erfolg wird `analyze_search_opportunities` mit einem stabilen Idempotenzschlüssel aus Enddatum und Syncjob-ID angelegt. Beide Jobtypen laufen außerhalb der kostenpflichtigen Artikelpipeline und benötigen keinen `content_runs`-Datensatz.
+Die Seite lädt höchstens 100 aggregierte Queryzeilen und 100 offene Chancen. Prozent- und Positionswerte werden serverseitig formatiert; Rohpayloads, Credentialpfad und JSON-Schlüssel werden nie an die View gegeben.
 
-- [ ] **Step 4: Cron ergänzen**
+- [ ] **Step 4: Route, Controller und View implementieren**
 
-Sonntag 06:00 Uhr Europe/Berlin, getrennt vom Artikelcron. Ist Search Console nicht konfiguriert, wird kein Job angelegt und eine einmalige Warnung geloggt. Die bestehende dynamische Artikelplanung bleibt unverändert.
+Der manuelle Sync prüft `searchConsoleConfigured === true`, aktiven Agenten und maximale Versuche, legt einen Job für das 28-Tage-Fenster mit `gsc-manual-sync:<YYYY-MM-DD>` an und leitet mit Statusmeldung zurück. Die Seite verändert keine Artikel und bietet keine automatische „Empfehlung anwenden“-Aktion.
 
-- [ ] **Step 5: Dashboard ergänzen**
+- [ ] **Step 5: Tests und Commit**
 
-Die neue geschützte Seite `/admin/content-agent/search-console` zeigt Konfigurationsstatus, letzten Import, Top-Suchanfragen und Top-Chancen mit Belegwerten. Ein CSRF-geschützter Button „Search Console jetzt synchronisieren“ legt einen idempotenten `sync_search_console`-Job an. Chancen erzeugen per ausdrücklicher Adminaktion einen normalen `generate_manual_draft`- oder `regenerate_metadata`-Job. Keine Empfehlung verändert automatisch Inhalte.
-
-- [ ] **Step 6: Tests und Commit**
-
-Run: `node --test tests/contentSearchAdminIntegration.test.js && npm run build && npm test`  
-Expected: alle Tests und Build PASS.
+Run: `node --test tests/contentSearchAdminIntegration.test.js && npm run build`  
+Expected: Adminschutz, CSRF, Limits, Escape und Build PASS.
 
 ~~~bash
-git add scripts/contentWorker.js services/contentAgent/searchConsoleSchedulerService.js repositories/contentAgentAdminRepository.js controllers/adminContentAgentController.js routes/adminContentAgentRoutes.js services/contentAgent/adminPresentationService.js views/admin/contentAgent/searchConsole.ejs views/admin/contentAgent/_tabs.ejs tests/contentSearchAdminIntegration.test.js
-git commit -m "feat: surface search driven content opportunities"
+git add views/admin/contentAgent/searchConsole.ejs views/admin/contentAgent/_tabs.ejs repositories/contentAgentAdminRepository.js services/contentAgent/adminPresentationService.js controllers/adminContentAgentController.js routes/adminContentAgentRoutes.js tests/contentSearchAdminIntegration.test.js
+git commit -m "feat: add search console admin insights"
 ~~~
 
-### Task 6: Docker Secret und IONOS-Anleitung
+### Task 7: Inerte Docker-Secret- und IONOS-Anleitung
 
 **Files:**
 - Modify: `docs/deployment/content-agent-ionos-vps.md`
@@ -452,5 +472,5 @@ git commit -m "docs: add search console VPS setup"
 - [ ] API-Client verwendet ausschließlich `webmasters.readonly`.
 - [ ] 28-Tage-Synchronisation ist idempotent.
 - [ ] Fehlende Search Console blockiert keine Artikelgenerierung.
-- [ ] Dashboard zeigt belegte Chancen ohne automatische Änderungen.
+- [ ] Die geschützte Adminseite zeigt belegte Chancen ohne automatische Änderungen.
 - [ ] `npm test` und `npm run build` sind vollständig erfolgreich.
