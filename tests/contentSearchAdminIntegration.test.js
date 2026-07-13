@@ -215,7 +215,7 @@ test('Controller gibt den technischen Hauptschalter als separaten sicheren Boole
   assert.doesNotMatch(JSON.stringify(res.rendered.locals), /google-search-console\.json|googleCredentialsPath/i);
 });
 
-test('manueller Sync verwendet lokales 28-Tage-Fenster, Tages-Deduplizierung und das Versuchshardcap', async () => {
+test('manueller Sync verwendet lokales 28-Tage-Fenster und den atomaren Repositoryvertrag', async () => {
   const jobs = [];
   const controller = createAdminContentAgentController(controllerDependencies({
     now: () => new Date('2026-07-13T22:30:00.000Z'),
@@ -225,7 +225,10 @@ test('manueller Sync verwendet lokales 28-Tage-Fenster, Tages-Deduplizierung und
       }
     },
     jobRepository: {
-      async enqueueJob(input) { jobs.push(input); return { id: 41 }; }
+      async enqueueManualSearchConsoleSyncJob(input) {
+        jobs.push(input);
+        return { id: 41, status: 'queued' };
+      }
     }
   }));
   const res = response();
@@ -233,8 +236,7 @@ test('manueller Sync verwendet lokales 28-Tage-Fenster, Tages-Deduplizierung und
   await controller.syncSearchConsoleAction({}, res, assert.fail);
 
   assert.deepEqual(jobs, [{
-    jobType: 'sync_search_console',
-    idempotencyKey: 'gsc-manual-sync:2026-07-14',
+    localDate: '2026-07-14',
     payload: {
       startDate: '2026-06-16',
       endDate: '2026-07-13'
@@ -263,7 +265,7 @@ test('fehlende GSC-Konfiguration und ein pausierter Agent verhindern den manuell
         }
       },
       jobRepository: {
-        async enqueueJob() { enqueueCalls += 1; return { id: 41 }; }
+        async enqueueManualSearchConsoleSyncJob() { enqueueCalls += 1; return { id: 41, status: 'queued' }; }
       }
     }));
     const res = response();
@@ -283,7 +285,29 @@ test('Null-Enqueue ist ein fachlicher Konflikt und erzeugt keine Erfolgsmeldung'
       }
     },
     jobRepository: {
-      async enqueueJob() { return null; }
+      async enqueueManualSearchConsoleSyncJob() { return null; }
+    }
+  }));
+  const res = response();
+
+  await controller.syncSearchConsoleAction({}, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body, /nicht eingeplant/i);
+  assert.equal(res.redirectedTo, undefined);
+});
+
+test('ein unveränderter terminaler manueller Sync erzeugt keine falsche Erfolgsmeldung', async () => {
+  const controller = createAdminContentAgentController(controllerDependencies({
+    settingsRepository: {
+      async getSettings() {
+        return { agent_enabled: true, maximum_attempts: 3, timezone: 'Europe/Berlin' };
+      }
+    },
+    jobRepository: {
+      async enqueueManualSearchConsoleSyncJob() {
+        return { id: 41, status: 'completed' };
+      }
     }
   }));
   const res = response();

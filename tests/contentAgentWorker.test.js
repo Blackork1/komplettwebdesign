@@ -32,6 +32,7 @@ import {
   resolveContentAgentRuntimeConfig
 } from '../services/contentAgent/runtimeConfigService.js';
 import { runSearchConsoleSchedulerTick } from '../services/contentAgent/searchConsoleSchedulerService.js';
+import { retryOrFailJob as persistRetryOrFailJob } from '../repositories/contentJobRepository.js';
 
 const execFileAsync = promisify(execFile);
 const { SEARCH_CONSOLE_JOB_TYPES } = contentWorkerModule;
@@ -1217,7 +1218,7 @@ test('ein pausierter Analyse-Enqueue lässt den erfolgreichen Sync bereinigt ret
   ]);
 });
 
-test('ein fehlgeschlagener Search-Console-Sync zeichnet nur einen generischen Providercode auf', async () => {
+test('ein fehlgeschlagener Search-Console-Sync wirft nur einen stabilen retryfähigen Fehler', async () => {
   const providerResults = [];
   const syncError = new Error(
     'GOOGLE_APPLICATION_CREDENTIALS=/srv/google-search-console.json token=geheim'
@@ -1234,7 +1235,14 @@ test('ein fehlgeschlagener Search-Console-Sync zeichnet nur einen generischen Pr
     id: 82,
     job_type: 'sync_search_console',
     payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
-  }, { leaseGuard: async () => true }), syncError);
+  }, { leaseGuard: async () => true }), (error) => {
+    assert.equal(error.code, 'CONTENT_SEARCH_CONSOLE_SYNC_FAILED');
+    assert.equal(error.retryable, true);
+    assert.equal(error.message, 'Die Search-Console-Synchronisierung ist vorübergehend fehlgeschlagen.');
+    assert.equal(error.cause, syncError);
+    assert.doesNotMatch(error.message, /GOOGLE_APPLICATION_CREDENTIALS|\.json|geheim|token/i);
+    return true;
+  });
 
   assert.deepEqual(providerResults, [{
     providerName: 'google_search_console',
@@ -1242,6 +1250,52 @@ test('ein fehlgeschlagener Search-Console-Sync zeichnet nur einen generischen Pr
     errorCode: 'SEARCH_CONSOLE_SYNC_FAILED'
   }]);
   assert.doesNotMatch(JSON.stringify(providerResults), /geheim|credentials|\.json/i);
+});
+
+test('der Worker persistiert bei einem GSC-Fehler ausschließlich die stabile Fehlermeldung', async () => {
+  const persisted = [];
+  const claim = {
+    id: 820,
+    locked_by: 'worker-gsc-test',
+    attempts: 1,
+    max_attempts: 3,
+    job_type: 'sync_search_console',
+    payload_json: { startDate: '2026-06-21', endDate: '2026-07-18' }
+  };
+  const externalError = new Error(
+    "ENOENT: GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json token=secret-token-fragment"
+  );
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('nicht erwartet'); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async syncSearchConsoleRange() { throw externalError; },
+    async recordProviderResult() {},
+    async enqueueJob() { assert.fail('nicht erwartet'); }
+  });
+  const db = {
+    async query(_sql, params) {
+      persisted.push(params[3]);
+      return { rows: [{ id: claim.id, status: 'queued', last_error: params[3] }] };
+    }
+  };
+  const { worker } = createWorkerHarness({
+    async claimNextJob() { return claim; },
+    handleJob: handler,
+    async retryOrFailJob(job, error, options) {
+      return persistRetryOrFailJob(job, error, options, db);
+    }
+  });
+
+  const result = await worker.processOnce();
+
+  assert.deepEqual(result, { status: 'queued' });
+  assert.deepEqual(persisted, [
+    'Die Search-Console-Synchronisierung ist vorübergehend fehlgeschlagen.'
+  ]);
+  assert.doesNotMatch(
+    JSON.stringify(persisted),
+    /GOOGLE_APPLICATION_CREDENTIALS|\/run\/secrets|gsc-service-account\.json|secret-token-fragment/i
+  );
 });
 
 test('die Search-Opportunity-Analyse liest, baut und upsertet ohne Content-Run', async () => {

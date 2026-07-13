@@ -605,9 +605,8 @@ export function createAdminContentAgentController(dependencies) {
         if (!local.isValid) {
           throw scheduleError('CONTENT_SCHEDULE_INVALID', 'Die konfigurierte Zeitzone ist ungültig.');
         }
-        const job = await jobRepository.enqueueJob({
-          jobType: 'sync_search_console',
-          idempotencyKey: `gsc-manual-sync:${local.toISODate()}`,
+        const job = await jobRepository.enqueueManualSearchConsoleSyncJob({
+          localDate: local.toISODate(),
           payload: {
             startDate: local.minus({ days: 28 }).toISODate(),
             endDate: local.minus({ days: 1 }).toISODate()
@@ -617,7 +616,7 @@ export function createAdminContentAgentController(dependencies) {
             Number(runtimeConfig.maxAttempts)
           )
         });
-        if (!job) {
+        if (!job || !['queued', 'running'].includes(job.status)) {
           throw Object.assign(new Error('Search-Console-Synchronisierung nicht eingeplant.'), {
             code: 'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED'
           });

@@ -5,6 +5,7 @@ import {
   claimNextJob,
   completeJob,
   enqueueAdminReviewNotificationJob,
+  enqueueManualSearchConsoleSyncJob,
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
@@ -177,6 +178,70 @@ test('Admin-Regenerationsjobs werden atomar durch den operativen Agentschalter g
 
   assert.equal(db.calls[0].params.at(-1), true);
   assert.match(db.calls[0].sql, /WHERE \$6 = FALSE OR EXISTS/i);
+});
+
+test('manueller GSC-Sync wird atomar gegated und verwendet ausschließlich einen manuellen Tages-Key', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 72, status: 'queued' }] }]);
+  const payload = { startDate: '2026-06-16', endDate: '2026-07-13' };
+
+  const result = await enqueueManualSearchConsoleSyncJob({
+    localDate: '2026-07-14',
+    payload,
+    maxAttempts: 4
+  }, db);
+
+  assert.deepEqual(result, { id: 72, status: 'queued' });
+  assert.deepEqual(db.calls[0].params, [
+    'gsc-manual-sync:2026-07-14',
+    payload,
+    4
+  ]);
+  assert.match(db.calls[0].sql, /INSERT INTO content_jobs/i);
+  assert.match(db.calls[0].sql, /WHERE EXISTS \([\s\S]*agent_enabled = TRUE/i);
+  assert.match(db.calls[0].sql, /ON CONFLICT \(idempotency_key\) DO UPDATE/i);
+  assert.match(db.calls[0].sql, /content_jobs\.job_type = 'sync_search_console'/i);
+  assert.match(db.calls[0].sql, /content_jobs\.idempotency_key LIKE 'gsc-manual-sync:%'/i);
+  assert.doesNotMatch(db.calls[0].sql, /gsc-sync:/i);
+});
+
+test('manueller GSC-Sync lässt aktive Duplikate aktiv und setzt terminale Jobs kontrolliert zurück', async () => {
+  const db = createQueryRecorder([
+    { rows: [{ id: 73, status: 'running', attempts: 2 }] },
+    { rows: [{ id: 73, status: 'queued', attempts: 0 }] }
+  ]);
+  const input = {
+    localDate: '2026-07-14',
+    payload: { startDate: '2026-06-16', endDate: '2026-07-13' },
+    maxAttempts: 3
+  };
+
+  assert.equal((await enqueueManualSearchConsoleSyncJob(input, db)).status, 'running');
+  assert.equal((await enqueueManualSearchConsoleSyncJob(input, db)).status, 'queued');
+
+  for (const call of db.calls) {
+    assert.match(call.sql, /status IN \('completed', 'failed', 'needs_manual_attention'\)/i);
+    assert.match(call.sql, /THEN 'queued'/i);
+    assert.match(call.sql, /attempts = CASE[\s\S]*THEN 0/i);
+    assert.match(call.sql, /locked_at = CASE[\s\S]*THEN NULL/i);
+    assert.match(call.sql, /locked_by = CASE[\s\S]*THEN NULL/i);
+    assert.match(call.sql, /finished_at = CASE[\s\S]*THEN NULL/i);
+    assert.match(call.sql, /last_error = CASE[\s\S]*THEN NULL/i);
+    assert.match(call.sql, /payload_json = CASE[\s\S]*EXCLUDED\.payload_json/i);
+    assert.match(call.sql, /max_attempts = CASE[\s\S]*EXCLUDED\.max_attempts/i);
+    assert.match(call.sql, /status IN \(\s*'queued', 'running', 'completed', 'failed', 'needs_manual_attention'\s*\)/i);
+  }
+});
+
+test('manueller GSC-Sync meldet bei deaktiviertem Gate oder unpassendem Konflikt keinen Job', async () => {
+  const db = createQueryRecorder([{ rows: [] }, { rows: [] }]);
+  const input = {
+    localDate: '2026-07-14',
+    payload: { startDate: '2026-06-16', endDate: '2026-07-13' },
+    maxAttempts: 3
+  };
+
+  assert.equal(await enqueueManualSearchConsoleSyncJob(input, db), null);
+  assert.equal(await enqueueManualSearchConsoleSyncJob(input, db), null);
 });
 
 test('terminale Jobupdates akzeptieren keine veraltete oder unvollständige Lease', async () => {

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSearchConsoleClient } from '../services/contentAgent/searchConsoleClient.js';
+import {
+  createSearchConsoleClient,
+  SEARCH_CONSOLE_REQUEST_TIMEOUT_MS
+} from '../services/contentAgent/searchConsoleClient.js';
 import {
   buildTechnicalConfigPresentation,
   getContentAgentTechnicalConfig
@@ -39,7 +42,7 @@ test('Search-Console-Abfragen verwenden ausschließlich den Readonly-Scope und k
 
   assert.equal(client.isConfigured(), true);
   assert.deepEqual(await client.querySearchAnalytics(body), expectedResponse);
-  assert.deepEqual(calls, [
+  assert.deepEqual(calls.slice(0, 2), [
     {
       type: 'authFactory',
       options: {
@@ -47,16 +50,23 @@ test('Search-Console-Abfragen verwenden ausschließlich den Readonly-Scope und k
         scopes: [READONLY_SCOPE]
       }
     },
-    { type: 'getClient' },
-    {
-      type: 'request',
-      options: {
-        url: 'https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Akomplettwebdesign.de/searchAnalytics/query',
-        method: 'POST',
-        data: body
-      }
-    }
+    { type: 'getClient' }
   ]);
+  assert.equal(calls.length, 3);
+  assert.equal(calls[2].type, 'request');
+  assert.deepEqual(
+    { ...calls[2].options, signal: undefined },
+    {
+      url: 'https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Akomplettwebdesign.de/searchAnalytics/query',
+      method: 'POST',
+      data: body,
+      timeout: SEARCH_CONSOLE_REQUEST_TIMEOUT_MS,
+      signal: undefined
+    }
+  );
+  assert.equal(calls[2].options.signal instanceof AbortSignal, true);
+  assert.equal(Number.isFinite(SEARCH_CONSOLE_REQUEST_TIMEOUT_MS), true);
+  assert.equal(SEARCH_CONSOLE_REQUEST_TIMEOUT_MS > 0, true);
 });
 
 test('unvollständige Konfiguration verhindert Authentifizierung, Dateizugriff und Netzwerkaufrufe', async () => {

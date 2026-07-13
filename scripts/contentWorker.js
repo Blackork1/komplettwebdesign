@@ -50,8 +50,8 @@ function permanentJobError(message, code) {
   return error;
 }
 
-function retryableJobError(message, code) {
-  const error = new Error(message);
+function retryableJobError(message, code, cause = null) {
+  const error = new Error(message, cause ? { cause } : undefined);
   error.code = code;
   error.retryable = true;
   return error;
@@ -257,7 +257,11 @@ export function createProductionJobHandler({
             success: false,
             errorCode: 'SEARCH_CONSOLE_SYNC_FAILED'
           });
-          throw error;
+          throw retryableJobError(
+            'Die Search-Console-Synchronisierung ist vorübergehend fehlgeschlagen.',
+            'CONTENT_SEARCH_CONSOLE_SYNC_FAILED',
+            error
+          );
         }
         await assertActiveLease(leaseGuard);
         await recordProviderResult({

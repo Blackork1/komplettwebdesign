@@ -40,7 +40,7 @@ assert.match(sql, /UNIQUE \(metric_date, page_url, query, device\)/i);
 
 - [ ] **Step 2: Test ausführen**
 
-Run: `node --test tests/contentSearchMetricsMigration.test.js`  
+Run: `node --test tests/contentSearchMetricsMigration.test.js`
 Expected: FAIL mit `ENOENT`.
 
 - [ ] **Step 3: Migration implementieren**
@@ -93,7 +93,7 @@ npm-Skript `migrate:content-agent` bleibt unverändert.
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentSearchMetricsMigration.test.js && npm test`  
+Run: `node --test tests/contentSearchMetricsMigration.test.js && npm test`
 Expected: alle Tests PASS.
 
 ~~~bash
@@ -121,12 +121,12 @@ Der Test injiziert eine `authFactory(options)` mit `getClient()` und einem Authc
 
 - [ ] **Step 2: Test ausführen**
 
-Run: `node --test tests/searchConsoleClient.test.js`  
+Run: `node --test tests/searchConsoleClient.test.js`
 Expected: FAIL mit `ERR_MODULE_NOT_FOUND`.
 
 - [ ] **Step 3: Abhängigkeit installieren**
 
-Run: `npm install google-auth-library`  
+Run: `npm install google-auth-library`
 Expected: Paket und Lockdatei aktualisiert.
 
 - [ ] **Step 4: Client implementieren**
@@ -179,7 +179,7 @@ searchConsoleConfigured: configured(env.SEARCH_CONSOLE_SITE_URL)
 
 - [ ] **Step 6: Tests und Commit**
 
-Run: `node --test tests/searchConsoleClient.test.js tests/contentAgentConfig.test.js`  
+Run: `node --test tests/searchConsoleClient.test.js tests/contentAgentConfig.test.js`
 Expected: alle Tests PASS.
 
 ~~~bash
@@ -205,7 +205,7 @@ Die Tests belegen Host- und Pfadnormalisierung für `komplettwebdesign.de` und `
 
 - [ ] **Step 2: Tests ausführen**
 
-Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`  
+Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`
 Expected: FAIL wegen fehlender Module.
 
 - [ ] **Step 3: Synchronisationsservice implementieren**
@@ -232,7 +232,7 @@ Der Upsert verwendet den Unique-Key `(metric_date, page_url, query, device)` und
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`  
+Run: `node --test tests/contentSearchMetricsRepository.test.js tests/searchConsoleSyncService.test.js`
 Expected: Pagination, Normalisierung, Lease-Fence, Aggregation und Upsert PASS.
 
 ~~~bash
@@ -258,7 +258,7 @@ Fixtures: Position 12, 500 Impressionen, 1 Prozent CTR ergibt `content_refresh`;
 
 - [ ] **Step 2: Tests ausführen**
 
-Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`  
+Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`
 Expected: FAIL wegen fehlender Module.
 
 - [ ] **Step 3: Suchchance exakt implementieren**
@@ -295,7 +295,7 @@ export function calculateSearchOpportunity(metrics) {
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`  
+Run: `node --test tests/contentSearchOpportunityRepository.test.js tests/searchOpportunityService.test.js`
 Expected: Scoring, Filter und idempotenter Upsert PASS.
 
 ~~~bash
@@ -324,7 +324,7 @@ Prüfen: unkonfiguriert kein Job; Sonntag 06:00 Uhr `Europe/Berlin` genau ein id
 
 - [ ] **Step 2: Tests ausführen**
 
-Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js`  
+Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js`
 Expected: FAIL für die neuen Jobtypen und den Scheduler.
 
 - [ ] **Step 3: Frühen Workerdispatch implementieren**
@@ -337,7 +337,7 @@ Standard ist `CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0`. Der Dienst validiert dieses
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js && OPENAI_API_KEY=test npm test`  
+Run: `node --test tests/contentSearchScheduler.test.js tests/contentAgentWorker.test.js tests/contentAgentJobRepository.test.js && OPENAI_API_KEY=test npm test`
 Expected: alle Tests PASS.
 
 ~~~bash
@@ -365,7 +365,7 @@ Prüfen: beide Routen sind adminpflichtig, POST besitzt CSRF-Schutz, Konfigurati
 
 - [ ] **Step 2: Test ausführen**
 
-Run: `node --test tests/contentSearchAdminIntegration.test.js`  
+Run: `node --test tests/contentSearchAdminIntegration.test.js`
 Expected: FAIL wegen fehlender Route/View.
 
 - [ ] **Step 3: Repository und Präsentation implementieren**
@@ -378,7 +378,7 @@ Der manuelle Sync prüft `searchConsoleConfigured === true`, aktiven Agenten und
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentSearchAdminIntegration.test.js && npm run build`  
+Run: `node --test tests/contentSearchAdminIntegration.test.js && npm run build`
 Expected: Adminschutz, CSRF, Limits, Escape und Build PASS.
 
 ~~~bash
@@ -407,7 +407,7 @@ assert.match(guide, /webmasters\.readonly/);
 
 - [ ] **Step 2: Test ausführen**
 
-Run: `node --test tests/contentAgentDeploymentGuide.test.js`  
+Run: `node --test tests/contentAgentDeploymentGuide.test.js`
 Expected: FAIL.
 
 - [ ] **Step 3: Secret-Einrichtung dokumentieren**
@@ -458,7 +458,7 @@ Zusätzlich wird ein Adminbutton „Search Console jetzt synchronisieren“ als 
 
 - [ ] **Step 5: Tests und Commit**
 
-Run: `node --test tests/contentAgentDeploymentGuide.test.js && npm test`  
+Run: `node --test tests/contentAgentDeploymentGuide.test.js && npm test`
 Expected: alle Tests PASS.
 
 ~~~bash

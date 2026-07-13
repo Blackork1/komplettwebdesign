@@ -8,6 +8,7 @@ import {
   updateContentAgentSettings
 } from '../repositories/contentAgentSettingsRepository.js';
 import {
+  enqueueManualSearchConsoleSyncJob,
   enqueueJob,
   retryContentJobForAdmin
 } from '../repositories/contentJobRepository.js';
@@ -73,6 +74,7 @@ const controller = createAdminContentAgentController({
   },
   jobRepository: {
     enqueueJob: (input) => enqueueJob(input, pool),
+    enqueueManualSearchConsoleSyncJob: (input) => enqueueManualSearchConsoleSyncJob(input, pool),
     retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool)
   },
   runtimeConfig: technicalConfig,

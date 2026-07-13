@@ -111,6 +111,123 @@ export async function enqueueJob({
   return rows[0] || null;
 }
 
+function canonicalIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value
+    ? null
+    : value;
+}
+
+export async function enqueueManualSearchConsoleSyncJob({
+  localDate,
+  payload,
+  maxAttempts = null
+}, db = pool) {
+  const normalizedLocalDate = canonicalIsoDate(localDate);
+  const startDate = canonicalIsoDate(payload?.startDate);
+  const endDate = canonicalIsoDate(payload?.endDate);
+  if (
+    !normalizedLocalDate
+    || !payload
+    || typeof payload !== 'object'
+    || Array.isArray(payload)
+    || Object.keys(payload).length !== 2
+    || !startDate
+    || !endDate
+    || startDate > endDate
+  ) {
+    throw new TypeError('Für den manuellen Search-Console-Sync wird ein gültiger Zeitraum benötigt.');
+  }
+  const normalizedPayload = { startDate, endDate };
+  const { rows } = await db.query(
+    `
+      INSERT INTO content_jobs (
+        job_type,
+        idempotency_key,
+        payload_json,
+        run_after,
+        max_attempts
+      )
+      SELECT 'sync_search_console', $1, $2, NOW(), $3
+      WHERE EXISTS (
+        SELECT 1
+        FROM content_agent_settings settings
+        WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+      )
+      ON CONFLICT (idempotency_key) DO UPDATE
+      SET status = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN 'queued'
+            ELSE content_jobs.status
+          END,
+          attempts = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN 0
+            ELSE content_jobs.attempts
+          END,
+          payload_json = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN EXCLUDED.payload_json
+            ELSE content_jobs.payload_json
+          END,
+          run_after = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NOW()
+            ELSE content_jobs.run_after
+          END,
+          max_attempts = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN EXCLUDED.max_attempts
+            ELSE content_jobs.max_attempts
+          END,
+          locked_at = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NULL
+            ELSE content_jobs.locked_at
+          END,
+          locked_by = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NULL
+            ELSE content_jobs.locked_by
+          END,
+          last_error = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NULL
+            ELSE content_jobs.last_error
+          END,
+          finished_at = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NULL
+            ELSE content_jobs.finished_at
+          END,
+          updated_at = CASE
+            WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN NOW()
+            ELSE content_jobs.updated_at
+          END
+      WHERE content_jobs.job_type = 'sync_search_console'
+        AND content_jobs.idempotency_key LIKE 'gsc-manual-sync:%'
+        AND content_jobs.status IN (
+          'queued', 'running', 'completed', 'failed', 'needs_manual_attention'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM content_agent_settings settings
+          WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+        )
+      RETURNING content_jobs.*
+    `,
+    [
+      `gsc-manual-sync:${normalizedLocalDate}`,
+      normalizedPayload,
+      normalizeMaxAttempts(maxAttempts)
+    ]
+  );
+
+  return rows[0] || null;
+}
+
 export async function enqueueAdminReviewNotificationJob({
   deliveryId,
   postId,
