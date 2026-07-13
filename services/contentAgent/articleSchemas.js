@@ -156,11 +156,17 @@ export const ArticleSeoSchema = z.object({
 export const ArticleLeadSchema = z.object({
   businessGoal: NonEmptyString,
   ctaType: NonEmptyString,
-  ctaPositions: z.tuple([
-    z.literal('blog_early'),
-    z.literal('blog_mid'),
-    z.literal('blog_final')
-  ])
+  ctaPositions: z.array(z.enum(['blog_early', 'blog_mid', 'blog_final']))
+    .length(3)
+    .superRefine((positions, context) => {
+      const expected = ['blog_early', 'blog_mid', 'blog_final'];
+      if (positions.some((position, index) => position !== expected[index])) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CTA-Positionen müssen früh, mittig und abschließend in dieser Reihenfolge vorliegen.'
+        });
+      }
+    })
 }).strict();
 
 export const ArticleSelfCheckSchema = z.object({

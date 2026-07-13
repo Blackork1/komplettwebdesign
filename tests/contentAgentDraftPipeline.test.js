@@ -1217,6 +1217,38 @@ test('vor Ausführung abgelehntes OpenAI-Schema gibt die Reservierung frei und e
   );
 });
 
+test('lokaler Schema-Preflight gibt die Reservierung ohne Provideraufruf frei', async () => {
+  const schemaError = Object.assign(new Error('Interne Schemadetails'), {
+    code: 'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE',
+    providerRequestStarted: false
+  });
+  let releaseCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createSeoBrief() { throw schemaError; }
+    },
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation(input) {
+        releaseCalls += 1;
+        return { ...input, status: 'released' };
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 314 }, harness.dependencies);
+
+  assert.equal(result.code, 'provider_request_rejected');
+  assert.equal(releaseCalls, 1);
+  assert.equal(
+    harness.finishCalls.at(-1).errorReport.providerDiagnostic.code,
+    'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE'
+  );
+  assert.doesNotMatch(JSON.stringify(harness.finishCalls.at(-1)), /Interne Schemadetails/);
+});
+
 test('Bildproviderfehler endet im ersten Jobattempt manuell statt irreführend zu requeueen', async () => {
   const imageError = new ContentImageError('Bildprovider unklar.', {
     code: 'IMAGE_GENERATION_FAILED',

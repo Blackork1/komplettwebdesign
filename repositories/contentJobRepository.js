@@ -1,7 +1,9 @@
 import pool from '../util/db.js';
 import {
   ADMIN_CONTENT_JOB_RETRY_CAP,
-  providerRecoveryRetryCap
+  providerRecoveryRetryCap,
+  PROVIDER_SCHEMA_REPAIR_RETRY_CAP,
+  REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP
 } from '../services/contentAgent/contentJobRetryPolicy.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 
@@ -495,6 +497,164 @@ export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {
       recoveredStage: reservation.stageId,
       reservationMonth: reservation.reservationMonth,
       reservedCost: reservation.reservedCost,
+      auditKey
+    };
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function hasOpenProviderReservation(stageResults) {
+  return Boolean(
+    stageResults
+    && typeof stageResults === 'object'
+    && !Array.isArray(stageResults)
+    && Object.entries(stageResults).some(([key, value]) => (
+      key.startsWith('budget:') && value?.status === 'reserved'
+    ))
+  );
+}
+
+function hasSettledStage(stageResults, stageId) {
+  return Boolean(
+    stageResults?.[stageId]
+    && Object.entries(stageResults).some(([key, value]) => (
+      key.startsWith('budget:')
+      && key.endsWith(`:${stageId}`)
+      && value?.status === 'settled'
+    ))
+  );
+}
+
+function validRejectedProviderRecoveryState(row) {
+  const diagnostic = row?.error_report_json?.providerDiagnostic;
+  return row
+    && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
+    && row.job_status === 'needs_manual_attention'
+    && row.last_error === 'provider_request_rejected'
+    && Number(row.attempts) === PROVIDER_SCHEMA_REPAIR_RETRY_CAP
+    && row.run_status === 'needs_manual_attention'
+    && row.current_stage === 'seo_brief'
+    && row.post_id == null
+    && row.error_report_json?.code === 'provider_request_rejected'
+    && diagnostic?.provider === 'openai'
+    && diagnostic?.stage === 'article_generation'
+    && diagnostic?.code === 'invalid_json_schema'
+    && Number(diagnostic?.httpStatus) === 400
+    && !hasOpenProviderReservation(row.stage_results_json)
+    && hasSettledStage(row.stage_results_json, 'seo_brief');
+}
+
+export async function recoverRejectedProviderJobForAdmin({ jobId, adminId } = {}, db = pool) {
+  if (
+    !Number.isSafeInteger(jobId) || jobId <= 0
+    || !Number.isSafeInteger(adminId) || adminId <= 0
+  ) {
+    throw new TypeError('Für die Schemawiederaufnahme werden positive sichere Ganzzahlen benötigt.');
+  }
+
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const { rows } = await client.query(
+      `
+        SELECT j.id AS job_id,
+               j.job_type,
+               j.status AS job_status,
+               j.attempts,
+               j.max_attempts,
+               j.last_error,
+               r.id AS run_id,
+               r.status AS run_status,
+               r.current_stage,
+               r.post_id,
+               r.error_report_json,
+               r.stage_results_json
+        FROM content_jobs AS j
+        JOIN content_runs AS r ON r.job_id = j.id
+        WHERE j.id = $1
+        FOR UPDATE OF j, r
+      `,
+      [jobId]
+    );
+    const state = rows[0];
+    if (!validRejectedProviderRecoveryState(state)) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const attempts = Number(state.attempts);
+    const recoveredStage = 'article_generation';
+    const auditKey = `provider_schema_recovery:${recoveredStage}:attempt-${attempts}`;
+    if (Object.hasOwn(state.stage_results_json, auditKey)) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const runResult = await client.query(
+      `
+        UPDATE content_runs
+        SET stage_results_json = stage_results_json || jsonb_build_object(
+              $2::text,
+              jsonb_build_object(
+                'status', 'authorized_after_rejection',
+                'stageId', $3::text,
+                'adminId', $4::bigint,
+                'authorizedAt', NOW()
+              )
+            ),
+            error_report_json = jsonb_build_object(
+              'code', 'provider_schema_recovery_authorized',
+              'stage', $3::text,
+              'message', 'Die vorab abgelehnte Providerstufe wurde nach der Schema-Korrektur zur Wiederaufnahme freigegeben.'
+            ),
+            finished_at = NULL
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND post_id IS NULL
+          AND NOT (stage_results_json ? $2::text)
+        RETURNING id
+      `,
+      [state.run_id, auditKey, recoveredStage, adminId]
+    );
+    if (!runResult.rows[0]) {
+      throw new Error('Die Schemawiederaufnahme konnte nicht atomar protokolliert werden.');
+    }
+
+    const jobResult = await client.query(
+      `
+        UPDATE content_jobs
+        SET status = 'queued',
+            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            run_after = NOW(),
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            finished_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND last_error = 'provider_request_rejected'
+          AND attempts = $3
+          AND attempts < $2
+        RETURNING *
+      `,
+      [jobId, REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP, attempts]
+    );
+    if (!jobResult.rows[0]) {
+      throw new Error('Der abgelehnte Content-Job konnte nicht atomar erneut eingereiht werden.');
+    }
+
+    await client.query('COMMIT');
+    return {
+      job: jobResult.rows[0],
+      runId: state.run_id,
+      recoveredStage,
       auditKey
     };
   } catch (error) {

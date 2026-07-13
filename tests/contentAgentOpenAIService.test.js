@@ -164,6 +164,12 @@ function createParseClient(outputParsed) {
   };
 }
 
+function containsArrayValuedItems(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value.items)) return true;
+  return Object.values(value).some(containsArrayValuedItems);
+}
+
 test('createTopicCandidates nutzt Content-Modell, strukturiertes Schema und versionierten Themenprompt', async () => {
   const value = { candidates: [validTopicCandidate] };
   const client = createParseClient(value);
@@ -218,6 +224,11 @@ test('die strukturierten Operationen wählen jeweils passendes Schema, Prompt un
   );
 
   for (const request of client.requests) {
+    assert.equal(
+      containsArrayValuedItems(request.text.format.schema),
+      false,
+      `${request.text.format.name} darf kein Tupel als Array unter items ausgeben.`
+    );
     const system = request.input[0].content;
     assert.match(system, /Deutsch/);
     assert.match(system, /professionellen Du-Ton/);
@@ -238,6 +249,37 @@ test('die strukturierten Operationen wählen jeweils passendes Schema, Prompt un
     article: validArticle,
     issues: [{ code: 'missing-faq', repairInstruction: 'FAQ ergänzen' }]
   });
+});
+
+test('Schema-Preflight stoppt inkompatible Strukturen vor dem OpenAI-Aufruf', async () => {
+  const client = createParseClient({ candidates: [validTopicCandidate] });
+  const module = await import('../services/contentAgent/openaiContentService.js');
+  assert.equal(typeof module.assertOpenAISchemaCompatibility, 'function');
+  assert.throws(
+    () => module.assertOpenAISchemaCompatibility({
+      type: 'array',
+      items: [{ type: 'string', const: 'a' }, { type: 'string', const: 'b' }]
+    }),
+    (error) => error?.code === 'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE'
+      && error?.providerRequestStarted === false
+  );
+
+  const service = createOpenAIContentService({
+    config,
+    client,
+    schemaCompatibilityValidator() {
+      const error = new Error('Lokaler Schema-Preflight fehlgeschlagen.');
+      error.code = 'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE';
+      error.providerRequestStarted = false;
+      throw error;
+    }
+  });
+
+  await assert.rejects(
+    service.createTopicCandidates({ seedTopics: ['Webdesign Berlin'] }),
+    /Schema-Preflight fehlgeschlagen/
+  );
+  assert.equal(client.requests.length, 0);
 });
 
 test('Review-Issues bleiben ohne neue optionale Fokusfelder kompatibel und erhalten sichere Standardwerte', async () => {

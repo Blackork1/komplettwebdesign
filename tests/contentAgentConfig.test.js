@@ -6,6 +6,7 @@ import {
   getContentAgentTechnicalConfig
 } from '../services/contentAgent/config.js';
 import {
+  ArticleLeadSchema,
   ArticleOutputSchema,
   ReviewOutputSchema,
   RiskSchema,
@@ -304,6 +305,22 @@ test('source references akzeptieren echte Minimal-Citations ohne erfundene Metad
     'keine-url'
   ]) {
     assert.equal(SourceReferenceSchema.safeParse({ ...minimalSource, url }).success, false, url);
+  }
+});
+
+test('CTA-Positionen behalten trotz Providerkompatibilität ihre feste Reihenfolge', () => {
+  const valid = {
+    businessGoal: 'Qualifizierte Anfragen',
+    ctaType: 'contact',
+    ctaPositions: ['blog_early', 'blog_mid', 'blog_final']
+  };
+  assert.equal(ArticleLeadSchema.safeParse(valid).success, true);
+  for (const ctaPositions of [
+    ['blog_mid', 'blog_early', 'blog_final'],
+    ['blog_early', 'blog_mid'],
+    ['blog_early', 'blog_mid', 'blog_mid']
+  ]) {
+    assert.equal(ArticleLeadSchema.safeParse({ ...valid, ctaPositions }).success, false);
   }
 });
 

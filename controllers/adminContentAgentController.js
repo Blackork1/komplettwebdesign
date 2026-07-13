@@ -670,6 +670,29 @@ export function createAdminContentAgentController(dependencies) {
       }
     },
 
+    async recoverRejectedProviderJobAction(req, res, next) {
+      try {
+        if (!criticalConfirmation(req.body?.confirmed)) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), {
+            code: 'CONTENT_CONFIRMATION_REQUIRED'
+          });
+        }
+        const admin = adminFromRequest(req);
+        const recovered = await jobRepository.recoverRejectedProviderJobForAdmin({
+          jobId: positiveId(req.params.id),
+          adminId: positiveId(admin.id)
+        });
+        if (!recovered) {
+          throw Object.assign(new Error('Schemawiederaufnahme nicht verfügbar.'), {
+            code: 'CONTENT_PROVIDER_RECOVERY_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect('/admin/content-agent/jobs?provider-recovery=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
     updateDraftAction(req, res, next) {
       return actionCapability({
         capability: draftService,

@@ -303,7 +303,8 @@ function providerFailureIsSafeToRetry(error) {
 
 function providerRequestWasRejectedBeforeExecution(error) {
   const httpStatus = Number(error?.status ?? error?.statusCode ?? error?.response?.status);
-  return httpStatus === 400 && error?.code === 'invalid_json_schema';
+  return error?.providerRequestStarted === false
+    || (httpStatus === 400 && error?.code === 'invalid_json_schema');
 }
 
 function markSafeProviderRetry(error) {
@@ -525,7 +526,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       if (error?.code === 'dry_run_external_call') throw error;
       await assertLease();
       if (providerRequestWasRejectedBeforeExecution(error)) {
-        await recordProviderOutcome('openai', false, error.code, error);
+        if (error?.providerRequestStarted !== false) {
+          await recordProviderOutcome('openai', false, error.code, error);
+        }
         if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
           return stopForRecovery(
             'provider_retry_release_failed',
@@ -546,7 +549,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         }
         return stopForRecovery(
           'provider_request_rejected',
-          'OpenAI hat die Anfrage vor der kostenpflichtigen Ausführung wegen eines ungültigen Ausgabeschemas abgelehnt.',
+          error?.providerRequestStarted === false
+            ? 'Die Anfrage wurde vor dem OpenAI-Aufruf wegen eines inkompatiblen Ausgabeschemas gestoppt.'
+            : 'OpenAI hat die Anfrage vor der kostenpflichtigen Ausführung wegen eines ungültigen Ausgabeschemas abgelehnt.',
           { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
         );
       }

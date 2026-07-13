@@ -10,6 +10,7 @@ import {
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
+  recoverRejectedProviderJobForAdmin,
   recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
   renewJobLease,
@@ -268,6 +269,122 @@ test('echtes PostgreSQL: unklare Providerreservierung wird genau einmal verworfe
       WHERE job_id = $1 AND entry.key LIKE 'provider_recovery:%'
     `, [jobId]);
     assert.equal(audits.rows[0].count, 1);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: abgelehntes Artikelschema wird genau einmal ab dem SEO-Briefing fortgesetzt', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'needs_manual_attention', 6, 6,
+          'provider_request_rejected', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, current_stage, cost_estimate,
+        error_report_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'needs_manual_attention',
+             'seo_brief',
+             0.171983,
+             '{
+               "code":"provider_request_rejected",
+               "providerDiagnostic": {
+                 "provider":"openai", "stage":"article_generation",
+                 "code":"invalid_json_schema", "httpStatus":400
+               }
+             }'::jsonb,
+             '{
+               "budget:2026-07:topic_research": {"status":"settled"},
+               "topic_research": {"value":{"candidates":[]}},
+               "budget:2026-07:seo_brief": {"status":"settled"},
+               "seo_brief": {"value":{"topic":"Gespeichertes Briefing"}}
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id, id AS run_id
+    `);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const result = await recoverRejectedProviderJobForAdmin({ jobId, adminId: 7 }, pool);
+
+    assert.equal(result.recoveredStage, 'article_generation');
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 6, max_attempts: 7, last_error: null
+    });
+    const run = (await pool.query(
+      'SELECT status, current_stage, post_id, cost_estimate, error_report_json, stage_results_json FROM content_runs WHERE job_id = $1',
+      [jobId]
+    )).rows[0];
+    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.current_stage, 'seo_brief');
+    assert.equal(run.post_id, null);
+    assert.equal(Number(run.cost_estimate), 0.171983);
+    assert.equal(run.error_report_json.code, 'provider_schema_recovery_authorized');
+    assert.equal(run.stage_results_json.seo_brief.value.topic, 'Gespeichertes Briefing');
+    assert.equal(
+      run.stage_results_json['provider_schema_recovery:article_generation:attempt-6'].status,
+      'authorized_after_rejection'
+    );
+
+    assert.equal(
+      await recoverRejectedProviderJobForAdmin({ jobId, adminId: 7 }, pool),
+      null
+    );
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

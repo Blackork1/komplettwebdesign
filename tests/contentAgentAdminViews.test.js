@@ -333,6 +333,37 @@ test('Jobliste trennt die bestätigte Providerwiederherstellung vom normalen Ret
   assert.doesNotMatch(html, /stage_results_json|payload_json|openai_response_ids_json/i);
 });
 
+test('Jobliste erklärt die sichere Fortsetzung nach einer vorab abgelehnten Artikelerstellung', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 6,
+      maxAttempts: 6,
+      lastSafeStageLabel: 'SEO-Briefing',
+      lastError: 'provider_request_rejected',
+      costEur: 0.17,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: true,
+      rejectedProviderRecoveryStageLabel: 'Artikelerstellung',
+      rejectedProviderRecoveryActionLabel: 'Artikelerstellung nach Schema-Korrektur fortsetzen'
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-rejected-provider"/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /vor der kostenpflichtigen Ausführung abgelehnt/);
+  assert.match(html, /keine unklare Doppelberechnung/);
+  assert.match(html, /nächste reguläre Artikelerstellung verursacht die üblichen OpenAI-Kosten/);
+  assert.match(html, /Artikelerstellung nach Schema-Korrektur fortsetzen/);
+  assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

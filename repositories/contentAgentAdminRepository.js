@@ -70,10 +70,19 @@ export function createContentAgentAdminRepository(db = pool) {
                  provider_recovery.open_provider_reservation_count,
                  provider_recovery.open_provider_stage,
                  (
+                   r.error_report_json ->> 'code' = 'provider_execution_uncertain'
+                   AND
                    r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
                    AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
                    AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
-                 ) AS provider_pre_execution_schema_rejection
+                 ) AS provider_pre_execution_schema_rejection,
+                 (
+                   r.error_report_json ->> 'code' = 'provider_request_rejected'
+                   AND r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
+                   AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
+                   AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
+                 ) AS provider_rejected_schema_repairable,
+                 r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -200,10 +209,19 @@ export function createContentAgentAdminRepository(db = pool) {
                provider_recovery.open_provider_reservation_count,
                provider_recovery.open_provider_stage,
                (
+                 r.error_report_json ->> 'code' = 'provider_execution_uncertain'
+                 AND
                  r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
                  AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
                  AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
-               ) AS provider_pre_execution_schema_rejection
+               ) AS provider_pre_execution_schema_rejection,
+               (
+                 r.error_report_json ->> 'code' = 'provider_request_rejected'
+                 AND r.error_report_json #>> '{providerDiagnostic,provider}' = 'openai'
+                 AND r.error_report_json #>> '{providerDiagnostic,code}' = 'invalid_json_schema'
+                 AND r.error_report_json #>> '{providerDiagnostic,httpStatus}' = '400'
+               ) AS provider_rejected_schema_repairable,
+               r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (

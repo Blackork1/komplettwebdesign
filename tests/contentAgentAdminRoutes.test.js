@@ -102,6 +102,16 @@ test('der Produktionsrouter injiziert die transaktionale Providerwiederherstellu
   );
 });
 
+test('der Produktionsrouter verdrahtet die bestätigte Wiederaufnahme abgelehnter Provideranfragen', () => {
+  assert.match(routes, /recoverRejectedProviderJobForAdmin/);
+  assert.match(routes, /jobs\/:id\/recover-rejected-provider/);
+  assert.match(routes, /controller\.recoverRejectedProviderJobAction/);
+  assert.match(
+    routes,
+    /recoverRejectedProviderJobForAdmin:\s*\(input\)\s*=>\s*recoverRejectedProviderJobForAdmin\(input, pool\)/
+  );
+});
+
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
   assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
   assert.doesNotMatch(routes, /controller\.publishDraftAction/);

@@ -278,6 +278,49 @@ test('bekannter OpenAI-Schemafehler bleibt für genau einen Reparaturversuch sic
   assert.equal(job.providerRecoveryStageLabel, 'SEO-Briefing');
 });
 
+test('vor Ausführung abgelehnte Artikelerstellung bietet genau eine bestätigte Fortsetzung an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 6,
+    max_attempts: 6,
+    last_error: 'provider_request_rejected',
+    current_stage: 'seo_brief',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    provider_rejected_schema_repairable: true,
+    provider_rejected_stage: 'article_generation'
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverProvider, false);
+  assert.equal(job.canRecoverRejectedProvider, true);
+  assert.equal(job.rejectedProviderRecoveryStageLabel, 'Artikelerstellung');
+  assert.equal(
+    job.rejectedProviderRecoveryActionLabel,
+    'Artikelerstellung nach Schema-Korrektur fortsetzen'
+  );
+});
+
+test('abgelehnte Artikelerstellung bleibt nach dem Reparaturversuch gesperrt', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 7,
+    max_attempts: 7,
+    last_error: 'provider_request_rejected',
+    current_stage: 'seo_brief',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    provider_rejected_schema_repairable: true,
+    provider_rejected_stage: 'article_generation'
+  }]);
+
+  assert.equal(job.canRecoverRejectedProvider, false);
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,

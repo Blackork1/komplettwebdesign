@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import {
+  canRecoverRejectedProviderJob,
   canRecoverUncertainProviderJob,
   canRetryContentJobManually
 } from './contentJobRetryPolicy.js';
@@ -362,6 +363,19 @@ export function buildJobListPresentation(rows = []) {
     });
     const providerStage = String(row.open_provider_stage || '').trim();
     const providerStageLabel = STAGE_LABELS[providerStage.split(':')[0]] || 'Providerstufe';
+    const rejectedProviderStage = String(row.provider_rejected_stage || '').trim();
+    const rejectedProviderStageLabel = STAGE_LABELS[rejectedProviderStage] || 'Providerstufe';
+    const canRecoverRejectedProvider = canRecoverRejectedProviderJob({
+      jobType: row.job_type,
+      status: row.status,
+      attempts: row.attempts,
+      lastError: row.last_error,
+      currentStage: row.current_stage,
+      providerStage: rejectedProviderStage,
+      postId: row.post_id,
+      openReservationCount: row.open_provider_reservation_count,
+      schemaRepairable: row.provider_rejected_schema_repairable === true
+    });
     return {
       id: row.id,
       jobType: row.job_type,
@@ -377,6 +391,13 @@ export function buildJobListPresentation(rows = []) {
       providerRecoveryStageLabel: canRecoverProvider ? providerStageLabel : null,
       providerRecoveryActionLabel: canRecoverProvider
         ? `Reservierung verwerfen und ${providerStageLabel} erneut erstellen`
+        : null,
+      canRecoverRejectedProvider,
+      rejectedProviderRecoveryStageLabel: canRecoverRejectedProvider
+        ? rejectedProviderStageLabel
+        : null,
+      rejectedProviderRecoveryActionLabel: canRecoverRejectedProvider
+        ? `${rejectedProviderStageLabel} nach Schema-Korrektur fortsetzen`
         : null,
       isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
       attempts: Number(row.attempts || 0),

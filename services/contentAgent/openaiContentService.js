@@ -34,6 +34,28 @@ import {
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
+function incompatibleSchemaError() {
+  return Object.assign(
+    new Error('Das strukturierte OpenAI-Schema enthält eine nicht unterstützte Konstruktion.'),
+    {
+      code: 'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE',
+      providerRequestStarted: false
+    }
+  );
+}
+
+export function assertOpenAISchemaCompatibility(schema) {
+  function visit(value) {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value.items) || Object.hasOwn(value, 'format')) {
+      throw incompatibleSchemaError();
+    }
+    for (const child of Object.values(value)) visit(child);
+  }
+  visit(schema);
+  return true;
+}
+
 function normalizeResponseId(value) {
   if (typeof value !== 'string') return null;
   const normalized = value
@@ -148,17 +170,24 @@ export function extractWebSources(response) {
   return sources;
 }
 
-export function createOpenAIContentService({ apiKey, config, client = null }) {
+export function createOpenAIContentService({
+  apiKey,
+  config,
+  client = null,
+  schemaCompatibilityValidator = assertOpenAISchemaCompatibility
+}) {
   const openai = client || new OpenAI({ apiKey });
 
   async function parse({ model, schema, schemaName, system, user, promptVersion }) {
+    const format = zodTextFormat(schema, schemaName);
+    schemaCompatibilityValidator(format.schema);
     const response = await openai.responses.parse({
       model,
       input: [
         { role: 'system', content: system },
         { role: 'user', content: user }
       ],
-      text: { format: zodTextFormat(schema, schemaName) }
+      text: { format }
     });
     assertCompletedResponse(response);
     if (response.output_parsed == null) {
