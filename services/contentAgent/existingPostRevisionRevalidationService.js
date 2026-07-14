@@ -157,20 +157,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     repository?.loadRevisionRevalidationContext,
     'optimizationRepository.loadRevisionRevalidationContext'
   );
-  const complete = requiredFunction(
-    repository?.completeRevisionRevalidation,
-    'optimizationRepository.completeRevisionRevalidation'
-  );
-  const fail = requiredFunction(
-    repository?.failRevisionRevalidation,
-    'optimizationRepository.failRevisionRevalidation'
-  );
   const finishRun = requiredFunction(dependencies.runRepository?.finishRun, 'runRepository.finishRun');
   const findRunByJobId = typeof dependencies.runRepository?.findRunByJobId === 'function'
     ? dependencies.runRepository.findRunByJobId
     : null;
-  const validateArticle = requiredFunction(dependencies.validateArticle, 'validateArticle');
-  const reviewArticle = requiredFunction(dependencies.openaiService?.reviewArticle, 'openaiService.reviewArticle');
   const fence = {
     revisionId: payload.revision_id,
     revisionVersion: payload.revision_version,
@@ -320,6 +310,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     const intent = { action: 'fail', failureCode: code };
     try {
       await retryTerminalOperation(async () => {
+        const fail = requiredFunction(
+          repository?.failRevisionRevalidation,
+          'optimizationRepository.failRevisionRevalidation'
+        );
         let persisted;
         try {
           persisted = await fail({ ...fence, failureCode: code });
@@ -453,6 +447,7 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
 
   let scope;
   try {
+    const validateArticle = requiredFunction(dependencies.validateArticle, 'validateArticle');
     scope = await assertOptimizationSnapshotRevalidated(
       context.revision.snapshot_json,
       validateArticle,
@@ -503,13 +498,17 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
         !== minimumScore) {
     return failClosedOrPreserveCompleteCleanup('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
-  const reviewerLearningRules = learningRulesForStage(
-    runtimeSnapshot.learningRuleSnapshot,
-    'reviewer'
-  );
   let paid = cleanupReview ? { value: cleanupReview } : null;
   if (!paid) {
     try {
+      const reviewArticle = requiredFunction(
+        dependencies.openaiService?.reviewArticle,
+        'openaiService.reviewArticle'
+      );
+      const reviewerLearningRules = learningRulesForStage(
+        runtimeSnapshot.learningRuleSnapshot,
+        'reviewer'
+      );
       paid = await executePaidStructuredTextStage({
       run,
       stageId: 'revision_editorial_review',
@@ -564,6 +563,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
   await leaseGuard();
   try {
     await retryTerminalOperation(async () => {
+      const complete = requiredFunction(
+        repository?.completeRevisionRevalidation,
+        'optimizationRepository.completeRevisionRevalidation'
+      );
       const persisted = await complete({
         ...fence,
         review: paid.value,

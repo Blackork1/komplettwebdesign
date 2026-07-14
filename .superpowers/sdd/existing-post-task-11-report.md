@@ -204,3 +204,27 @@ Ein transienter oder permanenter vorbereitender Fehler überschreibt einen berei
 - `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
 - Syntaxprüfungen und `git diff --check`: ohne Befund.
 - Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.
+
+## Sechster Nachtrag: providerunabhängige Cleanup-Abhängigkeiten
+
+### Getrennte Factory-Grenze
+
+Der Produktionshandler entscheidet unmittelbar anhand des bereits nach der Minimal-Payloadprüfung allowlisteten Cleanup-Intents, welche Abhängigkeiten konstruiert werden. `reconcile`, `complete`, `finish` und `fail:<Code>` verwenden ausschließlich eine eigene Minimalfactory mit dem bestehenden Revisionsrepository, dem Runrepository und dem lokalen Artikelvalidator. Sie konstruiert weder OpenAI-Client noch Content- oder Image-Provider, Promptkonfiguration, Kostenservice, Providerstatusadapter oder Lernbeobachtungsabhängigkeiten. Die vollständige Pipelinefactory bleibt ausschließlich dem normalen pending Paid-Pfad vorbehalten.
+
+Synchrone und asynchrone Fehler der ausgewählten Factory laufen durch dieselbe Revalidierungsdisposition wie Kontext- und Runtimefehler. Ein vorhandener Cleanup-Intent bleibt dadurch exakt und versuchsneutral; eine fehlende oder gestörte Minimalfactory kann ihn nicht in einen normalen Retry oder Fehler umdeuten. Im normalen pending Pfad bleiben transiente Factoryfehler retrybar und permanente Factoryfehler werden mit ihrem allowlisteten Code gefenct persistiert und am Run abgeschlossen.
+
+### Verzögerte Runner-Abhängigkeiten
+
+Der Runner verlangt `reviewArticle`, Reviewer-Lernregeln und die von der Paid Stage verwendeten Kosten-/Provideradapter erst unmittelbar vor einer tatsächlich notwendigen kostenpflichtigen redaktionellen Prüfung. `failRevisionRevalidation`, `completeRevisionRevalidation` und der lokale Artikelvalidator werden ebenfalls erst in den jeweils tatsächlich erreichten Zweigen validiert. Ein generischer oder `finish`-Cleanup benötigt damit nur Kontext- und Run-Reconcile, ein `fail`-Cleanup zusätzlich die gefencte Fehlerpersistenz und ein `complete`-Cleanup mit gesetteltem Review ausschließlich den lokalen Validator sowie die gefencte Abschlusspersistenz.
+
+### RED/GREEN-Belege und Verifikation
+
+- RED: Alle vier Cleanup-Intents riefen zunächst weiterhin die vollständige Factory auf; eine synchron geworfene Meldung wegen fehlendem `OPENAI_API_KEY` erreichte statt des versuchsneutralen Reschedules den normalen Fehlerpfad. Normale transiente Factoryfehler wurden roh weitergereicht. Der Runner las `openaiService.reviewArticle` bereits vor seinem ersten Cleanup-Reconcile.
+- GREEN: Die Factoryauswahl, der policy-geschützte Factoryaufruf und die verzögerten Runneranforderungen machten dieselben Verträge grün. Ein Produktionsruntime-Test ohne API-Key belegt zusätzlich, dass weder OpenAI- noch Image-Factory, Providerstatus oder Kostenservice aufgerufen werden und der exakte Cleanup-Token dennoch versuchsneutral erneut eingereiht wird.
+- Die Tests decken generischen, `complete`-, `finish`- und allowlisteten `fail`-Intent am normalen Versuchslimit ab. Für jeden Fall bleiben Vollfactory, Provider, Budget und Paid-Stage-Persistenz bei null Aufrufen. Der normale pending Pfad verwendet weiterhin die Vollfactory; transiente und permanente Factoryfehler folgen der gemeinsamen Policy.
+- Fokussierte Repository-, Worker- und Runner-Suiten: 206 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Echter PostgreSQL-Lauf mit explizit freigegebener lokaler Testdatenbank: 12 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Vollständige Suite mit lokalem, nicht verwendetem Dummywert `OPENAI_API_KEY=test-key`: 1.820 bestanden, 0 fehlgeschlagen, 12 geschützte PostgreSQL-Opt-in-Tests übersprungen; 1.832 Tests insgesamt.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Syntaxprüfungen und `git diff --check`: ohne Befund.
+- Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.

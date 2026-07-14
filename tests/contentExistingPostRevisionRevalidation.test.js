@@ -1046,6 +1046,83 @@ test('generischer Cleanup-Intent bleibt auch am Versuchslimit unverändert und p
   assert.equal(state.finishCalls.length, 0);
 });
 
+test('Cleanup-Reconcile fordert Provider- und Kostenabhängigkeiten erst für einen echten Paid-Pfad an', async () => {
+  for (const current of [
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+      expectedStatus: null
+    },
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish',
+      expectedStatus: null
+    },
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+      expectedStatus: 'needs_manual_attention'
+    },
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete',
+      expectedStatus: 'completed'
+    }
+  ]) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = 3;
+    fixture.claim.max_attempts = 3;
+    fixture.claim.last_error = current.token;
+    const { dependencies, state } = runnerDependencies(fixture);
+    let providerDependencyReads = 0;
+    let costDependencyReads = 0;
+    delete dependencies.openaiService;
+    delete dependencies.costService;
+    delete dependencies.recordProviderResult;
+    Object.defineProperty(dependencies, 'openaiService', {
+      get() {
+        providerDependencyReads += 1;
+        throw new Error('OPENAI_API_KEY fehlt.');
+      }
+    });
+    Object.defineProperty(dependencies, 'costService', {
+      get() {
+        costDependencyReads += 1;
+        throw new Error('Kostenservice darf im Cleanup nicht geladen werden.');
+      }
+    });
+    Object.defineProperty(dependencies, 'recordProviderResult', {
+      get() {
+        providerDependencyReads += 1;
+        throw new Error('Providerstatus darf im Cleanup nicht geladen werden.');
+      }
+    });
+    const run = {
+      id: 220,
+      status: 'running',
+      ...(current.expectedStatus === 'completed' ? {
+        stage_results_json: settledReviewStage(fixture, approvedReview(92))
+      } : {})
+    };
+    const execution = runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run,
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    if (current.expectedStatus) {
+      const result = await execution;
+      assert.equal(result.status, current.expectedStatus, current.token);
+    } else {
+      await assert.rejects(execution, (error) => (
+        error?.cleanupToken === current.token && error?.doesNotConsumeAttempt === true
+      ), current.token);
+    }
+    assert.equal(providerDependencyReads, 0, current.token);
+    assert.equal(costDependencyReads, 0, current.token);
+    assert.equal(state.providerCalls, 0, current.token);
+    assert.equal(state.budgetReservations, 0, current.token);
+    assert.equal(state.stageWrites, 0, current.token);
+  }
+});
+
 test('Complete-Cleanup verwendet nur das gefencte Runergebnis ohne Paid Stage oder Budget', async () => {
   const fixture = runnerFixture();
   fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';

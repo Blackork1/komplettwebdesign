@@ -351,6 +351,7 @@ export function createProductionJobHandler({
   failExistingPostRevisionRevalidation,
   runExistingPostRevisionRevalidationJob,
   createExistingPostRevisionRevalidationDependencies,
+  createExistingPostRevisionRevalidationCleanupDependencies,
   runContentLearningJob,
   createLearningDependencies,
   runAuditJob,
@@ -938,17 +939,27 @@ export function createProductionJobHandler({
         runExistingPostRevisionRevalidationJob,
         'runExistingPostRevisionRevalidationJob'
       );
-      const dependencyFactory = required(
-        createExistingPostRevisionRevalidationDependencies,
-        'createExistingPostRevisionRevalidationDependencies'
-      );
+      const dependencyFactory = revalidationCleanupIntent
+        ? createExistingPostRevisionRevalidationCleanupDependencies
+        : createExistingPostRevisionRevalidationDependencies;
+      let revalidationDependencies;
+      try {
+        revalidationDependencies = await required(
+          dependencyFactory,
+          revalidationCleanupIntent
+            ? 'createExistingPostRevisionRevalidationCleanupDependencies'
+            : 'createExistingPostRevisionRevalidationDependencies'
+        )(persistedSnapshot);
+      } catch (error) {
+        return handleRevalidationExecutionError(error, { run });
+      }
       result = await jobRunner({
         claim: { ...claim, payload_json: existingPostRevalidationPayload(claim) },
         cleanupIntent: revalidationCleanupIntent,
         run,
         runtimeSnapshot: persistedSnapshot,
         leaseGuard
-      }, await dependencyFactory(persistedSnapshot));
+      }, revalidationDependencies);
     } else if (existingPostOptimizationJob) {
       const jobRunner = required(
         runExistingPostOptimizationJob,
@@ -1325,6 +1336,16 @@ export function createProductionRuntime({
       )
     };
   }
+  function createExistingPostRevisionRevalidationCleanupDependencies() {
+    return {
+      optimizationRepository: required(
+        existingPostOptimizationRepository,
+        'existingPostOptimizationRepository'
+      ),
+      runRepository: repositories.runRepository,
+      validateArticle: modules.validateArticle
+    };
+  }
   function createLearningDependencies(snapshot = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
     return {
@@ -1379,6 +1400,7 @@ export function createProductionRuntime({
       createOptimizationDependencies,
       createExistingPostOptimizationDependencies,
       createExistingPostRevisionRevalidationDependencies,
+      createExistingPostRevisionRevalidationCleanupDependencies,
       createLearningDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,

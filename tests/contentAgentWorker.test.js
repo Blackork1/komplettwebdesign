@@ -40,6 +40,7 @@ import {
   retryContentJobForAdmin as persistAdminRetry,
   retryOrFailJob as persistRetryOrFailJob
 } from '../repositories/contentJobRepository.js';
+import { existingPostRevisionCleanupRetryError } from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
 
 const execFileAsync = promisify(execFile);
 const { SEARCH_CONSOLE_JOB_TYPES } = contentWorkerModule;
@@ -1932,7 +1933,10 @@ test('Worker trägt den validierten Cleanup-Intent explizit bis zum Runner', asy
     },
     async createRun() { assert.fail('Der persistierte Run muss übernommen werden.'); },
     async runPipeline() { assert.fail('Revalidierungen dürfen keine Entwurfspipeline starten.'); },
-    async createExistingPostRevisionRevalidationDependencies() { return {}; },
+    async createExistingPostRevisionRevalidationDependencies() {
+      assert.fail('Cleanup darf die vollständige Providerfactory nicht ausführen.');
+    },
+    async createExistingPostRevisionRevalidationCleanupDependencies() { return {}; },
     async runExistingPostRevisionRevalidationJob(input) {
       runnerInput = input;
       return { status: 'needs_manual_attention', code: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED' };
@@ -1958,6 +1962,154 @@ test('Worker trägt den validierten Cleanup-Intent explizit bis zum Runner', asy
     failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
     cleanupToken: token
   });
+});
+
+test('alle Cleanup-Intents umgehen die Providerfactory und bleiben am Versuchslimit versuchsneutral', async () => {
+  for (const token of [
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete',
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish',
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+  ]) {
+    let providerFactoryCalls = 0;
+    let cleanupFactoryCalls = 0;
+    const runtimeSnapshot = revalidationRuntimeSnapshot();
+    const handler = createProductionJobHandler({
+      async findRunByJobId() {
+        return { id: 199, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+      },
+      async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+      async runPipeline() { assert.fail('Cleanup darf keine Entwurfspipeline starten.'); },
+      createExistingPostRevisionRevalidationDependencies() {
+        providerFactoryCalls += 1;
+        throw new Error('OPENAI_API_KEY fehlt.');
+      },
+      createExistingPostRevisionRevalidationCleanupDependencies() {
+        cleanupFactoryCalls += 1;
+        return {
+          optimizationRepository: { marker: 'revision' },
+          runRepository: { marker: 'run' },
+          validateArticle: () => ({ passed: true })
+        };
+      },
+      async runExistingPostRevisionRevalidationJob(input, dependencies) {
+        assert.equal(input.cleanupIntent?.cleanupToken, token);
+        assert.equal(dependencies.optimizationRepository.marker, 'revision');
+        assert.equal(dependencies.runRepository.marker, 'run');
+        throw existingPostRevisionCleanupRetryError(
+          new Error('Reconcile bleibt absichtlich offen.'),
+          { cleanupToken: token }
+        );
+      }
+    });
+    const harness = createWorkerHarness({ handleJob: handler });
+    Object.assign(harness.claim, {
+      id: 52,
+      attempts: 3,
+      max_attempts: 3,
+      last_error: token,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: {
+        source: 'revision_revalidation',
+        revision_id: 71,
+        revision_version: 4,
+        snapshot_fingerprint: 'b'.repeat(64)
+      }
+    });
+
+    assert.deepEqual(await harness.worker.processOnce(), { status: 'queued' }, token);
+    const reschedule = harness.calls.find(([type]) => type === 'reschedule_without_attempt');
+    assert.equal(reschedule?.[2]?.cleanupToken, token);
+    assert.equal(reschedule?.[2]?.doesNotConsumeAttempt, true);
+    assert.equal(providerFactoryCalls, 0, token);
+    assert.equal(cleanupFactoryCalls, 1, token);
+    assert.equal(harness.calls.some(([type]) => type === 'retry'), false, token);
+    assert.equal(harness.calls.some(([type]) => type === 'fail'), false, token);
+  }
+});
+
+test('Factoryfehler im normalen Revalidierungspfad verwenden die gemeinsame Fehlerdisposition', async () => {
+  for (const current of [
+    {
+      label: 'transient',
+      error: Object.assign(new Error('Datenbank vorübergehend nicht erreichbar.'), { code: '57P01' }),
+      expectedCode: 'CONTENT_REVISION_REVALIDATION_TRANSIENT',
+      expectedStatus: null,
+      expectedFailureCode: null
+    },
+    {
+      label: 'permanent',
+      error: Object.assign(new Error('Factorykonfiguration dauerhaft ungültig.'), {
+        code: 'CONTENT_ACTION_VALIDATION_FAILED',
+        retryable: false
+      }),
+      expectedCode: null,
+      expectedStatus: 'needs_manual_attention',
+      expectedFailureCode: 'CONTENT_ACTION_VALIDATION_FAILED'
+    }
+  ]) {
+    let dependencyFactoryCalls = 0;
+    let cleanupFactoryCalls = 0;
+    const failureCodes = [];
+    const finishCodes = [];
+    const runtimeSnapshot = revalidationRuntimeSnapshot();
+    const handler = createProductionJobHandler({
+      async findRunByJobId() {
+        return { id: 201, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+      },
+      async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+      createExistingPostRevisionRevalidationDependencies() {
+        dependencyFactoryCalls += 1;
+        throw current.error;
+      },
+      createExistingPostRevisionRevalidationCleanupDependencies() {
+        cleanupFactoryCalls += 1;
+        return {};
+      },
+      async failExistingPostRevisionRevalidation(input) {
+        failureCodes.push(input.failureCode);
+        return { id: 71 };
+      },
+      async finishRun(_runId, input) {
+        finishCodes.push(input.errorReport?.code || null);
+        return {
+          id: 201,
+          status: input.status,
+          error_report_json: structuredClone(input.errorReport || {})
+        };
+      },
+      async runExistingPostRevisionRevalidationJob() {
+        assert.fail('Nach einem Factoryfehler darf der Runner nicht starten.');
+      },
+      async runPipeline() { assert.fail('Revalidierung darf keine Entwurfspipeline starten.'); }
+    });
+    const claim = {
+      id: 52,
+      attempts: 1,
+      max_attempts: 3,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: {
+        source: 'revision_revalidation',
+        revision_id: 71,
+        revision_version: 4,
+        snapshot_fingerprint: 'b'.repeat(64)
+      }
+    };
+
+    if (current.expectedCode) {
+      await assert.rejects(handler(claim, { leaseGuard: async () => true }), (error) => (
+        error?.code === current.expectedCode && error?.retryable === true
+      ), current.label);
+    } else {
+      const result = await handler(claim, { leaseGuard: async () => true });
+      assert.equal(result.status, current.expectedStatus, current.label);
+      assert.equal(result.code, current.expectedFailureCode, current.label);
+    }
+    assert.equal(dependencyFactoryCalls, 1, current.label);
+    assert.equal(cleanupFactoryCalls, 0, current.label);
+    assert.deepEqual(failureCodes, current.expectedFailureCode ? [current.expectedFailureCode] : []);
+    assert.deepEqual(finishCodes, current.expectedFailureCode ? [current.expectedFailureCode] : []);
+  }
 });
 
 test('Worker lehnt zusätzliche und nicht PostgreSQL-INT32-/SHA-taugliche Revalidierungsfelder ab', async () => {
@@ -3477,6 +3629,142 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.createContentWeeklyTopicPoolRepository, 'function');
   assert.equal(typeof modules.buildContentOpportunities, 'function');
   assert.equal(typeof modules.searchConsoleSchedulerService?.createSearchConsoleScheduler, 'function');
+});
+
+test('Produktionsruntime reconciliiert Cleanup ohne API-Key oder Providerfactory', async () => {
+  const token = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
+  const runtimeSnapshot = revalidationRuntimeSnapshot();
+  const claim = {
+    id: 301,
+    locked_by: 'cleanup-worker',
+    attempts: 3,
+    max_attempts: 3,
+    last_error: token,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  };
+  let availableClaim = claim;
+  let providerFactoryCalls = 0;
+  let providerCalls = 0;
+  let budgetCalls = 0;
+  let runnerCalls = 0;
+  let rescheduleCalls = 0;
+  const database = { async query() { return { rows: [] }; } };
+  const jobRepository = {
+    async upsertWorkerHeartbeat() {},
+    async recoverExpiredJobs() {},
+    async claimNextJob() {
+      const current = availableClaim;
+      availableClaim = null;
+      return current;
+    },
+    async renewJobLease(current) { return current; },
+    async completeJob() { assert.fail('Offener Cleanup darf den Job nicht abschließen.'); },
+    async failJob() { assert.fail('Offener Cleanup darf den Job nicht fehlschlagen lassen.'); },
+    async retryOrFailJob() { assert.fail('Cleanup muss versuchsneutral bleiben.'); },
+    async markJobNeedsManualAttention() { assert.fail('Cleanup darf nicht manuell terminalisieren.'); },
+    async rescheduleJobWithoutAttemptConsumption(current, error) {
+      rescheduleCalls += 1;
+      assert.equal(current, claim);
+      assert.equal(error.cleanupToken, token);
+      return { ...current, status: 'queued' };
+    },
+    async enqueueJob() { return null; },
+    async enqueueLearningObservationJob() { return null; },
+    async updateContentSchedulerState() {}
+  };
+  const modules = {
+    OpenAI: class {
+      constructor() {
+        providerFactoryCalls += 1;
+        throw new Error('OPENAI_API_KEY fehlt.');
+      }
+    },
+    cloudinary: { config() {} },
+    jobRepository,
+    runRepository: {
+      async findRunByJobId() {
+        return { id: 401, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+      },
+      async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+      async updateRunStage() { assert.fail('Cleanup darf keine Paid Stage speichern.'); },
+      async finishRun() { assert.fail('Der offene Reconcile darf den Run nicht abschließen.'); }
+    },
+    settingsRepository: { async getContentAgentSettings() { return { agent_enabled: true }; } },
+    runtimeConfigService: {
+      resolveContentAgentRuntimeConfig,
+      createContentAgentJobSnapshot
+    },
+    topicRepository: { async createTopic() {}, async markTopicUsed() {} },
+    providerStateRepository: {
+      async recordProviderResult() { providerCalls += 1; }
+    },
+    costService: {
+      estimateTextCost() { budgetCalls += 1; return 0; },
+      assertMonthlyBudget() { budgetCalls += 1; },
+      async getMonthlyContentCost() { budgetCalls += 1; },
+      async reserveMonthlyBudget() { budgetCalls += 1; },
+      async settleMonthlyBudget() { budgetCalls += 1; },
+      async releaseMonthlyBudgetReservation() { budgetCalls += 1; },
+      async getPersistedStageResult() { budgetCalls += 1; }
+    },
+    BlogPostModel: {
+      async createAIDraft() {},
+      async findAIDraftByGenerationRunId() {}
+    },
+    createPricingRepository() { return {}; },
+    createPricingService() { return { async getVisiblePackages() { return []; } }; },
+    createContentExistingPostOptimizationRepository() {
+      return {
+        async loadRevisionRevalidationContext() { assert.fail('Der Runnerdouble hält Reconcile offen.'); },
+        async completeRevisionRevalidation() { assert.fail('Nicht erwartet.'); },
+        async failRevisionRevalidation() { assert.fail('Nicht erwartet.'); }
+      };
+    },
+    createOpenAIContentService() {
+      providerFactoryCalls += 1;
+      throw new Error('OPENAI_API_KEY fehlt.');
+    },
+    createContentImageService() {
+      providerFactoryCalls += 1;
+      throw new Error('Image-Provider darf nicht konstruiert werden.');
+    },
+    validateArticle: () => ({ passed: true }),
+    selectBestTopic: () => null,
+    buildSiteInventory: async () => ({}),
+    async runDraftPipeline() { assert.fail('Cleanup darf keine Pipeline starten.'); },
+    async runExistingPostRevisionRevalidationJob(input, dependencies) {
+      runnerCalls += 1;
+      assert.equal(input.cleanupIntent.cleanupToken, token);
+      assert.equal(Object.hasOwn(dependencies, 'openaiService'), false);
+      assert.equal(Object.hasOwn(dependencies, 'costService'), false);
+      assert.equal(typeof dependencies.optimizationRepository.loadRevisionRevalidationContext, 'function');
+      assert.equal(typeof dependencies.runRepository.finishRun, 'function');
+      throw existingPostRevisionCleanupRetryError(
+        new Error('Reconcile bleibt absichtlich offen.'),
+        { cleanupToken: token }
+      );
+    }
+  };
+
+  const runtime = createProductionRuntime({
+    config: { enabled: true, workerPollMs: 5_000, jobLeaseMinutes: 30 },
+    env: {},
+    database,
+    modules
+  });
+
+  assert.deepEqual(await runtime.worker.processOnce(), { status: 'queued' });
+  assert.equal(runnerCalls, 1);
+  assert.equal(rescheduleCalls, 1);
+  assert.equal(providerFactoryCalls, 0);
+  assert.equal(providerCalls, 0);
+  assert.equal(budgetCalls, 0);
 });
 
 test('die Produktionsruntime verdrahtet GSC-Client, Repositories und beide frühen Dispatchpfade', async () => {
