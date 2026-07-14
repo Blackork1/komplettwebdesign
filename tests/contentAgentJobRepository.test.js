@@ -5,6 +5,7 @@ import {
   claimNextJob,
   completeJob,
   enqueueAdminReviewNotificationJob,
+  enqueueLearningObservationJob,
   enqueueManualSearchConsoleSyncJob,
   enqueueJob,
   failJob,
@@ -321,6 +322,23 @@ test('Admin-Prüfmailjobs erlauben den initialen Versuch und fünf echte Wiederh
   assert.match(
     db.calls[0].sql,
     /ON CONFLICT \(idempotency_key\) DO UPDATE SET max_attempts = CASE[\s\S]*content_jobs\.job_type = 'send_admin_review_notification'[\s\S]*EXCLUDED\.job_type = 'send_admin_review_notification'[\s\S]*GREATEST\(content_jobs\.max_attempts, EXCLUDED\.max_attempts\)[\s\S]*ELSE content_jobs\.max_attempts END/i
+  );
+});
+
+test('Lernjobs werden pro Artikel und Reviewversion genau einmal idempotent eingereiht', async () => {
+  const row = { id: 13, job_type: 'process_learning_observations', max_attempts: 3 };
+  const db = createQueryRecorder([{ rows: [row] }]);
+  assert.equal(await enqueueLearningObservationJob({ postId: 51, reviewVersion: 4 }, db), row);
+  assert.deepEqual(db.calls[0].params.slice(0, 5), [
+    'process_learning_observations',
+    'learning-observation:51:4',
+    { postId: 51, reviewVersion: 4, source: 'internal_learning' },
+    null,
+    3
+  ]);
+  await assert.rejects(
+    enqueueLearningObservationJob({ postId: 51, reviewVersion: 0 }, db),
+    { code: 'CONTENT_LEARNING_JOB_PAYLOAD_INVALID' }
   );
 });
 

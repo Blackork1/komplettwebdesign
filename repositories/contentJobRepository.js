@@ -285,6 +285,34 @@ export async function enqueueAdminReviewNotificationJob({
   }, db);
 }
 
+export async function enqueueLearningObservationJob({
+  postId,
+  reviewVersion
+}, db = pool) {
+  const normalizedPostId = Number(postId);
+  const normalizedReviewVersion = Number(reviewVersion);
+  if (
+    !Number.isSafeInteger(normalizedPostId) || normalizedPostId <= 0
+    || !Number.isSafeInteger(normalizedReviewVersion) || normalizedReviewVersion <= 0
+  ) {
+    throw Object.assign(
+      new TypeError('Für den Lernjob werden eine positive Artikel-ID und Reviewversion benötigt.'),
+      { code: 'CONTENT_LEARNING_JOB_PAYLOAD_INVALID' }
+    );
+  }
+
+  return enqueueJob({
+    jobType: 'process_learning_observations',
+    idempotencyKey: `learning-observation:${normalizedPostId}:${normalizedReviewVersion}`,
+    payload: {
+      postId: normalizedPostId,
+      reviewVersion: normalizedReviewVersion,
+      source: 'internal_learning'
+    },
+    maxAttempts: 3
+  }, db);
+}
+
 export async function enqueueApprovedPublicationJob({
   postId,
   approvalVersion,

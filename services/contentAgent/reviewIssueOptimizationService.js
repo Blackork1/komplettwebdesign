@@ -496,6 +496,16 @@ export async function runReviewIssueOptimizationJob(
       }
     }
     await assertLease();
+    if (typeof dependencies.enqueueLearningObservationJob === 'function') {
+      try {
+        await dependencies.enqueueLearningObservationJob({
+          postId,
+          reviewVersion: positiveInteger(committed?.post?.review_version) || expectedReviewVersion + 1
+        });
+      } catch {
+        // Die erfolgreiche Optimierung bleibt unabhängig vom nachgelagerten internen Lernjob gültig.
+      }
+    }
     const finished = await dependencies.runRepository.finishRun(run.id, {
       status: 'completed',
       postId,

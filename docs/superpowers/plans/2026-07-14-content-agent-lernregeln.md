@@ -280,7 +280,7 @@ git commit -m "feat: persist content learning evidence"
 - Produces: `runContentLearningJob({ claim, run, runtimeSnapshot, leaseGuard }, dependencies)`.
 - Consumes: Taxonomie, OpenAI-Service, Kostenreservierung, Run-Repository und `contentLearningRepository`.
 
-- [ ] **Step 1: Failing Job- und Servicetests schreiben**
+- [x] **Step 1: Failing Job- und Servicetests schreiben**
 
 Belegen:
 
@@ -291,25 +291,25 @@ Belegen:
 - Fehler des Lernjobs verändern den Entwurf nicht,
 - initiale Draft-Persistenz und erfolgreiche Prüfhinweisoptimierung reihen genau einen Job pro Review-Version ein.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningService.test.js tests/contentAgentWorker.test.js tests/contentAgentDraftPipeline.test.js tests/contentReviewIssueOptimizationService.test.js`
 
 Expected: FAIL wegen fehlendem Jobtyp und Handler.
 
-- [ ] **Step 3: Minimalen Workerfluss implementieren**
+- [x] **Step 3: Minimalen Workerfluss implementieren**
 
 Der Service lädt den gespeicherten Review, klassifiziert lokal, liest Caches und führt höchstens einen Batch-Provideraufruf für unbekannte Fingerabdrücke aus. Der Aufruf verwendet eine eigene Stage-ID `learning_classification:<reviewVersion>`, Reviewpreise und die bestehende Reservation-/Persistenzlogik. Anschließend werden Beobachtungen und Vorschläge atomar gespeichert.
 
 Der Generierungs- und Optimierungsfluss fängt ausschließlich Fehler beim Einreihen des Lernjobs ab und protokolliert sie; der bereits persistierte Entwurf bleibt terminal erfolgreich.
 
-- [ ] **Step 4: GREEN prüfen**
+- [x] **Step 4: GREEN prüfen**
 
 Run: `node --test tests/contentLearningService.test.js tests/contentAgentJobRepository.test.js tests/contentAgentWorker.test.js tests/contentAgentDraftPipeline.test.js tests/contentReviewIssueOptimizationService.test.js`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningService.js repositories/contentJobRepository.js scripts/contentWorker.js services/contentAgent/draftPipeline.js services/contentAgent/reviewIssueOptimizationService.js tests/contentLearningService.test.js tests/contentAgentJobRepository.test.js tests/contentAgentWorker.test.js tests/contentAgentDraftPipeline.test.js tests/contentReviewIssueOptimizationService.test.js

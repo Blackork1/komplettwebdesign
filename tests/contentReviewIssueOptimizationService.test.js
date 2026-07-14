@@ -294,6 +294,21 @@ test('führt Reparatur, deterministische Prüfung, Review und atomaren Commit au
   assert.equal(commitCall[1].commitKey, '12:optimize_review_issues:19');
 });
 
+test('reiht nach erfolgreichem Versionssprung einen nicht blockierenden Lernjob ein', async () => {
+  const learningJobs = [];
+  const deps = dependencies({
+    async enqueueLearningObservationJob(payload) { learningJobs.push(payload); }
+  });
+  const result = await runReviewIssueOptimizationJob(input(), deps);
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(learningJobs, [{ postId: 19, reviewVersion: 4 }]);
+
+  const failing = dependencies({
+    async enqueueLearningObservationJob() { throw new Error('Queue vorübergehend nicht verfügbar'); }
+  });
+  assert.equal((await runReviewIssueOptimizationJob(input(), failing)).status, 'completed');
+});
+
 test('stoppt bei ungültigem reparierten Artikel vor Review und Commit', async () => {
   const deps = dependencies({
     validateArticle() { return { passed: false, sanitizedHtml: '', issues: [{ code: 'invalid_html' }] }; }

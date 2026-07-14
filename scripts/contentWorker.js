@@ -17,6 +17,7 @@ export const REGENERATION_JOB_TYPES = new Set([
   'optimize_review_issues'
 ]);
 export const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
+export const LEARNING_JOB_TYPES = new Set(['process_learning_observations']);
 export const NOTIFICATION_JOB_TYPES = new Set(['send_admin_review_notification']);
 export const PUBLICATION_JOB_TYPES = new Set(['publish_approved_post']);
 export const NEWSLETTER_JOB_TYPES = new Set([
@@ -31,6 +32,7 @@ export const SUPPORTED_JOB_TYPES = new Set([
   ...GENERATION_JOB_TYPES,
   ...REGENERATION_JOB_TYPES,
   ...AUDIT_JOB_TYPES,
+  ...LEARNING_JOB_TYPES,
   ...NOTIFICATION_JOB_TYPES,
   ...PUBLICATION_JOB_TYPES,
   ...NEWSLETTER_JOB_TYPES,
@@ -127,6 +129,24 @@ function reviewIssueOptimizationPayload(claim) {
     return null;
   }
   return payload;
+}
+
+function learningObservationPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const keys = Object.keys(payload);
+  if (keys.length !== 3
+      || !Object.hasOwn(payload, 'postId')
+      || !Object.hasOwn(payload, 'reviewVersion')
+      || !Object.hasOwn(payload, 'source')
+      || !positiveDatabasePayloadInteger(payload.postId)
+      || !positiveSafePayloadInteger(payload.reviewVersion)
+      || payload.source !== 'internal_learning') return null;
+  return {
+    postId: payload.postId,
+    reviewVersion: payload.reviewVersion,
+    source: 'internal_learning'
+  };
 }
 
 function publicationJobPayload(claim) {
@@ -241,6 +261,8 @@ export function createProductionJobHandler({
   createRegenerationDependencies,
   runReviewIssueOptimizationJob,
   createOptimizationDependencies,
+  runContentLearningJob,
+  createLearningDependencies,
   runAuditJob,
   createAuditDependencies,
   sendAdminReviewNotification,
@@ -264,6 +286,12 @@ export function createProductionJobHandler({
       throw permanentJobError(
         'Der Prüfhinweis-Optimierungsjob enthält keinen gültigen Review- und Versionssnapshot.',
         'CONTENT_REVIEW_OPTIMIZATION_JOB_PAYLOAD_INVALID'
+      );
+    }
+    if (LEARNING_JOB_TYPES.has(claim.job_type) && !learningObservationPayload(claim)) {
+      throw permanentJobError(
+        'Der Lernjob enthält keinen gültigen internen Artikel- und Versionssnapshot.',
+        'CONTENT_LEARNING_JOB_PAYLOAD_INVALID'
       );
     }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
@@ -450,7 +478,22 @@ export function createProductionJobHandler({
     }
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
-    if (AUDIT_JOB_TYPES.has(claim.job_type)) {
+    if (LEARNING_JOB_TYPES.has(claim.job_type)) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für Lernjobs wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
+      const jobRunner = required(runContentLearningJob, 'runContentLearningJob');
+      const dependencyFactory = required(createLearningDependencies, 'createLearningDependencies');
+      result = await jobRunner({
+        claim: { ...claim, payload_json: learningObservationPayload(claim) },
+        run,
+        runtimeSnapshot: persistedSnapshot,
+        leaseGuard
+      }, await dependencyFactory(persistedSnapshot));
+    } else if (AUDIT_JOB_TYPES.has(claim.job_type)) {
       required(runAuditJob, 'runAuditJob');
       required(createAuditDependencies, 'createAuditDependencies');
       try {
@@ -578,6 +621,9 @@ function inventoryLoaders(database, pricingService) {
 function bindRepositories(database, modules) {
   const jobRepository = {
     enqueueJob: (input) => modules.jobRepository.enqueueJob(input, database),
+    enqueueLearningObservationJob: (input) => (
+      modules.jobRepository.enqueueLearningObservationJob(input, database)
+    ),
     claimNextJob: (workerId) => modules.jobRepository.claimNextJob(workerId, database),
     renewJobLease: (claim) => modules.jobRepository.renewJobLease(claim, database),
     completeJob: (claim) => modules.jobRepository.completeJob(claim, database),
@@ -727,6 +773,7 @@ export function createProductionRuntime({
         createAIDraft: (input) => modules.BlogPostModel.createAIDraft(input, database),
         findAIDraftByGenerationRunId: (runId) => modules.BlogPostModel.findAIDraftByGenerationRunId(runId, database)
       },
+      enqueueLearningObservationJob: repositories.jobRepository.enqueueLearningObservationJob,
       recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database)
     };
   }
@@ -742,6 +789,18 @@ export function createProductionRuntime({
     return {
       ...dependencies,
       optimizationRepository: modules.createContentReviewIssueOptimizationRepository(database)
+    };
+  }
+  function createLearningDependencies(snapshot = null) {
+    const jobConfig = jobConfigFromSnapshot(config, snapshot);
+    return {
+      learningRepository: modules.createContentLearningRepository(database),
+      openaiService: modules.createOpenAIContentService({
+        apiKey: env.OPENAI_API_KEY,
+        config: jobConfig
+      }),
+      runRepository: repositories.runRepository,
+      costService: repositories.costService
     };
   }
   function createAuditDependencies() {
@@ -765,13 +824,15 @@ export function createProductionRuntime({
       loadInitialInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService)),
       createPipelineDependencies,
       createRegenerationDependencies,
-      createOptimizationDependencies
+      createOptimizationDependencies,
+      createLearningDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
     finishRun: repositories.runRepository.finishRun,
     runPipeline: modules.runDraftPipeline,
     runRegenerationJob: modules.runDraftRegenerationJob,
     runReviewIssueOptimizationJob: modules.runReviewIssueOptimizationJob,
+    runContentLearningJob: modules.runContentLearningJob,
     runAuditJob: modules.runExistingContentAuditJob,
     createAuditDependencies,
     sendAdminReviewNotification: (input) => modules.sendAdminReviewNotification(input, {
@@ -923,7 +984,9 @@ export async function loadProductionModules() {
     searchMetricsRepositoryModule,
     searchOpportunityRepositoryModule,
     searchOpportunityModule,
-    searchConsoleSchedulerModule
+    searchConsoleSchedulerModule,
+    contentLearningServiceModule,
+    contentLearningRepositoryModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -960,7 +1023,9 @@ export async function loadProductionModules() {
     import('../repositories/contentSearchMetricsRepository.js'),
     import('../repositories/contentSearchOpportunityRepository.js'),
     import('../services/contentAgent/searchOpportunityService.js'),
-    import('../services/contentAgent/searchConsoleSchedulerService.js')
+    import('../services/contentAgent/searchConsoleSchedulerService.js'),
+    import('../services/contentAgent/contentLearningService.js'),
+    import('../repositories/contentLearningRepository.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1001,7 +1066,9 @@ export async function loadProductionModules() {
     createContentSearchOpportunityRepository:
       searchOpportunityRepositoryModule.createContentSearchOpportunityRepository,
     buildContentOpportunities: searchOpportunityModule.buildContentOpportunities,
-    searchConsoleSchedulerService: searchConsoleSchedulerModule
+    searchConsoleSchedulerService: searchConsoleSchedulerModule,
+    runContentLearningJob: contentLearningServiceModule.runContentLearningJob,
+    createContentLearningRepository: contentLearningRepositoryModule.createContentLearningRepository
   };
 }
 

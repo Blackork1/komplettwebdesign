@@ -774,6 +774,16 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     };
     await updateStage('completed', completedResult);
     await finishRunRequired({ status: 'completed', postId: draft.post.id });
+    if (typeof dependencies.enqueueLearningObservationJob === 'function') {
+      try {
+        await dependencies.enqueueLearningObservationJob({
+          postId: draft.post.id,
+          reviewVersion: Number(draft.post.review_version || 1)
+        });
+      } catch {
+        // Der interne Lernjob darf die fertige Entwurfserstellung niemals blockieren.
+      }
+    }
     return {
       status: 'completed',
       ...draft,

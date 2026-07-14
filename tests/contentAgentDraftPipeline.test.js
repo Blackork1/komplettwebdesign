@@ -1422,6 +1422,21 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.deepEqual(inventoryStage.stageResult.inventory.approvedLinks, [{ url: '/kontakt' }]);
 });
 
+test('runDraftPipeline reiht die Lernbeobachtung nach der Entwurfserstellung nicht blockierend ein', async () => {
+  const learningJobs = [];
+  const harness = createDependencies({
+    async enqueueLearningObservationJob(input) { learningJobs.push(input); }
+  });
+  const result = await runDraftPipeline({ runId: 707 }, harness.dependencies);
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(learningJobs, [{ postId: 41, reviewVersion: 1 }]);
+
+  const failing = createDependencies({
+    async enqueueLearningObservationJob() { throw new Error('Queue vorübergehend nicht verfügbar'); }
+  });
+  assert.equal((await runDraftPipeline({ runId: 708 }, failing.dependencies)).status, 'completed');
+});
+
 test('Pipeline-Retry verwendet persistiertes Inventar und ausschließlich die unveränderlichen Snapshotlinks', async () => {
   const persistedInventory = {
     inventory: {
