@@ -8,7 +8,9 @@ import {
   enqueueLearningObservationJob,
   enqueueManualSearchConsoleSyncJob,
   enqueueJob,
+  enqueueReviewOptimizationJob,
   failJob,
+  getLatestReviewOptimizationJob,
   markJobNeedsManualAttention,
   renewJobLease,
   recoverExpiredJobs,
@@ -195,6 +197,67 @@ test('Prüfhinweis-Optimierungen werden atomar durch den operativen Agentschalte
     }
   }, db);
   assert.equal(db.calls[0].params.at(-1), true);
+});
+
+test('Prüfhinweis-Optimierungen verwenden pro Entwurf und Reviewversion denselben Job', async () => {
+  const existingJob = {
+    id: 41,
+    status: 'queued',
+    idempotency_key: 'optimize_review_issues:19:3'
+  };
+  const db = createQueryRecorder([
+    { rows: [existingJob] },
+    { rows: [existingJob] }
+  ]);
+  const input = {
+    postId: 19,
+    expectedReviewVersion: 3,
+    issueMode: 'all',
+    maxAttempts: 3
+  };
+
+  const first = await enqueueReviewOptimizationJob(input, db);
+  const second = await enqueueReviewOptimizationJob(input, db);
+
+  assert.deepEqual(first, existingJob);
+  assert.deepEqual(second, existingJob);
+  assert.equal(db.calls.length, 2);
+  for (const call of db.calls) {
+    assert.match(call.sql, /ON CONFLICT \(idempotency_key\)/i);
+    assert.equal(call.params[1], 'optimize_review_issues:19:3');
+    assert.deepEqual(call.params[2], {
+      source: 'admin_regeneration',
+      post_id: 19,
+      forced_mode: 'review',
+      expected_review_version: 3,
+      issue_mode: 'all'
+    });
+  }
+});
+
+test('Optimierungsstatus liest nur den jüngsten passenden Job ohne vollständige Payload', async () => {
+  const row = {
+    id: 41,
+    status: 'running',
+    attempts: 1,
+    max_attempts: 3,
+    expected_review_version: 3,
+    created_at: '2026-07-14T10:00:00.000Z',
+    updated_at: '2026-07-14T10:01:00.000Z',
+    finished_at: null
+  };
+  const db = createQueryRecorder([{ rows: [row] }]);
+
+  const result = await getLatestReviewOptimizationJob({ postId: 19 }, db);
+
+  assert.deepEqual(result, row);
+  assert.match(db.calls[0].sql, /job_type = 'optimize_review_issues'/i);
+  assert.match(db.calls[0].sql, /payload_json ->> 'post_id'/i);
+  assert.match(db.calls[0].sql, /ORDER BY created_at DESC, id DESC LIMIT 1/i);
+  assert.doesNotMatch(db.calls[0].sql, /SELECT\s+\*/i);
+  assert.doesNotMatch(db.calls[0].sql, /payload_json\s+AS/i);
+  assert.doesNotMatch(db.calls[0].sql, /last_error/i);
+  assert.deepEqual(db.calls[0].params, [19]);
 });
 
 test('manueller GSC-Sync wird atomar gegated und verwendet ausschließlich einen manuellen Tages-Key', async () => {

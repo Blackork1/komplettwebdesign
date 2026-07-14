@@ -137,6 +137,77 @@ export async function enqueueJob({
   return rows[0] || null;
 }
 
+function positiveJobInteger(value, field) {
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 1) {
+    throw new TypeError(`${field} muss eine positive Ganzzahl sein.`);
+  }
+  return normalized;
+}
+
+export async function enqueueReviewOptimizationJob({
+  postId,
+  expectedReviewVersion,
+  issueMode,
+  issueIndex = null,
+  maxAttempts = null
+} = {}, db = pool) {
+  const normalizedPostId = positiveJobInteger(postId, 'postId');
+  const normalizedReviewVersion = positiveJobInteger(
+    expectedReviewVersion,
+    'expectedReviewVersion'
+  );
+  if (!['single', 'all'].includes(issueMode)) {
+    throw new TypeError('issueMode muss single oder all sein.');
+  }
+  const normalizedIssueIndex = issueMode === 'single' ? Number(issueIndex) : null;
+  if (issueMode === 'single'
+      && (!Number.isSafeInteger(normalizedIssueIndex) || normalizedIssueIndex < 0)) {
+    throw new TypeError('issueIndex muss eine nicht negative Ganzzahl sein.');
+  }
+
+  return enqueueJob({
+    jobType: 'optimize_review_issues',
+    idempotencyKey: `optimize_review_issues:${normalizedPostId}:${normalizedReviewVersion}`,
+    payload: {
+      source: 'admin_regeneration',
+      post_id: normalizedPostId,
+      forced_mode: 'review',
+      expected_review_version: normalizedReviewVersion,
+      issue_mode: issueMode,
+      ...(issueMode === 'single' ? { issue_index: normalizedIssueIndex } : {})
+    },
+    maxAttempts
+  }, db);
+}
+
+export async function getLatestReviewOptimizationJob({ postId } = {}, db = pool) {
+  const normalizedPostId = positiveJobInteger(postId, 'postId');
+  const { rows } = await db.query(
+    `
+      SELECT id,
+             status,
+             attempts,
+             max_attempts,
+             CASE
+               WHEN payload_json ->> 'expected_review_version' ~ '^[1-9][0-9]*$'
+                 THEN (payload_json ->> 'expected_review_version')::INTEGER
+               ELSE NULL
+             END AS expected_review_version,
+             created_at,
+             updated_at,
+             finished_at
+      FROM content_jobs
+      WHERE job_type = 'optimize_review_issues'
+        AND payload_json ->> 'post_id' = $1::TEXT
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1
+    `,
+    [normalizedPostId]
+  );
+  return rows[0] || null;
+}
+
 function canonicalIsoDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const date = new Date(`${value}T00:00:00.000Z`);
