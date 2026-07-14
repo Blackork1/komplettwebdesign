@@ -459,6 +459,38 @@ test('Jobliste erklärt die einmalige redaktionelle Neuprüfung ohne Artikelrepa
   assert.doesNotMatch(html, /repair:4|Artikel erneut reparieren/);
 });
 
+test('Jobliste erklärt die einmalige Entwurfsfertigstellung und die neuen Bildkosten', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'failed',
+      statusLabel: 'Endgültig fehlgeschlagen',
+      attempts: 10,
+      maxAttempts: 10,
+      lastSafeStageLabel: 'Bildbereinigung',
+      lastError: 'value too long for type character varying(80)',
+      costEur: 0.66,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: false,
+      canRecoverQualityGateManifest: false,
+      canRecoverEditorialReview: false,
+      canRecoverDraftPersistence: true,
+      draftPersistenceRecoveryActionLabel: 'Entwurf mit neuem Bild fertigstellen'
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-draft-persistence"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /SEO-Briefing, Artikel und Prüfungen bleiben unverändert/);
+  assert.match(html, /gelöschte Bild muss neu generiert werden/i);
+  assert.match(html, /zusätzliche Bildkosten/i);
+  assert.doesNotMatch(html, /Artikel erneut|Review erneut/);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

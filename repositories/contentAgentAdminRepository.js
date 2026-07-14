@@ -4,6 +4,35 @@ import { getMonthlyContentCost } from '../services/contentAgent/contentCostServi
 const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
+const DRAFT_PERSISTENCE_RECOVERABLE_SQL = `(
+  r.error_report_json ->> 'code' = 'pipeline_failed'
+  AND r.error_report_json ->> 'message' = 'value too long for type character varying(80)'
+  AND r.stage_results_json -> 'validation:3' ->> 'passed' = 'true'
+  AND r.stage_results_json -> 'review:4' -> 'value' ->> 'passed' = 'true'
+  AND COALESCE((r.stage_results_json -> 'review:4' -> 'value' ->> 'score')::int, 0) >= 80
+  AND r.stage_results_json -> 'review:4' -> 'value' ->> 'requiresManualReview' = 'false'
+  AND r.stage_results_json -> 'image_generation' ->> 'status' = 'completed'
+  AND r.stage_results_json -> 'cloudinary_upload' ->> 'status' = 'completed'
+  AND r.stage_results_json -> 'image_cleanup' ->> 'status' = 'completed'
+  AND r.stage_results_json -> 'image_cleanup' ->> 'publicId'
+    = r.stage_results_json -> 'cloudinary_upload' ->> 'publicId'
+  AND NOT (r.stage_results_json ? 'draft_creation')
+  AND NOT (r.stage_results_json ? 'draft_persistence_recovery:metadata_contract:attempt-10')
+  AND NOT (r.stage_results_json ? 'image_generation:2')
+  AND NOT (r.stage_results_json ? 'cloudinary_upload:2')
+  AND NOT (
+    CASE
+      WHEN jsonb_typeof(r.stage_results_json -> 'review:4' -> 'value' -> 'risks') = 'object'
+        THEN r.stage_results_json -> 'review:4' -> 'value' -> 'risks'
+      ELSE '{}'::jsonb
+    END
+    @? '$.* ? (@ == true)'
+  )
+  AND NOT (
+    r.stage_results_json
+    @? '$.keyvalue() ? (@.key like_regex "^budget:[0-9]{4}-[0-9]{2}:image_generation:2$")'
+  )
+)`;
 
 function normalizeLimit(value) {
   return Math.min(200, Math.max(1, Number(value) || 100));
@@ -87,7 +116,8 @@ export function createContentAgentAdminRepository(db = pool) {
                  r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                  quality_recovery.quality_gate_structure_repairable,
                  quality_recovery.quality_gate_manifest_repairable,
-                 quality_recovery.editorial_review_recoverable
+                 quality_recovery.editorial_review_recoverable,
+                 ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -325,7 +355,8 @@ export function createContentAgentAdminRepository(db = pool) {
                r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                quality_recovery.quality_gate_structure_repairable,
                quality_recovery.quality_gate_manifest_repairable,
-               quality_recovery.editorial_review_recoverable
+               quality_recovery.editorial_review_recoverable,
+               ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (

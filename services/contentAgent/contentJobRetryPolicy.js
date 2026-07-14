@@ -9,6 +9,9 @@ export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY =
 export const EDITORIAL_REVIEW_RECOVERY_RETRY_CAP = 10;
 export const EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY =
   'editorial_review_recovery:review_scope:attempt-9';
+export const DRAFT_PERSISTENCE_RECOVERY_RETRY_CAP = 11;
+export const DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY =
+  'draft_persistence_recovery:metadata_contract:attempt-10';
 
 const RETRYABLE_JOB_STATUSES = new Set(['failed', 'needs_manual_attention']);
 const ADMIN_REVIEW_NOTIFICATION_JOB = 'send_admin_review_notification';
@@ -141,4 +144,24 @@ export function canRecoverEditorialReview({
     && postId == null
     && Number(openReservationCount) === 0
     && editorialReviewRecoverable === true;
+}
+
+export function canRecoverDraftPersistence({
+  jobType,
+  status,
+  attempts,
+  lastError,
+  currentStage,
+  postId,
+  openReservationCount,
+  draftPersistenceRecoverable = false
+} = {}) {
+  return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
+    && status === 'failed'
+    && Number(attempts) === DRAFT_PERSISTENCE_RECOVERY_RETRY_CAP - 1
+    && lastError === 'value too long for type character varying(80)'
+    && currentStage === 'image_cleanup'
+    && postId == null
+    && Number(openReservationCount) === 0
+    && draftPersistenceRecoverable === true;
 }

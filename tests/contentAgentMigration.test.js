@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js';
 const runnerSource = readFileSync(new URL('../scripts/runContentAgentMigration.js', import.meta.url), 'utf8');
@@ -8,6 +8,10 @@ const runnerSource = readFileSync(new URL('../scripts/runContentAgentMigration.j
 const sql = readFileSync(
   new URL('../scripts/migrations/002_create_content_agent_core.sql', import.meta.url),
   'utf8'
+);
+const metadataContractMigrationUrl = new URL(
+  '../scripts/migrations/008_expand_generated_content_metadata.sql',
+  import.meta.url
 );
 
 test('content agent migration is additive', () => {
@@ -49,7 +53,18 @@ test('Migration synchronisiert Publikationszustände und kennt manuelle Queuezus
   assert.match(sql, /cancelled/i);
 });
 
-test('Migrationsrunner führt 002 bis 007 sequenziell unter einer Transaktionssperre aus', async () => {
+test('Migration 008 erweitert freie KI-Metadaten ohne Datenverlust auf TEXT', () => {
+  assert.equal(existsSync(metadataContractMigrationUrl), true);
+  const metadataSql = readFileSync(metadataContractMigrationUrl, 'utf8');
+  assert.match(metadataSql, /ALTER TABLE(?: IF EXISTS)? content_topics[\s\S]*ALTER COLUMN search_intent TYPE TEXT/i);
+  assert.match(metadataSql, /ALTER TABLE(?: IF EXISTS)? content_topics[\s\S]*ALTER COLUMN content_cluster TYPE TEXT/i);
+  assert.match(metadataSql, /ALTER TABLE(?: IF EXISTS)? content_post_metadata[\s\S]*ALTER COLUMN search_intent TYPE TEXT/i);
+  assert.match(metadataSql, /ALTER TABLE(?: IF EXISTS)? content_post_metadata[\s\S]*ALTER COLUMN content_cluster TYPE TEXT/i);
+  assert.match(metadataSql, /ALTER TABLE(?: IF EXISTS)? content_post_metadata[\s\S]*ALTER COLUMN cta_type TYPE TEXT/i);
+  assert.doesNotMatch(metadataSql, /DROP\s+(?:TABLE|COLUMN)/i);
+});
+
+test('Migrationsrunner führt 002 bis 008 sequenziell unter einer Transaktionssperre aus', async () => {
   const queries = [];
   let released = false;
   const client = {
@@ -78,11 +93,13 @@ test('Migrationsrunner führt 002 bis 007 sequenziell unter einer Transaktionssp
   assert.match(queries[6], /idx_content_notification_deliveries_post_type_latest/i);
   assert.match(queries[7], /CREATE TABLE IF NOT EXISTS content_search_metrics/i);
   assert.match(queries[7], /CREATE TABLE IF NOT EXISTS content_opportunities/i);
-  assert.equal(queries[8], 'COMMIT');
+  assert.match(queries[8], /ALTER TABLE(?: IF EXISTS)? content_post_metadata/i);
+  assert.match(queries[8], /ALTER COLUMN search_intent TYPE TEXT/i);
+  assert.equal(queries[9], 'COMMIT');
   assert.equal(released, true);
 });
 
-test('Migrationsrunner benennt alle sechs ausgeführten Migrationen in Statusmeldungen', () => {
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 erfolgreich/);
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 fehlgeschlagen/);
+test('Migrationsrunner benennt alle sieben ausgeführten Migrationen in Statusmeldungen', () => {
+  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 erfolgreich/);
+  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 fehlgeschlagen/);
 });

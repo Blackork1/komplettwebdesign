@@ -1824,6 +1824,121 @@ test('bestätigte redaktionelle Wiederaufnahme nutzt repair:3 unverändert und b
   );
 });
 
+test('bestätigte Metadatenwiederaufnahme bewahrt alle Textstufen und erzeugt nur ein Ersatzbild', async () => {
+  const longSearchIntent = 'informational mit klarer kommerzieller Nähe; Leser sucht eine umsetzbare Relaunch-Checkliste und Orientierung, ob ein Audit oder professionelle Unterstützung sinnvoll ist.';
+  const recoveryBrief = { ...schemaSeoBrief, searchIntent: longSearchIntent };
+  const validatorArticle = createValidatorValidArticle();
+  const recoveredArticle = {
+    ...schemaArticle,
+    ...validatorArticle,
+    seo: { ...schemaArticle.seo, searchIntent: longSearchIntent },
+    lead: schemaArticle.lead,
+    qualitySelfCheck: schemaArticle.qualitySelfCheck,
+    contentHtml: `${validatorArticle.contentHtml}<p>${'Validierter hilfreicher Inhalt. '.repeat(210)} Validierte dritte Reparatur.</p>`
+  };
+  const inventory = {
+    blogPosts: [], guides: [], servicePages: [], industries: [], packages: [], approvedLinks: []
+  };
+  const persistedStages = {
+    inventory: {
+      inventory,
+      counts: { blogPosts: 0, guides: 0, servicePages: 0, industries: 0, packages: 0 }
+    },
+    topic_research: persistedEnvelope({ candidates: [schemaTopic] }, 'resp-topic-paid'),
+    topic_persistence: { topic: { ...schemaTopic, id: 17 } },
+    seo_brief: persistedEnvelope(recoveryBrief, 'resp-brief-paid'),
+    article_generation: persistedEnvelope(schemaArticle, 'resp-article-paid'),
+    'repair:1': persistedEnvelope(schemaArticle, 'resp-repair-1-paid'),
+    'repair:2': persistedEnvelope(schemaArticle, 'resp-repair-2-paid'),
+    'repair:3': persistedEnvelope(recoveredArticle, 'resp-repair-3-paid'),
+    'review:3': persistedEnvelope({ ...review, score: 68, passed: false }, 'resp-review-3-paid'),
+    'review:4': persistedEnvelope({ ...review, score: 90 }, 'resp-review-4-paid'),
+    'quality_gate_recovery:structure_contract:attempt-7': {
+      status: 'authorized_after_quality_gate',
+      stageId: 'repair:3',
+      baseMaxRevisions: 2,
+      additionalRevisionCount: 1,
+      adminId: 7
+    },
+    'editorial_review_recovery:review_scope:attempt-9': {
+      status: 'authorized_after_editorial_scope_change',
+      stageId: 'review:4',
+      previousReviewStageId: 'review:3',
+      adminId: 7
+    },
+    'draft_persistence_recovery:metadata_contract:attempt-10': {
+      status: 'authorized_after_metadata_contract_fix',
+      imageGenerationStageId: 'image_generation:2',
+      cloudinaryUploadStageId: 'cloudinary_upload:2',
+      adminId: 7
+    },
+    image_generation: { status: 'completed', costIncurred: true },
+    cloudinary_upload: {
+      status: 'completed',
+      imageUrl: 'https://cdn.example.test/deleted.webp',
+      publicId: 'blog_images/deleted-after-rollback',
+      bytes: 321
+    },
+    image_cleanup: {
+      status: 'completed',
+      publicId: 'blog_images/deleted-after-rollback'
+    }
+  };
+  const paidStageIds = new Set([
+    'topic_research', 'seo_brief', 'article_generation',
+    'repair:1', 'repair:2', 'repair:3', 'review:3', 'review:4', 'image_generation'
+  ]);
+  const reservations = [];
+  const settlements = [];
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      async createTopicCandidates() { assert.fail('Themenrecherche darf nicht erneut ausgeführt werden.'); },
+      async createSeoBrief() { assert.fail('SEO-Briefing darf nicht erneut ausgeführt werden.'); },
+      async generateArticle() { assert.fail('Artikel darf nicht erneut ausgeführt werden.'); },
+      async reviewArticle() { assert.fail('Review 4 darf nicht erneut ausgeführt werden.'); },
+      async repairArticle() { assert.fail('Reparaturen dürfen nicht erneut ausgeführt werden.'); },
+      researchCurrentSources: base.dependencies.openaiService.researchCurrentSources
+    },
+    costService: {
+      async reserveMonthlyBudget(input) {
+        reservations.push(input);
+        return paidStageIds.has(input.stageId)
+          ? { created: false, status: 'settled', reservationMonth: '2026-07' }
+          : { created: true, status: 'reserved', reservationMonth: '2026-07' };
+      },
+      async settleMonthlyBudget(input) {
+        settlements.push(input);
+        return { status: 'settled' };
+      },
+      async getPersistedStageResult({ stageId }) {
+        return persistedStages[stageId] ?? null;
+      },
+      estimateTextCost() { return 0.01; }
+    },
+    validateArticle(value) {
+      const passed = value.contentHtml.includes('Validierte dritte Reparatur.');
+      return {
+        passed,
+        sanitizedHtml: value.contentHtml,
+        issues: passed ? [] : [{ code: 'html_contract_invalid', message: 'Noch nicht valide.' }]
+      };
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 1 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(harness.imageCalls.length, 1);
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.equal(harness.createdDrafts[0].metadata.search_intent, longSearchIntent);
+  assert.equal(reservations.some(({ stageId }) => stageId === 'image_generation:2'), true);
+  assert.equal(reservations.filter(({ stageId }) => stageId === 'image_generation').length, 0);
+  assert.deepEqual(settlements.map(({ stageId }) => stageId), ['image_generation:2']);
+  assert.equal(harness.stageUpdates.some(({ stageId }) => stageId === 'image_generation:2'), true);
+  assert.equal(harness.stageUpdates.some(({ stageId }) => stageId === 'cloudinary_upload:2'), true);
+});
+
 test('jede kostenpflichtige Stufe reserviert vor dem Aufruf das Monatsbudget', async () => {
   let topicCalls = 0;
   const budgetError = new ContentBudgetLimitError();

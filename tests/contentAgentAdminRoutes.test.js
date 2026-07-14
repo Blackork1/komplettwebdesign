@@ -142,6 +142,16 @@ test('der Produktionsrouter verdrahtet die bestätigte redaktionelle Neuprüfung
   );
 });
 
+test('der Produktionsrouter verdrahtet die bestätigte Entwurfsfertigstellung', () => {
+  assert.match(routes, /recoverDraftPersistenceForAdmin/);
+  assert.match(routes, /jobs\/:id\/recover-draft-persistence/);
+  assert.match(routes, /controller\.recoverDraftPersistenceAction/);
+  assert.match(
+    routes,
+    /recoverDraftPersistenceForAdmin:\s*\(input\)\s*=>\s*recoverDraftPersistenceForAdmin\(input, pool\)/
+  );
+});
+
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
   assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
   assert.doesNotMatch(routes, /controller\.publishDraftAction/);

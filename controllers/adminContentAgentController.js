@@ -13,6 +13,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_QUALITY_RECOVERY_NOT_AVAILABLE',
   'CONTENT_RULE_MANIFEST_RECOVERY_NOT_AVAILABLE',
   'CONTENT_EDITORIAL_REVIEW_RECOVERY_NOT_AVAILABLE',
+  'CONTENT_DRAFT_PERSISTENCE_RECOVERY_NOT_AVAILABLE',
   'CONTENT_APPROVAL_STALE',
   'CONTENT_PUBLICATION_SLOT_NOT_MISSED',
   'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
@@ -37,6 +38,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_QUALITY_RECOVERY_NOT_AVAILABLE: 'Die Qualitätswiederaufnahme ist in diesem Zustand nicht mehr verfügbar.',
   CONTENT_RULE_MANIFEST_RECOVERY_NOT_AVAILABLE: 'Die Regelstand-Wiederaufnahme ist in diesem Zustand nicht mehr verfügbar.',
   CONTENT_EDITORIAL_REVIEW_RECOVERY_NOT_AVAILABLE: 'Die redaktionelle Neuprüfung ist in diesem Zustand nicht mehr verfügbar.',
+  CONTENT_DRAFT_PERSISTENCE_RECOVERY_NOT_AVAILABLE: 'Die sichere Entwurfsfertigstellung ist in diesem Zustand nicht mehr verfügbar.',
   CONTENT_CONFIRMATION_REQUIRED: 'Die erforderliche Bestätigung fehlt.',
   CONTENT_SCHEDULE_INVALID: 'Der Veröffentlichungstermin oder die konfigurierte Zeitzone ist ungültig.',
   CONTENT_SCHEDULE_MUST_BE_FUTURE: 'Der Veröffentlichungstermin muss strikt in der Zukunft liegen.',
@@ -454,7 +456,8 @@ export function createAdminContentAgentController(dependencies) {
         return res.render('admin/contentAgent/jobs', {
           jobs: presentation.buildJobListPresentation(rows),
           providerRecoveryQueued: req.query?.['provider-recovery'] === 'queued',
-          editorialReviewRecoveryQueued: req.query?.['editorial-review-recovery'] === 'queued'
+          editorialReviewRecoveryQueued: req.query?.['editorial-review-recovery'] === 'queued',
+          draftPersistenceRecoveryQueued: req.query?.['draft-persistence-recovery'] === 'queued'
         });
       } catch (error) {
         return sendKnownError(error, res, next);
@@ -765,6 +768,29 @@ export function createAdminContentAgentController(dependencies) {
           });
         }
         return res.redirect('/admin/content-agent/jobs?editorial-review-recovery=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async recoverDraftPersistenceAction(req, res, next) {
+      try {
+        if (!criticalConfirmation(req.body?.confirmed)) {
+          throw Object.assign(new Error('Bestätigung fehlt.'), {
+            code: 'CONTENT_CONFIRMATION_REQUIRED'
+          });
+        }
+        const admin = adminFromRequest(req);
+        const recovered = await jobRepository.recoverDraftPersistenceForAdmin({
+          jobId: positiveId(req.params.id),
+          adminId: positiveId(admin.id)
+        });
+        if (!recovered) {
+          throw Object.assign(new Error('Entwurfsfertigstellung nicht verfügbar.'), {
+            code: 'CONTENT_DRAFT_PERSISTENCE_RECOVERY_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect('/admin/content-agent/jobs?draft-persistence-recovery=queued');
       } catch (error) {
         return sendKnownError(error, res, next);
       }

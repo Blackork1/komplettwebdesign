@@ -10,6 +10,7 @@ import {
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
+  recoverDraftPersistenceForAdmin,
   recoverEditorialReviewForAdmin,
   recoverQualityGateJobForAdmin,
   recoverQualityGateRuleManifestForAdmin,
@@ -32,6 +33,7 @@ import { createContentPublicationService } from '../services/contentAgent/conten
 import { sendAdminReviewNotification } from '../services/contentAgent/contentNotificationService.js';
 import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
 import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
+import { createContentAgentAdminRepository } from '../repositories/contentAgentAdminRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
 import {
   createContentAgentPgTestSchemaName,
@@ -822,6 +824,159 @@ test('echtes PostgreSQL: ausschließlich die korrigierte redaktionelle Prüfung 
   }
 });
 
+test('echtes PostgreSQL: Metadatenfehler bewahrt Textkosten und reiht nur das Ersatzbild ein', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    const previousManifest = {
+      ...CONTENT_AGENT_RULE_MANIFEST,
+      articleSchema: 'article-schema-v1'
+    };
+    const snapshot = {
+      timezone: 'Europe/Berlin',
+      allowedInternalLinks: ['/kontakt'],
+      allowedInternalLinksHash: canonicalSha256(['/kontakt']),
+      ruleManifest: previousManifest,
+      ruleManifestHash: canonicalSha256(previousManifest)
+    };
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'failed', 10, 10,
+          'value too long for type character varying(80)', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, current_stage, cost_estimate, error_report_json,
+        runtime_snapshot_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'failed',
+             'image_cleanup',
+             0.660000,
+             '{"code":"pipeline_failed","message":"value too long for type character varying(80)"}'::jsonb,
+             $1::jsonb,
+             '{
+               "budget:2026-07:article_generation":{"status":"settled"},
+               "article_generation":{"value":{"title":"Bezahlter Artikel"}},
+               "budget:2026-07:repair:3":{"status":"settled"},
+               "repair:3":{"value":{"title":"Validierte dritte Reparatur"}},
+               "validation:3":{"passed":true,"issues":[]},
+               "budget:2026-07:review:4":{"status":"settled"},
+               "review:4":{"value":{
+                 "passed":true,
+                 "score":90,
+                 "requiresManualReview":false,
+                 "issues":[{"code":"wording_repetition","blocking":false}],
+                 "risks":{
+                   "currentClaims":false,
+                   "legalClaims":false,
+                   "privacyClaims":false,
+                   "softwareVersionClaims":false,
+                   "staticPrices":false
+                 }
+               }},
+               "budget:2026-07:image_generation":{"status":"settled"},
+               "image_generation":{"status":"completed","costIncurred":true},
+               "cloudinary_upload":{
+                 "status":"completed",
+                 "imageUrl":"https://cdn.example.test/deleted.webp",
+                 "publicId":"blog_images/deleted-after-rollback",
+                 "bytes":321
+               },
+               "image_cleanup":{
+                 "status":"completed",
+                 "publicId":"blog_images/deleted-after-rollback"
+               }
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id
+    `, [JSON.stringify(snapshot)]);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const [presentedRow] = await createContentAgentAdminRepository(pool).listJobs(10);
+    assert.equal(presentedRow.draft_persistence_recoverable, true);
+
+    const result = await recoverDraftPersistenceForAdmin({ jobId, adminId: 9 }, pool);
+
+    assert.equal(result.recoveredStage, 'image_generation:2');
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 10, max_attempts: 11, last_error: null
+    });
+    const run = (await pool.query(`
+      SELECT cost_estimate, error_report_json, runtime_snapshot_json, stage_results_json
+      FROM content_runs
+      WHERE job_id = $1
+    `, [jobId])).rows[0];
+    assert.equal(Number(run.cost_estimate), 0.66);
+    assert.equal(run.error_report_json.code, 'draft_persistence_recovery_authorized');
+    assert.equal(run.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+    assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
+    assert.equal(run.stage_results_json['repair:3'].value.title, 'Validierte dritte Reparatur');
+    assert.equal(run.stage_results_json['review:4'].value.score, 90);
+    assert.equal(run.stage_results_json['image_generation:2'], undefined);
+    const audit = run.stage_results_json['draft_persistence_recovery:metadata_contract:attempt-10'];
+    assert.equal(audit.imageGenerationStageId, 'image_generation:2');
+    assert.equal(audit.cloudinaryUploadStageId, 'cloudinary_upload:2');
+    assert.equal(audit.adminId, 9);
+
+    assert.equal(await recoverDraftPersistenceForAdmin({ jobId, adminId: 9 }, pool), null);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
 const publishRisks = {
   currentClaims: false,
   legalClaims: false,
@@ -934,7 +1089,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–008 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -983,6 +1138,22 @@ test('echtes PostgreSQL: Migrationen 002–006 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const generatedMetadataTypes = await pool.query(`
+      SELECT table_name, column_name, data_type
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND (table_name, column_name) IN (
+          ('content_topics', 'search_intent'),
+          ('content_topics', 'content_cluster'),
+          ('content_post_metadata', 'search_intent'),
+          ('content_post_metadata', 'content_cluster'),
+          ('content_post_metadata', 'cta_type')
+        )
+      ORDER BY table_name, column_name
+    `);
+    assert.equal(generatedMetadataTypes.rows.length, 5);
+    assert.equal(generatedMetadataTypes.rows.every(({ data_type }) => data_type === 'text'), true);
 
     const finishJob = await pool.query(`
       INSERT INTO content_jobs (job_type, status, idempotency_key)

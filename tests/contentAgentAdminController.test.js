@@ -766,6 +766,51 @@ test('redaktionelle Neuprüfung verlangt eine literale kritische Bestätigung', 
   assert.equal(res.statusCode, 400);
 });
 
+test('bestätigte Entwurfsfertigstellung verwendet ausschließlich die kanonischen IDs', async () => {
+  let received;
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async recoverDraftPersistenceForAdmin(input) {
+        received = input;
+        return { job: { id: 19, status: 'queued' } };
+      }
+    }
+  }));
+  assert.equal(typeof controller.recoverDraftPersistenceAction, 'function');
+  const res = response();
+
+  await controller.recoverDraftPersistenceAction({
+    params: { id: '19' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'redaktion' } }
+  }, res, assert.fail);
+
+  assert.deepEqual(received, { jobId: 19, adminId: 7 });
+  assert.equal(res.redirectedTo, '/admin/content-agent/jobs?draft-persistence-recovery=queued');
+});
+
+test('Entwurfsfertigstellung verlangt eine literale kritische Bestätigung', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async recoverDraftPersistenceForAdmin() {
+        calls += 1;
+        return { job: { id: 19 } };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.recoverDraftPersistenceAction({
+    params: { id: '19' },
+    body: { confirmed: 'on' },
+    session: { user: { id: 7 } }
+  }, res, assert.fail);
+
+  assert.equal(calls, 0);
+  assert.equal(res.statusCode, 400);
+});
+
 test('Reject-Controller akzeptiert nur die literale kritische Bestätigung', async () => {
   const rejectInputs = [];
   const controller = createAdminContentAgentController(baseDependencies({

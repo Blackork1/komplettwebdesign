@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import {
+  canRecoverDraftPersistence,
   canRecoverEditorialReview,
   canRecoverQualityGateJob,
   canRecoverQualityGateRuleManifest,
@@ -409,6 +410,16 @@ export function buildJobListPresentation(rows = []) {
       openReservationCount: row.open_provider_reservation_count,
       editorialReviewRecoverable: row.editorial_review_recoverable === true
     });
+    const canRecoverDraft = canRecoverDraftPersistence({
+      jobType: row.job_type,
+      status: row.status,
+      attempts: row.attempts,
+      lastError: row.last_error,
+      currentStage: row.current_stage,
+      postId: row.post_id,
+      openReservationCount: row.open_provider_reservation_count,
+      draftPersistenceRecoverable: row.draft_persistence_recoverable === true
+    });
     const qualityIssues = (Array.isArray(row.error_report_json?.qualityIssues)
       ? row.error_report_json.qualityIssues
       : Array.isArray(row.latest_review_issues) ? row.latest_review_issues : [])
@@ -449,6 +460,10 @@ export function buildJobListPresentation(rows = []) {
       canRecoverEditorialReview: canRecoverEditorial,
       editorialReviewRecoveryActionLabel: canRecoverEditorial
         ? 'Nur redaktionelle Prüfung erneut ausführen'
+        : null,
+      canRecoverDraftPersistence: canRecoverDraft,
+      draftPersistenceRecoveryActionLabel: canRecoverDraft
+        ? 'Entwurf mit neuem Bild fertigstellen'
         : null,
       qualityIssues,
       isAdminReviewNotification: row.job_type === 'send_admin_review_notification',

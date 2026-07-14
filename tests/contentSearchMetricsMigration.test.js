@@ -29,11 +29,11 @@ test('Content-Chancen sind je Analyse eindeutig und auf bekannte Zustände begre
   );
 });
 
-test('Migrationsrunner führt 007 nach 006 aus und nennt 002 bis 007 im Abschluss', () => {
+test('Migrationsrunner führt 007 nach 006 und vor 008 aus und nennt alle im Abschluss', () => {
   assert.match(
     runnerSource,
-    /006_add_schedule_revisions_and_admin_review_lookup\.sql'[,\s\S]*007_create_content_search_metrics\.sql'/i
+    /006_add_schedule_revisions_and_admin_review_lookup\.sql'[,\s\S]*007_create_content_search_metrics\.sql'[,\s\S]*008_expand_generated_content_metadata\.sql'/i
   );
-  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 erfolgreich/i);
-  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 fehlgeschlagen/i);
+  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 erfolgreich/i);
+  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 fehlgeschlagen/i);
 });

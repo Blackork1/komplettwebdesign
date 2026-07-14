@@ -11,6 +11,7 @@ import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 import {
+  DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_AUDIT_KEY
 } from './contentJobRetryPolicy.js';
@@ -341,6 +342,17 @@ function authorizedEditorialReviewRecovery(value, maximumRevisions) {
   );
 }
 
+function authorizedDraftPersistenceRecovery(value) {
+  return Boolean(
+    value
+    && value.status === 'authorized_after_metadata_contract_fix'
+    && value.imageGenerationStageId === 'image_generation:2'
+    && value.cloudinaryUploadStageId === 'cloudinary_upload:2'
+    && Number.isSafeInteger(Number(value.adminId))
+    && Number(value.adminId) > 0
+  );
+}
+
 function safeQualityIssues(review) {
   return (Array.isArray(review?.issues) ? review.issues : []).slice(0, 8).map((issue) => ({
     code: typeof issue?.code === 'string' ? issue.code.slice(0, 120) : 'review_issue',
@@ -397,6 +409,9 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   let imageCreatedThisRun = false;
   let draftPersisted = false;
   let referencedDraftPublicId = null;
+  let imageGenerationStageId = 'image_generation';
+  let cloudinaryUploadStageId = 'cloudinary_upload';
+  let imageCleanupStageId = 'image_cleanup';
 
   async function assertLease() {
     return leaseGuard();
@@ -1063,10 +1078,17 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
 
+    const draftPersistenceRecovery = await readPersistedStage(DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY);
+    if (authorizedDraftPersistenceRecovery(draftPersistenceRecovery)) {
+      imageGenerationStageId = draftPersistenceRecovery.imageGenerationStageId;
+      cloudinaryUploadStageId = draftPersistenceRecovery.cloudinaryUploadStageId;
+      imageCleanupStageId = 'image_cleanup:2';
+    }
+
     await assertLease();
     const imageReservation = await costService.reserveMonthlyBudget({
       runId,
-      stageId: 'image_generation',
+      stageId: imageGenerationStageId,
       estimatedCost: config.imageCostEur,
       limit: config.monthlyCostLimitEur
     });
@@ -1085,11 +1107,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       const persistedGeneration = await costService.getPersistedStageResult({
         runId,
-        stageId: 'image_generation'
+        stageId: imageGenerationStageId
       });
       const persistedUpload = await costService.getPersistedStageResult({
         runId,
-        stageId: 'cloudinary_upload'
+        stageId: cloudinaryUploadStageId
       });
       if (!isPersistedImageResult(persistedGeneration, persistedUpload)) {
         await stopForRecovery(
@@ -1123,45 +1145,47 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         await assertLease();
         await costService.settleMonthlyBudget({
           runId,
-          stageId: 'image_generation',
+          stageId: imageGenerationStageId,
           reservationMonth: imageReservation.reservationMonth,
           actualCost: config.imageCostEur
         });
         await updateStage('image_generation', uploadedImage.audit?.imageGeneration || {
           status: 'completed',
           costIncurred: true
-        });
+        }, { stageId: imageGenerationStageId });
         await updateStage('cloudinary_upload', {
           ...(uploadedImage.audit?.upload || { status: 'completed' }),
           imageUrl: uploadedImage.imageUrl,
           publicId: uploadedImage.publicId,
           bytes: uploadedImage.bytes
-        });
+        }, { stageId: cloudinaryUploadStageId });
       } catch (error) {
         await recordImageProviderOutcomes(error.audit || {}, error);
         try {
           await costService.settleMonthlyBudget({
             runId,
-            stageId: 'image_generation',
+            stageId: imageGenerationStageId,
             reservationMonth: imageReservation.reservationMonth,
             actualCost: config.imageCostEur
           });
         } catch {
-          recordAuditWarning(error, 'BUDGET_SETTLEMENT_FAILED', { stageId: 'image_generation' });
+          recordAuditWarning(error, 'BUDGET_SETTLEMENT_FAILED', { stageId: imageGenerationStageId });
         }
         const audit = error.audit || {};
         await safeUpdateStage('image_generation', audit.imageGeneration || {
           status: 'failed',
           costIncurred: true,
           code: 'IMAGE_GENERATION_FAILED'
-        }, {}, error);
+        }, { stageId: imageGenerationStageId }, error);
         await safeUpdateStage(
           'cloudinary_upload',
           audit.upload || { status: 'not_started' },
-          {},
+          { stageId: cloudinaryUploadStageId },
           error
         );
-        if (audit.cleanup) await safeUpdateStage('image_cleanup', audit.cleanup, {}, error);
+        if (audit.cleanup) {
+          await safeUpdateStage('image_cleanup', audit.cleanup, { stageId: imageCleanupStageId }, error);
+        }
         await stopForRecovery(
           'image_provider_uncertain',
           'Ein Bildproviderfehler wird nicht automatisch wiederholt, weil Ausführung oder Upload unklar sein können.'
@@ -1191,7 +1215,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
             code: 'IMAGE_CLEANUP_FAILED'
           };
         }
-        await safeUpdateStage('image_cleanup', cleanupResult, {}, null);
+        await safeUpdateStage('image_cleanup', cleanupResult, { stageId: imageCleanupStageId }, null);
       }
     } else {
       await assertLease();
@@ -1285,7 +1309,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           code: 'IMAGE_CLEANUP_FAILED'
         };
       }
-      await safeUpdateStage('image_cleanup', cleanupResult, {}, null);
+      await safeUpdateStage('image_cleanup', cleanupResult, { stageId: imageCleanupStageId }, null);
     }
     const persistedDraftResult = {
       post: draft.post,
@@ -1328,7 +1352,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           publicId: uploadedImage.publicId,
           code: 'DRAFT_RECONCILIATION_UNCERTAIN'
         };
-        await safeUpdateStage('image_cleanup', deferred, {}, error);
+        await safeUpdateStage('image_cleanup', deferred, { stageId: imageCleanupStageId }, error);
         recordAuditWarning(error, 'IMAGE_CLEANUP_DEFERRED_UNCERTAIN', {
           publicId: uploadedImage.publicId
         });
@@ -1358,7 +1382,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           code: 'IMAGE_CLEANUP_FAILED'
         };
       }
-      await safeUpdateStage('image_cleanup', cleanupResult, {}, error);
+      await safeUpdateStage('image_cleanup', cleanupResult, { stageId: imageCleanupStageId }, error);
     }
     if (error instanceof ContentBudgetLimitError || error?.code === 'CONTENT_BUDGET_LIMIT_REACHED') {
       return finishManual('budget_limit_reached', 'Das konfigurierte Monatsbudget ist erreicht.');

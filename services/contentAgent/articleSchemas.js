@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ARTICLE_SCHEMA_VERSION = 'article-schema-v1';
+export const ARTICLE_SCHEMA_VERSION = 'article-schema-v2';
 import * as cheerio from 'cheerio';
 import { CONTENT_AGENT_LINKS } from '../../data/contentAgentLinks.js';
 
@@ -10,6 +10,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const APPROVED_INTERNAL_LINK_URLS = CONTENT_AGENT_LINKS.map(({ url }) => url);
 
 const NonEmptyString = z.string().trim().min(1);
+const GeneratedMetadataString = NonEmptyString.max(500);
 const Score = z.number().min(0).max(10);
 const HttpsUrlString = z.string()
   .regex(/^https:\/\/\S+$/, 'Quellen müssen eine gültige HTTPS-URL verwenden.')
@@ -56,14 +57,14 @@ export const TopicCandidateSchema = z.object({
   slug: z.string().regex(ASCII_SLUG, 'Der Slug muss ausschließlich ASCII-Kleinbuchstaben, Ziffern und Bindestriche enthalten.'),
   primaryKeyword: NonEmptyString,
   secondaryKeywords: z.array(NonEmptyString).min(1).max(12),
-  contentCluster: NonEmptyString,
-  searchIntent: NonEmptyString,
-  targetAudience: NonEmptyString,
+  contentCluster: GeneratedMetadataString,
+  searchIntent: GeneratedMetadataString,
+  targetAudience: GeneratedMetadataString,
   source: NonEmptyString,
   readerProblem: NonEmptyString,
   concreteReaderBenefit: NonEmptyString,
-  businessGoal: NonEmptyString,
-  ctaType: NonEmptyString,
+  businessGoal: GeneratedMetadataString,
+  ctaType: GeneratedMetadataString,
   requiresCurrentSources: z.boolean(),
   businessValue: Score,
   searchOpportunity: Score,
@@ -116,12 +117,12 @@ export const SeoBriefSchema = z.object({
   workingTitle: NonEmptyString,
   primaryKeyword: NonEmptyString,
   secondaryKeywords: z.array(NonEmptyString).min(1).max(12),
-  searchIntent: NonEmptyString,
-  targetAudience: NonEmptyString,
+  searchIntent: GeneratedMetadataString,
+  targetAudience: GeneratedMetadataString,
   readerProblem: NonEmptyString,
-  contentCluster: NonEmptyString,
-  businessGoal: NonEmptyString,
-  ctaType: NonEmptyString,
+  contentCluster: GeneratedMetadataString,
+  businessGoal: GeneratedMetadataString,
+  ctaType: GeneratedMetadataString,
   targetWordCount: z.number().int().min(1200).max(3200),
   outline: z.array(OutlineItemSchema).min(5).max(16),
   localExamples: z.array(NonEmptyString).max(8),
@@ -148,14 +149,14 @@ export const FaqItemSchema = z.object({
 export const ArticleSeoSchema = z.object({
   primaryKeyword: NonEmptyString,
   secondaryKeywords: z.array(NonEmptyString).min(1).max(12),
-  searchIntent: NonEmptyString,
-  targetAudience: NonEmptyString,
-  contentCluster: NonEmptyString
+  searchIntent: GeneratedMetadataString,
+  targetAudience: GeneratedMetadataString,
+  contentCluster: GeneratedMetadataString
 }).strict();
 
 export const ArticleLeadSchema = z.object({
-  businessGoal: NonEmptyString,
-  ctaType: NonEmptyString,
+  businessGoal: GeneratedMetadataString,
+  ctaType: GeneratedMetadataString,
   ctaPositions: z.array(z.enum(['blog_early', 'blog_mid', 'blog_final']))
     .length(3)
     .superRefine((positions, context) => {

@@ -254,6 +254,29 @@ test('topic candidates require strict candidate objects and ASCII slugs', () => 
   assert.equal(TopicCandidatesSchema.safeParse({ candidates: [validTopicCandidate], extra: true }).success, false);
 });
 
+test('freie KI-Metadaten erlauben bestehende ausführliche Werte, begrenzen aber ausufernde Antworten', () => {
+  const detailedIntent = 'informational mit klarer kommerzieller Nähe; Leser sucht eine umsetzbare Relaunch-Checkliste und Orientierung, ob ein Audit oder professionelle Unterstützung sinnvoll ist.';
+  assert.equal(detailedIntent.length > 80, true);
+  assert.equal(SeoBriefSchema.safeParse({
+    ...validSeoBrief,
+    searchIntent: detailedIntent,
+    contentCluster: 'Website-Relaunch und nachhaltige Conversion-Optimierung für lokale Unternehmen',
+    ctaType: 'Audit oder unverbindliche Projektberatung'
+  }).success, true);
+  assert.equal(SeoBriefSchema.safeParse({
+    ...validSeoBrief,
+    searchIntent: 'x'.repeat(501)
+  }).success, false);
+  assert.equal(ArticleOutputSchema.safeParse({
+    ...validArticle,
+    seo: { ...validArticle.seo, contentCluster: 'x'.repeat(501) }
+  }).success, false);
+  assert.equal(ArticleLeadSchema.safeParse({
+    ...validArticle.lead,
+    ctaType: 'x'.repeat(501)
+  }).success, false);
+});
+
 test('SEO brief enforces word, outline, internal-link and FAQ boundaries', () => {
   assert.equal(SeoBriefSchema.safeParse(validSeoBrief).success, true);
 

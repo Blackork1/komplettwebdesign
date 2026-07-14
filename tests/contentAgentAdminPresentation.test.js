@@ -440,6 +440,30 @@ test('technisch bestandener Artikel bietet nach falschem KI-Strukturblocker nur 
   ]);
 });
 
+test('fehlgeschlagene Metadatenspeicherung bietet nur die sichere Entwurfsfertigstellung an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'failed',
+    attempts: 10,
+    max_attempts: 10,
+    last_error: 'value too long for type character varying(80)',
+    current_stage: 'image_cleanup',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    draft_persistence_recoverable: true,
+    error_report_json: {
+      code: 'pipeline_failed',
+      message: 'value too long for type character varying(80)'
+    }
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverEditorialReview, false);
+  assert.equal(job.canRecoverDraftPersistence, true);
+  assert.equal(job.draftPersistenceRecoveryActionLabel, 'Entwurf mit neuem Bild fertigstellen');
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,

@@ -9,7 +9,9 @@ import {
   QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
-  EDITORIAL_REVIEW_RECOVERY_RETRY_CAP
+  EDITORIAL_REVIEW_RECOVERY_RETRY_CAP,
+  DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
+  DRAFT_PERSISTENCE_RECOVERY_RETRY_CAP
 } from '../services/contentAgent/contentJobRetryPolicy.js';
 import {
   CONTENT_AGENT_RULE_MANIFEST,
@@ -1185,6 +1187,189 @@ export async function recoverEditorialReviewForAdmin({
       runId: state.run_id,
       recoveredStage,
       auditKey: EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY
+    };
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function reviewHasNoActiveRisk(review) {
+  const risks = review?.risks;
+  return !risks || typeof risks !== 'object' || Array.isArray(risks)
+    ? false
+    : Object.values(risks).every((value) => value === false);
+}
+
+function validDraftPersistenceRecoveryState(row) {
+  const stageResults = row?.stage_results_json;
+  const validation = stageResults?.['validation:3'];
+  const review = stageResults?.['review:4']?.value;
+  const upload = stageResults?.cloudinary_upload;
+  const cleanup = stageResults?.image_cleanup;
+  return row
+    && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
+    && row.job_status === 'failed'
+    && row.last_error === 'value too long for type character varying(80)'
+    && Number(row.attempts) === DRAFT_PERSISTENCE_RECOVERY_RETRY_CAP - 1
+    && row.run_status === 'failed'
+    && row.current_stage === 'image_cleanup'
+    && row.post_id == null
+    && row.error_report_json?.code === 'pipeline_failed'
+    && row.error_report_json?.message === 'value too long for type character varying(80)'
+    && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)
+    && row.runtime_snapshot_json.ruleManifestHash !== CONTENT_AGENT_RULE_MANIFEST_HASH
+    && !hasOpenProviderReservation(stageResults)
+    && hasSettledStage(stageResults, 'article_generation')
+    && hasSettledStage(stageResults, 'repair:3')
+    && hasSettledStage(stageResults, 'review:4')
+    && validation?.passed === true
+    && Array.isArray(validation?.issues)
+    && validation.issues.length === 0
+    && review?.passed === true
+    && Number(review?.score) >= 80
+    && review?.requiresManualReview === false
+    && reviewHasNoActiveRisk(review)
+    && hasSettledStage(stageResults, 'image_generation')
+    && upload?.status === 'completed'
+    && typeof upload.publicId === 'string'
+    && upload.publicId.startsWith('blog_images/')
+    && cleanup?.status === 'completed'
+    && cleanup.publicId === upload.publicId
+    && !Object.hasOwn(stageResults, 'draft_creation')
+    && !Object.hasOwn(stageResults, DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY)
+    && !Object.hasOwn(stageResults, 'image_generation:2')
+    && !Object.hasOwn(stageResults, 'cloudinary_upload:2')
+    && !hasAnyBudgetStage(stageResults, 'image_generation:2');
+}
+
+export async function recoverDraftPersistenceForAdmin({
+  jobId,
+  adminId
+} = {}, db = pool) {
+  if (
+    !Number.isSafeInteger(jobId) || jobId <= 0
+    || !Number.isSafeInteger(adminId) || adminId <= 0
+  ) {
+    throw new TypeError('Für die Entwurfsfertigstellung werden positive sichere Ganzzahlen benötigt.');
+  }
+
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const { rows } = await client.query(
+      `
+        SELECT j.id AS job_id,
+               j.job_type,
+               j.status AS job_status,
+               j.attempts,
+               j.max_attempts,
+               j.last_error,
+               r.id AS run_id,
+               r.status AS run_status,
+               r.current_stage,
+               r.post_id,
+               r.cost_estimate,
+               r.error_report_json,
+               r.runtime_snapshot_json,
+               r.stage_results_json
+        FROM content_jobs AS j
+        JOIN content_runs AS r ON r.job_id = j.id
+        WHERE j.id = $1
+        FOR UPDATE OF j, r
+      `,
+      [jobId]
+    );
+    const state = rows[0];
+    if (!validDraftPersistenceRecoveryState(state)) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const previousManifestHash = state.runtime_snapshot_json.ruleManifestHash;
+    const recoveredStage = 'image_generation:2';
+    const runResult = await client.query(
+      `
+        UPDATE content_runs
+        SET runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+              'ruleManifest', $3::jsonb,
+              'ruleManifestHash', $4::text
+            ),
+            stage_results_json = stage_results_json || jsonb_build_object(
+              $2::text,
+              jsonb_build_object(
+                'status', 'authorized_after_metadata_contract_fix',
+                'imageGenerationStageId', 'image_generation:2',
+                'cloudinaryUploadStageId', 'cloudinary_upload:2',
+                'previousImageCleanupStageId', 'image_cleanup',
+                'previousManifestHash', $5::text,
+                'currentManifestHash', $4::text,
+                'adminId', $6::bigint,
+                'authorizedAt', NOW()
+              )
+            ),
+            error_report_json = jsonb_build_object(
+              'code', 'draft_persistence_recovery_authorized',
+              'stage', 'image_generation:2',
+              'message', 'Die Entwurfsfertigstellung mit einem neuen Bild wurde durch einen Administrator freigegeben.'
+            ),
+            finished_at = NULL
+        WHERE id = $1
+          AND status = 'failed'
+          AND post_id IS NULL
+          AND error_report_json ->> 'message' = 'value too long for type character varying(80)'
+          AND runtime_snapshot_json ->> 'ruleManifestHash' = $5::text
+          AND NOT (stage_results_json ? $2::text)
+        RETURNING id
+      `,
+      [
+        state.run_id,
+        DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
+        CONTENT_AGENT_RULE_MANIFEST,
+        CONTENT_AGENT_RULE_MANIFEST_HASH,
+        previousManifestHash,
+        adminId
+      ]
+    );
+    if (!runResult.rows[0]) {
+      throw new Error('Die Entwurfsfertigstellung konnte nicht atomar protokolliert werden.');
+    }
+
+    const attempts = Number(state.attempts);
+    const jobResult = await client.query(
+      `
+        UPDATE content_jobs
+        SET status = 'queued',
+            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            run_after = NOW(),
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            finished_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+          AND status = 'failed'
+          AND last_error = 'value too long for type character varying(80)'
+          AND attempts = $3
+          AND attempts < $2
+        RETURNING *
+      `,
+      [jobId, DRAFT_PERSISTENCE_RECOVERY_RETRY_CAP, attempts]
+    );
+    if (!jobResult.rows[0]) {
+      throw new Error('Der Job konnte nicht atomar zur Entwurfsfertigstellung eingereiht werden.');
+    }
+
+    await client.query('COMMIT');
+    return {
+      job: jobResult.rows[0],
+      runId: state.run_id,
+      recoveredStage,
+      auditKey: DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY
     };
   } catch (error) {
     if (transactionStarted) await rollbackRecoveryQuietly(client);
