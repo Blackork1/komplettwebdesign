@@ -2331,6 +2331,23 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
       revisionVersion: 4,
       snapshotFingerprint: 'f'.repeat(64)
     }), { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' });
+    const boundOriginRun = (await pool.query(`
+      SELECT id, runtime_snapshot_json
+      FROM content_runs
+      WHERE job_id = $1::bigint
+      ORDER BY id DESC
+      LIMIT 1
+    `, [auditInput.jobId])).rows[0];
+    await pool.query(`
+      UPDATE content_post_audits
+      SET status = 'open'
+      WHERE id = $1::bigint
+    `, [revalidationContext.audit.id]);
+    await pool.query(`
+      UPDATE content_runs
+      SET runtime_snapshot_json = '{}'::jsonb
+      WHERE id = $1::bigint
+    `, [boundOriginRun.id]);
     await optimizationRepository.failRevisionRevalidation({
       revisionId: Number(raceRevision.rows[0].id),
       revisionVersion: 4,
@@ -2338,6 +2355,13 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
         persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint,
       failureCode: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
     });
+    await assert.rejects(optimizationRepository.failRevisionRevalidation({
+      revisionId: Number(raceRevision.rows[0].id),
+      revisionVersion: 4,
+      snapshotFingerprint:
+        persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint,
+      failureCode: 'CONTENT_REVISION_STALE'
+    }), { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' });
     const failedRevalidation = await pool.query(`
       SELECT optimization_report_json -> 'revalidation' AS revalidation
       FROM content_post_revisions
@@ -2348,6 +2372,20 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
       failedRevalidation.rows[0].revalidation.snapshotFingerprint,
       persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
     );
+    assert.equal(
+      failedRevalidation.rows[0].revalidation.failureCode,
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+    );
+    await pool.query(`
+      UPDATE content_post_audits
+      SET status = 'revision_created'
+      WHERE id = $1::bigint
+    `, [revalidationContext.audit.id]);
+    await pool.query(`
+      UPDATE content_runs
+      SET runtime_snapshot_json = $1::jsonb
+      WHERE id = $2::bigint
+    `, [JSON.stringify(boundOriginRun.runtime_snapshot_json), boundOriginRun.id]);
     const failedRecoveryContext = await optimizationRepository.loadRevisionRevalidationContext({
       revisionId: Number(raceRevision.rows[0].id),
       revisionVersion: 4,

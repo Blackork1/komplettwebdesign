@@ -15,13 +15,41 @@ import {
   minimumExistingPostRevisionScore
 } from './existingPostRevisionApprovalPolicy.js';
 import { normalizeExistingPostRevisionSources } from './existingPostRevisionSourcePolicy.js';
-import { isExistingPostRevisionFailureCode } from './existingPostRevisionFailurePolicy.js';
+import {
+  classifyExistingPostRevisionError,
+  existingPostRevisionTransientError,
+  isExistingPostRevisionFailureCode
+} from './existingPostRevisionFailurePolicy.js';
 
 function requiredFunction(value, name) {
   if (typeof value !== 'function') {
     throw new TypeError(`Die Revalidierung benötigt ${name}.`);
   }
   return value;
+}
+
+function isRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasValidLoadedContextEnvelope(context) {
+  const revision = context?.revision;
+  const report = revision?.optimization_report_json;
+  const revalidation = report?.revalidation;
+  const audit = context?.audit;
+  return isRecord(context)
+    && isRecord(context.post)
+    && isRecord(revision)
+    && isRecord(revision.snapshot_json)
+    && isRecord(report)
+    && isRecord(revalidation)
+    && isRecord(audit)
+    && Number.isInteger(audit.score)
+    && audit.score >= 0
+    && audit.score <= 100
+    && Array.isArray(audit.findings_json)
+    && Array.isArray(audit.recommended_actions_json)
+    && isRecord(context.runtimeSnapshot);
 }
 
 function articleFromContext(post, snapshot) {
@@ -137,9 +165,36 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
 
   async function failClosed(code) {
     await leaseGuard();
-    await fail({ ...fence, failureCode: code });
+    try {
+      await fail({ ...fence, failureCode: code });
+    } catch (error) {
+      if (error?.code !== 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') throw error;
+      await finish('needs_manual_attention', error.code);
+      return {
+        status: 'needs_manual_attention',
+        revisionId: fence.revisionId,
+        code: error.code
+      };
+    }
     await finish('needs_manual_attention', code);
     return { status: 'needs_manual_attention', revisionId: fence.revisionId, code };
+  }
+
+  async function handleExecutionError(error) {
+    const classification = classifyExistingPostRevisionError(error, input.claim);
+    if (classification.disposition === 'lease_lost') throw error;
+    if (classification.disposition === 'fence_lost') {
+      await finish('needs_manual_attention', 'CONTENT_REVISION_REVALIDATION_FENCE_LOST');
+      return {
+        status: 'needs_manual_attention',
+        revisionId: fence.revisionId,
+        code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+      };
+    }
+    if (classification.disposition === 'transient') {
+      throw existingPostRevisionTransientError(error);
+    }
+    return failClosed(classification.failureCode);
   }
 
   await leaseGuard();
@@ -147,12 +202,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
   try {
     context = await loadContext(fence);
   } catch (error) {
-    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') {
-      await finish('needs_manual_attention', error.code);
-      return { status: 'needs_manual_attention', revisionId: fence.revisionId, code: error.code };
-    }
-    throw error;
+    return handleExecutionError(error);
+  }
+  if (!hasValidLoadedContextEnvelope(context)) {
+    return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
   const persistedRevalidation = context.revision?.optimization_report_json?.revalidation;
   const exactPersistedFence = persistedRevalidation?.revisionVersion === fence.revisionVersion
@@ -310,14 +363,18 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
   }
 
   await leaseGuard();
-  await complete({
-    ...fence,
-    review: paid.value,
-    score: paid.value.score,
-    minimumScore,
-    auditCodes: originalAuditCodes,
-    unresolvedAuditCodes
-  });
+  try {
+    await complete({
+      ...fence,
+      review: paid.value,
+      score: paid.value.score,
+      minimumScore,
+      auditCodes: originalAuditCodes,
+      unresolvedAuditCodes
+    });
+  } catch (error) {
+    return handleExecutionError(error);
+  }
   await finish('completed');
   return { status: 'completed', revisionId: fence.revisionId };
 }

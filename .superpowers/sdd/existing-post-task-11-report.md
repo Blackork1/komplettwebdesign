@@ -111,3 +111,31 @@ Die Mindestschwelle stammt an jeder Stelle ausschließlich aus dem numerischen g
 - Vollständige Suite mit lokalem, nicht verwendetem Dummywert `OPENAI_API_KEY=test-key`: 1.765 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen.
 - `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
 - Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.
+
+## Dritter Nachtrag: fail-closed Re-Audit und terminale Fehlerdisposition
+
+### Reproduzierbarkeitsgrenze des Re-Audits
+
+Ein ursprünglicher Auditcode gilt nur noch dann als gelöst, wenn er in einer festen, unveränderlichen Allowlist lokaler und mit dem gespeicherten Kontext tatsächlich reproduzierbarer Prüfungen enthalten ist und im aktuellen lokalen Audit nicht mehr vorkommt. Zukünftige unbekannte Codes sowie kontextabhängige Befunde wie `cannibalization_risk`, für die im Revalidierungskontext kein vollständiges Vergleichsinventar vorliegt, bleiben stets ungelöst. Fortbestehende bekannte Befunde und neue lokale Blocker verhindern weiterhin die Freigabe; neue serverseitig nichtblockierende Hinweise allein blockieren sie nicht.
+
+### Gemeinsame Fehlerpolicy und Zustandsübergänge
+
+Worker und Revalidierungsrunner verwenden dieselbe explizite Klassifikation für Leaseverlust, Fenceverlust, transiente Datenbank-/Netzwerkfehler und permanente Kontextfehler. Stale Revisionen, fehlende oder ungültige Reports, Audits, Ursprungssnapshots, Manifeste, Payloads, Bindungen und unbekannte Invarianten scheitern fail-closed. Der letzte ausgeschöpfte transiente Versuch wird mit `CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED` terminal. Permanente und ausgeschöpfte Fälle markieren ausschließlich den exakt gebundenen `pending`-Fence als `failed` und schließen einen vorhandenen Run sowie den Job als manuell prüfbedürftig ab. Leaseverlust bleibt wiederholbar; Fenceverlust terminalisiert den Job beziehungsweise Run, ohne einen fremden oder neueren Revisionsstand zu überschreiben.
+
+Strukturell geladene, aber ungültige Kontext-Hüllen werden vor jeder technischen Prüfung und vor jedem Provideraufruf abgewiesen. Dies umfasst insbesondere fehlende Reports, ungültige Auditarrays oder -scores und fehlende Ursprungssnapshots. Die Fehlerpersistenz verwendet weiterhin ausschließlich die minimale Fence-Sperre und hängt nicht von dem bereits beschädigten Audit- oder Ursprungskontext ab.
+
+### RED/GREEN- und PostgreSQL-Belege
+
+- RED: Unbekannte und kontextabhängige ursprüngliche Auditcodes wurden zunächst fälschlich als gelöst behandelt. Die feste Reproduzierbarkeits-Allowlist machte beide Regressionen grün.
+- RED: Worker und Runner behandelten stale, permanente, transiente und ausgeschöpfte Fehler unterschiedlich; letzte Versuche konnten den Revisionsstand in `pending` zurücklassen. Die gemeinsame Policy und die gefencten Handler machten die Vor- und Nach-Run-Fälle grün.
+- RED: Ein geladener Kontext ohne Optimierungsreport wurde zunächst als bloßer Fenceverlust eingeordnet. Die frühe Kontext-Hüllenprüfung terminalisiert diesen sowie ungültige Audit- und Ursprungskontexte nun exakt als Kontextfehler.
+- Der reale PostgreSQL-Test beschädigt gleichzeitig die Auditbindung und den Runtime-Snapshot des Ursprungslaufs. `failRevisionRevalidation` setzt den exakten `pending`-Fence dennoch auf `failed`; ein zweiter Abschlussversuch verliert den Fence und kann den gespeicherten Fehlercode nicht überschreiben.
+
+### Abschließende Verifikation
+
+- Fokussierte Re-Audit-, Repository-, Worker- und Runner-Suiten: 161 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Echter PostgreSQL-Lauf mit explizit freigegebener lokaler Testdatenbank: 11 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Vollständige Suite mit lokalem, nicht verwendetem Dummywert `OPENAI_API_KEY=test-key`: 1.778 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Syntaxprüfungen und `git diff --check`: ohne Befund.
+- Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.

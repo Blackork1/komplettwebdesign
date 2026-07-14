@@ -1906,7 +1906,7 @@ test('verlorener Fence überschreibt bei früher Payload-Terminalisierung keine 
   assert.equal(failureAttempts, 1);
 });
 
-test('fehlender Ursprungssnapshot markiert den Revisionsfence vor der Kontext-Terminalisierung', async () => {
+test('fehlender Ursprungssnapshot markiert den Revisionsfence und terminalisiert den Job konsistent', async () => {
   const failures = [];
   const payload = {
     source: 'revision_revalidation',
@@ -1925,15 +1925,47 @@ test('fehlender Ursprungssnapshot markiert den Revisionsfence vor der Kontext-Te
     }
   });
 
-  await assert.rejects(handler({
+  const result = await handler({
     id: 54,
     job_type: 'revalidate_existing_post_revision',
     payload_json: payload
-  }, { leaseGuard: async () => true }), {
-    code: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
-    retryable: false
-  });
+  }, { leaseGuard: async () => true });
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   assert.equal(failures[0].failureCode, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+});
+
+test('stale Kontext vor Runanlage terminalisiert den exakten Revisionsfence ohne Run', async () => {
+  const failures = [];
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Liveartikel verändert'), { code: 'CONTENT_REVISION_STALE' });
+    },
+    async createRun() { assert.fail('Für stale Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Für stale Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation(input) {
+      failures.push(input);
+      return { id: 71 };
+    }
+  });
+
+  const result = await handler({
+    id: 54,
+    attempts: 1,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_STALE');
+  assert.equal(failures[0].failureCode, 'CONTENT_REVISION_STALE');
 });
 
 test('vorübergehender Kontextladefehler bleibt retrybar und markiert die Revision nicht terminal', async () => {
@@ -1952,6 +1984,8 @@ test('vorübergehender Kontextladefehler bleibt retrybar und markiert die Revisi
 
   await assert.rejects(handler({
     id: 54,
+    attempts: 1,
+    max_attempts: 3,
     job_type: 'revalidate_existing_post_revision',
     payload_json: {
       source: 'revision_revalidation',
@@ -1959,7 +1993,78 @@ test('vorübergehender Kontextladefehler bleibt retrybar und markiert die Revisi
       revision_version: 4,
       snapshot_fingerprint: 'b'.repeat(64)
     }
-  }, { leaseGuard: async () => true }), temporaryError);
+  }, { leaseGuard: async () => true }), {
+    code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT',
+    retryable: true
+  });
+  assert.equal(failureWrites, 0);
+});
+
+test('ausgeschöpfter transienter Kontextfehler vor Runanlage verlässt pending terminal', async () => {
+  const failures = [];
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Verbindung zurückgesetzt'), { code: 'ECONNRESET' });
+    },
+    async createRun() { assert.fail('Ohne Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Ohne Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation(input) {
+      failures.push(input);
+      return { id: 71 };
+    }
+  });
+
+  const result = await handler({
+    id: 54,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+  assert.equal(
+    failures[0].failureCode,
+    'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+  );
+});
+
+test('verlorener Kontextfence terminalisiert nur den Job und schreibt keine fremde Revision', async () => {
+  let failureWrites = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Fence verloren'), {
+        code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+      });
+    },
+    async createRun() { assert.fail('Bei verlorenem Fence darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Bei verlorenem Fence darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation() { failureWrites += 1; }
+  });
+
+  const result = await handler({
+    id: 54,
+    attempts: 1,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_FENCE_LOST');
   assert.equal(failureWrites, 0);
 });
 

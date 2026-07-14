@@ -19,6 +19,22 @@ const EXISTING_CONTENT_FINDING_POLICY = Object.freeze({
   unknown_internal_link: { severity: 'error', blocking: true },
   cannibalization_risk: { severity: 'warning', blocking: false }
 });
+export const REPRODUCIBLE_EXISTING_CONTENT_REAUDIT_CODES = Object.freeze([
+  'unsupported_content_format',
+  'missing_meta_title',
+  'missing_meta_description',
+  'missing_image_alt',
+  'missing_structured_faq',
+  'stale_year',
+  'static_price',
+  'missing_contact_cta',
+  'missing_internal_links',
+  'broken_internal_link',
+  'unknown_internal_link'
+]);
+const REPRODUCIBLE_REAUDIT_CODE_SET = new Set(
+  REPRODUCIBLE_EXISTING_CONTENT_REAUDIT_CODES
+);
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -49,7 +65,9 @@ export function evaluateExistingContentReaudit({
     .filter(({ code }) => code);
   const currentCodes = new Set(normalizedCurrent.map(({ code }) => code));
   const originalCodeSet = new Set(originalCodes);
-  const unresolvedOriginalCodes = originalCodes.filter((code) => currentCodes.has(code));
+  const unresolvedOriginalCodes = originalCodes.filter((code) => (
+    !REPRODUCIBLE_REAUDIT_CODE_SET.has(code) || currentCodes.has(code)
+  ));
   const newBlockingCodes = [...new Set(normalizedCurrent
     .filter(({ code, blocking }) => blocking === true && !originalCodeSet.has(code))
     .map(({ code }) => code))].slice(0, 100);

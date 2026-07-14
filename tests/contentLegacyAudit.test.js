@@ -36,18 +36,53 @@ test('lokale Auditpolicy klassifiziert blockierende und nichtblockierende Befund
   assert.equal(findings.missing_internal_links.blocking, false);
 });
 
-test('Re-Audit verlangt ursprüngliche Codes und blockiert nur neue lokale Blocker', () => {
-  const originalFindings = [{ code: 'missing_meta_title' }];
+test('Re-Audit hält unbekannte zukünftige Originalcodes bindend', () => {
   assert.deepEqual(evaluateExistingContentReaudit({
-    originalFindings,
+    originalFindings: [{ code: 'unknown_future_code' }],
+    currentFindings: []
+  }), {
+    passed: false,
+    unresolvedOriginalCodes: ['unknown_future_code'],
+    newBlockingCodes: []
+  });
+});
+
+test('Re-Audit hält kontextabhängiges Kannibalisierungsrisiko ohne Vergleichsinventar bindend', () => {
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings: [{ code: 'cannibalization_risk' }],
+    currentFindings: []
+  }), {
+    passed: false,
+    unresolvedOriginalCodes: ['cannibalization_risk'],
+    newBlockingCodes: []
+  });
+});
+
+test('Re-Audit erkennt einen reproduzierbaren verschwundenen Originalcode als gelöst', () => {
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings: [{ code: 'missing_meta_title' }],
+    currentFindings: []
+  }), {
+    passed: true,
+    unresolvedOriginalCodes: [],
+    newBlockingCodes: []
+  });
+});
+
+test('Re-Audit hält einen reproduzierbaren fortbestehenden Originalcode ungelöst', () => {
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings: [{ code: 'missing_meta_title' }],
     currentFindings: [{ code: 'missing_meta_title' }]
   }), {
     passed: false,
     unresolvedOriginalCodes: ['missing_meta_title'],
     newBlockingCodes: []
   });
+});
+
+test('Re-Audit blockiert einen neu entstandenen lokalen Blocker trotz angelieferter Entschärfung', () => {
   assert.deepEqual(evaluateExistingContentReaudit({
-    originalFindings,
+    originalFindings: [],
     currentFindings: [
       { code: 'static_price', severity: 'info', blocking: false },
       { code: 'missing_internal_links', severity: 'error', blocking: true }
@@ -57,8 +92,11 @@ test('Re-Audit verlangt ursprüngliche Codes und blockiert nur neue lokale Block
     unresolvedOriginalCodes: [],
     newBlockingCodes: ['static_price']
   });
+});
+
+test('Re-Audit erlaubt einen neuen serverseitig nichtblockierenden lokalen Hinweis', () => {
   assert.deepEqual(evaluateExistingContentReaudit({
-    originalFindings,
+    originalFindings: [],
     currentFindings: [{ code: 'missing_internal_links', severity: 'error', blocking: true }]
   }), {
     passed: true,

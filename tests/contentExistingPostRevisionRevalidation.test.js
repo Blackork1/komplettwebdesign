@@ -11,13 +11,53 @@ import {
 } from '../services/contentAgent/existingPostRevisionApprovalPolicy.js';
 import { runExistingPostRevisionRevalidationJob } from '../services/contentAgent/existingPostRevisionRevalidationService.js';
 import { createContentAgentJobSnapshot } from '../services/contentAgent/runtimeConfigService.js';
-import { isExistingPostRevisionFailureCode } from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
+import * as revisionFailurePolicy from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
+
+const { isExistingPostRevisionFailureCode } = revisionFailurePolicy;
 
 test('Revalidierungsfehlercodes sind fest allowgelistet', () => {
   assert.equal(isExistingPostRevisionFailureCode('CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID'), true);
   assert.equal(isExistingPostRevisionFailureCode('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'), true);
   assert.equal(isExistingPostRevisionFailureCode('provider_execution_uncertain'), true);
   assert.equal(isExistingPostRevisionFailureCode('FREIER_PROVIDER_CODE'), false);
+});
+
+test('gemeinsame Revalidierungsfehlerpolicy trennt permanent, transient, ausgeschöpft, Lease und Fence', () => {
+  const classify = revisionFailurePolicy.classifyExistingPostRevisionError;
+  assert.equal(typeof classify, 'function');
+  assert.deepEqual(classify({ code: 'CONTENT_REVISION_STALE' }, {
+    attempts: 1, max_attempts: 3
+  }), {
+    disposition: 'permanent',
+    failureCode: 'CONTENT_REVISION_STALE',
+    exhausted: false
+  });
+  assert.deepEqual(classify({ code: '40001' }, {
+    attempts: 1, max_attempts: 3
+  }), {
+    disposition: 'transient',
+    failureCode: null,
+    exhausted: false
+  });
+  assert.deepEqual(classify({ code: 'ECONNRESET' }, {
+    attempts: 3, max_attempts: 3
+  }), {
+    disposition: 'permanent',
+    failureCode: 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED',
+    exhausted: true
+  });
+  assert.deepEqual(classify(new Error('Invariante verletzt'), {
+    attempts: 1, max_attempts: 3
+  }), {
+    disposition: 'permanent',
+    failureCode: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+    exhausted: false
+  });
+  assert.equal(classify({ code: 'CONTENT_JOB_LEASE_LOST' }).disposition, 'lease_lost');
+  assert.equal(
+    classify({ code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' }).disposition,
+    'fence_lost'
+  );
 });
 
 function approvedReview(score = 92) {
@@ -307,6 +347,137 @@ function runnerDependencies(fixture, overrides = {}) {
   return { dependencies, state };
 }
 
+test('dauerhafte stale und ungültige Kontexte terminalisieren Revision und vorhandenen Run', async () => {
+  for (const errorCode of [
+    'CONTENT_REVISION_STALE',
+    'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+  ]) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = 1;
+    fixture.claim.max_attempts = 3;
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.optimizationRepository.loadRevisionRevalidationContext = async () => {
+      throw Object.assign(new Error('Dauerhafter Kontextfehler'), { code: errorCode });
+    };
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 89, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, 'needs_manual_attention');
+    assert.equal(result.code, errorCode);
+    assert.equal(state.failedCalls[0].failureCode, errorCode);
+    assert.equal(state.finishCalls[0].input.status, 'needs_manual_attention');
+    assert.equal(state.providerCalls, 0);
+  }
+});
+
+test('geladene ungültige Reports, Audits und Ursprungssnapshots scheitern nach Runanlage fail-closed', async () => {
+  const cases = [
+    {
+      label: 'Report',
+      mutate(fixture) {
+        fixture.context.revision.optimization_report_json = null;
+      }
+    },
+    {
+      label: 'Audit',
+      mutate(fixture) {
+        fixture.context.audit.findings_json = null;
+      }
+    },
+    {
+      label: 'Audit-Score',
+      mutate(fixture) {
+        fixture.context.audit.score = null;
+      }
+    },
+    {
+      label: 'Ursprungssnapshot',
+      mutate(fixture) {
+        fixture.context.runtimeSnapshot = null;
+      }
+    }
+  ];
+
+  for (const currentCase of cases) {
+    const fixture = runnerFixture();
+    currentCase.mutate(fixture);
+    const { dependencies, state } = runnerDependencies(fixture);
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 89, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, 'needs_manual_attention', currentCase.label);
+    assert.equal(
+      result.code,
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+      currentCase.label
+    );
+    assert.equal(
+      state.failedCalls[0]?.failureCode,
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+      currentCase.label
+    );
+    assert.equal(state.finishCalls[0]?.input.status, 'needs_manual_attention', currentCase.label);
+    assert.equal(state.providerCalls, 0, currentCase.label);
+  }
+});
+
+test('transienter Kontextfehler nach Runanlage bleibt ohne Revisionsschreibzugriff retrybar', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 1;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  dependencies.optimizationRepository.loadRevisionRevalidationContext = async () => {
+    throw Object.assign(new Error('Serialisierungskonflikt'), { code: '40001' });
+  };
+
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 89, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies), {
+    code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT',
+    retryable: true
+  });
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 0);
+});
+
+test('ausgeschöpfter transienter Kontextfehler verlässt pending und terminalisiert den Run', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  dependencies.optimizationRepository.loadRevisionRevalidationContext = async () => {
+    throw Object.assign(new Error('Verbindung zurückgesetzt'), { code: 'ECONNRESET' });
+  };
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 89, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+  assert.equal(
+    state.failedCalls[0].failureCode,
+    'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+  );
+  assert.equal(state.finishCalls[0].input.status, 'needs_manual_attention');
+});
+
 test('Revalidierungsworker bindet Quellen und Review an Version/Fingerprint und nutzt Providerresultat beim Resume erneut', async () => {
   const fixture = runnerFixture();
   const { dependencies, state } = runnerDependencies(fixture);
@@ -524,16 +695,16 @@ test('Versionsrace nach persistierter Providerantwort überschreibt keinen neuer
     leaseGuard: async () => true
   };
 
-  await assert.rejects(
-    runExistingPostRevisionRevalidationJob(input, dependencies),
-    { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' }
-  );
+  const raced = await runExistingPostRevisionRevalidationJob(input, dependencies);
   const resumed = await runExistingPostRevisionRevalidationJob(input, dependencies);
 
+  assert.equal(raced.status, 'needs_manual_attention');
+  assert.equal(raced.code, 'CONTENT_REVISION_REVALIDATION_FENCE_LOST');
   assert.equal(resumed.status, 'needs_manual_attention');
   assert.equal(state.providerCalls, 1);
   assert.equal(state.completeCalls.length, 1);
   assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 2);
   assert.equal(state.finishCalls.at(-1).input.errorReport.code, 'CONTENT_REVISION_REVALIDATION_FENCE_LOST');
 });
 

@@ -6,6 +6,10 @@ import {
   buildAllowedInternalLinksFromInventory,
   validateContentRuleSnapshot
 } from '../services/contentAgent/contentRuleManifest.js';
+import {
+  classifyExistingPostRevisionError,
+  existingPostRevisionTransientError
+} from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
 import { createContentWorker, LeaseLostError } from '../services/contentAgent/workerService.js';
 
 export const GENERATION_JOB_TYPES = new Set(['generate_weekly_draft', 'generate_manual_draft']);
@@ -388,6 +392,35 @@ export function createProductionJobHandler({
         throw error;
       }
     }
+    async function handleRevalidationExecutionError(error, { run = null } = {}) {
+      const classification = classifyExistingPostRevisionError(error, claim);
+      if (classification.disposition === 'lease_lost') throw error;
+      if (classification.disposition === 'transient') {
+        throw existingPostRevisionTransientError(error);
+      }
+      const failureCode = classification.disposition === 'fence_lost'
+        ? 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+        : classification.failureCode;
+      if (classification.disposition !== 'fence_lost') {
+        await failRevalidationFence(failureCode);
+      }
+      if (run?.id && typeof finishRun === 'function') {
+        await assertActiveLease(leaseGuard);
+        assertFinishedRun(await finishRun(run.id, {
+          status: 'needs_manual_attention',
+          postId: null,
+          errorReport: {
+            code: failureCode,
+            message: 'Die Revalidierung wurde wegen eines dauerhaften Kontextfehlers beendet.'
+          }
+        }));
+      }
+      return {
+        status: 'needs_manual_attention',
+        post: null,
+        code: failureCode
+      };
+    }
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
     }
@@ -561,10 +594,18 @@ export function createProductionJobHandler({
     let initialInventory = null;
     let existingPostTrustedContext = null;
     let runtimeSnapshot;
-    let run = (snapshotEnabled || existingPostRevalidationJob)
-      && typeof findRunByJobId === 'function'
-      ? await findRunByJobId(claim.id)
-      : null;
+    let run = null;
+    if ((snapshotEnabled || existingPostRevalidationJob)
+        && typeof findRunByJobId === 'function') {
+      try {
+        run = await findRunByJobId(claim.id);
+      } catch (error) {
+        if (existingPostRevalidationJob) {
+          return handleRevalidationExecutionError(error);
+        }
+        throw error;
+      }
+    }
     if (!run) {
       await assertActiveLease(leaseGuard);
       if (existingPostRevalidationJob) {
@@ -576,25 +617,14 @@ export function createProductionJobHandler({
         try {
           context = await contextLoader(existingPostRevalidationPayload(claim));
         } catch (error) {
-          const terminalContextError = error?.retryable === false
-            || [
-              'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
-              'CONTENT_REVISION_NOT_FOUND',
-              'CONTENT_REVISION_CONFLICT'
-            ].includes(error?.code);
-          if (error?.code !== 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
-              && terminalContextError) {
-            await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
-          }
-          throw error;
+          return handleRevalidationExecutionError(error);
         }
         runtimeSnapshot = context?.runtimeSnapshot;
         if (!runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)) {
-          await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
-          throw permanentJobError(
+          return handleRevalidationExecutionError(permanentJobError(
             'Der Ursprungslauf enthält keinen gültigen Runtime-Snapshot.',
             'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
-          );
+          ));
         }
       } else if (snapshotEnabled) {
         const settings = await getSettings();
@@ -630,12 +660,26 @@ export function createProductionJobHandler({
         });
       }
       await assertActiveLease(leaseGuard);
-      run = await createRun({
-        jobId: claim.id,
-        ...((snapshotEnabled || existingPostRevalidationJob) ? { runtimeSnapshot } : {})
-      });
+      try {
+        run = await createRun({
+          jobId: claim.id,
+          ...((snapshotEnabled || existingPostRevalidationJob) ? { runtimeSnapshot } : {})
+        });
+      } catch (error) {
+        if (existingPostRevalidationJob) {
+          return handleRevalidationExecutionError(error);
+        }
+        throw error;
+      }
     }
-    if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
+    if (!run?.id) {
+      if (existingPostRevalidationJob) {
+        return handleRevalidationExecutionError(
+          new Error('Content-Agent-Lauf konnte nicht angelegt werden.')
+        );
+      }
+      throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
+    }
     const adoptedTerminal = adoptTerminalRun(run);
     if (adoptedTerminal) return adoptedTerminal;
     const persistedSnapshot = (snapshotEnabled || existingPostRevalidationJob)
