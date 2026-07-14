@@ -6,13 +6,16 @@ import {
   revertExistingPostChange
 } from '../services/contentAgent/existingPostDiffService.js';
 import {
-  classifyLearningIssueLocally,
-  getLearningCategory,
-  sanitizeLearningText
+  getLearningCategory
 } from '../services/contentAgent/contentLearningTaxonomy.js';
 import { createContentAuditRepository } from './contentAuditRepository.js';
 import { createContentLearningRepository } from './contentLearningRepository.js';
 import { trustedValidationContext } from './contentRevisionRepository.js';
+import {
+  isSnapshotFingerprint,
+  snapshotFingerprint
+} from '../services/contentAgent/revisionSnapshotFingerprint.js';
+import { ReviewOutputSchema } from '../services/contentAgent/articleSchemas.js';
 
 const HASH = /^[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -22,11 +25,60 @@ const MAX_FEEDBACK_DETAILS_BYTES = 64_000;
 const MAX_OUTCOME_JSON_BYTES = 256_000;
 const MAX_PG_INT32 = 2_147_483_647;
 const MAX_MANUAL_FEEDBACK_ITEMS = 24;
+const REVALIDATION_JOB_TYPE = 'revalidate_existing_post_revision';
+const REVALIDATION_FAILURE_CODES = new Set([
+  'CONTENT_BUDGET_LIMIT_REACHED',
+  'CONTENT_JOB_LEASE_LOST',
+  'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+  'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+  'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+  'CONTENT_REVISION_REVALIDATION_SCOPE_FAILED',
+  'CONTENT_REVISION_REVALIDATION_TECHNICAL_FAILED',
+  'provider_execution_uncertain',
+  'provider_stage_cost_invalid',
+  'provider_stage_persistence_uncertain',
+  'provider_stage_result_invalid',
+  'provider_stage_schema_invalid'
+]);
 const SAFE_CHANGE_KINDS = new Set(['field', 'faq', 'html']);
 const SAFE_CHANGE_FIELDS = new Set([
   'title', 'shortDescription', 'metaTitle', 'metaDescription', 'ogTitle',
   'ogDescription', 'imageAlt', 'faqJson', 'contentHtml'
 ]);
+const AUDIT_CODE_CATEGORY = Object.freeze({
+  missing_meta_title: 'technical_precision',
+  missing_meta_description: 'technical_precision',
+  missing_image_alt: 'technical_precision',
+  missing_structured_faq: 'search_intent_coverage',
+  stale_year: 'claims_and_sources',
+  static_price: 'claims_and_sources',
+  missing_contact_cta: 'cta_repetition_or_fit',
+  missing_internal_links: 'internal_linking',
+  broken_internal_link: 'internal_linking',
+  cannibalization_risk: 'search_intent_coverage'
+});
+const FIELD_AUDIT_CODES = Object.freeze({
+  metaTitle: new Set(['missing_meta_title']),
+  metaDescription: new Set(['missing_meta_description']),
+  imageAlt: new Set(['missing_image_alt']),
+  faqJson: new Set(['missing_structured_faq']),
+  contentHtml: new Set([
+    'stale_year', 'static_price', 'missing_contact_cta', 'missing_internal_links',
+    'broken_internal_link', 'cannibalization_risk'
+  ])
+});
+const SAFE_FIELD_LABELS = Object.freeze({
+  title: 'Titel',
+  shortDescription: 'Kurzbeschreibung',
+  metaTitle: 'Meta Title',
+  metaDescription: 'Meta Description',
+  ogTitle: 'Open-Graph-Titel',
+  ogDescription: 'Open-Graph-Beschreibung',
+  imageAlt: 'Bild-Alt-Text',
+  faqJson: 'FAQ',
+  contentHtml: 'Artikelinhalt',
+  unknown: 'unbekanntes Feld'
+});
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
   'og_title', 'og_description', 'faq_json', 'image_url', 'image_alt'
@@ -246,26 +298,31 @@ function safeChangeField(change) {
   return SAFE_CHANGE_FIELDS.has(change?.field) ? change.field : 'unknown';
 }
 
-function changeLearningClassification(change) {
-  const reasons = Array.isArray(change?.reasons) ? change.reasons : [];
-  const explicitCategory = reasons
-    .flatMap((reason) => Array.isArray(reason?.auditCodes) ? reason.auditCodes : [])
-    .map((code) => sanitizeLearningText(code, 80))
-    .find((code) => getLearningCategory(code));
-  const reason = sanitizeLearningText(
-    reasons.map((item) => item?.reason).filter(Boolean).join(' '),
-    500
-  ) || 'Die KI-Änderung wurde durch eine administrative Entscheidung korrigiert.';
-  if (explicitCategory) {
-    return { categoryKey: explicitCategory, confidence: 1, source: 'local', reason };
+function auditFindingCodes(findings) {
+  if (!Array.isArray(findings)) return [];
+  return [...new Set(findings.map((finding) => (
+    typeof finding?.code === 'string' ? finding.code : ''
+  )).filter((code) => Object.hasOwn(AUDIT_CODE_CATEGORY, code)))];
+}
+
+export function revalidationAuditFindingCodes(findings) {
+  if (!Array.isArray(findings)) return [];
+  return [...new Set(findings.map((finding) => (
+    typeof finding?.code === 'string' ? finding.code : ''
+  )).filter(Boolean))].slice(0, 100);
+}
+
+function changeLearningClassification(change, findings) {
+  const allowedCodes = FIELD_AUDIT_CODES[safeChangeField(change)];
+  const categories = allowedCodes
+    ? [...new Set(auditFindingCodes(findings)
+      .filter((code) => allowedCodes.has(code))
+      .map((code) => AUDIT_CODE_CATEGORY[code]))]
+    : [];
+  if (categories.length !== 1 || !getLearningCategory(categories[0])) {
+    return { categoryKey: 'unclassified', confidence: null, source: 'unclassified' };
   }
-  const local = classifyLearningIssueLocally({
-    code: reasons.flatMap((item) => item?.auditCodes || []).join(' '),
-    reason
-  });
-  return local
-    ? { ...local, reason }
-    : { categoryKey: 'unclassified', confidence: null, source: 'unclassified', reason };
+  return { categoryKey: categories[0], confidence: 1, source: 'locked_audit' };
 }
 
 function feedbackDetails(change, event, revisionVersion) {
@@ -277,18 +334,20 @@ function feedbackDetails(change, event, revisionVersion) {
   };
 }
 
-function learningObservation(change, event, revisionId) {
-  const classification = changeLearningClassification(change);
-  const instructions = {
-    reverted: 'Prüfe künftig, ob diese Änderung fachlich nötig ist, bevor du sie vorschlägst.',
-    manual_edit: 'Prüfe künftig die fachliche und sprachliche Passung genauer, bevor du diese Änderung vorschlägst.'
+function learningObservation(change, event, revisionId, classification) {
+  const taxonomy = getLearningCategory(classification.categoryKey);
+  if (!taxonomy) return null;
+  const field = safeChangeField(change);
+  const eventLabels = {
+    reverted: 'Rücknahme',
+    manual_edit: 'manuelle Bearbeitung'
   };
   return {
     categoryKey: classification.categoryKey,
     fingerprint: normalizeHash(change?.id, 'Die Änderungs-ID'),
-    reason: classification.reason,
-    instruction: instructions[event],
-    section: safeChangeField(change),
+    reason: `${eventLabels[event]} einer KI-Änderung im Feld „${SAFE_FIELD_LABELS[field]}“.`,
+    instruction: taxonomy.defaultRule,
+    section: field,
     anchor: `revision-${revisionId}-change-${change.id.slice(0, 12)}`,
     classificationSource: classification.source,
     confidence: classification.confidence
@@ -302,13 +361,28 @@ function snapshotFieldsForDiff(snapshot) {
   };
 }
 
-function matchingActiveOptimizationChange(changes, manualChange) {
-  return changes.find((change) => (
+export function matchingActiveOptimizationChange(changes, manualChange) {
+  const normalizedQuestion = (value) => String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .toLocaleLowerCase('de-DE');
+  const candidates = changes.filter((change) => (
     change?.status === 'active'
       && change?.kind === manualChange.kind
       && change?.field === manualChange.field
       && change?.afterFingerprint === manualChange.beforeFingerprint
-  )) || null;
+      && (change.kind !== 'field' || change.path === manualChange.path)
+      && (change.kind !== 'html' || (
+        change.blockType === manualChange.blockType
+          && change.afterPath === manualChange.beforePath
+      ))
+      && (change.kind !== 'faq' || (
+        normalizedQuestion(change.after?.question)
+          === normalizedQuestion(manualChange.before?.question)
+      ))
+  ));
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 function acceptedFeedbackSummary(report, revisionVersion) {
@@ -319,6 +393,149 @@ function acceptedFeedbackSummary(report, revisionVersion) {
     activeChanges: changes.filter(({ status }) => status === 'active').length,
     revertedChanges: changes.filter(({ status }) => status === 'reverted').length,
     manualChanges: changes.filter(({ status }) => status === 'manual_edit').length
+  };
+}
+
+function revisionRevalidationPayload(revisionId, revisionVersion, fingerprint) {
+  const normalizedRevisionId = postgresInteger(revisionId, 'Die Revisions-ID');
+  const normalizedVersion = postgresInteger(revisionVersion, 'Die Revisionsversion');
+  if (!isSnapshotFingerprint(fingerprint)) {
+    throw validationError('Der Snapshot-Fingerprint ist ungültig.');
+  }
+  return {
+    source: 'revision_revalidation',
+    revision_id: normalizedRevisionId,
+    revision_version: normalizedVersion,
+    snapshot_fingerprint: fingerprint
+  };
+}
+
+async function enqueueRevisionRevalidation(client, payload) {
+  const idempotencyKey = [
+    'existing-post-revalidation',
+    payload.revision_id,
+    payload.revision_version,
+    payload.snapshot_fingerprint
+  ].join(':');
+  const payloadJson = jsonString(payload, 'Der Revalidierungsauftrag', 4_096);
+  const { rows } = await client.query(`
+    INSERT INTO content_jobs (
+      job_type, status, idempotency_key, payload_json, max_attempts,
+      run_after, created_at, updated_at
+    ) VALUES (
+      $1::varchar(80), 'queued', $2::varchar(255), $3::jsonb, 3,
+      NOW(), NOW(), NOW()
+    )
+    ON CONFLICT (idempotency_key) DO UPDATE
+    SET idempotency_key = content_jobs.idempotency_key
+    RETURNING id, job_type, status, idempotency_key, payload_json
+  `, [REVALIDATION_JOB_TYPE, idempotencyKey, payloadJson]);
+  const job = rows[0];
+  if (!job
+      || job.job_type !== REVALIDATION_JOB_TYPE
+      || stableJson(job.payload_json) !== stableJson(payload)) {
+    throw conflict('Der Revalidierungsauftrag konnte nicht eindeutig gebunden werden.');
+  }
+  return job;
+}
+
+function markRevalidationPending(report, snapshot, revisionId, revisionVersion) {
+  const fingerprint = snapshotFingerprint(snapshot);
+  report.revalidation = {
+    status: 'pending',
+    revisionVersion,
+    snapshotFingerprint: fingerprint
+  };
+  return revisionRevalidationPayload(revisionId, revisionVersion, fingerprint);
+}
+
+function normalizeRevalidationFence(input = {}) {
+  return revisionRevalidationPayload(
+    input.revisionId,
+    input.revisionVersion,
+    input.snapshotFingerprint
+  );
+}
+
+async function lockedRevisionRevalidationContext(client, fence) {
+  await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+  const identity = await client.query(`
+    SELECT r.post_id
+    FROM content_post_revisions r
+    WHERE r.id = $1::bigint
+  `, [fence.revision_id]);
+  if (!identity.rows[0]) {
+    throw repositoryError('CONTENT_REVISION_NOT_FOUND', 'Optimierungsrevision nicht gefunden.');
+  }
+  const postResult = await client.query(`
+    SELECT ${POST_COLUMNS}
+    FROM posts p
+    WHERE p.id = $1::integer AND p.published = TRUE
+    FOR UPDATE OF p
+  `, [identity.rows[0].post_id]);
+  const post = postResult.rows[0];
+  if (!post) throw conflict('Der Liveartikel ist nicht mehr veröffentlicht.');
+  const revisionResult = await client.query(`
+    SELECT r.*
+    FROM content_post_revisions r
+    WHERE r.id = $1::bigint
+    FOR UPDATE OF r
+  `, [fence.revision_id]);
+  const revision = revisionResult.rows[0];
+  const revalidation = revision?.optimization_report_json?.revalidation;
+  if (!revision
+      || revision.status !== 'draft'
+      || revision.optimization_job_id == null
+      || Number(revision.revision_version) !== fence.revision_version
+      || snapshotFingerprint(revision.snapshot_json) !== fence.snapshot_fingerprint
+      || revalidation?.status !== 'pending'
+      || revalidation.revisionVersion !== fence.revision_version
+      || revalidation.snapshotFingerprint !== fence.snapshot_fingerprint) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+      'Der Revalidierungsauftrag gehört nicht mehr zum aktuellen Revisionsstand.'
+    );
+  }
+  assertLiveBase(post, revision.snapshot_json?.base, revision.snapshot_json?.base?.live_hash);
+  const auditResult = await client.query(`
+    SELECT a.id, a.post_id, a.job_id, a.status, a.score,
+           a.findings_json, a.recommended_actions_json
+    FROM content_post_audits a
+    WHERE a.id = $1::bigint
+      AND a.post_id = $2::integer
+      AND a.job_id = $3::bigint
+      AND a.status = 'revision_created'
+    FOR UPDATE OF a
+  `, [revision.audit_id, revision.post_id, revision.optimization_job_id]);
+  const audit = auditResult.rows[0];
+  if (!audit) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+      'Die Auditbindung der Revalidierung ist nicht mehr gültig.'
+    );
+  }
+  const runResult = await client.query(`
+    SELECT run.id, run.runtime_snapshot_json
+    FROM content_runs run
+    WHERE run.job_id = $1::bigint
+    ORDER BY run.id DESC
+    LIMIT 1
+  `, [revision.optimization_job_id]);
+  const originalRun = runResult.rows[0];
+  if (!originalRun?.runtime_snapshot_json
+      || typeof originalRun.runtime_snapshot_json !== 'object'
+      || Array.isArray(originalRun.runtime_snapshot_json)) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+      'Der gebundene Ursprungslauf enthält keinen gültigen Runtime-Snapshot.'
+    );
+  }
+  return {
+    post: normalizePostRow(post),
+    revision: structuredClone(revision),
+    audit: structuredClone(audit),
+    runtimeSnapshot: structuredClone(originalRun.runtime_snapshot_json),
+    originalRunId: Number(originalRun.id)
   };
 }
 
@@ -563,6 +780,154 @@ export function createContentExistingPostOptimizationRepository(
       return rows[0] || null;
     },
 
+    async loadRevisionRevalidationContext(input = {}) {
+      const fence = normalizeRevalidationFence(input);
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const context = await lockedRevisionRevalidationContext(client, fence);
+        await client.query('COMMIT');
+        return context;
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async completeRevisionRevalidation(input = {}) {
+      const fence = normalizeRevalidationFence(input);
+      const parsedReview = ReviewOutputSchema.safeParse(input.review);
+      if (!parsedReview.success) {
+        throw validationError('Das redaktionelle Revalidierungsreview ist ungültig.');
+      }
+      const review = parsedReview.data;
+      const score = Number(input.score);
+      const minimumScore = Number(input.minimumScore);
+      if (!Number.isInteger(score) || score < 0 || score > 100
+          || !Number.isInteger(minimumScore) || minimumScore < 80 || minimumScore > 100
+          || score !== Number(review.score)) {
+        throw validationError('Das Revalidierungsergebnis ist ungültig.');
+      }
+      const auditCodes = Array.isArray(input.auditCodes)
+        ? [...new Set(input.auditCodes.filter((code) => typeof code === 'string'))].slice(0, 100)
+        : [];
+      const unresolvedAuditCodes = Array.isArray(input.unresolvedAuditCodes)
+        ? [...new Set(input.unresolvedAuditCodes.filter((code) => typeof code === 'string'))].slice(0, 100)
+        : [];
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const context = await lockedRevisionRevalidationContext(client, fence);
+        const lockedAuditCodes = revalidationAuditFindingCodes(context.audit.findings_json);
+        const expectedMinimumScore = Math.max(
+          80,
+          Number(context.revision.optimization_report_json?.afterScore
+            ?? context.revision.optimization_report_json?.beforeScore) || 0
+        );
+        const risksPassed = Object.values(review.risks).every((value) => value === false);
+        const hasBlockingIssue = review.issues.some((issue) => (
+          issue.blocking === true || issue.autoPublishBlocking === true
+        ));
+        if (stableJson([...auditCodes].sort()) !== stableJson([...lockedAuditCodes].sort())
+            || unresolvedAuditCodes.length > 0
+            || minimumScore !== expectedMinimumScore
+            || score < expectedMinimumScore
+            || review.passed !== true
+            || review.requiresManualReview !== false
+            || !risksPassed
+            || hasBlockingIssue) {
+          throw validationError('Das Revalidierungsergebnis erfüllt die gebundenen Freigabekriterien nicht.');
+        }
+        const report = structuredClone(context.revision.optimization_report_json);
+        report.revalidation = {
+          status: 'passed',
+          revisionVersion: fence.revision_version,
+          snapshotFingerprint: fence.snapshot_fingerprint,
+          review: structuredClone(review),
+          score,
+          minimumScore,
+          auditCodes,
+          unresolvedAuditCodes,
+          validatedAt: new Date().toISOString()
+        };
+        const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
+        const { rows } = await client.query(`
+          UPDATE content_post_revisions
+          SET optimization_report_json = $2::jsonb,
+              updated_at = NOW()
+          WHERE id = $1::bigint
+            AND status = 'draft'
+            AND revision_version = $3::integer
+            AND optimization_report_json #>> '{revalidation,status}' = 'pending'
+            AND (optimization_report_json #>> '{revalidation,revisionVersion}')::integer = $3::integer
+            AND optimization_report_json #>> '{revalidation,snapshotFingerprint}' = $4::char(64)
+          RETURNING *
+        `, [fence.revision_id, reportJson, fence.revision_version, fence.snapshot_fingerprint]);
+        if (!rows[0]) {
+          throw repositoryError(
+            'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+            'Das Revalidierungsergebnis konnte keinem aktuellen Entwurf zugeordnet werden.'
+          );
+        }
+        await client.query('COMMIT');
+        return rows[0];
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async failRevisionRevalidation(input = {}) {
+      const fence = normalizeRevalidationFence(input);
+      const failureCode = String(input.failureCode || '');
+      if (!REVALIDATION_FAILURE_CODES.has(failureCode)) {
+        throw validationError('Der Revalidierungsfehlercode ist nicht freigegeben.');
+      }
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const context = await lockedRevisionRevalidationContext(client, fence);
+        const report = structuredClone(context.revision.optimization_report_json);
+        report.revalidation = {
+          status: 'failed',
+          revisionVersion: fence.revision_version,
+          snapshotFingerprint: fence.snapshot_fingerprint,
+          failureCode,
+          failedAt: new Date().toISOString()
+        };
+        const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
+        const { rows } = await client.query(`
+          UPDATE content_post_revisions
+          SET optimization_report_json = $2::jsonb,
+              updated_at = NOW()
+          WHERE id = $1::bigint
+            AND status = 'draft'
+            AND revision_version = $3::integer
+            AND optimization_report_json #>> '{revalidation,status}' = 'pending'
+            AND (optimization_report_json #>> '{revalidation,revisionVersion}')::integer = $3::integer
+            AND optimization_report_json #>> '{revalidation,snapshotFingerprint}' = $4::char(64)
+          RETURNING *
+        `, [fence.revision_id, reportJson, fence.revision_version, fence.snapshot_fingerprint]);
+        if (!rows[0]) {
+          throw repositoryError(
+            'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+            'Der Revalidierungsfehler konnte keinem aktuellen Entwurf zugeordnet werden.'
+          );
+        }
+        await client.query('COMMIT');
+        return rows[0];
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
     async updateRevisionAfterRevert(input = {}) {
       const revisionId = postgresInteger(input.revisionId, 'Die Revisions-ID');
       const expectedVersion = postgresInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
@@ -604,7 +969,7 @@ export function createContentExistingPostOptimizationRepository(
           throw conflict('Die Ausgangsbasis der Revision wurde verändert.');
         }
         const auditResult = await client.query(`
-          SELECT a.id
+          SELECT a.id, a.findings_json
           FROM content_post_audits a
           WHERE a.id = $1::bigint
             AND a.post_id = $2::integer
@@ -640,6 +1005,12 @@ export function createContentExistingPostOptimizationRepository(
           report,
           validationContext: await trustedValidationContext(revision.post_id, client)
         });
+        const revalidationPayload = markRevalidationPending(
+          report,
+          snapshot,
+          revisionId,
+          expectedVersion + 1
+        );
         const snapshotJson = jsonString(snapshot, 'Der Revisionssnapshot', MAX_SNAPSHOT_BYTES);
         const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
         const updateResult = await client.query(`
@@ -658,7 +1029,11 @@ export function createContentExistingPostOptimizationRepository(
         `, [revisionId, snapshotJson, reportJson, expectedVersion, admin.id, admin.username]);
         const updated = updateResult.rows[0];
         if (!updated) throw conflict();
-        const classification = changeLearningClassification(originalChange);
+        await enqueueRevisionRevalidation(client, revalidationPayload);
+        const classification = changeLearningClassification(
+          originalChange,
+          auditResult.rows[0].findings_json
+        );
         const detailsJson = normalizeFeedbackDetails(
           feedbackDetails(originalChange, 'reverted', expectedVersion + 1)
         );
@@ -679,11 +1054,19 @@ export function createContentExistingPostOptimizationRepository(
           admin.id,
           admin.username
         ]);
-        await learningRepository.recordObservationsAndMaybeProposals({
-          postId: revision.post_id,
-          reviewVersion: expectedVersion + 1,
-          observations: [learningObservation(originalChange, 'reverted', revisionId)]
-        }, client);
+        const observation = learningObservation(
+          originalChange,
+          'reverted',
+          revisionId,
+          classification
+        );
+        if (observation) {
+          await learningRepository.recordObservationsAndMaybeProposals({
+            postId: revision.post_id,
+            reviewVersion: expectedVersion + 1,
+            observations: [observation]
+          }, client);
+        }
         await client.query('COMMIT');
         return updated;
       } catch (error) {
@@ -734,7 +1117,7 @@ export function createContentExistingPostOptimizationRepository(
           throw conflict('Die Ausgangsbasis der Revision wurde verändert.');
         }
         const auditResult = await client.query(`
-          SELECT a.id
+          SELECT a.id, a.findings_json
           FROM content_post_audits a
           WHERE a.id = $1::bigint
             AND a.post_id = $2::integer
@@ -779,8 +1162,19 @@ export function createContentExistingPostOptimizationRepository(
         const feedbackItems = manualChanges.map((manualChange) => {
           const originalChange = matchingActiveOptimizationChange(report.changes || [], manualChange);
           if (originalChange) originalChange.status = 'manual_edit';
-          return { manualChange, sourceChange: originalChange || manualChange };
+          const sourceChange = originalChange || manualChange;
+          const classification = originalChange
+            ? changeLearningClassification(sourceChange, auditResult.rows[0].findings_json)
+            : { categoryKey: 'unclassified', confidence: null, source: 'unclassified' };
+          return { manualChange, sourceChange, classification, learningEligible: Boolean(originalChange) };
         });
+
+        const revalidationPayload = markRevalidationPending(
+          report,
+          nextSnapshot,
+          revisionId,
+          expectedVersion + 1
+        );
 
         const snapshotJson = jsonString(nextSnapshot, 'Der Revisionssnapshot', MAX_SNAPSHOT_BYTES);
         const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
@@ -800,9 +1194,9 @@ export function createContentExistingPostOptimizationRepository(
         `, [revisionId, snapshotJson, reportJson, expectedVersion, admin.id, admin.username]);
         const updated = updateResult.rows[0];
         if (!updated) throw conflict();
+        await enqueueRevisionRevalidation(client, revalidationPayload);
 
-        for (const { manualChange, sourceChange } of feedbackItems) {
-          const classification = changeLearningClassification(sourceChange);
+        for (const { manualChange, sourceChange, classification } of feedbackItems) {
           await client.query(`
             INSERT INTO content_revision_optimization_feedback (
               revision_id, post_id, change_id, event_type, category_key,
@@ -823,13 +1217,20 @@ export function createContentExistingPostOptimizationRepository(
             admin.username
           ]);
         }
-        if (feedbackItems.length > 0) {
+        const observations = feedbackItems
+          .filter(({ learningEligible }) => learningEligible)
+          .map(({ sourceChange, classification }) => learningObservation(
+            sourceChange,
+            'manual_edit',
+            revisionId,
+            classification
+          ))
+          .filter(Boolean);
+        if (observations.length > 0) {
           await learningRepository.recordObservationsAndMaybeProposals({
             postId: revision.post_id,
             reviewVersion: expectedVersion + 1,
-            observations: feedbackItems.map(({ sourceChange }) => (
-              learningObservation(sourceChange, 'manual_edit', revisionId)
-            ))
+            observations
           }, client);
         }
         await client.query('COMMIT');
@@ -878,6 +1279,18 @@ export function createContentExistingPostOptimizationRepository(
         if (!revision) throw repositoryError('CONTENT_REVISION_NOT_FOUND', 'Optimierungsrevision nicht gefunden.');
         if (revision.status !== 'draft' || Number(revision.revision_version) !== expectedVersion) {
           throw conflict();
+        }
+        const auditResult = await client.query(`
+          SELECT a.id, a.findings_json
+          FROM content_post_audits a
+          WHERE a.id = $1::bigint
+            AND a.post_id = $2::integer
+            AND a.job_id = $3::bigint
+            AND a.status = 'revision_created'
+          FOR UPDATE OF a
+        `, [revision.audit_id, revision.post_id, revision.optimization_job_id]);
+        if (!auditResult.rows[0]) {
+          throw conflict('Die Auditbindung der Revision ist nicht mehr gültig.');
         }
         const updateResult = await client.query(`
           UPDATE content_post_revisions

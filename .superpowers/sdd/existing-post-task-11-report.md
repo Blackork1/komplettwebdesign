@@ -48,3 +48,40 @@ Der erste echte Lauf deckte ausschließlich eine unvollständige Miniatur des is
 ## Bewusste Grenzen
 
 Die Lernpfade erzeugen ausschließlich Beobachtungen und gegebenenfalls bestehende, administrativ zu prüfende Regelvorschläge. Keine Rücknahme, Nachbearbeitung, Übernahme oder Ablehnung aktiviert unmittelbar eine globale Lernregel.
+
+## Nachtrag: formaler Review-Fix für die Revalidierung
+
+### Architektur und Freigabevertrag
+
+Rücknahmen und manuelle Bearbeitungen markieren den neuen Revisionsstand nicht mehr lokal als bestanden. Stattdessen speichern sie in derselben Transaktion den kanonischen SHA-256-Fingerprint, die neue Revisionsversion und `revalidation.status = 'pending'` und reihen genau einen idempotenten Job des Typs `revalidate_existing_post_revision` ein. Der Job-Payload enthält ausschließlich Quelle, Revisions-ID, Version und Fingerprint; IDs sind auf PostgreSQL-`INT32` begrenzt.
+
+Der Worker lädt den aktuellen Revisionsstand, den veröffentlichten Beitrag, das exakt über Audit-ID, Post-ID, Ursprungjob und Status gebundene Audit sowie den Runtime-Snapshot des Ursprungslaufs. Aktuelle Einstellungen werden nicht als Ersatz verwendet. Technische Prüfung und Umfangsprüfung laufen vor einem Provideraufruf. Anschließend verwendet die Revalidierung die vorhandene bezahlte, fortsetzbare Textstage `revision_editorial_review`; ihr Versionsfence enthält Revisions-ID, Version und Fingerprint. Es gibt keine automatische Reparaturstage.
+
+Eine einzige Freigabepolicy steuert Service und Vergleichsdarstellung. Freigabefähig ist nur ein aktueller Draft mit einem an dieselbe Version und denselben Snapshot gebundenen `passed`-Review. Das Review muss ohne manuelle Prüfpflicht, Risikoflags, blockierende Hinweise oder ungelöste Auditcodes bestehen und mindestens `max(80, originalScore)` erreichen. Alte `report.review`-Daten oder ein lokaler technischer Erfolg können die Freigabe nicht aktivieren. Der Editor einer Optimierungsrevision enthält deshalb keine direkte Veröffentlichungsaktion mehr, sondern verweist auf den schreibgeschützten Vergleich. Die vollständige Ablehnung erfordert dort eine sichtbare, erforderliche Bestätigung.
+
+### Race-, Audit- und Datenschutzgrenzen
+
+- `completeRevisionRevalidation` und `failRevisionRevalidation` schreiben ausschließlich auf einen weiterhin aktuellen `pending`-Fence. Ein neuerer Versions- oder Fingerprint-Stand wird nicht überschrieben.
+- Vor jeder Persistenz und vor dem Run-Abschluss wird die Lease erneut geprüft. Persistierte Paid-Stage-Ergebnisse werden bei einer Fortsetzung wiederverwendet; der Provider wird nicht doppelt aufgerufen und das Budget nicht doppelt belastet.
+- Budget-, Provider-, Qualitäts-, Kontext- und technische Fehler enden fail-closed mit festen Fehlercodes und erfordern eine manuelle Entscheidung.
+- Freigabe und Auditauflösung verwenden dieselben exakten Auditprädikate. Eine Ablehnung löst den Audit weiterhin nicht auf.
+- Die Revalidierungsbindung bewahrt alle tatsächlichen gesperrten Auditcodes, auch wenn ein Code noch nicht in der Lerntaxonomie bekannt ist.
+- Feedbackkategorien entstehen nur aus einer festen Zuordnung tatsächlicher Codes des gesperrten Audits. Details und Lernbeobachtungen enthalten ausschließlich feste Event-, Feld- und Taxonomietexte; KI-Gründe, Inhaltsauszüge, Prompts, Providerdaten und PII werden nicht gespeichert.
+- HTML- und FAQ-Zuordnungen müssen eindeutig über Feld, Fingerprint und strukturelle Identität sein. Mehrdeutige oder nicht zuordenbare manuelle Änderungen werden als `unclassified` gespeichert und erzeugen keine Lernbeobachtung.
+
+### Ergänzter TDD-Verlauf
+
+- RED: Policy- und Fingerprinttests scheiterten zunächst an den fehlenden Modulen. Mutationstests zeigten die bisherige lokale `passed`-Markierung und den fehlenden Revalidierungsjob. Worker- und Repositorytests scheiterten am unbekannten Jobtyp, fehlenden Runtime-Snapshot-Fence sowie fehlenden Abschlussmethoden.
+- GREEN: Die neuen Policy-, Resume-, Budget-, Lease-, Quellen-, Versions- und Fingerprintfälle sowie die erweiterten Repository-, Service-, View- und Workerfälle bestanden.
+- Zusätzlicher RED/GREEN-Randfall aus dem finalen Selbstreview: Ein Test mit einem zukünftig unbekannten Auditcode deckte auf, dass der Abschlussvergleich versehentlich die Lern-Taxonomie-Allowlist wiederverwendete. Die Revalidierungs-Auditbindung besitzt nun eine getrennte, vollständige Codeliste; der Regressionstest ist grün.
+- Der echte PostgreSQL-Lauf prüft zusätzlich den atomaren `pending`-Stand, genau einen Job mit exaktem Payload, die Übernahme des Ursprungslauf-Snapshots, einen verlorenen Fingerprint-Fence und die fenced Fehlerpersistenz.
+
+### Abschließende Verifikation
+
+- Fokussierte Review-Fix-Suiten: 242 bestanden, 0 fehlgeschlagen.
+- `tests/contentAgentWorker.test.js`: 88 bestanden, 0 fehlgeschlagen.
+- Echter PostgreSQL-Lauf mit explizit freigegebener lokaler Testdatenbank: 11 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Vollständige Suite mit lokalem, nicht verwendeten Dummywert `OPENAI_API_KEY=test-key`: 1.748 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen.
+- `git diff --check`: ohne Befund.
+- Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.

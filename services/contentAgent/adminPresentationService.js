@@ -19,6 +19,7 @@ import {
 import { aggregateSearchConsoleCategories } from './searchConsoleCategoryService.js';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
+import { evaluateExistingPostRevisionApproval } from './existingPostRevisionApprovalPolicy.js';
 
 const STAGE_LABELS = Object.freeze({
   inventory: 'Bestandsaufnahme',
@@ -927,29 +928,15 @@ export function buildRevisionComparisonPresentation(revision = {}) {
   const revisionStatus = ['draft', 'approved', 'rejected'].includes(revision.status)
     ? revision.status
     : 'rejected';
-  const reviewRisksPassed = report.review?.risks
-    && typeof report.review.risks === 'object'
-    && !Array.isArray(report.review.risks)
-    && Object.values(report.review.risks).every((value) => value === false);
-  const hasBlockingReviewIssue = Array.isArray(report.review?.issues)
-    && report.review.issues.some((issue) => (
-      issue?.blocking === true || issue?.autoPublishBlocking === true
-    ));
-  const initialValidationPassed = report.targetedScope?.passed === true
-    && report.validation?.passed === true
-    && report.review?.passed === true
-    && Number(report.review?.score) >= 80
-    && report.review?.requiresManualReview !== true
-    && reviewRisksPassed
-    && !hasBlockingReviewIssue;
-  const reportedRevalidationStatus = ['passed', 'failed', 'running'].includes(
+  const approval = evaluateExistingPostRevisionApproval({ revision });
+  const reportedRevalidationStatus = ['passed', 'failed', 'pending'].includes(
     report.revalidation?.status
   ) ? report.revalidation.status : null;
   const revalidationStatus = reportedRevalidationStatus
-    || (initialValidationPassed ? 'passed' : 'failed');
+    || 'failed';
   const revalidationPresentation = {
-    passed: { label: reportedRevalidationStatus ? 'Erneut geprüft' : 'Bei Erstellung geprüft' },
-    running: { label: 'Erneute Prüfung läuft' },
+    passed: { label: 'Aktuellen Stand geprüft' },
+    pending: { label: 'Erneute Prüfung läuft' },
     failed: { label: 'Erneute Prüfung fehlgeschlagen' }
   }[revalidationStatus];
   return {
@@ -958,9 +945,8 @@ export function buildRevisionComparisonPresentation(revision = {}) {
     revisionStatus,
     revalidationStatus,
     revalidationStatusLabel: revalidationPresentation.label,
-    approvalEnabled: revisionStatus === 'draft'
-      && initialValidationPassed
-      && revalidationStatus === 'passed',
+    approvalEnabled: approval.allowed,
+    approvalBlockedReason: approval.allowed ? null : approval.reasonLabel,
     qualityScore: score,
     beforeQualityScore: beforeScore,
     changeCount: changes.length,

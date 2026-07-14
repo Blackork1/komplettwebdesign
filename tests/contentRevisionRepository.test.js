@@ -19,6 +19,7 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
   const post = changedPost || livePost;
   const revision = {
     id: 3, post_id: 7, audit_id: 5, status: revisionStatus, revision_version: 4,
+    optimization_job_id: 44,
     snapshot_json: createRevisionSnapshot(livePost)
   };
   const client = {
@@ -30,12 +31,12 @@ function approvalHarness({ revisionStatus = 'draft', changedPost = null } = {}) 
       if (normalized.startsWith('LOCK TABLE posts')) return { rows: [] };
       if (normalized.startsWith('SELECT id, title, slug')) return { rows: [post] };
       if (normalized.startsWith('SELECT * FROM content_post_revisions')) return { rows: [revision] };
-      if (normalized.startsWith('SELECT * FROM content_post_audits')) return { rows: [{ id: 5, post_id: 7, status: 'revision_created' }] };
+      if (normalized.startsWith('SELECT * FROM content_post_audits')) return { rows: [{ id: 5, post_id: 7, job_id: 44, status: 'revision_created' }] };
       if (normalized.startsWith('SELECT slug FROM posts')) return { rows: [] };
       if (normalized.startsWith('SELECT url FROM (')) return { rows: [{ url: '/kontakt' }, { url: '/blog/artikel' }] };
       if (normalized.startsWith('UPDATE posts SET')) return { rows: [{ ...post, ...revision.snapshot_json.fields, slug: post.slug, published: true }] };
       if (normalized.startsWith('UPDATE content_post_revisions')) return { rows: [{ id: 3 }] };
-      if (normalized.startsWith('UPDATE content_post_audits')) return { rows: [] };
+      if (normalized.startsWith('UPDATE content_post_audits')) return { rows: [{ id: 5 }] };
       throw new Error(`Unerwartetes SQL: ${normalized}`);
     },
     release() { calls.push('RELEASE'); }
@@ -133,6 +134,15 @@ test('Freigabe sperrt Tabelle, Post, Revision und Audit in dieser Reihenfolge un
   const update = calls.find((sql) => sql.startsWith('UPDATE posts SET'));
   const assignments = update.slice(update.indexOf(' SET ') + 5, update.indexOf(' WHERE '));
   assert.doesNotMatch(assignments, /(?:^|,)\s*(?:slug|published|published_at)\s*=/i);
+  const auditLock = calls.find((sql) => sql.startsWith('SELECT * FROM content_post_audits'));
+  const auditUpdate = calls.find((sql) => sql.startsWith('UPDATE content_post_audits'));
+  for (const sql of [auditLock, auditUpdate]) {
+    assert.match(sql, /id = \$1::bigint/i);
+    assert.match(sql, /post_id = \$2::integer/i);
+    assert.match(sql, /job_id = \$3::bigint/i);
+    assert.match(sql, /status = 'revision_created'/i);
+  }
+  assert.match(auditUpdate, /RETURNING id/i);
   assert.ok(calls.includes('COMMIT'));
   assert.equal(calls.includes('ROLLBACK'), false);
 });

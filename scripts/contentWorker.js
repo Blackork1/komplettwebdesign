@@ -19,6 +19,7 @@ export const REGENERATION_JOB_TYPES = new Set([
 export const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
 export const LEARNING_JOB_TYPES = new Set(['process_learning_observations']);
 export const EXISTING_POST_OPTIMIZATION_JOB_TYPES = new Set(['optimize_existing_post']);
+export const EXISTING_POST_REVALIDATION_JOB_TYPES = new Set(['revalidate_existing_post_revision']);
 export const NOTIFICATION_JOB_TYPES = new Set(['send_admin_review_notification']);
 export const PUBLICATION_JOB_TYPES = new Set(['publish_approved_post']);
 export const NEWSLETTER_JOB_TYPES = new Set([
@@ -35,6 +36,7 @@ export const SUPPORTED_JOB_TYPES = new Set([
   ...AUDIT_JOB_TYPES,
   ...LEARNING_JOB_TYPES,
   ...EXISTING_POST_OPTIMIZATION_JOB_TYPES,
+  ...EXISTING_POST_REVALIDATION_JOB_TYPES,
   ...NOTIFICATION_JOB_TYPES,
   ...PUBLICATION_JOB_TYPES,
   ...NEWSLETTER_JOB_TYPES,
@@ -160,6 +162,18 @@ function existingPostOptimizationPayload(claim) {
   if (!positiveDatabasePayloadInteger(payload.post_id)) return null;
   if (!positiveDatabasePayloadInteger(payload.admin_id)) return null;
   if (!/^[0-9a-f]{64}$/.test(payload.base_live_hash)) return null;
+  return payload;
+}
+
+function existingPostRevalidationPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const allowed = ['source', 'revision_id', 'revision_version', 'snapshot_fingerprint'];
+  if (Object.keys(payload).sort().join('|') !== allowed.sort().join('|')) return null;
+  if (payload.source !== 'revision_revalidation'
+      || !positiveDatabasePayloadInteger(payload.revision_id)
+      || !positiveDatabasePayloadInteger(payload.revision_version)
+      || !/^[0-9a-f]{64}$/.test(payload.snapshot_fingerprint)) return null;
   return payload;
 }
 
@@ -312,6 +326,9 @@ export function createProductionJobHandler({
   createOptimizationDependencies,
   runExistingPostOptimizationJob,
   createExistingPostOptimizationDependencies,
+  loadExistingPostRevalidationContext,
+  runExistingPostRevisionRevalidationJob,
+  createExistingPostRevisionRevalidationDependencies,
   runContentLearningJob,
   createLearningDependencies,
   runAuditJob,
@@ -350,6 +367,13 @@ export function createProductionJobHandler({
       throw permanentJobError(
         'Der Bestandsoptimierungsjob enthält keinen gültigen unveränderlichen Artikel-Snapshot.',
         'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID'
+      );
+    }
+    if (EXISTING_POST_REVALIDATION_JOB_TYPES.has(claim.job_type)
+        && !existingPostRevalidationPayload(claim)) {
+      throw permanentJobError(
+        'Der Revalidierungsjob enthält keinen gültigen Revisions- und Fingerprint-Snapshot.',
+        'CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID'
       );
     }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
@@ -482,22 +506,38 @@ export function createProductionJobHandler({
       && typeof createJobSnapshot === 'function';
     const generationJob = GENERATION_JOB_TYPES.has(claim.job_type);
     const existingPostOptimizationJob = EXISTING_POST_OPTIMIZATION_JOB_TYPES.has(claim.job_type);
-    if (existingPostOptimizationJob && typeof leaseGuard !== 'function') {
+    const existingPostRevalidationJob = EXISTING_POST_REVALIDATION_JOB_TYPES.has(claim.job_type);
+    if ((existingPostOptimizationJob || existingPostRevalidationJob)
+        && typeof leaseGuard !== 'function') {
       throw permanentJobError(
         'Für Bestandsoptimierungen wird eine aktive Job-Lease benötigt.',
         'CONTENT_JOB_LEASE_REQUIRED'
       );
     }
-    const requireLinkSnapshot = generationJob || existingPostOptimizationJob;
+    const requireLinkSnapshot = generationJob || existingPostOptimizationJob || existingPostRevalidationJob;
     let initialInventory = null;
     let existingPostTrustedContext = null;
     let runtimeSnapshot;
-    let run = snapshotEnabled && typeof findRunByJobId === 'function'
+    let run = (snapshotEnabled || existingPostRevalidationJob)
+      && typeof findRunByJobId === 'function'
       ? await findRunByJobId(claim.id)
       : null;
     if (!run) {
       await assertActiveLease(leaseGuard);
-      if (snapshotEnabled) {
+      if (existingPostRevalidationJob) {
+        const contextLoader = required(
+          loadExistingPostRevalidationContext,
+          'loadExistingPostRevalidationContext'
+        );
+        const context = await contextLoader(existingPostRevalidationPayload(claim));
+        runtimeSnapshot = context?.runtimeSnapshot;
+        if (!runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)) {
+          throw permanentJobError(
+            'Der Ursprungslauf enthält keinen gültigen Runtime-Snapshot.',
+            'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+          );
+        }
+      } else if (snapshotEnabled) {
         const settings = await getSettings();
         const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
         let allowedInternalLinks;
@@ -533,14 +573,18 @@ export function createProductionJobHandler({
       await assertActiveLease(leaseGuard);
       run = await createRun({
         jobId: claim.id,
-        ...(snapshotEnabled ? { runtimeSnapshot } : {})
+        ...((snapshotEnabled || existingPostRevalidationJob) ? { runtimeSnapshot } : {})
       });
     }
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
     const adoptedTerminal = adoptTerminalRun(run);
     if (adoptedTerminal) return adoptedTerminal;
-    const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
-    if (snapshotEnabled && existingPostOptimizationJob && run.status !== 'completed'
+    const persistedSnapshot = (snapshotEnabled || existingPostRevalidationJob)
+      ? run.runtime_snapshot_json
+      : null;
+    if ((snapshotEnabled || existingPostRevalidationJob)
+        && (existingPostOptimizationJob || existingPostRevalidationJob)
+        && run.status !== 'completed'
         && (typeof persistedSnapshot?.webSearchCostPerCallEur !== 'number'
           || !Number.isFinite(persistedSnapshot.webSearchCostPerCallEur)
           || persistedSnapshot.webSearchCostPerCallEur < 0)) {
@@ -567,10 +611,11 @@ export function createProductionJobHandler({
         code
       );
     }
-    if (snapshotEnabled && enforceRuleSnapshot && run.status !== 'completed') {
+    if ((snapshotEnabled || existingPostRevalidationJob)
+        && enforceRuleSnapshot && run.status !== 'completed') {
       const validation = validateContentRuleSnapshot(persistedSnapshot, {
         requireAllowedInternalLinks: requireLinkSnapshot,
-        requireExistingPostTrustedContext: existingPostOptimizationJob
+        requireExistingPostTrustedContext: existingPostOptimizationJob || existingPostRevalidationJob
       });
       if (!validation.valid) {
         required(finishRun, 'finishRun');
@@ -591,7 +636,22 @@ export function createProductionJobHandler({
     }
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
-    if (existingPostOptimizationJob) {
+    if (existingPostRevalidationJob) {
+      const jobRunner = required(
+        runExistingPostRevisionRevalidationJob,
+        'runExistingPostRevisionRevalidationJob'
+      );
+      const dependencyFactory = required(
+        createExistingPostRevisionRevalidationDependencies,
+        'createExistingPostRevisionRevalidationDependencies'
+      );
+      result = await jobRunner({
+        claim: { ...claim, payload_json: existingPostRevalidationPayload(claim) },
+        run,
+        runtimeSnapshot: persistedSnapshot,
+        leaseGuard
+      }, await dependencyFactory(persistedSnapshot));
+    } else if (existingPostOptimizationJob) {
       const jobRunner = required(
         runExistingPostOptimizationJob,
         'runExistingPostOptimizationJob'
@@ -957,6 +1017,16 @@ export function createProductionRuntime({
       )
     };
   }
+  function createExistingPostRevisionRevalidationDependencies(snapshot = null) {
+    const dependencies = createPipelineDependencies(snapshot);
+    return {
+      ...dependencies,
+      optimizationRepository: required(
+        existingPostOptimizationRepository,
+        'existingPostOptimizationRepository'
+      )
+    };
+  }
   function createLearningDependencies(snapshot = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
     return {
@@ -991,6 +1061,13 @@ export function createProductionRuntime({
       ...(existingPostOptimizationRepository ? {
         loadExistingPostTrustedContext: (postId) => (
           existingPostOptimizationRepository.getTrustedContext(postId)
+        ),
+        loadExistingPostRevalidationContext: (payload) => (
+          existingPostOptimizationRepository.loadRevisionRevalidationContext({
+            revisionId: payload.revision_id,
+            revisionVersion: payload.revision_version,
+            snapshotFingerprint: payload.snapshot_fingerprint
+          })
         )
       } : {}),
       ...(contentLearningRepository ? {
@@ -1000,6 +1077,7 @@ export function createProductionRuntime({
       createRegenerationDependencies,
       createOptimizationDependencies,
       createExistingPostOptimizationDependencies,
+      createExistingPostRevisionRevalidationDependencies,
       createLearningDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
@@ -1008,6 +1086,8 @@ export function createProductionRuntime({
     runRegenerationJob: modules.runDraftRegenerationJob,
     runReviewIssueOptimizationJob: modules.runReviewIssueOptimizationJob,
     runExistingPostOptimizationJob: modules.runExistingPostOptimizationJob,
+    runExistingPostRevisionRevalidationJob:
+      modules.runExistingPostRevisionRevalidationJob,
     runContentLearningJob: modules.runContentLearningJob,
     runAuditJob: modules.runExistingContentAuditJob,
     createAuditDependencies,
@@ -1165,7 +1245,8 @@ export async function loadProductionModules() {
     contentLearningRepositoryModule,
     weeklyTopicPoolRepositoryModule,
     existingPostOptimizationPipelineModule,
-    existingPostOptimizationRepositoryModule
+    existingPostOptimizationRepositoryModule,
+    existingPostRevisionRevalidationModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1207,7 +1288,8 @@ export async function loadProductionModules() {
     import('../repositories/contentLearningRepository.js'),
     import('../repositories/contentWeeklyTopicPoolRepository.js'),
     import('../services/contentAgent/existingPostOptimizationPipeline.js'),
-    import('../repositories/contentExistingPostOptimizationRepository.js')
+    import('../repositories/contentExistingPostOptimizationRepository.js'),
+    import('../services/contentAgent/existingPostRevisionRevalidationService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1255,6 +1337,8 @@ export async function loadProductionModules() {
       weeklyTopicPoolRepositoryModule.createContentWeeklyTopicPoolRepository,
     runExistingPostOptimizationJob:
       existingPostOptimizationPipelineModule.runExistingPostOptimizationJob,
+    runExistingPostRevisionRevalidationJob:
+      existingPostRevisionRevalidationModule.runExistingPostRevisionRevalidationJob,
     createContentExistingPostOptimizationRepository:
       existingPostOptimizationRepositoryModule.createContentExistingPostOptimizationRepository
   };

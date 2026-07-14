@@ -2143,6 +2143,27 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
       )
       RETURNING id
     `, [optimizationPost.rows[0].id]);
+    const originRuntimeSnapshot = createContentAgentJobSnapshot({
+      runtimeConfig: {
+        operatingMode: 'review', timezone: 'Europe/Berlin', monthlyCostLimitEur: 25,
+        maxAttempts: 3, contentStageReservationEur: 0.5, reviewStageReservationEur: 0.25,
+        contentInputCostPerMtok: 2.5, contentOutputCostPerMtok: 15,
+        reviewInputCostPerMtok: 0.75, reviewOutputCostPerMtok: 4.5,
+        webSearchCostPerCallEur: 0.01, settingsVersion: 4
+      },
+      claim: {
+        job_type: 'optimize_existing_post',
+        payload_json: { source: 'admin_existing_content' }
+      },
+      now: new Date('2026-07-14T10:30:00.000Z'),
+      allowedInternalLinks: ['/kontakt'],
+      existingPostTrustedContext: { existingSlugs: [], metadata: null },
+      activeLearningRules: []
+    });
+    await createRun({
+      jobId: Number(optimizationJob.rows[0].id),
+      runtimeSnapshot: originRuntimeSnapshot
+    }, pool);
     const optimizationRepository = createContentExistingPostOptimizationRepository(pool);
     const auditInput = {
       postId: Number(optimizationPost.rows[0].id),
@@ -2268,6 +2289,66 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
     assert.equal(persistedRaceRevision.feedback_count, 1);
     assert.equal(persistedRaceRevision.snapshot_json.fields.meta_title, 'Ausgangstitel');
     assert.equal(persistedRaceRevision.optimization_report_json.changes[0].status, 'reverted');
+    assert.equal(persistedRaceRevision.optimization_report_json.revalidation.status, 'pending');
+    assert.equal(persistedRaceRevision.optimization_report_json.revalidation.revisionVersion, 4);
+    assert.match(
+      persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint,
+      /^[0-9a-f]{64}$/
+    );
+    const revalidationJobs = await pool.query(`
+      SELECT id, status, idempotency_key, payload_json
+      FROM content_jobs
+      WHERE job_type = 'revalidate_existing_post_revision'
+        AND (payload_json ->> 'revision_id')::bigint = $1::bigint
+      ORDER BY id
+    `, [raceRevision.rows[0].id]);
+    assert.equal(revalidationJobs.rows.length, 1);
+    assert.deepEqual(revalidationJobs.rows[0].payload_json, {
+      source: 'revision_revalidation',
+      revision_id: Number(raceRevision.rows[0].id),
+      revision_version: 4,
+      snapshot_fingerprint:
+        persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
+    });
+    assert.match(revalidationJobs.rows[0].idempotency_key, /^existing-post-revalidation:/);
+    const revalidationContext = await optimizationRepository.loadRevisionRevalidationContext({
+      revisionId: Number(raceRevision.rows[0].id),
+      revisionVersion: 4,
+      snapshotFingerprint:
+        persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
+    });
+    assert.equal(Number(revalidationContext.audit.job_id), auditInput.jobId);
+    assert.deepEqual(
+      revalidationContext.runtimeSnapshot,
+      JSON.parse(JSON.stringify(originRuntimeSnapshot))
+    );
+    await assert.rejects(optimizationRepository.loadRevisionRevalidationContext({
+      revisionId: Number(raceRevision.rows[0].id),
+      revisionVersion: 4,
+      snapshotFingerprint: 'f'.repeat(64)
+    }), { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' });
+    await optimizationRepository.failRevisionRevalidation({
+      revisionId: Number(raceRevision.rows[0].id),
+      revisionVersion: 4,
+      snapshotFingerprint:
+        persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint,
+      failureCode: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+    });
+    const failedRevalidation = await pool.query(`
+      SELECT optimization_report_json -> 'revalidation' AS revalidation
+      FROM content_post_revisions
+      WHERE id = $1
+    `, [raceRevision.rows[0].id]);
+    assert.equal(failedRevalidation.rows[0].revalidation.status, 'failed');
+    assert.equal(
+      failedRevalidation.rows[0].revalidation.snapshotFingerprint,
+      persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
+    );
+    await pool.query(`
+      UPDATE content_jobs
+      SET status = 'completed', finished_at = NOW(), updated_at = NOW()
+      WHERE id = $1
+    `, [revalidationJobs.rows[0].id]);
 
     await optimizationRepository.rejectRevision({
       revisionId: Number(raceRevision.rows[0].id),

@@ -15,6 +15,7 @@ import {
   createProductionRuntime,
   createShutdownController,
   EXISTING_POST_OPTIMIZATION_JOB_TYPES,
+  EXISTING_POST_REVALIDATION_JOB_TYPES,
   loadProductionModules,
   LEARNING_JOB_TYPES,
   REGENERATION_JOB_TYPES,
@@ -1714,6 +1715,92 @@ test('Worker akzeptiert ausschließlich minimalen Bestandsoptimierungs-Payload',
   assert.equal(calls[1][1].runtimeSnapshot, snapshot);
   assert.equal(calls[1][1].leaseGuard, leaseGuard);
   assert.deepEqual(calls[1][2], { optimization: true });
+});
+
+test('Worker übernimmt für Revalidierungen ausschließlich den gebundenen Ursprungssnapshot', async () => {
+  const runtimeSnapshot = createContentAgentJobSnapshot({
+    runtimeConfig: {
+      operatingMode: 'review', timezone: 'Europe/Berlin', monthlyCostLimitEur: 25,
+      maxAttempts: 3, contentStageReservationEur: 0.5, reviewStageReservationEur: 0.25,
+      contentInputCostPerMtok: 2.5, contentOutputCostPerMtok: 15,
+      reviewInputCostPerMtok: 0.75, reviewOutputCostPerMtok: 4.5,
+      webSearchCostPerCallEur: 0.01, settingsVersion: 4
+    },
+    claim: { job_type: 'optimize_existing_post', payload_json: { source: 'admin_existing_content' } },
+    allowedInternalLinks: ['/kontakt'],
+    existingPostTrustedContext: { existingSlugs: [], metadata: null },
+    activeLearningRules: []
+  });
+  const payload = {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: 'b'.repeat(64)
+  };
+  const calls = [];
+  const handler = createProductionJobHandler({
+    enforceRuleSnapshot: true,
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext(received) {
+      calls.push(['context', received]);
+      return { runtimeSnapshot };
+    },
+    async createRun({ runtimeSnapshot: received }) {
+      calls.push(['run', received]);
+      return { id: 99, status: 'running', runtime_snapshot_json: received };
+    },
+    async runPipeline() { assert.fail('Revalidierungen dürfen keine Entwurfspipeline starten.'); },
+    async createExistingPostRevisionRevalidationDependencies(received) {
+      calls.push(['dependencies', received]);
+      return { repository: true };
+    },
+    async runExistingPostRevisionRevalidationJob(context, dependencies) {
+      calls.push(['revalidation', context, dependencies]);
+      return { status: 'completed', revisionId: 71 };
+    }
+  });
+
+  const result = await handler({ id: 52, job_type: 'revalidate_existing_post_revision', payload_json: payload }, {
+    leaseGuard: async () => true
+  });
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual([...EXISTING_POST_REVALIDATION_JOB_TYPES], ['revalidate_existing_post_revision']);
+  assert.equal(SUPPORTED_JOB_TYPES.has('revalidate_existing_post_revision'), true);
+  assert.deepEqual(calls[0], ['context', payload]);
+  assert.equal(calls[1][1], runtimeSnapshot);
+  assert.equal(calls[3][1].runtimeSnapshot, runtimeSnapshot);
+  assert.deepEqual(calls[3][2], { repository: true });
+});
+
+test('Worker lehnt zusätzliche und nicht PostgreSQL-INT32-/SHA-taugliche Revalidierungsfelder ab', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Ungültige Revalidierung darf keinen Run erzeugen.'); },
+    async runPipeline() { assert.fail('Ungültige Revalidierung darf keine Pipeline starten.'); }
+  });
+  const valid = {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: 'b'.repeat(64)
+  };
+  for (const payload_json of [
+    { ...valid, browser_reason: 'nicht erlaubt' },
+    { ...valid, source: 'browser' },
+    { ...valid, revision_id: 2_147_483_648 },
+    { ...valid, revision_version: '4' },
+    { ...valid, snapshot_fingerprint: 'B'.repeat(64) },
+    { ...valid, snapshot_fingerprint: 'b'.repeat(63) }
+  ]) {
+    await assert.rejects(handler({
+      id: 53,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json
+    }, { leaseGuard: async () => true }), {
+      code: 'CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID',
+      retryable: false
+    });
+  }
 });
 
 test('zusätzliche und nicht PostgreSQL-INT32-taugliche Bestands-Payloadfelder werden permanent abgelehnt', async () => {

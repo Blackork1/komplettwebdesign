@@ -8,6 +8,7 @@ import {
 } from '../services/contentAgent/contentRevisionService.js';
 import * as adminPresentation from '../services/contentAgent/adminPresentationService.js';
 import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
+import { snapshotFingerprint } from '../services/contentAgent/revisionSnapshotFingerprint.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index + 1}?`, answer: 'Eine vollständige Antwort.' }));
 const post = {
@@ -231,7 +232,27 @@ test('KI-Optimierung baut denselben Snapshotvertrag und delegiert nur eine Draft
     jobId: 44,
     baseLiveHash,
     diff,
-    report: { baseLiveHash, beforeScore: 72, afterScore: 92 },
+    report: {
+      baseLiveHash,
+      beforeScore: 72,
+      afterScore: 92,
+      review: {
+        passed: true,
+        score: 92,
+        summary: 'Die gezielte Optimierung ist vollständig geprüft.',
+        strengths: ['Präzise Aktualisierung'],
+        issues: [],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: {
+          currentClaims: false,
+          legalClaims: false,
+          privacyClaims: false,
+          softwareVersionClaims: false,
+          staticPrices: false
+        }
+      }
+    },
     validationContext: { existingSlugs: [], allowedInternalLinks: ['/kontakt'] },
     admin: { id: 7, username: 'Content-Agent' }
   });
@@ -244,6 +265,11 @@ test('KI-Optimierung baut denselben Snapshotvertrag und delegiert nur eine Draft
   assert.equal(persisted[0].snapshot.fields.content, fields.contentHtml);
   assert.equal(persisted[0].snapshot.fields.image_url, staticPost.image_url);
   assert.deepEqual(persisted[0].report.changes, diff.changes);
+  assert.equal(persisted[0].report.revalidation.status, 'passed');
+  assert.equal(persisted[0].report.revalidation.revisionVersion, 1);
+  assert.equal(persisted[0].report.revalidation.score, 92);
+  assert.equal(persisted[0].report.revalidation.minimumScore, 92);
+  assert.match(persisted[0].report.revalidation.snapshotFingerprint, /^[0-9a-f]{64}$/);
   assert.deepEqual(validationContexts[0].allowedInternalLinks, ['/kontakt']);
 });
 
@@ -430,12 +456,21 @@ test('Vergleichspräsentation überspringt ungültige Änderungen vor dem separa
 });
 
 test('Vergleichspräsentation gibt die Übernahme nur ohne Risiken und blockierende Prüfbefunde frei', () => {
+  const currentSnapshot = { fields: {} };
+  const currentReview = {
+    passed: true,
+    score: 92,
+    requiresManualReview: false,
+    risks: { legal: false, privacy: false },
+    issues: []
+  };
   const baseRevision = {
     id: 74,
     status: 'draft',
     revision_version: 2,
-    snapshot_json: { fields: {} },
+    snapshot_json: currentSnapshot,
     optimization_report_json: {
+      beforeScore: 80,
       targetedScope: { passed: true },
       validation: { passed: true },
       review: {
@@ -445,6 +480,15 @@ test('Vergleichspräsentation gibt die Übernahme nur ohne Risiken und blockiere
         risks: { legal: false, privacy: false },
         issues: []
       },
+      revalidation: {
+        status: 'passed',
+        revisionVersion: 2,
+        snapshotFingerprint: snapshotFingerprint(currentSnapshot),
+        review: currentReview,
+        score: 92,
+        minimumScore: 80,
+        unresolvedAuditCodes: []
+      },
       changes: []
     }
   };
@@ -452,14 +496,13 @@ test('Vergleichspräsentation gibt die Übernahme nur ohne Risiken und blockiere
   assert.equal(safe.approvalEnabled, true);
 
   const risky = structuredClone(baseRevision);
-  risky.optimization_report_json.review.risks.legal = true;
-  risky.optimization_report_json.revalidation = { status: 'passed' };
+  risky.optimization_report_json.revalidation.review.risks.legal = true;
   assert.equal(
     adminPresentation.buildRevisionComparisonPresentation(risky).approvalEnabled,
     false
   );
   const blocked = structuredClone(baseRevision);
-  blocked.optimization_report_json.review.issues.push({ blocking: true });
+  blocked.optimization_report_json.revalidation.review.issues.push({ blocking: true });
   assert.equal(
     adminPresentation.buildRevisionComparisonPresentation(blocked).approvalEnabled,
     false
@@ -674,6 +717,14 @@ test('manuelle Bearbeitung einer KI-Revision verwendet den atomaren Feedbackpfad
 
 test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der Freigabetransaktion', async () => {
   const transaction = { query: async () => ({ rows: [] }) };
+  const revisionSnapshot = createRevisionSnapshot(post);
+  const currentReview = {
+    passed: true,
+    score: 92,
+    requiresManualReview: false,
+    risks: { legal: false },
+    issues: []
+  };
   let acceptedInput;
   const service = createContentRevisionService({
     repository: {
@@ -681,7 +732,10 @@ test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der
         await input.afterApproval({
           revision: {
             id: 71, post_id: 7, optimization_job_id: 44,
+            status: 'draft',
+            snapshot_json: revisionSnapshot,
             optimization_report_json: {
+              beforeScore: 80,
               targetedScope: { passed: true },
               validation: { passed: true },
               review: {
@@ -690,6 +744,15 @@ test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der
                 requiresManualReview: false,
                 risks: { legal: false },
                 issues: []
+              },
+              revalidation: {
+                status: 'passed',
+                revisionVersion: 3,
+                snapshotFingerprint: snapshotFingerprint(revisionSnapshot),
+                review: currentReview,
+                score: 92,
+                minimumScore: 80,
+                unresolvedAuditCodes: []
               },
               changes: []
             },

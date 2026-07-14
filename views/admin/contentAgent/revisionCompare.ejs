@@ -50,7 +50,7 @@
           <h2 id="compare-decision-title">Aktuellen Revisionsstand entscheiden</h2>
         </div>
         <span class="content-agent-readonly is-<%= checkState %>">
-          <i class="fa-solid <%= checkState === 'passed' ? 'fa-circle-check' : checkState === 'running' ? 'fa-spinner' : 'fa-triangle-exclamation' %>" aria-hidden="true"></i>
+          <i class="fa-solid <%= checkState === 'passed' ? 'fa-circle-check' : checkState === 'pending' ? 'fa-spinner' : 'fa-triangle-exclamation' %>" aria-hidden="true"></i>
           <%= item.revalidationStatusLabel || 'Prüfstatus unbekannt' %>
         </span>
       </div>
@@ -65,7 +65,7 @@
         <form method="post" action="/admin/content-agent/revisions/<%= item.revisionId %>/reject">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="hidden" name="expected_revision_version" value="<%= item.revisionVersion %>">
-          <input type="hidden" name="confirmed" value="true">
+          <label><input type="checkbox" name="confirmed" value="true" required> Ich bestätige, dass die vollständige Optimierungsrevision abgelehnt werden soll.</label>
           <button class="btn btn-outline-danger" type="submit"><i class="fa-solid fa-ban" aria-hidden="true"></i> Optimierung vollständig ablehnen</button>
         </form>
       </div>

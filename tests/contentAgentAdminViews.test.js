@@ -1203,6 +1203,10 @@ test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async ()
   assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/reject"/);
   assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/publish"/);
   assert.match(html, /name="confirmed" value="true"/);
+  const rejectForm = html.match(/<form[^>]*action="\/admin\/content-agent\/revisions\/71\/reject"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.match(rejectForm, /type="checkbox"[^>]*name="confirmed"[^>]*required/);
+  assert.doesNotMatch(rejectForm, /type="hidden"[^>]*name="confirmed"/);
+  assert.match(rejectForm, /vollständige Optimierungsrevision abgelehnt/);
   assert.match(html, /Erneut geprüft/);
   assert.doesNotMatch(html, /onclick=/i);
   assert.equal((html.match(/<main\b/g) || []).length, 1);
@@ -1278,7 +1282,7 @@ test('Vergleichsview verwendet nur bereinigtes Vorschau-HTML und keine Rohdatena
   );
 });
 
-test('Revisionseditor verlinkt den geschützten Vorher-Nachher-Vergleich ohne bestehende Aktionen zu verändern', async () => {
+test('Revisionseditor verlinkt den geschützten Vergleich und bietet für KI-Revisionen keinen Publish-Bypass', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('revisionEdit.ejs')), {
     ...baseLocals,
     revision: {
@@ -1293,7 +1297,8 @@ test('Revisionseditor verlinkt den geschützten Vorher-Nachher-Vergleich ohne be
   assert.match(html, /href="\/admin\/content-agent\/revisions\/8\/compare"/);
   assert.match(html, /Vorher-Nachher vergleichen/);
   assert.match(html, /action="\/admin\/content-agent\/revisions\/8"/);
-  assert.match(html, /action="\/admin\/content-agent\/revisions\/8\/publish"/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/revisions\/8\/publish"/);
+  assert.match(html, /Freigabe im Vorher-Nachher-Vergleich/);
 });
 
 test('manuelle Audit-Revision erhält keinen toten Link zum KI-Vergleich', async () => {

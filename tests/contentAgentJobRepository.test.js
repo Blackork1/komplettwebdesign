@@ -441,7 +441,7 @@ test('Admin-Retry lässt Bestandsoptimierungen nur nach sicheren Fehlern ohne of
   assert.equal(result.status, 'queued');
   assert.match(
     db.calls[0].sql,
-    /job_type <> 'optimize_existing_post'[\s\S]*last_error IN \('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST'\)/i
+    /job_type NOT IN \('optimize_existing_post', 'revalidate_existing_post_revision'\)[\s\S]*last_error IN \('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST'\)/i
   );
   assert.match(
     db.calls[0].sql,
@@ -453,7 +453,7 @@ test('Admin-Retry lässt Bestandsoptimierungen nur nach sicheren Fehlern ohne of
   );
   assert.match(
     db.calls[0].sql,
-    /UPDATE content_runs AS run SET status = 'running',[\s\S]*candidate\.job_type <> 'optimize_existing_post'[\s\S]*candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i
+    /UPDATE content_runs AS run SET status = 'running',[\s\S]*candidate\.job_type NOT IN \('optimize_existing_post', 'revalidate_existing_post_revision'\)[\s\S]*candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i
   );
   assert.match(
     db.calls[0].sql,
@@ -470,7 +470,7 @@ test('Admin-Retry öffnet nur zulässige terminale Nicht-Bestandsruns unter dems
   assert.match(sql, /eligible_retry AS MATERIALIZED/i);
   assert.match(sql, /COALESCE\(job\.last_error, ''\) <> 'provider_execution_uncertain'/i);
   assert.match(sql, /stage_result\.value ->> 'status' = 'reserved'/i);
-  assert.match(sql, /candidate\.job_type <> 'optimize_existing_post'/i);
+  assert.match(sql, /candidate\.job_type NOT IN \('optimize_existing_post', 'revalidate_existing_post_revision'\)/i);
   assert.match(sql, /candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i);
   assert.match(sql, /UPDATE content_jobs AS job[\s\S]*FROM eligible_retry AS candidate/i);
 });
@@ -1074,7 +1074,7 @@ test('retryOrFailJob queued temporäre Fehler mit Backoff und exhausted Fehler t
 
 test('retryOrFailJob persistiert für sichere Bestandswiederholungen einen stabilen Fehlercode', async () => {
   const row = { id: 12, status: 'failed', attempts: 3, max_attempts: 3 };
-  const db = createQueryRecorder([{ rows: [row] }]);
+  const db = createQueryRecorder([{ rows: [row] }, { rows: [row] }]);
   const error = Object.assign(new Error('Sicher vor Providerausführung fehlgeschlagen.'), {
     code: 'CONTENT_PROVIDER_SAFE_RETRY',
     retryable: true
@@ -1087,6 +1087,13 @@ test('retryOrFailJob persistiert für sichere Bestandswiederholungen einen stabi
     attempts: 3
   }, error, {}, db), row);
   assert.equal(db.calls[0].params[3], 'CONTENT_PROVIDER_SAFE_RETRY');
+  assert.equal(await retryOrFailJob({
+    id: 13,
+    job_type: 'revalidate_existing_post_revision',
+    locked_by: 'worker-1',
+    attempts: 3
+  }, error, {}, db), row);
+  assert.equal(db.calls[1].params[3], 'CONTENT_PROVIDER_SAFE_RETRY');
 });
 
 test('Lease-Recovery kennzeichnet verlorene Leases eindeutig und plant sichere Versuche normal neu ein', async () => {

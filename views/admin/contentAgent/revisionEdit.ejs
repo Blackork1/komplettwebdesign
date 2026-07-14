@@ -37,14 +37,22 @@
     <div class="content-agent-editor__actions"><p>Speichern verändert keinen veröffentlichten Inhalt.</p><button class="btn btn-primary" type="submit">Revision speichern</button></div>
   </form>
 
-  <section class="content-agent-panel mt-4">
-    <h2>Geprüfte Revision übernehmen</h2>
-    <p>Vor dem Update wird die Livefassung unter Sperre exakt mit Slug, Format, Zeitstempel und Hash verglichen und die Revision erneut validiert.</p>
-    <form method="post" action="/admin/content-agent/revisions/<%= item.id %>/publish" data-confirm="Diese Revision jetzt in den veröffentlichten Artikel übernehmen?">
-      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true"><input type="hidden" name="expected_revision_version" value="<%= item.revision_version || 1 %>">
-      <button class="btn btn-success" type="submit">Ausdrücklich freigeben</button>
-    </form>
-  </section>
+  <% if (item.optimization_job_id) { %>
+    <section class="content-agent-panel mt-4">
+      <h2>Freigabe im Vorher-Nachher-Vergleich</h2>
+      <p>Nach dem Speichern wird dieser Stand erneut geprüft. Die Freigabe ist ausschließlich im schreibgeschützten Vergleich möglich, sobald die Prüfung abgeschlossen ist.</p>
+      <a href="/admin/content-agent/revisions/<%= item.id %>/compare" class="btn btn-primary">Prüfstatus und Vergleich öffnen</a>
+    </section>
+  <% } else { %>
+    <section class="content-agent-panel mt-4">
+      <h2>Geprüfte Revision übernehmen</h2>
+      <p>Vor dem Update wird die Livefassung unter Sperre exakt mit Slug, Format, Zeitstempel und Hash verglichen und die Revision erneut validiert.</p>
+      <form method="post" action="/admin/content-agent/revisions/<%= item.id %>/publish" data-confirm="Diese Revision jetzt in den veröffentlichten Artikel übernehmen?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="confirmed" value="true"><input type="hidden" name="expected_revision_version" value="<%= item.revision_version || 1 %>">
+        <button class="btn btn-success" type="submit">Ausdrücklich freigeben</button>
+      </form>
+    </section>
+  <% } %>
 </div>
 <script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

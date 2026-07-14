@@ -3,10 +3,12 @@ import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { validateArticle as defaultValidateArticle } from './articleValidator.js';
 import { createContentRevisionRepository } from '../../repositories/contentRevisionRepository.js';
 import { createContentExistingPostOptimizationRepository } from '../../repositories/contentExistingPostOptimizationRepository.js';
-import { FaqItemSchema } from './articleSchemas.js';
+import { FaqItemSchema, ReviewOutputSchema } from './articleSchemas.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import { validateTargetedOptimizationScope } from './existingPostDiffService.js';
 import { normalizeInternalHref } from './trustedInternalLinkService.js';
+import { snapshotFingerprint } from './revisionSnapshotFingerprint.js';
+import { evaluateExistingPostRevisionApproval } from './existingPostRevisionApprovalPolicy.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -204,7 +206,7 @@ async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
   }
 }
 
-async function assertOptimizationSnapshotRevalidated(
+export async function assertOptimizationSnapshotRevalidated(
   snapshot,
   validateArticle,
   { post, report, validationContext = {} } = {}
@@ -226,35 +228,15 @@ async function assertOptimizationSnapshotRevalidated(
       'Der gespeicherte Optimierungsbericht ist ungültig.'
     );
   }
-  report.revalidation = {
-    status: 'passed',
-    scope,
-    validatedAt: new Date().toISOString()
-  };
+  return scope;
 }
 
-function assertOptimizationReportApproved(report) {
-  const risksPassed = report?.review?.risks
-    && typeof report.review.risks === 'object'
-    && !Array.isArray(report.review.risks)
-    && Object.values(report.review.risks).every((value) => value === false);
-  const blockingIssue = Array.isArray(report?.review?.issues)
-    && report.review.issues.some((issue) => (
-      issue?.blocking === true || issue?.autoPublishBlocking === true
-    ));
-  const revalidationPassed = report?.revalidation == null
-    || report.revalidation?.status === 'passed';
-  if (report?.targetedScope?.passed !== true
-      || report?.validation?.passed !== true
-      || report?.review?.passed !== true
-      || Number(report.review?.score) < 80
-      || report.review?.requiresManualReview === true
-      || !risksPassed
-      || blockingIssue
-      || !revalidationPassed) {
+function assertOptimizationReportApproved(revision) {
+  const decision = evaluateExistingPostRevisionApproval({ revision });
+  if (!decision.allowed) {
     throw revisionError(
       'CONTENT_REVISION_VALIDATION_FAILED',
-      'Die Optimierungsrevision erfüllt die Freigabekriterien nicht.'
+      `Die Optimierungsrevision erfüllt die Freigabekriterien nicht: ${decision.reasonLabel}.`
     );
   }
 }
@@ -302,17 +284,42 @@ function optimizedRevisionInput(input = {}) {
     throw revisionError('LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN', 'Legacy-EJS-Inhalt bleibt bytegenau unveränderlich.');
   }
 
+  const report = {
+    ...structuredClone(input.report),
+    baseLiveHash,
+    changes: structuredClone(input.diff.changes)
+  };
+  const parsedReview = ReviewOutputSchema.safeParse(report.review);
+  if (!parsedReview.success || Number(report.afterScore) !== parsedReview.data.score) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Der gebundene redaktionelle Prüfbericht ist ungültig.',
+      parsedReview.success ? [] : parsedReview.error.issues
+    );
+  }
+  report.review = parsedReview.data;
+  const originalScore = Number(report.afterScore ?? report.beforeScore);
+  const minimumScore = Math.max(80, Number.isFinite(originalScore)
+    ? originalScore
+    : 80);
+  report.revalidation = {
+    status: 'passed',
+    revisionVersion: 1,
+    snapshotFingerprint: snapshotFingerprint(snapshot),
+    review: structuredClone(parsedReview.data),
+    score: parsedReview.data.score,
+    minimumScore,
+    auditCodes: [],
+    unresolvedAuditCodes: []
+  };
+
   return {
     postId,
     auditId: positiveId(input.auditId, 'auditId'),
     jobId: positiveId(input.jobId, 'jobId'),
     baseLiveHash,
     snapshot,
-    report: {
-      ...structuredClone(input.report),
-      baseLiveHash,
-      changes: structuredClone(input.diff.changes)
-    },
+    report,
     admin: normalizeAdmin(input.admin),
     validationContext: input.validationContext && typeof input.validationContext === 'object'
       ? input.validationContext
@@ -420,7 +427,7 @@ export function createContentRevisionService({
     },
 
     async updateRevision({ revisionId, input, admin } = {}) {
-      const id = positiveId(revisionId, 'revisionId');
+      const id = postgresInteger(revisionId, 'revisionId');
       const normalizedAdmin = normalizeAdmin(admin);
       const revision = await repository.getRevisionForEdit(id);
       if (!revision) throw revisionError('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
@@ -466,11 +473,8 @@ export function createContentRevisionService({
 
     async approveRevision({ revisionId, expectedVersion, confirmed, admin } = {}) {
       if (confirmed !== true) throw revisionError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
-      const id = positiveId(revisionId, 'revisionId');
-      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {
-        throw revisionError('CONTENT_ACTION_VALIDATION_FAILED', 'expectedVersion ist ungültig.');
-      }
-      const version = expectedVersion;
+      const id = postgresInteger(revisionId, 'revisionId');
+      const version = postgresInteger(expectedVersion, 'expectedVersion');
       const normalizedAdmin = normalizeAdmin(admin);
       return repository.approveRevisionTransaction({
         revisionId: id,
@@ -478,9 +482,12 @@ export function createContentRevisionService({
         admin: normalizedAdmin,
         currentHash: liveHashForPost,
         validateSnapshot: (snapshot, context) => assertSnapshotValid(snapshot, validateArticle, context),
+        validateApproval: ({ revision }) => {
+          if (revision?.optimization_job_id != null) assertOptimizationReportApproved(revision);
+        },
         afterApproval: async ({ revision }, client) => {
           if (revision?.optimization_job_id == null) return;
-          assertOptimizationReportApproved(revision.optimization_report_json);
+          assertOptimizationReportApproved(revision);
           await optimizationRepository.recordAcceptedRevisionFeedback({
             revisionId: id,
             postId: revision.post_id,

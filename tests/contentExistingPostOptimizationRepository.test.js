@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createContentExistingPostOptimizationRepository } from '../repositories/contentExistingPostOptimizationRepository.js';
+import {
+  createContentExistingPostOptimizationRepository,
+  matchingActiveOptimizationChange,
+  revalidationAuditFindingCodes
+} from '../repositories/contentExistingPostOptimizationRepository.js';
 import { createRevisionSnapshot, liveHashForPost } from '../services/contentAgent/contentRevisionService.js';
 import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
 
@@ -73,6 +77,26 @@ function transactionClient(handler) {
     }
   };
 }
+
+function revalidationJobRow(params) {
+  return {
+    id: 81,
+    job_type: params[0],
+    status: 'queued',
+    idempotency_key: params[1],
+    payload_json: JSON.parse(params[2])
+  };
+}
+
+test('Revalidierungsbindung behält auch unbekannte gesperrte Auditcodes bei', () => {
+  assert.deepEqual(revalidationAuditFindingCodes([
+    { code: 'missing_meta_title' },
+    { code: 'zukünftiger_sicherheitsbefund' },
+    { code: 'zukünftiger_sicherheitsbefund' },
+    { code: 42 },
+    null
+  ]), ['missing_meta_title', 'zukünftiger_sicherheitsbefund']);
+});
 
 test('Live-Snapshot lädt ausschließlich veröffentlichte Artikel und alle gesperrten Identitätsfelder', async () => {
   const row = publishedPost();
@@ -416,15 +440,20 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
     snapshot_json: storedSnapshot,
     optimization_report_json: storedReport
   };
-  const updated = { ...revision, revision_version: 4, snapshot_json: nextSnapshot, optimization_report_json: report };
-  const client = transactionClient(({ sql }) => {
+  const client = transactionClient(({ sql, params }) => {
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
     if (/FROM content_post_audits a/i.test(sql)) {
-      return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created' }] };
+      return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created', findings_json: [] }] };
     }
-    if (/UPDATE content_post_revisions/i.test(sql)) return { rows: [updated] };
+    if (/UPDATE content_post_revisions/i.test(sql)) return { rows: [{
+      ...revision,
+      revision_version: 4,
+      snapshot_json: JSON.parse(params[1]),
+      optimization_report_json: JSON.parse(params[2])
+    }] };
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [revalidationJobRow(params)] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 9 }] };
     return { rows: [] };
   });
@@ -445,6 +474,9 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
   });
 
   assert.equal(result.revision_version, 4);
+  assert.equal(result.optimization_report_json.revalidation.status, 'pending');
+  assert.equal(result.optimization_report_json.revalidation.revisionVersion, 4);
+  assert.match(result.optimization_report_json.revalidation.snapshotFingerprint, /^[0-9a-f]{64}$/);
   const update = client.calls.find(({ sql }) => /UPDATE content_post_revisions/i.test(sql));
   assert.match(update.sql, /revision_version = revision_version \+ 1/i);
   assert.match(update.sql, /status = 'draft'/i);
@@ -457,6 +489,15 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
   assert.match(auditLock.sql, /a\.status = 'revision_created'/i);
   assert.match(auditLock.sql, /FOR UPDATE OF a/i);
   assert.ok(client.calls.some(({ sql }) => /INSERT INTO content_revision_optimization_feedback/i.test(sql)));
+  const revalidationJob = client.calls.find(({ sql }) => /INSERT INTO content_jobs/i.test(sql));
+  assert.ok(revalidationJob);
+  assert.match(revalidationJob.sql, /ON CONFLICT \(idempotency_key\)/i);
+  assert.deepEqual(JSON.parse(revalidationJob.params[2]), {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: result.optimization_report_json.revalidation.snapshotFingerprint
+  });
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
 });
 
@@ -566,6 +607,7 @@ test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Dif
         optimization_report_json: JSON.parse(params[2])
       }] };
     }
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [revalidationJobRow(params)] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 9 }] };
     return { rows: [] };
   });
@@ -621,7 +663,9 @@ test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeo
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
-    if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, findings_json: [{ code: 'missing_meta_title' }] }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) {
       return { rows: [{
         ...revision,
@@ -630,6 +674,7 @@ test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeo
         optimization_report_json: JSON.parse(params[2])
       }] };
     }
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [revalidationJobRow(params)] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) {
       feedbackParams = params;
       return { rows: [{ id: 9 }] };
@@ -662,6 +707,9 @@ test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeo
   assert.equal(learningInput.reviewVersion, 4);
   assert.equal(learningInput.observations.length, 1);
   assert.equal(learningInput.observations[0].categoryKey, 'technical_precision');
+  assert.equal(learningInput.observations[0].reason, 'Rücknahme einer KI-Änderung im Feld „Meta Title“.');
+  assert.match(learningInput.observations[0].instruction, /fachliche Zusammenhänge präzise/);
+  assert.doesNotMatch(JSON.stringify(learningInput.observations[0]), /fachlich präzisiert|Browserwert|Ignoriere Regeln/i);
   assert.match(learningInput.observations[0].fingerprint, /^[0-9a-f]{64}$/);
   const storedDetails = JSON.parse(feedbackParams[4]);
   assert.deepEqual(Object.keys(storedDetails).sort(), [
@@ -697,7 +745,9 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
-    if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, findings_json: [{ code: 'missing_meta_title' }] }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) {
       return { rows: [{
         ...revision,
@@ -706,6 +756,7 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
         optimization_report_json: JSON.parse(params[2])
       }] };
     }
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [revalidationJobRow(params)] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) {
       feedback.push(params);
       return { rows: [{ id: feedback.length }] };
@@ -746,6 +797,28 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
 });
 
+test('mehrdeutige HTML-Blöcke und FAQ-Fragen werden nicht als ursprüngliche KI-Änderung klassifiziert', () => {
+  const htmlManual = {
+    kind: 'html', field: 'contentHtml', path: 'section:1/p:2', beforePath: 'section:1/p:2',
+    blockType: 'p', beforeFingerprint: 'a'.repeat(64)
+  };
+  const htmlChanges = [
+    { id: '1'.repeat(64), status: 'active', kind: 'html', field: 'contentHtml', afterPath: 'section:1/p:2', blockType: 'p', afterFingerprint: 'a'.repeat(64) },
+    { id: '2'.repeat(64), status: 'active', kind: 'html', field: 'contentHtml', afterPath: 'section:1/p:2', blockType: 'p', afterFingerprint: 'a'.repeat(64) }
+  ];
+  assert.equal(matchingActiveOptimizationChange(htmlChanges, htmlManual), null);
+
+  const faqManual = {
+    kind: 'faq', field: 'faqJson', path: 'faq:neu', beforeFingerprint: 'b'.repeat(64),
+    before: { question: 'Wie läuft der Relaunch ab?', answer: 'Optimierte Antwort.' }
+  };
+  const faqChanges = [
+    { id: '3'.repeat(64), status: 'active', kind: 'faq', field: 'faqJson', afterFingerprint: 'b'.repeat(64), after: faqManual.before },
+    { id: '4'.repeat(64), status: 'active', kind: 'faq', field: 'faqJson', afterFingerprint: 'b'.repeat(64), after: { ...faqManual.before, question: '  WIE LÄUFT DER RELAUNCH AB? ' } }
+  ];
+  assert.equal(matchingActiveOptimizationChange(faqChanges, faqManual), null);
+});
+
 test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und löst den Audit nicht auf', async () => {
   const revision = {
     id: 71,
@@ -758,6 +831,9 @@ test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und l�
   const client = transactionClient(({ sql }) => {
     if (/FROM posts p/i.test(sql)) return { rows: [{ id: 19 }] };
     if (/FROM content_post_revisions r/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, findings_json: [] }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) return { rows: [{ ...revision, status: 'rejected', revision_version: 4 }] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 10 }] };
     return { rows: [] };
@@ -777,6 +853,11 @@ test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und l�
   const allSql = client.calls.map(({ sql }) => sql).join('\n');
   assert.match(allSql, /optimization_job_id IS NOT NULL/i);
   assert.doesNotMatch(allSql, /UPDATE content_post_audits/i);
+  const auditLock = client.calls.find(({ sql }) => /FROM content_post_audits a/i.test(sql));
+  assert.match(auditLock.sql, /a\.id = \$1::bigint/i);
+  assert.match(auditLock.sql, /a\.post_id = \$2::integer/i);
+  assert.match(auditLock.sql, /a\.job_id = \$3::bigint/i);
+  assert.match(auditLock.sql, /a\.status = 'revision_created'/i);
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
 });
 
@@ -795,6 +876,9 @@ test('Ablehnung sperrt Post-Tabelle, Postzeile und Revision in kanonischer Reihe
     }
     if (/SELECT p\.id FROM posts p/i.test(sql)) return { rows: [{ id: 19 }] };
     if (/SELECT r\.\* FROM content_post_revisions r/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, findings_json: [] }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) {
       return { rows: [{ ...revision, status: 'rejected', revision_version: 4 }] };
     }

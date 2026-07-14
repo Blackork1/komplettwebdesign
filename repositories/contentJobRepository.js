@@ -447,7 +447,7 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
           AND job.status IN ('failed', 'needs_manual_attention')
           AND COALESCE(job.last_error, '') <> 'provider_execution_uncertain'
           AND (
-            job.job_type <> 'optimize_existing_post'
+            job.job_type NOT IN ('optimize_existing_post', 'revalidate_existing_post_revision')
             OR (
               job.last_error IN ('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST')
               AND run.status = 'running'
@@ -471,7 +471,7 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
             finished_at = NULL
         FROM eligible_retry AS candidate
         WHERE run.id = candidate.run_id
-          AND candidate.job_type <> 'optimize_existing_post'
+          AND candidate.job_type NOT IN ('optimize_existing_post', 'revalidate_existing_post_revision')
           AND candidate.run_status IN ('failed', 'needs_manual_attention')
         RETURNING run.id, run.job_id
       )
@@ -1671,7 +1671,7 @@ export async function retryOrFailJob(claim, error, {
     `,
     [
       ...lease,
-      claim?.job_type === 'optimize_existing_post'
+      ['optimize_existing_post', 'revalidate_existing_post_revision'].includes(claim?.job_type)
         && error?.code === 'CONTENT_PROVIDER_SAFE_RETRY'
         ? 'CONTENT_PROVIDER_SAFE_RETRY'
         : sanitizeErrorMessage(error),

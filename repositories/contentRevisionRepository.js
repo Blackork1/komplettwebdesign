@@ -131,6 +131,7 @@ export function createContentRevisionRepository(db = pool) {
       admin,
       currentHash,
       validateSnapshot,
+      validateApproval,
       afterApproval
     }) {
       const client = await db.connect();
@@ -152,9 +153,12 @@ export function createContentRevisionRepository(db = pool) {
         }
         const { rows: audits } = await client.query(`
           SELECT * FROM content_post_audits
-          WHERE id = $1 AND post_id = $2 AND status = 'revision_created'
+          WHERE id = $1::bigint
+            AND post_id = $2::integer
+            AND ($3::bigint IS NULL OR job_id = $3::bigint)
+            AND status = 'revision_created'
           FOR UPDATE
-        `, [revision.audit_id, post.id]);
+        `, [revision.audit_id, post.id, revision.optimization_job_id]);
         if (!audits[0]) throw conflict('CONTENT_REVISION_CONFLICT', 'Der zugehörige Auditbefund ist nicht mehr freigabefähig.');
         const base = revision.snapshot_json?.base || {};
         if (base.slug !== post.slug
@@ -164,6 +168,9 @@ export function createContentRevisionRepository(db = pool) {
           throw conflict('CONTENT_REVISION_STALE', 'Der Livebeitrag wurde seit Erstellung der Revision verändert.');
         }
         await validateSnapshot(revision.snapshot_json, await trustedValidationContext(post.id, client));
+        if (typeof validateApproval === 'function') {
+          await validateApproval({ revision, post }, client);
+        }
         const fields = revision.snapshot_json.fields;
         const { rows: updatedPosts } = await client.query(`
           UPDATE posts SET
@@ -187,7 +194,18 @@ export function createContentRevisionRepository(db = pool) {
           RETURNING id
         `, [revisionId, admin.id, admin.username, expectedVersion]);
         if (!approvedRevisions[0]) throw conflict('CONTENT_REVISION_CONFLICT', 'Die Revision wurde zwischenzeitlich verändert.');
-        await client.query(`UPDATE content_post_audits SET status = 'resolved' WHERE id = $1`, [revision.audit_id]);
+        const { rows: resolvedAudits } = await client.query(`
+          UPDATE content_post_audits
+          SET status = 'resolved'
+          WHERE id = $1::bigint
+            AND post_id = $2::integer
+            AND ($3::bigint IS NULL OR job_id = $3::bigint)
+            AND status = 'revision_created'
+          RETURNING id
+        `, [revision.audit_id, post.id, revision.optimization_job_id]);
+        if (resolvedAudits.length !== 1) {
+          throw conflict('CONTENT_REVISION_CONFLICT', 'Der Auditbefund konnte nicht eindeutig aufgelöst werden.');
+        }
         if (typeof afterApproval === 'function') {
           await afterApproval({ revision, post: updatedPosts[0] }, client);
         }
