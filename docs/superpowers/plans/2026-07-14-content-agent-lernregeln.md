@@ -222,7 +222,7 @@ git commit -m "feat: classify unknown learning issues safely"
 - Produces: `createContentLearningRepository(db)`.
 - Repository methods: `loadReview({ postId, reviewVersion })`, `loadCachedClassifications(fingerprints)`, `storeClassifications(input)`, `recordObservationsAndMaybeProposals(input)`, `listActiveRuleVersions()`, `getAdminDashboard()`, `activateProposal(input)`, `rejectProposal(input)`, `reviseRule(input)`, `changeRuleStatus(input)`.
 
-- [ ] **Step 1: Failing Repositorytests schreiben**
+- [x] **Step 1: Failing Repositorytests schreiben**
 
 Die Tests müssen SQL-Parameter und Transaktionsreihenfolge belegen sowie im echten PostgreSQL zeigen:
 
@@ -234,17 +234,17 @@ assert.equal(await distinctArticleCount('cta_repetition_or_fit'), 1);
 
 Nach Artikel 2 existiert kein Vorschlag; nach Artikel 3 genau ein `pending`-Vorschlag. Zwei parallele dritte Beobachtungen dürfen kein Duplikat erzeugen.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningRepository.test.js`
 
 Expected: FAIL wegen fehlendem Repository.
 
-- [ ] **Step 3: Repository minimal implementieren**
+- [x] **Step 3: Repository minimal implementieren**
 
 `recordObservationsAndMaybeProposals` verwendet `BEGIN`, einen Advisory-Xact-Lock auf den Kategorienamen, Upserts, `COUNT(DISTINCT post_id)` und die lokale Regelvorlage. Aktivierung sperrt den Vorschlag `FOR UPDATE`, prüft `proposalVersion`, validiert den Regeltext, schreibt Regel und Version sowie ein Auditereignis und veröffentlicht keinen Beitrag.
 
-- [ ] **Step 4: GREEN und echte Nebenläufigkeit prüfen**
+- [x] **Step 4: GREEN und echte Nebenläufigkeit prüfen**
 
 Run: `node --test tests/contentLearningRepository.test.js`
 
@@ -252,7 +252,7 @@ Run: `CONTENT_AGENT_PG_TEST_URL=postgresql://blocksdorf@127.0.0.1/kwd_content_ag
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add repositories/contentLearningRepository.js tests/contentLearningRepository.test.js tests/contentAgentPostgresIntegration.test.js

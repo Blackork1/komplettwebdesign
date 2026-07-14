@@ -36,6 +36,7 @@ import { createContentPublishEventRepository } from '../repositories/contentPubl
 import { createContentAgentAdminRepository } from '../repositories/contentAgentAdminRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
 import { createContentReviewIssueOptimizationRepository } from '../repositories/contentReviewIssueOptimizationRepository.js';
+import { createContentLearningRepository } from '../repositories/contentLearningRepository.js';
 import {
   createContentAgentPgTestSchemaName,
   evaluateContentAgentPgResetGuard
@@ -1139,6 +1140,57 @@ test('echtes PostgreSQL: Migrationen 002–009 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const learningPosts = await pool.query(`
+      INSERT INTO posts (
+        title, slug, content, published, generated_by_ai,
+        content_format, workflow_status, review_version
+      ) VALUES
+        ('Lernartikel 1', 'lernartikel-1', '<p>Text 1</p>', FALSE, TRUE, 'static_html', 'needs_review', 1),
+        ('Lernartikel 2', 'lernartikel-2', '<p>Text 2</p>', FALSE, TRUE, 'static_html', 'needs_review', 1),
+        ('Lernartikel 3', 'lernartikel-3', '<p>Text 3</p>', FALSE, TRUE, 'static_html', 'needs_review', 1),
+        ('Lernartikel 4', 'lernartikel-4', '<p>Text 4</p>', FALSE, TRUE, 'static_html', 'needs_review', 1)
+      RETURNING id
+    `);
+    const learningRepository = createContentLearningRepository(pool);
+    const ctaObservation = {
+      categoryKey: 'cta_repetition_or_fit',
+      fingerprint: 'a'.repeat(64),
+      reason: 'Mehrere Kontaktaufforderungen wiederholen denselben Impuls.',
+      instruction: 'Formuliere einen CTA passend zum konkreten Entscheidungsschritt.',
+      section: 'Gesamter Artikel',
+      anchor: 'pruefung-gesamter-artikel',
+      classificationSource: 'local',
+      confidence: 0.9,
+      taxonomyVersion: 'content-learning-taxonomy-v1'
+    };
+    for (const row of learningPosts.rows.slice(0, 2)) {
+      const result = await learningRepository.recordObservationsAndMaybeProposals({
+        postId: row.id,
+        reviewVersion: 1,
+        observations: [ctaObservation]
+      });
+      assert.equal(result.proposals.length, 0);
+    }
+    await Promise.all(learningPosts.rows.slice(2).map((row) => (
+      learningRepository.recordObservationsAndMaybeProposals({
+        postId: row.id,
+        reviewVersion: 1,
+        observations: [ctaObservation]
+      })
+    )));
+    const learningProposalCount = await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM content_learning_rule_proposals
+      WHERE category_key = 'cta_repetition_or_fit' AND status = 'pending'
+    `);
+    assert.equal(learningProposalCount.rows[0].count, 1);
+    const learningObservationCount = await pool.query(`
+      SELECT COUNT(DISTINCT post_id)::int AS count
+      FROM content_learning_observations
+      WHERE category_key = 'cta_repetition_or_fit'
+    `);
+    assert.equal(learningObservationCount.rows[0].count, 4);
 
     const generatedMetadataTypes = await pool.query(`
       SELECT table_name, column_name, data_type
