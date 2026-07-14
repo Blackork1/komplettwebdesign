@@ -111,7 +111,22 @@ test('Cockpit enthält bestätigte sieben Reiter und sichere Aktionsformulare', 
   assert.match(schedule, /step="1"/);
   assert.match(technology, /schreibgeschützt/i);
   assert.match(script, /window\.confirm/);
-  assert.doesNotMatch(script, /fetch\(|XMLHttpRequest|localStorage/);
+  assert.doesNotMatch(script, /XMLHttpRequest|localStorage/);
+});
+
+test('Entwurfsoptimierung sperrt Doppelklicks und aktualisiert nur die Statusbox', async () => {
+  const script = await readFile(new URL('../public/js/admin-content-agent.js', import.meta.url), 'utf8');
+
+  assert.match(script, /data-review-optimization-form/);
+  assert.match(script, /data-review-optimization-submit/);
+  assert.match(script, /data-review-optimization-status/);
+  assert.match(script, /data-review-optimization-retry/);
+  assert.match(script, /window\.fetch/);
+  assert.match(script, /credentials:\s*'same-origin'/);
+  assert.match(script, /headers:\s*\{\s*Accept:\s*'application\/json'\s*\}/);
+  assert.match(script, /setTimeout\([^,]+,\s*5000\)/);
+  assert.doesNotMatch(script, /innerHTML|insertAdjacentHTML|outerHTML/);
+  assert.doesNotMatch(script, /location\.reload|window\.location\s*=/);
 });
 
 test('ungerade Haupttabanzahl nutzt im mobilen Zweispaltenraster einen Vollbreiten-Tab', async () => {
