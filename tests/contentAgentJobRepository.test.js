@@ -606,12 +606,43 @@ test('recoverExpiredJobs trennt Wiederholungen von endgültigen Fehlern und lös
 
   assert.equal(result, recovered);
   assert.match(db.calls[0].sql, /WHERE job\.status = 'running'/i);
+  assert.match(db.calls[0].sql, /LEFT JOIN content_runs AS run ON run\.job_id = job\.id/i);
+  assert.match(
+    db.calls[0].sql,
+    /WHEN expired\.run_status IN \('completed', 'failed', 'needs_manual_attention'\)[\s\S]*THEN expired\.run_status/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /expired\.run_status = 'completed'[\s\S]*THEN NULL[\s\S]*expired\.run_status IN \('failed', 'needs_manual_attention'\)/i
+  );
   assert.match(db.calls[0].sql, /job\.locked_at < NOW\(\) - \(\$1 \* INTERVAL '1 minute'\)/i);
   assert.match(db.calls[0].sql, /WHEN job\.attempts < job\.max_attempts THEN 'queued'[\s\S]*ELSE 'failed'/i);
   assert.match(db.calls[0].sql, /locked_at = NULL/i);
   assert.match(db.calls[0].sql, /locked_by = NULL/i);
   assert.match(db.calls[0].sql, /finished_at = CASE[\s\S]*WHEN job\.attempts < job\.max_attempts THEN NULL[\s\S]*ELSE NOW\(\)/i);
   assert.deepEqual(db.calls[0].params, [30]);
+});
+
+test('Recovery übernimmt einen terminalen Run auch nach dem letzten Jobversuch atomar', async () => {
+  const recovered = {
+    id: 5,
+    status: 'completed',
+    attempts: 3,
+    max_attempts: 3,
+    last_error: null,
+    locked_at: null,
+    locked_by: null
+  };
+  const db = createQueryRecorder([{ rows: [recovered] }]);
+
+  assert.deepEqual(await recoverExpiredJobs(30, db), [recovered]);
+
+  const sql = db.calls[0].sql;
+  const terminalBranch = sql.indexOf("expired.run_status IN ('completed', 'failed', 'needs_manual_attention')");
+  const exhaustedBranch = sql.indexOf('job.attempts < job.max_attempts');
+  assert.ok(terminalBranch >= 0 && terminalBranch < exhaustedBranch);
+  assert.match(sql, /COALESCE\(expired\.run_finished_at, NOW\(\)\)/i);
+  assert.match(sql, /COALESCE\(expired\.run_error_code, 'CONTENT_RUN_FAILED'\)/i);
 });
 
 test('Recovery gibt Jobversuch sechs für eine künftig fällige queued Delivery zurück', async () => {

@@ -19,10 +19,8 @@ export async function createRun({
       INSERT INTO content_runs (job_id, status, current_stage, runtime_snapshot_json)
       VALUES ($1, 'running', $2, $3::jsonb)
       ON CONFLICT (job_id) DO UPDATE
-      SET status = 'running',
-          current_stage = content_runs.current_stage,
-          stage_results_json = content_runs.stage_results_json,
-          finished_at = NULL
+      SET current_stage = content_runs.current_stage,
+          stage_results_json = content_runs.stage_results_json
       RETURNING *
     `,
     [jobId, currentStage, runtimeSnapshot]
@@ -89,6 +87,12 @@ export async function finishRun(runId, {
   postId = null,
   errorReport = {}
 } = {}, db = pool) {
+  if (!['completed', 'failed', 'needs_manual_attention'].includes(status)) {
+    throw Object.assign(
+      new TypeError('Ein Content-Run kann nur mit einem terminalen Status abgeschlossen werden.'),
+      { code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID' }
+    );
+  }
   const { rows } = await db.query(
     `
       UPDATE content_runs
@@ -101,6 +105,7 @@ export async function finishRun(runId, {
           END,
           finished_at = NOW()
       WHERE id = $1
+        AND status = 'running'
       RETURNING *
     `,
     [runId, status, postId, sanitizeErrorReport(errorReport)]

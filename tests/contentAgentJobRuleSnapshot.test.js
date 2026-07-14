@@ -214,6 +214,59 @@ test('Manifest-Mismatch terminalisiert nach Leaseverlust niemals durch einen ver
   }
 });
 
+test('Bestandsoptimierungs-Resume blockiert eine geänderte Optimierungsrichtlinien-Version vor der Pipeline', async () => {
+  const current = bindContentRulesToSnapshot({
+    baseSnapshot: { ...runtimeConfig(), webSearchCostPerCallEur: 0.01 },
+    allowedInternalLinks: ['/kontakt'],
+    requireAllowedInternalLinks: true,
+    existingPostTrustedContext: { existingSlugs: [], metadata: null },
+    requireExistingPostTrustedContext: true
+  });
+  const stale = {
+    ...current,
+    ruleManifest: {
+      ...current.ruleManifest,
+      existingPostDiffPolicy: 'existing-post-diff-policy-v0'
+    }
+  };
+  let pipelineCalls = 0;
+  const finishes = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    enforceRuleSnapshot: true,
+    async findRunByJobId() {
+      return { id: 92, status: 'running', runtime_snapshot_json: stale, stage_results_json: {} };
+    },
+    async getSettings() { assert.fail('Resume darf keine Live-Einstellungen laden.'); },
+    resolveRuntimeConfig() { assert.fail('Resume darf keine Live-Konfiguration auflösen.'); },
+    createJobSnapshot() { assert.fail('Resume darf keinen neuen Snapshot erzeugen.'); },
+    async createRun() { assert.fail('Resume darf keinen neuen Run erzeugen.'); },
+    async finishRun(runId, payload) {
+      finishes.push({ runId, payload });
+      return { id: runId, status: payload.status };
+    },
+    async runPipeline() { assert.fail('Bestandsoptimierung verwendet keine Entwurfspipeline.'); },
+    createExistingPostOptimizationDependencies() { pipelineCalls += 1; return {}; },
+    async runExistingPostOptimizationJob() { pipelineCalls += 1; return { status: 'completed' }; }
+  });
+
+  const result = await handler({
+    id: 702,
+    job_type: 'optimize_existing_post',
+    attempts: 2,
+    payload_json: {
+      source: 'admin_existing_content',
+      post_id: 19,
+      admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.code, 'CONTENT_RULE_MANIFEST_MISMATCH');
+  assert.equal(pipelineCalls, 0);
+  assert.equal(finishes[0].payload.status, 'needs_manual_attention');
+});
+
 test('Jobconfig übernimmt Link- und Regelbasis niemals aus der technischen Live-Konfiguration', () => {
   const stored = bindContentRulesToSnapshot({
     baseSnapshot: { enabled: true, autoPublishEffective: false },

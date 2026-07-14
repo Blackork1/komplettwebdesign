@@ -543,27 +543,53 @@ test('unklare Providerfehler bleiben ohne Freigabe und Wiederholung manuell', as
   }]);
 });
 
-test('429- und safeToRetry-Fehler werden erst nach atomarer Reservierungsfreigabe wiederholbar', async () => {
-  for (const providerError of [
-    Object.assign(new Error('Rate-Limit'), { status: 429 }),
-    Object.assign(new Error('Sicher vor Versand fehlgeschlagen'), { safeToRetry: true })
-  ]) {
-    const { dependencies, state } = stageDependencies();
-    await assert.rejects(
-      executePaidStructuredTextStage(stageInput({
-        async execute() { throw providerError; }
-      }), dependencies),
-      (error) => error === providerError
-        && error.code === 'CONTENT_PROVIDER_SAFE_RETRY'
-        && error.retryable === true
-    );
-    assert.deepEqual(state.releases, [{
-      runId: 7,
-      stageId: 'targeted_optimization',
-      reservationMonth: '2026-07'
-    }]);
-    assert.ok(state.events.indexOf('release') > state.events.indexOf('record:false'));
-  }
+test('explizit sicherer Providerfehler wird erst nach atomarer Reservierungsfreigabe wiederholbar', async () => {
+  const providerError = Object.assign(new Error('Sicher vor Versand fehlgeschlagen'), {
+    safeToRetry: true
+  });
+  const { dependencies, state } = stageDependencies();
+  await assert.rejects(
+    executePaidStructuredTextStage(stageInput({
+      async execute() { throw providerError; }
+    }), dependencies),
+    (error) => error === providerError
+      && error.code === 'CONTENT_PROVIDER_SAFE_RETRY'
+      && error.retryable === true
+  );
+  assert.deepEqual(state.releases, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07'
+  }]);
+  assert.ok(state.events.indexOf('release') > state.events.indexOf('record:false'));
+});
+
+test('nackter 429-Fehler bleibt mit offener Reservierung fail-closed', async () => {
+  const { dependencies, state } = stageDependencies();
+  const result = await executePaidStructuredTextStage(stageInput({
+    async execute() { throw Object.assign(new Error('Rate-Limit'), { status: 429 }); }
+  }), dependencies);
+
+  assert.equal(result.manual.code, 'provider_execution_uncertain');
+  assert.equal(state.releases.length, 0);
+});
+
+test('echte providerseitige Schemaablehnung vor Ausführung wird atomar freigegeben', async () => {
+  const { dependencies, state } = stageDependencies();
+  const schemaError = Object.assign(new Error('Schema abgelehnt'), {
+    code: 'invalid_json_schema',
+    status: 400
+  });
+
+  await assert.rejects(
+    executePaidStructuredTextStage(stageInput({
+      async execute() { throw schemaError; }
+    }), dependencies),
+    (error) => error === schemaError
+      && error.code === 'CONTENT_PROVIDER_SAFE_RETRY'
+      && error.retryable === true
+  );
+  assert.equal(state.releases.length, 1);
 });
 
 test('lokal vor Ausführung abgelehnte Schemas werden erst nach Reservierungsfreigabe wiederholbar', async () => {
@@ -598,7 +624,9 @@ test('fehlgeschlagene Reservierungsfreigabe macht einen sicheren Providerfehler 
     throw new Error('Freigabe unklar');
   };
   const result = await executePaidStructuredTextStage(stageInput({
-    async execute() { throw Object.assign(new Error('Rate-Limit'), { status: 429 }); }
+    async execute() {
+      throw Object.assign(new Error('Explizit sicherer Fehler'), { safeToRetry: true });
+    }
   }), dependencies);
 
   assert.equal(result.manual.code, 'provider_execution_uncertain');

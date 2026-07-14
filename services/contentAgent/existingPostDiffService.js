@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import * as cheerio from 'cheerio';
 
+export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v1';
+
 const SIMPLE_FIELDS = Object.freeze([
   'title',
   'shortDescription',

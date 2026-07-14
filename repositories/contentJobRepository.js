@@ -567,7 +567,8 @@ export async function recoverUncertainProviderJobForAdmin({ jobId, adminId } = {
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET stage_results_json =
+        SET status = 'running',
+            stage_results_json =
               (stage_results_json - $2::text)
               || jsonb_build_object(
                 $3::text,
@@ -740,7 +741,8 @@ export async function recoverRejectedProviderJobForAdmin({ jobId, adminId } = {}
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET stage_results_json = stage_results_json || jsonb_build_object(
+        SET status = 'running',
+            stage_results_json = stage_results_json || jsonb_build_object(
               $2::text,
               jsonb_build_object(
                 'status', 'authorized_after_rejection',
@@ -911,7 +913,8 @@ export async function recoverQualityGateJobForAdmin({
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET stage_results_json = stage_results_json || jsonb_build_object(
+        SET status = 'running',
+            stage_results_json = stage_results_json || jsonb_build_object(
               $2::text,
               jsonb_build_object(
                 'status', 'authorized_after_quality_gate',
@@ -1080,7 +1083,8 @@ export async function recoverQualityGateRuleManifestForAdmin({
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+        SET status = 'running',
+            runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
               'ruleManifest', $3::jsonb,
               'ruleManifestHash', $4::text
             ),
@@ -1241,7 +1245,8 @@ export async function recoverEditorialReviewForAdmin({
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+        SET status = 'running',
+            runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
               'ruleManifest', $3::jsonb,
               'ruleManifestHash', $4::text
             ),
@@ -1422,7 +1427,8 @@ export async function recoverDraftPersistenceForAdmin({
     const runResult = await client.query(
       `
         UPDATE content_runs
-        SET runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+        SET status = 'running',
+            runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
               'ruleManifest', $3::jsonb,
               'ruleManifestHash', $4::text
             ),
@@ -1696,8 +1702,12 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
       WITH expired AS (
         SELECT job.id,
                delivery.status AS delivery_status,
-               delivery.next_attempt_at AS delivery_next_attempt_at
+               delivery.next_attempt_at AS delivery_next_attempt_at,
+               run.status AS run_status,
+               run.finished_at AS run_finished_at,
+               run.error_report_json ->> 'code' AS run_error_code
         FROM content_jobs AS job
+        LEFT JOIN content_runs AS run ON run.job_id = job.id
         LEFT JOIN content_notification_deliveries AS delivery
           ON job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
           AND delivery.id::text = job.payload_json ->> 'deliveryId'
@@ -1714,6 +1724,8 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
       )
       UPDATE content_jobs AS job
       SET status = CASE
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN expired.run_status
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN 'queued'
@@ -1740,12 +1752,18 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
           locked_at = NULL,
           locked_by = NULL,
           last_error = CASE
+            WHEN expired.run_status = 'completed'
+              THEN NULL
+            WHEN expired.run_status IN ('failed', 'needs_manual_attention')
+              THEN COALESCE(expired.run_error_code, 'CONTENT_RUN_FAILED')
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN job.last_error
             ELSE 'CONTENT_JOB_LEASE_LOST'
           END,
           finished_at = CASE
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN COALESCE(expired.run_finished_at, NOW())
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN NULL

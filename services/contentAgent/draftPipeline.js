@@ -23,6 +23,10 @@ import {
   listAvailableWeeklyCandidates
 } from './weeklyTopicPoolService.js';
 import { buildSearchConsoleTopicSignals } from './searchConsoleCategoryService.js';
+import {
+  providerFailureIsSafeToRetry,
+  providerRequestWasRejectedBeforeExecution
+} from './providerRetryPolicy.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -345,17 +349,6 @@ function isPersistedCompletedResult(value, draft, autoPublishResult = null) {
   return value.policyVersion === autoPublishResult.policyVersion
     && value.published === autoPublishResult.post.published
     && value.reviewRequired === autoPublishResult.reviewRequired;
-}
-
-function providerFailureIsSafeToRetry(error) {
-  return error?.safeToRetry === true
-    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
-}
-
-function providerRequestWasRejectedBeforeExecution(error) {
-  const httpStatus = Number(error?.status ?? error?.statusCode ?? error?.response?.status);
-  return error?.providerRequestStarted === false
-    || (httpStatus === 400 && error?.code === 'invalid_json_schema');
 }
 
 function markSafeProviderRetry(error) {

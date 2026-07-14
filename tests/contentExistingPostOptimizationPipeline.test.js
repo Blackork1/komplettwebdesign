@@ -5,6 +5,10 @@ import { liveHashForPost } from '../services/contentAgent/contentRevisionService
 import { runExistingPostOptimizationJob } from '../services/contentAgent/existingPostOptimizationPipeline.js';
 import { auditExistingPost } from '../services/contentAgent/legacyAuditService.js';
 import { createOpenAIContentService } from '../services/contentAgent/openaiContentService.js';
+import {
+  buildExistingPostTrustedContext,
+  canonicalSha256
+} from '../services/contentAgent/contentRuleManifest.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({
   question: `Frage ${index + 1}?`,
@@ -97,6 +101,10 @@ function providerEnvelope(value, responseId, metadata = {}) {
 }
 
 function createJobInput(post, overrides = {}) {
+  const existingPostTrustedContext = buildExistingPostTrustedContext({
+    existingSlugs: [],
+    metadata: null
+  }, ['/kontakt']);
   return {
     claim: {
       id: 44,
@@ -119,7 +127,9 @@ function createJobInput(post, overrides = {}) {
       reviewInputCostPerMtok: 1,
       reviewOutputCostPerMtok: 2,
       webSearchCostPerCallEur: 0.01,
-      allowedInternalLinks: ['/kontakt']
+      allowedInternalLinks: ['/kontakt'],
+      existingPostTrustedContext,
+      existingPostTrustedContextHash: canonicalSha256(existingPostTrustedContext)
     },
     leaseGuard: async () => true,
     ...overrides
@@ -158,6 +168,7 @@ function createSuccessfulDependencies({
     review: 0,
     reviewInputs: [],
     validation: 0,
+    validationContexts: [],
     revisions: [],
     liveWrites: 0,
     reservations: [],
@@ -271,8 +282,9 @@ function createSuccessfulDependencies({
         return { id: runId, ...input };
       }
     },
-    async validateArticle(article) {
+    async validateArticle(article, context) {
       calls.validation += 1;
+      calls.validationContexts.push(structuredClone(context));
       return validationQueue.shift() ?? {
         passed: true,
         sanitizedHtml: article.contentHtml,
@@ -899,37 +911,73 @@ test('Livehashkonflikt bei atomarer Revisionsanlage endet manuell und schreibt n
   assert.equal(dependencies.calls.liveWrites, 0);
 });
 
-test('persistierter Runtime-Snapshot wird nicht aus aktuellem Repository-Kontext rekonstruiert', async () => {
+test('Retry konsumiert ausschließlich den gespeicherten Trusted Context trotz geändertem Live-Inventar', async () => {
   const post = publishedPost();
   let optimizationInput = null;
-  const dependencies = createSuccessfulDependencies({
-    post,
-    trustedContext: {
-      activeLearningRules: [{
-        id: 9,
-        version: 1,
-        categoryKey: 'internal_links',
-        instruction: 'Diese aktuelle Repository-Regel darf nicht nachgeladen werden.',
-        targetStages: ['writer']
-      }]
-    }
-  });
+  let auditedPrimaryKeyword = null;
+  let liveContext = {
+    existingSlugs: ['live-vorher'],
+    allowedInternalLinks: ['/live-vorher'],
+    metadata: { primary_keyword: 'Live vorher' }
+  };
+  const dependencies = createSuccessfulDependencies({ post });
+  dependencies.optimizationRepository.getTrustedContext = async () => {
+    dependencies.calls.trustedContexts += 1;
+    return structuredClone(liveContext);
+  };
+  dependencies.auditExistingPost = ({ post: auditedPost, ...input }) => {
+    auditedPrimaryKeyword = auditedPost.primary_keyword;
+    return auditExistingPost({ post: auditedPost, ...input });
+  };
   const originalOptimize = dependencies.openaiService.optimizeExistingPost;
   dependencies.openaiService.optimizeExistingPost = async (input) => {
     optimizationInput = structuredClone(input);
     return originalOptimize(input);
   };
+  const existingPostTrustedContext = buildExistingPostTrustedContext({
+    existingSlugs: ['aus-snapshot'],
+    metadata: { post_id: 19, primary_keyword: 'Aus Snapshot' }
+  }, ['/aus-snapshot']);
   const runtimeSnapshot = Object.freeze({
     ...createJobInput(post).runtimeSnapshot,
-    allowedInternalLinks: Object.freeze(['/aus-snapshot'])
+    allowedInternalLinks: Object.freeze(['/aus-snapshot']),
+    existingPostTrustedContext,
+    existingPostTrustedContextHash: canonicalSha256(existingPostTrustedContext)
   });
 
   await runExistingPostOptimizationJob(createJobInput(post, { runtimeSnapshot }), dependencies);
+  liveContext = {
+    existingSlugs: ['live-nachher'],
+    allowedInternalLinks: ['/live-nachher'],
+    metadata: { primary_keyword: 'Live nachher' }
+  };
+  await runExistingPostOptimizationJob(createJobInput(post, { runtimeSnapshot }), dependencies);
 
   assert.deepEqual(optimizationInput.allowedInternalLinks, ['/aus-snapshot']);
-  assert.equal(optimizationInput.allowedInternalLinks.includes('/vom-repository'), false);
+  assert.equal(dependencies.calls.trustedContexts, 0);
+  assert.equal(auditedPrimaryKeyword, 'Aus Snapshot');
+  assert.deepEqual(
+    dependencies.calls.validationContexts[0].existingSlugs,
+    ['aus-snapshot']
+  );
   assert.deepEqual(optimizationInput.learningRules, []);
   assert.deepEqual(runtimeSnapshot.allowedInternalLinks, ['/aus-snapshot']);
+});
+
+test('Pipeline lehnt einen manipulierten Trusted-Context-Hash vor jedem Livezugriff ab', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({ post });
+  const runtimeSnapshot = {
+    ...createJobInput(post).runtimeSnapshot,
+    existingPostTrustedContextHash: '0'.repeat(64)
+  };
+
+  await assert.rejects(
+    runExistingPostOptimizationJob(createJobInput(post, { runtimeSnapshot }), dependencies),
+    (error) => error?.code === 'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID'
+  );
+  assert.equal(dependencies.calls.liveSnapshots, 0);
+  assert.equal(dependencies.calls.trustedContexts, 0);
 });
 
 test('Auditjahr stammt aus dem unveränderlichen Startzeitpunkt des Runtime-Snapshots', async () => {

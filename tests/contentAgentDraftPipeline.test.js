@@ -1108,6 +1108,7 @@ test('aus früherem Attempt wiederverwendetes Bild wird trotz fehlendem Draft ni
 test('sicher abgelehnter 429-Provideraufruf gibt Reservierung frei und bleibt job-retrybar', async () => {
   const rateLimit = new Error('Rate Limit vor Ausführung');
   rateLimit.status = 429;
+  rateLimit.safeToRetry = true;
   let releaseCalls = 0;
   const base = createDependencies();
   const harness = createDependencies({
@@ -1131,6 +1132,7 @@ test('sicher abgelehnter 429-Provideraufruf gibt Reservierung frei und bleibt jo
 test('fehlgeschlagene Reservierungsfreigabe wird nicht als sicher retrybar requeued', async () => {
   const rateLimit = new Error('Rate Limit vor Ausführung');
   rateLimit.status = 429;
+  rateLimit.safeToRetry = true;
   const releaseError = new Error('Freigabe nicht persistierbar');
   const base = createDependencies();
   const harness = createDependencies({
@@ -1284,6 +1286,7 @@ test('End-to-End: 429 durchläuft Worker-Backoff und dieselbe Pipeline genau ein
         if (topicProviderCalls === 1) {
           const error = new Error('429 vor Ausführung');
           error.status = 429;
+          error.safeToRetry = true;
           throw error;
         }
         return base.dependencies.openaiService.createTopicCandidates(input);
@@ -1726,7 +1729,10 @@ test('sicher abgelehnter 429-Wochenrechercheaufruf gibt den dauerhaften Versuch 
     async releaseResearchAttempt() { released += 1; return true; },
     async markResearchAttempt() { marked += 1; }
   };
-  const providerError = Object.assign(new Error('Rate Limit vor Ausführung'), { status: 429 });
+  const providerError = Object.assign(new Error('Rate Limit vor Ausführung'), {
+    status: 429,
+    safeToRetry: true
+  });
   const base = createDependencies();
   const harness = createDependencies({
     config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },

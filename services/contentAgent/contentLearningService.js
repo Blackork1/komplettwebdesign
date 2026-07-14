@@ -1,4 +1,5 @@
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
+import { providerFailureIsSafeToRetry } from './providerRetryPolicy.js';
 import {
   CONTENT_LEARNING_TAXONOMY_VERSION,
   classifyLearningIssueLocally,
@@ -47,11 +48,6 @@ function normalizePayload(claim) {
     throw learningError('CONTENT_LEARNING_JOB_TYPE_UNSUPPORTED', 'Der Lernjobtyp wird nicht unterstützt.');
   }
   return { postId, reviewVersion };
-}
-
-function providerRetryIsSafe(error) {
-  return error?.safeToRetry === true
-    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
 }
 
 function cachedClassification(row) {
@@ -168,7 +164,7 @@ async function classifyWithProvider({
     result = await dependencies.openaiService.classifyLearningIssues({ issues });
   } catch (error) {
     if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    if (providerRetryIsSafe(error)) {
+    if (providerFailureIsSafeToRetry(error)) {
       await dependencies.costService.releaseMonthlyBudgetReservation({
         runId: run.id,
         stageId,

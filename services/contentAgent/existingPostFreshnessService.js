@@ -1,5 +1,7 @@
 import * as cheerio from 'cheerio';
 
+export const EXISTING_POST_FRESHNESS_POLICY_VERSION = 'existing-post-freshness-policy-v1';
+
 const MAX_CONTENT_LENGTH = 250_000;
 const MAX_METADATA_LENGTH = 1_000;
 

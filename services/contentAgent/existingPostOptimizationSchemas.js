@@ -5,6 +5,8 @@ import {
   normalizeSafeHttpsUrl
 } from './httpsUrlSafety.js';
 
+export const EXISTING_POST_OPTIMIZATION_SCHEMA_VERSION = 'existing-post-optimization-schema-v1';
+
 const OPTIMIZABLE_FIELDS = [
   'title',
   'shortDescription',

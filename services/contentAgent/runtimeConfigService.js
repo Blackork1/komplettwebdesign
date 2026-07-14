@@ -40,6 +40,8 @@ export function createContentAgentJobSnapshot({
   now = new Date(),
   allowedInternalLinks,
   requireAllowedInternalLinks = false,
+  existingPostTrustedContext,
+  requireExistingPostTrustedContext = false,
   activeLearningRules = []
 }) {
   const existingPostOptimization = claim?.job_type === 'optimize_existing_post'
@@ -90,7 +92,9 @@ export function createContentAgentJobSnapshot({
       learningRuleSnapshot: buildLearningRuleSnapshot(activeLearningRules)
     },
     allowedInternalLinks,
-    requireAllowedInternalLinks
+    requireAllowedInternalLinks: requireAllowedInternalLinks || existingPostOptimization,
+    existingPostTrustedContext,
+    requireExistingPostTrustedContext: requireExistingPostTrustedContext || existingPostOptimization
   });
 }
 

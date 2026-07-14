@@ -1,3 +1,5 @@
+import { providerFailureIsSafeToRetry } from './providerRetryPolicy.js';
+
 function parsePersistedEnvelope(value, schema, versionFence) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   if (value[versionFence.key] !== versionFence.value) return null;
@@ -69,12 +71,6 @@ function stableJson(value) {
   )).join(',')}}`;
 }
 
-function providerRetryIsSafe(error) {
-  return error?.safeToRetry === true
-    || error?.providerRequestStarted === false
-    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
-}
-
 async function recordProvider(dependencies, success, errorCode = null) {
   if (typeof dependencies.recordProviderResult !== 'function') return;
   try {
@@ -101,7 +97,7 @@ async function executeNewProviderStage(input, dependencies, reservation) {
       result = deterministicFailure;
     } else {
       await recordProvider(dependencies, false, error?.code || 'OPENAI_REQUEST_FAILED');
-      if (!providerRetryIsSafe(error)) return uncertainProviderResult();
+      if (!providerFailureIsSafeToRetry(error)) return uncertainProviderResult();
       try {
         await dependencies.costService.releaseMonthlyBudgetReservation({
           runId: input.run.id,

@@ -1736,6 +1736,7 @@ test('erster Bestandsoptimierungsrun friert Preis, Lernregeln und Linkmanifest e
   let settingsLoads = 0;
   let inventoryLoads = 0;
   let learningLoads = 0;
+  let trustedContextLoads = 0;
   const snapshots = [];
   const handler = createProductionJobHandler({
     technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
@@ -1747,6 +1748,19 @@ test('erster Bestandsoptimierungsrun friert Preis, Lernregeln und Linkmanifest e
     async loadInitialInventory() {
       inventoryLoads += 1;
       return { approvedLinks: [{ url: '/kontakt' }] };
+    },
+    async loadExistingPostTrustedContext() {
+      trustedContextLoads += 1;
+      if (trustedContextLoads > 1) {
+        return {
+          existingSlugs: ['live-geändert'],
+          metadata: { post_id: 19, primary_keyword: 'Live geändert' }
+        };
+      }
+      return {
+        existingSlugs: ['bestehend-zwei', 'bestehend-eins'],
+        metadata: { post_id: 19, primary_keyword: 'Website-Relaunch' }
+      };
     },
     async loadActiveLearningRules() { learningLoads += 1; return []; },
     async createRun({ runtimeSnapshot }) {
@@ -1777,17 +1791,25 @@ test('erster Bestandsoptimierungsrun friert Preis, Lernregeln und Linkmanifest e
   assert.equal(settingsLoads, 1);
   assert.equal(inventoryLoads, 1);
   assert.equal(learningLoads, 1);
+  assert.equal(trustedContextLoads, 1);
   assert.equal(storedRun.runtime_snapshot_json.webSearchCostPerCallEur, 0.01);
   assert.equal(storedRun.runtime_snapshot_json.allowedInternalLinks.includes('/kontakt'), true);
   assert.match(storedRun.runtime_snapshot_json.allowedInternalLinksHash, /^[0-9a-f]{64}$/);
   assert.match(storedRun.runtime_snapshot_json.learningRuleSnapshot.hash, /^[0-9a-f]{64}$/);
+  assert.deepEqual(storedRun.runtime_snapshot_json.existingPostTrustedContext, {
+    version: 1,
+    existingSlugs: ['bestehend-eins', 'bestehend-zwei'],
+    allowedInternalLinks: storedRun.runtime_snapshot_json.allowedInternalLinks,
+    metadata: { post_id: 19, primary_keyword: 'Website-Relaunch' }
+  });
+  assert.match(storedRun.runtime_snapshot_json.existingPostTrustedContextHash, /^[0-9a-f]{64}$/);
   assert.deepEqual(snapshots, [
     { context: storedRun.runtime_snapshot_json, dependency: storedRun.runtime_snapshot_json },
     { context: storedRun.runtime_snapshot_json, dependency: storedRun.runtime_snapshot_json }
   ]);
 });
 
-test('persistierter Bestands-Snapshot ohne Websuchepreis endet fail-closed ohne Livevermischung', async () => {
+test('persistierter Bestands-Snapshot ohne Websuchepreis endet ohne offene Reservierung dauerhaft fehlgeschlagen', async () => {
   const { webSearchCostPerCallEur: _ignoredPrice, ...snapshotWithoutPrice } = createContentAgentJobSnapshot({
     runtimeConfig: {
       operatingMode: 'review',
@@ -1797,7 +1819,9 @@ test('persistierter Bestands-Snapshot ohne Websuchepreis endet fail-closed ohne 
     },
     claim: { payload_json: { source: 'admin_existing_content' } },
     allowedInternalLinks: ['/kontakt'],
-    requireAllowedInternalLinks: true
+    requireAllowedInternalLinks: true,
+    existingPostTrustedContext: { existingSlugs: [], metadata: null },
+    requireExistingPostTrustedContext: true
   });
   const finishes = [];
   const handler = createProductionJobHandler({
@@ -1817,31 +1841,148 @@ test('persistierter Bestands-Snapshot ohne Websuchepreis endet fail-closed ohne 
     async runExistingPostOptimizationJob() { assert.fail('Die Optimierung darf nicht starten.'); }
   });
 
-  const result = await handler({
-    id: 44,
-    attempts: 2,
-    job_type: 'optimize_existing_post',
-    payload_json: {
-      source: 'admin_existing_content',
-      post_id: 19,
-      admin_id: 7,
-      base_live_hash: 'c'.repeat(64)
-    }
-  }, { leaseGuard: async () => true });
-
-  assert.deepEqual(result, {
-    status: 'needs_manual_attention',
-    post: null,
-    code: 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID'
-  });
+  await assert.rejects(handler({
+      id: 44,
+      attempts: 2,
+      job_type: 'optimize_existing_post',
+      payload_json: {
+        source: 'admin_existing_content',
+        post_id: 19,
+        admin_id: 7,
+        base_live_hash: 'c'.repeat(64)
+      }
+    }, { leaseGuard: async () => true }),
+  (error) => error?.code === 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID'
+    && error?.retryable === false);
   assert.deepEqual(finishes, [[90, {
-    status: 'needs_manual_attention',
+    status: 'failed',
     postId: null,
     errorReport: {
       code: 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID',
       message: 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
     }
   }]]);
+});
+
+test('persistierter Bestands-Snapshot ohne Websuchepreis bewahrt eine offene Providerreservierung für bestätigtes Abandon', async () => {
+  const finishes = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    enforceRuleSnapshot: true,
+    async getSettings() { assert.fail('Ein alter Snapshot darf keine Live-Einstellungen laden.'); },
+    resolveRuntimeConfig() { assert.fail('Ein alter Snapshot darf nicht ergänzt werden.'); },
+    createJobSnapshot() { assert.fail('Ein alter Snapshot darf nicht ersetzt werden.'); },
+    async findRunByJobId() {
+      return {
+        id: 91,
+        status: 'running',
+        runtime_snapshot_json: { timezone: 'Europe/Berlin' },
+        stage_results_json: {
+          'budget:2026-07:source_research': {
+            status: 'reserved',
+            stageId: 'source_research',
+            reservationMonth: '2026-07',
+            reservedCost: 0.5
+          }
+        }
+      };
+    },
+    async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+    async finishRun(runId, payload) {
+      finishes.push([runId, payload]);
+      return { id: runId, status: payload.status };
+    },
+    async runPipeline() { assert.fail('Die Entwurfspipeline darf nicht starten.'); },
+    createExistingPostOptimizationDependencies() { assert.fail('Dependencies dürfen nicht entstehen.'); },
+    async runExistingPostOptimizationJob() { assert.fail('Die Optimierung darf nicht starten.'); }
+  });
+
+  const result = await handler({
+    id: 45,
+    attempts: 2,
+    job_type: 'optimize_existing_post',
+    payload_json: {
+      source: 'admin_existing_content',
+      post_id: 19,
+      admin_id: 7,
+      base_live_hash: 'd'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_execution_uncertain');
+  assert.equal(finishes[0][1].status, 'needs_manual_attention');
+  assert.equal(finishes[0][1].errorReport.code, 'provider_execution_uncertain');
+});
+
+test('der Produktionshandler übernimmt terminale Runs ohne Pipeline- oder Finish-Aufruf', async () => {
+  const common = {
+    technicalConfig: { enabled: true },
+    async getSettings() { assert.fail('Terminale Runs laden keine Live-Einstellungen.'); },
+    resolveRuntimeConfig() { assert.fail('Terminale Runs lösen keine Live-Konfiguration auf.'); },
+    createJobSnapshot() { assert.fail('Terminale Runs erzeugen keinen Snapshot.'); },
+    async createRun() { assert.fail('Ein vorhandener Run darf nicht neu angelegt werden.'); },
+    async finishRun() { assert.fail('Ein terminaler Run darf nicht erneut abgeschlossen werden.'); },
+    async runPipeline() { assert.fail('Ein terminaler Run darf die Pipeline nicht erneut aufrufen.'); }
+  };
+  const claim = { id: 123, job_type: 'generate_manual_draft', payload_json: {} };
+
+  const completed = createProductionJobHandler({
+    ...common,
+    async findRunByJobId() { return { id: 7, status: 'completed', post_id: 19 }; }
+  });
+  assert.deepEqual(await completed(claim), { status: 'completed', postId: 19 });
+
+  const manual = createProductionJobHandler({
+    ...common,
+    async findRunByJobId() {
+      return {
+        id: 8,
+        status: 'needs_manual_attention',
+        error_report_json: { code: 'persisted_manual_reason' }
+      };
+    }
+  });
+  assert.deepEqual(await manual(claim), {
+    status: 'needs_manual_attention',
+    post: null,
+    code: 'persisted_manual_reason'
+  });
+
+  const failed = createProductionJobHandler({
+    ...common,
+    async findRunByJobId() {
+      return { id: 9, status: 'failed', error_report_json: { code: 'persisted_failure' } };
+    }
+  });
+  await assert.rejects(failed(claim), (error) => (
+    error?.code === 'persisted_failure' && error?.retryable === false
+  ));
+});
+
+test('Bestandsoptimierung prüft die Lease unmittelbar vor der ersten Runpersistenz', async () => {
+  let creates = 0;
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    async getSettings() { return {}; },
+    resolveRuntimeConfig() { return { webSearchCostPerCallEur: 0.01 }; },
+    createJobSnapshot() { return { webSearchCostPerCallEur: 0.01 }; },
+    async createRun() { creates += 1; return { id: 1 }; },
+    async finishRun() { assert.fail('Ohne Lease darf kein Run abgeschlossen werden.'); },
+    async runPipeline() { assert.fail('Die Entwurfspipeline darf nicht starten.'); },
+    createExistingPostOptimizationDependencies() { return {}; },
+    async runExistingPostOptimizationJob() { assert.fail('Die Optimierung darf nicht starten.'); }
+  });
+
+  await assert.rejects(handler({
+    id: 46,
+    job_type: 'optimize_existing_post',
+    payload_json: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'e'.repeat(64)
+    }
+  }, { leaseGuard: async () => false }), (error) => error?.code === 'CONTENT_JOB_LEASE_LOST');
+  assert.equal(creates, 0);
 });
 
 test('der Produktionshandler dispatcht eine gültige Prüfhinweis-Optimierung separat', async () => {
@@ -1982,7 +2123,7 @@ test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als f
     async leaseGuard() { leaseCalls.push('guard'); return true; }
   }), permanent);
 
-  assert.deepEqual(leaseCalls, ['guard']);
+  assert.deepEqual(leaseCalls, ['guard', 'guard']);
   assert.deepEqual(finishCalls, [[88, {
     status: 'failed',
     postId: null,

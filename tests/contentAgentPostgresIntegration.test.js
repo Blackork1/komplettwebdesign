@@ -62,6 +62,111 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
 });
 
+test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausgeschöpften Versuchen', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        idempotency_key VARCHAR(180) NOT NULL UNIQUE,
+        payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_notification_deliveries (
+        id BIGSERIAL PRIMARY KEY,
+        notification_type VARCHAR(64),
+        status VARCHAR(32),
+        next_attempt_at TIMESTAMPTZ
+      );
+      CREATE UNIQUE INDEX ux_content_jobs_active_existing_optimization
+        ON content_jobs ((payload_json ->> 'post_id'))
+        WHERE job_type = 'optimize_existing_post'
+          AND status IN ('queued', 'running', 'needs_manual_attention');
+
+      WITH jobs AS (
+        INSERT INTO content_jobs (
+          job_type, status, idempotency_key, payload_json, attempts, max_attempts,
+          locked_at, locked_by
+        ) VALUES
+          ('generate_manual_draft', 'running', 'completed-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('optimize_existing_post', 'running', 'failed-run', '{"post_id":19}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('generate_manual_draft', 'running', 'manual-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('generate_manual_draft', 'running', 'exhausted-running-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker')
+        RETURNING id, idempotency_key
+      )
+      INSERT INTO content_runs (job_id, status, error_report_json, finished_at)
+      SELECT id,
+             CASE idempotency_key
+               WHEN 'completed-run' THEN 'completed'
+               WHEN 'failed-run' THEN 'failed'
+               WHEN 'manual-run' THEN 'needs_manual_attention'
+               ELSE 'running'
+             END,
+             CASE idempotency_key
+               WHEN 'failed-run' THEN '{"code":"existing_snapshot_invalid"}'::jsonb
+               WHEN 'manual-run' THEN '{"code":"manual_check"}'::jsonb
+               ELSE '{}'::jsonb
+             END,
+             CASE WHEN idempotency_key = 'exhausted-running-run' THEN NULL ELSE NOW() END
+      FROM jobs;
+    `);
+
+    await recoverExpiredJobs(30, pool);
+    const states = (await pool.query(`
+      SELECT idempotency_key, status, last_error, locked_at, locked_by
+      FROM content_jobs ORDER BY idempotency_key
+    `)).rows;
+    assert.deepEqual(states, [
+      { idempotency_key: 'completed-run', status: 'completed', last_error: null, locked_at: null, locked_by: null },
+      { idempotency_key: 'exhausted-running-run', status: 'failed', last_error: 'CONTENT_JOB_LEASE_LOST', locked_at: null, locked_by: null },
+      { idempotency_key: 'failed-run', status: 'failed', last_error: 'existing_snapshot_invalid', locked_at: null, locked_by: null },
+      { idempotency_key: 'manual-run', status: 'needs_manual_attention', last_error: 'manual_check', locked_at: null, locked_by: null }
+    ]);
+
+    const replacement = await pool.query(`
+      INSERT INTO content_jobs (
+        job_type, status, idempotency_key, payload_json, attempts, max_attempts
+      ) VALUES (
+        'optimize_existing_post', 'queued', 'replacement-run', '{"post_id":19}'::jsonb, 0, 3
+      ) RETURNING id
+    `);
+    assert.equal(replacement.rowCount, 1);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
 test('echtes PostgreSQL: parallele Erstläufe erzeugen nur eine Wochenrecherche', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
@@ -384,7 +489,7 @@ test('echtes PostgreSQL: unklare Providerreservierung wird genau einmal verworfe
       'SELECT status, post_id, cost_estimate, error_report_json, stage_results_json FROM content_runs WHERE job_id = $1',
       [jobId]
     )).rows[0];
-    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.status, 'running');
     assert.equal(run.post_id, null);
     assert.equal(Number(run.cost_estimate), 0.086475);
     assert.equal(run.error_report_json.code, 'provider_recovery_authorized');
@@ -507,7 +612,7 @@ test('echtes PostgreSQL: abgelehntes Artikelschema wird genau einmal ab dem SEO-
       'SELECT status, current_stage, post_id, cost_estimate, error_report_json, stage_results_json FROM content_runs WHERE job_id = $1',
       [jobId]
     )).rows[0];
-    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.status, 'running');
     assert.equal(run.current_stage, 'seo_brief');
     assert.equal(run.post_id, null);
     assert.equal(Number(run.cost_estimate), 0.171983);
@@ -647,7 +752,7 @@ test('echtes PostgreSQL: Qualitätsfehler erhält genau eine zusätzliche Strukt
       FROM content_runs
       WHERE job_id = $1
     `, [jobId])).rows[0];
-    assert.equal(run.status, 'needs_manual_attention');
+    assert.equal(run.status, 'running');
     assert.equal(run.current_stage, 'validation');
     assert.equal(run.post_id, null);
     assert.equal(Number(run.cost_estimate), 0.483309);

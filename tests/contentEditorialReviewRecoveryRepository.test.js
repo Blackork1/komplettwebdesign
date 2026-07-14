@@ -122,6 +122,7 @@ test('redaktionelle Wiederaufnahme aktualisiert den Regelstand und reiht ausschl
   assert.equal(db.runUpdates, 1);
   assert.equal(db.jobUpdates, 1);
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.match(runUpdate.sql, /status\s*=\s*'running'/i);
   assert.match(runUpdate.sql, /runtime_snapshot_json\s*=/i);
   assert.doesNotMatch(runUpdate.sql, /cost_estimate\s*=/i);
   assert.doesNotMatch(runUpdate.sql, /stage_results_json\s*-/i);

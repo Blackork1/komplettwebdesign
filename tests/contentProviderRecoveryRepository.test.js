@@ -113,6 +113,7 @@ test('Providerreservierung wird atomar auditiert und derselbe Job erneut eingere
   assert.equal(db.events[6].sql, 'COMMIT');
 
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.match(runUpdate.sql, /status\s*=\s*'running'/i);
   assert.match(runUpdate.sql, /stage_results_json - \$2::text/i);
   assert.match(runUpdate.sql, /'abandoned_uncertain'/i);
   assert.match(runUpdate.sql, /cost_estimate = GREATEST\(0, cost_estimate - \$6::numeric\)/i);

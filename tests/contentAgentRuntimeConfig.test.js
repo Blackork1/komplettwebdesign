@@ -8,7 +8,9 @@ import {
 import { buildLearningRuleSnapshot } from '../services/contentAgent/contentLearningSnapshotService.js';
 import {
   CONTENT_AGENT_RULE_MANIFEST,
-  CONTENT_AGENT_RULE_MANIFEST_HASH
+  CONTENT_AGENT_RULE_MANIFEST_HASH,
+  canonicalSha256,
+  validateContentRuleSnapshot
 } from '../services/contentAgent/contentRuleManifest.js';
 
 const technicalConfig = Object.freeze({
@@ -198,4 +200,79 @@ test('neuer Bestandsoptimierungs-Snapshot verlangt vor Persistenz einen endliche
       payload_json: { source: 'admin_existing_content' }
     }
   }), (error) => error?.code === 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID');
+
+  assert.throws(() => createContentAgentJobSnapshot({
+    runtimeConfig: technicalConfig,
+    claim: {
+      job_type: 'optimize_existing_post',
+      payload_json: { source: 'admin_existing_content' }
+    }
+  }), (error) => error?.code === 'CONTENT_EXISTING_OPTIMIZATION_TRUSTED_CONTEXT_INVALID');
+});
+
+test('Bestandsoptimierungs-Snapshot friert exakt den begrenzten kanonischen Trusted Context samt Hash ein', () => {
+  const snapshot = createContentAgentJobSnapshot({
+    runtimeConfig: technicalConfig,
+    claim: {
+      job_type: 'optimize_existing_post',
+      payload_json: { source: 'admin_existing_content' }
+    },
+    allowedInternalLinks: ['/kontakt', '/blog/zwei'],
+    requireAllowedInternalLinks: true,
+    existingPostTrustedContext: {
+      existingSlugs: ['zwei', 'eins', 'eins'],
+      allowedInternalLinks: ['/darf-nicht-live-übernommen-werden'],
+      metadata: {
+        post_id: 19,
+        primary_keyword: 'Website-Relaunch',
+        quality_score: 91
+      },
+      activeLearningRules: [{ id: 999, rule_text: 'Nicht konsumiertes Feld' }]
+    },
+    requireExistingPostTrustedContext: true
+  });
+
+  assert.deepEqual(snapshot.existingPostTrustedContext, {
+    version: 1,
+    existingSlugs: ['eins', 'zwei'],
+    allowedInternalLinks: ['/blog/zwei', '/kontakt'],
+    metadata: {
+      post_id: 19,
+      primary_keyword: 'Website-Relaunch',
+      quality_score: 91
+    }
+  });
+  assert.equal(
+    snapshot.existingPostTrustedContextHash,
+    canonicalSha256(snapshot.existingPostTrustedContext)
+  );
+  assert.deepEqual(validateContentRuleSnapshot(snapshot, {
+    requireAllowedInternalLinks: true,
+    requireExistingPostTrustedContext: true
+  }), { valid: true, code: null });
+});
+
+test('Bestandsoptimierungs-Snapshot lehnt ungültigen oder zu großen Trusted Context vor createRun ab', () => {
+  const create = (existingPostTrustedContext) => createContentAgentJobSnapshot({
+    runtimeConfig: technicalConfig,
+    claim: {
+      job_type: 'optimize_existing_post',
+      payload_json: { source: 'admin_existing_content' }
+    },
+    allowedInternalLinks: ['/kontakt'],
+    requireAllowedInternalLinks: true,
+    existingPostTrustedContext,
+    requireExistingPostTrustedContext: true
+  });
+
+  assert.throws(() => create({ existingSlugs: [42], metadata: null }), {
+    code: 'CONTENT_EXISTING_OPTIMIZATION_TRUSTED_CONTEXT_INVALID'
+  });
+  assert.throws(() => create({
+    existingSlugs: [],
+    metadata: { quality_report_json: 'ä'.repeat(260_000) }
+  }), (error) => (
+    error?.code === 'CONTENT_EXISTING_OPTIMIZATION_TRUSTED_CONTEXT_TOO_LARGE'
+    || error instanceof RangeError
+  ));
 });

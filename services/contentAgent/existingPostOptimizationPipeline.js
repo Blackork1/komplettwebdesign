@@ -17,6 +17,7 @@ import { classifyExistingPostFreshness } from './existingPostFreshnessService.js
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import { auditExistingPost } from './legacyAuditService.js';
 import { executePaidStructuredTextStage } from './providerTextStageService.js';
+import { readExistingPostTrustedContextSnapshot } from './contentRuleManifest.js';
 
 const SourceResearchOutputSchema = SourceReferenceSchema.array().max(6);
 const HASH = /^[0-9a-f]{64}$/;
@@ -350,11 +351,13 @@ export async function runExistingPostOptimizationJob({
   const jobId = positiveInteger(claim?.id);
   const runId = positiveInteger(run?.id);
   const adminId = positiveInteger(payload?.admin_id);
+  const trustedContext = readExistingPostTrustedContextSnapshot(runtimeSnapshot);
   if (!postId || !jobId || !runId || !adminId || !HASH.test(String(payload?.base_live_hash || ''))
       || !runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)
       || typeof runtimeSnapshot.webSearchCostPerCallEur !== 'number'
       || !Number.isFinite(runtimeSnapshot.webSearchCostPerCallEur)
-      || runtimeSnapshot.webSearchCostPerCallEur < 0) {
+      || runtimeSnapshot.webSearchCostPerCallEur < 0
+      || !trustedContext) {
     throw pipelineError(
       'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID',
       'Die Eingabe der Bestandsoptimierung ist ungültig.'
@@ -370,7 +373,6 @@ export async function runExistingPostOptimizationJob({
   const validateArticle = requiredFunction(dependencies.validateArticle, 'validateArticle');
   const assertLease = typeof leaseGuard === 'function' ? leaseGuard : async () => true;
   requiredFunction(optimizationRepository?.getPublishedPostSnapshot, 'optimizationRepository.getPublishedPostSnapshot');
-  requiredFunction(optimizationRepository?.getTrustedContext, 'optimizationRepository.getTrustedContext');
   requiredFunction(auditRepository?.createAuditIdempotent, 'auditRepository.createAuditIdempotent');
   requiredFunction(searchMetricsRepository?.getPageSignals, 'searchMetricsRepository.getPageSignals');
   requiredFunction(openaiService?.optimizeExistingPost, 'openaiService.optimizeExistingPost');
@@ -524,11 +526,9 @@ export async function runExistingPostOptimizationJob({
     );
   }
 
-  await assertLease();
-  const trustedContext = await optimizationRepository.getTrustedContext(postId);
   const allowedInternalLinks = snapshotInternalLinks(
     runtimeSnapshot,
-    trustedContext?.allowedInternalLinks
+    trustedContext.allowedInternalLinks
   );
   const writerLearningRules = snapshotLearningRules(
     runtimeSnapshot,
@@ -538,9 +538,7 @@ export async function runExistingPostOptimizationJob({
     runtimeSnapshot,
     'reviewer'
   );
-  const inventory = Array.isArray(trustedContext?.inventory)
-    ? trustedContext.inventory
-    : allowedInternalLinks.map((url) => ({ url }));
+  const inventory = allowedInternalLinks.map((url) => ({ url }));
   const auditStage = await loadValidatedStage(
     'existing_content_audit',
     (value) => parseAuditStage(value, baseLiveHash)

@@ -245,6 +245,39 @@ async function finishRunOrRetry(finishRun, runId, payload) {
   }
 }
 
+function hasOpenProviderReservation(run) {
+  const stageResults = run?.stage_results_json;
+  return Boolean(
+    stageResults
+    && typeof stageResults === 'object'
+    && !Array.isArray(stageResults)
+    && Object.entries(stageResults).some(([key, value]) => (
+      key.startsWith('budget:') && value?.status === 'reserved'
+    ))
+  );
+}
+
+function adoptTerminalRun(run) {
+  if (run?.status === 'completed') {
+    return { status: 'completed', postId: run.post_id ?? null };
+  }
+  const code = typeof run?.error_report_json?.code === 'string'
+    ? run.error_report_json.code
+    : run?.status === 'failed'
+      ? 'CONTENT_RUN_FAILED'
+      : 'CONTENT_RUN_NEEDS_MANUAL_ATTENTION';
+  if (run?.status === 'needs_manual_attention') {
+    return { status: 'needs_manual_attention', post: null, code };
+  }
+  if (run?.status === 'failed') {
+    throw permanentJobError(
+      'Der bereits abgeschlossene Content-Agent-Lauf ist dauerhaft fehlgeschlagen.',
+      code
+    );
+  }
+  return null;
+}
+
 export function berlinDateKey(date = new Date(), timezone = 'Europe/Berlin') {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
@@ -266,6 +299,7 @@ export function createProductionJobHandler({
   findRunByJobId,
   enforceRuleSnapshot = false,
   loadInitialInventory,
+  loadExistingPostTrustedContext,
   loadActiveLearningRules,
   createRun,
   finishRun,
@@ -448,8 +482,15 @@ export function createProductionJobHandler({
       && typeof createJobSnapshot === 'function';
     const generationJob = GENERATION_JOB_TYPES.has(claim.job_type);
     const existingPostOptimizationJob = EXISTING_POST_OPTIMIZATION_JOB_TYPES.has(claim.job_type);
+    if (existingPostOptimizationJob && typeof leaseGuard !== 'function') {
+      throw permanentJobError(
+        'Für Bestandsoptimierungen wird eine aktive Job-Lease benötigt.',
+        'CONTENT_JOB_LEASE_REQUIRED'
+      );
+    }
     const requireLinkSnapshot = generationJob || existingPostOptimizationJob;
     let initialInventory = null;
+    let existingPostTrustedContext = null;
     let runtimeSnapshot;
     let run = snapshotEnabled && typeof findRunByJobId === 'function'
       ? await findRunByJobId(claim.id)
@@ -467,6 +508,12 @@ export function createProductionJobHandler({
           initialInventory = await loadInitialInventory();
           allowedInternalLinks = buildAllowedInternalLinksFromInventory(initialInventory);
         }
+        if (existingPostOptimizationJob && enforceRuleSnapshot) {
+          required(loadExistingPostTrustedContext, 'loadExistingPostTrustedContext');
+          existingPostTrustedContext = await loadExistingPostTrustedContext(
+            claim.payload_json.post_id
+          );
+        }
         runtimeSnapshot = createJobSnapshot({
           runtimeConfig,
           claim,
@@ -475,36 +522,54 @@ export function createProductionJobHandler({
           ...(requireLinkSnapshot && enforceRuleSnapshot ? {
             allowedInternalLinks,
             requireAllowedInternalLinks: true
+          } : {}),
+          ...(existingPostOptimizationJob && enforceRuleSnapshot ? {
+            existingPostTrustedContext,
+            requireExistingPostTrustedContext: true
           } : {})
         });
       }
+      await assertActiveLease(leaseGuard);
       run = await createRun({
         jobId: claim.id,
         ...(snapshotEnabled ? { runtimeSnapshot } : {})
       });
     }
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
+    const adoptedTerminal = adoptTerminalRun(run);
+    if (adoptedTerminal) return adoptedTerminal;
     const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
     if (snapshotEnabled && existingPostOptimizationJob && run.status !== 'completed'
         && (typeof persistedSnapshot?.webSearchCostPerCallEur !== 'number'
           || !Number.isFinite(persistedSnapshot.webSearchCostPerCallEur)
           || persistedSnapshot.webSearchCostPerCallEur < 0)) {
       required(finishRun, 'finishRun');
-      const code = 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
+      const openReservation = hasOpenProviderReservation(run);
+      const code = openReservation
+        ? 'provider_execution_uncertain'
+        : 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
+      const status = openReservation ? 'needs_manual_attention' : 'failed';
       await assertActiveLease(leaseGuard);
       assertFinishedRun(await finishRun(run.id, {
-        status: 'needs_manual_attention',
+        status,
         postId: null,
         errorReport: {
           code,
-          message: 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
+          message: openReservation
+            ? 'Eine offene Providerreservierung verhindert die automatische Aufgabe des veralteten Bestandsoptimierungslaufs.'
+            : 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
         }
       }));
-      return { status: 'needs_manual_attention', post: null, code };
+      if (openReservation) return { status, post: null, code };
+      throw permanentJobError(
+        'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung ist dauerhaft ungültig.',
+        code
+      );
     }
     if (snapshotEnabled && enforceRuleSnapshot && run.status !== 'completed') {
       const validation = validateContentRuleSnapshot(persistedSnapshot, {
-        requireAllowedInternalLinks: requireLinkSnapshot
+        requireAllowedInternalLinks: requireLinkSnapshot,
+        requireExistingPostTrustedContext: existingPostOptimizationJob
       });
       if (!validation.valid) {
         required(finishRun, 'finishRun');
@@ -526,12 +591,6 @@ export function createProductionJobHandler({
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
     if (existingPostOptimizationJob) {
-      if (typeof leaseGuard !== 'function') {
-        throw permanentJobError(
-          'Für Bestandsoptimierungen wird eine aktive Job-Lease benötigt.',
-          'CONTENT_JOB_LEASE_REQUIRED'
-        );
-      }
       const jobRunner = required(
         runExistingPostOptimizationJob,
         'runExistingPostOptimizationJob'
@@ -760,6 +819,10 @@ export function createProductionRuntime({
   const contentLearningRepository = typeof modules.createContentLearningRepository === 'function'
     ? modules.createContentLearningRepository(database)
     : null;
+  const existingPostOptimizationRepository =
+    typeof modules.createContentExistingPostOptimizationRepository === 'function'
+      ? modules.createContentExistingPostOptimizationRepository(database)
+      : null;
   const weeklyTopicPoolRepository = typeof modules.createContentWeeklyTopicPoolRepository === 'function'
     ? modules.createContentWeeklyTopicPoolRepository(database)
     : null;
@@ -880,9 +943,9 @@ export function createProductionRuntime({
     return {
       ...dependencies,
       optimizationRepository: required(
-        modules.createContentExistingPostOptimizationRepository,
-        'createContentExistingPostOptimizationRepository'
-      )(database),
+        existingPostOptimizationRepository,
+        'existingPostOptimizationRepository'
+      ),
       auditRepository: required(
         modules.createContentAuditRepository,
         'createContentAuditRepository'
@@ -924,6 +987,11 @@ export function createProductionRuntime({
       findRunByJobId: repositories.runRepository.findRunByJobId,
       enforceRuleSnapshot: true,
       loadInitialInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService)),
+      ...(existingPostOptimizationRepository ? {
+        loadExistingPostTrustedContext: (postId) => (
+          existingPostOptimizationRepository.getTrustedContext(postId)
+        )
+      } : {}),
       ...(contentLearningRepository ? {
         loadActiveLearningRules: () => contentLearningRepository.listActiveRuleVersions()
       } : {}),

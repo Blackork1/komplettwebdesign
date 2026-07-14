@@ -1,4 +1,5 @@
 import pool from '../../util/db.js';
+import { providerFailureIsSafeToRetry } from './providerRetryPolicy.js';
 
 export const DRAFT_REGENERATION_JOB_TYPES = Object.freeze([
   'regenerate_article',
@@ -257,11 +258,6 @@ async function loadOrphanCleanupRecovery({ run, stageId }, dependencies) {
       previousFailure: failed
     }
   };
-}
-
-function providerFailureIsSafeToRetry(error) {
-  return error?.safeToRetry === true
-    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
 }
 
 function markSafeRetry(error) {

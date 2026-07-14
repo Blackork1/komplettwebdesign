@@ -86,6 +86,7 @@ test('vorab abgelehnte Artikelerstellung wird ohne Kostenmutation erneut eingere
   assert.equal(db.runUpdates, 1);
   assert.equal(db.jobUpdates, 1);
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.match(runUpdate.sql, /status\s*=\s*'running'/i);
   assert.doesNotMatch(runUpdate.sql, /cost_estimate\s*=/i);
   assert.doesNotMatch(runUpdate.sql, /stage_results_json\s*-/i);
   assert.deepEqual(runUpdate.params, [
