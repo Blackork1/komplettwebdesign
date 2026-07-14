@@ -402,3 +402,28 @@ test('Vergleichspräsentation bereinigt Vorschau-HTML und begrenzt ausschließli
   assert.equal(withoutScore.qualityScore, null);
   assert.equal(withoutScore.beforeQualityScore, null);
 });
+
+test('Vergleichspräsentation überspringt ungültige Änderungen vor dem separaten Ausgabelimit', () => {
+  const validChanges = Array.from({ length: 41 }, (_, index) => ({
+    id: index.toString(16).padStart(64, '0'),
+    field: 'metaTitle',
+    changeType: 'modified',
+    before: `Alt ${index}`,
+    after: `Neu ${index}`,
+    status: 'active',
+    revertible: true
+  }));
+
+  const comparison = adminPresentation.buildRevisionComparisonPresentation({
+    id: 73,
+    revision_version: 1,
+    snapshot_json: { fields: {} },
+    optimization_report_json: {
+      changes: [null, 'kein Objekt', { id: 'ungültig' }, ...validChanges]
+    }
+  });
+
+  assert.equal(comparison.changes.length, 40);
+  assert.equal(comparison.changes[0].id, validChanges[0].id);
+  assert.equal(comparison.changes.at(-1).id, validChanges[39].id);
+});

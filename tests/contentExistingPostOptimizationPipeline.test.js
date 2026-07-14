@@ -361,6 +361,66 @@ test('begrenzte GSC-Seitensignale werden für die spätere Vergleichsansicht im 
   assert.deepEqual(dependencies.calls.revisions[0].report.gscSignals, gscSignals);
 });
 
+test('GSC-Seitensignale werden vor Stage, Providerinput und Bericht streng minimiert', async () => {
+  const post = publishedPost();
+  const gscSignals = [
+    {
+      query: `  ${'Website-Relaunch '.repeat(20)}  `,
+      clicks: 4,
+      impressions: 120,
+      ctr: 0.0333,
+      average_position: 7.5,
+      start_date: '2026-06-16',
+      end_date: '2026-07-13',
+      privateDimension: 'darf nicht persistiert werden'
+    },
+    {
+      query: 'Negative Werte', clicks: -1, impressions: 10,
+      ctr: 0.1, average_position: 3
+    },
+    {
+      query: 'Unendliche Werte', clicks: 1, impressions: Number.POSITIVE_INFINITY,
+      ctr: 0.1, average_position: 3
+    },
+    {
+      query: 'NaN-Werte', clicks: 1, impressions: 10,
+      ctr: Number.NaN, average_position: 3
+    },
+    {
+      query: 'Ungültiges Datum', clicks: 1, impressions: 10,
+      ctr: 0.1, average_position: 3, start_date: '2026-02-30'
+    },
+    ...Array.from({ length: 14 }, (_, index) => ({
+      query: `gültige Suchanfrage ${index + 1}`,
+      clicks: index,
+      impressions: index * 10,
+      ctr: 0.1,
+      average_position: index + 1,
+      unexpected: { raw: true }
+    }))
+  ];
+  const dependencies = createSuccessfulDependencies({ post, gscSignals });
+
+  await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  const staged = dependencies.persistedStages.get('gsc_page_signals').signals;
+  const providerInput = dependencies.calls.optimizationInputs[0].gscSignals;
+  const reported = dependencies.calls.revisions[0].report.gscSignals;
+  assert.equal(staged.length, 10);
+  assert.deepEqual(providerInput, staged);
+  assert.deepEqual(reported, staged);
+  assert.equal(staged[0].query.length, 180);
+  assert.deepEqual(Object.keys(staged[0]).sort(), [
+    'average_position', 'clicks', 'ctr', 'end_date', 'impressions', 'query', 'start_date'
+  ]);
+  assert.equal(staged.some(({ query }) => /Negative|Unendliche|NaN|Ungültiges Datum/.test(query)), false);
+  assert.equal(JSON.stringify(staged).includes('privateDimension'), false);
+  assert.equal(JSON.stringify(staged).includes('unexpected'), false);
+  assert.equal(staged.every((signal) => [
+    signal.clicks, signal.impressions, signal.ctr, signal.average_position
+  ].every((value) => Number.isFinite(value) && value >= 0)), true);
+});
+
 test('Webrecherche läuft ausschließlich bei Freshness-Bedarf und stoppt bei null oder einer Quelle manuell', async (t) => {
   for (const sourceCount of [0, 1]) {
     await t.test(`${sourceCount} belastbare Quellen`, async () => {
@@ -588,6 +648,42 @@ test('Wiederaufnahme überschreibt kein ungültiges oder versionsfremdes Stage-E
     gscWrites
   );
   assert.equal(dependencies.calls.optimization, 1);
+});
+
+test('Wiederaufnahme verwendet auch aus älteren GSC-Stages nur die kanonisch minimierte Form', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({ post });
+  const input = createJobInput(post);
+  assert.equal((await runExistingPostOptimizationJob(input, dependencies)).status, 'completed');
+  const gscCalls = dependencies.calls.gsc;
+  const optimizationCalls = dependencies.calls.optimization;
+  dependencies.persistedStages.get('gsc_page_signals').signals = [
+    {
+      query: 'x'.repeat(500), clicks: 2, impressions: 20, ctr: 0.1,
+      average_position: 4, start_date: '2026-06-01', end_date: '2026-06-30',
+      providerPayload: { secret: true }
+    },
+    {
+      query: 'Negativer Resume-Wert', clicks: -2, impressions: 20,
+      ctr: 0.1, average_position: 4
+    },
+    ...Array.from({ length: 12 }, (_, index) => ({
+      query: `Resume ${index + 1}`, clicks: index, impressions: index + 10,
+      ctr: 0.1, average_position: index + 1, rawRank: index
+    }))
+  ];
+
+  const result = await runExistingPostOptimizationJob(input, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.gsc, gscCalls);
+  assert.equal(dependencies.calls.optimization, optimizationCalls);
+  const reported = dependencies.calls.revisions.at(-1).report.gscSignals;
+  assert.equal(reported.length, 10);
+  assert.equal(reported[0].query.length, 180);
+  assert.equal(reported.some(({ query }) => query === 'Negativer Resume-Wert'), false);
+  assert.equal(JSON.stringify(reported).includes('providerPayload'), false);
+  assert.equal(JSON.stringify(reported).includes('rawRank'), false);
 });
 
 test('Wiederaufnahme verwirft semantisch manipulierte Diff-, Scope- und Validatorergebnisse', async (t) => {

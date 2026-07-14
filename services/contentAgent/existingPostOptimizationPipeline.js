@@ -22,6 +22,8 @@ import { readExistingPostTrustedContextSnapshot } from './contentRuleManifest.js
 const SourceResearchOutputSchema = SourceReferenceSchema.array().max(6);
 const HASH = /^[0-9a-f]{64}$/;
 const MAX_OPTIMIZATION_REPORT_BYTES = 512_000;
+const MAX_GSC_SIGNALS = 10;
+const MAX_GSC_QUERY_LENGTH = 180;
 const VERIFICATION_TYPES = new Set(['none', 'source', 'date', 'price', 'version', 'legal', 'privacy']);
 const PERMANENT_ASSESSMENT_ERRORS = new Set([
   'EXISTING_POST_DIFF_FAILED',
@@ -97,11 +99,69 @@ function parseAuditStage(value, baseLiveHash) {
   };
 }
 
+function normalizeGscDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
+    ? null
+    : value;
+}
+
+function normalizeGscQuery(value) {
+  if (typeof value !== 'string') return null;
+  const query = value
+    .replace(/[\u0000-\u001f\u007f]/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .slice(0, MAX_GSC_QUERY_LENGTH)
+    .trim();
+  return query || null;
+}
+
+function normalizeGscSignal(value) {
+  if (!plainObject(value)) return null;
+  const query = normalizeGscQuery(value.query);
+  if (!query) return null;
+  const numericFields = ['clicks', 'impressions', 'ctr', 'average_position'];
+  if (numericFields.some((field) => (
+    typeof value[field] !== 'number'
+    || !Number.isFinite(value[field])
+    || value[field] < 0
+  )) || value.ctr > 1) return null;
+
+  const normalized = {
+    query,
+    clicks: value.clicks,
+    impressions: value.impressions,
+    ctr: value.ctr,
+    average_position: value.average_position
+  };
+  for (const field of ['start_date', 'end_date']) {
+    if (value[field] === undefined) continue;
+    const date = normalizeGscDate(value[field]);
+    if (!date) return null;
+    normalized[field] = date;
+  }
+  if (normalized.start_date && normalized.end_date
+      && normalized.start_date > normalized.end_date) return null;
+  return normalized;
+}
+
+function normalizeGscSignals(values) {
+  const signals = [];
+  for (const value of Array.isArray(values) ? values : []) {
+    if (signals.length >= MAX_GSC_SIGNALS) break;
+    const signal = normalizeGscSignal(value);
+    if (signal) signals.push(signal);
+  }
+  return signals;
+}
+
 function parseGscStage(value, baseLiveHash) {
   if (!versionedStage(value, baseLiveHash)
       || typeof value.available !== 'boolean'
       || !Array.isArray(value.signals)) return null;
-  return { available: value.available, signals: structuredClone(value.signals) };
+  return { available: value.available, signals: normalizeGscSignals(value.signals) };
 }
 
 function parseFreshnessStage(value, baseLiveHash) {
@@ -588,7 +648,7 @@ export async function runExistingPostOptimizationJob({
     try {
       await assertLease();
       const signals = await searchMetricsRepository.getPageSignals({ postId });
-      gscSignals = Array.isArray(signals) ? signals : [];
+      gscSignals = normalizeGscSignals(signals);
     } catch (error) {
       if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
       gscAvailable = false;

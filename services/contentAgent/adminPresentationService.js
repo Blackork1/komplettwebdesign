@@ -799,7 +799,8 @@ function comparisonChanges(report = {}) {
   const ids = new Set();
   const changes = [];
   for (const change of source) {
-    if (!change || typeof change !== 'object' || changes.length >= REVISION_COMPARISON_LIMITS.changes) break;
+    if (changes.length >= REVISION_COMPARISON_LIMITS.changes) break;
+    if (!change || typeof change !== 'object' || Array.isArray(change)) continue;
     const id = typeof change.id === 'string' && /^[0-9a-f]{64}$/.test(change.id) ? change.id : null;
     if (!id || ids.has(id)) continue;
     ids.add(id);

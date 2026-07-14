@@ -1248,9 +1248,12 @@ test('Vergleichs-CSS baut gleichwertige Spalten, feste Sprungnavigation und mobi
   const manifest = JSON.parse(manifestText);
 
   assert.match(adminCss, /\.content-agent-compare__columns\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(adminCss, /\.content-agent-compare__jumpnav\s*\{[\s\S]*position:\s*sticky/);
-  assert.match(adminCss, /\.content-agent-compare__change\s*\{[\s\S]*scroll-margin-top:/);
+  assert.match(adminCss, /\.content-agent-compare\s*\{[\s\S]*--content-agent-compare-topbar-height:\s*60px/);
+  assert.match(adminCss, /\.content-agent-compare__jumpnav\s*\{[\s\S]*position:\s*sticky;[\s\S]*top:\s*var\(--content-agent-compare-sticky-top\)/);
+  assert.match(adminCss, /\.content-agent-compare__change\s*\{[\s\S]*scroll-margin-top:\s*var\(--content-agent-compare-anchor-offset\)/);
+  assert.match(adminCss, /@media\s*\(max-width:\s*960px\)[\s\S]*\.content-agent-compare__jumpnav\s*\{[\s\S]*position:\s*static[\s\S]*\.content-agent-compare__change\s*\{[\s\S]*scroll-margin-top:\s*calc\(var\(--content-agent-compare-topbar-height\)\s*\+\s*1rem\)/);
   assert.match(adminCss, /@media\s*\(max-width:\s*767\.98px\)[\s\S]*\.content-agent-compare__columns\s*\{[\s\S]*grid-template-columns:\s*1fr/);
+  assert.match(adminCss, /\.content-agent-compare\s+:where\(a,\s*button,\s*summary\):focus-visible\s*\{[\s\S]*outline:\s*3px solid #fff;[\s\S]*box-shadow:\s*0 0 0 6px #0b2a46,\s*0 0 0 8px #ff7849/);
   assert.match(adminCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(adminMinCss, /content-agent-compare__columns/);
   assert.equal(manifest.assets['admin.css'].output, 'admin.min.css');
