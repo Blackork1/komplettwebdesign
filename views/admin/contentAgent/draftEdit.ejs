@@ -26,9 +26,6 @@
   <% if (typeof queued !== 'undefined' && queued === true) { %>
     <div class="alert alert-info" role="status">Die gewünschte Neugenerierung wurde eingeplant.</div>
   <% } %>
-  <% if (typeof reviewOptimizationQueued !== 'undefined' && reviewOptimizationQueued === true) { %>
-    <div class="alert alert-info" role="status">Die Prüfhinweis-Optimierung und anschließende Neuprüfung wurden eingeplant. Der Artikel bleibt unveröffentlicht.</div>
-  <% } %>
   <% if (typeof approved !== 'undefined' && approved === true) { %>
     <div class="alert alert-success" role="status">Der geprüfte Entwurf wurde für den geplanten Termin freigegeben.</div>
   <% } %>
@@ -40,12 +37,17 @@
   <% } %>
 
   <% if (item.editorRiskReview) { %>
+    <%- include('_reviewOptimizationStatus', {
+      postId: item.id,
+      status: item.reviewOptimizationStatus
+    }) %>
     <%- include('_riskChecklist', {
       riskReview: item.editorRiskReview,
       postId: item.id,
       csrf,
       reviewVersion: item.reviewVersion,
-      actionsEnabled: item.editorRiskReview.blocked !== true
+      actionsEnabled: item.editorRiskReview.blocked !== true,
+      reviewOptimizationStatus: item.reviewOptimizationStatus
     }) %>
   <% } %>
 

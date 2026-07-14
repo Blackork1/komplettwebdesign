@@ -1,0 +1,75 @@
+<%
+  const currentStatus = typeof status !== 'undefined' && status && typeof status === 'object'
+    ? status
+    : { state: 'idle', active: false, blocksActions: false };
+  const state = ['idle', 'queued', 'running', 'completed', 'failed', 'manual_attention'].includes(currentStatus.state)
+    ? currentStatus.state
+    : 'failed';
+  const titles = {
+    idle: 'Fehlerbehebung bereit',
+    queued: 'Fehlerbehebung eingeplant',
+    running: 'Fehlerbehebung läuft',
+    completed: 'Fehlerbehebung abgeschlossen',
+    failed: 'Fehlerbehebung fehlgeschlagen',
+    manual_attention: 'Manuelle Prüfung erforderlich'
+  };
+  const defaultMessages = {
+    idle: 'Du kannst einzelne oder alle Prüfhinweise automatisch bearbeiten lassen.',
+    queued: 'Die Fehlerbehebung wartet auf die Verarbeitung durch den Worker.',
+    running: 'Die Fehlerbehebung wird gerade ausgeführt.',
+    completed: 'Die Fehlerbehebung wurde erfolgreich abgeschlossen.',
+    failed: 'Die Fehlerbehebung ist fehlgeschlagen.',
+    manual_attention: 'Die Fehlerbehebung benötigt eine manuelle Prüfung.'
+  };
+  const problemState = state === 'failed' || state === 'manual_attention';
+  const active = currentStatus.active === true;
+  const jobId = Number.isSafeInteger(Number(currentStatus.jobId)) && Number(currentStatus.jobId) > 0
+    ? Number(currentStatus.jobId)
+    : null;
+  const attempts = Number.isSafeInteger(Number(currentStatus.attempts))
+    ? Math.max(0, Number(currentStatus.attempts))
+    : 0;
+  const maxAttempts = Number.isSafeInteger(Number(currentStatus.maxAttempts))
+    ? Math.max(0, Number(currentStatus.maxAttempts))
+    : 0;
+%>
+
+<section
+  class="content-agent-review-optimization is-<%= state %>"
+  data-review-optimization-status
+  data-state="<%= state %>"
+  data-status-url="/admin/content-agent/drafts/<%= postId %>/review-optimization-status"
+  data-active="<%= active ? 'true' : 'false' %>"
+  role="status"
+  aria-live="polite"
+  aria-busy="<%= active ? 'true' : 'false' %>">
+  <div class="content-agent-review-optimization__icon" aria-hidden="true">
+    <i class="fa-solid <%= active ? 'fa-spinner' : (state === 'completed' ? 'fa-circle-check' : (problemState ? 'fa-triangle-exclamation' : 'fa-wand-magic-sparkles')) %>"></i>
+  </div>
+  <div class="content-agent-review-optimization__body">
+    <p class="content-agent-eyebrow">Automatische Optimierung</p>
+    <h2 data-review-optimization-title><%= titles[state] %></h2>
+    <p data-review-optimization-message><%= currentStatus.message || defaultMessages[state] %></p>
+    <p class="content-agent-review-optimization__meta" data-review-optimization-meta <%= jobId ? '' : 'hidden' %>>
+      <% if (jobId) { %>Job #<%= jobId %><% if (maxAttempts > 0) { %> · Versuch <%= attempts %> von <%= maxAttempts %><% } %><% } %>
+    </p>
+    <p class="content-agent-review-optimization__network" data-review-optimization-network hidden></p>
+    <div class="content-agent-review-optimization__actions">
+      <a
+        href="/admin/content-agent/drafts/<%= postId %>/edit"
+        class="btn btn-success"
+        data-review-optimization-reload
+        <%= currentStatus.reloadRecommended === true ? '' : 'hidden' %>>Aktualisierten Entwurf laden</a>
+      <a
+        href="/admin/content-agent/jobs"
+        class="btn btn-outline-primary"
+        data-review-optimization-jobs
+        <%= problemState ? '' : 'hidden' %>>Jobs &amp; Protokolle öffnen</a>
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        data-review-optimization-retry
+        hidden>Status erneut prüfen</button>
+    </div>
+  </div>
+</section>

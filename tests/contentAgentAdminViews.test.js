@@ -625,6 +625,11 @@ test('Drafteditor bietet einzelne und gemeinsame Optimierung für nicht blockier
             excerpt: 'Allgemeines Beispiel', reason: 'Zu abstrakt.', instruction: 'Beispiel konkretisieren.'
           }
         ]
+      },
+      reviewOptimizationStatus: {
+        state: 'idle', active: false, blocksActions: false, jobId: null,
+        attempts: 0, maxAttempts: 0, message: '', updatedAt: null,
+        reloadRecommended: false
       }
     },
     saved: false,
@@ -644,6 +649,83 @@ test('Drafteditor bietet einzelne und gemeinsame Optimierung für nicht blockier
   assert.match(html, /Alle Hinweise optimieren und neu prüfen/);
   assert.match(html, /eine Textreparatur und eine redaktionelle Prüfung/i);
   assert.match(html, /bleibt unveröffentlicht/i);
+  assert.match(html, /data-review-optimization-form/);
+});
+
+test('laufende Fehlerbehebung ist im Entwurf sichtbar und blendet weitere Optimierungen aus', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
+    ...baseLocals,
+    draft: {
+      id: 19,
+      title: 'Entwurf', shortDescription: 'Kurzbeschreibung', slug: 'entwurf',
+      metaTitle: 'Meta Title mit ausreichend vielen Zeichen für Google',
+      metaDescription: 'Meta Description mit ausreichend vielen Zeichen für die sichere Vorschau und die spätere Suchdarstellung des Artikels.',
+      ogTitle: 'OG-Titel', ogDescription: 'OG-Beschreibung', imageAlt: 'Bildbeschreibung',
+      contentHtml: '<section><h2>Artikel</h2></section>', faqJsonText: '[]', reviewVersion: 3,
+      editorRiskReview: {
+        blocked: false, sourceCount: 0,
+        items: [{
+          code: 'review_issue_1', section: 'Artikel', anchor: 'draft-content-html',
+          verificationType: 'none', sourceRequired: false, blocking: false,
+          excerpt: 'Bisheriger CTA', reason: 'Zu allgemein.', instruction: 'CTA präzisieren.'
+        }]
+      },
+      reviewOptimizationStatus: {
+        state: 'running', active: true, blocksActions: true, jobId: 41,
+        attempts: 1, maxAttempts: 3,
+        message: 'Die Fehlerbehebung wird gerade ausgeführt.',
+        updatedAt: '2026-07-14T10:01:00.000Z', reloadRecommended: false
+      }
+    },
+    saved: false,
+    queued: false,
+    reviewOptimizationQueued: false
+  });
+
+  assert.match(html, /data-review-optimization-status/);
+  assert.match(html, /data-state="running"/);
+  assert.match(html, /Fehlerbehebung läuft/);
+  assert.match(html, /Die Fehlerbehebung wird gerade ausgeführt/);
+  assert.match(html, /Job #41/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/drafts\/19\/optimize-review"/);
+});
+
+test('abgeschlossene Fehlerbehebung bietet bewusstes Neuladen ohne automatische Veröffentlichung', async () => {
+  const partial = await renderFile(fileURLToPath(viewUrl('_reviewOptimizationStatus.ejs')), {
+    postId: 19,
+    status: {
+      state: 'completed', active: false, blocksActions: false, jobId: 41,
+      attempts: 1, maxAttempts: 3,
+      message: 'Die Fehlerbehebung wurde erfolgreich abgeschlossen.',
+      updatedAt: '2026-07-14T10:03:00.000Z', reloadRecommended: true
+    }
+  });
+
+  assert.match(partial, /Fehlerbehebung abgeschlossen/);
+  assert.match(partial, /href="\/admin\/content-agent\/drafts\/19\/edit"/);
+  assert.match(partial, /data-review-optimization-reload/);
+  assert.match(partial, /Aktualisierten Entwurf laden/);
+  assert.doesNotMatch(partial, /publish|veröffentlichen/i);
+});
+
+test('fehlgeschlagene Fehlerbehebung verweist aus dem Entwurf auf Jobs und Protokolle', async () => {
+  for (const state of ['failed', 'manual_attention']) {
+    const partial = await renderFile(fileURLToPath(viewUrl('_reviewOptimizationStatus.ejs')), {
+      postId: 19,
+      status: {
+        state, active: false, blocksActions: true, jobId: 41,
+        attempts: 3, maxAttempts: 3,
+        message: state === 'failed'
+          ? 'Die Fehlerbehebung ist fehlgeschlagen.'
+          : 'Die Fehlerbehebung benötigt eine manuelle Prüfung.',
+        updatedAt: '2026-07-14T10:03:00.000Z', reloadRecommended: false
+      }
+    });
+
+    assert.match(partial, /href="\/admin\/content-agent\/jobs"/);
+    assert.match(partial, /Jobs &amp; Protokolle öffnen/);
+    assert.match(partial, /data-review-optimization-jobs/);
+  }
 });
 
 test('blockierte Prüfberichte bieten keine automatische Optimierung an', async () => {

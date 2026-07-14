@@ -1,7 +1,9 @@
 <% const focusedRiskReview = typeof riskReview !== 'undefined' && riskReview && typeof riskReview === 'object' ? riskReview : {}; %>
 <% const focusedRiskItems = Array.isArray(focusedRiskReview.items) ? focusedRiskReview.items : []; %>
 <% const verificationLabels = { none: 'Redaktionell', source: 'Quelle', date: 'Aktualität', price: 'Preis', version: 'Version', legal: 'Recht', privacy: 'Datenschutz' }; %>
-<% const optimizationActionsEnabled = typeof actionsEnabled !== 'undefined' && actionsEnabled === true && focusedRiskReview.blocked !== true; %>
+<% const currentOptimizationStatus = typeof reviewOptimizationStatus !== 'undefined' && reviewOptimizationStatus && typeof reviewOptimizationStatus === 'object' ? reviewOptimizationStatus : {}; %>
+<% const optimizationBlocked = currentOptimizationStatus.blocksActions === true; %>
+<% const optimizationActionsEnabled = typeof actionsEnabled !== 'undefined' && actionsEnabled === true && focusedRiskReview.blocked !== true && !optimizationBlocked; %>
 <% if (focusedRiskItems.length) { %>
   <aside class="content-agent-risk-checklist" aria-labelledby="focused-risk-heading">
     <div class="content-agent-risk-checklist__head">
@@ -27,27 +29,30 @@
           <p><strong>Prüfanweisung:</strong> <%= item.instruction %></p>
           <small>Kategorie: <%= item.code %></small>
           <% if (optimizationActionsEnabled) { %>
-            <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" class="mt-3" data-confirm="Diesen Prüfhinweis mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
+            <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" class="mt-3" data-review-optimization-form data-confirm="Diesen Prüfhinweis mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
               <input type="hidden" name="_csrf" value="<%= csrf %>">
               <input type="hidden" name="confirmed" value="true">
               <input type="hidden" name="expected_review_version" value="<%= reviewVersion %>">
               <input type="hidden" name="issue_mode" value="single">
               <input type="hidden" name="issue_index" value="<%= itemIndex %>">
-              <button class="btn btn-sm btn-outline-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Diesen Hinweis beheben</button>
+              <button class="btn btn-sm btn-outline-primary" type="submit" data-review-optimization-submit><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Diesen Hinweis beheben</button>
             </form>
           <% } %>
         </li>
       <% }) %>
     </ol>
     <p class="content-agent-quiet"><%= Number(focusedRiskReview.sourceCount || 0) %> Quellen im Bericht</p>
+    <% if (optimizationBlocked) { %>
+      <div class="alert alert-info mb-3" role="status">Eine Fehlerbehebung wurde bereits gestartet. Den aktuellen Zustand siehst du direkt oberhalb dieser Prüfstellen.</div>
+    <% } %>
     <% if (optimizationActionsEnabled) { %>
       <div class="alert alert-info mb-3" role="status"><strong>Kostenhinweis:</strong> Die Sammeloptimierung verwendet eine Textreparatur und eine redaktionelle Prüfung. Der Artikel bleibt unveröffentlicht und muss anschließend erneut freigegeben werden.</div>
-      <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" data-confirm="Alle Prüfhinweise mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
+      <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" data-review-optimization-form data-confirm="Alle Prüfhinweise mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="confirmed" value="true">
         <input type="hidden" name="expected_review_version" value="<%= reviewVersion %>">
         <input type="hidden" name="issue_mode" value="all">
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Alle Hinweise optimieren und neu prüfen</button>
+        <button class="btn btn-primary" type="submit" data-review-optimization-submit><i class="fa-solid fa-list-check" aria-hidden="true"></i> Alle Hinweise optimieren und neu prüfen</button>
       </form>
     <% } %>
   </aside>
