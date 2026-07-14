@@ -177,6 +177,7 @@ function input(payload = {}) {
 function dependencies(overrides = {}) {
   const calls = [];
   const reservations = [];
+  const stageResults = {};
   const current = draft();
   const deps = {
     calls,
@@ -216,7 +217,13 @@ function dependencies(overrides = {}) {
       estimateTextCost() { return 0.02; }
     },
     runRepository: {
-      async updateRunStage() {},
+      async updateRunStage(runId, payload) {
+        stageResults[payload.stageId] ??= structuredClone(payload.stageResult);
+        return {
+          id: runId,
+          stage_results_json: structuredClone(stageResults)
+        };
+      },
       async finishRun(runId, payload) {
         calls.push(['finish', payload]);
         return { id: runId, ...payload };

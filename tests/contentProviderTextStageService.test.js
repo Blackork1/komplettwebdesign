@@ -71,6 +71,10 @@ function stageDependencies() {
       async updateRunStage(runId, payload) {
         state.events.push('persist');
         state.persistedStages.push({ runId, ...payload });
+        return {
+          id: runId,
+          stage_results_json: { [payload.stageId]: structuredClone(payload.stageResult) }
+        };
       }
     },
     async recordProviderResult(payload) {
@@ -126,13 +130,14 @@ test('Retry rechnet ein vor dem Settlement persistiertes Ergebnis ohne neue Rese
     return persisted;
   };
   dependencies.runRepository.updateRunStage = async (runId, payload) => {
-    await persistStage(runId, payload);
+    const storedRun = await persistStage(runId, payload);
     persisted = structuredClone(payload.stageResult);
+    return storedRun;
   };
   dependencies.assertLease = async () => {
     state.events.push('lease');
     leaseCalls += 1;
-    if (leaseCalls === 3) {
+    if (leaseCalls === 4) {
       throw Object.assign(new Error('Lease nach Persistenz verloren'), {
         code: 'CONTENT_JOB_LEASE_LOST'
       });
@@ -196,6 +201,31 @@ test('offene Reservierung stoppt ohne zweiten Provideraufruf', async () => {
   assert.equal(result.manual.code, 'provider_execution_uncertain');
 });
 
+test('Budgetgrenze wird zentral als manueller Abschluss statt als Ausnahme zurückgegeben', async () => {
+  let calls = 0;
+  const result = await executePaidStructuredTextStage(stageInput({
+    async execute() { calls += 1; }
+  }), {
+    assertLease: async () => true,
+    costService: {
+      async getPersistedStageResult() { return null; },
+      async reserveMonthlyBudget() {
+        throw Object.assign(new Error('Monatsbudget ausgeschöpft'), {
+          code: 'CONTENT_BUDGET_LIMIT_REACHED'
+        });
+      }
+    }
+  });
+
+  assert.equal(calls, 0);
+  assert.deepEqual(result, {
+    manual: {
+      code: 'CONTENT_BUDGET_LIMIT_REACHED',
+      message: 'Das konfigurierte Monatsbudget für KI-Inhalte ist ausgeschöpft.'
+    }
+  });
+});
+
 test('persistiertes Ergebnis mit falschem Versionszaun wird nicht verwendet oder erneut ausgeführt', async () => {
   let calls = 0;
   let reservations = 0;
@@ -237,6 +267,7 @@ test('neue Textstufe persistiert validiertes Envelope samt Response-ID vor dem S
     'lease',
     'execute',
     'estimate',
+    'lease',
     'persist',
     'lease',
     'settle',
@@ -276,6 +307,79 @@ test('neue Textstufe persistiert validiertes Envelope samt Response-ID vor dem S
     envelope: state.persistedStages[0].stageResult,
     reused: false
   });
+});
+
+test('Leaseverlust nach Providerantwort und vor Persistenz bleibt ohne Wiederholung manuell', async () => {
+  const { dependencies, state } = stageDependencies();
+  let leaseCalls = 0;
+  let providerCalls = 0;
+  dependencies.assertLease = async () => {
+    state.events.push('lease');
+    leaseCalls += 1;
+    if (leaseCalls === 3) {
+      throw Object.assign(new Error('Lease nach Providerantwort verloren'), {
+        code: 'CONTENT_JOB_LEASE_LOST'
+      });
+    }
+  };
+
+  const result = await executePaidStructuredTextStage(stageInput({
+    async execute() {
+      state.events.push('execute');
+      providerCalls += 1;
+      return {
+        value: { title: 'Nicht erneut erzeugen' },
+        responseId: 'resp-ungeklaert',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        promptVersion: 'test-v1'
+      };
+    }
+  }), dependencies);
+
+  assert.equal(providerCalls, 1);
+  assert.equal(result.manual.code, 'provider_execution_uncertain');
+  assert.deepEqual(state.events, [
+    'load',
+    'lease',
+    'reserve',
+    'lease',
+    'execute',
+    'estimate',
+    'lease'
+  ]);
+  assert.equal(state.persistedStages.length, 0);
+  assert.equal(state.settlements.length, 0);
+  assert.equal(state.releases.length, 0);
+});
+
+test('zusätzliche Web-Suchkosten werden im Envelope und Settlement berücksichtigt', async () => {
+  const { dependencies, state } = stageDependencies();
+  const result = await executePaidStructuredTextStage(stageInput({
+    calculateAdditionalCost(providerResult) {
+      return providerResult.webSearchCallCount * 0.01;
+    },
+    async execute() {
+      state.events.push('execute');
+      return {
+        value: { title: 'Mit Recherche' },
+        responseId: 'resp-recherche',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        promptVersion: 'test-v1',
+        webSearchCallCount: 3
+      };
+    }
+  }), dependencies);
+
+  assert.equal(result.envelope.textCost, 0.015);
+  assert.equal(result.envelope.additionalCost, 0.03);
+  assert.equal(result.envelope.webSearchCallCount, 3);
+  assert.equal(result.envelope.actualCost, 0.045);
+  assert.deepEqual(state.settlements, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07',
+    actualCost: 0.045
+  }]);
 });
 
 test('ungültiges Structured Output bleibt mit offener Reservierung zur manuellen Prüfung', async () => {
@@ -365,4 +469,40 @@ test('unklare Ergebnispersistenz verhindert Settlement und Wiederholung', async 
   assert.equal(result.manual.code, 'provider_stage_persistence_uncertain');
   assert.equal(state.settlements.length, 0);
   assert.equal(state.releases.length, 0);
+});
+
+test('fehlende Persistenzbestätigung verhindert Settlement und Erfolgsstatus', async () => {
+  const { dependencies, state } = stageDependencies();
+  dependencies.runRepository.updateRunStage = async () => {
+    state.events.push('persist');
+    return null;
+  };
+
+  const result = await executePaidStructuredTextStage(stageInput(), dependencies);
+
+  assert.equal(result.manual.code, 'provider_stage_persistence_uncertain');
+  assert.equal(state.settlements.length, 0);
+  assert.equal(state.providerResults.length, 0);
+});
+
+test('konkurrierend vorhandenes anderes Stage-Ergebnis verhindert Settlement', async () => {
+  const { dependencies, state } = stageDependencies();
+  dependencies.runRepository.updateRunStage = async (runId, payload) => {
+    state.events.push('persist');
+    return {
+      id: runId,
+      stage_results_json: {
+        [payload.stageId]: {
+          ...structuredClone(payload.stageResult),
+          responseId: 'resp-konkurrenz'
+        }
+      }
+    };
+  };
+
+  const result = await executePaidStructuredTextStage(stageInput(), dependencies);
+
+  assert.equal(result.manual.code, 'provider_stage_persistence_uncertain');
+  assert.equal(state.settlements.length, 0);
+  assert.equal(state.providerResults.length, 0);
 });

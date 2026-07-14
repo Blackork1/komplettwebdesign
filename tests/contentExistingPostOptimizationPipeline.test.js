@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { liveHashForPost } from '../services/contentAgent/contentRevisionService.js';
 import { runExistingPostOptimizationJob } from '../services/contentAgent/existingPostOptimizationPipeline.js';
+import { auditExistingPost } from '../services/contentAgent/legacyAuditService.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({
   question: `Frage ${index + 1}?`,
@@ -84,12 +85,13 @@ function reviewResult(overrides = {}) {
   };
 }
 
-function providerEnvelope(value, responseId) {
+function providerEnvelope(value, responseId, metadata = {}) {
   return {
     value,
     responseId,
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: 'test-v1'
+    promptVersion: 'test-v1',
+    ...metadata
   };
 }
 
@@ -115,6 +117,7 @@ function createJobInput(post, overrides = {}) {
       contentOutputCostPerMtok: 2,
       reviewInputCostPerMtok: 1,
       reviewOutputCostPerMtok: 2,
+      webSearchCostPerCallEur: 0.01,
       allowedInternalLinks: ['/kontakt']
     },
     leaseGuard: async () => true,
@@ -130,9 +133,13 @@ function createSuccessfulDependencies({
   validationResults = [],
   gscError = null,
   revisionError = null,
-  trustedContext = {}
+  trustedContext = {},
+  webSearchCallCount = 0,
+  budgetLimitStageId = null,
+  auditPersistenceResult = undefined,
+  revisionResult = undefined
 } = {}) {
-  const persistedPaidStages = new Map();
+  const persistedStages = new Map();
   const calls = {
     stages: [],
     stageIds: [],
@@ -140,8 +147,15 @@ function createSuccessfulDependencies({
     warnings: [],
     leases: 0,
     research: 0,
+    liveSnapshots: 0,
+    trustedContexts: 0,
+    audits: 0,
+    auditWrites: 0,
+    gsc: 0,
     optimization: 0,
+    optimizationInputs: [],
     review: 0,
+    reviewInputs: [],
     validation: 0,
     revisions: [],
     liveWrites: 0,
@@ -154,9 +168,14 @@ function createSuccessfulDependencies({
 
   const dependencies = {
     calls,
+    persistedStages,
     optimizationRepository: {
-      async getPublishedPostSnapshot() { return structuredClone(post); },
+      async getPublishedPostSnapshot() {
+        calls.liveSnapshots += 1;
+        return structuredClone(post);
+      },
       async getTrustedContext() {
+        calls.trustedContexts += 1;
         return {
           existingSlugs: [],
           allowedInternalLinks: ['/vom-repository'],
@@ -168,7 +187,9 @@ function createSuccessfulDependencies({
       async createOptimizedRevision(input) {
         calls.revisions.push(structuredClone(input));
         if (revisionError) throw revisionError;
-        return { id: 71, post_id: post.id, status: 'draft' };
+        return revisionResult === undefined
+          ? { id: 71, post_id: post.id, status: 'draft' }
+          : structuredClone(revisionResult);
       },
       async updatePublishedPost() {
         calls.liveWrites += 1;
@@ -177,11 +198,14 @@ function createSuccessfulDependencies({
     },
     auditRepository: {
       async createAuditIdempotent(input) {
+        calls.auditWrites += 1;
+        if (auditPersistenceResult !== undefined) return structuredClone(auditPersistenceResult);
         return { id: 31, post_id: post.id, score: input.score, findings_json: input.findings };
       }
     },
     searchMetricsRepository: {
       async getPageSignals() {
+        calls.gsc += 1;
         if (gscError) throw gscError;
         return [];
       }
@@ -189,25 +213,36 @@ function createSuccessfulDependencies({
     openaiService: {
       async researchExistingPostSources() {
         calls.research += 1;
-        return providerEnvelope(structuredClone(researchSources), `resp_research_${calls.research}`);
+        return providerEnvelope(
+          structuredClone(researchSources),
+          `resp_research_${calls.research}`,
+          { webSearchCallCount }
+        );
       },
-      async optimizeExistingPost() {
+      async optimizeExistingPost(input) {
         calls.optimization += 1;
+        calls.optimizationInputs.push(structuredClone(input));
         const value = optimizationQueue.shift() ?? optimizationResults.at(-1);
         return providerEnvelope(structuredClone(value), `resp_opt_${calls.optimization}`);
       },
-      async reviewArticle() {
+      async reviewArticle(input) {
         calls.review += 1;
+        calls.reviewInputs.push(structuredClone(input));
         const value = reviewQueue.shift() ?? reviewResults.at(-1);
         return providerEnvelope(structuredClone(value), `resp_review_${calls.review}`);
       }
     },
     costService: {
       async getPersistedStageResult({ stageId }) {
-        return persistedPaidStages.get(stageId) ?? null;
+        return persistedStages.get(stageId) ?? null;
       },
       async reserveMonthlyBudget(input) {
         calls.reservations.push(structuredClone(input));
+        if (input.stageId === budgetLimitStageId) {
+          throw Object.assign(new Error('Monatsbudget ausgeschöpft'), {
+            code: 'CONTENT_BUDGET_LIMIT_REACHED'
+          });
+        }
         return { created: true, status: 'reserved', reservationMonth: '2026-07' };
       },
       async settleMonthlyBudget(input) {
@@ -221,10 +256,14 @@ function createSuccessfulDependencies({
       async updateRunStage(runId, input) {
         calls.stages.push(input.currentStage);
         calls.stageIds.push(input.stageId);
-        if (input.stageResult?.reservationMonth) {
-          persistedPaidStages.set(input.stageId, structuredClone(input.stageResult));
-        }
-        return { id: runId, current_stage: input.currentStage };
+        persistedStages.set(input.stageId, structuredClone(input.stageResult));
+        return {
+          id: runId,
+          current_stage: input.currentStage,
+          stage_results_json: Object.fromEntries(
+            [...persistedStages].map(([stageId, value]) => [stageId, structuredClone(value)])
+          )
+        };
       },
       async finishRun(runId, input) {
         calls.finishes.push({ runId, ...structuredClone(input) });
@@ -238,6 +277,10 @@ function createSuccessfulDependencies({
         sanitizedHtml: article.contentHtml,
         issues: []
       };
+    },
+    auditExistingPost(input) {
+      calls.audits += 1;
+      return auditExistingPost(input);
     },
     recordAuditWarning(error, code) {
       calls.warnings.push({ code, message: error.message });
@@ -260,6 +303,7 @@ test('statischer Artikel wird in fester Reihenfolge geprüft und ausschließlich
     'gsc_page_signals',
     'freshness_classification',
     'targeted_optimization',
+    'existing_post_diff',
     'targeted_scope_validation',
     'article_validation',
     'editorial_review',
@@ -316,7 +360,88 @@ test('Webrecherche läuft ausschließlich bei Freshness-Bedarf und stoppt bei nu
   assert.equal(freshDependencies.calls.research, 0);
 });
 
-test('Wiederaufnahme verwendet jede persistierte kostenpflichtige Stufe ohne zweiten Provideraufruf', async () => {
+test('Web-Suchaufrufe werden mit dem streng validierten Snapshotpreis abgerechnet', async () => {
+  const post = publishedPost({ content: originalHtml({ stale: true }) });
+  const dependencies = createSuccessfulDependencies({
+    post,
+    researchSources: [
+      { title: 'Primärquelle A', url: 'https://example.com/a' },
+      { title: 'Primärquelle B', url: 'https://example.com/b' }
+    ],
+    webSearchCallCount: 3
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(
+    dependencies.calls.settlements.find(({ stageId }) => stageId === 'source_research'),
+    {
+      runId: 51,
+      stageId: 'source_research',
+      reservationMonth: '2026-07',
+      actualCost: 0.04
+    }
+  );
+});
+
+test('Web-Suchpreis akzeptiert keine implizit konvertierten oder negativen Snapshotwerte', async () => {
+  const post = publishedPost();
+  for (const webSearchCostPerCallEur of ['0.01', -0.01, Number.NaN]) {
+    const dependencies = createSuccessfulDependencies({ post });
+    const runtimeSnapshot = {
+      ...createJobInput(post).runtimeSnapshot,
+      webSearchCostPerCallEur
+    };
+
+    await assert.rejects(
+      runExistingPostOptimizationJob(
+        createJobInput(post, { runtimeSnapshot }),
+        dependencies
+      ),
+      { code: 'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID' }
+    );
+    assert.equal(dependencies.calls.optimization, 0);
+  }
+});
+
+test('Budgetlimit beendet Recherche, Optimierung und Review jeweils genau einmal manuell', async (t) => {
+  const cases = [
+    {
+      name: 'Recherche',
+      stageId: 'source_research',
+      post: publishedPost({ content: originalHtml({ stale: true }) })
+    },
+    { name: 'Optimierung', stageId: 'targeted_optimization', post: publishedPost() },
+    { name: 'Review', stageId: 'editorial_review', post: publishedPost() }
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const dependencies = createSuccessfulDependencies({
+        post: scenario.post,
+        budgetLimitStageId: scenario.stageId,
+        researchSources: [
+          { title: 'Primärquelle A', url: 'https://example.com/a' },
+          { title: 'Primärquelle B', url: 'https://example.com/b' }
+        ]
+      });
+
+      const result = await runExistingPostOptimizationJob(
+        createJobInput(scenario.post),
+        dependencies
+      );
+
+      assert.equal(result.status, 'needs_manual_attention');
+      assert.equal(result.code, 'CONTENT_BUDGET_LIMIT_REACHED');
+      assert.equal(dependencies.calls.finishes.length, 1);
+      assert.equal(dependencies.calls.finishes[0].status, 'needs_manual_attention');
+      assert.equal(dependencies.calls.revisions.length, 0);
+    });
+  }
+});
+
+test('Wiederaufnahme verwendet alle versiongebundenen Stage-Ergebnisse trotz mutierter Fakes', async () => {
   const post = publishedPost({ content: originalHtml({ stale: true }) });
   const firstReview = reviewResult({
     passed: false,
@@ -347,6 +472,11 @@ test('Wiederaufnahme verwendet jede persistierte kostenpflichtige Stufe ohne zwe
     reviewResults: [firstReview, reviewResult()]
   });
   const input = createJobInput(post);
+  dependencies.revisionService = {
+    async createOptimizedRevision() {
+      return { id: 71, post_id: post.id, status: 'draft' };
+    }
+  };
 
   assert.equal((await runExistingPostOptimizationJob(input, dependencies)).status, 'completed');
   assert.deepEqual({
@@ -355,13 +485,127 @@ test('Wiederaufnahme verwendet jede persistierte kostenpflichtige Stufe ohne zwe
     review: dependencies.calls.review
   }, { research: 1, optimization: 2, review: 2 });
 
+  const firstNonPaidCalls = {
+    liveSnapshots: dependencies.calls.liveSnapshots,
+    audits: dependencies.calls.audits,
+    auditWrites: dependencies.calls.auditWrites,
+    gsc: dependencies.calls.gsc,
+    validation: dependencies.calls.validation
+  };
+  dependencies.optimizationRepository.getPublishedPostSnapshot = async () => {
+    throw new Error('Der mutierte Live-Fake darf bei Recovery nicht aufgerufen werden.');
+  };
+  dependencies.auditExistingPost = () => {
+    throw new Error('Der mutierte Audit-Fake darf bei Recovery nicht aufgerufen werden.');
+  };
+  dependencies.auditRepository.createAuditIdempotent = async () => {
+    throw new Error('Der mutierte Audit-Repository-Fake darf bei Recovery nicht aufgerufen werden.');
+  };
+  dependencies.searchMetricsRepository.getPageSignals = async () => {
+    throw new Error('Der mutierte GSC-Fake darf bei Recovery nicht aufgerufen werden.');
+  };
+  dependencies.validateArticle = async () => {
+    throw new Error('Der mutierte Validator-Fake darf bei Recovery nicht aufgerufen werden.');
+  };
+
   assert.equal((await runExistingPostOptimizationJob(input, dependencies)).status, 'completed');
   assert.deepEqual({
     research: dependencies.calls.research,
     optimization: dependencies.calls.optimization,
     review: dependencies.calls.review
   }, { research: 1, optimization: 2, review: 2 });
+  assert.deepEqual({
+    liveSnapshots: dependencies.calls.liveSnapshots,
+    audits: dependencies.calls.audits,
+    auditWrites: dependencies.calls.auditWrites,
+    gsc: dependencies.calls.gsc,
+    validation: dependencies.calls.validation
+  }, firstNonPaidCalls);
+  for (const stageId of [
+    'live_snapshot',
+    'existing_content_audit',
+    'gsc_page_signals',
+    'freshness_classification',
+    'existing_post_diff',
+    'targeted_scope_validation',
+    'article_validation',
+    'existing_post_diff:repair',
+    'targeted_scope_validation:repair',
+    'article_validation:repair'
+  ]) {
+    assert.equal(
+      dependencies.calls.stageIds.filter((value) => value === stageId).length,
+      1,
+      `${stageId} darf bei Recovery nicht überschrieben werden`
+    );
+  }
   assert.equal(dependencies.calls.reservations.length, 5);
+});
+
+test('Wiederaufnahme überschreibt kein ungültiges oder versionsfremdes Stage-Ergebnis', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({ post });
+  const input = createJobInput(post);
+
+  assert.equal((await runExistingPostOptimizationJob(input, dependencies)).status, 'completed');
+  dependencies.persistedStages.get('gsc_page_signals').baseLiveHash = 'b'.repeat(64);
+  const gscWrites = dependencies.calls.stageIds
+    .filter((stageId) => stageId === 'gsc_page_signals').length;
+
+  const result = await runExistingPostOptimizationJob(input, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'persisted_stage_result_invalid');
+  assert.equal(
+    dependencies.calls.stageIds.filter((stageId) => stageId === 'gsc_page_signals').length,
+    gscWrites
+  );
+  assert.equal(dependencies.calls.optimization, 1);
+});
+
+test('Wiederaufnahme verwirft semantisch manipulierte Diff-, Scope- und Validatorergebnisse', async (t) => {
+  const scenarios = [
+    {
+      name: 'Diff',
+      stageId: 'existing_post_diff',
+      mutate(value) { value.changes[0].before = 'Manipulierter Ausgangswert'; }
+    },
+    {
+      name: 'Scope',
+      stageId: 'targeted_scope_validation',
+      mutate(value) {
+        value.passed = true;
+        value.code = null;
+        value.changedBlockRatio = 0.9;
+      }
+    },
+    {
+      name: 'Validator',
+      stageId: 'article_validation',
+      mutate(value) {
+        value.passed = true;
+        value.issues = [{ code: 'unsafe_html', message: 'HTML ist nicht freigegeben.' }];
+      }
+    }
+  ];
+
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async () => {
+      const post = publishedPost();
+      const dependencies = createSuccessfulDependencies({ post });
+      const input = createJobInput(post);
+      assert.equal((await runExistingPostOptimizationJob(input, dependencies)).status, 'completed');
+      const revisionCount = dependencies.calls.revisions.length;
+      scenario.mutate(dependencies.persistedStages.get(scenario.stageId));
+
+      const result = await runExistingPostOptimizationJob(input, dependencies);
+
+      assert.equal(result.status, 'needs_manual_attention');
+      assert.equal(result.code, 'persisted_stage_result_invalid');
+      assert.equal(dependencies.calls.revisions.length, revisionCount);
+      assert.equal(dependencies.calls.optimization, 1);
+    });
+  }
 });
 
 test('Leaseverlust beendet den Lauf vor Provider- und Revisionszugriff', async () => {
@@ -379,7 +623,7 @@ test('Leaseverlust beendet den Lauf vor Provider- und Revisionszugriff', async (
   assert.equal(dependencies.calls.revisions.length, 0);
 });
 
-test('Legacy-EJS verwirft jede Inhaltsänderung bytegenau vor der Revision', async () => {
+test('Legacy-EJS-Inhaltsänderung endet als dauerhafter Fehler mit Runabschluss', async () => {
   const post = publishedPost({
     content_format: 'legacy_ejs',
     content: '<p><%= post.title %></p>\n'
@@ -389,12 +633,31 @@ test('Legacy-EJS verwirft jede Inhaltsänderung bytegenau vor der Revision', asy
     optimizationResults: [optimizedPost(post, { contentHtml: '<p>Geänderter Legacy-Inhalt</p>' })]
   });
 
-  await assert.rejects(
-    runExistingPostOptimizationJob(createJobInput(post), dependencies),
-    { code: 'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN' }
-  );
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.code, 'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN');
+  assert.equal(dependencies.calls.finishes.length, 1);
+  assert.equal(dependencies.calls.finishes[0].status, 'failed');
   assert.equal(dependencies.calls.revisions.length, 0);
   assert.equal(dependencies.calls.liveWrites, 0);
+});
+
+test('deterministisch zu großer Diff-Eingang endet ohne Worker-Wiederholungen als failed', async () => {
+  const content = Array.from({ length: 2_001 }, () => '<p>Unveränderter Block</p>').join('');
+  const post = publishedPost({ content });
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [optimizedPost(post, { contentHtml: content })]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.code, 'EXISTING_POST_DIFF_INPUT_INVALID');
+  assert.equal(dependencies.calls.finishes.length, 1);
+  assert.equal(dependencies.calls.review, 0);
+  assert.equal(dependencies.calls.revisions.length, 0);
 });
 
 test('Scopeüberschreitung erhält genau eine erfolgreiche Reparatur mit serverseitiger Neuprüfung', async () => {
@@ -486,6 +749,57 @@ test('Reviewfehler löst höchstens eine Reparatur aus und bleibt danach termina
   assert.equal(dependencies.calls.optimization, 2);
   assert.equal(dependencies.calls.review, 2);
   assert.equal(dependencies.calls.revisions.length, 0);
+  assert.deepEqual(
+    dependencies.calls.optimizationInputs[1].audit.findings.at(-1),
+    {
+      code: 'editorial_gap',
+      severity: 'error',
+      message: 'Der redaktionelle Nutzen ist nicht ausreichend.',
+      field: 'contentHtml',
+      evidence: 'Gezielt optimierte Fassung.',
+      repairInstruction: 'Präzisiere den Nutzen.',
+      sectionHeading: 'Planung',
+      verificationType: 'none',
+      sourceRequired: false
+    }
+  );
+});
+
+test('zu großer UTF-8-Optimierungsbericht stoppt vor Review und Revision', async () => {
+  const beforeBlock = 'ä'.repeat(220_000);
+  const afterBlock = 'ö'.repeat(220_000);
+  const content = `<p>${beforeBlock}</p><p>Zweiter unveränderter Block.</p><p>Dritter unveränderter Block.</p>`;
+  const post = publishedPost({ content });
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [optimizedPost(post, {
+      contentHtml: `<p>${afterBlock}</p><p>Zweiter unveränderter Block.</p><p>Dritter unveränderter Block.</p>`
+    })]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'existing_post_optimization_report_too_large');
+  assert.equal(dependencies.calls.review, 0);
+  assert.equal(dependencies.calls.revisions.length, 0);
+  assert.equal(dependencies.calls.finishes.length, 1);
+});
+
+test('erst nach Review zu großer UTF-8-Bericht stoppt bei der letzten Prüfung vor Revision', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({
+    post,
+    reviewResults: [reviewResult({ summary: 'ä'.repeat(260_000) })]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'existing_post_optimization_report_too_large');
+  assert.equal(dependencies.calls.review, 1);
+  assert.equal(dependencies.calls.revisions.length, 0);
+  assert.equal(dependencies.calls.finishes.length, 1);
 });
 
 test('Livehashkonflikt bei atomarer Revisionsanlage endet manuell und schreibt niemals live', async () => {
@@ -576,4 +890,67 @@ test('dauerhaft widersprüchliche interne Revisionsdaten beenden den Lauf als fa
   assert.equal(result.code, 'CONTENT_REVISION_VALIDATION_FAILED');
   assert.equal(dependencies.calls.finishes.at(-1).status, 'failed');
   assert.equal(dependencies.calls.liveWrites, 0);
+});
+
+test('fehlender Audit bei der Revision ist ein dauerhaft fehlgeschlagener Terminalpfad', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({
+    post,
+    revisionError: Object.assign(new Error('Audit nicht gefunden'), {
+      code: 'CONTENT_AUDIT_NOT_FOUND'
+    })
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.code, 'CONTENT_AUDIT_NOT_FOUND');
+  assert.equal(dependencies.calls.finishes.length, 1);
+  assert.equal(dependencies.calls.finishes[0].status, 'failed');
+});
+
+test('zwischenzeitlich fehlender Livebeitrag bei der Revision endet manuell als stale', async () => {
+  const post = publishedPost();
+  const dependencies = createSuccessfulDependencies({
+    post,
+    revisionError: Object.assign(new Error('Beitrag nicht mehr veröffentlicht'), {
+      code: 'CONTENT_POST_NOT_FOUND'
+    })
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_STALE');
+  assert.equal(dependencies.calls.finishes.length, 1);
+  assert.equal(dependencies.calls.finishes[0].status, 'needs_manual_attention');
+});
+
+test('ungültige Audit- und Revisionsergebnisse werden jeweils als failed abgeschlossen', async (t) => {
+  const post = publishedPost();
+  const cases = [
+    {
+      name: 'Audit-Ergebnis',
+      options: { auditPersistenceResult: null },
+      code: 'CONTENT_AUDIT_PERSISTENCE_FAILED'
+    },
+    {
+      name: 'Revisions-Ergebnis',
+      options: { revisionResult: { id: null, status: 'draft' } },
+      code: 'CONTENT_REVISION_PERSISTENCE_FAILED'
+    }
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const dependencies = createSuccessfulDependencies({ post, ...scenario.options });
+
+      const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+      assert.equal(result.status, 'failed');
+      assert.equal(result.code, scenario.code);
+      assert.equal(dependencies.calls.finishes.length, 1);
+      assert.equal(dependencies.calls.finishes[0].status, 'failed');
+    });
+  }
 });

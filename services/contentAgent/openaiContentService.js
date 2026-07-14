@@ -437,7 +437,10 @@ export function createOpenAIContentService({
       value: extractWebSources(response),
       responseId: response.id,
       usage: response.usage || {},
-      promptVersion: existingPostSourceResearchPromptVersion
+      promptVersion: existingPostSourceResearchPromptVersion,
+      webSearchCallCount: (Array.isArray(response.output) ? response.output : [])
+        .filter((item) => item?.type === 'web_search_call')
+        .length
     };
   }
 

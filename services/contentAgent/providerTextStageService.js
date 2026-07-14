@@ -5,6 +5,14 @@ function parsePersistedEnvelope(value, schema, versionFence) {
   return parsed.success ? { ...value, value: parsed.data } : null;
 }
 
+function stableJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  return `{${Object.keys(value).sort().map((key) => (
+    `${JSON.stringify(key)}:${stableJson(value[key])}`
+  )).join(',')}}`;
+}
+
 function providerRetryIsSafe(error) {
   return error?.safeToRetry === true
     || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
@@ -57,11 +65,22 @@ async function executeNewProviderStage(input, dependencies, reservation) {
     } };
   }
   const usage = result.usage || {};
-  const actualCost = dependencies.costService.estimateTextCost({
+  const textCost = dependencies.costService.estimateTextCost({
     usage,
     inputRate: input.inputRate,
     outputRate: input.outputRate
   });
+  let additionalCost = 0;
+  if (typeof input.calculateAdditionalCost === 'function') {
+    additionalCost = input.calculateAdditionalCost(result);
+    if (!Number.isFinite(additionalCost) || additionalCost < 0) {
+      return { manual: {
+        code: 'provider_stage_cost_invalid',
+        message: 'Die zusätzlichen Providerkosten konnten nicht sicher bestimmt werden.'
+      } };
+    }
+  }
+  const actualCost = textCost + additionalCost;
   const envelope = {
     value: parsed.data,
     responseId: result.responseId || null,
@@ -69,10 +88,26 @@ async function executeNewProviderStage(input, dependencies, reservation) {
     promptVersion: result.promptVersion || 'unknown',
     [input.versionFence.key]: input.versionFence.value,
     reservationMonth: reservation.reservationMonth,
-    actualCost
+    actualCost,
+    ...(typeof input.calculateAdditionalCost === 'function' ? {
+      textCost,
+      additionalCost,
+      webSearchCallCount: result.webSearchCallCount
+    } : {})
   };
   try {
-    await dependencies.runRepository.updateRunStage(input.run.id, {
+    await dependencies.assertLease();
+  } catch (error) {
+    if (error?.code === 'CONTENT_JOB_LEASE_LOST') {
+      return uncertainProviderResult(
+        'Die Lease ging nach der Providerantwort verloren. Das Ergebnis wird nicht automatisch gespeichert oder erneut erzeugt.'
+      );
+    }
+    throw error;
+  }
+  let persistedRun;
+  try {
+    persistedRun = await dependencies.runRepository.updateRunStage(input.run.id, {
       currentStage: input.stageId,
       stageId: input.stageId,
       stageResult: envelope,
@@ -83,6 +118,13 @@ async function executeNewProviderStage(input, dependencies, reservation) {
     return { manual: {
       code: 'provider_stage_persistence_uncertain',
       message: 'Das Providerergebnis konnte nicht eindeutig gespeichert werden. Die Reservierung bleibt zur manuellen Prüfung offen.'
+    } };
+  }
+  const confirmedEnvelope = persistedRun?.stage_results_json?.[input.stageId];
+  if (!confirmedEnvelope || stableJson(confirmedEnvelope) !== stableJson(envelope)) {
+    return { manual: {
+      code: 'provider_stage_persistence_uncertain',
+      message: 'Das Providerergebnis wurde nicht eindeutig als maßgebliches Stufenergebnis bestätigt. Die Reservierung bleibt zur manuellen Prüfung offen.'
     } };
   }
   await dependencies.assertLease();
@@ -121,13 +163,22 @@ export async function executePaidStructuredTextStage(input, dependencies) {
   }
 
   await dependencies.assertLease();
-  const reservation = await dependencies.costService.reserveMonthlyBudget({
-    runId: input.run.id,
-    stageId: input.stageId,
-    estimatedCost: input.reservationCost,
-    limit: Number(input.runtimeSnapshot.monthlyCostLimitEur),
-    timezone: input.runtimeSnapshot.timezone
-  });
+  let reservation;
+  try {
+    reservation = await dependencies.costService.reserveMonthlyBudget({
+      runId: input.run.id,
+      stageId: input.stageId,
+      estimatedCost: input.reservationCost,
+      limit: Number(input.runtimeSnapshot.monthlyCostLimitEur),
+      timezone: input.runtimeSnapshot.timezone
+    });
+  } catch (error) {
+    if (error?.code !== 'CONTENT_BUDGET_LIMIT_REACHED') throw error;
+    return { manual: {
+      code: 'CONTENT_BUDGET_LIMIT_REACHED',
+      message: 'Das konfigurierte Monatsbudget für KI-Inhalte ist ausgeschöpft.'
+    } };
+  }
   if (reservation.created !== true) {
     return { manual: {
       code: 'provider_execution_uncertain',

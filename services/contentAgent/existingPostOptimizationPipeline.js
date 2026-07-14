@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import {
   ReviewOutputSchema,
   SourceReferenceSchema
@@ -18,6 +20,14 @@ import { executePaidStructuredTextStage } from './providerTextStageService.js';
 
 const SourceResearchOutputSchema = SourceReferenceSchema.array().max(6);
 const HASH = /^[0-9a-f]{64}$/;
+const MAX_OPTIMIZATION_REPORT_BYTES = 512_000;
+const VERIFICATION_TYPES = new Set(['none', 'source', 'date', 'price', 'version', 'legal', 'privacy']);
+const PERMANENT_ASSESSMENT_ERRORS = new Set([
+  'EXISTING_POST_DIFF_FAILED',
+  'EXISTING_POST_DIFF_INPUT_INVALID',
+  'EXISTING_POST_IMMUTABLE_FIELD_CHANGE_FORBIDDEN',
+  'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN'
+]);
 
 function pipelineError(code, message, { retryable = false } = {}) {
   return Object.assign(new Error(message), { code, retryable });
@@ -33,6 +43,146 @@ function requiredFunction(value, name) {
     throw new TypeError(`Die Bestandsoptimierung benötigt ${name}.`);
   }
   return value;
+}
+
+function plainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stableJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  return `{${Object.keys(value).sort().map((key) => (
+    `${JSON.stringify(key)}:${stableJson(value[key])}`
+  )).join(',')}}`;
+}
+
+function optimizationFingerprint(fields) {
+  return createHash('sha256').update(stableJson(fields)).digest('hex');
+}
+
+function parseLiveSnapshotStage(value, postId) {
+  if (!plainObject(value) || !plainObject(value.post)
+      || positiveInteger(value.post.id) !== postId
+      || value.post.published !== true
+      || !HASH.test(String(value.baseLiveHash || ''))) return null;
+  try {
+    if (liveHashForPost(value.post) !== value.baseLiveHash) return null;
+  } catch {
+    return null;
+  }
+  return { post: structuredClone(value.post), baseLiveHash: value.baseLiveHash };
+}
+
+function versionedStage(value, baseLiveHash, candidateFingerprint = null) {
+  if (!plainObject(value) || value.baseLiveHash !== baseLiveHash) return false;
+  return candidateFingerprint === null || value.candidateFingerprint === candidateFingerprint;
+}
+
+function parseAuditStage(value, baseLiveHash) {
+  if (!versionedStage(value, baseLiveHash)
+      || !positiveInteger(value.auditId)
+      || !Number.isFinite(value.score)
+      || !Array.isArray(value.findings)
+      || !Array.isArray(value.recommendedActions)) return null;
+  return {
+    auditId: positiveInteger(value.auditId),
+    score: value.score,
+    findings: structuredClone(value.findings),
+    recommendedActions: structuredClone(value.recommendedActions)
+  };
+}
+
+function parseGscStage(value, baseLiveHash) {
+  if (!versionedStage(value, baseLiveHash)
+      || typeof value.available !== 'boolean'
+      || !Array.isArray(value.signals)) return null;
+  return { available: value.available, signals: structuredClone(value.signals) };
+}
+
+function parseFreshnessStage(value, baseLiveHash) {
+  if (!versionedStage(value, baseLiveHash)
+      || typeof value.requiresResearch !== 'boolean'
+      || !Array.isArray(value.reasons)
+      || value.reasons.some((reason) => typeof reason !== 'string')) return null;
+  return {
+    requiresResearch: value.requiresResearch,
+    reasons: [...value.reasons]
+  };
+}
+
+function validPersistedChange(change) {
+  return plainObject(change)
+    && HASH.test(String(change.id || ''))
+    && HASH.test(String(change.beforeFingerprint || ''))
+    && HASH.test(String(change.afterFingerprint || ''))
+    && typeof change.field === 'string'
+    && typeof change.changeType === 'string'
+    && change.status === 'active';
+}
+
+function parseDiffStage(value, baseLiveHash, candidateFingerprint) {
+  if (!versionedStage(value, baseLiveHash, candidateFingerprint)
+      || !Array.isArray(value.changes)
+      || !value.changes.every(validPersistedChange)) return null;
+  return { changes: structuredClone(value.changes) };
+}
+
+function parseScopeStage(value, baseLiveHash, candidateFingerprint) {
+  if (!versionedStage(value, baseLiveHash, candidateFingerprint)
+      || typeof value.passed !== 'boolean'
+      || !(value.code === null || typeof value.code === 'string')
+      || !Number.isFinite(value.changedBlockRatio)
+      || value.changedBlockRatio < 0
+      || value.changedBlockRatio > 1
+      || !Number.isFinite(value.wordCountDeltaRatio)
+      || value.wordCountDeltaRatio < 0) return null;
+  const semanticallyPassed = value.changedBlockRatio <= 0.35
+    && value.wordCountDeltaRatio <= 0.25;
+  if (value.passed !== semanticallyPassed
+      || value.code !== (semanticallyPassed ? null : 'TARGETED_SCOPE_EXCEEDED')) return null;
+  return {
+    passed: value.passed,
+    code: value.code,
+    changedBlockRatio: value.changedBlockRatio,
+    wordCountDeltaRatio: value.wordCountDeltaRatio
+  };
+}
+
+function validValidationIssue(issue) {
+  if (!plainObject(issue)) return false;
+  const allowedKeys = new Set(['code', 'message', 'href', 'actualLength', 'className']);
+  const keys = Object.keys(issue);
+  return keys.length <= allowedKeys.size
+    && keys.every((key) => allowedKeys.has(key))
+    && typeof issue.code === 'string'
+    && issue.code.length > 0
+    && issue.code.length <= 80
+    && typeof issue.message === 'string'
+    && issue.message.length > 0
+    && issue.message.length <= 2_000
+    && (issue.href === undefined || (typeof issue.href === 'string' && issue.href.length <= 2_048))
+    && (issue.className === undefined
+      || (typeof issue.className === 'string' && issue.className.length <= 200))
+    && (issue.actualLength === undefined
+      || (Number.isSafeInteger(issue.actualLength) && issue.actualLength >= 0));
+}
+
+function parseValidationStage(value, baseLiveHash, candidateFingerprint) {
+  if (!versionedStage(value, baseLiveHash, candidateFingerprint)
+      || typeof value.passed !== 'boolean'
+      || !Array.isArray(value.issues)
+      || value.issues.length > 100
+      || !value.issues.every(validValidationIssue)
+      || value.passed !== (value.issues.length === 0)) return null;
+  return { passed: value.passed, issues: structuredClone(value.issues) };
+}
+
+function serializedReportBytes(report, diff) {
+  return Buffer.byteLength(JSON.stringify({
+    ...report,
+    changes: Array.isArray(diff?.changes) ? diff.changes : []
+  }), 'utf8');
 }
 
 function articleFromPost(post) {
@@ -96,6 +246,18 @@ function safeIssues(issues = []) {
     field: typeof issue?.field === 'string' ? issue.field.slice(0, 80) : 'contentHtml',
     evidence: typeof issue?.evidenceExcerpt === 'string'
       ? issue.evidenceExcerpt.slice(0, 280)
+      : undefined,
+    repairInstruction: typeof issue?.repairInstruction === 'string'
+      ? issue.repairInstruction.slice(0, 2_000)
+      : undefined,
+    sectionHeading: typeof issue?.sectionHeading === 'string'
+      ? issue.sectionHeading.slice(0, 180)
+      : undefined,
+    verificationType: VERIFICATION_TYPES.has(issue?.verificationType)
+      ? issue.verificationType
+      : undefined,
+    sourceRequired: typeof issue?.sourceRequired === 'boolean'
+      ? issue.sourceRequired
       : undefined
   }));
 }
@@ -186,7 +348,10 @@ export async function runExistingPostOptimizationJob({
   const runId = positiveInteger(run?.id);
   const adminId = positiveInteger(payload?.admin_id);
   if (!postId || !jobId || !runId || !adminId || !HASH.test(String(payload?.base_live_hash || ''))
-      || !runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)) {
+      || !runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)
+      || typeof runtimeSnapshot.webSearchCostPerCallEur !== 'number'
+      || !Number.isFinite(runtimeSnapshot.webSearchCostPerCallEur)
+      || runtimeSnapshot.webSearchCostPerCallEur < 0) {
     throw pipelineError(
       'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID',
       'Die Eingabe der Bestandsoptimierung ist ungültig.'
@@ -259,7 +424,34 @@ export async function runExistingPostOptimizationJob({
     return { status: 'needs_manual_attention', revisionId: null, postId, code };
   }
 
-  async function paidStage({ stageId, schema, kind = 'content', execute }) {
+  async function finishFailed(code, message, details = {}) {
+    await finish('failed', code, message, details);
+    return { status: 'failed', revisionId: null, postId, code };
+  }
+
+  async function loadValidatedStage(stageId, parse) {
+    await assertLease();
+    const persisted = await costService.getPersistedStageResult({ runId, stageId });
+    if (persisted === null || persisted === undefined) return { reused: false };
+    let value;
+    try {
+      value = parse(persisted);
+    } catch {
+      value = null;
+    }
+    if (value === null || value === undefined) {
+      return {
+        terminal: await finishManual(
+          'persisted_stage_result_invalid',
+          'Ein gespeichertes Stufenergebnis ist ungültig oder gehört zu einer anderen Ausgangsversion.',
+          { stageId }
+        )
+      };
+    }
+    return { reused: true, value };
+  }
+
+  async function paidStage({ stageId, schema, kind = 'content', execute, calculateAdditionalCost }) {
     const reviewStage = kind === 'review';
     const result = await executePaidStructuredTextStage({
       run,
@@ -276,7 +468,8 @@ export async function runExistingPostOptimizationJob({
         ? runtimeSnapshot.reviewOutputCostPerMtok ?? runtimeSnapshot.contentOutputCostPerMtok
         : runtimeSnapshot.contentOutputCostPerMtok),
       schema,
-      execute
+      execute,
+      calculateAdditionalCost
     }, providerDependencies);
     if (result.manual) {
       return {
@@ -290,14 +483,24 @@ export async function runExistingPostOptimizationJob({
     return { value: result.value, envelope: result.envelope };
   }
 
-  await assertLease();
-  const post = await optimizationRepository.getPublishedPostSnapshot(postId);
-  if (!post || post.published !== true) {
-    await finish('failed', 'CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
-    return { status: 'failed', revisionId: null, postId, code: 'CONTENT_POST_NOT_FOUND' };
+  const liveStage = await loadValidatedStage(
+    'live_snapshot',
+    (value) => parseLiveSnapshotStage(value, postId)
+  );
+  if (liveStage.terminal) return liveStage.terminal;
+  let post;
+  let baseLiveHash;
+  if (liveStage.reused) {
+    ({ post, baseLiveHash } = liveStage.value);
+  } else {
+    await assertLease();
+    post = await optimizationRepository.getPublishedPostSnapshot(postId);
+    if (!post || post.published !== true) {
+      return finishFailed('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+    }
+    baseLiveHash = liveHashForPost(post);
+    await updateStage('live_snapshot', { post, baseLiveHash });
   }
-  const baseLiveHash = liveHashForPost(post);
-  await updateStage('live_snapshot', { post, baseLiveHash });
   if (baseLiveHash !== payload.base_live_hash) {
     return finishManual(
       'CONTENT_REVISION_STALE',
@@ -322,50 +525,83 @@ export async function runExistingPostOptimizationJob({
   const inventory = Array.isArray(trustedContext?.inventory)
     ? trustedContext.inventory
     : allowedInternalLinks.map((url) => ({ url }));
-  const audit = (dependencies.auditExistingPost || auditExistingPost)({
-    post: { ...post, ...(trustedContext?.metadata || {}) },
-    inventory,
-    currentYear: snapshotCurrentYear(runtimeSnapshot)
-  });
-  await assertLease();
-  const persistedAudit = await auditRepository.createAuditIdempotent({
-    postId,
-    jobId,
-    runId,
-    auditType: 'existing_post_optimization',
-    score: audit.score,
-    findings: audit.findings,
-    recommendedActions: audit.recommendedActions
-  });
-  const auditId = positiveInteger(persistedAudit?.id);
-  if (!auditId) {
-    throw pipelineError(
-      'CONTENT_AUDIT_PERSISTENCE_FAILED',
-      'Der Bestandsaudit konnte nicht sicher gespeichert werden.',
-      { retryable: true }
-    );
+  const auditStage = await loadValidatedStage(
+    'existing_content_audit',
+    (value) => parseAuditStage(value, baseLiveHash)
+  );
+  if (auditStage.terminal) return auditStage.terminal;
+  let audit;
+  let auditId;
+  if (auditStage.reused) {
+    ({ auditId, ...audit } = auditStage.value);
+  } else {
+    audit = (dependencies.auditExistingPost || auditExistingPost)({
+      post: { ...post, ...(trustedContext?.metadata || {}) },
+      inventory,
+      currentYear: snapshotCurrentYear(runtimeSnapshot)
+    });
+    await assertLease();
+    const persistedAudit = await auditRepository.createAuditIdempotent({
+      postId,
+      jobId,
+      runId,
+      auditType: 'existing_post_optimization',
+      score: audit.score,
+      findings: audit.findings,
+      recommendedActions: audit.recommendedActions
+    });
+    auditId = positiveInteger(persistedAudit?.id);
+    if (!auditId) {
+      return finishFailed(
+        'CONTENT_AUDIT_PERSISTENCE_FAILED',
+        'Der Bestandsaudit konnte nicht sicher gespeichert werden.'
+      );
+    }
+    await updateStage('existing_content_audit', { baseLiveHash, auditId, ...audit });
   }
-  await updateStage('existing_content_audit', { auditId, ...audit });
 
   let gscSignals = [];
   let gscAvailable = true;
-  try {
-    await assertLease();
-    const signals = await searchMetricsRepository.getPageSignals({ postId });
-    gscSignals = Array.isArray(signals) ? signals : [];
-  } catch (error) {
-    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    gscAvailable = false;
+  const gscStage = await loadValidatedStage(
+    'gsc_page_signals',
+    (value) => parseGscStage(value, baseLiveHash)
+  );
+  if (gscStage.terminal) return gscStage.terminal;
+  if (gscStage.reused) {
+    gscAvailable = gscStage.value.available;
+    gscSignals = gscStage.value.signals;
+  } else {
     try {
-      dependencies.recordAuditWarning?.(error, 'GSC_PAGE_SIGNALS_UNAVAILABLE');
-    } catch {
-      // Der persistierte Stage-Hinweis bleibt die maßgebliche Warnung.
+      await assertLease();
+      const signals = await searchMetricsRepository.getPageSignals({ postId });
+      gscSignals = Array.isArray(signals) ? signals : [];
+    } catch (error) {
+      if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+      gscAvailable = false;
+      try {
+        dependencies.recordAuditWarning?.(error, 'GSC_PAGE_SIGNALS_UNAVAILABLE');
+      } catch {
+        // Der persistierte Stage-Hinweis bleibt die maßgebliche Warnung.
+      }
     }
+    await updateStage('gsc_page_signals', {
+      baseLiveHash,
+      available: gscAvailable,
+      signals: gscSignals
+    });
   }
-  await updateStage('gsc_page_signals', { available: gscAvailable, signals: gscSignals });
 
-  const freshness = classifyExistingPostFreshness({ post, audit });
-  await updateStage('freshness_classification', freshness);
+  const freshnessStage = await loadValidatedStage(
+    'freshness_classification',
+    (value) => parseFreshnessStage(value, baseLiveHash)
+  );
+  if (freshnessStage.terminal) return freshnessStage.terminal;
+  const freshness = freshnessStage.reused
+    ? freshnessStage.value
+    : classifyExistingPostFreshness({ post, audit });
+  if (!freshnessStage.reused) {
+    await updateStage('freshness_classification', { baseLiveHash, ...freshness });
+  }
 
   let sources = [];
   if (freshness.requiresResearch === true) {
@@ -376,6 +612,11 @@ export async function runExistingPostOptimizationJob({
     const research = await paidStage({
       stageId: 'source_research',
       schema: SourceResearchOutputSchema,
+      calculateAdditionalCost: (providerResult) => {
+        const callCount = providerResult?.webSearchCallCount;
+        if (!Number.isSafeInteger(callCount) || callCount < 0) return Number.NaN;
+        return callCount * runtimeSnapshot.webSearchCostPerCallEur;
+      },
       execute: () => openaiService.researchExistingPostSources({
         post: articleFromPost(post),
         freshness,
@@ -418,23 +659,69 @@ export async function runExistingPostOptimizationJob({
 
   async function assess(fields, suffix = '') {
     const after = optimizedArticle(post, fields);
-    const diff = buildExistingPostDiff({
+    const candidateFingerprint = optimizationFingerprint(fields);
+    const expectedDiff = buildExistingPostDiff({
       before: articleFromPost(post),
       after,
       reasons: fields.changeReasons
     });
-    const scope = validateTargetedOptimizationScope({
+    const diffStageId = `existing_post_diff${suffix}`;
+    const persistedDiff = await loadValidatedStage(
+      diffStageId,
+      (value) => {
+        const parsed = parseDiffStage(value, baseLiveHash, candidateFingerprint);
+        return parsed && stableJson(parsed) === stableJson(expectedDiff) ? parsed : null;
+      }
+    );
+    if (persistedDiff.terminal) return { terminal: persistedDiff.terminal };
+    const diff = persistedDiff.reused
+      ? persistedDiff.value
+      : expectedDiff;
+    if (!persistedDiff.reused) {
+      await updateStage('existing_post_diff', {
+        baseLiveHash,
+        candidateFingerprint,
+        changes: diff.changes
+      }, diffStageId);
+    }
+
+    const scopeStageId = `targeted_scope_validation${suffix}`;
+    const expectedScope = validateTargetedOptimizationScope({
       before: articleFromPost(post),
       after
     });
-    await updateStage(
-      'targeted_scope_validation',
-      scope,
-      `targeted_scope_validation${suffix}`
+    const persistedScope = await loadValidatedStage(
+      scopeStageId,
+      (value) => {
+        const parsed = parseScopeStage(value, baseLiveHash, candidateFingerprint);
+        return parsed && stableJson(parsed) === stableJson(expectedScope) ? parsed : null;
+      }
     );
+    if (persistedScope.terminal) return { terminal: persistedScope.terminal };
+    const scope = persistedScope.reused
+      ? persistedScope.value
+      : expectedScope;
+    if (!persistedScope.reused) {
+      await updateStage('targeted_scope_validation', {
+        baseLiveHash,
+        candidateFingerprint,
+        ...scope
+      }, scopeStageId);
+    }
 
     let validation;
-    if (post.content_format === 'legacy_ejs') {
+    const validationStageId = `article_validation${suffix}`;
+    const persistedValidation = await loadValidatedStage(
+      validationStageId,
+      (value) => parseValidationStage(value, baseLiveHash, candidateFingerprint)
+    );
+    if (persistedValidation.terminal) return { terminal: persistedValidation.terminal };
+    if (persistedValidation.reused) {
+      validation = {
+        ...persistedValidation.value,
+        sanitizedHtml: fields.contentHtml
+      };
+    } else if (post.content_format === 'legacy_ejs') {
       validation = { passed: true, sanitizedHtml: fields.contentHtml, issues: [] };
     } else {
       validation = await validateArticle(after, {
@@ -446,22 +733,27 @@ export async function runExistingPostOptimizationJob({
       });
     }
     const sanitizationChanged = validation?.sanitizedHtml !== fields.contentHtml;
-    const normalizedValidation = {
-      passed: validation?.passed === true && !sanitizationChanged,
-      sanitizedHtml: validation?.sanitizedHtml,
-      issues: [
-        ...(Array.isArray(validation?.issues) ? validation.issues : []),
-        ...(sanitizationChanged ? [{
-          code: 'sanitized_html_changed',
-          message: 'Die HTML-Bereinigung würde den Optimierungsvorschlag verändern.'
-        }] : [])
-      ]
-    };
-    await updateStage(
-      'article_validation',
-      { passed: normalizedValidation.passed, issues: normalizedValidation.issues },
-      `article_validation${suffix}`
-    );
+    const normalizedValidation = persistedValidation.reused
+      ? validation
+      : {
+        passed: validation?.passed === true && !sanitizationChanged,
+        sanitizedHtml: validation?.sanitizedHtml,
+        issues: [
+          ...(Array.isArray(validation?.issues) ? validation.issues : []),
+          ...(sanitizationChanged ? [{
+            code: 'sanitized_html_changed',
+            message: 'Die HTML-Bereinigung würde den Optimierungsvorschlag verändern.'
+          }] : [])
+        ]
+      };
+    if (!persistedValidation.reused) {
+      await updateStage('article_validation', {
+        baseLiveHash,
+        candidateFingerprint,
+        passed: normalizedValidation.passed,
+        issues: normalizedValidation.issues
+      }, validationStageId);
+    }
     return {
       after,
       diff,
@@ -469,6 +761,15 @@ export async function runExistingPostOptimizationJob({
       validation: normalizedValidation,
       passed: scope.passed === true && normalizedValidation.passed === true
     };
+  }
+
+  async function assessSafely(fields, suffix = '') {
+    try {
+      return await assess(fields, suffix);
+    } catch (error) {
+      if (!PERMANENT_ASSESSMENT_ERRORS.has(error?.code)) throw error;
+      return { terminal: await finishFailed(error.code, error.message) };
+    }
   }
 
   async function editorialReview(fields, assessment, stageId) {
@@ -490,8 +791,39 @@ export async function runExistingPostOptimizationJob({
     });
   }
 
+  function buildReport(fields, assessment, review) {
+    return {
+      baseLiveHash,
+      beforeScore: audit.score,
+      afterScore: Number.isFinite(review?.score) ? review.score : null,
+      freshness,
+      sources,
+      targetedScope: assessment.scope,
+      validation: {
+        passed: assessment.validation.passed,
+        issues: assessment.validation.issues
+      },
+      review,
+      changeReasons: fields.changeReasons
+    };
+  }
+
+  async function stopForOversizedReport(fields, assessment, review = null) {
+    const report = buildReport(fields, assessment, review);
+    const sizeBytes = serializedReportBytes(report, assessment.diff);
+    if (sizeBytes <= MAX_OPTIMIZATION_REPORT_BYTES) return null;
+    return finishManual(
+      'existing_post_optimization_report_too_large',
+      'Der UTF-8-Optimierungsbericht überschreitet die sichere Speichergrenze.',
+      { sizeBytes, maximumBytes: MAX_OPTIMIZATION_REPORT_BYTES }
+    );
+  }
+
   let fields = optimization.value;
-  let assessment = await assess(fields);
+  let assessment = await assessSafely(fields);
+  if (assessment.terminal) return assessment.terminal;
+  const initialReportSizeTerminal = await stopForOversizedReport(fields, assessment);
+  if (initialReportSizeTerminal) return initialReportSizeTerminal;
   let review = null;
   if (assessment.passed) {
     const reviewStage = await editorialReview(fields, assessment, 'editorial_review');
@@ -508,7 +840,10 @@ export async function runExistingPostOptimizationJob({
     });
     if (repair.terminal) return repair.terminal;
     fields = repair.value;
-    assessment = await assess(fields, ':repair');
+    assessment = await assessSafely(fields, ':repair');
+    if (assessment.terminal) return assessment.terminal;
+    const repairedReportSizeTerminal = await stopForOversizedReport(fields, assessment);
+    if (repairedReportSizeTerminal) return repairedReportSizeTerminal;
     if (!assessment.passed) {
       return finishManual(
         'existing_post_optimization_repair_failed',
@@ -532,20 +867,9 @@ export async function runExistingPostOptimizationJob({
     }
   }
 
-  const report = {
-    baseLiveHash,
-    beforeScore: audit.score,
-    afterScore: review.score,
-    freshness,
-    sources,
-    targetedScope: assessment.scope,
-    validation: {
-      passed: assessment.validation.passed,
-      issues: assessment.validation.issues
-    },
-    review,
-    changeReasons: fields.changeReasons
-  };
+  const report = buildReport(fields, assessment, review);
+  const finalReportSizeTerminal = await stopForOversizedReport(fields, assessment, review);
+  if (finalReportSizeTerminal) return finalReportSizeTerminal;
 
   let revision;
   try {
@@ -569,18 +893,27 @@ export async function runExistingPostOptimizationJob({
     if (['CONTENT_REVISION_STALE', 'CONTENT_REVISION_CONFLICT'].includes(error?.code)) {
       return finishManual(error.code, error.message);
     }
-    if (['CONTENT_REVISION_VALIDATION_FAILED', 'CONTENT_ACTION_VALIDATION_FAILED'].includes(error?.code)) {
-      await finish('failed', error.code, error.message);
-      return { status: 'failed', revisionId: null, postId, code: error.code };
+    if (error?.code === 'CONTENT_POST_NOT_FOUND') {
+      return finishManual(
+        'CONTENT_REVISION_STALE',
+        'Der veröffentlichte Beitrag fehlt oder ist nicht mehr veröffentlicht.'
+      );
+    }
+    if ([
+      'CONTENT_AUDIT_NOT_FOUND',
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'CONTENT_ACTION_VALIDATION_FAILED',
+      'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN'
+    ].includes(error?.code)) {
+      return finishFailed(error.code, error.message);
     }
     throw error;
   }
   const revisionId = positiveInteger(revision?.id);
   if (!revisionId || revision.status !== 'draft') {
-    throw pipelineError(
+    return finishFailed(
       'CONTENT_REVISION_PERSISTENCE_FAILED',
-      'Die geprüfte Optimierung konnte nicht sicher als Draft-Revision gespeichert werden.',
-      { retryable: true }
+      'Die geprüfte Optimierung konnte nicht sicher als Draft-Revision gespeichert werden.'
     );
   }
   await updateStage('revision_creation', { revisionId, postId });

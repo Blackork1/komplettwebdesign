@@ -1246,8 +1246,50 @@ test('researchExistingPostSources nutzt das Content-Modell und liefert höchsten
     value: result.value,
     responseId: 'existing-source-response-1',
     usage: { input_tokens: 24, output_tokens: 11 },
-    promptVersion: '2026-07-14.2'
+    promptVersion: '2026-07-14.2',
+    webSearchCallCount: 0
   });
+});
+
+test('researchExistingPostSources zählt einen und mehrere tatsächliche Web-Suchaufrufe', async () => {
+  for (const expectedCount of [1, 3]) {
+    const client = {
+      responses: {
+        async create() {
+          return {
+            id: `existing-source-calls-${expectedCount}`,
+            status: 'completed',
+            output: [
+              ...Array.from({ length: expectedCount }, (_, index) => ({
+                id: `search-${index + 1}`,
+                type: 'web_search_call',
+                status: 'completed',
+                action: { type: 'search', sources: [] }
+              })),
+              {
+                type: 'message',
+                content: [{
+                  type: 'output_text',
+                  annotations: [{
+                    type: 'url_citation',
+                    url: 'https://example.com/quelle',
+                    title: 'Quelle'
+                  }]
+                }]
+              }
+            ]
+          };
+        }
+      }
+    };
+    const service = createOpenAIContentService({ config, client });
+
+    const result = await service.researchExistingPostSources({
+      freshness: { reasons: ['stale_year'] }
+    });
+
+    assert.equal(result.webSearchCallCount, expectedCount);
+  }
 });
 
 test('researchExistingPostSources verwirft unvollständige Responses vor der Quellenextraktion', async () => {
