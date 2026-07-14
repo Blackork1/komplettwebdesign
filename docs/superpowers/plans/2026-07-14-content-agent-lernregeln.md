@@ -117,7 +117,7 @@ git commit -m "feat: add content learning schema"
 - Produces: `createLearningIssueFingerprint(issue)` → 64-stelliger SHA-256-Hash.
 - Produces: `sanitizeLearningText(value, maxLength)` und `validateLearningRuleText(value)`.
 
-- [ ] **Step 1: Failing taxonomy tests schreiben**
+- [x] **Step 1: Failing taxonomy tests schreiben**
 
 Tests müssen unter anderem belegen:
 
@@ -133,23 +133,23 @@ assert.throws(
 );
 ```
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningTaxonomy.test.js tests/contentAgentRuleManifest.test.js`
 
 Expected: FAIL wegen fehlendem Modul beziehungsweise fehlender Manifestversion.
 
-- [ ] **Step 3: Taxonomie minimal implementieren**
+- [x] **Step 3: Taxonomie minimal implementieren**
 
 Die zehn freigegebenen Kategorien werden mit lokalem Signalwortsatz, sicherer Standardregel, Zielstufen `seo_brief`, `writer`, `reviewer` und Überanpassungswarnung definiert. Fingerabdrücke verwenden ausschließlich normalisierte Begründung, Anweisung und Verifikationstyp. Regeltexte sind 40–800 Zeichen lang und blockieren Markup, Steuerzeichen sowie Rollen-/Promptpräfixe.
 
-- [ ] **Step 4: GREEN prüfen und refaktorieren**
+- [x] **Step 4: GREEN prüfen und refaktorieren**
 
 Run: `node --test tests/contentLearningTaxonomy.test.js tests/contentAgentRuleManifest.test.js`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningTaxonomy.js services/contentAgent/contentRuleManifest.js tests/contentLearningTaxonomy.test.js tests/contentAgentRuleManifest.test.js
