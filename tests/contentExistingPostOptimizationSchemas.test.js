@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { zodTextFormat } from 'openai/helpers/zod';
 
 import { ExistingPostOptimizationOutputSchema } from '../services/contentAgent/existingPostOptimizationSchemas.js';
+import { assertOpenAISchemaCompatibility } from '../services/contentAgent/openaiContentService.js';
 
 function validOptimizationOutput() {
   return {
@@ -82,4 +84,40 @@ test('Änderungsgründe erlauben nur Optimierungsfelder und begrenzte Auditcodes
     ...valid,
     changeReasons: [{ ...reason, sourceUrls: ['keine-url'] }]
   }).success, false);
+});
+
+test('Quellenverweise akzeptieren nur begrenzte absolute HTTPS-URLs', () => {
+  const valid = validOptimizationOutput();
+  const reason = valid.changeReasons[0];
+
+  assert.equal(ExistingPostOptimizationOutputSchema.safeParse({
+    ...valid,
+    changeReasons: [{
+      ...reason,
+      sourceUrls: ['https://example.com/fachbeitrag?version=2#abschnitt']
+    }]
+  }).success, true);
+
+  for (const invalidUrl of [
+    'http://example.com/fachbeitrag',
+    '/interner-pfad',
+    'https://',
+    'https://example.com/pfad mit leerzeichen',
+    `https://example.com/${'a'.repeat(2_100)}`
+  ]) {
+    assert.equal(ExistingPostOptimizationOutputSchema.safeParse({
+      ...valid,
+      changeReasons: [{ ...reason, sourceUrls: [invalidUrl] }]
+    }).success, false, invalidUrl);
+  }
+});
+
+test('Optimierungsschema besteht den OpenAI-Preflight ohne URI-Format', () => {
+  const format = zodTextFormat(
+    ExistingPostOptimizationOutputSchema,
+    'existing_post_targeted_optimization'
+  );
+
+  assert.equal(assertOpenAISchemaCompatibility(format.schema), true);
+  assert.doesNotMatch(JSON.stringify(format.schema), /"format":"uri"/);
 });

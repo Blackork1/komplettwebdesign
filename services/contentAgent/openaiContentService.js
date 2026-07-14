@@ -9,6 +9,7 @@ import {
   WeeklyTopicResearchSchema
 } from './articleSchemas.js';
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
+import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import {
   buildTopicResearchPrompt,
   promptVersion as topicResearchPromptVersion
@@ -21,6 +22,14 @@ import {
   buildWebResearchPrompt,
   promptVersion as webResearchPromptVersion
 } from './prompts/webResearchPrompt.js';
+import {
+  buildExistingPostSourceResearchPrompt,
+  promptVersion as existingPostSourceResearchPromptVersion
+} from './prompts/existingPostSourceResearchPrompt.js';
+import {
+  buildExistingPostOptimizationPrompt,
+  promptVersion as existingPostOptimizationPromptVersion
+} from './prompts/existingPostOptimizationPrompt.js';
 import {
   buildSeoBriefPrompt,
   promptVersion as seoBriefPromptVersion
@@ -353,6 +362,38 @@ export function createOpenAIContentService({
     };
   }
 
+  async function researchExistingPostSources(input) {
+    const prompt = buildExistingPostSourceResearchPrompt(input);
+    const response = await openai.responses.create({
+      model: config.contentModel,
+      input: [
+        { role: 'system', content: prompt.system },
+        { role: 'user', content: prompt.user }
+      ],
+      tools: [{ type: 'web_search' }],
+      include: ['web_search_call.action.sources']
+    });
+    assertCompletedResponse(response);
+    return {
+      value: extractWebSources(response),
+      responseId: response.id,
+      usage: response.usage || {},
+      promptVersion: existingPostSourceResearchPromptVersion
+    };
+  }
+
+  async function optimizeExistingPost(input) {
+    const prompt = buildExistingPostOptimizationPrompt(input);
+    return parse({
+      model: config.contentModel,
+      schema: ExistingPostOptimizationOutputSchema,
+      schemaName: 'existing_post_targeted_optimization',
+      system: prompt.system,
+      user: prompt.user,
+      promptVersion: existingPostOptimizationPromptVersion
+    });
+  }
+
   async function createSeoBrief(input) {
     const prompt = buildSeoBriefPrompt(input);
     return parse({
@@ -413,6 +454,8 @@ export function createOpenAIContentService({
     createTopicCandidates,
     createWeeklyTopicPool,
     researchCurrentSources,
+    researchExistingPostSources,
+    optimizeExistingPost,
     createSeoBrief,
     generateArticle,
     reviewArticle,

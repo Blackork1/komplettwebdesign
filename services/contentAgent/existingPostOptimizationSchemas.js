@@ -13,11 +13,30 @@ const OPTIMIZABLE_FIELDS = [
   'imageAlt'
 ];
 
+const HTTPS_URL_PATTERN = /^https:\/\/[^\s]+$/iu;
+
+function isAbsoluteHttpsUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:'
+      && url.hostname.length > 0
+      && url.username.length === 0
+      && url.password.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+const HttpsUrlSchema = z.string()
+  .max(2_048)
+  .regex(HTTPS_URL_PATTERN)
+  .refine(isAbsoluteHttpsUrl);
+
 const ChangeReasonSchema = z.object({
   field: z.enum(OPTIMIZABLE_FIELDS),
   auditCodes: z.array(z.string().regex(/^[a-z0-9_:-]{1,80}$/)).max(12),
   reason: z.string().min(1).max(500),
-  sourceUrls: z.array(z.string().url()).max(6)
+  sourceUrls: z.array(HttpsUrlSchema).max(6)
 }).strict();
 
 export const ExistingPostOptimizationOutputSchema = z.object({

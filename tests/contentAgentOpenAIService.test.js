@@ -153,6 +153,29 @@ const approvedLearningRules = [{
   instruction: 'Erkläre technische Zusammenhänge konkret und nachvollziehbar.'
 }];
 
+function validExistingPostOptimization() {
+  return {
+    title: 'Website-Relaunch sicher planen',
+    shortDescription: 'Die wichtigsten Schritte für einen sicheren Relaunch.',
+    metaTitle: 'Website-Relaunch sicher planen',
+    metaDescription: 'Plane deinen Website-Relaunch ohne unnötige SEO-Verluste.',
+    ogTitle: 'Website-Relaunch sicher planen',
+    ogDescription: 'Ablauf, SEO und Freigabe verständlich erklärt.',
+    contentHtml: '<section><h2>Relaunch planen</h2><p>Prüfe Inhalte und Weiterleitungen.</p></section>',
+    faqJson: Array.from({ length: 5 }, (_, index) => ({
+      question: `Frage ${index + 1}?`,
+      answer: `Antwort ${index + 1}.`
+    })),
+    imageAlt: 'Planungsschritte für einen Website-Relaunch',
+    changeReasons: [{
+      field: 'metaTitle',
+      auditCodes: ['missing_meta_title'],
+      reason: 'Der Meta Title wird anhand des Auditbefunds konkretisiert.',
+      sourceUrls: []
+    }]
+  };
+}
+
 function createParseClient(outputParsed) {
   const requests = [];
   const outputs = Array.isArray(outputParsed) ? outputParsed : [outputParsed];
@@ -1113,5 +1136,138 @@ test('researchCurrentSources lehnt weniger als zwei belastbare Quellen ab', asyn
   await assert.rejects(
     service.researchCurrentSources({ topic: 'Nicht ausreichend belegt' }),
     /Aktuelle Quellen reichen für einen Artikel nicht aus\./
+  );
+});
+
+test('researchExistingPostSources nutzt das Content-Modell und liefert höchstens sechs HTTPS-Quellen', async () => {
+  const requests = [];
+  const citations = Array.from({ length: 8 }, (_, index) => ({
+    type: 'url_citation',
+    url: `https://example.com/quelle-${index + 1}`,
+    title: `Quelle ${index + 1}`
+  }));
+  const client = {
+    responses: {
+      async create(request) {
+        requests.push(request);
+        return {
+          id: 'existing-source-response-1',
+          status: 'completed',
+          usage: { input_tokens: 24, output_tokens: 11 },
+          output: [{
+            type: 'message',
+            content: [{ type: 'output_text', annotations: citations }]
+          }]
+        };
+      }
+    }
+  };
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.researchExistingPostSources({
+    post: { title: 'Website-Relaunch', slug: 'website-relaunch' },
+    freshness: { reasons: ['stale_year'] },
+    affectedExcerpts: [{ field: 'contentHtml', excerpt: 'Stand 2022 gilt diese Aussage.' }]
+  });
+
+  assert.equal(requests[0].model, config.contentModel);
+  assert.deepEqual(requests[0].tools, [{ type: 'web_search' }]);
+  assert.deepEqual(requests[0].include, ['web_search_call.action.sources']);
+  assert.equal(result.value.length, 6);
+  assert.deepEqual(result.value[0], {
+    url: 'https://example.com/quelle-1',
+    title: 'Quelle 1'
+  });
+  assert.deepEqual(result, {
+    value: result.value,
+    responseId: 'existing-source-response-1',
+    usage: { input_tokens: 24, output_tokens: 11 },
+    promptVersion: '2026-07-14.1'
+  });
+});
+
+test('researchExistingPostSources verwirft unvollständige Responses vor der Quellenextraktion', async () => {
+  const client = {
+    responses: {
+      async create() {
+        return {
+          id: 'existing-source-incomplete',
+          status: 'incomplete',
+          incomplete_details: { reason: 'max_output_tokens' },
+          output: [{
+            type: 'message',
+            content: [{
+              type: 'output_text',
+              annotations: [{
+                type: 'url_citation',
+                url: 'https://example.com/quelle',
+                title: 'Quelle'
+              }]
+            }]
+          }]
+        };
+      }
+    }
+  };
+  const service = createOpenAIContentService({ config, client });
+
+  await assert.rejects(
+    service.researchExistingPostSources({ freshness: { reasons: ['stale_year'] } }),
+    (error) => {
+      assert.equal(error.code, 'OPENAI_RESPONSE_INCOMPLETE');
+      assert.equal(error.responseId, 'existing-source-incomplete');
+      assert.doesNotMatch(error.message, /max_output_tokens/);
+      return true;
+    }
+  );
+});
+
+test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte Content-Modell', async () => {
+  const value = validExistingPostOptimization();
+  const client = createParseClient(value);
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.optimizeExistingPost({
+    post: {
+      slug: 'website-relaunch',
+      contentFormat: 'static_html',
+      contentHtml: '<section><h2>Relaunch</h2><p>Alt.</p></section>'
+    },
+    audit: { score: 72, findings: [] },
+    gscSignals: [],
+    sources: [],
+    allowedInternalLinks: ['/kontakt'],
+    learningRules: []
+  });
+
+  assert.equal(client.requests[0].model, config.contentModel);
+  assert.equal(client.requests[0].text.format.type, 'json_schema');
+  assert.equal(client.requests[0].text.format.name, 'existing_post_targeted_optimization');
+  assert.equal(client.requests[0].text.format.strict, true);
+  assert.equal(client.requests[0].text.format.schema.additionalProperties, false);
+  assert.deepEqual(result, {
+    value,
+    responseId: 'response-1',
+    usage: { input_tokens: 12, output_tokens: 7 },
+    promptVersion: '2026-07-14.1'
+  });
+});
+
+test('optimizeExistingPost lehnt zusätzliche gesperrte Felder aus strukturierten Doubles ab', async () => {
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient({
+      ...validExistingPostOptimization(),
+      slug: 'vom-modell-geändert'
+    })
+  });
+
+  await assert.rejects(
+    service.optimizeExistingPost({ post: { slug: 'website-relaunch' } }),
+    (error) => {
+      assert.equal(error.code, 'OPENAI_STRUCTURED_OUTPUT_INVALID');
+      assert.equal(error.responseId, 'response-1');
+      return true;
+    }
   );
 });
