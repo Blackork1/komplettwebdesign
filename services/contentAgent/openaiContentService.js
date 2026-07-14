@@ -88,12 +88,24 @@ function normalizeResponseId(value) {
 }
 
 export class OpenAIContentResponseError extends Error {
-  constructor({ code, responseId, message }) {
+  constructor({
+    code,
+    responseId,
+    message,
+    usage,
+    promptVersion,
+    providerResponseCompleted = false
+  }) {
     const safeResponseId = normalizeResponseId(responseId);
     super(safeResponseId ? `${message} Response-ID: ${safeResponseId}.` : message);
     this.name = 'OpenAIContentResponseError';
     this.code = code;
     this.responseId = safeResponseId;
+    if (providerResponseCompleted === true) {
+      this.usage = usage && typeof usage === 'object' && !Array.isArray(usage) ? usage : {};
+      this.promptVersion = typeof promptVersion === 'string' ? promptVersion : 'unknown';
+      this.providerResponseCompleted = true;
+    }
   }
 }
 
@@ -461,7 +473,10 @@ export function createOpenAIContentService({
           throw new OpenAIContentResponseError({
             code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
             responseId: response.id,
-            message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'
+            message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.',
+            usage: response.usage || {},
+            promptVersion: existingPostOptimizationPromptVersion,
+            providerResponseCompleted: true
           });
         }
       }

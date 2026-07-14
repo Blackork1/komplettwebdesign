@@ -309,6 +309,128 @@ test('neue Textstufe persistiert validiertes Envelope samt Response-ID vor dem S
   });
 });
 
+test('explizit erlaubter deterministischer Fehler einer vollständigen Antwort wird persistiert und abgerechnet', async () => {
+  const { dependencies, state } = stageDependencies();
+  const result = await executePaidStructuredTextStage(stageInput({
+    deterministicFailureCodes: ['OPENAI_LEGACY_EJS_CONTENT_CHANGED'],
+    async execute() {
+      state.events.push('execute');
+      throw Object.assign(new Error('OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'), {
+        code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+        responseId: 'resp-legacy',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        promptVersion: 'test-v1',
+        providerResponseCompleted: true
+      });
+    }
+  }), dependencies);
+
+  assert.deepEqual(state.events, [
+    'load',
+    'lease',
+    'reserve',
+    'lease',
+    'execute',
+    'estimate',
+    'lease',
+    'persist',
+    'lease',
+    'settle',
+    'record:true'
+  ]);
+  assert.deepEqual(state.persistedStages[0].stageResult, {
+    failure: {
+      code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+      message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'
+    },
+    responseId: 'resp-legacy',
+    usage: { input_tokens: 10, output_tokens: 5 },
+    promptVersion: 'test-v1',
+    liveHash: LIVE_HASH,
+    reservationMonth: '2026-07',
+    actualCost: 0.015
+  });
+  assert.deepEqual(state.settlements, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07',
+    actualCost: 0.015
+  }]);
+  assert.deepEqual(result, {
+    failed: {
+      code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+      message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'
+    },
+    envelope: state.persistedStages[0].stageResult,
+    reused: false
+  });
+});
+
+test('Retry verwendet einen persistierten deterministischen Fehler ohne zweiten Provideraufruf', async () => {
+  let providerCalls = 0;
+  const settlements = [];
+  const persisted = {
+    failure: {
+      code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+      message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'
+    },
+    responseId: 'resp-legacy',
+    usage: { input_tokens: 10, output_tokens: 5 },
+    promptVersion: 'test-v1',
+    liveHash: LIVE_HASH,
+    reservationMonth: '2026-07',
+    actualCost: 0.015
+  };
+  const result = await executePaidStructuredTextStage(stageInput({
+    deterministicFailureCodes: ['OPENAI_LEGACY_EJS_CONTENT_CHANGED'],
+    async execute() { providerCalls += 1; }
+  }), {
+    assertLease: async () => true,
+    costService: {
+      async getPersistedStageResult() { return persisted; },
+      async settleMonthlyBudget(payload) { settlements.push(payload); }
+    }
+  });
+
+  assert.equal(providerCalls, 0);
+  assert.deepEqual(settlements, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07',
+    actualCost: 0.015
+  }]);
+  assert.deepEqual(result, {
+    failed: persisted.failure,
+    envelope: persisted,
+    reused: true
+  });
+});
+
+test('vollständiger Fehler ohne explizite Codefreigabe bleibt ungeklärt und wird nicht persistiert', async () => {
+  const { dependencies, state } = stageDependencies();
+  const result = await executePaidStructuredTextStage(stageInput({
+    deterministicFailureCodes: ['OPENAI_LEGACY_EJS_CONTENT_CHANGED'],
+    async execute() {
+      throw Object.assign(new Error('Nicht freigegebener Inhaltsfehler'), {
+        code: 'OPENAI_OTHER_CONTENT_FAILURE',
+        responseId: 'resp-other',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        promptVersion: 'test-v1',
+        providerResponseCompleted: true
+      });
+    }
+  }), dependencies);
+
+  assert.equal(result.manual.code, 'provider_execution_uncertain');
+  assert.equal(state.persistedStages.length, 0);
+  assert.equal(state.settlements.length, 0);
+  assert.deepEqual(state.providerResults, [{
+    providerName: 'openai',
+    success: false,
+    errorCode: 'OPENAI_OTHER_CONTENT_FAILURE'
+  }]);
+});
+
 test('Leaseverlust nach Providerantwort und vor Persistenz bleibt ohne Wiederholung manuell', async () => {
   const { dependencies, state } = stageDependencies();
   let leaseCalls = 0;

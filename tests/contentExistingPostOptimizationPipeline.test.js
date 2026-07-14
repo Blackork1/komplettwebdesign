@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { liveHashForPost } from '../services/contentAgent/contentRevisionService.js';
 import { runExistingPostOptimizationJob } from '../services/contentAgent/existingPostOptimizationPipeline.js';
 import { auditExistingPost } from '../services/contentAgent/legacyAuditService.js';
+import { createOpenAIContentService } from '../services/contentAgent/openaiContentService.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({
   question: `Frage ${index + 1}?`,
@@ -641,6 +642,85 @@ test('Legacy-EJS-Inhaltsänderung endet als dauerhafter Fehler mit Runabschluss'
   assert.equal(dependencies.calls.finishes[0].status, 'failed');
   assert.equal(dependencies.calls.revisions.length, 0);
   assert.equal(dependencies.calls.liveWrites, 0);
+});
+
+test('vollständige OpenAI-Antwort mit Legacy-EJS-Änderung wird persistiert, abgerechnet und genau einmal als failed abgeschlossen', async () => {
+  const originalContent = '<p><%= post.title %></p>\n';
+  const post = publishedPost({
+    content_format: 'legacy_ejs',
+    content: originalContent
+  });
+  const providerValue = optimizedPost(post, {
+    contentHtml: '<p>Vom Modell verändert</p>'
+  });
+  const providerRequests = [];
+  const dependencies = createSuccessfulDependencies({ post });
+  dependencies.openaiService = createOpenAIContentService({
+    config: {
+      contentModel: 'gpt-test-content',
+      reviewModel: 'gpt-test-review'
+    },
+    client: {
+      responses: {
+        async create(request) {
+          providerRequests.push(request);
+          return {
+            id: 'resp-legacy-completed',
+            status: 'completed',
+            output: [{
+              type: 'message',
+              content: [{ type: 'output_text', text: JSON.stringify(providerValue) }]
+            }],
+            usage: { input_tokens: 120, output_tokens: 40 }
+          };
+        },
+        async parse() {
+          assert.fail('Der Editorial-Review darf nach dem deterministischen Providerfehler nicht starten.');
+        }
+      }
+    }
+  });
+  dependencies.costService.estimateTextCost = ({ usage }) => {
+    assert.deepEqual(usage, { input_tokens: 120, output_tokens: 40 });
+    return 0.037;
+  };
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.code, 'OPENAI_LEGACY_EJS_CONTENT_CHANGED');
+  assert.equal(providerRequests.length, 1);
+  assert.equal(dependencies.calls.finishes.length, 1);
+  assert.equal(dependencies.calls.finishes[0].status, 'failed');
+  assert.equal(
+    dependencies.calls.finishes[0].errorReport.code,
+    'OPENAI_LEGACY_EJS_CONTENT_CHANGED'
+  );
+  assert.equal(dependencies.calls.revisions.length, 0);
+  assert.equal(dependencies.calls.liveWrites, 0);
+  assert.deepEqual(
+    dependencies.calls.settlements.find(({ stageId }) => stageId === 'targeted_optimization'),
+    {
+      runId: 51,
+      stageId: 'targeted_optimization',
+      reservationMonth: '2026-07',
+      actualCost: 0.037
+    }
+  );
+  const persistedFailure = dependencies.persistedStages.get('targeted_optimization');
+  assert.equal(typeof persistedFailure.failure.message, 'string');
+  assert.deepEqual(persistedFailure, {
+    failure: {
+      code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+      message: persistedFailure.failure.message
+    },
+    responseId: 'resp-legacy-completed',
+    usage: { input_tokens: 120, output_tokens: 40 },
+    promptVersion: '2026-07-14.2',
+    baseLiveHash: liveHashForPost(post),
+    reservationMonth: '2026-07',
+    actualCost: 0.037
+  });
 });
 
 test('deterministisch zu großer Diff-Eingang endet ohne Worker-Wiederholungen als failed', async () => {

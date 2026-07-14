@@ -5,6 +5,62 @@ function parsePersistedEnvelope(value, schema, versionFence) {
   return parsed.success ? { ...value, value: parsed.data } : null;
 }
 
+function plainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function allowedDeterministicFailure(input, code) {
+  return typeof code === 'string'
+    && Array.isArray(input.deterministicFailureCodes)
+    && input.deterministicFailureCodes.includes(code);
+}
+
+function safeFailureMessage(value) {
+  if (typeof value !== 'string') {
+    return 'Die vollständige Providerantwort ist an einer deterministischen Inhaltsprüfung gescheitert.';
+  }
+  const normalized = value.replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim();
+  return normalized.slice(0, 2_000)
+    || 'Die vollständige Providerantwort ist an einer deterministischen Inhaltsprüfung gescheitert.';
+}
+
+function completedProviderFailure(error, input) {
+  if (error?.providerResponseCompleted !== true
+      || !allowedDeterministicFailure(input, error?.code)) return null;
+  return {
+    failure: {
+      code: error.code,
+      message: safeFailureMessage(error.message)
+    },
+    responseId: typeof error.responseId === 'string' ? error.responseId : null,
+    usage: plainObject(error.usage) ? error.usage : {},
+    promptVersion: typeof error.promptVersion === 'string' ? error.promptVersion : 'unknown'
+  };
+}
+
+function parsePersistedFailureEnvelope(value, input) {
+  if (!plainObject(value)
+      || value[input.versionFence.key] !== input.versionFence.value
+      || !plainObject(value.failure)
+      || !allowedDeterministicFailure(input, value.failure.code)
+      || typeof value.failure.message !== 'string'
+      || value.failure.message.length === 0
+      || value.failure.message.length > 2_000
+      || (value.responseId !== null && typeof value.responseId !== 'string')
+      || !plainObject(value.usage)
+      || typeof value.promptVersion !== 'string'
+      || typeof value.reservationMonth !== 'string'
+      || !Number.isFinite(value.actualCost)
+      || value.actualCost < 0) return null;
+  return {
+    ...value,
+    failure: {
+      code: value.failure.code,
+      message: value.failure.message
+    }
+  };
+}
+
 function stableJson(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
@@ -33,31 +89,37 @@ function uncertainProviderResult(message = 'Der Providerzustand ist nicht eindeu
 
 async function executeNewProviderStage(input, dependencies, reservation) {
   let result;
+  let deterministicFailure = null;
   try {
     await dependencies.assertLease();
     result = await input.execute();
   } catch (error) {
     if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    await recordProvider(dependencies, false, error?.code || 'OPENAI_REQUEST_FAILED');
-    if (!providerRetryIsSafe(error)) return uncertainProviderResult();
-    try {
-      await dependencies.costService.releaseMonthlyBudgetReservation({
-        runId: input.run.id,
-        stageId: input.stageId,
-        reservationMonth: reservation.reservationMonth
-      });
-    } catch {
-      return uncertainProviderResult(
-        'Die Budgetreservierung konnte nicht sicher freigegeben werden. Die kostenpflichtige Stufe wird nicht automatisch wiederholt.'
-      );
+    deterministicFailure = completedProviderFailure(error, input);
+    if (deterministicFailure) {
+      result = deterministicFailure;
+    } else {
+      await recordProvider(dependencies, false, error?.code || 'OPENAI_REQUEST_FAILED');
+      if (!providerRetryIsSafe(error)) return uncertainProviderResult();
+      try {
+        await dependencies.costService.releaseMonthlyBudgetReservation({
+          runId: input.run.id,
+          stageId: input.stageId,
+          reservationMonth: reservation.reservationMonth
+        });
+      } catch {
+        return uncertainProviderResult(
+          'Die Budgetreservierung konnte nicht sicher freigegeben werden. Die kostenpflichtige Stufe wird nicht automatisch wiederholt.'
+        );
+      }
+      error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
+      error.retryable = true;
+      throw error;
     }
-    error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
-    error.retryable = true;
-    throw error;
   }
 
-  const parsed = input.schema.safeParse(result?.value);
-  if (!parsed.success) {
+  const parsed = deterministicFailure ? null : input.schema.safeParse(result?.value);
+  if (parsed && !parsed.success) {
     return { manual: {
       code: 'provider_stage_schema_invalid',
       message: 'Der Provider hat kein gültiges strukturiertes Ergebnis geliefert.',
@@ -82,7 +144,9 @@ async function executeNewProviderStage(input, dependencies, reservation) {
   }
   const actualCost = textCost + additionalCost;
   const envelope = {
-    value: parsed.data,
+    ...(deterministicFailure
+      ? { failure: deterministicFailure.failure }
+      : { value: parsed.data }),
     responseId: result.responseId || null,
     usage,
     promptVersion: result.promptVersion || 'unknown',
@@ -135,7 +199,9 @@ async function executeNewProviderStage(input, dependencies, reservation) {
     actualCost
   });
   await recordProvider(dependencies, true);
-  return { value: envelope.value, envelope, reused: false };
+  return deterministicFailure
+    ? { failed: envelope.failure, envelope, reused: false }
+    : { value: envelope.value, envelope, reused: false };
 }
 
 export async function executePaidStructuredTextStage(input, dependencies) {
@@ -144,7 +210,10 @@ export async function executePaidStructuredTextStage(input, dependencies) {
     stageId: input.stageId
   });
   if (persisted !== null && persisted !== undefined) {
-    const envelope = parsePersistedEnvelope(persisted, input.schema, input.versionFence);
+    const persistedFailure = plainObject(persisted) && Object.hasOwn(persisted, 'failure');
+    const envelope = persistedFailure
+      ? parsePersistedFailureEnvelope(persisted, input)
+      : parsePersistedEnvelope(persisted, input.schema, input.versionFence);
     if (!envelope) {
       return { manual: {
         code: 'provider_stage_result_invalid',
@@ -159,7 +228,9 @@ export async function executePaidStructuredTextStage(input, dependencies) {
       actualCost: Number(envelope.actualCost)
     });
     await recordProvider(dependencies, true);
-    return { value: envelope.value, envelope, reused: true };
+    return persistedFailure
+      ? { failed: envelope.failure, envelope, reused: true }
+      : { value: envelope.value, envelope, reused: true };
   }
 
   await dependencies.assertLease();

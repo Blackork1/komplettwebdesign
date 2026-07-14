@@ -28,6 +28,9 @@ const PERMANENT_ASSESSMENT_ERRORS = new Set([
   'EXISTING_POST_IMMUTABLE_FIELD_CHANGE_FORBIDDEN',
   'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN'
 ]);
+const DETERMINISTIC_OPTIMIZATION_FAILURE_CODES = Object.freeze([
+  'OPENAI_LEGACY_EJS_CONTENT_CHANGED'
+]);
 
 function pipelineError(code, message, { retryable = false } = {}) {
   return Object.assign(new Error(message), { code, retryable });
@@ -451,7 +454,14 @@ export async function runExistingPostOptimizationJob({
     return { reused: true, value };
   }
 
-  async function paidStage({ stageId, schema, kind = 'content', execute, calculateAdditionalCost }) {
+  async function paidStage({
+    stageId,
+    schema,
+    kind = 'content',
+    execute,
+    calculateAdditionalCost,
+    deterministicFailureCodes
+  }) {
     const reviewStage = kind === 'review';
     const result = await executePaidStructuredTextStage({
       run,
@@ -469,7 +479,8 @@ export async function runExistingPostOptimizationJob({
         : runtimeSnapshot.contentOutputCostPerMtok),
       schema,
       execute,
-      calculateAdditionalCost
+      calculateAdditionalCost,
+      deterministicFailureCodes
     }, providerDependencies);
     if (result.manual) {
       return {
@@ -478,6 +489,11 @@ export async function runExistingPostOptimizationJob({
           result.manual.message,
           Array.isArray(result.manual.issues) ? { issues: result.manual.issues } : {}
         )
+      };
+    }
+    if (result.failed) {
+      return {
+        terminal: await finishFailed(result.failed.code, result.failed.message)
       };
     }
     return { value: result.value, envelope: result.envelope };
@@ -653,6 +669,7 @@ export async function runExistingPostOptimizationJob({
   const optimization = await paidStage({
     stageId: 'targeted_optimization',
     schema: ExistingPostOptimizationOutputSchema,
+    deterministicFailureCodes: DETERMINISTIC_OPTIMIZATION_FAILURE_CODES,
     execute: () => openaiService.optimizeExistingPost(optimizationInput())
   });
   if (optimization.terminal) return optimization.terminal;
@@ -836,6 +853,7 @@ export async function runExistingPostOptimizationJob({
     const repair = await paidStage({
       stageId: 'repair',
       schema: ExistingPostOptimizationOutputSchema,
+      deterministicFailureCodes: DETERMINISTIC_OPTIMIZATION_FAILURE_CODES,
       execute: () => openaiService.optimizeExistingPost(optimizationInput(findings))
     });
     if (repair.terminal) return repair.terminal;
