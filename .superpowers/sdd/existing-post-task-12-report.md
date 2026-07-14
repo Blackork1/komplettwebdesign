@@ -67,3 +67,28 @@ Ergebnis: 1 bestanden, 0 fehlgeschlagen, 0 übersprungen.
 ## Bewusste Grenzen
 
 Die Nachmessung ist eine lokale deskriptive Beobachtung. Sie führt weder eine Kausalitätsanalyse noch eine automatische Rücknahme oder Lernregelaktivierung aus. Fehlende lokale Tagesabdeckung bleibt wartend und wird nach einer späteren erfolgreichen Synchronisierung erneut geprüft.
+
+## Nachtrag: migrationssicherer Claim-Upgrade
+
+### Ursache und Korrektur
+
+Der Content-Agent-Migrationsrunner besitzt bewusst keine Versionshistorie, sondern führt die registrierten SQL-Dateien bei jedem Lauf sequenziell erneut aus. Die Claim-Spalten und der Claim-Constraint waren zunächst nur innerhalb von `CREATE TABLE IF NOT EXISTS` der Migration 011 definiert. Auf einer Installation, auf der 011 bereits vor Task 12 gelaufen war, änderte dieser Block die vorhandene Outcome-Tabelle nicht; die Claim-Abfragen des Repositorys hätten deshalb wegen fehlender Spalten abgebrochen.
+
+Die neue, explizit im Runner registrierte Migration `012_upgrade_revision_outcome_claims.sql` aktualisiert auch eine bereits vorhandene Outcome-Tabelle:
+
+- `evaluation_claim_token` und `evaluation_claimed_at` werden mit `ADD COLUMN IF NOT EXISTS` ergänzt.
+- Alte `ready`-Zeilen ohne vollständiges Claim-Paar werden sicher auf `waiting` zurückgesetzt und können danach regulär neu geclaimt werden.
+- Claimwerte außerhalb von `ready` werden entfernt.
+- Erst nach der Normalisierung wird der benannte Constraint `content_revision_optimization_outcomes_claim_consistent` ersetzt und validiert.
+- Wiederholte Läufe sind idempotent; der Runner führt nun 002 bis 012 unter derselben Transaktionssperre aus.
+
+### RED/GREEN- und PostgreSQL-Belege
+
+- RED: Der Runner endete nach 011, die Datei 012 fehlte und der echte Upgrade-Test konnte weder Claim-Spalten noch Constraint laden.
+- GREEN: Die statischen Runner- und Migrationsverträge bestanden anschließend mit 10 von 10 Tests.
+- Der echte PostgreSQL-Test erstellt eine Legacy-011-Tabelle ohne Claim-Spalten, fügt eine alte `ready`-Zeile ein, führt Migration 012 zweimal aus und prüft beide Spalten, genau einen validierten benannten Constraint und die Normalisierung auf `waiting`.
+- Anschließend claimt das echte Outcome-Repository dieselbe Zeile erfolgreich mit Claim-Token und Revisionsversions-CAS.
+- Gezielte Migrations-, Repository-, Outcome-, Worker- und Runner-Verträge: 176 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Echter PostgreSQL-Lauf: 2 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Vollständige Suite mit `OPENAI_API_KEY=test-key`: 1.841 bestanden, 0 fehlgeschlagen, 14 geschützte Opt-in-Tests übersprungen; 1.855 Tests insgesamt.

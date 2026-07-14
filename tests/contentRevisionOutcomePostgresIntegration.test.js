@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
 import { createContentExistingPostOptimizationRepository } from '../repositories/contentExistingPostOptimizationRepository.js';
@@ -20,6 +22,10 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
 });
+const outcomeUpgradeMigrationUrl = new URL(
+  '../scripts/migrations/012_upgrade_revision_outcome_claims.sql',
+  import.meta.url
+);
 
 test('echtes PostgreSQL: lokale 28-Tage-Abdeckung, unveränderliche Basis und parallele Outcome-Claims', {
   skip: resetGuard.allowed ? false : resetGuard.reason
@@ -78,12 +84,14 @@ test('echtes PostgreSQL: lokale 28-Tage-Abdeckung, unveränderliche Basis und pa
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
-    const [metricsMigration, outcomeMigration] = await Promise.all([
+    const [metricsMigration, outcomeMigration, outcomeUpgradeMigration] = await Promise.all([
       readFile(new URL('../scripts/migrations/007_create_content_search_metrics.sql', import.meta.url), 'utf8'),
-      readFile(new URL('../scripts/migrations/011_create_existing_post_optimization.sql', import.meta.url), 'utf8')
+      readFile(new URL('../scripts/migrations/011_create_existing_post_optimization.sql', import.meta.url), 'utf8'),
+      readFile(outcomeUpgradeMigrationUrl, 'utf8')
     ]);
     await pool.query(metricsMigration);
     await pool.query(outcomeMigration);
+    await pool.query(outcomeUpgradeMigration);
 
     const inserted = await pool.query(`
       INSERT INTO posts (title, slug, content, published, updated_at)
@@ -282,6 +290,131 @@ test('echtes PostgreSQL: lokale 28-Tage-Abdeckung, unveränderliche Basis und pa
     assert.equal(missing.baseline_start_date, null);
     assert.equal(missing.baseline_end_date, null);
     assert.equal(missing.baseline_metrics_json.hasData, false);
+  } finally {
+    try {
+      if (pool) await pool.end();
+    } finally {
+      try {
+        if (schemaCreated) await adminPool.query(`DROP SCHEMA "${schemaName}" CASCADE`);
+      } finally {
+        await adminPool.end();
+      }
+    }
+  }
+});
+
+test('echtes PostgreSQL: Migration 012 aktualisiert eine ausgeführte Legacy-011 zweimal sicher', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  assert.equal(
+    existsSync(fileURLToPath(outcomeUpgradeMigrationUrl)),
+    true,
+    'Die Outcome-Upgrade-Migration 012 fehlt.'
+  );
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000,
+      max: 4
+    });
+    await pool.query(`
+      CREATE TABLE posts (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE
+      );
+      CREATE TABLE content_post_revisions (
+        id BIGSERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        revision_version INTEGER NOT NULL DEFAULT 1,
+        status VARCHAR(32) NOT NULL DEFAULT 'approved',
+        optimization_job_id BIGINT
+      );
+      CREATE TABLE content_revision_optimization_outcomes (
+        revision_id BIGINT PRIMARY KEY REFERENCES content_post_revisions(id),
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        applied_at TIMESTAMPTZ NOT NULL,
+        baseline_start_date DATE,
+        baseline_end_date DATE,
+        baseline_metrics_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        followup_start_date DATE NOT NULL,
+        followup_end_date DATE NOT NULL,
+        followup_metrics_json JSONB,
+        feedback_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+        evaluation_status VARCHAR(24) NOT NULL DEFAULT 'waiting',
+        evaluated_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CHECK (evaluation_status IN ('waiting', 'ready', 'evaluated', 'insufficient_data', 'failed')),
+        CHECK (followup_end_date = followup_start_date + 27)
+      );
+    `);
+    const post = (await pool.query(`
+      INSERT INTO posts (slug) VALUES ('legacy-outcome') RETURNING id
+    `)).rows[0];
+    const revision = (await pool.query(`
+      INSERT INTO content_post_revisions (post_id, revision_version, status, optimization_job_id)
+      VALUES ($1, 4, 'approved', 91) RETURNING id
+    `, [post.id])).rows[0];
+    await pool.query(`
+      INSERT INTO content_revision_optimization_outcomes (
+        revision_id, post_id, applied_at, baseline_metrics_json,
+        followup_start_date, followup_end_date, evaluation_status
+      ) VALUES (
+        $1, $2, '2026-07-14T16:00:00Z',
+        '{"hasData":false,"clicks":0,"impressions":0,"ctr":0,"averagePosition":null,"queries":[]}'::jsonb,
+        '2026-07-15', '2026-08-11', 'ready'
+      )
+    `, [revision.id, post.id]);
+
+    const migration012 = await readFile(outcomeUpgradeMigrationUrl, 'utf8');
+    await pool.query(migration012);
+    await pool.query(migration012);
+
+    const columns = (await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = 'content_revision_optimization_outcomes'
+        AND column_name IN ('evaluation_claim_token', 'evaluation_claimed_at')
+      ORDER BY column_name
+    `, [schemaName])).rows.map(({ column_name: name }) => name);
+    assert.deepEqual(columns, ['evaluation_claim_token', 'evaluation_claimed_at']);
+    const constraints = (await pool.query(`
+      SELECT conname, convalidated
+      FROM pg_constraint
+      WHERE conrelid = 'content_revision_optimization_outcomes'::regclass
+        AND conname = 'content_revision_optimization_outcomes_claim_consistent'
+    `)).rows;
+    assert.deepEqual(constraints, [{
+      conname: 'content_revision_optimization_outcomes_claim_consistent',
+      convalidated: true
+    }]);
+    assert.deepEqual((await pool.query(`
+      SELECT evaluation_status, evaluation_claim_token, evaluation_claimed_at
+      FROM content_revision_optimization_outcomes WHERE revision_id = $1
+    `, [revision.id])).rows[0], {
+      evaluation_status: 'waiting',
+      evaluation_claim_token: null,
+      evaluation_claimed_at: null
+    });
+
+    const outcomeRepository = createContentExistingPostOptimizationRepository(pool);
+    const claimed = await outcomeRepository.listDueOutcomes({
+      throughDate: '2026-08-11',
+      limit: 50,
+      claimToken: '22222222-2222-4222-8222-222222222222'
+    });
+    assert.equal(claimed.length, 1);
+    assert.equal(claimed[0].evaluation_status, 'ready');
+    assert.equal(claimed[0].evaluation_claim_token, '22222222-2222-4222-8222-222222222222');
   } finally {
     try {
       if (pool) await pool.end();

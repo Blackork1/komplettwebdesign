@@ -34,6 +34,6 @@ test('Migrationsrunner führt 007 nach 006 und vor 008, 009 sowie 010 aus und ne
     runnerSource,
     /006_add_schedule_revisions_and_admin_review_lookup\.sql'[,\s\S]*007_create_content_search_metrics\.sql'[,\s\S]*008_expand_generated_content_metadata\.sql'[,\s\S]*009_create_content_learning_rules\.sql'[,\s\S]*010_create_weekly_topic_pools\.sql'/i
   );
-  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 erfolgreich/i);
-  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 fehlgeschlagen/i);
+  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 \+ 012 erfolgreich/i);
+  assert.match(runnerSource, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 \+ 012 fehlgeschlagen/i);
 });
