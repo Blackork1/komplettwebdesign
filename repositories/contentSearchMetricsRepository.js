@@ -1,6 +1,7 @@
 import pool from '../util/db.js';
 
 const CANONICAL_BLOG_PATH = /^\/blog\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function blogPathsBySlug(paths) {
   const result = new Map();
@@ -31,6 +32,34 @@ function normalizeTopicSignalLimit(limit) {
     throw new TypeError('limit muss eine positive Ganzzahl sein.');
   }
   return Math.min(normalized, 500);
+}
+
+function normalizePositiveId(value, label) {
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new TypeError(`${label} muss eine positive Ganzzahl sein.`);
+  }
+  return normalized;
+}
+
+function normalizeOptionalDate(value, label) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) {
+    throw new TypeError(`${label} muss ein gültiges ISO-Datum sein.`);
+  }
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    throw new TypeError(`${label} muss ein gültiges ISO-Datum sein.`);
+  }
+  return value;
+}
+
+function normalizePageSignalLimit(value) {
+  const normalized = Number(value ?? 20);
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new TypeError('limit muss eine positive Ganzzahl sein.');
+  }
+  return Math.min(normalized, 100);
 }
 
 export function createContentSearchMetricsRepository(db = pool) {
@@ -193,6 +222,36 @@ export function createContentSearchMetricsRepository(db = pool) {
         pages: pagesResult.rows,
         metrics: metricsResult.rows
       };
+    },
+
+    async getPageSignals({ postId, startDate = null, endDate = null, limit = 20 } = {}) {
+      const normalizedPostId = normalizePositiveId(postId, 'postId');
+      const normalizedStartDate = normalizeOptionalDate(startDate, 'startDate');
+      const normalizedEndDate = normalizeOptionalDate(endDate, 'endDate');
+      if (normalizedStartDate && normalizedEndDate && normalizedStartDate > normalizedEndDate) {
+        throw new TypeError('startDate darf nicht nach endDate liegen.');
+      }
+      const normalizedLimit = normalizePageSignalLimit(limit);
+      const { rows } = await db.query(`
+        SELECT query,
+               SUM(clicks)::double precision AS clicks,
+               SUM(impressions)::double precision AS impressions,
+               (SUM(clicks) / NULLIF(SUM(impressions), 0))::double precision AS ctr,
+               (
+                 SUM(average_position * impressions)
+                 / NULLIF(SUM(impressions), 0)
+               )::double precision AS average_position,
+               MIN(metric_date)::date AS start_date,
+               MAX(metric_date)::date AS end_date
+        FROM content_search_metrics
+        WHERE post_id = $1::integer
+          AND ($2::date IS NULL OR metric_date >= $2::date)
+          AND ($3::date IS NULL OR metric_date <= $3::date)
+        GROUP BY query
+        ORDER BY SUM(impressions) DESC, query ASC
+        LIMIT $4::integer
+      `, [normalizedPostId, normalizedStartDate, normalizedEndDate, normalizedLimit]);
+      return rows;
     }
   };
 }

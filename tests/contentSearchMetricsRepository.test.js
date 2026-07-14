@@ -214,3 +214,56 @@ test('Aktuelle Themensignale geben ohne gespeicherte Daten ein leeres Ergebnis z
   assert.deepEqual(result, { range: null, pages: [], metrics: [] });
   assert.equal(db.calls.length, 1);
 });
+
+test('Seitensignale werden streng parametrisiert und standardmäßig auf 20 Suchanfragen begrenzt', async () => {
+  const rows = [{
+    query: 'website relaunch',
+    clicks: 4,
+    impressions: 120,
+    ctr: 0.0333,
+    average_position: 7.5,
+    start_date: '2026-06-16',
+    end_date: '2026-07-13'
+  }];
+  const db = createQueryRecorder([{ rows }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  const result = await repository.getPageSignals({ postId: 19 });
+
+  assert.deepEqual(result, rows);
+  assert.deepEqual(db.calls[0].params, [19, null, null, 20]);
+  assert.match(db.calls[0].sql, /WHERE post_id = \$1::integer/i);
+  assert.match(db.calls[0].sql, /\$2::date IS NULL OR metric_date >= \$2::date/i);
+  assert.match(db.calls[0].sql, /\$3::date IS NULL OR metric_date <= \$3::date/i);
+  assert.match(db.calls[0].sql, /GROUP BY query/i);
+  assert.match(db.calls[0].sql, /ORDER BY SUM\(impressions\) DESC, query ASC/i);
+  assert.match(db.calls[0].sql, /LIMIT \$4::integer/i);
+});
+
+test('Seitensignale begrenzen das angeforderte Limit serverseitig auf 100', async () => {
+  const db = createQueryRecorder([{ rows: [] }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  await repository.getPageSignals({
+    postId: 19,
+    startDate: '2026-06-01',
+    endDate: '2026-06-30',
+    limit: 500
+  });
+
+  assert.deepEqual(db.calls[0].params, [19, '2026-06-01', '2026-06-30', 100]);
+});
+
+test('Seitensignale weisen ungültige IDs, Daten und Zeiträume vor der Abfrage zurück', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentSearchMetricsRepository(db);
+
+  await assert.rejects(repository.getPageSignals({ postId: null }), TypeError);
+  await assert.rejects(repository.getPageSignals({ postId: 19, startDate: '01.06.2026' }), TypeError);
+  await assert.rejects(repository.getPageSignals({
+    postId: 19,
+    startDate: '2026-07-01',
+    endDate: '2026-06-01'
+  }), TypeError);
+  assert.equal(db.calls.length, 0);
+});
