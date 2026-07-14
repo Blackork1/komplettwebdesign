@@ -182,13 +182,6 @@ function tokenSimilarity(before, after) {
   return intersectionSize / union.size;
 }
 
-function hasSameDirectionNeighbor(before, after) {
-  return Boolean(
-    (before.previousFingerprint && before.previousFingerprint === after.previousFingerprint)
-    || (before.nextFingerprint && before.nextFingerprint === after.nextFingerprint)
-  );
-}
-
 function hasCrossedNeighbor(before, after) {
   return Boolean(
     (before.previousFingerprint && before.previousFingerprint === after.nextFingerprint)
@@ -228,24 +221,11 @@ function exactFingerprintPairs(beforeBlocks, afterBlocks) {
   const pairedAfter = new Set();
   for (const [key, beforeGroup] of beforeGroups) {
     const afterGroup = afterGroups.get(key) || [];
-    const remainingAfter = [...afterGroup];
-    const remainingBefore = [];
     const duplicate = beforeGroup.length > 1 || afterGroup.length > 1;
-
-    for (const before of beforeGroup) {
-      const samePathIndex = remainingAfter.findIndex(({ path }) => path === before.path);
-      if (samePathIndex < 0) {
-        remainingBefore.push(before);
-        continue;
-      }
-      const [after] = remainingAfter.splice(samePathIndex, 1);
-      pairs.push({ before, after, duplicate });
-      pairedBefore.add(before.index);
-      pairedAfter.add(after.index);
-    }
-    for (const [index, before] of remainingBefore.entries()) {
-      const after = remainingAfter[index];
-      if (!after) continue;
+    const pairCount = Math.min(beforeGroup.length, afterGroup.length);
+    for (let index = 0; index < pairCount; index += 1) {
+      const before = beforeGroup[index];
+      const after = afterGroup[index];
       pairs.push({ before, after, duplicate });
       pairedBefore.add(before.index);
       pairedAfter.add(after.index);
@@ -358,21 +338,7 @@ function crossesExactPair(operation, exactPairs) {
 function modificationIsAmbiguous(operation, beforeBlocks, afterBlocks) {
   const sameTypeBefore = beforeBlocks.filter(({ type }) => type === operation.before.type);
   const sameTypeAfter = afterBlocks.filter(({ type }) => type === operation.after.type);
-  if (sameTypeBefore.length === 1 && sameTypeAfter.length === 1) return false;
-
-  const chosenSimilarity = tokenSimilarity(operation.before, operation.after);
-  const otherAfterSimilarity = Math.max(0, ...sameTypeAfter
-    .filter((candidate) => candidate !== operation.after)
-    .map((candidate) => tokenSimilarity(operation.before, candidate)));
-  const otherBeforeSimilarity = Math.max(0, ...sameTypeBefore
-    .filter((candidate) => candidate !== operation.before)
-    .map((candidate) => tokenSimilarity(candidate, operation.after)));
-  if (otherAfterSimilarity - chosenSimilarity >= 0.2
-      || otherBeforeSimilarity - chosenSimilarity >= 0.2) return true;
-  if (chosenSimilarity >= 0.6
-      && chosenSimilarity - otherAfterSimilarity >= 0.2
-      && chosenSimilarity - otherBeforeSimilarity >= 0.2) return false;
-  return !hasSameDirectionNeighbor(operation.before, operation.after);
+  return sameTypeBefore.length !== 1 || sameTypeAfter.length !== 1;
 }
 
 function alignHtmlBlocks(beforeBlocks, afterBlocks) {

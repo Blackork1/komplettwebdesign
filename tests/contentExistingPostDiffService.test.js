@@ -289,6 +289,38 @@ test('zwei bearbeitete und vertauschte Absätze bleiben trotz gemeinsamer Nachba
   }
 });
 
+test('stark ähnliche vertauschte Restblöcke zwischen stabilen Ankern dominieren keine Kreuzpaarung', () => {
+  const before = article({
+    contentHtml: [
+      '<section><h2>Stabiler Start</h2>',
+      '<p>Die Planung umfasst Audit, Ziele, Inhalte und Freigabe für Bereich Alpha.</p>',
+      '<p>Die Planung umfasst Audit, Ziele, Inhalte und Freigabe für Bereich Beta.</p>',
+      '<h3>Stabiles Ende</h3></section>'
+    ].join('')
+  });
+  const after = article({
+    contentHtml: [
+      '<section><h2>Stabiler Start</h2>',
+      '<p>Die Planung umfasst Audit, Ziele, Inhalte und konkrete Freigabe für Bereich Beta.</p>',
+      '<p>Die Planung umfasst Audit, Ziele, Inhalte und konkrete Freigabe für Bereich Alpha.</p>',
+      '<h3>Stabiles Ende</h3></section>'
+    ].join('')
+  });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+  const htmlChanges = diff.changes.filter(({ kind }) => kind === 'html');
+
+  assert.equal(htmlChanges.length, 2);
+  assert.equal(htmlChanges.every(({ mappingAmbiguous }) => mappingAmbiguous === true), true);
+  assert.equal(htmlChanges.every(({ revertible }) => revertible === false), true);
+  for (const change of htmlChanges) {
+    assert.throws(() => revertExistingPostChange({
+      snapshot: { revisionVersion: 1, current: after, diff },
+      changeId: change.id,
+      expectedVersion: 1
+    }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
+  }
+});
+
 test('verschobene identische Duplikate werden nie als unabhängige rücknehmbare Modifikationen angeboten', () => {
   const before = article({
     contentHtml: '<section><p>Identischer Absatz.</p><p>Identischer Absatz.</p><p>Eindeutiger Anker.</p></section>'
@@ -310,6 +342,29 @@ test('verschobene identische Duplikate werden nie als unabhängige rücknehmbare
     }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
   }
   assert.equal((after.contentHtml.match(/Identischer Absatz\./g) || []).length, 2);
+});
+
+test('eine führende Addition vor langen identischen Absätzen erzeugt keine künstliche Verschiebung', () => {
+  const duplicate = `<p>${words('identisch-', 60)}</p>`;
+  const before = article({ contentHtml: `${duplicate}${duplicate}` });
+  const after = article({ contentHtml: `<p>Kurz ergänzt.</p>${duplicate}${duplicate}` });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+
+  assert.deepEqual(diff.changes.map(({ changeType }) => changeType), ['added']);
+  assert.equal(validateTargetedOptimizationScope({ before, after, diff }).changedBlockRatio, 0);
+});
+
+test('eine führende Entfernung vor langen identischen Absätzen erzeugt keine künstliche Verschiebung', () => {
+  const duplicate = `<p>${words('identisch-', 60)}</p>`;
+  const before = article({ contentHtml: `<p>Kurz entfernt.</p>${duplicate}${duplicate}` });
+  const after = article({ contentHtml: `${duplicate}${duplicate}` });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+
+  assert.deepEqual(diff.changes.map(({ changeType }) => changeType), ['removed']);
+  assert.equal(
+    validateTargetedOptimizationScope({ before, after, diff }).changedBlockRatio,
+    0.333333
+  );
 });
 
 test('mehr als 35 Prozent geänderte vorhandene Textblöcke werden abgelehnt', () => {
