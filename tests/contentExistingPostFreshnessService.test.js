@@ -175,3 +175,11 @@ test('Einführung eines Google-Rankingfaktors ist ein Änderungsereignis', () =>
     reasons: ['google_or_seo_change']
   });
 });
+
+test('Artikel ein nach führt ist ohne konkretes Änderungsobjekt keine Einführung', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>SEO führt ein Unternehmen zu mehr Sichtbarkeit.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
