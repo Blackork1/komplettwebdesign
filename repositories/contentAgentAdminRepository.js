@@ -505,15 +505,86 @@ export function createContentAgentAdminRepository(db = pool) {
         ]);
         let job = inserted.rows[0] || null;
         if (!job) {
+          const idempotent = await client.query(`
+            SELECT idempotent_job.id, idempotent_job.status, idempotent_job.attempts,
+                   idempotent_job.max_attempts, idempotent_job.created_at,
+                   idempotent_job.updated_at,
+                   (
+                     idempotent_job.job_type = $2
+                     AND idempotent_job.payload_json = $3::jsonb
+                     AND idempotent_job.payload_json ->> 'post_id' = $4::text
+                   ) AS request_matches,
+                   COALESCE(post_guard.published, FALSE) AS post_published,
+                   COALESCE(agent_guard.agent_enabled, FALSE) AS agent_enabled
+            FROM content_jobs idempotent_job
+            LEFT JOIN LATERAL (
+              SELECT p.published
+              FROM posts p
+              WHERE p.id = $4::integer
+              FOR SHARE
+            ) post_guard ON TRUE
+            LEFT JOIN LATERAL (
+              SELECT settings.agent_enabled
+              FROM content_agent_settings settings
+              WHERE settings.id = 1
+              FOR SHARE
+            ) agent_guard ON TRUE
+            WHERE idempotent_job.idempotency_key = $1
+            LIMIT 1
+            FOR SHARE OF idempotent_job
+          `, [
+            normalized.idempotencyKey,
+            normalized.jobType,
+            normalized.payload,
+            normalized.postId
+          ]);
+          const idempotentJob = idempotent.rows[0] || null;
+          if (idempotentJob) {
+            const {
+              request_matches: requestMatches,
+              post_published: postPublished,
+              agent_enabled: agentEnabled,
+              ...safeJob
+            } = idempotentJob;
+            job = requestMatches === true && postPublished === true && agentEnabled === true
+              ? safeJob
+              : null;
+            await client.query('COMMIT');
+            return job;
+          }
+
           const active = await client.query(`
             SELECT active_job.id, active_job.status, active_job.attempts,
                    active_job.max_attempts, active_job.created_at, active_job.updated_at
             FROM content_jobs active_job
+            JOIN posts p
+              ON p.id = $1::integer AND p.published = TRUE
+            JOIN content_agent_settings settings
+              ON settings.id = 1 AND settings.agent_enabled = TRUE
             WHERE active_job.job_type = 'optimize_existing_post'
+              AND jsonb_typeof(active_job.payload_json) = 'object'
+              AND active_job.payload_json ?& ARRAY[
+                'source', 'post_id', 'admin_id', 'base_live_hash'
+              ]
+              AND active_job.payload_json - ARRAY[
+                'source', 'post_id', 'admin_id', 'base_live_hash'
+              ] = '{}'::jsonb
+              AND jsonb_typeof(active_job.payload_json -> 'source') = 'string'
+              AND jsonb_typeof(active_job.payload_json -> 'post_id') = 'number'
+              AND jsonb_typeof(active_job.payload_json -> 'admin_id') = 'number'
+              AND jsonb_typeof(active_job.payload_json -> 'base_live_hash') = 'string'
+              AND active_job.payload_json ->> 'source' = 'admin_existing_content'
               AND active_job.payload_json ->> 'post_id' = $1::text
+              AND active_job.payload_json ->> 'admin_id' ~ '^[1-9][0-9]{0,9}$'
+              AND (
+                length(active_job.payload_json ->> 'admin_id') < 10
+                OR active_job.payload_json ->> 'admin_id' <= '2147483647'
+              )
+              AND active_job.payload_json ->> 'base_live_hash' ~ '^[0-9a-f]{64}$'
               AND active_job.status IN ('queued', 'running', 'needs_manual_attention')
             ORDER BY created_at DESC, id DESC
             LIMIT 1
+            FOR SHARE OF active_job, p, settings
           `, [normalized.postId]);
           job = active.rows[0] || null;
         }

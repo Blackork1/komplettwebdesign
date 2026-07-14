@@ -3,10 +3,33 @@
 
   var activeStates = ['queued', 'running'];
   var terminalStates = ['completed', 'failed', 'manual_attention'];
+  var passiveStates = ['idle'];
 
   function knownState(value) {
-    if (activeStates.includes(value) || terminalStates.includes(value)) return value;
+    if (activeStates.includes(value)
+        || terminalStates.includes(value)
+        || passiveStates.includes(value)) return value;
     return null;
+  }
+
+  function positiveIntegerOrNull(value) {
+    return value === null
+      || (typeof value === 'number' && Number.isSafeInteger(value) && value > 0);
+  }
+
+  function safeStatusText(value) {
+    return typeof value === 'string' && value.length > 0 && value.length <= 500;
+  }
+
+  function safeErrorCode(value) {
+    return value === null
+      || (typeof value === 'string' && /^[A-Za-z0-9_:-]{1,100}$/.test(value));
+  }
+
+  function safeTimestamp(value) {
+    return value === null
+      || (typeof value === 'string'
+        && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value));
   }
 
   function safeStatusUrl(value) {
@@ -27,6 +50,34 @@
   function setText(row, selector, value) {
     var target = row.querySelector(selector);
     if (target) target.textContent = typeof value === 'string' ? value : '';
+  }
+
+  function validStatusData(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+    var state = knownState(data.state);
+    if (!state) return null;
+    var expectedActive = activeStates.includes(state);
+    var expectedTerminal = terminalStates.includes(state);
+    var revisionUrl = data.revisionUrl === null ? null : safeActionUrl(data.revisionUrl);
+    if (typeof data.active !== 'boolean'
+        || data.active !== expectedActive
+        || typeof data.terminal !== 'boolean'
+        || data.terminal !== expectedTerminal
+        || typeof data.canStart !== 'boolean'
+        || !safeStatusText(data.statusLabel)
+        || !safeStatusText(data.stageLabel)
+        || !safeStatusText(data.message)
+        || !positiveIntegerOrNull(data.jobId)
+        || (state === 'idle' ? data.jobId !== null : data.jobId === null)
+        || !positiveIntegerOrNull(data.revisionId)
+        || (data.revisionUrl !== null && revisionUrl === null)
+        || (data.revisionId === null) !== (data.revisionUrl === null)
+        || (data.revisionId !== null
+          && revisionUrl !== '/admin/content-agent/revisions/' + data.revisionId + '/edit')
+        || !safeErrorCode(data.errorCode)
+        || typeof data.unsafeProviderState !== 'boolean'
+        || !safeTimestamp(data.updatedAt)) return null;
+    return state;
   }
 
   function replacePrimaryAction(row, data, state) {
@@ -61,16 +112,25 @@
   }
 
   function updateRow(row, data) {
-    var state = knownState(data && data.state);
-    if (!state) return false;
-    var active = activeStates.includes(state) && data.active === true;
+    var state = validStatusData(data);
+    if (!state) return { valid: false, active: false };
+    var active = activeStates.includes(state);
     row.setAttribute('data-state', state);
     row.setAttribute('data-active', active ? 'true' : 'false');
     setText(row, '[data-existing-content-optimization-label]', data.statusLabel);
     setText(row, '[data-existing-content-optimization-stage]', data.stageLabel);
     setText(row, '[data-existing-content-optimization-message]', data.message);
     replacePrimaryAction(row, data, state);
-    return active;
+    return { valid: true, active: active };
+  }
+
+  function stopAfterInvalidStatus(row) {
+    row.setAttribute('data-active', 'false');
+    setText(
+      row,
+      '[data-existing-content-optimization-message]',
+      'Die Statusantwort war ungültig. Die Aktualisierung wurde sicher beendet.'
+    );
   }
 
   function stopAfterNetworkError(row) {
@@ -112,7 +172,13 @@
         return response.json();
       }).then(function (data) {
         requestRunning = false;
-        if (document.contains(row) && updateRow(row, data)) schedule();
+        if (!document.contains(row)) return;
+        var result = updateRow(row, data);
+        if (!result.valid) {
+          stopAfterInvalidStatus(row);
+          return;
+        }
+        if (result.active) schedule();
       }).catch(function () {
         requestRunning = false;
         if (document.contains(row)) stopAfterNetworkError(row);

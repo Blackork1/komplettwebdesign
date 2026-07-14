@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { renderFile } from 'ejs';
 
 const viewUrl = (name) => new URL(`../views/admin/contentAgent/${name}`, import.meta.url);
@@ -82,6 +83,60 @@ const baseLocals = {
   cssAsset: (value) => `/assets/${value}`,
   jsAsset: (value) => `/assets/${value}`
 };
+
+async function executeExistingContentPolling(statusPayload) {
+  const script = await readFile(
+    new URL('../public/js/admin-existing-content-optimization.js', import.meta.url),
+    'utf8'
+  );
+  const attributes = new Map([
+    ['data-state', 'running'],
+    ['data-active', 'true'],
+    ['data-status-url', '/admin/content-agent/existing-content/19/optimization-status']
+  ]);
+  const label = { textContent: 'In Bearbeitung' };
+  const stage = { textContent: 'Gezielte Optimierung' };
+  const message = { textContent: 'Die KI-Optimierung läuft.' };
+  const button = { disabled: false, textContent: 'Optimierung läuft' };
+  const primaryAction = {
+    child: null,
+    querySelector(selector) { return selector === 'button' ? button : null; },
+    replaceChildren(child) { this.child = child; }
+  };
+  const elements = new Map([
+    ['[data-existing-content-optimization-label]', label],
+    ['[data-existing-content-optimization-stage]', stage],
+    ['[data-existing-content-optimization-message]', message],
+    ['[data-existing-content-primary-action]', primaryAction]
+  ]);
+  const row = {
+    getAttribute(name) { return attributes.get(name) || null; },
+    setAttribute(name, value) { attributes.set(name, String(value)); },
+    querySelector(selector) { return elements.get(selector) || null; }
+  };
+  const timers = [];
+  const windowTarget = {
+    fetch: async () => ({ ok: true, json: async () => statusPayload }),
+    clearTimeout() {},
+    setTimeout(callback, delay) {
+      timers.push({ callback, delay });
+      return timers.length;
+    }
+  };
+  const documentTarget = {
+    contains(candidate) { return candidate === row; },
+    createElement() { return { className: '', href: '', textContent: '' }; },
+    querySelectorAll() { return [row]; }
+  };
+
+  runInNewContext(script, { window: windowTarget, document: documentTarget, Error });
+  assert.equal(timers.length, 1);
+  assert.equal(timers[0].delay, 3000);
+  timers[0].callback();
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  return { attributes, label, stage, message, primaryAction, timers };
+}
 
 test('Cockpit enthält bestätigte sieben Reiter und sichere Aktionsformulare', async () => {
   const [overview, tabs, schedule, technology, script] = await Promise.all([
@@ -384,6 +439,38 @@ test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau ein
   assert.match(html, /Livefassung bleibt unverändert/i);
 });
 
+test('Bestandszeile bewahrt die manuelle Audit-Revision als CSRF-geschützte sekundäre Aktion', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Website-Relaunch planen',
+      slug: 'website-relaunch-planen',
+      auditId: 31,
+      auditStatus: 'open',
+      auditScore: 78,
+      revisionId: null,
+      optimization: {
+        state: 'idle', active: false, terminal: false, canStart: true,
+        statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+        message: 'Noch keine KI-Optimierung gestartet.', jobId: null,
+        revisionId: null, revisionUrl: null, errorCode: null,
+        unsafeProviderState: false, updatedAt: null
+      }
+    }]
+  });
+
+  const revisionForm = html.match(/<form[^>]*action="\/admin\/content-agent\/existing-content\/19\/revision"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.match(revisionForm, /method="post"/);
+  assert.match(revisionForm, /name="_csrf" value="csrf-test"/);
+  assert.match(revisionForm, /name="audit_id" value="31"/);
+  assert.match(revisionForm, /btn btn-sm btn-outline-secondary/);
+  assert.match(revisionForm, /Revision anlegen/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.equal((html.match(/data-existing-content-primary-action/g) || []).length, 1);
+  assert.equal((html.match(/btn btn-sm btn-primary/g) || []).length, 1);
+});
+
 test('laufende Bestandsoptimierung zeigt Stufe, deaktiviert die Einzelaktion und aktiviert Statuspolling', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,
@@ -446,6 +533,54 @@ test('Bestandsoptimierungs-JavaScript pollt nur aktive Zustände alle drei Sekun
   assert.match(script, /content-agent\\\/revisions/);
   assert.match(script, /\/admin\/content-agent\/jobs/);
   assert.doesNotMatch(script, /innerHTML|insertAdjacentHTML|outerHTML|eval\(|location\.reload|window\.location\s*=/);
+});
+
+test('strukturell ungültige 2xx-Statusantwort beendet Polling sichtbar und sicher', async () => {
+  const state = await executeExistingContentPolling({
+    state: 'running',
+    active: 'true',
+    terminal: false,
+    canStart: false,
+    statusLabel: 'In Bearbeitung',
+    stageLabel: 'Gezielte Optimierung',
+    message: 'Manipulierte Statusantwort',
+    jobId: 44,
+    revisionId: null,
+    revisionUrl: null,
+    errorCode: null,
+    unsafeProviderState: false,
+    updatedAt: '2026-07-14T10:03:00.000Z'
+  });
+
+  assert.equal(state.attributes.get('data-active'), 'false');
+  assert.match(state.message.textContent, /Statusantwort/i);
+  assert.match(state.message.textContent, /sicher beendet/i);
+  assert.equal(state.timers.length, 1);
+});
+
+test('gültiger terminaler Status bleibt gezielt stehen und verlinkt die fertige Revision', async () => {
+  const state = await executeExistingContentPolling({
+    state: 'completed',
+    active: false,
+    terminal: true,
+    canStart: false,
+    statusLabel: 'Revision bereit',
+    stageLabel: 'Revision erstellt',
+    message: 'Die Revision kann jetzt geprüft werden.',
+    jobId: 44,
+    revisionId: 71,
+    revisionUrl: '/admin/content-agent/revisions/71/edit',
+    errorCode: null,
+    unsafeProviderState: false,
+    updatedAt: '2026-07-14T10:04:00.000Z'
+  });
+
+  assert.equal(state.attributes.get('data-state'), 'completed');
+  assert.equal(state.attributes.get('data-active'), 'false');
+  assert.equal(state.message.textContent, 'Die Revision kann jetzt geprüft werden.');
+  assert.equal(state.primaryAction.child.href, '/admin/content-agent/revisions/71/edit');
+  assert.equal(state.primaryAction.child.textContent, 'Revision bearbeiten');
+  assert.equal(state.timers.length, 1);
 });
 
 test('Draftübersicht bietet Statusfilter, Termin- und Maildetails sowie sicheren CSRF-Retry', async () => {

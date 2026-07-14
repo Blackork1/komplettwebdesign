@@ -260,6 +260,7 @@ test('paralleler Bestandsstart gibt den bereits aktiven sicheren Zustand statt D
   const active = { id: 43, status: 'running', attempts: 1, max_attempts: 3 };
   const db = createTransactionDatabase(({ sql }) => {
     if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [] };
+    if (/FROM content_jobs idempotent_job/i.test(sql)) return { rows: [] };
     if (/FROM content_jobs active_job/i.test(sql)) return { rows: [active] };
     return { rows: [] };
   });
@@ -276,11 +277,220 @@ test('paralleler Bestandsstart gibt den bereits aktiven sicheren Zustand statt D
   });
 
   assert.equal(result, active);
+  const exactLookupIndex = db.calls.findIndex(({ sql }) => /FROM content_jobs idempotent_job/i.test(sql));
+  const activeLookupIndex = db.calls.findIndex(({ sql }) => /FROM content_jobs active_job/i.test(sql));
+  assert.ok(exactLookupIndex > 0 && exactLookupIndex < activeLookupIndex);
+  const exactLookup = db.calls[exactLookupIndex];
+  assert.deepEqual(exactLookup.params, [
+    'existing-post-optimization:19:parallel',
+    'optimize_existing_post',
+    { source: 'admin_existing_content', post_id: 19, admin_id: 7, base_live_hash: 'a'.repeat(64) },
+    19
+  ]);
+  assert.match(exactLookup.sql, /idempotent_job\.payload_json = \$3::jsonb/i);
+  assert.match(exactLookup.sql, /idempotent_job\.payload_json ->> 'post_id' = \$4::text/i);
+  assert.match(exactLookup.sql, /FROM posts p[\s\S]*p\.id = \$4::integer[\s\S]*FOR SHARE/i);
+  assert.match(exactLookup.sql, /FROM content_agent_settings settings[\s\S]*settings\.id = 1[\s\S]*FOR SHARE/i);
+  assert.match(exactLookup.sql, /FOR SHARE OF idempotent_job/i);
   const lookup = db.calls.find(({ sql }) => /FROM content_jobs active_job/i.test(sql));
   assert.deepEqual(lookup.params, [19]);
   assert.match(lookup.sql, /status IN \('queued', 'running', 'needs_manual_attention'\)/i);
+  assert.match(lookup.sql, /p\.published = TRUE/i);
+  assert.match(lookup.sql, /settings\.agent_enabled = TRUE/i);
+  assert.match(lookup.sql, /active_job\.payload_json - ARRAY\[[\s\S]*\] = '\{\}'::jsonb/i);
+  assert.match(lookup.sql, /active_job\.payload_json ->> 'source' = 'admin_existing_content'/i);
+  assert.match(lookup.sql, /active_job\.payload_json ->> 'post_id' = \$1::text/i);
   assert.match(lookup.sql, /ORDER BY created_at DESC, id DESC LIMIT 1/i);
+  assert.match(lookup.sql, /FOR SHARE OF active_job, p, settings/i);
   assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('zwei tatsächlich parallele Starts mit verschiedenen Schlüsseln teilen denselben aktiven Job', async () => {
+  let persistedJob = null;
+  let insertedJobs = 0;
+  let releases = 0;
+  const db = {
+    async connect() {
+      return {
+        release() { releases += 1; },
+        async query(sql, params = []) {
+          const normalized = normalizeSql(sql);
+          if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+          if (/INSERT INTO content_jobs/i.test(normalized)) {
+            if (persistedJob) return { rows: [] };
+            insertedJobs += 1;
+            persistedJob = {
+              id: 51,
+              status: 'queued',
+              attempts: 0,
+              max_attempts: params[3],
+              idempotencyKey: params[1]
+            };
+            const { idempotencyKey, ...publicJob } = persistedJob;
+            return { rows: [publicJob] };
+          }
+          if (/FROM content_jobs idempotent_job/i.test(normalized)) {
+            if (persistedJob?.idempotencyKey !== params[0]) return { rows: [] };
+            const { idempotencyKey, ...publicJob } = persistedJob;
+            return {
+              rows: [{
+                ...publicJob,
+                request_matches: true,
+                post_published: true,
+                agent_enabled: true
+              }]
+            };
+          }
+          if (/FROM content_jobs active_job/i.test(normalized)) {
+            const { idempotencyKey, ...publicJob } = persistedJob;
+            return { rows: [publicJob] };
+          }
+          return { rows: [] };
+        }
+      };
+    }
+  };
+  const repository = createContentAgentAdminRepository(db);
+  const request = (suffix) => repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: `existing-post-optimization:19:${suffix}`,
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  const results = await Promise.all([request('parallel-a'), request('parallel-b')]);
+
+  assert.equal(insertedJobs, 1);
+  assert.deepEqual(results[0], results[1]);
+  assert.equal(results[0].id, 51);
+  assert.equal(releases, 2);
+});
+
+test('terminaler Job mit identischem Idempotenzschlüssel wird unverändert und vor aktiven Fremdschlüsseln aufgelöst', async () => {
+  const terminal = {
+    id: 42, status: 'completed', attempts: 1, max_attempts: 3,
+    created_at: '2026-07-14T10:00:00.000Z', updated_at: '2026-07-14T10:04:00.000Z'
+  };
+  const db = createTransactionDatabase(({ sql }) => {
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [] };
+    if (/FROM content_jobs idempotent_job/i.test(sql)) {
+      return {
+        rows: [{
+          ...terminal,
+          request_matches: true,
+          post_published: true,
+          agent_enabled: true
+        }]
+      };
+    }
+    if (/FROM content_jobs active_job/i.test(sql)) {
+      assert.fail('Bei einem passenden Idempotenzschlüssel darf kein fremder aktiver Job gewählt werden.');
+    }
+    return { rows: [] };
+  });
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:terminal',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  assert.deepEqual(result, terminal);
+  assert.equal(db.calls.some(({ sql }) => /FROM content_jobs active_job/i.test(sql)), false);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('identischer Idempotenzschlüssel mit abweichendem Auftrag schlägt geschlossen fehl', async () => {
+  const db = createTransactionDatabase(({ sql }) => {
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [] };
+    if (/FROM content_jobs idempotent_job/i.test(sql)) {
+      return {
+        rows: [{
+          id: 42, status: 'queued', attempts: 0, max_attempts: 3,
+          request_matches: false,
+          post_published: true,
+          agent_enabled: true
+        }]
+      };
+    }
+    if (/FROM content_jobs active_job/i.test(sql)) {
+      assert.fail('Ein Same-Key-Mismatch darf nicht auf einen anderen aktiven Job ausweichen.');
+    }
+    return { rows: [] };
+  });
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:kollision',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  assert.equal(result, null);
+  assert.equal(db.calls.some(({ sql }) => /FROM content_jobs active_job/i.test(sql)), false);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('Konfliktauflösung gibt bei zwischenzeitlich unveröffentlichtem Artikel oder deaktiviertem Agenten keinen Job zurück', async (t) => {
+  for (const path of ['identischer Schlüssel', 'aktiver Fremdschlüssel']) {
+    for (const scenario of [
+      { name: 'Artikel unveröffentlicht', post_published: false, agent_enabled: true },
+      { name: 'Agent deaktiviert', post_published: true, agent_enabled: false }
+    ]) {
+      await t.test(`${path}: ${scenario.name}`, async () => {
+        const db = createTransactionDatabase(({ sql }) => {
+          if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [] };
+          if (/FROM content_jobs idempotent_job/i.test(sql)) {
+            if (path === 'aktiver Fremdschlüssel') return { rows: [] };
+            return {
+              rows: [{
+                id: 42, status: 'queued', attempts: 0, max_attempts: 3,
+                request_matches: true,
+                post_published: scenario.post_published,
+                agent_enabled: scenario.agent_enabled
+              }]
+            };
+          }
+          if (/FROM content_jobs active_job/i.test(sql)) {
+            const repeatsGuards = /p\.published = TRUE/i.test(sql)
+              && /settings\.agent_enabled = TRUE/i.test(sql);
+            return {
+              rows: repeatsGuards
+                ? []
+                : [{ id: 41, status: 'running', attempts: 1, max_attempts: 3 }]
+            };
+          }
+          return { rows: [] };
+        });
+        const repository = createContentAgentAdminRepository(db);
+
+        const result = await repository.enqueueExistingPostOptimizationJob({
+          jobType: 'optimize_existing_post',
+          idempotencyKey: `existing-post-optimization:19:${scenario.name}`,
+          payload: {
+            source: 'admin_existing_content', post_id: 19, admin_id: 7,
+            base_live_hash: 'a'.repeat(64)
+          },
+          maxAttempts: 3
+        });
+
+        assert.equal(result, null);
+        assert.equal(db.calls.at(-1).sql, 'COMMIT');
+      });
+    }
+  }
 });
 
 test('Bestands-Enqueue lehnt zusätzliche Payloadfelder und ungültige IDs vor Transaktionsbeginn ab', async () => {

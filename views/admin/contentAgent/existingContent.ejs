@@ -37,6 +37,13 @@
             <td class="text-end">
               <div class="content-agent-actions justify-content-end">
                 <a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel öffnen</a>
+                <% if (item.auditId && item.auditStatus !== 'resolved' && !item.revisionId) { %>
+                  <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/revision">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <input type="hidden" name="audit_id" value="<%= item.auditId %>">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">Revision anlegen</button>
+                  </form>
+                <% } %>
                 <div data-existing-content-primary-action>
                   <% if (optimization.active === true) { %>
                     <button class="btn btn-sm btn-primary" type="button" disabled><%= optimization.state === 'queued' ? 'Optimierung eingeplant' : 'Optimierung läuft' %></button>
