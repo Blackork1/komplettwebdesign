@@ -421,7 +421,9 @@ test('generischer Admin-Retry schließt Prüfmailjobs atomar im Update-CAS aus',
 
   assert.equal(result, null);
   assert.equal(db.calls.length, 1);
-  assert.match(db.calls[0].sql, /^UPDATE content_jobs/i);
+  assert.match(db.calls[0].sql, /^WITH locked_job AS MATERIALIZED/i);
+  assert.match(db.calls[0].sql, /SELECT \* FROM content_jobs WHERE id = \$1 FOR UPDATE/i);
+  assert.match(db.calls[0].sql, /locked_run AS MATERIALIZED[\s\S]*FOR UPDATE OF run/i);
   assert.match(db.calls[0].sql, /job_type <> 'send_admin_review_notification'/i);
   assert.match(db.calls[0].sql, /NOT EXISTS[\s\S]*jsonb_each[\s\S]*status[^=]*=[^']*'reserved'/i);
   assert.doesNotMatch(db.calls[0].sql, /^SELECT|;\s*SELECT/i);
@@ -443,12 +445,34 @@ test('Admin-Retry lässt Bestandsoptimierungen nur nach sicheren Fehlern ohne of
   );
   assert.match(
     db.calls[0].sql,
-    /EXISTS \( SELECT 1 FROM content_runs[\s\S]*status = 'running'/i
+    /job\.last_error IN \('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST'\)[\s\S]*run\.status = 'running'/i
   );
   assert.match(
     db.calls[0].sql,
-    /NOT EXISTS \( SELECT 1 FROM content_runs[\s\S]*jsonb_each[\s\S]*status[^=]*=[^']*'reserved'/i
+    /NOT EXISTS \( SELECT 1 FROM locked_run AS reservation_run[\s\S]*jsonb_each[\s\S]*status[^=]*=[^']*'reserved'/i
   );
+  assert.match(
+    db.calls[0].sql,
+    /UPDATE content_runs AS run SET status = 'running',[\s\S]*candidate\.job_type <> 'optimize_existing_post'[\s\S]*candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /candidate\.run_id IS NULL[\s\S]*candidate\.run_status = 'running'[\s\S]*EXISTS \( SELECT 1 FROM reopened_run/i
+  );
+});
+
+test('Admin-Retry öffnet nur zulässige terminale Nicht-Bestandsruns unter demselben Reservierungszaun', async () => {
+  const db = createQueryRecorder([{ rows: [] }]);
+
+  assert.equal(await retryContentJobForAdmin({ jobId: 25 }, db), null);
+
+  const { sql } = db.calls[0];
+  assert.match(sql, /eligible_retry AS MATERIALIZED/i);
+  assert.match(sql, /COALESCE\(job\.last_error, ''\) <> 'provider_execution_uncertain'/i);
+  assert.match(sql, /stage_result\.value ->> 'status' = 'reserved'/i);
+  assert.match(sql, /candidate\.job_type <> 'optimize_existing_post'/i);
+  assert.match(sql, /candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i);
+  assert.match(sql, /UPDATE content_jobs AS job[\s\S]*FROM eligible_retry AS candidate/i);
 });
 
 test('manueller Admin-Retry gewährt nach ausgeschöpften automatischen Versuchen einen kontrollierten Zusatzversuch', async () => {

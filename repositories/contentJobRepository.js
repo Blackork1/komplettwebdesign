@@ -421,7 +421,61 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
   const cap = ADMIN_CONTENT_JOB_RETRY_CAP;
   const { rows } = await db.query(
     `
-      UPDATE content_jobs
+      WITH locked_job AS MATERIALIZED (
+        SELECT *
+        FROM content_jobs
+        WHERE id = $1
+        FOR UPDATE
+      ),
+      locked_run AS MATERIALIZED (
+        SELECT run.id,
+               run.job_id,
+               run.status,
+               run.stage_results_json
+        FROM content_runs AS run
+        JOIN locked_job AS job ON job.id = run.job_id
+        FOR UPDATE OF run
+      ),
+      eligible_retry AS MATERIALIZED (
+        SELECT job.id,
+               job.job_type,
+               run.id AS run_id,
+               run.status AS run_status
+        FROM locked_job AS job
+        LEFT JOIN locked_run AS run ON run.job_id = job.id
+        WHERE job.job_type <> 'send_admin_review_notification'
+          AND job.status IN ('failed', 'needs_manual_attention')
+          AND COALESCE(job.last_error, '') <> 'provider_execution_uncertain'
+          AND (
+            job.job_type <> 'optimize_existing_post'
+            OR (
+              job.last_error IN ('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST')
+              AND run.status = 'running'
+            )
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM locked_run AS reservation_run
+            CROSS JOIN LATERAL jsonb_each(
+              COALESCE(reservation_run.stage_results_json, '{}'::jsonb)
+            ) AS stage_result(key, value)
+            WHERE reservation_run.job_id = job.id
+              AND stage_result.key LIKE 'budget:%'
+              AND stage_result.value ->> 'status' = 'reserved'
+          )
+          AND job.attempts < $2
+      ),
+      reopened_run AS (
+        UPDATE content_runs AS run
+        SET status = 'running',
+            finished_at = NULL
+        FROM eligible_retry AS candidate
+        WHERE run.id = candidate.run_id
+          AND candidate.job_type <> 'optimize_existing_post'
+          AND candidate.run_status IN ('failed', 'needs_manual_attention')
+        RETURNING run.id, run.job_id
+      )
+      UPDATE content_jobs AS job
       SET status = 'queued',
           max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
           run_after = NOW(),
@@ -430,34 +484,18 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
           last_error = NULL,
           finished_at = NULL,
           updated_at = NOW()
-      WHERE id = $1
-        AND job_type <> 'send_admin_review_notification'
-        AND status IN ('failed', 'needs_manual_attention')
-        AND COALESCE(last_error, '') <> 'provider_execution_uncertain'
+      FROM eligible_retry AS candidate
+      WHERE job.id = candidate.id
         AND (
-          job_type <> 'optimize_existing_post'
-          OR (
-            last_error IN ('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST')
-            AND EXISTS (
-              SELECT 1
-              FROM content_runs AS resumable_run
-              WHERE resumable_run.job_id = content_jobs.id
-                AND resumable_run.status = 'running'
-            )
+          candidate.run_id IS NULL
+          OR candidate.run_status = 'running'
+          OR EXISTS (
+            SELECT 1
+            FROM reopened_run
+            WHERE reopened_run.job_id = job.id
           )
         )
-        AND NOT EXISTS (
-          SELECT 1
-          FROM content_runs AS reservation_run
-          CROSS JOIN LATERAL jsonb_each(
-            COALESCE(reservation_run.stage_results_json, '{}'::jsonb)
-          ) AS stage_result(key, value)
-          WHERE reservation_run.job_id = content_jobs.id
-            AND stage_result.key LIKE 'budget:%'
-            AND stage_result.value ->> 'status' = 'reserved'
-        )
-        AND attempts < $2
-      RETURNING *
+      RETURNING job.*
     `,
     [jobId, cap]
   );

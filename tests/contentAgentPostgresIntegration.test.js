@@ -18,10 +18,16 @@ import {
   recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
   renewJobLease,
+  retryContentJobForAdmin,
   retryOrFailJob,
   upsertWorkerHeartbeat
 } from '../repositories/contentJobRepository.js';
-import { createRun, finishRun, updateRunStage } from '../repositories/contentRunRepository.js';
+import {
+  createRun,
+  findRunByJobId,
+  finishRun,
+  updateRunStage
+} from '../repositories/contentRunRepository.js';
 import {
   releaseMonthlyBudgetReservation,
   reserveMonthlyBudget,
@@ -160,6 +166,134 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
       ) RETURNING id
     `);
     assert.equal(replacement.rowCount, 1);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: Admin-Retry öffnet nur zulässige Generierungsruns für den Worker', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        idempotency_key VARCHAR(180) NOT NULL UNIQUE,
+        payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 3,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL DEFAULT 'inventory',
+        runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+
+      WITH jobs AS (
+        INSERT INTO content_jobs (
+          job_type, status, idempotency_key, payload_json, attempts, max_attempts,
+          last_error, finished_at
+        ) VALUES
+          ('generate_manual_draft', 'failed', 'admin-retry-generation', '{"source":"admin_manual"}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
+          ('optimize_existing_post', 'failed', 'admin-retry-existing', '{"source":"admin_existing_content","post_id":19}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
+          ('generate_manual_draft', 'failed', 'admin-retry-reserved', '{"source":"admin_manual"}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
+          ('send_admin_review_notification', 'failed', 'admin-retry-mail', '{}'::jsonb, 1, 3, 'SMTP_FAILED', NOW())
+        RETURNING id, idempotency_key
+      )
+      INSERT INTO content_runs (
+        job_id, status, runtime_snapshot_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'failed',
+             '{"timezone":"Europe/Berlin"}'::jsonb,
+             CASE idempotency_key
+               WHEN 'admin-retry-reserved' THEN '{"budget:2026-07:article_generation":{"status":"reserved"}}'::jsonb
+               ELSE '{}'::jsonb
+             END,
+             NOW()
+      FROM jobs
+      WHERE idempotency_key <> 'admin-retry-mail';
+    `);
+
+    const jobs = (await pool.query(`
+      SELECT * FROM content_jobs ORDER BY idempotency_key
+    `)).rows;
+    const byKey = new Map(jobs.map((job) => [job.idempotency_key, job]));
+    const generation = byKey.get('admin-retry-generation');
+
+    const retried = await retryContentJobForAdmin({ jobId: Number(generation.id) }, pool);
+    assert.equal(retried.status, 'queued');
+    assert.equal((await findRunByJobId(generation.id, pool)).status, 'running');
+
+    let pipelineCalls = 0;
+    const handler = createProductionJobHandler({
+      technicalConfig: { enabled: true },
+      async getSettings() { assert.fail('Der geöffnete Run darf keine Live-Einstellungen laden.'); },
+      resolveRuntimeConfig() { assert.fail('Der geöffnete Run darf keine Live-Konfiguration laden.'); },
+      createJobSnapshot() { assert.fail('Der geöffnete Run darf keinen neuen Snapshot erzeugen.'); },
+      findRunByJobId: (jobId) => findRunByJobId(jobId, pool),
+      async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+      async runPipeline() {
+        pipelineCalls += 1;
+        return { status: 'completed', post: { id: 55, published: false } };
+      }
+    });
+    assert.equal((await handler({ ...retried, status: 'running' })).status, 'completed');
+    assert.equal(pipelineCalls, 1);
+
+    for (const idempotencyKey of [
+      'admin-retry-existing',
+      'admin-retry-reserved',
+      'admin-retry-mail'
+    ]) {
+      const blocked = byKey.get(idempotencyKey);
+      assert.equal(
+        await retryContentJobForAdmin({ jobId: Number(blocked.id) }, pool),
+        null
+      );
+    }
+    const blockedStates = (await pool.query(`
+      SELECT job.idempotency_key, job.status AS job_status, run.status AS run_status
+      FROM content_jobs AS job
+      LEFT JOIN content_runs AS run ON run.job_id = job.id
+      WHERE job.idempotency_key IN (
+        'admin-retry-existing', 'admin-retry-reserved', 'admin-retry-mail'
+      )
+      ORDER BY job.idempotency_key
+    `)).rows;
+    assert.deepEqual(blockedStates, [
+      { idempotency_key: 'admin-retry-existing', job_status: 'failed', run_status: 'failed' },
+      { idempotency_key: 'admin-retry-mail', job_status: 'failed', run_status: null },
+      { idempotency_key: 'admin-retry-reserved', job_status: 'failed', run_status: 'failed' }
+    ]);
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

@@ -35,7 +35,10 @@ import {
   resolveContentAgentRuntimeConfig
 } from '../services/contentAgent/runtimeConfigService.js';
 import { runSearchConsoleSchedulerTick } from '../services/contentAgent/searchConsoleSchedulerService.js';
-import { retryOrFailJob as persistRetryOrFailJob } from '../repositories/contentJobRepository.js';
+import {
+  retryContentJobForAdmin as persistAdminRetry,
+  retryOrFailJob as persistRetryOrFailJob
+} from '../repositories/contentJobRepository.js';
 
 const execFileAsync = promisify(execFile);
 const { SEARCH_CONSOLE_JOB_TYPES } = contentWorkerModule;
@@ -1541,6 +1544,49 @@ test('der Produktionshandler führt Bestandsaudits im selben Run mit Lease-Fence
   assert.deepEqual(calls.at(-1), ['finish', 88, { status: 'completed', postId: null }]);
 });
 
+test('der produktive Snapshotpfad behandelt einen Admin-Bestandsaudit nicht als Artikeloptimierung', async () => {
+  let persistedSnapshot;
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    enforceRuleSnapshot: true,
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() {
+      return {
+        operatingMode: 'review',
+        timezone: 'Europe/Berlin',
+        webSearchCostPerCallEur: 0.01,
+        settingsVersion: 1
+      };
+    },
+    createJobSnapshot: createContentAgentJobSnapshot,
+    async loadInitialInventory() {
+      assert.fail('Ein Bestandsaudit darf kein Optimierungs-Linkinventar benötigen.');
+    },
+    async loadExistingPostTrustedContext() {
+      assert.fail('Ein Bestandsaudit darf keinen Optimierungs-Trusted-Context benötigen.');
+    },
+    async loadActiveLearningRules() { return []; },
+    async createRun({ runtimeSnapshot }) {
+      persistedSnapshot = runtimeSnapshot;
+      return { id: 89, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+    },
+    async finishRun(runId, payload) { return { id: runId, ...payload }; },
+    async runPipeline() { assert.fail('Audit darf keine Generierung starten.'); },
+    createAuditDependencies() { return {}; },
+    async runAuditJob() { return { status: 'completed', audited: 3 }; }
+  });
+
+  const result = await handler({
+    id: 52,
+    job_type: 'audit_existing_posts',
+    payload_json: { source: 'admin_existing_content', admin_id: 7 }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.audited, 3);
+  assert.equal(Object.hasOwn(persistedSnapshot, 'allowedInternalLinks'), false);
+  assert.equal(Object.hasOwn(persistedSnapshot, 'existingPostTrustedContext'), false);
+});
+
 test('Auditjob wird bei fehlendem Runabschluss technisch retrybar und nie erfolgreich abgeschlossen', async () => {
   const handler = createProductionJobHandler({
     async createRun() { return { id: 88 }; },
@@ -1960,13 +2006,79 @@ test('der Produktionshandler übernimmt terminale Runs ohne Pipeline- oder Finis
   ));
 });
 
-test('Bestandsoptimierung prüft die Lease unmittelbar vor der ersten Runpersistenz', async () => {
+test('normaler Admin-Retry öffnet einen terminalen Generierungsrun und der Worker setzt die Pipeline fort', async () => {
+  const job = {
+    id: 124,
+    job_type: 'generate_manual_draft',
+    status: 'failed',
+    attempts: 1,
+    max_attempts: 3,
+    last_error: 'CONTENT_VALIDATION_FAILED',
+    payload_json: { source: 'admin_manual' }
+  };
+  const run = {
+    id: 10,
+    job_id: job.id,
+    status: 'failed',
+    runtime_snapshot_json: { timezone: 'Europe/Berlin' },
+    stage_results_json: {}
+  };
+  const database = {
+    async query(sql) {
+      const normalized = sql.replace(/\s+/g, ' ').trim();
+      if (/UPDATE content_runs AS run SET status = 'running'/i.test(normalized)) {
+        run.status = 'running';
+      }
+      job.status = 'queued';
+      return { rows: [{ ...job }] };
+    }
+  };
+
+  const retried = await persistAdminRetry({ jobId: job.id }, database);
+  assert.equal(retried.status, 'queued');
+  assert.equal(run.status, 'running');
+
+  const pipelineCalls = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    async getSettings() { assert.fail('Der persistierte Run darf keine Live-Einstellungen laden.'); },
+    resolveRuntimeConfig() { assert.fail('Der persistierte Run darf keine Live-Konfiguration laden.'); },
+    createJobSnapshot() { assert.fail('Der persistierte Run darf keinen neuen Snapshot erzeugen.'); },
+    async findRunByJobId() { return structuredClone(run); },
+    async createRun() { assert.fail('Der bewusst geöffnete Run darf nicht neu angelegt werden.'); },
+    async runPipeline(input) {
+      pipelineCalls.push(input);
+      return { status: 'completed', post: { id: 55, published: false } };
+    }
+  });
+
+  const result = await handler({ ...job, status: 'running', locked_by: 'worker', attempts: 2 });
+  assert.equal(result.status, 'completed');
+  assert.equal(pipelineCalls.length, 1);
+  assert.equal(pipelineCalls[0].runId, run.id);
+});
+
+test('Bestandsoptimierung prüft die Lease vor allen Snapshot-Loadern und der Snapshotbildung', async () => {
   let creates = 0;
+  const snapshotCalls = [];
   const handler = createProductionJobHandler({
     technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
-    async getSettings() { return {}; },
-    resolveRuntimeConfig() { return { webSearchCostPerCallEur: 0.01 }; },
-    createJobSnapshot() { return { webSearchCostPerCallEur: 0.01 }; },
+    enforceRuleSnapshot: true,
+    async getSettings() { snapshotCalls.push('settings'); return {}; },
+    resolveRuntimeConfig() {
+      snapshotCalls.push('runtime');
+      return { webSearchCostPerCallEur: 0.01 };
+    },
+    createJobSnapshot() {
+      snapshotCalls.push('snapshot');
+      return { webSearchCostPerCallEur: 0.01 };
+    },
+    async loadActiveLearningRules() { snapshotCalls.push('learning'); return []; },
+    async loadInitialInventory() { snapshotCalls.push('inventory'); return {}; },
+    async loadExistingPostTrustedContext() {
+      snapshotCalls.push('trusted-context');
+      return { existingSlugs: [], metadata: {} };
+    },
     async createRun() { creates += 1; return { id: 1 }; },
     async finishRun() { assert.fail('Ohne Lease darf kein Run abgeschlossen werden.'); },
     async runPipeline() { assert.fail('Die Entwurfspipeline darf nicht starten.'); },
@@ -1983,6 +2095,7 @@ test('Bestandsoptimierung prüft die Lease unmittelbar vor der ersten Runpersist
     }
   }, { leaseGuard: async () => false }), (error) => error?.code === 'CONTENT_JOB_LEASE_LOST');
   assert.equal(creates, 0);
+  assert.deepEqual(snapshotCalls, []);
 });
 
 test('der Produktionshandler dispatcht eine gültige Prüfhinweis-Optimierung separat', async () => {

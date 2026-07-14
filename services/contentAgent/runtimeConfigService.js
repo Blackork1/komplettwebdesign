@@ -44,8 +44,7 @@ export function createContentAgentJobSnapshot({
   requireExistingPostTrustedContext = false,
   activeLearningRules = []
 }) {
-  const existingPostOptimization = claim?.job_type === 'optimize_existing_post'
-    || claim?.payload_json?.source === 'admin_existing_content';
+  const existingPostOptimization = claim?.job_type === 'optimize_existing_post';
   if (existingPostOptimization
       && (typeof runtimeConfig?.webSearchCostPerCallEur !== 'number'
         || !Number.isFinite(runtimeConfig.webSearchCostPerCallEur)

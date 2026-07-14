@@ -496,6 +496,7 @@ export function createProductionJobHandler({
       ? await findRunByJobId(claim.id)
       : null;
     if (!run) {
+      await assertActiveLease(leaseGuard);
       if (snapshotEnabled) {
         const settings = await getSettings();
         const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
@@ -529,7 +530,6 @@ export function createProductionJobHandler({
           } : {})
         });
       }
-      await assertActiveLease(leaseGuard);
       run = await createRun({
         jobId: claim.id,
         ...(snapshotEnabled ? { runtimeSnapshot } : {})

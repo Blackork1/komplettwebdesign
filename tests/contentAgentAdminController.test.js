@@ -741,12 +741,13 @@ test('Admin-Retry setzt denselben Job per Compare-and-Set fort', async () => {
   assert.equal(job.id, 23);
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].params, [23, 5]);
-  assert.match(calls[0].sql, /^UPDATE content_jobs/i);
-  assert.match(calls[0].sql, /WHERE id = \$1 AND job_type <> 'send_admin_review_notification' AND status IN \('failed', 'needs_manual_attention'\)/i);
-  assert.match(calls[0].sql, /COALESCE\(last_error, ''\) <> 'provider_execution_uncertain'/i);
+  assert.match(calls[0].sql, /^WITH locked_job AS MATERIALIZED/i);
+  assert.match(calls[0].sql, /WHERE job\.job_type <> 'send_admin_review_notification' AND job\.status IN \('failed', 'needs_manual_attention'\)/i);
+  assert.match(calls[0].sql, /COALESCE\(job\.last_error, ''\) <> 'provider_execution_uncertain'/i);
   assert.match(calls[0].sql, /attempts < \$2/i);
   assert.doesNotMatch(calls[0].sql, /INSERT INTO|;\s*SELECT/i);
-  assert.match(calls[0].sql, /NOT EXISTS[\s\S]*content_runs[\s\S]*jsonb_each/i);
+  assert.match(calls[0].sql, /locked_run AS MATERIALIZED[\s\S]*jsonb_each/i);
+  assert.match(calls[0].sql, /reopened_run AS \([\s\S]*UPDATE content_runs AS run/i);
 });
 
 test('Retry-Aktion meldet einen verlorenen Zustandsvergleich als Konflikt', async () => {
