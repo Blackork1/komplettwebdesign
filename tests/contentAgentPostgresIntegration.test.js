@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import { DateTime } from 'luxon';
 
 import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js';
 import {
@@ -1601,7 +1602,48 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve→Publish laufen genau einmal', {
+function nestedTransactionDatabase(client, savepointName) {
+  const identifier = String(savepointName || 'repository_call');
+  assert.match(identifier, /^[a-z][a-z0-9_]*$/);
+  return {
+    query(sql, params) {
+      return client.query(sql, params);
+    },
+    async connect() {
+      let savepointActive = false;
+      return {
+        async query(sql, params) {
+          const command = typeof sql === 'string' ? sql.trim().toUpperCase() : '';
+          if (command === 'BEGIN') {
+            assert.equal(savepointActive, false);
+            savepointActive = true;
+            return client.query(`SAVEPOINT ${identifier}`);
+          }
+          if (command === 'COMMIT') {
+            assert.equal(savepointActive, true);
+            savepointActive = false;
+            return client.query(`RELEASE SAVEPOINT ${identifier}`);
+          }
+          if (command === 'ROLLBACK') {
+            if (!savepointActive) return { rows: [], rowCount: 0 };
+            await client.query(`ROLLBACK TO SAVEPOINT ${identifier}`);
+            savepointActive = false;
+            return client.query(`RELEASE SAVEPOINT ${identifier}`);
+          }
+          return client.query(sql, params);
+        },
+        release() {}
+      };
+    }
+  };
+}
+
+function berlinCalendarDate(value) {
+  if (typeof value === 'string') return value.slice(0, 10);
+  return DateTime.fromJSDate(value).setZone('Europe/Berlin').toISODate();
+}
+
+test('echtes PostgreSQL: Migrationen 002–012 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -1664,6 +1706,185 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const optimizationTransaction = await pool.connect();
+    const rollbackSlug = `pg-existing-rollback-${schemaName.slice(-12)}`;
+    try {
+      await optimizationTransaction.query('BEGIN');
+      const optimizationAdmin = (await optimizationTransaction.query(
+        "SELECT id, username FROM admins WHERE username = 'migration-admin'"
+      )).rows[0];
+      const optimizationPost = (await optimizationTransaction.query(`
+        INSERT INTO posts (
+          title, slug, excerpt, content, published, workflow_status, content_format,
+          meta_title, meta_description, og_title, og_description, faq_json,
+          image_url, image_alt, published_at
+        ) VALUES (
+          'Rollback-geprüfter Bestandsartikel', $1, 'Ausgangsfassung',
+          '<section><h2>Ausgang</h2><p>Bestehender Text.</p></section>', TRUE,
+          'published', 'static_html', 'Ausgangstitel', 'Ausgangsbeschreibung',
+          'Ausgangstitel', 'Ausgangsbeschreibung', '[]'::jsonb,
+          '/uploads/rollback.webp', 'Ausgangsbild', '2026-03-01T10:00:00Z'
+        )
+        RETURNING *
+      `, [rollbackSlug])).rows[0];
+      const optimizationJob = (await optimizationTransaction.query(`
+        INSERT INTO content_jobs (
+          job_type, status, idempotency_key, payload_json, max_attempts
+        ) VALUES (
+          'optimize_existing_post', 'queued', $1,
+          jsonb_build_object(
+            'source', 'admin_existing_content',
+            'post_id', $2::integer,
+            'admin_id', $3::integer,
+            'base_live_hash', $4::text
+          ),
+          3
+        )
+        RETURNING id
+      `, [
+        `pg-existing-rollback-job-${schemaName.slice(-12)}`,
+        optimizationPost.id,
+        optimizationAdmin.id,
+        'a'.repeat(64)
+      ])).rows[0];
+
+      await optimizationTransaction.query('SAVEPOINT duplicate_active_optimization');
+      try {
+        await assert.rejects(
+          optimizationTransaction.query(`
+            INSERT INTO content_jobs (
+              job_type, status, idempotency_key, payload_json, max_attempts
+            ) VALUES (
+              'optimize_existing_post', 'running', $1,
+              jsonb_build_object('post_id', $2::integer), 3
+            )
+          `, [`pg-existing-duplicate-${schemaName.slice(-12)}`, optimizationPost.id]),
+          (error) => error.code === '23505'
+            && error.constraint === 'ux_content_jobs_active_existing_optimization'
+        );
+      } finally {
+        await optimizationTransaction.query('ROLLBACK TO SAVEPOINT duplicate_active_optimization');
+        await optimizationTransaction.query('RELEASE SAVEPOINT duplicate_active_optimization');
+      }
+
+      const audit = (await optimizationTransaction.query(`
+        INSERT INTO content_post_audits (
+          post_id, job_id, audit_type, score, findings_json,
+          recommended_actions_json, status
+        ) VALUES (
+          $1::integer, $2::bigint, 'existing_post_optimization_v1', 72,
+          '[{"code":"missing_meta_title"}]'::jsonb,
+          '[{"field":"meta_title"}]'::jsonb,
+          'revision_created'
+        )
+        RETURNING id
+      `, [optimizationPost.id, optimizationJob.id])).rows[0];
+      const optimizationSnapshot = createRevisionSnapshot(optimizationPost);
+      optimizationSnapshot.fields.meta_title = 'Verbesserter Metatitel';
+      const optimizationReport = {
+        ...buildExistingPostDiff({
+          before: { metaTitle: optimizationPost.meta_title },
+          after: { metaTitle: optimizationSnapshot.fields.meta_title },
+          reasons: []
+        }),
+        baseLiveHash: optimizationSnapshot.base.live_hash,
+        beforeScore: 72,
+        afterScore: 90,
+        sources: []
+      };
+      const optimizationRevision = (await optimizationTransaction.query(`
+        INSERT INTO content_post_revisions (
+          post_id, audit_id, snapshot_json, status, revision_version,
+          admin_id, admin_username, optimization_job_id, optimization_report_json
+        ) VALUES (
+          $1::integer, $2::bigint, $3::jsonb, 'draft', 1,
+          $4::integer, $5::varchar(255), $6::bigint, $7::jsonb
+        )
+        RETURNING id, revision_version
+      `, [
+        optimizationPost.id,
+        audit.id,
+        JSON.stringify(optimizationSnapshot),
+        optimizationAdmin.id,
+        optimizationAdmin.username,
+        optimizationJob.id,
+        JSON.stringify(optimizationReport)
+      ])).rows[0];
+
+      const versionedRevision = (await optimizationTransaction.query(`
+        UPDATE content_post_revisions
+        SET revision_version = revision_version + 1,
+            status = 'approved',
+            approved_at = '2026-03-28T12:00:00Z',
+            updated_at = NOW()
+        WHERE id = $1::bigint
+          AND revision_version = $2::integer
+        RETURNING revision_version
+      `, [optimizationRevision.id, 1])).rows[0];
+      assert.equal(versionedRevision.revision_version, 2);
+      const staleVersionWrite = await optimizationTransaction.query(`
+        UPDATE content_post_revisions
+        SET revision_version = revision_version + 1
+        WHERE id = $1::bigint
+          AND revision_version = $2::integer
+        RETURNING revision_version
+      `, [optimizationRevision.id, 1]);
+      assert.equal(staleVersionWrite.rowCount, 0);
+
+      const optimizationRepository = createContentExistingPostOptimizationRepository(
+        nestedTransactionDatabase(optimizationTransaction, 'stale_livehash_repository')
+      );
+      const outcome = await optimizationRepository.createOutcomeBaseline({
+        revisionId: Number(optimizationRevision.id),
+        postId: Number(optimizationPost.id),
+        expectedVersion: 2,
+        appliedAt: '2026-03-28T12:00:00.000Z',
+        baselineStartDate: '2026-03-01',
+        baselineEndDate: '2026-03-28',
+        baselineMetrics: {
+          hasData: true,
+          clicks: 4,
+          impressions: 80,
+          ctr: 0.05,
+          averagePosition: 9.5,
+          queries: []
+        },
+        timezone: 'Europe/Berlin'
+      }, optimizationTransaction);
+      assert.equal(berlinCalendarDate(outcome.followup_start_date), '2026-03-29');
+      assert.equal(berlinCalendarDate(outcome.followup_end_date), '2026-04-25');
+
+      await optimizationTransaction.query(`
+        UPDATE posts
+        SET title = 'Parallel veränderter Liveartikel',
+            updated_at = updated_at + INTERVAL '1 second'
+        WHERE id = $1::integer
+      `, [optimizationPost.id]);
+      await assert.rejects(optimizationRepository.createOptimizedRevision({
+        postId: Number(optimizationPost.id),
+        auditId: Number(audit.id),
+        jobId: Number(optimizationJob.id),
+        baseLiveHash: optimizationSnapshot.base.live_hash,
+        snapshot: optimizationSnapshot,
+        report: optimizationReport,
+        admin: {
+          id: Number(optimizationAdmin.id),
+          username: optimizationAdmin.username
+        }
+      }), { code: 'CONTENT_REVISION_STALE' });
+
+      await optimizationTransaction.query('ROLLBACK');
+    } catch (error) {
+      await optimizationTransaction.query('ROLLBACK');
+      throw error;
+    } finally {
+      optimizationTransaction.release();
+    }
+    assert.equal((await pool.query(
+      'SELECT COUNT(*)::integer AS count FROM posts WHERE slug = $1',
+      [rollbackSlug]
+    )).rows[0].count, 0);
 
     const weeklyPoolTables = await pool.query(`
       SELECT

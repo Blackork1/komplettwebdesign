@@ -8,6 +8,8 @@ Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhal
 
 **Hinweis für das Wochenpool-Update:** Die wöchentliche OpenAI-Webrecherche benötigt keine neue `.env`-Variable und keine Änderung an `docker-compose.yml`. Der vorhandene `OPENAI_API_KEY` wird weiterverwendet. Erforderlich sind ein geprüftes Datenbankbackup, Migration 010 und der gemeinsame Recreate von `app` und `content-worker`. Migration 010 speichert zusätzlich einen dauerhaften Rechercheversuch pro Kalenderwoche, damit ein unklarer oder bereits kostenpflichtiger OpenAI-Aufruf nicht durch einen anderen Lauf doppelt ausgeführt wird. DataForSEO und Google Ads werden nicht angebunden.
 
+**Hinweis für die KI-Bestandsoptimierung:** Dieses Update benötigt keine neue `.env`-Variable und keinen neuen Docker-Dienst. Die bestehende OpenAI-, PostgreSQL- und GSC-Konfiguration wird weiterverwendet. Erforderlich sind ein geprüftes Datenbankbackup, der Migrationslauf einschließlich `011_create_existing_post_optimization.sql` und `012_upgrade_revision_outcome_claims.sql`, die nachfolgende Schema-Prüfung sowie erst danach der gemeinsame Recreate von `app` und `content-worker`. Migration 011 ergänzt die geschützten Optimierungsrevisionen und GSC-Ergebnisse; Migration 012 aktualisiert bereits vorhandene Outcome-Tabellen migrationssicher um die Claim-Spalten und den validierten Claim-Constraint.
+
 ## 1. Projektpfad und Ausgangslage prüfen
 
 Alle kopierbaren Hostbefehle dieser Anleitung beginnen am bereits geöffneten Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$`. Der feste Host-Betriebsordner ist `~/apps/komplettwebdesign`; ausschließlich `server/` wird per Git automatisch aktualisiert, also `~/apps/komplettwebdesign/server`. Die Dateien `.env`, `docker-compose.yml` und `deploy/deploy.sh` werden manuell gepflegt und vor jeder Änderung gesichert. Sie liegen direkt unter `~/apps/komplettwebdesign` und dürfen nicht durch einen Checkout im Unterordner `server/` überschrieben werden.
@@ -307,7 +309,9 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
     -e CONTENT_AGENT_PG_TEST_URL="postgresql://${TEST_DB_USER}:${TEST_DB_PASSWORD}@${TEST_DB_CONTAINER}:5432/${TEST_DB_NAME}" \
     -e CONTENT_AGENT_PG_TEST_ALLOW_RESET=true \
     -e CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1 \
-    komplettwebdesign-app:local node --test tests/contentAgentPostgresIntegration.test.js
+    komplettwebdesign-app:local node --test \
+      tests/contentAgentPostgresIntegration.test.js \
+      tests/contentRevisionOutcomePostgresIntegration.test.js
 
   docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
     psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
@@ -316,7 +320,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009 und 010 erfolgreich melden. Danach muss der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, der E2E-Test oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009, 010, 011 und 012 erfolgreich melden. Danach müssen sowohl der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish als auch die isolierten Verträge für KI-Bestandsoptimierung, GSC-Basis, 28-Tage-Folgefenster und migrationssichere Outcome-Claims bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, einer der E2E-Tests oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
 Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
@@ -338,10 +342,64 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql` und `010_create_weekly_topic_pools.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 010 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql`, `010_create_weekly_topic_pools.sql`, `011_create_existing_post_optimization.sql` und `012_upgrade_revision_outcome_claims.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Migration 011 ergänzt die Tabellen `content_revision_optimization_outcomes` und `content_revision_optimization_feedback`, den eindeutigen aktiven Jobindex `ux_content_jobs_active_existing_optimization` sowie den fälligen Outcome-Index `idx_content_revision_outcomes_pending`. Migration 012 ergänzt bei bereits ausgeführter Migration 011 die Claim-Spalten idempotent und erzwingt den validierten Constraint `content_revision_optimization_outcomes_claim_consistent`. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 012 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
 docker compose run --rm app npm run migrate:content-agent
+```
+
+Unmittelbar nach dem Migrationslauf und noch vor Dry-Run oder Worker-Neustart die für die Bestandsoptimierung benötigten Tabellen, Indizes, Claim-Spalten und den validierten Constraint prüfen. Dieser Block liest ausschließlich PostgreSQL-Systemkataloge und gibt weder Artikelinhalte noch Zugangsdaten aus. Er muss exakt `ok` ausgeben; andernfalls ist der Rollout abzubrechen:
+
+```bash
+CONTENT_AGENT_SCHEMA_OK="$(
+  docker compose run --rm -T app node --input-type=module <<'NODE'
+import pg from 'pg';
+
+const client = new pg.Client({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+try {
+  await client.connect();
+  const { rows } = await client.query(`
+    SELECT
+      to_regclass('public.content_revision_optimization_outcomes') IS NOT NULL AS outcomes_table,
+      to_regclass('public.content_revision_optimization_feedback') IS NOT NULL AS feedback_table,
+      to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
+      to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'content_revision_optimization_outcomes'
+          AND column_name IN ('evaluation_claim_token', 'evaluation_claimed_at')
+        HAVING COUNT(*) = 2
+      ) AS claim_columns,
+      EXISTS (
+        SELECT 1
+        FROM pg_constraint constraint_row
+        JOIN pg_class table_row ON table_row.oid = constraint_row.conrelid
+        JOIN pg_namespace schema_row ON schema_row.oid = table_row.relnamespace
+        WHERE schema_row.nspname = 'public'
+          AND table_row.relname = 'content_revision_optimization_outcomes'
+          AND constraint_row.conname = 'content_revision_optimization_outcomes_claim_consistent'
+          AND constraint_row.convalidated = TRUE
+      ) AS claim_constraint
+  `);
+  if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
+    throw new Error('Migration 011/012 ist nicht vollständig wirksam.');
+  }
+  process.stdout.write('ok\n');
+} finally {
+  await client.end().catch(() => {});
+}
+NODE
+)"
+test "$CONTENT_AGENT_SCHEMA_OK" = "ok"
 ```
 
 Vor dem Workerstart folgt zwingend der lokale Dry-Run. Er verwendet simulierte Adapter und muss in seinem JSON-Ergebnis exakt den sicheren Vertrag `"externalCalls":0`, `"articleValid":true`, `"publishMode":"draft"`, `"scheduledReview":true` und `"notificationSimulated":true` melden:
@@ -352,7 +410,7 @@ docker compose run --rm app npm run content-agent:dry-run
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
 
-Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 010 und demselben geprüften Image:
+Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration bis einschließlich 012, Schema-Prüfung und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 012 und demselben geprüften Image:
 
 ```bash
 docker compose up -d --no-deps --force-recreate app content-worker
@@ -817,6 +875,16 @@ docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB
 Die erste Ausgabe muss fünf vorhandene Tabellen nennen, die zweite Ausgabe muss `t` lauten. Im Adminbereich anschließend ausschließlich mit einem bewusst geprüften Vorschlag testen: Regeltext und Belege lesen, Regel aktivieren und kontrollieren, dass sie unter „Aktive und bisherige Regeln“ mit Version 1 erscheint. Der zugehörige Artikel muss weiterhin unveröffentlicht bleiben. Erst ein danach neu gestarteter Content-Job erhält die aktive Regelversion in seinem unveränderlichen Snapshot; bereits laufende oder abgeschlossene Jobs werden nicht rückwirkend verändert.
 
 Eine Aktivierung, Änderung, Pausierung oder Deaktivierung benötigt immer den geschützten Admin-POST mit CSRF, ausdrücklicher Bestätigung und aktueller Version. Der Wirksamkeitsstatus bleibt bis zu fünf neuen Artikeln auf „Weiter beobachten“. Search-Console-Werte sind dort nur beschreibender Kontext und dürfen keine Regel automatisch ändern.
+
+### 9.3 KI-Bestandsoptimierung kontrolliert abnehmen
+
+Nach erfolgreicher Schema-Prüfung und gesundem Worker im Adminbereich den Reiter mit den bestehenden Inhalten öffnen. Für den kontrollierten KI-Bestandsoptimierungsauftrag genau einen bereits veröffentlichten Artikel mit `content_format=static_html` auswählen, dessen Livefassung vorher bewusst gelesen und dessen Titel, Slug sowie Änderungszeitpunkt notiert wurden. Die Aktion „Mit KI prüfen und optimieren“ genau einmal starten. Sie kann OpenAI-Kosten und bei festgestelltem Aktualitätsbedarf Kosten für die vorhandene OpenAI-Webrecherche verursachen. Keinen zweiten Auftrag anlegen, solange die Zeile „Optimierung läuft“, einen sicheren Wiederaufnahmezustand oder eine manuelle Providerklärung zeigt.
+
+In „Jobs & Protokolle“ sowie in den Workerlogs prüfen, dass genau ein Auftrag vom Typ `optimize_existing_post` verarbeitet wird. Während des gesamten Laufs muss der öffentliche Artikel unverändert bleiben. Nach erfolgreichem Abschluss muss die Bestandsliste „Optimierung prüfen“ anbieten; die Vergleichsansicht zeigt die Livefassung links und die geschützte Revision rechts. Slug, Bild-URL, Inhaltsformat, Veröffentlichungsstatus und Veröffentlichungszeitpunkte dürfen in der Revision nicht verändert sein. Bei `legacy_ejs` muss zusätzlich der Artikeltext bytegenau unverändert bleiben.
+
+Zunächst mindestens eine sichere Einzeländerung zurücknehmen und abwarten, bis die erneut gestartete Validierung einen terminalen Zustand erreicht. Erst danach die aktuelle Revisionsversion erneut prüfen. Für diesen technischen Abnahmelauf die Gesamtübernahme nur dann bestätigen, wenn Inhalt, Quellen, Qualitätsscore, Diff und verbleibende Befunde redaktionell geprüft wurden. Eine Übernahme muss den Livehash und die aktuelle Revisionsversion atomar prüfen; eine zwischenzeitliche Liveänderung muss stattdessen konfliktfrei abbrechen.
+
+Nach einer bewussten Übernahme muss genau eine Zeile in `content_revision_optimization_outcomes` bestehen. Der gespeicherte Folgezeitraum beginnt am ersten vollständigen lokalen Kalendertag nach der Übernahme und umfasst 28 Tage. Die Auswertung darf erst nach vollständiger lokaler GSC-Tagesabdeckung erscheinen und bleibt als „Neutrale Beobachtung“ beziehungsweise „Noch nicht belastbar“ gekennzeichnet. Sie ändert oder verwirft niemals automatisch einen Artikel. Falls die Revision im Abnahmelauf nicht fachlich freigegeben werden kann, sie bewusst ablehnen; auch dann bleibt die Livefassung unverändert.
 
 ## 10. Normaler Rückfall ohne Datenbank-Restore
 

@@ -213,6 +213,43 @@ test('Rollout dokumentiert Migration 004 bis 010, den terminierten Reviewfluss u
   ]) assert.match(guide, new RegExp(checkpoint));
 });
 
+test('VPS-Anleitung migriert Bestandsoptimierung 011 und Outcome-Upgrade 012 vor dem Worker-Neustart', () => {
+  assert.match(guide, /011_create_existing_post_optimization\.sql/);
+  assert.match(guide, /012_upgrade_revision_outcome_claims\.sql/);
+  assert.match(guide, /KI-Bestandsoptimierung[^\n]*keine neue `\.env`-Variable/i);
+  assert.match(guide, /KI-Bestandsoptimierung[^\n]*keinen neuen Docker-Dienst/i);
+  assert.match(
+    guide,
+    /bestehende OpenAI-, PostgreSQL- und GSC-Konfiguration[^\n]*(?:weiterverwendet|wiederverwendet)/i
+  );
+
+  for (const databaseObject of [
+    'content_revision_optimization_outcomes',
+    'content_revision_optimization_feedback',
+    'ux_content_jobs_active_existing_optimization',
+    'idx_content_revision_outcomes_pending',
+    'content_revision_optimization_outcomes_claim_consistent'
+  ]) assert.match(guide, new RegExp(databaseObject));
+
+  const rolloutStart = guide.indexOf('## 7. Produktionsbackup erstellen');
+  const repeatableDeployStart = guide.indexOf('### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`');
+  assert.ok(rolloutStart >= 0 && repeatableDeployStart > rolloutStart);
+  const productionRollout = guide.slice(rolloutStart, repeatableDeployStart);
+  const migration = productionRollout.indexOf(
+    'docker compose run --rm app npm run migrate:content-agent'
+  );
+  const schemaVerification = productionRollout.indexOf('CONTENT_AGENT_SCHEMA_OK=');
+  const workerRestart = productionRollout.indexOf(
+    'docker compose up -d --no-deps --force-recreate app content-worker'
+  );
+  assert.ok(migration >= 0);
+  assert.ok(schemaVerification > migration, 'Schema 011/012 muss nach der Migration geprüft werden');
+  assert.ok(workerRestart > schemaVerification, 'Worker darf erst nach der Schema-Prüfung neu starten');
+
+  assert.match(guide, /tests\/contentRevisionOutcomePostgresIntegration\.test\.js/);
+  assert.match(guide, /kontrollierten KI-Bestandsoptimierungsauftrag/i);
+});
+
 test('VPS-Anleitung dokumentiert den vollständigen SMTP-Vertrag und den nötigen Recreate', () => {
   for (const name of ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM']) {
     assert.match(guide, new RegExp(`^${name}=`, 'm'));
