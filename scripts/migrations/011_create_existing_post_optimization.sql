@@ -52,6 +52,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_content_jobs_active_existing_optimization
   WHERE job_type = 'optimize_existing_post'
     AND status IN ('queued', 'running', 'needs_manual_attention');
 
+CREATE TABLE IF NOT EXISTS content_search_metric_sync_days (
+  metric_date DATE PRIMARY KEY,
+  synced_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS content_revision_optimization_outcomes (
   revision_id BIGINT PRIMARY KEY REFERENCES content_post_revisions(id) ON DELETE CASCADE,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -64,6 +69,8 @@ CREATE TABLE IF NOT EXISTS content_revision_optimization_outcomes (
   followup_metrics_json JSONB,
   feedback_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   evaluation_status VARCHAR(24) NOT NULL DEFAULT 'waiting',
+  evaluation_claim_token UUID,
+  evaluation_claimed_at TIMESTAMPTZ,
   evaluated_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -71,6 +78,10 @@ CREATE TABLE IF NOT EXISTS content_revision_optimization_outcomes (
   CHECK (followup_metrics_json IS NULL OR jsonb_typeof(followup_metrics_json) = 'object'),
   CHECK (jsonb_typeof(feedback_json) = 'array'),
   CHECK (evaluation_status IN ('waiting', 'ready', 'evaluated', 'insufficient_data', 'failed')),
+  CHECK (
+    (evaluation_status = 'ready' AND evaluation_claim_token IS NOT NULL AND evaluation_claimed_at IS NOT NULL)
+    OR (evaluation_status <> 'ready' AND evaluation_claim_token IS NULL AND evaluation_claimed_at IS NULL)
+  ),
   CHECK (followup_end_date = followup_start_date + 27)
 );
 

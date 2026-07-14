@@ -31,6 +31,21 @@
             <td>
               <% if (item.auditId) { %><span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span><% } else { %><span class="content-agent-quiet">Noch nicht geprüft</span><% } %>
               <div class="mt-2"><strong data-existing-content-optimization-label><%= optimization.statusLabel %></strong><br><span data-existing-content-optimization-stage><%= optimization.stageLabel %></span><br><small class="content-agent-quiet" data-existing-content-optimization-message><%= optimization.message %></small></div>
+              <% if (item.outcome) { %>
+                <div class="mt-3" data-revision-outcome data-state="<%= item.outcome.state %>">
+                  <strong><%= item.outcome.label %></strong>
+                  <% if (item.outcome.state !== 'waiting') { %>
+                    <div class="small mt-1">
+                      <span>Basis: <%= item.outcome.baseline.clicksLabel %> Klicks, <%= item.outcome.baseline.impressionsLabel %> Impressionen, CTR <%= item.outcome.baseline.ctrLabel %>, Position <%= item.outcome.baseline.averagePositionLabel %></span><br>
+                      <span>Danach: <%= item.outcome.followup.clicksLabel %> Klicks, <%= item.outcome.followup.impressionsLabel %> Impressionen, CTR <%= item.outcome.followup.ctrLabel %>, Position <%= item.outcome.followup.averagePositionLabel %></span><br>
+                      <span>Änderung: <%= item.outcome.changes.clicksLabel %> Klicks, <%= item.outcome.changes.impressionsLabel %> Impressionen, CTR <%= item.outcome.changes.ctrLabel %>, Position <%= item.outcome.changes.averagePositionLabel %></span>
+                    </div>
+                    <% if (item.outcome.newImportantQueries.length) { %><small>Neue wichtige Suchanfragen:</small><ul class="mb-1"><% item.outcome.newImportantQueries.forEach((query) => { %><li><%= query.query %> (<%= query.clicksLabel %> Klicks, <%= query.impressionsLabel %> Impressionen)</li><% }) %></ul><% } %>
+                    <% if (item.outcome.lostImportantQueries.length) { %><small>Verlorene wichtige Suchanfragen:</small><ul class="mb-1"><% item.outcome.lostImportantQueries.forEach((query) => { %><li><%= query.query %> (<%= query.clicksLabel %> Klicks, <%= query.impressionsLabel %> Impressionen)</li><% }) %></ul><% } %>
+                    <small class="content-agent-quiet"><%= item.outcome.note %></small>
+                  <% } %>
+                </div>
+              <% } %>
             </td>
             <td><% if (item.findings && item.findings.length) { %><ul class="mb-0"><% item.findings.slice(0, 4).forEach((finding) => { %><li><%= finding.message || finding.code %></li><% }) %></ul><% if (item.findings.length > 4) { %><small>+ <%= item.findings.length - 4 %> weitere</small><% } %><% } else { %>–<% } %></td>
             <td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td>

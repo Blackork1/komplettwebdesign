@@ -678,6 +678,72 @@ test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
   }]);
 });
 
+test('Bestandspräsentation zeigt Outcomes ausschließlich neutral, endlich und mit begrenzten Queries', () => {
+  const [item] = buildExistingContentListPresentation([{
+    id: 4,
+    title: 'Artikel',
+    slug: 'artikel',
+    updated_at: '2026-07-11T12:00:00.000Z',
+    outcome_evaluation_status: 'evaluated',
+    outcome_baseline_clicks: '4',
+    outcome_baseline_impressions: '80',
+    outcome_baseline_ctr: '0.05',
+    outcome_baseline_average_position: '12.5',
+    outcome_followup_clicks: '8',
+    outcome_followup_impressions: '100',
+    outcome_followup_ctr: '0.08',
+    outcome_followup_average_position: '9.5',
+    outcome_changes_json: {
+      clicks: 4, impressions: 20, ctr: 0.03, averagePosition: -3,
+      raw: 'nicht übernehmen'
+    },
+    outcome_new_queries_json: Array.from({ length: 8 }, (_, index) => ({
+      query: index === 0 ? ' <script>alert(1)</script>\n ' : `Neue   Suche ${index}`,
+      clicks: 2,
+      impressions: 20,
+      provider: 'nicht übernehmen'
+    })),
+    outcome_lost_queries_json: [{ query: 'Alte Suche', clicks: 1, impressions: 15 }],
+    provider_response: { geheim: true }
+  }]);
+
+  assert.deepEqual(item.outcome, {
+    state: 'observed',
+    label: 'Neutrale Beobachtung',
+    note: 'Die Werte sind eine neutrale Beobachtung. Saison, Nachfrage und Google-Änderungen können sie beeinflussen.',
+    baseline: {
+      clicksLabel: '4', impressionsLabel: '80', ctrLabel: '5 %', averagePositionLabel: '12,5'
+    },
+    followup: {
+      clicksLabel: '8', impressionsLabel: '100', ctrLabel: '8 %', averagePositionLabel: '9,5'
+    },
+    changes: {
+      clicksLabel: '+4', impressionsLabel: '+20', ctrLabel: '+3 %', averagePositionLabel: '-3,0'
+    },
+    newImportantQueries: [
+      { query: '<script>alert(1)</script>', clicksLabel: '2', impressionsLabel: '20' },
+      { query: 'Neue Suche 1', clicksLabel: '2', impressionsLabel: '20' },
+      { query: 'Neue Suche 2', clicksLabel: '2', impressionsLabel: '20' },
+      { query: 'Neue Suche 3', clicksLabel: '2', impressionsLabel: '20' },
+      { query: 'Neue Suche 4', clicksLabel: '2', impressionsLabel: '20' }
+    ],
+    lostImportantQueries: [
+      { query: 'Alte Suche', clicksLabel: '1', impressionsLabel: '15' }
+    ]
+  });
+  assert.doesNotMatch(JSON.stringify(item), /provider_response|geheim|\braw\b/i);
+});
+
+test('wartende und wenig belastbare Outcomes erhalten ausschließlich die vereinbarten Zustände', () => {
+  const rows = buildExistingContentListPresentation([
+    { id: 1, title: 'Warten', slug: 'warten', outcome_evaluation_status: 'ready' },
+    { id: 2, title: 'Wenig Daten', slug: 'wenig', outcome_evaluation_status: 'insufficient_data' }
+  ]);
+  assert.equal(rows[0].outcome.label, 'Warte auf 28 Tage');
+  assert.equal(rows[1].outcome.label, 'Noch nicht belastbar');
+  assert.doesNotMatch(JSON.stringify(rows), /verbesser|verschlechter|kausal/i);
+});
+
 test('Bestandsoptimierungsstatus präsentiert laufende Stufe ausschließlich über allowlistete Felder', () => {
   const result = presentExistingContentOptimizationState({
     optimization_job_id: 44,

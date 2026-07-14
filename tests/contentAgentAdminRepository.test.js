@@ -170,10 +170,14 @@ test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () 
   assert.match(sql, /FROM posts/i);
   assert.match(sql, /published = TRUE/i);
   assert.match(sql, /r\.audit_id = audit\.id/i);
+  assert.match(sql, /content_revision_optimization_outcomes/i);
+  assert.match(sql, /outcome\.evaluation_status AS outcome_evaluation_status/i);
+  assert.match(sql, /baseline_metrics_json ->> 'clicks' AS outcome_baseline_clicks/i);
+  assert.match(sql, /followup_metrics_json -> 'newImportantQueries' AS outcome_new_queries_json/i);
   const projection = sql.match(/^SELECT[\s\S]*?FROM posts p/i)?.[0] || '';
   assert.doesNotMatch(
     projection,
-    /\bcontent\b|stage_results_json|payload_json\s+AS|openai_response_ids_json/i
+    /\bcontent\b|stage_results_json|payload_json\s+AS|openai_response_ids_json|baseline_metrics_json\s*(?:,|AS)|followup_metrics_json\s*(?:,|AS)/i
   );
 });
 
@@ -193,7 +197,7 @@ test('Bestandsliste wählt neuesten Job, Run und Optimierungsrevision determinis
   const projection = sql.match(/^SELECT[\s\S]*?FROM posts p/i)?.[0] || '';
   assert.doesNotMatch(
     projection,
-    /stage_results_json\s*(?:,|AS)|runtime_snapshot_json|openai_response_ids_json|payload_json\s+AS|optimization_report_json|snapshot_json/i
+    /stage_results_json\s*(?:,|AS)|runtime_snapshot_json|openai_response_ids_json|payload_json\s+AS|optimization_report_json|snapshot_json|baseline_metrics_json\s*(?:,|AS)|followup_metrics_json\s*(?:,|AS)/i
   );
   assert.match(projection, /optimization_run\.current_stage AS optimization_current_stage/i);
   assert.match(projection, /optimization_revision_id/i);

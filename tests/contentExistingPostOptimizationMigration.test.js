@@ -13,6 +13,10 @@ test('Migration 011 schützt aktive Bestandsoptimierungen und speichert GSC-Outc
   assert.match(sql, /baseline_metrics_json JSONB NOT NULL/i);
   assert.match(sql, /followup_metrics_json JSONB/i);
   assert.match(sql, /feedback_json JSONB NOT NULL/i);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS content_search_metric_sync_days/i);
+  assert.match(sql, /metric_date DATE PRIMARY KEY/i);
+  assert.match(sql, /evaluation_claim_token UUID/i);
+  assert.match(sql, /evaluation_claimed_at TIMESTAMPTZ/i);
 });
 
 test('Migration 011 bereinigt Mehrfach-Drafts postweit vor dem eindeutigen Index und erhält Audits', async () => {

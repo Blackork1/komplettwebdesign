@@ -87,7 +87,11 @@ function normalizeMaxAttempts(value) {
 }
 
 function requiresEnabledAgent(jobType, payload) {
-  return ['sync_search_console', 'analyze_search_opportunities'].includes(jobType)
+  return [
+    'sync_search_console',
+    'analyze_search_opportunities',
+    'evaluate_revision_outcomes'
+  ].includes(jobType)
     || (jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule')
     || (jobType === 'generate_manual_draft' && payload?.source === 'admin_manual')
     || (

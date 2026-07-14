@@ -726,6 +726,8 @@ test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der
     issues: []
   };
   let acceptedInput;
+  let baselineInput;
+  const events = [];
   const service = createContentRevisionService({
     repository: {
       async approveRevisionTransaction(input) {
@@ -765,9 +767,29 @@ test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der
     },
     optimizationRepository: {
       async recordAcceptedRevisionFeedback(input, client) {
+        events.push('feedback');
         acceptedInput = { input, client };
+      },
+      async createOutcomeBaseline(input, client) {
+        events.push('baseline');
+        baselineInput = { input, client };
+        return { revision_id: input.revisionId };
       }
-    }
+    },
+    searchMetricsRepository: {
+      async getLatestCompletePageMetrics(input, client) {
+        events.push('metrics');
+        assert.equal(client, transaction);
+        assert.deepEqual(input, {
+          postId: 7,
+          throughDate: '2026-07-12',
+          days: 28,
+          queryLimit: 10
+        });
+        return null;
+      }
+    },
+    timezone: 'Europe/Berlin'
   });
 
   await service.approveRevision({
@@ -781,6 +803,17 @@ test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der
   assert.equal(acceptedInput.input.revisionId, 71);
   assert.equal(acceptedInput.input.expectedVersion, 3);
   assert.deepEqual(acceptedInput.input.admin, { id: 7, username: 'Admin' });
+  assert.equal(baselineInput.client, transaction);
+  assert.deepEqual(baselineInput.input.baselineMetrics, {
+    hasData: false,
+    clicks: 0,
+    impressions: 0,
+    ctr: 0,
+    averagePosition: null,
+    queries: []
+  });
+  assert.equal(baselineInput.input.appliedAt, '2026-07-12T10:00:00.000Z');
+  assert.deepEqual(events, ['feedback', 'metrics', 'baseline']);
 });
 
 test('Übernahme einer KI-Revision scheitert serverseitig bei Risiken oder fehlgeschlagener Revalidierung', async () => {

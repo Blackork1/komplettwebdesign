@@ -673,22 +673,126 @@ export function buildDraftListPresentation(rows = [], now = new Date(), schedule
   });
 }
 
+function outcomeNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+}
+
+function outcomeMetricLabels(row, prefix) {
+  const clicks = outcomeNumber(row[`${prefix}_clicks`]);
+  const impressions = outcomeNumber(row[`${prefix}_impressions`]);
+  const ctr = outcomeNumber(row[`${prefix}_ctr`]);
+  const averagePosition = outcomeNumber(row[`${prefix}_average_position`]);
+  return {
+    clicksLabel: clicks === null ? '–' : germanNumber(clicks, { maximumFractionDigits: 0 }),
+    impressionsLabel: impressions === null
+      ? '–'
+      : germanNumber(impressions, { maximumFractionDigits: 0 }),
+    ctrLabel: ctr === null
+      ? '–'
+      : germanNumber(ctr, { style: 'percent', maximumFractionDigits: 1 }),
+    averagePositionLabel: averagePosition === null
+      ? '–'
+      : germanNumber(averagePosition, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  };
+}
+
+function outcomeChangeLabels(value) {
+  const changes = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const label = (raw, options = {}) => {
+    const number = outcomeNumber(raw);
+    return number === null ? '–' : germanNumber(number, { signDisplay: 'exceptZero', ...options });
+  };
+  return {
+    clicksLabel: label(changes.clicks, { maximumFractionDigits: 0 }),
+    impressionsLabel: label(changes.impressions, { maximumFractionDigits: 0 }),
+    ctrLabel: label(changes.ctr, { style: 'percent', maximumFractionDigits: 1 }),
+    averagePositionLabel: label(changes.averagePosition, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    })
+  };
+}
+
+function outcomeQueryPresentation(value) {
+  const seen = new Set();
+  const result = [];
+  for (const raw of Array.isArray(value) ? value : []) {
+    const query = [...String(raw?.query || '')
+      .normalize('NFKC')
+      .replace(/[\u0000-\u001f\u007f]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()]
+      .slice(0, 160)
+      .join('');
+    if (!query || seen.has(query)) continue;
+    seen.add(query);
+    const clicks = outcomeNumber(raw?.clicks);
+    const impressions = outcomeNumber(raw?.impressions);
+    result.push({
+      query,
+      clicksLabel: clicks === null ? '–' : germanNumber(clicks, { maximumFractionDigits: 0 }),
+      impressionsLabel: impressions === null
+        ? '–'
+        : germanNumber(impressions, { maximumFractionDigits: 0 })
+    });
+    if (result.length === 5) break;
+  }
+  return result;
+}
+
+function presentRevisionOutcome(row) {
+  const status = typeof row.outcome_evaluation_status === 'string'
+    ? row.outcome_evaluation_status
+    : '';
+  if (!status) return null;
+  const state = status === 'evaluated'
+    ? 'observed'
+    : status === 'insufficient_data'
+      ? 'insufficient_data'
+      : 'waiting';
+  const label = state === 'observed'
+    ? 'Neutrale Beobachtung'
+    : state === 'insufficient_data'
+      ? 'Noch nicht belastbar'
+      : 'Warte auf 28 Tage';
+  return {
+    state,
+    label,
+    note: state === 'waiting'
+      ? null
+      : 'Die Werte sind eine neutrale Beobachtung. Saison, Nachfrage und Google-Änderungen können sie beeinflussen.',
+    baseline: outcomeMetricLabels(row, 'outcome_baseline'),
+    followup: outcomeMetricLabels(row, 'outcome_followup'),
+    changes: outcomeChangeLabels(row.outcome_changes_json),
+    newImportantQueries: outcomeQueryPresentation(row.outcome_new_queries_json),
+    lostImportantQueries: outcomeQueryPresentation(row.outcome_lost_queries_json)
+  };
+}
+
 export function buildExistingContentListPresentation(rows = []) {
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    slug: row.slug,
-    updatedAt: row.updated_at,
-    optimization: presentExistingContentOptimizationState(row),
-    ...(Object.hasOwn(row, 'audit_id') ? {
-      auditId: row.audit_id || null,
-      auditScore: row.audit_score === null || row.audit_score === undefined ? null : Number(row.audit_score),
-      auditStatus: row.audit_status || null,
-      findings: Array.isArray(row.findings_json) ? row.findings_json : [],
-      revisionId: row.revision_id || null,
-      revisionStatus: row.revision_status || null
-    } : {})
-  }));
+  return rows.map((row) => {
+    const outcome = presentRevisionOutcome(row);
+    return ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      updatedAt: row.updated_at,
+      optimization: presentExistingContentOptimizationState(row),
+      ...(outcome ? { outcome } : {}),
+      ...(Object.hasOwn(row, 'audit_id') ? {
+        auditId: row.audit_id || null,
+        auditScore: row.audit_score === null || row.audit_score === undefined
+          ? null
+          : Number(row.audit_score),
+        auditStatus: row.audit_status || null,
+        findings: Array.isArray(row.findings_json) ? row.findings_json : [],
+        revisionId: row.revision_id || null,
+        revisionStatus: row.revision_status || null
+      } : {})
+    });
+  });
 }
 
 const REVISION_COMPARISON_GROUPS = Object.freeze([

@@ -22,6 +22,7 @@ import { isExistingPostRevisionFailureCode } from '../services/contentAgent/exis
 
 const HASH = /^[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_SNAPSHOT_BYTES = 1_000_000;
 const MAX_REPORT_BYTES = 512_000;
 const MAX_FEEDBACK_DETAILS_BYTES = 64_000;
@@ -130,6 +131,164 @@ function plainObject(value, label) {
     throw validationError(`${label} muss ein Objekt sein.`);
   }
   return value;
+}
+
+function exactObjectKeys(value, keys, label) {
+  const object = plainObject(value, label);
+  const expected = [...keys].sort();
+  const actual = Object.keys(object).sort();
+  if (actual.length !== expected.length
+      || actual.some((key, index) => key !== expected[index])) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  return object;
+}
+
+function finiteNumber(value, label, { nullable = false, nonNegative = false } = {}) {
+  if (nullable && value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value) || (nonNegative && value < 0)) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  return value;
+}
+
+function outcomeQuery(value, label) {
+  const query = exactObjectKeys(
+    value,
+    ['query', 'clicks', 'impressions', 'ctr', 'averagePosition'],
+    label
+  );
+  if (typeof query.query !== 'string'
+      || !query.query
+      || query.query !== query.query.trim()
+      || [...query.query].length > 160
+      || /[\u0000-\u001f\u007f]/.test(query.query)) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  const clicks = finiteNumber(query.clicks, `${label}: Klicks`, { nonNegative: true });
+  const impressions = finiteNumber(
+    query.impressions,
+    `${label}: Impressionen`,
+    { nonNegative: true }
+  );
+  const ctr = finiteNumber(query.ctr, `${label}: CTR`, { nonNegative: true });
+  if (ctr > 1) throw validationError(`${label}: CTR ist ungültig.`);
+  return {
+    query: query.query,
+    clicks,
+    impressions,
+    ctr,
+    averagePosition: finiteNumber(
+      query.averagePosition,
+      `${label}: Position`,
+      { nullable: true, nonNegative: true }
+    )
+  };
+}
+
+function outcomeMetrics(value, label) {
+  const metrics = exactObjectKeys(
+    value,
+    ['hasData', 'clicks', 'impressions', 'ctr', 'averagePosition', 'queries'],
+    label
+  );
+  if (typeof metrics.hasData !== 'boolean'
+      || !Array.isArray(metrics.queries)
+      || metrics.queries.length > 10) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  const ctr = finiteNumber(metrics.ctr, `${label}: CTR`, { nonNegative: true });
+  if (ctr > 1) throw validationError(`${label}: CTR ist ungültig.`);
+  return {
+    hasData: metrics.hasData,
+    clicks: finiteNumber(metrics.clicks, `${label}: Klicks`, { nonNegative: true }),
+    impressions: finiteNumber(
+      metrics.impressions,
+      `${label}: Impressionen`,
+      { nonNegative: true }
+    ),
+    ctr,
+    averagePosition: finiteNumber(
+      metrics.averagePosition,
+      `${label}: Position`,
+      { nullable: true, nonNegative: true }
+    ),
+    queries: metrics.queries.map((query, index) => outcomeQuery(query, `${label}: Query ${index + 1}`))
+  };
+}
+
+function outcomeQueryChange(value, label) {
+  const query = exactObjectKeys(value, ['query', 'clicks', 'impressions'], label);
+  if (typeof query.query !== 'string'
+      || !query.query
+      || query.query !== query.query.trim()
+      || [...query.query].length > 160
+      || /[\u0000-\u001f\u007f]/.test(query.query)) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  return {
+    query: query.query,
+    clicks: finiteNumber(query.clicks, `${label}: Klicks`, { nonNegative: true }),
+    impressions: finiteNumber(
+      query.impressions,
+      `${label}: Impressionen`,
+      { nonNegative: true }
+    )
+  };
+}
+
+function outcomeFollowupMetrics(value) {
+  const label = 'Die GSC-Folgemetriken';
+  const followup = exactObjectKeys(value, [
+    'hasData', 'clicks', 'impressions', 'ctr', 'averagePosition', 'queries',
+    'changes', 'newImportantQueries', 'lostImportantQueries', 'label', 'note'
+  ], label);
+  const metrics = outcomeMetrics(Object.fromEntries([
+    'hasData', 'clicks', 'impressions', 'ctr', 'averagePosition', 'queries'
+  ].map((key) => [key, followup[key]])), label);
+  const changes = exactObjectKeys(
+    followup.changes,
+    ['clicks', 'impressions', 'ctr', 'averagePosition'],
+    `${label}: Änderungen`
+  );
+  if (!Array.isArray(followup.newImportantQueries)
+      || followup.newImportantQueries.length > 5
+      || !Array.isArray(followup.lostImportantQueries)
+      || followup.lostImportantQueries.length > 5
+      || !['Neutrale Beobachtung', 'Noch nicht belastbar'].includes(followup.label)
+      || typeof followup.note !== 'string'
+      || !followup.note
+      || followup.note.length > 300) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  return {
+    ...metrics,
+    changes: {
+      clicks: finiteNumber(changes.clicks, `${label}: Klickänderung`),
+      impressions: finiteNumber(changes.impressions, `${label}: Impressionsänderung`),
+      ctr: finiteNumber(changes.ctr, `${label}: CTR-Änderung`),
+      averagePosition: finiteNumber(
+        changes.averagePosition,
+        `${label}: Positionsänderung`,
+        { nullable: true }
+      )
+    },
+    newImportantQueries: followup.newImportantQueries.map((query, index) => (
+      outcomeQueryChange(query, `${label}: neue Query ${index + 1}`)
+    )),
+    lostImportantQueries: followup.lostImportantQueries.map((query, index) => (
+      outcomeQueryChange(query, `${label}: verlorene Query ${index + 1}`)
+    )),
+    label: followup.label,
+    note: followup.note
+  };
+}
+
+function normalizeClaimToken(value) {
+  if (typeof value !== 'string' || !UUID.test(value)) {
+    throw validationError('Der Outcome-Claim-Token ist ungültig.');
+  }
+  return value.toLowerCase();
 }
 
 function jsonString(value, label, maxBytes) {
@@ -1463,7 +1622,7 @@ export function createContentExistingPostOptimizationRepository(
           || (baselineStartDate && baselineStartDate > baselineEndDate)) {
         throw validationError('Der GSC-Basiszeitraum ist widersprüchlich.');
       }
-      const baselineMetrics = plainObject(input.baselineMetrics, 'Die GSC-Basismetriken');
+      const baselineMetrics = outcomeMetrics(input.baselineMetrics, 'Die GSC-Basismetriken');
       const baselineMetricsJson = jsonString(
         baselineMetrics,
         'Die GSC-Basismetriken',
@@ -1520,20 +1679,57 @@ export function createContentExistingPostOptimizationRepository(
       return rows[0];
     },
 
-    async listDueOutcomes({ throughDate = null, limit = 50 } = {}) {
+    async listDueOutcomes({ throughDate = null, limit = 50, claimToken } = {}) {
       const normalizedDate = normalizeCalendarDate(throughDate, 'Der Stichtag');
       const normalizedLimit = Math.min(50, positiveInteger(limit, 'Das Outcome-Limit'));
-      const { rows } = await db.query(`
-        SELECT outcome.*, r.revision_version, p.slug
-        FROM content_revision_optimization_outcomes outcome
-        JOIN content_post_revisions r ON r.id = outcome.revision_id
-        JOIN posts p ON p.id = outcome.post_id
-        WHERE outcome.evaluation_status IN ('waiting', 'ready', 'failed')
-          AND outcome.followup_end_date <= COALESCE($1::date, CURRENT_DATE)
-        ORDER BY outcome.followup_end_date, outcome.revision_id
-        LIMIT $2::integer
-      `, [normalizedDate, normalizedLimit]);
-      return rows;
+      const normalizedClaimToken = normalizeClaimToken(claimToken);
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const { rows } = await client.query(`
+          WITH candidates AS (
+            SELECT outcome.revision_id
+            FROM content_revision_optimization_outcomes outcome
+            WHERE (
+                outcome.evaluation_status IN ('waiting', 'failed')
+                OR (
+                  outcome.evaluation_status = 'ready'
+                  AND outcome.evaluation_claimed_at < NOW() - INTERVAL '30 minutes'
+                )
+              )
+              AND outcome.followup_end_date <= COALESCE($1::date, CURRENT_DATE)
+            ORDER BY outcome.followup_end_date, outcome.revision_id
+            FOR UPDATE OF outcome SKIP LOCKED
+            LIMIT $2::integer
+          ), claimed AS (
+            UPDATE content_revision_optimization_outcomes AS outcome
+            SET evaluation_status = 'ready',
+                evaluation_claim_token = $3::uuid,
+                evaluation_claimed_at = NOW(),
+                updated_at = NOW()
+            FROM candidates
+            WHERE outcome.revision_id = candidates.revision_id
+            RETURNING outcome.*
+          )
+          SELECT claimed.*,
+                 claimed.baseline_start_date::text AS baseline_start_date,
+                 claimed.baseline_end_date::text AS baseline_end_date,
+                 claimed.followup_start_date::text AS followup_start_date,
+                 claimed.followup_end_date::text AS followup_end_date,
+                 r.revision_version, p.slug
+          FROM claimed
+          JOIN content_post_revisions r ON r.id = claimed.revision_id
+          JOIN posts p ON p.id = claimed.post_id
+          ORDER BY claimed.followup_end_date, claimed.revision_id
+        `, [normalizedDate, normalizedLimit, normalizedClaimToken]);
+        await client.query('COMMIT');
+        return rows;
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async completeOutcome(input = {}) {
@@ -1542,37 +1738,26 @@ export function createContentExistingPostOptimizationRepository(
         input.expectedRevisionVersion,
         'Die erwartete Revisionsversion'
       );
-      const allowedExistingStatuses = new Set(['waiting', 'ready', 'failed']);
-      const expectedStatuses = Array.isArray(input.expectedStatuses)
-        ? [...new Set(input.expectedStatuses)]
-        : [];
-      if (expectedStatuses.length < 1
-          || expectedStatuses.some((status) => !allowedExistingStatuses.has(status))) {
-        throw validationError('Die erwarteten Outcome-Statuswerte sind ungültig.');
-      }
+      const claimToken = normalizeClaimToken(input.claimToken);
       const evaluationStatus = String(input.evaluationStatus || '');
       if (!['evaluated', 'insufficient_data', 'failed'].includes(evaluationStatus)) {
         throw validationError('Der neue Outcome-Status ist ungültig.');
       }
       const followupMetrics = input.followupMetrics == null
         ? null
-        : plainObject(input.followupMetrics, 'Die GSC-Folgemetriken');
+        : outcomeFollowupMetrics(input.followupMetrics);
       if (evaluationStatus !== 'failed' && followupMetrics == null) {
         throw validationError('Für den Outcome-Abschluss fehlen GSC-Folgemetriken.');
-      }
-      const feedback = input.feedback ?? [];
-      if (!Array.isArray(feedback) || feedback.length > 100) {
-        throw validationError('Das Outcome-Feedback ist ungültig.');
       }
       const followupMetricsJson = followupMetrics == null
         ? null
         : jsonString(followupMetrics, 'Die GSC-Folgemetriken', MAX_OUTCOME_JSON_BYTES);
-      const feedbackJson = jsonString(feedback, 'Das Outcome-Feedback', MAX_OUTCOME_JSON_BYTES);
       const { rows } = await db.query(`
         UPDATE content_revision_optimization_outcomes AS outcome
         SET followup_metrics_json = $5::jsonb,
-            feedback_json = $6::jsonb,
             evaluation_status = $4::varchar(24),
+            evaluation_claim_token = NULL,
+            evaluation_claimed_at = NULL,
             evaluated_at = CASE
               WHEN $4::varchar(24) IN ('evaluated', 'insufficient_data') THEN NOW()
               ELSE outcome.evaluated_at
@@ -1582,16 +1767,40 @@ export function createContentExistingPostOptimizationRepository(
         WHERE outcome.revision_id = $1::bigint
           AND r.id = outcome.revision_id
           AND r.revision_version = $2::integer
-          AND outcome.evaluation_status = ANY($3::varchar[])
+          AND outcome.evaluation_status = 'ready'
+          AND outcome.evaluation_claim_token = $3::uuid
         RETURNING outcome.*
       `, [
         revisionId,
         expectedRevisionVersion,
-        expectedStatuses,
+        claimToken,
         evaluationStatus,
-        followupMetricsJson,
-        feedbackJson
+        followupMetricsJson
       ]);
+      return rows[0] || null;
+    },
+
+    async releaseOutcomeClaim(input = {}) {
+      const revisionId = positiveInteger(input.revisionId, 'Die Revisions-ID');
+      const expectedRevisionVersion = positiveInteger(
+        input.expectedRevisionVersion,
+        'Die erwartete Revisionsversion'
+      );
+      const claimToken = normalizeClaimToken(input.claimToken);
+      const { rows } = await db.query(`
+        UPDATE content_revision_optimization_outcomes AS outcome
+        SET evaluation_status = 'waiting',
+            evaluation_claim_token = NULL,
+            evaluation_claimed_at = NULL,
+            updated_at = NOW()
+        FROM content_post_revisions r
+        WHERE outcome.revision_id = $1::bigint
+          AND r.id = outcome.revision_id
+          AND r.revision_version = $2::integer
+          AND outcome.evaluation_status = 'ready'
+          AND outcome.evaluation_claim_token = $3::uuid
+        RETURNING outcome.*
+      `, [revisionId, expectedRevisionVersion, claimToken]);
       return rows[0] || null;
     }
   };

@@ -439,6 +439,39 @@ test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau ein
   assert.match(html, /Livefassung bleibt unverändert/i);
 });
 
+test('Bestandszeile escaped Outcome-Queries und formuliert die Nachmessung ausschließlich neutral', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Artikel',
+      slug: 'artikel',
+      outcome: {
+        state: 'observed',
+        label: 'Neutrale Beobachtung',
+        note: 'Die Werte sind eine neutrale Beobachtung. Saison, Nachfrage und Google-Änderungen können sie beeinflussen.',
+        baseline: { clicksLabel: '4', impressionsLabel: '80', ctrLabel: '5 %', averagePositionLabel: '12,5' },
+        followup: { clicksLabel: '8', impressionsLabel: '100', ctrLabel: '8 %', averagePositionLabel: '9,5' },
+        changes: { clicksLabel: '+4', impressionsLabel: '+20', ctrLabel: '+3 %', averagePositionLabel: '-3,0' },
+        newImportantQueries: [{ query: '<script>alert(1)</script>', clicksLabel: '2', impressionsLabel: '20' }],
+        lostImportantQueries: [{ query: 'Alte Suche', clicksLabel: '1', impressionsLabel: '15' }]
+      },
+      optimization: {
+        state: 'completed', active: false, terminal: true, canStart: false,
+        statusLabel: 'Abgeschlossen', stageLabel: 'Revision erstellt',
+        message: 'Die Optimierung ist abgeschlossen.', jobId: 44,
+        revisionId: null, revisionUrl: null, errorCode: null,
+        unsafeProviderState: false, updatedAt: null
+      }
+    }]
+  });
+
+  assert.match(html, /Neutrale Beobachtung/);
+  assert.match(html, /Saison, Nachfrage und Google-Änderungen/);
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script>alert\(1\)<\/script>|automatisch.*rück|kausaler Beweis/i);
+});
+
 test('Bestandszeile bewahrt die manuelle Audit-Revision als CSRF-geschützte sekundäre Aktion', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,

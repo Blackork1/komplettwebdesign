@@ -3,6 +3,7 @@ import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { validateArticle as defaultValidateArticle } from './articleValidator.js';
 import { createContentRevisionRepository } from '../../repositories/contentRevisionRepository.js';
 import { createContentExistingPostOptimizationRepository } from '../../repositories/contentExistingPostOptimizationRepository.js';
+import { createContentSearchMetricsRepository } from '../../repositories/contentSearchMetricsRepository.js';
 import { FaqItemSchema, ReviewOutputSchema } from './articleSchemas.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import { validateTargetedOptimizationScope } from './existingPostDiffService.js';
@@ -12,6 +13,7 @@ import {
   evaluateExistingPostRevisionApproval,
   minimumExistingPostRevisionScore
 } from './existingPostRevisionApprovalPolicy.js';
+import { captureRevisionBaseline } from './contentRevisionOutcomeService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -336,7 +338,9 @@ function optimizedRevisionInput(input = {}) {
 export function createContentRevisionService({
   repository = createContentRevisionRepository(),
   optimizationRepository = createContentExistingPostOptimizationRepository(),
-  validateArticle = defaultValidateArticle
+  searchMetricsRepository = createContentSearchMetricsRepository(),
+  validateArticle = defaultValidateArticle,
+  timezone = 'Europe/Berlin'
 } = {}) {
   return {
     async prepareExistingPostOptimization(postId) {
@@ -491,7 +495,7 @@ export function createContentRevisionService({
         validateApproval: ({ revision }) => {
           if (revision?.optimization_job_id != null) assertOptimizationReportApproved(revision);
         },
-        afterApproval: async ({ revision }, client) => {
+        afterApproval: async ({ revision, post }, client) => {
           if (revision?.optimization_job_id == null) return;
           assertOptimizationReportApproved(revision);
           await optimizationRepository.recordAcceptedRevisionFeedback({
@@ -501,6 +505,17 @@ export function createContentRevisionService({
             admin: normalizedAdmin,
             report: revision.optimization_report_json
           }, client);
+          await captureRevisionBaseline({
+            revisionId: id,
+            postId: revision.post_id,
+            expectedVersion: version,
+            appliedAt: post.updated_at,
+            timezone,
+            transactionClient: client
+          }, {
+            searchMetricsRepository,
+            outcomeRepository: optimizationRepository
+          });
         }
       });
     }

@@ -267,3 +267,68 @@ test('Seitensignale weisen ungültige IDs, Daten und Zeiträume vor der Abfrage 
   }), TypeError);
   assert.equal(db.calls.length, 0);
 });
+
+test('erfolgreiche lokale Synchronisierung belegt auch tageweise Zeiträume ohne Ergebniszeilen', async () => {
+  const db = createQueryRecorder([{ rows: [{ metric_date: '2026-07-01' }] }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  await repository.recordSyncCoverage({
+    startDate: '2026-07-01',
+    endDate: '2026-07-28'
+  });
+
+  assert.deepEqual(db.calls[0].params, ['2026-07-01', '2026-07-28']);
+  assert.match(db.calls[0].sql, /INSERT INTO content_search_metric_sync_days/i);
+  assert.match(db.calls[0].sql, /generate_series\(\$1::date, \$2::date, INTERVAL '1 day'\)/i);
+  assert.match(db.calls[0].sql, /ON CONFLICT \(metric_date\) DO UPDATE/i);
+});
+
+test('Basisfenster verlangt 28 belegte Kalendertage und aggregiert alle Queries vor der Begrenzung', async () => {
+  const row = {
+    startDate: '2026-06-17', endDate: '2026-07-14', coverageDayCount: 28,
+    hasData: true, clicks: 8, impressions: 100, averagePosition: 7.5, queries: []
+  };
+  const transaction = createQueryRecorder([{ rows: [row] }]);
+  const repository = createContentSearchMetricsRepository({
+    async query() { throw new Error('Die Basis muss die Freigabetransaktion verwenden.'); }
+  });
+
+  assert.deepEqual(await repository.getLatestCompletePageMetrics({
+    postId: 19,
+    throughDate: '2026-07-14',
+    days: 28,
+    queryLimit: 10
+  }, transaction), row);
+
+  assert.deepEqual(transaction.calls[0].params, [19, '2026-07-14', 28, 10]);
+  assert.match(transaction.calls[0].sql, /content_search_metric_sync_days/i);
+  assert.match(transaction.calls[0].sql, /COUNT\(\*\).*\$3::integer/is);
+  assert.match(transaction.calls[0].sql, /ORDER BY candidate_end\.metric_date DESC/i);
+  assert.match(transaction.calls[0].sql, /SUM\(metric\.clicks\)/i);
+  assert.match(transaction.calls[0].sql, /SUM\(metric\.average_position \* metric\.impressions\)/i);
+  assert.match(transaction.calls[0].sql, /ORDER BY impressions DESC, query ASC[\s\S]*LIMIT \$4::integer/i);
+  assert.doesNotMatch(transaction.calls[0].sql, /provider|response|fetched_at/i);
+});
+
+test('Folgefenster weist die lokale Tagesabdeckung getrennt von vorhandenen Metrikzeilen aus', async () => {
+  const row = {
+    startDate: '2026-07-15', endDate: '2026-08-11', coverageDayCount: 27,
+    hasData: true, clicks: 4, impressions: 80, averagePosition: 9, queries: []
+  };
+  const db = createQueryRecorder([{ rows: [row] }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  assert.deepEqual(await repository.getPageOutcomeMetrics({
+    postId: 19,
+    startDate: '2026-07-15',
+    endDate: '2026-08-11',
+    days: 28,
+    queryLimit: 10
+  }), row);
+
+  assert.deepEqual(db.calls[0].params, [19, '2026-07-15', '2026-08-11', 28, 10]);
+  assert.match(db.calls[0].sql, /COUNT\(coverage\.metric_date\)/i);
+  assert.match(db.calls[0].sql, /coverage_day_count/i);
+  assert.match(db.calls[0].sql, /COUNT\(metric\.id\)::integer AS metric_row_count/i);
+  assert.match(db.calls[0].sql, /coverage_summary\.coverage_day_count AS "coverageDayCount"/i);
+});

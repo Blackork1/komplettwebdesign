@@ -1136,7 +1136,14 @@ test('Outcome-Basis wird in der übergebenen Freigabetransaktion mit lokalem 28-
     appliedAt: '2026-07-14T16:00:00.000Z',
     baselineStartDate: null,
     baselineEndDate: null,
-    baselineMetrics: { hasData: false },
+    baselineMetrics: {
+      hasData: false,
+      clicks: 0,
+      impressions: 0,
+      ctr: 0,
+      averagePosition: null,
+      queries: []
+    },
     timezone: 'Europe/Berlin'
   }, transaction);
 
@@ -1151,23 +1158,41 @@ test('Outcome-Basis wird in der übergebenen Freigabetransaktion mit lokalem 28-
   assert.deepEqual(calls[0].params.slice(0, 4), [71, 19, '2026-07-14T16:00:00.000Z', 3]);
 });
 
-test('Fällige Outcomes sind auf 50 Datensätze begrenzt und nullsicher parametrisiert', async () => {
-  const calls = [];
-  const repository = createContentExistingPostOptimizationRepository({
-    async query(sql, params) {
-      calls.push({ sql: normalizedSql(sql), params });
-      return { rows: [] };
+test('Fällige Outcomes werden atomar, parallelitätssicher und auf 50 Datensätze begrenzt geclaimt', async () => {
+  const client = transactionClient((call) => {
+    if (/UPDATE content_revision_optimization_outcomes AS outcome/i.test(call.sql)) {
+      return { rows: [{ revision_id: 71, evaluation_status: 'ready' }] };
     }
+    return { rows: [] };
+  });
+  const repository = createContentExistingPostOptimizationRepository({
+    async query() { throw new Error('Der Outcome-Claim muss eine Transaktion verwenden.'); },
+    async connect() { return client; }
   });
 
-  assert.deepEqual(await repository.listDueOutcomes({ throughDate: null, limit: 500 }), []);
-  assert.deepEqual(calls[0].params, [null, 50]);
-  assert.match(calls[0].sql, /COALESCE\(\$1::date, CURRENT_DATE\)/i);
-  assert.match(calls[0].sql, /LIMIT \$2::integer/i);
-  assert.match(calls[0].sql, /evaluation_status IN \('waiting', 'ready', 'failed'\)/i);
+  assert.deepEqual(await repository.listDueOutcomes({
+    throughDate: '2026-08-11',
+    limit: 500,
+    claimToken: '11111111-1111-4111-8111-111111111111'
+  }), [{ revision_id: 71, evaluation_status: 'ready' }]);
+  const claim = client.calls.find((call) => /UPDATE content_revision_optimization_outcomes AS outcome/i.test(call.sql));
+  assert.deepEqual(claim.params, [
+    '2026-08-11',
+    50,
+    '11111111-1111-4111-8111-111111111111'
+  ]);
+  assert.match(claim.sql, /FOR UPDATE OF outcome SKIP LOCKED/i);
+  assert.match(claim.sql, /LIMIT \$2::integer/i);
+  assert.match(claim.sql, /evaluation_status IN \('waiting', 'failed'\)/i);
+  assert.match(claim.sql, /evaluation_status = 'ready'[\s\S]*evaluation_claimed_at < NOW\(\) - INTERVAL '30 minutes'/i);
+  assert.match(claim.sql, /SET evaluation_status = 'ready'/i);
+  assert.match(claim.sql, /evaluation_claim_token = \$3::uuid/i);
+  assert.deepEqual(client.calls.at(0).sql, 'BEGIN');
+  assert.deepEqual(client.calls.at(-1).sql, 'COMMIT');
+  assert.equal(client.released, true);
 });
 
-test('Outcome-Abschluss verwendet Revisionsversion und bisherigen Status als optimistischen Lock', async () => {
+test('Outcome-Abschluss verwendet Revisionsversion und Claim-Token als CAS und lässt Feedback unverändert', async () => {
   const row = { revision_id: 71, evaluation_status: 'evaluated' };
   const calls = [];
   const repository = createContentExistingPostOptimizationRepository({
@@ -1180,15 +1205,88 @@ test('Outcome-Abschluss verwendet Revisionsversion und bisherigen Status als opt
   const result = await repository.completeOutcome({
     revisionId: 71,
     expectedRevisionVersion: 3,
-    expectedStatuses: ['waiting', 'ready'],
+    claimToken: '11111111-1111-4111-8111-111111111111',
     evaluationStatus: 'evaluated',
-    followupMetrics: { impressions: 120, clicks: 4 },
-    feedback: [{ label: 'Beobachtung' }]
+    followupMetrics: {
+      hasData: true,
+      clicks: 4,
+      impressions: 120,
+      ctr: 0.03333333,
+      averagePosition: 8,
+      queries: [],
+      changes: { clicks: 1, impressions: 20, ctr: 0.01, averagePosition: -2 },
+      newImportantQueries: [],
+      lostImportantQueries: [],
+      label: 'Neutrale Beobachtung',
+      note: 'Die Werte sind eine neutrale Beobachtung. Saison, Nachfrage und Google-Änderungen können sie beeinflussen.'
+    }
   });
 
   assert.deepEqual(result, row);
   assert.match(calls[0].sql, /FROM content_post_revisions r/i);
   assert.match(calls[0].sql, /r\.revision_version = \$2::integer/i);
-  assert.match(calls[0].sql, /outcome\.evaluation_status = ANY\(\$3::varchar\[\]\)/i);
-  assert.deepEqual(calls[0].params.slice(0, 4), [71, 3, ['waiting', 'ready'], 'evaluated']);
+  assert.match(calls[0].sql, /outcome\.evaluation_status = 'ready'/i);
+  assert.match(calls[0].sql, /outcome\.evaluation_claim_token = \$3::uuid/i);
+  assert.match(calls[0].sql, /evaluation_claim_token = NULL/i);
+  assert.doesNotMatch(calls[0].sql, /feedback_json\s*=/i);
+  assert.deepEqual(calls[0].params.slice(0, 4), [
+    71,
+    3,
+    '11111111-1111-4111-8111-111111111111',
+    'evaluated'
+  ]);
+});
+
+test('unvollständige Nachmessung gibt ausschließlich den eigenen Claim atomar frei', async () => {
+  const row = { revision_id: 71, evaluation_status: 'waiting' };
+  const calls = [];
+  const repository = createContentExistingPostOptimizationRepository({
+    async query(sql, params) { calls.push({ sql: normalizedSql(sql), params }); return { rows: [row] }; }
+  });
+
+  assert.deepEqual(await repository.releaseOutcomeClaim({
+    revisionId: 71,
+    expectedRevisionVersion: 3,
+    claimToken: '11111111-1111-4111-8111-111111111111'
+  }), row);
+  assert.match(calls[0].sql, /SET evaluation_status = 'waiting'/i);
+  assert.match(calls[0].sql, /evaluation_claim_token = NULL/i);
+  assert.match(calls[0].sql, /outcome\.evaluation_claim_token = \$3::uuid/i);
+  assert.match(calls[0].sql, /r\.revision_version = \$2::integer/i);
+});
+
+test('Baseline- und Outcome-JSON lehnen zusätzliche Roh- oder Providerfelder vor dem Schreiben ab', async () => {
+  let queries = 0;
+  const transaction = { async query() { queries += 1; return { rows: [] }; } };
+  const repository = createContentExistingPostOptimizationRepository({
+    async query() { queries += 1; return { rows: [] }; }
+  });
+  const baseline = {
+    hasData: true,
+    clicks: 1,
+    impressions: 60,
+    ctr: 1 / 60,
+    averagePosition: 8,
+    queries: []
+  };
+
+  await assert.rejects(repository.createOutcomeBaseline({
+    revisionId: 71,
+    postId: 19,
+    expectedVersion: 3,
+    appliedAt: '2026-07-14T16:00:00.000Z',
+    baselineStartDate: '2026-06-17',
+    baselineEndDate: '2026-07-14',
+    baselineMetrics: { ...baseline, providerResponse: { id: 'geheim' } },
+    timezone: 'Europe/Berlin'
+  }, transaction), /Basismetriken|ungültig/i);
+
+  await assert.rejects(repository.completeOutcome({
+    revisionId: 71,
+    expectedRevisionVersion: 3,
+    claimToken: '11111111-1111-4111-8111-111111111111',
+    evaluationStatus: 'evaluated',
+    followupMetrics: { ...baseline, raw: 'nicht erlaubt' }
+  }), /Folgemetriken|ungültig/i);
+  assert.equal(queries, 0);
 });

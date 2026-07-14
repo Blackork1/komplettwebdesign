@@ -27,10 +27,12 @@ function metricRow({
 function createRepository({ postIds = new Map(), events = [] } = {}) {
   const pathCalls = [];
   const writeCalls = [];
+  const coverageCalls = [];
 
   return {
     pathCalls,
     writeCalls,
+    coverageCalls,
     async findPostIdsByCanonicalPaths(paths) {
       events.push('lookup');
       pathCalls.push(paths);
@@ -42,9 +44,33 @@ function createRepository({ postIds = new Map(), events = [] } = {}) {
       events.push('write');
       writeCalls.push(rows);
       return rows;
+    },
+    async recordSyncCoverage(input) {
+      coverageCalls.push(input);
     }
   };
 }
+
+test('vollständig abgerufene leere GSC-Zeiträume werden lokal als synchronisiert belegt', async () => {
+  const repository = createRepository();
+  const service = createSearchConsoleSyncService({
+    client: { async querySearchAnalytics() { return { rows: [] }; } },
+    repository,
+    allowedHosts: ALLOWED_HOSTS
+  });
+
+  await service.syncSearchConsoleRange({
+    startDate: '2026-07-01',
+    endDate: '2026-07-28',
+    leaseGuard: async () => {}
+  });
+
+  assert.deepEqual(repository.writeCalls, []);
+  assert.deepEqual(repository.coverageCalls, [{
+    startDate: '2026-07-01',
+    endDate: '2026-07-28'
+  }]);
+});
 
 test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vor dem Schreiben', async () => {
   const events = [];
@@ -120,7 +146,7 @@ test('paginiert mit tatsächlicher Zeilenzahl und normalisiert sichere Seiten vo
     'guard', 'api:0',
     'guard', 'api:25000',
     'guard', 'api:25002',
-    'lookup', 'guard', 'write'
+    'lookup', 'guard', 'write', 'guard'
   ]);
   assert.equal(repository.writeCalls.length, 1);
   assert.equal(repository.writeCalls[0].length, 25_002);
@@ -296,7 +322,7 @@ test('aggregiert denselben normalisierten Conflict-Key über alle API-Seiten vor
     'guard', 'api:0',
     'guard', 'api:25000',
     'guard', 'api:25001',
-    'lookup', 'guard', 'write'
+    'lookup', 'guard', 'write', 'guard'
   ]);
   assert.equal(repository.writeCalls.length, 1);
   assert.equal(repository.writeCalls[0].length, 25_000);

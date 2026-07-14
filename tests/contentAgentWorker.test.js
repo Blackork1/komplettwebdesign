@@ -18,6 +18,7 @@ import {
   EXISTING_POST_REVALIDATION_JOB_TYPES,
   loadProductionModules,
   LEARNING_JOB_TYPES,
+  OUTCOME_JOB_TYPES,
   REGENERATION_JOB_TYPES,
   SUPPORTED_JOB_TYPES,
   startContentWorker
@@ -1196,7 +1197,12 @@ test('der Produktionshandler unterstützt beide Search-Console-Jobtypen als eige
   }
 });
 
-test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueued die Analyse', async () => {
+test('der Produktionshandler unterstützt die lokale Outcome-Auswertung als eigenen Jobtyp', () => {
+  assert.deepEqual([...OUTCOME_JOB_TYPES], ['evaluate_revision_outcomes']);
+  assert.equal(SUPPORTED_JOB_TYPES.has('evaluate_revision_outcomes'), true);
+});
+
+test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueued Analyse sowie Outcome-Auswertung', async () => {
   const events = [];
   const leaseGuard = async () => { events.push('lease'); return true; };
   const handler = createProductionJobHandler({
@@ -1228,9 +1234,50 @@ test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueue
       jobType: 'analyze_search_opportunities',
       idempotencyKey: 'gsc-analysis:2026-06-21:2026-07-18',
       payload: { startDate: '2026-06-21', endDate: '2026-07-18' }
+    }],
+    ['enqueue', {
+      jobType: 'evaluate_revision_outcomes',
+      idempotencyKey: 'revision-outcomes:2026-07-18',
+      payload: { endDate: '2026-07-18' }
     }]
   ]);
   assert.equal(events.filter((event) => event === 'lease').length >= 3, true);
+});
+
+test('Outcome-Job akzeptiert ausschließlich endDate und verwendet keine GSC- oder Artikelpipeline', async () => {
+  const calls = [];
+  const leaseGuard = async () => { calls.push('lease'); return true; };
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für Outcomes darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für Outcomes darf keine Artikelpipeline starten.'); },
+    async syncSearchConsoleRange() { assert.fail('Outcomes dürfen keinen GSC-Netzabruf starten.'); },
+    async evaluateRevisionOutcomes(input) {
+      calls.push(['evaluate', input]);
+      return { claimed: 1, evaluated: 1 };
+    }
+  });
+
+  assert.deepEqual(await handler({
+    id: 91,
+    job_type: 'evaluate_revision_outcomes',
+    payload_json: { endDate: '2026-08-11' }
+  }, { leaseGuard }), { status: 'completed' });
+  assert.deepEqual(calls, ['lease', ['evaluate', { endDate: '2026-08-11' }], 'lease']);
+
+  for (const payload_json of [
+    {},
+    { endDate: '2026-08-11', extra: true },
+    { endDate: '11.08.2026' }
+  ]) {
+    await assert.rejects(handler({
+      id: 92,
+      job_type: 'evaluate_revision_outcomes',
+      payload_json
+    }, { leaseGuard }), (error) => (
+      error.code === 'CONTENT_REVISION_OUTCOME_JOB_PAYLOAD_INVALID'
+        && error.retryable === false
+    ));
+  }
 });
 
 test('ein pausierter Analyse-Enqueue lässt den erfolgreichen Sync bereinigt retrybar', async () => {
@@ -3625,6 +3672,7 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.createSearchConsoleClient, 'function');
   assert.equal(typeof modules.createSearchConsoleSyncService, 'function');
   assert.equal(typeof modules.createContentSearchMetricsRepository, 'function');
+  assert.equal(typeof modules.evaluateDueRevisionOutcomes, 'function');
   assert.equal(typeof modules.createContentSearchOpportunityRepository, 'function');
   assert.equal(typeof modules.createContentWeeklyTopicPoolRepository, 'function');
   assert.equal(typeof modules.buildContentOpportunities, 'function');
@@ -3890,7 +3938,12 @@ test('die Produktionsruntime verdrahtet GSC-Client, Repositories und beide früh
   assert.equal(events.some(([type]) => type === 'build'), true);
   assert.equal(events.some(([type]) => type === 'opportunities'), true);
   assert.equal(events.filter(([type]) => type === 'provider').length, 1);
-  assert.equal(events.filter(([type]) => type === 'enqueue').length, 1);
+  assert.equal(events.filter(([type]) => type === 'enqueue').length, 2);
+  assert.deepEqual(events.filter(([type]) => type === 'enqueue').at(-1)[1], {
+    jobType: 'evaluate_revision_outcomes',
+    idempotencyKey: 'revision-outcomes:2026-07-18',
+    payload: { endDate: '2026-07-18' }
+  });
 });
 
 test('der Entrypoint startet beide Scheduler erst beim aktiven Worker und stoppt beide sicher', async () => {

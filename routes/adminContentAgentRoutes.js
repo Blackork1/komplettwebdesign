@@ -92,7 +92,8 @@ const draftService = createAdminDraftService();
 const publicationService = createContentPublicationService();
 const scheduledPublicationService = createScheduledPublicationService();
 const revisionService = createContentRevisionService({
-  repository: createContentRevisionRepository(pool)
+  repository: createContentRevisionRepository(pool),
+  timezone: technicalConfig.timezone
 });
 const learningAdminService = createContentLearningAdminService({
   repository: createContentLearningRepository(pool)

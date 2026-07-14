@@ -1,4 +1,5 @@
 import pool from '../util/db.js';
+import { DateTime } from 'luxon';
 
 const CANONICAL_BLOG_PATH = /^\/blog\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -60,6 +61,116 @@ function normalizePageSignalLimit(value) {
     throw new TypeError('limit muss eine positive Ganzzahl sein.');
   }
   return Math.min(normalized, 100);
+}
+
+function normalizeOutcomeDays(value) {
+  const normalized = Number(value ?? 28);
+  if (!Number.isSafeInteger(normalized) || normalized <= 0 || normalized > 28) {
+    throw new TypeError('days muss zwischen 1 und 28 liegen.');
+  }
+  return normalized;
+}
+
+function normalizeOutcomeQueryLimit(value) {
+  const normalized = Number(value ?? 10);
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new TypeError('queryLimit muss eine positive Ganzzahl sein.');
+  }
+  return Math.min(normalized, 10);
+}
+
+function requireQueryClient(value) {
+  if (!value || typeof value.query !== 'function') {
+    throw new TypeError('Eine Datenbanktransaktion mit query-Funktion wird benötigt.');
+  }
+  return value;
+}
+
+const OUTCOME_METRICS_CTES = `
+  coverage_summary AS (
+    SELECT outcome_window.start_date,
+           outcome_window.end_date,
+           COUNT(coverage.metric_date)::integer AS coverage_day_count
+    FROM outcome_window
+    LEFT JOIN content_search_metric_sync_days coverage
+      ON coverage.metric_date BETWEEN outcome_window.start_date AND outcome_window.end_date
+    GROUP BY outcome_window.start_date, outcome_window.end_date
+  ),
+  metric_totals AS (
+    SELECT outcome_window.start_date,
+           outcome_window.end_date,
+           COUNT(metric.id)::integer AS metric_row_count,
+           COALESCE(SUM(metric.clicks), 0)::double precision AS clicks,
+           COALESCE(SUM(metric.impressions), 0)::double precision AS impressions,
+           (
+             COALESCE(SUM(metric.clicks), 0)
+             / NULLIF(COALESCE(SUM(metric.impressions), 0), 0)
+           )::double precision AS ctr,
+           (
+             SUM(metric.average_position * metric.impressions)
+             / NULLIF(SUM(metric.impressions), 0)
+           )::double precision AS average_position
+    FROM outcome_window
+    LEFT JOIN content_search_metrics metric
+      ON metric.post_id = $1::integer
+     AND metric.metric_date BETWEEN outcome_window.start_date AND outcome_window.end_date
+    GROUP BY outcome_window.start_date, outcome_window.end_date
+  ),
+  query_metrics AS (
+    SELECT metric.query,
+           SUM(metric.clicks)::double precision AS clicks,
+           SUM(metric.impressions)::double precision AS impressions,
+           (
+             SUM(metric.clicks) / NULLIF(SUM(metric.impressions), 0)
+           )::double precision AS ctr,
+           (
+             SUM(metric.average_position * metric.impressions)
+             / NULLIF(SUM(metric.impressions), 0)
+           )::double precision AS average_position
+    FROM outcome_window
+    JOIN content_search_metrics metric
+      ON metric.post_id = $1::integer
+     AND metric.metric_date BETWEEN outcome_window.start_date AND outcome_window.end_date
+    GROUP BY metric.query
+  ),
+  limited_queries AS (
+    SELECT query, clicks, impressions, ctr, average_position
+    FROM query_metrics
+    ORDER BY impressions DESC, query ASC
+    LIMIT __QUERY_LIMIT__::integer
+  ),
+  query_list AS (
+    SELECT COALESCE(
+      jsonb_agg(jsonb_build_object(
+        'query', query,
+        'clicks', clicks,
+        'impressions', impressions,
+        'ctr', ctr,
+        'averagePosition', average_position
+      ) ORDER BY impressions DESC, query ASC),
+      '[]'::jsonb
+    ) AS queries
+    FROM limited_queries
+  )
+`;
+
+function outcomeMetricsSelect() {
+  return `
+    SELECT coverage_summary.start_date::text AS "startDate",
+           coverage_summary.end_date::text AS "endDate",
+           coverage_summary.coverage_day_count AS "coverageDayCount",
+           (metric_totals.metric_row_count > 0) AS "hasData",
+           metric_totals.clicks,
+           metric_totals.impressions,
+           COALESCE(metric_totals.ctr, 0)::double precision AS ctr,
+           metric_totals.average_position AS "averagePosition",
+           query_list.queries
+    FROM coverage_summary
+    JOIN metric_totals
+      ON metric_totals.start_date = coverage_summary.start_date
+     AND metric_totals.end_date = coverage_summary.end_date
+    CROSS JOIN query_list
+  `;
 }
 
 export function createContentSearchMetricsRepository(db = pool) {
@@ -139,6 +250,23 @@ export function createContentSearchMetricsRepository(db = pool) {
       );
 
       return result.rows;
+    },
+
+    async recordSyncCoverage({ startDate, endDate } = {}) {
+      const normalizedStartDate = normalizeOptionalDate(startDate, 'startDate');
+      const normalizedEndDate = normalizeOptionalDate(endDate, 'endDate');
+      if (!normalizedStartDate || !normalizedEndDate || normalizedStartDate > normalizedEndDate) {
+        throw new TypeError('Für die Sync-Abdeckung wird ein gültiger Zeitraum benötigt.');
+      }
+      const { rows } = await db.query(`
+        INSERT INTO content_search_metric_sync_days (metric_date, synced_at)
+        SELECT day::date, NOW()
+        FROM generate_series($1::date, $2::date, INTERVAL '1 day') AS day
+        ON CONFLICT (metric_date) DO UPDATE
+        SET synced_at = NOW()
+        RETURNING metric_date
+      `, [normalizedStartDate, normalizedEndDate]);
+      return rows;
     },
 
     async listAggregatedMetrics({ startDate, endDate, limit } = {}) {
@@ -252,6 +380,80 @@ export function createContentSearchMetricsRepository(db = pool) {
         LIMIT $4::integer
       `, [normalizedPostId, normalizedStartDate, normalizedEndDate, normalizedLimit]);
       return rows;
+    },
+
+    async getLatestCompletePageMetrics({
+      postId,
+      throughDate,
+      days = 28,
+      queryLimit = 10
+    } = {}, queryClient) {
+      const normalizedPostId = normalizePositiveId(postId, 'postId');
+      const normalizedThroughDate = normalizeOptionalDate(throughDate, 'throughDate');
+      if (!normalizedThroughDate) throw new TypeError('throughDate wird benötigt.');
+      const normalizedDays = normalizeOutcomeDays(days);
+      const normalizedQueryLimit = normalizeOutcomeQueryLimit(queryLimit);
+      const client = requireQueryClient(queryClient);
+      const ctes = OUTCOME_METRICS_CTES.replace('__QUERY_LIMIT__', '$4');
+      const { rows } = await client.query(`
+        WITH outcome_window AS (
+          SELECT candidate_end.metric_date - ($3::integer - 1) AS start_date,
+                 candidate_end.metric_date AS end_date
+          FROM content_search_metric_sync_days candidate_end
+          WHERE candidate_end.metric_date <= $2::date
+            AND (
+              SELECT COUNT(*)
+              FROM content_search_metric_sync_days covered_day
+              WHERE covered_day.metric_date BETWEEN
+                candidate_end.metric_date - ($3::integer - 1)
+                AND candidate_end.metric_date
+            ) = $3::integer
+          ORDER BY candidate_end.metric_date DESC
+          LIMIT 1
+        ),
+        ${ctes}
+        ${outcomeMetricsSelect()}
+      `, [normalizedPostId, normalizedThroughDate, normalizedDays, normalizedQueryLimit]);
+      return rows[0] || null;
+    },
+
+    async getPageOutcomeMetrics({
+      postId,
+      startDate,
+      endDate,
+      days = 28,
+      queryLimit = 10
+    } = {}) {
+      const normalizedPostId = normalizePositiveId(postId, 'postId');
+      const normalizedStartDate = normalizeOptionalDate(startDate, 'startDate');
+      const normalizedEndDate = normalizeOptionalDate(endDate, 'endDate');
+      const normalizedDays = normalizeOutcomeDays(days);
+      if (!normalizedStartDate || !normalizedEndDate || normalizedStartDate > normalizedEndDate) {
+        throw new TypeError('Für die Nachmessung wird ein gültiger Zeitraum benötigt.');
+      }
+      const expectedEndDate = DateTime.fromISO(normalizedStartDate, { zone: 'UTC' })
+        .plus({ days: normalizedDays - 1 })
+        .toISODate();
+      if (expectedEndDate !== normalizedEndDate) {
+        throw new TypeError('Der Nachmessungszeitraum stimmt nicht mit days überein.');
+      }
+      const normalizedQueryLimit = normalizeOutcomeQueryLimit(queryLimit);
+      const ctes = OUTCOME_METRICS_CTES.replace('__QUERY_LIMIT__', '$5');
+      const { rows } = await db.query(`
+        WITH outcome_window AS (
+          SELECT $2::date AS start_date, $3::date AS end_date
+          WHERE ($3::date - $2::date + 1) = $4::integer
+        ),
+        ${ctes}
+        ${outcomeMetricsSelect()}
+      `, [
+        normalizedPostId,
+        normalizedStartDate,
+        normalizedEndDate,
+        normalizedDays,
+        normalizedQueryLimit
+      ]);
+      return rows[0] || null;
     }
   };
 }

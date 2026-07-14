@@ -37,6 +37,7 @@ export const SEARCH_CONSOLE_JOB_TYPES = new Set([
   'sync_search_console',
   'analyze_search_opportunities'
 ]);
+export const OUTCOME_JOB_TYPES = new Set(['evaluate_revision_outcomes']);
 export const SUPPORTED_JOB_TYPES = new Set([
   ...GENERATION_JOB_TYPES,
   ...REGENERATION_JOB_TYPES,
@@ -47,7 +48,8 @@ export const SUPPORTED_JOB_TYPES = new Set([
   ...NOTIFICATION_JOB_TYPES,
   ...PUBLICATION_JOB_TYPES,
   ...NEWSLETTER_JOB_TYPES,
-  ...SEARCH_CONSOLE_JOB_TYPES
+  ...SEARCH_CONSOLE_JOB_TYPES,
+  ...OUTCOME_JOB_TYPES
 ]);
 
 const MAX_DATABASE_ID = 2_147_483_647;
@@ -112,6 +114,15 @@ function searchConsoleJobPayload(claim) {
   const endDate = canonicalIsoDate(payload.endDate);
   if (!startDate || !endDate || startDate > endDate) return null;
   return { startDate, endDate };
+}
+
+function revisionOutcomeJobPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+      || Object.keys(payload).length !== 1
+      || !Object.hasOwn(payload, 'endDate')) return null;
+  const endDate = canonicalIsoDate(payload.endDate);
+  return endDate ? { endDate } : null;
 }
 
 function reviewIssueOptimizationPayload(claim) {
@@ -364,6 +375,7 @@ export function createProductionJobHandler({
   listAggregatedSearchMetrics,
   buildSearchOpportunities,
   upsertSearchOpportunities,
+  evaluateRevisionOutcomes,
   recordProviderResult,
   enqueueJob
 }) {
@@ -627,6 +639,34 @@ export function createProductionJobHandler({
     if (revalidationClaim) {
       revalidationCleanupIntent = parseExistingPostRevisionCleanupIntent(claim.last_error);
     }
+    if (OUTCOME_JOB_TYPES.has(claim.job_type)) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für Outcome-Jobs wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
+      const payload = revisionOutcomeJobPayload(claim);
+      if (!payload) {
+        throw permanentJobError(
+          'Der Outcome-Job enthält keinen gültigen lokalen Stichtag.',
+          'CONTENT_REVISION_OUTCOME_JOB_PAYLOAD_INVALID'
+        );
+      }
+      required(evaluateRevisionOutcomes, 'evaluateRevisionOutcomes');
+      await assertActiveLease(leaseGuard);
+      try {
+        await evaluateRevisionOutcomes(payload);
+      } catch (error) {
+        throw retryableJobError(
+          'Die lokale Outcome-Auswertung ist vorübergehend fehlgeschlagen.',
+          'CONTENT_REVISION_OUTCOME_EVALUATION_FAILED',
+          error
+        );
+      }
+      await assertActiveLease(leaseGuard);
+      return { status: 'completed' };
+    }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
       if (typeof leaseGuard !== 'function') {
         throw permanentJobError(
@@ -676,6 +716,18 @@ export function createProductionJobHandler({
           throw retryableJobError(
             'Der Search-Console-Analysejob konnte noch nicht eingeplant werden.',
             'CONTENT_GSC_ANALYSIS_ENQUEUE_DEFERRED'
+          );
+        }
+        await assertActiveLease(leaseGuard);
+        const outcomeJob = await enqueueJob({
+          jobType: 'evaluate_revision_outcomes',
+          idempotencyKey: `revision-outcomes:${payload.endDate}`,
+          payload: { endDate: payload.endDate }
+        });
+        if (!outcomeJob) {
+          throw retryableJobError(
+            'Die lokale Outcome-Auswertung konnte noch nicht eingeplant werden.',
+            'CONTENT_REVISION_OUTCOME_ENQUEUE_DEFERRED'
           );
         }
         return { status: 'completed' };
@@ -1440,6 +1492,14 @@ export function createProductionRuntime({
     upsertSearchOpportunities: searchOpportunityRepository
       ? (input) => searchOpportunityRepository.upsertOpenOpportunities(input)
       : null,
+    evaluateRevisionOutcomes: existingPostOptimizationRepository
+      && searchMetricsRepository
+      && typeof modules.evaluateDueRevisionOutcomes === 'function'
+      ? (input) => modules.evaluateDueRevisionOutcomes(input, {
+        outcomeRepository: existingPostOptimizationRepository,
+        searchMetricsRepository
+      })
+      : null,
     recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database),
     enqueueJob: repositories.jobRepository.enqueueJob,
     pipelineDependencies
@@ -1569,7 +1629,8 @@ export async function loadProductionModules() {
     weeklyTopicPoolRepositoryModule,
     existingPostOptimizationPipelineModule,
     existingPostOptimizationRepositoryModule,
-    existingPostRevisionRevalidationModule
+    existingPostRevisionRevalidationModule,
+    contentRevisionOutcomeModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1612,7 +1673,8 @@ export async function loadProductionModules() {
     import('../repositories/contentWeeklyTopicPoolRepository.js'),
     import('../services/contentAgent/existingPostOptimizationPipeline.js'),
     import('../repositories/contentExistingPostOptimizationRepository.js'),
-    import('../services/contentAgent/existingPostRevisionRevalidationService.js')
+    import('../services/contentAgent/existingPostRevisionRevalidationService.js'),
+    import('../services/contentAgent/contentRevisionOutcomeService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1663,7 +1725,8 @@ export async function loadProductionModules() {
     runExistingPostRevisionRevalidationJob:
       existingPostRevisionRevalidationModule.runExistingPostRevisionRevalidationJob,
     createContentExistingPostOptimizationRepository:
-      existingPostOptimizationRepositoryModule.createContentExistingPostOptimizationRepository
+      existingPostOptimizationRepositoryModule.createContentExistingPostOptimizationRepository,
+    evaluateDueRevisionOutcomes: contentRevisionOutcomeModule.evaluateDueRevisionOutcomes
   };
 }
 

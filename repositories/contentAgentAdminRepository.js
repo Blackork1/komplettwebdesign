@@ -361,7 +361,19 @@ export function createContentAgentAdminRepository(db = pool) {
                  ELSE NULL
                END AS optimization_error_code,
                optimization_revision.optimization_revision_id,
-               optimization_revision.optimization_revision_status
+               optimization_revision.optimization_revision_status,
+               outcome.outcome_evaluation_status,
+               outcome.outcome_baseline_clicks,
+               outcome.outcome_baseline_impressions,
+               outcome.outcome_baseline_ctr,
+               outcome.outcome_baseline_average_position,
+               outcome.outcome_followup_clicks,
+               outcome.outcome_followup_impressions,
+               outcome.outcome_followup_ctr,
+               outcome.outcome_followup_average_position,
+               outcome.outcome_changes_json,
+               outcome.outcome_new_queries_json,
+               outcome.outcome_lost_queries_json
         FROM posts p
         LEFT JOIN LATERAL (
           SELECT a.id, a.score, a.status, a.findings_json
@@ -409,6 +421,28 @@ export function createContentAgentAdminRepository(db = pool) {
           ORDER BY optimized_revision.created_at DESC, optimized_revision.id DESC
           LIMIT 1
         ) optimization_revision ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT outcome.evaluation_status AS outcome_evaluation_status,
+                 outcome.baseline_metrics_json ->> 'clicks' AS outcome_baseline_clicks,
+                 outcome.baseline_metrics_json ->> 'impressions' AS outcome_baseline_impressions,
+                 outcome.baseline_metrics_json ->> 'ctr' AS outcome_baseline_ctr,
+                 outcome.baseline_metrics_json ->> 'averagePosition' AS outcome_baseline_average_position,
+                 outcome.followup_metrics_json ->> 'clicks' AS outcome_followup_clicks,
+                 outcome.followup_metrics_json ->> 'impressions' AS outcome_followup_impressions,
+                 outcome.followup_metrics_json ->> 'ctr' AS outcome_followup_ctr,
+                 outcome.followup_metrics_json ->> 'averagePosition' AS outcome_followup_average_position,
+                 outcome.followup_metrics_json -> 'changes' AS outcome_changes_json,
+                 outcome.followup_metrics_json -> 'newImportantQueries' AS outcome_new_queries_json,
+                 outcome.followup_metrics_json -> 'lostImportantQueries' AS outcome_lost_queries_json
+          FROM content_revision_optimization_outcomes outcome
+          JOIN content_post_revisions outcome_revision
+            ON outcome_revision.id = outcome.revision_id
+          WHERE outcome.post_id = p.id
+            AND outcome_revision.status = 'approved'
+            AND outcome_revision.optimization_job_id IS NOT NULL
+          ORDER BY outcome.applied_at DESC, outcome.revision_id DESC
+          LIMIT 1
+        ) outcome ON TRUE
         WHERE p.published = TRUE
         ORDER BY p.updated_at DESC
         LIMIT 100
