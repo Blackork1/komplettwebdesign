@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   createRevisionSnapshot,
-  createContentRevisionService
+  createContentRevisionService,
+  liveHashForPost
 } from '../services/contentAgent/contentRevisionService.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index + 1}?`, answer: 'Eine vollständige Antwort.' }));
@@ -155,4 +156,126 @@ test('Freigabe benötigt Bestätigung und delegiert die atomare Sperrtransaktion
   await service.approveRevision({ revisionId: 3, expectedVersion: 1, confirmed: true, admin: { id: 1, username: 'admin' } });
   assert.equal(approvals.length, 1);
   assert.equal(approvals[0].expectedVersion, 1);
+});
+
+test('Vorbereitung einer KI-Optimierung liefert ausschließlich den serverseitigen Livehash', async () => {
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async getPublishedPostSnapshot(postId) {
+        assert.equal(postId, 7);
+        return post;
+      }
+    }
+  });
+
+  assert.deepEqual(await service.prepareExistingPostOptimization(7), {
+    baseLiveHash: liveHashForPost(post)
+  });
+});
+
+test('Vorbereitung lehnt fehlende oder unveröffentlichte Artikel ab', async () => {
+  for (const repositoryPost of [null, { ...post, published: false }]) {
+    const service = createContentRevisionService({
+      optimizationRepository: {
+        async getPublishedPostSnapshot() { return repositoryPost; }
+      }
+    });
+
+    await assert.rejects(
+      service.prepareExistingPostOptimization(7),
+      { code: 'CONTENT_POST_NOT_FOUND' }
+    );
+  }
+});
+
+test('KI-Optimierung baut denselben Snapshotvertrag und delegiert nur eine Draft-Revision', async () => {
+  const staticPost = { ...post, content_format: 'static_html', content: '<p>Inhalt</p>' };
+  const baseLiveHash = liveHashForPost(staticPost);
+  const persisted = [];
+  const validationContexts = [];
+  const fields = {
+    title: 'Gezielt optimierter Titel',
+    shortDescription: 'Gezielt optimierte Kurzbeschreibung',
+    metaTitle: 'Gezielt optimierter Meta-Titel',
+    metaDescription: 'Eine gezielt optimierte und ausreichend konkrete Meta-Beschreibung für den bestehenden Beitrag.',
+    ogTitle: 'Gezielt optimierter OG-Titel',
+    ogDescription: 'Gezielt optimierte OG-Beschreibung',
+    contentHtml: '<p>Gezielt optimierter Inhalt</p>',
+    faqJson: validFaq,
+    imageAlt: 'Gezielt optimierter Alt-Text',
+    changeReasons: [{
+      field: 'contentHtml', auditCodes: ['missing_internal_links'],
+      reason: 'Konkreter formuliert.', sourceUrls: []
+    }]
+  };
+  const diff = { changes: [{ id: 'change-1', field: 'contentHtml' }] };
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async createOptimizedRevision(input) {
+        persisted.push(input);
+        return { id: 71, status: 'draft' };
+      }
+    },
+    validateArticle: async (article, context) => {
+      validationContexts.push(context);
+      return { passed: true, sanitizedHtml: article.contentHtml, issues: [] };
+    }
+  });
+
+  const result = await service.createOptimizedRevision({
+    post: staticPost,
+    fields,
+    auditId: 31,
+    jobId: 44,
+    baseLiveHash,
+    diff,
+    report: { baseLiveHash, beforeScore: 72, afterScore: 92 },
+    validationContext: { existingSlugs: [], allowedInternalLinks: ['/kontakt'] },
+    admin: { id: 7, username: 'Content-Agent' }
+  });
+
+  assert.deepEqual(result, { id: 71, status: 'draft' });
+  assert.equal(persisted.length, 1);
+  assert.equal(persisted[0].snapshot.base.live_hash, baseLiveHash);
+  assert.equal(persisted[0].snapshot.base.slug, staticPost.slug);
+  assert.equal(persisted[0].snapshot.base.content_format, 'static_html');
+  assert.equal(persisted[0].snapshot.fields.content, fields.contentHtml);
+  assert.equal(persisted[0].snapshot.fields.image_url, staticPost.image_url);
+  assert.deepEqual(persisted[0].report.changes, diff.changes);
+  assert.deepEqual(validationContexts[0].allowedInternalLinks, ['/kontakt']);
+});
+
+test('KI-Revisionsservice verwirft ungültige Providerfelder und einen veralteten Basishash vor dem Repository', async () => {
+  const writes = [];
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async createOptimizedRevision(input) { writes.push(input); }
+    }
+  });
+  const validFields = {
+    title: 'Titel', shortDescription: 'Kurzbeschreibung', metaTitle: 'Meta-Titel',
+    metaDescription: 'Meta-Beschreibung', ogTitle: 'OG-Titel', ogDescription: 'OG-Beschreibung',
+    contentHtml: post.content, faqJson: validFaq, imageAlt: 'Alt-Text',
+    changeReasons: [{ field: 'metaTitle', auditCodes: [], reason: 'Präzisiert.', sourceUrls: [] }]
+  };
+  const base = {
+    post,
+    fields: validFields,
+    auditId: 31,
+    jobId: 44,
+    diff: { changes: [] },
+    report: { baseLiveHash: liveHashForPost(post) },
+    admin: { id: 7, username: 'Content-Agent' }
+  };
+
+  await assert.rejects(service.createOptimizedRevision({
+    ...base,
+    fields: { ...validFields, slug: 'unerlaubt' },
+    baseLiveHash: liveHashForPost(post)
+  }), { code: 'CONTENT_REVISION_VALIDATION_FAILED' });
+  await assert.rejects(service.createOptimizedRevision({
+    ...base,
+    baseLiveHash: 'b'.repeat(64)
+  }), { code: 'CONTENT_REVISION_STALE' });
+  assert.equal(writes.length, 0);
 });

@@ -2,7 +2,9 @@ import { createHash } from 'node:crypto';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { validateArticle as defaultValidateArticle } from './articleValidator.js';
 import { createContentRevisionRepository } from '../../repositories/contentRevisionRepository.js';
+import { createContentExistingPostOptimizationRepository } from '../../repositories/contentExistingPostOptimizationRepository.js';
 import { FaqItemSchema } from './articleSchemas.js';
+import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import { normalizeInternalHref } from './trustedInternalLinkService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
@@ -184,11 +186,101 @@ async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
   }
 }
 
+function optimizedRevisionInput(input = {}) {
+  const post = input.post;
+  const postId = positiveId(post?.id, 'post.id');
+  if (post?.published !== true) {
+    throw revisionError('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+  }
+  const parsedFields = ExistingPostOptimizationOutputSchema.safeParse(input.fields);
+  if (!parsedFields.success) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Die optimierten Revisionsfelder sind ungültig.',
+      parsedFields.error.issues
+    );
+  }
+  const baseLiveHash = String(input.baseLiveHash || '');
+  if (!/^[0-9a-f]{64}$/.test(baseLiveHash) || liveHashForPost(post) !== baseLiveHash) {
+    throw revisionError('CONTENT_REVISION_STALE', 'Der Liveartikel wurde seit Beginn der Optimierung verändert.');
+  }
+  if (!input.diff || typeof input.diff !== 'object' || !Array.isArray(input.diff.changes)) {
+    throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Der serverseitige Optimierungsdiff ist ungültig.');
+  }
+  if (!input.report || typeof input.report !== 'object' || Array.isArray(input.report)
+      || input.report.baseLiveHash !== baseLiveHash) {
+    throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Der Optimierungsbericht ist ungültig.');
+  }
+
+  const fields = parsedFields.data;
+  const snapshot = createRevisionSnapshot(post);
+  Object.assign(snapshot.fields, {
+    title: fields.title,
+    excerpt: fields.shortDescription,
+    content: fields.contentHtml,
+    meta_title: fields.metaTitle,
+    meta_description: fields.metaDescription,
+    og_title: fields.ogTitle,
+    og_description: fields.ogDescription,
+    faq_json: fields.faqJson,
+    image_alt: fields.imageAlt
+  });
+  if (snapshot.base.content_format === 'legacy_ejs' && snapshot.fields.content !== post.content) {
+    throw revisionError('LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN', 'Legacy-EJS-Inhalt bleibt bytegenau unveränderlich.');
+  }
+
+  return {
+    postId,
+    auditId: positiveId(input.auditId, 'auditId'),
+    jobId: positiveId(input.jobId, 'jobId'),
+    baseLiveHash,
+    snapshot,
+    report: {
+      ...structuredClone(input.report),
+      baseLiveHash,
+      changes: structuredClone(input.diff.changes)
+    },
+    admin: normalizeAdmin(input.admin),
+    validationContext: input.validationContext && typeof input.validationContext === 'object'
+      ? input.validationContext
+      : {}
+  };
+}
+
 export function createContentRevisionService({
   repository = createContentRevisionRepository(),
+  optimizationRepository = createContentExistingPostOptimizationRepository(),
   validateArticle = defaultValidateArticle
 } = {}) {
   return {
+    async prepareExistingPostOptimization(postId) {
+      const post = await optimizationRepository.getPublishedPostSnapshot(
+        positiveId(postId, 'postId')
+      );
+      if (!post || post.published !== true) {
+        throw revisionError('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+      }
+      return { baseLiveHash: liveHashForPost(post) };
+    },
+
+    async createOptimizedRevision(input = {}) {
+      const normalized = optimizedRevisionInput(input);
+      await assertSnapshotValid(
+        normalized.snapshot,
+        validateArticle,
+        normalized.validationContext
+      );
+      return optimizationRepository.createOptimizedRevision({
+        postId: normalized.postId,
+        auditId: normalized.auditId,
+        jobId: normalized.jobId,
+        baseLiveHash: normalized.baseLiveHash,
+        snapshot: normalized.snapshot,
+        report: normalized.report,
+        admin: normalized.admin
+      });
+    },
+
     async enqueueAudit({ admin } = {}) {
       const normalizedAdmin = normalizeAdmin(admin);
       return repository.enqueueAuditJob({ admin: normalizedAdmin });
