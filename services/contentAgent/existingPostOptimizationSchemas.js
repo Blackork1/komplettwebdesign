@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { FaqItemSchema } from './articleSchemas.js';
+import {
+  MAX_SAFE_HTTPS_URL_LENGTH,
+  normalizeSafeHttpsUrl
+} from './httpsUrlSafety.js';
 
 const OPTIMIZABLE_FIELDS = [
   'title',
@@ -15,22 +19,11 @@ const OPTIMIZABLE_FIELDS = [
 
 const HTTPS_URL_PATTERN = /^https:\/\/[^\s]+$/iu;
 
-function isAbsoluteHttpsUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:'
-      && url.hostname.length > 0
-      && url.username.length === 0
-      && url.password.length === 0;
-  } catch {
-    return false;
-  }
-}
-
 const HttpsUrlSchema = z.string()
-  .max(2_048)
+  .max(MAX_SAFE_HTTPS_URL_LENGTH)
   .regex(HTTPS_URL_PATTERN)
-  .refine(isAbsoluteHttpsUrl);
+  .refine((value) => normalizeSafeHttpsUrl(value) !== null)
+  .transform((value) => normalizeSafeHttpsUrl(value));
 
 const ChangeReasonSchema = z.object({
   field: z.enum(OPTIMIZABLE_FIELDS),

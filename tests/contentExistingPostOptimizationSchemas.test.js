@@ -4,6 +4,10 @@ import { zodTextFormat } from 'openai/helpers/zod';
 
 import { ExistingPostOptimizationOutputSchema } from '../services/contentAgent/existingPostOptimizationSchemas.js';
 import { assertOpenAISchemaCompatibility } from '../services/contentAgent/openaiContentService.js';
+import {
+  MAX_SAFE_HTTPS_URL_LENGTH,
+  normalizeSafeHttpsUrl
+} from '../services/contentAgent/httpsUrlSafety.js';
 
 function validOptimizationOutput() {
   return {
@@ -102,6 +106,8 @@ test('Quellenverweise akzeptieren nur begrenzte absolute HTTPS-URLs', () => {
     'http://example.com/fachbeitrag',
     '/interner-pfad',
     'https://',
+    'https://nutzer:passwort@example.com/fachbeitrag',
+    'https://-example.com/fachbeitrag',
     'https://example.com/pfad mit leerzeichen',
     `https://example.com/${'a'.repeat(2_100)}`
   ]) {
@@ -120,4 +126,40 @@ test('Optimierungsschema besteht den OpenAI-Preflight ohne URI-Format', () => {
 
   assert.equal(assertOpenAISchemaCompatibility(format.schema), true);
   assert.doesNotMatch(JSON.stringify(format.schema), /"format":"uri"/);
+});
+
+test('gemeinsamer HTTPS-Normalisierer begrenzt, prüft und kanonisiert Quellen-URLs', () => {
+  assert.equal(MAX_SAFE_HTTPS_URL_LENGTH, 2_048);
+  assert.equal(
+    normalizeSafeHttpsUrl(' https://example.com/fachbeitrag#abschnitt ', {
+      allowSurroundingWhitespace: true,
+      stripHash: true
+    }),
+    'https://example.com/fachbeitrag'
+  );
+  for (const invalidUrl of [
+    'http://example.com/fachbeitrag',
+    'https://nutzer:passwort@example.com/fachbeitrag',
+    'https://-example.com/fachbeitrag',
+    'https://example-.com/fachbeitrag',
+    `https://example.com/${'ä'.repeat(700)}`,
+    `https://example.com/${'x'.repeat(MAX_SAFE_HTTPS_URL_LENGTH)}`
+  ]) {
+    assert.equal(normalizeSafeHttpsUrl(invalidUrl), null, invalidUrl);
+  }
+});
+
+test('Optimierungsschema kanonisiert gültige sourceUrls mit dem gemeinsamen Normalisierer', () => {
+  const valid = validOptimizationOutput();
+  const parsed = ExistingPostOptimizationOutputSchema.parse({
+    ...valid,
+    changeReasons: [{
+      ...valid.changeReasons[0],
+      sourceUrls: ['https://EXAMPLE.com:443/fachbeitrag#abschnitt']
+    }]
+  });
+
+  assert.deepEqual(parsed.changeReasons[0].sourceUrls, [
+    'https://example.com/fachbeitrag#abschnitt'
+  ]);
 });

@@ -182,6 +182,20 @@ function createParseClient(outputParsed) {
   return {
     requests,
     responses: {
+      async create(request) {
+        const index = requests.length;
+        requests.push(request);
+        const value = outputs[index] ?? outputs.at(-1);
+        return {
+          id: `response-${requests.length}`,
+          status: 'completed',
+          output: [{
+            type: 'message',
+            content: [{ type: 'output_text', text: JSON.stringify(value) }]
+          }],
+          usage: { input_tokens: 12, output_tokens: 7 }
+        };
+      },
       async parse(request) {
         requests.push(request);
         return {
@@ -823,6 +837,56 @@ test('extractWebSources priorisiert betitelte Zitate vor titellosen Action-Quell
   ]);
 });
 
+test('extractWebSources verwirft unsichere URLs und begrenzt Metadaten vor der Deduplizierung', () => {
+  const response = {
+    output: [{
+      type: 'message',
+      content: [{
+        type: 'output_text',
+        annotations: [
+          {
+            type: 'url_citation',
+            url: 'https://nutzer:passwort@example.com/geheim',
+            title: 'Quelle mit Zugangsdaten'
+          },
+          {
+            type: 'url_citation',
+            url: `https://example.com/${'x'.repeat(2_100)}`,
+            title: 'Überlange URL'
+          },
+          {
+            type: 'url_citation',
+            url: 'https://-example.com/ungueltig',
+            title: 'Ungültiger Host'
+          },
+          {
+            type: 'url_citation',
+            url: ' https://example.com/sicher#eins ',
+            title: `  ${'T'.repeat(600)}  `,
+            publisher: 'P'.repeat(300),
+            published_at: '2'.repeat(100),
+            retrieved_at: '3'.repeat(100)
+          },
+          {
+            type: 'url_citation',
+            url: 'https://example.com/sicher#zwei',
+            title: 'Späteres Duplikat'
+          }
+        ]
+      }]
+    }]
+  };
+
+  const sources = extractWebSources(response);
+
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0].url, 'https://example.com/sicher');
+  assert.equal(sources[0].title.length, 500);
+  assert.equal(sources[0].publisher.length, 200);
+  assert.equal(sources[0].publishedAt.length, 64);
+  assert.equal(sources[0].retrievedAt.length, 64);
+});
+
 test('Promptbuilder serialisieren ausschließlich ihre fachlichen Allowlist-Felder', () => {
   const cases = [
     {
@@ -1182,7 +1246,7 @@ test('researchExistingPostSources nutzt das Content-Modell und liefert höchsten
     value: result.value,
     responseId: 'existing-source-response-1',
     usage: { input_tokens: 24, output_tokens: 11 },
-    promptVersion: '2026-07-14.1'
+    promptVersion: '2026-07-14.2'
   });
 });
 
@@ -1249,7 +1313,7 @@ test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte C
     value,
     responseId: 'response-1',
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: '2026-07-14.1'
+    promptVersion: '2026-07-14.2'
   });
 });
 
@@ -1270,4 +1334,97 @@ test('optimizeExistingPost lehnt zusätzliche gesperrte Felder aus strukturierte
       return true;
     }
   );
+});
+
+test('optimizeExistingPost lehnt verändertes Legacy-EJS nach der Schema-Prüfung mit Response-ID ab', async () => {
+  const originalHtml = '<p><%= post.title %></p>\n';
+  const client = createParseClient({
+    ...validExistingPostOptimization(),
+    contentHtml: '<p>Vom Modell verändert</p>'
+  });
+  const service = createOpenAIContentService({ config, client });
+
+  await assert.rejects(
+    service.optimizeExistingPost({
+      post: {
+        slug: 'legacy-beitrag',
+        contentFormat: 'legacy_ejs',
+        contentHtml: originalHtml
+      }
+    }),
+    (error) => {
+      assert.equal(error.code, 'OPENAI_LEGACY_EJS_CONTENT_CHANGED');
+      assert.equal(error.responseId, 'response-1');
+      assert.doesNotMatch(error.message, /Vom Modell verändert|post\.title/);
+      return true;
+    }
+  );
+});
+
+test('optimizeExistingPost lehnt überlanges Legacy-EJS vor dem Provideraufruf ab und kürzt es nicht', async () => {
+  const client = createParseClient(validExistingPostOptimization());
+  const service = createOpenAIContentService({ config, client });
+  const overlongHtml = `<p><%= post.title %></p>${'x'.repeat(250_001)}`;
+
+  await assert.rejects(
+    service.optimizeExistingPost({
+      post: {
+        slug: 'legacy-beitrag',
+        contentFormat: 'legacy_ejs',
+        contentHtml: overlongHtml
+      }
+    }),
+    (error) => {
+      assert.equal(error.code, 'CONTENT_EXISTING_POST_PROMPT_INPUT_INVALID');
+      assert.equal(error.providerRequestStarted, false);
+      return true;
+    }
+  );
+  assert.equal(client.requests.length, 0);
+});
+
+test('optimizeExistingPost prüft unvollständige echte Responses vor JSON- und Zod-Verarbeitung', async () => {
+  let parseCalls = 0;
+  let createCalls = 0;
+  const sensitiveTruncatedJson = '{"title":"Internes Fragment"';
+  const client = {
+    responses: {
+      async parse() {
+        parseCalls += 1;
+        throw new SyntaxError(`Rohes SDK-Parsing fehlgeschlagen: ${sensitiveTruncatedJson}`);
+      },
+      async create(request) {
+        createCalls += 1;
+        assert.equal(request.text.format.name, 'existing_post_targeted_optimization');
+        return {
+          id: 'existing-optimization-incomplete',
+          status: 'incomplete',
+          incomplete_details: { reason: 'max_output_tokens' },
+          output: [{
+            type: 'message',
+            content: [{ type: 'output_text', text: sensitiveTruncatedJson }]
+          }]
+        };
+      }
+    }
+  };
+  const service = createOpenAIContentService({ config, client });
+
+  await assert.rejects(
+    service.optimizeExistingPost({
+      post: {
+        slug: 'website-relaunch',
+        contentFormat: 'static_html',
+        contentHtml: '<p>Bestehender Inhalt.</p>'
+      }
+    }),
+    (error) => {
+      assert.equal(error.code, 'OPENAI_RESPONSE_INCOMPLETE');
+      assert.equal(error.responseId, 'existing-optimization-incomplete');
+      assert.doesNotMatch(error.message, /Internes Fragment|max_output_tokens|SDK-Parsing/);
+      return true;
+    }
+  );
+  assert.equal(parseCalls, 0);
+  assert.equal(createCalls, 1);
 });

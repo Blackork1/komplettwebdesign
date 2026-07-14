@@ -52,6 +52,7 @@ import {
   promptVersion as contentLearningClassifierPromptVersion
 } from './prompts/contentLearningClassifierPrompt.js';
 import { calculateGscTopicRelevance } from './searchConsoleCategoryService.js';
+import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
@@ -96,25 +97,15 @@ export class OpenAIContentResponseError extends Error {
   }
 }
 
-function normalizeText(value) {
-  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+function normalizeText(value, maximum) {
+  return typeof value === 'string'
+    ? value.replace(/\s+/g, ' ').trim().slice(0, maximum)
+    : '';
 }
 
-function normalizeHttpsUrl(value) {
-  if (typeof value !== 'string') return null;
-  try {
-    const url = new URL(value.trim());
-    if (url.protocol !== 'https:') return null;
-    url.hash = '';
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
-function copyAnnotationField(target, annotation, camelName, snakeName) {
+function copyAnnotationField(target, annotation, camelName, snakeName, maximum) {
   if (target[camelName]) return;
-  const value = normalizeText(annotation[camelName] ?? annotation[snakeName]);
+  const value = normalizeText(annotation[camelName] ?? annotation[snakeName], maximum);
   if (value) target[camelName] = value;
 }
 
@@ -156,6 +147,14 @@ function assertCompletedResponse(response) {
   }
 }
 
+function structuredOutputText(response) {
+  const blocks = (Array.isArray(response?.output) ? response.output : [])
+    .filter((item) => item?.type === 'message' && Array.isArray(item.content))
+    .flatMap((item) => item.content)
+    .filter((block) => block?.type === 'output_text' && typeof block.text === 'string');
+  return blocks.length === 1 && blocks[0].text.length > 0 ? blocks[0].text : null;
+}
+
 export function extractWebSources(response) {
   const sourcesByUrl = new Map();
 
@@ -163,7 +162,10 @@ export function extractWebSources(response) {
     const annotation = rawSource?.url_citation && typeof rawSource.url_citation === 'object'
       ? { ...rawSource, ...rawSource.url_citation }
       : rawSource;
-    const url = normalizeHttpsUrl(annotation?.url);
+    const url = normalizeSafeHttpsUrl(annotation?.url, {
+      allowSurroundingWhitespace: true,
+      stripHash: true
+    });
     if (!url) return;
 
     let source = sourcesByUrl.get(url);
@@ -171,11 +173,11 @@ export function extractWebSources(response) {
       source = { url };
       sourcesByUrl.set(url, source);
     }
-    const title = normalizeText(annotation.title);
+    const title = normalizeText(annotation.title, 500);
     if (title && !source.title) source.title = title;
-    copyAnnotationField(source, annotation, 'publisher', 'publisher');
-    copyAnnotationField(source, annotation, 'publishedAt', 'published_at');
-    copyAnnotationField(source, annotation, 'retrievedAt', 'retrieved_at');
+    copyAnnotationField(source, annotation, 'publisher', 'publisher', 200);
+    copyAnnotationField(source, annotation, 'publishedAt', 'published_at', 64);
+    copyAnnotationField(source, annotation, 'retrievedAt', 'retrieved_at', 64);
   }
 
   const output = Array.isArray(response?.output) ? response.output : [];
@@ -304,6 +306,63 @@ export function createOpenAIContentService({
     };
   }
 
+  async function createStructuredResponse({
+    model,
+    schema,
+    schemaName,
+    system,
+    user,
+    promptVersion,
+    validateValue
+  }) {
+    const format = zodTextFormat(schema, schemaName);
+    schemaCompatibilityValidator(format.schema);
+    const response = await openai.responses.create({
+      model,
+      input: [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ],
+      text: { format }
+    });
+    assertCompletedResponse(response);
+    const outputText = structuredOutputText(response);
+    if (outputText === null) {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_MISSING',
+        responseId: response.id,
+        message: 'OpenAI lieferte kein strukturiertes Ergebnis.'
+      });
+    }
+    let parsedJson;
+    try {
+      parsedJson = JSON.parse(outputText);
+    } catch {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_INVALID',
+        responseId: response.id,
+        message: 'OpenAI lieferte ein schemawidriges strukturiertes Ergebnis.'
+      });
+    }
+    let value;
+    try {
+      value = schema.parse(parsedJson);
+    } catch {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_INVALID',
+        responseId: response.id,
+        message: 'OpenAI lieferte ein schemawidriges strukturiertes Ergebnis.'
+      });
+    }
+    if (validateValue) validateValue(value, response);
+    return {
+      value,
+      responseId: response.id,
+      usage: response.usage || {},
+      promptVersion
+    };
+  }
+
   async function createTopicCandidates(input) {
     const prompt = buildTopicResearchPrompt(input);
     return parse({
@@ -384,13 +443,25 @@ export function createOpenAIContentService({
 
   async function optimizeExistingPost(input) {
     const prompt = buildExistingPostOptimizationPrompt(input);
-    return parse({
+    const originalPost = input?.post && typeof input.post === 'object' ? input.post : {};
+    const originalFormat = originalPost.contentFormat ?? originalPost.content_format;
+    const originalHtml = originalPost.contentHtml ?? originalPost.content;
+    return createStructuredResponse({
       model: config.contentModel,
       schema: ExistingPostOptimizationOutputSchema,
       schemaName: 'existing_post_targeted_optimization',
       system: prompt.system,
       user: prompt.user,
-      promptVersion: existingPostOptimizationPromptVersion
+      promptVersion: existingPostOptimizationPromptVersion,
+      validateValue(value, response) {
+        if (originalFormat === 'legacy_ejs' && value.contentHtml !== originalHtml) {
+          throw new OpenAIContentResponseError({
+            code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
+            responseId: response.id,
+            message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.'
+          });
+        }
+      }
     });
   }
 
