@@ -7,6 +7,7 @@ import {
   SeoBriefSchema,
   TopicCandidatesSchema
 } from './articleSchemas.js';
+import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
 import {
   buildTopicResearchPrompt,
   promptVersion as topicResearchPromptVersion
@@ -32,6 +33,10 @@ import {
   promptVersion as articleRepairPromptVersion
 } from './prompts/articleRepairPrompt.js';
 import { normalizeEditorialReview } from './editorialReviewPolicy.js';
+import {
+  buildContentLearningClassifierPrompt,
+  promptVersion as contentLearningClassifierPromptVersion
+} from './prompts/contentLearningClassifierPrompt.js';
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
@@ -295,12 +300,24 @@ export function createOpenAIContentService({
     });
   }
 
+  async function classifyLearningIssues(input) {
+    const prompt = buildContentLearningClassifierPrompt(input);
+    return parse({
+      model: config.reviewModel,
+      schema: LearningClassificationBatchSchema,
+      schemaName: 'content_learning_classification',
+      ...prompt,
+      promptVersion: contentLearningClassifierPromptVersion
+    });
+  }
+
   return {
     createTopicCandidates,
     researchCurrentSources,
     createSeoBrief,
     generateArticle,
     reviewArticle,
-    repairArticle
+    repairArticle,
+    classifyLearningIssues
   };
 }

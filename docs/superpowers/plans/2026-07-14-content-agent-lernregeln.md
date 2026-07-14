@@ -173,7 +173,7 @@ git commit -m "feat: classify recurring review issues"
 - Produces: `buildContentLearningClassifierPrompt({ issues })`.
 - Produces: `openaiContentService.classifyLearningIssues({ issues })` mit dem vorhandenen Reviewmodell.
 
-- [ ] **Step 1: Failing schema- und Prompttests schreiben**
+- [x] **Step 1: Failing schema- und Prompttests schreiben**
 
 ```js
 assert.deepEqual(result.value.classifications[0], {
@@ -186,23 +186,23 @@ assert.deepEqual(result.value.classifications[0], {
 
 Die Tests lehnen freie Kategorien, zusätzliche Felder, ungültige Fingerabdrücke und Konfidenzen außerhalb 0–1 ab.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningOpenAIService.test.js tests/contentAgentOpenAIService.test.js`
 
 Expected: FAIL, weil Schema, Prompt und Servicemethode fehlen.
 
-- [ ] **Step 3: Minimalen Structured-Output-Aufruf implementieren**
+- [x] **Step 3: Minimalen Structured-Output-Aufruf implementieren**
 
 Der Prompt erhält nur Fingerabdruck, Begründung, Anweisung und die erlaubten Taxonomieschlüssel. Der Systemtext verbietet Regelaktivierung und neue Kategorien. `classifyLearningIssues` verwendet `config.reviewModel` sowie die bestehende `parse`-Funktion.
 
-- [ ] **Step 4: GREEN prüfen**
+- [x] **Step 4: GREEN prüfen**
 
 Run: `node --test tests/contentLearningOpenAIService.test.js tests/contentAgentOpenAIService.test.js`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningSchemas.js services/contentAgent/prompts/contentLearningClassifierPrompt.js services/contentAgent/openaiContentService.js services/contentAgent/contentRuleManifest.js tests/contentLearningOpenAIService.test.js tests/contentAgentOpenAIService.test.js

@@ -10,6 +10,7 @@ import { promptVersion as brandPolicyPrompt } from './prompts/brandPolicy.js';
 import { promptVersion as seoBriefPrompt } from './prompts/seoBriefPrompt.js';
 import { promptVersion as topicResearchPrompt } from './prompts/topicResearchPrompt.js';
 import { promptVersion as webResearchPrompt } from './prompts/webResearchPrompt.js';
+import { promptVersion as contentLearningClassifierPrompt } from './prompts/contentLearningClassifierPrompt.js';
 import { RISK_REPORT_VERSION } from './riskReportService.js';
 import { CONTENT_LEARNING_TAXONOMY_VERSION } from './contentLearningTaxonomy.js';
 import { REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION } from './reviewIssueOptimizationService.js';
@@ -46,6 +47,7 @@ export const CONTENT_AGENT_RULE_MANIFEST = Object.freeze({
   articleWriterPrompt,
   autoPublishPolicy: AUTO_PUBLISH_POLICY_VERSION,
   brandPolicyPrompt,
+  contentLearningClassifierPrompt,
   contentLearningTaxonomy: CONTENT_LEARNING_TAXONOMY_VERSION,
   internalLinkNormalization: INTERNAL_LINK_NORMALIZATION_VERSION,
   riskReport: RISK_REPORT_VERSION,
