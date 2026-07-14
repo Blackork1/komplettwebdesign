@@ -327,6 +327,147 @@ test('Reviewer-Prompt fordert echte H2/H3-Fundstellen ohne erfundene HTML-IDs', 
   assert.match(prompt, /keine HTML-IDs/i);
 });
 
+test('Reviewer-Prompt überlässt HTML, CTA, FAQ und Metadaten ausschließlich dem technischen Validator', () => {
+  const prompt = buildArticleReviewerPrompt({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  }).system;
+
+  assert.match(prompt, /technische Validierung.*bereits bestanden/i);
+  assert.match(prompt, /weder CTA.*zählen/i);
+  assert.match(prompt, /FAQ.*nicht.*strukturell/i);
+  assert.match(prompt, /Metadaten.*nicht.*technisch/i);
+  assert.match(prompt, /nur.*redaktionell|redaktionelle/i);
+  assert.doesNotMatch(prompt, /gegen.*HTML-Regeln/i);
+});
+
+test('Review-Service entfernt technische Strukturblocker aus der redaktionellen Entscheidung', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 68,
+    requiresManualReview: true,
+    issues: [
+      {
+        code: 'cta_count_exceeds_briefing',
+        severity: 'error',
+        message: 'Vier CTA statt drei.',
+        repairInstruction: 'CTA entfernen.',
+        blocking: true,
+        sectionHeading: null,
+        evidenceExcerpt: null,
+        verificationType: 'none',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'faq_structural_check',
+        severity: 'error',
+        message: 'FAQ-Struktur manuell prüfen.',
+        repairInstruction: 'FAQ prüfen.',
+        blocking: true,
+        sectionHeading: null,
+        evidenceExcerpt: null,
+        verificationType: 'none',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'redundant_contact_prompt',
+        severity: 'warning',
+        message: 'Kontaktaufforderung wirkt wiederholt.',
+        repairInstruction: 'Formulierung redaktionell prüfen.',
+        blocking: false,
+        sectionHeading: null,
+        evidenceExcerpt: null,
+        verificationType: 'none',
+        sourceRequired: false,
+        autoPublishBlocking: false
+      }
+    ]
+  };
+  const client = createParseClient(providerReview);
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  });
+
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['redundant_contact_prompt']);
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 80);
+  assert.equal(result.value.requiresManualReview, false);
+});
+
+test('Review-Service lässt reine redaktionelle Hinweise ohne Blocker den validierten Artikel nicht stoppen', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 76,
+    requiresManualReview: true,
+    issues: [{
+      code: 'wording_repetition',
+      severity: 'warning',
+      message: 'Eine Formulierung wiederholt sich.',
+      repairInstruction: 'Formulierung bei Gelegenheit variieren.',
+      blocking: false,
+      sectionHeading: null,
+      evidenceExcerpt: null,
+      verificationType: 'none',
+      sourceRequired: false,
+      autoPublishBlocking: false
+    }]
+  };
+  const service = createOpenAIContentService({ config, client: createParseClient(providerReview) });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  });
+
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 80);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['wording_repetition']);
+});
+
+test('Review-Service erzwingt einen echten redaktionellen Blocker auch bei widersprüchlichem Providerstatus', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: true,
+    score: 94,
+    requiresManualReview: false,
+    issues: [{
+      code: 'unsupported_claim',
+      severity: 'error',
+      message: 'Eine fachliche Aussage ist unbelegt.',
+      repairInstruction: 'Aussage belegen oder entfernen.',
+      blocking: true,
+      sectionHeading: null,
+      evidenceExcerpt: null,
+      verificationType: 'source',
+      sourceRequired: true,
+      autoPublishBlocking: true
+    }]
+  };
+  const service = createOpenAIContentService({ config, client: createParseClient(providerReview) });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  });
+
+  assert.equal(result.value.passed, false);
+  assert.equal(result.value.requiresManualReview, true);
+  assert.equal(result.value.score, 94);
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['unsupported_claim']);
+});
+
 test('fehlendes output_parsed führt zu einem klaren Fehler', async () => {
   const client = {
     responses: {

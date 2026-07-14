@@ -132,6 +132,16 @@ test('der Produktionsrouter verdrahtet die bestätigte Regelstand-Übernahme', (
   );
 });
 
+test('der Produktionsrouter verdrahtet die bestätigte redaktionelle Neuprüfung', () => {
+  assert.match(routes, /recoverEditorialReviewForAdmin/);
+  assert.match(routes, /jobs\/:id\/recover-editorial-review/);
+  assert.match(routes, /controller\.recoverEditorialReviewAction/);
+  assert.match(
+    routes,
+    /recoverEditorialReviewForAdmin:\s*\(input\)\s*=>\s*recoverEditorialReviewForAdmin\(input, pool\)/
+  );
+});
+
 test('der alte direkte Publish-Endpunkt ist nicht mehr erreichbar', () => {
   assert.doesNotMatch(routes, /drafts\/:id\/publish['"]/);
   assert.doesNotMatch(routes, /controller\.publishDraftAction/);

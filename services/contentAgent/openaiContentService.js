@@ -31,6 +31,7 @@ import {
   buildArticleRepairPrompt,
   promptVersion as articleRepairPromptVersion
 } from './prompts/articleRepairPrompt.js';
+import { normalizeEditorialReview } from './editorialReviewPolicy.js';
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
@@ -273,13 +274,14 @@ export function createOpenAIContentService({
 
   async function reviewArticle(input) {
     const prompt = buildArticleReviewerPrompt(input);
-    return parse({
+    const result = await parse({
       model: config.reviewModel,
       schema: ReviewOutputSchema,
       schemaName: 'article_review',
       ...prompt,
       promptVersion: articleReviewerPromptVersion
     });
+    return { ...result, value: normalizeEditorialReview(result.value) };
   }
 
   async function repairArticle(input) {

@@ -10,7 +10,10 @@ import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
-import { QUALITY_GATE_RECOVERY_AUDIT_KEY } from './contentJobRetryPolicy.js';
+import {
+  EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
+  QUALITY_GATE_RECOVERY_AUDIT_KEY
+} from './contentJobRetryPolicy.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -325,6 +328,25 @@ function authorizedQualityRecovery(value, baseMaxRevisions) {
     && Number.isSafeInteger(Number(value.adminId))
     && Number(value.adminId) > 0
   );
+}
+
+function authorizedEditorialReviewRecovery(value, maximumRevisions) {
+  return Boolean(
+    value
+    && value.status === 'authorized_after_editorial_scope_change'
+    && value.stageId === `review:${maximumRevisions + 1}`
+    && value.previousReviewStageId === `review:${maximumRevisions}`
+    && Number.isSafeInteger(Number(value.adminId))
+    && Number(value.adminId) > 0
+  );
+}
+
+function safeQualityIssues(review) {
+  return (Array.isArray(review?.issues) ? review.issues : []).slice(0, 8).map((issue) => ({
+    code: typeof issue?.code === 'string' ? issue.code.slice(0, 120) : 'review_issue',
+    severity: ['info', 'warning', 'error'].includes(issue?.severity) ? issue.severity : 'warning',
+    message: typeof issue?.message === 'string' ? issue.message.slice(0, 500) : 'Redaktionelle Prüfung erforderlich.'
+  }));
 }
 
 function providerErrorDiagnostic(error, stage) {
@@ -959,6 +981,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     const maximumRevisions = config.maxRevisions + (
       authorizedQualityRecovery(qualityRecovery, config.maxRevisions) ? 1 : 0
     );
+    const editorialReviewRecovery = await readPersistedStage(EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY);
     let revision = 0;
     const approved = () => validation.passed
       && currentReview?.passed === true
@@ -1015,12 +1038,28 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
     }
 
+    if (!approved()
+        && validation.passed
+        && authorizedEditorialReviewRecovery(editorialReviewRecovery, maximumRevisions)) {
+      currentReview = await paidTextOperation({
+        stage: 'review',
+        stageId: `review:${maximumRevisions + 1}`,
+        operation: openaiService.reviewArticle,
+        input: { briefing, article: reviewableArticle(), sourceReferences }
+      });
+      if (reviewRequiresSources(currentReview)) {
+        const requiredSources = await requireValidSources(sourceReferences);
+        if (!requiredSources.ok) return requiredSources.result;
+      }
+    }
+
     if (!approved()) {
       return finishManual(
         'quality_gate_failed',
         currentReview?.score < 80
           ? 'Der Reviewscore liegt unter 80.'
-          : 'Der Artikel hat die Qualitätsprüfung nicht bestanden.'
+          : 'Der Artikel hat die Qualitätsprüfung nicht bestanden.',
+        { qualityIssues: safeQualityIssues(currentReview) }
       );
     }
 

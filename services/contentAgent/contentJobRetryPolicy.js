@@ -6,6 +6,9 @@ export const QUALITY_GATE_RECOVERY_AUDIT_KEY = 'quality_gate_recovery:structure_
 export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP = 9;
 export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY =
   'rule_manifest_recovery:quality_gate:attempt-8';
+export const EDITORIAL_REVIEW_RECOVERY_RETRY_CAP = 10;
+export const EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY =
+  'editorial_review_recovery:review_scope:attempt-9';
 
 const RETRYABLE_JOB_STATUSES = new Set(['failed', 'needs_manual_attention']);
 const ADMIN_REVIEW_NOTIFICATION_JOB = 'send_admin_review_notification';
@@ -118,4 +121,24 @@ export function canRecoverQualityGateRuleManifest({
     && postId == null
     && Number(openReservationCount) === 0
     && manifestRepairable === true;
+}
+
+export function canRecoverEditorialReview({
+  jobType,
+  status,
+  attempts,
+  lastError,
+  currentStage,
+  postId,
+  openReservationCount,
+  editorialReviewRecoverable = false
+} = {}) {
+  return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
+    && status === 'needs_manual_attention'
+    && Number(attempts) === EDITORIAL_REVIEW_RECOVERY_RETRY_CAP - 1
+    && lastError === 'quality_gate_failed'
+    && currentStage === 'review'
+    && postId == null
+    && Number(openReservationCount) === 0
+    && editorialReviewRecoverable === true;
 }

@@ -426,6 +426,39 @@ test('Jobliste erklärt die sichere Manifestübernahme nach dem kostenfreien Vor
   assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
 });
 
+test('Jobliste erklärt die einmalige redaktionelle Neuprüfung ohne Artikelreparatur', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 9,
+      maxAttempts: 9,
+      lastSafeStageLabel: 'Redaktionelle Prüfung',
+      lastError: 'quality_gate_failed',
+      costEur: 0.61,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: false,
+      canRecoverQualityGateManifest: false,
+      canRecoverEditorialReview: true,
+      editorialReviewRecoveryActionLabel: 'Nur redaktionelle Prüfung erneut ausführen',
+      qualityIssues: ['Vier CTA statt drei.', 'FAQ-Struktur prüfen.']
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-editorial-review"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Artikel und bestandene technische Validierung bleiben unverändert/);
+  assert.match(html, /nur eine neue redaktionelle OpenAI-Prüfung/i);
+  assert.match(html, /Vier CTA statt drei/);
+  assert.match(html, /FAQ-Struktur prüfen/);
+  assert.doesNotMatch(html, /repair:4|Artikel erneut reparieren/);
+});
+
 test('veröffentlichter Post bietet keinen Mailretry-POST an', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

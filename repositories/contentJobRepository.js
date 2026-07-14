@@ -7,7 +7,9 @@ import {
   QUALITY_GATE_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_RETRY_CAP,
   QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY,
-  QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP
+  QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP,
+  EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
+  EDITORIAL_REVIEW_RECOVERY_RETRY_CAP
 } from '../services/contentAgent/contentJobRetryPolicy.js';
 import {
   CONTENT_AGENT_RULE_MANIFEST,
@@ -15,6 +17,7 @@ import {
   canonicalSha256
 } from '../services/contentAgent/contentRuleManifest.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
+import { reviewHasOnlyTechnicalBlockingIssues } from '../services/contentAgent/editorialReviewPolicy.js';
 
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
@@ -1020,6 +1023,168 @@ export async function recoverQualityGateRuleManifestForAdmin({
       runId: state.run_id,
       recoveredStage,
       auditKey: QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY
+    };
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function validEditorialReviewRecoveryState(row) {
+  const stageResults = row?.stage_results_json;
+  const qualityRecovery = stageResults?.[QUALITY_GATE_RECOVERY_AUDIT_KEY];
+  const validation = stageResults?.['validation:3'];
+  const review = stageResults?.['review:3']?.value;
+  return row
+    && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
+    && row.job_status === 'needs_manual_attention'
+    && row.last_error === 'quality_gate_failed'
+    && Number(row.attempts) === EDITORIAL_REVIEW_RECOVERY_RETRY_CAP - 1
+    && row.run_status === 'needs_manual_attention'
+    && row.current_stage === 'review'
+    && row.post_id == null
+    && row.error_report_json?.code === 'quality_gate_failed'
+    && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)
+    && row.runtime_snapshot_json.ruleManifestHash !== CONTENT_AGENT_RULE_MANIFEST_HASH
+    && !hasOpenProviderReservation(stageResults)
+    && hasSettledStage(stageResults, 'article_generation')
+    && hasSettledStage(stageResults, 'repair:3')
+    && hasSettledStage(stageResults, 'review:3')
+    && validation?.passed === true
+    && Array.isArray(validation?.issues)
+    && validation.issues.length === 0
+    && reviewHasOnlyTechnicalBlockingIssues(review)
+    && qualityRecovery?.status === 'authorized_after_quality_gate'
+    && qualityRecovery?.stageId === 'repair:3'
+    && !Object.hasOwn(stageResults, 'review:4')
+    && !hasAnyBudgetStage(stageResults, 'review:4');
+}
+
+export async function recoverEditorialReviewForAdmin({
+  jobId,
+  adminId
+} = {}, db = pool) {
+  if (
+    !Number.isSafeInteger(jobId) || jobId <= 0
+    || !Number.isSafeInteger(adminId) || adminId <= 0
+  ) {
+    throw new TypeError('Für die redaktionelle Wiederaufnahme werden positive sichere Ganzzahlen benötigt.');
+  }
+
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const { rows } = await client.query(
+      `
+        SELECT j.id AS job_id,
+               j.job_type,
+               j.status AS job_status,
+               j.attempts,
+               j.max_attempts,
+               j.last_error,
+               r.id AS run_id,
+               r.status AS run_status,
+               r.current_stage,
+               r.post_id,
+               r.error_report_json,
+               r.runtime_snapshot_json,
+               r.stage_results_json
+        FROM content_jobs AS j
+        JOIN content_runs AS r ON r.job_id = j.id
+        WHERE j.id = $1
+        FOR UPDATE OF j, r
+      `,
+      [jobId]
+    );
+    const state = rows[0];
+    if (!validEditorialReviewRecoveryState(state)
+        || Object.hasOwn(state.stage_results_json, EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY)) {
+      await client.query('COMMIT');
+      return null;
+    }
+
+    const previousManifestHash = state.runtime_snapshot_json.ruleManifestHash;
+    const recoveredStage = 'review:4';
+    const runResult = await client.query(
+      `
+        UPDATE content_runs
+        SET runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+              'ruleManifest', $3::jsonb,
+              'ruleManifestHash', $4::text
+            ),
+            stage_results_json = stage_results_json || jsonb_build_object(
+              $2::text,
+              jsonb_build_object(
+                'status', 'authorized_after_editorial_scope_change',
+                'stageId', 'review:4',
+                'previousReviewStageId', 'review:3',
+                'previousManifestHash', $5::text,
+                'currentManifestHash', $4::text,
+                'adminId', $6::bigint,
+                'authorizedAt', NOW()
+              )
+            ),
+            error_report_json = jsonb_build_object(
+              'code', 'editorial_review_recovery_authorized',
+              'stage', 'review:4',
+              'message', 'Die neue rein redaktionelle Prüfung wurde durch einen Administrator freigegeben.'
+            ),
+            finished_at = NULL
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND post_id IS NULL
+          AND runtime_snapshot_json ->> 'ruleManifestHash' = $5::text
+          AND NOT (stage_results_json ? $2::text)
+        RETURNING id
+      `,
+      [
+        state.run_id,
+        EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
+        CONTENT_AGENT_RULE_MANIFEST,
+        CONTENT_AGENT_RULE_MANIFEST_HASH,
+        previousManifestHash,
+        adminId
+      ]
+    );
+    if (!runResult.rows[0]) {
+      throw new Error('Die redaktionelle Wiederaufnahme konnte nicht atomar protokolliert werden.');
+    }
+
+    const attempts = Number(state.attempts);
+    const jobResult = await client.query(
+      `
+        UPDATE content_jobs
+        SET status = 'queued',
+            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            run_after = NOW(),
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            finished_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+          AND status = 'needs_manual_attention'
+          AND last_error = 'quality_gate_failed'
+          AND attempts = $3
+          AND attempts < $2
+        RETURNING *
+      `,
+      [jobId, EDITORIAL_REVIEW_RECOVERY_RETRY_CAP, attempts]
+    );
+    if (!jobResult.rows[0]) {
+      throw new Error('Der Job konnte nicht atomar zur redaktionellen Neuprüfung eingereiht werden.');
+    }
+
+    await client.query('COMMIT');
+    return {
+      job: jobResult.rows[0],
+      runId: state.run_id,
+      recoveredStage,
+      auditKey: EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY
     };
   } catch (error) {
     if (transactionStarted) await rollbackRecoveryQuietly(client);

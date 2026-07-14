@@ -1700,6 +1700,130 @@ test('bestätigte Qualitätswiederaufnahme nutzt bezahlte Stufen und erlaubt gen
   );
 });
 
+test('bestätigte redaktionelle Wiederaufnahme nutzt repair:3 unverändert und bezahlt nur review:4 neu', async () => {
+  const lowReview = {
+    ...review,
+    passed: false,
+    score: 68,
+    requiresManualReview: true,
+    issues: [{
+      code: 'cta_count_exceeds_briefing',
+      severity: 'error',
+      message: 'Vier CTA statt drei.',
+      repairInstruction: 'CTA entfernen.',
+      blocking: true
+    }]
+  };
+  const validatorArticle = createValidatorValidArticle();
+  const repairedArticle = {
+    ...schemaArticle,
+    ...validatorArticle,
+    lead: schemaArticle.lead,
+    qualitySelfCheck: schemaArticle.qualitySelfCheck,
+    contentHtml: `${validatorArticle.contentHtml}<p>${'Validierter hilfreicher Inhalt. '.repeat(210)} Validierte dritte Reparatur.</p>`
+  };
+  const inventory = {
+    blogPosts: [], guides: [], servicePages: [], industries: [], packages: [], approvedLinks: []
+  };
+  const persistedStages = {
+    inventory: {
+      inventory,
+      counts: { blogPosts: 0, guides: 0, servicePages: 0, industries: 0, packages: 0 }
+    },
+    topic_research: persistedEnvelope({ candidates: [schemaTopic] }, 'resp-topic-paid'),
+    topic_persistence: { topic: { ...schemaTopic, id: 17 } },
+    seo_brief: persistedEnvelope(schemaSeoBrief, 'resp-brief-paid'),
+    article_generation: persistedEnvelope(schemaArticle, 'resp-article-paid'),
+    'repair:1': persistedEnvelope(schemaArticle, 'resp-repair-1-paid'),
+    'repair:2': persistedEnvelope(schemaArticle, 'resp-repair-2-paid'),
+    'repair:3': persistedEnvelope(repairedArticle, 'resp-repair-3-paid'),
+    'review:3': persistedEnvelope(lowReview, 'resp-review-3-paid'),
+    'quality_gate_recovery:structure_contract:attempt-7': {
+      status: 'authorized_after_quality_gate',
+      stageId: 'repair:3',
+      baseMaxRevisions: 2,
+      additionalRevisionCount: 1,
+      adminId: 7
+    },
+    'editorial_review_recovery:review_scope:attempt-9': {
+      status: 'authorized_after_editorial_scope_change',
+      stageId: 'review:4',
+      previousReviewStageId: 'review:3',
+      adminId: 7
+    }
+  };
+  const paidStageIds = new Set([
+    'topic_research', 'seo_brief', 'article_generation',
+    'repair:1', 'repair:2', 'repair:3', 'review:3'
+  ]);
+  const reservations = [];
+  const settlements = [];
+  let reviewCalls = 0;
+  let repairCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async reviewArticle() {
+        reviewCalls += 1;
+        return operation(review, 'resp-review-4')();
+      },
+      async repairArticle() {
+        repairCalls += 1;
+        assert.fail('Die validierte dritte Reparatur darf nicht erneut erzeugt werden.');
+      }
+    },
+    costService: {
+      async reserveMonthlyBudget(input) {
+        reservations.push(input);
+        return paidStageIds.has(input.stageId)
+          ? { created: false, status: 'settled', reservationMonth: '2026-07' }
+          : { created: true, status: 'reserved', reservationMonth: '2026-07' };
+      },
+      async settleMonthlyBudget(input) {
+        settlements.push(input);
+        return { status: 'settled' };
+      },
+      async getPersistedStageResult({ stageId }) {
+        return persistedStages[stageId] ?? null;
+      },
+      estimateTextCost() { return 0.01; }
+    },
+    validateArticle(value) {
+      const passed = value.contentHtml.includes('Validierte dritte Reparatur.');
+      return {
+        passed,
+        sanitizedHtml: value.contentHtml,
+        issues: passed ? [] : [{ code: 'html_contract_invalid', message: 'Noch nicht valide.' }]
+      };
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 1 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed', JSON.stringify({
+    result,
+    finishCalls: harness.finishCalls,
+    reservations: reservations.map(({ stageId }) => stageId),
+    reviewCalls,
+    repairCalls
+  }));
+  assert.equal(repairCalls, 0);
+  assert.equal(reviewCalls, 1);
+  assert.equal(harness.imageCalls.length, 1);
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.equal(reservations.some(({ stageId }) => stageId === 'repair:4'), false);
+  assert.equal(reservations.some(({ stageId }) => stageId === 'review:4'), true);
+  assert.deepEqual(
+    settlements.filter(({ stageId }) => stageId.startsWith('review')).map(({ stageId }) => stageId),
+    ['review:4']
+  );
+  assert.deepEqual(
+    harness.stageUpdates.filter(({ currentStage }) => currentStage === 'repair'),
+    []
+  );
+});
+
 test('jede kostenpflichtige Stufe reserviert vor dem Aufruf das Monatsbudget', async () => {
   let topicCalls = 0;
   const budgetError = new ContentBudgetLimitError();

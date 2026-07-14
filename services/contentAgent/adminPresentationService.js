@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import {
+  canRecoverEditorialReview,
   canRecoverQualityGateJob,
   canRecoverQualityGateRuleManifest,
   canRecoverRejectedProviderJob,
@@ -398,6 +399,22 @@ export function buildJobListPresentation(rows = []) {
       openReservationCount: row.open_provider_reservation_count,
       manifestRepairable: row.quality_gate_manifest_repairable === true
     });
+    const canRecoverEditorial = canRecoverEditorialReview({
+      jobType: row.job_type,
+      status: row.status,
+      attempts: row.attempts,
+      lastError: row.last_error,
+      currentStage: row.current_stage,
+      postId: row.post_id,
+      openReservationCount: row.open_provider_reservation_count,
+      editorialReviewRecoverable: row.editorial_review_recoverable === true
+    });
+    const qualityIssues = (Array.isArray(row.error_report_json?.qualityIssues)
+      ? row.error_report_json.qualityIssues
+      : Array.isArray(row.latest_review_issues) ? row.latest_review_issues : [])
+      .slice(0, 8)
+      .map((issue) => safeError(issue?.message))
+      .filter(Boolean);
     return {
       id: row.id,
       jobType: row.job_type,
@@ -429,6 +446,11 @@ export function buildJobListPresentation(rows = []) {
       qualityGateManifestRecoveryActionLabel: canRecoverQualityGateManifest
         ? 'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
         : null,
+      canRecoverEditorialReview: canRecoverEditorial,
+      editorialReviewRecoveryActionLabel: canRecoverEditorial
+        ? 'Nur redaktionelle Prüfung erneut ausführen'
+        : null,
+      qualityIssues,
       isAdminReviewNotification: row.job_type === 'send_admin_review_notification',
       attempts: Number(row.attempts || 0),
       maxAttempts: Number(row.max_attempts || 0),

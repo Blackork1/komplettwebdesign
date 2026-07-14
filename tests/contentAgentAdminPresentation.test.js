@@ -408,6 +408,38 @@ test('Manifestwiederaufnahme bleibt mit Providerreservierung oder nach Versuch n
   }
 });
 
+test('technisch bestandener Artikel bietet nach falschem KI-Strukturblocker nur die redaktionelle Neuprüfung an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 9,
+    max_attempts: 9,
+    last_error: 'quality_gate_failed',
+    current_stage: 'review',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    editorial_review_recoverable: true,
+    error_report_json: {
+      code: 'quality_gate_failed'
+    },
+    latest_review_issues: [
+      { code: 'cta_count_exceeds_briefing', message: 'Vier CTA statt drei.' },
+      { code: 'faq_structural_check', message: 'FAQ-Struktur prüfen.' }
+    ]
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverQualityGate, false);
+  assert.equal(job.canRecoverQualityGateManifest, false);
+  assert.equal(job.canRecoverEditorialReview, true);
+  assert.equal(job.editorialReviewRecoveryActionLabel, 'Nur redaktionelle Prüfung erneut ausführen');
+  assert.deepEqual(job.qualityIssues, [
+    'Vier CTA statt drei.',
+    'FAQ-Struktur prüfen.'
+  ]);
+});
+
 test('Draftpräsentation reduziert Qualitätsdaten auf sichere Kennzahlen', () => {
   const [draft] = buildDraftListPresentation([{
     id: 11,

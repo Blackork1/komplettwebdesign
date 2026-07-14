@@ -10,6 +10,7 @@ import {
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
+  recoverEditorialReviewForAdmin,
   recoverQualityGateJobForAdmin,
   recoverQualityGateRuleManifestForAdmin,
   recoverRejectedProviderJobForAdmin,
@@ -667,6 +668,153 @@ test('echtes PostgreSQL: vorzeitig gestoppter Manifestfehler wird ohne Inhaltsve
     assert.equal(audit.currentManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
 
     assert.equal(await recoverQualityGateRuleManifestForAdmin({ jobId, adminId: 9 }, pool), null);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: ausschließlich die korrigierte redaktionelle Prüfung wird fortgesetzt', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    const previousManifest = {
+      ...CONTENT_AGENT_RULE_MANIFEST,
+      articleReviewerPrompt: '2026-07-11.1'
+    };
+    const previousHash = canonicalSha256(previousManifest);
+    const previousSnapshot = {
+      timezone: 'Europe/Berlin',
+      allowedInternalLinks: ['/kontakt'],
+      allowedInternalLinksHash: canonicalSha256(['/kontakt']),
+      ruleManifest: previousManifest,
+      ruleManifestHash: previousHash
+    };
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        current_stage VARCHAR(64) NOT NULL,
+        post_id INTEGER,
+        cost_estimate NUMERIC(12,6) NOT NULL DEFAULT 0,
+        error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+    `);
+    const inserted = await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, attempts, max_attempts, last_error, finished_at
+        )
+        VALUES (
+          'generate_weekly_draft', 'needs_manual_attention', 9, 9,
+          'quality_gate_failed', NOW()
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (
+        job_id, status, current_stage, cost_estimate, error_report_json,
+        runtime_snapshot_json, stage_results_json, finished_at
+      )
+      SELECT id,
+             'needs_manual_attention',
+             'review',
+             0.611075,
+             '{"code":"quality_gate_failed","message":"Der Reviewscore liegt unter 80."}'::jsonb,
+             $1::jsonb,
+             '{
+               "budget:2026-07:article_generation":{"status":"settled"},
+               "article_generation":{"value":{"title":"Bezahlter Artikel"}},
+               "budget:2026-07:repair:3":{"status":"settled"},
+               "repair:3":{"value":{"title":"Validierte dritte Reparatur"}},
+               "validation:3":{"passed":true,"issues":[]},
+               "budget:2026-07:review:3":{"status":"settled"},
+               "review:3":{"value":{
+                 "passed":false,
+                 "score":68,
+                 "requiresManualReview":true,
+                 "risks":{},
+                 "issues":[
+                   {"code":"cta_count_exceeds_briefing","blocking":true},
+                   {"code":"faq_structural_check","blocking":true}
+                 ]
+               }},
+               "quality_gate_recovery:structure_contract:attempt-7":{
+                 "status":"authorized_after_quality_gate",
+                 "stageId":"repair:3",
+                 "baseMaxRevisions":2,
+                 "additionalRevisionCount":1,
+                 "adminId":7
+               },
+               "rule_manifest_recovery:quality_gate:attempt-8":{
+                 "status":"authorized_after_manifest_mismatch",
+                 "stageId":"repair:3",
+                 "adminId":7
+               }
+             }'::jsonb,
+             NOW()
+      FROM job
+      RETURNING job_id
+    `, [JSON.stringify(previousSnapshot)]);
+    const jobId = Number(inserted.rows[0].job_id);
+
+    const result = await recoverEditorialReviewForAdmin({ jobId, adminId: 9 }, pool);
+
+    assert.equal(result.recoveredStage, 'review:4');
+    const job = (await pool.query(
+      'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
+      [jobId]
+    )).rows[0];
+    assert.deepEqual(job, {
+      status: 'queued', attempts: 9, max_attempts: 10, last_error: null
+    });
+    const run = (await pool.query(`
+      SELECT cost_estimate, error_report_json, runtime_snapshot_json, stage_results_json
+      FROM content_runs
+      WHERE job_id = $1
+    `, [jobId])).rows[0];
+    assert.equal(Number(run.cost_estimate), 0.611075);
+    assert.equal(run.error_report_json.code, 'editorial_review_recovery_authorized');
+    assert.equal(run.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+    assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
+    assert.equal(run.stage_results_json['repair:3'].value.title, 'Validierte dritte Reparatur');
+    assert.equal(run.stage_results_json['review:4'], undefined);
+    const audit = run.stage_results_json['editorial_review_recovery:review_scope:attempt-9'];
+    assert.equal(audit.stageId, 'review:4');
+    assert.equal(audit.previousReviewStageId, 'review:3');
+    assert.equal(audit.previousManifestHash, previousHash);
+    assert.equal(audit.currentManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
+
+    assert.equal(await recoverEditorialReviewForAdmin({ jobId, adminId: 9 }, pool), null);
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

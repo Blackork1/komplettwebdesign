@@ -10,6 +10,7 @@ import {
 import {
   enqueueManualSearchConsoleSyncJob,
   enqueueJob,
+  recoverEditorialReviewForAdmin,
   recoverQualityGateJobForAdmin,
   recoverQualityGateRuleManifestForAdmin,
   recoverRejectedProviderJobForAdmin,
@@ -49,6 +50,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/jobs/:id/recover-rejected-provider', isAdmin, verifyCsrfToken, controller.recoverRejectedProviderJobAction);
   router.post('/admin/content-agent/jobs/:id/recover-quality-gate', isAdmin, verifyCsrfToken, controller.recoverQualityGateJobAction);
   router.post('/admin/content-agent/jobs/:id/recover-rule-manifest', isAdmin, verifyCsrfToken, controller.recoverQualityGateRuleManifestAction);
+  router.post('/admin/content-agent/jobs/:id/recover-editorial-review', isAdmin, verifyCsrfToken, controller.recoverEditorialReviewAction);
   router.post('/admin/content-agent/drafts/:id', isAdmin, verifyCsrfToken, controller.updateDraftAction);
   router.post('/admin/content-agent/drafts/:id/reject', isAdmin, verifyCsrfToken, controller.rejectDraftAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-image', isAdmin, verifyCsrfToken, controller.regenerateImageAction);
@@ -87,7 +89,8 @@ const controller = createAdminContentAgentController({
     recoverUncertainProviderJobForAdmin: (input) => recoverUncertainProviderJobForAdmin(input, pool),
     recoverRejectedProviderJobForAdmin: (input) => recoverRejectedProviderJobForAdmin(input, pool),
     recoverQualityGateJobForAdmin: (input) => recoverQualityGateJobForAdmin(input, pool),
-    recoverQualityGateRuleManifestForAdmin: (input) => recoverQualityGateRuleManifestForAdmin(input, pool)
+    recoverQualityGateRuleManifestForAdmin: (input) => recoverQualityGateRuleManifestForAdmin(input, pool),
+    recoverEditorialReviewForAdmin: (input) => recoverEditorialReviewForAdmin(input, pool)
   },
   runtimeConfig: technicalConfig,
   technicalPresentation: buildTechnicalConfigPresentation({ technicalConfig }),

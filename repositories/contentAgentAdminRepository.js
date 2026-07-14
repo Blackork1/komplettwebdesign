@@ -67,6 +67,8 @@ export function createContentAgentAdminRepository(db = pool) {
           SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,
                  j.last_error, j.created_at, j.updated_at, j.finished_at,
                  r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
+                 r.error_report_json,
+                 r.stage_results_json #> '{review:3,value,issues}' AS latest_review_issues,
                  provider_recovery.open_provider_reservation_count,
                  provider_recovery.open_provider_stage,
                  (
@@ -84,7 +86,8 @@ export function createContentAgentAdminRepository(db = pool) {
                  ) AS provider_rejected_schema_repairable,
                  r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                  quality_recovery.quality_gate_structure_repairable,
-                 quality_recovery.quality_gate_manifest_repairable
+                 quality_recovery.quality_gate_manifest_repairable,
+                 quality_recovery.editorial_review_recoverable
           FROM content_jobs j
           LEFT JOIN content_runs r ON r.job_id = j.id
           LEFT JOIN LATERAL (
@@ -143,7 +146,51 @@ export function createContentAgentAdminRepository(db = pool) {
                 FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
                 WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
               )
-            ) AS quality_gate_manifest_repairable
+            ) AS quality_gate_manifest_repairable,
+            (
+              r.error_report_json ->> 'code' = 'quality_gate_failed'
+              AND r.stage_results_json -> 'validation:3' ->> 'passed' = 'true'
+              AND jsonb_array_length(COALESCE(r.stage_results_json -> 'validation:3' -> 'issues', '[]'::jsonb)) = 0
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+                  AND settled.value ->> 'status' = 'settled'
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:3$'
+                  AND settled.value ->> 'status' = 'settled'
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'issues', '[]'::jsonb)) AS issue
+                WHERE COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                   OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+              )
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'issues', '[]'::jsonb)) AS issue
+                WHERE (
+                  COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                  OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+                )
+                  AND COALESCE(issue ->> 'code', '') !~* '^(cta_(count|locations?|tracking|contact_target|structure)|faq_(count|structure|structural|visibility|visible|markup|json|mismatch)|html_|bootstrap_|class_|h1_|meta_(title|description)|slug_|image_alt|internal_link_(count|target|href|validity))'
+              )
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'risks', '{}'::jsonb)) AS risk(key, value)
+                WHERE risk.value = 'true'::jsonb
+              )
+              AND NOT (r.stage_results_json ? 'editorial_review_recovery:review_scope:attempt-9')
+              AND NOT (r.stage_results_json ? 'review:4')
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS review_budget(key, value)
+                WHERE review_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:4$'
+              )
+            ) AS editorial_review_recoverable
           ) quality_recovery ON TRUE
           ORDER BY j.created_at DESC
           LIMIT $1
@@ -258,6 +305,8 @@ export function createContentAgentAdminRepository(db = pool) {
         SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,
                j.last_error, j.created_at, j.updated_at, j.finished_at,
                r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
+               r.error_report_json,
+               r.stage_results_json #> '{review:3,value,issues}' AS latest_review_issues,
                provider_recovery.open_provider_reservation_count,
                provider_recovery.open_provider_stage,
                (
@@ -275,7 +324,8 @@ export function createContentAgentAdminRepository(db = pool) {
                ) AS provider_rejected_schema_repairable,
                r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                quality_recovery.quality_gate_structure_repairable,
-               quality_recovery.quality_gate_manifest_repairable
+               quality_recovery.quality_gate_manifest_repairable,
+               quality_recovery.editorial_review_recoverable
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
         LEFT JOIN LATERAL (
@@ -334,7 +384,51 @@ export function createContentAgentAdminRepository(db = pool) {
               FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
               WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
             )
-          ) AS quality_gate_manifest_repairable
+          ) AS quality_gate_manifest_repairable,
+          (
+            r.error_report_json ->> 'code' = 'quality_gate_failed'
+            AND r.stage_results_json -> 'validation:3' ->> 'passed' = 'true'
+            AND jsonb_array_length(COALESCE(r.stage_results_json -> 'validation:3' -> 'issues', '[]'::jsonb)) = 0
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+                AND settled.value ->> 'status' = 'settled'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:3$'
+                AND settled.value ->> 'status' = 'settled'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'issues', '[]'::jsonb)) AS issue
+              WHERE COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                 OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'issues', '[]'::jsonb)) AS issue
+              WHERE (
+                COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+              )
+                AND COALESCE(issue ->> 'code', '') !~* '^(cta_(count|locations?|tracking|contact_target|structure)|faq_(count|structure|structural|visibility|visible|markup|json|mismatch)|html_|bootstrap_|class_|h1_|meta_(title|description)|slug_|image_alt|internal_link_(count|target|href|validity))'
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json -> 'review:3' -> 'value' -> 'risks', '{}'::jsonb)) AS risk(key, value)
+              WHERE risk.value = 'true'::jsonb
+            )
+            AND NOT (r.stage_results_json ? 'editorial_review_recovery:review_scope:attempt-9')
+            AND NOT (r.stage_results_json ? 'review:4')
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS review_budget(key, value)
+              WHERE review_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:4$'
+            )
+          ) AS editorial_review_recoverable
         ) quality_recovery ON TRUE
         ORDER BY j.created_at DESC
         LIMIT $1
