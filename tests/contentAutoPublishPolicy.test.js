@@ -110,6 +110,23 @@ test('Reviewmodus, forced review, technischer Gate und Snapshot-Freigaben blocki
   }
 });
 
+test('aktive Lernregeln können den Reviewmodus niemals in automatische Veröffentlichung umwandeln', () => {
+  const decision = evaluateAutoPublish(safeInput({
+    snapshot: {
+      operatingMode: 'review',
+      forcedMode: 'review',
+      learningRuleSnapshot: {
+        version: 'content-learning-rules-v1',
+        rules: [{ id: 8, version: 1, categoryKey: 'generic_content' }],
+        hash: 'a'.repeat(64)
+      }
+    }
+  }));
+  assert.equal(decision.allowed, false);
+  assert.ok(decision.reasons.includes('mode_review'));
+  assert.ok(decision.reasons.includes('forced_review'));
+});
+
 test('Policy erzwingt den höheren Snapshot-Mindestscore und mindestens 90', () => {
   assert.ok(evaluateAutoPublish(safeInput({
     snapshot: { autoPublishMinScore: 96 }

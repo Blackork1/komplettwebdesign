@@ -47,6 +47,9 @@ import {
   CONTENT_AGENT_RULE_MANIFEST_HASH,
   canonicalSha256
 } from '../services/contentAgent/contentRuleManifest.js';
+import { createContentAgentJobSnapshot } from '../services/contentAgent/runtimeConfigService.js';
+import { learningRulesForStage } from '../services/contentAgent/contentLearningSnapshotService.js';
+import { buildArticleWriterPrompt } from '../services/contentAgent/prompts/articleWriterPrompt.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
 const resetGuard = evaluateContentAgentPgResetGuard({
@@ -1191,6 +1194,114 @@ test('echtes PostgreSQL: Migrationen 002–009 und Generate→Notify→Approve�
       WHERE category_key = 'cta_repetition_or_fit'
     `);
     assert.equal(learningObservationCount.rows[0].count, 4);
+
+    const learningAdmin = await pool.query("SELECT id, username FROM admins WHERE username = 'migration-admin'");
+    const pendingProposal = (await pool.query(`
+      SELECT id, proposal_version, suggested_rule_text, target_stages
+      FROM content_learning_rule_proposals
+      WHERE category_key = 'cta_repetition_or_fit' AND status = 'pending'
+    `)).rows[0];
+    const activated = await learningRepository.activateProposal({
+      proposalId: Number(pendingProposal.id),
+      expectedVersion: Number(pendingProposal.proposal_version),
+      ruleText: pendingProposal.suggested_rule_text,
+      targetStages: pendingProposal.target_stages,
+      admin: { id: Number(learningAdmin.rows[0].id), username: learningAdmin.rows[0].username }
+    });
+    assert.equal(activated.rule.status, 'active');
+    assert.equal(Number(activated.rule.rule_revision), 1);
+    const activeLearningRules = await learningRepository.listActiveRuleVersions();
+    assert.equal(activeLearningRules.length, 1);
+    assert.deepEqual(
+      [Number(activeLearningRules[0].id), Number(activeLearningRules[0].version)],
+      [Number(activated.rule.id), 1]
+    );
+
+    const learningJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key, payload_json)
+      VALUES (
+        'generate_manual_draft', 'queued', 'pg-learning-rule-snapshot',
+        '{"source":"integration_learning","forced_mode":"review"}'::jsonb
+      )
+      RETURNING *
+    `);
+    const learningRuntimeSnapshot = createContentAgentJobSnapshot({
+      runtimeConfig: {
+        operatingMode: 'review', timezone: 'Europe/Berlin', monthlyCostLimitEur: 25,
+        autoPublishMinScore: 90, maxAttempts: 3, generationLeadHours: 4,
+        adminNotificationEmail: 'redaktion@example.de', newsletterBlogNotificationsEnabled: false,
+        manualApprovalsCount: 0, autoPublishEffective: false, maxTopicCandidates: 8,
+        maxRevisions: 2, contentStageReservationEur: 0.5, reviewStageReservationEur: 0.25,
+        contentInputCostPerMtok: 2.5, contentOutputCostPerMtok: 15,
+        reviewInputCostPerMtok: 0.75, reviewOutputCostPerMtok: 4.5,
+        imageCostEur: 0.041, contentModel: 'content', reviewModel: 'review', imageModel: 'image',
+        settingsVersion: 1
+      },
+      claim: learningJob.rows[0],
+      now: new Date('2026-07-14T10:00:00.000Z'),
+      allowedInternalLinks: ['/kontakt'],
+      requireAllowedInternalLinks: true,
+      activeLearningRules
+    });
+    const learningRun = await createRun({
+      jobId: Number(learningJob.rows[0].id),
+      runtimeSnapshot: learningRuntimeSnapshot
+    }, pool);
+    const persistedLearningRun = (await pool.query(`
+      SELECT runtime_snapshot_json
+      FROM content_runs
+      WHERE id = $1
+    `, [learningRun.id])).rows[0];
+    assert.deepEqual(
+      persistedLearningRun.runtime_snapshot_json.learningRuleSnapshot.rules
+        .map(({ id, version }) => [id, version]),
+      [[Number(activated.rule.id), 1]]
+    );
+    const writerRules = learningRulesForStage(
+      persistedLearningRun.runtime_snapshot_json.learningRuleSnapshot,
+      'writer'
+    );
+    const writerInput = JSON.parse(buildArticleWriterPrompt({
+      briefing: { topic: 'Kontrolliertes Lernen' },
+      pricingContext: {},
+      learningRules: writerRules
+    }).user);
+    assert.deepEqual(writerInput.learningRules.map(({ id, version }) => [id, version]), [
+      [Number(activated.rule.id), 1]
+    ]);
+
+    const untouchedLearningPosts = await pool.query(`
+      SELECT COUNT(*)::integer AS count
+      FROM posts
+      WHERE id = ANY($1::integer[])
+        AND published = FALSE
+        AND workflow_status = 'needs_review'
+        AND approved_at IS NULL
+        AND approved_review_version IS NULL
+    `, [learningPosts.rows.map(({ id }) => Number(id))]);
+    assert.equal(untouchedLearningPosts.rows[0].count, 4);
+    assert.equal((await pool.query(`
+      SELECT COUNT(*)::integer AS count
+      FROM content_learning_events
+      WHERE event_type = 'proposal_approved'
+        AND rule_id = $1
+    `, [activated.rule.id])).rows[0].count, 1);
+
+    const learningDashboard = await learningRepository.getAdminDashboard();
+    assert.equal(learningDashboard.rules.length, 1);
+    assert.equal(learningDashboard.effectiveness.length, 1);
+    await pool.query(`
+      WITH finished_learning_run AS (
+        UPDATE content_runs
+        SET status = 'completed', current_stage = 'completed', finished_at = NOW()
+        WHERE id = $1
+        RETURNING id
+      )
+      UPDATE content_jobs
+      SET status = 'completed', finished_at = NOW(), updated_at = NOW()
+      WHERE id = $2
+        AND EXISTS (SELECT 1 FROM finished_learning_run)
+    `, [learningRun.id, learningJob.rows[0].id]);
 
     const generatedMetadataTypes = await pool.query(`
       SELECT table_name, column_name, data_type

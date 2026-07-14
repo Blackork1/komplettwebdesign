@@ -28,11 +28,11 @@ test('Migration 006 ergänzt exakt den LATERAL-kompatiblen neuesten Admin-Review
   assert.doesNotMatch(sql, /DROP INDEX/i);
 });
 
-test('Migrationsrunner führt 006 bis 008 in Reihenfolge aus und meldet alle im Abschluss', async () => {
+test('Migrationsrunner führt 006 bis 009 in Reihenfolge aus und meldet alle im Abschluss', async () => {
   const source = await readFile(new URL('../scripts/runContentAgentMigration.js', import.meta.url), 'utf8');
   assert.match(
     source,
-    /005_upgrade_admin_notification_retry_index\.sql'[\s\S]*006_add_schedule_revisions_and_admin_review_lookup\.sql'[\s\S]*007_create_content_search_metrics\.sql'[\s\S]*008_expand_generated_content_metadata\.sql'/i
+    /005_upgrade_admin_notification_retry_index\.sql'[\s\S]*006_add_schedule_revisions_and_admin_review_lookup\.sql'[\s\S]*007_create_content_search_metrics\.sql'[\s\S]*008_expand_generated_content_metadata\.sql'[\s\S]*009_create_content_learning_rules\.sql'/i
   );
-  assert.match(source, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 erfolgreich/i);
+  assert.match(source, /002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 erfolgreich/i);
 });

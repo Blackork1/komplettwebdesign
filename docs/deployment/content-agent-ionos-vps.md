@@ -4,6 +4,8 @@ Diese Anleitung ergänzt das bestehende Compose-Projekt `komplettwebdesign` um g
 
 Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Die öffentliche Website läuft weiterhin ausschließlich über `app` und dessen Traefik-Anbindung. Der `content-worker` bleibt intern: An ihm werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI, Cloudinary und den rein lesenden Search-Console-Zugang.
 
+**Hinweis für das Lernregel-Update:** Wenn `app`, `content-worker`, Search Console und SMTP bereits nach dieser Anleitung eingerichtet sind, benötigen die Lernregeln keine neue `.env`-Variable und keine Änderung an `docker-compose.yml`. Für dieses Update genügen ein geprüftes Datenbankbackup, der idempotente Migrationslauf bis Migration 009, der gemeinsame Recreate von `app` und `content-worker` sowie die unten beschriebenen Kontrollen. Lernregeln werden in PostgreSQL verwaltet und erst nach ausdrücklicher Adminfreigabe aktiv.
+
 ## 1. Projektpfad und Ausgangslage prüfen
 
 Alle kopierbaren Hostbefehle dieser Anleitung beginnen am bereits geöffneten Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$`. Der feste Host-Betriebsordner ist `~/apps/komplettwebdesign`; ausschließlich `server/` wird per Git automatisch aktualisiert, also `~/apps/komplettwebdesign/server`. Die Dateien `.env`, `docker-compose.yml` und `deploy/deploy.sh` werden manuell gepflegt und vor jeder Änderung gesichert. Sie liegen direkt unter `~/apps/komplettwebdesign` und dürfen nicht durch einen Checkout im Unterordner `server/` überschrieben werden.
@@ -334,7 +336,7 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql` und `007_create_content_search_metrics.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung von Migration 002 + 003 + 004 + 005 + 006 + 007 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql` und `009_create_content_learning_rules.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 009 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
 docker compose run --rm app npm run migrate:content-agent
@@ -348,7 +350,7 @@ docker compose run --rm app npm run content-agent:dry-run
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
 
-Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch startet der Worker erstmals mit Migration 007 und dem geprüften Image:
+Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 009 und demselben geprüften Image:
 
 ```bash
 docker compose up -d --no-deps --force-recreate app content-worker
@@ -798,6 +800,21 @@ Ein HTTP-Status 409 mit „Der Content-Agent ist deaktiviert“ bedeutet, dass d
 Nach erfolgreichem Abschluss zeigt der Reiter aggregierte Suchanfragen, Klicks, Impressionen, CTR, Positionen und rein redaktionelle Optimierungschancen. Keine Search-Console-Auswertung darf automatisch Inhalte ändern oder veröffentlichen. Bestehende Artikel bleiben unverändert, bis ein Mensch eine Empfehlung bewusst redaktionell umsetzt.
 
 Die Artikelpipeline ist von Search Console unabhängig und darf durch eine fehlende oder fehlerhafte GSC-Verbindung nicht blockiert werden. Die Search-Console-Synchronisierung ist jederzeit deaktivierbar: Dazu `SEARCH_CONSOLE_SITE_URL` und `GOOGLE_APPLICATION_CREDENTIALS` in der manuell verwalteten Root-`.env` leeren, App und Worker neu erzeugen und prüfen, dass der Reiter „Nicht konfiguriert“ meldet. Der normale Review-, Generierungs- und Veröffentlichungsablauf bleibt dabei verfügbar; ein Datenbank-Restore ist dafür nicht erforderlich.
+
+### 9.2 Lernregeln kontrolliert abnehmen
+
+Nach Migration 009 und dem gemeinsamen Recreate im Adminbereich den Reiter „Lernregeln“ öffnen. Die Seite muss ohne technischen Fehler laden. Bei einem neuen System sind zunächst keine aktiven Regeln vorhanden. Ein Vorschlag darf erst erscheinen, nachdem dieselbe klassifizierte Fehlerkategorie bei mindestens drei unterschiedlichen KI-Artikeln beobachtet wurde. Mehrere Optimierungen desselben Artikels zählen dabei nur einmal.
+
+Die neue Datenbankstruktur lässt sich vom Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$` ohne Anzeige von Artikel- oder Providerinhalten prüfen:
+
+```bash
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT to_regclass('\''public.content_learning_observations'\''), to_regclass('\''public.content_learning_rule_proposals'\''), to_regclass('\''public.content_learning_rules'\''), to_regclass('\''public.content_learning_rule_versions'\''), to_regclass('\''public.content_learning_events'\'');"'
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '\''public'\'' AND table_name = '\''content_learning_rules'\'' AND column_name = '\''rule_revision'\'');"'
+```
+
+Die erste Ausgabe muss fünf vorhandene Tabellen nennen, die zweite Ausgabe muss `t` lauten. Im Adminbereich anschließend ausschließlich mit einem bewusst geprüften Vorschlag testen: Regeltext und Belege lesen, Regel aktivieren und kontrollieren, dass sie unter „Aktive und bisherige Regeln“ mit Version 1 erscheint. Der zugehörige Artikel muss weiterhin unveröffentlicht bleiben. Erst ein danach neu gestarteter Content-Job erhält die aktive Regelversion in seinem unveränderlichen Snapshot; bereits laufende oder abgeschlossene Jobs werden nicht rückwirkend verändert.
+
+Eine Aktivierung, Änderung, Pausierung oder Deaktivierung benötigt immer den geschützten Admin-POST mit CSRF, ausdrücklicher Bestätigung und aktueller Version. Der Wirksamkeitsstatus bleibt bis zu fünf neuen Artikeln auf „Weiter beobachten“. Search-Console-Werte sind dort nur beschreibender Kontext und dürfen keine Regel automatisch ändern.
 
 ## 10. Normaler Rückfall ohne Datenbank-Restore
 

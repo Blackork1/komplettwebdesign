@@ -532,7 +532,16 @@ test('automatische Veröffentlichung revalidiert unter Lock, speichert allowed v
 
 test('forced review und spätere Revalidierungsblocker speichern blocked und lassen den Post unveröffentlicht', async () => {
   const cases = [
-    { snapshot: { ...autoSnapshot, forcedMode: 'review', operatingMode: 'review' } },
+    { snapshot: {
+      ...autoSnapshot,
+      forcedMode: 'review',
+      operatingMode: 'review',
+      learningRuleSnapshot: {
+        version: 'content-learning-rules-v1',
+        rules: [{ id: 8, version: 1, categoryKey: 'generic_content' }],
+        hash: 'a'.repeat(64)
+      }
+    } },
     { validation: () => ({ passed: false, sanitizedHtml: '', issues: [{ code: 'link_invalid' }] }) }
   ];
   for (const current of cases) {

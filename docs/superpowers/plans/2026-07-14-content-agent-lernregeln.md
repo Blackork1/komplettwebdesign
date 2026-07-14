@@ -569,21 +569,21 @@ git commit -m "feat: measure content learning effectiveness"
 - Verifies: Review → Beobachtung → dritter Artikel → Vorschlag → Adminaktivierung → neuer Job-Snapshot → Promptintegration → erneuter Review.
 - Verifies: keine Lernaktion setzt `published`, `approved_at` oder `approved_review_version`.
 
-- [ ] **Step 1: Failing Ende-zu-Ende-Test ergänzen**
+- [x] **Step 1: Failing Ende-zu-Ende-Test ergänzen**
 
 Der echte PostgreSQL-Test erzeugt drei unterschiedliche unveröffentlichte KI-Artikel mit derselben Kategorie, aktiviert den Vorschlag, startet einen vierten Job und prüft die exakte Regelversion im Snapshot. Ein paralleler dritter Beleg darf nur einen Vorschlag erzeugen.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `CONTENT_AGENT_PG_TEST_URL=postgresql://blocksdorf@127.0.0.1/kwd_content_agent_integration_test CONTENT_AGENT_PG_TEST_ALLOW_RESET=true CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1 node --test tests/contentAgentPostgresIntegration.test.js`
 
 Expected: FAIL, bis alle Integrationskanten verbunden sind.
 
-- [ ] **Step 3: Fehlende Integrationskanten minimal schließen und VPS-Anleitung ergänzen**
+- [x] **Step 3: Fehlende Integrationskanten minimal schließen und VPS-Anleitung ergänzen**
 
 Die Anleitung nennt Migration 009, Backup, idempotenten Migrationslauf, Build, Recreate von `app` und `content-worker`, Healthcheck sowie die klare Aussage, dass `.env` und `docker-compose.yml` unverändert bleiben.
 
-- [ ] **Step 4: Vollständige Abnahme ausführen**
+- [x] **Step 4: Vollständige Abnahme ausführen**
 
 Run: `OPENAI_API_KEY=test-key npm test`
 
@@ -601,7 +601,7 @@ Run: `git diff --check`
 
 Expected: keine Ausgabe.
 
-- [ ] **Step 5: Sicherheitscheck durchführen**
+- [x] **Step 5: Sicherheitscheck durchführen**
 
 Manuell anhand des Diffs bestätigen:
 
@@ -612,7 +612,7 @@ Manuell anhand des Diffs bestätigen:
 - alle Adminwrites mit CSRF, Bestätigung und Versionssperre,
 - keine neue Pflichtkonfiguration.
 
-- [ ] **Step 6: Plan abhaken und Abschlusscommit erstellen**
+- [x] **Step 6: Plan abhaken und Abschlusscommit erstellen**
 
 ```bash
 git add docs/deployment/content-agent-ionos-vps.md docs/superpowers/plans/2026-07-14-content-agent-lernregeln.md tests/contentAgentPostgresIntegration.test.js tests/contentPublicationService.test.js tests/contentAutoPublishPolicy.test.js

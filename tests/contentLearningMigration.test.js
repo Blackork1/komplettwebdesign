@@ -20,7 +20,7 @@ test('Migration 009 legt die vollständige, revisionssichere Lernstruktur an', a
     assert.match(sql, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`, 'i'));
   }
   assert.match(sql, /REFERENCES posts\s*\(id\) ON DELETE CASCADE/i);
-  assert.match(sql, /REFERENCES users\s*\(id\) ON DELETE SET NULL/i);
+  assert.match(sql, /REFERENCES admins\s*\(id\) ON DELETE SET NULL/i);
   assert.match(sql, /CHECK \(status IN \('pending', 'approved', 'rejected', 'superseded'\)\)/i);
   assert.match(sql, /CHECK \(status IN \('active', 'paused', 'disabled'\)\)/i);
   assert.match(sql, /rule_revision INTEGER NOT NULL DEFAULT 1/i);
