@@ -148,3 +148,30 @@ test('eindeutig unsichtbare Elemente werden bei der Aktualitätsprüfung ignorie
   });
   assert.deepEqual(result, { requiresResearch: false, reasons: [] });
 });
+
+test('zeitlose Rankingfaktoren sind kein SEO-Änderungsereignis', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>SEO berücksichtigt Rankingfaktoren.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
+
+test('zeitlose Suchalgorithmen sind kein SEO-Änderungsereignis', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>SEO orientiert sich an Suchalgorithmen.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
+
+test('Einführung eines Google-Rankingfaktors ist ein Änderungsereignis', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>Google führte einen Rankingfaktor ein.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, {
+    requiresResearch: true,
+    reasons: ['google_or_seo_change']
+  });
+});
