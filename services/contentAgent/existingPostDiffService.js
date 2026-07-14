@@ -106,13 +106,6 @@ function normalizeFaq(value) {
   return value;
 }
 
-function faqComparable(item) {
-  if (!item || typeof item !== 'object' || Array.isArray(item)) {
-    throw serviceError('EXISTING_POST_DIFF_INPUT_INVALID', 'Ein FAQ-Eintrag ist ungültig.');
-  }
-  return item;
-}
-
 function elementPath($, element) {
   const parts = [];
   let current = element;
@@ -145,12 +138,14 @@ function parseHtmlBlocks(html) {
   const $ = cheerio.load(String(html ?? ''), null, false);
   const blocks = $(HTML_BLOCK_SELECTOR).toArray()
     .filter((element) => !hasSelectedAncestor($, element))
-    .map((element) => {
+    .map((element, index) => {
       const outerHtml = $.html(element);
       return {
+        index,
         type: blockType($, element),
         path: elementPath($, element),
         html: outerHtml,
+        text: $(element).text().normalize('NFKC').trim().replace(/\s+/gu, ' '),
         fingerprint: fingerprint(outerHtml),
         element
       };
@@ -161,16 +156,151 @@ function parseHtmlBlocks(html) {
       `Artikel dürfen höchstens ${MAX_HTML_BLOCKS} vergleichbare HTML-Blöcke enthalten.`
     );
   }
+  for (const [index, block] of blocks.entries()) {
+    block.previousFingerprint = blocks[index - 1]?.fingerprint || null;
+    block.nextFingerprint = blocks[index + 1]?.fingerprint || null;
+  }
   return { $, blocks };
+}
+
+function blockKey(block) {
+  return `${block.type}:${block.fingerprint}`;
+}
+
+function tokenSimilarity(before, after) {
+  const tokens = (value) => new Set(
+    String(value || '').toLocaleLowerCase('de-DE').match(/[\p{L}\p{N}]+/gu) || []
+  );
+  const beforeTokens = tokens(before.text);
+  const afterTokens = tokens(after.text);
+  const union = new Set([...beforeTokens, ...afterTokens]);
+  if (union.size === 0) return 0;
+  let intersectionSize = 0;
+  for (const token of beforeTokens) {
+    if (afterTokens.has(token)) intersectionSize += 1;
+  }
+  return intersectionSize / union.size;
+}
+
+function hasSameDirectionNeighbor(before, after) {
+  return Boolean(
+    (before.previousFingerprint && before.previousFingerprint === after.previousFingerprint)
+    || (before.nextFingerprint && before.nextFingerprint === after.nextFingerprint)
+  );
+}
+
+function hasCrossedNeighbor(before, after) {
+  return Boolean(
+    (before.previousFingerprint && before.previousFingerprint === after.nextFingerprint)
+    || (before.nextFingerprint && before.nextFingerprint === after.previousFingerprint)
+  );
 }
 
 function substitutionCost(before, after) {
   if (before.fingerprint === after.fingerprint && before.type === after.type) return 0;
-  if (before.type === after.type) return 1;
-  return 3;
+  if (before.type !== after.type) return 3;
+  let score = 0;
+  if (before.path === after.path) score += 4;
+  if (before.index === after.index) score += 1;
+  if (before.previousFingerprint && before.previousFingerprint === after.previousFingerprint) score += 2;
+  if (before.nextFingerprint && before.nextFingerprint === after.nextFingerprint) score += 2;
+  if (hasCrossedNeighbor(before, after)) score += 1;
+  const similarity = tokenSimilarity(before, after);
+  if (similarity >= 0.6) score += 3;
+  else if (similarity >= 0.25) score += 1;
+  return score >= 4 ? 1 : 2;
 }
 
-function alignHtmlBlocks(beforeBlocks, afterBlocks) {
+function exactFingerprintPairs(beforeBlocks, afterBlocks) {
+  const beforeGroups = new Map();
+  const afterGroups = new Map();
+  for (const block of beforeBlocks) {
+    const key = blockKey(block);
+    beforeGroups.set(key, [...(beforeGroups.get(key) || []), block]);
+  }
+  for (const block of afterBlocks) {
+    const key = blockKey(block);
+    afterGroups.set(key, [...(afterGroups.get(key) || []), block]);
+  }
+
+  const pairs = [];
+  const pairedBefore = new Set();
+  const pairedAfter = new Set();
+  for (const [key, beforeGroup] of beforeGroups) {
+    const afterGroup = afterGroups.get(key) || [];
+    const remainingAfter = [...afterGroup];
+    const remainingBefore = [];
+    const duplicate = beforeGroup.length > 1 || afterGroup.length > 1;
+
+    for (const before of beforeGroup) {
+      const samePathIndex = remainingAfter.findIndex(({ path }) => path === before.path);
+      if (samePathIndex < 0) {
+        remainingBefore.push(before);
+        continue;
+      }
+      const [after] = remainingAfter.splice(samePathIndex, 1);
+      pairs.push({ before, after, duplicate });
+      pairedBefore.add(before.index);
+      pairedAfter.add(after.index);
+    }
+    for (const [index, before] of remainingBefore.entries()) {
+      const after = remainingAfter[index];
+      if (!after) continue;
+      pairs.push({ before, after, duplicate });
+      pairedBefore.add(before.index);
+      pairedAfter.add(after.index);
+    }
+  }
+
+  return {
+    pairs,
+    remainingBefore: beforeBlocks.filter(({ index }) => !pairedBefore.has(index)),
+    remainingAfter: afterBlocks.filter(({ index }) => !pairedAfter.has(index))
+  };
+}
+
+function longestStablePairs(pairs) {
+  const ordered = [...pairs].sort((left, right) => left.before.index - right.before.index);
+  const states = ordered.map((pair) => ({
+    length: 1,
+    samePath: pair.before.path === pair.after.path ? 1 : 0,
+    unique: pair.duplicate ? 0 : 1,
+    previous: -1
+  }));
+  const isBetter = (candidate, current) => (
+    candidate.length > current.length
+    || (candidate.length === current.length && candidate.samePath > current.samePath)
+    || (candidate.length === current.length && candidate.samePath === current.samePath
+      && candidate.unique > current.unique)
+  );
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    for (let previous = 0; previous < index; previous += 1) {
+      if (ordered[previous].after.index >= ordered[index].after.index) continue;
+      const candidate = {
+        length: states[previous].length + 1,
+        samePath: states[previous].samePath
+          + (ordered[index].before.path === ordered[index].after.path ? 1 : 0),
+        unique: states[previous].unique + (ordered[index].duplicate ? 0 : 1),
+        previous
+      };
+      if (isBetter(candidate, states[index])) states[index] = candidate;
+    }
+  }
+
+  let bestIndex = -1;
+  for (let index = 0; index < states.length; index += 1) {
+    if (bestIndex < 0 || isBetter(states[index], states[bestIndex])) bestIndex = index;
+  }
+  const stable = new Set();
+  while (bestIndex >= 0) {
+    stable.add(ordered[bestIndex]);
+    bestIndex = states[bestIndex].previous;
+  }
+  return stable;
+}
+
+function alignResidualBlocks(beforeBlocks, afterBlocks) {
   const rows = beforeBlocks.length + 1;
   const columns = afterBlocks.length + 1;
   const costs = Array.from({ length: rows }, () => Array(columns).fill(0));
@@ -216,6 +346,64 @@ function alignHtmlBlocks(beforeBlocks, afterBlocks) {
     throw serviceError('EXISTING_POST_DIFF_FAILED', 'Die HTML-Blöcke konnten nicht sicher zugeordnet werden.');
   }
   return operations.reverse();
+}
+
+function crossesExactPair(operation, exactPairs) {
+  if (!operation.before || !operation.after) return false;
+  return exactPairs.some(({ before, after }) => (
+    (operation.before.index - before.index) * (operation.after.index - after.index) < 0
+  ));
+}
+
+function modificationIsAmbiguous(operation, beforeBlocks, afterBlocks) {
+  const sameTypeBefore = beforeBlocks.filter(({ type }) => type === operation.before.type);
+  const sameTypeAfter = afterBlocks.filter(({ type }) => type === operation.after.type);
+  if (sameTypeBefore.length === 1 && sameTypeAfter.length === 1) return false;
+
+  const chosenSimilarity = tokenSimilarity(operation.before, operation.after);
+  const otherAfterSimilarity = Math.max(0, ...sameTypeAfter
+    .filter((candidate) => candidate !== operation.after)
+    .map((candidate) => tokenSimilarity(operation.before, candidate)));
+  const otherBeforeSimilarity = Math.max(0, ...sameTypeBefore
+    .filter((candidate) => candidate !== operation.before)
+    .map((candidate) => tokenSimilarity(candidate, operation.after)));
+  if (otherAfterSimilarity - chosenSimilarity >= 0.2
+      || otherBeforeSimilarity - chosenSimilarity >= 0.2) return true;
+  if (chosenSimilarity >= 0.6
+      && chosenSimilarity - otherAfterSimilarity >= 0.2
+      && chosenSimilarity - otherBeforeSimilarity >= 0.2) return false;
+  return !hasSameDirectionNeighbor(operation.before, operation.after);
+}
+
+function alignHtmlBlocks(beforeBlocks, afterBlocks) {
+  const exact = exactFingerprintPairs(beforeBlocks, afterBlocks);
+  const stablePairs = longestStablePairs(exact.pairs);
+  const exactOperations = exact.pairs.map((pair) => ({
+    type: stablePairs.has(pair) ? 'unchanged' : 'moved',
+    before: pair.before,
+    after: pair.after,
+    mappingAmbiguous: pair.duplicate
+  }));
+  const residualOperations = alignResidualBlocks(exact.remainingBefore, exact.remainingAfter)
+    .map((operation) => {
+      if (operation.type !== 'modified') return operation;
+      const moved = crossesExactPair(operation, exact.pairs);
+      return {
+        ...operation,
+        type: moved ? 'moved_modified' : 'modified',
+        mappingAmbiguous: moved || modificationIsAmbiguous(
+          operation,
+          exact.remainingBefore,
+          exact.remainingAfter
+        )
+      };
+    });
+  const priority = { added: 0, removed: 1, modified: 2, moved_modified: 2, moved: 3, unchanged: 4 };
+  return [...exactOperations, ...residualOperations].sort((left, right) => {
+    const leftPosition = Math.min(left.before?.index ?? Infinity, left.after?.index ?? Infinity);
+    const rightPosition = Math.min(right.before?.index ?? Infinity, right.after?.index ?? Infinity);
+    return leftPosition - rightPosition || priority[left.type] - priority[right.type];
+  });
 }
 
 function normalizeReasons(reasons, field) {
@@ -268,63 +456,73 @@ function assertImmutableFields(before, after) {
 function faqChanges(beforeValue, afterValue, reasons) {
   const beforeFaq = normalizeFaq(beforeValue);
   const afterFaq = normalizeFaq(afterValue);
-  const afterByQuestion = new Map();
-  const beforeCounts = new Map();
-  const afterCounts = new Map();
+  const beforeEntries = beforeFaq.map((item, index) => ({
+    item, index, key: normalizeQuestion(item?.question), fingerprint: fingerprint(item)
+  }));
+  const afterEntries = afterFaq.map((item, index) => ({
+    item, index, key: normalizeQuestion(item?.question), fingerprint: fingerprint(item)
+  }));
+  const consumedBefore = new Set();
+  const consumedAfter = new Set();
 
-  for (const item of beforeFaq) {
-    const key = normalizeQuestion(item?.question);
-    beforeCounts.set(key, (beforeCounts.get(key) || 0) + 1);
-  }
-  for (const [index, item] of afterFaq.entries()) {
-    const key = normalizeQuestion(item?.question);
-    const entries = afterByQuestion.get(key) || [];
-    entries.push({ item, index });
-    afterByQuestion.set(key, entries);
-    afterCounts.set(key, (afterCounts.get(key) || 0) + 1);
+  for (const beforeEntry of beforeEntries) {
+    const exact = afterEntries.find((afterEntry) => (
+      !consumedAfter.has(afterEntry.index)
+      && afterEntry.key === beforeEntry.key
+      && afterEntry.fingerprint === beforeEntry.fingerprint
+    ));
+    if (!exact) continue;
+    consumedBefore.add(beforeEntry.index);
+    consumedAfter.add(exact.index);
   }
 
-  const consumed = new Set();
+  const groupKeys = [];
+  for (const entry of [...beforeEntries, ...afterEntries]) {
+    if (!groupKeys.includes(entry.key)) groupKeys.push(entry.key);
+  }
   const changes = [];
-  const occurrences = new Map();
-  for (const [beforeIndex, item] of beforeFaq.entries()) {
-    const key = normalizeQuestion(item?.question);
-    const occurrence = occurrences.get(key) || 0;
-    occurrences.set(key, occurrence + 1);
-    const match = afterByQuestion.get(key)?.[occurrence];
-    const path = `faq:${fingerprint(key)}:${occurrence}`;
-    if (!match) {
+  for (const key of groupKeys) {
+    const remainingBefore = beforeEntries.filter((entry) => (
+      entry.key === key && !consumedBefore.has(entry.index)
+    ));
+    const remainingAfter = afterEntries.filter((entry) => (
+      entry.key === key && !consumedAfter.has(entry.index)
+    ));
+    if (remainingBefore.length === 1 && remainingAfter.length === 1) {
+      const [current] = remainingBefore;
+      const [proposed] = remainingAfter;
+      const proposedFingerprintCount = afterEntries.filter((entry) => (
+        entry.key === key && entry.fingerprint === proposed.fingerprint
+      )).length;
       changes.push(finalizeChange({
-        kind: 'faq', field: 'faqJson', path, changeType: 'removed',
-        before: item, after: null, beforeIndex, afterIndex: null,
-        revertible: false
+        kind: 'faq', field: 'faqJson',
+        path: `faq:${fingerprint(key)}:${current.index}`,
+        changeType: 'modified', before: current.item, after: proposed.item,
+        beforeIndex: current.index, afterIndex: proposed.index,
+        revertible: proposedFingerprintCount === 1
       }, reasons));
       continue;
     }
-    consumed.add(match.index);
-    if (stableJson(faqComparable(item)) !== stableJson(faqComparable(match.item))) {
-      const unique = beforeCounts.get(key) === 1 && afterCounts.get(key) === 1;
+
+    const ambiguous = remainingBefore.length > 1 || remainingAfter.length > 1;
+    for (const current of remainingBefore) {
       changes.push(finalizeChange({
-        kind: 'faq', field: 'faqJson', path, changeType: 'modified',
-        before: item, after: match.item, beforeIndex, afterIndex: match.index,
-        revertible: unique
+        kind: 'faq', field: 'faqJson',
+        path: `faq:${fingerprint(key)}:${current.index}`,
+        changeType: 'removed', before: current.item, after: null,
+        beforeIndex: current.index, afterIndex: null,
+        revertible: false
       }, reasons));
     }
-  }
-
-  for (const [afterIndex, item] of afterFaq.entries()) {
-    if (consumed.has(afterIndex)) continue;
-    const key = normalizeQuestion(item?.question);
-    const sameQuestionBefore = beforeCounts.get(key) || 0;
-    const occurrence = sameQuestionBefore + afterFaq.slice(0, afterIndex)
-      .filter((candidate, index) => !consumed.has(index) && normalizeQuestion(candidate?.question) === key)
-      .length;
-    changes.push(finalizeChange({
-      kind: 'faq', field: 'faqJson', path: `faq:${fingerprint(key)}:${occurrence}`,
-      changeType: 'added', before: null, after: item,
-      beforeIndex: null, afterIndex,
-      revertible: (afterCounts.get(key) || 0) === 1
-    }, reasons));
+    for (const proposed of remainingAfter) {
+      changes.push(finalizeChange({
+        kind: 'faq', field: 'faqJson',
+        path: `faq:${fingerprint(key)}:${proposed.index}`,
+        changeType: 'added', before: null, after: proposed.item,
+        beforeIndex: null, afterIndex: proposed.index,
+        revertible: !ambiguous
+      }, reasons));
+    }
   }
   return changes;
 }
@@ -356,7 +554,10 @@ function htmlChanges(beforeHtml, afterHtml, reasons) {
         changeType: operation.type,
         before: beforeBlock?.html ?? null,
         after: afterBlock?.html ?? null,
-        revertible: operation.type !== 'removed' && uniqueAfter
+        mappingAmbiguous: operation.mappingAmbiguous === true,
+        revertible: uniqueAfter
+          && operation.mappingAmbiguous !== true
+          && (operation.type === 'modified' || operation.type === 'added')
       }, reasons);
     });
 }
@@ -401,15 +602,26 @@ export function buildExistingPostDiff({ before = {}, after = {}, reasons = [] } 
 
 function countWords(html) {
   const $ = cheerio.load(String(html ?? ''), null, false);
-  const textParts = [];
-  function collectText(nodes) {
+  const blockElements = new Set([
+    'address', 'article', 'aside', 'blockquote', 'br', 'div', 'footer', 'form',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'li', 'main', 'nav',
+    'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead',
+    'tr', 'ul'
+  ]);
+  function visibleText(nodes) {
+    let result = '';
     for (const node of nodes || []) {
-      if (node.type === 'text') textParts.push(node.data || '');
-      else collectText(node.children);
+      if (node.type === 'text') {
+        result += node.data || '';
+        continue;
+      }
+      const children = visibleText(node.children);
+      const tagName = String(node.tagName || node.name || '').toLowerCase();
+      result += blockElements.has(tagName) ? ` ${children} ` : children;
     }
+    return result;
   }
-  collectText($.root()[0]?.children);
-  const text = textParts.join(' ').normalize('NFKC');
+  const text = visibleText($.root()[0]?.children).normalize('NFKC');
   return text.match(/[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu)?.length || 0;
 }
 
@@ -424,7 +636,12 @@ export function validateTargetedOptimizationScope({ before = {}, after = {} } = 
   const beforeBlocks = parseHtmlBlocks(beforeHtml).blocks;
   const afterBlocks = parseHtmlBlocks(afterHtml).blocks;
   const operations = alignHtmlBlocks(beforeBlocks, afterBlocks);
-  const changedExistingBlocks = operations.filter(({ type }) => type === 'modified' || type === 'removed').length;
+  const changedExistingBlocks = operations.filter(({ type }) => (
+    type === 'modified'
+    || type === 'removed'
+    || type === 'moved'
+    || type === 'moved_modified'
+  )).length;
   const rawChangedBlockRatio = beforeBlocks.length === 0
     ? 0
     : changedExistingBlocks / beforeBlocks.length;

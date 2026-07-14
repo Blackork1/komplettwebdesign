@@ -122,6 +122,74 @@ test('hinzugefügte und entfernte FAQ bleiben getrennt und deterministisch', () 
   assert.equal(first.changes[1].revertible, true);
 });
 
+test('vollständig identische doppelte FAQ werden vor der Zuordnung positionsunabhängig konsumiert', () => {
+  const question = 'Wie läuft die Planung?';
+  const first = { question, answer: 'Mit einem Audit.' };
+  const second = { question, answer: 'Mit einer Zieldefinition.' };
+  const diff = buildExistingPostDiff({
+    before: article({ faqJson: [first, second] }),
+    after: article({ faqJson: [second, first] }),
+    reasons: []
+  });
+
+  assert.deepEqual(diff.changes, []);
+});
+
+test('nach exakter Zuordnung wird ein eindeutiger FAQ-Rest als Modifikation gepaart', () => {
+  const question = 'Wie läuft die Planung?';
+  const stable = { question, answer: 'Mit einer Zieldefinition.' };
+  const beforeChanged = { question, answer: 'Mit einem Audit.' };
+  const afterChanged = { question, answer: 'Mit Audit und Bestandsaufnahme.' };
+  const diff = buildExistingPostDiff({
+    before: article({ faqJson: [beforeChanged, stable] }),
+    after: article({ faqJson: [stable, afterChanged] }),
+    reasons: []
+  });
+
+  assert.equal(diff.changes.length, 1);
+  assert.equal(diff.changes[0].changeType, 'modified');
+  assert.deepEqual(diff.changes[0].before, beforeChanged);
+  assert.deepEqual(diff.changes[0].after, afterChanged);
+  assert.equal(diff.changes[0].revertible, true);
+});
+
+test('ein eindeutiger FAQ-Rest mit dupliziertem Zielfingerprint bleibt nicht rücknehmbar', () => {
+  const question = 'Wie läuft die Planung?';
+  const stable = { question, answer: 'Mit einer Zieldefinition.' };
+  const diff = buildExistingPostDiff({
+    before: article({ faqJson: [
+      { question, answer: 'Mit einem Audit.' },
+      stable
+    ] }),
+    after: article({ faqJson: [stable, stable] }),
+    reasons: []
+  });
+
+  assert.equal(diff.changes.length, 1);
+  assert.equal(diff.changes[0].changeType, 'modified');
+  assert.equal(diff.changes[0].revertible, false);
+});
+
+test('mehrdeutige Reste doppelter FAQ werden konservativ als Add und Remove modelliert', () => {
+  const question = 'Wie läuft die Planung?';
+  const diff = buildExistingPostDiff({
+    before: article({ faqJson: [
+      { question, answer: 'Antwort A.' },
+      { question, answer: 'Antwort B.' }
+    ] }),
+    after: article({ faqJson: [
+      { question, answer: 'Antwort C.' },
+      { question, answer: 'Antwort D.' }
+    ] }),
+    reasons: []
+  });
+
+  assert.deepEqual(diff.changes.map(({ changeType }) => changeType), [
+    'removed', 'removed', 'added', 'added'
+  ]);
+  assert.equal(diff.changes.every(({ revertible }) => revertible === false), true);
+});
+
 test('DOM-Diff erkennt geänderte, hinzugefügte und entfernte erlaubte Textblöcke ohne CTA-Unterblöcke doppelt zu zählen', () => {
   const before = article({
     contentHtml: [
@@ -153,6 +221,95 @@ test('DOM-Diff erkennt geänderte, hinzugefügte und entfernte erlaubte Textblö
     String(value || '').includes('<p>Alter CTA.</p>') && String(next || '').includes('<p>Neuer CTA.</p>')
   )), true);
   assert.equal(htmlChanges.filter(({ blockType }) => blockType === 'p').length, 1);
+});
+
+test('der Tausch zweier eindeutiger Absätze wird als nicht einzeln rücknehmbare Verschiebung erkannt', () => {
+  const before = article({
+    contentHtml: '<section><p>Alpha ist eindeutig.</p><p>Beta ist eindeutig.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const after = article({
+    contentHtml: '<section><p>Beta ist eindeutig.</p><p>Alpha ist eindeutig.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+  const htmlChanges = diff.changes.filter(({ kind }) => kind === 'html');
+
+  assert.ok(htmlChanges.some(({ changeType }) => changeType === 'moved'));
+  assert.equal(htmlChanges.some(({ changeType }) => changeType === 'modified'), false);
+  assert.equal(htmlChanges.every(({ revertible }) => revertible === false), true);
+  assert.throws(() => revertExistingPostChange({
+    snapshot: { revisionVersion: 1, current: after, diff },
+    changeId: htmlChanges[0].id,
+    expectedVersion: 1
+  }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
+  assert.equal((after.contentHtml.match(/Alpha ist eindeutig\./g) || []).length, 1);
+  assert.equal((after.contentHtml.match(/Beta ist eindeutig\./g) || []).length, 1);
+});
+
+test('Verschieben plus Bearbeiten bleibt gekoppelt und darf keinen falschen Zielblock überschreiben', () => {
+  const before = article({
+    contentHtml: '<section><p>Alpha beschreibt die Planung.</p><p>Beta beschreibt die Prüfung.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const after = article({
+    contentHtml: '<section><p>Beta beschreibt die Prüfung.</p><p>Alpha beschreibt jetzt die konkrete Planung.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+  const movedAndModified = diff.changes.find(({ changeType }) => changeType === 'moved_modified');
+
+  assert.ok(movedAndModified);
+  assert.match(movedAndModified.before, /Alpha beschreibt die Planung/);
+  assert.match(movedAndModified.after, /Alpha beschreibt jetzt die konkrete Planung/);
+  assert.equal(movedAndModified.revertible, false);
+  assert.throws(() => revertExistingPostChange({
+    snapshot: { revisionVersion: 1, current: after, diff },
+    changeId: movedAndModified.id,
+    expectedVersion: 1
+  }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
+  assert.equal((after.contentHtml.match(/Alpha beschreibt/g) || []).length, 1);
+  assert.equal((after.contentHtml.match(/Beta beschreibt/g) || []).length, 1);
+});
+
+test('zwei bearbeitete und vertauschte Absätze bleiben trotz gemeinsamer Nachbarschaft nicht rücknehmbar', () => {
+  const before = article({
+    contentHtml: '<section><p>Alpha beschreibt die Planung.</p><p>Beta beschreibt die Prüfung.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const after = article({
+    contentHtml: '<section><p>Beta beschreibt jetzt die konkrete Prüfung.</p><p>Alpha beschreibt jetzt die konkrete Planung.</p><p>Der Anker bleibt.</p></section>'
+  });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+  const htmlChanges = diff.changes.filter(({ kind }) => kind === 'html');
+
+  assert.equal(htmlChanges.length, 2);
+  assert.equal(htmlChanges.every(({ revertible }) => revertible === false), true);
+  for (const change of htmlChanges) {
+    assert.throws(() => revertExistingPostChange({
+      snapshot: { revisionVersion: 1, current: after, diff },
+      changeId: change.id,
+      expectedVersion: 1
+    }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
+  }
+});
+
+test('verschobene identische Duplikate werden nie als unabhängige rücknehmbare Modifikationen angeboten', () => {
+  const before = article({
+    contentHtml: '<section><p>Identischer Absatz.</p><p>Identischer Absatz.</p><p>Eindeutiger Anker.</p></section>'
+  });
+  const after = article({
+    contentHtml: '<section><p>Identischer Absatz.</p><p>Eindeutiger Anker.</p><p>Identischer Absatz.</p></section>'
+  });
+  const diff = buildExistingPostDiff({ before, after, reasons: [] });
+  const htmlChanges = diff.changes.filter(({ kind }) => kind === 'html');
+
+  assert.ok(htmlChanges.some(({ changeType }) => changeType === 'moved'));
+  assert.equal(htmlChanges.some(({ changeType }) => changeType === 'modified'), false);
+  assert.equal(htmlChanges.every(({ revertible }) => revertible === false), true);
+  for (const change of htmlChanges) {
+    assert.throws(() => revertExistingPostChange({
+      snapshot: { revisionVersion: 1, current: after, diff },
+      changeId: change.id,
+      expectedVersion: 1
+    }), { code: 'CONTENT_REVISION_CHANGE_CONFLICT' });
+  }
+  assert.equal((after.contentHtml.match(/Identischer Absatz\./g) || []).length, 2);
 });
 
 test('mehr als 35 Prozent geänderte vorhandene Textblöcke werden abgelehnt', () => {
@@ -218,6 +375,30 @@ test('hinzugefügte Blöcke zählen nicht als geänderte vorhandene Blöcke, abe
     changedBlockRatio: 0,
     wordCountDeltaRatio: 0.26
   });
+});
+
+test('Inline-Elemente erzeugen keine künstlichen Wortgrenzen', () => {
+  const before = article({
+    contentHtml: '<p>Web<strong>design</strong> <a href="/kontakt">Berlin</a><span>Agentur</span></p><p>Nächster Absatz</p>'
+  });
+  const after = article({
+    contentHtml: '<p>Web<strong>design</strong> <a href="/kontakt">Berlin</a><span>Agentur</span> Zusatz</p><p>Nächster Absatz</p>'
+  });
+
+  assert.equal(
+    validateTargetedOptimizationScope({ before, after, diff: { changes: [] } }).wordCountDeltaRatio,
+    0.25
+  );
+});
+
+test('benachbarte Absätze bleiben bei der Wortzählung getrennt', () => {
+  const before = article({ contentHtml: '<p>Erster</p><p>Zweiter</p>' });
+  const after = article({ contentHtml: '<p>Erster</p><p>Zweiter</p><p>Dritter</p>' });
+
+  assert.equal(
+    validateTargetedOptimizationScope({ before, after, diff: { changes: [] } }).wordCountDeltaRatio,
+    0.5
+  );
 });
 
 test('leere Artikel liefern endliche Quoten und neue Inhalte überschreiten die Wortzahlgrenze', () => {
