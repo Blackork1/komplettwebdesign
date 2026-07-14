@@ -63,7 +63,9 @@
     update();
   });
 
-  var optimizationStatus = document.querySelector('[data-review-optimization-status]');
+  var optimizationStatus = typeof document.querySelector === 'function'
+    ? document.querySelector('[data-review-optimization-status]')
+    : null;
   var optimizationForms = Array.from(document.querySelectorAll('[data-review-optimization-form]'));
   var optimizationLocked = false;
   var optimizationRequestRunning = false;

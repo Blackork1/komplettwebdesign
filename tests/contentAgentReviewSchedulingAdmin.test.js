@@ -28,7 +28,9 @@ function dependencies(overrides = {}) {
     settingsRepository: {
       async getSettings() { return { timezone: 'Europe/Berlin', schedule_revision: 7 }; }
     },
-    jobRepository: {},
+    jobRepository: {
+      async getLatestReviewOptimizationJob() { return null; }
+    },
     runtimeConfig: { enabled: true, maxAttempts: 3 },
     presentation: {},
     now: () => now,
