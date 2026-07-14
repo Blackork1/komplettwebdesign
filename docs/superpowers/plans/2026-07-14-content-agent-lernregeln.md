@@ -466,17 +466,17 @@ git commit -m "feat: manage content learning rules securely"
 - Produces: `presentContentLearningDashboard(raw)` ohne Rohpayloads, vollständige Artikeltexte oder Providerantworten.
 - View erhält `learningDashboard`, `csrfToken` und sichere Statusmeldungen.
 
-- [ ] **Step 1: Failing View- und Präsentationstests schreiben**
+- [x] **Step 1: Failing View- und Präsentationstests schreiben**
 
 Tests rendern Vorschläge, aktive Regeln, Beobachtungen und Verlauf. Sie prüfen deutsche Umlaute, escaped Regeltexte, CSRF-Felder, Versionsfelder, Bestätigungsdialoge und Abwesenheit von `runtime_snapshot_json`, Providerantworten und vollständigem Artikel-HTML.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentAgentAdminViews.test.js tests/contentAgentAdminPresentation.test.js`
 
 Expected: FAIL.
 
-- [ ] **Step 3: Präsentation, Reiter und responsive Ansicht implementieren**
+- [x] **Step 3: Präsentation, Reiter und responsive Ansicht implementieren**
 
 Der neue Reiter heißt „Lernregeln“. Die Seite zeigt:
 
@@ -489,7 +489,7 @@ Der neue Reiter heißt „Lernregeln“. Die Seite zeigt:
 
 Mobile Formulare bleiben einspaltig und Aktionen sind eindeutig beschriftet.
 
-- [ ] **Step 4: GREEN und CSS-Build prüfen**
+- [x] **Step 4: GREEN und CSS-Build prüfen**
 
 Run: `node --test tests/contentAgentAdminViews.test.js tests/contentAgentAdminPresentation.test.js`
 
@@ -497,7 +497,7 @@ Run: `npm run build`
 
 Expected: PASS; CSS-Manifest wird konsistent erzeugt.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add views/admin/contentAgent/learningRules.ejs views/admin/contentAgent/_tabs.ejs services/contentAgent/adminPresentationService.js public/css/admin-content-agent.css public/css/app.bundle.css public/css/manifest.json tests/contentAgentAdminViews.test.js tests/contentAgentAdminPresentation.test.js

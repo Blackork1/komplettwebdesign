@@ -8,8 +8,61 @@ import {
   buildJobListPresentation,
   buildSchedulePresentation,
   buildTechnologyPresentation,
-  deriveReviewState
+  deriveReviewState,
+  presentContentLearningDashboard
 } from '../services/contentAgent/adminPresentationService.js';
+
+test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus', () => {
+  const dashboard = presentContentLearningDashboard({
+    proposals: [{
+      id: 3,
+      category_key: 'cta_repetition_or_fit',
+      status: 'pending',
+      proposal_version: 2,
+      suggested_rule_text: '<script>nicht ausführen</script> Formuliere CTAs eindeutig und passend zum Entscheidungsschritt, ohne gleiche Impulse zu wiederholen.',
+      target_stages: ['writer', 'reviewer'],
+      evidence_count: 3,
+      evidence_json: [{
+        post_id: 11,
+        review_version: 4,
+        reason: 'Mehrere CTAs ähneln sich.',
+        instruction: 'Unterscheide die Handlungsimpulse.',
+        raw_provider_response: 'geheim'
+      }],
+      expected_effect: 'Weniger wiederholte CTAs.',
+      overfit_warning: 'CTA-Positionen nicht verändern.',
+      runtime_snapshot_json: { secret: true }
+    }],
+    rules: [{
+      id: 8,
+      category_key: 'generic_content',
+      status: 'active',
+      current_version: 1,
+      rule_revision: 3,
+      rule_text: 'Formuliere zentrale Abschnitte konkret für die Zielgruppe und ersetze austauschbare Aussagen durch nachvollziehbare Empfehlungen.',
+      target_stages: ['seo_brief', 'writer', 'reviewer'],
+      updated_by_admin_name: 'Admin Ä',
+      updated_at: '2026-07-14T08:00:00.000Z',
+      article_html: '<article>vollständig</article>'
+    }],
+    observations: [{
+      category_key: 'generic_content', article_count: 4, observation_count: 6,
+      post_ids: [11, 12], last_seen_at: '2026-07-14T07:00:00.000Z'
+    }],
+    unclassified: { article_count: 2, observation_count: 3, last_seen_at: '2026-07-13T07:00:00.000Z' },
+    events: [{
+      id: 19, event_type: 'rule_revised', category_key: 'generic_content',
+      rule_version: 2, admin_name: 'Admin Ä', created_at: '2026-07-14T08:00:00.000Z',
+      details_json: { providerResponse: 'geheim' }
+    }]
+  });
+
+  assert.equal(dashboard.proposals[0].categoryLabel, 'CTA-Wiederholung oder fehlende Passung');
+  assert.equal(dashboard.proposals[0].evidence[0].postId, 11);
+  assert.deepEqual(dashboard.rules[0].targetStageLabels, ['SEO-Briefing', 'Artikelerstellung', 'Redaktionelle Prüfung']);
+  assert.equal(dashboard.events[0].eventLabel, 'Neue Regelversion aktiviert');
+  assert.doesNotMatch(JSON.stringify(dashboard), /runtime_snapshot_json|raw_provider_response|providerResponse|article_html|vollständig|geheim/i);
+});
 import {
   canRetryContentJobManually
 } from '../services/contentAgent/contentJobRetryPolicy.js';

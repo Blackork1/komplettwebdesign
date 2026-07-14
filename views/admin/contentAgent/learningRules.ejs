@@ -1,0 +1,123 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const dashboard = learningDashboard || { proposals: [], rules: [], observations: [], unclassified: {}, events: [] };
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const stageOptions = [
+    { value: 'seo_brief', label: 'SEO-Briefing' },
+    { value: 'writer', label: 'Artikelerstellung' },
+    { value: 'reviewer', label: 'Redaktionelle Prüfung' }
+  ];
+  const messages = {
+    activated: 'Der Vorschlag wurde als aktive Lernregel übernommen.',
+    rejected: 'Der Vorschlag wurde nachvollziehbar abgelehnt.',
+    revised: 'Die neue Regelversion wurde aktiviert.',
+    'status-changed': 'Der Regelstatus wurde sicher geändert.'
+  };
+%>
+
+<div class="content-agent-page">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Kontrolliertes Lernen</p>
+      <h1 class="admin-page-title mb-1"><i class="fa-solid fa-brain" aria-hidden="true"></i> Lernregeln</h1>
+      <p class="content-agent-lead">Wiederkehrende Prüfhinweise werden erst nach mehreren Artikeln vorgeschlagen und ausschließlich nach deiner Freigabe für neue Inhalte verwendet.</p>
+    </div>
+    <span class="content-agent-readonly"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Keine automatische Aktivierung</span>
+  </header>
+
+  <%- include('_tabs', { activeTab: 'learningRules' }) %>
+
+  <% if (messages[result]) { %>
+    <div class="alert alert-success" role="status"><%= messages[result] %></div>
+  <% } %>
+
+  <section class="content-agent-panel content-learning-section" aria-labelledby="learning-proposals-heading">
+    <div class="content-agent-panel__head">
+      <div><p class="content-agent-eyebrow">Freigabe</p><h2 id="learning-proposals-heading">Neue Vorschläge</h2></div>
+      <span class="content-learning-count"><%= dashboard.proposals.filter((item) => item.status === 'pending').length %> offen</span>
+    </div>
+    <% const pendingProposals = dashboard.proposals.filter((item) => item.status === 'pending'); %>
+    <% if (!pendingProposals.length) { %>
+      <div class="content-agent-empty"><i class="fa-regular fa-circle-check" aria-hidden="true"></i><div><strong>Keine offenen Vorschläge</strong><p>Nach drei unterschiedlichen Artikeln mit demselben Fehlertyp kann hier ein neuer Vorschlag erscheinen.</p></div></div>
+    <% } else { %>
+      <div class="content-learning-grid">
+        <% pendingProposals.forEach((proposal) => { %>
+          <article class="content-learning-card">
+            <header class="content-learning-card__head">
+              <div><span class="content-agent-status content-agent-status--warning"><%= proposal.statusLabel %></span><h3><%= proposal.categoryLabel %></h3></div>
+              <strong><%= proposal.evidenceCount %> Artikel</strong>
+            </header>
+            <form method="post" action="/admin/content-agent/learning-rules/proposals/<%= proposal.id %>/activate" data-confirm="Diese Lernregel wirklich aktivieren? Sie wird ab dem nächsten neu gestarteten Content-Job verwendet.">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="expected_version" value="<%= proposal.expectedVersion %>">
+              <input type="hidden" name="confirmed" value="true">
+              <label class="content-agent-field"><span>Freizugebender Regeltext</span><textarea name="rule_text" rows="4" minlength="40" maxlength="800" required><%= proposal.ruleText %></textarea></label>
+              <fieldset class="content-learning-stages"><legend>Zielstufen</legend><div>
+                <% stageOptions.forEach((stage) => { %><label><input type="checkbox" name="target_stages" value="<%= stage.value %>" <%= proposal.targetStages.includes(stage.value) ? 'checked' : '' %>> <span><%= stage.label %></span></label><% }) %>
+              </div></fieldset>
+              <div class="content-learning-guidance"><p><strong>Erwartete Wirkung:</strong> <%= proposal.expectedEffect %></p><p><strong>Überanpassung vermeiden:</strong> <%= proposal.overfitWarning %></p></div>
+              <details class="content-learning-evidence"><summary>Belege prüfen (<%= proposal.evidence.length %>)</summary><ol>
+                <% proposal.evidence.forEach((evidence) => { %><li><a href="/admin/content-agent/drafts/<%= evidence.postId %>/edit">Entwurf #<%= evidence.postId %></a><span>Reviewversion <%= evidence.reviewVersion || '–' %></span><p><strong>Begründung:</strong> <%= evidence.reason %></p><p><strong>Prüfanweisung:</strong> <%= evidence.instruction %></p></li><% }) %>
+              </ol></details>
+              <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Regel aktivieren</button>
+            </form>
+            <form method="post" action="/admin/content-agent/learning-rules/proposals/<%= proposal.id %>/reject" data-confirm="Diesen Lernregelvorschlag wirklich ablehnen?">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="expected_version" value="<%= proposal.expectedVersion %>">
+              <input type="hidden" name="confirmed" value="true">
+              <button class="btn btn-outline-secondary" type="submit">Vorschlag ablehnen</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="content-agent-panel content-learning-section" aria-labelledby="learning-rules-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Regelbestand</p><h2 id="learning-rules-heading">Aktive und bisherige Regeln</h2></div><span class="content-learning-count"><%= dashboard.rules.length %> Regeln</span></div>
+    <% if (!dashboard.rules.length) { %>
+      <div class="content-agent-empty"><i class="fa-solid fa-brain" aria-hidden="true"></i><div><strong>Noch keine Lernregel aktiv</strong><p>Freigegebene Vorschläge erscheinen mit ihrer unveränderlichen Version hier.</p></div></div>
+    <% } else { %>
+      <div class="content-learning-rule-list">
+        <% dashboard.rules.forEach((rule) => { %>
+          <article class="content-learning-rule <%= rule.status === 'disabled' ? 'is-disabled' : '' %>">
+            <header><div><span class="content-agent-status <%= rule.status === 'active' ? 'content-agent-status--success' : rule.status === 'paused' ? 'content-agent-status--warning' : 'content-agent-status--neutral' %>"><%= rule.statusLabel %></span><h3><%= rule.categoryLabel %></h3></div><span>Inhaltsversion <strong><%= rule.contentVersion %></strong></span></header>
+            <p><%= rule.ruleText %></p>
+            <p class="content-learning-meta"><%= rule.targetStageLabels.join(' · ') %><%= rule.updatedAtLabel ? ` · Aktualisiert ${rule.updatedAtLabel}` : '' %></p>
+            <% if (rule.status !== 'disabled') { %>
+              <details class="content-learning-editor"><summary>Neue Version anlegen</summary>
+                <form method="post" action="/admin/content-agent/learning-rules/<%= rule.id %>/revise" data-confirm="Diese neue Regelversion wirklich aktivieren? Laufende Jobs behalten ihren bisherigen Snapshot.">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="expected_version" value="<%= rule.expectedVersion %>"><input type="hidden" name="confirmed" value="true">
+                  <label class="content-agent-field"><span>Regeltext</span><textarea name="rule_text" rows="4" minlength="40" maxlength="800" required><%= rule.ruleText %></textarea></label>
+                  <fieldset class="content-learning-stages"><legend>Zielstufen</legend><div><% stageOptions.forEach((stage) => { %><label><input type="checkbox" name="target_stages" value="<%= stage.value %>" <%= rule.targetStages.includes(stage.value) ? 'checked' : '' %>> <span><%= stage.label %></span></label><% }) %></div></fieldset>
+                  <button class="btn btn-primary" type="submit">Neue Version aktivieren</button>
+                </form>
+              </details>
+              <div class="content-learning-actions">
+                <% const nextStatuses = rule.status === 'active' ? [{ value: 'paused', label: 'Pausieren' }, { value: 'disabled', label: 'Dauerhaft deaktivieren' }] : [{ value: 'active', label: 'Reaktivieren' }, { value: 'disabled', label: 'Dauerhaft deaktivieren' }]; %>
+                <% nextStatuses.forEach((next) => { %><form method="post" action="/admin/content-agent/learning-rules/<%= rule.id %>/status" data-confirm="Regelstatus wirklich auf „<%= next.label %>“ ändern?"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="expected_version" value="<%= rule.expectedVersion %>"><input type="hidden" name="current_status" value="<%= rule.status %>"><input type="hidden" name="next_status" value="<%= next.value %>"><input type="hidden" name="confirmed" value="true"><button class="btn btn-sm <%= next.value === 'disabled' ? 'btn-outline-danger' : 'btn-outline-secondary' %>" type="submit"><%= next.label %></button></form><% }) %>
+              </div>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <div class="content-learning-lower-grid">
+    <section class="content-agent-panel" aria-labelledby="learning-observations-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Muster</p><h2 id="learning-observations-heading">Beobachtungen</h2></div></div>
+      <div class="content-learning-observations">
+        <% dashboard.observations.forEach((item) => { %><article><div><strong><%= item.categoryLabel %></strong><span><%= item.articleCount %> Artikel · <%= item.observationCount %> Hinweise</span></div><p><% item.postIds.forEach((postId) => { %><a href="/admin/content-agent/drafts/<%= postId %>/edit">#<%= postId %></a> <% }) %></p><small>Zuletzt: <%= item.lastSeenAtLabel || 'Noch nicht verfügbar' %></small></article><% }) %>
+        <article class="is-unclassified"><div><strong>Noch nicht klassifiziert</strong><span><%= dashboard.unclassified.articleCount || 0 %> Artikel · <%= dashboard.unclassified.observationCount || 0 %> Hinweise</span></div><small>Zuletzt: <%= dashboard.unclassified.lastSeenAtLabel || 'Noch nicht verfügbar' %></small></article>
+      </div>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="learning-events-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Audit</p><h2 id="learning-events-heading">Verlauf</h2></div></div>
+      <% if (!dashboard.events.length) { %><div class="content-agent-empty"><div><strong>Noch keine Änderungen</strong><p>Freigaben und Statusänderungen werden hier protokolliert.</p></div></div><% } else { %><ol class="content-learning-timeline"><% dashboard.events.forEach((event) => { %><li><span aria-hidden="true"></span><div><strong><%= event.eventLabel %></strong><p><%= event.categoryLabel %><%= event.ruleVersion ? ` · Version ${event.ruleVersion}` : '' %></p><small><%= event.adminName %> · <%= event.createdAtLabel || 'Zeitpunkt unbekannt' %></small></div></li><% }) %></ol><% } %>
+    </section>
+  </div>
+</div>
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<%- include('../../partials/admin_footer') %>

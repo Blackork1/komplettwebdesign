@@ -12,6 +12,10 @@ import { sanitizeErrorMessage } from '../../repositories/contentErrorSanitizer.j
 import { isAdminNotificationManuallyRetryable } from './adminDraftService.js';
 import { buildPublicationSlot } from './contentSchedulerService.js';
 import { isHeartbeatFresh } from './workerService.js';
+import {
+  getLearningCategory,
+  sanitizeLearningText
+} from './contentLearningTaxonomy.js';
 
 const STAGE_LABELS = Object.freeze({
   inventory: 'Bestandsaufnahme',
@@ -61,6 +65,35 @@ const SEARCH_OPPORTUNITY_PRESENTATION = Object.freeze({
     type: 'Inhalt prüfen',
     recommendation: 'Inhalt für diese Suchanfrage redaktionell vertiefen.'
   })
+});
+
+const LEARNING_STAGE_LABELS = Object.freeze({
+  seo_brief: 'SEO-Briefing',
+  writer: 'Artikelerstellung',
+  reviewer: 'Redaktionelle Prüfung'
+});
+
+const LEARNING_PROPOSAL_STATUS_LABELS = Object.freeze({
+  pending: 'Freigabe offen',
+  approved: 'Aktiviert',
+  rejected: 'Abgelehnt',
+  superseded: 'Ersetzt'
+});
+
+const LEARNING_RULE_STATUS_LABELS = Object.freeze({
+  active: 'Aktiv',
+  paused: 'Pausiert',
+  disabled: 'Dauerhaft deaktiviert'
+});
+
+const LEARNING_EVENT_LABELS = Object.freeze({
+  proposal_created: 'Vorschlag automatisch erstellt',
+  proposal_approved: 'Vorschlag als Lernregel aktiviert',
+  proposal_rejected: 'Vorschlag abgelehnt',
+  rule_revised: 'Neue Regelversion aktiviert',
+  rule_paused: 'Lernregel pausiert',
+  rule_reactivated: 'Lernregel reaktiviert',
+  rule_disabled: 'Lernregel dauerhaft deaktiviert'
 });
 
 const TECHNICAL_KEYS = Object.freeze([
@@ -207,6 +240,102 @@ function presentProvider(provider = {}) {
 function germanNumber(value, options = {}) {
   const number = Number(value);
   return new Intl.NumberFormat('de-DE', options).format(Number.isFinite(number) ? number : 0);
+}
+
+function learningCategoryPresentation(categoryKey) {
+  const key = sanitizeLearningText(categoryKey, 80) || 'unclassified';
+  const definition = getLearningCategory(key);
+  return {
+    categoryKey: definition ? key : 'unclassified',
+    categoryLabel: definition?.label || 'Noch nicht klassifiziert'
+  };
+}
+
+function learningTargetStages(value) {
+  const stages = Array.isArray(value)
+    ? [...new Set(value.map((stage) => sanitizeLearningText(stage, 30)))]
+      .filter((stage) => LEARNING_STAGE_LABELS[stage])
+    : [];
+  return {
+    targetStages: stages,
+    targetStageLabels: stages.map((stage) => LEARNING_STAGE_LABELS[stage])
+  };
+}
+
+function safePositiveInteger(value) {
+  const normalized = Number(value);
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : null;
+}
+
+export function presentContentLearningDashboard(raw = {}) {
+  const proposals = (Array.isArray(raw.proposals) ? raw.proposals : []).slice(0, 100).map((row) => ({
+    id: safePositiveInteger(row.id),
+    ...learningCategoryPresentation(row.category_key),
+    status: LEARNING_PROPOSAL_STATUS_LABELS[row.status] ? row.status : 'pending',
+    statusLabel: LEARNING_PROPOSAL_STATUS_LABELS[row.status] || 'Status unbekannt',
+    expectedVersion: safePositiveInteger(row.proposal_version),
+    ruleText: sanitizeLearningText(row.suggested_rule_text, 800),
+    ...learningTargetStages(row.target_stages),
+    evidenceCount: Math.max(0, Number(row.evidence_count) || 0),
+    evidence: (Array.isArray(row.evidence_json) ? row.evidence_json : []).slice(0, 5).map((item) => ({
+      postId: safePositiveInteger(item.post_id),
+      reviewVersion: safePositiveInteger(item.review_version),
+      reason: sanitizeLearningText(item.reason, 500),
+      instruction: sanitizeLearningText(item.instruction, 500),
+      section: sanitizeLearningText(item.section_name, 180) || null,
+      anchor: sanitizeLearningText(item.anchor, 220) || null
+    })).filter((item) => item.postId),
+    expectedEffect: sanitizeLearningText(row.expected_effect, 500),
+    overfitWarning: sanitizeLearningText(row.overfit_warning, 500),
+    decidedBy: sanitizeLearningText(row.decided_by_admin_name, 180) || null,
+    decidedAtLabel: berlinDateTime(row.decided_at),
+    createdAtLabel: berlinDateTime(row.created_at)
+  })).filter((item) => item.id && item.expectedVersion);
+
+  const rules = (Array.isArray(raw.rules) ? raw.rules : []).slice(0, 100).map((row) => ({
+    id: safePositiveInteger(row.id),
+    ...learningCategoryPresentation(row.category_key),
+    status: LEARNING_RULE_STATUS_LABELS[row.status] ? row.status : 'disabled',
+    statusLabel: LEARNING_RULE_STATUS_LABELS[row.status] || 'Status unbekannt',
+    contentVersion: safePositiveInteger(row.current_version),
+    expectedVersion: safePositiveInteger(row.rule_revision),
+    ruleText: sanitizeLearningText(row.rule_text, 800),
+    ...learningTargetStages(row.target_stages),
+    updatedBy: sanitizeLearningText(row.updated_by_admin_name || row.created_by_admin_name, 180) || null,
+    createdAtLabel: berlinDateTime(row.created_at),
+    updatedAtLabel: berlinDateTime(row.updated_at)
+  })).filter((item) => item.id && item.contentVersion && item.expectedVersion);
+
+  const observations = (Array.isArray(raw.observations) ? raw.observations : []).slice(0, 100).map((row) => ({
+    ...learningCategoryPresentation(row.category_key),
+    articleCount: Math.max(0, Number(row.article_count) || 0),
+    observationCount: Math.max(0, Number(row.observation_count) || 0),
+    postIds: (Array.isArray(row.post_ids) ? row.post_ids : [])
+      .map(safePositiveInteger).filter(Boolean).slice(0, 20),
+    lastSeenAtLabel: berlinDateTime(row.last_seen_at)
+  }));
+
+  const events = (Array.isArray(raw.events) ? raw.events : []).slice(0, 100).map((row) => ({
+    id: safePositiveInteger(row.id),
+    eventType: LEARNING_EVENT_LABELS[row.event_type] ? row.event_type : 'unknown',
+    eventLabel: LEARNING_EVENT_LABELS[row.event_type] || 'Lernregelereignis',
+    ...learningCategoryPresentation(row.category_key),
+    ruleVersion: safePositiveInteger(row.rule_version),
+    adminName: sanitizeLearningText(row.admin_name, 180) || 'System',
+    createdAtLabel: berlinDateTime(row.created_at)
+  })).filter((item) => item.id);
+
+  return {
+    proposals,
+    rules,
+    observations,
+    unclassified: {
+      articleCount: Math.max(0, Number(raw.unclassified?.article_count) || 0),
+      observationCount: Math.max(0, Number(raw.unclassified?.observation_count) || 0),
+      lastSeenAtLabel: berlinDateTime(raw.unclassified?.last_seen_at)
+    },
+    events
+  };
 }
 
 function searchPageLabel(value) {

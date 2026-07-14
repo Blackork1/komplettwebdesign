@@ -83,7 +83,7 @@ const baseLocals = {
   jsAsset: (value) => `/assets/${value}`
 };
 
-test('Cockpit enthält bestätigte sechs Reiter und sichere Aktionsformulare', async () => {
+test('Cockpit enthält bestätigte sieben Reiter und sichere Aktionsformulare', async () => {
   const [overview, tabs, schedule, technology, script] = await Promise.all([
     readView('overview.ejs'),
     renderFile(fileURLToPath(viewUrl('_tabs.ejs')), { activeTab: 'overview' }),
@@ -98,6 +98,7 @@ test('Cockpit enthält bestätigte sechs Reiter und sichere Aktionsformulare', a
   assert.match(tabs, /Zeitplan &amp; Modus/);
   assert.match(tabs, /Jobs &amp; Protokolle/);
   assert.match(tabs, /Search Console/);
+  assert.match(tabs, /Lernregeln/);
   assert.match(tabs, /Technik/);
   assert.match(overview, /Jetzt Entwurf erstellen/);
   assert.match(overview, /name="_csrf"/);
@@ -113,14 +114,14 @@ test('Cockpit enthält bestätigte sechs Reiter und sichere Aktionsformulare', a
   assert.doesNotMatch(script, /fetch\(|XMLHttpRequest|localStorage/);
 });
 
-test('gerade Haupttabanzahl hält das mobile Zweispaltenraster ohne Vollbreiten-Tab', async () => {
+test('ungerade Haupttabanzahl nutzt im mobilen Zweispaltenraster einen Vollbreiten-Tab', async () => {
   const [tabs, tabsSource, adminCss] = await Promise.all([
     renderFile(fileURLToPath(viewUrl('_tabs.ejs')), { activeTab: 'overview' }),
     readView('_tabs.ejs'),
     readFile(new URL('../public/admin.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(tabs, /<nav class="content-agent-tabs content-agent-tabs--even"/);
+  assert.match(tabs, /<nav class="content-agent-tabs content-agent-tabs--odd"/);
   assert.match(
     tabsSource,
     /contentAgentTabs\.length\s*%\s*2[\s\S]*content-agent-tabs--even[\s\S]*content-agent-tabs--odd/
@@ -129,10 +130,48 @@ test('gerade Haupttabanzahl hält das mobile Zweispaltenraster ohne Vollbreiten-
     adminCss,
     /\.content-agent-tabs--odd\s+\.content-agent-tabs__link:last-child\s*\{\s*grid-column:\s*1\s*\/\s*-1;\s*\}/
   );
-  assert.doesNotMatch(
-    adminCss,
-    /(?:^|\n)\s*\.content-agent-tabs__link:last-child\s*\{[^}]*grid-column:/
-  );
+});
+
+test('Lernregelseite zeigt sichere Vorschläge, Regeln, Beobachtungen und Verlauf mit CSRF', async () => {
+  const learningDashboard = {
+    proposals: [{
+      id: 3, categoryLabel: 'CTA-Wiederholung oder fehlende Passung', status: 'pending',
+      statusLabel: 'Freigabe offen', expectedVersion: 2,
+      ruleText: '<script>nicht ausführen</script> Sichere Regel mit genügend Inhalt für eine redaktionelle Prüfung.',
+      targetStages: ['writer', 'reviewer'], targetStageLabels: ['Artikelerstellung', 'Redaktionelle Prüfung'],
+      evidenceCount: 3, evidence: [{ postId: 11, reviewVersion: 4, reason: 'Wiederholung', instruction: 'Unterscheiden' }],
+      expectedEffect: 'Weniger Wiederholung', overfitWarning: 'Nicht übertreiben'
+    }],
+    rules: [{
+      id: 8, categoryLabel: 'Zu generische Inhalte', status: 'active', statusLabel: 'Aktiv',
+      contentVersion: 1, expectedVersion: 3,
+      ruleText: 'Formuliere zentrale Abschnitte konkret für Zielgruppe und Thema.',
+      targetStages: ['seo_brief', 'writer'], targetStageLabels: ['SEO-Briefing', 'Artikelerstellung'],
+      updatedAtLabel: '14.07.2026, 10:00 Uhr (MESZ)'
+    }],
+    observations: [{ categoryLabel: 'Zu generische Inhalte', articleCount: 4, observationCount: 6, postIds: [11, 12], lastSeenAtLabel: '14.07.2026, 09:00 Uhr (MESZ)' }],
+    unclassified: { articleCount: 2, observationCount: 3, lastSeenAtLabel: '13.07.2026, 09:00 Uhr (MESZ)' },
+    events: [{ id: 19, eventLabel: 'Neue Regelversion aktiviert', categoryLabel: 'Zu generische Inhalte', adminName: 'Admin Ä', createdAtLabel: '14.07.2026, 10:00 Uhr (MESZ)', ruleVersion: 2 }]
+  };
+  const html = await renderFile(fileURLToPath(viewUrl('learningRules.ejs')), {
+    ...baseLocals,
+    currentPathname: '/admin/content-agent/learning-rules',
+    learningDashboard,
+    result: 'activated'
+  });
+
+  assert.match(html, /Lernregeln/);
+  assert.match(html, /Neue Vorschläge/);
+  assert.match(html, /Aktive und bisherige Regeln/);
+  assert.match(html, /Beobachtungen/);
+  assert.match(html, /Verlauf/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  assert.match(html, /name="expected_version" value="2"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /data-confirm=/);
+  assert.match(html, /&lt;script&gt;nicht ausführen&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script>nicht ausführen<\/script>/);
+  assert.doesNotMatch(html, /runtime_snapshot_json|providerResponse|article_html|stage_results_json/i);
 });
 
 test('Übersicht rendert Layout A zugänglich und escaped dynamische Werte', async () => {

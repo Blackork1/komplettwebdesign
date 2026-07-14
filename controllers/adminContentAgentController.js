@@ -61,6 +61,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
+const LEARNING_RESULT_MESSAGES = new Set(['activated', 'rejected', 'revised', 'status-changed']);
 const SEARCH_CONSOLE_PROPERTY = 'komplettwebdesign.de';
 
 function reviewStatusFilter(value) {
@@ -602,7 +603,7 @@ export function createAdminContentAgentController(dependencies) {
         const present = typeof presentation?.presentContentLearningDashboard === 'function'
           ? presentation.presentContentLearningDashboard(rawDashboard)
           : rawDashboard;
-        const result = typeof req.query?.result === 'string' ? req.query.result : '';
+        const result = LEARNING_RESULT_MESSAGES.has(req.query?.result) ? req.query.result : '';
         return res.render('admin/contentAgent/learningRules', {
           learningDashboard: present,
           result
