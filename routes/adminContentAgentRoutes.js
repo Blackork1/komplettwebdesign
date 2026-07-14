@@ -10,6 +10,8 @@ import {
 import {
   enqueueManualSearchConsoleSyncJob,
   enqueueJob,
+  enqueueReviewOptimizationJob,
+  getLatestReviewOptimizationJob,
   recoverDraftPersistenceForAdmin,
   recoverEditorialReviewForAdmin,
   recoverQualityGateJobForAdmin,
@@ -46,6 +48,7 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/learning-rules', isAdmin, controller.learningRulesPage);
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
+  router.get('/admin/content-agent/drafts/:id/review-optimization-status', isAdmin, controller.reviewOptimizationStatusAction);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);
   router.post('/admin/content-agent/search-console/sync', isAdmin, verifyCsrfToken, controller.syncSearchConsoleAction);
@@ -97,6 +100,8 @@ const controller = createAdminContentAgentController({
   },
   jobRepository: {
     enqueueJob: (input) => enqueueJob(input, pool),
+    enqueueReviewOptimizationJob: (input) => enqueueReviewOptimizationJob(input, pool),
+    getLatestReviewOptimizationJob: (input) => getLatestReviewOptimizationJob(input, pool),
     enqueueManualSearchConsoleSyncJob: (input) => enqueueManualSearchConsoleSyncJob(input, pool),
     retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool),
     recoverUncertainProviderJobForAdmin: (input) => recoverUncertainProviderJobForAdmin(input, pool),

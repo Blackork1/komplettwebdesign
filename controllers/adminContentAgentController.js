@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { DateTime, IANAZone } from 'luxon';
+import { presentReviewOptimizationStatus } from '../services/contentAgent/reviewOptimizationStatusService.js';
 
 const CONFLICT_CODES = new Set([
   'CONTENT_AGENT_DISABLED',
@@ -467,17 +468,16 @@ export function createAdminContentAgentController(dependencies) {
         code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
       });
     }
-    const job = await jobRepository.enqueueJob({
-      jobType: 'optimize_review_issues',
-      idempotencyKey: `optimize_review_issues:${postId}:${expectedReviewVersion}:${randomUUID()}`,
-      payload: {
-        source: 'admin_regeneration',
-        post_id: postId,
-        forced_mode: 'review',
-        expected_review_version: expectedReviewVersion,
-        issue_mode: issueMode,
-        ...(issueMode === 'single' ? { issue_index: issueIndex } : {})
-      },
+    if (typeof jobRepository?.enqueueReviewOptimizationJob !== 'function') {
+      throw Object.assign(new Error('Prüfhinweis-Optimierung nicht verfügbar.'), {
+        code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+      });
+    }
+    const job = await jobRepository.enqueueReviewOptimizationJob({
+      postId,
+      expectedReviewVersion,
+      issueMode,
+      issueIndex,
       maxAttempts: Math.min(
         Number(settings.maximum_attempts),
         Number(runtimeConfig.maxAttempts)
@@ -486,6 +486,11 @@ export function createAdminContentAgentController(dependencies) {
     if (!job) {
       throw Object.assign(new Error('Content-Agent deaktiviert.'), {
         code: 'CONTENT_AGENT_DISABLED'
+      });
+    }
+    if (!['queued', 'running'].includes(job.status)) {
+      throw Object.assign(new Error('Prüfhinweis-Optimierung nicht verfügbar.'), {
+        code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
       });
     }
     return job;
@@ -636,11 +641,16 @@ export function createAdminContentAgentController(dependencies) {
     },
 
     async draftEditPage(req, res, next) {
-      if (typeof draftService?.getDraftForReview !== 'function') return unavailable(res);
+      if (typeof draftService?.getDraftForReview !== 'function'
+          || typeof jobRepository?.getLatestReviewOptimizationJob !== 'function') {
+        return unavailable(res);
+      }
       try {
-        const [draft, settings] = await Promise.all([
-          draftService.getDraftForReview(positiveId(req.params.id)),
-          settingsRepository.getSettings()
+        const postId = positiveId(req.params.id);
+        const [draft, settings, optimizationJob] = await Promise.all([
+          draftService.getDraftForReview(postId),
+          settingsRepository.getSettings(),
+          jobRepository.getLatestReviewOptimizationJob({ postId })
         ]);
         const editorRiskReview = draft.riskReview && typeof draft.riskReview === 'object'
           ? {
@@ -652,7 +662,14 @@ export function createAdminContentAgentController(dependencies) {
           : null;
         return res.render('admin/contentAgent/draftEdit', {
           draft: scheduledDraftPresentation(
-            { ...draft, editorRiskReview },
+            {
+              ...draft,
+              editorRiskReview,
+              reviewOptimizationStatus: presentReviewOptimizationStatus({
+                job: optimizationJob,
+                currentReviewVersion: draft.reviewVersion
+              })
+            },
             {
               ...settings,
               timezone: settings?.timezone || runtimeConfig.timezone || 'UTC'
@@ -665,6 +682,27 @@ export function createAdminContentAgentController(dependencies) {
           rescheduled: req.query?.rescheduled === '1',
           notificationRetried: req.query?.notification_retried === '1'
         });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async reviewOptimizationStatusAction(req, res, next) {
+      if (typeof draftService?.getDraftForReview !== 'function'
+          || typeof jobRepository?.getLatestReviewOptimizationJob !== 'function') {
+        return unavailable(res);
+      }
+      try {
+        const postId = positiveId(req.params.id);
+        const [draft, optimizationJob] = await Promise.all([
+          draftService.getDraftForReview(postId),
+          jobRepository.getLatestReviewOptimizationJob({ postId })
+        ]);
+        res.set('Cache-Control', 'no-store');
+        return res.json(presentReviewOptimizationStatus({
+          job: optimizationJob,
+          currentReviewVersion: draft.reviewVersion
+        }));
       } catch (error) {
         return sendKnownError(error, res, next);
       }

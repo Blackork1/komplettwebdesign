@@ -13,7 +13,9 @@ function response() {
   return {
     statusCode: 200,
     status(code) { this.statusCode = code; return this; },
+    set(name, value) { this.headers = { ...(this.headers || {}), [name]: value }; return this; },
     send(body) { this.body = body; return this; },
+    json(body) { this.jsonBody = body; return this; },
     redirect(url) { this.redirectedTo = url; return this; },
     render(view, locals) { this.rendered = { view, locals }; return this; }
   };
@@ -224,7 +226,10 @@ test('gezielte Prüfhinweis-Optimierung reiht Einzel- und Sammelmodus mit Versio
       }
     },
     jobRepository: {
-      async enqueueJob(input) { jobs.push(input); return { id: jobs.length }; }
+      async enqueueReviewOptimizationJob(input) {
+        jobs.push(input);
+        return { id: 41, status: 'queued' };
+      }
     }
   }));
 
@@ -247,24 +252,20 @@ test('gezielte Prüfhinweis-Optimierung reiht Einzel- und Sammelmodus mit Versio
   }
 
   assert.equal(jobs.length, 2);
-  assert.equal(jobs[0].jobType, 'optimize_review_issues');
-  assert.match(jobs[0].idempotencyKey, /^optimize_review_issues:19:3:[0-9a-f-]+$/i);
-  assert.deepEqual(jobs[0].payload, {
-    source: 'admin_regeneration',
-    post_id: 19,
-    forced_mode: 'review',
-    expected_review_version: 3,
-    issue_mode: 'single',
-    issue_index: 1
+  assert.deepEqual(jobs[0], {
+    postId: 19,
+    expectedReviewVersion: 3,
+    issueMode: 'single',
+    issueIndex: 1,
+    maxAttempts: 3
   });
-  assert.deepEqual(jobs[1].payload, {
-    source: 'admin_regeneration',
-    post_id: 19,
-    forced_mode: 'review',
-    expected_review_version: 3,
-    issue_mode: 'all'
+  assert.deepEqual(jobs[1], {
+    postId: 19,
+    expectedReviewVersion: 3,
+    issueMode: 'all',
+    issueIndex: null,
+    maxAttempts: 3
   });
-  assert.equal(jobs[0].maxAttempts, 3);
 });
 
 test('Prüfhinweis-Optimierung lehnt veraltete, blockierte und ungültige Auswahl ohne Job ab', async () => {
@@ -296,7 +297,7 @@ test('Prüfhinweis-Optimierung lehnt veraltete, blockierte und ungültige Auswah
         }
       },
       jobRepository: {
-        async enqueueJob() { enqueueCalls += 1; return { id: 1 }; }
+        async enqueueReviewOptimizationJob() { enqueueCalls += 1; return { id: 1 }; }
       }
     }));
     const res = response();
@@ -306,6 +307,104 @@ test('Prüfhinweis-Optimierung lehnt veraltete, blockierte und ungültige Auswah
     assert.equal(enqueueCalls, 0);
     assert.equal(res.statusCode, 409);
   }
+});
+
+test('terminaler bestehender Optimierungsjob wird nicht als neu eingeplant gemeldet', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: true, maximum_attempts: 3 }; }
+    },
+    draftService: {
+      async getDraftForReview() {
+        return {
+          reviewVersion: 3,
+          riskReview: { blocked: false, items: [{ code: 'review_issue_1' }] }
+        };
+      }
+    },
+    jobRepository: {
+      async enqueueReviewOptimizationJob() {
+        return { id: 41, status: 'needs_manual_attention' };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.optimizeReviewIssuesAction({
+    params: { id: '19' },
+    body: { confirmed: 'true', expected_review_version: '3', issue_mode: 'all' }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.equal(res.redirectedTo, undefined);
+});
+
+test('Entwurfseditor erhält den bereinigten Livezustand der letzten Fehlerbehebung', async () => {
+  const job = {
+    id: 41, status: 'running', attempts: 1, max_attempts: 3,
+    expected_review_version: 3,
+    updated_at: '2026-07-14T10:01:00.000Z'
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return { timezone: 'Europe/Berlin' }; }
+    },
+    draftService: {
+      async getDraftForReview(postId) {
+        return { id: postId, reviewVersion: 3, riskReview: { blocked: false, items: [] } };
+      }
+    },
+    jobRepository: {
+      async getLatestReviewOptimizationJob(input) {
+        assert.deepEqual(input, { postId: 19 });
+        return job;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.draftEditPage({ params: { id: '19' }, query: {} }, res, assert.fail);
+
+  assert.equal(res.rendered.view, 'admin/contentAgent/draftEdit');
+  assert.deepEqual(res.rendered.locals.draft.reviewOptimizationStatus, {
+    state: 'running', active: true, blocksActions: true, jobId: 41,
+    attempts: 1, maxAttempts: 3,
+    message: 'Die Fehlerbehebung wird gerade ausgeführt.',
+    updatedAt: '2026-07-14T10:01:00.000Z', reloadRecommended: false
+  });
+});
+
+test('geschützter Statusendpunkt liefert ausschließlich die bereinigte Optimierungsdarstellung', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    draftService: {
+      async getDraftForReview(postId) {
+        assert.equal(postId, 19);
+        return { id: postId, reviewVersion: 4 };
+      }
+    },
+    jobRepository: {
+      async getLatestReviewOptimizationJob() {
+        return {
+          id: 41, status: 'completed', attempts: 1, max_attempts: 3,
+          expected_review_version: 3,
+          updated_at: '2026-07-14T10:03:00.000Z',
+          provider_payload: { apiKey: 'darf-nicht-ausgegeben-werden' }
+        };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.reviewOptimizationStatusAction({ params: { id: '19' } }, res, assert.fail);
+
+  assert.deepEqual(res.jsonBody, {
+    state: 'completed', active: false, blocksActions: false, jobId: 41,
+    attempts: 1, maxAttempts: 3,
+    message: 'Die Fehlerbehebung wurde erfolgreich abgeschlossen.',
+    updatedAt: '2026-07-14T10:03:00.000Z', reloadRecommended: true
+  });
+  assert.equal(JSON.stringify(res.jsonBody).includes('apiKey'), false);
+  assert.equal(res.headers['Cache-Control'], 'no-store');
 });
 
 test('Regeneration ist bei operativer Pause oder technischem Not-Aus gesperrt', async () => {

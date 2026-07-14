@@ -23,6 +23,7 @@ const GET_PATHS = [
   '/admin/content-agent/learning-rules',
   '/admin/content-agent/drafts/:id/preview',
   '/admin/content-agent/drafts/:id/edit',
+  '/admin/content-agent/drafts/:id/review-optimization-status',
   '/admin/content-agent/revisions/:id/edit'
 ];
 
