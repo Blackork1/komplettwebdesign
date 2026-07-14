@@ -189,6 +189,66 @@ test('Audit-Payloads werden vor der Datenbankabfrage begrenzt', async () => {
   assert.equal(queryCalls, 0);
 });
 
+test('Verlierender Audit-Insert liest den konkurrierenden Gewinner in einem neuen Statement-Snapshot', async () => {
+  const winner = {
+    id: 31,
+    post_id: 19,
+    job_id: 44,
+    run_id: 55,
+    audit_type: 'existing_post_optimization',
+    status: 'open'
+  };
+  const calls = [];
+  const repository = createContentExistingPostOptimizationRepository({
+    async query(sql, params) {
+      calls.push({ sql: normalizedSql(sql), params });
+      return calls.length === 1 ? { rows: [] } : { rows: [winner] };
+    }
+  });
+
+  const result = await repository.createAuditIdempotent({
+    postId: 19,
+    jobId: 44,
+    runId: 55,
+    auditType: 'existing_post_optimization',
+    score: 72,
+    findings: [],
+    recommendedActions: []
+  });
+
+  assert.deepEqual(result, winner);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].sql, /^INSERT INTO content_post_audits/i);
+  assert.match(calls[0].sql, /ON CONFLICT[\s\S]*DO NOTHING[\s\S]*RETURNING \*/i);
+  assert.doesNotMatch(calls[0].sql, /\bWITH\b|UNION ALL/i);
+  assert.match(calls[1].sql, /^SELECT \* FROM content_post_audits/i);
+  assert.deepEqual(calls[1].params, [44, 19, 'existing_post_optimization']);
+});
+
+test('Verschwindender Audit-Konflikt wird hÃ¶chstens einmal erneut eingefÃ¼gt und danach fail-closed beendet', async () => {
+  const calls = [];
+  const repository = createContentExistingPostOptimizationRepository({
+    async query(sql, params) {
+      calls.push({ sql: normalizedSql(sql), params });
+      return { rows: [] };
+    }
+  });
+
+  await assert.rejects(repository.createAuditIdempotent({
+    postId: 19,
+    jobId: 44,
+    runId: 55,
+    auditType: 'existing_post_optimization',
+    score: 72,
+    findings: [],
+    recommendedActions: []
+  }), { code: 'CONTENT_AUDIT_PERSISTENCE_CONFLICT' });
+
+  assert.equal(calls.length, 4);
+  assert.equal(calls.filter(({ sql }) => /^INSERT INTO/i.test(sql)).length, 2);
+  assert.equal(calls.filter(({ sql }) => /^SELECT \*/i.test(sql)).length, 2);
+});
+
 test('Revisionsanlage bindet Job, Audit, Livehash und Optimierungsbericht atomar', async () => {
   const post = publishedPost();
   const input = optimizedRevisionInput(post);
@@ -460,6 +520,7 @@ test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und lÃ
     revision_version: 3
   };
   const client = transactionClient(({ sql }) => {
+    if (/FROM posts p/i.test(sql)) return { rows: [{ id: 19 }] };
     if (/FROM content_post_revisions r/i.test(sql)) return { rows: [revision] };
     if (/UPDATE content_post_revisions/i.test(sql)) return { rows: [{ ...revision, status: 'rejected', revision_version: 4 }] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 10 }] };
@@ -481,6 +542,49 @@ test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und lÃ
   assert.match(allSql, /optimization_job_id IS NOT NULL/i);
   assert.doesNotMatch(allSql, /UPDATE content_post_audits/i);
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
+});
+
+test('Ablehnung sperrt Post-Tabelle, Postzeile und Revision in kanonischer Reihenfolge vor dem Feedback', async () => {
+  const revision = {
+    id: 71,
+    post_id: 19,
+    audit_id: 31,
+    optimization_job_id: 44,
+    status: 'draft',
+    revision_version: 3
+  };
+  const client = transactionClient(({ sql }) => {
+    if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) {
+      return { rows: [{ post_id: 19 }] };
+    }
+    if (/SELECT p\.id FROM posts p/i.test(sql)) return { rows: [{ id: 19 }] };
+    if (/SELECT r\.\* FROM content_post_revisions r/i.test(sql)) return { rows: [revision] };
+    if (/UPDATE content_post_revisions/i.test(sql)) {
+      return { rows: [{ ...revision, status: 'rejected', revision_version: 4 }] };
+    }
+    if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 10 }] };
+    return { rows: [] };
+  });
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { return client; }
+  });
+
+  await repository.rejectRevision({
+    revisionId: 71,
+    expectedVersion: 3,
+    admin: { id: 7, username: 'Admin' }
+  });
+
+  const sql = client.calls.map((call) => call.sql);
+  const locks = [
+    sql.findIndex((query) => /^LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE$/i.test(query)),
+    sql.findIndex((query) => /SELECT p\.id FROM posts p[\s\S]*FOR UPDATE OF p/i.test(query)),
+    sql.findIndex((query) => /SELECT r\.\* FROM content_post_revisions r[\s\S]*FOR UPDATE OF r/i.test(query)),
+    sql.findIndex((query) => /UPDATE content_post_revisions/i.test(query)),
+    sql.findIndex((query) => /INSERT INTO content_revision_optimization_feedback/i.test(query))
+  ];
+  assert.ok(locks.every((position) => position >= 0));
+  assert.deepEqual(locks, [...locks].sort((left, right) => left - right));
 });
 
 test('Outcome-Basis wird in der Ã¼bergebenen Freigabetransaktion mit lokalem 28-Tage-Fenster angelegt', async () => {

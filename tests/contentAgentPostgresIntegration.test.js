@@ -51,6 +51,9 @@ import {
 import { createContentAgentJobSnapshot } from '../services/contentAgent/runtimeConfigService.js';
 import { learningRulesForStage } from '../services/contentAgent/contentLearningSnapshotService.js';
 import { buildArticleWriterPrompt } from '../services/contentAgent/prompts/articleWriterPrompt.js';
+import { createContentExistingPostOptimizationRepository } from '../repositories/contentExistingPostOptimizationRepository.js';
+import { createRevisionSnapshot } from '../services/contentAgent/contentRevisionService.js';
+import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
 const resetGuard = evaluateContentAgentPgResetGuard({
@@ -1213,7 +1216,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -1721,12 +1724,17 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
     const preexistingIndexes = await pool.query(`
       SELECT indexname FROM pg_indexes
       WHERE schemaname = current_schema()
-        AND indexname IN ('ux_content_post_audits_job_post_type', 'ux_content_post_revisions_draft_audit')
+        AND indexname IN (
+          'ux_content_post_audits_job_post_type',
+          'ux_content_post_revisions_draft_audit',
+          'ux_content_post_revisions_draft_post'
+        )
       ORDER BY indexname
     `);
     assert.deepEqual(preexistingIndexes.rows.map(({ indexname }) => indexname), [
       'ux_content_post_audits_job_post_type',
-      'ux_content_post_revisions_draft_audit'
+      'ux_content_post_revisions_draft_audit',
+      'ux_content_post_revisions_draft_post'
     ]);
     const duplicateJob = await pool.query(`
       INSERT INTO content_jobs (job_type, status, idempotency_key)
@@ -1743,6 +1751,7 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
       VALUES ($1, $2, 'local_content_v1', 80, 'open', '2026-01-01T00:00:00Z') RETURNING id
     `, [publishedPost.rows[0].id, duplicateJob.rows[0].id]);
     const snapshot = JSON.stringify({ base: {}, fields: {} });
+    await pool.query('DROP INDEX ux_content_post_revisions_draft_post');
     await pool.query(`
       INSERT INTO content_post_revisions (post_id, audit_id, snapshot_json, status, created_at)
       VALUES
@@ -1774,10 +1783,14 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
     const rebuiltIndexes = await pool.query(`
       SELECT indexname, indexdef FROM pg_indexes
       WHERE schemaname = current_schema()
-        AND indexname IN ('ux_content_post_audits_job_post_type', 'ux_content_post_revisions_draft_audit')
+        AND indexname IN (
+          'ux_content_post_audits_job_post_type',
+          'ux_content_post_revisions_draft_audit',
+          'ux_content_post_revisions_draft_post'
+        )
       ORDER BY indexname
     `);
-    assert.equal(rebuiltIndexes.rows.length, 2);
+    assert.equal(rebuiltIndexes.rows.length, 3);
     assert.ok(rebuiltIndexes.rows.every(({ indexdef }) => /CREATE UNIQUE INDEX/i.test(indexdef)));
     await runContentAgentMigration(pool);
     const secondPass = await pool.query(`
@@ -1789,11 +1802,21 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
     `, [duplicateJob.rows[0].id]);
     assert.deepEqual(secondPass.rows[0], { audit_count: 1, revision_count: 2 });
 
+    const nullJobPost = await pool.query(`
+      INSERT INTO posts (
+        title, slug, content, published, workflow_status, content_format
+      ) VALUES (
+        'Separater Revisionsentwurf', 'separater-revisionsentwurf', '<p>Entwurf</p>',
+        FALSE, 'draft', 'legacy_ejs'
+      )
+      RETURNING id
+    `);
     const nullJobAudit = await pool.query(`
       INSERT INTO content_post_audits (post_id, job_id, audit_type, score, status)
       VALUES ($1, NULL, 'legacy_null_job', 60, 'open') RETURNING id
-    `, [publishedPost.rows[0].id]);
+    `, [nullJobPost.rows[0].id]);
     await pool.query('DROP INDEX ux_content_post_revisions_draft_audit');
+    await pool.query('DROP INDEX ux_content_post_revisions_draft_post');
     await pool.query(`
       INSERT INTO content_post_revisions (
         post_id, audit_id, snapshot_json, status, created_at, updated_at, approved_at
@@ -1801,7 +1824,7 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
         ($1, $2, $3::jsonb, 'draft', '2026-02-01T00:00:00Z', '2026-02-02T00:00:00Z', NULL),
         ($1, $2, $3::jsonb, 'draft', '2026-02-03T00:00:00Z', '2026-02-04T00:00:00Z', NULL),
         ($1, $2, $3::jsonb, 'approved', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z')
-    `, [publishedPost.rows[0].id, nullJobAudit.rows[0].id, snapshot]);
+    `, [nullJobPost.rows[0].id, nullJobAudit.rows[0].id, snapshot]);
     await runContentAgentMigration(pool);
     const nullJobState = await pool.query(`
       SELECT audit.status,
@@ -1833,11 +1856,120 @@ test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve�
       FROM content_post_revisions WHERE audit_id = $1 ORDER BY id
     `, [nullJobAudit.rows[0].id]);
     assert.deepEqual(nullJobAfterRerun.rows, nullJobBeforeRerun.rows);
-    const nullJobDraftIndex = await pool.query(`
-      SELECT indexdef FROM pg_indexes
-      WHERE schemaname = current_schema() AND indexname = 'ux_content_post_revisions_draft_audit'
+    const nullJobDraftIndexes = await pool.query(`
+      SELECT indexname, indexdef FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND indexname IN (
+          'ux_content_post_revisions_draft_audit',
+          'ux_content_post_revisions_draft_post'
+        )
+      ORDER BY indexname
     `);
-    assert.match(nullJobDraftIndex.rows[0].indexdef, /CREATE UNIQUE INDEX/i);
+    assert.equal(nullJobDraftIndexes.rows.length, 2);
+    assert.ok(nullJobDraftIndexes.rows.every(({ indexdef }) => /CREATE UNIQUE INDEX/i.test(indexdef)));
+
+    const optimizationPost = await pool.query(`
+      INSERT INTO posts (
+        title, slug, excerpt, content, published, workflow_status, content_format,
+        meta_title, meta_description, og_title, og_description, faq_json,
+        image_url, image_alt, published_at
+      ) VALUES (
+        'Parallel geprüfter Artikel', 'parallel-gepruefter-artikel', 'Ausgangsfassung',
+        '<section><h2>Ausgang</h2><p>Bestehender Text.</p></section>', TRUE,
+        'published', 'static_html', 'Ausgangstitel', 'Ausgangsbeschreibung',
+        'Ausgangstitel', 'Ausgangsbeschreibung', '[]'::jsonb,
+        '/uploads/parallel.webp', 'Ausgangsbild', NOW()
+      )
+      RETURNING *
+    `);
+    const optimizationJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key, payload_json)
+      VALUES (
+        'optimize_existing_post', 'completed', 'pg-existing-optimization-race',
+        jsonb_build_object('post_id', $1::integer)
+      )
+      RETURNING id
+    `, [optimizationPost.rows[0].id]);
+    const optimizationRepository = createContentExistingPostOptimizationRepository(pool);
+    const auditInput = {
+      postId: Number(optimizationPost.rows[0].id),
+      jobId: Number(optimizationJob.rows[0].id),
+      runId: null,
+      auditType: 'parallel_existing_post_v1',
+      score: 72,
+      findings: [{ code: 'metadata_quality' }],
+      recommendedActions: [{ field: 'meta_title' }]
+    };
+    const concurrentAudits = await Promise.all([
+      optimizationRepository.createAuditIdempotent(auditInput),
+      optimizationRepository.createAuditIdempotent(auditInput)
+    ]);
+    assert.equal(concurrentAudits[0].id, concurrentAudits[1].id);
+    assert.equal((await pool.query(`
+      SELECT COUNT(*)::integer AS count
+      FROM content_post_audits
+      WHERE job_id = $1 AND post_id = $2 AND audit_type = $3
+    `, [auditInput.jobId, auditInput.postId, auditInput.auditType])).rows[0].count, 1);
+
+    const optimizationSnapshot = createRevisionSnapshot(optimizationPost.rows[0]);
+    optimizationSnapshot.fields.meta_title = 'Verbesserter Metatitel';
+    const optimizationReport = {
+      ...buildExistingPostDiff({
+        before: { metaTitle: optimizationPost.rows[0].meta_title },
+        after: { metaTitle: optimizationSnapshot.fields.meta_title }
+      }),
+      baseLiveHash: optimizationSnapshot.base.live_hash
+    };
+    const raceRevision = await pool.query(`
+      INSERT INTO content_post_revisions (
+        post_id, audit_id, snapshot_json, status, revision_version,
+        optimization_job_id, optimization_report_json
+      ) VALUES ($1, $2, $3::jsonb, 'draft', 3, $4, $5::jsonb)
+      RETURNING id
+    `, [
+      auditInput.postId,
+      concurrentAudits[0].id,
+      JSON.stringify(optimizationSnapshot),
+      auditInput.jobId,
+      JSON.stringify(optimizationReport)
+    ]);
+    await pool.query(
+      "UPDATE content_post_audits SET status = 'revision_created' WHERE id = $1",
+      [concurrentAudits[0].id]
+    );
+    const optimizationAdmin = (await pool.query(
+      "SELECT id, username FROM admins WHERE username = 'migration-admin'"
+    )).rows[0];
+    const revisionRace = await settleWithoutPostLockFailure([
+      optimizationRepository.rejectRevision({
+        revisionId: Number(raceRevision.rows[0].id),
+        expectedVersion: 3,
+        details: { reason: 'Paralleltest Ablehnung' },
+        admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
+      }),
+      optimizationRepository.updateRevisionAfterRevert({
+        revisionId: Number(raceRevision.rows[0].id),
+        expectedVersion: 3,
+        changeId: optimizationReport.changes[0].id,
+        details: { reason: 'Paralleltest Rücknahme' },
+        validateSnapshot: async () => {},
+        admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
+      })
+    ], 'Ablehnung gegen Rücknahme');
+    assert.equal(revisionRace.filter(({ status }) => status === 'fulfilled').length, 1);
+    const raceFailure = revisionRace.find(({ status }) => status === 'rejected');
+    assert.equal(raceFailure?.reason?.code, 'CONTENT_REVISION_CONFLICT');
+    const persistedRaceRevision = (await pool.query(`
+      SELECT status, revision_version,
+             (SELECT COUNT(*)::integer
+              FROM content_revision_optimization_feedback feedback
+              WHERE feedback.revision_id = revision.id) AS feedback_count
+      FROM content_post_revisions revision
+      WHERE revision.id = $1
+    `, [raceRevision.rows[0].id])).rows[0];
+    assert.ok(['draft', 'rejected'].includes(persistedRaceRevision.status));
+    assert.equal(persistedRaceRevision.revision_version, 4);
+    assert.equal(persistedRaceRevision.feedback_count, 1);
 
     const adminForeignKeys = await pool.query(`
       SELECT tc.table_name

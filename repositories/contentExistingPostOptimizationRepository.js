@@ -558,6 +558,22 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+        const identity = await client.query(`
+          SELECT r.post_id
+          FROM content_post_revisions r
+          WHERE r.id = $1::bigint AND r.optimization_job_id IS NOT NULL
+        `, [revisionId]);
+        if (!identity.rows[0]) {
+          throw repositoryError('CONTENT_REVISION_NOT_FOUND', 'Optimierungsrevision nicht gefunden.');
+        }
+        const postResult = await client.query(`
+          SELECT p.id
+          FROM posts p
+          WHERE p.id = $1::integer
+          FOR UPDATE OF p
+        `, [identity.rows[0].post_id]);
+        if (!postResult.rows[0]) throw conflict('Der zugehörige Artikel ist nicht mehr vorhanden.');
         const locked = await client.query(`
           SELECT r.* FROM content_post_revisions r
           WHERE r.id = $1::bigint AND r.optimization_job_id IS NOT NULL

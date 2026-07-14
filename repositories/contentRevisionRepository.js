@@ -58,14 +58,24 @@ export function createContentRevisionRepository(db = pool) {
         const { rows: posts } = await client.query(`SELECT ${POST_COLUMNS} FROM posts WHERE id = $1 AND published = TRUE FOR UPDATE`, [postId]);
         if (!posts[0]) throw conflict('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
         const { rows: existing } = await client.query(`
-          SELECT * FROM content_post_revisions WHERE audit_id = $1 AND status = 'draft' LIMIT 1 FOR UPDATE
-        `, [auditId]);
+          SELECT * FROM content_post_revisions
+          WHERE post_id = $1 AND status = 'draft'
+          ORDER BY id
+          FOR UPDATE
+        `, [postId]);
         const { rows: audits } = await client.query(`
           SELECT * FROM content_post_audits
           WHERE id = $1 AND post_id = $2 AND status IN ('open', 'revision_created')
           FOR UPDATE
         `, [auditId, postId]);
         if (!audits[0]) throw conflict('CONTENT_AUDIT_NOT_FOUND', 'Passender offener Auditbefund nicht gefunden.');
+        if (existing.length > 1
+            || (existing[0] && Number(existing[0].audit_id) !== Number(auditId))) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Für diesen Artikel besteht bereits eine aktive Draft-Revision.'
+          );
+        }
         let revision = existing[0];
         if (!revision) {
           const { rows } = await client.query(`
@@ -80,6 +90,12 @@ export function createContentRevisionRepository(db = pool) {
         return revision;
       } catch (error) {
         await rollback(client);
+        if (error?.code === '23505') {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Für diesen Artikel besteht bereits eine aktive Draft-Revision.'
+          );
+        }
         throw error;
       } finally {
         client.release();

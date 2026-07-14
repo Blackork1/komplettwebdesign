@@ -54,6 +54,70 @@ const approvalInput = {
   validateSnapshot: async () => true
 };
 
+function revisionCreationHarness(existingDraft) {
+  const calls = [];
+  const client = {
+    async query(sql, params = []) {
+      const normalized = String(sql).replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)
+          || normalized.startsWith('LOCK TABLE posts')) return { rows: [] };
+      if (normalized.startsWith('SELECT id, title, slug')) return { rows: [livePost] };
+      if (normalized.startsWith('SELECT * FROM content_post_revisions')) {
+        return { rows: existingDraft ? [existingDraft] : [] };
+      }
+      if (normalized.startsWith('SELECT * FROM content_post_audits')) {
+        return { rows: [{ id: 5, post_id: 7, status: 'open' }] };
+      }
+      if (normalized.startsWith('INSERT INTO content_post_revisions')) {
+        return { rows: [{ id: 9, post_id: 7, audit_id: 5, status: 'draft' }] };
+      }
+      if (normalized.startsWith('UPDATE content_post_audits')) return { rows: [] };
+      throw new Error(`Unerwartetes SQL: ${normalized}`);
+    },
+    release() { calls.push({ sql: 'RELEASE', params: [] }); }
+  };
+  return {
+    calls,
+    repository: createContentRevisionRepository({ async connect() { return client; } })
+  };
+}
+
+test('Revisionsanlage nimmt ausschließlich den postweiten Draft desselben Audits idempotent wieder auf', async () => {
+  const existing = { id: 8, post_id: 7, audit_id: 5, status: 'draft', revision_version: 2 };
+  const { calls, repository } = revisionCreationHarness(existing);
+
+  const result = await repository.createRevisionFromAudit({
+    postId: 7,
+    auditId: 5,
+    admin: { id: 1, username: 'admin' },
+    createSnapshot: createRevisionSnapshot
+  });
+
+  assert.equal(result.id, 8);
+  const draftLock = calls.find(({ sql }) => sql.startsWith('SELECT * FROM content_post_revisions'));
+  assert.match(draftLock.sql, /WHERE post_id = \$1 AND status = 'draft'/i);
+  assert.deepEqual(draftLock.params, [7]);
+  assert.equal(calls.some(({ sql }) => sql.startsWith('INSERT INTO content_post_revisions')), false);
+  assert.ok(calls.some(({ sql }) => sql === 'COMMIT'));
+});
+
+test('Revisionsanlage weist einen postweiten Draft eines anderen Audits fail-closed zurück', async () => {
+  const existing = { id: 8, post_id: 7, audit_id: 6, status: 'draft', revision_version: 2 };
+  const { calls, repository } = revisionCreationHarness(existing);
+
+  await assert.rejects(repository.createRevisionFromAudit({
+    postId: 7,
+    auditId: 5,
+    admin: { id: 1, username: 'admin' },
+    createSnapshot: createRevisionSnapshot
+  }), { code: 'CONTENT_REVISION_CONFLICT' });
+
+  assert.ok(calls.some(({ sql }) => sql === 'ROLLBACK'));
+  assert.equal(calls.some(({ sql }) => sql.startsWith('INSERT INTO content_post_revisions')), false);
+  assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), false);
+});
+
 test('Freigabe sperrt Tabelle, Post, Revision und Audit in dieser Reihenfolge und ändert nur die Allowlist', async () => {
   const { repository, calls } = approvalHarness();
   const result = await repository.approveRevisionTransaction(approvalInput);

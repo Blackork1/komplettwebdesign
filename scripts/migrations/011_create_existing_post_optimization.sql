@@ -8,6 +8,45 @@ ALTER TABLE content_post_revisions
   ADD CONSTRAINT content_post_revisions_optimization_report_object
   CHECK (jsonb_typeof(optimization_report_json) = 'object');
 
+WITH ranked_post_drafts AS (
+  SELECT revision.id,
+         ROW_NUMBER() OVER (
+           PARTITION BY revision.post_id
+           ORDER BY revision.updated_at DESC,
+                    revision.created_at DESC,
+                    revision.id DESC
+         ) AS position
+  FROM content_post_revisions revision
+  WHERE revision.status = 'draft'
+)
+UPDATE content_post_revisions revision
+SET status = 'rejected',
+    revision_version = revision.revision_version + 1,
+    updated_at = NOW()
+WHERE revision.id IN (
+  SELECT id FROM ranked_post_drafts WHERE position > 1
+);
+
+UPDATE content_post_audits audit
+SET status = CASE
+  WHEN EXISTS (
+    SELECT 1 FROM content_post_revisions revision
+    WHERE revision.audit_id = audit.id AND revision.status = 'draft'
+  ) THEN 'revision_created'
+  WHEN EXISTS (
+    SELECT 1 FROM content_post_revisions revision
+    WHERE revision.audit_id = audit.id AND revision.status = 'approved'
+  ) THEN 'resolved'
+  ELSE 'open'
+END
+WHERE EXISTS (
+  SELECT 1 FROM content_post_revisions revision
+  WHERE revision.audit_id = audit.id
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_content_post_revisions_draft_post
+  ON content_post_revisions (post_id) WHERE status = 'draft';
+
 CREATE UNIQUE INDEX IF NOT EXISTS ux_content_jobs_active_existing_optimization
   ON content_jobs ((payload_json ->> 'post_id'))
   WHERE job_type = 'optimize_existing_post'
