@@ -182,14 +182,16 @@ test('Erstrollout startet App und Worker erst nach Build, Testmigration, Backup 
   );
 });
 
-test('Rollout dokumentiert Migration 004 bis 009, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
-  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005[^\n]*006[^\n]*007[^\n]*008[^\n]*009/i);
+test('Rollout dokumentiert Migration 004 bis 010, den terminierten Reviewfluss und exakte Prüfpunkte', () => {
+  assert.match(guide, /002[^\n]*003[^\n]*004[^\n]*005[^\n]*006[^\n]*007[^\n]*008[^\n]*009[^\n]*010/i);
   assert.match(guide, /004_create_scheduled_content_review\.sql/);
   assert.match(guide, /005_upgrade_admin_notification_retry_index\.sql/);
   assert.match(guide, /006_add_schedule_revisions_and_admin_review_lookup\.sql/);
   assert.match(guide, /007_create_content_search_metrics\.sql/);
   assert.match(guide, /008_expand_generated_content_metadata\.sql/);
   assert.match(guide, /009_create_content_learning_rules\.sql/);
+  assert.match(guide, /010_create_weekly_topic_pools\.sql/);
+  assert.match(guide, /Wochenpool[\s\S]*keine neue `\.env`-Variable[\s\S]*keine Änderung an `docker-compose\.yml`/i);
   assert.match(guide, /Lernregel-Update[^\n]*keine neue `\.env`-Variable[^\n]*keine Änderung an `docker-compose\.yml`/i);
   assert.match(guide, /idx_content_notification_deliveries_post_type_latest/);
   assert.equal((guide.match(/schedule_revision = settings\.schedule_revision \+ CASE WHEN current_settings\.agent_enabled THEN 1 ELSE 0 END/g) || []).length, 2);

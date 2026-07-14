@@ -1423,6 +1423,609 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.deepEqual(inventoryStage.stageResult.inventory.approvedLinks, [{ url: '/kontakt' }]);
 });
 
+test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf nutzt ihn ohne weitere Poolkosten erneut', async () => {
+  const weeklySources = [
+    { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
+    { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
+  ];
+  const weeklyTopics = [
+    { ...schemaTopic, slug: 'aktuelles-webdesign-thema', source: 'openai_weekly_web_research', requiresCurrentSources: true, isTesterTopic: false },
+    { ...schemaTopic, slug: 'lokale-seo-entwicklung', topic: 'Lokale SEO-Entwicklung', source: 'openai_weekly_web_research', requiresCurrentSources: true, isTesterTopic: false }
+  ];
+  let pool = null;
+  let weeklyResearchCalls = 0;
+  let concreteSourceCalls = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return pool ? structuredClone(pool) : null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async markResearchAttempt() {
+      return { acquired: false, status: 'completed' };
+    },
+    async releaseResearchAttempt() { return true; },
+    async createPool(input) {
+      pool = {
+        id: 77,
+        ...input,
+        selections: []
+      };
+      return structuredClone(pool);
+    },
+    async claimCandidate({ candidateSlug, generationRunId }) {
+      if (pool.selections.some((selection) => selection.candidateSlug === candidateSlug)) return false;
+      pool.selections.push({ candidateSlug, generationRunId });
+      return true;
+    }
+  };
+
+  function weeklyDependencies() {
+    const base = createDependencies();
+    return createDependencies({
+      config: {
+        ...base.dependencies.config,
+        timezone: 'Europe/Berlin',
+        maxTopicCandidates: 9
+      },
+      weeklyTopicPoolRepository,
+      openaiService: {
+        ...base.dependencies.openaiService,
+        async createWeeklyTopicPool() {
+          weeklyResearchCalls += 1;
+          return operation({ candidates: weeklyTopics, sourceReferences: weeklySources }, 'resp-weekly-pool')();
+        },
+        async createTopicCandidates() {
+          assert.fail('Die alte Themenrecherche darf bei einem regulären Wochenlauf nicht starten.');
+        },
+        async researchCurrentSources() {
+          concreteSourceCalls += 1;
+          return operation(weeklySources, `resp-concrete-${concreteSourceCalls}`)();
+        }
+      }
+    });
+  }
+
+  const monday = weeklyDependencies();
+  const firstResult = await runDraftPipeline(
+    { runId: 901, currentDate: '2026-07-13', regionFocus: 'Berlin und Brandenburg' },
+    monday.dependencies
+  );
+  const thursday = weeklyDependencies();
+  const secondResult = await runDraftPipeline(
+    { runId: 902, currentDate: '2026-07-16', regionFocus: 'Berlin und Brandenburg' },
+    thursday.dependencies
+  );
+
+  assert.equal(firstResult.status, 'completed');
+  assert.equal(secondResult.status, 'completed');
+  assert.equal(weeklyResearchCalls, 1);
+  assert.equal(concreteSourceCalls, 2, 'Jeder Artikel benötigt weiterhin seine eigene Quellenprüfung.');
+  assert.deepEqual(pool.selections, [
+    { candidateSlug: 'aktuelles-webdesign-thema', generationRunId: 901 },
+    { candidateSlug: 'lokale-seo-entwicklung', generationRunId: 902 }
+  ]);
+  assert.deepEqual(
+    monday.budgetReservations.map(({ stageId }) => stageId).slice(0, 2),
+    ['weekly_topic_research', 'source_research']
+  );
+  assert.equal(
+    thursday.budgetReservations.some(({ stageId }) => stageId === 'weekly_topic_research'),
+    false
+  );
+  assert.equal(
+    thursday.stageUpdates.some(({ stageId }) => stageId === 'weekly_topic_pool_cache:2026-07-13'),
+    true
+  );
+});
+
+test('Wochenrecherche prüft den Pool nach dem Datenbanklock erneut und vermeidet doppelte Providerkosten', async () => {
+  const weeklySources = [
+    { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
+    { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
+  ];
+  const storedPool = {
+    id: 79,
+    weekStart: '2026-07-13',
+    timezone: 'Europe/Berlin',
+    candidates: [{
+      ...schemaTopic,
+      slug: 'parallel-angelegtes-thema',
+      source: 'openai_weekly_web_research',
+      requiresCurrentSources: true,
+      isTesterTopic: false
+    }],
+    sourceReferences: weeklySources,
+    selections: []
+  };
+  let initialRead = true;
+  let weeklyResearchCalls = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() {
+      if (initialRead) {
+        initialRead = false;
+        return null;
+      }
+      return structuredClone(storedPool);
+    },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async createPool() {
+      assert.fail('Der bereits parallel angelegte Wochenpool muss wiederverwendet werden.');
+    },
+    async claimCandidate({ candidateSlug, generationRunId }) {
+      storedPool.selections.push({ candidateSlug, generationRunId });
+      return true;
+    }
+  };
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() {
+        weeklyResearchCalls += 1;
+        assert.fail('Keine zweite kostenpflichtige Wochenrecherche erwartet.');
+      },
+      async researchCurrentSources() {
+        return operation(weeklySources, 'resp-concrete-parallel')();
+      }
+    }
+  });
+
+  const result = await runDraftPipeline(
+    { runId: 905, currentDate: '2026-07-14', regionFocus: 'Berlin und Brandenburg' },
+    harness.dependencies
+  );
+
+  assert.equal(result.status, 'completed');
+  assert.equal(weeklyResearchCalls, 0);
+  assert.equal(
+    harness.budgetReservations.some(({ stageId }) => stageId === 'weekly_topic_research'),
+    false
+  );
+  assert.deepEqual(storedPool.selections, [{
+    candidateSlug: 'parallel-angelegtes-thema',
+    generationRunId: 905
+  }]);
+});
+
+test('ein dauerhafter Wochenrechercheversuch eines anderen Laufs blockiert weitere Providerkosten', async () => {
+  let weeklyResearchCalls = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt() {
+      return {
+        acquired: false,
+        ownerGenerationRunId: 900,
+        status: 'needs_manual_attention',
+        responseId: 'response-unklar',
+        errorCode: 'provider_execution_uncertain'
+      };
+    }
+  };
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() {
+        weeklyResearchCalls += 1;
+        assert.fail('Der zweite Wochenlauf darf OpenAI nicht erneut aufrufen.');
+      }
+    }
+  });
+
+  const result = await runDraftPipeline(
+    { runId: 907, currentDate: '2026-07-14' },
+    harness.dependencies
+  );
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'weekly_topic_research_already_attempted');
+  assert.equal(weeklyResearchCalls, 0);
+  assert.equal(
+    harness.budgetReservations.some(({ stageId }) => stageId === 'weekly_topic_research'),
+    false
+  );
+});
+
+test('explizit vor Ausführung abgelehnte Wochenrecherche gibt den dauerhaften Versuch für Retry frei', async () => {
+  let released = 0;
+  let marked = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async releaseResearchAttempt() { released += 1; return true; },
+    async markResearchAttempt() { marked += 1; }
+  };
+  const providerError = Object.assign(new Error('Ungültiges Schema vor Provider-Ausführung'), {
+    code: 'invalid_json_schema',
+    status: 400,
+    providerRequestStarted: false
+  });
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation(input) {
+        return { ...input, status: 'released' };
+      }
+    },
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() { throw providerError; }
+    }
+  });
+
+  const result = await runDraftPipeline(
+    { runId: 908, currentDate: '2026-07-14' },
+    harness.dependencies
+  );
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_request_rejected');
+  assert.equal(released, 1);
+  assert.equal(marked, 0);
+});
+
+test('sicher abgelehnter 429-Wochenrechercheaufruf gibt den dauerhaften Versuch für Retry frei', async () => {
+  let released = 0;
+  let marked = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async releaseResearchAttempt() { released += 1; return true; },
+    async markResearchAttempt() { marked += 1; }
+  };
+  const providerError = Object.assign(new Error('Rate Limit vor Ausführung'), { status: 429 });
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    costService: {
+      ...base.dependencies.costService,
+      async releaseMonthlyBudgetReservation(input) {
+        return { ...input, status: 'released' };
+      }
+    },
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() { throw providerError; }
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 912, currentDate: '2026-07-14' }, harness.dependencies),
+    (error) => error === providerError && error.retryable === true
+  );
+
+  assert.equal(released, 1);
+  assert.equal(marked, 0);
+});
+
+test('unklar ausgeführte Wochenrecherche bleibt dauerhaft für weitere Läufe gesperrt', async () => {
+  const markedAttempts = [];
+  let released = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async releaseResearchAttempt() { released += 1; return true; },
+    async markResearchAttempt(input) {
+      markedAttempts.push(input);
+      return { acquired: false, status: input.status };
+    }
+  };
+  const providerError = Object.assign(new Error('Timeout nach möglicher Ausführung'), {
+    code: 'ETIMEDOUT'
+  });
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() { throw providerError; }
+    }
+  });
+
+  const result = await runDraftPipeline(
+    { runId: 909, currentDate: '2026-07-14' },
+    harness.dependencies
+  );
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_execution_uncertain');
+  assert.equal(released, 0);
+  assert.equal(markedAttempts.length, 1);
+  assert.equal(markedAttempts[0].status, 'needs_manual_attention');
+  assert.equal(markedAttempts[0].errorCode, 'provider_execution_uncertain');
+});
+
+test('Leaseverlust nach erfolgreicher Wochenrecherche gibt den dauerhaften Versuch nicht frei', async () => {
+  const markedAttempts = [];
+  let released = 0;
+  let providerResolved = false;
+  const leaseError = Object.assign(new Error('Lease nach Providerantwort verloren'), {
+    code: 'CONTENT_JOB_LEASE_LOST',
+    retryable: true
+  });
+  const weeklySources = [
+    { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
+    { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
+  ];
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async releaseResearchAttempt() { released += 1; return true; },
+    async markResearchAttempt(input) {
+      markedAttempts.push(input);
+      return { acquired: false, status: input.status };
+    }
+  };
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() {
+        providerResolved = true;
+        return operation({
+          candidates: [{
+            ...schemaTopic,
+            slug: 'leaseverlust-nach-wochenrecherche',
+            source: 'openai_weekly_web_research',
+            requiresCurrentSources: true,
+            isTesterTopic: false
+          }],
+          sourceReferences: weeklySources
+        }, 'resp-weekly-lease')();
+      }
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({
+      runId: 910,
+      currentDate: '2026-07-14',
+      leaseGuard: async () => {
+        if (providerResolved) throw leaseError;
+        return true;
+      }
+    }, harness.dependencies),
+    leaseError
+  );
+
+  assert.equal(released, 0);
+  assert.equal(markedAttempts.length, 1);
+  assert.equal(markedAttempts[0].status, 'needs_manual_attention');
+  assert.equal(markedAttempts[0].errorCode, 'CONTENT_JOB_LEASE_LOST');
+});
+
+test('Persistenzfehler nach erfolgreicher Wochenrecherche gibt den dauerhaften Versuch nicht frei', async () => {
+  const markedAttempts = [];
+  let released = 0;
+  const weeklySources = [
+    { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
+    { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
+  ];
+  const weeklyTopicPoolRepository = {
+    async findPool() { return null; },
+    async withPoolCreationLock(identity, callback) {
+      return callback(weeklyTopicPoolRepository);
+    },
+    async claimResearchAttempt({ generationRunId }) {
+      return { acquired: true, ownerGenerationRunId: generationRunId, status: 'reserved' };
+    },
+    async releaseResearchAttempt() { released += 1; return true; },
+    async markResearchAttempt(input) {
+      markedAttempts.push(input);
+      return { acquired: false, status: input.status };
+    }
+  };
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    runRepository: {
+      ...base.dependencies.runRepository,
+      async updateRunStage(runId, update) {
+        if (update.stageId === 'weekly_topic_research') return null;
+        return base.dependencies.runRepository.updateRunStage(runId, update);
+      }
+    },
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() {
+        return operation({
+          candidates: [{
+            ...schemaTopic,
+            slug: 'persistenzfehler-nach-wochenrecherche',
+            source: 'openai_weekly_web_research',
+            requiresCurrentSources: true,
+            isTesterTopic: false
+          }],
+          sourceReferences: weeklySources
+        }, 'resp-weekly-persistenz')();
+      }
+    }
+  });
+
+  await assert.rejects(
+    runDraftPipeline({ runId: 911, currentDate: '2026-07-14' }, harness.dependencies),
+    (error) => error?.code === 'CONTENT_STAGE_PERSISTENCE_FAILED'
+  );
+
+  assert.equal(released, 0);
+  assert.equal(markedAttempts.length, 1);
+  assert.equal(markedAttempts[0].status, 'needs_manual_attention');
+  assert.equal(markedAttempts[0].errorCode, 'CONTENT_STAGE_PERSISTENCE_FAILED');
+});
+
+test('Retry nach Wochenpool-Claim behält für denselben Lauf exakt denselben Kandidaten', async () => {
+  const weeklySources = [
+    { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
+    { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
+  ];
+  const selectedCandidate = {
+    ...schemaTopic,
+    slug: 'retry-thema-aus-wochenpool',
+    source: 'openai_weekly_web_research',
+    requiresCurrentSources: true,
+    isTesterTopic: false
+  };
+  const pool = {
+    id: 80,
+    weekStart: '2026-07-13',
+    timezone: 'Europe/Berlin',
+    candidates: [selectedCandidate],
+    sourceReferences: weeklySources,
+    selections: []
+  };
+  let claimCalls = 0;
+  let createTopicCalls = 0;
+  const weeklyTopicPoolRepository = {
+    async findPool() { return structuredClone(pool); },
+    async claimCandidate({ candidateSlug, generationRunId }) {
+      claimCalls += 1;
+      pool.selections.push({ candidateSlug, generationRunId });
+      return true;
+    }
+  };
+  const base = createDependencies();
+  const sharedOverrides = {
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository,
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() { assert.fail('Der vorhandene Wochenpool muss verwendet werden.'); },
+      async researchCurrentSources() { return operation(weeklySources, 'resp-retry-sources')(); }
+    },
+    topicRepository: {
+      async createTopic(value) {
+        createTopicCalls += 1;
+        if (createTopicCalls === 1) throw new Error('Crash vor topic_persistence');
+        return { ...value, id: 17 };
+      },
+      async markTopicUsed() {}
+    }
+  };
+
+  const first = createDependencies(sharedOverrides);
+  await assert.rejects(
+    runDraftPipeline({ runId: 906, currentDate: '2026-07-14' }, first.dependencies),
+    /Crash vor topic_persistence/
+  );
+  const second = createDependencies(sharedOverrides);
+  const result = await runDraftPipeline(
+    { runId: 906, currentDate: '2026-07-14' },
+    second.dependencies
+  );
+
+  assert.equal(result.status, 'completed');
+  assert.equal(claimCalls, 1);
+  assert.deepEqual(pool.selections, [{
+    candidateSlug: 'retry-thema-aus-wochenpool',
+    generationRunId: 906
+  }]);
+});
+
+test('ein beschädigter persistierter Wochenpool stoppt kontrolliert vor Themenanlage und Provideraufruf', async () => {
+  const base = createDependencies();
+  let providerCalls = 0;
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository: {
+      async findPool() {
+        return {
+          id: 78,
+          weekStart: '2026-07-13',
+          candidates: [{ topic: 'Unvollständig', slug: 'unvollstaendig' }],
+          sourceReferences: [
+            { title: 'Quelle A', url: 'https://example.test/a' },
+            { title: 'Quelle B', url: 'https://example.test/b' }
+          ],
+          selections: []
+        };
+      }
+    },
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() { providerCalls += 1; assert.fail('nicht erwartet'); }
+    }
+  });
+
+  const result = await runDraftPipeline({ runId: 904, currentDate: '2026-07-14' }, harness.dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'weekly_topic_pool_invalid');
+  assert.equal(providerCalls, 0);
+  assert.equal(harness.createdDrafts.length, 0);
+});
+
+test('eine explizite manuelle Seed-Vorgabe behält die bisherige Themenrecherche bei', async () => {
+  let legacyCalls = 0;
+  const base = createDependencies();
+  const harness = createDependencies({
+    config: { ...base.dependencies.config, timezone: 'Europe/Berlin' },
+    weeklyTopicPoolRepository: {
+      async findPool() { assert.fail('Der Wochenpool darf bei manuellen Seed-Themen nicht gelesen werden.'); }
+    },
+    openaiService: {
+      ...base.dependencies.openaiService,
+      async createWeeklyTopicPool() {
+        assert.fail('Die Web-Wochenrecherche darf bei manuellen Seed-Themen nicht starten.');
+      },
+      async createTopicCandidates(input) {
+        legacyCalls += 1;
+        assert.deepEqual(input.seedTopics, ['Website-Relaunch Berlin']);
+        return operation({ candidates: [topic] }, 'resp-seed-topic')();
+      }
+    }
+  });
+
+  const result = await runDraftPipeline({
+    runId: 903,
+    currentDate: '2026-07-14',
+    seedTopics: ['Website-Relaunch Berlin']
+  }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(legacyCalls, 1);
+  assert.equal(harness.budgetReservations[0].stageId, 'topic_research');
+});
+
 test('runDraftPipeline reiht die Lernbeobachtung nach der Entwurfserstellung nicht blockierend ein', async () => {
   const learningJobs = [];
   const harness = createDependencies({

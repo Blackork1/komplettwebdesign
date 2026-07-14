@@ -1929,6 +1929,7 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.createSearchConsoleSyncService, 'function');
   assert.equal(typeof modules.createContentSearchMetricsRepository, 'function');
   assert.equal(typeof modules.createContentSearchOpportunityRepository, 'function');
+  assert.equal(typeof modules.createContentWeeklyTopicPoolRepository, 'function');
   assert.equal(typeof modules.buildContentOpportunities, 'function');
   assert.equal(typeof modules.searchConsoleSchedulerService?.createSearchConsoleScheduler, 'function');
 });

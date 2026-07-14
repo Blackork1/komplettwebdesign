@@ -12,7 +12,8 @@ import {
   RiskSchema,
   SeoBriefSchema,
   SourceReferenceSchema,
-  TopicCandidatesSchema
+  TopicCandidatesSchema,
+  WeeklyTopicPoolResultSchema
 } from '../services/contentAgent/articleSchemas.js';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import { CONTENT_AGENT_PROFILE } from '../data/contentAgentProfile.js';
@@ -252,6 +253,47 @@ test('topic candidates require strict candidate objects and ASCII slugs', () => 
   assert.equal(TopicCandidatesSchema.safeParse({ candidates: [{ ...validTopicCandidate, slug: 'für-berlin' }] }).success, false);
   assert.equal(TopicCandidatesSchema.safeParse({ candidates: [{ ...validTopicCandidate, extra: true }] }).success, false);
   assert.equal(TopicCandidatesSchema.safeParse({ candidates: [validTopicCandidate], extra: true }).success, false);
+});
+
+test('Wochenpool verlangt eindeutige Slugs, zwei Quellen und höchstens ein Drittel Tester-Themen', () => {
+  const regular = {
+    ...validTopicCandidate,
+    source: 'openai_weekly_web_research',
+    requiresCurrentSources: true,
+    isTesterTopic: false
+  };
+  const tester = {
+    ...regular,
+    topic: 'SEO-Tester richtig auswerten',
+    slug: 'seo-tester-richtig-auswerten',
+    isTesterTopic: true
+  };
+  const secondRegular = {
+    ...regular,
+    topic: 'Website-Relaunch vorbereiten',
+    slug: 'website-relaunch-vorbereiten'
+  };
+  const sources = [
+    { title: 'Quelle A', url: 'https://example.com/a' },
+    { title: 'Quelle B', url: 'https://example.org/b' }
+  ];
+
+  assert.equal(WeeklyTopicPoolResultSchema.safeParse({
+    candidates: [regular, secondRegular, tester],
+    sourceReferences: sources
+  }).success, true);
+  assert.equal(WeeklyTopicPoolResultSchema.safeParse({
+    candidates: [regular, { ...regular }],
+    sourceReferences: sources
+  }).success, false, 'Slugs müssen im Pool eindeutig sein.');
+  assert.equal(WeeklyTopicPoolResultSchema.safeParse({
+    candidates: [regular, tester],
+    sourceReferences: sources
+  }).success, false, 'Tester-Themen dürfen höchstens ein Drittel ausmachen.');
+  assert.equal(WeeklyTopicPoolResultSchema.safeParse({
+    candidates: [regular],
+    sourceReferences: sources.slice(0, 1)
+  }).success, false, 'Gespeicherte Wochenpools benötigen mindestens zwei Quellen.');
 });
 
 test('freie KI-Metadaten erlauben bestehende ausführliche Werte, begrenzen aber ausufernde Antworten', () => {

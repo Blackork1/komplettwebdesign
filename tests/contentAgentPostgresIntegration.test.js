@@ -37,6 +37,7 @@ import { createContentAgentAdminRepository } from '../repositories/contentAgentA
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
 import { createContentReviewIssueOptimizationRepository } from '../repositories/contentReviewIssueOptimizationRepository.js';
 import { createContentLearningRepository } from '../repositories/contentLearningRepository.js';
+import { createContentWeeklyTopicPoolRepository } from '../repositories/contentWeeklyTopicPoolRepository.js';
 import {
   createContentAgentPgTestSchemaName,
   evaluateContentAgentPgResetGuard
@@ -56,6 +57,124 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
+});
+
+test('echtes PostgreSQL: parallele Erstläufe erzeugen nur eine Wochenrecherche', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000,
+      max: 4
+    });
+    await pool.query(`
+      CREATE TABLE content_runs (id BIGINT PRIMARY KEY);
+      INSERT INTO content_runs (id) VALUES (1), (2), (3), (4);
+    `);
+    const migration010 = await readFile(
+      new URL('../scripts/migrations/010_create_weekly_topic_pools.sql', import.meta.url),
+      'utf8'
+    );
+    await pool.query(migration010);
+
+    const repository = createContentWeeklyTopicPoolRepository(pool);
+    const identity = { weekStart: '2026-07-13', timezone: 'Europe/Berlin' };
+    const candidates = [{ topic: 'Aktuelles Webdesign', slug: 'aktuelles-webdesign' }];
+    const sourceReferences = [
+      { title: 'Quelle A', url: 'https://example.com/a' },
+      { title: 'Quelle B', url: 'https://example.org/b' }
+    ];
+    let initialReads = 0;
+    let releaseInitialReads;
+    const bothInitiallyRead = new Promise((resolve) => { releaseInitialReads = resolve; });
+    let researchCalls = 0;
+
+    async function createOrReusePool(generationRunId) {
+      const existing = await repository.findPool(identity);
+      initialReads += 1;
+      if (initialReads === 2) releaseInitialReads();
+      await bothInitiallyRead;
+      if (existing) return existing;
+
+      return repository.withPoolCreationLock(identity, async (lockedRepository) => {
+        const concurrentPool = await lockedRepository.findPool(identity);
+        if (concurrentPool) return concurrentPool;
+        const attempt = await lockedRepository.claimResearchAttempt({
+          ...identity,
+          generationRunId
+        });
+        if (!attempt.acquired) return null;
+        researchCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const createdPool = await lockedRepository.createPool({
+          ...identity,
+          candidates,
+          sourceReferences,
+          responseId: 'response-parallel',
+          promptVersion: '2026-07-14.1'
+        });
+        await lockedRepository.markResearchAttempt({
+          ...identity,
+          generationRunId,
+          status: 'completed',
+          responseId: 'response-parallel'
+        });
+        return createdPool;
+      });
+    }
+
+    const [first, second] = await Promise.all([createOrReusePool(1), createOrReusePool(2)]);
+
+    assert.equal(researchCalls, 1);
+    assert.equal(first.id, second.id);
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM content_weekly_topic_pools')).rows[0].count, 1);
+    const completedAttempt = await pool.query(`
+      SELECT owner_generation_run_id, status
+      FROM content_weekly_topic_research_attempts
+      WHERE week_start = '2026-07-13'
+        AND timezone = 'Europe/Berlin'
+    `);
+    assert.equal(['1', '2'].includes(completedAttempt.rows[0].owner_generation_run_id), true);
+    assert.equal(completedAttempt.rows[0].status, 'completed');
+
+    const blockedIdentity = { weekStart: '2026-07-20', timezone: 'Europe/Berlin' };
+    await repository.withPoolCreationLock(blockedIdentity, async (lockedRepository) => {
+      const attempt = await lockedRepository.claimResearchAttempt({
+        ...blockedIdentity,
+        generationRunId: 3
+      });
+      assert.equal(attempt.acquired, true);
+      await lockedRepository.markResearchAttempt({
+        ...blockedIdentity,
+        generationRunId: 3,
+        status: 'needs_manual_attention',
+        errorCode: 'provider_execution_uncertain'
+      });
+    });
+    const blockedAttempt = await repository.withPoolCreationLock(
+      blockedIdentity,
+      async (lockedRepository) => lockedRepository.claimResearchAttempt({
+        ...blockedIdentity,
+        generationRunId: 4
+      })
+    );
+    assert.equal(blockedAttempt.acquired, false);
+    assert.equal(blockedAttempt.ownerGenerationRunId, 3);
+    assert.equal(blockedAttempt.status, 'needs_manual_attention');
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
 });
 
 test('echtes PostgreSQL: Migration 006 rekonstruiert bestehende Zeitplanänderungen ohne Doppelseed', {
@@ -1094,7 +1213,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–009 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–010 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -1143,6 +1262,14 @@ test('echtes PostgreSQL: Migrationen 002–009 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+
+    const weeklyPoolTables = await pool.query(`
+      SELECT
+        to_regclass('content_weekly_topic_pools')::text AS pools,
+        to_regclass('content_weekly_topic_pool_selections')::text AS selections
+    `);
+    assert.equal(weeklyPoolTables.rows[0].pools, 'content_weekly_topic_pools');
+    assert.equal(weeklyPoolTables.rows[0].selections, 'content_weekly_topic_pool_selections');
 
     const learningPosts = await pool.query(`
       INSERT INTO posts (

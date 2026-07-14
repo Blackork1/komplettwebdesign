@@ -112,6 +112,45 @@ export const SourceReferenceSchema = z.object({
   retrievedAt: z.string().regex(ISO_DATE, 'Das Abrufdatum muss YYYY-MM-DD verwenden.').nullish()
 }).strict();
 
+export const WeeklyTopicResearchCandidateSchema = TopicCandidateSchema.extend({
+  isTesterTopic: z.boolean()
+});
+
+export const WeeklyTopicResearchSchema = z.object({
+  candidates: z.array(WeeklyTopicResearchCandidateSchema).min(1).max(20)
+}).strict();
+
+export const WeeklyTopicCandidateSchema = WeeklyTopicResearchCandidateSchema.extend({
+  source: z.literal('openai_weekly_web_research'),
+  requiresCurrentSources: z.literal(true)
+});
+
+export const WeeklyTopicPoolResultSchema = z.object({
+  candidates: z.array(WeeklyTopicCandidateSchema).min(1).max(20),
+  sourceReferences: z.array(SourceReferenceSchema).min(2).max(6)
+}).strict().superRefine((pool, context) => {
+  const slugs = new Set();
+  for (const [index, candidate] of pool.candidates.entries()) {
+    if (slugs.has(candidate.slug)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['candidates', index, 'slug'],
+        message: 'Kandidatenslugs müssen innerhalb eines Wochenpools eindeutig sein.'
+      });
+    }
+    slugs.add(candidate.slug);
+  }
+
+  const testerCount = pool.candidates.filter(({ isTesterTopic }) => isTesterTopic).length;
+  if (testerCount > Math.floor(pool.candidates.length / 3)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['candidates'],
+      message: 'Tester-Themen dürfen höchstens ein Drittel des Wochenpools ausmachen.'
+    });
+  }
+});
+
 export const SeoBriefSchema = z.object({
   topic: NonEmptyString,
   workingTitle: NonEmptyString,

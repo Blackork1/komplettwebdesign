@@ -4,7 +4,8 @@ import {
   ReviewOutputSchema,
   SeoBriefSchema,
   TopicCandidateSchema,
-  TopicCandidatesSchema
+  TopicCandidatesSchema,
+  WeeklyTopicPoolResultSchema
 } from './articleSchemas.js';
 import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
@@ -16,6 +17,11 @@ import {
   QUALITY_GATE_RECOVERY_AUDIT_KEY
 } from './contentJobRetryPolicy.js';
 import { learningRulesForStage } from './contentLearningSnapshotService.js';
+import {
+  findWeeklyCandidateForRun,
+  getWeeklyTopicPoolIdentity,
+  listAvailableWeeklyCandidates
+} from './weeklyTopicPoolService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -180,6 +186,7 @@ function parseProviderEnvelope(value, stage) {
   const payload = value.value;
   let parsed;
   if (stage === 'topic_research') parsed = TopicCandidatesSchema.safeParse(payload);
+  else if (stage === 'weekly_topic_research') parsed = WeeklyTopicPoolResultSchema.safeParse(payload);
   else if (stage === 'seo_brief') parsed = SeoBriefSchema.safeParse(payload);
   else if (stage === 'article_generation' || stage === 'repair') parsed = ArticleOutputSchema.safeParse(payload);
   else if (stage === 'review') parsed = ReviewOutputSchema.safeParse(payload);
@@ -223,6 +230,37 @@ function isPersistedInventoryResult(value) {
     && Number(counts.servicePages) === inventory.servicePages.length
     && Number(counts.industries) === inventory.industries.length
     && Number(counts.packages) === inventory.packages.length;
+}
+
+function normalizeWeeklyTopicPool(value) {
+  const parsed = WeeklyTopicPoolResultSchema.safeParse({
+    candidates: value?.candidates,
+    sourceReferences: value?.sourceReferences
+  });
+  const selections = value?.selections;
+  if (!parsed.success
+      || !Number.isSafeInteger(Number(value?.id))
+      || Number(value.id) <= 0
+      || typeof value?.weekStart !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}$/.test(value.weekStart)
+      || !Array.isArray(selections)
+      || selections.some((selection) => (
+        typeof selection?.candidateSlug !== 'string'
+        || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(selection.candidateSlug)
+        || !Number.isSafeInteger(Number(selection.generationRunId))
+        || Number(selection.generationRunId) <= 0
+      ))) return null;
+
+  return {
+    ...value,
+    id: Number(value.id),
+    candidates: parsed.data.candidates,
+    sourceReferences: parsed.data.sourceReferences,
+    selections: selections.map((selection) => ({
+      ...selection,
+      generationRunId: Number(selection.generationRunId)
+    }))
+  };
 }
 
 function internalLinksWithinSnapshot(links, allowedInternalLinks) {
@@ -323,6 +361,13 @@ function markSafeProviderRetry(error) {
   if (!error || typeof error !== 'object') return error;
   error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
   error.retryable = true;
+  return error;
+}
+
+function markProviderExecutionPhase(error, phase, responseId = null) {
+  if (!error || typeof error !== 'object') return error;
+  error.providerExecutionPhase = phase;
+  if (responseId && !error.responseId) error.responseId = responseId;
   return error;
 }
 
@@ -543,7 +588,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     throw new ManualAttentionStop(result);
   }
 
-  async function recoverProviderStage(stageId, stage, reservation) {
+  async function recoverProviderStage(stageId, stage, reservation, returnEnvelope = false) {
     if (reservation.status === 'reserved') {
       return stopForRecovery(
         'provider_recovery_reserved',
@@ -567,29 +612,77 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
     modelResults.push(persisted);
-    return persisted.value;
+    return returnEnvelope ? persisted : persisted.value;
   }
 
-  async function paidTextOperation({ stage, stageId = stage, operation, input: operationInput }) {
-    const reservation = await reserve(stageId, stage);
-    if (reservation.created !== true) {
-      return recoverProviderStage(stageId, stage, reservation);
-    }
-    await assertLease();
-    let result;
+  async function paidTextOperation({
+    stage,
+    stageId = stage,
+    operation,
+    input: operationInput,
+    returnEnvelope = false
+  }) {
+    let providerExecutionPhase = 'not_started';
+    let providerResponseId = null;
+
     try {
-      result = await operation(operationInput);
-    } catch (error) {
-      if (error?.code === 'dry_run_external_call') throw error;
+      const reservation = await reserve(stageId, stage);
+      if (reservation.created !== true) {
+        providerExecutionPhase = 'prior_attempt_present';
+        return await recoverProviderStage(stageId, stage, reservation, returnEnvelope);
+      }
       await assertLease();
-      if (providerRequestWasRejectedBeforeExecution(error)) {
-        if (error?.providerRequestStarted !== false) {
-          await recordProviderOutcome('openai', false, error.code, error);
+      providerExecutionPhase = 'request_started';
+      let result;
+      try {
+        result = await operation(operationInput);
+      } catch (error) {
+        if (error?.code === 'dry_run_external_call') throw error;
+        await assertLease();
+        if (providerRequestWasRejectedBeforeExecution(error)) {
+          providerExecutionPhase = 'not_executed';
+          if (error?.providerRequestStarted !== false) {
+            await recordProviderOutcome('openai', false, error.code, error);
+          }
+          if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
+            return await stopForRecovery(
+              'provider_retry_release_failed',
+              'Die vor Ausführung abgelehnte Provideranfrage konnte ihre Budgetreservierung nicht freigeben.'
+            );
+          }
+          try {
+            await costService.releaseMonthlyBudgetReservation({
+              runId,
+              stageId,
+              reservationMonth: reservation.reservationMonth
+            });
+          } catch {
+            return await stopForRecovery(
+              'provider_retry_release_failed',
+              'Die vor Ausführung abgelehnte Provideranfrage konnte ihre Budgetreservierung nicht atomar freigeben.'
+            );
+          }
+          return await stopForRecovery(
+            'provider_request_rejected',
+            error?.providerRequestStarted === false
+              ? 'Die Anfrage wurde vor dem OpenAI-Aufruf wegen eines inkompatiblen Ausgabeschemas gestoppt.'
+              : 'OpenAI hat die Anfrage vor der kostenpflichtigen Ausführung wegen eines ungültigen Ausgabeschemas abgelehnt.',
+            { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
+          );
         }
+        if (!providerFailureIsSafeToRetry(error)) {
+          return await stopForRecovery(
+            'provider_execution_uncertain',
+            'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.',
+            { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
+          );
+        }
+        providerExecutionPhase = 'not_executed';
+        await recordProviderOutcome('openai', false, error?.code || 'OPENAI_REQUEST_FAILED', error);
         if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
-          return stopForRecovery(
+          return await stopForRecovery(
             'provider_retry_release_failed',
-            'Die vor Ausführung abgelehnte Provideranfrage konnte ihre Budgetreservierung nicht freigeben.'
+            'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht freigeben.'
           );
         }
         try {
@@ -599,68 +692,39 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
             reservationMonth: reservation.reservationMonth
           });
         } catch {
-          return stopForRecovery(
+          return await stopForRecovery(
             'provider_retry_release_failed',
-            'Die vor Ausführung abgelehnte Provideranfrage konnte ihre Budgetreservierung nicht atomar freigeben.'
+            'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht atomar freigeben.'
           );
         }
-        return stopForRecovery(
-          'provider_request_rejected',
-          error?.providerRequestStarted === false
-            ? 'Die Anfrage wurde vor dem OpenAI-Aufruf wegen eines inkompatiblen Ausgabeschemas gestoppt.'
-            : 'OpenAI hat die Anfrage vor der kostenpflichtigen Ausführung wegen eines ungültigen Ausgabeschemas abgelehnt.',
-          { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
-        );
+        throw markSafeProviderRetry(error);
       }
-      if (!providerFailureIsSafeToRetry(error)) {
-        return stopForRecovery(
-          'provider_execution_uncertain',
-          'Der Providerfehler lässt nicht sicher erkennen, ob der kostenpflichtige Aufruf ausgeführt wurde.',
-          { providerDiagnostic: providerErrorDiagnostic(error, stageId) }
-        );
-      }
-      await recordProviderOutcome('openai', false, error?.code || 'OPENAI_REQUEST_FAILED', error);
-      if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
-        return stopForRecovery(
-          'provider_retry_release_failed',
-          'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht freigeben.'
-        );
-      }
-      try {
-        await costService.releaseMonthlyBudgetReservation({
-          runId,
-          stageId,
-          reservationMonth: reservation.reservationMonth
-        });
-      } catch {
-        return stopForRecovery(
-          'provider_retry_release_failed',
-          'Die sichere Providerwiederholung konnte ihre Budgetreservierung nicht atomar freigeben.'
-        );
-      }
-      throw markSafeProviderRetry(error);
+      providerExecutionPhase = 'response_received';
+      providerResponseId = result.responseId ?? null;
+      await recordProviderOutcome('openai', true, null);
+      await assertLease();
+      const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
+      await costService.settleMonthlyBudget({
+        runId,
+        stageId,
+        reservationMonth: reservation.reservationMonth,
+        actualCost
+      });
+      modelResults.push(result);
+      await updateStage(stage, {
+        value: result.value,
+        responseId: result.responseId ?? null,
+        usage: result.usage || {},
+        promptVersion: result.promptVersion
+      }, {
+        stageId,
+        tokenUsage: result.usage,
+        responseIds: result.responseId ? [result.responseId] : []
+      });
+      return returnEnvelope ? result : result.value;
+    } catch (error) {
+      throw markProviderExecutionPhase(error, providerExecutionPhase, providerResponseId);
     }
-    await recordProviderOutcome('openai', true, null);
-    await assertLease();
-    const actualCost = costService.estimateTextCost({ usage: result.usage, ...textRates(config, stage) });
-    await costService.settleMonthlyBudget({
-      runId,
-      stageId,
-      reservationMonth: reservation.reservationMonth,
-      actualCost
-    });
-    modelResults.push(result);
-    await updateStage(stage, {
-      value: result.value,
-      responseId: result.responseId ?? null,
-      usage: result.usage || {},
-      promptVersion: result.promptVersion
-    }, {
-      stageId,
-      tokenUsage: result.usage,
-      responseIds: result.responseId ? [result.responseId] : []
-    });
-    return result.value;
   }
 
   async function finishManual(code, message, details = {}) {
@@ -862,16 +926,217 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     const inventory = inventoryResult.inventory;
     const pricingContext = inventory.packages || [];
 
-    const topicCandidates = await paidTextOperation({
-      stage: 'topic_research',
-      operation: openaiService.createTopicCandidates,
-      input: {
-        inventory,
-        seedTopics: input.seedTopics || [],
-        maxCandidates: config.maxTopicCandidates
+    const seedTopics = Array.isArray(input.seedTopics)
+      ? input.seedTopics.filter((entry) => typeof entry === 'string' && entry.trim())
+      : [];
+    const useWeeklyTopicPool = seedTopics.length === 0
+      && typeof openaiService.createWeeklyTopicPool === 'function';
+    let selectedTopic = null;
+
+    if (useWeeklyTopicPool) {
+      const weeklyTopicPoolRepository = required(
+        dependencies.weeklyTopicPoolRepository,
+        'weeklyTopicPoolRepository'
+      );
+      const identity = getWeeklyTopicPoolIdentity({
+        currentDate: input.currentDate,
+        timezone: config.timezone
+      });
+      let weeklyPool = await weeklyTopicPoolRepository.findPool(identity);
+
+      if (!weeklyPool) {
+        required(
+          weeklyTopicPoolRepository.withPoolCreationLock,
+          'weeklyTopicPoolRepository.withPoolCreationLock'
+        );
+        const lockedResult = await weeklyTopicPoolRepository.withPoolCreationLock(
+          identity,
+          async (lockedRepository) => {
+            await assertLease();
+            const concurrentlyCreatedPool = await lockedRepository.findPool(identity);
+            if (concurrentlyCreatedPool) {
+              return { pool: concurrentlyCreatedPool, reused: true };
+            }
+
+            const researchAttempt = await lockedRepository.claimResearchAttempt({
+              ...identity,
+              generationRunId: runId
+            });
+            if (!researchAttempt?.acquired) {
+              return {
+                manualResult: await finishManual(
+                  'weekly_topic_research_already_attempted',
+                  'Für diese Kalenderwoche existiert bereits ein nicht sicher wiederholbarer Rechercheversuch.',
+                  {
+                    ownerGenerationRunId: researchAttempt?.ownerGenerationRunId ?? null,
+                    attemptStatus: researchAttempt?.status || 'unknown',
+                    attemptErrorCode: researchAttempt?.errorCode || null
+                  }
+                )
+              };
+            }
+
+            let weeklyResearch;
+            try {
+              weeklyResearch = await paidTextOperation({
+                stage: 'weekly_topic_research',
+                operation: openaiService.createWeeklyTopicPool,
+                input: {
+                  inventory,
+                  currentDate: input.currentDate,
+                  regionFocus: input.regionFocus,
+                  maxCandidates: config.maxTopicCandidates || 9
+                },
+                returnEnvelope: true
+              });
+            } catch (error) {
+              const safelyNotExecuted = error?.providerExecutionPhase === 'not_started'
+                || error?.providerExecutionPhase === 'not_executed';
+              try {
+                if (safelyNotExecuted) {
+                  await lockedRepository.releaseResearchAttempt({
+                    ...identity,
+                    generationRunId: runId
+                  });
+                } else {
+                  await lockedRepository.markResearchAttempt({
+                    ...identity,
+                    generationRunId: runId,
+                    status: 'needs_manual_attention',
+                    errorCode: error instanceof ManualAttentionStop
+                      ? error.result?.code || 'provider_execution_uncertain'
+                      : error?.code || 'weekly_topic_research_failed',
+                    responseId: error?.responseId || null
+                  });
+                }
+              } catch {
+                recordAuditWarning(error, 'WEEKLY_RESEARCH_ATTEMPT_UPDATE_FAILED');
+              }
+              throw error;
+            }
+            const parsedWeeklyResearch = WeeklyTopicPoolResultSchema.safeParse(weeklyResearch.value);
+            if (!parsedWeeklyResearch.success) {
+              await lockedRepository.markResearchAttempt({
+                ...identity,
+                generationRunId: runId,
+                status: 'needs_manual_attention',
+                errorCode: 'weekly_topic_pool_invalid',
+                responseId: weeklyResearch.responseId ?? null
+              });
+              return {
+                manualResult: await finishManual(
+                  'weekly_topic_pool_invalid',
+                  'Die wöchentliche Webrecherche lieferte keinen vertragsgültigen Themenpool.'
+                )
+              };
+            }
+            const sourceInspection = inspectSourceReferences(
+              parsedWeeklyResearch.data.sourceReferences,
+              { required: true }
+            );
+            if (!sourceInspection.valid) {
+              const errorCode = sourceInspection.code || 'weekly_topic_sources_insufficient';
+              await lockedRepository.markResearchAttempt({
+                ...identity,
+                generationRunId: runId,
+                status: 'needs_manual_attention',
+                errorCode,
+                responseId: weeklyResearch.responseId ?? null
+              });
+              return {
+                manualResult: await finishManual(
+                  errorCode,
+                  sourceInspection.code === 'too_many_sources'
+                    ? 'Die wöchentliche Themenrecherche darf höchstens sechs validierte Quellen verwenden.'
+                    : 'Die wöchentliche Themenrecherche benötigt zwei bis sechs eindeutige validierte HTTPS-Quellen.'
+                )
+              };
+            }
+            const pool = await lockedRepository.createPool({
+              ...identity,
+              candidates: parsedWeeklyResearch.data.candidates,
+              sourceReferences: sourceInspection.sources,
+              responseId: weeklyResearch.responseId ?? null,
+              promptVersion: weeklyResearch.promptVersion
+            });
+            await lockedRepository.markResearchAttempt({
+              ...identity,
+              generationRunId: runId,
+              status: 'completed',
+              responseId: weeklyResearch.responseId ?? null
+            });
+            return { pool, reused: false };
+          }
+        );
+        if (lockedResult.manualResult) return lockedResult.manualResult;
+        weeklyPool = lockedResult.pool;
+        if (lockedResult.reused) {
+          await updateStage('weekly_topic_pool_cache', {
+            poolId: weeklyPool.id,
+            weekStart: weeklyPool.weekStart,
+            candidateCount: weeklyPool.candidates?.length || 0,
+            sourceCount: weeklyPool.sourceReferences?.length || 0,
+            reused: true
+          }, {
+            stageId: `weekly_topic_pool_cache:${identity.weekStart}`
+          });
+        }
+      } else {
+        weeklyPool = normalizeWeeklyTopicPool(weeklyPool);
+        if (!weeklyPool) {
+          return finishManual(
+            'weekly_topic_pool_invalid',
+            'Der gespeicherte Wochenpool ist unvollständig oder widersprüchlich.'
+          );
+        }
+        await updateStage('weekly_topic_pool_cache', {
+          poolId: weeklyPool.id,
+          weekStart: weeklyPool.weekStart,
+          candidateCount: weeklyPool.candidates.length,
+          sourceCount: weeklyPool.sourceReferences.length,
+          reused: true
+        }, {
+          stageId: `weekly_topic_pool_cache:${identity.weekStart}`
+        });
       }
-    });
-    const selectedTopic = topicScoringService.selectBestTopic(topicCandidates.candidates, inventory);
+
+      weeklyPool = normalizeWeeklyTopicPool(weeklyPool);
+      if (!weeklyPool) {
+        return finishManual(
+          'weekly_topic_pool_invalid',
+          'Der gespeicherte Wochenpool ist unvollständig oder widersprüchlich.'
+        );
+      }
+
+      selectedTopic = findWeeklyCandidateForRun(weeklyPool, runId);
+      if (!selectedTopic) {
+        let availableCandidates = listAvailableWeeklyCandidates(weeklyPool);
+        while (availableCandidates.length > 0 && !selectedTopic) {
+          const candidate = topicScoringService.selectBestTopic(availableCandidates, inventory);
+          if (!candidate) break;
+          await assertLease();
+          const claimed = await weeklyTopicPoolRepository.claimCandidate({
+            poolId: weeklyPool.id,
+            candidateSlug: candidate.slug,
+            generationRunId: runId
+          });
+          if (claimed) selectedTopic = candidate;
+          else availableCandidates = availableCandidates.filter(({ slug }) => slug !== candidate.slug);
+        }
+      }
+    } else {
+      const topicCandidates = await paidTextOperation({
+        stage: 'topic_research',
+        operation: openaiService.createTopicCandidates,
+        input: {
+          inventory,
+          seedTopics,
+          maxCandidates: config.maxTopicCandidates
+        }
+      });
+      selectedTopic = topicScoringService.selectBestTopic(topicCandidates.candidates, inventory);
+    }
+
     if (!selectedTopic) {
       await updateStage('topic_scoring', { selectedTopic: null });
       return finishManual('no_eligible_topic', 'Kein geeigneter Themenkandidat verfügbar.');

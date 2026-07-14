@@ -691,6 +691,9 @@ export function createProductionRuntime({
   const contentLearningRepository = typeof modules.createContentLearningRepository === 'function'
     ? modules.createContentLearningRepository(database)
     : null;
+  const weeklyTopicPoolRepository = typeof modules.createContentWeeklyTopicPoolRepository === 'function'
+    ? modules.createContentWeeklyTopicPoolRepository(database)
+    : null;
   const pricingRepository = modules.createPricingRepository(database);
   const pricingService = modules.createPricingService(pricingRepository, { cache: false });
   modules.cloudinary.config({
@@ -768,6 +771,7 @@ export function createProductionRuntime({
       openaiService: modules.createOpenAIContentService({ apiKey: env.OPENAI_API_KEY, config: jobConfig }),
       topicScoringService: { selectBestTopic: modules.selectBestTopic },
       topicRepository: repositories.topicRepository,
+      ...(weeklyTopicPoolRepository ? { weeklyTopicPoolRepository } : {}),
       runRepository: repositories.runRepository,
       costService: jobCostService,
       validateArticle: modules.validateArticle,
@@ -997,7 +1001,8 @@ export async function loadProductionModules() {
     searchOpportunityModule,
     searchConsoleSchedulerModule,
     contentLearningServiceModule,
-    contentLearningRepositoryModule
+    contentLearningRepositoryModule,
+    weeklyTopicPoolRepositoryModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1036,7 +1041,8 @@ export async function loadProductionModules() {
     import('../services/contentAgent/searchOpportunityService.js'),
     import('../services/contentAgent/searchConsoleSchedulerService.js'),
     import('../services/contentAgent/contentLearningService.js'),
-    import('../repositories/contentLearningRepository.js')
+    import('../repositories/contentLearningRepository.js'),
+    import('../repositories/contentWeeklyTopicPoolRepository.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1079,7 +1085,9 @@ export async function loadProductionModules() {
     buildContentOpportunities: searchOpportunityModule.buildContentOpportunities,
     searchConsoleSchedulerService: searchConsoleSchedulerModule,
     runContentLearningJob: contentLearningServiceModule.runContentLearningJob,
-    createContentLearningRepository: contentLearningRepositoryModule.createContentLearningRepository
+    createContentLearningRepository: contentLearningRepositoryModule.createContentLearningRepository,
+    createContentWeeklyTopicPoolRepository:
+      weeklyTopicPoolRepositoryModule.createContentWeeklyTopicPoolRepository
   };
 }
 

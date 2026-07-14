@@ -5,13 +5,18 @@ import {
   ArticleOutputSchema,
   ReviewOutputSchema,
   SeoBriefSchema,
-  TopicCandidatesSchema
+  TopicCandidatesSchema,
+  WeeklyTopicResearchSchema
 } from './articleSchemas.js';
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
 import {
   buildTopicResearchPrompt,
   promptVersion as topicResearchPromptVersion
 } from './prompts/topicResearchPrompt.js';
+import {
+  buildWeeklyTopicResearchPrompt,
+  promptVersion as weeklyTopicResearchPromptVersion
+} from './prompts/weeklyTopicResearchPrompt.js';
 import {
   buildWebResearchPrompt,
   promptVersion as webResearchPromptVersion
@@ -142,38 +147,93 @@ function assertCompletedResponse(response) {
 }
 
 export function extractWebSources(response) {
-  const sources = [];
   const sourcesByUrl = new Map();
 
-  for (const item of Array.isArray(response?.output) ? response.output : []) {
+  function addSource(rawSource) {
+    const annotation = rawSource?.url_citation && typeof rawSource.url_citation === 'object'
+      ? { ...rawSource, ...rawSource.url_citation }
+      : rawSource;
+    const url = normalizeHttpsUrl(annotation?.url);
+    if (!url) return;
+
+    let source = sourcesByUrl.get(url);
+    if (!source) {
+      source = { url };
+      sourcesByUrl.set(url, source);
+    }
+    const title = normalizeText(annotation.title);
+    if (title && !source.title) source.title = title;
+    copyAnnotationField(source, annotation, 'publisher', 'publisher');
+    copyAnnotationField(source, annotation, 'publishedAt', 'published_at');
+    copyAnnotationField(source, annotation, 'retrievedAt', 'retrieved_at');
+  }
+
+  const output = Array.isArray(response?.output) ? response.output : [];
+
+  // Betitelte Zitationsannotationen sind die verlässliche Grundlage für das
+  // eigene Quellenschema. Action-Quellen enthalten laut API nicht zwingend
+  // einen Titel und dürfen daher die begrenzte Ergebnisliste nicht verdrängen.
+  for (const item of output) {
     if (item?.type !== 'message' || !Array.isArray(item.content)) continue;
 
     for (const block of item.content) {
       for (const rawAnnotation of Array.isArray(block?.annotations) ? block.annotations : []) {
         if (rawAnnotation?.type !== 'url_citation') continue;
-        const annotation = rawAnnotation.url_citation && typeof rawAnnotation.url_citation === 'object'
-          ? { ...rawAnnotation, ...rawAnnotation.url_citation }
-          : rawAnnotation;
-        const url = normalizeHttpsUrl(annotation.url);
-        if (!url) continue;
-
-        let source = sourcesByUrl.get(url);
-        if (!source) {
-          if (sources.length === 6) continue;
-          source = { url };
-          sourcesByUrl.set(url, source);
-          sources.push(source);
-        }
-        const title = normalizeText(annotation.title);
-        if (title && !source.title) source.title = title;
-        copyAnnotationField(source, annotation, 'publisher', 'publisher');
-        copyAnnotationField(source, annotation, 'publishedAt', 'published_at');
-        copyAnnotationField(source, annotation, 'retrievedAt', 'retrieved_at');
+        addSource(rawAnnotation);
       }
     }
   }
 
-  return sources;
+  for (const item of output) {
+    if (item?.type !== 'web_search_call') continue;
+    for (const rawSource of Array.isArray(item.action?.sources) ? item.action.sources : []) {
+      addSource(rawSource);
+    }
+  }
+
+  return [...sourcesByUrl.values()]
+    .filter((source) => typeof source.title === 'string' && source.title.length > 0)
+    .slice(0, 6);
+}
+
+const TESTER_TOPIC_PATTERN = /\b(?:website|seo|geo|meta|broken[-\s]?links?)[-\s]?tester\b|\bwebsite[-\s]?test\b/i;
+
+function classifyWeeklyTesterTopic(candidate) {
+  const searchableText = [
+    candidate.topic,
+    candidate.suggestedTitle,
+    candidate.slug,
+    candidate.primaryKeyword,
+    candidate.contentCluster
+  ].filter((value) => typeof value === 'string').join(' ');
+  return {
+    ...candidate,
+    isTesterTopic: candidate.isTesterTopic || TESTER_TOPIC_PATTERN.test(searchableText)
+  };
+}
+
+function curateWeeklyCandidates(candidates, maxCandidates) {
+  const normalizedMaximum = Number.isSafeInteger(maxCandidates)
+    ? Math.min(20, Math.max(1, maxCandidates))
+    : 9;
+  const seenSlugs = new Set();
+  const uniqueCandidates = candidates.map(classifyWeeklyTesterTopic).filter((candidate) => {
+    if (seenSlugs.has(candidate.slug)) return false;
+    seenSlugs.add(candidate.slug);
+    return true;
+  });
+  const regularCandidates = uniqueCandidates
+    .filter(({ isTesterTopic }) => !isTesterTopic)
+    .slice(0, normalizedMaximum);
+  const testerLimit = Math.min(
+    Math.floor(regularCandidates.length / 2),
+    normalizedMaximum - regularCandidates.length
+  );
+  const testerCandidates = uniqueCandidates
+    .filter(({ isTesterTopic }) => isTesterTopic)
+    .slice(0, Math.max(0, testerLimit));
+  const selected = new Set([...regularCandidates, ...testerCandidates]);
+  return uniqueCandidates.filter((candidate) => selected.has(candidate));
 }
 
 export function createOpenAIContentService({
@@ -184,17 +244,30 @@ export function createOpenAIContentService({
 }) {
   const openai = client || new OpenAI({ apiKey });
 
-  async function parse({ model, schema, schemaName, system, user, promptVersion }) {
+  async function parse({
+    model,
+    schema,
+    schemaName,
+    system,
+    user,
+    promptVersion,
+    tools,
+    transformValue,
+    include
+  }) {
     const format = zodTextFormat(schema, schemaName);
     schemaCompatibilityValidator(format.schema);
-    const response = await openai.responses.parse({
+    const request = {
       model,
       input: [
         { role: 'system', content: system },
         { role: 'user', content: user }
       ],
       text: { format }
-    });
+    };
+    if (tools) request.tools = tools;
+    if (include) request.include = include;
+    const response = await openai.responses.parse(request);
     assertCompletedResponse(response);
     if (response.output_parsed == null) {
       throw new OpenAIContentResponseError({
@@ -214,7 +287,7 @@ export function createOpenAIContentService({
       });
     }
     return {
-      value,
+      value: transformValue ? transformValue(value, response) : value,
       responseId: response.id,
       usage: response.usage || {},
       promptVersion
@@ -229,6 +302,29 @@ export function createOpenAIContentService({
       schemaName: 'topic_candidates',
       ...prompt,
       promptVersion: topicResearchPromptVersion
+    });
+  }
+
+  async function createWeeklyTopicPool(input) {
+    const prompt = buildWeeklyTopicResearchPrompt(input);
+    return parse({
+      model: config.contentModel,
+      schema: WeeklyTopicResearchSchema,
+      schemaName: 'weekly_topic_candidates',
+      ...prompt,
+      tools: [{ type: 'web_search' }],
+      include: ['web_search_call.action.sources'],
+      transformValue(value, response) {
+        return {
+          candidates: curateWeeklyCandidates(value.candidates, input?.maxCandidates).map((candidate) => ({
+            ...candidate,
+            source: 'openai_weekly_web_research',
+            requiresCurrentSources: true
+          })),
+          sourceReferences: extractWebSources(response)
+        };
+      },
+      promptVersion: weeklyTopicResearchPromptVersion
     });
   }
 
@@ -313,6 +409,7 @@ export function createOpenAIContentService({
 
   return {
     createTopicCandidates,
+    createWeeklyTopicPool,
     researchCurrentSources,
     createSeoBrief,
     generateArticle,
