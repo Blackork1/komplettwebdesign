@@ -141,6 +141,7 @@ function createSuccessfulDependencies({
   optimizationResults = [optimizedPost(post)],
   reviewResults = [reviewResult()],
   researchSources = [],
+  gscSignals = [],
   validationResults = [],
   gscError = null,
   revisionError = null,
@@ -219,7 +220,7 @@ function createSuccessfulDependencies({
       async getPageSignals() {
         calls.gsc += 1;
         if (gscError) throw gscError;
-        return [];
+        return structuredClone(gscSignals);
       }
     },
     openaiService: {
@@ -345,6 +346,19 @@ test('GSC-Ausfall wird protokolliert und blockiert die Optimierung nicht', async
     code: 'GSC_PAGE_SIGNALS_UNAVAILABLE',
     message: 'GSC nicht verfügbar'
   }]);
+});
+
+test('begrenzte GSC-Seitensignale werden für die spätere Vergleichsansicht im Bericht gespeichert', async () => {
+  const post = publishedPost();
+  const gscSignals = [{
+    query: 'website relaunch planen', clicks: 4, impressions: 120,
+    ctr: 0.0333, average_position: 7.5
+  }];
+  const dependencies = createSuccessfulDependencies({ post, gscSignals });
+
+  await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.deepEqual(dependencies.calls.revisions[0].report.gscSignals, gscSignals);
 });
 
 test('Webrecherche läuft ausschließlich bei Freshness-Bedarf und stoppt bei null oder einer Quelle manuell', async (t) => {

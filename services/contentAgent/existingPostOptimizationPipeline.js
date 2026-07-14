@@ -813,6 +813,7 @@ export async function runExistingPostOptimizationJob({
       afterScore: Number.isFinite(review?.score) ? review.score : null,
       freshness,
       sources,
+      gscSignals,
       targetedScope: assessment.scope,
       validation: {
         passed: assessment.validation.passed,

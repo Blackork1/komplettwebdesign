@@ -10,7 +10,10 @@
 <div class="content-agent-page content-agent-editor">
   <header class="content-agent-pagehead">
     <div><p class="content-agent-eyebrow">Bestandsrevision #<%= item.id || '' %></p><h1 class="admin-page-title mb-1">Veröffentlichten Artikel sicher überarbeiten</h1><p class="content-agent-lead">Die Livefassung bleibt bis zur ausdrücklichen Freigabe unverändert. Slug und Veröffentlichungsstatus sind gesperrt.</p></div>
-    <a href="/admin/content-agent/existing-content" class="btn btn-outline-secondary">Zur Bestandsliste</a>
+    <div class="content-agent-actions">
+      <% if (item.optimization_job_id) { %><a href="/admin/content-agent/revisions/<%= item.id %>/compare" class="btn btn-primary"><i class="fa-solid fa-code-compare" aria-hidden="true"></i> Vorher-Nachher vergleichen</a><% } %>
+      <a href="/admin/content-agent/existing-content" class="btn btn-outline-secondary">Zur Bestandsliste</a>
+    </div>
   </header>
   <%- include('_tabs', { activeTab: 'drafts' }) %>
   <% if (saved === true) { %><div class="alert alert-success" role="status">Die Revision wurde gespeichert; der Liveartikel blieb unverändert.</div><% } %>

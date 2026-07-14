@@ -751,6 +751,23 @@ export function createAdminContentAgentController(dependencies) {
       });
     },
 
+    async revisionComparePage(req, res, next) {
+      res.set('X-Robots-Tag', 'noindex, nofollow');
+      res.set('Cache-Control', 'no-store');
+      try {
+        const revisionId = positiveId(req.params.id);
+        if (typeof revisionService?.getRevisionComparison !== 'function'
+            || typeof presentation?.buildRevisionComparisonPresentation !== 'function') {
+          return unavailable(res);
+        }
+        const revision = await revisionService.getRevisionComparison(revisionId);
+        const comparison = presentation.buildRevisionComparisonPresentation(revision);
+        return res.render('admin/contentAgent/revisionCompare', { comparison });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
     async updateSettingsAction(req, res, next) {
       try {
         const current = await settingsRepository.getSettings();

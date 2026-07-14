@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   contentAgentStatus,
@@ -1433,4 +1434,76 @@ test('malformed FAQ-JSON aus dem Draftservice wird als sicherer 400-Fehler ausge
   assert.equal(res.statusCode, 400);
   assert.equal(forwarded, undefined);
   assert.doesNotMatch(res.body, /Unexpected token|position 0|nicht-json/i);
+});
+
+test('authentifizierte Vergleichsroute ist ausschließlich als geschützter GET-Endpunkt verdrahtet', async () => {
+  const routes = await readFile(new URL('../routes/adminContentAgentRoutes.js', import.meta.url), 'utf8');
+
+  assert.match(
+    routes,
+    /router\.get\('\/admin\/content-agent\/revisions\/:id\/compare',\s*isAdmin,\s*controller\.revisionComparePage\)/
+  );
+  assert.doesNotMatch(
+    routes,
+    /router\.(?:post|put|patch|delete)\('\/admin\/content-agent\/revisions\/:id\/compare'/
+  );
+});
+
+test('Vergleichsseite setzt noindex und rendert ausschließlich das sichere Präsentationsmodell', async () => {
+  const rawRevision = {
+    id: 71,
+    snapshot_json: { fields: { content: '<script>roh</script>' } },
+    optimization_report_json: { providerResponse: 'darf nicht in die View' }
+  };
+  const safeComparison = {
+    revisionId: 71,
+    live: { title: 'Live', contentHtml: '<p>Alt.</p>' },
+    optimized: { title: 'Optimiert', contentHtml: '<p>Neu.</p>' },
+    changes: [], changeGroups: [], sources: [], gscSignals: []
+  };
+  let receivedRevision;
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async getRevisionComparison(revisionId) {
+        assert.equal(revisionId, 71);
+        return rawRevision;
+      }
+    },
+    presentation: {
+      buildRevisionComparisonPresentation(revision) {
+        receivedRevision = revision;
+        return safeComparison;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.revisionComparePage({ params: { id: '71' } }, res, assert.fail);
+
+  assert.equal(receivedRevision, rawRevision);
+  assert.equal(res.headers['X-Robots-Tag'], 'noindex, nofollow');
+  assert.equal(res.headers['Cache-Control'], 'no-store');
+  assert.deepEqual(res.rendered, {
+    view: 'admin/contentAgent/revisionCompare',
+    locals: { comparison: safeComparison }
+  });
+});
+
+test('Vergleichsseite verwirft ungültige IDs vor Repository und Präsentation', async () => {
+  let reads = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async getRevisionComparison() { reads += 1; }
+    },
+    presentation: {
+      buildRevisionComparisonPresentation() { assert.fail('ungültige Revision darf nicht präsentiert werden'); }
+    }
+  }));
+
+  for (const id of ['0', '-1', '<script>', '1.5']) {
+    const res = response();
+    await controller.revisionComparePage({ params: { id } }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+  }
+  assert.equal(reads, 0);
 });

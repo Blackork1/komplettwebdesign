@@ -1127,3 +1127,132 @@ test('Revisionseditor escaped Legacy-Inhalt, sperrt ihn und schützt die Freigab
   assert.match(html, /&lt;% globalThis\.ausgefuehrt = true %&gt;/);
   assert.doesNotMatch(html, /<script>(?:Titel|alert\(1\)|faq)<\/script>/);
 });
+
+test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('revisionCompare.ejs')), {
+    ...baseLocals,
+    currentPathname: '/admin/content-agent/revisions/71/compare',
+    comparison: {
+      revisionId: 71,
+      revisionVersion: 3,
+      qualityScore: 92,
+      changeCount: 1,
+      live: {
+        title: '<script>Website-Relaunch planen</script>',
+        excerpt: 'Bestehende Kurzbeschreibung',
+        contentHtml: '<p>Alte Fassung.</p>'
+      },
+      optimized: {
+        title: 'Website-Relaunch sicher planen',
+        excerpt: 'Optimierte Kurzbeschreibung',
+        contentHtml: '<p>Neue Fassung.</p>'
+      },
+      changes: [{
+        id: 'a'.repeat(64),
+        label: 'Meta Title',
+        kind: 'modified',
+        kindLabel: 'Geändert',
+        kindIcon: 'fa-pen',
+        status: 'active',
+        statusLabel: 'Aktiv',
+        reason: 'Konkreter <script>Nutzen</script>.',
+        beforeExcerpt: 'Website-Relaunch planen',
+        afterExcerpt: 'Website-Relaunch sicher planen',
+        auditCodes: ['meta_title_missing'],
+        revertible: true
+      }],
+      changeGroups: [{
+        key: 'metadata',
+        label: 'Meta-Daten',
+        icon: 'fa-tags',
+        changes: [{
+          id: 'a'.repeat(64), label: 'Meta Title', kind: 'modified', kindLabel: 'Geändert',
+          kindIcon: 'fa-pen', status: 'active', statusLabel: 'Aktiv', reason: 'Konkreter <script>Nutzen</script>.',
+          beforeExcerpt: 'Website-Relaunch planen', afterExcerpt: 'Website-Relaunch sicher planen',
+          auditCodes: ['meta_title_missing'], revertible: true
+        }]
+      }],
+      sources: [{ title: '<img src=x onerror=alert(1)>Aktuelle Fachquelle', url: 'https://example.com/fachquelle' }],
+      gscSignals: []
+    }
+  });
+
+  assert.match(html, /Aktuelle Livefassung/);
+  assert.match(html, /Optimierte Revision/);
+  assert.match(html, /href="#change-[0-9a-f]{64}"/);
+  assert.match(html, /id="change-[0-9a-f]{64}"/);
+  assert.match(html, /Qualität 92\/100/);
+  assert.match(html, /Verwendete Quellen/);
+  assert.match(html, /Geändert/);
+  assert.match(html, /fa-pen/);
+  assert.match(html, /href="\/admin\/content-agent\/revisions\/71\/edit"/);
+  assert.match(html, /href="\/admin\/content-agent\/existing-content"/);
+  assert.match(html, /&lt;script&gt;Website-Relaunch planen&lt;\/script&gt;/);
+  assert.match(html, /Konkreter &lt;script&gt;Nutzen&lt;\/script&gt;\./);
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;Aktuelle Fachquelle/);
+  assert.doesNotMatch(html, /<script>(?:Website-Relaunch planen|Nutzen)<\/script>|<img src=x onerror=/);
+  assert.doesNotMatch(html, /<form|data-confirm=|onclick=/i);
+  assert.equal((html.match(/<main\b/g) || []).length, 1);
+});
+
+test('Vergleichsview verwendet nur bereinigtes Vorschau-HTML und keine Rohdatenattribute', async () => {
+  const source = await readView('revisionCompare.ejs');
+
+  assert.match(source, /<%-\s*comparison\.live\.contentHtml\s*%>/);
+  assert.match(source, /<%-\s*comparison\.optimized\.contentHtml\s*%>/);
+  assert.doesNotMatch(source, /stage_results_json|providerResponse|runtime_snapshot|optimization_report_json/i);
+  assert.doesNotMatch(source, /data-(?:change|diff|reason|source)\s*=|on[a-z]+\s*=/i);
+});
+
+test('Revisionseditor verlinkt den geschützten Vorher-Nachher-Vergleich ohne bestehende Aktionen zu verändern', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('revisionEdit.ejs')), {
+    ...baseLocals,
+    revision: {
+      id: 8,
+      optimization_job_id: 44,
+      revision_version: 4,
+      snapshot_json: { base: { content_format: 'static_html' }, fields: {} }
+    },
+    saved: false
+  });
+
+  assert.match(html, /href="\/admin\/content-agent\/revisions\/8\/compare"/);
+  assert.match(html, /Vorher-Nachher vergleichen/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/8"/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/8\/publish"/);
+});
+
+test('manuelle Audit-Revision erhält keinen toten Link zum KI-Vergleich', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('revisionEdit.ejs')), {
+    ...baseLocals,
+    revision: {
+      id: 9,
+      optimization_job_id: null,
+      revision_version: 1,
+      snapshot_json: { base: { content_format: 'static_html' }, fields: {} }
+    },
+    saved: false
+  });
+
+  assert.doesNotMatch(html, /revisions\/9\/compare/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/9"/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/9\/publish"/);
+});
+
+test('Vergleichs-CSS baut gleichwertige Spalten, feste Sprungnavigation und mobile Live-zuerst-Reihenfolge', async () => {
+  const [adminCss, adminMinCss, manifestText] = await Promise.all([
+    readFile(new URL('../public/admin.css', import.meta.url), 'utf8'),
+    readFile(new URL('../public/admin.min.css', import.meta.url), 'utf8'),
+    readFile(new URL('../public/css-asset-manifest.json', import.meta.url), 'utf8')
+  ]);
+  const manifest = JSON.parse(manifestText);
+
+  assert.match(adminCss, /\.content-agent-compare__columns\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(adminCss, /\.content-agent-compare__jumpnav\s*\{[\s\S]*position:\s*sticky/);
+  assert.match(adminCss, /\.content-agent-compare__change\s*\{[\s\S]*scroll-margin-top:/);
+  assert.match(adminCss, /@media\s*\(max-width:\s*767\.98px\)[\s\S]*\.content-agent-compare__columns\s*\{[\s\S]*grid-template-columns:\s*1fr/);
+  assert.match(adminCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(adminMinCss, /content-agent-compare__columns/);
+  assert.equal(manifest.assets['admin.css'].output, 'admin.min.css');
+  assert.match(manifest.assets['admin.css'].href, /^\/admin\.min\.css\?v=[0-9a-f]{12}$/);
+});

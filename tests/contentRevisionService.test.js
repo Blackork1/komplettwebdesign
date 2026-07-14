@@ -6,6 +6,7 @@ import {
   createContentRevisionService,
   liveHashForPost
 } from '../services/contentAgent/contentRevisionService.js';
+import * as adminPresentation from '../services/contentAgent/adminPresentationService.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index + 1}?`, answer: 'Eine vollständige Antwort.' }));
 const post = {
@@ -278,4 +279,126 @@ test('KI-Revisionsservice verwirft ungültige Providerfelder und einen veraltete
     baseLiveHash: 'b'.repeat(64)
   }), { code: 'CONTENT_REVISION_STALE' });
   assert.equal(writes.length, 0);
+});
+
+test('Revisionsvergleich wird ausschließlich über das begrenzte Vergleichs-Repository geladen', async () => {
+  const calls = [];
+  const revision = { id: 71, optimization_job_id: 44, snapshot_json: { fields: {} } };
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async getRevisionComparison(revisionId) {
+        calls.push(revisionId);
+        return revision;
+      }
+    }
+  });
+
+  assert.deepEqual(await service.getRevisionComparison(71), revision);
+  assert.deepEqual(calls, [71]);
+
+  const missing = createContentRevisionService({
+    optimizationRepository: { async getRevisionComparison() { return null; } }
+  });
+  await assert.rejects(
+    missing.getRevisionComparison(71),
+    { code: 'CONTENT_REVISION_NOT_FOUND' }
+  );
+});
+
+test('Vergleichspräsentation bereinigt Vorschau-HTML und begrenzt ausschließlich sichere Diffdaten', () => {
+  assert.equal(typeof adminPresentation.buildRevisionComparisonPresentation, 'function');
+  const validId = 'a'.repeat(64);
+  const invalidChanges = Array.from({ length: 55 }, (_, index) => ({
+    id: index === 0 ? validId : `${index}`.repeat(64).slice(0, 64),
+    kind: index % 2 ? 'html' : 'field',
+    field: index % 2 ? 'contentHtml' : 'metaTitle',
+    changeType: index % 3 === 0 ? 'added' : index % 3 === 1 ? 'removed' : 'modified',
+    before: `<script>alt-${index}</script>${'A'.repeat(900)}`,
+    after: `<img src=x onerror=alert(${index})>${'N'.repeat(900)}`,
+    reasons: [{
+      reason: `<script>grund-${index}</script>${'R'.repeat(900)}`,
+      auditCodes: ['meta_title_missing', '<script>'],
+      sourceUrls: ['https://example.com/sicher', 'https://user:pass@example.com/geheim']
+    }],
+    status: 'active',
+    revertible: true
+  }));
+  invalidChanges.push({
+    id: 'nicht-sicher', field: 'metaTitle', kind: 'field', changeType: 'modified',
+    before: 'Alt', after: 'Neu', status: 'active', revertible: true
+  });
+
+  const comparison = adminPresentation.buildRevisionComparisonPresentation({
+    id: 71,
+    revision_version: 3,
+    live_title: '<script>Live</script>',
+    live_content: '<h2>Live</h2><script>window.live=true</script><p>Alt.</p>',
+    live_excerpt: 'Bestehende Kurzbeschreibung',
+    live_meta_title: 'Bestehender Meta Title',
+    live_meta_description: 'Bestehende Meta Description',
+    live_og_title: 'Bestehender OG-Titel',
+    live_og_description: 'Bestehende OG-Beschreibung',
+    live_faq_json: validFaq,
+    live_image_alt: 'Bestehender Alt-Text',
+    snapshot_json: {
+      fields: {
+        title: '<img src=x onerror=alert(1)>Optimiert',
+        content: '<h2>Optimiert</h2><script>window.optimiert=true</script><p>Neu.</p>',
+        excerpt: 'Optimierte Kurzbeschreibung',
+        meta_title: 'Optimierter Meta Title',
+        meta_description: 'Optimierte Meta Description',
+        og_title: 'Optimierter OG-Titel',
+        og_description: 'Optimierte OG-Beschreibung',
+        faq_json: validFaq,
+        image_alt: 'Optimierter Alt-Text'
+      }
+    },
+    optimization_report_json: {
+      afterScore: 92,
+      changes: invalidChanges,
+      sources: [
+        { title: 'Aktuelle Fachquelle', url: 'https://example.com/fachquelle' },
+        { title: 'Mit Zugangsdaten', url: 'https://user:pass@example.com/geheim' },
+        { title: 'Unsicher', url: 'http://example.com/unsicher' }
+      ],
+      gscSignals: Array.from({ length: 18 }, (_, index) => ({
+        query: `${index}: ${'Suchanfrage '.repeat(40)}`,
+        clicks: index,
+        impressions: index * 10,
+        ctr: 0.1,
+        average_position: 7.5
+      })),
+      providerResponse: { secret: 'sk-darf-nicht-in-das-Modell' },
+      stage_results_json: [{ secret: true }]
+    }
+  });
+
+  assert.equal(comparison.revisionId, 71);
+  assert.equal(comparison.qualityScore, 92);
+  assert.doesNotMatch(comparison.live.contentHtml, /script|window\.live/i);
+  assert.doesNotMatch(comparison.optimized.contentHtml, /script|window\.optimiert|onerror/i);
+  assert.equal(comparison.changes.length, 40);
+  assert.equal(comparison.changes.every(({ id }) => /^[0-9a-f]{64}$/.test(id)), true);
+  assert.equal(comparison.changes[0].id, validId);
+  assert.equal(comparison.changes[0].beforeExcerpt.length <= 600, true);
+  assert.equal(comparison.changes[0].afterExcerpt.length <= 600, true);
+  assert.equal(comparison.changes[0].reason.length <= 500, true);
+  assert.deepEqual(comparison.changeGroups.map(({ key }) => [
+    'metadata', 'content', 'faq', 'images', 'links'
+  ].includes(key)), [true, true, true, true, true]);
+  assert.equal(comparison.sources.length, 1);
+  assert.equal(comparison.sources[0].url, 'https://example.com/fachquelle');
+  assert.equal(comparison.gscSignals.length, 10);
+  assert.equal(comparison.gscSignals.every(({ query }) => query.length <= 180), true);
+  assert.equal(comparison.providerResponse, undefined);
+  assert.equal(comparison.stage_results_json, undefined);
+
+  const withoutScore = adminPresentation.buildRevisionComparisonPresentation({
+    id: 72,
+    revision_version: 1,
+    snapshot_json: { fields: {} },
+    optimization_report_json: { afterScore: null, beforeScore: null, changes: [] }
+  });
+  assert.equal(withoutScore.qualityScore, null);
+  assert.equal(withoutScore.beforeQualityScore, null);
 });

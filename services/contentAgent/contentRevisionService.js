@@ -302,6 +302,14 @@ export function createContentRevisionService({
       return revision;
     },
 
+    async getRevisionComparison(revisionId) {
+      const revision = await optimizationRepository.getRevisionComparison(
+        positiveId(revisionId, 'revisionId')
+      );
+      if (!revision) throw revisionError('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
+      return revision;
+    },
+
     async renderRevisionEdit(revisionId, req, res) {
       const revision = await this.getRevisionForEdit(revisionId);
       return res.render('admin/contentAgent/revisionEdit', {

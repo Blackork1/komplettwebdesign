@@ -1,0 +1,178 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const item = typeof comparison !== 'undefined' && comparison ? comparison : {};
+  const live = item.live || {};
+  const optimized = item.optimized || {};
+  const changes = Array.isArray(item.changes) ? item.changes : [];
+  const groups = Array.isArray(item.changeGroups) ? item.changeGroups : [];
+  const sources = Array.isArray(item.sources) ? item.sources : [];
+  const gscSignals = Array.isArray(item.gscSignals) ? item.gscSignals : [];
+%>
+<div class="content-agent-page content-agent-compare">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Bestandsrevision #<%= item.revisionId || '' %> · Vergleichsstand <%= item.revisionVersion || 1 %></p>
+      <h1 class="admin-page-title mb-1">Livefassung und Optimierung prüfen</h1>
+      <p class="content-agent-lead">Der Vergleich ist schreibgeschützt. Die veröffentlichte Fassung bleibt unverändert, bis sie im Editor ausdrücklich freigegeben wird.</p>
+    </div>
+    <div class="content-agent-actions">
+      <% if (item.revisionId) { %>
+        <a class="btn btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Revision manuell bearbeiten</a>
+      <% } %>
+      <a class="btn btn-outline-secondary" href="/admin/content-agent/existing-content">Zur Bestandsliste</a>
+    </div>
+  </header>
+
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
+
+  <section class="content-agent-compare__summary" aria-label="Zusammenfassung des Vergleichs">
+    <div>
+      <span class="content-agent-compare__summary-icon"><i class="fa-solid fa-code-compare" aria-hidden="true"></i></span>
+      <p><strong><%= item.changeCount || 0 %> Änderungen</strong><span>serverseitig ermittelt</span></p>
+    </div>
+    <div>
+      <span class="content-agent-compare__summary-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+      <p><strong>Nur Vorschau</strong><span>keine Live-Schreibaktion</span></p>
+    </div>
+    <div>
+      <span class="content-agent-compare__summary-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+      <p><strong><%= item.qualityScore === null || item.qualityScore === undefined ? 'Qualität noch offen' : `Qualität ${item.qualityScore}/100` %></strong><span><%= item.beforeQualityScore === null || item.beforeQualityScore === undefined ? 'nach redaktioneller Prüfung' : `zuvor ${item.beforeQualityScore}/100` %></span></p>
+    </div>
+  </section>
+
+  <aside class="content-agent-compare__jumpnav" aria-labelledby="compare-jumpnav-title">
+    <div>
+      <p class="content-agent-eyebrow">Sprungnavigation</p>
+      <h2 id="compare-jumpnav-title">Geprüfte Änderungen</h2>
+    </div>
+    <% if (changes.length > 0) { %>
+      <ol>
+        <% changes.forEach(function (change, index) { %>
+          <li><a href="#change-<%= change.id %>"><span><%= index + 1 %></span><%= change.label %><small><i class="fa-solid <%= change.kindIcon %>" aria-hidden="true"></i> <%= change.kindLabel %></small></a></li>
+        <% }) %>
+      </ol>
+    <% } else { %>
+      <p class="content-agent-quiet">Für diesen Vergleich liegen keine aktiven, sicher zuordenbaren Änderungen vor.</p>
+    <% } %>
+  </aside>
+
+  <section class="content-agent-compare__workspace" aria-labelledby="compare-workspace-title">
+    <div class="content-agent-compare__sectionhead">
+      <div>
+        <p class="content-agent-eyebrow">Vorher · Nachher</p>
+        <h2 id="compare-workspace-title">Zwei gleichwertige Fassungen</h2>
+      </div>
+      <ul class="content-agent-compare__legend" aria-label="Legende der Änderungsarten">
+        <li class="is-removed"><i class="fa-solid fa-minus" aria-hidden="true"></i> Entfernt</li>
+        <li class="is-modified"><i class="fa-solid fa-pen" aria-hidden="true"></i> Geändert</li>
+        <li class="is-added"><i class="fa-solid fa-plus" aria-hidden="true"></i> Hinzugefügt</li>
+      </ul>
+    </div>
+
+    <div class="content-agent-compare__columns">
+      <article class="content-agent-compare__document is-live" aria-labelledby="compare-live-title">
+        <header>
+          <span><i class="fa-solid fa-globe" aria-hidden="true"></i> Aktuelle Livefassung</span>
+          <small>Ausgangsstand</small>
+        </header>
+        <div class="content-agent-compare__document-body">
+          <h3 id="compare-live-title"><%= live.title || 'Ohne Titel' %></h3>
+          <p class="content-agent-compare__excerpt"><%= live.excerpt || '–' %></p>
+          <div class="content-agent-compare__preview"><%- comparison.live.contentHtml %></div>
+          <details class="content-agent-compare__metadata">
+            <summary>Meta- und Bilddaten anzeigen</summary>
+            <dl>
+              <div><dt>Meta Title</dt><dd><%= live.metaTitle || '–' %></dd></div>
+              <div><dt>Meta Description</dt><dd><%= live.metaDescription || '–' %></dd></div>
+              <div><dt>OG-Titel</dt><dd><%= live.ogTitle || '–' %></dd></div>
+              <div><dt>OG-Beschreibung</dt><dd><%= live.ogDescription || '–' %></dd></div>
+              <div><dt>Bild-Alt-Text</dt><dd><%= live.imageAlt || '–' %></dd></div>
+            </dl>
+          </details>
+        </div>
+      </article>
+
+      <article class="content-agent-compare__document is-optimized" aria-labelledby="compare-optimized-title">
+        <header>
+          <span><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Optimierte Revision</span>
+          <small>nicht veröffentlicht</small>
+        </header>
+        <div class="content-agent-compare__document-body">
+          <h3 id="compare-optimized-title"><%= optimized.title || 'Ohne Titel' %></h3>
+          <p class="content-agent-compare__excerpt"><%= optimized.excerpt || '–' %></p>
+          <div class="content-agent-compare__preview"><%- comparison.optimized.contentHtml %></div>
+          <details class="content-agent-compare__metadata">
+            <summary>Meta- und Bilddaten anzeigen</summary>
+            <dl>
+              <div><dt>Meta Title</dt><dd><%= optimized.metaTitle || '–' %></dd></div>
+              <div><dt>Meta Description</dt><dd><%= optimized.metaDescription || '–' %></dd></div>
+              <div><dt>OG-Titel</dt><dd><%= optimized.ogTitle || '–' %></dd></div>
+              <div><dt>OG-Beschreibung</dt><dd><%= optimized.ogDescription || '–' %></dd></div>
+              <div><dt>Bild-Alt-Text</dt><dd><%= optimized.imageAlt || '–' %></dd></div>
+            </dl>
+          </details>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="content-agent-compare__changes" aria-labelledby="compare-changes-title">
+    <div class="content-agent-compare__sectionhead">
+      <div><p class="content-agent-eyebrow">Prüfprotokoll</p><h2 id="compare-changes-title">Änderungen im Detail</h2></div>
+      <p>Auszüge sind bewusst begrenzt. Volltexte bleiben oben in der bereinigten Vorschau sichtbar.</p>
+    </div>
+
+    <% groups.forEach(function (group) { %>
+      <% if (Array.isArray(group.changes) && group.changes.length > 0) { %>
+        <section class="content-agent-compare__group" aria-labelledby="compare-group-<%= group.key %>">
+          <h3 id="compare-group-<%= group.key %>"><i class="fa-solid <%= group.icon %>" aria-hidden="true"></i> <%= group.label %> <span><%= group.changes.length %></span></h3>
+          <div>
+            <% group.changes.forEach(function (change) { %>
+              <article class="content-agent-compare__change is-<%= change.kind %>" id="change-<%= change.id %>">
+                <header>
+                  <div><span class="content-agent-compare__change-kind"><i class="fa-solid <%= change.kindIcon %>" aria-hidden="true"></i> <%= change.kindLabel %></span><h4><%= change.label %></h4></div>
+                  <span class="content-agent-compare__change-status is-<%= change.status %>"><i class="fa-solid <%= change.status === 'reverted' ? 'fa-rotate-left' : 'fa-circle-check' %>" aria-hidden="true"></i> <%= change.statusLabel %></span>
+                </header>
+                <div class="content-agent-compare__extracts">
+                  <div><span>Live</span><p><%= change.beforeExcerpt %></p></div>
+                  <div><span>Revision</span><p><%= change.afterExcerpt %></p></div>
+                </div>
+                <div class="content-agent-compare__reason">
+                  <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+                  <div><strong>Warum wurde das geändert?</strong><p><%= change.reason %></p>
+                    <% if (Array.isArray(change.auditCodes) && change.auditCodes.length > 0) { %><p class="content-agent-compare__audit">Auditbefund: <%= change.auditCodes.join(', ') %></p><% } %>
+                  </div>
+                </div>
+                <p class="content-agent-compare__revert-note"><i class="fa-solid <%= change.revertible ? 'fa-arrow-rotate-left' : 'fa-lock' %>" aria-hidden="true"></i> <%= change.revertible ? 'Einzeln rücknehmbar' : 'Nur in der manuellen Bearbeitung anpassbar' %></p>
+              </article>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+    <% }) %>
+    <% if (changes.length === 0) { %><div class="content-agent-empty"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><p>Keine sicher zuordenbaren Änderungen vorhanden.</p></div><% } %>
+  </section>
+
+  <div class="content-agent-compare__evidence">
+    <section class="content-agent-panel" aria-labelledby="compare-sources-title">
+      <div class="content-agent-panel__head"><h2 id="compare-sources-title">Verwendete Quellen</h2><span class="content-agent-readonly"><i class="fa-solid fa-lock" aria-hidden="true"></i> HTTPS-geprüft</span></div>
+      <% if (sources.length > 0) { %>
+        <ol class="content-agent-compare__source-list">
+          <% sources.forEach(function (source) { %>
+            <li><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i><div><a href="<%= source.url %>" target="_blank" rel="noopener noreferrer"><%= source.title %></a><p><%= [source.publisher, source.publishedAt].filter(Boolean).join(' · ') || 'Externe Fachquelle' %></p></div></li>
+          <% }) %>
+        </ol>
+      <% } else { %><p class="content-agent-quiet">Für diese gezielte Optimierung war keine aktuelle Webrecherche erforderlich.</p><% } %>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="compare-gsc-title">
+      <div class="content-agent-panel__head"><h2 id="compare-gsc-title">Unterstützende GSC-Signale</h2><span class="content-agent-readonly"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i> Kontext</span></div>
+      <% if (gscSignals.length > 0) { %>
+        <div class="content-agent-table-wrap"><table class="content-agent-table content-agent-compare__gsc"><thead><tr><th>Suchanfrage</th><th>Klicks</th><th>Impressionen</th><th>CTR</th><th>Position</th></tr></thead><tbody>
+          <% gscSignals.forEach(function (signal) { %><tr><td><%= signal.query %></td><td><%= signal.clicksLabel %></td><td><%= signal.impressionsLabel %></td><td><%= signal.ctrLabel %></td><td><%= signal.averagePositionLabel %></td></tr><% }) %>
+        </tbody></table></div>
+      <% } else { %><p class="content-agent-quiet">Keine belastbaren Seitensignale für diese Revision gespeichert.</p><% } %>
+    </section>
+  </div>
+</div>
+<%- include('../../partials/admin_footer') %>

@@ -17,6 +17,8 @@ import {
   sanitizeLearningText
 } from './contentLearningTaxonomy.js';
 import { aggregateSearchConsoleCategories } from './searchConsoleCategoryService.js';
+import { sanitizeArticleHtml } from './articleSanitizer.js';
+import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
 
 const STAGE_LABELS = Object.freeze({
   inventory: 'Bestandsaufnahme',
@@ -686,6 +688,239 @@ export function buildExistingContentListPresentation(rows = []) {
       revisionStatus: row.revision_status || null
     } : {})
   }));
+}
+
+const REVISION_COMPARISON_GROUPS = Object.freeze([
+  Object.freeze({ key: 'metadata', label: 'Meta-Daten', icon: 'fa-tags' }),
+  Object.freeze({ key: 'content', label: 'Inhalt', icon: 'fa-align-left' }),
+  Object.freeze({ key: 'faq', label: 'FAQ', icon: 'fa-circle-question' }),
+  Object.freeze({ key: 'images', label: 'Bilddaten', icon: 'fa-image' }),
+  Object.freeze({ key: 'links', label: 'Links', icon: 'fa-link' })
+]);
+
+const REVISION_FIELD_LABELS = Object.freeze({
+  title: 'Titel',
+  shortDescription: 'Kurzbeschreibung',
+  excerpt: 'Kurzbeschreibung',
+  metaTitle: 'Meta Title',
+  meta_title: 'Meta Title',
+  metaDescription: 'Meta Description',
+  meta_description: 'Meta Description',
+  ogTitle: 'OG-Titel',
+  og_title: 'OG-Titel',
+  ogDescription: 'OG-Beschreibung',
+  og_description: 'OG-Beschreibung',
+  contentHtml: 'Artikelinhalt',
+  content: 'Artikelinhalt',
+  faqJson: 'FAQ',
+  faq_json: 'FAQ',
+  imageAlt: 'Bild-Alt-Text',
+  image_alt: 'Bild-Alt-Text',
+  imageUrl: 'Bild-URL',
+  image_url: 'Bild-URL',
+  links: 'Link'
+});
+
+const REVISION_CHANGE_TYPES = Object.freeze({
+  added: Object.freeze({ kind: 'added', label: 'Hinzugefügt', icon: 'fa-plus' }),
+  removed: Object.freeze({ kind: 'removed', label: 'Entfernt', icon: 'fa-minus' }),
+  moved: Object.freeze({ kind: 'modified', label: 'Geändert', icon: 'fa-pen' }),
+  moved_modified: Object.freeze({ kind: 'modified', label: 'Geändert', icon: 'fa-pen' }),
+  modified: Object.freeze({ kind: 'modified', label: 'Geändert', icon: 'fa-pen' })
+});
+
+const REVISION_COMPARISON_LIMITS = Object.freeze({
+  changes: 40,
+  sources: 6,
+  gscSignals: 10,
+  excerpt: 600,
+  reason: 500,
+  query: 180
+});
+
+function comparisonExcerpt(value) {
+  if (value === null || value === undefined || value === '') return '–';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return sanitizeLearningText(String(value), REVISION_COMPARISON_LIMITS.excerpt) || '–';
+  }
+  if (Array.isArray(value)) {
+    const items = value.slice(0, 3).map(comparisonExcerpt).filter((item) => item !== '–');
+    return sanitizeLearningText(items.join(' · '), REVISION_COMPARISON_LIMITS.excerpt) || '–';
+  }
+  if (value && typeof value === 'object') {
+    const question = sanitizeLearningText(value.question, 260);
+    const answer = sanitizeLearningText(value.answer, 320);
+    return sanitizeLearningText(
+      [question && `Frage: ${question}`, answer && `Antwort: ${answer}`].filter(Boolean).join(' · '),
+      REVISION_COMPARISON_LIMITS.excerpt
+    ) || '–';
+  }
+  return '–';
+}
+
+function comparisonGroupKey(change = {}) {
+  const field = String(change.field || '');
+  const marker = `${field} ${change.path || ''} ${change.blockType || ''} ${change.before || ''} ${change.after || ''}`;
+  if (change.kind === 'faq' || ['faqJson', 'faq_json'].includes(field)) return 'faq';
+  if (['imageAlt', 'image_alt', 'imageUrl', 'image_url'].includes(field)) return 'images';
+  if (/\blink(?:s)?\b|<a\b|href=/iu.test(marker)) return 'links';
+  if (['contentHtml', 'content'].includes(field) || change.kind === 'html') return 'content';
+  return 'metadata';
+}
+
+function comparisonReason(change = {}, report = {}) {
+  const direct = Array.isArray(change.reasons)
+    ? change.reasons.find((reason) => typeof reason?.reason === 'string')
+    : null;
+  const fallback = Array.isArray(report.changeReasons)
+    ? report.changeReasons.find((reason) => reason?.field === change.field)
+    : null;
+  return sanitizeLearningText(direct?.reason || fallback?.reason || '', REVISION_COMPARISON_LIMITS.reason)
+    || 'Serverseitig ermittelte Abweichung zwischen Livefassung und Revision.';
+}
+
+function comparisonAuditCodes(change = {}, report = {}) {
+  const direct = Array.isArray(change.reasons)
+    ? change.reasons.flatMap((reason) => Array.isArray(reason?.auditCodes) ? reason.auditCodes : [])
+    : [];
+  const fallback = Array.isArray(report.changeReasons)
+    ? report.changeReasons
+      .filter((reason) => reason?.field === change.field)
+      .flatMap((reason) => Array.isArray(reason.auditCodes) ? reason.auditCodes : [])
+    : [];
+  return [...new Set([...direct, ...fallback]
+    .map((code) => sanitizeLearningText(code, 80))
+    .filter((code) => /^[a-z0-9_:-]{1,80}$/i.test(code)))]
+    .slice(0, 6);
+}
+
+function comparisonChanges(report = {}) {
+  const source = Array.isArray(report.changes) ? report.changes : [];
+  const ids = new Set();
+  const changes = [];
+  for (const change of source) {
+    if (!change || typeof change !== 'object' || changes.length >= REVISION_COMPARISON_LIMITS.changes) break;
+    const id = typeof change.id === 'string' && /^[0-9a-f]{64}$/.test(change.id) ? change.id : null;
+    if (!id || ids.has(id)) continue;
+    ids.add(id);
+    const type = REVISION_CHANGE_TYPES[change.changeType] || REVISION_CHANGE_TYPES.modified;
+    const status = change.status === 'reverted' ? 'reverted' : 'active';
+    changes.push({
+      id,
+      label: REVISION_FIELD_LABELS[change.field] || 'Inhaltliche Änderung',
+      groupKey: comparisonGroupKey(change),
+      kind: type.kind,
+      kindLabel: type.label,
+      kindIcon: type.icon,
+      status,
+      statusLabel: status === 'reverted' ? 'Zurückgenommen' : 'Aktiv',
+      beforeExcerpt: comparisonExcerpt(change.before),
+      afterExcerpt: comparisonExcerpt(change.after),
+      reason: comparisonReason(change, report),
+      auditCodes: comparisonAuditCodes(change, report),
+      revertible: status === 'active' && change.revertible === true
+    });
+  }
+  return changes;
+}
+
+function comparisonSources(report = {}) {
+  const sources = [];
+  const seen = new Set();
+  for (const source of Array.isArray(report.sources) ? report.sources : []) {
+    if (sources.length >= REVISION_COMPARISON_LIMITS.sources) break;
+    const url = normalizeSafeHttpsUrl(source?.url);
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    sources.push({
+      title: sanitizeLearningText(source?.title, 240) || 'Aktuelle Fachquelle',
+      publisher: sanitizeLearningText(source?.publisher, 180) || null,
+      publishedAt: /^\d{4}-\d{2}-\d{2}$/.test(String(source?.publishedAt || ''))
+        ? String(source.publishedAt)
+        : null,
+      url
+    });
+  }
+  return sources;
+}
+
+function comparisonNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function comparisonGscSignals(report = {}) {
+  const raw = Array.isArray(report.gscSignals)
+    ? report.gscSignals
+    : Array.isArray(report.searchConsoleSignals) ? report.searchConsoleSignals : [];
+  return raw.slice(0, REVISION_COMPARISON_LIMITS.gscSignals).map((signal) => {
+    const clicks = comparisonNumber(signal?.clicks);
+    const impressions = comparisonNumber(signal?.impressions);
+    const ctr = comparisonNumber(signal?.ctr);
+    const averagePosition = comparisonNumber(signal?.average_position ?? signal?.averagePosition);
+    return {
+      query: sanitizeLearningText(signal?.query, REVISION_COMPARISON_LIMITS.query) || 'Suchanfrage nicht benannt',
+      clicksLabel: germanNumber(clicks, { maximumFractionDigits: 0 }),
+      impressionsLabel: germanNumber(impressions, { maximumFractionDigits: 0 }),
+      ctrLabel: germanNumber(ctr, { style: 'percent', maximumFractionDigits: 1 }),
+      averagePositionLabel: averagePosition > 0
+        ? germanNumber(averagePosition, { maximumFractionDigits: 1 })
+        : '–'
+    };
+  });
+}
+
+function comparisonScore(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : null;
+}
+
+function comparisonPreview(fields = {}, prefix = '') {
+  const read = (snake, camel = snake) => prefix
+    ? fields[`${prefix}_${snake}`]
+    : fields[snake] ?? fields[camel];
+  const content = read('content', 'contentHtml');
+  return {
+    title: sanitizeLearningText(read('title'), 255) || 'Ohne Titel',
+    excerpt: sanitizeLearningText(read('excerpt', 'shortDescription'), 500) || '–',
+    contentHtml: sanitizeArticleHtml(String(content || '').slice(0, 250_000)),
+    metaTitle: sanitizeLearningText(read('meta_title', 'metaTitle'), 255) || '–',
+    metaDescription: sanitizeLearningText(read('meta_description', 'metaDescription'), 500) || '–',
+    ogTitle: sanitizeLearningText(read('og_title', 'ogTitle'), 255) || '–',
+    ogDescription: sanitizeLearningText(read('og_description', 'ogDescription'), 500) || '–',
+    imageAlt: sanitizeLearningText(read('image_alt', 'imageAlt'), 500) || '–'
+  };
+}
+
+export function buildRevisionComparisonPresentation(revision = {}) {
+  const report = revision.optimization_report_json && typeof revision.optimization_report_json === 'object'
+    && !Array.isArray(revision.optimization_report_json)
+    ? revision.optimization_report_json
+    : {};
+  const snapshotFields = revision.snapshot_json?.fields && typeof revision.snapshot_json.fields === 'object'
+    && !Array.isArray(revision.snapshot_json.fields)
+    ? revision.snapshot_json.fields
+    : {};
+  const changes = comparisonChanges(report);
+  const score = comparisonScore(report.afterScore);
+  const beforeScore = comparisonScore(report.beforeScore ?? revision.audit_score);
+  return {
+    revisionId: presentedPositiveInteger(revision.id),
+    revisionVersion: presentedPositiveInteger(revision.revision_version) || 1,
+    qualityScore: score,
+    beforeQualityScore: beforeScore,
+    changeCount: changes.length,
+    live: comparisonPreview(revision, 'live'),
+    optimized: comparisonPreview(snapshotFields),
+    changes,
+    changeGroups: REVISION_COMPARISON_GROUPS.map((group) => ({
+      ...group,
+      changes: changes.filter((change) => change.groupKey === group.key)
+    })),
+    sources: comparisonSources(report),
+    gscSignals: comparisonGscSignals(report)
+  };
 }
 
 function presentedPositiveInteger(value) {

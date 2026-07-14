@@ -78,6 +78,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
   router.post('/admin/content-agent/existing-content/:id/optimize', isAdmin, verifyCsrfToken, controller.optimizeExistingContentAction);
   router.post('/admin/content-agent/existing-content/:id/revision', isAdmin, verifyCsrfToken, controller.createRevisionAction);
+  router.get('/admin/content-agent/revisions/:id/compare', isAdmin, controller.revisionComparePage);
   router.get('/admin/content-agent/revisions/:id/edit', isAdmin, controller.revisionEditPage);
   router.post('/admin/content-agent/revisions/:id', isAdmin, verifyCsrfToken, controller.updateRevisionAction);
   router.post('/admin/content-agent/revisions/:id/publish', isAdmin, verifyCsrfToken, controller.publishRevisionAction);
