@@ -54,13 +54,15 @@ const AUDIT_CODE_REASONS = new Map([
   ['accessibility_standard', 'technical_standard']
 ]);
 
-const YEAR_PATTERN = /\b(?:19|20)\d{2}\b/u;
 const STATIC_PRICE_PATTERN = /(?:\b\d[\d.\s]*(?:,\d{1,2})?\s*(?:€|eur\b|euro\b)|(?:€|eur\b|euro\b)\s*\d)/iu;
-const NUMERIC_COST_CLAIM_PATTERN = /\b(?:preis(?:e|en|es)?|kosten(?:punkt)?|kostet|tarif)\b.{0,40}\b\d[\d.\s]*(?:,\d{1,2})?\b/iu;
+const EXPLICIT_AMOUNT_PATTERN = /\b(?:preis|kosten|kostenpunkt)\s*(?::|beträgt|betragen|belaufen sich auf|liegt bei)\s*(?:rund|etwa|circa|ca\.?|ab)?\s*\d[\d.\s]*(?:,\d{1,2})?\b/iu;
 const SEARCH_CHANGE_SUBJECT = '(?:\\b(?:google|seo|geo|ki)\\b|\\bsuchmaschinenoptimierung\\b|\\bgenerative engine optimization\\b|\\bkünstliche intelligenz\\b)';
-const CHANGE_MARKER = '(?:änder\\w*|update\\w*|aktuell\\w*|neu(?:e|en|er|es)?|algorithm\\w*|rankingfaktor\\w*|rollout\\w*)';
-const SEARCH_CHANGE_PATTERN = new RegExp(`(?:${SEARCH_CHANGE_SUBJECT}.{0,80}${CHANGE_MARKER}|${CHANGE_MARKER}.{0,80}${SEARCH_CHANGE_SUBJECT})`, 'iu');
-const AI_OR_TOOL_PATTERN = /\b(?:chatgpt|gpt[-\s]?[1-9]\w*|openai|claude|gemini|copilot|midjourney|dall-e|wordpress|yoast|rank\s*math|semrush|ahrefs|screaming\s*frog|node\.js|next\.js)\b/iu;
+const SEARCH_CHANGE_MARKER = '(?:änder\\w*|update\\w*|aktualisier\\w*|algorithm\\w*|rankingfaktor\\w*|rollout\\w*|neu(?:e|en|er|es)?\\s+(?:anforderung\\w*|richtlinie\\w*|funktion\\w*|feature\\w*|regel\\w*)|aktuell\\w*\\s+(?:anforderung\\w*|richtlinie\\w*|funktion\\w*|feature\\w*|stand\\w*))';
+const SEARCH_CHANGE_PATTERN = new RegExp(`(?:${SEARCH_CHANGE_SUBJECT}[^.!?]{0,60}${SEARCH_CHANGE_MARKER}|${SEARCH_CHANGE_MARKER}[^.!?]{0,60}${SEARCH_CHANGE_SUBJECT})`, 'iu');
+const TOOL_PRODUCT = '(?:\\b(?:chatgpt|openai|claude|gemini|copilot|midjourney|wordpress|yoast|semrush|ahrefs)\\b|\\brank\\s*math\\b|\\bscreaming\\s*frog\\b|\\b(?:node|next)\\.js\\b|\\bdall-e\\b)';
+const TOOL_CHANGE_MARKER = '(?:update\\w*|aktualisier\\w*|release\\w*|neu(?:e|en|er|es)?\\s+(?:funktion\\w*|feature\\w*)|aktuell\\w*\\s+(?:funktion\\w*|feature\\w*|funktionsumfang\\w*|version\\w*|stand\\w*))';
+const TOOL_CHANGE_PATTERN = new RegExp(`(?:${TOOL_PRODUCT}[^.!?]{0,48}${TOOL_CHANGE_MARKER}|${TOOL_CHANGE_MARKER}[^.!?]{0,48}${TOOL_PRODUCT})`, 'iu');
+const TOOL_VERSION_PATTERN = new RegExp(`(?:${TOOL_PRODUCT}(?:\\s+|-)(?:version\\s*)?v?\\d+(?:\\.\\d+){0,3}\\b|\\bversion\\s+v?\\d+(?:\\.\\d+){0,3}\\s+(?:von|für)\\s+${TOOL_PRODUCT}|\\bgpt[-\\s]?[1-9][\\w.-]*\\b)`, 'iu');
 const VERSION_CLAIM_PATTERN = /\b(?:version|modell|software|tool|produkt)\s+[\p{L}\p{N}_.-]*\d+(?:\.\d+){0,3}\b/iu;
 const LEGAL_OR_PRIVACY_PATTERN = /\b(?:dsgvo|gdpr|tdddg|ttdsg|datenschutz(?:recht)?|cookies?|consent|einwilligung|urheberrecht|barrierefreiheitsstärkungsgesetz|bfsg|impressumspflicht|rechtsgrundlage|rechtlich|gesetzlich|verordnung|zulässig|unzulässig|verboten)\b/iu;
 const TECHNICAL_STANDARD_PATTERN = /(?:\b(?:wcag|bitv|din(?:\s+en)?|iso|iec|rfc|w3c|ecmascript)\b|\bschema\.org\b|\b(?:html|css|http)\s*\d(?:\.\d+)?\b|\btechnisch(?:e|en|er|es)?\s+(?:norm|standard)\b)/iu;
@@ -73,6 +75,12 @@ function visiblePostText(post) {
   const content = boundedText(post?.contentHtml ?? post?.content, MAX_CONTENT_LENGTH);
   const $ = cheerio.load(content, null, false);
   $('script, style, template, noscript, svg').remove();
+  $('[hidden], [aria-hidden], [style]').filter((_, element) => {
+    const node = $(element);
+    if (node.attr('hidden') !== undefined) return true;
+    if (String(node.attr('aria-hidden') || '').trim().toLocaleLowerCase('de-DE') === 'true') return true;
+    return /(?:^|;)\s*display\s*:\s*none(?:\s*!important)?\s*(?:;|$)/iu.test(node.attr('style') || '');
+  }).remove();
   return [
     boundedText(post?.title, MAX_METADATA_LENGTH),
     boundedText(post?.excerpt, MAX_METADATA_LENGTH),
@@ -91,10 +99,11 @@ function addAuditReasons(reasons, audit) {
 }
 
 function addTextReasons(reasons, text) {
-  if (YEAR_PATTERN.test(text)) reasons.add('stale_year');
-  if (STATIC_PRICE_PATTERN.test(text) || NUMERIC_COST_CLAIM_PATTERN.test(text)) reasons.add('static_price');
+  if (STATIC_PRICE_PATTERN.test(text) || EXPLICIT_AMOUNT_PATTERN.test(text)) reasons.add('static_price');
   if (SEARCH_CHANGE_PATTERN.test(text)) reasons.add('google_or_seo_change');
-  if (AI_OR_TOOL_PATTERN.test(text) || VERSION_CLAIM_PATTERN.test(text)) reasons.add('ai_or_tool_version');
+  if (TOOL_CHANGE_PATTERN.test(text) || TOOL_VERSION_PATTERN.test(text) || VERSION_CLAIM_PATTERN.test(text)) {
+    reasons.add('ai_or_tool_version');
+  }
   if (LEGAL_OR_PRIVACY_PATTERN.test(text)) reasons.add('legal_or_privacy');
   if (TECHNICAL_STANDARD_PATTERN.test(text)) reasons.add('technical_standard');
 }

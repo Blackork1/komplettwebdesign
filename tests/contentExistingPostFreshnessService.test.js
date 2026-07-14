@@ -94,3 +94,57 @@ test('GEO-Kürzel wird nicht innerhalb zeitloser Wörter erkannt', () => {
   });
   assert.deepEqual(result, { requiresResearch: false, reasons: [] });
 });
+
+test('historische Jahresangaben benötigen ohne Auditbefund keine Recherche', () => {
+  for (const content of [
+    '<p>Seit 1999 begleiten wir Unternehmen.</p>',
+    '<p>1999 gegründet.</p>',
+    '<p>Von 1999 bis 2005 entstand unser Standort.</p>',
+    '<p>Die Bauphase dauerte 1999–2005.</p>'
+  ]) {
+    const result = classifyExistingPostFreshness({
+      post: { content },
+      audit: { findings: [] }
+    });
+    assert.deepEqual(result, { requiresResearch: false, reasons: [] }, content);
+  }
+});
+
+test('neue Kunden sind kein SEO-Änderungssignal', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>SEO hilft, neue Kunden zu gewinnen.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
+
+test('bloße Produktnamen benötigen ohne Versions- oder Aktualitätssignal keine Recherche', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>Die Website verwendet WordPress.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
+
+test('Leistungsanzahlen in einem Tarif sind keine statischen Preisangaben', () => {
+  const result = classifyExistingPostFreshness({
+    post: { content: '<p>Ein Tarif umfasst 3 Kernleistungen.</p>' },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
+
+test('eindeutig unsichtbare Elemente werden bei der Aktualitätsprüfung ignoriert', () => {
+  const result = classifyExistingPostFreshness({
+    post: {
+      content: [
+        '<p hidden>Die Regel galt 2025.</p>',
+        '<p aria-hidden="true">Das Angebot kostet 99 Euro.</p>',
+        '<div style="color: red; display: none !important"><p>Google änderte seinen Algorithmus.</p></div>',
+        '<p>Eine klare Navigation hilft bei der Orientierung.</p>'
+      ].join('')
+    },
+    audit: { findings: [] }
+  });
+  assert.deepEqual(result, { requiresResearch: false, reasons: [] });
+});
