@@ -2,6 +2,7 @@ import { ArticleOutputSchema, ReviewOutputSchema } from './articleSchemas.js';
 import { buildFocusedRiskReport as buildFocusedRiskReportDefault } from './riskReportService.js';
 import { learningRulesForStage } from './contentLearningSnapshotService.js';
 import { classifyLearningIssueLocally, getLearningCategory } from './contentLearningTaxonomy.js';
+import { executePaidStructuredTextStage } from './providerTextStageService.js';
 
 export const REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE = 'optimize_review_issues';
 export const REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION = 'review-issue-optimization-v1';
@@ -162,150 +163,6 @@ function matchingLearningRules(runtimeSnapshot, stage, categoryKeys) {
   return learningRulesForStage(runtimeSnapshot.learningRuleSnapshot, stage, categoryKeys);
 }
 
-function stageEnvelope(value, schema, expectedReviewVersion) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  if (positiveInteger(value.reviewVersionBefore) !== expectedReviewVersion) return null;
-  const parsed = schema.safeParse(value.value);
-  return parsed.success ? { ...value, value: parsed.data } : null;
-}
-
-function providerRetryIsSafe(error) {
-  return error?.safeToRetry === true
-    || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
-}
-
-async function recordProvider(dependencies, success, errorCode = null) {
-  if (typeof dependencies.recordProviderResult !== 'function') return;
-  try {
-    await dependencies.recordProviderResult({ providerName: 'openai', success, errorCode });
-  } catch {
-    // Die technische Statusanzeige darf einen fachlich sicheren Lauf nicht verändern.
-  }
-}
-
-async function executeTextStage({
-  run,
-  stageId,
-  expectedReviewVersion,
-  runtimeSnapshot,
-  reservationCost,
-  inputRate,
-  outputRate,
-  schema,
-  execute
-}, dependencies) {
-  const persisted = await dependencies.costService.getPersistedStageResult({ runId: run.id, stageId });
-  if (persisted !== null && persisted !== undefined) {
-    const envelope = stageEnvelope(persisted, schema, expectedReviewVersion);
-    if (!envelope) {
-      return { manual: {
-        code: 'provider_stage_result_invalid',
-        message: 'Das gespeicherte Providerergebnis ist ungültig oder gehört zu einer anderen Reviewversion.'
-      } };
-    }
-    await dependencies.assertLease();
-    await dependencies.costService.reserveMonthlyBudget({
-      runId: run.id,
-      stageId,
-      estimatedCost: reservationCost,
-      limit: Number(runtimeSnapshot.monthlyCostLimitEur || 0),
-      timezone: runtimeSnapshot.timezone
-    });
-    await dependencies.costService.settleMonthlyBudget({
-      runId: run.id,
-      stageId,
-      reservationMonth: envelope.reservationMonth,
-      actualCost: Number(envelope.actualCost || 0)
-    });
-    await recordProvider(dependencies, true);
-    return { value: envelope.value };
-  }
-
-  await dependencies.assertLease();
-  const reservation = await dependencies.costService.reserveMonthlyBudget({
-    runId: run.id,
-    stageId,
-    estimatedCost: reservationCost,
-    limit: Number(runtimeSnapshot.monthlyCostLimitEur || 0),
-    timezone: runtimeSnapshot.timezone
-  });
-  if (reservation?.created !== true) {
-    return { manual: {
-      code: 'provider_execution_uncertain',
-      message: 'Für diese Providerstufe besteht bereits eine ungeklärte Reservierung. Sie wird nicht automatisch erneut ausgeführt.'
-    } };
-  }
-
-  let result;
-  try {
-    await dependencies.assertLease();
-    result = await execute();
-  } catch (error) {
-    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    await recordProvider(dependencies, false, error?.code || 'OPENAI_REQUEST_FAILED');
-    if (providerRetryIsSafe(error)) {
-      await dependencies.costService.releaseMonthlyBudgetReservation({
-        runId: run.id,
-        stageId,
-        reservationMonth: reservation.reservationMonth
-      });
-      error.code = 'CONTENT_PROVIDER_SAFE_RETRY';
-      error.retryable = true;
-      throw error;
-    }
-    return { manual: {
-      code: 'provider_execution_uncertain',
-      message: 'Der Providerzustand ist nicht eindeutig. Die kostenpflichtige Stufe wird nicht automatisch wiederholt.'
-    } };
-  }
-
-  const parsed = schema.safeParse(result?.value);
-  if (!parsed.success) {
-    return { manual: {
-      code: 'provider_stage_schema_invalid',
-      message: 'Der Provider hat kein gültiges strukturiertes Ergebnis geliefert.',
-      issues: parsed.error.issues
-    } };
-  }
-  const actualCost = dependencies.costService.estimateTextCost({
-    usage: result.usage || {},
-    inputRate,
-    outputRate
-  });
-  const envelope = {
-    value: parsed.data,
-    responseId: result.responseId || null,
-    usage: result.usage || {},
-    promptVersion: result.promptVersion || 'unknown',
-    reviewVersionBefore: expectedReviewVersion,
-    reservationMonth: reservation.reservationMonth,
-    actualCost
-  };
-  try {
-    await dependencies.runRepository.updateRunStage(run.id, {
-      currentStage: stageId,
-      stageId,
-      stageResult: envelope,
-      tokenUsage: envelope.usage,
-      responseIds: envelope.responseId ? [envelope.responseId] : []
-    });
-  } catch {
-    return { manual: {
-      code: 'provider_stage_persistence_uncertain',
-      message: 'Das Providerergebnis konnte nicht eindeutig gespeichert werden. Die Reservierung bleibt zur manuellen Prüfung offen.'
-    } };
-  }
-  await dependencies.assertLease();
-  await dependencies.costService.settleMonthlyBudget({
-    runId: run.id,
-    stageId,
-    reservationMonth: reservation.reservationMonth,
-    actualCost
-  });
-  await recordProvider(dependencies, true);
-  return { value: envelope.value };
-}
-
 async function finishManual(run, postId, manual, dependencies) {
   await dependencies.assertLease();
   const finished = await dependencies.runRepository.finishRun(run.id, {
@@ -408,10 +265,10 @@ export async function runReviewIssueOptimizationJob(
   try {
     const learningCategories = selectedLearningCategories(selectedIssues);
     const repairStageId = `${REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE}:${postId}:repair`;
-    const repair = await executeTextStage({
+    const repair = await executePaidStructuredTextStage({
       run,
       stageId: repairStageId,
-      expectedReviewVersion,
+      versionFence: { key: 'reviewVersionBefore', value: expectedReviewVersion },
       runtimeSnapshot,
       reservationCost: Number(runtimeSnapshot.contentStageReservationEur ?? 0.5),
       inputRate: Number(runtimeSnapshot.contentInputCostPerMtok || 0),
@@ -439,10 +296,10 @@ export async function runReviewIssueOptimizationJob(
     candidate.contentHtml = validation.sanitizedHtml;
 
     const reviewStageId = `${REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE}:${postId}:review`;
-    const reviewResult = await executeTextStage({
+    const reviewResult = await executePaidStructuredTextStage({
       run,
       stageId: reviewStageId,
-      expectedReviewVersion,
+      versionFence: { key: 'reviewVersionBefore', value: expectedReviewVersion },
       runtimeSnapshot,
       reservationCost: Number(runtimeSnapshot.reviewStageReservationEur
         ?? runtimeSnapshot.contentStageReservationEur

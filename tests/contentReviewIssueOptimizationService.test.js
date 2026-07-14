@@ -405,6 +405,7 @@ test('verwendet persistierte Providerergebnisse beim Retry ohne neue OpenAI-Aufr
 
   const result = await runReviewIssueOptimizationJob(input(), deps);
   assert.equal(result.status, 'completed');
+  assert.equal(deps.reservations.length, 0);
   assert.equal(deps.calls.some(([name]) => name === 'repair'), false);
   assert.equal(deps.calls.some(([name]) => name === 'review'), false);
 });
