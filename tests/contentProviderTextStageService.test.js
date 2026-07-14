@@ -83,6 +83,7 @@ function stageDependencies() {
 
 test('bezahlte Textstufe verwendet persistiertes Ergebnis ohne zweiten Provideraufruf', async () => {
   let calls = 0;
+  const settlements = [];
   const persisted = {
     value: { title: 'Gespeichert' },
     liveHash: LIVE_HASH,
@@ -92,7 +93,8 @@ test('bezahlte Textstufe verwendet persistiertes Ergebnis ohne zweiten Providera
   const dependencies = {
     assertLease: async () => true,
     costService: {
-      async getPersistedStageResult() { return persisted; }
+      async getPersistedStageResult() { return persisted; },
+      async settleMonthlyBudget(payload) { settlements.push(payload); }
     }
   };
 
@@ -104,7 +106,76 @@ test('bezahlte Textstufe verwendet persistiertes Ergebnis ohne zweiten Providera
   }), dependencies);
 
   assert.equal(calls, 0);
+  assert.deepEqual(settlements, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07',
+    actualCost: 0.01
+  }]);
   assert.deepEqual(result, { value: { title: 'Gespeichert' }, envelope: persisted, reused: true });
+});
+
+test('Retry rechnet ein vor dem Settlement persistiertes Ergebnis ohne neue Reservierung oder Providerausführung ab', async () => {
+  const { dependencies, state } = stageDependencies();
+  let persisted = null;
+  let leaseCalls = 0;
+  let providerCalls = 0;
+  const persistStage = dependencies.runRepository.updateRunStage;
+  dependencies.costService.getPersistedStageResult = async () => {
+    state.events.push('load');
+    return persisted;
+  };
+  dependencies.runRepository.updateRunStage = async (runId, payload) => {
+    await persistStage(runId, payload);
+    persisted = structuredClone(payload.stageResult);
+  };
+  dependencies.assertLease = async () => {
+    state.events.push('lease');
+    leaseCalls += 1;
+    if (leaseCalls === 3) {
+      throw Object.assign(new Error('Lease nach Persistenz verloren'), {
+        code: 'CONTENT_JOB_LEASE_LOST'
+      });
+    }
+  };
+  const input = stageInput({
+    async execute() {
+      state.events.push('execute');
+      providerCalls += 1;
+      return {
+        value: { title: 'Einmal erzeugt' },
+        responseId: 'resp-einmalig',
+        usage: { input_tokens: 10, output_tokens: 5 },
+        promptVersion: 'test-v1'
+      };
+    }
+  });
+
+  await assert.rejects(
+    executePaidStructuredTextStage(input, dependencies),
+    { code: 'CONTENT_JOB_LEASE_LOST' }
+  );
+  assert.ok(persisted);
+  assert.equal(state.settlements.length, 0);
+
+  dependencies.assertLease = async () => { state.events.push('lease'); };
+  state.events.length = 0;
+  const retried = await executePaidStructuredTextStage(input, dependencies);
+
+  assert.equal(providerCalls, 1);
+  assert.equal(state.reservations.length, 1);
+  assert.deepEqual(state.events, ['load', 'lease', 'settle', 'record:true']);
+  assert.deepEqual(state.settlements, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07',
+    actualCost: 0.015
+  }]);
+  assert.deepEqual(retried, {
+    value: { title: 'Einmal erzeugt' },
+    envelope: persisted,
+    reused: true
+  });
 });
 
 test('offene Reservierung stoppt ohne zweiten Provideraufruf', async () => {

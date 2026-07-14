@@ -103,12 +103,21 @@ export async function executePaidStructuredTextStage(input, dependencies) {
   });
   if (persisted !== null && persisted !== undefined) {
     const envelope = parsePersistedEnvelope(persisted, input.schema, input.versionFence);
-    return envelope
-      ? { value: envelope.value, envelope, reused: true }
-      : { manual: {
+    if (!envelope) {
+      return { manual: {
         code: 'provider_stage_result_invalid',
         message: 'Das gespeicherte Providerergebnis ist ungültig oder gehört zu einer anderen Ausgangsversion.'
       } };
+    }
+    await dependencies.assertLease();
+    await dependencies.costService.settleMonthlyBudget({
+      runId: input.run.id,
+      stageId: input.stageId,
+      reservationMonth: envelope.reservationMonth,
+      actualCost: Number(envelope.actualCost)
+    });
+    await recordProvider(dependencies, true);
+    return { value: envelope.value, envelope, reused: true };
   }
 
   await dependencies.assertLease();
