@@ -28,6 +28,8 @@ import { createContentPublicationService } from '../services/contentAgent/conten
 import { createScheduledPublicationService } from '../services/contentAgent/scheduledPublicationService.js';
 import { createContentRevisionService } from '../services/contentAgent/contentRevisionService.js';
 import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
+import { createContentLearningRepository } from '../repositories/contentLearningRepository.js';
+import { createContentLearningAdminService } from '../services/contentAgent/contentLearningAdminService.js';
 import * as blogPostPresentation from '../services/blogPostPresentationService.js';
 import * as presentation from '../services/contentAgent/adminPresentationService.js';
 import pool from '../util/db.js';
@@ -41,11 +43,16 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/jobs', isAdmin, controller.jobsPage);
   router.get('/admin/content-agent/technology', isAdmin, controller.technologyPage);
   router.get('/admin/content-agent/search-console', isAdmin, controller.searchConsolePage);
+  router.get('/admin/content-agent/learning-rules', isAdmin, controller.learningRulesPage);
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);
   router.post('/admin/content-agent/search-console/sync', isAdmin, verifyCsrfToken, controller.syncSearchConsoleAction);
+  router.post('/admin/content-agent/learning-rules/proposals/:id/activate', isAdmin, verifyCsrfToken, controller.activateLearningProposalAction);
+  router.post('/admin/content-agent/learning-rules/proposals/:id/reject', isAdmin, verifyCsrfToken, controller.rejectLearningProposalAction);
+  router.post('/admin/content-agent/learning-rules/:id/revise', isAdmin, verifyCsrfToken, controller.reviseLearningRuleAction);
+  router.post('/admin/content-agent/learning-rules/:id/status', isAdmin, verifyCsrfToken, controller.changeLearningRuleStatusAction);
   router.post('/admin/content-agent/jobs/:id/retry', isAdmin, verifyCsrfToken, controller.retryJobAction);
   router.post('/admin/content-agent/jobs/:id/recover-provider', isAdmin, verifyCsrfToken, controller.recoverProviderJobAction);
   router.post('/admin/content-agent/jobs/:id/recover-rejected-provider', isAdmin, verifyCsrfToken, controller.recoverRejectedProviderJobAction);
@@ -79,6 +86,9 @@ const scheduledPublicationService = createScheduledPublicationService();
 const revisionService = createContentRevisionService({
   repository: createContentRevisionRepository(pool)
 });
+const learningAdminService = createContentLearningAdminService({
+  repository: createContentLearningRepository(pool)
+});
 const controller = createAdminContentAgentController({
   adminRepository: createContentAgentAdminRepository(pool),
   settingsRepository: {
@@ -104,6 +114,7 @@ const controller = createAdminContentAgentController({
   publicationService,
   scheduledPublicationService,
   revisionService,
+  learningAdminService,
   blogPostPresentation
 });
 

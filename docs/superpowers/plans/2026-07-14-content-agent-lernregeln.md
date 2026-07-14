@@ -403,7 +403,7 @@ git commit -m "feat: apply approved learning rules to new content"
 - Produces: `createContentLearningAdminService({ repository })`.
 - Controller actions: `learningRulesPage`, `activateLearningProposalAction`, `rejectLearningProposalAction`, `reviseLearningRuleAction`, `changeLearningRuleStatusAction`.
 
-- [ ] **Step 1: Failing Sicherheits- und Übergangstests schreiben**
+- [x] **Step 1: Failing Sicherheits- und Übergangstests schreiben**
 
 Alle POST-Routen benötigen `isAdmin`, `verifyCsrfToken`, `confirmed=true`, positive IDs und eine erwartete Version. Tests belegen erlaubte Übergänge:
 
@@ -417,13 +417,13 @@ active|paused -> neue Version active
 
 Veraltete Versionen liefern eine verständliche Konfliktmeldung. Keine Aktion ruft einen Veröffentlichungsdienst auf.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningAdminService.test.js tests/contentAgentAdminController.test.js tests/contentAgentAdminRoutes.test.js`
 
 Expected: FAIL.
 
-- [ ] **Step 3: Adminservice, Controller und Routen implementieren**
+- [x] **Step 3: Adminservice, Controller und Routen implementieren**
 
 Routen:
 
@@ -437,13 +437,13 @@ POST /admin/content-agent/learning-rules/:id/status
 
 Der Service validiert Regeltexte vor dem Repositoryaufruf und reicht Admin-ID sowie Adminname für das Audit durch.
 
-- [ ] **Step 4: GREEN prüfen**
+- [x] **Step 4: GREEN prüfen**
 
 Run: `node --test tests/contentLearningAdminService.test.js tests/contentAgentAdminController.test.js tests/contentAgentAdminRoutes.test.js`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningAdminService.js controllers/adminContentAgentController.js routes/adminContentAgentRoutes.js tests/contentLearningAdminService.test.js tests/contentAgentAdminController.test.js tests/contentAgentAdminRoutes.test.js

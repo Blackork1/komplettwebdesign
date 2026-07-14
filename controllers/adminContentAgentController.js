@@ -24,7 +24,9 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVIEW_VERSION_STALE',
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
-  'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED'
+  'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
+  'CONTENT_LEARNING_VERSION_CONFLICT',
+  'CONTENT_LEARNING_STATE_CONFLICT'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -53,7 +55,9 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
-  CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.'
+  CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
+  CONTENT_LEARNING_VERSION_CONFLICT: 'Der Vorschlag oder die Regel wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
+  CONTENT_LEARNING_STATE_CONFLICT: 'Die Lernregel befindet sich nicht mehr im erwarteten Zustand.'
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
@@ -198,6 +202,20 @@ function optionalBoolean(value, fieldName) {
 
 function criticalConfirmation(value) {
   return value === true || value === 'true';
+}
+
+function requiredConfirmation(value) {
+  if (!criticalConfirmation(value)) {
+    throw Object.assign(new Error('Bestätigung fehlt.'), {
+      code: 'CONTENT_CONFIRMATION_REQUIRED'
+    });
+  }
+  return true;
+}
+
+function targetStages(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined ? [] : [value];
 }
 
 function settingsPatch(body = {}) {
@@ -352,6 +370,7 @@ export function createAdminContentAgentController(dependencies) {
     revisionService,
     blogPostPresentation,
     scheduledPublicationService,
+    learningAdminService,
     now = () => new Date()
   } = dependencies;
 
@@ -576,6 +595,23 @@ export function createAdminContentAgentController(dependencies) {
       }
     },
 
+    async learningRulesPage(req, res, next) {
+      if (typeof learningAdminService?.getDashboard !== 'function') return unavailable(res);
+      try {
+        const rawDashboard = await learningAdminService.getDashboard();
+        const present = typeof presentation?.presentContentLearningDashboard === 'function'
+          ? presentation.presentContentLearningDashboard(rawDashboard)
+          : rawDashboard;
+        const result = typeof req.query?.result === 'string' ? req.query.result : '';
+        return res.render('admin/contentAgent/learningRules', {
+          learningDashboard: present,
+          result
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
     async draftPreviewPage(req, res, next) {
       if (typeof draftService?.getDraftForReview !== 'function'
           || typeof blogPostPresentation?.buildBlogPostPageModel !== 'function') {
@@ -721,6 +757,76 @@ export function createAdminContentAgentController(dependencies) {
       } catch (error) {
         return sendKnownError(error, res, next);
       }
+    },
+
+    activateLearningProposalAction(req, res, next) {
+      return actionCapability({
+        capability: learningAdminService,
+        method: 'activateProposal',
+        args: () => [{
+          proposalId: positiveId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_version),
+          ruleText: req.body?.rule_text,
+          targetStages: targetStages(req.body?.target_stages),
+          admin: adminFromRequest(req),
+          confirmed: requiredConfirmation(req.body?.confirmed)
+        }],
+        redirect: '/admin/content-agent/learning-rules?result=activated',
+        res,
+        next
+      });
+    },
+
+    rejectLearningProposalAction(req, res, next) {
+      return actionCapability({
+        capability: learningAdminService,
+        method: 'rejectProposal',
+        args: () => [{
+          proposalId: positiveId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_version),
+          admin: adminFromRequest(req),
+          confirmed: requiredConfirmation(req.body?.confirmed)
+        }],
+        redirect: '/admin/content-agent/learning-rules?result=rejected',
+        res,
+        next
+      });
+    },
+
+    reviseLearningRuleAction(req, res, next) {
+      return actionCapability({
+        capability: learningAdminService,
+        method: 'reviseRule',
+        args: () => [{
+          ruleId: positiveId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_version),
+          ruleText: req.body?.rule_text,
+          targetStages: targetStages(req.body?.target_stages),
+          admin: adminFromRequest(req),
+          confirmed: requiredConfirmation(req.body?.confirmed)
+        }],
+        redirect: '/admin/content-agent/learning-rules?result=revised',
+        res,
+        next
+      });
+    },
+
+    changeLearningRuleStatusAction(req, res, next) {
+      return actionCapability({
+        capability: learningAdminService,
+        method: 'changeRuleStatus',
+        args: () => [{
+          ruleId: positiveId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_version),
+          currentStatus: req.body?.current_status,
+          nextStatus: req.body?.next_status,
+          admin: adminFromRequest(req),
+          confirmed: requiredConfirmation(req.body?.confirmed)
+        }],
+        redirect: '/admin/content-agent/learning-rules?result=status-changed',
+        res,
+        next
+      });
     },
 
     async retryJobAction(req, res, next) {

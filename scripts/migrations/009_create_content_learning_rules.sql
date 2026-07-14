@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS content_learning_rules (
   category_key VARCHAR(80) NOT NULL UNIQUE,
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   current_version INTEGER NOT NULL,
+  rule_revision INTEGER NOT NULL DEFAULT 1,
   created_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_by_admin_name VARCHAR(180),
   updated_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -84,8 +85,12 @@ CREATE TABLE IF NOT EXISTS content_learning_rules (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (status IN ('active', 'paused', 'disabled')),
-  CHECK (current_version >= 1)
+  CHECK (current_version >= 1),
+  CHECK (rule_revision >= 1)
 );
+
+ALTER TABLE content_learning_rules
+  ADD COLUMN IF NOT EXISTS rule_revision INTEGER NOT NULL DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS content_learning_rule_versions (
   rule_id BIGINT NOT NULL REFERENCES content_learning_rules(id) ON DELETE CASCADE,

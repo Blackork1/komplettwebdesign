@@ -23,6 +23,7 @@ test('Migration 009 legt die vollständige, revisionssichere Lernstruktur an', a
   assert.match(sql, /REFERENCES users\s*\(id\) ON DELETE SET NULL/i);
   assert.match(sql, /CHECK \(status IN \('pending', 'approved', 'rejected', 'superseded'\)\)/i);
   assert.match(sql, /CHECK \(status IN \('active', 'paused', 'disabled'\)\)/i);
+  assert.match(sql, /rule_revision INTEGER NOT NULL DEFAULT 1/i);
 });
 
 test('Migration 009 zählt bekannte Kategorien und unbekannte Fingerabdrücke je Artikel nur einmal', async () => {

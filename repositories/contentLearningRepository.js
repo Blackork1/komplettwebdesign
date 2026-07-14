@@ -1,12 +1,22 @@
+import { createHash } from 'node:crypto';
+
 import pool from '../util/db.js';
 import {
   CONTENT_LEARNING_TAXONOMY_VERSION,
   getLearningCategory,
-  sanitizeLearningText
+  sanitizeLearningText,
+  validateLearningRuleText
 } from '../services/contentAgent/contentLearningTaxonomy.js';
 
 const FINGERPRINT = /^[0-9a-f]{64}$/;
 const CLASSIFICATION_SOURCES = new Set(['local', 'provider', 'unclassified']);
+const TARGET_STAGE_ORDER = Object.freeze(['seo_brief', 'writer', 'reviewer']);
+const TARGET_STAGES = new Set(TARGET_STAGE_ORDER);
+const RULE_STATUS_TRANSITIONS = Object.freeze({
+  active: new Set(['paused', 'disabled']),
+  paused: new Set(['active', 'disabled']),
+  disabled: new Set()
+});
 
 function inputError(message) {
   return Object.assign(new TypeError(message), { code: 'CONTENT_LEARNING_INPUT_INVALID' });
@@ -16,6 +26,50 @@ function positiveInteger(value, label) {
   const normalized = Number(value);
   if (!Number.isSafeInteger(normalized) || normalized <= 0) throw inputError(`${label} muss positiv sein.`);
   return normalized;
+}
+
+function normalizeAdmin(value) {
+  const id = positiveInteger(value?.id, 'Die Admin-ID');
+  const username = sanitizeLearningText(value?.username, 180);
+  if (!username) throw inputError('Der Adminname fehlt.');
+  return { id, username };
+}
+
+function normalizeTargetStages(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 3) {
+    throw inputError('Die Zielstufen der Lernregel sind ungültig.');
+  }
+  const unique = new Set(value.map((stage) => sanitizeLearningText(stage, 30)));
+  if (unique.size !== value.length || [...unique].some((stage) => !TARGET_STAGES.has(stage))) {
+    throw inputError('Die Zielstufen der Lernregel sind ungültig.');
+  }
+  return TARGET_STAGE_ORDER.filter((stage) => unique.has(stage));
+}
+
+function hashRule({ ruleText, targetStages }) {
+  return createHash('sha256').update(JSON.stringify({
+    ruleText,
+    targetStages
+  })).digest('hex');
+}
+
+function learningError(code, message) {
+  return Object.assign(new Error(message), { code });
+}
+
+async function inTransaction(db, callback) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch { /* ursprünglichen Fehler erhalten */ }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function normalizeObservation(value) {
@@ -283,6 +337,217 @@ export function createContentLearningRepository(db = pool) {
         ORDER BY r.id, r.current_version
       `);
       return rows;
+    },
+
+    async getAdminDashboard() {
+      const [proposals, rules, observations, unclassified, events] = await Promise.all([
+        db.query(`
+          SELECT id, category_key, status, proposal_version, suggested_rule_text,
+                 target_stages, evidence_count, evidence_json, expected_effect,
+                 overfit_warning, decided_by_admin_name, decided_at, created_at, updated_at
+          FROM content_learning_rule_proposals
+          ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END, created_at DESC, id DESC
+          LIMIT 100
+        `),
+        db.query(`
+          SELECT r.id, r.category_key, r.status, r.current_version, r.rule_revision,
+                 r.created_by_admin_name, r.updated_by_admin_name, r.created_at, r.updated_at,
+                 v.rule_text, v.target_stages, v.rule_hash, v.created_at AS version_created_at
+          FROM content_learning_rules r
+          JOIN content_learning_rule_versions v
+            ON v.rule_id = r.id AND v.version = r.current_version
+          ORDER BY CASE r.status WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END,
+                   r.updated_at DESC, r.id DESC
+          LIMIT 100
+        `),
+        db.query(`
+          SELECT category_key, COUNT(DISTINCT post_id)::integer AS article_count,
+                 COUNT(*)::integer AS observation_count, MAX(last_seen_at) AS last_seen_at,
+                 ARRAY_AGG(DISTINCT post_id ORDER BY post_id) AS post_ids
+          FROM content_learning_observations
+          WHERE category_key <> 'unclassified'
+          GROUP BY category_key
+          ORDER BY MAX(last_seen_at) DESC, category_key
+        `),
+        db.query(`
+          SELECT COUNT(DISTINCT post_id)::integer AS article_count,
+                 COUNT(*)::integer AS observation_count, MAX(last_seen_at) AS last_seen_at
+          FROM content_learning_observations
+          WHERE category_key = 'unclassified'
+        `),
+        db.query(`
+          SELECT id, event_type, proposal_id, rule_id, rule_version, category_key,
+                 details_json, admin_id, admin_name, created_at
+          FROM content_learning_events
+          ORDER BY created_at DESC, id DESC
+          LIMIT 100
+        `)
+      ]);
+      return {
+        proposals: proposals.rows,
+        rules: rules.rows,
+        observations: observations.rows,
+        unclassified: unclassified.rows[0] || {
+          article_count: 0,
+          observation_count: 0,
+          last_seen_at: null
+        },
+        events: events.rows
+      };
+    },
+
+    async activateProposal(input) {
+      const proposalId = positiveInteger(input?.proposalId, 'Die Vorschlags-ID');
+      const expectedVersion = positiveInteger(input?.expectedVersion, 'Die erwartete Version');
+      const ruleText = validateLearningRuleText(input?.ruleText);
+      const targetStages = normalizeTargetStages(input?.targetStages);
+      const admin = normalizeAdmin(input?.admin);
+      return inTransaction(db, async (client) => {
+        const proposalResult = await client.query(`
+          SELECT * FROM content_learning_rule_proposals
+          WHERE id = $1
+          FOR UPDATE
+        `, [proposalId]);
+        const proposal = proposalResult.rows[0];
+        if (!proposal) throw learningError('CONTENT_LEARNING_PROPOSAL_NOT_FOUND', 'Der Lernregelvorschlag wurde nicht gefunden.');
+        if (proposal.status !== 'pending' || Number(proposal.proposal_version) !== expectedVersion) {
+          throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Der Lernregelvorschlag ist veraltet.');
+        }
+        const ruleResult = await client.query(`
+          INSERT INTO content_learning_rules (
+            category_key, status, current_version, rule_revision,
+            created_by_admin_id, created_by_admin_name,
+            updated_by_admin_id, updated_by_admin_name
+          ) VALUES ($1, 'active', 1, 1, $2, $3, $2, $3)
+          ON CONFLICT (category_key) DO NOTHING
+          RETURNING *
+        `, [proposal.category_key, admin.id, admin.username]);
+        const rule = ruleResult.rows[0];
+        if (!rule) throw learningError('CONTENT_LEARNING_STATE_CONFLICT', 'Für diese Kategorie existiert bereits eine Lernregel.');
+        const ruleHash = hashRule({ ruleText, targetStages });
+        await client.query(`
+          INSERT INTO content_learning_rule_versions (
+            rule_id, version, rule_text, target_stages, rule_hash,
+            source_proposal_id, created_by_admin_id, created_by_admin_name
+          ) VALUES ($1, 1, $2, $3::text[], $4, $5, $6, $7)
+        `, [rule.id, ruleText, targetStages, ruleHash, proposalId, admin.id, admin.username]);
+        const decisionResult = await client.query(`
+          UPDATE content_learning_rule_proposals
+          SET status = 'approved', proposal_version = proposal_version + 1,
+              suggested_rule_text = $3, target_stages = $4::text[],
+              decided_by_admin_id = $5, decided_by_admin_name = $6,
+              decided_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND proposal_version = $2 AND status = 'pending'
+          RETURNING *
+        `, [proposalId, expectedVersion, ruleText, targetStages, admin.id, admin.username]);
+        if (!decisionResult.rows[0]) {
+          throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Der Lernregelvorschlag ist veraltet.');
+        }
+        await client.query(`
+          INSERT INTO content_learning_events (
+            event_type, proposal_id, rule_id, rule_version, category_key,
+            details_json, admin_id, admin_name
+          ) VALUES ('proposal_approved', $1, $2, 1, $3, $4::jsonb, $5, $6)
+        `, [proposalId, rule.id, proposal.category_key, JSON.stringify({ targetStages }), admin.id, admin.username]);
+        return { proposal: decisionResult.rows[0], rule: { ...rule, rule_hash: ruleHash } };
+      });
+    },
+
+    async rejectProposal(input) {
+      const proposalId = positiveInteger(input?.proposalId, 'Die Vorschlags-ID');
+      const expectedVersion = positiveInteger(input?.expectedVersion, 'Die erwartete Version');
+      const admin = normalizeAdmin(input?.admin);
+      return inTransaction(db, async (client) => {
+        const result = await client.query(`
+          UPDATE content_learning_rule_proposals
+          SET status = 'rejected', proposal_version = proposal_version + 1,
+              decided_by_admin_id = $3, decided_by_admin_name = $4,
+              decided_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND proposal_version = $2 AND status = 'pending'
+          RETURNING *
+        `, [proposalId, expectedVersion, admin.id, admin.username]);
+        const proposal = result.rows[0];
+        if (!proposal) throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Der Lernregelvorschlag ist veraltet.');
+        await client.query(`
+          INSERT INTO content_learning_events (
+            event_type, proposal_id, category_key, details_json, admin_id, admin_name
+          ) VALUES ('proposal_rejected', $1, $2, '{}'::jsonb, $3, $4)
+        `, [proposalId, proposal.category_key, admin.id, admin.username]);
+        return proposal;
+      });
+    },
+
+    async reviseRule(input) {
+      const ruleId = positiveInteger(input?.ruleId, 'Die Regel-ID');
+      const expectedVersion = positiveInteger(input?.expectedVersion, 'Die erwartete Version');
+      const ruleText = validateLearningRuleText(input?.ruleText);
+      const targetStages = normalizeTargetStages(input?.targetStages);
+      const admin = normalizeAdmin(input?.admin);
+      return inTransaction(db, async (client) => {
+        const currentResult = await client.query(`
+          SELECT * FROM content_learning_rules
+          WHERE id = $1
+          FOR UPDATE
+        `, [ruleId]);
+        const current = currentResult.rows[0];
+        if (!current) throw learningError('CONTENT_LEARNING_RULE_NOT_FOUND', 'Die Lernregel wurde nicht gefunden.');
+        if (Number(current.rule_revision) !== expectedVersion || !['active', 'paused'].includes(current.status)) {
+          throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Die Lernregel ist veraltet oder dauerhaft deaktiviert.');
+        }
+        const nextVersion = Number(current.current_version) + 1;
+        const ruleHash = hashRule({ ruleText, targetStages });
+        await client.query(`
+          INSERT INTO content_learning_rule_versions (
+            rule_id, version, rule_text, target_stages, rule_hash,
+            created_by_admin_id, created_by_admin_name
+          ) VALUES ($1, $2, $3, $4::text[], $5, $6, $7)
+        `, [ruleId, nextVersion, ruleText, targetStages, ruleHash, admin.id, admin.username]);
+        const updateResult = await client.query(`
+          UPDATE content_learning_rules
+          SET status = 'active', current_version = $2, rule_revision = rule_revision + 1,
+              updated_by_admin_id = $3, updated_by_admin_name = $4, updated_at = NOW()
+          WHERE id = $1 AND rule_revision = $5
+          RETURNING *
+        `, [ruleId, nextVersion, admin.id, admin.username, expectedVersion]);
+        if (!updateResult.rows[0]) throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Die Lernregel ist veraltet.');
+        await client.query(`
+          INSERT INTO content_learning_events (
+            event_type, rule_id, rule_version, category_key, details_json, admin_id, admin_name
+          ) VALUES ('rule_revised', $1, $2, $3, $4::jsonb, $5, $6)
+        `, [ruleId, nextVersion, current.category_key, JSON.stringify({ previousStatus: current.status, targetStages }), admin.id, admin.username]);
+        return { ...updateResult.rows[0], rule_text: ruleText, target_stages: targetStages, rule_hash: ruleHash };
+      });
+    },
+
+    async changeRuleStatus(input) {
+      const ruleId = positiveInteger(input?.ruleId, 'Die Regel-ID');
+      const expectedVersion = positiveInteger(input?.expectedVersion, 'Die erwartete Version');
+      const currentStatus = sanitizeLearningText(input?.currentStatus, 20);
+      const nextStatus = sanitizeLearningText(input?.nextStatus, 20);
+      const admin = normalizeAdmin(input?.admin);
+      if (!RULE_STATUS_TRANSITIONS[currentStatus]?.has(nextStatus)) {
+        throw inputError('Dieser Statusübergang ist nicht erlaubt.');
+      }
+      return inTransaction(db, async (client) => {
+        const result = await client.query(`
+          UPDATE content_learning_rules
+          SET status = $4, rule_revision = rule_revision + 1,
+              updated_by_admin_id = $5, updated_by_admin_name = $6, updated_at = NOW()
+          WHERE id = $1 AND rule_revision = $2 AND status = $3
+          RETURNING *
+        `, [ruleId, expectedVersion, currentStatus, nextStatus, admin.id, admin.username]);
+        const rule = result.rows[0];
+        if (!rule) throw learningError('CONTENT_LEARNING_VERSION_CONFLICT', 'Die Lernregel ist veraltet.');
+        const eventType = nextStatus === 'paused'
+          ? 'rule_paused'
+          : nextStatus === 'active' ? 'rule_reactivated' : 'rule_disabled';
+        await client.query(`
+          INSERT INTO content_learning_events (
+            event_type, rule_id, rule_version, category_key, details_json, admin_id, admin_name
+          ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
+        `, [eventType, ruleId, rule.current_version, rule.category_key, JSON.stringify({ previousStatus: currentStatus, nextStatus }), admin.id, admin.username]);
+        return rule;
+      });
     }
   };
 }

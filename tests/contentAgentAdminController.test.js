@@ -97,6 +97,72 @@ test('manuelle Erstellung erzwingt admin_manual und review', async () => {
   assert.equal(res.redirectedTo, '/admin/content-agent?created=1');
 });
 
+test('Lernregelseite und bestätigte Adminaktionen sind sicher verdrahtet', async () => {
+  const calls = [];
+  const learningAdminService = {
+    async getDashboard() { return { proposals: [{ id: 1 }] }; },
+    async activateProposal(input) { calls.push(['activate', input]); },
+    async rejectProposal(input) { calls.push(['reject', input]); },
+    async reviseRule(input) { calls.push(['revise', input]); },
+    async changeRuleStatus(input) { calls.push(['status', input]); }
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    learningAdminService,
+    presentation: {
+      presentContentLearningDashboard(value) { return { safe: value.proposals.length }; }
+    }
+  }));
+  const pageResponse = response();
+  await controller.learningRulesPage({ query: { result: 'activated' } }, pageResponse, assert.fail);
+  assert.deepEqual(pageResponse.rendered, {
+    view: 'admin/contentAgent/learningRules',
+    locals: { learningDashboard: { safe: 1 }, result: 'activated' }
+  });
+
+  const requests = [
+    ['activateLearningProposalAction', '4', {
+      confirmed: 'true', expected_version: '2', rule_text: 'Formuliere jeden CTA passend zum jeweiligen Entscheidungsschritt und vermeide inhaltlich gleiche Kontaktaufforderungen.', target_stages: ['writer', 'reviewer']
+    }],
+    ['rejectLearningProposalAction', '5', { confirmed: 'true', expected_version: '3' }],
+    ['reviseLearningRuleAction', '6', {
+      confirmed: 'true', expected_version: '4', rule_text: 'Nutze konkrete Unternehmensszenarien und setze lokale Bezüge nur ein, wenn sie die Erklärung tatsächlich verbessern.', target_stages: 'writer'
+    }],
+    ['changeLearningRuleStatusAction', '7', {
+      confirmed: 'true', expected_version: '5', current_status: 'active', next_status: 'paused'
+    }]
+  ];
+  for (const [action, id, body] of requests) {
+    const res = response();
+    await controller[action]({
+      params: { id }, body, session: { user: { id: 9, username: 'Admin Ä' } }
+    }, res, assert.fail);
+    assert.match(res.redirectedTo, /^\/admin\/content-agent\/learning-rules\?result=/);
+  }
+  assert.deepEqual(calls[0][1].targetStages, ['writer', 'reviewer']);
+  assert.deepEqual(calls[2][1].targetStages, ['writer']);
+  assert.equal(calls[3][1].nextStatus, 'paused');
+});
+
+test('Lernregelaktionen lehnen fehlende Bestätigung und ungültige Versionen vor dem Service ab', async () => {
+  let calls = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    learningAdminService: {
+      async rejectProposal() { calls += 1; }
+    }
+  }));
+  for (const body of [
+    { confirmed: 'false', expected_version: '1' },
+    { confirmed: 'true', expected_version: '1.5' }
+  ]) {
+    const res = response();
+    await controller.rejectLearningProposalAction({
+      params: { id: '3' }, body, session: { user: { id: 9, username: 'Admin' } }
+    }, res, assert.fail);
+    assert.equal(res.statusCode, 400);
+  }
+  assert.equal(calls, 0);
+});
+
 test('vier getrennte Regenerationsaktionen enqueuen minimale Reviewjobs mit Hardcap', async () => {
   const jobs = [];
   const controller = createAdminContentAgentController(baseDependencies({

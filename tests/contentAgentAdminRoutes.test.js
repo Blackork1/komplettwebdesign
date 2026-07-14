@@ -20,6 +20,7 @@ const GET_PATHS = [
   '/admin/content-agent/jobs',
   '/admin/content-agent/technology',
   '/admin/content-agent/search-console',
+  '/admin/content-agent/learning-rules',
   '/admin/content-agent/drafts/:id/preview',
   '/admin/content-agent/drafts/:id/edit',
   '/admin/content-agent/revisions/:id/edit'
@@ -29,6 +30,10 @@ const POST_PATHS = [
   '/admin/content-agent/settings',
   '/admin/content-agent/jobs/manual-draft',
   '/admin/content-agent/search-console/sync',
+  '/admin/content-agent/learning-rules/proposals/:id/activate',
+  '/admin/content-agent/learning-rules/proposals/:id/reject',
+  '/admin/content-agent/learning-rules/:id/revise',
+  '/admin/content-agent/learning-rules/:id/status',
   '/admin/content-agent/jobs/:id/retry',
   '/admin/content-agent/jobs/:id/recover-provider',
   '/admin/content-agent/drafts/:id',
