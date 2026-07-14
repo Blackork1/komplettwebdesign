@@ -22,6 +22,7 @@ import {
   getWeeklyTopicPoolIdentity,
   listAvailableWeeklyCandidates
 } from './weeklyTopicPoolService.js';
+import { buildSearchConsoleTopicSignals } from './searchConsoleCategoryService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -978,6 +979,15 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
 
             let weeklyResearch;
             try {
+              let searchConsoleSignals = buildSearchConsoleTopicSignals();
+              if (typeof dependencies.loadSearchConsoleTopicSignals === 'function') {
+                try {
+                  const rawSearchConsoleSignals = await dependencies.loadSearchConsoleTopicSignals();
+                  searchConsoleSignals = buildSearchConsoleTopicSignals(rawSearchConsoleSignals);
+                } catch (error) {
+                  recordAuditWarning(error, 'GSC_TOPIC_SIGNALS_UNAVAILABLE');
+                }
+              }
               weeklyResearch = await paidTextOperation({
                 stage: 'weekly_topic_research',
                 operation: openaiService.createWeeklyTopicPool,
@@ -985,6 +995,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
                   inventory,
                   currentDate: input.currentDate,
                   regionFocus: input.regionFocus,
+                  searchConsoleSignals,
                   maxCandidates: config.maxTopicCandidates || 9
                 },
                 returnEnvelope: true

@@ -16,6 +16,7 @@ import {
   getLearningCategory,
   sanitizeLearningText
 } from './contentLearningTaxonomy.js';
+import { aggregateSearchConsoleCategories } from './searchConsoleCategoryService.js';
 
 const STAGE_LABELS = Object.freeze({
   inventory: 'Bestandsaufnahme',
@@ -400,13 +401,50 @@ function searchPageLabel(value) {
   }
 }
 
+function searchConsoleRangePresentation(range = {}) {
+  const start = DateTime.fromISO(String(range.start_date || range.startDate || ''), {
+    zone: 'Europe/Berlin'
+  });
+  const end = DateTime.fromISO(String(range.end_date || range.endDate || ''), {
+    zone: 'Europe/Berlin'
+  });
+  if (!start.isValid || !end.isValid || end < start) {
+    return { periodLabel: 'Noch kein Zeitraum', periodDetail: 'Keine gespeicherten Tage' };
+  }
+  const days = Math.floor(end.startOf('day').diff(start.startOf('day'), 'days').days) + 1;
+  return {
+    periodLabel: start.year === end.year
+      ? `${start.toFormat('dd.LL.')}–${end.toFormat('dd.LL.yyyy')}`
+      : `${start.toFormat('dd.LL.yyyy')}–${end.toFormat('dd.LL.yyyy')}`,
+    periodDetail: `${days} gespeicherte${days === 1 ? 'r Tag' : ' Tage'}`
+  };
+}
+
+function pageRowsFromMetrics(metrics = []) {
+  const pages = new Map();
+  for (const row of metrics) {
+    const pageUrl = String(row?.page_url || '');
+    const current = pages.get(pageUrl) || { page_url: pageUrl, clicks: 0, impressions: 0 };
+    current.clicks += Number(row?.clicks) || 0;
+    current.impressions += Number(row?.impressions) || 0;
+    pages.set(pageUrl, current);
+  }
+  return [...pages.values()];
+}
+
 export function buildSearchConsolePresentation(data = {}) {
   const sourceMetrics = Array.isArray(data.metrics) ? data.metrics : [];
+  const sourcePages = Array.isArray(data.pages) && data.pages.length > 0
+    ? data.pages
+    : pageRowsFromMetrics(sourceMetrics);
   const sourceOpportunities = Array.isArray(data.opportunities) ? data.opportunities : [];
-  const totalClicks = sourceMetrics.reduce((sum, row) => sum + (Number(row.clicks) || 0), 0);
-  const totalImpressions = sourceMetrics.reduce((sum, row) => sum + (Number(row.impressions) || 0), 0);
   const countFormat = { maximumFractionDigits: 0 };
   const percentFormat = { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  const aggregate = aggregateSearchConsoleCategories({
+    pages: sourcePages,
+    metrics: sourceMetrics
+  });
+  const range = searchConsoleRangePresentation(data.range);
 
   const metrics = sourceMetrics.map((row) => ({
     query: String(row.query || '–'),
@@ -435,15 +473,79 @@ export function buildSearchConsolePresentation(data = {}) {
       };
     });
   const provider = data.provider ? presentProvider(data.provider) : presentProvider();
+  const presentRate = (value) => germanNumber(value, percentFormat);
+  const presentCount = (value) => germanNumber(value, countFormat);
+  const presentPosition = (value) => germanNumber(value, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  const categories = aggregate.categories.map((category) => ({
+    key: category.key,
+    label: category.label,
+    description: category.description,
+    primary: category.primary === true,
+    clicks: presentCount(category.clicks),
+    impressions: presentCount(category.impressions),
+    ctr: presentRate(category.ctr),
+    share: presentRate(category.share),
+    hasData: category.impressions > 0,
+    languages: category.languages.map((language) => ({
+      key: language.key,
+      label: language.label,
+      clicks: presentCount(language.clicks),
+      impressions: presentCount(language.impressions),
+      ctr: presentRate(language.ctr),
+      hasData: language.impressions > 0
+    })),
+    subcategories: category.subcategories.map((subcategory) => ({
+      key: subcategory.key,
+      label: subcategory.label,
+      clicks: presentCount(subcategory.clicks),
+      impressions: presentCount(subcategory.impressions),
+      ctr: presentRate(subcategory.ctr),
+      hasData: subcategory.impressions > 0
+    })),
+    pages: category.pages.map((page) => ({
+      path: page.path,
+      language: page.language === 'en' ? 'Englisch' : 'Deutsch',
+      clicks: presentCount(page.clicks),
+      impressions: presentCount(page.impressions),
+      ctr: presentRate(page.ctr)
+    })),
+    queries: category.queries.map((query) => ({
+      query: query.query,
+      page: query.path,
+      language: query.language === 'en' ? 'Englisch' : 'Deutsch',
+      clicks: presentCount(query.clicks),
+      impressions: presentCount(query.impressions),
+      ctr: presentRate(query.ctr),
+      position: presentPosition(query.averagePosition)
+    }))
+  }));
+  const categoryLabelByKey = new Map(categories.map((category) => [category.key, category.label]));
+  const contentOpportunities = aggregate.contentOpportunities.map((item) => ({
+    query: item.query,
+    page: item.path,
+    categoryKey: item.categoryKey,
+    categoryLabel: categoryLabelByKey.get(item.categoryKey) || 'Sonstige Inhalte',
+    language: item.language === 'en' ? 'Englisch' : 'Deutsch',
+    clicks: presentCount(item.clicks),
+    impressions: presentCount(item.impressions),
+    ctr: presentRate(item.ctr),
+    position: presentPosition(item.averagePosition)
+  }));
 
   return {
     summary: {
       queryCount: metrics.length,
-      clicks: germanNumber(totalClicks, countFormat),
-      impressions: germanNumber(totalImpressions, countFormat),
-      ctr: germanNumber(totalImpressions > 0 ? totalClicks / totalImpressions : 0, percentFormat),
-      opportunityCount: opportunities.length
+      clicks: presentCount(aggregate.summary.clicks),
+      impressions: presentCount(aggregate.summary.impressions),
+      ctr: presentRate(aggregate.summary.ctr),
+      opportunityCount: opportunities.length,
+      ...range
     },
+    categories,
+    contentOpportunities,
     metrics,
     opportunities,
     provider: {

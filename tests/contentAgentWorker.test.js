@@ -2263,6 +2263,24 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
         publishApprovedPost: async () => ({ post: { published: true } })
       };
     },
+    createSearchConsoleClient: () => ({}),
+    createContentSearchMetricsRepository(db) {
+      dbArguments.push(db);
+      return {
+        async getLatestTopicSignals() {
+          return { range: null, pages: [], metrics: [] };
+        },
+        async listAggregatedMetrics() { return []; },
+        async findPostIdsByCanonicalPaths() { return new Map(); },
+        async upsertSearchMetrics() { return []; }
+      };
+    },
+    createContentSearchOpportunityRepository(db) {
+      dbArguments.push(db);
+      return { async upsertOpenOpportunities() { return []; } };
+    },
+    createSearchConsoleSyncService: () => ({ async syncSearchConsoleRange() {} }),
+    buildContentOpportunities: () => [],
     runDraftPipeline: async () => ({ status: 'completed' }),
     validateArticle: () => ({ passed: true }),
     selectBestTopic: () => null
@@ -2289,6 +2307,11 @@ test('die Produktionsruntime bindet sämtliche Datenbankadapter an genau den inj
   await runtime.pipelineDependencies.draftRepository.findAIDraftByGenerationRunId(1);
   await runtime.pipelineDependencies.recordProviderResult({ providerName: 'openai', success: true });
   await runtime.pipelineDependencies.inventoryService.buildSiteInventory();
+  assert.deepEqual(await runtime.pipelineDependencies.loadSearchConsoleTopicSignals(), {
+    range: null,
+    pages: [],
+    metrics: []
+  });
   await runtime.worker.processOnce();
   await runtime.jobRepository.enqueueJob({});
 

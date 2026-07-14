@@ -2,7 +2,8 @@
 <%
   const safeSearchConsole = searchConsole || {};
   const safeSummary = safeSearchConsole.summary || {};
-  const safeMetrics = Array.isArray(safeSearchConsole.metrics) ? safeSearchConsole.metrics : [];
+  const safeCategories = Array.isArray(safeSearchConsole.categories) ? safeSearchConsole.categories : [];
+  const safeContentOpportunities = Array.isArray(safeSearchConsole.contentOpportunities) ? safeSearchConsole.contentOpportunities : [];
   const safeOpportunities = Array.isArray(safeSearchConsole.opportunities) ? safeSearchConsole.opportunities : [];
   const safeProvider = safeSearchConsole.provider || {};
   const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
@@ -48,20 +49,89 @@
     <div class="content-agent-notice"><span class="content-agent-status-dot <%= safeProvider.healthy ? 'is-online' : 'is-neutral' %>" aria-hidden="true"></span><div><strong>Google Search Console: <%= safeProvider.statusLabel || 'Noch kein Ergebnis' %></strong><p><%= safeProvider.lastSuccessAtLabel ? `Letzter erfolgreicher Abruf: ${safeProvider.lastSuccessAtLabel}` : 'Noch kein erfolgreicher Abruf gespeichert.' %><%= safeProvider.lastErrorCode ? ` · Fehlercode: ${safeProvider.lastErrorCode}` : '' %></p></div></div>
   <% } %>
 
+  <aside class="content-gsc-signal-note" aria-label="Einordnung der Search-Console-Daten">
+    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+    <p><strong>GSC ist ein ergänzendes Signal.</strong> Die Daten zeigen, wo deine Website bereits Sichtbarkeit besitzt. Aktuelle Nachfrage und neue Themen werden weiterhin hauptsächlich über die OpenAI-Webrecherche ermittelt.</p>
+  </aside>
+
   <section class="content-agent-metrics" aria-label="Search-Console-Kennzahlen">
-    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--info" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Queryzeilen</p><p class="content-agent-metric__value"><%= safeSummary.queryCount || 0 %></p><p class="content-agent-metric__detail">Aggregierte Suchanfragen</p></div></article>
-    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--success" aria-hidden="true"><i class="fa-solid fa-arrow-pointer"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Klicks</p><p class="content-agent-metric__value"><%= safeSummary.clicks || '0' %></p><p class="content-agent-metric__detail">Gesamt-CTR <%= safeSummary.ctr || '0,00 %' %></p></div></article>
-    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--neutral" aria-hidden="true"><i class="fa-solid fa-eye"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Impressionen</p><p class="content-agent-metric__value"><%= safeSummary.impressions || '0' %></p><p class="content-agent-metric__detail">Sichtkontakte der geladenen Zeilen</p></div></article>
-    <article class="content-agent-metric"><div class="content-agent-metric__icon <%= Number(safeSummary.opportunityCount || 0) > 0 ? 'content-agent-status--warning' : 'content-agent-status--success' %>" aria-hidden="true"><i class="fa-regular fa-lightbulb"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Offene Chancen</p><p class="content-agent-metric__value"><%= safeSummary.opportunityCount || 0 %></p><p class="content-agent-metric__detail">Nur redaktionelle Empfehlungen</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--neutral" aria-hidden="true"><i class="fa-solid fa-eye"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Impressionen</p><p class="content-agent-metric__value"><%= safeSummary.impressions || '0' %></p><p class="content-agent-metric__detail">Vollständige Seitensummen</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--success" aria-hidden="true"><i class="fa-solid fa-arrow-pointer"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Klicks</p><p class="content-agent-metric__value"><%= safeSummary.clicks || '0' %></p><p class="content-agent-metric__detail">Organische Klicks im Zeitraum</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--info" aria-hidden="true"><i class="fa-solid fa-percent"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Klickrate</p><p class="content-agent-metric__value"><%= safeSummary.ctr || '0,00 %' %></p><p class="content-agent-metric__detail">Klicks im Verhältnis zu Impressionen</p></div></article>
+    <article class="content-agent-metric"><div class="content-agent-metric__icon content-agent-status--warning" aria-hidden="true"><i class="fa-regular fa-calendar"></i></div><div class="content-agent-metric__body"><p class="content-agent-metric__label">Auswertungszeitraum</p><p class="content-agent-metric__value"><%= safeSummary.periodLabel || 'Noch kein Zeitraum' %></p><p class="content-agent-metric__detail"><%= safeSummary.periodDetail || 'Keine gespeicherten Tage' %></p></div></article>
   </section>
 
-  <section class="content-agent-panel mb-3" aria-labelledby="search-query-heading">
-    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Leistung</p><h2 id="search-query-heading">Aggregierte Suchanfragen</h2></div><span class="content-agent-readonly">Maximal 100 Zeilen</span></div>
-    <% if (!safeMetrics.length) { %>
-      <div class="content-agent-empty"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><div><strong>Noch keine Suchdaten</strong><p>Nach dem ersten erfolgreichen Abruf erscheinen Query, Klicks, Impressionen, CTR und Position hier.</p></div></div>
+  <section class="content-agent-panel content-gsc-overview mb-3" aria-labelledby="search-topics-heading">
+    <div class="content-agent-panel__head">
+      <div><p class="content-agent-eyebrow">Themenblöcke zuerst</p><h2 id="search-topics-heading">Wo deine Website bereits Sichtbarkeit besitzt</h2></div>
+      <span class="content-agent-readonly">Deutsch und Englisch getrennt</span>
+    </div>
+    <p class="content-gsc-intro">Ähnliche Seiten werden zusammengefasst. Dadurch bleiben die Website-Tester als wichtiger Themenblock erkennbar, ohne Blog-, Leistungs- und lokale Chancen zu verdrängen.</p>
+
+    <% if (!safeCategories.some((category) => category.hasData)) { %>
+      <div class="content-agent-empty"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><div><strong>Noch keine Suchdaten</strong><p>Nach dem ersten erfolgreichen Abruf erscheinen die Themenblöcke, Sprachanteile und wichtigsten Suchanfragen hier.</p></div></div>
     <% } else { %>
-      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Query</th><th scope="col">Seite</th><th scope="col" class="text-end">Klicks</th><th scope="col" class="text-end">Impressionen</th><th scope="col" class="text-end">CTR</th><th scope="col" class="text-end">Position</th></tr></thead><tbody>
-        <% safeMetrics.forEach((row) => { %><tr><td><strong><%= row.query %></strong></td><td><code><%= row.page %></code></td><td class="text-end"><%= row.clicks %></td><td class="text-end"><%= row.impressions %></td><td class="text-end"><%= row.ctr %></td><td class="text-end"><%= row.position %></td></tr><% }) %>
+      <div class="content-gsc-category-grid">
+        <% safeCategories.forEach((category) => { %>
+          <article class="content-gsc-category <%= category.primary ? 'is-primary' : '' %> <%= category.hasData ? '' : 'is-empty' %>">
+            <header class="content-gsc-category__head">
+              <div class="content-gsc-category__title">
+                <span class="content-gsc-category__icon" aria-hidden="true"><i class="fa-solid <%= category.key === 'website_testers' ? 'fa-magnifying-glass-chart' : category.key === 'blog_guides' ? 'fa-book-open' : category.key === 'services' ? 'fa-briefcase' : category.key === 'local_industries' ? 'fa-location-dot' : 'fa-layer-group' %>"></i></span>
+                <div><h3><%= category.label %></h3><p><%= category.description %></p></div>
+              </div>
+              <span class="content-gsc-share"><%= category.share %> der Impressionen</span>
+            </header>
+
+            <dl class="content-gsc-category__metrics">
+              <div><dt>Impressionen</dt><dd><%= category.impressions %></dd></div>
+              <div><dt>Klicks</dt><dd><%= category.clicks %></dd></div>
+              <div><dt>CTR</dt><dd><%= category.ctr %></dd></div>
+            </dl>
+
+            <% if (category.subcategories.length) { %>
+              <div class="content-gsc-tester-grid" aria-label="Tester-Arten">
+                <% category.subcategories.forEach((subcategory) => { %>
+                  <div class="<%= subcategory.hasData ? '' : 'is-empty' %>"><strong><%= subcategory.label %></strong><span><%= subcategory.impressions %> Impressionen</span><small><%= subcategory.clicks %> Klicks · <%= subcategory.ctr %> CTR</small></div>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <div class="content-gsc-languages" aria-label="Sprachen">
+              <% category.languages.forEach((language) => { %>
+                <span class="<%= language.hasData ? '' : 'is-empty' %>"><strong><%= language.label %></strong> · <%= language.impressions %> Impressionen · <%= language.clicks %> Klicks</span>
+              <% }) %>
+            </div>
+
+            <% if (category.hasData) { %>
+              <details class="content-gsc-details">
+                <summary>Seiten und Suchanfragen anzeigen</summary>
+                <% if (category.pages.length) { %>
+                  <h4>Stärkste Seiten</h4>
+                  <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Seite</th><th scope="col">Sprache</th><th scope="col" class="text-end">Klicks</th><th scope="col" class="text-end">Impressionen</th><th scope="col" class="text-end">CTR</th></tr></thead><tbody>
+                    <% category.pages.forEach((page) => { %><tr><td><code><%= page.path %></code></td><td><%= page.language %></td><td class="text-end"><%= page.clicks %></td><td class="text-end"><%= page.impressions %></td><td class="text-end"><%= page.ctr %></td></tr><% }) %>
+                  </tbody></table></div>
+                <% } %>
+                <% if (category.queries.length) { %>
+                  <h4>Stärkste Suchanfragen</h4>
+                  <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Suchanfrage</th><th scope="col">Seite</th><th scope="col" class="text-end">Impressionen</th><th scope="col" class="text-end">Position</th></tr></thead><tbody>
+                    <% category.queries.forEach((row) => { %><tr><td><strong><%= row.query %></strong></td><td><code><%= row.page %></code></td><td class="text-end"><%= row.impressions %></td><td class="text-end"><%= row.position %></td></tr><% }) %>
+                  </tbody></table></div>
+                <% } %>
+              </details>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="content-agent-panel mb-3" aria-labelledby="content-opportunity-heading">
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Redaktionelles Potenzial</p><h2 id="content-opportunity-heading">Wichtigste Content-Chancen außerhalb der Tester</h2></div><span class="content-agent-readonly">GSC-Signal · nicht alleinige Themenwahl</span></div>
+    <% if (!safeContentOpportunities.length) { %>
+      <div class="content-agent-empty"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i><div><strong>Noch keine Nicht-Tester-Chancen</strong><p>Sobald passende Suchanfragen vorliegen, erscheinen hier Blog-, Leistungs- und lokale Themen mit bestehender Sichtbarkeit.</p></div></div>
+    <% } else { %>
+      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Suchanfrage</th><th scope="col">Themenblock</th><th scope="col">Seite</th><th scope="col" class="text-end">Impressionen</th><th scope="col" class="text-end">Klicks</th><th scope="col" class="text-end">Position</th></tr></thead><tbody>
+        <% safeContentOpportunities.forEach((item) => { %><tr><td><strong><%= item.query %></strong><small class="content-gsc-table-language"><%= item.language %></small></td><td><span class="content-agent-score"><%= item.categoryLabel %></span></td><td><code><%= item.page %></code></td><td class="text-end"><%= item.impressions %></td><td class="text-end"><%= item.clicks %></td><td class="text-end"><%= item.position %></td></tr><% }) %>
       </tbody></table></div>
     <% } %>
   </section>

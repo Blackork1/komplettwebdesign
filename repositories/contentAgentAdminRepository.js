@@ -468,8 +468,40 @@ export function createContentAgentAdminRepository(db = pool) {
     },
 
     async getSearchConsoleInsights() {
-      const [metrics, opportunities, provider] = await Promise.all([
+      const [range, pages, metrics, opportunities, provider] = await Promise.all([
         db.query(`
+          SELECT
+            (MAX(metric_date) - INTERVAL '27 days')::date AS start_date,
+            MAX(metric_date)::date AS end_date
+          FROM content_search_metrics
+        `),
+        db.query(`
+          WITH available_range AS (
+            SELECT
+              (MAX(metric_date) - INTERVAL '27 days')::date AS start_date,
+              MAX(metric_date)::date AS end_date
+            FROM content_search_metrics
+          )
+          SELECT page_url,
+                 SUM(clicks)::double precision AS clicks,
+                 SUM(impressions)::double precision AS impressions,
+                 (SUM(clicks) / NULLIF(SUM(impressions), 0))::double precision AS ctr,
+                 (
+                   SUM(average_position * impressions)
+                   / NULLIF(SUM(impressions), 0)
+                 )::double precision AS average_position
+          FROM content_search_metrics, available_range
+          WHERE metric_date BETWEEN available_range.start_date AND available_range.end_date
+          GROUP BY page_url
+          ORDER BY SUM(impressions) DESC, page_url ASC
+        `),
+        db.query(`
+          WITH available_range AS (
+            SELECT
+              (MAX(metric_date) - INTERVAL '27 days')::date AS start_date,
+              MAX(metric_date)::date AS end_date
+            FROM content_search_metrics
+          )
           SELECT page_url, query,
                  SUM(clicks)::double precision AS clicks,
                  SUM(impressions)::double precision AS impressions,
@@ -478,11 +510,12 @@ export function createContentAgentAdminRepository(db = pool) {
                    SUM(average_position * impressions)
                    / NULLIF(SUM(impressions), 0)
                  )::double precision AS average_position
-          FROM content_search_metrics
+          FROM content_search_metrics, available_range
+          WHERE metric_date BETWEEN available_range.start_date AND available_range.end_date
           GROUP BY page_url, query
           ORDER BY SUM(impressions) DESC, page_url ASC, query ASC
           LIMIT $1
-        `, [100]),
+        `, [300]),
         db.query(`
           SELECT id, post_id, opportunity_type, primary_query, score, created_at
           FROM content_opportunities
@@ -500,7 +533,11 @@ export function createContentAgentAdminRepository(db = pool) {
         `, ['google_search_console'])
       ]);
 
+      const storedRange = range.rows[0];
+
       return {
+        range: storedRange?.start_date && storedRange?.end_date ? storedRange : null,
+        pages: pages.rows,
         metrics: metrics.rows,
         opportunities: opportunities.rows,
         provider: provider.rows[0] || null

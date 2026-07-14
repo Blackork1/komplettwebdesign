@@ -1,4 +1,4 @@
-export const TOPIC_SCORING_VERSION = 'topic-scoring-v1';
+export const TOPIC_SCORING_VERSION = 'topic-scoring-v2';
 
 function clamp(value) {
   return Math.min(10, Math.max(0, Number(value) || 0));
@@ -13,13 +13,21 @@ function requireCandidate(candidate) {
 
 export function scoreTopic(candidate) {
   requireCandidate(candidate);
-  const base =
-    clamp(candidate.businessValue) * 0.30 +
-    clamp(candidate.searchOpportunity) * 0.25 +
-    clamp(candidate.problemPurchaseProximity) * 0.15 +
-    clamp(candidate.internalLinkPotential) * 0.10 +
-    clamp(candidate.clusterFit) * 0.10 +
-    clamp(candidate.localRelevance) * 0.10;
+  const weeklyWebResearch = candidate.source === 'openai_weekly_web_research';
+  const base = weeklyWebResearch
+    ? clamp(candidate.businessValue) * 0.27 +
+      clamp(candidate.searchOpportunity) * 0.23 +
+      clamp(candidate.problemPurchaseProximity) * 0.14 +
+      clamp(candidate.internalLinkPotential) * 0.09 +
+      clamp(candidate.clusterFit) * 0.09 +
+      clamp(candidate.localRelevance) * 0.08 +
+      clamp(candidate.gscRelevance) * 0.10
+    : clamp(candidate.businessValue) * 0.30 +
+      clamp(candidate.searchOpportunity) * 0.25 +
+      clamp(candidate.problemPurchaseProximity) * 0.15 +
+      clamp(candidate.internalLinkPotential) * 0.10 +
+      clamp(candidate.clusterFit) * 0.10 +
+      clamp(candidate.localRelevance) * 0.10;
   const finalScore = Math.round((base - clamp(candidate.cannibalizationRisk) * 0.20) * 100) / 100;
 
   return {

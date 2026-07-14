@@ -7,10 +7,47 @@ import {
   buildExistingContentListPresentation,
   buildJobListPresentation,
   buildSchedulePresentation,
+  buildSearchConsolePresentation,
   buildTechnologyPresentation,
   deriveReviewState,
   presentContentLearningDashboard
 } from '../services/contentAgent/adminPresentationService.js';
+
+test('Search-Console-Präsentation bildet Variante A mit Zeitraum, Themenblöcken und Nicht-Tester-Chancen ab', () => {
+  const result = buildSearchConsolePresentation({
+    range: { start_date: '2026-06-16', end_date: '2026-07-13' },
+    pages: [
+      { page_url: '/website-tester/seo', clicks: 20, impressions: 1_000 },
+      { page_url: '/en/website-tester/geo', clicks: 4, impressions: 250 },
+      { page_url: '/blog/ki-suche', clicks: 8, impressions: 500 },
+      { page_url: '/website-relaunch', clicks: 3, impressions: 150 }
+    ],
+    metrics: [
+      { page_url: '/website-tester/seo', query: 'seo tester', clicks: 20, impressions: 1_000, ctr: 0.02, average_position: 7.2 },
+      { page_url: '/blog/ki-suche', query: 'seo für ki suche', clicks: 8, impressions: 500, ctr: 0.016, average_position: 11.4 }
+    ],
+    opportunities: [],
+    provider: null
+  });
+
+  assert.deepEqual(result.summary, {
+    queryCount: 2,
+    clicks: '35',
+    impressions: '1.900',
+    ctr: '1,84 %',
+    opportunityCount: 0,
+    periodLabel: '16.06.–13.07.2026',
+    periodDetail: '28 gespeicherte Tage'
+  });
+  assert.deepEqual(result.categories.map((category) => category.key), [
+    'website_testers', 'blog_guides', 'services', 'local_industries', 'other'
+  ]);
+  assert.equal(result.categories[0].impressions, '1.250');
+  assert.equal(result.categories[0].languages.find((item) => item.key === 'en').impressions, '250');
+  assert.equal(result.categories[0].subcategories.find((item) => item.key === 'seo').impressions, '1.000');
+  assert.equal(result.contentOpportunities[0].query, 'seo für ki suche');
+  assert.equal(result.contentOpportunities[0].categoryLabel, 'Blog & Ratgeber');
+});
 
 test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus', () => {
   const dashboard = presentContentLearningDashboard({

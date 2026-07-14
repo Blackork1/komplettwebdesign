@@ -1435,6 +1435,7 @@ test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf
   let pool = null;
   let weeklyResearchCalls = 0;
   let concreteSourceCalls = 0;
+  let receivedSearchConsoleSignals = null;
   const weeklyTopicPoolRepository = {
     async findPool() { return pool ? structuredClone(pool) : null; },
     async withPoolCreationLock(identity, callback) {
@@ -1471,10 +1472,21 @@ test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf
         maxTopicCandidates: 9
       },
       weeklyTopicPoolRepository,
+      async loadSearchConsoleTopicSignals() {
+        return {
+          range: { start_date: '2026-06-16', end_date: '2026-07-13' },
+          pages: [{ page_url: '/blog/ki-suche', clicks: 4, impressions: 300 }],
+          metrics: [{
+            page_url: '/blog/ki-suche', query: 'seo für ki suche', clicks: 4,
+            impressions: 300, ctr: 4 / 300, average_position: 11
+          }]
+        };
+      },
       openaiService: {
         ...base.dependencies.openaiService,
-        async createWeeklyTopicPool() {
+        async createWeeklyTopicPool(input) {
           weeklyResearchCalls += 1;
+          receivedSearchConsoleSignals = input.searchConsoleSignals;
           return operation({ candidates: weeklyTopics, sourceReferences: weeklySources }, 'resp-weekly-pool')();
         },
         async createTopicCandidates() {
@@ -1502,6 +1514,8 @@ test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf
   assert.equal(firstResult.status, 'completed');
   assert.equal(secondResult.status, 'completed');
   assert.equal(weeklyResearchCalls, 1);
+  assert.equal(receivedSearchConsoleSignals.topNonTesterQueries[0].query, 'seo für ki suche');
+  assert.equal(receivedSearchConsoleSignals.testerBlock.impressions, 0);
   assert.equal(concreteSourceCalls, 2, 'Jeder Artikel benötigt weiterhin seine eigene Quellenprüfung.');
   assert.deepEqual(pool.selections, [
     { candidateSlug: 'aktuelles-webdesign-thema', generationRunId: 901 },
@@ -1519,6 +1533,20 @@ test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf
     thursday.stageUpdates.some(({ stageId }) => stageId === 'weekly_topic_pool_cache:2026-07-13'),
     true
   );
+
+  pool = null;
+  receivedSearchConsoleSignals = null;
+  const nextWeek = weeklyDependencies();
+  nextWeek.dependencies.loadSearchConsoleTopicSignals = async () => {
+    throw new Error('GSC vorübergehend nicht erreichbar');
+  };
+  const nextWeekResult = await runDraftPipeline(
+    { runId: 903, currentDate: '2026-07-20', regionFocus: 'Berlin und Brandenburg' },
+    nextWeek.dependencies
+  );
+  assert.equal(nextWeekResult.status, 'completed');
+  assert.deepEqual(receivedSearchConsoleSignals.topNonTesterQueries, []);
+  assert.equal(weeklyResearchCalls, 2, 'Die Webrecherche läuft trotz fehlender GSC-Signale weiter.');
 });
 
 test('Wochenrecherche prüft den Pool nach dem Datenbanklock erneut und vermeidet doppelte Providerkosten', async () => {

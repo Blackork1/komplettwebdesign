@@ -180,3 +180,37 @@ test('Aggregation ohne Limit lässt die serverseitige Begrenzung weg', async () 
   assert.deepEqual(db.calls[0].params, ['2026-06-01', '2026-06-30']);
   assert.doesNotMatch(db.calls[0].sql, /\bLIMIT\b/i);
 });
+
+test('Aktuelle Themensignale verwenden den neuesten gespeicherten Tag und vollständige Seitensummen', async () => {
+  const range = { start_date: '2026-06-16', end_date: '2026-07-13' };
+  const pages = [{ page_url: '/blog/ki-suche', clicks: 4, impressions: 300 }];
+  const metrics = [{ page_url: '/blog/ki-suche', query: 'seo ki', clicks: 4, impressions: 300 }];
+  const db = createQueryRecorder([
+    { rows: [range] },
+    { rows: pages },
+    { rows: metrics }
+  ]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  const result = await repository.getLatestTopicSignals({ limit: 250 });
+
+  assert.deepEqual(result, { range, pages, metrics });
+  assert.equal(db.calls.length, 3);
+  assert.match(db.calls[0].sql, /MAX\(metric_date\)/i);
+  assert.match(db.calls[0].sql, /INTERVAL '27 days'/i);
+  assert.match(db.calls[1].sql, /GROUP BY page_url/i);
+  assert.doesNotMatch(db.calls[1].sql, /\bLIMIT\b/i);
+  assert.match(db.calls[2].sql, /GROUP BY page_url, query/i);
+  assert.match(db.calls[2].sql, /LIMIT \$3/i);
+  assert.deepEqual(db.calls[2].params, ['2026-06-16', '2026-07-13', 250]);
+});
+
+test('Aktuelle Themensignale geben ohne gespeicherte Daten ein leeres Ergebnis zurück', async () => {
+  const db = createQueryRecorder([{ rows: [{ start_date: null, end_date: null }] }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  const result = await repository.getLatestTopicSignals();
+
+  assert.deepEqual(result, { range: null, pages: [], metrics: [] });
+  assert.equal(db.calls.length, 1);
+});

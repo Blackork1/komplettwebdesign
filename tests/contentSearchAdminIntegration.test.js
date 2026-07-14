@@ -57,14 +57,20 @@ test('Search-Console-Routen verlangen Admin und der Schreibweg zusätzlich CSRF'
   );
 });
 
-test('Adminrepository lädt höchstens 100 aggregierte Queryzeilen, 100 Chancen und den GSC-Status parametrisiert', async () => {
+test('Adminrepository lädt vollständige Seitensummen, 300 Querydetails, 100 Chancen und den GSC-Status', async () => {
   const calls = [];
   const db = {
     async query(sql, params = []) {
       const normalized = normalizeSql(sql);
       calls.push({ sql: normalized, params });
-      if (/FROM content_search_metrics/i.test(normalized)) {
+      if (/SELECT \(MAX\(metric_date\)/i.test(normalized)) {
+        return { rows: [{ start_date: '2026-06-16', end_date: '2026-07-13' }] };
+      }
+      if (/GROUP BY page_url, query/i.test(normalized)) {
         return { rows: [{ query: 'webdesign berlin', page_url: '/blog/webdesign', clicks: '12', impressions: '800', ctr: '0.015', average_position: '8.4' }] };
+      }
+      if (/GROUP BY page_url/i.test(normalized)) {
+        return { rows: [{ page_url: '/blog/webdesign', clicks: '12', impressions: '800', ctr: '0.015', average_position: '8.4' }] };
       }
       if (/FROM content_opportunities/i.test(normalized)) {
         return { rows: [{ id: 4, opportunity_type: 'meta_refresh', primary_query: 'webdesign berlin', score: '8.75' }] };
@@ -80,17 +86,23 @@ test('Adminrepository lädt höchstens 100 aggregierte Queryzeilen, 100 Chancen 
   const result = await repository.getSearchConsoleInsights();
 
   assert.equal(result.metrics.length, 1);
+  assert.equal(result.pages.length, 1);
+  assert.deepEqual(result.range, { start_date: '2026-06-16', end_date: '2026-07-13' });
   assert.equal(result.opportunities.length, 1);
   assert.equal(result.provider.provider_name, 'google_search_console');
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, 5);
   assert.deepEqual(calls.map(({ params }) => params), [
-    [100],
+    [],
+    [],
+    [300],
     [100],
     ['google_search_console']
   ]);
-  assert.match(calls[0].sql, /GROUP BY page_url, query[\s\S]*LIMIT \$1/i);
-  assert.match(calls[1].sql, /WHERE status = 'open'[\s\S]*LIMIT \$1/i);
-  assert.match(calls[2].sql, /WHERE provider_name = \$1[\s\S]*LIMIT 1/i);
+  assert.match(calls[0].sql, /MAX\(metric_date\)[\s\S]*INTERVAL '27 days'/i);
+  assert.match(calls[1].sql, /GROUP BY page_url/i);
+  assert.match(calls[2].sql, /GROUP BY page_url, query[\s\S]*LIMIT \$1/i);
+  assert.match(calls[3].sql, /WHERE status = 'open'[\s\S]*LIMIT \$1/i);
+  assert.match(calls[4].sql, /WHERE provider_name = \$1[\s\S]*LIMIT 1/i);
   const sql = calls.map(({ sql: statement }) => statement).join(' ');
   assert.doesNotMatch(sql, /\bSELECT\s+\*|evidence_json|recommendation_json|payload_json|credentials/i);
 });
@@ -146,7 +158,9 @@ test('Präsentation formatiert Kennzahlen deutsch und verwirft Rohfelder sowie J
     clicks: '1.234',
     impressions: '98.765',
     ctr: '1,25 %',
-    opportunityCount: 1
+    opportunityCount: 1,
+    periodLabel: 'Noch kein Zeitraum',
+    periodDetail: 'Keine gespeicherten Tage'
   });
   const serialized = JSON.stringify(result);
   assert.doesNotMatch(serialized, /payload_json|evidence_json|recommendation_json|analysis_key|geheimer-schlüssel|provider-geheim|nicht ausgeben|<script>roh<\/script>/i);
@@ -338,15 +352,21 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
         clicks: '1.234',
         impressions: '98.765',
         ctr: '1,25 %',
-        opportunityCount: 1
+        opportunityCount: 1,
+        periodLabel: '16.06.–13.07.2026',
+        periodDetail: '28 gespeicherte Tage'
       },
-      metrics: [{
-        query: '<script>query</script>',
-        page: '/blog/<img src=x onerror=alert(1)>',
-        clicks: '1.234',
-        impressions: '98.765',
-        ctr: '1,23 %',
-        position: '8,5'
+      categories: [{
+        key: 'blog_guides', label: 'Blog & Ratgeber', description: 'Hilfreiche Inhalte',
+        primary: false, hasData: true, clicks: '1.234', impressions: '98.765',
+        ctr: '1,25 %', share: '100,00 %', subcategories: [],
+        languages: [{ key: 'de', label: 'Deutsch', clicks: '1.234', impressions: '98.765', ctr: '1,25 %', hasData: true }],
+        pages: [{ path: '/blog/<img src=x onerror=alert(1)>', language: 'Deutsch', clicks: '1.234', impressions: '98.765', ctr: '1,25 %' }],
+        queries: [{ query: '<script>query</script>', page: '/blog/test', language: 'Deutsch', clicks: '1.234', impressions: '98.765', ctr: '1,25 %', position: '8,5' }]
+      }],
+      contentOpportunities: [{
+        query: '<script>content-chance</script>', page: '/blog/test', categoryLabel: 'Blog & Ratgeber',
+        language: 'Deutsch', clicks: '1.234', impressions: '98.765', ctr: '1,25 %', position: '8,5'
       }],
       opportunities: [{
         id: 17,
@@ -364,8 +384,8 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
     }
   });
 
-  assert.equal((html.match(/class="table-responsive"/g) || []).length, 2);
-  for (const label of ['Query', 'Klicks', 'Impressionen', 'CTR', 'Position', 'Empfehlung']) {
+  assert.ok((html.match(/class="table-responsive"/g) || []).length >= 3);
+  for (const label of ['Klicks', 'Impressionen', 'CTR', 'Position', 'Empfehlung']) {
     assert.match(html, new RegExp(`>${label}<`));
   }
   assert.match(html, /method="post" action="\/admin\/content-agent\/search-console\/sync"/);
@@ -374,6 +394,7 @@ test('Search-Console-View zeigt zwei responsive Tabellen, escaped dynamische Tex
   assert.doesNotMatch(html, /<button[^>]*type="submit"[^>]*disabled/);
   assert.match(html, /Nur Auswertung|keine Inhaltsänderung/i);
   assert.match(html, /&lt;script&gt;query&lt;\/script&gt;/);
+  assert.match(html, /&lt;script&gt;content-chance&lt;\/script&gt;/);
   assert.match(html, /&lt;script&gt;chance&lt;\/script&gt;/);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(html, /komplettwebdesign\.de&lt;script&gt;property&lt;\/script&gt;/);

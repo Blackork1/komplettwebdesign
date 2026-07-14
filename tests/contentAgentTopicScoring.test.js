@@ -5,7 +5,11 @@ import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import { TopicCandidateSchema } from '../services/contentAgent/articleSchemas.js';
 import { calculateCannibalizationRisk } from '../services/contentAgent/cannibalizationService.js';
 import { buildSiteInventory } from '../services/contentAgent/siteInventoryService.js';
-import { scoreTopic, selectBestTopic } from '../services/contentAgent/topicScoringService.js';
+import {
+  scoreTopic,
+  selectBestTopic,
+  TOPIC_SCORING_VERSION
+} from '../services/contentAgent/topicScoringService.js';
 
 test('topic score follows approved weights', () => {
   const scored = scoreTopic({
@@ -34,6 +38,25 @@ test('topic score clamps every scoring input to the approved zero-to-ten range',
 
   assert.equal(scored.finalScore, 10);
   assert.equal(scored.eligible, true);
+});
+
+test('wöchentliche Webrecherche gewichtet GSC nachweislich mit höchstens zehn Prozent', () => {
+  const scored = scoreTopic({
+    source: 'openai_weekly_web_research',
+    businessValue: 9,
+    searchOpportunity: 8,
+    problemPurchaseProximity: 9,
+    internalLinkPotential: 8,
+    clusterFit: 8,
+    localRelevance: 7,
+    gscRelevance: 10,
+    cannibalizationRisk: 2
+  });
+
+  assert.equal(TOPIC_SCORING_VERSION, 'topic-scoring-v2');
+  assert.equal(scored.finalScore, 8.13);
+  assert.equal(scored.eligible, true);
+  assert.equal(scoreTopic({ ...scored, gscRelevance: 0 }).finalScore, 7.13);
 });
 
 test('best topic selection is stable on ties and excludes risks above four', () => {

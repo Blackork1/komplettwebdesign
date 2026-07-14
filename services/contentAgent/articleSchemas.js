@@ -122,7 +122,8 @@ export const WeeklyTopicResearchSchema = z.object({
 
 export const WeeklyTopicCandidateSchema = WeeklyTopicResearchCandidateSchema.extend({
   source: z.literal('openai_weekly_web_research'),
-  requiresCurrentSources: z.literal(true)
+  requiresCurrentSources: z.literal(true),
+  gscRelevance: Score.default(0)
 });
 
 export const WeeklyTopicPoolResultSchema = z.object({

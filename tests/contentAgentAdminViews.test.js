@@ -213,6 +213,63 @@ test('Übersicht rendert Layout A zugänglich und escaped dynamische Werte', asy
   assert.doesNotMatch(html, /stage_results_json|payload_json|openai_response_ids_json/i);
 });
 
+test('Search-Console-Tab rendert die bestätigte Variante A mit Themenblöcken zuerst', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('searchConsole.ejs')), {
+    ...baseLocals,
+    currentPathname: '/admin/content-agent/search-console',
+    searchConsoleConfigured: true,
+    searchConsoleProperty: 'komplettwebdesign.de',
+    agentEnabled: true,
+    technicalAgentEnabled: true,
+    syncQueued: false,
+    searchConsole: {
+      summary: {
+        impressions: '1.900', clicks: '35', ctr: '1,84 %',
+        periodLabel: '16.06.–13.07.2026', periodDetail: '28 gespeicherte Tage',
+        opportunityCount: 1
+      },
+      categories: [{
+        key: 'website_testers', label: 'Website-Tester', primary: true,
+        description: 'SEO-, GEO-, Broken-Link-, Meta- und allgemeine Website-Tests',
+        impressions: '1.250', clicks: '24', ctr: '1,92 %', share: '65,79 %', hasData: true,
+        languages: [
+          { key: 'de', label: 'Deutsch', impressions: '1.000', clicks: '20', ctr: '2,00 %', hasData: true },
+          { key: 'en', label: 'Englisch', impressions: '250', clicks: '4', ctr: '1,60 %', hasData: true }
+        ],
+        subcategories: [
+          { key: 'seo', label: 'SEO-Tester', impressions: '1.000', clicks: '20', ctr: '2,00 %', hasData: true },
+          { key: 'geo', label: 'GEO-Tester', impressions: '250', clicks: '4', ctr: '1,60 %', hasData: true },
+          { key: 'broken_links', label: 'Broken-Link-Tester', impressions: '0', clicks: '0', ctr: '0,00 %', hasData: false },
+          { key: 'meta', label: 'Meta-Tester', impressions: '0', clicks: '0', ctr: '0,00 %', hasData: false }
+        ],
+        pages: [{ path: '/website-tester/seo', language: 'Deutsch', impressions: '1.000', clicks: '20', ctr: '2,00 %' }],
+        queries: [{ query: '<script>seo tester</script>', page: '/website-tester/seo', language: 'Deutsch', impressions: '1.000', clicks: '20', ctr: '2,00 %', position: '7,2' }]
+      }],
+      contentOpportunities: [{
+        query: 'seo für ki suche', page: '/blog/ki-suche', categoryLabel: 'Blog & Ratgeber',
+        language: 'Deutsch', impressions: '500', clicks: '8', ctr: '1,60 %', position: '11,4'
+      }],
+      opportunities: [{ id: 1, query: 'webdesign berlin', type: 'Inhalt prüfen', recommendation: 'Inhalt vertiefen.', score: '8,50' }],
+      provider: { healthy: true, statusLabel: 'Verbunden', lastSuccessAtLabel: '14.07.2026, 08:00 Uhr' }
+    }
+  });
+
+  assert.match(html, /Themenblöcke zuerst/);
+  assert.match(html, /Auswertungszeitraum/);
+  assert.match(html, /16.06.–13.07.2026/);
+  assert.match(html, /Website-Tester/);
+  assert.match(html, /SEO-Tester/);
+  assert.match(html, /GEO-Tester/);
+  assert.match(html, /Broken-Link-Tester/);
+  assert.match(html, /Deutsch/);
+  assert.match(html, /Englisch/);
+  assert.match(html, /Wichtigste Content-Chancen außerhalb der Tester/);
+  assert.match(html, /GSC ist ein ergänzendes Signal/i);
+  assert.match(html, /<details class="content-gsc-details"/);
+  assert.match(html, /&lt;script&gt;seo tester&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script>seo tester<\/script>/);
+});
+
 test('Zeitplan akzeptiert Centbeträge und Erfolgsmeldung ist über sicheren Viewlocal erreichbar', async () => {
   const scheduleHtml = await renderFile(fileURLToPath(viewUrl('schedule.ejs')), {
     ...baseLocals,

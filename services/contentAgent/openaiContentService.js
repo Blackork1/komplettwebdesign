@@ -42,6 +42,7 @@ import {
   buildContentLearningClassifierPrompt,
   promptVersion as contentLearningClassifierPromptVersion
 } from './prompts/contentLearningClassifierPrompt.js';
+import { calculateGscTopicRelevance } from './searchConsoleCategoryService.js';
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
@@ -319,7 +320,8 @@ export function createOpenAIContentService({
           candidates: curateWeeklyCandidates(value.candidates, input?.maxCandidates).map((candidate) => ({
             ...candidate,
             source: 'openai_weekly_web_research',
-            requiresCurrentSources: true
+            requiresCurrentSources: true,
+            gscRelevance: calculateGscTopicRelevance(candidate, input?.searchConsoleSignals)
           })),
           sourceReferences: extractWebSources(response)
         };

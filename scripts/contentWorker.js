@@ -772,6 +772,9 @@ export function createProductionRuntime({
       topicScoringService: { selectBestTopic: modules.selectBestTopic },
       topicRepository: repositories.topicRepository,
       ...(weeklyTopicPoolRepository ? { weeklyTopicPoolRepository } : {}),
+      ...(typeof searchMetricsRepository?.getLatestTopicSignals === 'function' ? {
+        loadSearchConsoleTopicSignals: () => searchMetricsRepository.getLatestTopicSignals({ limit: 300 })
+      } : {}),
       runRepository: repositories.runRepository,
       costService: jobCostService,
       validateArticle: modules.validateArticle,

@@ -114,6 +114,30 @@ test('Technikstatus liest nur persistierte Zustände und führt keine Provider-P
   assert.match(db.calls[1].sql, /content_provider_state/i);
 });
 
+test('Search-Console-Dashboard lädt vollständige Seitensummen und Querydetails für die neuesten 28 Datentage', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.getSearchConsoleInsights();
+
+  const metricCalls = db.calls.filter(({ sql }) => /content_search_metrics/i.test(sql));
+  assert.equal(metricCalls.length, 3);
+  assert.match(metricCalls[0].sql, /MAX\(metric_date\)/i);
+  assert.match(metricCalls[0].sql, /INTERVAL '27 days'/i);
+  assert.match(metricCalls[1].sql, /GROUP BY page_url/i);
+  assert.doesNotMatch(metricCalls[1].sql, /\bLIMIT\b/i);
+  assert.match(metricCalls[2].sql, /GROUP BY page_url, query/i);
+  assert.match(metricCalls[2].sql, /LIMIT \$1/i);
+  assert.deepEqual(metricCalls[2].params, [300]);
+  assert.deepEqual(result, {
+    range: null,
+    pages: [],
+    metrics: [],
+    opportunities: [],
+    provider: { provider_name: 'openai' }
+  });
+});
+
 test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () => {
   const db = createQueryRecorder();
   const repository = createContentAgentAdminRepository(db);
