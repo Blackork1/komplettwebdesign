@@ -356,6 +356,98 @@ test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmod
   }
 });
 
+test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau eine primäre Aktion', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Website-Relaunch planen',
+      slug: 'website-relaunch-planen',
+      updatedAt: '2026-07-14T10:00:00.000Z',
+      optimization: {
+        state: 'idle', active: false, terminal: false, canStart: true,
+        statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+        message: 'Noch keine KI-Optimierung gestartet.', jobId: null,
+        revisionId: null, revisionUrl: null, errorCode: null,
+        unsafeProviderState: false, updatedAt: null
+      }
+    }]
+  });
+
+  const form = html.match(/<form[^>]*action="\/admin\/content-agent\/existing-content\/19\/optimize"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.match(form, /method="post"/);
+  assert.match(form, /name="_csrf" value="csrf-test"/);
+  assert.doesNotMatch(form, /name="(?:post_id|admin_id|base_live_hash|max_attempts|payload|slug)"/i);
+  assert.equal((html.match(/data-existing-content-primary-action/g) || []).length, 1);
+  assert.match(html, /1 veröffentlichter Inhalt/);
+  assert.match(html, /KI-Optimierung starten/);
+  assert.match(html, /Livefassung bleibt unverändert/i);
+});
+
+test('laufende Bestandsoptimierung zeigt Stufe, deaktiviert die Einzelaktion und aktiviert Statuspolling', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19, title: 'Artikel', slug: 'artikel',
+      optimization: {
+        state: 'running', active: true, terminal: false, canStart: false,
+        statusLabel: 'In Bearbeitung', stageLabel: 'Gezielte Optimierung',
+        message: 'Die KI-Optimierung läuft: Gezielte Optimierung.', jobId: 44,
+        revisionId: null, revisionUrl: null, errorCode: null,
+        unsafeProviderState: false, updatedAt: '2026-07-14T10:03:00.000Z'
+      }
+    }]
+  });
+
+  assert.match(html, /data-existing-content-optimization/);
+  assert.match(html, /data-state="running"/);
+  assert.match(html, /data-status-url="\/admin\/content-agent\/existing-content\/19\/optimization-status"/);
+  assert.match(html, /Gezielte Optimierung/);
+  assert.match(html, /<button[^>]*disabled[^>]*>[\s\S]*?Optimierung läuft/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.equal((html.match(/data-existing-content-primary-action/g) || []).length, 1);
+});
+
+test('unsicherer Providerzustand bietet keinen normalen Retry und verweist sicher auf Jobs', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19, title: 'Artikel', slug: 'artikel',
+      optimization: {
+        state: 'manual_attention', active: false, terminal: true, canStart: false,
+        statusLabel: 'Manuelle Prüfung nötig', stageLabel: 'Gezielte Optimierung',
+        message: 'Der Lauf benötigt eine manuelle Prüfung.', jobId: 44,
+        revisionId: null, revisionUrl: null,
+        errorCode: 'provider_execution_uncertain', unsafeProviderState: true,
+        updatedAt: '2026-07-14T10:03:00.000Z'
+      }
+    }]
+  });
+
+  assert.match(html, /Manuelle Prüfung nötig/);
+  assert.match(html, /href="\/admin\/content-agent\/jobs"/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.doesNotMatch(html, /Erneut optimieren|normal.*wiederholen/i);
+  assert.equal((html.match(/data-existing-content-primary-action/g) || []).length, 1);
+});
+
+test('Bestandsoptimierungs-JavaScript pollt nur aktive Zustände alle drei Sekunden und schreibt kein HTML', async () => {
+  const script = await readFile(
+    new URL('../public/js/admin-existing-content-optimization.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(script, /\['queued', 'running'\]/);
+  assert.match(script, /setTimeout\([^,]+,\s*3000\)/);
+  assert.match(script, /document\.contains\(/);
+  assert.match(script, /credentials:\s*'same-origin'/);
+  assert.match(script, /Accept:\s*'application\/json'/);
+  assert.match(script, /textContent/);
+  assert.match(script, /content-agent\\\/revisions/);
+  assert.match(script, /\/admin\/content-agent\/jobs/);
+  assert.doesNotMatch(script, /innerHTML|insertAdjacentHTML|outerHTML|eval\(|location\.reload|window\.location\s*=/);
+});
+
 test('Draftübersicht bietet Statusfilter, Termin- und Maildetails sowie sicheren CSRF-Retry', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('drafts.ejs')), {
     ...baseLocals,

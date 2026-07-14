@@ -42,6 +42,59 @@ const STATUS_LABELS = Object.freeze({
   cancelled: 'Abgebrochen'
 });
 
+const EXISTING_OPTIMIZATION_STAGE_LABELS = Object.freeze({
+  inventory: 'Bestandsaufnahme',
+  live_snapshot: 'Livefassung prüfen',
+  existing_content_audit: 'Bestandsanalyse',
+  gsc_page_signals: 'Search-Console-Signale',
+  freshness_classification: 'Aktualität prüfen',
+  source_research: 'Quellenrecherche',
+  targeted_optimization: 'Gezielte Optimierung',
+  existing_post_diff: 'Änderungsvergleich',
+  targeted_scope_validation: 'Änderungsumfang prüfen',
+  article_validation: 'Artikel validieren',
+  editorial_review: 'Redaktionelle Prüfung',
+  repair: 'Gezielte Reparatur',
+  revision_creation: 'Revision erstellt',
+  completed: 'Abgeschlossen'
+});
+
+const SAFE_EXISTING_OPTIMIZATION_ERROR_CODES = new Set([
+  'CONTENT_BUDGET_LIMIT_REACHED',
+  'CONTENT_EXISTING_OPTIMIZATION_FAILED',
+  'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID',
+  'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID',
+  'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID',
+  'CONTENT_JOB_LEASE_LOST',
+  'CONTENT_POST_NOT_FOUND',
+  'CONTENT_PROVIDER_SAFE_RETRY',
+  'CONTENT_RULE_MANIFEST_MISMATCH',
+  'CONTENT_RUN_FINISH_FAILED',
+  'CONTENT_RUNTIME_SNAPSHOT_INVALID',
+  'CONTENT_STAGE_PERSISTENCE_FAILED',
+  'article_validation_failed',
+  'editorial_review_failed',
+  'existing_post_editorial_review_failed',
+  'existing_post_optimization_repair_failed',
+  'existing_post_optimization_report_too_large',
+  'insufficient_existing_post_sources',
+  'live_post_hash_mismatch',
+  'persisted_stage_result_invalid',
+  'provider_execution_uncertain',
+  'provider_request_rejected',
+  'provider_stage_cost_invalid',
+  'provider_stage_persistence_uncertain',
+  'provider_stage_result_invalid',
+  'provider_stage_schema_invalid',
+  'sanitized_html_changed',
+  'targeted_scope_exceeded'
+]);
+
+const UNSAFE_EXISTING_PROVIDER_CODES = new Set([
+  'provider_execution_uncertain',
+  'provider_stage_persistence_uncertain'
+]);
+
 const REVIEW_STATE_LABELS = Object.freeze({
   needs_review: 'Prüfung offen',
   approved_scheduled: 'Freigegeben und terminiert',
@@ -623,6 +676,7 @@ export function buildExistingContentListPresentation(rows = []) {
     title: row.title,
     slug: row.slug,
     updatedAt: row.updated_at,
+    optimization: presentExistingContentOptimizationState(row),
     ...(Object.hasOwn(row, 'audit_id') ? {
       auditId: row.audit_id || null,
       auditScore: row.audit_score === null || row.audit_score === undefined ? null : Number(row.audit_score),
@@ -632,6 +686,98 @@ export function buildExistingContentListPresentation(rows = []) {
       revisionStatus: row.revision_status || null
     } : {})
   }));
+}
+
+function presentedPositiveInteger(value) {
+  const normalized = Number(value);
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : null;
+}
+
+function presentedTimestamp(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+export function presentExistingContentOptimizationState(row = {}) {
+  const jobId = presentedPositiveInteger(row.optimization_job_id);
+  if (jobId === null) {
+    return {
+      state: 'idle',
+      active: false,
+      terminal: false,
+      canStart: true,
+      statusLabel: 'Noch nicht gestartet',
+      stageLabel: 'Noch keine Stufe',
+      message: 'Noch keine KI-Optimierung gestartet.',
+      jobId: null,
+      revisionId: null,
+      revisionUrl: null,
+      errorCode: null,
+      unsafeProviderState: false,
+      updatedAt: null
+    };
+  }
+
+  const rawStatus = typeof row.optimization_job_status === 'string'
+    ? row.optimization_job_status
+    : '';
+  const state = rawStatus === 'needs_manual_attention'
+    ? 'manual_attention'
+    : ['queued', 'running', 'completed', 'failed'].includes(rawStatus)
+      ? rawStatus
+      : 'manual_attention';
+  const active = state === 'queued' || state === 'running';
+  const terminal = !active;
+  const rawStage = typeof row.optimization_current_stage === 'string'
+    ? row.optimization_current_stage.split(':')[0]
+    : '';
+  const stageLabel = EXISTING_OPTIMIZATION_STAGE_LABELS[rawStage]
+    || (rawStage ? 'Unbekannte Stufe' : 'Noch keine Stufe');
+  const rawErrorCode = typeof row.optimization_error_code === 'string'
+    ? row.optimization_error_code
+    : '';
+  const errorCode = SAFE_EXISTING_OPTIMIZATION_ERROR_CODES.has(rawErrorCode)
+    ? rawErrorCode
+    : null;
+  const unsafeProviderState = UNSAFE_EXISTING_PROVIDER_CODES.has(errorCode);
+  const revisionId = presentedPositiveInteger(row.optimization_revision_id);
+  const hasDraftRevision = revisionId !== null
+    && row.optimization_revision_status === 'draft';
+  const messages = {
+    queued: 'Die KI-Optimierung wurde eingeplant und wartet auf den Worker.',
+    running: `Die KI-Optimierung läuft: ${stageLabel}.`,
+    completed: 'Die Optimierung ist abgeschlossen. Die Livefassung blieb unverändert.',
+    failed: 'Die KI-Optimierung ist fehlgeschlagen. Ein neuer, sicherer Start ist möglich.',
+    manual_attention: unsafeProviderState
+      ? 'Der Providerzustand ist nicht eindeutig und benötigt eine manuelle Prüfung.'
+      : 'Der Lauf benötigt eine manuelle Prüfung.'
+  };
+  const labels = {
+    queued: 'Eingeplant',
+    running: 'In Bearbeitung',
+    completed: hasDraftRevision ? 'Revision bereit' : 'Abgeschlossen',
+    failed: 'Fehlgeschlagen',
+    manual_attention: 'Manuelle Prüfung nötig'
+  };
+
+  return {
+    state,
+    active,
+    terminal,
+    canStart: state === 'failed' && !unsafeProviderState,
+    statusLabel: labels[state],
+    stageLabel,
+    message: messages[state],
+    jobId,
+    revisionId: hasDraftRevision ? revisionId : null,
+    revisionUrl: hasDraftRevision
+      ? `/admin/content-agent/revisions/${revisionId}/edit`
+      : null,
+    errorCode,
+    unsafeProviderState,
+    updatedAt: presentedTimestamp(row.optimization_job_updated_at)
+  };
 }
 
 export function buildJobListPresentation(rows = []) {

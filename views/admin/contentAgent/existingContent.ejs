@@ -5,7 +5,7 @@
 %>
 <div class="content-agent-page">
   <header class="content-agent-pagehead">
-    <div><p class="content-agent-eyebrow">Bestandsprüfung</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-box-archive" aria-hidden="true"></i> Bestehende Inhalte</h1><p class="content-agent-lead">Veröffentlichte Artikel analysieren, ohne die Livefassung zu überschreiben.</p></div>
+    <div><p class="content-agent-eyebrow">Bestandsprüfung</p><h1 class="admin-page-title mb-1"><i class="fa-solid fa-box-archive" aria-hidden="true"></i> Bestehende Inhalte</h1><p class="content-agent-lead">Veröffentlichte Artikel analysieren und als getrennte Revision optimieren, ohne die Livefassung zu überschreiben.</p></div>
     <form method="post" action="/admin/content-agent/existing-content/audit" data-confirm="Bestehende Inhalte jetzt prüfen? Dabei wird kein veröffentlichter Artikel verändert.">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass-chart" aria-hidden="true"></i> Bestehende Inhalte prüfen</button>
@@ -13,15 +13,56 @@
   </header>
   <%- include('_tabs', { activeTab: 'drafts' }) %>
   <div class="content-agent-subnav"><a href="/admin/content-agent/drafts">KI-Entwürfe</a><a class="is-active" href="/admin/content-agent/existing-content" aria-current="page">Bestehende Inhalte</a></div>
-  <div class="content-agent-notice"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Liveinhalte bleiben geschützt</strong><p>Prüfungen und spätere Überarbeitungen werden getrennt gespeichert. Erst eine ausdrückliche Freigabe kann eine veröffentlichte Fassung ändern.</p></div></div>
+  <div class="content-agent-notice"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Liveinhalte bleiben geschützt</strong><p>Jede KI-Optimierung wird getrennt als Revision gespeichert. Die Livefassung bleibt unverändert, bis eine Revision ausdrücklich freigegeben wird.</p></div></div>
   <section class="content-agent-panel" aria-labelledby="stock-heading">
-    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Inventar</p><h2 id="stock-heading"><%= safeExistingContent.length %> veröffentlichte Inhalte</h2></div></div>
+    <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Inventar</p><h2 id="stock-heading"><%= safeExistingContent.length %> <%= safeExistingContent.length === 1 ? 'veröffentlichter Inhalt' : 'veröffentlichte Inhalte' %></h2></div></div>
     <% if (!safeExistingContent.length) { %><div class="content-agent-empty"><i class="fa-regular fa-folder-open" aria-hidden="true"></i><div><strong>Kein Bestand gefunden</strong><p>Es sind derzeit keine veröffentlichten Artikel vorhanden.</p></div></div><% } else { %>
-      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Artikel</th><th scope="col">Prüfstatus</th><th scope="col">Befunde</th><th scope="col">Aktualisiert</th><th scope="col" class="text-end">Aktion</th></tr></thead><tbody>
-        <% safeExistingContent.forEach((item) => { %><tr><td><strong><%= item.title %></strong><br><code><%= item.slug %></code></td><td><% if (item.auditId) { %><span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span><% } else { %><span class="content-agent-quiet">Noch nicht geprüft</span><% } %></td><td><% if (item.findings && item.findings.length) { %><ul class="mb-0"><% item.findings.slice(0, 4).forEach((finding) => { %><li><%= finding.message || finding.code %></li><% }) %></ul><% if (item.findings.length > 4) { %><small>+ <%= item.findings.length - 4 %> weitere</small><% } %><% } else { %>–<% } %></td><td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td><td class="text-end"><div class="content-agent-actions justify-content-end"><a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel öffnen</a><% if (item.revisionId) { %><a class="btn btn-sm btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit">Revision bearbeiten</a><% } else if (item.auditId && item.auditStatus !== 'resolved') { %><form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/revision"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="audit_id" value="<%= item.auditId %>"><button class="btn btn-sm btn-outline-primary" type="submit">Revision anlegen</button></form><% } %></div></td></tr><% }) %>
+      <div class="table-responsive"><table class="table content-agent-table align-middle"><thead><tr><th scope="col">Artikel</th><th scope="col">Prüfung &amp; Optimierung</th><th scope="col">Befunde</th><th scope="col">Aktualisiert</th><th scope="col" class="text-end">Aktion</th></tr></thead><tbody>
+        <% safeExistingContent.forEach((item) => {
+          const optimization = item.optimization || {
+            state: 'idle', active: false, canStart: true,
+            statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+            message: 'Noch keine KI-Optimierung gestartet.', revisionUrl: null,
+            unsafeProviderState: false
+          };
+        %>
+          <tr data-existing-content-optimization data-state="<%= optimization.state %>" data-active="<%= optimization.active === true ? 'true' : 'false' %>"<% if (optimization.active === true) { %> data-status-url="/admin/content-agent/existing-content/<%= item.id %>/optimization-status"<% } %>>
+            <td><strong><%= item.title %></strong><br><code><%= item.slug %></code></td>
+            <td>
+              <% if (item.auditId) { %><span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span><% } else { %><span class="content-agent-quiet">Noch nicht geprüft</span><% } %>
+              <div class="mt-2"><strong data-existing-content-optimization-label><%= optimization.statusLabel %></strong><br><span data-existing-content-optimization-stage><%= optimization.stageLabel %></span><br><small class="content-agent-quiet" data-existing-content-optimization-message><%= optimization.message %></small></div>
+            </td>
+            <td><% if (item.findings && item.findings.length) { %><ul class="mb-0"><% item.findings.slice(0, 4).forEach((finding) => { %><li><%= finding.message || finding.code %></li><% }) %></ul><% if (item.findings.length > 4) { %><small>+ <%= item.findings.length - 4 %> weitere</small><% } %><% } else { %>–<% } %></td>
+            <td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></td>
+            <td class="text-end">
+              <div class="content-agent-actions justify-content-end">
+                <a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel öffnen</a>
+                <div data-existing-content-primary-action>
+                  <% if (optimization.active === true) { %>
+                    <button class="btn btn-sm btn-primary" type="button" disabled><%= optimization.state === 'queued' ? 'Optimierung eingeplant' : 'Optimierung läuft' %></button>
+                  <% } else if (optimization.revisionUrl) { %>
+                    <a class="btn btn-sm btn-primary" href="<%= optimization.revisionUrl %>">Revision bearbeiten</a>
+                  <% } else if (item.revisionId) { %>
+                    <a class="btn btn-sm btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit">Revision bearbeiten</a>
+                  <% } else if (optimization.state === 'manual_attention' || optimization.state === 'completed') { %>
+                    <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
+                  <% } else if (optimization.canStart === true) { %>
+                    <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/optimize" data-confirm="KI-Optimierung für diesen Artikel starten? Die Livefassung bleibt unverändert.">
+                      <input type="hidden" name="_csrf" value="<%= csrf %>">
+                      <button class="btn btn-sm btn-primary" type="submit">KI-Optimierung starten</button>
+                    </form>
+                  <% } else { %>
+                    <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
       </tbody></table></div>
     <% } %>
   </section>
 </div>
 <script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-existing-content-optimization.js') : '/js/admin-existing-content-optimization.js' %>" defer></script>
 <%- include('../../partials/admin_footer') %>

@@ -3,6 +3,7 @@ import { getMonthlyContentCost } from '../services/contentAgent/contentCostServi
 
 const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
 const DRAFT_PERSISTENCE_RECOVERABLE_SQL = `(
   r.error_report_json ->> 'code' = 'pipeline_failed'
@@ -40,6 +41,38 @@ function normalizeLimit(value) {
 
 export function normalizeReviewStatusFilter(value) {
   return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
+}
+
+function positivePostgresInteger(value, field) {
+  if (typeof value !== 'number'
+      || !Number.isSafeInteger(value)
+      || value < 1
+      || value > POSTGRES_INTEGER_MAX) {
+    throw new TypeError(`${field} muss eine positive PostgreSQL-Ganzzahl sein.`);
+  }
+  return value;
+}
+
+function existingOptimizationEnqueueInput(input = {}) {
+  const payload = input?.payload;
+  const payloadKeys = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? Object.keys(payload).sort()
+    : [];
+  const allowedPayloadKeys = ['admin_id', 'base_live_hash', 'post_id', 'source'];
+  if (input.jobType !== 'optimize_existing_post'
+      || typeof input.idempotencyKey !== 'string'
+      || input.idempotencyKey.length < 1
+      || input.idempotencyKey.length > 180
+      || payloadKeys.join('|') !== allowedPayloadKeys.join('|')
+      || payload.source !== 'admin_existing_content'
+      || typeof payload.base_live_hash !== 'string'
+      || !/^[0-9a-f]{64}$/.test(payload.base_live_hash)) {
+    throw new TypeError('Der Bestandsoptimierungsauftrag ist ungültig.');
+  }
+  const postId = positivePostgresInteger(payload.post_id, 'post_id');
+  positivePostgresInteger(payload.admin_id, 'admin_id');
+  const maxAttempts = positivePostgresInteger(input.maxAttempts, 'maxAttempts');
+  return { ...input, payload: { ...payload }, postId, maxAttempts };
 }
 
 export function createContentAgentAdminRepository(db = pool) {
@@ -307,7 +340,28 @@ export function createContentAgentAdminRepository(db = pool) {
         SELECT p.id, p.title, p.slug, p.updated_at,
                audit.id AS audit_id, audit.score AS audit_score,
                audit.status AS audit_status, audit.findings_json,
-               revision.id AS revision_id, revision.status AS revision_status
+               revision.id AS revision_id, revision.status AS revision_status,
+               optimization_job.optimization_job_id,
+               optimization_job.optimization_job_status,
+               optimization_job.optimization_attempts,
+               optimization_job.optimization_max_attempts,
+               optimization_job.optimization_job_updated_at,
+               optimization_run.optimization_run_id,
+               optimization_run.optimization_run_status,
+               optimization_run.current_stage AS optimization_current_stage,
+               CASE
+                 WHEN COALESCE(
+                   optimization_run.run_error_code,
+                   optimization_job.optimization_last_error
+                 ) ~ '^[A-Za-z][A-Za-z0-9_:-]{0,79}$'
+                   THEN COALESCE(
+                     optimization_run.run_error_code,
+                     optimization_job.optimization_last_error
+                   )
+                 ELSE NULL
+               END AS optimization_error_code,
+               optimization_revision.optimization_revision_id,
+               optimization_revision.optimization_revision_status
         FROM posts p
         LEFT JOIN LATERAL (
           SELECT a.id, a.score, a.status, a.findings_json
@@ -323,11 +377,158 @@ export function createContentAgentAdminRepository(db = pool) {
           ORDER BY r.created_at DESC, r.id DESC
           LIMIT 1
         ) revision ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT j.id AS optimization_job_id,
+                 j.status AS optimization_job_status,
+                 j.attempts AS optimization_attempts,
+                 j.max_attempts AS optimization_max_attempts,
+                 j.last_error AS optimization_last_error,
+                 j.updated_at AS optimization_job_updated_at
+          FROM content_jobs j
+          WHERE j.job_type = 'optimize_existing_post'
+            AND j.payload_json ->> 'post_id' = p.id::text
+          ORDER BY j.created_at DESC, j.id DESC
+          LIMIT 1
+        ) optimization_job ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT run.id AS optimization_run_id,
+                 run.status AS optimization_run_status,
+                 run.current_stage,
+                 run.error_report_json ->> 'code' AS run_error_code
+          FROM content_runs run
+          WHERE run.job_id = optimization_job.optimization_job_id
+          ORDER BY run.started_at DESC, run.id DESC
+          LIMIT 1
+        ) optimization_run ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT optimized_revision.id AS optimization_revision_id,
+                 optimized_revision.status AS optimization_revision_status
+          FROM content_post_revisions optimized_revision
+          WHERE optimized_revision.optimization_job_id = optimization_job.optimization_job_id
+            AND optimized_revision.post_id = p.id
+          ORDER BY optimized_revision.created_at DESC, optimized_revision.id DESC
+          LIMIT 1
+        ) optimization_revision ON TRUE
         WHERE p.published = TRUE
         ORDER BY p.updated_at DESC
         LIMIT 100
       `);
       return rows;
+    },
+
+    async getExistingContentOptimizationState(postId) {
+      const normalizedPostId = positivePostgresInteger(postId, 'postId');
+      const { rows } = await db.query(`
+        SELECT p.id,
+               optimization_job.optimization_job_id,
+               optimization_job.optimization_job_status,
+               optimization_job.optimization_attempts,
+               optimization_job.optimization_max_attempts,
+               optimization_job.optimization_job_updated_at,
+               optimization_run.optimization_run_id,
+               optimization_run.optimization_run_status,
+               optimization_run.current_stage AS optimization_current_stage,
+               CASE
+                 WHEN COALESCE(
+                   optimization_run.run_error_code,
+                   optimization_job.optimization_last_error
+                 ) ~ '^[A-Za-z][A-Za-z0-9_:-]{0,79}$'
+                   THEN COALESCE(
+                     optimization_run.run_error_code,
+                     optimization_job.optimization_last_error
+                   )
+                 ELSE NULL
+               END AS optimization_error_code,
+               optimization_revision.optimization_revision_id,
+               optimization_revision.optimization_revision_status
+        FROM posts p
+        LEFT JOIN LATERAL (
+          SELECT j.id AS optimization_job_id,
+                 j.status AS optimization_job_status,
+                 j.attempts AS optimization_attempts,
+                 j.max_attempts AS optimization_max_attempts,
+                 j.last_error AS optimization_last_error,
+                 j.updated_at AS optimization_job_updated_at
+          FROM content_jobs j
+          WHERE j.job_type = 'optimize_existing_post'
+            AND j.payload_json ->> 'post_id' = p.id::text
+          ORDER BY j.created_at DESC, j.id DESC
+          LIMIT 1
+        ) optimization_job ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT run.id AS optimization_run_id,
+                 run.status AS optimization_run_status,
+                 run.current_stage,
+                 run.error_report_json ->> 'code' AS run_error_code
+          FROM content_runs run
+          WHERE run.job_id = optimization_job.optimization_job_id
+          ORDER BY run.started_at DESC, run.id DESC
+          LIMIT 1
+        ) optimization_run ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT optimized_revision.id AS optimization_revision_id,
+                 optimized_revision.status AS optimization_revision_status
+          FROM content_post_revisions optimized_revision
+          WHERE optimized_revision.optimization_job_id = optimization_job.optimization_job_id
+            AND optimized_revision.post_id = p.id
+          ORDER BY optimized_revision.created_at DESC, optimized_revision.id DESC
+          LIMIT 1
+        ) optimization_revision ON TRUE
+        WHERE p.id = $1::integer AND p.published = TRUE
+        LIMIT 1
+      `, [normalizedPostId]);
+      return rows[0] || null;
+    },
+
+    async enqueueExistingPostOptimizationJob(input = {}) {
+      const normalized = existingOptimizationEnqueueInput(input);
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const inserted = await client.query(`
+          INSERT INTO content_jobs (
+            job_type, idempotency_key, payload_json, max_attempts
+          )
+          SELECT $1, $2, $3::jsonb, $4
+          FROM posts p
+          CROSS JOIN content_agent_settings settings
+          WHERE p.id = $5::integer AND p.published = TRUE
+            AND settings.id = 1 AND settings.agent_enabled = TRUE
+          ON CONFLICT DO NOTHING
+          RETURNING id, status, attempts, max_attempts, created_at, updated_at
+        `, [
+          normalized.jobType,
+          normalized.idempotencyKey,
+          normalized.payload,
+          normalized.maxAttempts,
+          normalized.postId
+        ]);
+        let job = inserted.rows[0] || null;
+        if (!job) {
+          const active = await client.query(`
+            SELECT active_job.id, active_job.status, active_job.attempts,
+                   active_job.max_attempts, active_job.created_at, active_job.updated_at
+            FROM content_jobs active_job
+            WHERE active_job.job_type = 'optimize_existing_post'
+              AND active_job.payload_json ->> 'post_id' = $1::text
+              AND active_job.status IN ('queued', 'running', 'needs_manual_attention')
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+          `, [normalized.postId]);
+          job = active.rows[0] || null;
+        }
+        await client.query('COMMIT');
+        return job;
+      } catch (error) {
+        try {
+          await client.query('ROLLBACK');
+        } catch {
+          // Der ursprüngliche Datenbankfehler bleibt maßgeblich.
+        }
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async listJobs(limit = 100) {

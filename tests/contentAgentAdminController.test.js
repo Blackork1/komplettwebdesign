@@ -1230,6 +1230,171 @@ test('Bestehende Inhalte rendert ein sicheres Präsentationsmodell statt 501', a
   });
 });
 
+test('Startaktion erzwingt Agent-Aktivierung und ausschließlich serverseitigen Minimalpayload', async () => {
+  let enqueued = null;
+  let prepared = null;
+  const liveHash = 'a'.repeat(64);
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() {
+        return { agent_enabled: true, maximum_attempts: 5 };
+      }
+    },
+    revisionService: {
+      async prepareExistingPostOptimization(postId) {
+        prepared = postId;
+        return { baseLiveHash: liveHash };
+      }
+    },
+    jobRepository: {
+      async enqueueExistingPostOptimizationJob(input) {
+        enqueued = input;
+        return { id: 44, status: 'queued' };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.optimizeExistingContentAction({
+    params: { id: '19' },
+    body: {
+      post_id: 999,
+      admin_id: 999,
+      base_live_hash: 'b'.repeat(64),
+      max_attempts: 999,
+      payload: { provider: 'nicht erlaubt' }
+    },
+    session: { user: { id: 7, username: 'Admin' } }
+  }, res, assert.fail);
+
+  assert.equal(prepared, 19);
+  assert.equal(enqueued.jobType, 'optimize_existing_post');
+  assert.match(enqueued.idempotencyKey, /^existing-post-optimization:19:[0-9a-f-]+$/i);
+  assert.deepEqual(enqueued.payload, {
+    source: 'admin_existing_content',
+    post_id: 19,
+    admin_id: 7,
+    base_live_hash: liveHash
+  });
+  assert.equal(enqueued.maxAttempts, 3);
+  assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?optimization=queued');
+});
+
+test('deaktivierter Agent und ungültige PostgreSQL-INT32-IDs verhindern die Bestandsoptimierung', async () => {
+  let prepares = 0;
+  let enqueues = 0;
+  const disabled = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: false, maximum_attempts: 3 }; }
+    },
+    revisionService: {
+      async prepareExistingPostOptimization() { prepares += 1; }
+    },
+    jobRepository: {
+      async enqueueExistingPostOptimizationJob() { enqueues += 1; }
+    }
+  }));
+  const disabledResponse = response();
+  await disabled.optimizeExistingContentAction({
+    params: { id: '19' }, session: { user: { id: 7, username: 'Admin' } }
+  }, disabledResponse, assert.fail);
+  assert.equal(disabledResponse.statusCode, 409);
+  assert.equal(prepares, 0);
+  assert.equal(enqueues, 0);
+
+  const enabled = createAdminContentAgentController(baseDependencies({
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: true, maximum_attempts: 3 }; }
+    },
+    revisionService: {
+      async prepareExistingPostOptimization() { prepares += 1; return { baseLiveHash: 'a'.repeat(64) }; }
+    },
+    jobRepository: {
+      async enqueueExistingPostOptimizationJob() { enqueues += 1; return { id: 44, status: 'queued' }; }
+    }
+  }));
+  for (const [id, adminId] of [
+    ['0', 7], ['01', 7], ['2147483648', 7], ['19', 0], ['19', 2147483648]
+  ]) {
+    const invalidResponse = response();
+    await enabled.optimizeExistingContentAction({
+      params: { id }, session: { user: { id: adminId, username: 'Admin' } }
+    }, invalidResponse, assert.fail);
+    assert.equal(invalidResponse.statusCode, 400);
+  }
+  assert.equal(enqueues, 0);
+});
+
+test('Statusroute sendet no-store und ausschließlich das allowlistete Präsentationsmodell', async () => {
+  const raw = {
+    id: 19,
+    optimization_job_id: 44,
+    optimization_job_status: 'running',
+    provider_secret: 'sk-darf-nicht-raus'
+  };
+  const safe = {
+    state: 'running',
+    active: true,
+    statusLabel: 'In Bearbeitung',
+    stageLabel: 'Gezielte Optimierung'
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async getExistingContentOptimizationState(postId) {
+        assert.equal(postId, 19);
+        return raw;
+      }
+    },
+    presentation: {
+      presentExistingContentOptimizationState(input) {
+        assert.equal(input, raw);
+        return safe;
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.existingContentOptimizationStatusAction({ params: { id: '19' } }, res, assert.fail);
+
+  assert.equal(res.headers['Cache-Control'], 'no-store');
+  assert.deepEqual(res.jsonBody, safe);
+  assert.doesNotMatch(JSON.stringify(res.jsonBody), /provider|secret|stage_results_json/i);
+});
+
+test('Statusroute gibt für unveröffentlichte oder fehlende Artikel sicher 404 aus', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async getExistingContentOptimizationState() { return null; }
+    },
+    presentation: {
+      presentExistingContentOptimizationState() { assert.fail('Präsentation darf nicht laufen'); }
+    }
+  }));
+  const res = response();
+
+  await controller.existingContentOptimizationStatusAction({ params: { id: '19' } }, res, assert.fail);
+
+  assert.equal(res.statusCode, 404);
+  assert.doesNotMatch(res.body, /Datenbank|SQL|Provider/i);
+});
+
+test('Statusroute setzt no-store auch bei einer ungültigen Pfad-ID', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async getExistingContentOptimizationState() { assert.fail('Repository darf nicht laufen'); }
+    },
+    presentation: {
+      presentExistingContentOptimizationState() { assert.fail('Präsentation darf nicht laufen'); }
+    }
+  }));
+  const res = response();
+
+  await controller.existingContentOptimizationStatusAction({ params: { id: '01' } }, res, assert.fail);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.headers['Cache-Control'], 'no-store');
+});
+
 test('nicht-string Fehlercodes werfen nicht in der Statusabbildung', async () => {
   assert.equal(contentAgentStatus({ code: 42 }), 500);
 

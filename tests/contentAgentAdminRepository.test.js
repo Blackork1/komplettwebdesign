@@ -31,6 +31,27 @@ function createQueryRecorder() {
   };
 }
 
+function createTransactionDatabase(handler) {
+  const calls = [];
+  let releases = 0;
+  const client = {
+    async query(sql, params = []) {
+      const normalized = normalizeSql(sql);
+      calls.push({ sql: normalized, params });
+      if (normalized === 'BEGIN' || normalized === 'COMMIT' || normalized === 'ROLLBACK') {
+        return { rows: [] };
+      }
+      return handler({ sql: normalized, params, calls });
+    },
+    release() { releases += 1; }
+  };
+  return {
+    calls,
+    get releases() { return releases; },
+    async connect() { return client; }
+  };
+}
+
 test('Dashboardabfragen laden keine Rohpayloads, Artikel oder Modellantworten', async () => {
   const db = createQueryRecorder();
   const repository = createContentAgentAdminRepository(db);
@@ -149,7 +170,139 @@ test('Bestandsliste lädt nur kompakte veröffentlichte Artikeldaten', async () 
   assert.match(sql, /FROM posts/i);
   assert.match(sql, /published = TRUE/i);
   assert.match(sql, /r\.audit_id = audit\.id/i);
-  assert.doesNotMatch(sql, /\bcontent\b|stage_results_json|payload_json|openai_response_ids_json/i);
+  const projection = sql.match(/^SELECT[\s\S]*?FROM posts p/i)?.[0] || '';
+  assert.doesNotMatch(
+    projection,
+    /\bcontent\b|stage_results_json|payload_json\s+AS|openai_response_ids_json/i
+  );
+});
+
+test('Bestandsliste wählt neuesten Job, Run und Optimierungsrevision deterministisch ohne große JSON-Projektion', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  await repository.listExistingContent();
+
+  const sql = db.calls[0].sql;
+  assert.match(sql, /LEFT JOIN LATERAL \( SELECT j\.id AS optimization_job_id/i);
+  assert.match(sql, /j\.job_type = 'optimize_existing_post'/i);
+  assert.match(sql, /j\.payload_json ->> 'post_id' = p\.id::text/i);
+  assert.match(sql, /ORDER BY j\.created_at DESC, j\.id DESC LIMIT 1/i);
+  assert.match(sql, /FROM content_runs run[\s\S]*run\.job_id = optimization_job\.optimization_job_id[\s\S]*ORDER BY run\.started_at DESC, run\.id DESC LIMIT 1/i);
+  assert.match(sql, /FROM content_post_revisions optimized_revision[\s\S]*optimized_revision\.optimization_job_id = optimization_job\.optimization_job_id[\s\S]*ORDER BY optimized_revision\.created_at DESC, optimized_revision\.id DESC LIMIT 1/i);
+  const projection = sql.match(/^SELECT[\s\S]*?FROM posts p/i)?.[0] || '';
+  assert.doesNotMatch(
+    projection,
+    /stage_results_json\s*(?:,|AS)|runtime_snapshot_json|openai_response_ids_json|payload_json\s+AS|optimization_report_json|snapshot_json/i
+  );
+  assert.match(projection, /optimization_run\.current_stage AS optimization_current_stage/i);
+  assert.match(projection, /optimization_revision_id/i);
+});
+
+test('kompakter Optimierungsstatus ist auf veröffentlichte INT32-Artikel begrenzt', async () => {
+  const row = { id: 19, optimization_job_id: 44, optimization_job_status: 'running' };
+  const db = {
+    calls: [],
+    async query(sql, params = []) {
+      const normalized = normalizeSql(sql);
+      this.calls.push({ sql: normalized, params });
+      return { rows: [row] };
+    }
+  };
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.equal(await repository.getExistingContentOptimizationState(19), row);
+  assert.deepEqual(db.calls[0].params, [19]);
+  assert.match(db.calls[0].sql, /p\.id = \$1::integer AND p\.published = TRUE/i);
+  assert.doesNotMatch(db.calls[0].sql, /stage_results_json|runtime_snapshot_json|openai_response_ids_json|optimization_report_json|snapshot_json/i);
+  await assert.rejects(() => repository.getExistingContentOptimizationState(2147483648), TypeError);
+  assert.equal(db.calls.length, 1);
+});
+
+test('Bestands-Enqueue prüft Agent und Liveartikel atomar und respektiert den aktiven Unique-Index', async () => {
+  const inserted = { id: 44, status: 'queued', attempts: 0, max_attempts: 3 };
+  const db = createTransactionDatabase(({ sql }) => {
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [inserted] };
+    return { rows: [] };
+  });
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:uuid',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  assert.equal(result, inserted);
+  assert.equal(db.calls[0].sql, 'BEGIN');
+  const insert = db.calls.find(({ sql }) => /INSERT INTO content_jobs/i.test(sql));
+  assert.deepEqual(insert.params, [
+    'optimize_existing_post',
+    'existing-post-optimization:19:uuid',
+    { source: 'admin_existing_content', post_id: 19, admin_id: 7, base_live_hash: 'a'.repeat(64) },
+    3,
+    19
+  ]);
+  assert.match(insert.sql, /FROM posts p[\s\S]*content_agent_settings settings/i);
+  assert.match(insert.sql, /p\.id = \$5::integer AND p\.published = TRUE/i);
+  assert.match(insert.sql, /settings\.agent_enabled = TRUE/i);
+  assert.match(insert.sql, /ON CONFLICT DO NOTHING/i);
+  assert.doesNotMatch(insert.sql, /ON CONFLICT \(idempotency_key\)/i);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+  assert.equal(db.releases, 1);
+});
+
+test('paralleler Bestandsstart gibt den bereits aktiven sicheren Zustand statt Duplikat oder 500 zurück', async () => {
+  const active = { id: 43, status: 'running', attempts: 1, max_attempts: 3 };
+  const db = createTransactionDatabase(({ sql }) => {
+    if (/INSERT INTO content_jobs/i.test(sql)) return { rows: [] };
+    if (/FROM content_jobs active_job/i.test(sql)) return { rows: [active] };
+    return { rows: [] };
+  });
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:parallel',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  assert.equal(result, active);
+  const lookup = db.calls.find(({ sql }) => /FROM content_jobs active_job/i.test(sql));
+  assert.deepEqual(lookup.params, [19]);
+  assert.match(lookup.sql, /status IN \('queued', 'running', 'needs_manual_attention'\)/i);
+  assert.match(lookup.sql, /ORDER BY created_at DESC, id DESC LIMIT 1/i);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('Bestands-Enqueue lehnt zusätzliche Payloadfelder und ungültige IDs vor Transaktionsbeginn ab', async () => {
+  const db = createTransactionDatabase(() => ({ rows: [] }));
+  const repository = createContentAgentAdminRepository(db);
+  const base = {
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:uuid',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  };
+
+  await assert.rejects(() => repository.enqueueExistingPostOptimizationJob({
+    ...base, payload: { ...base.payload, slug: 'unerlaubt' }
+  }), TypeError);
+  await assert.rejects(() => repository.enqueueExistingPostOptimizationJob({
+    ...base, payload: { ...base.payload, post_id: 2147483648 }
+  }), TypeError);
+  assert.equal(db.calls.length, 0);
 });
 
 test('Draftliste lädt pro Post ausschließlich die neueste Admin-Review-Zustellung', async () => {

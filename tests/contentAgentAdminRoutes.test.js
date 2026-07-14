@@ -24,6 +24,7 @@ const GET_PATHS = [
   '/admin/content-agent/drafts/:id/preview',
   '/admin/content-agent/drafts/:id/edit',
   '/admin/content-agent/drafts/:id/review-optimization-status',
+  '/admin/content-agent/existing-content/:id/optimization-status',
   '/admin/content-agent/revisions/:id/edit'
 ];
 
@@ -49,6 +50,7 @@ const POST_PATHS = [
   '/admin/content-agent/drafts/:id/reschedule',
   '/admin/content-agent/drafts/:id/notification/retry',
   '/admin/content-agent/existing-content/audit',
+  '/admin/content-agent/existing-content/:id/optimize',
   '/admin/content-agent/existing-content/:id/revision',
   '/admin/content-agent/revisions/:id',
   '/admin/content-agent/revisions/:id/publish'
@@ -76,6 +78,25 @@ test('alle Content-Agent-Schreibwege verlangen Admin und CSRF', () => {
       `Admin- oder CSRF-Schutz fehlt für POST ${path}`
     );
   }
+});
+
+test('Bestandsoptimierung ist als Admin-POST mit CSRF und geschütztem Status-GET verdrahtet', () => {
+  assert.match(
+    routes,
+    /router\.post\('\/admin\/content-agent\/existing-content\/:id\/optimize',\s*isAdmin,\s*verifyCsrfToken,\s*controller\.optimizeExistingContentAction\)/
+  );
+  assert.match(
+    routes,
+    /router\.get\('\/admin\/content-agent\/existing-content\/:id\/optimization-status',\s*isAdmin,\s*controller\.existingContentOptimizationStatusAction\)/
+  );
+});
+
+test('Produktionsrouter bindet das transaktionale Bestands-Enqueue aus dem Admin-Repository ein', () => {
+  assert.match(routes, /const adminRepository = createContentAgentAdminRepository\(pool\)/);
+  assert.match(
+    routes,
+    /enqueueExistingPostOptimizationJob:\s*\(input\)\s*=>\s*adminRepository\.enqueueExistingPostOptimizationJob\(input\)/
+  );
 });
 
 test('alte Blog-Schreibrouten verlangen ebenfalls Admin und CSRF', () => {

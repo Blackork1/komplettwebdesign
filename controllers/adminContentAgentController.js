@@ -24,6 +24,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_DRAFT_EDIT_CONFLICT',
   'CONTENT_REVIEW_VERSION_STALE',
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
+  'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
   'CONTENT_LEARNING_VERSION_CONFLICT',
@@ -55,6 +56,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
+  CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
   CONTENT_LEARNING_VERSION_CONFLICT: 'Der Vorschlag oder die Regel wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
@@ -282,6 +284,17 @@ function transitionTarget(current, patch) {
 function positiveId(value) {
   const id = Number(value);
   if (!Number.isSafeInteger(id) || id < 1) {
+    throw Object.assign(new Error('Ungültige ID.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+  }
+  return id;
+}
+
+function postgresIntegerId(value) {
+  if (typeof value === 'string' && !/^[1-9]\d*$/.test(value)) {
+    throw Object.assign(new Error('Ungültige ID.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+  }
+  const id = Number(value);
+  if (!Number.isSafeInteger(id) || id < 1 || id > 2_147_483_647) {
     throw Object.assign(new Error('Ungültige ID.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
   }
   return id;
@@ -539,6 +552,26 @@ export function createAdminContentAgentController(dependencies) {
         const rows = await adminRepository.listExistingContent();
         const existingContent = presentation.buildExistingContentListPresentation(rows);
         return res.render('admin/contentAgent/existingContent', { existingContent });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async existingContentOptimizationStatusAction(req, res, next) {
+      res.set('Cache-Control', 'no-store');
+      if (typeof adminRepository?.getExistingContentOptimizationState !== 'function'
+          || typeof presentation?.presentExistingContentOptimizationState !== 'function') {
+        return unavailable(res);
+      }
+      try {
+        const postId = postgresIntegerId(req.params.id);
+        const row = await adminRepository.getExistingContentOptimizationState(postId);
+        if (!row) {
+          throw Object.assign(new Error('Veröffentlichter Beitrag nicht gefunden.'), {
+            code: 'CONTENT_POST_NOT_FOUND'
+          });
+        }
+        return res.json(presentation.presentExistingContentOptimizationState(row));
       } catch (error) {
         return sendKnownError(error, res, next);
       }
@@ -1180,6 +1213,50 @@ export function createAdminContentAgentController(dependencies) {
         res,
         next
       });
+    },
+
+    async optimizeExistingContentAction(req, res, next) {
+      try {
+        const postId = postgresIntegerId(req.params.id);
+        const admin = adminFromRequest(req);
+        const adminId = postgresIntegerId(admin.id);
+        const settings = await requireAdminEnqueueEnabled();
+        if (typeof revisionService?.prepareExistingPostOptimization !== 'function'
+            || typeof jobRepository?.enqueueExistingPostOptimizationJob !== 'function') {
+          return unavailable(res);
+        }
+        const prepared = await revisionService.prepareExistingPostOptimization(postId);
+        const liveHash = typeof prepared?.baseLiveHash === 'string'
+          ? prepared.baseLiveHash
+          : '';
+        if (!/^[0-9a-f]{64}$/.test(liveHash)) {
+          throw Object.assign(new Error('Ungültiger Livehash.'), {
+            code: 'CONTENT_ACTION_VALIDATION_FAILED'
+          });
+        }
+        const job = await jobRepository.enqueueExistingPostOptimizationJob({
+          jobType: 'optimize_existing_post',
+          idempotencyKey: `existing-post-optimization:${postId}:${randomUUID()}`,
+          payload: {
+            source: 'admin_existing_content',
+            post_id: postId,
+            admin_id: adminId,
+            base_live_hash: liveHash
+          },
+          maxAttempts: Math.min(
+            Number(settings.maximum_attempts),
+            Number(runtimeConfig.maxAttempts)
+          )
+        });
+        if (!job || !['queued', 'running', 'needs_manual_attention'].includes(job.status)) {
+          throw Object.assign(new Error('Bestandsoptimierung nicht verfügbar.'), {
+            code: 'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect('/admin/content-agent/existing-content?optimization=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
     },
 
     createRevisionAction(req, res, next) {

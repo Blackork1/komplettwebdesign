@@ -49,6 +49,7 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
   router.get('/admin/content-agent/drafts/:id/review-optimization-status', isAdmin, controller.reviewOptimizationStatusAction);
+  router.get('/admin/content-agent/existing-content/:id/optimization-status', isAdmin, controller.existingContentOptimizationStatusAction);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);
   router.post('/admin/content-agent/search-console/sync', isAdmin, verifyCsrfToken, controller.syncSearchConsoleAction);
@@ -75,6 +76,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/reschedule', isAdmin, verifyCsrfToken, controller.rescheduleDraftAction);
   router.post('/admin/content-agent/drafts/:id/notification/retry', isAdmin, verifyCsrfToken, controller.retryDraftNotificationAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
+  router.post('/admin/content-agent/existing-content/:id/optimize', isAdmin, verifyCsrfToken, controller.optimizeExistingContentAction);
   router.post('/admin/content-agent/existing-content/:id/revision', isAdmin, verifyCsrfToken, controller.createRevisionAction);
   router.get('/admin/content-agent/revisions/:id/edit', isAdmin, controller.revisionEditPage);
   router.post('/admin/content-agent/revisions/:id', isAdmin, verifyCsrfToken, controller.updateRevisionAction);
@@ -92,8 +94,9 @@ const revisionService = createContentRevisionService({
 const learningAdminService = createContentLearningAdminService({
   repository: createContentLearningRepository(pool)
 });
+const adminRepository = createContentAgentAdminRepository(pool);
 const controller = createAdminContentAgentController({
-  adminRepository: createContentAgentAdminRepository(pool),
+  adminRepository,
   settingsRepository: {
     getSettings: () => getContentAgentSettings(pool),
     updateSettings: (input) => updateContentAgentSettings(input, pool)
@@ -102,6 +105,7 @@ const controller = createAdminContentAgentController({
     enqueueJob: (input) => enqueueJob(input, pool),
     enqueueReviewOptimizationJob: (input) => enqueueReviewOptimizationJob(input, pool),
     getLatestReviewOptimizationJob: (input) => getLatestReviewOptimizationJob(input, pool),
+    enqueueExistingPostOptimizationJob: (input) => adminRepository.enqueueExistingPostOptimizationJob(input),
     enqueueManualSearchConsoleSyncJob: (input) => enqueueManualSearchConsoleSyncJob(input, pool),
     retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool),
     recoverUncertainProviderJobForAdmin: (input) => recoverUncertainProviderJobForAdmin(input, pool),
