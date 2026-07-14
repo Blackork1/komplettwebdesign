@@ -438,6 +438,34 @@ test('Worker reicht eine explizite Retryzeit lease-sicher an das Repository weit
   assert.deepEqual(retry[1], claim);
 });
 
+test('terminaler Revalidierungs-Cleanup wird auch am Versuchslimit versuchsneutral neu eingereiht', async () => {
+  const retryAt = new Date('2026-07-14T12:00:00.000Z');
+  const cleanupError = Object.assign(new Error('Revalidierungsabschluss ausstehend'), {
+    code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+    retryable: true,
+    doesNotConsumeAttempt: true,
+    retryAt
+  });
+  const { worker, calls, claim } = createWorkerHarness({
+    async handleJob(job) {
+      calls.push(['handle', job]);
+      throw cleanupError;
+    }
+  });
+  claim.job_type = 'revalidate_existing_post_revision';
+  claim.attempts = 3;
+  claim.max_attempts = 3;
+
+  assert.deepEqual(await worker.processOnce(), { status: 'queued' });
+  const cleanup = calls.find(([type]) => type === 'reschedule_without_attempt');
+  assert.ok(cleanup);
+  assert.equal(cleanup[1], claim);
+  assert.equal(cleanup[2], cleanupError);
+  assert.equal(cleanup[3].retryAt, retryAt);
+  assert.equal(calls.filter(([type]) => type === 'retry').length, 0);
+  assert.equal(calls.filter(([type]) => type === 'fail').length, 0);
+});
+
 test('NOT_DUE wird lease-sicher ohne Verbrauch des Jobversuchs neu eingeplant', async () => {
   const retryAt = new Date('2026-07-12T22:00:00.000Z');
   const notDue = Object.assign(new Error('Zustellung noch nicht fällig'), {
@@ -2036,6 +2064,76 @@ test('ausgeschöpfter transienter Kontextfehler vor Runanlage verlässt pending 
   );
 });
 
+test('frühe Revisions-Terminalisierung wiederholt einen transienten Schreibfehler intern', async () => {
+  let failureAttempts = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Liveartikel verändert'), { code: 'CONTENT_REVISION_STALE' });
+    },
+    async createRun() { assert.fail('Für stale Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Für stale Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation() {
+      failureAttempts += 1;
+      if (failureAttempts === 1) {
+        throw Object.assign(new Error('Serialisierungskonflikt'), { code: '40001' });
+      }
+      return { id: 71 };
+    }
+  });
+
+  const result = await handler({
+    id: 54,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_STALE');
+  assert.equal(failureAttempts, 2);
+});
+
+test('dauerhaft gestörter früher Revisions-Cleanup bleibt am Versuchslimit wiederaufnehmbar', async () => {
+  let failureAttempts = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Liveartikel verändert'), { code: 'CONTENT_REVISION_STALE' });
+    },
+    async createRun() { assert.fail('Für stale Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Für stale Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation() {
+      failureAttempts += 1;
+      throw Object.assign(new Error('Datenbank nicht erreichbar'), { code: '57P01' });
+    }
+  });
+
+  await assert.rejects(handler({
+    id: 54,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true }), {
+    code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+    retryable: true,
+    doesNotConsumeAttempt: true
+  });
+  assert.equal(failureAttempts, 2);
+});
+
 test('verlorener Kontextfence terminalisiert nur den Job und schreibt keine fremde Revision', async () => {
   let failureWrites = 0;
   const handler = createProductionJobHandler({
@@ -2119,6 +2217,54 @@ test('ungültiger persistierter Runtime- oder Manifestsnapshot markiert Revision
     assert.equal(calls[0][0], 'revision');
     assert.equal(calls[1][0], 'run');
   }
+});
+
+test('früher Runabschluss einer Revalidierung wiederholt null intern ohne Runnerstart', async () => {
+  const payload = {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: 'b'.repeat(64)
+  };
+  let finishAttempts = 0;
+  const handler = createProductionJobHandler({
+    enforceRuleSnapshot: true,
+    async findRunByJobId() {
+      return {
+        id: 100,
+        status: 'running',
+        runtime_snapshot_json: {
+          ...revalidationRuntimeSnapshot(),
+          ruleManifestHash: 'f'.repeat(64)
+        }
+      };
+    },
+    async createRun() { assert.fail('Persistierter Run darf nicht neu entstehen.'); },
+    async failExistingPostRevisionRevalidation() { return { id: 71 }; },
+    async finishRun(_runId, input) {
+      finishAttempts += 1;
+      if (finishAttempts === 1) return null;
+      return { id: 100, status: input.status };
+    },
+    async runPipeline() { assert.fail('Ungültiger Snapshot darf keine Pipeline starten.'); },
+    async runExistingPostRevisionRevalidationJob() {
+      assert.fail('Ungültiger Snapshot darf keine Revalidierung starten.');
+    },
+    async createExistingPostRevisionRevalidationDependencies() {
+      assert.fail('Ungültiger Snapshot darf keine Abhängigkeiten erzeugen.');
+    }
+  });
+
+  const result = await handler({
+    id: 55,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: payload
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(finishAttempts, 2);
 });
 
 test('zusätzliche und nicht PostgreSQL-INT32-taugliche Bestands-Payloadfelder werden permanent abgelehnt', async () => {

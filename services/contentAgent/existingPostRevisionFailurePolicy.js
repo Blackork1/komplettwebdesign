@@ -23,6 +23,8 @@ const TRANSIENT_ERROR_CODES = new Set([
   'CONTENT_DATABASE_TEMPORARY',
   'CONTENT_JOB_LEASE_REQUIRED',
   'CONTENT_NETWORK_TEMPORARY',
+  'CONTENT_PROVIDER_SAFE_RETRY',
+  'CONTENT_REVISION_REVALIDATION_FAILURE_PERSIST_FAILED',
   'CONTENT_REVISION_REVALIDATION_TRANSIENT',
   'CONTENT_RUN_FINISH_FAILED',
   'EAI_AGAIN',
@@ -94,6 +96,13 @@ export function classifyExistingPostRevisionError(error, claim = {}) {
     }
     return { disposition: 'transient', failureCode: null, exhausted: false };
   }
+  if (EXISTING_POST_REVISION_FAILURE_CODES.has(code)) {
+    return {
+      disposition: 'permanent',
+      failureCode: code,
+      exhausted: false
+    };
+  }
   if (PERMANENT_CONTEXT_ERROR_CODES.has(code) || error?.retryable === false) {
     return {
       disposition: 'permanent',
@@ -112,5 +121,35 @@ export function existingPostRevisionTransientError(cause) {
   return Object.assign(
     new Error('Die Revalidierung konnte wegen eines vorübergehenden Datenbank- oder Netzwerkfehlers nicht fortgesetzt werden.', { cause }),
     { code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT', retryable: true }
+  );
+}
+
+export function existingPostRevisionCleanupRetryError(cause, options = {}) {
+  const now = options.now instanceof Date ? options.now : new Date();
+  const retryAt = new Date(now.getTime() + 30_000);
+  const action = ['complete', 'fail', 'finish'].includes(options.action)
+    ? options.action
+    : 'reconcile';
+  const failureCode = action === 'fail' && isExistingPostRevisionFailureCode(options.failureCode)
+    ? options.failureCode
+    : null;
+  const cleanupToken = action === 'reconcile'
+    ? 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+    : [
+      'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+      action,
+      ...(failureCode ? [failureCode] : [])
+    ].join(':');
+  return Object.assign(
+    new Error('Der terminale Abschluss der Revalidierung ist noch nicht vollständig gespeichert.', { cause }),
+    {
+      code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+      retryable: true,
+      doesNotConsumeAttempt: true,
+      retryAt,
+      cleanupAction: action,
+      cleanupFailureCode: failureCode,
+      cleanupToken
+    }
   );
 }

@@ -126,7 +126,10 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
           ('generate_manual_draft', 'running', 'completed-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
           ('optimize_existing_post', 'running', 'failed-run', '{"post_id":19}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
           ('generate_manual_draft', 'running', 'manual-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
-          ('generate_manual_draft', 'running', 'exhausted-running-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker')
+          ('generate_manual_draft', 'running', 'exhausted-running-run', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('revalidate_existing_post_revision', 'running', 'revalidation-early-crash', '{}'::jsonb, 1, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('revalidate_existing_post_revision', 'running', 'revalidation-cleanup', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker'),
+          ('revalidate_existing_post_revision', 'running', 'revalidation-terminal', '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker')
         RETURNING id, idempotency_key
       )
       INSERT INTO content_runs (job_id, status, error_report_json, finished_at)
@@ -135,14 +138,19 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
                WHEN 'completed-run' THEN 'completed'
                WHEN 'failed-run' THEN 'failed'
                WHEN 'manual-run' THEN 'needs_manual_attention'
+               WHEN 'revalidation-terminal' THEN 'failed'
                ELSE 'running'
              END,
              CASE idempotency_key
                WHEN 'failed-run' THEN '{"code":"existing_snapshot_invalid"}'::jsonb
                WHEN 'manual-run' THEN '{"code":"manual_check"}'::jsonb
+               WHEN 'revalidation-terminal' THEN '{"code":"CONTENT_REVISION_REVALIDATION_QUALITY_FAILED"}'::jsonb
                ELSE '{}'::jsonb
              END,
-             CASE WHEN idempotency_key = 'exhausted-running-run' THEN NULL ELSE NOW() END
+             CASE
+               WHEN idempotency_key IN ('exhausted-running-run', 'revalidation-cleanup') THEN NULL
+               ELSE NOW()
+             END
       FROM jobs;
     `);
 
@@ -155,8 +163,29 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
       { idempotency_key: 'completed-run', status: 'completed', last_error: null, locked_at: null, locked_by: null },
       { idempotency_key: 'exhausted-running-run', status: 'failed', last_error: 'CONTENT_JOB_LEASE_LOST', locked_at: null, locked_by: null },
       { idempotency_key: 'failed-run', status: 'failed', last_error: 'existing_snapshot_invalid', locked_at: null, locked_by: null },
-      { idempotency_key: 'manual-run', status: 'needs_manual_attention', last_error: 'manual_check', locked_at: null, locked_by: null }
+      { idempotency_key: 'manual-run', status: 'needs_manual_attention', last_error: 'manual_check', locked_at: null, locked_by: null },
+      { idempotency_key: 'revalidation-cleanup', status: 'queued', last_error: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED', locked_at: null, locked_by: null },
+      { idempotency_key: 'revalidation-early-crash', status: 'queued', last_error: 'CONTENT_JOB_LEASE_LOST', locked_at: null, locked_by: null },
+      { idempotency_key: 'revalidation-terminal', status: 'failed', last_error: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED', locked_at: null, locked_by: null }
     ]);
+    const cleanupState = (await pool.query(`
+      SELECT attempts, finished_at, run_after <= NOW() AS due
+      FROM content_jobs
+      WHERE idempotency_key = 'revalidation-cleanup'
+    `)).rows[0];
+    assert.deepEqual(cleanupState, { attempts: 2, finished_at: null, due: true });
+    const earlyCrashState = (await pool.query(`
+      SELECT attempts, finished_at
+      FROM content_jobs
+      WHERE idempotency_key = 'revalidation-early-crash'
+    `)).rows[0];
+    assert.deepEqual(earlyCrashState, { attempts: 1, finished_at: null });
+    const terminalRevalidationState = (await pool.query(`
+      SELECT attempts
+      FROM content_jobs
+      WHERE idempotency_key = 'revalidation-terminal'
+    `)).rows[0];
+    assert.deepEqual(terminalRevalidationState, { attempts: 3 });
 
     const replacement = await pool.query(`
       INSERT INTO content_jobs (

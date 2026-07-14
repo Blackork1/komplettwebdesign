@@ -39,6 +39,15 @@ test('gemeinsame Revalidierungsfehlerpolicy trennt permanent, transient, ausgesc
     failureCode: null,
     exhausted: false
   });
+  for (const code of ['40P01', '57P01', 'ECONNRESET', 'CONTENT_PROVIDER_SAFE_RETRY']) {
+    assert.deepEqual(classify({ code }, {
+      attempts: 1, max_attempts: 3
+    }), {
+      disposition: 'transient',
+      failureCode: null,
+      exhausted: false
+    }, code);
+  }
   assert.deepEqual(classify({ code: 'ECONNRESET' }, {
     attempts: 3, max_attempts: 3
   }), {
@@ -53,10 +62,32 @@ test('gemeinsame Revalidierungsfehlerpolicy trennt permanent, transient, ausgesc
     failureCode: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
     exhausted: false
   });
+  assert.deepEqual(classify({ code: 'provider_stage_result_invalid' }, {
+    attempts: 1, max_attempts: 3
+  }), {
+    disposition: 'permanent',
+    failureCode: 'provider_stage_result_invalid',
+    exhausted: false
+  });
   assert.equal(classify({ code: 'CONTENT_JOB_LEASE_LOST' }).disposition, 'lease_lost');
   assert.equal(
     classify({ code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' }).disposition,
     'fence_lost'
+  );
+  const cleanupError = revisionFailurePolicy.existingPostRevisionCleanupRetryError(
+    Object.assign(new Error('Abschluss vorübergehend fehlgeschlagen'), { code: '40001' })
+  );
+  assert.equal(cleanupError.code, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY');
+  assert.equal(cleanupError.retryable, true);
+  assert.equal(cleanupError.doesNotConsumeAttempt, true);
+  assert.equal(cleanupError.retryAt instanceof Date, true);
+  assert.equal(Number.isNaN(cleanupError.retryAt.getTime()), false);
+  assert.equal(
+    revisionFailurePolicy.existingPostRevisionCleanupRetryError(
+      new Error('Fehlerpersistenz ausstehend'),
+      { action: 'fail', failureCode: 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED' }
+    ).cleanupToken,
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
   );
 });
 
@@ -526,6 +557,120 @@ test('Budgetfehler markiert nur den aktuellen Fence als fehlgeschlagen und ruft 
   });
 });
 
+test('sicherer Providerretry bleibt vor dem letzten Attempt transient und wird auf dem letzten exakt terminal', async () => {
+  for (const attempts of [1, 3]) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = attempts;
+    fixture.claim.max_attempts = 3;
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.openaiService.reviewArticle = async () => {
+      state.providerCalls += 1;
+      throw Object.assign(new Error('Sicher vor Versand fehlgeschlagen'), {
+        safeToRetry: true,
+        providerRequestStarted: false
+      });
+    };
+    const execution = runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 191, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    if (attempts < fixture.claim.max_attempts) {
+      await assert.rejects(execution, {
+        code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT',
+        retryable: true
+      });
+      assert.equal(state.failedCalls.length, 0);
+      assert.equal(state.finishCalls.length, 0);
+    } else {
+      const result = await execution;
+      assert.equal(result.status, 'needs_manual_attention');
+      assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+      assert.equal(
+        state.failedCalls[0]?.failureCode,
+        'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+      );
+      assert.equal(state.finishCalls[0]?.input.status, 'needs_manual_attention');
+    }
+    assert.equal(state.providerCalls, 1);
+    assert.equal(state.completeCalls.length, 0);
+  }
+});
+
+test('PostgreSQL- und Netzwerkfehler beim Budgetzugriff behalten ihre gemeinsame transiente Disposition', async () => {
+  for (const code of ['40001', '40P01', '57P01', 'ECONNRESET']) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = 1;
+    fixture.claim.max_attempts = 3;
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.costService.getPersistedStageResult = async () => {
+      throw Object.assign(new Error('Budgetzugriff vorübergehend fehlgeschlagen'), { code });
+    };
+
+    await assert.rejects(runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 192, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies), {
+      code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT',
+      retryable: true
+    });
+    assert.equal(state.providerCalls, 0, code);
+    assert.equal(state.failedCalls.length, 0, code);
+    assert.equal(state.finishCalls.length, 0, code);
+  }
+});
+
+test('permanenter Paid-Stage-Code und unklare Providerausführung terminalisieren mit ihrem exakten Code', async () => {
+  const cases = [
+    {
+      code: 'provider_stage_result_invalid',
+      prepare(dependencies) {
+        dependencies.costService.getPersistedStageResult = async () => {
+          throw Object.assign(new Error('Persistiertes Ergebnis ungültig'), {
+            code: 'provider_stage_result_invalid',
+            retryable: false
+          });
+        };
+      }
+    },
+    {
+      code: 'provider_execution_uncertain',
+      prepare(dependencies, state) {
+        dependencies.openaiService.reviewArticle = async () => {
+          state.providerCalls += 1;
+          throw Object.assign(new Error('Verbindung nach Versand abgebrochen'), {
+            code: 'OPENAI_CONNECTION_UNCERTAIN',
+            providerRequestStarted: true
+          });
+        };
+      }
+    }
+  ];
+
+  for (const currentCase of cases) {
+    const fixture = runnerFixture();
+    const { dependencies, state } = runnerDependencies(fixture);
+    currentCase.prepare(dependencies, state);
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 193, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, 'needs_manual_attention', currentCase.code);
+    assert.equal(result.code, currentCase.code, currentCase.code);
+    assert.equal(state.failedCalls[0]?.failureCode, currentCase.code, currentCase.code);
+    assert.equal(state.finishCalls[0]?.input.errorReport.code, currentCase.code);
+    assert.equal(state.completeCalls.length, 0);
+  }
+});
+
 test('Leaseverlust nach Providerantwort verhindert Revisions- und Runabschluss', async () => {
   const fixture = runnerFixture();
   const { dependencies, state } = runnerDependencies(fixture);
@@ -604,7 +749,406 @@ test('Retry nach Leaseverlust hinter fachlichem Commit reconciled passed ohne zw
   assert.equal(state.finishCalls.length, 1);
 });
 
-test('Retry nach null oder Fehler von finishRun reconciled passed ohne zweite fachliche Persistenz', async () => {
+test('failRevisionRevalidation wird beim letzten Claim intern einmal transient wiederholt', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  fixture.context.revision.optimization_report_json.sources = [
+    { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
+  ];
+  const { dependencies, state } = runnerDependencies(fixture);
+  let failureAttempts = 0;
+  dependencies.optimizationRepository.failRevisionRevalidation = async (input) => {
+    failureAttempts += 1;
+    if (failureAttempts === 1) {
+      throw Object.assign(new Error('Serialisierungskonflikt beim Abschluss'), { code: '40001' });
+    }
+    state.failedCalls.push(input);
+    return { id: 71 };
+  };
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 198, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  assert.equal(failureAttempts, 2);
+  assert.equal(state.failedCalls[0]?.failureCode, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  assert.equal(state.finishCalls.length, 1);
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+});
+
+test('completeRevisionRevalidation wird beim letzten Claim intern einmal transient wiederholt', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  let completeAttempts = 0;
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    completeAttempts += 1;
+    if (completeAttempts === 1) {
+      throw Object.assign(new Error('Serialisierungskonflikt beim Abschluss'), { code: '40001' });
+    }
+    state.completeCalls.push(input);
+    markFixtureRevalidationPassed(fixture, input.review);
+    return { id: 71 };
+  };
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 202, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(completeAttempts, 2);
+  assert.equal(state.finishCalls.length, 1);
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+  assert.equal(state.stageWrites, 1);
+});
+
+test('unklar bestätigter Revisionsabschluss wird vor dem Runabschluss reconciled', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  let completeAttempts = 0;
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    completeAttempts += 1;
+    if (completeAttempts === 1) {
+      markFixtureRevalidationPassed(fixture, input.review);
+      throw Object.assign(new Error('Verbindung nach COMMIT zurückgesetzt'), { code: 'ECONNRESET' });
+    }
+    throw Object.assign(new Error('Fence nach erfolgreichem Commit geschlossen'), {
+      code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+    });
+  };
+  dependencies.optimizationRepository.failRevisionRevalidation = async () => {
+    throw Object.assign(new Error('Fence nach erfolgreichem Commit geschlossen'), {
+      code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+    });
+  };
+  const input = {
+    claim: fixture.claim,
+    run: { id: 203, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  };
+
+  await assert.rejects(
+    runExistingPostRevisionRevalidationJob(input, dependencies),
+    { code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', retryable: true }
+  );
+  assert.equal(state.finishCalls.length, 0);
+
+  const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
+  assert.equal(recovered.status, 'completed');
+  assert.equal(completeAttempts, 2);
+  assert.equal(state.finishCalls.length, 1);
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+  assert.equal(state.stageWrites, 1);
+});
+
+test('ein dauerhaft transienter Failure-Cleanup bleibt auch beim letzten Claim versuchsneutral', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  fixture.context.revision.optimization_report_json.sources = [
+    { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
+  ];
+  const { dependencies, state } = runnerDependencies(fixture);
+  let failureAttempts = 0;
+  dependencies.optimizationRepository.failRevisionRevalidation = async () => {
+    failureAttempts += 1;
+    throw Object.assign(new Error('Datenbank beim Abschluss nicht erreichbar'), { code: '57P01' });
+  };
+
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 199, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies), (error) => (
+    error?.code === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+      && error?.retryable === true
+      && error?.doesNotConsumeAttempt === true
+      && error?.retryAt instanceof Date
+  ));
+
+  assert.equal(failureAttempts, 2);
+  assert.equal(state.finishCalls.length, 0);
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+});
+
+test('unklar bestätigte Fehlerpersistenz wird mit ihrem exakten Code reconciled', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  fixture.context.revision.optimization_report_json.sources = [
+    { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
+  ];
+  const { dependencies, state } = runnerDependencies(fixture);
+  let failureAttempts = 0;
+  dependencies.optimizationRepository.failRevisionRevalidation = async (input) => {
+    failureAttempts += 1;
+    if (failureAttempts === 1) {
+      fixture.context.revision.optimization_report_json.revalidation = {
+        status: 'failed',
+        revisionVersion: 4,
+        snapshotFingerprint: fixture.fingerprint,
+        failureCode: input.failureCode
+      };
+      throw Object.assign(new Error('Verbindung nach COMMIT zurückgesetzt'), { code: 'ECONNRESET' });
+    }
+    throw Object.assign(new Error('Fence nach erfolgreichem Commit geschlossen'), {
+      code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+    });
+  };
+  const input = {
+    claim: fixture.claim,
+    run: { id: 204, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  };
+
+  await assert.rejects(
+    runExistingPostRevisionRevalidationJob(input, dependencies),
+    { code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', retryable: true }
+  );
+  assert.equal(state.finishCalls.length, 0);
+
+  const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
+  assert.equal(recovered.status, 'needs_manual_attention');
+  assert.equal(recovered.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  assert.equal(failureAttempts, 2);
+  assert.equal(state.finishCalls[0]?.input?.errorReport?.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+  assert.equal(state.stageWrites, 0);
+});
+
+test('versuchsneutraler Failure-Cleanup startet Paid Stage, Budget und Provider nicht erneut', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  dependencies.openaiService.reviewArticle = async () => {
+    state.providerCalls += 1;
+    throw Object.assign(new Error('Sicher vor Versand fehlgeschlagen'), {
+      safeToRetry: true,
+      providerRequestStarted: false
+    });
+  };
+  let failureAttempts = 0;
+  dependencies.optimizationRepository.failRevisionRevalidation = async () => {
+    failureAttempts += 1;
+    throw Object.assign(new Error('Datenbank beim Abschluss nicht erreichbar'), { code: '57P01' });
+  };
+  const input = {
+    claim: fixture.claim,
+    run: { id: 205, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  };
+  let cleanupError;
+
+  await assert.rejects(runExistingPostRevisionRevalidationJob(input, dependencies), (error) => {
+    cleanupError = error;
+    return error?.code === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
+  });
+  assert.equal(failureAttempts, 2);
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+  assert.equal(state.stageWrites, 0);
+
+  fixture.claim.last_error = cleanupError.cleanupToken;
+  dependencies.optimizationRepository.failRevisionRevalidation = async (failureInput) => {
+    failureAttempts += 1;
+    state.failedCalls.push(failureInput);
+    fixture.context.revision.optimization_report_json.revalidation = {
+      status: 'failed',
+      revisionVersion: 4,
+      snapshotFingerprint: fixture.fingerprint,
+      failureCode: failureInput.failureCode
+    };
+    return { id: 71 };
+  };
+
+  const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
+  assert.equal(recovered.status, 'needs_manual_attention');
+  assert.equal(recovered.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+  assert.equal(failureAttempts, 3);
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+  assert.equal(state.stageWrites, 0);
+  assert.equal(state.finishCalls.length, 1);
+});
+
+test('generische Recovery am Versuchslimit rekonstruiert fail-only ohne Providerzugriff', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 208, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+  assert.equal(state.stageWrites, 0);
+  assert.equal(state.completeCalls.length, 0);
+  assert.equal(state.failedCalls[0]?.failureCode, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
+  assert.equal(state.finishCalls.length, 1);
+});
+
+test('Complete-Cleanup verwendet nur das gefencte Runergebnis ohne Paid Stage oder Budget', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+  const review = approvedReview(92);
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: {
+      id: 209,
+      status: 'running',
+      stage_results_json: {
+        revision_editorial_review: {
+          revisionFence: `71:4:${fixture.fingerprint}`,
+          value: review,
+          reservationMonth: '2026-07',
+          actualCost: 0.01
+        },
+        'budget:2026-07:revision_editorial_review': {
+          status: 'settled',
+          reservationMonth: '2026-07',
+          reservedCost: 0.25,
+          actualCost: 0.01
+        }
+      }
+    },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(state.completeCalls.length, 1);
+  assert.deepEqual(state.completeCalls[0].review, review);
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+  assert.equal(state.stageWrites, 0);
+  assert.equal(state.finishCalls.length, 1);
+});
+
+test('Complete-Cleanup gibt ein ungesetteltes Runbudget ohne Budgetoperation manuell ab', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: {
+      id: 210,
+      status: 'running',
+      stage_results_json: {
+        revision_editorial_review: {
+          revisionFence: `71:4:${fixture.fingerprint}`,
+          value: approvedReview(92),
+          reservationMonth: '2026-07',
+          actualCost: 0.01
+        },
+        'budget:2026-07:revision_editorial_review': {
+          status: 'reserved',
+          reservationMonth: '2026-07',
+          reservedCost: 0.25
+        }
+      }
+    },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'provider_stage_persistence_uncertain');
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+  assert.equal(state.stageWrites, 0);
+  assert.equal(state.completeCalls.length, 0);
+  assert.equal(state.failedCalls[0]?.failureCode, 'provider_stage_persistence_uncertain');
+  assert.equal(state.finishCalls.length, 1);
+});
+
+test('permanente Terminalfehler werden nicht als endloser Cleanup-Retry maskiert', async () => {
+  {
+    const fixture = runnerFixture();
+    fixture.context.revision.optimization_report_json.sources = [
+      { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
+    ];
+    const { dependencies } = runnerDependencies(fixture);
+    let failureAttempts = 0;
+    dependencies.optimizationRepository.failRevisionRevalidation = async () => {
+      failureAttempts += 1;
+      throw Object.assign(new Error('Persistenzvertrag dauerhaft ungültig'), {
+        code: 'CONTENT_ACTION_VALIDATION_FAILED',
+        retryable: false
+      });
+    };
+
+    await assert.rejects(runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 206, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED',
+      retryable: false
+    });
+    assert.equal(failureAttempts, 1);
+  }
+
+  {
+    const fixture = runnerFixture();
+    markFixtureRevalidationPassed(fixture);
+    const { dependencies } = runnerDependencies(fixture);
+    let finishAttempts = 0;
+    dependencies.runRepository.finishRun = async () => {
+      finishAttempts += 1;
+      throw Object.assign(new Error('Terminalstatus dauerhaft ungültig'), {
+        code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID',
+        retryable: false
+      });
+    };
+
+    await assert.rejects(runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 207, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies), {
+      code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID',
+      retryable: false
+    });
+    assert.equal(finishAttempts, 1);
+  }
+});
+
+test('null oder Fehler von finishRun wird nach passed intern ohne zweite Paid-Stage wiederholt', async () => {
   for (const firstFinish of ['null', 'throw']) {
     const fixture = runnerFixture();
     const { dependencies, state } = runnerDependencies(fixture);
@@ -630,10 +1174,6 @@ test('Retry nach null oder Fehler von finishRun reconciled passed ohne zweite fa
       leaseGuard: async () => true
     };
 
-    await assert.rejects(
-      runExistingPostRevisionRevalidationJob(input, dependencies),
-      { code: 'CONTENT_RUN_FINISH_FAILED' }
-    );
     const resumed = await runExistingPostRevisionRevalidationJob(input, dependencies);
 
     assert.equal(resumed.status, 'completed');
@@ -642,6 +1182,105 @@ test('Retry nach null oder Fehler von finishRun reconciled passed ohne zweite fa
     assert.equal(state.stageWrites, 1);
     assert.equal(state.completeCalls.length, 1);
     assert.equal(state.finishCalls.length, 2);
+  }
+});
+
+test('geladene passed- und failed-Zustände wiederholen null oder Fehler von finishRun intern', async () => {
+  for (const status of ['passed', 'failed']) {
+    for (const firstFinish of ['null', 'throw']) {
+      const fixture = runnerFixture();
+      if (status === 'passed') {
+        markFixtureRevalidationPassed(fixture);
+      } else {
+        fixture.context.revision.optimization_report_json.revalidation = {
+          status: 'failed',
+          revisionVersion: 4,
+          snapshotFingerprint: fixture.fingerprint,
+          failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+        };
+      }
+      const { dependencies, state } = runnerDependencies(fixture);
+      let finishAttempts = 0;
+      dependencies.runRepository.finishRun = async (runId, input) => {
+        finishAttempts += 1;
+        state.finishCalls.push({ runId, input });
+        if (finishAttempts === 1) {
+          if (firstFinish === 'null') return null;
+          throw Object.assign(new Error('Runabschluss vorübergehend nicht erreichbar'), {
+            code: 'ECONNRESET'
+          });
+        }
+        return { id: runId, status: input.status };
+      };
+
+      const result = await runExistingPostRevisionRevalidationJob({
+        claim: fixture.claim,
+        run: { id: 201, status: 'running' },
+        runtimeSnapshot: fixture.runtimeSnapshot,
+        leaseGuard: async () => true
+      }, dependencies);
+
+      assert.equal(
+        result.status,
+        status === 'passed' ? 'completed' : 'needs_manual_attention',
+        `${status}/${firstFinish}`
+      );
+      assert.equal(finishAttempts, 2, `${status}/${firstFinish}`);
+      assert.equal(state.providerCalls, 0, `${status}/${firstFinish}`);
+      assert.equal(state.budgetReservations, 0, `${status}/${firstFinish}`);
+      assert.equal(state.stageWrites, 0, `${status}/${firstFinish}`);
+    }
+  }
+});
+
+test('finishRun-Cleanup nach passed und failed bleibt versuchsneutral und startet keine Paid Stage', async () => {
+  for (const status of ['passed', 'failed']) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = 3;
+    fixture.claim.max_attempts = 3;
+    if (status === 'passed') {
+      markFixtureRevalidationPassed(fixture);
+    } else {
+      fixture.context.revision.optimization_report_json.revalidation = {
+        status: 'failed',
+        revisionVersion: 4,
+        snapshotFingerprint: fixture.fingerprint,
+        failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+      };
+    }
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.runRepository.finishRun = async (runId, input) => {
+      state.finishCalls.push({ runId, input });
+      throw Object.assign(new Error('Runabschluss nicht erreichbar'), { code: 'ECONNRESET' });
+    };
+    const input = {
+      claim: fixture.claim,
+      run: { id: 200, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    };
+
+    await assert.rejects(
+      runExistingPostRevisionRevalidationJob(input, dependencies),
+      { code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', retryable: true }
+    );
+    assert.equal(state.finishCalls.length, 2, status);
+    assert.equal(state.providerCalls, 0, status);
+    assert.equal(state.budgetReservations, 0, status);
+    assert.equal(state.stageWrites, 0, status);
+
+    dependencies.runRepository.finishRun = async (runId, finishInput) => {
+      state.finishCalls.push({ runId, input: finishInput });
+      return { id: runId, status: finishInput.status };
+    };
+    const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
+    assert.equal(
+      recovered.status,
+      status === 'passed' ? 'completed' : 'needs_manual_attention'
+    );
+    assert.equal(state.providerCalls, 0, status);
+    assert.equal(state.budgetReservations, 0, status);
+    assert.equal(state.completeCalls.length, 0, status);
   }
 });
 

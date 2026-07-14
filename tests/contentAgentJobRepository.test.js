@@ -512,6 +512,28 @@ test('NOT_DUE-Reschedule gibt exakt den gefencten Claimversuch ohne Unterlauf zu
   assert.equal(db.calls[0].params[4], retryAt);
 });
 
+test('Revalidierungs-Cleanup persistiert ausschließlich den allowlisteten Resume-Intent', async () => {
+  const { rescheduleJobWithoutAttemptConsumption } = await import('../repositories/contentJobRepository.js');
+  const retryAt = new Date('2026-07-13T10:00:00.000Z');
+  const db = createQueryRecorder([{ rows: [{ id: 10, status: 'queued' }] }]);
+  const error = Object.assign(new Error('Interne Ursache darf nicht persistiert werden.'), {
+    code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+    cleanupToken: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+  });
+
+  await rescheduleJobWithoutAttemptConsumption({
+    id: 10,
+    locked_by: 'worker-cleanup',
+    attempts: 3
+  }, error, { retryAt }, db);
+
+  assert.equal(
+    db.calls[0].params[3],
+    'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+  );
+  assert.equal(db.calls[0].params[3].includes('Interne Ursache'), false);
+});
+
 test('der Wochen-Scheduler prüft die operative Pause atomar im idempotenten Insert', async () => {
   const db = createQueryRecorder([{ rows: [] }]);
 
@@ -667,6 +689,51 @@ test('Recovery übernimmt einen terminalen Run auch nach dem letzten Jobversuch 
   assert.ok(terminalBranch >= 0 && terminalBranch < exhaustedBranch);
   assert.match(sql, /COALESCE\(expired\.run_finished_at, NOW\(\)\)/i);
   assert.match(sql, /COALESCE\(expired\.run_error_code, 'CONTENT_RUN_FAILED'\)/i);
+});
+
+test('Recovery hält nichtterminale Revalidierungs-Cleanups am Versuchslimit wiederaufnehmbar', async () => {
+  const recovered = {
+    id: 6,
+    job_type: 'revalidate_existing_post_revision',
+    status: 'queued',
+    attempts: 2,
+    max_attempts: 3,
+    locked_at: null,
+    locked_by: null,
+    finished_at: null
+  };
+  const db = createQueryRecorder([{ rows: [recovered] }]);
+
+  assert.deepEqual(await recoverExpiredJobs(30, db), [recovered]);
+
+  const sql = db.calls[0].sql;
+  const terminalBranch = sql.indexOf("expired.run_status IN ('completed', 'failed', 'needs_manual_attention')");
+  const cleanupBranch = sql.indexOf("job.job_type = 'revalidate_existing_post_revision'");
+  assert.ok(terminalBranch >= 0 && cleanupBranch > terminalBranch);
+  assert.match(
+    sql,
+    /job\.job_type = 'revalidate_existing_post_revision'[\s\S]*THEN 'queued'/i
+  );
+  assert.match(
+    sql,
+    /job\.job_type = 'revalidate_existing_post_revision'[\s\S]*job\.attempts >= job\.max_attempts[\s\S]*CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:/i
+  );
+  assert.match(
+    sql,
+    /attempts = CASE[\s\S]*job\.job_type = 'revalidate_existing_post_revision'[\s\S]*GREATEST\(job\.attempts - 1, 0\)/i
+  );
+  assert.match(
+    sql,
+    /attempts = CASE[\s\S]*expired\.run_status IN \('completed', 'failed', 'needs_manual_attention'\)[\s\S]*THEN job\.attempts[\s\S]*job\.job_type = 'revalidate_existing_post_revision'/i
+  );
+  assert.match(
+    sql,
+    /finished_at = CASE[\s\S]*job\.job_type = 'revalidate_existing_post_revision'[\s\S]*THEN NULL/i
+  );
+  assert.match(
+    sql,
+    /job\.job_type = 'revalidate_existing_post_revision'[\s\S]*job\.attempts >= job\.max_attempts[\s\S]*THEN 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'/i
+  );
 });
 
 test('Recovery gibt Jobversuch sechs für eine künftig fällige queued Delivery zurück', async () => {

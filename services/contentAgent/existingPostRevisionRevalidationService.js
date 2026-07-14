@@ -17,6 +17,7 @@ import {
 import { normalizeExistingPostRevisionSources } from './existingPostRevisionSourcePolicy.js';
 import {
   classifyExistingPostRevisionError,
+  existingPostRevisionCleanupRetryError,
   existingPostRevisionTransientError,
   isExistingPostRevisionFailureCode
 } from './existingPostRevisionFailurePolicy.js';
@@ -116,6 +117,51 @@ function reviewPasses(review, minimumScore, unresolvedAuditCodes) {
     && unresolvedAuditCodes.length === 0;
 }
 
+const REVALIDATION_CLEANUP_CODE = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
+
+function parseCleanupIntent(value) {
+  if (typeof value !== 'string' || !value.startsWith(REVALIDATION_CLEANUP_CODE)) return null;
+  if (value === REVALIDATION_CLEANUP_CODE) return { action: 'reconcile', failureCode: null };
+  const parts = value.split(':');
+  if (parts.length === 2 && ['complete', 'finish'].includes(parts[1])) {
+    return { action: parts[1], failureCode: null };
+  }
+  if (parts.length === 3
+      && parts[1] === 'fail'
+      && isExistingPostRevisionFailureCode(parts[2])) {
+    return { action: 'fail', failureCode: parts[2] };
+  }
+  return { action: 'reconcile', failureCode: null };
+}
+
+function persistedCleanupReview(run, fence) {
+  const envelope = run?.stage_results_json?.revision_editorial_review;
+  const expectedFence = `${fence.revisionId}:${fence.revisionVersion}:${fence.snapshotFingerprint}`;
+  if (!isRecord(envelope)
+      || envelope.revisionFence !== expectedFence
+      || typeof envelope.reservationMonth !== 'string'
+      || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(envelope.reservationMonth)
+      || !Number.isFinite(envelope.actualCost)
+      || envelope.actualCost < 0) return null;
+  const budget = run?.stage_results_json?.[
+    `budget:${envelope.reservationMonth}:revision_editorial_review`
+  ];
+  if (!isRecord(budget)
+      || budget.status !== 'settled'
+      || budget.reservationMonth !== envelope.reservationMonth
+      || !Number.isFinite(budget.actualCost)
+      || budget.actualCost !== envelope.actualCost) return null;
+  const parsed = ReviewOutputSchema.safeParse(envelope.value);
+  return parsed.success ? parsed.data : null;
+}
+
+function terminalPersistenceIsTransient(error) {
+  return classifyExistingPostRevisionError(error, {
+    attempts: 1,
+    max_attempts: 2
+  }).disposition === 'transient';
+}
+
 export async function runExistingPostRevisionRevalidationJob(input = {}, dependencies = {}) {
   const payload = input.claim?.payload_json || {};
   const run = input.run;
@@ -144,29 +190,80 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     snapshotFingerprint: payload.snapshot_fingerprint
   };
 
-  async function finish(status, code = null) {
-    await leaseGuard();
-    try {
-      const persisted = await finishRun(runId, {
-        status,
-        postId: null,
-        errorReport: code ? { code, message: 'Die aktuelle KI-Revision benötigt eine manuelle Prüfung.' } : {}
-      });
-      if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
-        throw new Error('Der Revalidierungslauf wurde nicht aktualisiert.');
+  async function retryTerminalOperation(operation, {
+    shouldRetry = terminalPersistenceIsTransient,
+    cleanup = {}
+  } = {}) {
+    let cause = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await leaseGuard();
+      try {
+        return await operation();
+      } catch (error) {
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') {
+          throw error;
+        }
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') {
+          if (cause) throw existingPostRevisionCleanupRetryError(cause, cleanup);
+          throw error;
+        }
+        if (!shouldRetry(error)) {
+          if (cause) throw existingPostRevisionCleanupRetryError(cause, cleanup);
+          throw error;
+        }
+        cause = error;
       }
-    } catch (cause) {
-      throw Object.assign(
-        new Error('Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.', { cause }),
-        { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
-      );
     }
+    throw existingPostRevisionCleanupRetryError(cause, cleanup);
+  }
+
+  async function finish(status, code = null) {
+    await retryTerminalOperation(async () => {
+      let persisted;
+      try {
+        persisted = await finishRun(runId, {
+          status,
+          postId: null,
+          errorReport: code ? { code, message: 'Die aktuelle KI-Revision benötigt eine manuelle Prüfung.' } : {}
+        });
+      } catch (cause) {
+        if (typeof cause?.code === 'string') throw cause;
+        throw Object.assign(
+          new Error('Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.', { cause }),
+          { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
+        );
+      }
+      if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
+        throw Object.assign(
+          new Error('Der Revalidierungslauf wurde nicht aktualisiert.'),
+          { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
+        );
+      }
+      return persisted;
+    }, { cleanup: { action: 'finish' } });
   }
 
   async function failClosed(code) {
-    await leaseGuard();
     try {
-      await fail({ ...fence, failureCode: code });
+      await retryTerminalOperation(async () => {
+        let persisted;
+        try {
+          persisted = await fail({ ...fence, failureCode: code });
+        } catch (cause) {
+          if (typeof cause?.code === 'string') throw cause;
+          throw Object.assign(
+            new Error('Der Revalidierungsfehler wurde nicht sicher gespeichert.', { cause }),
+            { code: 'CONTENT_REVISION_REVALIDATION_FAILURE_PERSIST_FAILED', retryable: true }
+          );
+        }
+        if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
+          throw Object.assign(
+            new Error('Der Revalidierungsfehler wurde nicht gespeichert.'),
+            { code: 'CONTENT_REVISION_REVALIDATION_FAILURE_PERSIST_FAILED', retryable: true }
+          );
+        }
+        return persisted;
+      }, { cleanup: { action: 'fail', failureCode: code } });
     } catch (error) {
       if (error?.code !== 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') throw error;
       await finish('needs_manual_attention', error.code);
@@ -208,6 +305,19 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
   const persistedRevalidation = context.revision?.optimization_report_json?.revalidation;
+  let cleanupIntent = parseCleanupIntent(input.claim?.last_error);
+  if (cleanupIntent?.action === 'reconcile') {
+    const attempts = Number(input.claim?.attempts);
+    const maxAttempts = Number(input.claim?.max_attempts ?? input.claim?.maxAttempts);
+    cleanupIntent = Number.isSafeInteger(attempts)
+      && Number.isSafeInteger(maxAttempts)
+      && attempts >= maxAttempts
+      ? {
+        action: 'fail',
+        failureCode: 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
+      }
+      : null;
+  }
   const exactPersistedFence = persistedRevalidation?.revisionVersion === fence.revisionVersion
     && persistedRevalidation?.snapshotFingerprint === fence.snapshotFingerprint;
   if (!exactPersistedFence) {
@@ -240,6 +350,15 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
   }
   if (persistedRevalidation.status !== 'pending') {
     return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  }
+  if (cleanupIntent?.action === 'fail') {
+    return failClosed(cleanupIntent.failureCode);
+  }
+  const cleanupReview = cleanupIntent ? persistedCleanupReview(run, fence) : null;
+  if (cleanupIntent && !cleanupReview) {
+    return failClosed(cleanupIntent.action === 'complete'
+      ? 'provider_stage_persistence_uncertain'
+      : 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
   if (!runtimeSnapshot
       || canonicalJson(runtimeSnapshot) !== canonicalJson(context.runtimeSnapshot)) {
@@ -309,9 +428,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     runtimeSnapshot.learningRuleSnapshot,
     'reviewer'
   );
-  let paid;
-  try {
-    paid = await executePaidStructuredTextStage({
+  let paid = cleanupReview ? { value: cleanupReview } : null;
+  if (!paid) {
+    try {
+      paid = await executePaidStructuredTextStage({
       run,
       stageId: 'revision_editorial_review',
       versionFence: {
@@ -347,10 +467,10 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
         sourceReferences: sources,
         learningRules: reviewerLearningRules
       })
-    }, { ...dependencies, assertLease: leaseGuard });
-  } catch (error) {
-    if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
-    return failClosed('provider_execution_uncertain');
+      }, { ...dependencies, assertLease: leaseGuard });
+    } catch (error) {
+      return handleExecutionError(error);
+    }
   }
   if (paid.manual) {
     const code = isExistingPostRevisionFailureCode(paid.manual.code)
@@ -364,15 +484,28 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
 
   await leaseGuard();
   try {
-    await complete({
-      ...fence,
-      review: paid.value,
-      score: paid.value.score,
-      minimumScore,
-      auditCodes: originalAuditCodes,
-      unresolvedAuditCodes
+    await retryTerminalOperation(async () => {
+      const persisted = await complete({
+        ...fence,
+        review: paid.value,
+        score: paid.value.score,
+        minimumScore,
+        auditCodes: originalAuditCodes,
+        unresolvedAuditCodes
+      });
+      if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
+        throw Object.assign(
+          new Error('Das Revalidierungsergebnis wurde nicht gespeichert.'),
+          { code: 'CONTENT_REVISION_REVALIDATION_TRANSIENT', retryable: true }
+        );
+      }
+      return persisted;
+    }, {
+      shouldRetry: terminalPersistenceIsTransient,
+      cleanup: { action: 'complete' }
     });
   } catch (error) {
+    if (error?.code === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY') throw error;
     return handleExecutionError(error);
   }
   await finish('completed');

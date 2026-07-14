@@ -139,3 +139,35 @@ Strukturell geladene, aber ungültige Kontext-Hüllen werden vor jeder technisch
 - `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
 - Syntaxprüfungen und `git diff --check`: ohne Befund.
 - Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.
+
+## Vierter Nachtrag: exakte Paid-Stage-Disposition und wiederaufnehmbarer Terminal-Cleanup
+
+### Provider- und Fehlerdisposition
+
+Der Catch der bezahlten redaktionellen Stage erzeugt keinen pauschalen `provider_execution_uncertain`-Fehler mehr. Er führt alle Fehler durch dieselbe Revalidierungspolicy wie Kontext- und Budgetzugriffe. `CONTENT_PROVIDER_SAFE_RETRY`, transiente PostgreSQL-Codes wie `40001`, `40P01` und `57P01` sowie Netzwerkfehler bleiben vor dem letzten Versuch wiederholbar. Erst ein tatsächlich ausgeschöpfter transienter Fehler terminalisiert exakt mit `CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED`. Permanente Stagecodes bleiben unverändert erhalten; nur eine tatsächlich unklare, bereits gestartete Providerausführung endet mit `provider_execution_uncertain`. Lease- und Fenceverlust behalten ihre gesonderte, schreibgeschützte Behandlung.
+
+### Terminal-Cleanup und Recovery
+
+- `completeRevisionRevalidation`, `failRevisionRevalidation` und `finishRun` werden in den Runner- sowie frühen Workerpfaden lease-gesichert einmal intern wiederholt. Auch `null` von `finishRun` gilt als unbestätigter Abschluss. Ein Fence nach einem möglicherweise bereits bestätigten Commit wird zunächst versuchsneutral reconciled, statt den Run mit einem falschen Fencecode zu beenden.
+- Bleibt eine Terminaloperation gestört, entsteht `CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY` mit gültigem Wiederholungszeitpunkt und ohne Verbrauch eines weiteren fachlichen Jobversuchs. Der Worker verwendet dafür direkt `rescheduleJobWithoutAttemptConsumption`; der generische letzte Fehlversuch kann den Job nicht fälschlich terminalisieren.
+- Der versuchsneutrale Reschedule speichert ausschließlich einen allowlisteten Cleanup-Intent in `last_error`: `fail` bindet den exakten terminalen Fehlercode, `complete` beziehungsweise `finish` binden nur die ausstehende Abschlussart. Interne Ursachen oder Zugangsdaten gelangen nicht in den Intent.
+- Ein Retry lädt zuerst den persistierten Revisionszustand. Bei `passed` oder `failed` wird ausschließlich der offene Run abgeglichen. Bei `pending` führt ein `fail`-Intent direkt die gefencte Fehlerpersistenz aus. Ein `complete`-Intent akzeptiert ausschließlich ein an denselben Fence gebundenes Runreview mit einer nachweislich gesettelten, in Monat und Istkosten konsistenten Budgetreservierung. Provider, Paid Stage, Budgetoperation, Stagepersistenz und fachliche Vorarbeit werden im Cleanup nicht wiederholt. Ein ungesetteltes Budget endet ohne Budgetmutation als manuell zu klärende Persistenzunsicherheit.
+- Die Lease-Recovery übernimmt einen bereits terminalen Run samt Versuchszähler und Laufzeit weiterhin mit Priorität. Ein normaler früher Crash unter dem Versuchslimit bleibt eine normale Wiederaufnahme und verbraucht den begonnenen Versuch. Nur ein strukturierter Cleanup-Intent oder ein nichtterminaler Revalidierungslauf am Versuchslimit wird versuchsneutral erneut eingereiht; am Limit wird fehlender Intent konservativ und providerfrei als `CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED` rekonstruiert. Bleibt PostgreSQL bis über den Reschedule hinaus nicht erreichbar, bleibt der Job lease-gebunden; unter dem Limit folgt eine normale sichere Wiederaufnahme, am Limit der providerfreie Fail-only-Pfad.
+- Jeder Revisionsschreibzugriff bleibt an Version und Snapshot-Fingerprint gebunden. Fenceverlust beendet den alten Run beziehungsweise Job ohne Überschreiben einer neueren Revision.
+
+### RED/GREEN- und PostgreSQL-Belege
+
+- RED: Sichere Providerretry-, PostgreSQL- und Netzwerkfehler wurden im Paid-Stage-Catch zunächst pauschal als unklare Providerausführung terminalisiert; permanente Stagecodes verloren ebenfalls ihre exakte Bedeutung.
+- GREEN: Die gemeinsame Policy trennt sichere Wiederholung, ausgeschöpften Retry, permanente Stagefehler, echte Ausführungsunsicherheit, Lease und Fence. Die neuen Policy- und Runnerfälle bestehen.
+- RED: Ein transienter oder unklar bestätigter Fehler von `completeRevisionRevalidation`, `failRevisionRevalidation`, `finishRun = null` oder ein geworfener Runabschluss konnte am letzten Claim den Job endgültig beziehungsweise mit dem falschen Fencecode abschließen, obwohl Revision oder Run noch nicht konsistent terminal waren. Frühe Workerpfade besaßen dieselbe Lücke.
+- GREEN: Interner Terminal-Retry, allowlisteter Cleanup-Intent, Worker-Reschedule und Recovery-SQL halten den Abschluss wiederaufnehmbar. Regressionstests belegen, dass weder Failure- noch Complete-Cleanup Provider, Paid Stage oder Budget erneut ausführen und dass permanente Terminalfehler nicht als endloser transienter Cleanup maskiert werden.
+- Der echte PostgreSQL-Test enthält nun einen frühen normalen Crash, eine ausgeschöpfte laufende Revalidierung mit offenem Run und eine Revalidierung mit bereits terminalem Run. Der frühe Fall behält seinen verbrauchten Versuch und läuft normal weiter, der ausgeschöpfte Fall wird fail-only versuchsneutral erneut fällig, und der terminale Fall übernimmt Status sowie exakten Fehlercode ohne Veränderung von Attempt oder `run_after`.
+
+### Abschließende Verifikation
+
+- Fokussierte Repository-, Worker- und Runner-Suiten: 185 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Echter PostgreSQL-Lauf mit explizit freigegebener lokaler Testdatenbank: 11 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Vollständige Suite mit lokalem, nicht verwendetem Dummywert `OPENAI_API_KEY=test-key`: 1.799 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen; 1.810 Tests insgesamt.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Syntaxprüfungen und `git diff --check`: ohne Befund.
+- Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.
