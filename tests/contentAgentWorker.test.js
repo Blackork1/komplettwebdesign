@@ -2098,6 +2098,62 @@ test('Bestandsoptimierung prüft die Lease vor allen Snapshot-Loadern und der Sn
   assert.deepEqual(snapshotCalls, []);
 });
 
+test('Bestandsoptimierung prüft die Lease nach den Snapshot-Loadern erneut vor createRun', async () => {
+  let leaseChecks = 0;
+  let creates = 0;
+  const snapshotCalls = [];
+  const leaseGuard = async () => {
+    leaseChecks += 1;
+    return leaseChecks === 1;
+  };
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    enforceRuleSnapshot: true,
+    async getSettings() { snapshotCalls.push('settings'); return {}; },
+    resolveRuntimeConfig() {
+      snapshotCalls.push('runtime');
+      return { webSearchCostPerCallEur: 0.01 };
+    },
+    createJobSnapshot() {
+      snapshotCalls.push('snapshot');
+      return { webSearchCostPerCallEur: 0.01 };
+    },
+    async loadActiveLearningRules() { snapshotCalls.push('learning'); return []; },
+    async loadInitialInventory() { snapshotCalls.push('inventory'); return {}; },
+    async loadExistingPostTrustedContext() {
+      snapshotCalls.push('trusted-context');
+      return { existingSlugs: [], metadata: {} };
+    },
+    async createRun() {
+      creates += 1;
+      assert.fail('Nach verlorenem Lease darf kein Run persistiert werden.');
+    },
+    async finishRun() { assert.fail('Nach verlorenem Lease darf nichts abgeschlossen werden.'); },
+    async runPipeline() { assert.fail('Nach verlorenem Lease darf keine Pipeline starten.'); },
+    createExistingPostOptimizationDependencies() {
+      assert.fail('Nach verlorenem Lease dürfen keine Pipelineabhängigkeiten entstehen.');
+    },
+    async runExistingPostOptimizationJob() {
+      assert.fail('Nach verlorenem Lease darf keine Optimierung starten.');
+    }
+  });
+
+  await assert.rejects(handler({
+    id: 47,
+    job_type: 'optimize_existing_post',
+    payload_json: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'f'.repeat(64)
+    }
+  }, { leaseGuard }), (error) => error?.code === 'CONTENT_JOB_LEASE_LOST');
+
+  assert.equal(leaseChecks, 2);
+  assert.equal(creates, 0);
+  assert.deepEqual(snapshotCalls, [
+    'settings', 'runtime', 'learning', 'inventory', 'trusted-context', 'snapshot'
+  ]);
+});
+
 test('der Produktionshandler dispatcht eine gültige Prüfhinweis-Optimierung separat', async () => {
   assert.equal(SUPPORTED_JOB_TYPES.has('optimize_review_issues'), true);
   assert.equal(REGENERATION_JOB_TYPES.has('optimize_review_issues'), true);
@@ -2236,7 +2292,7 @@ test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als f
     async leaseGuard() { leaseCalls.push('guard'); return true; }
   }), permanent);
 
-  assert.deepEqual(leaseCalls, ['guard', 'guard']);
+  assert.deepEqual(leaseCalls, ['guard', 'guard', 'guard']);
   assert.deepEqual(finishCalls, [[88, {
     status: 'failed',
     postId: null,

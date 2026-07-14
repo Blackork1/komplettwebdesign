@@ -530,6 +530,7 @@ export function createProductionJobHandler({
           } : {})
         });
       }
+      await assertActiveLease(leaseGuard);
       run = await createRun({
         jobId: claim.id,
         ...(snapshotEnabled ? { runtimeSnapshot } : {})
