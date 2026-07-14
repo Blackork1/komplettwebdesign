@@ -1327,7 +1327,13 @@ test('optimizeExistingPost lehnt zusätzliche gesperrte Felder aus strukturierte
   });
 
   await assert.rejects(
-    service.optimizeExistingPost({ post: { slug: 'website-relaunch' } }),
+    service.optimizeExistingPost({
+      post: {
+        slug: 'website-relaunch',
+        contentFormat: 'static_html',
+        contentHtml: '<p>Bestehender Inhalt.</p>'
+      }
+    }),
     (error) => {
       assert.equal(error.code, 'OPENAI_STRUCTURED_OUTPUT_INVALID');
       assert.equal(error.responseId, 'response-1');

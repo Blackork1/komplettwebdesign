@@ -50,7 +50,26 @@ function normalizeFaqJson(value) {
 
 function normalizePost(value) {
   const post = plainObject(value, 'Der bestehende Artikel');
-  const result = {};
+  const result = {
+    contentFormat: exactString(
+      post.contentFormat ?? post.content_format,
+      'Das Inhaltsformat',
+      40
+    ),
+    contentHtml: exactString(
+      post.contentHtml ?? post.content,
+      'Der Artikelinhalt',
+      MAX_CONTENT_HTML_LENGTH
+    )
+  };
+  const nullableStringFields = new Set([
+    'metaTitle',
+    'metaDescription',
+    'ogTitle',
+    'ogDescription',
+    'imageUrl',
+    'imageAlt'
+  ]);
   const stringFields = [
     ['title', post.title, 255, 'Der Artikeltitel'],
     ['shortDescription', post.shortDescription ?? post.excerpt, 500, 'Die Kurzbeschreibung'],
@@ -59,8 +78,6 @@ function normalizePost(value) {
     ['ogTitle', post.ogTitle ?? post.og_title, 255, 'Der OG-Titel'],
     ['ogDescription', post.ogDescription ?? post.og_description, 500, 'Die OG-Beschreibung'],
     ['slug', post.slug, 255, 'Der Slug'],
-    ['contentFormat', post.contentFormat ?? post.content_format, 40, 'Das Inhaltsformat'],
-    ['contentHtml', post.contentHtml ?? post.content, MAX_CONTENT_HTML_LENGTH, 'Der Artikelinhalt'],
     ['imageUrl', post.imageUrl ?? post.image_url, 2_048, 'Die Bild-URL'],
     ['imageAlt', post.imageAlt ?? post.image_alt, 500, 'Der Bild-Alttext'],
     ['status', post.status ?? post.workflow_status, 40, 'Der Veröffentlichungsstatus'],
@@ -68,6 +85,7 @@ function normalizePost(value) {
     ['targetAudience', post.targetAudience ?? post.target_audience, 1_000, 'Die Artikelzielgruppe']
   ];
   for (const [key, rawValue, maximum, label] of stringFields) {
+    if (rawValue === null && nullableStringFields.has(key)) continue;
     if (rawValue !== undefined) result[key] = exactString(rawValue, label, maximum);
   }
   const timestampFields = [
@@ -81,7 +99,7 @@ function normalizePost(value) {
   if (post.id !== undefined) result.id = positiveInteger(post.id, 'Die Artikel-ID');
   if (post.published !== undefined) result.published = exactBoolean(post.published, 'Der Veröffentlichungswert');
   const faqJson = post.faqJson ?? post.faq_json;
-  if (faqJson !== undefined) result.faqJson = normalizeFaqJson(faqJson);
+  if (faqJson !== undefined && faqJson !== null) result.faqJson = normalizeFaqJson(faqJson);
   return result;
 }
 
@@ -102,6 +120,7 @@ function normalizeAudit(value) {
         ['evidence', 4_000, 'Die Audit-Evidenz']
       ];
       for (const [key, maximum, label] of fields) {
+        if (key === 'evidence' && finding[key] === null) continue;
         if (finding[key] !== undefined) {
           normalized[key] = exactString(finding[key], `${label} in Befund ${index + 1}`, maximum);
         }
@@ -151,6 +170,7 @@ function normalizeSources(value) {
       ['retrievedAt', source.retrievedAt ?? source.retrieved_at, 64, 'Das Abrufdatum']
     ];
     for (const [key, rawValue, maximum, label] of fields) {
+      if (key !== 'url' && rawValue === null) continue;
       if (rawValue !== undefined) normalized[key] = exactString(rawValue, `${label} ${index + 1}`, maximum);
     }
     if (normalized.url !== undefined) {
@@ -193,12 +213,13 @@ function normalizeInternalLinks(value) {
 
 function optimizationInput(input) {
   const source = plainObject(input, 'Die Optimierungseingabe');
+  const post = normalizePost(source.post);
   const result = {};
   if (source.brand !== undefined) result.brand = normalizeBrand(source.brand);
   if (source.targetAudience !== undefined) {
     result.targetAudience = exactString(source.targetAudience, 'Die Zielgruppe', 1_000);
   }
-  if (source.post !== undefined) result.post = normalizePost(source.post);
+  result.post = post;
   if (source.audit !== undefined) result.audit = normalizeAudit(source.audit);
   if (source.gscSignals !== undefined) result.gscSignals = normalizeGscSignals(source.gscSignals);
   if (source.sources !== undefined) result.sources = normalizeSources(source.sources);

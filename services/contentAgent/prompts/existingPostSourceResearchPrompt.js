@@ -10,6 +10,7 @@ import {
 export const promptVersion = '2026-07-14.2';
 
 const MAX_FRESHNESS_REASONS = 8;
+const MAX_FRESHNESS_REASON_INPUTS = 100;
 const MAX_REASON_LENGTH = 80;
 const MAX_AFFECTED_EXCERPTS = 8;
 const MAX_EXCERPT_LENGTH = 1_200;
@@ -46,13 +47,14 @@ function freshnessReasons(input) {
       ? []
       : plainObject(input.freshness, 'Die Freshness-Klassifizierung').reasons ?? [];
 
-  return [...new Set(validatedList(
+  const validatedReasons = validatedList(
     rawReasons,
     'Die Freshness-Gründe',
-    MAX_FRESHNESS_REASONS,
+    MAX_FRESHNESS_REASON_INPUTS,
     (reason, index) => exactString(reason, `Der Freshness-Grund ${index + 1}`, MAX_REASON_LENGTH),
-    100
-  ).filter(Boolean))];
+    MAX_FRESHNESS_REASON_INPUTS
+  );
+  return [...new Set(validatedReasons.filter(Boolean))].slice(0, MAX_FRESHNESS_REASONS);
 }
 
 function affectedExcerpts(input) {

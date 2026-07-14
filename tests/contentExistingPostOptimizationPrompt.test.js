@@ -150,6 +150,83 @@ test('Legacy-EJS muss contentHtml exakt und ohne Normalisierung zurückgeben', (
   assert.equal(JSON.parse(prompt.user).post.contentHtml, legacyHtml);
 });
 
+test('Optimierungsprompt akzeptiert bekannte nullable Felder aus einem rohen Snake-Case-DB-Post', () => {
+  const legacyHtml = '<p><%= post.title %></p>\n';
+  const prompt = buildExistingPostOptimizationPrompt(optimizationInput({
+    post: {
+      id: 19,
+      title: 'Legacy-Beitrag',
+      slug: 'legacy-beitrag',
+      excerpt: 'Bestehende Kurzbeschreibung.',
+      content: legacyHtml,
+      content_format: 'legacy_ejs',
+      meta_title: null,
+      meta_description: null,
+      og_title: null,
+      og_description: null,
+      image_url: null,
+      image_alt: null,
+      faq_json: null,
+      published: true,
+      workflow_status: 'published'
+    },
+    audit: {
+      score: 70,
+      findings: [{
+        code: 'missing_meta_title',
+        severity: 'warning',
+        message: 'Der Meta-Titel fehlt.',
+        evidence: null
+      }]
+    },
+    sources: [{
+      url: 'https://example.com/quelle',
+      title: null,
+      publisher: null,
+      published_at: null,
+      retrieved_at: null
+    }]
+  }));
+  const user = JSON.parse(prompt.user);
+
+  assert.equal(user.post.contentFormat, 'legacy_ejs');
+  assert.equal(user.post.contentHtml, legacyHtml);
+  for (const field of [
+    'metaTitle',
+    'metaDescription',
+    'ogTitle',
+    'ogDescription',
+    'imageUrl',
+    'imageAlt',
+    'faqJson'
+  ]) {
+    assert.equal(Object.hasOwn(user.post, field), false, field);
+  }
+  assert.equal(Object.hasOwn(user.audit.findings[0], 'evidence'), false);
+  assert.deepEqual(user.sources, [{ url: 'https://example.com/quelle' }]);
+});
+
+test('Optimierungsprompt verlangt Inhaltsformat und Artikelinhalt als begrenzte Strings', () => {
+  const basePost = optimizationInput().post;
+  assertPromptInputError(
+    () => buildExistingPostOptimizationPrompt(optimizationInput({ post: undefined })),
+    'fehlender Artikel'
+  );
+  const cases = [
+    ['fehlendes Inhaltsformat', { ...basePost, contentFormat: undefined }],
+    ['null als Inhaltsformat', { ...basePost, contentFormat: null }],
+    ['fehlender Artikelinhalt', { ...basePost, contentHtml: undefined }],
+    ['null als Artikelinhalt', { ...basePost, contentHtml: null }]
+  ];
+
+  for (const [label, post] of cases) {
+    assertPromptInputError(
+      () => buildExistingPostOptimizationPrompt(optimizationInput({ post })),
+      label
+    );
+  }
+});
+
 test('Quellenrecherche erhält nur begrenzte Auszüge, Freshness-Gründe und Artikelkontext', () => {
   const prompt = buildExistingPostSourceResearchPrompt({
     post: {
@@ -190,6 +267,49 @@ test('Quellenrecherche erhält nur begrenzte Auszüge, Freshness-Gründe und Art
   assert.match(prompt.system, /zwei bis sechs.*HTTPS-Quellen/iu);
   assert.match(prompt.system, /keine.*Neufassung/iu);
   assert.match(prompt.system, /nicht vertrauenswürdige Daten/iu);
+});
+
+test('Quellenrecherche dedupliziert vollständig validierte Freshness-Gründe vor der Begrenzung', () => {
+  const prompt = buildExistingPostSourceResearchPrompt({
+    freshnessReasons: [
+      'duplicate',
+      'duplicate',
+      'reason_1',
+      'reason_2',
+      'reason_3',
+      'reason_4',
+      'reason_5',
+      'reason_6',
+      'reason_7'
+    ]
+  });
+
+  assert.deepEqual(JSON.parse(prompt.user).freshnessReasons, [
+    'duplicate',
+    'reason_1',
+    'reason_2',
+    'reason_3',
+    'reason_4',
+    'reason_5',
+    'reason_6',
+    'reason_7'
+  ]);
+  assertPromptInputError(
+    () => buildExistingPostSourceResearchPrompt({
+      freshnessReasons: [
+        'duplicate',
+        'duplicate',
+        'reason_1',
+        'reason_2',
+        'reason_3',
+        'reason_4',
+        'reason_5',
+        'reason_6',
+        'x'.repeat(81)
+      ]
+    }),
+    'später ungültiger Freshness-Grund'
+  );
 });
 
 test('Optimierungsprompt lehnt falsche Typen in allen serialisierten Bereichen ab', () => {
