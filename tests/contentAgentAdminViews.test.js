@@ -1135,6 +1135,10 @@ test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async ()
     comparison: {
       revisionId: 71,
       revisionVersion: 3,
+      revisionStatus: 'draft',
+      revalidationStatus: 'passed',
+      revalidationStatusLabel: 'Erneut geprüft',
+      approvalEnabled: true,
       qualityScore: 92,
       changeCount: 1,
       live: {
@@ -1191,8 +1195,75 @@ test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async ()
   assert.match(html, /Konkreter &lt;script&gt;Nutzen&lt;\/script&gt;\./);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;Aktuelle Fachquelle/);
   assert.doesNotMatch(html, /<script>(?:Website-Relaunch planen|Nutzen)<\/script>|<img src=x onerror=/);
-  assert.doesNotMatch(html, /<form|data-confirm=|onclick=/i);
+  const revertForm = html.match(/<form[^>]*action="\/admin\/content-agent\/revisions\/71\/changes\/[0-9a-f]{64}\/revert"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.match(revertForm, /method="post"/);
+  assert.match(revertForm, /name="_csrf" value="csrf-test"/);
+  assert.match(revertForm, /name="expected_revision_version" value="3"/);
+  assert.match(revertForm, />\s*\u00c4nderung zurücknehmen\s*</);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/reject"/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/publish"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Erneut geprüft/);
+  assert.doesNotMatch(html, /onclick=/i);
   assert.equal((html.match(/<main\b/g) || []).length, 1);
+});
+
+test('nicht rücknehmbare Änderungen erklären die Sperre und fehlgeschlagene Revalidierung sperrt die Übernahme', async () => {
+  const changeId = 'd'.repeat(64);
+  const html = await renderFile(fileURLToPath(viewUrl('revisionCompare.ejs')), {
+    ...baseLocals,
+    comparison: {
+      revisionId: 71,
+      revisionVersion: 5,
+      revisionStatus: 'draft',
+      revalidationStatus: 'failed',
+      revalidationStatusLabel: 'Erneute Prüfung fehlgeschlagen',
+      approvalEnabled: false,
+      live: { title: 'Live', contentHtml: '<p>Alt.</p>' },
+      optimized: { title: 'Revision', contentHtml: '<p>Neu.</p>' },
+      changes: [{
+        id: changeId,
+        label: 'Artikelinhalt',
+        kind: 'modified',
+        kindLabel: 'Geändert',
+        kindIcon: 'fa-pen',
+        status: 'active',
+        statusLabel: 'Aktiv',
+        beforeExcerpt: 'Alt',
+        afterExcerpt: 'Neu',
+        reason: 'Mehrdeutiger Block.',
+        auditCodes: [],
+        revertible: false,
+        revertBlockedReason: 'Dieser HTML-Block ist nicht eindeutig zuordenbar.'
+      }],
+      changeGroups: [{
+        key: 'content', label: 'Artikelinhalt', icon: 'fa-align-left',
+        changes: [{
+          id: changeId,
+          label: 'Artikelinhalt',
+          kind: 'modified',
+          kindLabel: 'Geändert',
+          kindIcon: 'fa-pen',
+          status: 'active',
+          statusLabel: 'Aktiv',
+          beforeExcerpt: 'Alt',
+          afterExcerpt: 'Neu',
+          reason: 'Mehrdeutiger Block.',
+          auditCodes: [],
+          revertible: false,
+          revertBlockedReason: 'Dieser HTML-Block ist nicht eindeutig zuordenbar.'
+        }]
+      }],
+      sources: [],
+      gscSignals: []
+    }
+  });
+
+  assert.doesNotMatch(html, new RegExp(`/changes/${changeId}/revert`));
+  assert.match(html, /Dieser HTML-Block ist nicht eindeutig zuordenbar/);
+  assert.match(html, /Erneute Prüfung fehlgeschlagen/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/publish"[\s\S]*?<button[^>]*disabled/);
+  assert.match(html, /fa-triangle-exclamation/);
 });
 
 test('Vergleichsview verwendet nur bereinigtes Vorschau-HTML und keine Rohdatenattribute', async () => {
@@ -1201,7 +1272,10 @@ test('Vergleichsview verwendet nur bereinigtes Vorschau-HTML und keine Rohdatena
   assert.match(source, /<%-\s*comparison\.live\.contentHtml\s*%>/);
   assert.match(source, /<%-\s*comparison\.optimized\.contentHtml\s*%>/);
   assert.doesNotMatch(source, /stage_results_json|providerResponse|runtime_snapshot|optimization_report_json/i);
-  assert.doesNotMatch(source, /data-(?:change|diff|reason|source)\s*=|on[a-z]+\s*=/i);
+  assert.doesNotMatch(
+    source,
+    /data-(?:change|diff|reason|source)\s*=|\s(?:onclick|onchange|onsubmit|oninput|onerror)\s*=/i
+  );
 });
 
 test('Revisionseditor verlinkt den geschützten Vorher-Nachher-Vergleich ohne bestehende Aktionen zu verändern', async () => {

@@ -53,6 +53,8 @@ const POST_PATHS = [
   '/admin/content-agent/existing-content/:id/optimize',
   '/admin/content-agent/existing-content/:id/revision',
   '/admin/content-agent/revisions/:id',
+  '/admin/content-agent/revisions/:id/changes/:changeId/revert',
+  '/admin/content-agent/revisions/:id/reject',
   '/admin/content-agent/revisions/:id/publish'
 ];
 
@@ -88,6 +90,17 @@ test('Bestandsoptimierung ist als Admin-POST mit CSRF und geschütztem Status-GE
   assert.match(
     routes,
     /router\.get\('\/admin\/content-agent\/existing-content\/:id\/optimization-status',\s*isAdmin,\s*controller\.existingContentOptimizationStatusAction\)/
+  );
+});
+
+test('Rücknahme und Ablehnung sind ausschließlich als Admin-POST mit CSRF verdrahtet', () => {
+  assert.match(
+    routes,
+    /router\.post\('\/admin\/content-agent\/revisions\/:id\/changes\/:changeId\/revert',\s*isAdmin,\s*verifyCsrfToken,\s*controller\.revertOptimizationChangeAction\)/
+  );
+  assert.match(
+    routes,
+    /router\.post\('\/admin\/content-agent\/revisions\/:id\/reject',\s*isAdmin,\s*verifyCsrfToken,\s*controller\.rejectOptimizationRevisionAction\)/
   );
 });
 

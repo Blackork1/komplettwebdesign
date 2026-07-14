@@ -1496,6 +1496,20 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      CREATE TABLE ratgeber (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        published BOOLEAN NOT NULL DEFAULT FALSE
+      );
+      CREATE TABLE leistungen_pages (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        is_published BOOLEAN NOT NULL DEFAULT FALSE
+      );
+      CREATE TABLE industries (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE
+      );
       INSERT INTO posts (title, slug, content, published)
       VALUES ('Alt veröffentlicht', 'alt-veroeffentlicht', '<p>Alt</p>', TRUE),
              ('Alter Entwurf', 'alter-entwurf', '<p>Entwurf</p>', FALSE);
@@ -2179,26 +2193,88 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
     const optimizationAdmin = (await pool.query(
       "SELECT id, username FROM admins WHERE username = 'migration-admin'"
     )).rows[0];
+
+    const mismatchedOptimizationJob = await pool.query(`
+      INSERT INTO content_jobs (job_type, status, idempotency_key, payload_json)
+      VALUES (
+        'optimize_existing_post', 'completed', 'pg-existing-optimization-mismatch',
+        jsonb_build_object('post_id', $1::integer)
+      )
+      RETURNING id
+    `, [auditInput.postId]);
+    await pool.query(
+      'UPDATE content_post_audits SET job_id = $2 WHERE id = $1',
+      [concurrentAudits[0].id, mismatchedOptimizationJob.rows[0].id]
+    );
+    await assert.rejects(optimizationRepository.updateRevisionAfterRevert({
+      revisionId: Number(raceRevision.rows[0].id),
+      expectedVersion: 3,
+      changeId: optimizationReport.changes[0].id,
+      validateSnapshot: async () => {},
+      admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
+    }), { code: 'CONTENT_REVISION_CONFLICT' });
+    const mismatchState = (await pool.query(`
+      SELECT revision_version,
+             (SELECT COUNT(*)::integer
+              FROM content_revision_optimization_feedback feedback
+              WHERE feedback.revision_id = revision.id) AS feedback_count
+      FROM content_post_revisions revision
+      WHERE revision.id = $1
+    `, [raceRevision.rows[0].id])).rows[0];
+    assert.equal(mismatchState.revision_version, 3);
+    assert.equal(mismatchState.feedback_count, 0);
+    await pool.query(
+      'UPDATE content_post_audits SET job_id = $2 WHERE id = $1',
+      [concurrentAudits[0].id, auditInput.jobId]
+    );
+
     const revisionRace = await settleWithoutPostLockFailure([
-      optimizationRepository.rejectRevision({
+      optimizationRepository.updateRevisionAfterRevert({
         revisionId: Number(raceRevision.rows[0].id),
         expectedVersion: 3,
-        details: { reason: 'Paralleltest Ablehnung' },
+        changeId: optimizationReport.changes[0].id,
+        validateSnapshot: async () => {},
         admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
       }),
       optimizationRepository.updateRevisionAfterRevert({
         revisionId: Number(raceRevision.rows[0].id),
         expectedVersion: 3,
         changeId: optimizationReport.changes[0].id,
-        details: { reason: 'Paralleltest Rücknahme' },
         validateSnapshot: async () => {},
         admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
       })
-    ], 'Ablehnung gegen Rücknahme');
-    assert.equal(revisionRace.filter(({ status }) => status === 'fulfilled').length, 1);
+    ], 'identische Rücknahme gegen identische Rücknahme');
+    assert.equal(
+      revisionRace.filter(({ status }) => status === 'fulfilled').length,
+      1,
+      JSON.stringify(revisionRace.map((outcome) => ({
+        status: outcome.status,
+        code: outcome.reason?.code,
+        message: outcome.reason?.message
+      })))
+    );
     const raceFailure = revisionRace.find(({ status }) => status === 'rejected');
     assert.equal(raceFailure?.reason?.code, 'CONTENT_REVISION_CONFLICT');
     const persistedRaceRevision = (await pool.query(`
+      SELECT status, revision_version, snapshot_json, optimization_report_json,
+             (SELECT COUNT(*)::integer
+              FROM content_revision_optimization_feedback feedback
+              WHERE feedback.revision_id = revision.id) AS feedback_count
+      FROM content_post_revisions revision
+      WHERE revision.id = $1
+    `, [raceRevision.rows[0].id])).rows[0];
+    assert.equal(persistedRaceRevision.status, 'draft');
+    assert.equal(persistedRaceRevision.revision_version, 4);
+    assert.equal(persistedRaceRevision.feedback_count, 1);
+    assert.equal(persistedRaceRevision.snapshot_json.fields.meta_title, 'Ausgangstitel');
+    assert.equal(persistedRaceRevision.optimization_report_json.changes[0].status, 'reverted');
+
+    await optimizationRepository.rejectRevision({
+      revisionId: Number(raceRevision.rows[0].id),
+      expectedVersion: 4,
+      admin: { id: Number(optimizationAdmin.id), username: optimizationAdmin.username }
+    });
+    const rejectedRaceRevision = (await pool.query(`
       SELECT status, revision_version,
              (SELECT COUNT(*)::integer
               FROM content_revision_optimization_feedback feedback
@@ -2206,9 +2282,9 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
       FROM content_post_revisions revision
       WHERE revision.id = $1
     `, [raceRevision.rows[0].id])).rows[0];
-    assert.ok(['draft', 'rejected'].includes(persistedRaceRevision.status));
-    assert.equal(persistedRaceRevision.revision_version, 4);
-    assert.equal(persistedRaceRevision.feedback_count, 1);
+    assert.equal(rejectedRaceRevision.status, 'rejected');
+    assert.equal(rejectedRaceRevision.revision_version, 5);
+    assert.equal(rejectedRaceRevision.feedback_count, 2);
 
     const adminForeignKeys = await pool.query(`
       SELECT tc.table_name

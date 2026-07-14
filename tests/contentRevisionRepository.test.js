@@ -186,3 +186,24 @@ test('Revisionsspeicherung verwendet einen atomaren Versionsvergleich', async ()
   assert.match(calls[0].sql, /status = 'draft' AND revision_version = \$3/i);
   assert.equal(calls[0].params[2], 4);
 });
+
+test('Übernahmefeedback läuft vor dem Commit in derselben Freigabetransaktion und rollt bei Fehlern live zurück', async () => {
+  const { repository, calls } = approvalHarness();
+  let callbackClient;
+  await assert.rejects(repository.approveRevisionTransaction({
+    ...approvalInput,
+    afterApproval: async (_context, client) => {
+      callbackClient = client;
+      throw Object.assign(new Error('Feedback konnte nicht gespeichert werden.'), {
+        code: 'CONTENT_REVISION_FEEDBACK_FAILED'
+      });
+    }
+  }), { code: 'CONTENT_REVISION_FEEDBACK_FAILED' });
+
+  assert.ok(callbackClient);
+  const revisionUpdate = calls.findIndex((sql) => sql.startsWith('UPDATE content_post_revisions'));
+  const auditUpdate = calls.findIndex((sql) => sql.startsWith('UPDATE content_post_audits'));
+  const rollback = calls.indexOf('ROLLBACK');
+  assert.ok(revisionUpdate >= 0 && auditUpdate > revisionUpdate && rollback > auditUpdate);
+  assert.equal(calls.includes('COMMIT'), false);
+});

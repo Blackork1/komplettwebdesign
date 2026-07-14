@@ -14,7 +14,7 @@ const POST_COLUMNS = `
   og_title, og_description, faq_json, image_url, image_alt, published, updated_at
 `;
 
-async function trustedValidationContext(postId, client) {
+export async function trustedValidationContext(postId, client) {
   const [slugs, links] = await Promise.all([
     client.query(`SELECT slug FROM posts WHERE id <> $1 ORDER BY id LIMIT 5000`, [postId]),
     client.query(`
@@ -125,7 +125,14 @@ export function createContentRevisionRepository(db = pool) {
       return rows[0] || null;
     },
 
-    async approveRevisionTransaction({ revisionId, expectedVersion, admin, currentHash, validateSnapshot }) {
+    async approveRevisionTransaction({
+      revisionId,
+      expectedVersion,
+      admin,
+      currentHash,
+      validateSnapshot,
+      afterApproval
+    }) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
@@ -181,6 +188,9 @@ export function createContentRevisionRepository(db = pool) {
         `, [revisionId, admin.id, admin.username, expectedVersion]);
         if (!approvedRevisions[0]) throw conflict('CONTENT_REVISION_CONFLICT', 'Die Revision wurde zwischenzeitlich verändert.');
         await client.query(`UPDATE content_post_audits SET status = 'resolved' WHERE id = $1`, [revision.audit_id]);
+        if (typeof afterApproval === 'function') {
+          await afterApproval({ revision, post: updatedPosts[0] }, client);
+        }
         await client.query('COMMIT');
         return { post: updatedPosts[0], revisionId };
       } catch (error) {

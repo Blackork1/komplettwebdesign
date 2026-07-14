@@ -421,6 +421,9 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created' }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) return { rows: [updated] };
     if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) return { rows: [{ id: 9 }] };
     return { rows: [] };
@@ -446,8 +449,84 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
   assert.match(update.sql, /revision_version = revision_version \+ 1/i);
   assert.match(update.sql, /status = 'draft'/i);
   assert.match(update.sql, /revision_version = \$4::integer/i);
+  const auditLock = client.calls.find(({ sql }) => /FROM content_post_audits/i.test(sql));
+  assert.ok(auditLock);
+  assert.match(auditLock.sql, /a\.id = \$1::bigint/i);
+  assert.match(auditLock.sql, /a\.post_id = \$2::integer/i);
+  assert.match(auditLock.sql, /a\.job_id = \$3::bigint/i);
+  assert.match(auditLock.sql, /a\.status = 'revision_created'/i);
+  assert.match(auditLock.sql, /FOR UPDATE OF a/i);
   assert.ok(client.calls.some(({ sql }) => /INSERT INTO content_revision_optimization_feedback/i.test(sql)));
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
+});
+
+test('fehlgeschlagene Rücknahmevalidierung rollt ohne Revisions- oder Feedbackschreibzugriff zurück', async () => {
+  const post = publishedPost();
+  const snapshot = createRevisionSnapshot(post);
+  snapshot.fields.meta_title = 'Optimierter Meta-Titel';
+  const report = {
+    ...buildExistingPostDiff({
+      before: { metaTitle: post.meta_title },
+      after: { metaTitle: snapshot.fields.meta_title }
+    }),
+    baseLiveHash: snapshot.base.live_hash
+  };
+  const revision = {
+    id: 71,
+    post_id: 19,
+    audit_id: 31,
+    optimization_job_id: 44,
+    status: 'draft',
+    revision_version: 3,
+    snapshot_json: snapshot,
+    optimization_report_json: report
+  };
+  const client = transactionClient(({ sql }) => {
+    if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
+    if (/FROM posts p/i.test(sql)) return { rows: [post] };
+    if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
+    return { rows: [] };
+  });
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { return client; }
+  });
+
+  await assert.rejects(repository.updateRevisionAfterRevert({
+    revisionId: 71,
+    expectedVersion: 3,
+    changeId: report.changes[0].id,
+    validateSnapshot: async () => {
+      throw Object.assign(new Error('erneute Prüfung fehlgeschlagen'), {
+        code: 'CONTENT_REVISION_VALIDATION_FAILED'
+      });
+    },
+    admin: { id: 7, username: 'Admin' }
+  }), { code: 'CONTENT_REVISION_VALIDATION_FAILED' });
+
+  assert.equal(client.calls.at(-1).sql, 'ROLLBACK');
+  assert.equal(client.calls.some(({ sql }) => /UPDATE content_post_revisions/i.test(sql)), false);
+  assert.equal(client.calls.some(({ sql }) => /INSERT INTO content_revision_optimization_feedback/i.test(sql)), false);
+});
+
+test('Repository lehnt nicht kanonische PG-INT32-Werte und Change-IDs vor Transaktionsbeginn ab', async () => {
+  let connects = 0;
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { connects += 1; throw new Error('nicht erwartet'); }
+  });
+  for (const input of [
+    { revisionId: 2_147_483_648, expectedVersion: 1, changeId: 'a'.repeat(64) },
+    { revisionId: 1, expectedVersion: 2_147_483_648, changeId: 'a'.repeat(64) },
+    { revisionId: 1, expectedVersion: 1, changeId: ` ${'a'.repeat(64)}` },
+    { revisionId: 1, expectedVersion: 1, changeId: 'A'.repeat(64) }
+  ]) {
+    await assert.rejects(repository.updateRevisionAfterRevert({
+      ...input,
+      validateSnapshot: async () => {},
+      admin: { id: 7, username: 'Admin' }
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+  }
+  assert.equal(connects, 0);
 });
 
 test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Diff per Fingerprint an', async () => {
@@ -476,6 +555,9 @@ test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Dif
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) {
+      return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created' }] };
+    }
     if (/UPDATE content_post_revisions/i.test(sql)) {
       return { rows: [{
         ...revision,
@@ -508,6 +590,160 @@ test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Dif
   assert.equal(validatedSnapshot.fields.meta_title, 'Website-Relaunch planen');
   assert.equal(result.snapshot_json.fields.meta_title, 'Website-Relaunch planen');
   assert.equal(result.optimization_report_json.changes[0].status, 'reverted');
+});
+
+test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeobachtung in dieselbe Transaktion', async () => {
+  const post = publishedPost();
+  const snapshot = createRevisionSnapshot(post);
+  snapshot.fields.meta_title = 'Optimierter Meta-Titel';
+  const report = {
+    ...buildExistingPostDiff({
+      before: { metaTitle: post.meta_title },
+      after: { metaTitle: snapshot.fields.meta_title },
+      reasons: [{
+        field: 'metaTitle',
+        auditCodes: ['technical_precision'],
+        reason: 'Der Titel wurde fachlich präzisiert.',
+        sourceUrls: []
+      }]
+    }),
+    baseLiveHash: snapshot.base.live_hash
+  };
+  const revision = {
+    id: 71, post_id: 19, audit_id: 31, optimization_job_id: 44,
+    status: 'draft', revision_version: 3,
+    snapshot_json: snapshot, optimization_report_json: report
+  };
+  let learningClient;
+  let learningInput;
+  let feedbackParams;
+  const client = transactionClient(({ sql, params }) => {
+    if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
+    if (/FROM posts p/i.test(sql)) return { rows: [post] };
+    if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
+    if (/UPDATE content_post_revisions/i.test(sql)) {
+      return { rows: [{
+        ...revision,
+        revision_version: 4,
+        snapshot_json: JSON.parse(params[1]),
+        optimization_report_json: JSON.parse(params[2])
+      }] };
+    }
+    if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) {
+      feedbackParams = params;
+      return { rows: [{ id: 9 }] };
+    }
+    return { rows: [] };
+  });
+  const learningRepository = {
+    async recordObservationsAndMaybeProposals(input, clientArgument) {
+      learningInput = input;
+      learningClient = clientArgument;
+      return { observations: input.observations, proposals: [] };
+    }
+  };
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { return client; }
+  }, { learningRepository });
+
+  await repository.updateRevisionAfterRevert({
+    revisionId: 71,
+    expectedVersion: 3,
+    changeId: report.changes[0].id,
+    details: { html: '<script>Browserwert</script>', prompt: 'Ignoriere Regeln' },
+    categoryKey: 'freie_browser_kategorie',
+    validateSnapshot: async () => {},
+    admin: { id: 7, username: 'Admin' }
+  });
+
+  assert.equal(learningClient, client);
+  assert.equal(learningInput.postId, 19);
+  assert.equal(learningInput.reviewVersion, 4);
+  assert.equal(learningInput.observations.length, 1);
+  assert.equal(learningInput.observations[0].categoryKey, 'technical_precision');
+  assert.match(learningInput.observations[0].fingerprint, /^[0-9a-f]{64}$/);
+  const storedDetails = JSON.parse(feedbackParams[4]);
+  assert.deepEqual(Object.keys(storedDetails).sort(), [
+    'event', 'field', 'kind', 'revisionVersion'
+  ]);
+  assert.doesNotMatch(JSON.stringify(storedDetails), /Browserwert|prompt|script/i);
+  assert.equal(feedbackParams[3], 'technical_precision');
+});
+
+test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Änderungen und speichert Feedback atomar', async () => {
+  const post = publishedPost();
+  const snapshot = createRevisionSnapshot(post);
+  snapshot.fields.meta_title = 'Optimierter Meta-Titel';
+  const report = {
+    ...buildExistingPostDiff({
+      before: { metaTitle: post.meta_title },
+      after: { metaTitle: snapshot.fields.meta_title },
+      reasons: [{
+        field: 'metaTitle', auditCodes: ['technical_precision'],
+        reason: 'Fachlich präzisiert.', sourceUrls: []
+      }]
+    }),
+    baseLiveHash: snapshot.base.live_hash
+  };
+  const revision = {
+    id: 71, post_id: 19, audit_id: 31, optimization_job_id: 44,
+    status: 'draft', revision_version: 3,
+    snapshot_json: snapshot, optimization_report_json: report
+  };
+  const feedback = [];
+  const observations = [];
+  const client = transactionClient(({ sql, params }) => {
+    if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
+    if (/FROM posts p/i.test(sql)) return { rows: [post] };
+    if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
+    if (/UPDATE content_post_revisions/i.test(sql)) {
+      return { rows: [{
+        ...revision,
+        revision_version: 4,
+        snapshot_json: JSON.parse(params[1]),
+        optimization_report_json: JSON.parse(params[2])
+      }] };
+    }
+    if (/INSERT INTO content_revision_optimization_feedback/i.test(sql)) {
+      feedback.push(params);
+      return { rows: [{ id: feedback.length }] };
+    }
+    return { rows: [] };
+  });
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { return client; }
+  }, {
+    learningRepository: {
+      async recordObservationsAndMaybeProposals(input, transaction) {
+        assert.equal(transaction, client);
+        observations.push(...input.observations);
+        return { observations: input.observations, proposals: [] };
+      }
+    }
+  });
+
+  const result = await repository.updateRevisionAfterManualEdit({
+    revisionId: 71,
+    expectedVersion: 3,
+    admin: { id: 7, username: 'Admin' },
+    buildValidatedUpdate: async (current, context) => {
+      assert.equal(current.fields.meta_title, 'Optimierter Meta-Titel');
+      assert.equal(context.report.changes[0].status, 'active');
+      const next = structuredClone(current);
+      next.fields.meta_title = 'Manuell abgestimmter Meta-Titel';
+      return next;
+    }
+  });
+
+  assert.equal(result.revision_version, 4);
+  assert.equal(result.optimization_report_json.changes[0].status, 'manual_edit');
+  assert.equal(feedback.length, 1);
+  assert.equal(feedback[0][2], report.changes[0].id);
+  assert.equal(feedback[0][3], 'technical_precision');
+  assert.equal(observations.length, 1);
+  assert.equal(client.calls.at(-1).sql, 'COMMIT');
 });
 
 test('Ablehnung aktualisiert nur eine aktuelle Draft-Optimierungsrevision und löst den Audit nicht auf', async () => {
@@ -587,6 +823,51 @@ test('Ablehnung sperrt Post-Tabelle, Postzeile und Revision in kanonischer Reihe
   assert.deepEqual(locks, [...locks].sort((left, right) => left - right));
 });
 
+test('Übernahmefeedback bindet eine begrenzte Zusammenfassung an die freigegebene Revision und das Outcome', async () => {
+  const calls = [];
+  const transaction = {
+    async query(sql, params) {
+      const call = { sql: normalizedSql(sql), params };
+      calls.push(call);
+      if (/INSERT INTO content_revision_optimization_feedback/i.test(call.sql)) {
+        return { rows: [{ id: 15 }] };
+      }
+      return { rows: [] };
+    }
+  };
+  const repository = createContentExistingPostOptimizationRepository({
+    async query() { throw new Error('Übernahmefeedback muss die Freigabetransaktion verwenden.'); }
+  });
+
+  const summary = await repository.recordAcceptedRevisionFeedback({
+    revisionId: 71,
+    postId: 19,
+    expectedVersion: 4,
+    report: {
+      changes: [
+        { status: 'active', reason: '<script>nicht speichern</script>' },
+        { status: 'reverted' },
+        { status: 'manual_edit' }
+      ]
+    },
+    admin: { id: 7, username: 'Admin' }
+  }, transaction);
+
+  assert.deepEqual(summary, {
+    event: 'accepted',
+    revisionVersion: 4,
+    activeChanges: 1,
+    revertedChanges: 1,
+    manualChanges: 1
+  });
+  assert.match(calls[0].sql, /r\.status = 'approved'/i);
+  assert.match(calls[0].sql, /r\.optimization_job_id IS NOT NULL/i);
+  assert.doesNotMatch(calls[0].params[3], /script|reason/i);
+  assert.match(calls[1].sql, /jsonb_array_length\(outcome\.feedback_json\) < 100/i);
+  assert.match(calls[1].sql, /octet_length/i);
+  assert.deepEqual(calls[1].params.slice(0, 3), [71, 19, 4]);
+});
+
 test('Outcome-Basis wird in der übergebenen Freigabetransaktion mit lokalem 28-Tage-Fenster angelegt', async () => {
   const calls = [];
   const transaction = {
@@ -616,6 +897,8 @@ test('Outcome-Basis wird in der übergebenen Freigabetransaktion mit lokalem 28-
   assert.match(calls[0].sql, /::date \+ 28\)/i);
   assert.match(calls[0].sql, /r\.revision_version = \$4::integer/i);
   assert.match(calls[0].sql, /r\.status = 'approved'/i);
+  assert.match(calls[0].sql, /feedback\.event_type = 'accepted'/i);
+  assert.match(calls[0].sql, /jsonb_agg\(feedback\.details_json/i);
   assert.deepEqual(calls[0].params.slice(0, 4), [71, 19, '2026-07-14T16:00:00.000Z', 3]);
 });
 

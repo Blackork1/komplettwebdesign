@@ -805,7 +805,15 @@ function comparisonChanges(report = {}) {
     if (!id || ids.has(id)) continue;
     ids.add(id);
     const type = REVISION_CHANGE_TYPES[change.changeType] || REVISION_CHANGE_TYPES.modified;
-    const status = change.status === 'reverted' ? 'reverted' : 'active';
+    const status = ['reverted', 'manual_edit'].includes(change.status)
+      ? change.status
+      : 'active';
+    const statusPresentation = {
+      active: { label: 'Aktiv', icon: 'fa-circle-check' },
+      reverted: { label: 'Zurückgenommen', icon: 'fa-rotate-left' },
+      manual_edit: { label: 'Manuell nachbearbeitet', icon: 'fa-pen-to-square' }
+    }[status];
+    const revertible = status === 'active' && change.revertible === true;
     changes.push({
       id,
       label: REVISION_FIELD_LABELS[change.field] || 'Inhaltliche Änderung',
@@ -814,12 +822,22 @@ function comparisonChanges(report = {}) {
       kindLabel: type.label,
       kindIcon: type.icon,
       status,
-      statusLabel: status === 'reverted' ? 'Zurückgenommen' : 'Aktiv',
+      statusLabel: statusPresentation.label,
+      statusIcon: statusPresentation.icon,
       beforeExcerpt: comparisonExcerpt(change.before),
       afterExcerpt: comparisonExcerpt(change.after),
       reason: comparisonReason(change, report),
       auditCodes: comparisonAuditCodes(change, report),
-      revertible: status === 'active' && change.revertible === true
+      revertible,
+      revertBlockedReason: revertible
+        ? null
+        : status === 'reverted'
+          ? 'Diese Änderung wurde bereits zurückgenommen.'
+          : status === 'manual_edit'
+            ? 'Diese KI-Änderung wurde manuell nachbearbeitet und ist nicht mehr einzeln rücknehmbar.'
+            : change.kind === 'html'
+              ? 'Dieser HTML-Block ist nicht eindeutig und sicher zuordenbar.'
+              : 'Diese Änderung ist nicht sicher einzeln rücknehmbar.'
     });
   }
   return changes;
@@ -906,9 +924,43 @@ export function buildRevisionComparisonPresentation(revision = {}) {
   const changes = comparisonChanges(report);
   const score = comparisonScore(report.afterScore);
   const beforeScore = comparisonScore(report.beforeScore ?? revision.audit_score);
+  const revisionStatus = ['draft', 'approved', 'rejected'].includes(revision.status)
+    ? revision.status
+    : 'rejected';
+  const reviewRisksPassed = report.review?.risks
+    && typeof report.review.risks === 'object'
+    && !Array.isArray(report.review.risks)
+    && Object.values(report.review.risks).every((value) => value === false);
+  const hasBlockingReviewIssue = Array.isArray(report.review?.issues)
+    && report.review.issues.some((issue) => (
+      issue?.blocking === true || issue?.autoPublishBlocking === true
+    ));
+  const initialValidationPassed = report.targetedScope?.passed === true
+    && report.validation?.passed === true
+    && report.review?.passed === true
+    && Number(report.review?.score) >= 80
+    && report.review?.requiresManualReview !== true
+    && reviewRisksPassed
+    && !hasBlockingReviewIssue;
+  const reportedRevalidationStatus = ['passed', 'failed', 'running'].includes(
+    report.revalidation?.status
+  ) ? report.revalidation.status : null;
+  const revalidationStatus = reportedRevalidationStatus
+    || (initialValidationPassed ? 'passed' : 'failed');
+  const revalidationPresentation = {
+    passed: { label: reportedRevalidationStatus ? 'Erneut geprüft' : 'Bei Erstellung geprüft' },
+    running: { label: 'Erneute Prüfung läuft' },
+    failed: { label: 'Erneute Prüfung fehlgeschlagen' }
+  }[revalidationStatus];
   return {
     revisionId: presentedPositiveInteger(revision.id),
     revisionVersion: presentedPositiveInteger(revision.revision_version) || 1,
+    revisionStatus,
+    revalidationStatus,
+    revalidationStatusLabel: revalidationPresentation.label,
+    approvalEnabled: revisionStatus === 'draft'
+      && initialValidationPassed
+      && revalidationStatus === 'passed',
     qualityScore: score,
     beforeQualityScore: beforeScore,
     changeCount: changes.length,

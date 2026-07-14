@@ -188,6 +188,31 @@ test('Transaktionsfehler führen zu Rollback und Freigabe des Clients', async ()
   assert.equal(released, true);
 });
 
+test('Optimierungsfeedback kann Lernbeobachtungen im bestehenden Transaktionsclient aufzeichnen', async () => {
+  const harness = createStatefulDb();
+  let connectCalls = 0;
+  const repository = createContentLearningRepository({
+    async connect() {
+      connectCalls += 1;
+      throw new Error('Bei einer bestehenden Revisionstransaktion darf kein zweiter Client geöffnet werden.');
+    }
+  });
+
+  const result = await repository.recordObservationsAndMaybeProposals({
+    postId: 19,
+    reviewVersion: 4,
+    observations: [observation('technical_precision', 7)]
+  }, harness.db && {
+    query: (...args) => harness.db.connect().then((client) => client.query(...args))
+  });
+
+  assert.equal(connectCalls, 0);
+  assert.equal(result.observations.length, 1);
+  assert.equal(result.proposals.length, 0);
+  assert.deepEqual(harness.state.transactions, []);
+  assert.equal(harness.state.observations.size, 1);
+});
+
 test('Dashboardmetriken ordnen nur exakt gesnapshottete Regelversionen zu und aggregieren GSC nur beschreibend', async () => {
   const queries = [];
   const repository = createContentLearningRepository({

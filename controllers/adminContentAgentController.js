@@ -19,6 +19,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_PUBLICATION_SLOT_NOT_MISSED',
   'CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE',
   'CONTENT_REVISION_CONFLICT',
+  'CONTENT_REVISION_CHANGE_CONFLICT',
   'CONTENT_REVISION_STALE',
   'CONTENT_SCHEDULE_SETTINGS_STALE',
   'CONTENT_DRAFT_EDIT_CONFLICT',
@@ -51,6 +52,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_PUBLICATION_SLOT_NOT_MISSED: 'Die Sofortveröffentlichung ist nur nach einem verpassten Termin möglich.',
   CONTENT_DRAFT_NOTIFICATION_NOT_RETRYABLE: 'Für diesen Entwurf gibt es keine fehlgeschlagene Admin-Benachrichtigung.',
   CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
+  CONTENT_REVISION_CHANGE_CONFLICT: 'Die Änderung kann wegen eines Revisionskonflikts nicht sicher zurückgenommen werden.',
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.',
   CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
   CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
@@ -304,7 +306,16 @@ function strictPositiveInteger(value) {
   if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) {
     throw Object.assign(new Error('Ungültige Versionsnummer.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
   }
-  return positiveId(value);
+  return postgresIntegerId(value);
+}
+
+function strictSha256(value) {
+  if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) {
+    throw Object.assign(new Error('Ungültige Änderungs-ID.'), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED'
+    });
+  }
+  return value;
 }
 
 function strictNonNegativeInteger(value) {
@@ -1297,6 +1308,38 @@ export function createAdminContentAgentController(dependencies) {
         method: 'updateRevision',
         args: () => [{ revisionId: positiveId(req.params.id), input: req.body, admin: adminFromRequest(req) }],
         redirect: `/admin/content-agent/revisions/${req.params.id}/edit?saved=1`,
+        res,
+        next
+      });
+    },
+
+    revertOptimizationChangeAction(req, res, next) {
+      return actionCapability({
+        capability: revisionService,
+        method: 'revertOptimizationChange',
+        args: () => [{
+          revisionId: postgresIntegerId(req.params.id),
+          changeId: strictSha256(req.params.changeId),
+          expectedVersion: strictPositiveInteger(req.body?.expected_revision_version),
+          admin: adminFromRequest(req)
+        }],
+        redirect: `/admin/content-agent/revisions/${req.params.id}/compare?change_reverted=1`,
+        res,
+        next
+      });
+    },
+
+    rejectOptimizationRevisionAction(req, res, next) {
+      return actionCapability({
+        capability: revisionService,
+        method: 'rejectOptimizationRevision',
+        args: () => [{
+          revisionId: postgresIntegerId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_revision_version),
+          confirmed: requiredConfirmation(req.body?.confirmed),
+          admin: adminFromRequest(req)
+        }],
+        redirect: '/admin/content-agent/existing-content?revision_rejected=1',
         res,
         next
       });

@@ -1507,3 +1507,91 @@ test('Vergleichsseite verwirft ungültige IDs vor Repository und Präsentation',
   }
   assert.equal(reads, 0);
 });
+
+test('Rücknahmecontroller akzeptiert nur kanonische PG-INT32-Werte und eine exakte SHA-256-ID', async () => {
+  const inputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async revertOptimizationChange(input) { inputs.push(input); }
+    }
+  }));
+  const changeId = 'a'.repeat(64);
+  const res = response();
+  await controller.revertOptimizationChangeAction({
+    params: { id: '71', changeId },
+    body: { expected_revision_version: '3' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+  assert.equal(res.redirectedTo, '/admin/content-agent/revisions/71/compare?change_reverted=1');
+  assert.deepEqual(inputs[0], {
+    revisionId: 71,
+    changeId,
+    expectedVersion: 3,
+    admin: { id: 7, username: 'Redaktion' }
+  });
+
+  for (const invalid of [
+    { id: '2147483648', changeId, version: '3' },
+    { id: '71', changeId: 'A'.repeat(64), version: '3' },
+    { id: '71', changeId: `${changeId}%20`, version: '3' },
+    { id: '71', changeId, version: '2147483648' },
+    { id: '71', changeId, version: '03' }
+  ]) {
+    const invalidRes = response();
+    await controller.revertOptimizationChangeAction({
+      params: { id: invalid.id, changeId: invalid.changeId },
+      body: { expected_revision_version: invalid.version },
+      session: { user: { id: 7, username: 'Redaktion' } }
+    }, invalidRes, assert.fail);
+    assert.equal(invalidRes.statusCode, 400);
+  }
+  assert.equal(inputs.length, 1);
+});
+
+test('Ablehnungscontroller verlangt die literale Bestätigung und leitet Konflikte sicher weiter', async () => {
+  const inputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async rejectOptimizationRevision(input) {
+        inputs.push(input);
+        if (input.expectedVersion === 4) {
+          throw Object.assign(new Error('interner Revisionszustand'), {
+            code: 'CONTENT_REVISION_CONFLICT'
+          });
+        }
+      }
+    }
+  }));
+  const res = response();
+  await controller.rejectOptimizationRevisionAction({
+    params: { id: '71' },
+    body: { expected_revision_version: '3', confirmed: 'true' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+  assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?revision_rejected=1');
+  assert.deepEqual(inputs[0], {
+    revisionId: 71,
+    expectedVersion: 3,
+    confirmed: true,
+    admin: { id: 7, username: 'Redaktion' }
+  });
+
+  for (const confirmed of [undefined, 'on', '1', 'false']) {
+    const invalidRes = response();
+    await controller.rejectOptimizationRevisionAction({
+      params: { id: '71' },
+      body: { expected_revision_version: '3', confirmed },
+      session: { user: { id: 7, username: 'Redaktion' } }
+    }, invalidRes, assert.fail);
+    assert.equal(invalidRes.statusCode, 400);
+  }
+
+  const conflictRes = response();
+  await controller.rejectOptimizationRevisionAction({
+    params: { id: '71' },
+    body: { expected_revision_version: '4', confirmed: 'true' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, conflictRes, assert.fail);
+  assert.equal(conflictRes.statusCode, 409);
+  assert.doesNotMatch(conflictRes.body, /interner Revisionszustand/);
+});

@@ -5,6 +5,7 @@ import { createContentRevisionRepository } from '../../repositories/contentRevis
 import { createContentExistingPostOptimizationRepository } from '../../repositories/contentExistingPostOptimizationRepository.js';
 import { FaqItemSchema } from './articleSchemas.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
+import { validateTargetedOptimizationScope } from './existingPostDiffService.js';
 import { normalizeInternalHref } from './trustedInternalLinkService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
@@ -22,6 +23,8 @@ const MAX_FIELD_LENGTHS = Object.freeze({
   image_url: 2_048,
   image_alt: 500
 });
+const MAX_PG_INT32 = 2_147_483_647;
+const SHA256 = /^[0-9a-f]{64}$/;
 
 function revisionError(code, message, issues = []) {
   return Object.assign(new Error(message), { code, issues });
@@ -84,6 +87,21 @@ function positiveId(value, field) {
     throw revisionError('CONTENT_ACTION_VALIDATION_FAILED', `${field} ist ungültig.`);
   }
   return id;
+}
+
+function postgresInteger(value, field) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 1 || number > MAX_PG_INT32) {
+    throw revisionError('CONTENT_ACTION_VALIDATION_FAILED', `${field} ist ungültig.`);
+  }
+  return number;
+}
+
+function changeHash(value) {
+  if (typeof value !== 'string' || !SHA256.test(value)) {
+    throw revisionError('CONTENT_ACTION_VALIDATION_FAILED', 'changeId ist ungültig.');
+  }
+  return value;
 }
 
 function parseFaq(value) {
@@ -182,6 +200,61 @@ async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
       'CONTENT_REVISION_VALIDATION_FAILED',
       'Die erneute Inhaltsprüfung ist fehlgeschlagen.',
       Array.isArray(validation?.issues) ? validation.issues : []
+    );
+  }
+}
+
+async function assertOptimizationSnapshotRevalidated(
+  snapshot,
+  validateArticle,
+  { post, report, validationContext = {} } = {}
+) {
+  await assertSnapshotValid(snapshot, validateArticle, validationContext);
+  const before = validationArticle(createRevisionSnapshot(post));
+  const after = validationArticle(snapshot);
+  const scope = validateTargetedOptimizationScope({ before, after });
+  if (scope.passed !== true) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Die erneute Umfangsprüfung ist fehlgeschlagen.',
+      [{ code: scope.code || 'TARGETED_SCOPE_EXCEEDED' }]
+    );
+  }
+  if (!report || typeof report !== 'object' || Array.isArray(report)) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Der gespeicherte Optimierungsbericht ist ungültig.'
+    );
+  }
+  report.revalidation = {
+    status: 'passed',
+    scope,
+    validatedAt: new Date().toISOString()
+  };
+}
+
+function assertOptimizationReportApproved(report) {
+  const risksPassed = report?.review?.risks
+    && typeof report.review.risks === 'object'
+    && !Array.isArray(report.review.risks)
+    && Object.values(report.review.risks).every((value) => value === false);
+  const blockingIssue = Array.isArray(report?.review?.issues)
+    && report.review.issues.some((issue) => (
+      issue?.blocking === true || issue?.autoPublishBlocking === true
+    ));
+  const revalidationPassed = report?.revalidation == null
+    || report.revalidation?.status === 'passed';
+  if (report?.targetedScope?.passed !== true
+      || report?.validation?.passed !== true
+      || report?.review?.passed !== true
+      || Number(report.review?.score) < 80
+      || report.review?.requiresManualReview === true
+      || !risksPassed
+      || blockingIssue
+      || !revalidationPassed) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Die Optimierungsrevision erfüllt die Freigabekriterien nicht.'
     );
   }
 }
@@ -310,6 +383,34 @@ export function createContentRevisionService({
       return revision;
     },
 
+    async revertOptimizationChange(input = {}) {
+      const revisionId = postgresInteger(input.revisionId, 'revisionId');
+      const expectedVersion = postgresInteger(input.expectedVersion, 'expectedVersion');
+      const normalizedAdmin = normalizeAdmin(input.admin);
+      return optimizationRepository.updateRevisionAfterRevert({
+        revisionId,
+        changeId: changeHash(input.changeId),
+        expectedVersion,
+        admin: normalizedAdmin,
+        validateSnapshot: (snapshot, context) => assertOptimizationSnapshotRevalidated(
+          snapshot,
+          validateArticle,
+          context
+        )
+      });
+    },
+
+    async rejectOptimizationRevision(input = {}) {
+      if (input.confirmed !== true) {
+        throw revisionError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
+      }
+      return optimizationRepository.rejectRevision({
+        revisionId: postgresInteger(input.revisionId, 'revisionId'),
+        expectedVersion: postgresInteger(input.expectedVersion, 'expectedVersion'),
+        admin: normalizeAdmin(input.admin)
+      });
+    },
+
     async renderRevisionEdit(revisionId, req, res) {
       const revision = await this.getRevisionForEdit(revisionId);
       return res.render('admin/contentAgent/revisionEdit', {
@@ -320,7 +421,7 @@ export function createContentRevisionService({
 
     async updateRevision({ revisionId, input, admin } = {}) {
       const id = positiveId(revisionId, 'revisionId');
-      normalizeAdmin(admin);
+      const normalizedAdmin = normalizeAdmin(admin);
       const revision = await repository.getRevisionForEdit(id);
       if (!revision) throw revisionError('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
       if (revision.status !== 'draft') throw revisionError('CONTENT_REVISION_CONFLICT', 'Nur Entwurfsrevisionen sind bearbeitbar.');
@@ -328,8 +429,29 @@ export function createContentRevisionService({
       if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1 || expectedVersion !== Number(revision.revision_version)) {
         throw revisionError('CONTENT_REVISION_CONFLICT', 'Die Revision wurde in einem anderen Browserfenster verändert.');
       }
-      const snapshot = structuredClone(revision.snapshot_json);
       const patch = normalizePatch(input);
+      if (revision.optimization_job_id != null) {
+        return optimizationRepository.updateRevisionAfterManualEdit({
+          revisionId: postgresInteger(id, 'revisionId'),
+          expectedVersion: postgresInteger(expectedVersion, 'expectedVersion'),
+          admin: normalizedAdmin,
+          buildValidatedUpdate: async (lockedSnapshot, context) => {
+            const snapshot = structuredClone(lockedSnapshot);
+            if (snapshot.base.content_format === 'legacy_ejs'
+                && Object.hasOwn(patch, 'content')
+                && patch.content !== snapshot.fields.content) {
+              throw revisionError(
+                'CONTENT_REVISION_VALIDATION_FAILED',
+                'Legacy-EJS-Inhalt bleibt unveränderlich.'
+              );
+            }
+            Object.assign(snapshot.fields, patch);
+            await assertOptimizationSnapshotRevalidated(snapshot, validateArticle, context);
+            return snapshot;
+          }
+        });
+      }
+      const snapshot = structuredClone(revision.snapshot_json);
       if (snapshot.base.content_format === 'legacy_ejs'
           && Object.hasOwn(patch, 'content')
           && patch.content !== snapshot.fields.content) {
@@ -355,7 +477,18 @@ export function createContentRevisionService({
         expectedVersion: version,
         admin: normalizedAdmin,
         currentHash: liveHashForPost,
-        validateSnapshot: (snapshot, context) => assertSnapshotValid(snapshot, validateArticle, context)
+        validateSnapshot: (snapshot, context) => assertSnapshotValid(snapshot, validateArticle, context),
+        afterApproval: async ({ revision }, client) => {
+          if (revision?.optimization_job_id == null) return;
+          assertOptimizationReportApproved(revision.optimization_report_json);
+          await optimizationRepository.recordAcceptedRevisionFeedback({
+            revisionId: id,
+            postId: revision.post_id,
+            expectedVersion: version,
+            admin: normalizedAdmin,
+            report: revision.optimization_report_json
+          }, client);
+        }
       });
     }
   };

@@ -7,6 +7,7 @@ import {
   liveHashForPost
 } from '../services/contentAgent/contentRevisionService.js';
 import * as adminPresentation from '../services/contentAgent/adminPresentationService.js';
+import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
 
 const validFaq = Array.from({ length: 5 }, (_, index) => ({ question: `Frage ${index + 1}?`, answer: 'Eine vollständige Antwort.' }));
 const post = {
@@ -426,4 +427,336 @@ test('Vergleichspräsentation überspringt ungültige Änderungen vor dem separa
   assert.equal(comparison.changes.length, 40);
   assert.equal(comparison.changes[0].id, validChanges[0].id);
   assert.equal(comparison.changes.at(-1).id, validChanges[39].id);
+});
+
+test('Vergleichspräsentation gibt die Übernahme nur ohne Risiken und blockierende Prüfbefunde frei', () => {
+  const baseRevision = {
+    id: 74,
+    status: 'draft',
+    revision_version: 2,
+    snapshot_json: { fields: {} },
+    optimization_report_json: {
+      targetedScope: { passed: true },
+      validation: { passed: true },
+      review: {
+        passed: true,
+        score: 92,
+        requiresManualReview: false,
+        risks: { legal: false, privacy: false },
+        issues: []
+      },
+      changes: []
+    }
+  };
+  const safe = adminPresentation.buildRevisionComparisonPresentation(baseRevision);
+  assert.equal(safe.approvalEnabled, true);
+
+  const risky = structuredClone(baseRevision);
+  risky.optimization_report_json.review.risks.legal = true;
+  risky.optimization_report_json.revalidation = { status: 'passed' };
+  assert.equal(
+    adminPresentation.buildRevisionComparisonPresentation(risky).approvalEnabled,
+    false
+  );
+  const blocked = structuredClone(baseRevision);
+  blocked.optimization_report_json.review.issues.push({ blocking: true });
+  assert.equal(
+    adminPresentation.buildRevisionComparisonPresentation(blocked).approvalEnabled,
+    false
+  );
+});
+
+test('einzelne Rücknahme prüft Revisionsversion, Change-ID und den vollständigen Snapshot', async () => {
+  const staticPost = {
+    ...post,
+    content_format: 'static_html',
+    content: '<p>Bestehender Inhalt.</p>',
+    image_url: '/uploads/bild.webp'
+  };
+  const snapshot = createRevisionSnapshot(staticPost);
+  snapshot.fields.meta_title = 'Optimierter Meta-Titel';
+  const report = {
+    ...buildExistingPostDiff({
+      before: { metaTitle: staticPost.meta_title },
+      after: { metaTitle: snapshot.fields.meta_title }
+    }),
+    baseLiveHash: snapshot.base.live_hash,
+    beforeScore: 72,
+    afterScore: 91,
+    targetedScope: { passed: true },
+    validation: { passed: true },
+    review: { approved: true, score: 91 }
+  };
+  const changeId = report.changes[0].id;
+  let received;
+  let validationCalls = 0;
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async updateRevisionAfterRevert(input) {
+        received = input;
+        const reverted = structuredClone(snapshot);
+        reverted.fields.meta_title = staticPost.meta_title;
+        await input.validateSnapshot(reverted, { post: staticPost, report });
+        const nextReport = structuredClone(report);
+        nextReport.changes[0].status = 'reverted';
+        return {
+          id: 71,
+          status: 'draft',
+          revision_version: 4,
+          snapshot_json: reverted,
+          optimization_report_json: nextReport
+        };
+      }
+    },
+    validateArticle: async (article) => {
+      validationCalls += 1;
+      return { passed: true, sanitizedHtml: article.contentHtml, issues: [] };
+    }
+  });
+
+  const result = await service.revertOptimizationChange({
+    revisionId: 71,
+    changeId,
+    expectedVersion: 3,
+    admin: { id: 7, username: 'Admin' }
+  });
+
+  assert.equal(result.revision_version, 4);
+  assert.equal(result.optimization_report_json.changes[0].status, 'reverted');
+  assert.equal(received.revisionId, 71);
+  assert.equal(received.expectedVersion, 3);
+  assert.equal(received.changeId, changeId);
+  assert.equal(typeof received.validateSnapshot, 'function');
+  assert.equal(validationCalls, 1);
+});
+
+test('Rücknahme verwirft nicht kanonische PostgreSQL-IDs, Versionen und Change-IDs vor dem Repository', async () => {
+  let writes = 0;
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async updateRevisionAfterRevert() { writes += 1; }
+    }
+  });
+  const validChangeId = 'b'.repeat(64);
+  for (const input of [
+    { revisionId: 2_147_483_648, changeId: validChangeId, expectedVersion: 3 },
+    { revisionId: 71, changeId: validChangeId, expectedVersion: 2_147_483_648 },
+    { revisionId: 71, changeId: ` ${validChangeId}`, expectedVersion: 3 },
+    { revisionId: 71, changeId: 'B'.repeat(64), expectedVersion: 3 },
+    { revisionId: 71, changeId: 'b'.repeat(63), expectedVersion: 3 }
+  ]) {
+    await assert.rejects(service.revertOptimizationChange({
+      ...input,
+      admin: { id: 7, username: 'Admin' }
+    }), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
+  }
+  assert.equal(writes, 0);
+});
+
+test('fehlgeschlagene Revalidierung wird vor einer Rücknahmespeicherung weitergereicht', async () => {
+  const staticPost = {
+    ...post,
+    content_format: 'static_html',
+    image_url: '/uploads/bild.webp'
+  };
+  const snapshot = createRevisionSnapshot(staticPost);
+  let persisted = false;
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async updateRevisionAfterRevert(input) {
+        await input.validateSnapshot(snapshot, {
+          post: staticPost,
+          report: {
+            beforeScore: 80,
+            afterScore: 90,
+            targetedScope: { passed: true },
+            validation: { passed: true },
+            review: { approved: true, score: 90 }
+          }
+        });
+        persisted = true;
+      }
+    },
+    validateArticle: async () => ({
+      passed: false,
+      sanitizedHtml: staticPost.content,
+      issues: [{ code: 'invalid_snapshot' }]
+    })
+  });
+
+  await assert.rejects(service.revertOptimizationChange({
+    revisionId: 71,
+    changeId: 'c'.repeat(64),
+    expectedVersion: 2,
+    admin: { id: 7, username: 'Admin' }
+  }), { code: 'CONTENT_REVISION_VALIDATION_FAILED' });
+  assert.equal(persisted, false);
+});
+
+test('Ablehnung benötigt Bestätigung und delegiert ausschließlich die aktuelle Draftversion', async () => {
+  const calls = [];
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async rejectRevision(input) {
+        calls.push(input);
+        return { id: 71, status: 'rejected', revision_version: 4 };
+      }
+    }
+  });
+
+  await assert.rejects(service.rejectOptimizationRevision({
+    revisionId: 71,
+    expectedVersion: 3,
+    confirmed: false,
+    admin: { id: 7, username: 'Admin' }
+  }), { code: 'CONTENT_CONFIRMATION_REQUIRED' });
+  assert.equal(calls.length, 0);
+
+  const result = await service.rejectOptimizationRevision({
+    revisionId: 71,
+    expectedVersion: 3,
+    confirmed: true,
+    admin: { id: 7, username: 'Admin' }
+  });
+  assert.equal(result.status, 'rejected');
+  assert.deepEqual(calls[0], {
+    revisionId: 71,
+    expectedVersion: 3,
+    admin: { id: 7, username: 'Admin' }
+  });
+});
+
+test('manuelle Bearbeitung einer KI-Revision verwendet den atomaren Feedbackpfad statt des allgemeinen Updates', async () => {
+  const snapshot = createRevisionSnapshot(post);
+  const revision = {
+    id: 71,
+    post_id: 7,
+    status: 'draft',
+    revision_version: 3,
+    optimization_job_id: 44,
+    snapshot_json: snapshot,
+    optimization_report_json: { baseLiveHash: snapshot.base.live_hash, changes: [] },
+    validation_context: {}
+  };
+  let genericWrites = 0;
+  let optimizationInput;
+  const service = createContentRevisionService({
+    repository: {
+      async getRevisionForEdit() { return revision; },
+      async updateDraftRevision() { genericWrites += 1; }
+    },
+    optimizationRepository: {
+      async updateRevisionAfterManualEdit(input) {
+        optimizationInput = input;
+        const next = await input.buildValidatedUpdate(structuredClone(snapshot), {
+          post,
+          report: structuredClone(revision.optimization_report_json),
+          validationContext: {}
+        });
+        return { ...revision, revision_version: 4, snapshot_json: next };
+      }
+    }
+  });
+
+  const result = await service.updateRevision({
+    revisionId: 71,
+    input: { revision_version: '3', meta_title: 'Manuell abgestimmter Meta-Titel' },
+    admin: { id: 7, username: 'Admin' }
+  });
+
+  assert.equal(result.revision_version, 4);
+  assert.equal(result.snapshot_json.fields.meta_title, 'Manuell abgestimmter Meta-Titel');
+  assert.equal(optimizationInput.revisionId, 71);
+  assert.equal(optimizationInput.expectedVersion, 3);
+  assert.equal(typeof optimizationInput.buildValidatedUpdate, 'function');
+  assert.equal(genericWrites, 0);
+});
+
+test('Übernahme einer KI-Revision speichert akzeptiertes Feedback innerhalb der Freigabetransaktion', async () => {
+  const transaction = { query: async () => ({ rows: [] }) };
+  let acceptedInput;
+  const service = createContentRevisionService({
+    repository: {
+      async approveRevisionTransaction(input) {
+        await input.afterApproval({
+          revision: {
+            id: 71, post_id: 7, optimization_job_id: 44,
+            optimization_report_json: {
+              targetedScope: { passed: true },
+              validation: { passed: true },
+              review: {
+                passed: true,
+                score: 92,
+                requiresManualReview: false,
+                risks: { legal: false },
+                issues: []
+              },
+              changes: []
+            },
+            revision_version: 3
+          },
+          post
+        }, transaction);
+        return { post, revisionId: 71 };
+      }
+    },
+    optimizationRepository: {
+      async recordAcceptedRevisionFeedback(input, client) {
+        acceptedInput = { input, client };
+      }
+    }
+  });
+
+  await service.approveRevision({
+    revisionId: 71,
+    expectedVersion: 3,
+    confirmed: true,
+    admin: { id: 7, username: 'Admin' }
+  });
+
+  assert.equal(acceptedInput.client, transaction);
+  assert.equal(acceptedInput.input.revisionId, 71);
+  assert.equal(acceptedInput.input.expectedVersion, 3);
+  assert.deepEqual(acceptedInput.input.admin, { id: 7, username: 'Admin' });
+});
+
+test('Übernahme einer KI-Revision scheitert serverseitig bei Risiken oder fehlgeschlagener Revalidierung', async () => {
+  let feedbackWrites = 0;
+  const service = createContentRevisionService({
+    repository: {
+      async approveRevisionTransaction(input) {
+        await input.afterApproval({
+          revision: {
+            id: 71,
+            post_id: 7,
+            optimization_job_id: 44,
+            optimization_report_json: {
+              targetedScope: { passed: true },
+              validation: { passed: true },
+              review: {
+                passed: true,
+                score: 92,
+                requiresManualReview: false,
+                risks: { legal: true },
+                issues: []
+              },
+              revalidation: { status: 'failed' },
+              changes: []
+            }
+          }
+        }, { query: async () => ({ rows: [] }) });
+      }
+    },
+    optimizationRepository: {
+      async recordAcceptedRevisionFeedback() { feedbackWrites += 1; }
+    }
+  });
+
+  await assert.rejects(service.approveRevision({
+    revisionId: 71,
+    expectedVersion: 3,
+    confirmed: true,
+    admin: { id: 7, username: 'Admin' }
+  }), { code: 'CONTENT_REVISION_VALIDATION_FAILED' });
+  assert.equal(feedbackWrites, 0);
 });

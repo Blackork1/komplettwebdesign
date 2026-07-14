@@ -206,7 +206,10 @@ export function createContentLearningRepository(db = pool) {
       }
     },
 
-    async recordObservationsAndMaybeProposals({ postId, reviewVersion, observations }) {
+    async recordObservationsAndMaybeProposals(
+      { postId, reviewVersion, observations },
+      transactionClient = null
+    ) {
       const normalizedPostId = positiveInteger(postId, 'Die Artikel-ID');
       const normalizedReviewVersion = positiveInteger(reviewVersion, 'Die Review-Version');
       if (!Array.isArray(observations) || observations.length < 1 || observations.length > 24) {
@@ -216,9 +219,10 @@ export function createContentLearningRepository(db = pool) {
       const classifiedCategories = [...new Set(normalized
         .map(({ categoryKey }) => categoryKey)
         .filter((categoryKey) => categoryKey !== 'unclassified'))].sort();
-      const client = await db.connect();
+      const ownsTransaction = transactionClient == null;
+      const client = transactionClient || await db.connect();
       try {
-        await client.query('BEGIN');
+        if (ownsTransaction) await client.query('BEGIN');
         for (const categoryKey of classifiedCategories) {
           await client.query(
             "SELECT pg_advisory_xact_lock(hashtext('content-learning:' || $1::text))",
@@ -316,13 +320,15 @@ export function createContentLearningRepository(db = pool) {
             ) VALUES ($1, $2, 'proposal_created', $3::jsonb)
           `, [categoryKey, proposal.id, JSON.stringify({ evidenceCount: articleCount })]);
         }
-        await client.query('COMMIT');
+        if (ownsTransaction) await client.query('COMMIT');
         return { observations: persistedObservations, proposals };
       } catch (error) {
-        try { await client.query('ROLLBACK'); } catch { /* ursprünglichen Fehler erhalten */ }
+        if (ownsTransaction) {
+          try { await client.query('ROLLBACK'); } catch { /* ursprünglichen Fehler erhalten */ }
+        }
         throw error;
       } finally {
-        client.release();
+        if (ownsTransaction) client.release();
       }
     },
 

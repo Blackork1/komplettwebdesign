@@ -7,6 +7,8 @@
   const groups = Array.isArray(item.changeGroups) ? item.changeGroups : [];
   const sources = Array.isArray(item.sources) ? item.sources : [];
   const gscSignals = Array.isArray(item.gscSignals) ? item.gscSignals : [];
+  const state = item.revisionStatus;
+  const checkState = item.revalidationStatus;
 %>
 <div class="content-agent-page content-agent-compare">
   <header class="content-agent-pagehead">
@@ -39,6 +41,36 @@
       <p><strong><%= item.qualityScore === null || item.qualityScore === undefined ? 'Qualität noch offen' : `Qualität ${item.qualityScore}/100` %></strong><span><%= item.beforeQualityScore === null || item.beforeQualityScore === undefined ? 'nach redaktioneller Prüfung' : `zuvor ${item.beforeQualityScore}/100` %></span></p>
     </div>
   </section>
+
+  <% if (item.revisionId && state === 'draft') { %>
+    <section class="content-agent-panel" aria-labelledby="compare-decision-title">
+      <div class="content-agent-panel__head">
+        <div>
+          <p class="content-agent-eyebrow">Freigabeentscheidung</p>
+          <h2 id="compare-decision-title">Aktuellen Revisionsstand entscheiden</h2>
+        </div>
+        <span class="content-agent-readonly is-<%= checkState %>">
+          <i class="fa-solid <%= checkState === 'passed' ? 'fa-circle-check' : checkState === 'running' ? 'fa-spinner' : 'fa-triangle-exclamation' %>" aria-hidden="true"></i>
+          <%= item.revalidationStatusLabel || 'Prüfstatus unbekannt' %>
+        </span>
+      </div>
+      <p>Nur ein vollständig geprüfter aktueller Revisionsstand kann über den bestehenden Freigabepfad übernommen werden.</p>
+      <div class="content-agent-actions">
+        <form method="post" action="/admin/content-agent/revisions/<%= item.revisionId %>/publish">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="expected_revision_version" value="<%= item.revisionVersion %>">
+          <input type="hidden" name="confirmed" value="true">
+          <button class="btn btn-primary" type="submit" <%= item.approvalEnabled ? '' : 'disabled' %>><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Geprüfte Revision übernehmen</button>
+        </form>
+        <form method="post" action="/admin/content-agent/revisions/<%= item.revisionId %>/reject">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="expected_revision_version" value="<%= item.revisionVersion %>">
+          <input type="hidden" name="confirmed" value="true">
+          <button class="btn btn-outline-danger" type="submit"><i class="fa-solid fa-ban" aria-hidden="true"></i> Optimierung vollständig ablehnen</button>
+        </form>
+      </div>
+    </section>
+  <% } %>
 
   <aside class="content-agent-compare__jumpnav" aria-labelledby="compare-jumpnav-title">
     <div>
@@ -131,7 +163,7 @@
               <article class="content-agent-compare__change is-<%= change.kind %>" id="change-<%= change.id %>">
                 <header>
                   <div><span class="content-agent-compare__change-kind"><i class="fa-solid <%= change.kindIcon %>" aria-hidden="true"></i> <%= change.kindLabel %></span><h4><%= change.label %></h4></div>
-                  <span class="content-agent-compare__change-status is-<%= change.status %>"><i class="fa-solid <%= change.status === 'reverted' ? 'fa-rotate-left' : 'fa-circle-check' %>" aria-hidden="true"></i> <%= change.statusLabel %></span>
+                  <span class="content-agent-compare__change-status is-<%= change.status %>"><i class="fa-solid <%= change.statusIcon || (change.status === 'reverted' ? 'fa-rotate-left' : 'fa-circle-check') %>" aria-hidden="true"></i> <%= change.statusLabel %></span>
                 </header>
                 <div class="content-agent-compare__extracts">
                   <div><span>Live</span><p><%= change.beforeExcerpt %></p></div>
@@ -143,7 +175,15 @@
                     <% if (Array.isArray(change.auditCodes) && change.auditCodes.length > 0) { %><p class="content-agent-compare__audit">Auditbefund: <%= change.auditCodes.join(', ') %></p><% } %>
                   </div>
                 </div>
-                <p class="content-agent-compare__revert-note"><i class="fa-solid <%= change.revertible ? 'fa-arrow-rotate-left' : 'fa-lock' %>" aria-hidden="true"></i> <%= change.revertible ? 'Einzeln rücknehmbar' : 'Nur in der manuellen Bearbeitung anpassbar' %></p>
+                <% if (change.revertible && state === 'draft') { %>
+                  <form method="post" action="/admin/content-agent/revisions/<%= item.revisionId %>/changes/<%= change.id %>/revert" class="content-agent-compare__revert-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="expected_revision_version" value="<%= item.revisionVersion %>">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i> Änderung zurücknehmen</button>
+                  </form>
+                <% } else { %>
+                  <p class="content-agent-compare__revert-note"><i class="fa-solid fa-lock" aria-hidden="true"></i> <%= change.revertBlockedReason || 'Nur in der manuellen Bearbeitung anpassbar.' %></p>
+                <% } %>
               </article>
             <% }) %>
           </div>

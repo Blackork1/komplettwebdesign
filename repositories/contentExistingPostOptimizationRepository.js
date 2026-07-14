@@ -1,8 +1,18 @@
 import { createHash } from 'node:crypto';
 
 import pool from '../util/db.js';
-import { revertExistingPostChange } from '../services/contentAgent/existingPostDiffService.js';
+import {
+  buildExistingPostDiff,
+  revertExistingPostChange
+} from '../services/contentAgent/existingPostDiffService.js';
+import {
+  classifyLearningIssueLocally,
+  getLearningCategory,
+  sanitizeLearningText
+} from '../services/contentAgent/contentLearningTaxonomy.js';
 import { createContentAuditRepository } from './contentAuditRepository.js';
+import { createContentLearningRepository } from './contentLearningRepository.js';
+import { trustedValidationContext } from './contentRevisionRepository.js';
 
 const HASH = /^[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -10,6 +20,13 @@ const MAX_SNAPSHOT_BYTES = 1_000_000;
 const MAX_REPORT_BYTES = 512_000;
 const MAX_FEEDBACK_DETAILS_BYTES = 64_000;
 const MAX_OUTCOME_JSON_BYTES = 256_000;
+const MAX_PG_INT32 = 2_147_483_647;
+const MAX_MANUAL_FEEDBACK_ITEMS = 24;
+const SAFE_CHANGE_KINDS = new Set(['field', 'faq', 'html']);
+const SAFE_CHANGE_FIELDS = new Set([
+  'title', 'shortDescription', 'metaTitle', 'metaDescription', 'ogTitle',
+  'ogDescription', 'imageAlt', 'faqJson', 'contentHtml'
+]);
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
   'og_title', 'og_description', 'faq_json', 'image_url', 'image_alt'
@@ -44,8 +61,16 @@ function positiveInteger(value, label) {
   return normalized;
 }
 
+function postgresInteger(value, label) {
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 1 || normalized > MAX_PG_INT32) {
+    throw validationError(`${label} ist ungültig.`);
+  }
+  return normalized;
+}
+
 function normalizeAdmin(value) {
-  const id = positiveInteger(value?.id, 'Die Administrator-ID');
+  const id = postgresInteger(value?.id, 'Die Administrator-ID');
   const username = typeof value?.username === 'string' ? value.username.trim() : '';
   if (!username || username.length > 180) {
     throw validationError('Der Administratorname ist ungültig.');
@@ -54,7 +79,7 @@ function normalizeAdmin(value) {
 }
 
 function normalizeHash(value, label = 'Der Livehash') {
-  const normalized = typeof value === 'string' ? value.trim() : '';
+  const normalized = typeof value === 'string' ? value : '';
   if (!HASH.test(normalized)) throw validationError(`${label} ist ungültig.`);
   return normalized;
 }
@@ -213,7 +238,94 @@ function normalizeFeedbackDetails(value = {}) {
   return jsonString(details, 'Die Feedbackdetails', MAX_FEEDBACK_DETAILS_BYTES);
 }
 
-export function createContentExistingPostOptimizationRepository(db = pool) {
+function safeChangeKind(change) {
+  return SAFE_CHANGE_KINDS.has(change?.kind) ? change.kind : 'field';
+}
+
+function safeChangeField(change) {
+  return SAFE_CHANGE_FIELDS.has(change?.field) ? change.field : 'unknown';
+}
+
+function changeLearningClassification(change) {
+  const reasons = Array.isArray(change?.reasons) ? change.reasons : [];
+  const explicitCategory = reasons
+    .flatMap((reason) => Array.isArray(reason?.auditCodes) ? reason.auditCodes : [])
+    .map((code) => sanitizeLearningText(code, 80))
+    .find((code) => getLearningCategory(code));
+  const reason = sanitizeLearningText(
+    reasons.map((item) => item?.reason).filter(Boolean).join(' '),
+    500
+  ) || 'Die KI-Änderung wurde durch eine administrative Entscheidung korrigiert.';
+  if (explicitCategory) {
+    return { categoryKey: explicitCategory, confidence: 1, source: 'local', reason };
+  }
+  const local = classifyLearningIssueLocally({
+    code: reasons.flatMap((item) => item?.auditCodes || []).join(' '),
+    reason
+  });
+  return local
+    ? { ...local, reason }
+    : { categoryKey: 'unclassified', confidence: null, source: 'unclassified', reason };
+}
+
+function feedbackDetails(change, event, revisionVersion) {
+  return {
+    event,
+    kind: safeChangeKind(change),
+    field: safeChangeField(change),
+    revisionVersion
+  };
+}
+
+function learningObservation(change, event, revisionId) {
+  const classification = changeLearningClassification(change);
+  const instructions = {
+    reverted: 'Prüfe künftig, ob diese Änderung fachlich nötig ist, bevor du sie vorschlägst.',
+    manual_edit: 'Prüfe künftig die fachliche und sprachliche Passung genauer, bevor du diese Änderung vorschlägst.'
+  };
+  return {
+    categoryKey: classification.categoryKey,
+    fingerprint: normalizeHash(change?.id, 'Die Änderungs-ID'),
+    reason: classification.reason,
+    instruction: instructions[event],
+    section: safeChangeField(change),
+    anchor: `revision-${revisionId}-change-${change.id.slice(0, 12)}`,
+    classificationSource: classification.source,
+    confidence: classification.confidence
+  };
+}
+
+function snapshotFieldsForDiff(snapshot) {
+  return {
+    ...structuredClone(snapshot?.fields || {}),
+    contentFormat: snapshot?.base?.content_format
+  };
+}
+
+function matchingActiveOptimizationChange(changes, manualChange) {
+  return changes.find((change) => (
+    change?.status === 'active'
+      && change?.kind === manualChange.kind
+      && change?.field === manualChange.field
+      && change?.afterFingerprint === manualChange.beforeFingerprint
+  )) || null;
+}
+
+function acceptedFeedbackSummary(report, revisionVersion) {
+  const changes = Array.isArray(report?.changes) ? report.changes.slice(0, 2_000) : [];
+  return {
+    event: 'accepted',
+    revisionVersion,
+    activeChanges: changes.filter(({ status }) => status === 'active').length,
+    revertedChanges: changes.filter(({ status }) => status === 'reverted').length,
+    manualChanges: changes.filter(({ status }) => status === 'manual_edit').length
+  };
+}
+
+export function createContentExistingPostOptimizationRepository(
+  db = pool,
+  { learningRepository = createContentLearningRepository(db) } = {}
+) {
   const auditRepository = createContentAuditRepository(db);
 
   return {
@@ -452,17 +564,12 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
     },
 
     async updateRevisionAfterRevert(input = {}) {
-      const revisionId = positiveInteger(input.revisionId, 'Die Revisions-ID');
-      const expectedVersion = positiveInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
+      const revisionId = postgresInteger(input.revisionId, 'Die Revisions-ID');
+      const expectedVersion = postgresInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
       const admin = normalizeAdmin(input.admin);
       const changeId = normalizeHash(input.changeId, 'Die Änderungs-ID');
       if (typeof input.validateSnapshot !== 'function') {
         throw validationError('Für die Rücknahme wird eine vollständige Snapshot-Prüfung benötigt.');
-      }
-      const detailsJson = normalizeFeedbackDetails(input.details);
-      const categoryKey = input.categoryKey == null ? null : String(input.categoryKey).trim();
-      if (categoryKey != null && (!/^[a-z0-9_:-]{1,80}$/.test(categoryKey))) {
-        throw validationError('Die Feedbackkategorie ist ungültig.');
       }
 
       const client = await db.connect();
@@ -496,6 +603,21 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
         if (revision.optimization_report_json?.baseLiveHash !== revision.snapshot_json?.base?.live_hash) {
           throw conflict('Die Ausgangsbasis der Revision wurde verändert.');
         }
+        const auditResult = await client.query(`
+          SELECT a.id
+          FROM content_post_audits a
+          WHERE a.id = $1::bigint
+            AND a.post_id = $2::integer
+            AND a.job_id = $3::bigint
+            AND a.status = 'revision_created'
+          FOR UPDATE OF a
+        `, [revision.audit_id, revision.post_id, revision.optimization_job_id]);
+        if (!auditResult.rows[0]) {
+          throw conflict('Die Auditbindung der Revision ist nicht mehr gültig.');
+        }
+        const originalChange = revision.optimization_report_json?.changes?.find(
+          (change) => change?.id === changeId
+        );
         const reverted = revertExistingPostChange({
           snapshot: {
             snapshot_json: revision.snapshot_json,
@@ -512,7 +634,12 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
             || Number(reverted.revision_version) !== expectedVersion + 1) {
           throw conflict('Die Rücknahme hat die Revisionsbasis unerwartet verändert.');
         }
-        await input.validateSnapshot(snapshot, { post, revision, report });
+        await input.validateSnapshot(snapshot, {
+          post,
+          revision,
+          report,
+          validationContext: await trustedValidationContext(revision.post_id, client)
+        });
         const snapshotJson = jsonString(snapshot, 'Der Revisionssnapshot', MAX_SNAPSHOT_BYTES);
         const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
         const updateResult = await client.query(`
@@ -531,6 +658,10 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
         `, [revisionId, snapshotJson, reportJson, expectedVersion, admin.id, admin.username]);
         const updated = updateResult.rows[0];
         if (!updated) throw conflict();
+        const classification = changeLearningClassification(originalChange);
+        const detailsJson = normalizeFeedbackDetails(
+          feedbackDetails(originalChange, 'reverted', expectedVersion + 1)
+        );
         await client.query(`
           INSERT INTO content_revision_optimization_feedback (
             revision_id, post_id, change_id, event_type, category_key,
@@ -539,7 +670,168 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
             $1::bigint, $2::integer, $3::char(64), 'reverted',
             $4::varchar(80), $5::jsonb, $6::integer, $7::varchar(180)
           )
-        `, [revisionId, revision.post_id, changeId, categoryKey, detailsJson, admin.id, admin.username]);
+        `, [
+          revisionId,
+          revision.post_id,
+          changeId,
+          classification.categoryKey,
+          detailsJson,
+          admin.id,
+          admin.username
+        ]);
+        await learningRepository.recordObservationsAndMaybeProposals({
+          postId: revision.post_id,
+          reviewVersion: expectedVersion + 1,
+          observations: [learningObservation(originalChange, 'reverted', revisionId)]
+        }, client);
+        await client.query('COMMIT');
+        return updated;
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async updateRevisionAfterManualEdit(input = {}) {
+      const revisionId = postgresInteger(input.revisionId, 'Die Revisions-ID');
+      const expectedVersion = postgresInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
+      const admin = normalizeAdmin(input.admin);
+      if (typeof input.buildValidatedUpdate !== 'function') {
+        throw validationError('Für die manuelle Bearbeitung wird eine vollständige Snapshot-Prüfung benötigt.');
+      }
+
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+        const identity = await client.query(`
+          SELECT r.post_id FROM content_post_revisions r WHERE r.id = $1::bigint
+        `, [revisionId]);
+        if (!identity.rows[0]) throw repositoryError('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
+        const postResult = await client.query(`
+          SELECT ${POST_COLUMNS}
+          FROM posts p
+          WHERE p.id = $1::integer AND p.published = TRUE
+          FOR UPDATE OF p
+        `, [identity.rows[0].post_id]);
+        const post = postResult.rows[0];
+        if (!post) throw conflict('Der Liveartikel ist nicht mehr veröffentlicht.');
+        const revisionResult = await client.query(`
+          SELECT r.* FROM content_post_revisions r
+          WHERE r.id = $1::bigint
+          FOR UPDATE OF r
+        `, [revisionId]);
+        const revision = revisionResult.rows[0];
+        if (!revision || revision.status !== 'draft'
+            || revision.optimization_job_id == null
+            || Number(revision.revision_version) !== expectedVersion) {
+          throw conflict();
+        }
+        assertLiveBase(post, revision.snapshot_json?.base, revision.snapshot_json?.base?.live_hash);
+        if (revision.optimization_report_json?.baseLiveHash !== revision.snapshot_json?.base?.live_hash) {
+          throw conflict('Die Ausgangsbasis der Revision wurde verändert.');
+        }
+        const auditResult = await client.query(`
+          SELECT a.id
+          FROM content_post_audits a
+          WHERE a.id = $1::bigint
+            AND a.post_id = $2::integer
+            AND a.job_id = $3::bigint
+            AND a.status = 'revision_created'
+          FOR UPDATE OF a
+        `, [revision.audit_id, revision.post_id, revision.optimization_job_id]);
+        if (!auditResult.rows[0]) {
+          throw conflict('Die Auditbindung der Revision ist nicht mehr gültig.');
+        }
+
+        const previousSnapshot = plainObject(
+          structuredClone(revision.snapshot_json),
+          'Der Revisionssnapshot'
+        );
+        const report = plainObject(
+          structuredClone(revision.optimization_report_json),
+          'Der Optimierungsbericht'
+        );
+        const nextSnapshot = plainObject(await input.buildValidatedUpdate(
+          structuredClone(previousSnapshot),
+          {
+            post,
+            revision,
+            report,
+            validationContext: await trustedValidationContext(revision.post_id, client)
+          }
+        ), 'Der Revisionssnapshot');
+        if (!sameBase(previousSnapshot.base, nextSnapshot.base)
+            || report.baseLiveHash !== previousSnapshot.base?.live_hash) {
+          throw conflict('Die manuelle Bearbeitung hat die Revisionsbasis unerwartet verändert.');
+        }
+
+        const manualChanges = buildExistingPostDiff({
+          before: snapshotFieldsForDiff(previousSnapshot),
+          after: snapshotFieldsForDiff(nextSnapshot),
+          reasons: []
+        }).changes;
+        if (manualChanges.length > MAX_MANUAL_FEEDBACK_ITEMS) {
+          throw validationError('Die manuelle Bearbeitung enthält zu viele einzelne Änderungen.');
+        }
+        const feedbackItems = manualChanges.map((manualChange) => {
+          const originalChange = matchingActiveOptimizationChange(report.changes || [], manualChange);
+          if (originalChange) originalChange.status = 'manual_edit';
+          return { manualChange, sourceChange: originalChange || manualChange };
+        });
+
+        const snapshotJson = jsonString(nextSnapshot, 'Der Revisionssnapshot', MAX_SNAPSHOT_BYTES);
+        const reportJson = jsonString(report, 'Der Optimierungsbericht', MAX_REPORT_BYTES);
+        const updateResult = await client.query(`
+          UPDATE content_post_revisions
+          SET snapshot_json = $2::jsonb,
+              optimization_report_json = $3::jsonb,
+              revision_version = revision_version + 1,
+              admin_id = $5::integer,
+              admin_username = $6::varchar(255),
+              updated_at = NOW()
+          WHERE id = $1::bigint
+            AND status = 'draft'
+            AND revision_version = $4::integer
+            AND optimization_job_id IS NOT NULL
+          RETURNING *
+        `, [revisionId, snapshotJson, reportJson, expectedVersion, admin.id, admin.username]);
+        const updated = updateResult.rows[0];
+        if (!updated) throw conflict();
+
+        for (const { manualChange, sourceChange } of feedbackItems) {
+          const classification = changeLearningClassification(sourceChange);
+          await client.query(`
+            INSERT INTO content_revision_optimization_feedback (
+              revision_id, post_id, change_id, event_type, category_key,
+              details_json, admin_id, admin_name
+            ) VALUES (
+              $1::bigint, $2::integer, $3::char(64), 'manual_edit',
+              $4::varchar(80), $5::jsonb, $6::integer, $7::varchar(180)
+            )
+          `, [
+            revisionId,
+            revision.post_id,
+            sourceChange.id,
+            classification.categoryKey,
+            normalizeFeedbackDetails(
+              feedbackDetails(manualChange, 'manual_edit', expectedVersion + 1)
+            ),
+            admin.id,
+            admin.username
+          ]);
+        }
+        if (feedbackItems.length > 0) {
+          await learningRepository.recordObservationsAndMaybeProposals({
+            postId: revision.post_id,
+            reviewVersion: expectedVersion + 1,
+            observations: feedbackItems.map(({ sourceChange }) => (
+              learningObservation(sourceChange, 'manual_edit', revisionId)
+            ))
+          }, client);
+        }
         await client.query('COMMIT');
         return updated;
       } catch (error) {
@@ -551,10 +843,13 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
     },
 
     async rejectRevision(input = {}) {
-      const revisionId = positiveInteger(input.revisionId, 'Die Revisions-ID');
-      const expectedVersion = positiveInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
+      const revisionId = postgresInteger(input.revisionId, 'Die Revisions-ID');
+      const expectedVersion = postgresInteger(input.expectedVersion, 'Die erwartete Revisionsversion');
       const admin = normalizeAdmin(input.admin);
-      const detailsJson = normalizeFeedbackDetails(input.details);
+      const detailsJson = normalizeFeedbackDetails({
+        event: 'rejected',
+        revisionVersion: expectedVersion + 1
+      });
       const client = await db.connect();
       try {
         await client.query('BEGIN');
@@ -617,6 +912,57 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
       }
     },
 
+    async recordAcceptedRevisionFeedback(input = {}, transactionClient) {
+      const client = requireTransactionClient(transactionClient);
+      const revisionId = postgresInteger(input.revisionId, 'Die Revisions-ID');
+      const postId = postgresInteger(input.postId, 'Die Artikel-ID');
+      const expectedVersion = postgresInteger(
+        input.expectedVersion,
+        'Die erwartete Revisionsversion'
+      );
+      const admin = normalizeAdmin(input.admin);
+      const summary = acceptedFeedbackSummary(input.report, expectedVersion);
+      const summaryJson = normalizeFeedbackDetails(summary);
+      const feedbackResult = await client.query(`
+        INSERT INTO content_revision_optimization_feedback (
+          revision_id, post_id, event_type, details_json, admin_id, admin_name
+        )
+        SELECT r.id, r.post_id, 'accepted', $4::jsonb, $5::integer, $6::varchar(180)
+        FROM content_post_revisions r
+        WHERE r.id = $1::bigint
+          AND r.post_id = $2::integer
+          AND r.revision_version = $3::integer
+          AND r.status = 'approved'
+          AND r.optimization_job_id IS NOT NULL
+        RETURNING id
+      `, [revisionId, postId, expectedVersion, summaryJson, admin.id, admin.username]);
+      if (!feedbackResult.rows[0]) {
+        throw conflict('Das Übernahmefeedback konnte nicht an die freigegebene Revision gebunden werden.');
+      }
+      await client.query(`
+        UPDATE content_revision_optimization_outcomes AS outcome
+        SET feedback_json = outcome.feedback_json || $4::jsonb,
+            updated_at = NOW()
+        FROM content_post_revisions r
+        WHERE outcome.revision_id = $1::bigint
+          AND outcome.post_id = $2::integer
+          AND r.id = outcome.revision_id
+          AND r.revision_version = $3::integer
+          AND r.status = 'approved'
+          AND r.optimization_job_id IS NOT NULL
+          AND jsonb_typeof(outcome.feedback_json) = 'array'
+          AND jsonb_array_length(outcome.feedback_json) < 100
+          AND octet_length((outcome.feedback_json || $4::jsonb)::text) <= $5::integer
+      `, [
+        revisionId,
+        postId,
+        expectedVersion,
+        jsonString([summary], 'Die Feedbackzusammenfassung', MAX_FEEDBACK_DETAILS_BYTES),
+        MAX_OUTCOME_JSON_BYTES
+      ]);
+      return summary;
+    },
+
     async createOutcomeBaseline(input = {}, transactionClient) {
       const client = requireTransactionClient(transactionClient);
       const revisionId = positiveInteger(input.revisionId, 'Die Revisions-ID');
@@ -641,12 +987,19 @@ export function createContentExistingPostOptimizationRepository(db = pool) {
           INSERT INTO content_revision_optimization_outcomes (
             revision_id, post_id, applied_at, baseline_start_date,
             baseline_end_date, baseline_metrics_json,
-            followup_start_date, followup_end_date
+            followup_start_date, followup_end_date, feedback_json
           )
           SELECT r.id, $2::integer, $3::timestamptz, $5::date,
                  $6::date, $7::jsonb,
                  (($3::timestamptz AT TIME ZONE $8::text)::date + 1),
-                 (($3::timestamptz AT TIME ZONE $8::text)::date + 28)
+                 (($3::timestamptz AT TIME ZONE $8::text)::date + 28),
+                 COALESCE((
+                   SELECT jsonb_agg(feedback.details_json ORDER BY feedback.created_at, feedback.id)
+                   FROM content_revision_optimization_feedback feedback
+                   WHERE feedback.revision_id = r.id
+                     AND feedback.post_id = r.post_id
+                     AND feedback.event_type = 'accepted'
+                 ), '[]'::jsonb)
           FROM content_post_revisions r
           WHERE r.id = $1::bigint
             AND r.post_id = $2::integer
