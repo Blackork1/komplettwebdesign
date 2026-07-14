@@ -221,6 +221,39 @@ test('persistierter Draft wird vollständig revalidiert und erst danach veröffe
   assert.equal(calls.includes('ROLLBACK'), false);
 });
 
+test('gezielt optimierter Entwurf bleibt nach neuer Reviewversion konsistent veröffentlichbar', async () => {
+  const optimizedHtml = '<section><h2>Inhalt</h2><p>Der konkrete CTA wurde gezielt überarbeitet.</p></section>';
+  const optimizedDraft = validDraft({
+    post: {
+      content: optimizedHtml,
+      review_version: 3,
+      approved_review_version: null,
+      approved_at: null,
+      approved_by_admin_id: null,
+      workflow_status: 'needs_review'
+    },
+    metadata: {
+      quality_score: 93,
+      quality_report_json: {
+        passed: true,
+        score: 93,
+        summary: 'Der konkrete Prüfhinweis wurde behoben.',
+        strengths: ['Der CTA ist jetzt spezifisch und handlungsnah.'],
+        issues: [],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: safeRisks,
+        focusedReview: { blocked: false, items: [], riskFlags: [], sourceCount: 0 }
+      }
+    }
+  });
+  const { service, calls } = harness({ draft: optimizedDraft });
+  const result = await service.publishDraftManually({ postId: 9, admin, confirmed: true });
+  assert.equal(result.post.published, true);
+  assert.equal(calls.includes('COMMIT'), true);
+  assert.equal(calls.includes('ROLLBACK'), false);
+});
+
 test('geplante Veröffentlichung kann denselben vollständigen Validator im Freigabezustand verwenden', async () => {
   let validationCalls = 0;
   const scheduledDraft = validDraft({

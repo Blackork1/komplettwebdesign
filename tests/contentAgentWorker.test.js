@@ -15,6 +15,7 @@ import {
   createProductionRuntime,
   createShutdownController,
   loadProductionModules,
+  REGENERATION_JOB_TYPES,
   SUPPORTED_JOB_TYPES,
   startContentWorker
 } from '../scripts/contentWorker.js';
@@ -1621,6 +1622,60 @@ test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben 
   }
 });
 
+test('der Produktionshandler dispatcht eine gültige Prüfhinweis-Optimierung separat', async () => {
+  assert.equal(SUPPORTED_JOB_TYPES.has('optimize_review_issues'), true);
+  assert.equal(REGENERATION_JOB_TYPES.has('optimize_review_issues'), true);
+  const calls = [];
+  const snapshot = { operatingMode: 'review', timezone: 'Europe/Berlin' };
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true },
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() { return snapshot; },
+    createJobSnapshot() { return snapshot; },
+    async createRun() { return { id: 88, runtime_snapshot_json: snapshot }; },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async runRegenerationJob() { assert.fail('allgemeine Regeneration nicht erwartet'); },
+    async createOptimizationDependencies(current) {
+      calls.push(['dependencies', current]);
+      return { optimization: true };
+    },
+    async runReviewIssueOptimizationJob(context, dependencies) {
+      calls.push(['optimization', context, dependencies]);
+      return { status: 'completed', post: { id: 19, published: false } };
+    }
+  });
+  const result = await handler({
+    id: 52,
+    job_type: 'optimize_review_issues',
+    payload_json: {
+      source: 'admin_regeneration',
+      post_id: 19,
+      forced_mode: 'review',
+      expected_review_version: 3,
+      issue_mode: 'single',
+      issue_index: 0
+    }
+  }, { leaseGuard: async () => true });
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(calls[0], ['dependencies', snapshot]);
+  assert.equal(calls[1][0], 'optimization');
+  assert.equal(calls[1][1].run.id, 88);
+  assert.deepEqual(calls[1][2], { optimization: true });
+});
+
+test('Prüfhinweis-Optimierung lehnt unvollständige Payloads vor dem Run ab', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Ungültige Payload darf keinen Run erzeugen'); },
+    async runPipeline() { assert.fail('nicht erwartet'); }
+  });
+  await assert.rejects(handler({
+    id: 52,
+    job_type: 'optimize_review_issues',
+    payload_json: { post_id: 19, forced_mode: 'review' }
+  }), (error) => error.code === 'CONTENT_REVIEW_OPTIMIZATION_JOB_PAYLOAD_INVALID'
+    && error.retryable === false);
+});
+
 test('permanenter Regenerationsfehler terminalisiert denselben Run gefenct als failed', async () => {
   const finishCalls = [];
   const permanent = Object.assign(new Error('Entwurf nicht mehr verfügbar'), {
@@ -1811,6 +1866,8 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
 
   assert.equal(typeof modules.runDraftRegenerationJob, 'function');
   assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
+  assert.equal(typeof modules.runReviewIssueOptimizationJob, 'function');
+  assert.equal(typeof modules.createContentReviewIssueOptimizationRepository, 'function');
   assert.equal(typeof modules.createContentPublicationService, 'function');
   assert.equal(typeof modules.createBlogNewsletterService, 'function');
   assert.equal(typeof modules.sendAdminReviewNotification, 'function');

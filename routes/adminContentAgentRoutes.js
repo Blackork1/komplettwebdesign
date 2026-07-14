@@ -59,6 +59,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/regenerate-faq', isAdmin, verifyCsrfToken, controller.regenerateFaqAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-metadata', isAdmin, verifyCsrfToken, controller.regenerateMetadataAction);
   router.post('/admin/content-agent/drafts/:id/regenerate-article', isAdmin, verifyCsrfToken, controller.regenerateDraftAction);
+  router.post('/admin/content-agent/drafts/:id/optimize-review', isAdmin, verifyCsrfToken, controller.optimizeReviewIssuesAction);
   router.post('/admin/content-agent/drafts/:id/approve-scheduled', isAdmin, verifyCsrfToken, controller.approveScheduledAction);
   router.post('/admin/content-agent/drafts/:id/publish-now', isAdmin, verifyCsrfToken, controller.publishNowAction);
   router.post('/admin/content-agent/drafts/:id/reschedule', isAdmin, verifyCsrfToken, controller.rescheduleDraftAction);

@@ -13,7 +13,8 @@ export const REGENERATION_JOB_TYPES = new Set([
   'regenerate_article',
   'regenerate_metadata',
   'regenerate_faq',
-  'regenerate_image'
+  'regenerate_image',
+  'optimize_review_issues'
 ]);
 export const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
 export const NOTIFICATION_JOB_TYPES = new Set(['send_admin_review_notification']);
@@ -98,6 +99,34 @@ function searchConsoleJobPayload(claim) {
   const endDate = canonicalIsoDate(payload.endDate);
   if (!startDate || !endDate || startDate > endDate) return null;
   return { startDate, endDate };
+}
+
+function reviewIssueOptimizationPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const allowedKeys = new Set([
+    'source',
+    'post_id',
+    'forced_mode',
+    'expected_review_version',
+    'issue_mode',
+    'issue_index'
+  ]);
+  if (Object.keys(payload).some((key) => !allowedKeys.has(key))
+      || payload.source !== 'admin_regeneration'
+      || payload.forced_mode !== 'review'
+      || !positiveDatabasePayloadInteger(payload.post_id)
+      || !positiveSafePayloadInteger(payload.expected_review_version)
+      || !['single', 'all'].includes(payload.issue_mode)) return null;
+  if (payload.issue_mode === 'single') {
+    if (!Object.hasOwn(payload, 'issue_index')
+        || typeof payload.issue_index !== 'number'
+        || !Number.isSafeInteger(payload.issue_index)
+        || payload.issue_index < 0) return null;
+  } else if (Object.hasOwn(payload, 'issue_index')) {
+    return null;
+  }
+  return payload;
 }
 
 function publicationJobPayload(claim) {
@@ -210,6 +239,8 @@ export function createProductionJobHandler({
   createPipelineDependencies,
   runRegenerationJob,
   createRegenerationDependencies,
+  runReviewIssueOptimizationJob,
+  createOptimizationDependencies,
   runAuditJob,
   createAuditDependencies,
   sendAdminReviewNotification,
@@ -228,6 +259,12 @@ export function createProductionJobHandler({
   return async function handleJob(claim, { leaseGuard } = {}) {
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
+    }
+    if (claim.job_type === 'optimize_review_issues' && !reviewIssueOptimizationPayload(claim)) {
+      throw permanentJobError(
+        'Der Prüfhinweis-Optimierungsjob enthält keinen gültigen Review- und Versionssnapshot.',
+        'CONTENT_REVIEW_OPTIMIZATION_JOB_PAYLOAD_INVALID'
+      );
     }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
       if (typeof leaseGuard !== 'function') {
@@ -443,11 +480,16 @@ export function createProductionJobHandler({
         throw error;
       }
     } else if (REGENERATION_JOB_TYPES.has(claim.job_type)) {
-      required(runRegenerationJob, 'runRegenerationJob');
-      required(createRegenerationDependencies, 'createRegenerationDependencies');
-      const regenerationDependencies = await createRegenerationDependencies(persistedSnapshot);
+      const reviewIssueOptimization = claim.job_type === 'optimize_review_issues';
+      const jobRunner = reviewIssueOptimization
+        ? required(runReviewIssueOptimizationJob, 'runReviewIssueOptimizationJob')
+        : required(runRegenerationJob, 'runRegenerationJob');
+      const dependencyFactory = reviewIssueOptimization
+        ? required(createOptimizationDependencies, 'createOptimizationDependencies')
+        : required(createRegenerationDependencies, 'createRegenerationDependencies');
+      const regenerationDependencies = await dependencyFactory(persistedSnapshot);
       try {
-        result = await runRegenerationJob({
+        result = await jobRunner({
           claim,
           run,
           runtimeSnapshot: persistedSnapshot,
@@ -695,6 +737,13 @@ export function createProductionRuntime({
       draftRepository: modules.createDraftRegenerationRepository(database)
     };
   }
+  function createOptimizationDependencies(snapshot = null) {
+    const dependencies = createPipelineDependencies(snapshot);
+    return {
+      ...dependencies,
+      optimizationRepository: modules.createContentReviewIssueOptimizationRepository(database)
+    };
+  }
   function createAuditDependencies() {
     return {
       auditRepository: modules.createContentAuditRepository(database)
@@ -715,12 +764,14 @@ export function createProductionRuntime({
       enforceRuleSnapshot: true,
       loadInitialInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService)),
       createPipelineDependencies,
-      createRegenerationDependencies
+      createRegenerationDependencies,
+      createOptimizationDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
     finishRun: repositories.runRepository.finishRun,
     runPipeline: modules.runDraftPipeline,
     runRegenerationJob: modules.runDraftRegenerationJob,
+    runReviewIssueOptimizationJob: modules.runReviewIssueOptimizationJob,
     runAuditJob: modules.runExistingContentAuditJob,
     createAuditDependencies,
     sendAdminReviewNotification: (input) => modules.sendAdminReviewNotification(input, {
@@ -858,6 +909,8 @@ export async function loadProductionModules() {
     runtimeConfigService,
     schedulerService,
     regenerationService,
+    reviewIssueOptimizationService,
+    reviewIssueOptimizationRepositoryModule,
     publicationService,
     auditService,
     auditRepositoryModule,
@@ -893,6 +946,8 @@ export async function loadProductionModules() {
     import('../services/contentAgent/runtimeConfigService.js'),
     import('../services/contentAgent/contentSchedulerService.js'),
     import('../services/contentAgent/draftRegenerationService.js'),
+    import('../services/contentAgent/reviewIssueOptimizationService.js'),
+    import('../repositories/contentReviewIssueOptimizationRepository.js'),
     import('../services/contentAgent/contentPublicationService.js'),
     import('../services/contentAgent/legacyAuditService.js'),
     import('../repositories/contentAuditRepository.js'),
@@ -930,6 +985,9 @@ export async function loadProductionModules() {
     schedulerService,
     runDraftRegenerationJob: regenerationService.runDraftRegenerationJob,
     createDraftRegenerationRepository: regenerationService.createDraftRegenerationRepository,
+    runReviewIssueOptimizationJob: reviewIssueOptimizationService.runReviewIssueOptimizationJob,
+    createContentReviewIssueOptimizationRepository:
+      reviewIssueOptimizationRepositoryModule.createContentReviewIssueOptimizationRepository,
     createContentPublicationService: publicationService.createContentPublicationService,
     createScheduledPublicationService: scheduledPublicationModule.createScheduledPublicationService,
     createBlogNewsletterService: blogNewsletterModule.createBlogNewsletterService,

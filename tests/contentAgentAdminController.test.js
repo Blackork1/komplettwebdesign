@@ -138,6 +138,110 @@ test('vier getrennte Regenerationsaktionen enqueuen minimale Reviewjobs mit Hard
   assert.equal(new Set(jobs.map(({ idempotencyKey }) => idempotencyKey)).size, 4);
 });
 
+test('gezielte Prüfhinweis-Optimierung reiht Einzel- und Sammelmodus mit Versionsfence ein', async () => {
+  const jobs = [];
+  const review = {
+    blocked: false,
+    items: [
+      { code: 'review_issue_1', instruction: 'CTA präzisieren.' },
+      { code: 'review_issue_2', instruction: 'Beispiel konkretisieren.' }
+    ]
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    runtimeConfig: { enabled: true, maxAttempts: 3, autoPublishEnabled: false },
+    settingsRepository: {
+      async getSettings() { return { agent_enabled: true, maximum_attempts: 5 }; }
+    },
+    draftService: {
+      async getDraftForReview(postId) {
+        return { id: postId, reviewVersion: 3, riskReview: review };
+      }
+    },
+    jobRepository: {
+      async enqueueJob(input) { jobs.push(input); return { id: jobs.length }; }
+    }
+  }));
+
+  for (const body of [
+    {
+      confirmed: 'true', expected_review_version: '3',
+      issue_mode: 'single', issue_index: '1'
+    },
+    {
+      confirmed: 'true', expected_review_version: '3', issue_mode: 'all'
+    }
+  ]) {
+    const res = response();
+    await controller.optimizeReviewIssuesAction({
+      params: { id: '19' },
+      body,
+      session: { user: { id: 7, username: 'admin' } }
+    }, res, assert.fail);
+    assert.equal(res.redirectedTo, '/admin/content-agent/drafts/19/edit?review_optimization=queued');
+  }
+
+  assert.equal(jobs.length, 2);
+  assert.equal(jobs[0].jobType, 'optimize_review_issues');
+  assert.match(jobs[0].idempotencyKey, /^optimize_review_issues:19:3:[0-9a-f-]+$/i);
+  assert.deepEqual(jobs[0].payload, {
+    source: 'admin_regeneration',
+    post_id: 19,
+    forced_mode: 'review',
+    expected_review_version: 3,
+    issue_mode: 'single',
+    issue_index: 1
+  });
+  assert.deepEqual(jobs[1].payload, {
+    source: 'admin_regeneration',
+    post_id: 19,
+    forced_mode: 'review',
+    expected_review_version: 3,
+    issue_mode: 'all'
+  });
+  assert.equal(jobs[0].maxAttempts, 3);
+});
+
+test('Prüfhinweis-Optimierung lehnt veraltete, blockierte und ungültige Auswahl ohne Job ab', async () => {
+  for (const { body, riskReview } of [
+    {
+      body: { confirmed: 'true', expected_review_version: '2', issue_mode: 'all' },
+      riskReview: { blocked: false, items: [{ code: 'review_issue_1' }] }
+    },
+    {
+      body: { confirmed: 'true', expected_review_version: '3', issue_mode: 'all' },
+      riskReview: { blocked: true, items: [{ code: 'review_issue_1' }] }
+    },
+    {
+      body: {
+        confirmed: 'true', expected_review_version: '3',
+        issue_mode: 'single', issue_index: '4'
+      },
+      riskReview: { blocked: false, items: [{ code: 'review_issue_1' }] }
+    }
+  ]) {
+    let enqueueCalls = 0;
+    const controller = createAdminContentAgentController(baseDependencies({
+      settingsRepository: {
+        async getSettings() { return { agent_enabled: true, maximum_attempts: 3 }; }
+      },
+      draftService: {
+        async getDraftForReview() {
+          return { reviewVersion: 3, riskReview };
+        }
+      },
+      jobRepository: {
+        async enqueueJob() { enqueueCalls += 1; return { id: 1 }; }
+      }
+    }));
+    const res = response();
+    await controller.optimizeReviewIssuesAction({
+      params: { id: '19' }, body, session: { user: { id: 7, username: 'admin' } }
+    }, res, assert.fail);
+    assert.equal(enqueueCalls, 0);
+    assert.equal(res.statusCode, 409);
+  }
+});
+
 test('Regeneration ist bei operativer Pause oder technischem Not-Aus gesperrt', async () => {
   for (const { runtimeConfig, settings } of [
     { runtimeConfig: { enabled: true, maxAttempts: 3 }, settings: { agent_enabled: false } },

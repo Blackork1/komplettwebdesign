@@ -37,6 +37,7 @@ const POST_PATHS = [
   '/admin/content-agent/drafts/:id/regenerate-faq',
   '/admin/content-agent/drafts/:id/regenerate-metadata',
   '/admin/content-agent/drafts/:id/regenerate-article',
+  '/admin/content-agent/drafts/:id/optimize-review',
   '/admin/content-agent/drafts/:id/approve-scheduled',
   '/admin/content-agent/drafts/:id/publish-now',
   '/admin/content-agent/drafts/:id/reschedule',

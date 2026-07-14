@@ -180,6 +180,22 @@ test('Admin-Regenerationsjobs werden atomar durch den operativen Agentschalter g
   assert.match(db.calls[0].sql, /WHERE \$6 = FALSE OR EXISTS/i);
 });
 
+test('Prüfhinweis-Optimierungen werden atomar durch den operativen Agentschalter geschützt', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 72, status: 'queued' }] }]);
+  await enqueueJob({
+    jobType: 'optimize_review_issues',
+    idempotencyKey: 'optimize_review_issues:19:3:uuid',
+    payload: {
+      source: 'admin_regeneration',
+      post_id: 19,
+      forced_mode: 'review',
+      expected_review_version: 3,
+      issue_mode: 'all'
+    }
+  }, db);
+  assert.equal(db.calls[0].params.at(-1), true);
+});
+
 test('manueller GSC-Sync wird atomar gegated und verwendet ausschließlich einen manuellen Tages-Key', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 72, status: 'queued' }] }]);
   const payload = { startDate: '2026-06-16', endDate: '2026-07-13' };

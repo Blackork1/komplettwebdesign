@@ -22,6 +22,7 @@ test('Regelmanifest enthält alle prompt- und entscheidungsrelevanten Versionen 
     'brandPolicyPrompt',
     'internalLinkNormalization',
     'riskReport',
+    'reviewIssueOptimizationPolicy',
     'seoBriefPrompt',
     'topicResearchPrompt',
     'topicScoring',

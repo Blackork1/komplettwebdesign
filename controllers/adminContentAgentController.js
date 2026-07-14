@@ -22,6 +22,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_SCHEDULE_SETTINGS_STALE',
   'CONTENT_DRAFT_EDIT_CONFLICT',
   'CONTENT_REVIEW_VERSION_STALE',
+  'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED'
 ]);
@@ -50,6 +51,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
   CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
+  CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.'
 });
@@ -272,6 +274,21 @@ function strictPositiveInteger(value) {
   return positiveId(value);
 }
 
+function strictNonNegativeInteger(value) {
+  if (typeof value !== 'string' || !/^(?:0|[1-9]\d*)$/.test(value)) {
+    throw Object.assign(new Error('Ungültiger Hinweisindex.'), {
+      code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+    });
+  }
+  const number = Number(value);
+  if (!Number.isSafeInteger(number)) {
+    throw Object.assign(new Error('Ungültiger Hinweisindex.'), {
+      code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+    });
+  }
+  return number;
+}
+
 function canonicalNullablePositiveInteger(value) {
   if (value === null || value === undefined) return 'null';
   const normalized = Number(value);
@@ -387,6 +404,71 @@ export function createAdminContentAgentController(dependencies) {
       res,
       next
     });
+  }
+
+  async function enqueueReviewIssueOptimization(req) {
+    if (!criticalConfirmation(req.body?.confirmed)) {
+      throw Object.assign(new Error('Bestätigung fehlt.'), {
+        code: 'CONTENT_CONFIRMATION_REQUIRED'
+      });
+    }
+    const postId = positiveId(req.params.id);
+    const expectedReviewVersion = strictPositiveInteger(req.body?.expected_review_version);
+    const issueMode = req.body?.issue_mode;
+    if (!['single', 'all'].includes(issueMode)) {
+      throw Object.assign(new Error('Ungültiger Optimierungsmodus.'), {
+        code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+      });
+    }
+    const settings = await requireAdminEnqueueEnabled();
+    if (typeof draftService?.getDraftForReview !== 'function') {
+      throw Object.assign(new Error('Entwurfsprüfung nicht verfügbar.'), {
+        code: 'CONTENT_DRAFT_NOT_FOUND'
+      });
+    }
+    const draft = await draftService.getDraftForReview(postId);
+    const riskReview = draft?.riskReview;
+    const items = Array.isArray(riskReview?.items) ? riskReview.items : [];
+    if (Number(draft?.reviewVersion) !== expectedReviewVersion) {
+      throw Object.assign(new Error('Veraltete Reviewversion.'), {
+        code: 'CONTENT_REVIEW_VERSION_STALE'
+      });
+    }
+    if (riskReview?.blocked === true || items.length === 0) {
+      throw Object.assign(new Error('Prüfhinweis-Optimierung nicht verfügbar.'), {
+        code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+      });
+    }
+    const issueIndex = issueMode === 'single'
+      ? strictNonNegativeInteger(req.body?.issue_index)
+      : null;
+    if (issueMode === 'single' && !items[issueIndex]) {
+      throw Object.assign(new Error('Prüfhinweis nicht gefunden.'), {
+        code: 'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE'
+      });
+    }
+    const job = await jobRepository.enqueueJob({
+      jobType: 'optimize_review_issues',
+      idempotencyKey: `optimize_review_issues:${postId}:${expectedReviewVersion}:${randomUUID()}`,
+      payload: {
+        source: 'admin_regeneration',
+        post_id: postId,
+        forced_mode: 'review',
+        expected_review_version: expectedReviewVersion,
+        issue_mode: issueMode,
+        ...(issueMode === 'single' ? { issue_index: issueIndex } : {})
+      },
+      maxAttempts: Math.min(
+        Number(settings.maximum_attempts),
+        Number(runtimeConfig.maxAttempts)
+      )
+    });
+    if (!job) {
+      throw Object.assign(new Error('Content-Agent deaktiviert.'), {
+        code: 'CONTENT_AGENT_DISABLED'
+      });
+    }
+    return job;
   }
 
   return {
@@ -541,6 +623,7 @@ export function createAdminContentAgentController(dependencies) {
           ),
           saved: req.query?.saved === '1',
           queued: req.query?.queued === '1',
+          reviewOptimizationQueued: req.query?.review_optimization === 'queued',
           approved: req.query?.approved === '1',
           rescheduled: req.query?.rescheduled === '1',
           notificationRetried: req.query?.notification_retried === '1'
@@ -925,6 +1008,17 @@ export function createAdminContentAgentController(dependencies) {
 
     regenerateDraftAction(req, res, next) {
       return regenerationAction('regenerate_article', req, res, next);
+    },
+
+    optimizeReviewIssuesAction(req, res, next) {
+      return actionCapability({
+        capability: { enqueue: () => enqueueReviewIssueOptimization(req) },
+        method: 'enqueue',
+        args: [],
+        redirect: `/admin/content-agent/drafts/${req.params.id}/edit?review_optimization=queued`,
+        res,
+        next
+      });
     },
 
     async enqueueAuditAction(req, res, next) {

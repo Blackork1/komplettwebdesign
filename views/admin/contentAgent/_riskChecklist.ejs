@@ -1,6 +1,7 @@
 <% const focusedRiskReview = typeof riskReview !== 'undefined' && riskReview && typeof riskReview === 'object' ? riskReview : {}; %>
 <% const focusedRiskItems = Array.isArray(focusedRiskReview.items) ? focusedRiskReview.items : []; %>
 <% const verificationLabels = { none: 'Redaktionell', source: 'Quelle', date: 'Aktualität', price: 'Preis', version: 'Version', legal: 'Recht', privacy: 'Datenschutz' }; %>
+<% const optimizationActionsEnabled = typeof actionsEnabled !== 'undefined' && actionsEnabled === true && focusedRiskReview.blocked !== true; %>
 <% if (focusedRiskItems.length) { %>
   <aside class="content-agent-risk-checklist" aria-labelledby="focused-risk-heading">
     <div class="content-agent-risk-checklist__head">
@@ -13,7 +14,7 @@
       </span>
     </div>
     <ol class="content-agent-risk-checklist__items">
-      <% focusedRiskItems.forEach((item) => { %>
+      <% focusedRiskItems.forEach((item, itemIndex) => { %>
         <li class="content-agent-risk-checklist__item">
           <div class="content-agent-risk-checklist__meta">
             <a href="#<%= item.anchor %>"><%= item.section %></a>
@@ -25,9 +26,29 @@
           <p><strong>Begründung:</strong> <%= item.reason %></p>
           <p><strong>Prüfanweisung:</strong> <%= item.instruction %></p>
           <small>Kategorie: <%= item.code %></small>
+          <% if (optimizationActionsEnabled) { %>
+            <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" class="mt-3" data-confirm="Diesen Prüfhinweis mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="confirmed" value="true">
+              <input type="hidden" name="expected_review_version" value="<%= reviewVersion %>">
+              <input type="hidden" name="issue_mode" value="single">
+              <input type="hidden" name="issue_index" value="<%= itemIndex %>">
+              <button class="btn btn-sm btn-outline-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Diesen Hinweis beheben</button>
+            </form>
+          <% } %>
         </li>
       <% }) %>
     </ol>
-    <p class="content-agent-quiet mb-0"><%= Number(focusedRiskReview.sourceCount || 0) %> Quellen im Bericht</p>
+    <p class="content-agent-quiet"><%= Number(focusedRiskReview.sourceCount || 0) %> Quellen im Bericht</p>
+    <% if (optimizationActionsEnabled) { %>
+      <div class="alert alert-info mb-3" role="status"><strong>Kostenhinweis:</strong> Die Sammeloptimierung verwendet eine Textreparatur und eine redaktionelle Prüfung. Der Artikel bleibt unveröffentlicht und muss anschließend erneut freigegeben werden.</div>
+      <form method="post" action="/admin/content-agent/drafts/<%= postId %>/optimize-review" data-confirm="Alle Prüfhinweise mit einer kostenpflichtigen Textreparatur und einer redaktionellen Prüfung bearbeiten? Der Artikel bleibt unveröffentlicht.">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="expected_review_version" value="<%= reviewVersion %>">
+        <input type="hidden" name="issue_mode" value="all">
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Alle Hinweise optimieren und neu prüfen</button>
+      </form>
+    <% } %>
   </aside>
 <% } %>

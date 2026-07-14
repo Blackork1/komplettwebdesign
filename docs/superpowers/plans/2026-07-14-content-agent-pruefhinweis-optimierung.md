@@ -37,7 +37,7 @@
 - Consumes: `draftService.getDraftForReview(postId)` und `jobRepository.enqueueJob(input)`.
 - Produces: `optimizeReviewIssuesAction(req, res, next)` und POST `/admin/content-agent/drafts/:id/optimize-review`.
 
-- [ ] **Step 1: Failing View- und Routentests schreiben**
+- [x] **Step 1: Failing View- und Routentests schreiben**
 
 Die Tests rendern einen Entwurf mit einem nicht blockierenden `focusedReview` und verlangen:
 
@@ -53,7 +53,7 @@ assert.match(html, /Alle Hinweise optimieren und neu prüfen/);
 
 Der Routentest verlangt die neue Route hinter `isAdmin` und `verifyCsrfToken`.
 
-- [ ] **Step 2: RED verifizieren**
+- [x] **Step 2: RED verifizieren**
 
 Run:
 
@@ -63,7 +63,7 @@ node --test tests/contentAgentAdminController.test.js tests/contentAgentAdminRou
 
 Expected: FAIL, weil Route, Controlleraktion und Formulare fehlen.
 
-- [ ] **Step 3: Controllervertrag minimal implementieren**
+- [x] **Step 3: Controllervertrag minimal implementieren**
 
 Die Aktion akzeptiert ausschließlich:
 
@@ -96,11 +96,11 @@ await jobRepository.enqueueJob({
 
 Ungültige oder veraltete Werte erhalten sichere 409-Fehlercodes; fehlende Bestätigung erhält 400.
 
-- [ ] **Step 4: Formulare und Queuehinweis implementieren**
+- [x] **Step 4: Formulare und Queuehinweis implementieren**
 
 `draftEdit.ejs` übergibt `postId`, `csrf`, `reviewVersion` und `actionsEnabled` an `_riskChecklist.ejs`. Der Partial rendert pro Hinweis ein Einzelaktionsformular und unter der Liste ein Sammelformular. Beide enthalten eine Kostenwarnung im Bestätigungsdialog und werden bei blockiertem Bericht nicht gerendert.
 
-- [ ] **Step 5: GREEN verifizieren**
+- [x] **Step 5: GREEN verifizieren**
 
 Run:
 
@@ -122,7 +122,7 @@ Expected: PASS.
 - Produces: `REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE`, `selectOptimizationIssues(draft, payload)` und `buildOptimizationCandidate(draft, repairedArticle)`.
 - Consumes: persistierten `quality_report_json.focusedReview`, `ArticleOutputSchema` und `ReviewOutputSchema`.
 
-- [ ] **Step 1: Failing Vertragstests schreiben**
+- [x] **Step 1: Failing Vertragstests schreiben**
 
 Die Tests beweisen:
 
@@ -145,7 +145,7 @@ assert.equal(
 
 Zusätzliche Tests lehnen veraltete Version, leere Hinweise, blockierten Bericht, ungültigen Modus und außerhalb liegenden Index vor jedem Provideraufruf ab.
 
-- [ ] **Step 2: RED verifizieren**
+- [x] **Step 2: RED verifizieren**
 
 Run:
 
@@ -155,11 +155,11 @@ node --test tests/contentReviewIssueOptimizationService.test.js
 
 Expected: FAIL mit fehlendem Modul beziehungsweise fehlenden Exporten.
 
-- [ ] **Step 3: Reine Selektions- und Mergefunktionen implementieren**
+- [x] **Step 3: Reine Selektions- und Mergefunktionen implementieren**
 
 `selectOptimizationIssues` liefert im Einzelmodus genau den persistierten Hinweis und im Sammelmodus eine Kopie aller persistierten Hinweise. `buildOptimizationCandidate` baut den vollständigen Artikel aus dem aktuellen Entwurf und ersetzt ausschließlich `contentHtml` durch das Reparaturergebnis.
 
-- [ ] **Step 4: GREEN verifizieren**
+- [x] **Step 4: GREEN verifizieren**
 
 Run:
 
@@ -181,7 +181,7 @@ Expected: PASS.
 - Produces: `runReviewIssueOptimizationJob({ claim, run, runtimeSnapshot, leaseGuard }, dependencies)`.
 - Consumes: `openaiService.repairArticle`, `openaiService.reviewArticle`, `validateArticle`, `buildFocusedRiskReport`, `costService`, `runRepository` und `optimizationRepository`.
 
-- [ ] **Step 1: Failing Pipeline-Tests schreiben**
+- [x] **Step 1: Failing Pipeline-Tests schreiben**
 
 Der Erfolgstest erwartet die Reihenfolge:
 
@@ -205,7 +205,7 @@ Weitere Tests beweisen:
 - Eine offene Providerreservierung wird nicht erneut ausgeführt.
 - Stale-Version stoppt vor Budgetreservierung und Provideraufruf.
 
-- [ ] **Step 2: RED verifizieren**
+- [x] **Step 2: RED verifizieren**
 
 Run:
 
@@ -215,7 +215,7 @@ node --test tests/contentReviewIssueOptimizationService.test.js
 
 Expected: FAIL, weil der Jobrunner fehlt.
 
-- [ ] **Step 3: Zwei persistente Providerstufen implementieren**
+- [x] **Step 3: Zwei persistente Providerstufen implementieren**
 
 Jede Stufe verwendet einen Envelope:
 
@@ -233,7 +233,7 @@ Jede Stufe verwendet einen Envelope:
 
 Die Stufe reserviert das Budget, prüft die Lease, ruft den Provider, persistiert den Envelope, rechnet das Budget ab und protokolliert den Providerzustand. Persistierte, schemagültige Envelopes werden ohne zweiten Provideraufruf übernommen.
 
-- [ ] **Step 4: Qualitäts-Gate implementieren**
+- [x] **Step 4: Qualitäts-Gate implementieren**
 
 Nach der Reparatur wird ausschließlich `contentHtml` übernommen und `validateArticle` ausgeführt. Der Reviewer prüft die sanitizierte Fassung. `buildFocusedRiskReport` erzeugt den neuen Bericht. Commit ist nur erlaubt, wenn:
 
@@ -245,7 +245,7 @@ review.passed === true
 && focusedReview.blocked === false
 ```
 
-- [ ] **Step 5: GREEN verifizieren**
+- [x] **Step 5: GREEN verifizieren**
 
 Run:
 
@@ -269,7 +269,7 @@ Expected: PASS.
 - Produces: `createContentReviewIssueOptimizationRepository(db)` mit `getDraftWithMetadata(postId)`, `getValidationContext(postId, draft)`, `commitOptimization(input)` und `reconcileOptimizationCommit(input)`.
 - Consumes: `postId`, `expectedReviewVersion`, sanitizierte HTML-Fassung, Score, Qualitätsbericht und Commit-Key.
 
-- [ ] **Step 1: Failing Repositorytests schreiben**
+- [x] **Step 1: Failing Repositorytests schreiben**
 
 Der Test erwartet eine Transaktion, die:
 
@@ -287,7 +287,7 @@ WHERE id = $1 AND review_version = $3
 
 und in derselben Transaktion `content_post_metadata.quality_score`, `quality_report_json` sowie `generation_metadata_json.lastReviewIssueOptimization` aktualisiert.
 
-- [ ] **Step 2: RED verifizieren**
+- [x] **Step 2: RED verifizieren**
 
 Run:
 
@@ -297,7 +297,7 @@ node --test tests/contentReviewIssueOptimizationRepository.test.js
 
 Expected: FAIL mit fehlendem Repository.
 
-- [ ] **Step 3: Repository und Fence implementieren**
+- [x] **Step 3: Repository und Fence implementieren**
 
 Der Commit-Key folgt exakt:
 
@@ -307,11 +307,11 @@ Der Commit-Key folgt exakt:
 
 Ein vorhandener identischer Fence liefert idempotent denselben Zustand. Eine andere Reviewversion liefert `CONTENT_REGENERATION_STALE`. Ein unklarer Commit wird über Fence und Reviewversion als `committed`, `not_committed` oder `concurrent` abgeglichen.
 
-- [ ] **Step 4: Echten PostgreSQL-Test ergänzen**
+- [x] **Step 4: Echten PostgreSQL-Test ergänzen**
 
 Der Integrationstest erzeugt einen unveröffentlichten Entwurf mit fokussiertem Hinweis, führt den Commit aus und prüft anschließend HTML, Score, Bericht, Reviewversion, gelöschte Freigabe und Fence in derselben Datenbank.
 
-- [ ] **Step 5: GREEN verifizieren**
+- [x] **Step 5: GREEN verifizieren**
 
 Run:
 
@@ -338,7 +338,7 @@ Expected: PASS.
 - Consumes: `REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE`, `runReviewIssueOptimizationJob` und `createContentReviewIssueOptimizationRepository`.
 - Produces: produktive Ausführung des neuen Jobs im vorhandenen Worker.
 
-- [ ] **Step 1: Failing Integrations-Vertragstests schreiben**
+- [x] **Step 1: Failing Integrations-Vertragstests schreiben**
 
 Die Tests verlangen:
 
@@ -349,7 +349,7 @@ assert.equal(REGENERATION_JOB_TYPES.has('optimize_review_issues'), true);
 
 Sie prüfen außerdem, dass der Job nur mit `source: 'admin_regeneration'`, `forced_mode: 'review'`, gültiger Payloadstruktur und aktivem Agenten ausgeführt wird.
 
-- [ ] **Step 2: RED verifizieren**
+- [x] **Step 2: RED verifizieren**
 
 Run:
 
@@ -359,15 +359,15 @@ node --test tests/contentAgentJobRepository.test.js tests/contentAgentWorker.tes
 
 Expected: FAIL, weil Jobtyp und Produktionsmodule fehlen.
 
-- [ ] **Step 3: Worker verdrahten**
+- [x] **Step 3: Worker verdrahten**
 
 `loadProductionModules` lädt Service und Repository. `createProductionRuntime` erzeugt die Optimierungsabhängigkeiten mit derselben OpenAI-, Budget-, Validator- und Providerzustandskonfiguration wie die bestehende Pipeline. Der Handler ruft für den neuen Job ausschließlich `runReviewIssueOptimizationJob` auf.
 
-- [ ] **Step 4: Regelmanifest versionieren**
+- [x] **Step 4: Regelmanifest versionieren**
 
 Eine eigene Optimierungs-Promptversion wird in das signierte Content-Regelmanifest aufgenommen, damit ein laufender Job keine unbemerkte Aufgabenänderung übernimmt.
 
-- [ ] **Step 5: GREEN verifizieren**
+- [x] **Step 5: GREEN verifizieren**
 
 Run:
 
@@ -390,11 +390,11 @@ Expected: PASS.
 - Consumes: optimierten Entwurf mit neuem Qualitätsbericht.
 - Produces: belegte Veröffentlichbarkeit nach manueller Freigabe.
 
-- [ ] **Step 1: Failing Veröffentlichungstest schreiben**
+- [x] **Step 1: Failing Veröffentlichungstest schreiben**
 
 Der Test führt den optimierten Artikel samt neuem Qualitätsbericht durch die vorhandene Veröffentlichungsvalidierung und erwartet keinen `risk_review_inconsistent`-Fehler.
 
-- [ ] **Step 2: RED verifizieren und minimale Korrektur ausführen**
+- [x] **Step 2: RED verifizieren und minimale Korrektur ausführen**
 
 Run:
 
@@ -404,7 +404,7 @@ node --test tests/contentPublicationService.test.js tests/contentReviewIssueOpti
 
 Expected: Der neue Test muss vor vollständiger Persistenzintegration fehlschlagen und danach bestehen.
 
-- [ ] **Step 3: Vollständige Verifikation ausführen**
+- [x] **Step 3: Vollständige Verifikation ausführen**
 
 Run:
 
@@ -417,10 +417,10 @@ CONTENT_AGENT_PG_TEST_URL=postgresql://blocksdorf@127.0.0.1/kwd_content_agent_in
 
 Expected: 0 fehlgeschlagene Tests, erfolgreicher Build, erfolgreicher echter PostgreSQL-Test.
 
-- [ ] **Step 4: Planstatus aktualisieren und Änderungen committen**
+- [x] **Step 4: Planstatus aktualisieren und Änderungen committen**
 
 Alle erledigten Checkboxen werden auf `[x]` gesetzt. Danach werden ausschließlich die zu diesem Plan gehörenden Dateien gestaged und mit einer deutschen, eindeutigen Zusammenfassung geprüft.
 
-- [ ] **Step 5: Auf `main` pushen und VPS verifizieren**
+- [x] **Step 5: Auf `main` pushen und VPS verifizieren**
 
 Nach erfolgreichem Push werden auf `~/apps/komplettwebdesign` Git-Stand, App, Worker, HTTP-Status und neue Adminaktion geprüft. Es sind keine `.env`- oder `docker-compose.yml`-Änderungen vorgesehen.

@@ -11,6 +11,7 @@ import { promptVersion as seoBriefPrompt } from './prompts/seoBriefPrompt.js';
 import { promptVersion as topicResearchPrompt } from './prompts/topicResearchPrompt.js';
 import { promptVersion as webResearchPrompt } from './prompts/webResearchPrompt.js';
 import { RISK_REPORT_VERSION } from './riskReportService.js';
+import { REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION } from './reviewIssueOptimizationService.js';
 import { TOPIC_SCORING_VERSION } from './topicScoringService.js';
 import {
   INTERNAL_LINK_NORMALIZATION_VERSION,
@@ -46,6 +47,7 @@ export const CONTENT_AGENT_RULE_MANIFEST = Object.freeze({
   brandPolicyPrompt,
   internalLinkNormalization: INTERNAL_LINK_NORMALIZATION_VERSION,
   riskReport: RISK_REPORT_VERSION,
+  reviewIssueOptimizationPolicy: REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION,
   seoBriefPrompt,
   topicResearchPrompt,
   topicScoring: TOPIC_SCORING_VERSION,

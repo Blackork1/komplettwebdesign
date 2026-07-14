@@ -35,6 +35,7 @@ import { createScheduledPublicationService } from '../services/contentAgent/sche
 import { createContentPublishEventRepository } from '../repositories/contentPublishEventRepository.js';
 import { createContentAgentAdminRepository } from '../repositories/contentAgentAdminRepository.js';
 import { createDraftRegenerationRepository } from '../services/contentAgent/draftRegenerationService.js';
+import { createContentReviewIssueOptimizationRepository } from '../repositories/contentReviewIssueOptimizationRepository.js';
 import {
   createContentAgentPgTestSchemaName,
   evaluateContentAgentPgResetGuard
@@ -1801,6 +1802,54 @@ test('echtes PostgreSQL: Migrationen 002–008 und Generate→Notify→Approve�
     );
 
     const regenerationRepository = createDraftRegenerationRepository(pool);
+    const reviewOptimizationRepository = createContentReviewIssueOptimizationRepository(pool);
+    const optimizationDraft = await insertPublishableDraft(pool, 'review-optimization', 72);
+    await pool.query(`
+      UPDATE posts
+      SET workflow_status = 'approved_scheduled',
+          approved_review_version = review_version,
+          approved_at = NOW(),
+          approved_by_admin_id = $2,
+          scheduled_at = NOW() + INTERVAL '1 day'
+      WHERE id = $1
+    `, [optimizationDraft.id, publicationAdmin.rows[0].id]);
+    const optimizationVersion = Number(optimizationDraft.review_version);
+    const optimizedHtml = publishableHtml(publishableFaq()).replace(
+      'Abschlussberatung anfragen',
+      'Go-live-Prüfung konkret anfragen'
+    );
+    const optimizedReport = publishQualityReport(93);
+    const optimized = await reviewOptimizationRepository.commitOptimization({
+      postId: optimizationDraft.id,
+      contentHtml: optimizedHtml,
+      qualityScore: 93,
+      qualityReport: optimizedReport,
+      expectedReviewVersion: optimizationVersion,
+      commitKey: `987:optimize_review_issues:${optimizationDraft.id}`
+    });
+    assert.equal(optimized.post.review_version, optimizationVersion + 1);
+    assert.equal(optimized.post.workflow_status, 'needs_review');
+    assert.equal(optimized.post.approved_review_version, null);
+    assert.equal(optimized.post.approved_at, null);
+    assert.equal(optimized.post.approved_by_admin_id, null);
+    assert.equal(optimized.post.content, optimizedHtml);
+    assert.equal(optimized.metadata.quality_score, 93);
+    assert.deepEqual(optimized.metadata.quality_report_json, optimizedReport);
+    assert.equal(
+      optimized.metadata.generation_metadata_json.lastReviewIssueOptimization.commitKey,
+      `987:optimize_review_issues:${optimizationDraft.id}`
+    );
+    const optimizedRetry = await reviewOptimizationRepository.commitOptimization({
+      postId: optimizationDraft.id,
+      contentHtml: optimizedHtml,
+      qualityScore: 93,
+      qualityReport: optimizedReport,
+      expectedReviewVersion: optimizationVersion,
+      commitKey: `987:optimize_review_issues:${optimizationDraft.id}`
+    });
+    assert.equal(optimizedRetry.idempotent, true);
+    assert.equal(optimizedRetry.post.review_version, optimizationVersion + 1);
+
     const textRaceDraft = await insertPublishableDraft(pool, 'text-race');
     const textRace = await settleWithoutPostLockFailure([
       publicationService.publishDraftManually({

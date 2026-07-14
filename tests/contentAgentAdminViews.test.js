@@ -548,6 +548,79 @@ test('Drafteditor bietet vier Regenerationen ohne alten direkten Publish-Bypass'
   assert.match(html, /data-confirm="[^"]*(?:veröffentlichen|ablehnen)/i);
 });
 
+test('Drafteditor bietet einzelne und gemeinsame Optimierung für nicht blockierende Prüfhinweise', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('draftEdit.ejs')), {
+    ...baseLocals,
+    draft: {
+      id: 19,
+      title: 'Entwurf',
+      shortDescription: 'Kurzbeschreibung',
+      slug: 'entwurf',
+      metaTitle: 'Meta Title mit ausreichend vielen Zeichen für Google',
+      metaDescription: 'Meta Description mit ausreichend vielen Zeichen für die sichere Vorschau und die spätere Suchdarstellung des Artikels.',
+      ogTitle: 'OG-Titel',
+      ogDescription: 'OG-Beschreibung',
+      imageAlt: 'Bildbeschreibung',
+      contentHtml: '<section><h2>Artikel</h2></section>',
+      faqJsonText: '[]',
+      reviewVersion: 3,
+      editorRiskReview: {
+        blocked: false,
+        sourceCount: 0,
+        items: [
+          {
+            code: 'review_issue_1', section: 'Artikel', anchor: 'draft-content-html',
+            verificationType: 'none', sourceRequired: false, blocking: false,
+            excerpt: 'Bisheriger CTA', reason: 'Zu allgemein.', instruction: 'CTA präzisieren.'
+          },
+          {
+            code: 'review_issue_2', section: 'Artikel', anchor: 'draft-content-html',
+            verificationType: 'none', sourceRequired: false, blocking: false,
+            excerpt: 'Allgemeines Beispiel', reason: 'Zu abstrakt.', instruction: 'Beispiel konkretisieren.'
+          }
+        ]
+      }
+    },
+    saved: false,
+    queued: false,
+    reviewOptimizationQueued: false
+  });
+
+  const action = 'action="/admin/content-agent/drafts/19/optimize-review"';
+  assert.equal((html.match(new RegExp(action, 'g')) || []).length, 3);
+  assert.equal((html.match(/name="issue_mode" value="single"/g) || []).length, 2);
+  assert.match(html, /name="issue_index" value="0"/);
+  assert.match(html, /name="issue_index" value="1"/);
+  assert.match(html, /name="issue_mode" value="all"/);
+  assert.equal((html.match(/name="expected_review_version" value="3"/g) || []).length >= 3, true);
+  assert.equal((html.match(/name="confirmed" value="true"/g) || []).length >= 4, true);
+  assert.match(html, /Diesen Hinweis beheben/);
+  assert.match(html, /Alle Hinweise optimieren und neu prüfen/);
+  assert.match(html, /eine Textreparatur und eine redaktionelle Prüfung/i);
+  assert.match(html, /bleibt unveröffentlicht/i);
+});
+
+test('blockierte Prüfberichte bieten keine automatische Optimierung an', async () => {
+  const partial = await renderFile(fileURLToPath(viewUrl('_riskChecklist.ejs')), {
+    riskReview: {
+      blocked: true,
+      sourceCount: 1,
+      items: [{
+        code: 'risk_legal_claims', section: 'Artikel', anchor: 'draft-content-html',
+        verificationType: 'legal', sourceRequired: true, blocking: true,
+        excerpt: 'Rechtliche Aussage', reason: 'Prüfung nötig.', instruction: 'Quelle prüfen.'
+      }]
+    },
+    postId: 19,
+    csrf: 'csrf-test',
+    reviewVersion: 3,
+    actionsEnabled: false
+  });
+
+  assert.match(partial, /Veröffentlichung blockiert/);
+  assert.doesNotMatch(partial, /optimize-review|Diesen Hinweis beheben|Alle Hinweise optimieren/);
+});
+
 test('Adminnavigation und Dashboard führen sichtbar zum Content-Agenten', async () => {
   const [header, adminDashboard] = await Promise.all([
     readFile(new URL('../views/partials/admin_header.ejs', import.meta.url), 'utf8'),
