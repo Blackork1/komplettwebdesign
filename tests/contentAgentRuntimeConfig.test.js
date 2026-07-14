@@ -24,6 +24,7 @@ const technicalConfig = Object.freeze({
   contentOutputCostPerMtok: 15,
   reviewInputCostPerMtok: 0.75,
   reviewOutputCostPerMtok: 4.5,
+  webSearchCostPerCallEur: 0.01,
   imageCostEur: 0.041,
   contentModel: 'content-model',
   reviewModel: 'review-model',
@@ -175,6 +176,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     contentOutputCostPerMtok: 15,
     reviewInputCostPerMtok: 0.75,
     reviewOutputCostPerMtok: 4.5,
+    webSearchCostPerCallEur: 0.01,
     imageCostEur: 0.041,
     contentModel: 'content-model',
     reviewModel: 'review-model',
@@ -186,4 +188,14 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     ruleManifestHash: CONTENT_AGENT_RULE_MANIFEST_HASH
   });
   assert.equal(Object.isFrozen(snapshot), true);
+});
+
+test('neuer Bestandsoptimierungs-Snapshot verlangt vor Persistenz einen endlichen Websuchepreis', () => {
+  assert.throws(() => createContentAgentJobSnapshot({
+    runtimeConfig: { ...technicalConfig, webSearchCostPerCallEur: undefined },
+    claim: {
+      job_type: 'optimize_existing_post',
+      payload_json: { source: 'admin_existing_content' }
+    }
+  }), (error) => error?.code === 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID');
 });

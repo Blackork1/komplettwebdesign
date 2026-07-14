@@ -42,6 +42,17 @@ export function createContentAgentJobSnapshot({
   requireAllowedInternalLinks = false,
   activeLearningRules = []
 }) {
+  const existingPostOptimization = claim?.job_type === 'optimize_existing_post'
+    || claim?.payload_json?.source === 'admin_existing_content';
+  if (existingPostOptimization
+      && (typeof runtimeConfig?.webSearchCostPerCallEur !== 'number'
+        || !Number.isFinite(runtimeConfig.webSearchCostPerCallEur)
+        || runtimeConfig.webSearchCostPerCallEur < 0)) {
+    throw Object.assign(
+      new TypeError('Für die Bestandsoptimierung fehlt ein gültiger technischer Websuchepreis.'),
+      { code: 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID' }
+    );
+  }
   return bindContentRulesToSnapshot({
     baseSnapshot: {
       version: 3,
@@ -69,6 +80,7 @@ export function createContentAgentJobSnapshot({
       contentOutputCostPerMtok: runtimeConfig.contentOutputCostPerMtok,
       reviewInputCostPerMtok: runtimeConfig.reviewInputCostPerMtok,
       reviewOutputCostPerMtok: runtimeConfig.reviewOutputCostPerMtok,
+      webSearchCostPerCallEur: runtimeConfig.webSearchCostPerCallEur,
       imageCostEur: runtimeConfig.imageCostEur,
       contentModel: runtimeConfig.contentModel,
       reviewModel: runtimeConfig.reviewModel,

@@ -423,7 +423,32 @@ test('generischer Admin-Retry schließt Prüfmailjobs atomar im Update-CAS aus',
   assert.equal(db.calls.length, 1);
   assert.match(db.calls[0].sql, /^UPDATE content_jobs/i);
   assert.match(db.calls[0].sql, /job_type <> 'send_admin_review_notification'/i);
+  assert.match(db.calls[0].sql, /NOT EXISTS[\s\S]*jsonb_each[\s\S]*status[^=]*=[^']*'reserved'/i);
   assert.doesNotMatch(db.calls[0].sql, /^SELECT|;\s*SELECT/i);
+});
+
+test('Admin-Retry lässt Bestandsoptimierungen nur nach sicheren Fehlern ohne offene Reservierung zu', async () => {
+  const db = createQueryRecorder([{ rows: [{
+    id: 24,
+    job_type: 'optimize_existing_post',
+    status: 'queued'
+  }] }]);
+
+  const result = await retryContentJobForAdmin({ jobId: 24 }, db);
+
+  assert.equal(result.status, 'queued');
+  assert.match(
+    db.calls[0].sql,
+    /job_type <> 'optimize_existing_post'[\s\S]*last_error IN \('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST'\)/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /EXISTS \( SELECT 1 FROM content_runs[\s\S]*status = 'running'/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /NOT EXISTS \( SELECT 1 FROM content_runs[\s\S]*jsonb_each[\s\S]*status[^=]*=[^']*'reserved'/i
+  );
 });
 
 test('manueller Admin-Retry gewährt nach ausgeschöpften automatischen Versuchen einen kontrollierten Zusatzversuch', async () => {
@@ -990,6 +1015,38 @@ test('retryOrFailJob queued temporäre Fehler mit Backoff und exhausted Fehler t
   assert.match(db.calls[0].sql, /status = CASE WHEN attempts < max_attempts THEN 'queued' ELSE 'failed' END/i);
   assert.match(db.calls[0].sql, /run_after = CASE[\s\S]*NOW\(\) \+ \(\$5 \* INTERVAL '1 second'\)/i);
   assert.deepEqual(db.calls[0].params.slice(0, 3), [9, 'worker-1', 2]);
+});
+
+test('retryOrFailJob persistiert für sichere Bestandswiederholungen einen stabilen Fehlercode', async () => {
+  const row = { id: 12, status: 'failed', attempts: 3, max_attempts: 3 };
+  const db = createQueryRecorder([{ rows: [row] }]);
+  const error = Object.assign(new Error('Sicher vor Providerausführung fehlgeschlagen.'), {
+    code: 'CONTENT_PROVIDER_SAFE_RETRY',
+    retryable: true
+  });
+
+  assert.equal(await retryOrFailJob({
+    id: 12,
+    job_type: 'optimize_existing_post',
+    locked_by: 'worker-1',
+    attempts: 3
+  }, error, {}, db), row);
+  assert.equal(db.calls[0].params[3], 'CONTENT_PROVIDER_SAFE_RETRY');
+});
+
+test('Lease-Recovery kennzeichnet verlorene Leases eindeutig und plant sichere Versuche normal neu ein', async () => {
+  const db = createQueryRecorder([{ rows: [{ id: 19, status: 'queued' }] }]);
+
+  await recoverExpiredJobs(30, db);
+
+  assert.match(
+    db.calls[0].sql,
+    /last_error = CASE[\s\S]*CONTENT_JOB_LEASE_LOST/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /WHEN job\.attempts < job\.max_attempts THEN 'queued'/i
+  );
 });
 
 test('retryOrFailJob bevorzugt eine gültige explizite Retryzeit und behält den Lease-Fence', async () => {

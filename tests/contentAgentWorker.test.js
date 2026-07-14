@@ -14,6 +14,7 @@ import {
   createProductionJobHandler,
   createProductionRuntime,
   createShutdownController,
+  EXISTING_POST_OPTIMIZATION_JOB_TYPES,
   loadProductionModules,
   LEARNING_JOB_TYPES,
   REGENERATION_JOB_TYPES,
@@ -1623,6 +1624,226 @@ test('der Produktionshandler dispatcht vier Regenerationsjobtypen mit demselben 
   }
 });
 
+test('Worker akzeptiert ausschließlich minimalen Bestandsoptimierungs-Payload', async () => {
+  const snapshot = { timezone: 'Europe/Berlin', webSearchCostPerCallEur: 0.01 };
+  const calls = [];
+  const leaseGuard = async () => true;
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() { return snapshot; },
+    createJobSnapshot({ runtimeConfig }) { return runtimeConfig; },
+    async createRun({ runtimeSnapshot }) {
+      return { id: 88, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+    },
+    async runPipeline() { assert.fail('Bestandsoptimierungen dürfen keine Entwurfspipeline starten.'); },
+    async createExistingPostOptimizationDependencies(current) {
+      calls.push(['dependencies', current]);
+      return { optimization: true };
+    },
+    async runExistingPostOptimizationJob(context, dependencies) {
+      calls.push(['optimization', context, dependencies]);
+      return { status: 'completed', revisionId: 71, postId: 19 };
+    }
+  });
+  const payload = {
+    source: 'admin_existing_content',
+    post_id: 19,
+    admin_id: 7,
+    base_live_hash: 'a'.repeat(64)
+  };
+
+  const result = await handler({
+    id: 41,
+    job_type: 'optimize_existing_post',
+    payload_json: payload
+  }, { leaseGuard });
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual([...EXISTING_POST_OPTIMIZATION_JOB_TYPES], ['optimize_existing_post']);
+  assert.equal(SUPPORTED_JOB_TYPES.has('optimize_existing_post'), true);
+  assert.deepEqual(calls[0], ['dependencies', snapshot]);
+  assert.equal(calls[1][0], 'optimization');
+  assert.deepEqual(calls[1][1].claim.payload_json, payload);
+  assert.equal(calls[1][1].runtimeSnapshot, snapshot);
+  assert.equal(calls[1][1].leaseGuard, leaseGuard);
+  assert.deepEqual(calls[1][2], { optimization: true });
+});
+
+test('zusätzliche und nicht PostgreSQL-INT32-taugliche Bestands-Payloadfelder werden permanent abgelehnt', async () => {
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Ungültige Payload darf keinen Run erzeugen.'); },
+    async runPipeline() { assert.fail('Ungültige Payload darf keine Pipeline starten.'); }
+  });
+  const valid = {
+    source: 'admin_existing_content',
+    post_id: 19,
+    admin_id: 7,
+    base_live_hash: 'a'.repeat(64)
+  };
+  const invalidPayloads = [
+    { ...valid, slug: 'unerlaubt' },
+    { ...valid, source: 'admin_manual' },
+    { ...valid, post_id: 0 },
+    { ...valid, post_id: 2_147_483_648 },
+    { ...valid, admin_id: '7' },
+    { ...valid, admin_id: 2_147_483_648 },
+    { ...valid, base_live_hash: 'A'.repeat(64) },
+    { ...valid, base_live_hash: 'a'.repeat(63) }
+  ];
+
+  for (const payload_json of invalidPayloads) {
+    await assert.rejects(handler({
+      id: 42,
+      job_type: 'optimize_existing_post',
+      payload_json
+    }, { leaseGuard: async () => true }), {
+      code: 'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID',
+      retryable: false
+    });
+  }
+});
+
+test('erster Bestandsoptimierungsrun friert Preis, Lernregeln und Linkmanifest ein und Retry lädt keine Livewerte', async () => {
+  const claim = {
+    id: 43,
+    job_type: 'optimize_existing_post',
+    payload_json: {
+      source: 'admin_existing_content',
+      post_id: 19,
+      admin_id: 7,
+      base_live_hash: 'b'.repeat(64)
+    }
+  };
+  const runtimeConfig = {
+    operatingMode: 'review',
+    timezone: 'Europe/Berlin',
+    monthlyCostLimitEur: 25,
+    maxAttempts: 3,
+    contentStageReservationEur: 0.5,
+    reviewStageReservationEur: 0.25,
+    contentInputCostPerMtok: 2.5,
+    contentOutputCostPerMtok: 15,
+    reviewInputCostPerMtok: 0.75,
+    reviewOutputCostPerMtok: 4.5,
+    webSearchCostPerCallEur: 0.01,
+    contentModel: 'content',
+    reviewModel: 'review',
+    imageModel: 'image',
+    settingsVersion: 4
+  };
+  let storedRun = null;
+  let settingsLoads = 0;
+  let inventoryLoads = 0;
+  let learningLoads = 0;
+  const snapshots = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    enforceRuleSnapshot: true,
+    async findRunByJobId() { return storedRun && structuredClone(storedRun); },
+    async getSettings() { settingsLoads += 1; return { settings_version: 4 }; },
+    resolveRuntimeConfig() { return runtimeConfig; },
+    createJobSnapshot: createContentAgentJobSnapshot,
+    async loadInitialInventory() {
+      inventoryLoads += 1;
+      return { approvedLinks: [{ url: '/kontakt' }] };
+    },
+    async loadActiveLearningRules() { learningLoads += 1; return []; },
+    async createRun({ runtimeSnapshot }) {
+      storedRun = {
+        id: 89,
+        status: 'running',
+        runtime_snapshot_json: structuredClone(runtimeSnapshot)
+      };
+      return structuredClone(storedRun);
+    },
+    async finishRun() { assert.fail('Der gültige Snapshot darf nicht terminalisiert werden.'); },
+    async runPipeline() { assert.fail('Bestandsoptimierungen dürfen keine Entwurfspipeline starten.'); },
+    createExistingPostOptimizationDependencies(snapshot) {
+      return { snapshot: structuredClone(snapshot) };
+    },
+    async runExistingPostOptimizationJob(context, dependencies) {
+      snapshots.push({
+        context: structuredClone(context.runtimeSnapshot),
+        dependency: dependencies.snapshot
+      });
+      return { status: 'completed', revisionId: 71, postId: 19 };
+    }
+  });
+
+  await handler({ ...claim, attempts: 1 }, { leaseGuard: async () => true });
+  await handler({ ...claim, attempts: 2 }, { leaseGuard: async () => true });
+
+  assert.equal(settingsLoads, 1);
+  assert.equal(inventoryLoads, 1);
+  assert.equal(learningLoads, 1);
+  assert.equal(storedRun.runtime_snapshot_json.webSearchCostPerCallEur, 0.01);
+  assert.equal(storedRun.runtime_snapshot_json.allowedInternalLinks.includes('/kontakt'), true);
+  assert.match(storedRun.runtime_snapshot_json.allowedInternalLinksHash, /^[0-9a-f]{64}$/);
+  assert.match(storedRun.runtime_snapshot_json.learningRuleSnapshot.hash, /^[0-9a-f]{64}$/);
+  assert.deepEqual(snapshots, [
+    { context: storedRun.runtime_snapshot_json, dependency: storedRun.runtime_snapshot_json },
+    { context: storedRun.runtime_snapshot_json, dependency: storedRun.runtime_snapshot_json }
+  ]);
+});
+
+test('persistierter Bestands-Snapshot ohne Websuchepreis endet fail-closed ohne Livevermischung', async () => {
+  const { webSearchCostPerCallEur: _ignoredPrice, ...snapshotWithoutPrice } = createContentAgentJobSnapshot({
+    runtimeConfig: {
+      operatingMode: 'review',
+      timezone: 'Europe/Berlin',
+      monthlyCostLimitEur: 25,
+      webSearchCostPerCallEur: 0.01
+    },
+    claim: { payload_json: { source: 'admin_existing_content' } },
+    allowedInternalLinks: ['/kontakt'],
+    requireAllowedInternalLinks: true
+  });
+  const finishes = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    enforceRuleSnapshot: true,
+    async findRunByJobId() {
+      return { id: 90, status: 'running', runtime_snapshot_json: snapshotWithoutPrice };
+    },
+    async getSettings() { assert.fail('Ein alter Snapshot darf keine Live-Einstellungen laden.'); },
+    resolveRuntimeConfig() { assert.fail('Ein alter Snapshot darf nicht ergänzt werden.'); },
+    createJobSnapshot() { assert.fail('Ein alter Snapshot darf nicht ersetzt werden.'); },
+    async loadInitialInventory() { assert.fail('Ein alter Snapshot darf kein Live-Inventar laden.'); },
+    async createRun() { assert.fail('Der vorhandene Run darf nicht neu angelegt werden.'); },
+    async finishRun(runId, payload) { finishes.push([runId, payload]); return { id: runId }; },
+    async runPipeline() { assert.fail('Die Entwurfspipeline darf nicht starten.'); },
+    createExistingPostOptimizationDependencies() { assert.fail('Dependencies dürfen nicht entstehen.'); },
+    async runExistingPostOptimizationJob() { assert.fail('Die Optimierung darf nicht starten.'); }
+  });
+
+  const result = await handler({
+    id: 44,
+    attempts: 2,
+    job_type: 'optimize_existing_post',
+    payload_json: {
+      source: 'admin_existing_content',
+      post_id: 19,
+      admin_id: 7,
+      base_live_hash: 'c'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.deepEqual(result, {
+    status: 'needs_manual_attention',
+    post: null,
+    code: 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID'
+  });
+  assert.deepEqual(finishes, [[90, {
+    status: 'needs_manual_attention',
+    postId: null,
+    errorReport: {
+      code: 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID',
+      message: 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
+    }
+  }]]);
+});
+
 test('der Produktionshandler dispatcht eine gültige Prüfhinweis-Optimierung separat', async () => {
   assert.equal(SUPPORTED_JOB_TYPES.has('optimize_review_issues'), true);
   assert.equal(REGENERATION_JOB_TYPES.has('optimize_review_issues'), true);
@@ -1921,6 +2142,8 @@ test('Produktionsmodule laden den Regenerationsservice ausschließlich verzöger
   assert.equal(typeof modules.createDraftRegenerationRepository, 'function');
   assert.equal(typeof modules.runReviewIssueOptimizationJob, 'function');
   assert.equal(typeof modules.createContentReviewIssueOptimizationRepository, 'function');
+  assert.equal(typeof modules.runExistingPostOptimizationJob, 'function');
+  assert.equal(typeof modules.createContentExistingPostOptimizationRepository, 'function');
   assert.equal(typeof modules.createContentPublicationService, 'function');
   assert.equal(typeof modules.createBlogNewsletterService, 'function');
   assert.equal(typeof modules.sendAdminReviewNotification, 'function');

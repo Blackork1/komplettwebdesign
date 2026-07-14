@@ -566,6 +566,31 @@ test('429- und safeToRetry-Fehler werden erst nach atomarer Reservierungsfreigab
   }
 });
 
+test('lokal vor Ausführung abgelehnte Schemas werden erst nach Reservierungsfreigabe wiederholbar', async () => {
+  const { dependencies, state } = stageDependencies();
+  const schemaError = Object.assign(
+    new Error('Das strukturierte Schema ist nicht kompatibel.'),
+    {
+      code: 'CONTENT_OPENAI_SCHEMA_INCOMPATIBLE',
+      providerRequestStarted: false
+    }
+  );
+
+  await assert.rejects(
+    executePaidStructuredTextStage(stageInput({
+      async execute() { throw schemaError; }
+    }), dependencies),
+    (error) => error === schemaError
+      && error.code === 'CONTENT_PROVIDER_SAFE_RETRY'
+      && error.retryable === true
+  );
+  assert.deepEqual(state.releases, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07'
+  }]);
+});
+
 test('fehlgeschlagene Reservierungsfreigabe macht einen sicheren Providerfehler manuell', async () => {
   const { dependencies, state } = stageDependencies();
   dependencies.costService.releaseMonthlyBudgetReservation = async () => {

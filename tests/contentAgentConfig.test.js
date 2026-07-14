@@ -153,7 +153,18 @@ test('config defaults to drafts in Europe Berlin', () => {
   assert.equal(config.monthlyCostLimitEur, 25);
   assert.equal(config.contentStageReservationEur, 0.5);
   assert.equal(config.reviewStageReservationEur, 0.25);
+  assert.equal(config.webSearchCostPerCallEur, 0.01);
   assert.equal(Object.isFrozen(config), true);
+});
+
+test('Websuchepreis stammt aus der technischen Preisquelle und ist kein eigener Env-Schalter', () => {
+  const config = getContentAgentTechnicalConfig({
+    CONTENT_AGENT_WEB_SEARCH_COST_PER_CALL_EUR: '999',
+    OPENAI_WEB_SEARCH_COST_PER_CALL_EUR: '999'
+  });
+
+  assert.equal(config.webSearchCostPerCallEur, 0.01);
+  assert.equal(Number.isFinite(config.webSearchCostPerCallEur), true);
 });
 
 test('config parses overrides and clamps bounded integers', () => {

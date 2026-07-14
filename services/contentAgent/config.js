@@ -18,6 +18,8 @@ function configured(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+export const CONTENT_AGENT_WEB_SEARCH_COST_PER_CALL_EUR = 0.01;
+
 export function getContentAgentTechnicalConfig(env = process.env) {
   return Object.freeze({
     enabled: boolean(env.CONTENT_AGENT_ENABLED, false),
@@ -38,6 +40,7 @@ export function getContentAgentTechnicalConfig(env = process.env) {
     contentOutputCostPerMtok: decimal(env.OPENAI_CONTENT_OUTPUT_COST_PER_MTOK, 15),
     reviewInputCostPerMtok: decimal(env.OPENAI_REVIEW_INPUT_COST_PER_MTOK, 0.75),
     reviewOutputCostPerMtok: decimal(env.OPENAI_REVIEW_OUTPUT_COST_PER_MTOK, 4.50),
+    webSearchCostPerCallEur: CONTENT_AGENT_WEB_SEARCH_COST_PER_CALL_EUR,
     imageCostEur: decimal(env.OPENAI_IMAGE_COST_EUR, 0.041),
     workerPollMs: integer(env.CONTENT_AGENT_WORKER_POLL_MS, 5000, 1000, 60000),
     jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180),

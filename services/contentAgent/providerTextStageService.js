@@ -71,6 +71,7 @@ function stableJson(value) {
 
 function providerRetryIsSafe(error) {
   return error?.safeToRetry === true
+    || error?.providerRequestStarted === false
     || Number(error?.status ?? error?.statusCode ?? error?.response?.status) === 429;
 }
 

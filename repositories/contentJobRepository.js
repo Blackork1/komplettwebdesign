@@ -434,6 +434,28 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
         AND job_type <> 'send_admin_review_notification'
         AND status IN ('failed', 'needs_manual_attention')
         AND COALESCE(last_error, '') <> 'provider_execution_uncertain'
+        AND (
+          job_type <> 'optimize_existing_post'
+          OR (
+            last_error IN ('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST')
+            AND EXISTS (
+              SELECT 1
+              FROM content_runs AS resumable_run
+              WHERE resumable_run.job_id = content_jobs.id
+                AND resumable_run.status = 'running'
+            )
+          )
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM content_runs AS reservation_run
+          CROSS JOIN LATERAL jsonb_each(
+            COALESCE(reservation_run.stage_results_json, '{}'::jsonb)
+          ) AS stage_result(key, value)
+          WHERE reservation_run.job_id = content_jobs.id
+            AND stage_result.key LIKE 'budget:%'
+            AND stage_result.value ->> 'status' = 'reserved'
+        )
         AND attempts < $2
       RETURNING *
     `,
@@ -1603,7 +1625,15 @@ export async function retryOrFailJob(claim, error, {
         AND status = 'running'
       RETURNING *
     `,
-    [...lease, sanitizeErrorMessage(error), normalizedBackoff, normalizedRetryAt]
+    [
+      ...lease,
+      claim?.job_type === 'optimize_existing_post'
+        && error?.code === 'CONTENT_PROVIDER_SAFE_RETRY'
+        ? 'CONTENT_PROVIDER_SAFE_RETRY'
+        : sanitizeErrorMessage(error),
+      normalizedBackoff,
+      normalizedRetryAt
+    ]
   );
   return rows[0] || null;
 }
@@ -1709,6 +1739,12 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
           END,
           locked_at = NULL,
           locked_by = NULL,
+          last_error = CASE
+            WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
+              AND expired.delivery_status IN ('queued', 'sending')
+              THEN job.last_error
+            ELSE 'CONTENT_JOB_LEASE_LOST'
+          END,
           finished_at = CASE
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')

@@ -18,6 +18,7 @@ export const REGENERATION_JOB_TYPES = new Set([
 ]);
 export const AUDIT_JOB_TYPES = new Set(['audit_existing_posts']);
 export const LEARNING_JOB_TYPES = new Set(['process_learning_observations']);
+export const EXISTING_POST_OPTIMIZATION_JOB_TYPES = new Set(['optimize_existing_post']);
 export const NOTIFICATION_JOB_TYPES = new Set(['send_admin_review_notification']);
 export const PUBLICATION_JOB_TYPES = new Set(['publish_approved_post']);
 export const NEWSLETTER_JOB_TYPES = new Set([
@@ -33,6 +34,7 @@ export const SUPPORTED_JOB_TYPES = new Set([
   ...REGENERATION_JOB_TYPES,
   ...AUDIT_JOB_TYPES,
   ...LEARNING_JOB_TYPES,
+  ...EXISTING_POST_OPTIMIZATION_JOB_TYPES,
   ...NOTIFICATION_JOB_TYPES,
   ...PUBLICATION_JOB_TYPES,
   ...NEWSLETTER_JOB_TYPES,
@@ -149,6 +151,18 @@ function learningObservationPayload(claim) {
   };
 }
 
+function existingPostOptimizationPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const allowed = ['source', 'post_id', 'admin_id', 'base_live_hash'];
+  if (Object.keys(payload).sort().join('|') !== allowed.sort().join('|')) return null;
+  if (payload.source !== 'admin_existing_content') return null;
+  if (!positiveDatabasePayloadInteger(payload.post_id)) return null;
+  if (!positiveDatabasePayloadInteger(payload.admin_id)) return null;
+  if (!/^[0-9a-f]{64}$/.test(payload.base_live_hash)) return null;
+  return payload;
+}
+
 function publicationJobPayload(claim) {
   const payload = claim?.payload_json;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
@@ -262,6 +276,8 @@ export function createProductionJobHandler({
   createRegenerationDependencies,
   runReviewIssueOptimizationJob,
   createOptimizationDependencies,
+  runExistingPostOptimizationJob,
+  createExistingPostOptimizationDependencies,
   runContentLearningJob,
   createLearningDependencies,
   runAuditJob,
@@ -293,6 +309,13 @@ export function createProductionJobHandler({
       throw permanentJobError(
         'Der Lernjob enthält keinen gültigen internen Artikel- und Versionssnapshot.',
         'CONTENT_LEARNING_JOB_PAYLOAD_INVALID'
+      );
+    }
+    if (EXISTING_POST_OPTIMIZATION_JOB_TYPES.has(claim.job_type)
+        && !existingPostOptimizationPayload(claim)) {
+      throw permanentJobError(
+        'Der Bestandsoptimierungsjob enthält keinen gültigen unveränderlichen Artikel-Snapshot.',
+        'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID'
       );
     }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
@@ -424,6 +447,8 @@ export function createProductionJobHandler({
       && typeof resolveRuntimeConfig === 'function'
       && typeof createJobSnapshot === 'function';
     const generationJob = GENERATION_JOB_TYPES.has(claim.job_type);
+    const existingPostOptimizationJob = EXISTING_POST_OPTIMIZATION_JOB_TYPES.has(claim.job_type);
+    const requireLinkSnapshot = generationJob || existingPostOptimizationJob;
     let initialInventory = null;
     let runtimeSnapshot;
     let run = snapshotEnabled && typeof findRunByJobId === 'function'
@@ -437,7 +462,7 @@ export function createProductionJobHandler({
         const activeLearningRules = typeof loadActiveLearningRules === 'function'
           ? await loadActiveLearningRules()
           : [];
-        if (generationJob && enforceRuleSnapshot) {
+        if (requireLinkSnapshot && enforceRuleSnapshot) {
           required(loadInitialInventory, 'loadInitialInventory');
           initialInventory = await loadInitialInventory();
           allowedInternalLinks = buildAllowedInternalLinksFromInventory(initialInventory);
@@ -447,7 +472,7 @@ export function createProductionJobHandler({
           claim,
           now: now(),
           activeLearningRules,
-          ...(generationJob && enforceRuleSnapshot ? {
+          ...(requireLinkSnapshot && enforceRuleSnapshot ? {
             allowedInternalLinks,
             requireAllowedInternalLinks: true
           } : {})
@@ -460,9 +485,26 @@ export function createProductionJobHandler({
     }
     if (!run?.id) throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
     const persistedSnapshot = snapshotEnabled ? run.runtime_snapshot_json : null;
+    if (snapshotEnabled && existingPostOptimizationJob && run.status !== 'completed'
+        && (typeof persistedSnapshot?.webSearchCostPerCallEur !== 'number'
+          || !Number.isFinite(persistedSnapshot.webSearchCostPerCallEur)
+          || persistedSnapshot.webSearchCostPerCallEur < 0)) {
+      required(finishRun, 'finishRun');
+      const code = 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
+      await assertActiveLease(leaseGuard);
+      assertFinishedRun(await finishRun(run.id, {
+        status: 'needs_manual_attention',
+        postId: null,
+        errorReport: {
+          code,
+          message: 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
+        }
+      }));
+      return { status: 'needs_manual_attention', post: null, code };
+    }
     if (snapshotEnabled && enforceRuleSnapshot && run.status !== 'completed') {
       const validation = validateContentRuleSnapshot(persistedSnapshot, {
-        requireAllowedInternalLinks: generationJob
+        requireAllowedInternalLinks: requireLinkSnapshot
       });
       if (!validation.valid) {
         required(finishRun, 'finishRun');
@@ -483,7 +525,34 @@ export function createProductionJobHandler({
     }
     const jobTimezone = persistedSnapshot?.timezone || timezone;
     let result;
-    if (LEARNING_JOB_TYPES.has(claim.job_type)) {
+    if (existingPostOptimizationJob) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für Bestandsoptimierungen wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
+      const jobRunner = required(
+        runExistingPostOptimizationJob,
+        'runExistingPostOptimizationJob'
+      );
+      const dependencyFactory = required(
+        createExistingPostOptimizationDependencies,
+        'createExistingPostOptimizationDependencies'
+      );
+      result = await jobRunner({
+        claim: { ...claim, payload_json: existingPostOptimizationPayload(claim) },
+        run,
+        runtimeSnapshot: persistedSnapshot,
+        leaseGuard
+      }, await dependencyFactory(persistedSnapshot));
+      if (result?.status === 'failed') {
+        throw permanentJobError(
+          'Die Bestandsoptimierung ist dauerhaft fehlgeschlagen.',
+          result.code || 'CONTENT_EXISTING_OPTIMIZATION_FAILED'
+        );
+      }
+    } else if (LEARNING_JOB_TYPES.has(claim.job_type)) {
       if (typeof leaseGuard !== 'function') {
         throw permanentJobError(
           'Für Lernjobs wird eine aktive Job-Lease benötigt.',
@@ -806,6 +875,24 @@ export function createProductionRuntime({
       optimizationRepository: modules.createContentReviewIssueOptimizationRepository(database)
     };
   }
+  function createExistingPostOptimizationDependencies(snapshot = null) {
+    const dependencies = createPipelineDependencies(snapshot);
+    return {
+      ...dependencies,
+      optimizationRepository: required(
+        modules.createContentExistingPostOptimizationRepository,
+        'createContentExistingPostOptimizationRepository'
+      )(database),
+      auditRepository: required(
+        modules.createContentAuditRepository,
+        'createContentAuditRepository'
+      )(database),
+      searchMetricsRepository: required(
+        searchMetricsRepository,
+        'searchMetricsRepository'
+      )
+    };
+  }
   function createLearningDependencies(snapshot = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
     return {
@@ -843,6 +930,7 @@ export function createProductionRuntime({
       createPipelineDependencies,
       createRegenerationDependencies,
       createOptimizationDependencies,
+      createExistingPostOptimizationDependencies,
       createLearningDependencies
     } : {}),
     createRun: repositories.runRepository.createRun,
@@ -850,6 +938,7 @@ export function createProductionRuntime({
     runPipeline: modules.runDraftPipeline,
     runRegenerationJob: modules.runDraftRegenerationJob,
     runReviewIssueOptimizationJob: modules.runReviewIssueOptimizationJob,
+    runExistingPostOptimizationJob: modules.runExistingPostOptimizationJob,
     runContentLearningJob: modules.runContentLearningJob,
     runAuditJob: modules.runExistingContentAuditJob,
     createAuditDependencies,
@@ -1005,7 +1094,9 @@ export async function loadProductionModules() {
     searchConsoleSchedulerModule,
     contentLearningServiceModule,
     contentLearningRepositoryModule,
-    weeklyTopicPoolRepositoryModule
+    weeklyTopicPoolRepositoryModule,
+    existingPostOptimizationPipelineModule,
+    existingPostOptimizationRepositoryModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1045,7 +1136,9 @@ export async function loadProductionModules() {
     import('../services/contentAgent/searchConsoleSchedulerService.js'),
     import('../services/contentAgent/contentLearningService.js'),
     import('../repositories/contentLearningRepository.js'),
-    import('../repositories/contentWeeklyTopicPoolRepository.js')
+    import('../repositories/contentWeeklyTopicPoolRepository.js'),
+    import('../services/contentAgent/existingPostOptimizationPipeline.js'),
+    import('../repositories/contentExistingPostOptimizationRepository.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1090,7 +1183,11 @@ export async function loadProductionModules() {
     runContentLearningJob: contentLearningServiceModule.runContentLearningJob,
     createContentLearningRepository: contentLearningRepositoryModule.createContentLearningRepository,
     createContentWeeklyTopicPoolRepository:
-      weeklyTopicPoolRepositoryModule.createContentWeeklyTopicPoolRepository
+      weeklyTopicPoolRepositoryModule.createContentWeeklyTopicPoolRepository,
+    runExistingPostOptimizationJob:
+      existingPostOptimizationPipelineModule.runExistingPostOptimizationJob,
+    createContentExistingPostOptimizationRepository:
+      existingPostOptimizationRepositoryModule.createContentExistingPostOptimizationRepository
   };
 }
 

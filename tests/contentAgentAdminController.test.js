@@ -745,7 +745,8 @@ test('Admin-Retry setzt denselben Job per Compare-and-Set fort', async () => {
   assert.match(calls[0].sql, /WHERE id = \$1 AND job_type <> 'send_admin_review_notification' AND status IN \('failed', 'needs_manual_attention'\)/i);
   assert.match(calls[0].sql, /COALESCE\(last_error, ''\) <> 'provider_execution_uncertain'/i);
   assert.match(calls[0].sql, /attempts < \$2/i);
-  assert.doesNotMatch(calls[0].sql, /INSERT INTO|content_runs/i);
+  assert.doesNotMatch(calls[0].sql, /INSERT INTO|;\s*SELECT/i);
+  assert.match(calls[0].sql, /NOT EXISTS[\s\S]*content_runs[\s\S]*jsonb_each/i);
 });
 
 test('Retry-Aktion meldet einen verlorenen Zustandsvergleich als Konflikt', async () => {
