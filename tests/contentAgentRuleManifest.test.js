@@ -21,6 +21,7 @@ test('Regelmanifest enthält alle prompt- und entscheidungsrelevanten Versionen 
     'autoPublishPolicy',
     'brandPolicyPrompt',
     'contentLearningClassifierPrompt',
+    'contentLearningSnapshot',
     'contentLearningTaxonomy',
     'internalLinkNormalization',
     'riskReport',

@@ -252,6 +252,7 @@ export function createProductionJobHandler({
   findRunByJobId,
   enforceRuleSnapshot = false,
   loadInitialInventory,
+  loadActiveLearningRules,
   createRun,
   finishRun,
   runPipeline,
@@ -433,6 +434,9 @@ export function createProductionJobHandler({
         const settings = await getSettings();
         const runtimeConfig = resolveRuntimeConfig({ technicalConfig, settings });
         let allowedInternalLinks;
+        const activeLearningRules = typeof loadActiveLearningRules === 'function'
+          ? await loadActiveLearningRules()
+          : [];
         if (generationJob && enforceRuleSnapshot) {
           required(loadInitialInventory, 'loadInitialInventory');
           initialInventory = await loadInitialInventory();
@@ -442,6 +446,7 @@ export function createProductionJobHandler({
           runtimeConfig,
           claim,
           now: now(),
+          activeLearningRules,
           ...(generationJob && enforceRuleSnapshot ? {
             allowedInternalLinks,
             requireAllowedInternalLinks: true
@@ -683,6 +688,9 @@ export function createProductionRuntime({
   required(database, 'database');
   required(modules, 'modules');
   const repositories = bindRepositories(database, modules);
+  const contentLearningRepository = typeof modules.createContentLearningRepository === 'function'
+    ? modules.createContentLearningRepository(database)
+    : null;
   const pricingRepository = modules.createPricingRepository(database);
   const pricingService = modules.createPricingService(pricingRepository, { cache: false });
   modules.cloudinary.config({
@@ -794,7 +802,7 @@ export function createProductionRuntime({
   function createLearningDependencies(snapshot = null) {
     const jobConfig = jobConfigFromSnapshot(config, snapshot);
     return {
-      learningRepository: modules.createContentLearningRepository(database),
+      learningRepository: required(contentLearningRepository, 'contentLearningRepository'),
       openaiService: modules.createOpenAIContentService({
         apiKey: env.OPENAI_API_KEY,
         config: jobConfig
@@ -822,6 +830,9 @@ export function createProductionRuntime({
       findRunByJobId: repositories.runRepository.findRunByJobId,
       enforceRuleSnapshot: true,
       loadInitialInventory: () => modules.buildSiteInventory(inventoryLoaders(database, pricingService)),
+      ...(contentLearningRepository ? {
+        loadActiveLearningRules: () => contentLearningRepository.listActiveRuleVersions()
+      } : {}),
       createPipelineDependencies,
       createRegenerationDependencies,
       createOptimizationDependencies,

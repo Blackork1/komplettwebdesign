@@ -15,6 +15,7 @@ import {
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_AUDIT_KEY
 } from './contentJobRetryPolicy.js';
+import { learningRulesForStage } from './contentLearningSnapshotService.js';
 
 const CURRENT_RISK_FIELDS = [
   'currentClaims',
@@ -47,6 +48,12 @@ function reservationAmount(config, stage) {
   return stage === 'review'
     ? Number(config.reviewStageReservationEur ?? 0.25)
     : Number(config.contentStageReservationEur ?? 0.50);
+}
+
+function activeLearningRules(config, stage) {
+  return config?.learningRuleSnapshot
+    ? learningRulesForStage(config.learningRuleSnapshot, stage)
+    : [];
 }
 
 function generationMetadata(results) {
@@ -930,7 +937,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         inventory,
         internalLinks: snapshotInternalLinks,
         sourceReferences,
-        pricingContext
+        pricingContext,
+        learningRules: activeLearningRules(config, 'seo_brief')
       }
     });
     const invalidBriefSources = await validateOptionalSourceBoundary(briefing.sourceReferences, sourceReferences);
@@ -957,7 +965,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     let currentArticle = await paidTextOperation({
       stage: 'article_generation',
       operation: openaiService.generateArticle,
-      input: { briefing, pricingContext }
+      input: {
+        briefing,
+        pricingContext,
+        learningRules: activeLearningRules(config, 'writer')
+      }
     });
     const invalidArticleSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
     if (invalidArticleSources) return invalidArticleSources;
@@ -994,7 +1006,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       currentReview = await paidTextOperation({
         stage: 'review',
         operation: openaiService.reviewArticle,
-        input: { briefing, article: reviewableArticle(), sourceReferences }
+        input: {
+          briefing,
+          article: reviewableArticle(),
+          sourceReferences,
+          learningRules: activeLearningRules(config, 'reviewer')
+        }
       });
       if (reviewRequiresSources(currentReview)) {
         const requiredSources = await requireValidSources(sourceReferences);
@@ -1031,7 +1048,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         input: {
           briefing,
           article: reviewableArticle(),
-          issues: [...issues, pricingLockIssue(lockedPricingTokens)]
+          issues: [...issues, pricingLockIssue(lockedPricingTokens)],
+          learningRules: activeLearningRules(config, 'writer')
         }
       });
       const invalidRepairSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
@@ -1052,7 +1070,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           stage: 'review',
           stageId: `review:${revision}`,
           operation: openaiService.reviewArticle,
-          input: { briefing, article: reviewableArticle(), sourceReferences }
+          input: {
+            briefing,
+            article: reviewableArticle(),
+            sourceReferences,
+            learningRules: activeLearningRules(config, 'reviewer')
+          }
         });
         if (reviewRequiresSources(currentReview)) {
           const requiredSources = await requireValidSources(sourceReferences);
@@ -1070,7 +1093,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         stage: 'review',
         stageId: `review:${maximumRevisions + 1}`,
         operation: openaiService.reviewArticle,
-        input: { briefing, article: reviewableArticle(), sourceReferences }
+        input: {
+          briefing,
+          article: reviewableArticle(),
+          sourceReferences,
+          learningRules: activeLearningRules(config, 'reviewer')
+        }
       });
       if (reviewRequiresSources(currentReview)) {
         const requiredSources = await requireValidSources(sourceReferences);

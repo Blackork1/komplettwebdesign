@@ -37,11 +37,20 @@ function runtimeConfig() {
   };
 }
 
+const activeLearningRules = [{
+  id: 4,
+  version: 2,
+  category_key: 'technical_precision',
+  rule_text: 'Erkläre technische Zusammenhänge so konkret, dass Unternehmer die nächste Entscheidung nachvollziehbar treffen können.',
+  target_stages: ['writer', 'reviewer']
+}];
+
 test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwendet unverändert denselben Snapshot', async () => {
   let storedRun = null;
   let inventoryLoads = 0;
   let createRuns = 0;
   let settingsLoads = 0;
+  let learningRuleLoads = 0;
   const pipelineCalls = [];
   const events = [];
   const handler = createProductionJobHandler({
@@ -50,6 +59,10 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
     async findRunByJobId() { return storedRun && structuredClone(storedRun); },
     async getSettings() { settingsLoads += 1; return { settings_version: 4 }; },
     resolveRuntimeConfig: () => runtimeConfig(),
+    async loadActiveLearningRules() {
+      learningRuleLoads += 1;
+      return structuredClone(activeLearningRules);
+    },
     createJobSnapshot: createContentAgentJobSnapshot,
     async loadInitialInventory() {
       inventoryLoads += 1;
@@ -82,6 +95,7 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
   assert.deepEqual(events, ['inventory', 'run']);
   assert.equal(inventoryLoads, 1);
   assert.equal(settingsLoads, 1);
+  assert.equal(learningRuleLoads, 1);
   assert.equal(createRuns, 1);
   assert.equal(storedRun.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
   assert.deepEqual(storedRun.runtime_snapshot_json.allowedInternalLinks, [
@@ -98,6 +112,10 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
     '/webdesign-berlin'
   ]);
   assert.match(storedRun.runtime_snapshot_json.allowedInternalLinksHash, /^[0-9a-f]{64}$/);
+  assert.deepEqual(
+    storedRun.runtime_snapshot_json.learningRuleSnapshot.rules.map(({ id, version }) => [id, version]),
+    [[4, 2]]
+  );
   assert.deepEqual(pipelineCalls.map(({ dependencies }) => dependencies.config), [
     storedRun.runtime_snapshot_json,
     storedRun.runtime_snapshot_json

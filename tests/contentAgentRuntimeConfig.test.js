@@ -5,6 +5,7 @@ import {
   resolveContentAgentRuntimeConfig,
   validateContentAgentSettingsTransition
 } from '../services/contentAgent/runtimeConfigService.js';
+import { buildLearningRuleSnapshot } from '../services/contentAgent/contentLearningSnapshotService.js';
 import {
   CONTENT_AGENT_RULE_MANIFEST,
   CONTENT_AGENT_RULE_MANIFEST_HASH
@@ -151,7 +152,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
   });
 
   assert.deepEqual(snapshot, {
-    version: 2,
+    version: 3,
     operatingMode: 'review',
     forcedMode: 'review',
     source: 'admin_manual',
@@ -180,6 +181,7 @@ test('Job-Snapshot friert die wirksamen Startwerte und die Jobquelle ein', () =>
     imageModel: 'image-model',
     settingsVersion: 2,
     startedAt: '2026-07-11T10:15:30.000Z',
+    learningRuleSnapshot: buildLearningRuleSnapshot([]),
     ruleManifest: CONTENT_AGENT_RULE_MANIFEST,
     ruleManifestHash: CONTENT_AGENT_RULE_MANIFEST_HASH
   });

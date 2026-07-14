@@ -342,7 +342,7 @@ git commit -m "feat: process learning observations asynchronously"
 - Produces: `learningRulesForStage(snapshot, stage, categoryKeys?)`.
 - `createContentAgentJobSnapshot` consumes `activeLearningRules` und persistiert den kanonischen Snapshot.
 
-- [ ] **Step 1: Failing Snapshot- und Prompttests schreiben**
+- [x] **Step 1: Failing Snapshot- und Prompttests schreiben**
 
 ```js
 assert.deepEqual(
@@ -354,13 +354,13 @@ assert.equal(validateLearningRuleSnapshot(structuredClone(snapshot)).valid, true
 
 Manipulierte Texte, Reihenfolgen, Einzelhashes oder Listenhashes müssen fehlschlagen. Prompttests prüfen, dass nur freigegebene Felder und nur stufenrelevante Regeln übertragen werden.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningSnapshot.test.js tests/contentAgentJobRuleSnapshot.test.js tests/contentAgentOpenAIService.test.js`
 
 Expected: FAIL.
 
-- [ ] **Step 3: Snapshot und drei Promptstufen implementieren**
+- [x] **Step 3: Snapshot und drei Promptstufen implementieren**
 
 Vor dem ersten `content_run` lädt der Worker aktive Regeln und übergibt sie an `createContentAgentJobSnapshot`. Der Snapshot wird nach ID und Version sortiert, pro Regel sowie als Liste gehasht und auf höchstens 50 Regeln beziehungsweise 40 KiB begrenzt.
 
@@ -374,13 +374,13 @@ Promptinput:
 
 SEO-Briefing, Writer und Reviewer erhalten jeweils nur ihre Stufe. Die gezielte Optimierung filtert zusätzlich auf die Kategorien der ausgewählten Prüfhinweise.
 
-- [ ] **Step 4: GREEN und Snapshot-Wiederaufnahme prüfen**
+- [x] **Step 4: GREEN und Snapshot-Wiederaufnahme prüfen**
 
 Run: `node --test tests/contentLearningSnapshot.test.js tests/contentAgentJobRuleSnapshot.test.js tests/contentAgentOpenAIService.test.js tests/contentAgentDraftPipeline.test.js tests/contentReviewIssueOptimizationService.test.js`
 
 Expected: PASS; ein Retry verwendet unverändert denselben Snapshot.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningSnapshotService.js services/contentAgent/runtimeConfigService.js scripts/contentWorker.js services/contentAgent/contentRuleManifest.js services/contentAgent/prompts/seoBriefPrompt.js services/contentAgent/prompts/articleWriterPrompt.js services/contentAgent/prompts/articleReviewerPrompt.js services/contentAgent/draftPipeline.js services/contentAgent/reviewIssueOptimizationService.js tests/contentLearningSnapshot.test.js tests/contentAgentJobRuleSnapshot.test.js tests/contentAgentOpenAIService.test.js tests/contentAgentDraftPipeline.test.js tests/contentReviewIssueOptimizationService.test.js

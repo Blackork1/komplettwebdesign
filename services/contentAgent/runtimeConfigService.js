@@ -1,4 +1,5 @@
 import { bindContentRulesToSnapshot } from './contentRuleManifest.js';
+import { buildLearningRuleSnapshot } from './contentLearningSnapshotService.js';
 
 export function resolveContentAgentRuntimeConfig({ technicalConfig, settings }) {
   const budget = Math.min(
@@ -38,11 +39,12 @@ export function createContentAgentJobSnapshot({
   claim,
   now = new Date(),
   allowedInternalLinks,
-  requireAllowedInternalLinks = false
+  requireAllowedInternalLinks = false,
+  activeLearningRules = []
 }) {
   return bindContentRulesToSnapshot({
     baseSnapshot: {
-      version: 2,
+      version: 3,
       operatingMode: claim?.payload_json?.forced_mode || runtimeConfig.operatingMode,
       forcedMode: claim?.payload_json?.forced_mode || null,
       source: claim?.payload_json?.source || 'unknown',
@@ -72,7 +74,8 @@ export function createContentAgentJobSnapshot({
       reviewModel: runtimeConfig.reviewModel,
       imageModel: runtimeConfig.imageModel,
       settingsVersion: runtimeConfig.settingsVersion,
-      startedAt: now.toISOString()
+      startedAt: now.toISOString(),
+      learningRuleSnapshot: buildLearningRuleSnapshot(activeLearningRules)
     },
     allowedInternalLinks,
     requireAllowedInternalLinks

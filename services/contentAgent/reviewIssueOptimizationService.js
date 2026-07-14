@@ -1,5 +1,7 @@
 import { ArticleOutputSchema, ReviewOutputSchema } from './articleSchemas.js';
 import { buildFocusedRiskReport as buildFocusedRiskReportDefault } from './riskReportService.js';
+import { learningRulesForStage } from './contentLearningSnapshotService.js';
+import { classifyLearningIssueLocally, getLearningCategory } from './contentLearningTaxonomy.js';
 
 export const REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE = 'optimize_review_issues';
 export const REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION = 'review-issue-optimization-v1';
@@ -141,6 +143,23 @@ function repairIssues(items) {
     sourceRequired: item.sourceRequired === true,
     autoPublishBlocking: item.blocking === true
   }));
+}
+
+function selectedLearningCategories(items) {
+  const categories = new Set();
+  for (const item of items) {
+    const explicit = typeof item?.categoryKey === 'string' && getLearningCategory(item.categoryKey)
+      ? item.categoryKey
+      : null;
+    const categoryKey = explicit || classifyLearningIssueLocally(item)?.categoryKey;
+    if (categoryKey) categories.add(categoryKey);
+  }
+  return [...categories];
+}
+
+function matchingLearningRules(runtimeSnapshot, stage, categoryKeys) {
+  if (!runtimeSnapshot?.learningRuleSnapshot || categoryKeys.length === 0) return [];
+  return learningRulesForStage(runtimeSnapshot.learningRuleSnapshot, stage, categoryKeys);
 }
 
 function stageEnvelope(value, schema, expectedReviewVersion) {
@@ -387,6 +406,7 @@ export async function runReviewIssueOptimizationJob(
     }, guarded);
   }
   try {
+    const learningCategories = selectedLearningCategories(selectedIssues);
     const repairStageId = `${REVIEW_ISSUE_OPTIMIZATION_JOB_TYPE}:${postId}:repair`;
     const repair = await executeTextStage({
       run,
@@ -400,7 +420,8 @@ export async function runReviewIssueOptimizationJob(
       execute: () => dependencies.openaiService.repairArticle({
         briefing: draft.metadata?.seo_brief_json || {},
         article: currentArticleFromDraft(draft),
-        issues: repairIssues(selectedIssues)
+        issues: repairIssues(selectedIssues),
+        learningRules: matchingLearningRules(runtimeSnapshot, 'writer', learningCategories)
       })
     }, guarded);
     if (repair.manual) return finishManual(run, postId, repair.manual, guarded);
@@ -436,7 +457,8 @@ export async function runReviewIssueOptimizationJob(
       execute: () => dependencies.openaiService.reviewArticle({
         briefing: draft.metadata?.seo_brief_json || {},
         article: candidate,
-        sourceReferences: candidate.sourceReferences
+        sourceReferences: candidate.sourceReferences,
+        learningRules: matchingLearningRules(runtimeSnapshot, 'reviewer', learningCategories)
       })
     }, guarded);
     if (reviewResult.manual) return finishManual(run, postId, reviewResult.manual, guarded);

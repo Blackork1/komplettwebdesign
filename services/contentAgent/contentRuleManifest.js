@@ -13,6 +13,11 @@ import { promptVersion as webResearchPrompt } from './prompts/webResearchPrompt.
 import { promptVersion as contentLearningClassifierPrompt } from './prompts/contentLearningClassifierPrompt.js';
 import { RISK_REPORT_VERSION } from './riskReportService.js';
 import { CONTENT_LEARNING_TAXONOMY_VERSION } from './contentLearningTaxonomy.js';
+import {
+  CONTENT_LEARNING_SNAPSHOT_VERSION,
+  buildLearningRuleSnapshot,
+  validateLearningRuleSnapshot
+} from './contentLearningSnapshotService.js';
 import { REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION } from './reviewIssueOptimizationService.js';
 import { TOPIC_SCORING_VERSION } from './topicScoringService.js';
 import {
@@ -48,6 +53,7 @@ export const CONTENT_AGENT_RULE_MANIFEST = Object.freeze({
   autoPublishPolicy: AUTO_PUBLISH_POLICY_VERSION,
   brandPolicyPrompt,
   contentLearningClassifierPrompt,
+  contentLearningSnapshot: CONTENT_LEARNING_SNAPSHOT_VERSION,
   contentLearningTaxonomy: CONTENT_LEARNING_TAXONOMY_VERSION,
   internalLinkNormalization: INTERNAL_LINK_NORMALIZATION_VERSION,
   riskReport: RISK_REPORT_VERSION,
@@ -93,6 +99,7 @@ export function bindContentRulesToSnapshot({
 } = {}) {
   const snapshot = {
     ...baseSnapshot,
+    learningRuleSnapshot: baseSnapshot.learningRuleSnapshot || buildLearningRuleSnapshot([]),
     ruleManifest: Object.freeze({ ...CONTENT_AGENT_RULE_MANIFEST }),
     ruleManifestHash: CONTENT_AGENT_RULE_MANIFEST_HASH
   };
@@ -119,6 +126,10 @@ export function validateContentRuleSnapshot(snapshot, { requireAllowedInternalLi
       || snapshot.ruleManifestHash !== CONTENT_AGENT_RULE_MANIFEST_HASH
       || canonicalSha256(snapshot.ruleManifest) !== snapshot.ruleManifestHash) {
     return { valid: false, code: 'CONTENT_RULE_MANIFEST_MISMATCH' };
+  }
+  const learningValidation = validateLearningRuleSnapshot(snapshot.learningRuleSnapshot);
+  if (!learningValidation.valid) {
+    return { valid: false, code: learningValidation.code };
   }
   if (requireAllowedInternalLinks || snapshot.allowedInternalLinks !== undefined) {
     if (!Array.isArray(snapshot.allowedInternalLinks)

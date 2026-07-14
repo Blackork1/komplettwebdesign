@@ -146,6 +146,13 @@ const validReview = {
   risks: validRisk
 };
 
+const approvedLearningRules = [{
+  id: 4,
+  version: 2,
+  categoryKey: 'technical_precision',
+  instruction: 'Erkläre technische Zusammenhänge konkret und nachvollziehbar.'
+}];
+
 function createParseClient(outputParsed) {
   const requests = [];
   const outputs = Array.isArray(outputParsed) ? outputParsed : [outputParsed];
@@ -650,6 +657,7 @@ test('Promptbuilder serialisieren ausschließlich ihre fachlichen Allowlist-Feld
         internalLinks: ['/kontakt'],
         sourceReferences,
         pricingContext: { token: '{{price}}' },
+        learningRules: approvedLearningRules,
         secret: 'intern'
       },
       expected: {
@@ -657,23 +665,68 @@ test('Promptbuilder serialisieren ausschließlich ihre fachlichen Allowlist-Feld
         inventory: ['Seite'],
         internalLinks: ['/kontakt'],
         sourceReferences,
-        pricingContext: { token: '{{price}}' }
+        pricingContext: { token: '{{price}}' },
+        learningRules: approvedLearningRules
       }
     },
     {
       build: buildArticleWriterPrompt,
-      input: { briefing: validSeoBrief, pricingContext: { token: '{{price}}' }, sourceReferences, adminNotes: 'intern' },
-      expected: { briefing: validSeoBrief, pricingContext: { token: '{{price}}' } }
+      input: {
+        briefing: validSeoBrief,
+        pricingContext: { token: '{{price}}' },
+        learningRules: approvedLearningRules,
+        sourceReferences,
+        adminNotes: 'intern'
+      },
+      expected: {
+        briefing: validSeoBrief,
+        pricingContext: { token: '{{price}}' },
+        learningRules: approvedLearningRules
+      }
     },
     {
       build: buildArticleReviewerPrompt,
-      input: { briefing: validSeoBrief, article: validArticle, sourceReferences, secret: 'intern' },
-      expected: { briefing: validSeoBrief, article: validArticle, sourceReferences }
+      input: {
+        briefing: validSeoBrief,
+        article: validArticle,
+        sourceReferences,
+        learningRules: approvedLearningRules,
+        secret: 'intern'
+      },
+      expected: {
+        briefing: validSeoBrief,
+        article: validArticle,
+        sourceReferences,
+        learningRules: approvedLearningRules
+      }
     }
   ];
 
   for (const { build, input, expected } of cases) {
     assert.deepEqual(JSON.parse(build(input).user), expected);
+  }
+});
+
+test('Lernregeln werden in allen redaktionellen Promptstufen ausdrücklich als freigegeben behandelt', () => {
+  for (const prompt of [
+    buildSeoBriefPrompt({ topic: validTopicCandidate, learningRules: approvedLearningRules }),
+    buildArticleWriterPrompt({ briefing: validSeoBrief, learningRules: approvedLearningRules }),
+    buildArticleReviewerPrompt({
+      briefing: validSeoBrief,
+      article: validArticle,
+      learningRules: approvedLearningRules
+    }),
+    buildArticleRepairPrompt({
+      briefing: validSeoBrief,
+      article: validArticle,
+      issues: [],
+      learningRules: approvedLearningRules,
+      secret: 'intern'
+    })
+  ]) {
+    assert.match(prompt.system, /freigegebenen Lernregeln/i);
+    assert.deepEqual(JSON.parse(prompt.user).learningRules, approvedLearningRules);
+    assert.doesNotMatch(prompt.user, /secret|darf nicht/);
   }
 });
 

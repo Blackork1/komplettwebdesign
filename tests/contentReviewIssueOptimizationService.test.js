@@ -6,6 +6,7 @@ import {
   runReviewIssueOptimizationJob,
   selectOptimizationIssues
 } from '../services/contentAgent/reviewIssueOptimizationService.js';
+import { buildLearningRuleSnapshot } from '../services/contentAgent/contentLearningSnapshotService.js';
 
 const faq = Array.from({ length: 5 }, (_, index) => ({
   question: `Frage ${index + 1}?`,
@@ -18,8 +19,8 @@ function reviewIssue(index = 1) {
     severity: 'warning',
     section: 'Relaunch planen',
     excerpt: 'Ein konkreter Absatz.',
-    reason: `Prüfhinweis ${index}`,
-    instruction: `Hinweis ${index} gezielt beheben.`,
+    reason: `Mehrere Kontaktaufforderungen sind in Prüfhinweis ${index} inhaltlich ähnlich.`,
+    instruction: `CTA aus Hinweis ${index} gezielt und passend zum Entscheidungsschritt formulieren.`,
     verificationType: 'none',
     sourceRequired: false,
     blocking: false,
@@ -307,6 +308,36 @@ test('reiht nach erfolgreichem Versionssprung einen nicht blockierenden Lernjob 
     async enqueueLearningObservationJob() { throw new Error('Queue vorübergehend nicht verfügbar'); }
   });
   assert.equal((await runReviewIssueOptimizationJob(input(), failing)).status, 'completed');
+});
+
+test('gezielte Optimierung erhält nur Lernregeln der ausgewählten Hinweiskategorie', async () => {
+  const deps = dependencies();
+  const context = input();
+  context.runtimeSnapshot.learningRuleSnapshot = buildLearningRuleSnapshot([
+    {
+      id: 4,
+      version: 2,
+      categoryKey: 'cta_repetition_or_fit',
+      instruction: 'Formuliere jeden CTA passend zum konkreten Entscheidungsschritt und vermeide inhaltlich gleiche Kontaktaufforderungen.',
+      targetStages: ['writer', 'reviewer']
+    },
+    {
+      id: 5,
+      version: 1,
+      categoryKey: 'technical_precision',
+      instruction: 'Erkläre technische Zusammenhänge so konkret, dass Unternehmer die nächste Entscheidung nachvollziehbar treffen können.',
+      targetStages: ['writer', 'reviewer']
+    }
+  ]);
+  assert.equal((await runReviewIssueOptimizationJob(context, deps)).status, 'completed');
+  assert.deepEqual(
+    deps.calls.find(([name]) => name === 'repair')[1].learningRules.map(({ id }) => id),
+    [4]
+  );
+  assert.deepEqual(
+    deps.calls.find(([name]) => name === 'review')[1].learningRules.map(({ id }) => id),
+    [4]
+  );
 });
 
 test('stoppt bei ungültigem reparierten Artikel vor Review und Commit', async () => {

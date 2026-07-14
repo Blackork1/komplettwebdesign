@@ -12,6 +12,7 @@ import { runDraftPipeline } from '../services/contentAgent/draftPipeline.js';
 import { ContentBudgetLimitError } from '../services/contentAgent/contentCostService.js';
 import { createContentWorker } from '../services/contentAgent/workerService.js';
 import { createTopic } from '../repositories/contentTopicRepository.js';
+import { buildLearningRuleSnapshot } from '../services/contentAgent/contentLearningSnapshotService.js';
 
 const usage = { input_tokens: 1_000, output_tokens: 500 };
 
@@ -1435,6 +1436,49 @@ test('runDraftPipeline reiht die Lernbeobachtung nach der Entwurfserstellung nic
     async enqueueLearningObservationJob() { throw new Error('Queue vorübergehend nicht verfügbar'); }
   });
   assert.equal((await runDraftPipeline({ runId: 708 }, failing.dependencies)).status, 'completed');
+});
+
+test('Pipeline übergibt jeder Promptstufe ausschließlich ihre freigegebenen Lernregeln', async () => {
+  const harness = createDependencies();
+  harness.dependencies.config.learningRuleSnapshot = buildLearningRuleSnapshot([
+    {
+      id: 1,
+      version: 1,
+      categoryKey: 'examples_or_local_relevance',
+      instruction: 'Plane mindestens zwei konkrete Unternehmensszenarien, wenn sie die Erklärung des gewählten Themas nachvollziehbar verbessern.',
+      targetStages: ['seo_brief']
+    },
+    {
+      id: 2,
+      version: 1,
+      categoryKey: 'technical_precision',
+      instruction: 'Erkläre technische Zusammenhänge so konkret, dass Unternehmer die nächste Entscheidung nachvollziehbar treffen können.',
+      targetStages: ['writer']
+    },
+    {
+      id: 3,
+      version: 2,
+      categoryKey: 'decision_support',
+      instruction: 'Prüfe, ob der Artikel Kriterien, Alternativen und einen konkreten nächsten Entscheidungsschritt nachvollziehbar gegenüberstellt.',
+      targetStages: ['reviewer']
+    }
+  ]);
+  const promptInputs = { seo: [], writer: [] };
+  const originalSeo = harness.dependencies.openaiService.createSeoBrief;
+  const originalWriter = harness.dependencies.openaiService.generateArticle;
+  harness.dependencies.openaiService.createSeoBrief = async (input) => {
+    promptInputs.seo.push(input);
+    return originalSeo(input);
+  };
+  harness.dependencies.openaiService.generateArticle = async (input) => {
+    promptInputs.writer.push(input);
+    return originalWriter(input);
+  };
+
+  assert.equal((await runDraftPipeline({ runId: 709 }, harness.dependencies)).status, 'completed');
+  assert.deepEqual(promptInputs.seo[0].learningRules.map(({ id }) => id), [1]);
+  assert.deepEqual(promptInputs.writer[0].learningRules.map(({ id }) => id), [2]);
+  assert.deepEqual(harness.reviewInputs[0].learningRules.map(({ id }) => id), [3]);
 });
 
 test('Pipeline-Retry verwendet persistiertes Inventar und ausschließlich die unveränderlichen Snapshotlinks', async () => {
