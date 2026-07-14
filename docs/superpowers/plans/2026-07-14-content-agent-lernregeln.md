@@ -48,7 +48,7 @@
 - Produces: Tabellen `content_learning_observations`, `content_learning_classifications`, `content_learning_rule_proposals`, `content_learning_rules`, `content_learning_rule_versions`, `content_learning_events`.
 - Produces: idempotente Migration 009 mit partiellen Unique-Indizes für klassifizierte und unklassifizierte Beobachtungen.
 
-- [ ] **Step 1: Failing migration contract tests schreiben**
+- [x] **Step 1: Failing migration contract tests schreiben**
 
 ```js
 test('Migration 009 zählt klassifizierte Beobachtungen pro Artikel und Kategorie nur einmal', async () => {
@@ -59,13 +59,13 @@ test('Migration 009 zählt klassifizierte Beobachtungen pro Artikel und Kategori
 });
 ```
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningMigration.test.js`
 
 Expected: FAIL, weil Migration 009 noch nicht existiert.
 
-- [ ] **Step 3: Migration minimal implementieren**
+- [x] **Step 3: Migration minimal implementieren**
 
 Die SQL-Datei legt alle sechs Tabellen mit Fremdschlüsseln, Status-Checks, Längenbegrenzungen, Zeitstempeln und folgenden Sperren an:
 
@@ -85,7 +85,7 @@ CREATE UNIQUE INDEX ux_content_learning_pending_category
 
 `scripts/runContentAgentMigration.js` führt 009 nach 008 aus und meldet den vollständigen Stand 002–009.
 
-- [ ] **Step 4: GREEN und echte Datenbank prüfen**
+- [x] **Step 4: GREEN und echte Datenbank prüfen**
 
 Run: `node --test tests/contentLearningMigration.test.js tests/contentAgentDeploymentGuide.test.js`
 
@@ -93,7 +93,7 @@ Run: `CONTENT_AGENT_PG_TEST_URL=postgresql://blocksdorf@127.0.0.1/kwd_content_ag
 
 Expected: PASS; Migrationen sind wiederholt ausführbar.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/migrations/009_create_content_learning_rules.sql scripts/runContentAgentMigration.js tests/contentLearningMigration.test.js tests/contentAgentPostgresIntegration.test.js tests/contentAgentDeploymentGuide.test.js

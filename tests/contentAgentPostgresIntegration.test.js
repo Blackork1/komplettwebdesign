@@ -1090,7 +1090,7 @@ async function settleWithoutPostLockFailure(operations, label, timeoutMs = 5_000
   }
 }
 
-test('echtes PostgreSQL: Migrationen 002–008 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–009 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
