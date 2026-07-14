@@ -17,6 +17,7 @@ import {
   recoverRejectedProviderJobForAdmin,
   recoverUncertainProviderJobForAdmin,
   recoverExpiredJobs,
+  rescheduleJobWithoutAttemptConsumption,
   renewJobLease,
   retryContentJobForAdmin,
   retryOrFailJob,
@@ -68,7 +69,7 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
 });
 
-test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausgeschöpften Versuchen', {
+test('echtes PostgreSQL: Lease-Recovery übernimmt normale Runs und reconciliiert terminale Revalidierungsruns', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -153,6 +154,26 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
              END
       FROM jobs;
     `);
+    await pool.query(`
+      WITH job AS (
+        INSERT INTO content_jobs (
+          job_type, status, idempotency_key, payload_json, attempts, max_attempts,
+          locked_at, locked_by, last_error
+        ) VALUES (
+          'revalidate_existing_post_revision', 'running', 'revalidation-generic-cleanup',
+          '{}'::jsonb, 3, 3, NOW() - INTERVAL '60 minutes', 'alter-worker',
+          'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+        )
+        RETURNING id
+      )
+      INSERT INTO content_runs (job_id, status, error_report_json)
+      SELECT id, 'running', '{}'::jsonb FROM job
+    `);
+    await pool.query(`
+      UPDATE content_jobs
+      SET last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+      WHERE idempotency_key = 'revalidation-terminal'
+    `);
 
     await recoverExpiredJobs(30, pool);
     const states = (await pool.query(`
@@ -166,7 +187,8 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
       { idempotency_key: 'manual-run', status: 'needs_manual_attention', last_error: 'manual_check', locked_at: null, locked_by: null },
       { idempotency_key: 'revalidation-cleanup', status: 'queued', last_error: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED', locked_at: null, locked_by: null },
       { idempotency_key: 'revalidation-early-crash', status: 'queued', last_error: 'CONTENT_JOB_LEASE_LOST', locked_at: null, locked_by: null },
-      { idempotency_key: 'revalidation-terminal', status: 'failed', last_error: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED', locked_at: null, locked_by: null }
+      { idempotency_key: 'revalidation-generic-cleanup', status: 'queued', last_error: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', locked_at: null, locked_by: null },
+      { idempotency_key: 'revalidation-terminal', status: 'queued', last_error: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', locked_at: null, locked_by: null }
     ]);
     const cleanupState = (await pool.query(`
       SELECT attempts, finished_at, run_after <= NOW() AS due
@@ -174,6 +196,12 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
       WHERE idempotency_key = 'revalidation-cleanup'
     `)).rows[0];
     assert.deepEqual(cleanupState, { attempts: 2, finished_at: null, due: true });
+    const genericCleanupState = (await pool.query(`
+      SELECT attempts, finished_at, run_after <= NOW() AS due
+      FROM content_jobs
+      WHERE idempotency_key = 'revalidation-generic-cleanup'
+    `)).rows[0];
+    assert.deepEqual(genericCleanupState, { attempts: 2, finished_at: null, due: true });
     const earlyCrashState = (await pool.query(`
       SELECT attempts, finished_at
       FROM content_jobs
@@ -181,11 +209,11 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
     `)).rows[0];
     assert.deepEqual(earlyCrashState, { attempts: 1, finished_at: null });
     const terminalRevalidationState = (await pool.query(`
-      SELECT attempts
+      SELECT attempts, finished_at, run_after <= NOW() AS due
       FROM content_jobs
       WHERE idempotency_key = 'revalidation-terminal'
     `)).rows[0];
-    assert.deepEqual(terminalRevalidationState, { attempts: 3 });
+    assert.deepEqual(terminalRevalidationState, { attempts: 2, finished_at: null, due: true });
 
     const replacement = await pool.query(`
       INSERT INTO content_jobs (
@@ -195,6 +223,95 @@ test('echtes PostgreSQL: Lease-Recovery übernimmt terminale Runs auch nach ausg
       ) RETURNING id
     `);
     assert.equal(replacement.rowCount, 1);
+  } finally {
+    await pool?.end().catch(() => {});
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
+});
+
+test('echtes PostgreSQL: mehrere Cleanup-Reschedules bewahren Intent, Versuch und Retryzeit', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        idempotency_key VARCHAR(180) NOT NULL UNIQUE,
+        payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        attempts INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by VARCHAR(180),
+        last_error TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      )
+    `);
+    const inserted = (await pool.query(`
+      INSERT INTO content_jobs (
+        job_type, status, idempotency_key, attempts, max_attempts,
+        locked_at, locked_by, last_error, finished_at
+      ) VALUES (
+        'revalidate_existing_post_revision', 'running', 'complete-cleanup', 3, 3,
+        NOW(), 'cleanup-worker',
+        'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete', NOW()
+      )
+      RETURNING *
+    `)).rows[0];
+    const cleanupToken = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+    const cleanupError = Object.assign(new Error('Interne Ursache bleibt verborgen.'), {
+      code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+      retryable: true,
+      doesNotConsumeAttempt: true,
+      cleanupToken
+    });
+    const retryTimes = [
+      new Date('2030-07-14T12:00:30.000Z'),
+      new Date('2030-07-14T12:01:00.000Z')
+    ];
+    let claim = inserted;
+
+    for (const retryAt of retryTimes) {
+      const rescheduled = await rescheduleJobWithoutAttemptConsumption(
+        claim,
+        cleanupError,
+        { retryAt },
+        pool
+      );
+      assert.equal(rescheduled.status, 'queued');
+      assert.equal(rescheduled.attempts, 2);
+      assert.equal(rescheduled.last_error, cleanupToken);
+      assert.equal(rescheduled.run_after.getTime(), retryAt.getTime());
+      assert.equal(rescheduled.finished_at, null);
+
+      claim = (await pool.query(`
+        UPDATE content_jobs
+        SET status = 'running',
+            attempts = attempts + 1,
+            locked_at = NOW(),
+            locked_by = 'cleanup-worker'
+        WHERE id = $1
+        RETURNING *
+      `, [inserted.id])).rows[0];
+      assert.equal(claim.attempts, 3);
+      assert.equal(claim.last_error, cleanupToken);
+    }
   } finally {
     await pool?.end().catch(() => {});
     if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);

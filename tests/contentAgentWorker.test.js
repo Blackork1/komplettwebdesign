@@ -1817,6 +1817,149 @@ test('Worker übernimmt für Revalidierungen ausschließlich den gebundenen Ursp
   assert.deepEqual(calls[3][2], { repository: true });
 });
 
+test('früher Cleanup-Intent bleibt vor Run- und Kontextzugriff exakt und versuchsneutral', async () => {
+  const payload = {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: 'b'.repeat(64)
+  };
+  const cases = [
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete',
+      attempts: 1,
+      code: '40001',
+      action: 'complete',
+      failureCode: null
+    },
+    {
+      token: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+      attempts: 3,
+      code: 'ECONNRESET',
+      action: 'fail',
+      failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+    }
+  ];
+
+  for (const current of cases) {
+    let contextCalls = 0;
+    let failureWrites = 0;
+    const handler = createProductionJobHandler({
+      async findRunByJobId() {
+        throw Object.assign(new Error('Runzugriff vorübergehend nicht erreichbar'), {
+          code: current.code
+        });
+      },
+      async loadExistingPostRevalidationContext() { contextCalls += 1; },
+      async createRun() { assert.fail('Während des Cleanup-Fehlers darf kein Run entstehen.'); },
+      async runPipeline() { assert.fail('Während des Cleanup-Fehlers darf keine Pipeline starten.'); },
+      async failExistingPostRevisionRevalidation() { failureWrites += 1; }
+    });
+
+    await assert.rejects(handler({
+      id: 52,
+      attempts: current.attempts,
+      max_attempts: 3,
+      last_error: current.token,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: payload
+    }, { leaseGuard: async () => true }), (error) => {
+      assert.equal(error?.code, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY');
+      assert.equal(error?.retryable, true);
+      assert.equal(error?.doesNotConsumeAttempt, true);
+      assert.equal(error?.cleanupToken, current.token);
+      assert.equal(error?.cleanupAction, current.action);
+      assert.equal(error?.cleanupFailureCode, current.failureCode);
+      return true;
+    });
+    assert.equal(contextCalls, 0, current.token);
+    assert.equal(failureWrites, 0, current.token);
+  }
+});
+
+test('Cleanup-Intent bleibt bei transientem Kontextfehler auch am Versuchslimit complete', async () => {
+  const token = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+  let runnerCalls = 0;
+  let dependencyCalls = 0;
+  let failureWrites = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      throw Object.assign(new Error('Kontextzugriff vorübergehend nicht erreichbar'), {
+        code: '57P01'
+      });
+    },
+    async createRun() { assert.fail('Ohne Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Ohne Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation() { failureWrites += 1; },
+    async createExistingPostRevisionRevalidationDependencies() { dependencyCalls += 1; },
+    async runExistingPostRevisionRevalidationJob() { runnerCalls += 1; }
+  });
+
+  await assert.rejects(handler({
+    id: 52,
+    attempts: 3,
+    max_attempts: 3,
+    last_error: token,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true }), (error) => (
+    error?.cleanupToken === token
+      && error?.cleanupAction === 'complete'
+      && error?.doesNotConsumeAttempt === true
+  ));
+  assert.equal(failureWrites, 0);
+  assert.equal(dependencyCalls, 0);
+  assert.equal(runnerCalls, 0);
+});
+
+test('Worker trägt den validierten Cleanup-Intent explizit bis zum Runner', async () => {
+  const token = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED';
+  let runnerInput;
+  const runtimeSnapshot = revalidationRuntimeSnapshot();
+  const handler = createProductionJobHandler({
+    async findRunByJobId() {
+      return {
+        id: 99,
+        status: 'running',
+        runtime_snapshot_json: runtimeSnapshot
+      };
+    },
+    async createRun() { assert.fail('Der persistierte Run muss übernommen werden.'); },
+    async runPipeline() { assert.fail('Revalidierungen dürfen keine Entwurfspipeline starten.'); },
+    async createExistingPostRevisionRevalidationDependencies() { return {}; },
+    async runExistingPostRevisionRevalidationJob(input) {
+      runnerInput = input;
+      return { status: 'needs_manual_attention', code: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED' };
+    }
+  });
+
+  await handler({
+    id: 52,
+    attempts: 3,
+    max_attempts: 3,
+    last_error: token,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.deepEqual(runnerInput?.cleanupIntent, {
+    action: 'fail',
+    failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+    cleanupToken: token
+  });
+});
+
 test('Worker lehnt zusätzliche und nicht PostgreSQL-INT32-/SHA-taugliche Revalidierungsfelder ab', async () => {
   const handler = createProductionJobHandler({
     async createRun() { assert.fail('Ungültige Revalidierung darf keinen Run erzeugen.'); },
@@ -2134,6 +2277,161 @@ test('dauerhaft gestörter früher Revisions-Cleanup bleibt am Versuchslimit wie
   assert.equal(failureAttempts, 2);
 });
 
+test('permanenter früher failRevision-Fehler bleibt fenced Cleanup-only', async () => {
+  let contextCalls = 0;
+  let failureAttempts = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      contextCalls += 1;
+      throw Object.assign(new Error('Liveartikel verändert'), { code: 'CONTENT_REVISION_STALE' });
+    },
+    async createRun() { assert.fail('Für stale Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Für stale Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation() {
+      failureAttempts += 1;
+      throw Object.assign(new Error('Persistenzvertrag dauerhaft ungültig'), {
+        code: 'CONTENT_ACTION_VALIDATION_FAILED',
+        retryable: false
+      });
+    }
+  });
+
+  await assert.rejects(handler({
+    id: 54,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true }), (error) => (
+    error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_STALE'
+      && error?.doesNotConsumeAttempt === true
+  ));
+  assert.equal(failureAttempts, 1);
+  assert.equal(contextCalls >= 2, true);
+});
+
+test('permanenter früher failRevision-Fehler adoptiert einen bereits committed Revisionsstatus', async () => {
+  let persistedFailure = null;
+  let contextCalls = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() { return null; },
+    async loadExistingPostRevalidationContext() {
+      contextCalls += 1;
+      if (!persistedFailure) {
+        throw Object.assign(new Error('Liveartikel verändert'), { code: 'CONTENT_REVISION_STALE' });
+      }
+      return {
+        revision: {
+          optimization_report_json: {
+            revalidation: {
+              status: 'failed',
+              revisionVersion: 4,
+              snapshotFingerprint: 'b'.repeat(64),
+              failureCode: persistedFailure
+            }
+          }
+        }
+      };
+    },
+    async createRun() { assert.fail('Für terminalen Kontext darf kein Run entstehen.'); },
+    async runPipeline() { assert.fail('Für terminalen Kontext darf keine Pipeline starten.'); },
+    async failExistingPostRevisionRevalidation(input) {
+      persistedFailure = input.failureCode;
+      throw Object.assign(new Error('Antwort nach erfolgreichem COMMIT ungültig'), {
+        code: 'CONTENT_ACTION_VALIDATION_FAILED',
+        retryable: false
+      });
+    }
+  });
+
+  const result = await handler({
+    id: 54,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true });
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_STALE');
+  assert.equal(contextCalls, 2);
+});
+
+test('permanenter früher finishRun-Fehler bleibt offen oder adoptiert den terminalen Run', async () => {
+  const payload = {
+    source: 'revision_revalidation',
+    revision_id: 71,
+    revision_version: 4,
+    snapshot_fingerprint: 'b'.repeat(64)
+  };
+  for (const committed of [false, true]) {
+    let persistedRun = {
+      id: committed ? 102 : 101,
+      status: 'running',
+      runtime_snapshot_json: { timezone: 'Europe/Berlin' }
+    };
+    let findCalls = 0;
+    const handler = createProductionJobHandler({
+      async findRunByJobId() {
+        findCalls += 1;
+        return structuredClone(persistedRun);
+      },
+      async createRun() { assert.fail('Persistierter Run darf nicht neu entstehen.'); },
+      async failExistingPostRevisionRevalidation() { return { id: 71 }; },
+      async finishRun(_runId, input) {
+        if (committed) {
+          persistedRun = {
+            id: persistedRun.id,
+            status: input.status,
+            error_report_json: input.errorReport
+          };
+        }
+        throw Object.assign(new Error('Runabschluss dauerhaft nicht bestätigt'), {
+          code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID',
+          retryable: false
+        });
+      },
+      async runPipeline() { assert.fail('Ungültiger Snapshot darf keine Pipeline starten.'); },
+      async runExistingPostRevisionRevalidationJob() {
+        assert.fail('Ungültiger Snapshot darf keine Revalidierung starten.');
+      },
+      async createExistingPostRevisionRevalidationDependencies() {
+        assert.fail('Ungültiger Snapshot darf keine Abhängigkeiten erzeugen.');
+      }
+    });
+
+    const execution = handler({
+      id: 55,
+      attempts: 3,
+      max_attempts: 3,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: payload
+    }, { leaseGuard: async () => true });
+    if (committed) {
+      const result = await execution;
+      assert.equal(result.status, 'needs_manual_attention');
+      assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+    } else {
+      await assert.rejects(execution, (error) => (
+        error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish'
+          && error?.doesNotConsumeAttempt === true
+      ));
+    }
+    assert.equal(findCalls, 2, String(committed));
+  }
+});
+
 test('verlorener Kontextfence terminalisiert nur den Job und schreibt keine fremde Revision', async () => {
   let failureWrites = 0;
   const handler = createProductionJobHandler({
@@ -2166,6 +2464,53 @@ test('verlorener Kontextfence terminalisiert nur den Job und schreibt keine frem
   assert.equal(failureWrites, 0);
 });
 
+test('Complete-Cleanup bleibt vor Runtime- und Manifestprüfung unverändert kostenfrei', async () => {
+  const token = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+  for (const snapshot of [
+    { timezone: 'Europe/Berlin' },
+    { ...revalidationRuntimeSnapshot(), ruleManifestHash: 'f'.repeat(64) }
+  ]) {
+    let failureWrites = 0;
+    let finishCalls = 0;
+    let dependencyCalls = 0;
+    let runnerCalls = 0;
+    const handler = createProductionJobHandler({
+      enforceRuleSnapshot: true,
+      async findRunByJobId() {
+        return { id: 100, status: 'running', runtime_snapshot_json: snapshot };
+      },
+      async createRun() { assert.fail('Persistierter Run darf nicht neu entstehen.'); },
+      async failExistingPostRevisionRevalidation() { failureWrites += 1; },
+      async finishRun() { finishCalls += 1; },
+      async runPipeline() { assert.fail('Cleanup darf keine Pipeline starten.'); },
+      async runExistingPostRevisionRevalidationJob() { runnerCalls += 1; },
+      async createExistingPostRevisionRevalidationDependencies() { dependencyCalls += 1; }
+    });
+
+    await assert.rejects(handler({
+      id: 55,
+      attempts: 3,
+      max_attempts: 3,
+      last_error: token,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: {
+        source: 'revision_revalidation',
+        revision_id: 71,
+        revision_version: 4,
+        snapshot_fingerprint: 'b'.repeat(64)
+      }
+    }, { leaseGuard: async () => true }), (error) => (
+      error?.cleanupToken === token
+        && error?.cleanupAction === 'complete'
+        && error?.doesNotConsumeAttempt === true
+    ));
+    assert.equal(failureWrites, 0);
+    assert.equal(finishCalls, 0);
+    assert.equal(dependencyCalls, 0);
+    assert.equal(runnerCalls, 0);
+  }
+});
+
 test('ungültiger persistierter Runtime- oder Manifestsnapshot markiert Revision vor Runabschluss', async () => {
   const payload = {
     source: 'revision_revalidation',
@@ -2173,11 +2518,10 @@ test('ungültiger persistierter Runtime- oder Manifestsnapshot markiert Revision
     revision_version: 4,
     snapshot_fingerprint: 'b'.repeat(64)
   };
-  for (const { snapshot, expectReject } of [
-    { snapshot: { timezone: 'Europe/Berlin' }, expectReject: true },
+  for (const snapshot of [
+    { timezone: 'Europe/Berlin' },
     {
-      snapshot: { ...revalidationRuntimeSnapshot(), ruleManifestHash: 'f'.repeat(64) },
-      expectReject: false
+      ...revalidationRuntimeSnapshot(), ruleManifestHash: 'f'.repeat(64)
     }
   ]) {
     const calls = [];
@@ -2204,16 +2548,12 @@ test('ungültiger persistierter Runtime- oder Manifestsnapshot markiert Revision
       }
     });
 
-    const execution = handler({
+    const result = await handler({
       id: 55,
       job_type: 'revalidate_existing_post_revision',
       payload_json: payload
     }, { leaseGuard: async () => true });
-    if (expectReject) {
-      await assert.rejects(execution, { retryable: false });
-    } else {
-      assert.equal((await execution).status, 'needs_manual_attention');
-    }
+    assert.equal(result.status, 'needs_manual_attention');
     assert.equal(calls[0][0], 'revision');
     assert.equal(calls[1][0], 'run');
   }
@@ -2555,6 +2895,127 @@ test('der Produktionshandler übernimmt terminale Runs ohne Pipeline- oder Finis
   await assert.rejects(failed(claim), (error) => (
     error?.code === 'persisted_failure' && error?.retryable === false
   ));
+});
+
+test('terminaler Revalidierungs-Run wird erst nach terminalem Revisionsfence adoptiert', async () => {
+  let contextLoads = 0;
+  let failureWrites = 0;
+  let dependencyCalls = 0;
+  const handler = createProductionJobHandler({
+    async findRunByJobId() {
+      return {
+        id: 219,
+        status: 'completed',
+        runtime_snapshot_json: revalidationRuntimeSnapshot()
+      };
+    },
+    async loadExistingPostRevalidationContext() {
+      contextLoads += 1;
+      return {
+        revision: {
+          optimization_report_json: {
+            revalidation: {
+              status: 'pending',
+              revisionVersion: 4,
+              snapshotFingerprint: 'b'.repeat(64)
+            }
+          }
+        }
+      };
+    },
+    async failExistingPostRevisionRevalidation() { failureWrites += 1; },
+    async createRun() { assert.fail('Terminaler Run darf nicht neu angelegt werden.'); },
+    async finishRun() { assert.fail('Pending Revision darf keinen weiteren Runabschluss auslösen.'); },
+    async runPipeline() { assert.fail('Terminaler Revalidierungs-Run darf keine Pipeline starten.'); },
+    async createExistingPostRevisionRevalidationDependencies() { dependencyCalls += 1; },
+    async runExistingPostRevisionRevalidationJob() {
+      assert.fail('Pending Revision darf nicht als terminal adoptiert werden.');
+    }
+  });
+
+  await assert.rejects(handler({
+    id: 56,
+    attempts: 3,
+    max_attempts: 3,
+    job_type: 'revalidate_existing_post_revision',
+    payload_json: {
+      source: 'revision_revalidation',
+      revision_id: 71,
+      revision_version: 4,
+      snapshot_fingerprint: 'b'.repeat(64)
+    }
+  }, { leaseGuard: async () => true }), (error) => (
+    error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish'
+      && error?.doesNotConsumeAttempt === true
+  ));
+  assert.equal(contextLoads, 1);
+  assert.equal(failureWrites, 0);
+  assert.equal(dependencyCalls, 0);
+});
+
+test('terminaler Revalidierungs-Run adoptiert erst danach auch einen abweichenden Terminalstatus', async () => {
+  for (const current of [
+    {
+      revalidation: { status: 'passed' },
+      run: { status: 'completed', error_report_json: {} },
+      expected: { status: 'completed', postId: null }
+    },
+    {
+      revalidation: {
+        status: 'failed',
+        failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+      },
+      run: {
+        status: 'needs_manual_attention',
+        error_report_json: { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' }
+      },
+      expected: {
+        status: 'needs_manual_attention',
+        post: null,
+        code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+      }
+    }
+  ]) {
+    const handler = createProductionJobHandler({
+      async findRunByJobId() {
+        return {
+          id: 220,
+          post_id: null,
+          runtime_snapshot_json: revalidationRuntimeSnapshot(),
+          ...current.run
+        };
+      },
+      async loadExistingPostRevalidationContext() {
+        return {
+          revision: {
+            optimization_report_json: {
+              revalidation: {
+                ...current.revalidation,
+                revisionVersion: 4,
+                snapshotFingerprint: 'b'.repeat(64)
+              }
+            }
+          }
+        };
+      },
+      async createRun() { assert.fail('Terminaler Run darf nicht neu angelegt werden.'); },
+      async finishRun() { assert.fail('Terminaler Run darf nicht überschrieben werden.'); },
+      async runPipeline() { assert.fail('Terminaler Revalidierungs-Run darf keine Pipeline starten.'); }
+    });
+
+    assert.deepEqual(await handler({
+      id: 57,
+      attempts: 3,
+      max_attempts: 3,
+      job_type: 'revalidate_existing_post_revision',
+      payload_json: {
+        source: 'revision_revalidation',
+        revision_id: 71,
+        revision_version: 4,
+        snapshot_fingerprint: 'b'.repeat(64)
+      }
+    }, { leaseGuard: async () => true }), current.expected);
+  }
 });
 
 test('normaler Admin-Retry öffnet einen terminalen Generierungsrun und der Worker setzt die Pipeline fort', async () => {

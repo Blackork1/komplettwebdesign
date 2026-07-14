@@ -50,6 +50,7 @@ const PERMANENT_CONTEXT_ERROR_CODES = new Set([
   'CONTENT_RUNTIME_SNAPSHOT_RULES_MISSING',
   'CONTENT_RUNTIME_SNAPSHOT_TOO_LARGE'
 ]);
+const EXISTING_POST_REVISION_CLEANUP_CODE = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
 
 function persistedFailureCode(code) {
   return EXISTING_POST_REVISION_FAILURE_CODES.has(code)
@@ -76,6 +77,28 @@ function retriesExhausted(claim = {}) {
 
 export function isExistingPostRevisionFailureCode(value) {
   return typeof value === 'string' && EXISTING_POST_REVISION_FAILURE_CODES.has(value);
+}
+
+export function parseExistingPostRevisionCleanupIntent(value) {
+  if (value === EXISTING_POST_REVISION_CLEANUP_CODE) {
+    return {
+      action: 'reconcile',
+      failureCode: null,
+      cleanupToken: EXISTING_POST_REVISION_CLEANUP_CODE
+    };
+  }
+  if (typeof value !== 'string') return null;
+  const parts = value.split(':');
+  if (parts[0] !== EXISTING_POST_REVISION_CLEANUP_CODE) return null;
+  if (parts.length === 2 && ['complete', 'finish'].includes(parts[1])) {
+    return { action: parts[1], failureCode: null, cleanupToken: value };
+  }
+  if (parts.length === 3
+      && parts[1] === 'fail'
+      && isExistingPostRevisionFailureCode(parts[2])) {
+    return { action: 'fail', failureCode: parts[2], cleanupToken: value };
+  }
+  return null;
 }
 
 export function classifyExistingPostRevisionError(error, claim = {}) {
@@ -127,16 +150,18 @@ export function existingPostRevisionTransientError(cause) {
 export function existingPostRevisionCleanupRetryError(cause, options = {}) {
   const now = options.now instanceof Date ? options.now : new Date();
   const retryAt = new Date(now.getTime() + 30_000);
-  const action = ['complete', 'fail', 'finish'].includes(options.action)
-    ? options.action
-    : 'reconcile';
-  const failureCode = action === 'fail' && isExistingPostRevisionFailureCode(options.failureCode)
-    ? options.failureCode
-    : null;
+  const suppliedIntent = parseExistingPostRevisionCleanupIntent(options.cleanupToken);
+  let action = suppliedIntent?.action
+    ?? (['complete', 'fail', 'finish'].includes(options.action) ? options.action : 'reconcile');
+  const failureCode = suppliedIntent?.failureCode
+    ?? (action === 'fail' && isExistingPostRevisionFailureCode(options.failureCode)
+      ? options.failureCode
+      : null);
+  if (action === 'fail' && !failureCode) action = 'reconcile';
   const cleanupToken = action === 'reconcile'
-    ? 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+    ? EXISTING_POST_REVISION_CLEANUP_CODE
     : [
-      'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY',
+      EXISTING_POST_REVISION_CLEANUP_CODE,
       action,
       ...(failureCode ? [failureCode] : [])
     ].join(':');

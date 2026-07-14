@@ -1772,14 +1772,16 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
       )
       UPDATE content_jobs AS job
       SET status = CASE
-            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
-              THEN expired.run_status
             WHEN job.job_type = 'revalidate_existing_post_revision'
               AND (
+                expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+                OR
                 job.attempts >= job.max_attempts
-                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:(complete|finish|fail:[A-Za-z0-9_]+)$'
+                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY(:complete|:finish|:fail:[A-Za-z0-9_]+)?$'
               )
               THEN 'queued'
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN expired.run_status
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN 'queued'
@@ -1789,28 +1791,32 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
             END
           END,
           attempts = CASE
-            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
-              THEN job.attempts
             WHEN job.job_type = 'revalidate_existing_post_revision'
               AND (
+                expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+                OR
                 job.attempts >= job.max_attempts
-                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:(complete|finish|fail:[A-Za-z0-9_]+)$'
+                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY(:complete|:finish|:fail:[A-Za-z0-9_]+)?$'
               )
               THEN GREATEST(job.attempts - 1, 0)
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN job.attempts
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN GREATEST(job.attempts - 1, 0)
             ELSE job.attempts
           END,
           run_after = CASE
-            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
-              THEN job.run_after
             WHEN job.job_type = 'revalidate_existing_post_revision'
               AND (
+                expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+                OR
                 job.attempts >= job.max_attempts
-                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:(complete|finish|fail:[A-Za-z0-9_]+)$'
+                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY(:complete|:finish|:fail:[A-Za-z0-9_]+)?$'
               )
               THEN NOW()
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN job.run_after
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status = 'queued'
               THEN GREATEST(job.run_after, expired.delivery_next_attempt_at)
@@ -1822,13 +1828,16 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
           locked_at = NULL,
           locked_by = NULL,
           last_error = CASE
+            WHEN job.job_type = 'revalidate_existing_post_revision'
+              AND job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY(:complete|:finish|:fail:[A-Za-z0-9_]+)?$'
+              THEN job.last_error
+            WHEN job.job_type = 'revalidate_existing_post_revision'
+              AND expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
             WHEN expired.run_status = 'completed'
               THEN NULL
             WHEN expired.run_status IN ('failed', 'needs_manual_attention')
               THEN COALESCE(expired.run_error_code, 'CONTENT_RUN_FAILED')
-            WHEN job.job_type = 'revalidate_existing_post_revision'
-              AND job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:(complete|finish|fail:[A-Za-z0-9_]+)$'
-              THEN job.last_error
             WHEN job.job_type = 'revalidate_existing_post_revision'
               AND job.attempts >= job.max_attempts
               THEN 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
@@ -1838,14 +1847,16 @@ export async function recoverExpiredJobs(leaseMinutes, db = pool) {
             ELSE 'CONTENT_JOB_LEASE_LOST'
           END,
           finished_at = CASE
-            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
-              THEN COALESCE(expired.run_finished_at, NOW())
             WHEN job.job_type = 'revalidate_existing_post_revision'
               AND (
+                expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+                OR
                 job.attempts >= job.max_attempts
-                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:(complete|finish|fail:[A-Za-z0-9_]+)$'
+                OR job.last_error ~ '^CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY(:complete|:finish|:fail:[A-Za-z0-9_]+)?$'
               )
               THEN NULL
+            WHEN expired.run_status IN ('completed', 'failed', 'needs_manual_attention')
+              THEN COALESCE(expired.run_finished_at, NOW())
             WHEN job.job_type IN ('send_admin_review_notification', 'send_blog_newsletter_delivery')
               AND expired.delivery_status IN ('queued', 'sending')
               THEN NULL

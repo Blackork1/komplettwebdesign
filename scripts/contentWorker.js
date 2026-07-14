@@ -9,7 +9,9 @@ import {
 import {
   classifyExistingPostRevisionError,
   existingPostRevisionCleanupRetryError,
-  existingPostRevisionTransientError
+  existingPostRevisionTransientError,
+  isExistingPostRevisionFailureCode,
+  parseExistingPostRevisionCleanupIntent
 } from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
 import { createContentWorker, LeaseLostError } from '../services/contentAgent/workerService.js';
 
@@ -371,6 +373,7 @@ export function createProductionJobHandler({
     const revalidationFence = revalidationClaim
       ? existingPostRevalidationFence(claim)
       : null;
+    let revalidationCleanupIntent = null;
     async function retryRevalidationTerminalOperation(operation, cleanup = {}) {
       let cause = null;
       for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -390,8 +393,7 @@ export function createProductionJobHandler({
             max_attempts: 2
           }).disposition === 'transient';
           if (!transient) {
-            if (cause) throw existingPostRevisionCleanupRetryError(cause, cleanup);
-            throw error;
+            throw existingPostRevisionCleanupRetryError(error, cleanup);
           }
           cause = error;
         }
@@ -400,23 +402,122 @@ export function createProductionJobHandler({
     }
     async function finishRevalidationRun(runId, input) {
       required(finishRun, 'finishRun');
-      return retryRevalidationTerminalOperation(async () => {
-        try {
-          return assertFinishedRun(await finishRun(runId, input));
-        } catch (cause) {
-          if (typeof cause?.code === 'string') throw cause;
-          throw retryableJobError(
-            'Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.',
-            'CONTENT_RUN_FINISH_FAILED',
-            cause
-          );
+      try {
+        return await retryRevalidationTerminalOperation(async () => {
+          try {
+            return assertFinishedRun(await finishRun(runId, input));
+          } catch (cause) {
+            if (typeof cause?.code === 'string') throw cause;
+            throw retryableJobError(
+              'Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.',
+              'CONTENT_RUN_FINISH_FAILED',
+              cause
+            );
+          }
+        }, { action: 'finish' });
+      } catch (error) {
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+        if (error?.code !== 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY') throw error;
+        if (typeof findRunByJobId === 'function') {
+          await assertActiveLease(leaseGuard);
+          try {
+            const persisted = await findRunByJobId(claim.id);
+            if (['completed', 'failed', 'needs_manual_attention'].includes(persisted?.status)) {
+              return persisted;
+            }
+          } catch (readError) {
+            if (readError?.code === 'CONTENT_JOB_LEASE_LOST') throw readError;
+          }
         }
-      }, { action: 'finish' });
+        throw existingPostRevisionCleanupRetryError(error, { action: 'finish' });
+      }
+    }
+    function earlyRevisionOutcome(context) {
+      const revalidation = context?.revision?.optimization_report_json?.revalidation;
+      if (!revalidation || typeof revalidation !== 'object' || Array.isArray(revalidation)
+          || !positiveDatabasePayloadInteger(revalidation.revisionVersion)
+          || typeof revalidation.snapshotFingerprint !== 'string'
+          || !/^[0-9a-f]{64}$/.test(revalidation.snapshotFingerprint)) {
+        return { status: 'unresolved', code: null };
+      }
+      if (revalidation?.revisionVersion !== revalidationFence?.revisionVersion
+          || revalidation?.snapshotFingerprint !== revalidationFence?.snapshotFingerprint) {
+        return { status: 'foreign', code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' };
+      }
+      if (revalidation.status === 'passed') return { status: 'passed', code: null };
+      if (revalidation.status === 'failed') {
+        return {
+          status: 'failed',
+          code: isExistingPostRevisionFailureCode(revalidation.failureCode)
+            ? revalidation.failureCode
+            : 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+        };
+      }
+      if (revalidation.status === 'pending') return { status: 'pending', code: null };
+      return { status: 'unresolved', code: null };
+    }
+    async function reconcileEarlyRevision(cause, cleanup) {
+      if (!revalidationFence || typeof loadExistingPostRevalidationContext !== 'function') {
+        throw existingPostRevisionCleanupRetryError(cause, cleanup);
+      }
+      await assertActiveLease(leaseGuard);
+      let context;
+      try {
+        context = await loadExistingPostRevalidationContext({
+          source: 'revision_revalidation',
+          revision_id: revalidationFence.revisionId,
+          revision_version: revalidationFence.revisionVersion,
+          snapshot_fingerprint: revalidationFence.snapshotFingerprint
+        });
+      } catch (error) {
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') {
+          return { status: 'foreign', code: error.code };
+        }
+        throw existingPostRevisionCleanupRetryError(cause ?? error, cleanup);
+      }
+      const outcome = earlyRevisionOutcome(context);
+      if (['pending', 'unresolved'].includes(outcome.status)) {
+        throw existingPostRevisionCleanupRetryError(cause, cleanup);
+      }
+      return outcome;
+    }
+    async function adoptTerminalRevalidationRun(run) {
+      const cleanup = revalidationCleanupIntent
+        ?? parseExistingPostRevisionCleanupIntent(
+          'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish'
+        );
+      if (typeof loadExistingPostRevalidationContext !== 'function') {
+        throw existingPostRevisionCleanupRetryError(
+          new Error('Der terminale Run kann noch keinem Revisionszustand zugeordnet werden.'),
+          cleanup
+        );
+      }
+      await assertActiveLease(leaseGuard);
+      let context;
+      try {
+        context = await loadExistingPostRevalidationContext(existingPostRevalidationPayload(claim));
+      } catch (error) {
+        if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') {
+          return adoptTerminalRun(run);
+        }
+        throw existingPostRevisionCleanupRetryError(error, cleanup);
+      }
+      const outcome = earlyRevisionOutcome(context);
+      if (['pending', 'unresolved'].includes(outcome.status)) {
+        throw existingPostRevisionCleanupRetryError(
+          new Error('Der Revisionszustand zum terminalen Run ist noch nicht bestätigt.'),
+          cleanup
+        );
+      }
+      return adoptTerminalRun(run);
     }
     async function failRevalidationFence(failureCode) {
       if (!revalidationFence || typeof failExistingPostRevisionRevalidation !== 'function') {
-        return false;
+        return { status: 'foreign', code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' };
       }
+      const cleanup = { action: 'fail', failureCode };
       try {
         await retryRevalidationTerminalOperation(async () => {
           let failed;
@@ -440,39 +541,56 @@ export function createProductionJobHandler({
             );
           }
           return failed;
-        }, { action: 'fail', failureCode });
-        return true;
+        }, cleanup);
+        return { status: 'failed', code: failureCode };
       } catch (error) {
-        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') return false;
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') {
+          return { status: 'foreign', code: error.code };
+        }
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY') {
+          return reconcileEarlyRevision(error.cause ?? error, cleanup);
+        }
         throw error;
       }
     }
     async function handleRevalidationExecutionError(error, { run = null } = {}) {
       const classification = classifyExistingPostRevisionError(error, claim);
       if (classification.disposition === 'lease_lost') throw error;
+      if (revalidationCleanupIntent && classification.disposition !== 'fence_lost') {
+        throw existingPostRevisionCleanupRetryError(error, revalidationCleanupIntent);
+      }
       if (classification.disposition === 'transient') {
         throw existingPostRevisionTransientError(error);
       }
       const failureCode = classification.disposition === 'fence_lost'
         ? 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
         : classification.failureCode;
+      let revisionOutcome = { status: 'foreign', code: failureCode };
       if (classification.disposition !== 'fence_lost') {
-        await failRevalidationFence(failureCode);
+        revisionOutcome = await failRevalidationFence(failureCode);
       }
+      const terminalStatus = revisionOutcome.status === 'passed'
+        ? 'completed'
+        : 'needs_manual_attention';
+      const terminalCode = revisionOutcome.status === 'passed'
+        ? null
+        : revisionOutcome.code || failureCode;
       if (run?.id && typeof finishRun === 'function') {
-        await finishRevalidationRun(run.id, {
-          status: 'needs_manual_attention',
+        const persistedRun = await finishRevalidationRun(run.id, {
+          status: terminalStatus,
           postId: null,
-          errorReport: {
-            code: failureCode,
+          errorReport: terminalCode ? {
+            code: terminalCode,
             message: 'Die Revalidierung wurde wegen eines dauerhaften Kontextfehlers beendet.'
-          }
+          } : {}
         });
+        const adopted = adoptTerminalRun(persistedRun);
+        if (adopted) return adopted;
       }
       return {
-        status: 'needs_manual_attention',
+        status: terminalStatus,
         post: null,
-        code: failureCode
+        ...(terminalCode ? { code: terminalCode } : {})
       };
     }
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
@@ -504,6 +622,9 @@ export function createProductionJobHandler({
         'Der Revalidierungsjob enthält keinen gültigen Revisions- und Fingerprint-Snapshot.',
         'CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID'
       );
+    }
+    if (revalidationClaim) {
+      revalidationCleanupIntent = parseExistingPostRevisionCleanupIntent(claim.last_error);
     }
     if (SEARCH_CONSOLE_JOB_TYPES.has(claim.job_type)) {
       if (typeof leaseGuard !== 'function') {
@@ -734,7 +855,10 @@ export function createProductionJobHandler({
       }
       throw new Error('Content-Agent-Lauf konnte nicht angelegt werden.');
     }
-    const adoptedTerminal = adoptTerminalRun(run);
+    const terminalRun = ['completed', 'failed', 'needs_manual_attention'].includes(run.status);
+    const adoptedTerminal = existingPostRevalidationJob && terminalRun
+      ? await adoptTerminalRevalidationRun(run)
+      : adoptTerminalRun(run);
     if (adoptedTerminal) return adoptedTerminal;
     const persistedSnapshot = (snapshotEnabled || existingPostRevalidationJob)
       ? run.runtime_snapshot_json
@@ -752,10 +876,13 @@ export function createProductionJobHandler({
         : existingPostRevalidationJob
           ? 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
           : 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
-      const status = openReservation ? 'needs_manual_attention' : 'failed';
       if (existingPostRevalidationJob) {
-        await failRevalidationFence(code);
+        return handleRevalidationExecutionError(permanentJobError(
+          'Der gespeicherte Runtime-Snapshot der Revalidierung ist dauerhaft ungültig.',
+          code
+        ), { run });
       }
+      const status = openReservation ? 'needs_manual_attention' : 'failed';
       const finishInput = {
         status,
         postId: null,
@@ -766,12 +893,8 @@ export function createProductionJobHandler({
             : 'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung enthält keinen gültigen Websuchepreis.'
         }
       };
-      if (existingPostRevalidationJob) {
-        await finishRevalidationRun(run.id, finishInput);
-      } else {
-        await assertActiveLease(leaseGuard);
-        assertFinishedRun(await finishRun(run.id, finishInput));
-      }
+      await assertActiveLease(leaseGuard);
+      assertFinishedRun(await finishRun(run.id, finishInput));
       if (openReservation) return { status, post: null, code };
       throw permanentJobError(
         'Der gespeicherte Runtime-Snapshot der Bestandsoptimierung ist dauerhaft ungültig.',
@@ -788,7 +911,10 @@ export function createProductionJobHandler({
         required(finishRun, 'finishRun');
         const code = validation.code || 'CONTENT_RUNTIME_SNAPSHOT_INVALID';
         if (existingPostRevalidationJob) {
-          await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+          return handleRevalidationExecutionError(permanentJobError(
+            'Der gespeicherte Regelsnapshot der Revalidierung ist dauerhaft ungültig.',
+            code
+          ), { run });
         }
         const finishInput = {
           status: 'needs_manual_attention',
@@ -800,12 +926,8 @@ export function createProductionJobHandler({
               : 'Der gespeicherte Runtime-Snapshot ist unvollständig oder ungültig.'
           }
         };
-        if (existingPostRevalidationJob) {
-          await finishRevalidationRun(run.id, finishInput);
-        } else {
-          await assertActiveLease(leaseGuard);
-          assertFinishedRun(await finishRun(run.id, finishInput));
-        }
+        await assertActiveLease(leaseGuard);
+        assertFinishedRun(await finishRun(run.id, finishInput));
         return { status: 'needs_manual_attention', post: null, code };
       }
     }
@@ -822,6 +944,7 @@ export function createProductionJobHandler({
       );
       result = await jobRunner({
         claim: { ...claim, payload_json: existingPostRevalidationPayload(claim) },
+        cleanupIntent: revalidationCleanupIntent,
         run,
         runtimeSnapshot: persistedSnapshot,
         leaseGuard

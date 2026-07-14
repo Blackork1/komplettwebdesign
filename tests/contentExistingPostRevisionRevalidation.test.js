@@ -89,6 +89,29 @@ test('gemeinsame Revalidierungsfehlerpolicy trennt permanent, transient, ausgesc
     ).cleanupToken,
     'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED'
   );
+  const parseCleanupIntent = revisionFailurePolicy.parseExistingPostRevisionCleanupIntent;
+  assert.equal(typeof parseCleanupIntent, 'function');
+  assert.deepEqual(parseCleanupIntent('CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete'), {
+    action: 'complete',
+    failureCode: null,
+    cleanupToken: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete'
+  });
+  assert.deepEqual(
+    parseCleanupIntent('CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'),
+    {
+      action: 'fail',
+      failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+      cleanupToken: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+    }
+  );
+  assert.equal(
+    parseCleanupIntent('CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:FREIER_CODE'),
+    null
+  );
+  assert.equal(
+    parseCleanupIntent('CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete:zusatz'),
+    null
+  );
 });
 
 function approvedReview(score = 92) {
@@ -106,6 +129,23 @@ function approvedReview(score = 92) {
       privacyClaims: false,
       softwareVersionClaims: false,
       staticPrices: false
+    }
+  };
+}
+
+function settledReviewStage(fixture, review) {
+  return {
+    revision_editorial_review: {
+      revisionFence: `71:4:${fixture.fingerprint}`,
+      value: review,
+      reservationMonth: '2026-07',
+      actualCost: 0.01
+    },
+    'budget:2026-07:revision_editorial_review': {
+      status: 'settled',
+      reservationMonth: '2026-07',
+      reservedCost: 0.25,
+      actualCost: 0.01
     }
   };
 }
@@ -842,12 +882,6 @@ test('unklar bestätigter Revisionsabschluss wird vor dem Runabschluss reconcile
     leaseGuard: async () => true
   };
 
-  await assert.rejects(
-    runExistingPostRevisionRevalidationJob(input, dependencies),
-    { code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', retryable: true }
-  );
-  assert.equal(state.finishCalls.length, 0);
-
   const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
   assert.equal(recovered.status, 'completed');
   assert.equal(completeAttempts, 2);
@@ -920,12 +954,6 @@ test('unklar bestätigte Fehlerpersistenz wird mit ihrem exakten Code reconciled
     leaseGuard: async () => true
   };
 
-  await assert.rejects(
-    runExistingPostRevisionRevalidationJob(input, dependencies),
-    { code: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY', retryable: true }
-  );
-  assert.equal(state.finishCalls.length, 0);
-
   const recovered = await runExistingPostRevisionRevalidationJob(input, dependencies);
   assert.equal(recovered.status, 'needs_manual_attention');
   assert.equal(recovered.code, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
@@ -993,28 +1021,29 @@ test('versuchsneutraler Failure-Cleanup startet Paid Stage, Budget und Provider 
   assert.equal(state.finishCalls.length, 1);
 });
 
-test('generische Recovery am Versuchslimit rekonstruiert fail-only ohne Providerzugriff', async () => {
+test('generischer Cleanup-Intent bleibt auch am Versuchslimit unverändert und providerfrei', async () => {
   const fixture = runnerFixture();
   fixture.claim.attempts = 3;
   fixture.claim.max_attempts = 3;
   fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY';
   const { dependencies, state } = runnerDependencies(fixture);
 
-  const result = await runExistingPostRevisionRevalidationJob({
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
     claim: fixture.claim,
     run: { id: 208, status: 'running' },
     runtimeSnapshot: fixture.runtimeSnapshot,
     leaseGuard: async () => true
-  }, dependencies);
+  }, dependencies), (error) => (
+    error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'
+      && error?.doesNotConsumeAttempt === true
+  ));
 
-  assert.equal(result.status, 'needs_manual_attention');
-  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
   assert.equal(state.providerCalls, 0);
   assert.equal(state.budgetReservations, 0);
   assert.equal(state.stageWrites, 0);
   assert.equal(state.completeCalls.length, 0);
-  assert.equal(state.failedCalls[0]?.failureCode, 'CONTENT_REVISION_REVALIDATION_RETRY_EXHAUSTED');
-  assert.equal(state.finishCalls.length, 1);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 0);
 });
 
 test('Complete-Cleanup verwendet nur das gefencte Runergebnis ohne Paid Stage oder Budget', async () => {
@@ -1056,12 +1085,111 @@ test('Complete-Cleanup verwendet nur das gefencte Runergebnis ohne Paid Stage od
   assert.equal(state.finishCalls.length, 1);
 });
 
-test('Complete-Cleanup gibt ein ungesetteltes Runbudget ohne Budgetoperation manuell ab', async () => {
+test('Complete-Cleanup bleibt bei lokalen Kontext- und Reviewabweichungen exakt erhalten', async () => {
+  for (const current of [
+    {
+      label: 'Runtime-Snapshot',
+      prepare(fixture) {
+        fixture.context.runtimeSnapshot = {
+          ...fixture.runtimeSnapshot,
+          settingsVersion: fixture.runtimeSnapshot.settingsVersion + 1
+        };
+      }
+    },
+    {
+      label: 'Trusted Context',
+      prepare(fixture) {
+        const brokenRuntimeSnapshot = {
+          ...fixture.runtimeSnapshot,
+          existingPostTrustedContext: null
+        };
+        fixture.runtimeSnapshot = brokenRuntimeSnapshot;
+        fixture.context.runtimeSnapshot = structuredClone(brokenRuntimeSnapshot);
+      }
+    },
+    {
+      label: 'Quellen',
+      prepare(fixture) {
+        fixture.context.revision.optimization_report_json.sources = [{
+          title: 'Unsichere Quelle',
+          url: 'https://user:pass@example.com/geheim'
+        }];
+      }
+    },
+    {
+      label: 'Umfangsprüfung',
+      prepareDependencies(dependencies) {
+        dependencies.validateArticle = async () => {
+          throw Object.assign(new Error('Der Umfang weicht ab.'), {
+            issues: [{ code: 'scope_changed' }]
+          });
+        };
+      }
+    },
+    {
+      label: 'Re-Audit',
+      prepare(fixture) {
+        const content = '<section><h2>Planung</h2><p>Bestehender Inhalt für 900 Euro.</p></section>';
+        fixture.context.post.content = content;
+        fixture.context.revision.snapshot_json.fields.content = content;
+        fixture.fingerprint = snapshotFingerprint(fixture.context.revision.snapshot_json);
+        fixture.context.revision.optimization_report_json.revalidation.snapshotFingerprint = fixture.fingerprint;
+        fixture.claim.payload_json.snapshot_fingerprint = fixture.fingerprint;
+      }
+    },
+    {
+      label: 'Mindestscore',
+      prepare(fixture) {
+        fixture.context.revision.optimization_report_json.revalidation.minimumScore = 87;
+      }
+    },
+    {
+      label: 'Reviewergebnis',
+      prepare(fixture, run) {
+        run.stage_results_json = settledReviewStage(fixture, approvedReview(70));
+      }
+    }
+  ]) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = 3;
+    fixture.claim.max_attempts = 3;
+    fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
+    const run = { id: 219, status: 'running' };
+    current.prepare?.(fixture, run);
+    run.stage_results_json ??= settledReviewStage(fixture, approvedReview(92));
+    const { dependencies, state } = runnerDependencies(fixture);
+    current.prepareDependencies?.(dependencies);
+
+    await assert.rejects(runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run,
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies), (error) => {
+      assert.equal(
+        error?.cleanupToken,
+        'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete',
+        current.label
+      );
+      assert.equal(error?.doesNotConsumeAttempt, true, current.label);
+      return true;
+    }, current.label);
+
+    assert.equal(state.providerCalls, 0, current.label);
+    assert.equal(state.budgetReservations, 0, current.label);
+    assert.equal(state.stageWrites, 0, current.label);
+    assert.equal(state.completeCalls.length, 0, current.label);
+    assert.equal(state.failedCalls.length, 0, current.label);
+    assert.equal(state.finishCalls.length, 0, current.label);
+  }
+});
+
+test('Complete-Cleanup bleibt bei ungesetteltem Runbudget unverändert wiederaufnehmbar', async () => {
   const fixture = runnerFixture();
   fixture.claim.last_error = 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete';
   const { dependencies, state } = runnerDependencies(fixture);
 
-  const result = await runExistingPostRevisionRevalidationJob({
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
     claim: fixture.claim,
     run: {
       id: 210,
@@ -1082,25 +1210,78 @@ test('Complete-Cleanup gibt ein ungesetteltes Runbudget ohne Budgetoperation man
     },
     runtimeSnapshot: fixture.runtimeSnapshot,
     leaseGuard: async () => true
-  }, dependencies);
+  }, dependencies), (error) => (
+    error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete'
+      && error?.doesNotConsumeAttempt === true
+  ));
 
-  assert.equal(result.status, 'needs_manual_attention');
-  assert.equal(result.code, 'provider_stage_persistence_uncertain');
   assert.equal(state.providerCalls, 0);
   assert.equal(state.budgetReservations, 0);
   assert.equal(state.stageWrites, 0);
   assert.equal(state.completeCalls.length, 0);
-  assert.equal(state.failedCalls[0]?.failureCode, 'provider_stage_persistence_uncertain');
-  assert.equal(state.finishCalls.length, 1);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 0);
 });
 
-test('permanente Terminalfehler werden nicht als endloser Cleanup-Retry maskiert', async () => {
+test('expliziter Cleanup-Intent bleibt bei transientem Kontextzugriff unter und am Versuchslimit erhalten', async () => {
+  for (const current of [
+    {
+      attempts: 1,
+      code: '40001',
+      intent: {
+        action: 'complete',
+        failureCode: null,
+        cleanupToken: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete'
+      }
+    },
+    {
+      attempts: 3,
+      code: 'ECONNRESET',
+      intent: {
+        action: 'fail',
+        failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
+        cleanupToken: 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+      }
+    }
+  ]) {
+    const fixture = runnerFixture();
+    fixture.claim.attempts = current.attempts;
+    fixture.claim.max_attempts = 3;
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.optimizationRepository.loadRevisionRevalidationContext = async () => {
+      throw Object.assign(new Error('Kontext vorübergehend nicht erreichbar'), {
+        code: current.code
+      });
+    };
+
+    await assert.rejects(runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      cleanupIntent: current.intent,
+      run: { id: 211, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies), (error) => {
+      assert.equal(error?.cleanupToken, current.intent.cleanupToken);
+      assert.equal(error?.cleanupAction, current.intent.action);
+      assert.equal(error?.cleanupFailureCode, current.intent.failureCode);
+      assert.equal(error?.doesNotConsumeAttempt, true);
+      return true;
+    });
+    assert.equal(state.providerCalls, 0, current.intent.cleanupToken);
+    assert.equal(state.budgetReservations, 0, current.intent.cleanupToken);
+    assert.equal(state.stageWrites, 0, current.intent.cleanupToken);
+    assert.equal(state.failedCalls.length, 0, current.intent.cleanupToken);
+    assert.equal(state.completeCalls.length, 0, current.intent.cleanupToken);
+  }
+});
+
+test('permanenter failRevision-Fehler bleibt als exakter kostenfreier Cleanup wiederaufnehmbar', async () => {
   {
     const fixture = runnerFixture();
     fixture.context.revision.optimization_report_json.sources = [
       { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
     ];
-    const { dependencies } = runnerDependencies(fixture);
+    const { dependencies, state } = runnerDependencies(fixture);
     let failureAttempts = 0;
     dependencies.optimizationRepository.failRevisionRevalidation = async () => {
       failureAttempts += 1;
@@ -1115,17 +1296,92 @@ test('permanente Terminalfehler werden nicht als endloser Cleanup-Retry maskiert
       run: { id: 206, status: 'running' },
       runtimeSnapshot: fixture.runtimeSnapshot,
       leaseGuard: async () => true
-    }, dependencies), {
+    }, dependencies), (error) => {
+      assert.equal(error?.code, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY');
+      assert.equal(
+        error?.cleanupToken,
+        'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:fail:CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+      );
+      assert.equal(error?.doesNotConsumeAttempt, true);
+      return true;
+    });
+    assert.equal(failureAttempts, 1);
+    assert.equal(state.finishCalls.length, 0);
+    assert.equal(state.providerCalls, 0);
+  }
+});
+
+test('permanenter completeRevision-Fehler bleibt complete-cleanup und wird nicht fehlterminalisiert', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    state.completeCalls.push(input);
+    throw Object.assign(new Error('Persistenzvertrag dauerhaft ungültig'), {
       code: 'CONTENT_ACTION_VALIDATION_FAILED',
       retryable: false
     });
-    assert.equal(failureAttempts, 1);
-  }
+  };
 
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 217, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies), (error) => {
+    assert.equal(error?.code, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY');
+    assert.equal(error?.cleanupToken, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete');
+    assert.equal(error?.doesNotConsumeAttempt, true);
+    return true;
+  });
+  assert.equal(state.completeCalls.length, 1);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 0);
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+});
+
+test('unlesbarer Reconcile-Kontext lässt permanenten complete-Intent unverändert offen', async () => {
+  const fixture = runnerFixture();
+  fixture.claim.attempts = 3;
+  fixture.claim.max_attempts = 3;
+  const { dependencies, state } = runnerDependencies(fixture);
+  let contextLoads = 0;
+  dependencies.optimizationRepository.loadRevisionRevalidationContext = async () => {
+    contextLoads += 1;
+    return contextLoads === 1
+      ? structuredClone(fixture.context)
+      : { revision: { optimization_report_json: null } };
+  };
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    state.completeCalls.push(input);
+    throw Object.assign(new Error('Persistenzvertrag dauerhaft ungültig'), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED',
+      retryable: false
+    });
+  };
+
+  await assert.rejects(runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 218, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies), (error) => (
+    error?.cleanupToken === 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:complete'
+      && error?.doesNotConsumeAttempt === true
+  ));
+  assert.equal(contextLoads, 2);
+  assert.equal(state.completeCalls.length, 1);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 0);
+});
+
+test('permanenter finishRun-Fehler bleibt bis zur Runkonsistenz Cleanup-only', async () => {
   {
     const fixture = runnerFixture();
     markFixtureRevalidationPassed(fixture);
-    const { dependencies } = runnerDependencies(fixture);
+    const { dependencies, state } = runnerDependencies(fixture);
     let finishAttempts = 0;
     dependencies.runRepository.finishRun = async () => {
       finishAttempts += 1;
@@ -1134,17 +1390,143 @@ test('permanente Terminalfehler werden nicht als endloser Cleanup-Retry maskiert
         retryable: false
       });
     };
+    dependencies.runRepository.findRunByJobId = async () => ({
+      id: 207,
+      status: 'running'
+    });
 
-    await assert.rejects(runExistingPostRevisionRevalidationJob({
+    const input = {
       claim: fixture.claim,
       run: { id: 207, status: 'running' },
       runtimeSnapshot: fixture.runtimeSnapshot,
       leaseGuard: async () => true
-    }, dependencies), {
-      code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID',
+    };
+    for (let recovery = 0; recovery < 2; recovery += 1) {
+      await assert.rejects(runExistingPostRevisionRevalidationJob(input, dependencies), (error) => {
+        assert.equal(error?.code, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY');
+        assert.equal(error?.cleanupToken, 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY:finish');
+        assert.equal(error?.doesNotConsumeAttempt, true);
+        return true;
+      });
+    }
+    assert.equal(finishAttempts, 2);
+    assert.equal(state.providerCalls, 0);
+    assert.equal(state.budgetReservations, 0);
+  }
+});
+
+test('permanente commit-uncertain Revisionsterminalisierung wird sofort fenced adoptiert', async () => {
+  for (const action of ['complete', 'fail']) {
+    const fixture = runnerFixture();
+    const { dependencies, state } = runnerDependencies(fixture);
+    if (action === 'complete') {
+      dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+        state.completeCalls.push(input);
+        markFixtureRevalidationPassed(fixture, input.review);
+        throw Object.assign(new Error('Antwort nach erfolgreichem COMMIT ungültig'), {
+          code: 'CONTENT_ACTION_VALIDATION_FAILED',
+          retryable: false
+        });
+      };
+    } else {
+      fixture.context.revision.optimization_report_json.sources = [
+        { title: 'Unsicher', url: 'https://user:pass@example.com/geheim' },
+      ];
+      dependencies.optimizationRepository.failRevisionRevalidation = async (input) => {
+        state.failedCalls.push(input);
+        fixture.context.revision.optimization_report_json.revalidation = {
+          status: 'failed',
+          revisionVersion: 4,
+          snapshotFingerprint: fixture.fingerprint,
+          failureCode: input.failureCode
+        };
+        throw Object.assign(new Error('Antwort nach erfolgreichem COMMIT ungültig'), {
+          code: 'CONTENT_ACTION_VALIDATION_FAILED',
+          retryable: false
+        });
+      };
+    }
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: action === 'complete' ? 212 : 213, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, action === 'complete' ? 'completed' : 'needs_manual_attention');
+    assert.equal(state.finishCalls.length, 1, action);
+    assert.equal(state.providerCalls, action === 'complete' ? 1 : 0, action);
+    assert.equal(state.budgetReservations, action === 'complete' ? 1 : 0, action);
+  }
+});
+
+test('permanenter completeRevision-Fehler adoptiert einen abweichenden failed-Zustand ohne Überschreiben', async () => {
+  const fixture = runnerFixture();
+  const { dependencies, state } = runnerDependencies(fixture);
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    state.completeCalls.push(input);
+    fixture.context.revision.optimization_report_json.revalidation = {
+      status: 'failed',
+      revisionVersion: 4,
+      snapshotFingerprint: fixture.fingerprint,
+      failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+    };
+    throw Object.assign(new Error('Fence wurde von einem anderen Abschluss übernommen'), {
+      code: 'CONTENT_ACTION_VALIDATION_FAILED',
       retryable: false
     });
-    assert.equal(finishAttempts, 1);
+  };
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 214, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED');
+  assert.equal(state.completeCalls.length, 1);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls[0]?.input?.status, 'needs_manual_attention');
+});
+
+test('permanenter finishRun-Fehler adoptiert commit-uncertain und abweichende terminale Runs', async () => {
+  for (const terminalRun of [
+    { id: 215, status: 'completed', error_report_json: {} },
+    {
+      id: 216,
+      status: 'needs_manual_attention',
+      error_report_json: { code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST' }
+    }
+  ]) {
+    const fixture = runnerFixture();
+    markFixtureRevalidationPassed(fixture);
+    const { dependencies, state } = runnerDependencies(fixture);
+    let persistedRun = { id: terminalRun.id, status: 'running' };
+    dependencies.runRepository.finishRun = async () => {
+      persistedRun = structuredClone(terminalRun);
+      throw Object.assign(new Error('Antwort nach Run-COMMIT dauerhaft ungültig'), {
+        code: 'CONTENT_RUN_TERMINAL_STATUS_INVALID',
+        retryable: false
+      });
+    };
+    dependencies.runRepository.findRunByJobId = async () => structuredClone(persistedRun);
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: terminalRun.id, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, terminalRun.status);
+    if (terminalRun.status === 'needs_manual_attention') {
+      assert.equal(result.code, terminalRun.error_report_json.code);
+    }
+    assert.equal(state.providerCalls, 0);
+    assert.equal(state.budgetReservations, 0);
   }
 });
 

@@ -691,7 +691,7 @@ test('Recovery übernimmt einen terminalen Run auch nach dem letzten Jobversuch 
   assert.match(sql, /COALESCE\(expired\.run_error_code, 'CONTENT_RUN_FAILED'\)/i);
 });
 
-test('Recovery hält nichtterminale Revalidierungs-Cleanups am Versuchslimit wiederaufnehmbar', async () => {
+test('Recovery hält Revalidierungs-Cleanups auch mit terminalem Run wiederaufnehmbar', async () => {
   const recovered = {
     id: 6,
     job_type: 'revalidate_existing_post_revision',
@@ -709,7 +709,7 @@ test('Recovery hält nichtterminale Revalidierungs-Cleanups am Versuchslimit wie
   const sql = db.calls[0].sql;
   const terminalBranch = sql.indexOf("expired.run_status IN ('completed', 'failed', 'needs_manual_attention')");
   const cleanupBranch = sql.indexOf("job.job_type = 'revalidate_existing_post_revision'");
-  assert.ok(terminalBranch >= 0 && cleanupBranch > terminalBranch);
+  assert.ok(cleanupBranch >= 0 && terminalBranch > cleanupBranch);
   assert.match(
     sql,
     /job\.job_type = 'revalidate_existing_post_revision'[\s\S]*THEN 'queued'/i
@@ -724,7 +724,11 @@ test('Recovery hält nichtterminale Revalidierungs-Cleanups am Versuchslimit wie
   );
   assert.match(
     sql,
-    /attempts = CASE[\s\S]*expired\.run_status IN \('completed', 'failed', 'needs_manual_attention'\)[\s\S]*THEN job\.attempts[\s\S]*job\.job_type = 'revalidate_existing_post_revision'/i
+    /attempts = CASE[\s\S]*job\.job_type = 'revalidate_existing_post_revision'[\s\S]*GREATEST\(job\.attempts - 1, 0\)[\s\S]*expired\.run_status IN \('completed', 'failed', 'needs_manual_attention'\)[\s\S]*THEN job\.attempts/i
+  );
+  assert.match(
+    sql,
+    /last_error = CASE[\s\S]*job\.job_type = 'revalidate_existing_post_revision'[\s\S]*expired\.run_status IN \('completed', 'failed', 'needs_manual_attention'\)[\s\S]*THEN 'CONTENT_REVISION_REVALIDATION_CLEANUP_RETRY'/i
   );
   assert.match(
     sql,
