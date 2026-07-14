@@ -84,6 +84,12 @@
             <header><div><span class="content-agent-status <%= rule.status === 'active' ? 'content-agent-status--success' : rule.status === 'paused' ? 'content-agent-status--warning' : 'content-agent-status--neutral' %>"><%= rule.statusLabel %></span><h3><%= rule.categoryLabel %></h3></div><span>Inhaltsversion <strong><%= rule.contentVersion %></strong></span></header>
             <p><%= rule.ruleText %></p>
             <p class="content-learning-meta"><%= rule.targetStageLabels.join(' · ') %><%= rule.updatedAtLabel ? ` · Aktualisiert ${rule.updatedAtLabel}` : '' %></p>
+            <div class="content-learning-effectiveness <%= rule.effectiveness.status === 'revision_recommended' ? 'is-warning' : rule.effectiveness.status === 'effective' ? 'is-effective' : '' %>">
+              <div class="content-learning-effectiveness__head"><strong>Wirksamkeit: <%= rule.effectiveness.statusLabel %></strong><span><%= rule.effectiveness.articleCount %> neue Artikel</span></div>
+              <p><%= rule.effectiveness.statusHint %></p>
+              <dl><div><dt>Wiederholungen</dt><dd><%= rule.effectiveness.recurrenceCount %> · <%= rule.effectiveness.currentRateLabel %></dd></div><div><dt>Vergleich davor</dt><dd><%= rule.effectiveness.baselineRateLabel %></dd></div><div><dt>Ø Qualität</dt><dd><%= rule.effectiveness.averageQualityScoreLabel %></dd></div></dl>
+              <details><summary>Search-Console-Kontext</summary><% if (rule.effectiveness.gsc.hasData) { %><dl class="content-learning-gsc"><div><dt>Klicks</dt><dd><%= rule.effectiveness.gsc.clicksLabel %></dd></div><div><dt>Impressionen</dt><dd><%= rule.effectiveness.gsc.impressionsLabel %></dd></div><div><dt>CTR</dt><dd><%= rule.effectiveness.gsc.ctrLabel %></dd></div><div><dt>Position</dt><dd><%= rule.effectiveness.gsc.averagePositionLabel %></dd></div></dl><% } else { %><p>Noch keine Search-Console-Daten für diese Artikel vorhanden. Diese Werte dienen nur als Kontext und ändern keine Lernregel.</p><% } %></details>
+            </div>
             <% if (rule.status !== 'disabled') { %>
               <details class="content-learning-editor"><summary>Neue Version anlegen</summary>
                 <form method="post" action="/admin/content-agent/learning-rules/<%= rule.id %>/revise" data-confirm="Diese neue Regelversion wirklich aktivieren? Laufende Jobs behalten ihren bisherigen Snapshot.">

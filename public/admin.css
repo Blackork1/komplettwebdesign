@@ -1251,6 +1251,19 @@ body {
 .content-learning-rule.is-disabled { opacity: 0.72; }
 .content-learning-rule > p { margin: 0.5rem 0; color: var(--content-agent-ink); }
 .content-learning-meta { color: var(--content-agent-muted) !important; font-size: 0.78rem; }
+.content-learning-effectiveness { margin-top: 0.85rem; padding: 0.8rem; background: #edf3f7; border: 1px solid #d8e3ea; border-radius: 8px; }
+.content-learning-effectiveness.is-effective { background: #edf8f1; border-color: #c9e6d4; }
+.content-learning-effectiveness.is-warning { background: #fff6e7; border-color: #efd3a7; }
+.content-learning-effectiveness__head { display: flex; justify-content: space-between; gap: 0.75rem; color: var(--content-agent-ink); }
+.content-learning-effectiveness__head span { color: var(--content-agent-muted); font-size: 0.78rem; }
+.content-learning-effectiveness > p { margin: 0.35rem 0 0.65rem; color: var(--content-agent-muted); font-size: 0.8rem; }
+.content-learning-effectiveness dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; margin: 0; }
+.content-learning-effectiveness dl > div { display: grid; gap: 0.15rem; }
+.content-learning-effectiveness dt { color: var(--content-agent-muted); font-size: 0.72rem; font-weight: 650; }
+.content-learning-effectiveness dd { margin: 0; color: var(--content-agent-ink); font-size: 0.82rem; font-weight: 800; }
+.content-learning-effectiveness details { margin-top: 0.7rem; }
+.content-learning-effectiveness summary { color: var(--content-agent-blue); cursor: pointer; font-size: 0.78rem; font-weight: 750; }
+.content-learning-effectiveness .content-learning-gsc { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 0.55rem; }
 .content-learning-editor { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--content-agent-line); }
 .content-learning-editor form { margin-top: 0.8rem; }
 .content-learning-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.85rem; }
@@ -1334,7 +1347,10 @@ body {
   .content-learning-actions .btn { width: 100%; }
   .content-learning-card__head,
   .content-learning-rule > header,
+  .content-learning-effectiveness__head,
   .content-learning-observations article > div { align-items: flex-start; flex-direction: column; }
+  .content-learning-effectiveness dl,
+  .content-learning-effectiveness .content-learning-gsc { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

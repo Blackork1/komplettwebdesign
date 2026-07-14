@@ -20,8 +20,35 @@ function harness(overrides = {}) {
 
 test('lädt das Lernregel-Dashboard ausschließlich lesend', async () => {
   const { calls, service } = harness();
-  assert.deepEqual(await service.getDashboard(), { proposals: [] });
+  assert.deepEqual(await service.getDashboard(), { proposals: [], rules: [] });
   assert.deepEqual(calls, [['dashboard']]);
+});
+
+test('ordnet Wirksamkeitsdaten ausschließlich der exakten Regelversion zu', async () => {
+  const { service } = harness({
+    async getAdminDashboard() {
+      return {
+        proposals: [],
+        rules: [
+          { id: 8, current_version: 2 },
+          { id: 9, current_version: 1 }
+        ],
+        effectiveness: [{
+          rule_id: 8, rule_version: 2, article_count: 6, recurrence_count: 1,
+          baseline_article_count: 10, baseline_recurrence_count: 6,
+          average_quality_score: 91, impressions: 400
+        }, {
+          rule_id: 8, rule_version: 1, article_count: 99, recurrence_count: 99
+        }]
+      };
+    }
+  });
+  const dashboard = await service.getDashboard();
+  assert.equal(dashboard.rules[0].effectiveness.status, 'effective');
+  assert.equal(dashboard.rules[0].effectiveness.articleCount, 6);
+  assert.equal(dashboard.rules[0].effectiveness.gsc.impressions, 400);
+  assert.equal(dashboard.rules[1].effectiveness.status, 'observing');
+  assert.equal(dashboard.rules[1].effectiveness.articleCount, 0);
 });
 
 test('aktiviert oder verwirft einen Vorschlag nur bestätigt und versionsgesichert', async () => {

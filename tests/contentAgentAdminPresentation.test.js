@@ -43,7 +43,12 @@ test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus',
       target_stages: ['seo_brief', 'writer', 'reviewer'],
       updated_by_admin_name: 'Admin Ä',
       updated_at: '2026-07-14T08:00:00.000Z',
-      article_html: '<article>vollständig</article>'
+      article_html: '<article>vollständig</article>',
+      effectiveness: {
+        status: 'effective', articleCount: 6, recurrenceCount: 1,
+        baselineRate: 0.6, currentRate: 1 / 6, averageQualityScore: 91,
+        gsc: { clicks: 12, impressions: 400, ctr: 0.03, averagePosition: 8.4 }
+      }
     }],
     observations: [{
       category_key: 'generic_content', article_count: 4, observation_count: 6,
@@ -60,6 +65,8 @@ test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus',
   assert.equal(dashboard.proposals[0].categoryLabel, 'CTA-Wiederholung oder fehlende Passung');
   assert.equal(dashboard.proposals[0].evidence[0].postId, 11);
   assert.deepEqual(dashboard.rules[0].targetStageLabels, ['SEO-Briefing', 'Artikelerstellung', 'Redaktionelle Prüfung']);
+  assert.equal(dashboard.rules[0].effectiveness.statusLabel, 'Wirksam');
+  assert.equal(dashboard.rules[0].effectiveness.gsc.impressionsLabel, '400');
   assert.equal(dashboard.events[0].eventLabel, 'Neue Regelversion aktiviert');
   assert.doesNotMatch(JSON.stringify(dashboard), /runtime_snapshot_json|raw_provider_response|providerResponse|article_html|vollständig|geheim/i);
 });

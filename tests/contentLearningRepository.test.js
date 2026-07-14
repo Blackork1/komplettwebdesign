@@ -187,3 +187,41 @@ test('Transaktionsfehler führen zu Rollback und Freigabe des Clients', async ()
   assert.equal(calls.at(-1), 'ROLLBACK');
   assert.equal(released, true);
 });
+
+test('Dashboardmetriken ordnen nur exakt gesnapshottete Regelversionen zu und aggregieren GSC nur beschreibend', async () => {
+  const queries = [];
+  const repository = createContentLearningRepository({
+    async query(sql) {
+      const compact = sql.replace(/\s+/g, ' ').trim();
+      queries.push(compact);
+      if (/FROM content_learning_rule_proposals/i.test(compact)) return { rows: [] };
+      if (/FROM content_learning_rules r JOIN content_learning_rule_versions/i.test(compact)
+          && !/learningRuleSnapshot/i.test(compact)) return { rows: [] };
+      if (/FROM content_learning_observations WHERE category_key <>/i.test(compact)) return { rows: [] };
+      if (/FROM content_learning_observations WHERE category_key = 'unclassified'/i.test(compact)) return { rows: [{ article_count: 0, observation_count: 0 }] };
+      if (/FROM content_learning_events/i.test(compact)) return { rows: [] };
+      if (/learningRuleSnapshot/i.test(compact)) return { rows: [{
+        rule_id: 8,
+        rule_version: 2,
+        article_count: 6,
+        recurrence_count: 1,
+        baseline_article_count: 10,
+        baseline_recurrence_count: 6,
+        average_quality_score: 91,
+        clicks: 12,
+        impressions: 400,
+        ctr: 0.03,
+        average_position: 8.4
+      }] };
+      throw new Error(`Unerwartetes SQL: ${compact}`);
+    }
+  });
+
+  const result = await repository.getAdminDashboard();
+  assert.equal(result.effectiveness[0].rule_id, 8);
+  const query = queries.find((sql) => /learningRuleSnapshot/i.test(sql));
+  assert.match(query, /jsonb_array_elements/i);
+  assert.match(query, /snapshot_rule ->> 'id'/i);
+  assert.match(query, /snapshot_rule ->> 'version'/i);
+  assert.match(query, /content_search_metrics/i);
+});

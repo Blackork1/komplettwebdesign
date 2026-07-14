@@ -96,6 +96,21 @@ const LEARNING_EVENT_LABELS = Object.freeze({
   rule_disabled: 'Lernregel dauerhaft deaktiviert'
 });
 
+const LEARNING_EFFECTIVENESS = Object.freeze({
+  effective: Object.freeze({
+    label: 'Wirksam',
+    hint: 'Die Fehlerkategorie tritt in den ausgewerteten neuen Artikeln nicht oder deutlich seltener auf.'
+  }),
+  observing: Object.freeze({
+    label: 'Weiter beobachten',
+    hint: 'Für eine belastbare Bewertung sind mindestens fünf neue Artikel mit exakt dieser Regelversion erforderlich.'
+  }),
+  revision_recommended: Object.freeze({
+    label: 'Revision empfohlen',
+    hint: 'Die Fehlerkategorie tritt weiterhin wiederholt auf. Prüfe eine neue Regelversion redaktionell.'
+  })
+});
+
 const TECHNICAL_KEYS = Object.freeze([
   'enabled',
   'autoPublishEnabled',
@@ -267,6 +282,39 @@ function safePositiveInteger(value) {
   return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : null;
 }
 
+function presentLearningEffectiveness(raw = {}) {
+  const status = LEARNING_EFFECTIVENESS[raw.status] ? raw.status : 'observing';
+  const numberOrNull = (value) => {
+    const number = Number(value);
+    return value === null || value === undefined || !Number.isFinite(number) ? null : number;
+  };
+  const currentRate = numberOrNull(raw.currentRate);
+  const baselineRate = numberOrNull(raw.baselineRate);
+  const averageQualityScore = numberOrNull(raw.averageQualityScore);
+  const gsc = raw.gsc && typeof raw.gsc === 'object' ? raw.gsc : {};
+  const clicks = numberOrNull(gsc.clicks);
+  const impressions = numberOrNull(gsc.impressions);
+  const ctr = numberOrNull(gsc.ctr);
+  const averagePosition = numberOrNull(gsc.averagePosition);
+  return {
+    status,
+    statusLabel: LEARNING_EFFECTIVENESS[status].label,
+    statusHint: LEARNING_EFFECTIVENESS[status].hint,
+    articleCount: Math.max(0, Number(raw.articleCount) || 0),
+    recurrenceCount: Math.max(0, Number(raw.recurrenceCount) || 0),
+    currentRateLabel: currentRate === null ? 'Noch nicht verfügbar' : germanNumber(currentRate, { style: 'percent', maximumFractionDigits: 1 }),
+    baselineRateLabel: baselineRate === null ? 'Keine Vergleichsgruppe' : germanNumber(baselineRate, { style: 'percent', maximumFractionDigits: 1 }),
+    averageQualityScoreLabel: averageQualityScore === null ? 'Noch nicht verfügbar' : germanNumber(averageQualityScore, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    gsc: {
+      hasData: clicks !== null || impressions !== null || ctr !== null || averagePosition !== null,
+      clicksLabel: clicks === null ? '–' : germanNumber(clicks, { maximumFractionDigits: 0 }),
+      impressionsLabel: impressions === null ? '–' : germanNumber(impressions, { maximumFractionDigits: 0 }),
+      ctrLabel: ctr === null ? '–' : germanNumber(ctr, { style: 'percent', maximumFractionDigits: 1 }),
+      averagePositionLabel: averagePosition === null ? '–' : germanNumber(averagePosition, { maximumFractionDigits: 1 })
+    }
+  };
+}
+
 export function presentContentLearningDashboard(raw = {}) {
   const proposals = (Array.isArray(raw.proposals) ? raw.proposals : []).slice(0, 100).map((row) => ({
     id: safePositiveInteger(row.id),
@@ -303,7 +351,8 @@ export function presentContentLearningDashboard(raw = {}) {
     ...learningTargetStages(row.target_stages),
     updatedBy: sanitizeLearningText(row.updated_by_admin_name || row.created_by_admin_name, 180) || null,
     createdAtLabel: berlinDateTime(row.created_at),
-    updatedAtLabel: berlinDateTime(row.updated_at)
+    updatedAtLabel: berlinDateTime(row.updated_at),
+    effectiveness: presentLearningEffectiveness(row.effectiveness)
   })).filter((item) => item.id && item.contentVersion && item.expectedVersion);
 
   const observations = (Array.isArray(raw.observations) ? raw.observations : []).slice(0, 100).map((row) => ({

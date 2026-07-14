@@ -147,7 +147,12 @@ test('Lernregelseite zeigt sichere Vorschläge, Regeln, Beobachtungen und Verlau
       contentVersion: 1, expectedVersion: 3,
       ruleText: 'Formuliere zentrale Abschnitte konkret für Zielgruppe und Thema.',
       targetStages: ['seo_brief', 'writer'], targetStageLabels: ['SEO-Briefing', 'Artikelerstellung'],
-      updatedAtLabel: '14.07.2026, 10:00 Uhr (MESZ)'
+      updatedAtLabel: '14.07.2026, 10:00 Uhr (MESZ)',
+      effectiveness: {
+        status: 'revision_recommended', statusLabel: 'Revision empfohlen', statusHint: 'Die Fehlerkategorie tritt weiterhin wiederholt auf.',
+        articleCount: 6, recurrenceCount: 3, currentRateLabel: '50 %', baselineRateLabel: '60 %', averageQualityScoreLabel: '91,0',
+        gsc: { hasData: true, clicksLabel: '12', impressionsLabel: '400', ctrLabel: '3 %', averagePositionLabel: '8,4' }
+      }
     }],
     observations: [{ categoryLabel: 'Zu generische Inhalte', articleCount: 4, observationCount: 6, postIds: [11, 12], lastSeenAtLabel: '14.07.2026, 09:00 Uhr (MESZ)' }],
     unclassified: { articleCount: 2, observationCount: 3, lastSeenAtLabel: '13.07.2026, 09:00 Uhr (MESZ)' },
@@ -165,6 +170,8 @@ test('Lernregelseite zeigt sichere Vorschläge, Regeln, Beobachtungen und Verlau
   assert.match(html, /Aktive und bisherige Regeln/);
   assert.match(html, /Beobachtungen/);
   assert.match(html, /Verlauf/);
+  assert.match(html, /Revision empfohlen/);
+  assert.match(html, /Search-Console-Kontext/);
   assert.match(html, /name="_csrf" value="csrf-test"/);
   assert.match(html, /name="expected_version" value="2"/);
   assert.match(html, /name="confirmed" value="true"/);

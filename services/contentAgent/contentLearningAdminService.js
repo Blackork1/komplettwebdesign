@@ -2,6 +2,7 @@ import {
   sanitizeLearningText,
   validateLearningRuleText
 } from './contentLearningTaxonomy.js';
+import { evaluateLearningRuleEffectiveness } from './contentLearningEffectivenessService.js';
 
 const TARGET_STAGE_ORDER = Object.freeze(['seo_brief', 'writer', 'reviewer']);
 const TARGET_STAGES = new Set(TARGET_STAGE_ORDER);
@@ -56,6 +57,40 @@ function baseAction(input, idField) {
   };
 }
 
+function effectivenessFor(row = {}) {
+  const articleCount = Math.max(0, Number(row.article_count) || 0);
+  const recurrenceCount = Math.max(0, Number(row.recurrence_count) || 0);
+  const baselineArticleCount = Math.max(0, Number(row.baseline_article_count) || 0);
+  const baselineRecurrenceCount = Math.max(0, Number(row.baseline_recurrence_count) || 0);
+  const currentRate = articleCount > 0 ? recurrenceCount / articleCount : 0;
+  const baselineRate = baselineArticleCount > 0
+    ? baselineRecurrenceCount / baselineArticleCount
+    : null;
+  return {
+    status: evaluateLearningRuleEffectiveness({
+      articleCount,
+      recurrenceCount,
+      baselineRate,
+      currentRate
+    }),
+    articleCount,
+    recurrenceCount,
+    baselineArticleCount,
+    baselineRecurrenceCount,
+    baselineRate,
+    currentRate,
+    averageQualityScore: row.average_quality_score == null
+      ? null
+      : Number(row.average_quality_score),
+    gsc: {
+      clicks: row.clicks == null ? null : Number(row.clicks),
+      impressions: row.impressions == null ? null : Number(row.impressions),
+      ctr: row.ctr == null ? null : Number(row.ctr),
+      averagePosition: row.average_position == null ? null : Number(row.average_position)
+    }
+  };
+}
+
 export function createContentLearningAdminService({ repository } = {}) {
   if (!repository || typeof repository !== 'object') {
     throw validationError('Das Lernregel-Repository fehlt.');
@@ -65,7 +100,19 @@ export function createContentLearningAdminService({ repository } = {}) {
       if (typeof repository.getAdminDashboard !== 'function') {
         throw validationError('Das Lernregel-Dashboard ist nicht verfügbar.');
       }
-      return repository.getAdminDashboard();
+      const dashboard = await repository.getAdminDashboard();
+      const effectiveness = new Map((Array.isArray(dashboard?.effectiveness)
+        ? dashboard.effectiveness
+        : []).map((row) => [`${Number(row.rule_id)}:${Number(row.rule_version)}`, row]));
+      return {
+        ...dashboard,
+        rules: (Array.isArray(dashboard?.rules) ? dashboard.rules : []).map((rule) => ({
+          ...rule,
+          effectiveness: effectivenessFor(
+            effectiveness.get(`${Number(rule.id)}:${Number(rule.current_version)}`)
+          )
+        }))
+      };
     },
 
     async activateProposal(input) {

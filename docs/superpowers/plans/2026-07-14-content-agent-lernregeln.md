@@ -522,7 +522,7 @@ git commit -m "feat: add content learning dashboard"
 - Produces: `evaluateLearningRuleEffectiveness({ articleCount, recurrenceCount, baselineRate, currentRate })` → `effective | observing | revision_recommended`.
 - Repository liefert pro Regelversion Artikelzahl, Wiederholungen, Qualitätsscore sowie vorhandene aggregierte GSC-Metriken.
 
-- [ ] **Step 1: Failing Wirksamkeitstests schreiben**
+- [x] **Step 1: Failing Wirksamkeitstests schreiben**
 
 Belegen:
 
@@ -531,23 +531,23 @@ Belegen:
 - wiederholtes Auftreten ohne Verbesserung ergibt `revision_recommended`,
 - fehlende GSC-Daten ändern den qualitativen Status nicht.
 
-- [ ] **Step 2: RED prüfen**
+- [x] **Step 2: RED prüfen**
 
 Run: `node --test tests/contentLearningEffectiveness.test.js tests/contentLearningRepository.test.js tests/contentAgentAdminPresentation.test.js tests/contentAgentAdminViews.test.js`
 
 Expected: FAIL.
 
-- [ ] **Step 3: Auswertung und Read-only-Anzeige implementieren**
+- [x] **Step 3: Auswertung und Read-only-Anzeige implementieren**
 
 Die Berechnung verwendet ausschließlich Artikel, deren persistierter Runtime-Snapshot die exakte Regel-ID und Version enthält. GSC-Daten werden nur angezeigt. `revision_recommended` erzeugt einen Hinweis, aber keinen automatischen Schreibvorgang.
 
-- [ ] **Step 4: GREEN prüfen**
+- [x] **Step 4: GREEN prüfen**
 
 Run: `node --test tests/contentLearningEffectiveness.test.js tests/contentLearningRepository.test.js tests/contentAgentAdminPresentation.test.js tests/contentAgentAdminViews.test.js`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add services/contentAgent/contentLearningEffectivenessService.js repositories/contentLearningRepository.js services/contentAgent/adminPresentationService.js views/admin/contentAgent/learningRules.ejs tests/contentLearningEffectiveness.test.js tests/contentLearningRepository.test.js tests/contentAgentAdminPresentation.test.js tests/contentAgentAdminViews.test.js

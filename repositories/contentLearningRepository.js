@@ -340,7 +340,7 @@ export function createContentLearningRepository(db = pool) {
     },
 
     async getAdminDashboard() {
-      const [proposals, rules, observations, unclassified, events] = await Promise.all([
+      const [proposals, rules, observations, unclassified, events, effectiveness] = await Promise.all([
         db.query(`
           SELECT id, category_key, status, proposal_version, suggested_rule_text,
                  target_stages, evidence_count, evidence_json, expected_effect,
@@ -381,6 +381,84 @@ export function createContentLearningRepository(db = pool) {
           FROM content_learning_events
           ORDER BY created_at DESC, id DESC
           LIMIT 100
+        `),
+        db.query(`
+          WITH current_rule_versions AS (
+            SELECT r.id AS rule_id, r.category_key, v.version AS rule_version,
+                   v.created_at AS rule_version_created_at
+            FROM content_learning_rules r
+            JOIN content_learning_rule_versions v
+              ON v.rule_id = r.id AND v.version = r.current_version
+          ), snapshotted_articles AS (
+            SELECT rv.rule_id, rv.rule_version, rv.category_key, p.id AS post_id,
+                   m.quality_score,
+                   CASE WHEN observation.post_id IS NULL THEN 0 ELSE 1 END AS recurred
+            FROM current_rule_versions rv
+            JOIN content_runs run ON TRUE
+            JOIN LATERAL jsonb_array_elements(
+              COALESCE(run.runtime_snapshot_json #> '{learningRuleSnapshot,rules}', '[]'::jsonb)
+            ) AS snapshot_rule ON
+              (snapshot_rule ->> 'id')::bigint = rv.rule_id
+              AND (snapshot_rule ->> 'version')::integer = rv.rule_version
+            JOIN posts p ON p.generation_run_id = run.id
+            JOIN content_post_metadata m ON m.post_id = p.id
+            LEFT JOIN content_learning_observations observation
+              ON observation.post_id = p.id
+             AND observation.category_key = rv.category_key
+          ), article_gsc AS (
+            SELECT post_id, SUM(clicks)::double precision AS clicks,
+                   SUM(impressions)::double precision AS impressions,
+                   (SUM(clicks) / NULLIF(SUM(impressions), 0))::double precision AS ctr,
+                   (
+                     SUM(average_position * impressions)
+                     / NULLIF(SUM(impressions), 0)
+                   )::double precision AS average_position
+            FROM content_search_metrics
+            WHERE post_id IS NOT NULL
+            GROUP BY post_id
+          ), rule_metrics AS (
+            SELECT article.rule_id, article.rule_version,
+                   COUNT(DISTINCT article.post_id)::integer AS article_count,
+                   SUM(article.recurred)::integer AS recurrence_count,
+                   AVG(article.quality_score)::double precision AS average_quality_score,
+                   SUM(gsc.clicks)::double precision AS clicks,
+                   SUM(gsc.impressions)::double precision AS impressions,
+                   (SUM(gsc.clicks) / NULLIF(SUM(gsc.impressions), 0))::double precision AS ctr,
+                   (
+                     SUM(gsc.average_position * gsc.impressions)
+                     / NULLIF(SUM(gsc.impressions), 0)
+                   )::double precision AS average_position
+            FROM snapshotted_articles article
+            LEFT JOIN article_gsc gsc ON gsc.post_id = article.post_id
+            GROUP BY article.rule_id, article.rule_version
+          )
+          SELECT rv.rule_id, rv.rule_version,
+                 COALESCE(metrics.article_count, 0)::integer AS article_count,
+                 COALESCE(metrics.recurrence_count, 0)::integer AS recurrence_count,
+                 baseline.article_count::integer AS baseline_article_count,
+                 baseline.recurrence_count::integer AS baseline_recurrence_count,
+                 metrics.average_quality_score, metrics.clicks, metrics.impressions,
+                 metrics.ctr, metrics.average_position
+          FROM current_rule_versions rv
+          LEFT JOIN rule_metrics metrics
+            ON metrics.rule_id = rv.rule_id AND metrics.rule_version = rv.rule_version
+          LEFT JOIN LATERAL (
+            SELECT COUNT(*)::integer AS article_count,
+                   COUNT(observation.post_id)::integer AS recurrence_count
+            FROM (
+              SELECT prior.id
+              FROM posts prior
+              WHERE prior.generated_by_ai = TRUE
+                AND prior.content_format = 'static_html'
+                AND prior.created_at < rv.rule_version_created_at
+              ORDER BY prior.created_at DESC, prior.id DESC
+              LIMIT 20
+            ) baseline_post
+            LEFT JOIN content_learning_observations observation
+              ON observation.post_id = baseline_post.id
+             AND observation.category_key = rv.category_key
+          ) baseline ON TRUE
+          ORDER BY rv.rule_id, rv.rule_version
         `)
       ]);
       return {
@@ -392,7 +470,8 @@ export function createContentLearningRepository(db = pool) {
           observation_count: 0,
           last_seen_at: null
         },
-        events: events.rows
+        events: events.rows,
+        effectiveness: effectiveness.rows
       };
     },
 
