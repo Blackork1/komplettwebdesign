@@ -8,7 +8,10 @@ import { ExistingPostOptimizationOutputSchema } from './existingPostOptimization
 import { validateTargetedOptimizationScope } from './existingPostDiffService.js';
 import { normalizeInternalHref } from './trustedInternalLinkService.js';
 import { snapshotFingerprint } from './revisionSnapshotFingerprint.js';
-import { evaluateExistingPostRevisionApproval } from './existingPostRevisionApprovalPolicy.js';
+import {
+  evaluateExistingPostRevisionApproval,
+  minimumExistingPostRevisionScore
+} from './existingPostRevisionApprovalPolicy.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -298,10 +301,13 @@ function optimizedRevisionInput(input = {}) {
     );
   }
   report.review = parsedReview.data;
-  const originalScore = Number(report.afterScore ?? report.beforeScore);
-  const minimumScore = Math.max(80, Number.isFinite(originalScore)
-    ? originalScore
-    : 80);
+  const minimumScore = minimumExistingPostRevisionScore(report);
+  if (minimumScore == null) {
+    throw revisionError(
+      'CONTENT_REVISION_VALIDATION_FAILED',
+      'Der gebundene Ausgangsscore ist ungültig.'
+    );
+  }
   report.revalidation = {
     status: 'passed',
     revisionVersion: 1,

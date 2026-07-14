@@ -1223,6 +1223,7 @@ test('nicht rücknehmbare Änderungen erklären die Sperre und fehlgeschlagene R
       revalidationStatus: 'failed',
       revalidationStatusLabel: 'Erneute Prüfung fehlgeschlagen',
       approvalEnabled: false,
+      approvalBlockedReason: 'Erst <script>Prüfung</script> abschließen.',
       live: { title: 'Live', contentHtml: '<p>Alt.</p>' },
       optimized: { title: 'Revision', contentHtml: '<p>Neu.</p>' },
       changes: [{
@@ -1266,8 +1267,13 @@ test('nicht rücknehmbare Änderungen erklären die Sperre und fehlgeschlagene R
   assert.doesNotMatch(html, new RegExp(`/changes/${changeId}/revert`));
   assert.match(html, /Dieser HTML-Block ist nicht eindeutig zuordenbar/);
   assert.match(html, /Erneute Prüfung fehlgeschlagen/);
+  assert.match(html, /Freigabe derzeit gesperrt/);
+  assert.match(html, /Erst &lt;script&gt;Prüfung&lt;\/script&gt; abschließen\./);
+  assert.doesNotMatch(html, /Erst <script>Prüfung<\/script> abschließen\./);
   assert.match(html, /action="\/admin\/content-agent\/revisions\/71\/publish"[\s\S]*?<button[^>]*disabled/);
   assert.match(html, /fa-triangle-exclamation/);
+  assert.match(html, /hier nach erfolgreicher Prüfung ausdrücklich freigegeben/);
+  assert.doesNotMatch(html, /im Editor ausdrücklich freigegeben/);
 });
 
 test('Vergleichsview verwendet nur bereinigtes Vorschau-HTML und keine Rohdatenattribute', async () => {

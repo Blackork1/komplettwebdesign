@@ -1,35 +1,21 @@
-import { ReviewOutputSchema, SourceReferenceSchema } from './articleSchemas.js';
+import { ReviewOutputSchema } from './articleSchemas.js';
 import {
   canonicalJson,
   readExistingPostTrustedContextSnapshot
 } from './contentRuleManifest.js';
 import { learningRulesForStage } from './contentLearningSnapshotService.js';
 import { assertOptimizationSnapshotRevalidated } from './contentRevisionService.js';
-import { auditExistingPost } from './legacyAuditService.js';
-import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
+import {
+  auditExistingPost,
+  evaluateExistingContentReaudit
+} from './legacyAuditService.js';
 import { executePaidStructuredTextStage } from './providerTextStageService.js';
-
-const REAUDITABLE_CODES = new Set([
-  'unsupported_content_format',
-  'missing_meta_title',
-  'missing_meta_description',
-  'missing_image_alt',
-  'missing_structured_faq',
-  'stale_year',
-  'static_price',
-  'missing_contact_cta',
-  'missing_internal_links',
-  'broken_internal_link',
-  'unknown_internal_link'
-]);
-const ALLOWED_FAILURE_CODES = new Set([
-  'CONTENT_BUDGET_LIMIT_REACHED',
-  'provider_execution_uncertain',
-  'provider_stage_cost_invalid',
-  'provider_stage_persistence_uncertain',
-  'provider_stage_result_invalid',
-  'provider_stage_schema_invalid'
-]);
+import {
+  evaluateExistingPostRevisionApproval,
+  minimumExistingPostRevisionScore
+} from './existingPostRevisionApprovalPolicy.js';
+import { normalizeExistingPostRevisionSources } from './existingPostRevisionSourcePolicy.js';
+import { isExistingPostRevisionFailureCode } from './existingPostRevisionFailurePolicy.js';
 
 function requiredFunction(value, name) {
   if (typeof value !== 'function') {
@@ -77,16 +63,6 @@ function postFromSnapshot(post, snapshot) {
     image_url: snapshot.fields.image_url,
     image_alt: snapshot.fields.image_alt
   };
-}
-
-function safeSources(report) {
-  const parsed = SourceReferenceSchema.array().max(6).safeParse(report?.sources ?? []);
-  if (!parsed.success) return null;
-  const normalized = parsed.data.map((source) => {
-    const url = normalizeSafeHttpsUrl(source.url);
-    return url ? { ...source, url } : null;
-  });
-  return normalized.every(Boolean) ? normalized : null;
 }
 
 function auditCodes(audit) {
@@ -142,15 +118,20 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
 
   async function finish(status, code = null) {
     await leaseGuard();
-    const persisted = await finishRun(runId, {
-      status,
-      postId: null,
-      errorReport: code ? { code, message: 'Die aktuelle KI-Revision benötigt eine manuelle Prüfung.' } : {}
-    });
-    if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
-      throw Object.assign(new Error('Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.'), {
-        code: 'CONTENT_RUN_FINISH_FAILED', retryable: true
+    try {
+      const persisted = await finishRun(runId, {
+        status,
+        postId: null,
+        errorReport: code ? { code, message: 'Die aktuelle KI-Revision benötigt eine manuelle Prüfung.' } : {}
       });
+      if (!persisted || typeof persisted !== 'object' || Array.isArray(persisted)) {
+        throw new Error('Der Revalidierungslauf wurde nicht aktualisiert.');
+      }
+    } catch (cause) {
+      throw Object.assign(
+        new Error('Der Revalidierungslauf konnte nicht sicher abgeschlossen werden.', { cause }),
+        { code: 'CONTENT_RUN_FINISH_FAILED', retryable: true }
+      );
     }
   }
 
@@ -173,12 +154,48 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     }
     throw error;
   }
+  const persistedRevalidation = context.revision?.optimization_report_json?.revalidation;
+  const exactPersistedFence = persistedRevalidation?.revisionVersion === fence.revisionVersion
+    && persistedRevalidation?.snapshotFingerprint === fence.snapshotFingerprint;
+  if (!exactPersistedFence) {
+    await finish('needs_manual_attention', 'CONTENT_REVISION_REVALIDATION_FENCE_LOST');
+    return {
+      status: 'needs_manual_attention',
+      revisionId: fence.revisionId,
+      code: 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+    };
+  }
+  if (persistedRevalidation.status === 'passed') {
+    const approval = evaluateExistingPostRevisionApproval({ revision: context.revision });
+    if (!approval.allowed) {
+      await finish('needs_manual_attention', 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+      return {
+        status: 'needs_manual_attention',
+        revisionId: fence.revisionId,
+        code: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+      };
+    }
+    await finish('completed');
+    return { status: 'completed', revisionId: fence.revisionId };
+  }
+  if (persistedRevalidation.status === 'failed') {
+    const code = isExistingPostRevisionFailureCode(persistedRevalidation.failureCode)
+      ? persistedRevalidation.failureCode
+      : 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID';
+    await finish('needs_manual_attention', code);
+    return { status: 'needs_manual_attention', revisionId: fence.revisionId, code };
+  }
+  if (persistedRevalidation.status !== 'pending') {
+    return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  }
   if (!runtimeSnapshot
       || canonicalJson(runtimeSnapshot) !== canonicalJson(context.runtimeSnapshot)) {
     return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
   const trustedContext = readExistingPostTrustedContextSnapshot(runtimeSnapshot);
-  const sources = safeSources(context.revision.optimization_report_json);
+  const sources = normalizeExistingPostRevisionSources(
+    context.revision.optimization_report_json
+  );
   if (!trustedContext || !sources) {
     return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
   }
@@ -215,26 +232,26 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     inventory: runtimeSnapshot.allowedInternalLinks.map((url) => ({ url })),
     currentYear: new Date(runtimeSnapshot.startedAt).getUTCFullYear()
   });
-  const currentAuditCodes = new Set(currentAudit.findings.map(({ code }) => code));
-  const unresolvedAuditCodes = originalAuditCodes.filter((code) => (
-    !REAUDITABLE_CODES.has(code) || currentAuditCodes.has(code)
-  ));
-  if (unresolvedAuditCodes.length > 0) {
+  const reaudit = evaluateExistingContentReaudit({
+    originalFindings: context.audit.findings_json,
+    currentFindings: currentAudit.findings
+  });
+  const unresolvedAuditCodes = [
+    ...reaudit.unresolvedOriginalCodes,
+    ...reaudit.newBlockingCodes
+  ];
+  if (!reaudit.passed) {
     return failClosed('CONTENT_REVISION_REVALIDATION_QUALITY_FAILED');
   }
 
-  const minimumScore = Math.max(
-    80,
-    Number.isFinite(Number(
-      context.revision.optimization_report_json?.afterScore
-        ?? context.revision.optimization_report_json?.beforeScore
-    ))
-      ? Number(
-        context.revision.optimization_report_json?.afterScore
-          ?? context.revision.optimization_report_json?.beforeScore
-      )
-      : 80
+  const minimumScore = minimumExistingPostRevisionScore(
+    context.revision.optimization_report_json
   );
+  if (minimumScore == null
+      || context.revision.optimization_report_json?.revalidation?.minimumScore
+        !== minimumScore) {
+    return failClosed('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  }
   const reviewerLearningRules = learningRulesForStage(
     runtimeSnapshot.learningRuleSnapshot,
     'reviewer'
@@ -283,7 +300,7 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
     return failClosed('provider_execution_uncertain');
   }
   if (paid.manual) {
-    const code = ALLOWED_FAILURE_CODES.has(paid.manual.code)
+    const code = isExistingPostRevisionFailureCode(paid.manual.code)
       ? paid.manual.code
       : 'provider_execution_uncertain';
     return failClosed(code);

@@ -24,6 +24,12 @@ function validReview(review, minimumScore) {
     && !blockingIssue;
 }
 
+export function minimumExistingPostRevisionScore(report) {
+  const beforeScore = report?.beforeScore;
+  if (!Number.isInteger(beforeScore) || beforeScore < 0 || beforeScore > 100) return null;
+  return Math.max(80, beforeScore);
+}
+
 export function evaluateExistingPostRevisionApproval({ revision, snapshotFingerprint } = {}) {
   if (!revision || revision.status !== 'draft') {
     return denied('revision_not_draft', 'Nur eine Entwurfsrevision kann freigegeben werden');
@@ -56,9 +62,9 @@ export function evaluateExistingPostRevisionApproval({ revision, snapshotFingerp
       || revalidation.unresolvedAuditCodes.length > 0) {
     return denied('audit_findings_unresolved', 'Auditbefunde sind noch nicht vollständig gelöst');
   }
-  const originalScore = Number(report?.afterScore ?? report?.beforeScore);
-  const minimumScore = Math.max(80, Number.isFinite(originalScore) ? originalScore : 80);
-  if (revalidation.minimumScore !== minimumScore
+  const minimumScore = minimumExistingPostRevisionScore(report);
+  if (minimumScore == null
+      || revalidation.minimumScore !== minimumScore
       || revalidation.score !== revalidation.review?.score
       || !validReview(revalidation.review, minimumScore)) {
     return denied('revalidation_quality_failed', 'Aktuelle Prüfung erfüllt die Freigabekriterien nicht');

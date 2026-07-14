@@ -15,7 +15,7 @@
     <div>
       <p class="content-agent-eyebrow">Bestandsrevision #<%= item.revisionId || '' %> · Vergleichsstand <%= item.revisionVersion || 1 %></p>
       <h1 class="admin-page-title mb-1">Livefassung und Optimierung prüfen</h1>
-      <p class="content-agent-lead">Der Vergleich ist schreibgeschützt. Die veröffentlichte Fassung bleibt unverändert, bis sie im Editor ausdrücklich freigegeben wird.</p>
+      <p class="content-agent-lead">Der Vergleich ist schreibgeschützt. Die veröffentlichte Fassung bleibt unverändert, bis sie hier nach erfolgreicher Prüfung ausdrücklich freigegeben wird.</p>
     </div>
     <div class="content-agent-actions">
       <% if (item.revisionId) { %>
@@ -55,6 +55,9 @@
         </span>
       </div>
       <p>Nur ein vollständig geprüfter aktueller Revisionsstand kann über den bestehenden Freigabepfad übernommen werden.</p>
+      <% if (!item.approvalEnabled && item.approvalBlockedReason) { %>
+        <p class="content-agent-quiet"><strong>Freigabe derzeit gesperrt:</strong> <%= item.approvalBlockedReason %></p>
+      <% } %>
       <div class="content-agent-actions">
         <form method="post" action="/admin/content-agent/revisions/<%= item.revisionId %>/publish">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">

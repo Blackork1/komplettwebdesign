@@ -5,13 +5,59 @@ import { buildTrustedInternalPaths, normalizeInternalHref } from './trustedInter
 export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v2';
 const MAX_AUDIT_POSTS = 500;
 const MAX_CONTENT_LENGTH = 250_000;
+const EXISTING_CONTENT_FINDING_POLICY = Object.freeze({
+  unsupported_content_format: { severity: 'error', blocking: true },
+  missing_meta_title: { severity: 'warning', blocking: false },
+  missing_meta_description: { severity: 'warning', blocking: false },
+  missing_image_alt: { severity: 'warning', blocking: false },
+  missing_structured_faq: { severity: 'warning', blocking: false },
+  stale_year: { severity: 'warning', blocking: true },
+  static_price: { severity: 'error', blocking: true },
+  missing_contact_cta: { severity: 'info', blocking: false },
+  missing_internal_links: { severity: 'info', blocking: false },
+  broken_internal_link: { severity: 'error', blocking: true },
+  unknown_internal_link: { severity: 'error', blocking: true },
+  cannibalization_risk: { severity: 'warning', blocking: false }
+});
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+export function normalizeExistingContentAuditFinding(value = {}) {
+  const code = typeof value?.code === 'string' ? value.code : '';
+  const policy = EXISTING_CONTENT_FINDING_POLICY[code] || {
+    severity: 'error',
+    blocking: true
+  };
+  return { ...value, code, ...policy };
+}
+
 function finding(code, message, details = {}) {
-  return { code, message, ...details };
+  return normalizeExistingContentAuditFinding({ code, message, ...details });
+}
+
+export function evaluateExistingContentReaudit({
+  originalFindings = [],
+  currentFindings = []
+} = {}) {
+  const originalCodes = [...new Set((Array.isArray(originalFindings) ? originalFindings : [])
+    .map((item) => typeof item?.code === 'string' ? item.code : '')
+    .filter(Boolean))].slice(0, 100);
+  const normalizedCurrent = (Array.isArray(currentFindings) ? currentFindings : [])
+    .map(normalizeExistingContentAuditFinding)
+    .filter(({ code }) => code);
+  const currentCodes = new Set(normalizedCurrent.map(({ code }) => code));
+  const originalCodeSet = new Set(originalCodes);
+  const unresolvedOriginalCodes = originalCodes.filter((code) => currentCodes.has(code));
+  const newBlockingCodes = [...new Set(normalizedCurrent
+    .filter(({ code, blocking }) => blocking === true && !originalCodeSet.has(code))
+    .map(({ code }) => code))].slice(0, 100);
+  return {
+    passed: unresolvedOriginalCodes.length === 0 && newBlockingCodes.length === 0,
+    unresolvedOriginalCodes,
+    newBlockingCodes
+  };
 }
 
 function faqItems(value) {

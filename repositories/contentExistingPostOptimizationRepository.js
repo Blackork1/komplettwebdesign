@@ -10,12 +10,15 @@ import {
 } from '../services/contentAgent/contentLearningTaxonomy.js';
 import { createContentAuditRepository } from './contentAuditRepository.js';
 import { createContentLearningRepository } from './contentLearningRepository.js';
-import { trustedValidationContext } from './contentRevisionRepository.js';
 import {
   isSnapshotFingerprint,
   snapshotFingerprint
 } from '../services/contentAgent/revisionSnapshotFingerprint.js';
 import { ReviewOutputSchema } from '../services/contentAgent/articleSchemas.js';
+import { minimumExistingPostRevisionScore } from '../services/contentAgent/existingPostRevisionApprovalPolicy.js';
+import { readExistingPostTrustedContextSnapshot } from '../services/contentAgent/contentRuleManifest.js';
+import { normalizeExistingPostRevisionSources } from '../services/contentAgent/existingPostRevisionSourcePolicy.js';
+import { isExistingPostRevisionFailureCode } from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
 
 const HASH = /^[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -26,20 +29,6 @@ const MAX_OUTCOME_JSON_BYTES = 256_000;
 const MAX_PG_INT32 = 2_147_483_647;
 const MAX_MANUAL_FEEDBACK_ITEMS = 24;
 const REVALIDATION_JOB_TYPE = 'revalidate_existing_post_revision';
-const REVALIDATION_FAILURE_CODES = new Set([
-  'CONTENT_BUDGET_LIMIT_REACHED',
-  'CONTENT_JOB_LEASE_LOST',
-  'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
-  'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
-  'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED',
-  'CONTENT_REVISION_REVALIDATION_SCOPE_FAILED',
-  'CONTENT_REVISION_REVALIDATION_TECHNICAL_FAILED',
-  'provider_execution_uncertain',
-  'provider_stage_cost_invalid',
-  'provider_stage_persistence_uncertain',
-  'provider_stage_result_invalid',
-  'provider_stage_schema_invalid'
-]);
 const SAFE_CHANGE_KINDS = new Set(['field', 'faq', 'html']);
 const SAFE_CHANGE_FIELDS = new Set([
   'title', 'shortDescription', 'metaTitle', 'metaDescription', 'ogTitle',
@@ -441,10 +430,15 @@ async function enqueueRevisionRevalidation(client, payload) {
 
 function markRevalidationPending(report, snapshot, revisionId, revisionVersion) {
   const fingerprint = snapshotFingerprint(snapshot);
+  const minimumScore = minimumExistingPostRevisionScore(report);
+  if (minimumScore == null) {
+    throw validationError('Der Ausgangsscore der Revalidierung ist ungültig.');
+  }
   report.revalidation = {
     status: 'pending',
     revisionVersion,
-    snapshotFingerprint: fingerprint
+    snapshotFingerprint: fingerprint,
+    minimumScore
   };
   return revisionRevalidationPayload(revisionId, revisionVersion, fingerprint);
 }
@@ -455,6 +449,33 @@ function normalizeRevalidationFence(input = {}) {
     input.revisionVersion,
     input.snapshotFingerprint
   );
+}
+
+async function lockedRevisionValidationContext(client, revision) {
+  const sources = normalizeExistingPostRevisionSources(
+    revision.optimization_report_json
+  );
+  if (!sources) {
+    throw validationError('Die gebundenen Revisionsquellen sind ungültig.');
+  }
+  const { rows } = await client.query(`
+    SELECT run.runtime_snapshot_json
+    FROM content_runs run
+    WHERE run.job_id = $1::bigint
+    ORDER BY run.id DESC
+    LIMIT 1
+  `, [revision.optimization_job_id]);
+  const trustedContext = readExistingPostTrustedContextSnapshot(
+    rows[0]?.runtime_snapshot_json
+  );
+  if (!trustedContext) {
+    throw validationError('Der gebundene Ursprungskontext der Revision ist ungültig.');
+  }
+  return {
+    existingSlugs: [...trustedContext.existingSlugs],
+    allowedInternalLinks: [...trustedContext.allowedInternalLinks],
+    sourceReferences: sources
+  };
 }
 
 async function lockedRevisionRevalidationContext(client, fence) {
@@ -483,12 +504,15 @@ async function lockedRevisionRevalidationContext(client, fence) {
   `, [fence.revision_id]);
   const revision = revisionResult.rows[0];
   const revalidation = revision?.optimization_report_json?.revalidation;
+  const revalidationState = ['pending', 'passed', 'failed'].includes(revalidation?.status)
+    ? revalidation.status
+    : null;
   if (!revision
       || revision.status !== 'draft'
       || revision.optimization_job_id == null
       || Number(revision.revision_version) !== fence.revision_version
       || snapshotFingerprint(revision.snapshot_json) !== fence.snapshot_fingerprint
-      || revalidation?.status !== 'pending'
+      || revalidationState == null
       || revalidation.revisionVersion !== fence.revision_version
       || revalidation.snapshotFingerprint !== fence.snapshot_fingerprint) {
     throw repositoryError(
@@ -535,8 +559,58 @@ async function lockedRevisionRevalidationContext(client, fence) {
     revision: structuredClone(revision),
     audit: structuredClone(audit),
     runtimeSnapshot: structuredClone(originalRun.runtime_snapshot_json),
-    originalRunId: Number(originalRun.id)
+    originalRunId: Number(originalRun.id),
+    revalidationState
   };
+}
+
+async function lockedRevisionFailureFence(client, fence) {
+  await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+  const identity = await client.query(`
+    SELECT r.post_id
+    FROM content_post_revisions r
+    WHERE r.id = $1::bigint
+  `, [fence.revision_id]);
+  if (!identity.rows[0]) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+      'Der Revalidierungsauftrag gehört nicht mehr zu einer bestehenden Revision.'
+    );
+  }
+  const postResult = await client.query(`
+    SELECT p.id
+    FROM posts p
+    WHERE p.id = $1::integer
+    FOR UPDATE OF p
+  `, [identity.rows[0].post_id]);
+  if (!postResult.rows[0]) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+      'Der Revalidierungsauftrag gehört nicht mehr zu einem bestehenden Artikel.'
+    );
+  }
+  const revisionResult = await client.query(`
+    SELECT r.*
+    FROM content_post_revisions r
+    WHERE r.id = $1::bigint
+    FOR UPDATE OF r
+  `, [fence.revision_id]);
+  const revision = revisionResult.rows[0];
+  const revalidation = revision?.optimization_report_json?.revalidation;
+  if (!revision
+      || revision.status !== 'draft'
+      || revision.optimization_job_id == null
+      || Number(revision.revision_version) !== fence.revision_version
+      || snapshotFingerprint(revision.snapshot_json) !== fence.snapshot_fingerprint
+      || revalidation?.status !== 'pending'
+      || revalidation.revisionVersion !== fence.revision_version
+      || revalidation.snapshotFingerprint !== fence.snapshot_fingerprint) {
+    throw repositoryError(
+      'CONTENT_REVISION_REVALIDATION_FENCE_LOST',
+      'Der Revalidierungsauftrag gehört nicht mehr zum aktuellen Revisionsstand.'
+    );
+  }
+  return revision;
 }
 
 export function createContentExistingPostOptimizationRepository(
@@ -821,10 +895,8 @@ export function createContentExistingPostOptimizationRepository(
         await client.query('BEGIN');
         const context = await lockedRevisionRevalidationContext(client, fence);
         const lockedAuditCodes = revalidationAuditFindingCodes(context.audit.findings_json);
-        const expectedMinimumScore = Math.max(
-          80,
-          Number(context.revision.optimization_report_json?.afterScore
-            ?? context.revision.optimization_report_json?.beforeScore) || 0
+        const expectedMinimumScore = minimumExistingPostRevisionScore(
+          context.revision.optimization_report_json
         );
         const risksPassed = Object.values(review.risks).every((value) => value === false);
         const hasBlockingIssue = review.issues.some((issue) => (
@@ -832,6 +904,9 @@ export function createContentExistingPostOptimizationRepository(
         ));
         if (stableJson([...auditCodes].sort()) !== stableJson([...lockedAuditCodes].sort())
             || unresolvedAuditCodes.length > 0
+            || expectedMinimumScore == null
+            || context.revision.optimization_report_json?.revalidation?.minimumScore
+              !== expectedMinimumScore
             || minimumScore !== expectedMinimumScore
             || score < expectedMinimumScore
             || review.passed !== true
@@ -884,14 +959,14 @@ export function createContentExistingPostOptimizationRepository(
     async failRevisionRevalidation(input = {}) {
       const fence = normalizeRevalidationFence(input);
       const failureCode = String(input.failureCode || '');
-      if (!REVALIDATION_FAILURE_CODES.has(failureCode)) {
+      if (!isExistingPostRevisionFailureCode(failureCode)) {
         throw validationError('Der Revalidierungsfehlercode ist nicht freigegeben.');
       }
       const client = await db.connect();
       try {
         await client.query('BEGIN');
-        const context = await lockedRevisionRevalidationContext(client, fence);
-        const report = structuredClone(context.revision.optimization_report_json);
+        const revision = await lockedRevisionFailureFence(client, fence);
+        const report = structuredClone(revision.optimization_report_json);
         report.revalidation = {
           status: 'failed',
           revisionVersion: fence.revision_version,
@@ -1003,7 +1078,7 @@ export function createContentExistingPostOptimizationRepository(
           post,
           revision,
           report,
-          validationContext: await trustedValidationContext(revision.post_id, client)
+          validationContext: await lockedRevisionValidationContext(client, revision)
         });
         const revalidationPayload = markRevalidationPending(
           report,
@@ -1143,7 +1218,7 @@ export function createContentExistingPostOptimizationRepository(
             post,
             revision,
             report,
-            validationContext: await trustedValidationContext(revision.post_id, client)
+            validationContext: await lockedRevisionValidationContext(client, revision)
           }
         ), 'Der Revisionssnapshot');
         if (!sameBase(previousSnapshot.base, nextSnapshot.base)

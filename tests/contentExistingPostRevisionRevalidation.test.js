@@ -6,10 +6,19 @@ import {
   snapshotFingerprint
 } from '../services/contentAgent/revisionSnapshotFingerprint.js';
 import {
-  evaluateExistingPostRevisionApproval
+  evaluateExistingPostRevisionApproval,
+  minimumExistingPostRevisionScore
 } from '../services/contentAgent/existingPostRevisionApprovalPolicy.js';
 import { runExistingPostRevisionRevalidationJob } from '../services/contentAgent/existingPostRevisionRevalidationService.js';
 import { createContentAgentJobSnapshot } from '../services/contentAgent/runtimeConfigService.js';
+import { isExistingPostRevisionFailureCode } from '../services/contentAgent/existingPostRevisionFailurePolicy.js';
+
+test('Revalidierungsfehlercodes sind fest allowgelistet', () => {
+  assert.equal(isExistingPostRevisionFailureCode('CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID'), true);
+  assert.equal(isExistingPostRevisionFailureCode('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'), true);
+  assert.equal(isExistingPostRevisionFailureCode('provider_execution_uncertain'), true);
+  assert.equal(isExistingPostRevisionFailureCode('FREIER_PROVIDER_CODE'), false);
+});
 
 function approvedReview(score = 92) {
   return {
@@ -53,7 +62,7 @@ function approvedRevision(overrides = {}) {
           snapshotFingerprint: fingerprint,
           review: approvedReview(92),
           score: 92,
-          minimumScore: 90,
+          minimumScore: 88,
           unresolvedAuditCodes: []
         }
       },
@@ -102,7 +111,7 @@ test('nur die aktuelle version- und fingerprintgebundene Revalidierung erlaubt d
 
 test('Freigabepolicy erzwingt höheren Originalscore, Risikofreiheit und gelöste Auditbefunde', () => {
   const cases = [
-    (revision) => { revision.optimization_report_json.afterScore = 94; },
+    (revision) => { revision.optimization_report_json.beforeScore = 94; },
     (revision) => { revision.optimization_report_json.revalidation.review.risks.legal = true; },
     (revision) => { revision.optimization_report_json.revalidation.review.requiresManualReview = true; },
     (revision) => { revision.optimization_report_json.revalidation.review.issues.push({ blocking: true }); },
@@ -116,6 +125,25 @@ test('Freigabepolicy erzwingt höheren Originalscore, Risikofreiheit und gelöst
     mutate(revision);
     assert.equal(evaluateExistingPostRevisionApproval({ revision }).allowed, false);
   }
+});
+
+test('Mindestscore stammt ausschließlich aus beforeScore und niemals aus afterScore', () => {
+  assert.equal(minimumExistingPostRevisionScore({ beforeScore: 72, afterScore: 99 }), 80);
+  assert.equal(minimumExistingPostRevisionScore({ beforeScore: 91, afterScore: 70 }), 91);
+  assert.equal(minimumExistingPostRevisionScore({ beforeScore: null, afterScore: 99 }), null);
+  assert.equal(minimumExistingPostRevisionScore({ beforeScore: '91', afterScore: 70 }), null);
+
+  const belowEighty = approvedRevision().revision;
+  belowEighty.optimization_report_json.beforeScore = 72;
+  belowEighty.optimization_report_json.afterScore = 99;
+  belowEighty.optimization_report_json.revalidation.minimumScore = 80;
+  assert.equal(evaluateExistingPostRevisionApproval({ revision: belowEighty }).allowed, true);
+
+  const aboveEighty = approvedRevision().revision;
+  aboveEighty.optimization_report_json.beforeScore = 91;
+  aboveEighty.optimization_report_json.afterScore = 70;
+  aboveEighty.optimization_report_json.revalidation.minimumScore = 91;
+  assert.equal(evaluateExistingPostRevisionApproval({ revision: aboveEighty }).allowed, true);
 });
 
 function runnerFixture() {
@@ -194,7 +222,8 @@ function runnerFixture() {
         revalidation: {
           status: 'pending',
           revisionVersion: 4,
-          snapshotFingerprint: fingerprint
+          snapshotFingerprint: fingerprint,
+          minimumScore: 88
         }
       }
     },
@@ -222,6 +251,8 @@ function runnerFixture() {
 function runnerDependencies(fixture, overrides = {}) {
   const state = {
     providerCalls: 0,
+    budgetReservations: 0,
+    stageWrites: 0,
     completeCalls: [],
     failedCalls: [],
     finishCalls: [],
@@ -251,13 +282,17 @@ function runnerDependencies(fixture, overrides = {}) {
     },
     costService: {
       async getPersistedStageResult() { return state.storedStage; },
-      async reserveMonthlyBudget() { return { created: true, reservationMonth: '2026-07' }; },
+      async reserveMonthlyBudget() {
+        state.budgetReservations += 1;
+        return { created: true, reservationMonth: '2026-07' };
+      },
       estimateTextCost() { return 0.01; },
       async settleMonthlyBudget() {},
       async releaseMonthlyBudgetReservation() {}
     },
     runRepository: {
       async updateRunStage(_runId, input) {
+        state.stageWrites += 1;
         state.storedStage = structuredClone(input.stageResult);
         return { stage_results_json: { revision_editorial_review: state.storedStage } };
       },
@@ -289,7 +324,7 @@ test('Revalidierungsworker bindet Quellen und Review an Version/Fingerprint und 
   assert.equal(state.completeCalls.length, 2);
   assert.equal(state.completeCalls[0].revisionVersion, 4);
   assert.equal(state.completeCalls[0].snapshotFingerprint, fixture.fingerprint);
-  assert.equal(state.completeCalls[0].minimumScore, 90);
+  assert.equal(state.completeCalls[0].minimumScore, 88);
   assert.deepEqual(state.completeCalls[0].unresolvedAuditCodes, []);
   assert.deepEqual(state.reviewInputs[0].sourceReferences, fixture.context.revision.optimization_report_json.sources);
   assert.equal(state.storedStage.revisionFence, `71:4:${fixture.fingerprint}`);
@@ -343,6 +378,126 @@ test('Leaseverlust nach Providerantwort verhindert Revisions- und Runabschluss',
   assert.equal(state.completeCalls.length, 0);
   assert.equal(state.failedCalls.length, 0);
   assert.equal(state.finishCalls.length, 0);
+});
+
+function markFixtureRevalidationPassed(fixture, review = approvedReview(92)) {
+  fixture.context.revision.optimization_report_json.revalidation = {
+    status: 'passed',
+    revisionVersion: 4,
+    snapshotFingerprint: fixture.fingerprint,
+    review,
+    score: review.score,
+    minimumScore: 88,
+    auditCodes: [],
+    unresolvedAuditCodes: []
+  };
+}
+
+test('Retry nach Leaseverlust hinter fachlichem Commit reconciled passed ohne zweite Paid-Stage', async () => {
+  const fixture = runnerFixture();
+  const { dependencies, state } = runnerDependencies(fixture);
+  let loseLease = false;
+  dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+    state.completeCalls.push(input);
+    markFixtureRevalidationPassed(fixture, input.review);
+    loseLease = true;
+    return { id: 71 };
+  };
+  const firstInput = {
+    claim: fixture.claim,
+    run: { id: 97, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => {
+      if (loseLease) {
+        throw Object.assign(new Error('Lease verloren'), { code: 'CONTENT_JOB_LEASE_LOST' });
+      }
+      return true;
+    }
+  };
+
+  await assert.rejects(
+    runExistingPostRevisionRevalidationJob(firstInput, dependencies),
+    { code: 'CONTENT_JOB_LEASE_LOST' }
+  );
+  loseLease = false;
+  const resumed = await runExistingPostRevisionRevalidationJob({
+    ...firstInput,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(resumed.status, 'completed');
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.budgetReservations, 1);
+  assert.equal(state.stageWrites, 1);
+  assert.equal(state.completeCalls.length, 1);
+  assert.equal(state.finishCalls.length, 1);
+});
+
+test('Retry nach null oder Fehler von finishRun reconciled passed ohne zweite fachliche Persistenz', async () => {
+  for (const firstFinish of ['null', 'throw']) {
+    const fixture = runnerFixture();
+    const { dependencies, state } = runnerDependencies(fixture);
+    dependencies.optimizationRepository.completeRevisionRevalidation = async (input) => {
+      state.completeCalls.push(input);
+      markFixtureRevalidationPassed(fixture, input.review);
+      return { id: 71 };
+    };
+    let finishAttempts = 0;
+    dependencies.runRepository.finishRun = async (runId, input) => {
+      finishAttempts += 1;
+      state.finishCalls.push({ runId, input });
+      if (finishAttempts === 1) {
+        if (firstFinish === 'null') return null;
+        throw new Error('Datenbank vorübergehend nicht erreichbar');
+      }
+      return { id: runId, status: input.status };
+    };
+    const input = {
+      claim: fixture.claim,
+      run: { id: 98, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    };
+
+    await assert.rejects(
+      runExistingPostRevisionRevalidationJob(input, dependencies),
+      { code: 'CONTENT_RUN_FINISH_FAILED' }
+    );
+    const resumed = await runExistingPostRevisionRevalidationJob(input, dependencies);
+
+    assert.equal(resumed.status, 'completed');
+    assert.equal(state.providerCalls, 1);
+    assert.equal(state.budgetReservations, 1);
+    assert.equal(state.stageWrites, 1);
+    assert.equal(state.completeCalls.length, 1);
+    assert.equal(state.finishCalls.length, 2);
+  }
+});
+
+test('Retry übernimmt exakt gebundenes failed als manuellen Zustand ohne Vorprüfung oder Paid-Stage', async () => {
+  const fixture = runnerFixture();
+  fixture.context.revision.optimization_report_json.revalidation = {
+    status: 'failed',
+    revisionVersion: 4,
+    snapshotFingerprint: fixture.fingerprint,
+    failureCode: 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED'
+  };
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 99, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED');
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.budgetReservations, 0);
+  assert.equal(state.completeCalls.length, 0);
+  assert.equal(state.failedCalls.length, 0);
+  assert.equal(state.finishCalls.length, 1);
 });
 
 test('Versionsrace nach persistierter Providerantwort überschreibt keinen neueren Entwurf und erzeugt keinen zweiten Provideraufruf', async () => {
@@ -400,4 +555,54 @@ test('unsichere oder nicht gebundene Quellen stoppen vor Provideraufruf fail-clo
   assert.equal(result.status, 'needs_manual_attention');
   assert.equal(state.providerCalls, 0);
   assert.equal(state.failedCalls[0].failureCode, 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+});
+
+test('Re-Audit blockiert fortbestehende ursprüngliche sowie neue Preis- und Jahresbefunde vor dem Provider', async () => {
+  for (const scenario of [
+    {
+      original: [{ code: 'stale_year' }],
+      content: '<section><h2>Planung</h2><p>Bestehender Inhalt für 2024.</p></section>'
+    },
+    {
+      original: [],
+      content: '<section><h2>Planung</h2><p>Bestehender Inhalt für 900 Euro.</p></section>'
+    }
+  ]) {
+    const fixture = runnerFixture();
+    fixture.context.audit.findings_json = scenario.original;
+    fixture.context.post.content = scenario.content;
+    fixture.context.revision.snapshot_json.fields.content = scenario.content;
+    fixture.fingerprint = snapshotFingerprint(fixture.context.revision.snapshot_json);
+    fixture.context.revision.optimization_report_json.revalidation.snapshotFingerprint = fixture.fingerprint;
+    fixture.claim.payload_json.snapshot_fingerprint = fixture.fingerprint;
+    const { dependencies, state } = runnerDependencies(fixture);
+
+    const result = await runExistingPostRevisionRevalidationJob({
+      claim: fixture.claim,
+      run: { id: 95, status: 'running' },
+      runtimeSnapshot: fixture.runtimeSnapshot,
+      leaseGuard: async () => true
+    }, dependencies);
+
+    assert.equal(result.status, 'needs_manual_attention');
+    assert.equal(state.providerCalls, 0);
+    assert.equal(state.failedCalls[0].failureCode, 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED');
+  }
+});
+
+test('Re-Audit erlaubt einen neuen nichtblockierenden lokalen Hinweis', async () => {
+  const fixture = runnerFixture();
+  fixture.context.audit.findings_json = [];
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 96, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(state.providerCalls, 1);
+  assert.deepEqual(state.completeCalls[0].unresolvedAuditCodes, []);
 });

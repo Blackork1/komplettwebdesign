@@ -85,3 +85,29 @@ Eine einzige Freigabepolicy steuert Service und Vergleichsdarstellung. Freigabef
 - Vollständige Suite mit lokalem, nicht verwendeten Dummywert `OPENAI_API_KEY=test-key`: 1.748 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen.
 - `git diff --check`: ohne Befund.
 - Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.
+
+## Zweiter Nachtrag: vollständige Härtung der Bestandsrevalidierung
+
+### Audit- und Score-Policy
+
+Die lokale Bestandsprüfung weist jedem bekannten Befundcode serverseitig eine feste Severity und Blocking-Eigenschaft zu; angelieferte Werte können diese Policy nicht überschreiben. Unbekannte neue Codes werden fail-closed als blockierend behandelt. Das Re-Audit verlangt das Verschwinden jedes ursprünglich gesperrten Codes und blockiert zusätzlich neu entstandene lokale Blocker. Die Regressionstests unterscheiden fortbestehende Originalbefunde, neue statische Preise, neue veraltete Jahresangaben und neue nichtblockierende Hinweise.
+
+Die Mindestschwelle stammt an jeder Stelle ausschließlich aus dem numerischen ganzzahligen `beforeScore` und beträgt exakt `max(80, beforeScore)`. `afterScore` beeinflusst weder initiale Revisionsbindung noch pending-Zustand, Worker, Repositoryabschluss oder Freigabepolicy. Fehlende, typfalsche oder außerhalb von 0 bis 100 liegende Ausgangsscores werden fail-closed abgewiesen.
+
+### Quellen-, Fence- und Recovery-Vertrag
+
+- Rücknahme und manuelle Bearbeitung validieren externe Links ausschließlich gegen höchstens sechs normalisierte HTTPS-Quellen aus dem gesperrten `optimization_report_json` sowie gegen den validierten Trusted Context des Ursprungslaufs. Browserquellen werden ignoriert. Eine gebundene Fachquelle erreicht den atomaren `pending`-Stand; ein unbekanntes externes Ziel rollt vor Revisions-, Feedback- und Joberzeugung zurück.
+- Frühe terminale Workerpfade für ungültige Payloads, fehlenden Ursprungssnapshot, ungültigen persistierten Runtime-Snapshot und korruptes Regelmanifest markieren zuerst den extrahierbaren Revisionsfence. Ein verlorener Fence überschreibt keinen neueren Stand. Vorübergehende Kontextladefehler bleiben retrybar und erzeugen keinen falschen terminalen Revisionszustand.
+- Die Fehlerpersistenz besitzt eine eigene minimale Fence-Sperre. Sie benötigt bewusst keinen möglicherweise bereits defekten Audit- oder Ursprungskontext, bleibt aber an Draftstatus, Revisionsversion, Snapshot-Fingerprint und `pending` gebunden.
+- `loadRevisionRevalidationContext` kann für exakt denselben Fence `pending`, `passed` und `failed` laden. Ein Retry nach fachlichem Commit und anschließendem Lease- oder Runabschlussfehler übernimmt den persistierten Zustand. Bei `passed` wird nur noch der Run abgeschlossen; bei `failed` wird nur noch der manuelle Runzustand abgeglichen. Provider, Budgetreservierung, Stagepersistenz und fachlicher Revisionscommit werden nicht wiederholt.
+- Fehlercodes stammen aus einer gemeinsamen festen Allowlist für Worker, Runner und Repository. Der Vergleich zeigt den zentral berechneten, escaped Sperrgrund und beschreibt die Freigabe korrekt als Aktion im Vergleich.
+
+### Ergänzter RED/GREEN-Verlauf und Verifikation
+
+- RED/GREEN: Neue Tests deckten die lokale Blocking-Policy, die reine `beforeScore`-Schwelle, gebundene gegenüber unbekannten Quellen, alle frühen Worker-Terminalisierungen sowie Recovery nach Leaseverlust, `finishRun = null`, geworfenem Abschlussfehler und bereits gespeichertem `failed` ab.
+- Zusätzlicher RED/GREEN-Selbstreview: Ein defekter Audit-/Ursprungskontext verhinderte zunächst seine eigene fenced Fehlerpersistenz. Eine getrennte minimale Fence-Sperre löst diesen Widerspruch; ein weiterer Test verhindert, dass vorübergehende Kontextfehler fälschlich terminalisiert werden.
+- Fokussierte Suiten: 212 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Echter PostgreSQL-Lauf mit explizit freigegebener lokaler Testdatenbank: 11 bestanden, 0 fehlgeschlagen, 0 übersprungen.
+- Vollständige Suite mit lokalem, nicht verwendetem Dummywert `OPENAI_API_KEY=test-key`: 1.765 bestanden, 0 fehlgeschlagen, 11 geschützte PostgreSQL-Opt-in-Tests übersprungen.
+- `npm run build`: erfolgreich; 41 CSS-Quelldateien verarbeitet, Manifest unverändert.
+- Externe OpenAI-, Cloudinary-, SMTP- oder Produktionsaufrufe wurden nicht ausgeführt.

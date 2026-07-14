@@ -177,6 +177,20 @@ function existingPostRevalidationPayload(claim) {
   return payload;
 }
 
+function existingPostRevalidationFence(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  if (!positiveDatabasePayloadInteger(payload.revision_id)
+      || !positiveDatabasePayloadInteger(payload.revision_version)
+      || typeof payload.snapshot_fingerprint !== 'string'
+      || !/^[0-9a-f]{64}$/.test(payload.snapshot_fingerprint)) return null;
+  return {
+    revisionId: payload.revision_id,
+    revisionVersion: payload.revision_version,
+    snapshotFingerprint: payload.snapshot_fingerprint
+  };
+}
+
 function publicationJobPayload(claim) {
   const payload = claim?.payload_json;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
@@ -327,6 +341,7 @@ export function createProductionJobHandler({
   runExistingPostOptimizationJob,
   createExistingPostOptimizationDependencies,
   loadExistingPostRevalidationContext,
+  failExistingPostRevisionRevalidation,
   runExistingPostRevisionRevalidationJob,
   createExistingPostRevisionRevalidationDependencies,
   runContentLearningJob,
@@ -347,6 +362,32 @@ export function createProductionJobHandler({
   required(createRun, 'createRun');
   required(runPipeline, 'runPipeline');
   return async function handleJob(claim, { leaseGuard } = {}) {
+    const revalidationClaim = EXISTING_POST_REVALIDATION_JOB_TYPES.has(claim?.job_type);
+    const revalidationFence = revalidationClaim
+      ? existingPostRevalidationFence(claim)
+      : null;
+    async function failRevalidationFence(failureCode) {
+      if (!revalidationFence || typeof failExistingPostRevisionRevalidation !== 'function') {
+        return false;
+      }
+      await assertActiveLease(leaseGuard);
+      try {
+        const failed = await failExistingPostRevisionRevalidation({
+          ...revalidationFence,
+          failureCode
+        });
+        if (!failed || typeof failed !== 'object' || Array.isArray(failed)) {
+          throw retryableJobError(
+            'Der Revalidierungsfehler konnte nicht sicher am Revisionsfence gespeichert werden.',
+            'CONTENT_REVISION_REVALIDATION_FAILURE_PERSIST_FAILED'
+          );
+        }
+        return true;
+      } catch (error) {
+        if (error?.code === 'CONTENT_REVISION_REVALIDATION_FENCE_LOST') return false;
+        throw error;
+      }
+    }
     if (!SUPPORTED_JOB_TYPES.has(claim?.job_type)) {
       throw permanentJobError('Nicht unterstützter Content-Jobtyp.', 'CONTENT_JOB_TYPE_UNSUPPORTED');
     }
@@ -371,6 +412,7 @@ export function createProductionJobHandler({
     }
     if (EXISTING_POST_REVALIDATION_JOB_TYPES.has(claim.job_type)
         && !existingPostRevalidationPayload(claim)) {
+      await failRevalidationFence('CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID');
       throw permanentJobError(
         'Der Revalidierungsjob enthält keinen gültigen Revisions- und Fingerprint-Snapshot.',
         'CONTENT_REVISION_REVALIDATION_PAYLOAD_INVALID'
@@ -506,10 +548,11 @@ export function createProductionJobHandler({
       && typeof createJobSnapshot === 'function';
     const generationJob = GENERATION_JOB_TYPES.has(claim.job_type);
     const existingPostOptimizationJob = EXISTING_POST_OPTIMIZATION_JOB_TYPES.has(claim.job_type);
-    const existingPostRevalidationJob = EXISTING_POST_REVALIDATION_JOB_TYPES.has(claim.job_type);
+    const existingPostRevalidationJob = revalidationClaim;
     if ((existingPostOptimizationJob || existingPostRevalidationJob)
         && typeof leaseGuard !== 'function') {
-      throw permanentJobError(
+      const leaseError = existingPostRevalidationJob ? retryableJobError : permanentJobError;
+      throw leaseError(
         'Für Bestandsoptimierungen wird eine aktive Job-Lease benötigt.',
         'CONTENT_JOB_LEASE_REQUIRED'
       );
@@ -529,9 +572,25 @@ export function createProductionJobHandler({
           loadExistingPostRevalidationContext,
           'loadExistingPostRevalidationContext'
         );
-        const context = await contextLoader(existingPostRevalidationPayload(claim));
+        let context;
+        try {
+          context = await contextLoader(existingPostRevalidationPayload(claim));
+        } catch (error) {
+          const terminalContextError = error?.retryable === false
+            || [
+              'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID',
+              'CONTENT_REVISION_NOT_FOUND',
+              'CONTENT_REVISION_CONFLICT'
+            ].includes(error?.code);
+          if (error?.code !== 'CONTENT_REVISION_REVALIDATION_FENCE_LOST'
+              && terminalContextError) {
+            await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+          }
+          throw error;
+        }
         runtimeSnapshot = context?.runtimeSnapshot;
         if (!runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)) {
+          await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
           throw permanentJobError(
             'Der Ursprungslauf enthält keinen gültigen Runtime-Snapshot.',
             'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
@@ -592,8 +651,13 @@ export function createProductionJobHandler({
       const openReservation = hasOpenProviderReservation(run);
       const code = openReservation
         ? 'provider_execution_uncertain'
-        : 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
+        : existingPostRevalidationJob
+          ? 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+          : 'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID';
       const status = openReservation ? 'needs_manual_attention' : 'failed';
+      if (existingPostRevalidationJob) {
+        await failRevalidationFence(code);
+      }
       await assertActiveLease(leaseGuard);
       assertFinishedRun(await finishRun(run.id, {
         status,
@@ -620,6 +684,9 @@ export function createProductionJobHandler({
       if (!validation.valid) {
         required(finishRun, 'finishRun');
         const code = validation.code || 'CONTENT_RUNTIME_SNAPSHOT_INVALID';
+        if (existingPostRevalidationJob) {
+          await failRevalidationFence('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+        }
         await assertActiveLease(leaseGuard);
         assertFinishedRun(await finishRun(run.id, {
           status: 'needs_manual_attention',
@@ -1068,6 +1135,9 @@ export function createProductionRuntime({
             revisionVersion: payload.revision_version,
             snapshotFingerprint: payload.snapshot_fingerprint
           })
+        ),
+        failExistingPostRevisionRevalidation: (input) => (
+          existingPostOptimizationRepository.failRevisionRevalidation(input)
         )
       } : {}),
       ...(contentLearningRepository ? {

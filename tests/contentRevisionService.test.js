@@ -268,7 +268,7 @@ test('KI-Optimierung baut denselben Snapshotvertrag und delegiert nur eine Draft
   assert.equal(persisted[0].report.revalidation.status, 'passed');
   assert.equal(persisted[0].report.revalidation.revisionVersion, 1);
   assert.equal(persisted[0].report.revalidation.score, 92);
-  assert.equal(persisted[0].report.revalidation.minimumScore, 92);
+  assert.equal(persisted[0].report.revalidation.minimumScore, 80);
   assert.match(persisted[0].report.revalidation.snapshotFingerprint, /^[0-9a-f]{64}$/);
   assert.deepEqual(validationContexts[0].allowedInternalLinks, ['/kontakt']);
 });

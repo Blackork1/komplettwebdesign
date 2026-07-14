@@ -2192,7 +2192,10 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
         before: { metaTitle: optimizationPost.rows[0].meta_title },
         after: { metaTitle: optimizationSnapshot.fields.meta_title }
       }),
-      baseLiveHash: optimizationSnapshot.base.live_hash
+      baseLiveHash: optimizationSnapshot.base.live_hash,
+      beforeScore: 72,
+      afterScore: 92,
+      sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
     };
     const raceRevision = await pool.query(`
       INSERT INTO content_post_revisions (
@@ -2291,6 +2294,7 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
     assert.equal(persistedRaceRevision.optimization_report_json.changes[0].status, 'reverted');
     assert.equal(persistedRaceRevision.optimization_report_json.revalidation.status, 'pending');
     assert.equal(persistedRaceRevision.optimization_report_json.revalidation.revisionVersion, 4);
+    assert.equal(persistedRaceRevision.optimization_report_json.revalidation.minimumScore, 80);
     assert.match(
       persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint,
       /^[0-9a-f]{64}$/
@@ -2343,6 +2347,17 @@ test('echtes PostgreSQL: Migrationen 002–011 und Generate→Notify→Approve�
     assert.equal(
       failedRevalidation.rows[0].revalidation.snapshotFingerprint,
       persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
+    );
+    const failedRecoveryContext = await optimizationRepository.loadRevisionRevalidationContext({
+      revisionId: Number(raceRevision.rows[0].id),
+      revisionVersion: 4,
+      snapshotFingerprint:
+        persistedRaceRevision.optimization_report_json.revalidation.snapshotFingerprint
+    });
+    assert.equal(failedRecoveryContext.revalidationState, 'failed');
+    assert.equal(
+      failedRecoveryContext.revision.optimization_report_json.revalidation.failureCode,
+      'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
     );
     await pool.query(`
       UPDATE content_jobs

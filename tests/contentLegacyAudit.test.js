@@ -3,8 +3,69 @@ import assert from 'node:assert/strict';
 
 import {
   auditExistingPost,
+  evaluateExistingContentReaudit,
   runExistingContentAuditJob
 } from '../services/contentAgent/legacyAuditService.js';
+
+test('lokale Auditpolicy klassifiziert blockierende und nichtblockierende Befunde serverseitig', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 1,
+      title: 'Preise 2024',
+      excerpt: '',
+      content: '<p>Das Paket kostet 900 Euro.</p>',
+      content_format: 'static_html',
+      meta_title: 'Meta',
+      meta_description: 'Beschreibung',
+      image_alt: 'Alt',
+      faq_json: []
+    },
+    inventory: [],
+    currentYear: 2026
+  });
+  const findings = Object.fromEntries(result.findings.map((finding) => [finding.code, finding]));
+
+  assert.deepEqual(
+    { severity: findings.stale_year.severity, blocking: findings.stale_year.blocking },
+    { severity: 'warning', blocking: true }
+  );
+  assert.deepEqual(
+    { severity: findings.static_price.severity, blocking: findings.static_price.blocking },
+    { severity: 'error', blocking: true }
+  );
+  assert.equal(findings.missing_internal_links.blocking, false);
+});
+
+test('Re-Audit verlangt ursprüngliche Codes und blockiert nur neue lokale Blocker', () => {
+  const originalFindings = [{ code: 'missing_meta_title' }];
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings,
+    currentFindings: [{ code: 'missing_meta_title' }]
+  }), {
+    passed: false,
+    unresolvedOriginalCodes: ['missing_meta_title'],
+    newBlockingCodes: []
+  });
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings,
+    currentFindings: [
+      { code: 'static_price', severity: 'info', blocking: false },
+      { code: 'missing_internal_links', severity: 'error', blocking: true }
+    ]
+  }), {
+    passed: false,
+    unresolvedOriginalCodes: [],
+    newBlockingCodes: ['static_price']
+  });
+  assert.deepEqual(evaluateExistingContentReaudit({
+    originalFindings,
+    currentFindings: [{ code: 'missing_internal_links', severity: 'error', blocking: true }]
+  }), {
+    passed: true,
+    unresolvedOriginalCodes: [],
+    newBlockingCodes: []
+  });
+});
 
 test('Bestandsaudit erkennt tatsächliche Ausgabefehler deterministisch und schließt den eigenen Post aus', () => {
   const post = {

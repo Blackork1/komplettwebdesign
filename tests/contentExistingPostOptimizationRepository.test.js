@@ -8,6 +8,9 @@ import {
 } from '../repositories/contentExistingPostOptimizationRepository.js';
 import { createRevisionSnapshot, liveHashForPost } from '../services/contentAgent/contentRevisionService.js';
 import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
+import { normalizeExistingPostRevisionSources } from '../services/contentAgent/existingPostRevisionSourcePolicy.js';
+import { createContentAgentJobSnapshot } from '../services/contentAgent/runtimeConfigService.js';
+import { snapshotFingerprint } from '../services/contentAgent/revisionSnapshotFingerprint.js';
 
 function normalizedSql(sql) {
   return sql.replace(/\s+/g, ' ').trim();
@@ -88,6 +91,33 @@ function revalidationJobRow(params) {
   };
 }
 
+function originRuntimeSnapshot() {
+  return createContentAgentJobSnapshot({
+    runtimeConfig: {
+      operatingMode: 'review',
+      timezone: 'Europe/Berlin',
+      monthlyCostLimitEur: 25,
+      maxAttempts: 3,
+      contentStageReservationEur: 0.5,
+      reviewStageReservationEur: 0.25,
+      contentInputCostPerMtok: 2.5,
+      contentOutputCostPerMtok: 15,
+      reviewInputCostPerMtok: 0.75,
+      reviewOutputCostPerMtok: 4.5,
+      webSearchCostPerCallEur: 0.01,
+      settingsVersion: 4
+    },
+    claim: {
+      job_type: 'optimize_existing_post',
+      payload_json: { source: 'admin_existing_content' }
+    },
+    now: new Date('2026-07-14T10:30:00.000Z'),
+    allowedInternalLinks: ['/kontakt'],
+    existingPostTrustedContext: { existingSlugs: [], metadata: null },
+    activeLearningRules: []
+  });
+}
+
 test('Revalidierungsbindung behält auch unbekannte gesperrte Auditcodes bei', () => {
   assert.deepEqual(revalidationAuditFindingCodes([
     { code: 'missing_meta_title' },
@@ -96,6 +126,77 @@ test('Revalidierungsbindung behält auch unbekannte gesperrte Auditcodes bei', (
     { code: 42 },
     null
   ]), ['missing_meta_title', 'zukünftiger_sicherheitsbefund']);
+});
+
+test('Revisionsquellen werden begrenzt, HTTPS-normalisiert und ohne Browserwerte gebunden', () => {
+  assert.deepEqual(normalizeExistingPostRevisionSources({
+    sources: [{ title: ' Fachquelle ', url: 'https://example.com/fachquelle' }]
+  }), [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]);
+  assert.equal(normalizeExistingPostRevisionSources({
+    sources: [{ title: 'Unsicher', url: 'https://nutzer:passwort@example.com/geheim' }]
+  }), null);
+  assert.equal(normalizeExistingPostRevisionSources({
+    sources: Array.from({ length: 7 }, (_, index) => ({
+      title: `Quelle ${index}`,
+      url: `https://example.com/${index}`
+    }))
+  }), null);
+});
+
+test('fenced Fehlerpersistenz benötigt keinen bereits defekten Audit- oder Ursprungskontext', async () => {
+  const post = publishedPost();
+  const snapshot = createRevisionSnapshot(post);
+  const fingerprint = snapshotFingerprint(snapshot);
+  const revision = {
+    id: 71,
+    post_id: 19,
+    audit_id: 31,
+    optimization_job_id: 44,
+    status: 'draft',
+    revision_version: 4,
+    snapshot_json: snapshot,
+    optimization_report_json: {
+      beforeScore: 72,
+      revalidation: {
+        status: 'pending',
+        revisionVersion: 4,
+        snapshotFingerprint: fingerprint,
+        minimumScore: 80
+      }
+    }
+  };
+  const client = transactionClient(({ sql, params }) => {
+    if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) {
+      return { rows: [{ post_id: 19 }] };
+    }
+    if (/FROM posts p/i.test(sql)) return { rows: [post] };
+    if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) {
+      return { rows: [revision] };
+    }
+    if (/UPDATE content_post_revisions/i.test(sql)) {
+      return { rows: [{
+        ...revision,
+        optimization_report_json: JSON.parse(params[1])
+      }] };
+    }
+    return { rows: [] };
+  });
+  const repository = createContentExistingPostOptimizationRepository({
+    async connect() { return client; }
+  });
+
+  const failed = await repository.failRevisionRevalidation({
+    revisionId: 71,
+    revisionVersion: 4,
+    snapshotFingerprint: fingerprint,
+    failureCode: 'CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID'
+  });
+
+  assert.equal(failed.optimization_report_json.revalidation.status, 'failed');
+  assert.equal(
+    client.calls.some(({ sql }) => /content_post_audits|FROM content_runs/i.test(sql)),
+    false
+  );
 });
 
 test('Live-Snapshot lädt ausschließlich veröffentlichte Artikel und alle gesperrten Identitätsfelder', async () => {
@@ -414,7 +515,9 @@ test('Revisionsvergleich lädt Livefassung, Audit, Bericht und Outcome begrenzt'
 });
 
 test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speichert Feedback', async () => {
-  const post = publishedPost();
+  const post = publishedPost({
+    content: '<section><h2>Planung</h2><p><a href="https://example.com/fachquelle">Fachquelle</a></p></section>'
+  });
   const storedSnapshot = createRevisionSnapshot(post);
   storedSnapshot.fields.meta_title = 'Optimierter Meta Title';
   const nextSnapshot = structuredClone(storedSnapshot);
@@ -425,7 +528,10 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
       after: { metaTitle: storedSnapshot.fields.meta_title },
       reasons: []
     }),
-    baseLiveHash: storedSnapshot.base.live_hash
+    baseLiveHash: storedSnapshot.base.live_hash,
+    beforeScore: 72,
+    afterScore: 92,
+    sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
   };
   const changeId = storedReport.changes[0].id;
   const report = structuredClone(storedReport);
@@ -444,6 +550,9 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_runs run/i.test(sql)) {
+      return { rows: [{ runtime_snapshot_json: originRuntimeSnapshot() }] };
+    }
     if (/FROM content_post_audits a/i.test(sql)) {
       return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created', findings_json: [] }] };
     }
@@ -461,6 +570,7 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
     async connect() { return client; }
   });
 
+  let lockedValidationContext;
   const result = await repository.updateRevisionAfterRevert({
     revisionId: 71,
     expectedVersion: 3,
@@ -469,13 +579,27 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
     changeId,
     categoryKey: 'metadata_quality',
     details: { reason: 'Admin-Rücknahme' },
-    validateSnapshot: async () => {},
+    sourceReferences: [{ title: 'Browserquelle', url: 'https://evil.example/browser' }],
+    validateSnapshot: async (lockedSnapshot, context) => {
+      lockedValidationContext = context.validationContext;
+      assert.match(lockedSnapshot.fields.content, /https:\/\/example\.com\/fachquelle/);
+      assert.equal(
+        context.validationContext.sourceReferences.some(({ url }) => (
+          url === 'https://example.com/fachquelle'
+        )),
+        true
+      );
+    },
     admin: { id: 7, username: 'Admin' }
   });
 
   assert.equal(result.revision_version, 4);
   assert.equal(result.optimization_report_json.revalidation.status, 'pending');
   assert.equal(result.optimization_report_json.revalidation.revisionVersion, 4);
+  assert.equal(result.optimization_report_json.revalidation.minimumScore, 80);
+  assert.deepEqual(lockedValidationContext.sourceReferences, [
+    { title: 'Fachquelle', url: 'https://example.com/fachquelle' }
+  ]);
   assert.match(result.optimization_report_json.revalidation.snapshotFingerprint, /^[0-9a-f]{64}$/);
   const update = client.calls.find(({ sql }) => /UPDATE content_post_revisions/i.test(sql));
   assert.match(update.sql, /revision_version = revision_version \+ 1/i);
@@ -501,8 +625,10 @@ test('Rücknahme-Update prüft Livehash und Revisionsversion atomar und speicher
   assert.equal(client.calls.at(-1).sql, 'COMMIT');
 });
 
-test('fehlgeschlagene Rücknahmevalidierung rollt ohne Revisions- oder Feedbackschreibzugriff zurück', async () => {
-  const post = publishedPost();
+test('unbekannte externe Rücknahmequelle blockiert und rollt ohne Schreibzugriff zurück', async () => {
+  const post = publishedPost({
+    content: '<section><h2>Planung</h2><p><a href="https://unknown.example/fremd">Fremdquelle</a></p></section>'
+  });
   const snapshot = createRevisionSnapshot(post);
   snapshot.fields.meta_title = 'Optimierter Meta-Titel';
   const report = {
@@ -510,7 +636,8 @@ test('fehlgeschlagene Rücknahmevalidierung rollt ohne Revisions- oder Feedbacks
       before: { metaTitle: post.meta_title },
       after: { metaTitle: snapshot.fields.meta_title }
     }),
-    baseLiveHash: snapshot.base.live_hash
+    baseLiveHash: snapshot.base.live_hash,
+    sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
   };
   const revision = {
     id: 71,
@@ -526,6 +653,9 @@ test('fehlgeschlagene Rücknahmevalidierung rollt ohne Revisions- oder Feedbacks
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_runs run/i.test(sql)) {
+      return { rows: [{ runtime_snapshot_json: originRuntimeSnapshot() }] };
+    }
     if (/FROM content_post_audits a/i.test(sql)) return { rows: [{ id: 31 }] };
     return { rows: [] };
   });
@@ -537,7 +667,15 @@ test('fehlgeschlagene Rücknahmevalidierung rollt ohne Revisions- oder Feedbacks
     revisionId: 71,
     expectedVersion: 3,
     changeId: report.changes[0].id,
-    validateSnapshot: async () => {
+    sourceReferences: [{ title: 'Browserquelle', url: 'https://unknown.example/fremd' }],
+    validateSnapshot: async (lockedSnapshot, context) => {
+      assert.match(lockedSnapshot.fields.content, /https:\/\/unknown\.example\/fremd/);
+      assert.equal(
+        context.validationContext.sourceReferences.some(({ url }) => (
+          url === 'https://unknown.example/fremd'
+        )),
+        false
+      );
       throw Object.assign(new Error('erneute Prüfung fehlgeschlagen'), {
         code: 'CONTENT_REVISION_VALIDATION_FAILED'
       });
@@ -579,7 +717,13 @@ test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Dif
     after: { metaTitle: snapshot.fields.meta_title },
     reasons: []
   });
-  const report = { ...diff, baseLiveHash: snapshot.base.live_hash };
+  const report = {
+    ...diff,
+    baseLiveHash: snapshot.base.live_hash,
+    beforeScore: 72,
+    afterScore: 92,
+    sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
+  };
   const changeId = report.changes[0].id;
   const revision = {
     id: 71,
@@ -596,6 +740,9 @@ test('Rücknahme ignoriert vorbereitete Fremdwerte und wendet den gesperrten Dif
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_runs run/i.test(sql)) {
+      return { rows: [{ runtime_snapshot_json: originRuntimeSnapshot() }] };
+    }
     if (/FROM content_post_audits a/i.test(sql)) {
       return { rows: [{ id: 31, post_id: 19, job_id: 44, status: 'revision_created' }] };
     }
@@ -649,7 +796,10 @@ test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeo
         sourceUrls: []
       }]
     }),
-    baseLiveHash: snapshot.base.live_hash
+    baseLiveHash: snapshot.base.live_hash,
+    beforeScore: 72,
+    afterScore: 92,
+    sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
   };
   const revision = {
     id: 71, post_id: 19, audit_id: 31, optimization_job_id: 44,
@@ -663,6 +813,9 @@ test('Rücknahme schreibt nur serverseitig abgeleitetes Feedback und die Lernbeo
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_runs run/i.test(sql)) {
+      return { rows: [{ runtime_snapshot_json: originRuntimeSnapshot() }] };
+    }
     if (/FROM content_post_audits a/i.test(sql)) {
       return { rows: [{ id: 31, findings_json: [{ code: 'missing_meta_title' }] }] };
     }
@@ -732,7 +885,10 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
         reason: 'Fachlich präzisiert.', sourceUrls: []
       }]
     }),
-    baseLiveHash: snapshot.base.live_hash
+    baseLiveHash: snapshot.base.live_hash,
+    beforeScore: 72,
+    afterScore: 92,
+    sources: [{ title: 'Fachquelle', url: 'https://example.com/fachquelle' }]
   };
   const revision = {
     id: 71, post_id: 19, audit_id: 31, optimization_job_id: 44,
@@ -745,6 +901,9 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
     if (/SELECT r\.post_id FROM content_post_revisions r/i.test(sql)) return { rows: [{ post_id: 19 }] };
     if (/FROM posts p/i.test(sql)) return { rows: [post] };
     if (/FROM content_post_revisions r/i.test(sql) && /FOR UPDATE/i.test(sql)) return { rows: [revision] };
+    if (/FROM content_runs run/i.test(sql)) {
+      return { rows: [{ runtime_snapshot_json: originRuntimeSnapshot() }] };
+    }
     if (/FROM content_post_audits a/i.test(sql)) {
       return { rows: [{ id: 31, findings_json: [{ code: 'missing_meta_title' }] }] };
     }
@@ -775,13 +934,16 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
     }
   });
 
+  let lockedValidationContext;
   const result = await repository.updateRevisionAfterManualEdit({
     revisionId: 71,
     expectedVersion: 3,
     admin: { id: 7, username: 'Admin' },
+    sourceReferences: [{ title: 'Browserquelle', url: 'https://evil.example/browser' }],
     buildValidatedUpdate: async (current, context) => {
       assert.equal(current.fields.meta_title, 'Optimierter Meta-Titel');
       assert.equal(context.report.changes[0].status, 'active');
+      lockedValidationContext = context.validationContext;
       const next = structuredClone(current);
       next.fields.meta_title = 'Manuell abgestimmter Meta-Titel';
       return next;
@@ -790,6 +952,9 @@ test('manuelle Bearbeitung einer Optimierungsrevision markiert betroffene KI-Än
 
   assert.equal(result.revision_version, 4);
   assert.equal(result.optimization_report_json.changes[0].status, 'manual_edit');
+  assert.deepEqual(lockedValidationContext.sourceReferences, [
+    { title: 'Fachquelle', url: 'https://example.com/fachquelle' }
+  ]);
   assert.equal(feedback.length, 1);
   assert.equal(feedback[0][2], report.changes[0].id);
   assert.equal(feedback[0][3], 'technical_precision');
