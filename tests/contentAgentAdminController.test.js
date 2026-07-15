@@ -1258,6 +1258,47 @@ test('Artikel-Performance liefert für unbekannte veröffentlichte Artikel 404',
   assert.equal(res.statusCode, 404);
 });
 
+test('Performance-Revision verlangt Bestätigung und reicht nur gebundene Evidenz weiter', async () => {
+  const calls = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    settingsRepository: { async getSettings() { return { agent_enabled: true, maximum_attempts: 3 }; } },
+    revisionService: {
+      async prepareExistingPostOptimization(postId) {
+        assert.equal(postId, 5);
+        return { baseLiveHash: 'b'.repeat(64) };
+      }
+    },
+    jobRepository: {
+      async enqueuePerformanceRevisionJob(input) {
+        calls.push(input);
+        return { id: 81, status: 'queued' };
+      }
+    }
+  }));
+  const rejected = response();
+  await controller.createPerformanceRevisionAction({
+    params: { id: '5' }, body: {}, session: { user: { id: 7, username: 'Admin' } }
+  }, rejected, assert.fail);
+  assert.equal(rejected.statusCode, 400);
+
+  const accepted = response();
+  await controller.createPerformanceRevisionAction({
+    params: { id: '5' },
+    body: { confirmation: 'performance_revision', snapshot_id: '9', evidence_hash: 'a'.repeat(64) },
+    session: { user: { id: 7, username: 'Admin' } }
+  }, accepted, assert.fail);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0], {
+    postId: 5,
+    adminId: 7,
+    baseLiveHash: 'b'.repeat(64),
+    snapshotId: 9,
+    evidenceHash: 'a'.repeat(64),
+    maxAttempts: 3
+  });
+  assert.equal(accepted.redirectedTo, '/admin/content-agent/existing-content/5/performance?revision=queued');
+});
+
 test('Startaktion erzwingt Agent-Aktivierung und ausschließlich serverseitigen Minimalpayload', async () => {
   let enqueued = null;
   let prepared = null;

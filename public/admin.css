@@ -3180,6 +3180,22 @@ body {
   margin: 0.75rem 0 0;
 }
 
+.content-agent-performance-revision {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--content-agent-blue) 35%, var(--content-agent-border));
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--content-agent-blue) 6%, #fff);
+}
+
+.content-agent-performance-revision p {
+  margin: 0.25rem 0 0;
+  color: var(--content-agent-muted);
+}
+
 @media (max-width: 900px) {
   .content-agent-performance-grid,
   .content-agent-performance-grid.is-comparison,
@@ -3204,6 +3220,11 @@ body {
   .content-agent-performance .content-agent-actions,
   .content-agent-performance .content-agent-actions .btn {
     width: 100%;
+  }
+
+  .content-agent-performance-revision {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .content-agent-performance-table {

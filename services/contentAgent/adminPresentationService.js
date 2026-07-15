@@ -73,6 +73,7 @@ const SAFE_EXISTING_OPTIMIZATION_ERROR_CODES = new Set([
   'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID',
   'CONTENT_JOB_LEASE_LOST',
   'CONTENT_POST_NOT_FOUND',
+  'CONTENT_PERFORMANCE_EVIDENCE_STALE',
   'CONTENT_PROVIDER_SAFE_RETRY',
   'CONTENT_REVISION_CONFLICT',
   'CONTENT_REVISION_STALE',
@@ -954,6 +955,17 @@ export function presentArticlePerformanceDetail(raw = {}) {
   const learning = raw.learning && typeof raw.learning === 'object' ? raw.learning : {};
   const pendingCount = Math.max(0, Number(learning.pendingCount) || 0);
   const activeCount = Math.max(0, Number(learning.activeCount) || 0);
+  const evidenceHash = String(snapshot?.evidence_hash || '');
+  const workflow = raw.workflow && typeof raw.workflow === 'object' ? raw.workflow : {};
+  const canCreateRevision = summary.isEligible
+    && snapshot?.status === 'opportunity'
+    && Array.isArray(snapshot?.diagnoses_json)
+    && snapshot.diagnoses_json.length > 0
+    && safePositiveInteger(snapshot?.id) !== null
+    && /^[0-9a-f]{64}$/.test(evidenceHash)
+    && safePositiveInteger(post.id) !== null
+    && workflow.hasDraftRevision !== true
+    && workflow.hasActiveOptimization !== true;
   return {
     post: {
       id: safePositiveInteger(post.id),
@@ -1009,7 +1021,13 @@ export function presentArticlePerformanceDetail(raw = {}) {
           ? `${pendingCount} Lernvorschlag${pendingCount === 1 ? '' : 'e'} wartet auf Freigabe`
           : summary.learningEligible ? 'Als Lernsignal freigegeben' : 'Noch kein belastbares Lernsignal',
       dashboardUrl: '/admin/content-agent/learning-rules'
-    }
+    },
+    revisionAction: canCreateRevision ? {
+      available: true,
+      url: `/admin/content-agent/existing-content/${post.id}/performance/revision`,
+      snapshotId: safePositiveInteger(snapshot.id),
+      evidenceHash
+    } : { available: false }
   };
 }
 

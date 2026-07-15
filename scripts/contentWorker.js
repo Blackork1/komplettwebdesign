@@ -202,12 +202,29 @@ function learningObservationPayload(claim) {
 function existingPostOptimizationPayload(claim) {
   const payload = claim?.payload_json;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
-  const allowed = ['source', 'post_id', 'admin_id', 'base_live_hash'];
-  if (Object.keys(payload).sort().join('|') !== allowed.sort().join('|')) return null;
-  if (payload.source !== 'admin_existing_content') return null;
+  const regular = ['source', 'post_id', 'admin_id', 'base_live_hash'];
+  const performance = [
+    ...regular, 'snapshot_id', 'evidence_hash', 'diagnosis_codes'
+  ];
+  const expected = payload.source === 'article_performance' ? performance : regular;
+  if (Object.keys(payload).sort().join('|') !== expected.sort().join('|')) return null;
+  if (!['admin_existing_content', 'article_performance'].includes(payload.source)) return null;
   if (!positiveDatabasePayloadInteger(payload.post_id)) return null;
   if (!positiveDatabasePayloadInteger(payload.admin_id)) return null;
   if (!/^[0-9a-f]{64}$/.test(payload.base_live_hash)) return null;
+  if (payload.source === 'article_performance') {
+    const allowedDiagnosisCodes = new Set([
+      'visibility_opportunity', 'snippet_or_intent_opportunity', 'ranking_opportunity',
+      'content_or_cta_opportunity', 'contact_path_opportunity'
+    ]);
+    if (!positiveSafePayloadInteger(payload.snapshot_id)
+        || !/^[0-9a-f]{64}$/.test(String(payload.evidence_hash || ''))
+        || !Array.isArray(payload.diagnosis_codes)
+        || payload.diagnosis_codes.length < 1
+        || payload.diagnosis_codes.length > 5
+        || payload.diagnosis_codes.some((code) => !allowedDiagnosisCodes.has(code))
+        || new Set(payload.diagnosis_codes).size !== payload.diagnosis_codes.length) return null;
+  }
   return payload;
 }
 
@@ -1525,7 +1542,10 @@ export function createProductionRuntime({
       searchMetricsRepository: required(
         searchMetricsRepository,
         'searchMetricsRepository'
-      )
+      ),
+      ...(articlePerformanceRepository ? {
+        performanceRepository: articlePerformanceRepository
+      } : {})
     };
   }
   function createExistingPostRevisionRevalidationDependencies(snapshot = null) {

@@ -513,6 +513,7 @@ export function createContentAgentAdminRepository(db = pool) {
                snapshot.positive_signals_json,
                snapshot.data_eligible,
                snapshot.learning_eligible,
+               snapshot.evidence_hash,
                snapshot.explanation_status,
                snapshot.explanation_json,
                opportunity.id AS opportunity_id,
@@ -520,7 +521,9 @@ export function createContentAgentAdminRepository(db = pool) {
                opportunity.score AS opportunity_score,
                opportunity.status AS opportunity_status,
                learning.pending_count,
-               learning.active_count
+               learning.active_count,
+               workflow.has_draft_revision,
+               workflow.has_active_optimization
         FROM posts p
         LEFT JOIN content_post_metadata metadata ON metadata.post_id = p.id
         LEFT JOIN LATERAL (
@@ -563,6 +566,19 @@ export function createContentAgentAdminRepository(db = pool) {
                 )
             ) AS active_count
         ) learning ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT
+            EXISTS (
+              SELECT 1 FROM content_post_revisions revision
+              WHERE revision.post_id = p.id AND revision.status = 'draft'
+            ) AS has_draft_revision,
+            EXISTS (
+              SELECT 1 FROM content_jobs job
+              WHERE job.job_type = 'optimize_existing_post'
+                AND job.payload_json ->> 'post_id' = p.id::text
+                AND job.status IN ('queued', 'running', 'needs_manual_attention')
+            ) AS has_active_optimization
+        ) workflow ON TRUE
         WHERE p.id = $1
           AND p.published = TRUE
         LIMIT 1
@@ -593,6 +609,7 @@ export function createContentAgentAdminRepository(db = pool) {
           positive_signals_json: row.positive_signals_json,
           data_eligible: row.data_eligible,
           learning_eligible: row.learning_eligible,
+          evidence_hash: row.evidence_hash,
           explanation_status: row.explanation_status,
           explanation_json: row.explanation_json
         } : null,
@@ -605,6 +622,10 @@ export function createContentAgentAdminRepository(db = pool) {
         learning: {
           pendingCount: Number(row.pending_count) || 0,
           activeCount: Number(row.active_count) || 0
+        },
+        workflow: {
+          hasDraftRevision: row.has_draft_revision === true,
+          hasActiveOptimization: row.has_active_optimization === true
         }
       };
     },

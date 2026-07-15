@@ -27,6 +27,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE',
+  'CONTENT_PERFORMANCE_EVIDENCE_STALE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
   'CONTENT_LEARNING_VERSION_CONFLICT',
@@ -61,6 +62,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE: 'Der Optimierungsauftrag kann in diesem Zustand nicht sicher geschlossen werden.',
+  CONTENT_PERFORMANCE_EVIDENCE_STALE: 'Die Performance-Auswertung wurde zwischenzeitlich aktualisiert oder ist nicht mehr belastbar. Bitte lade die Seite neu.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
   CONTENT_LEARNING_VERSION_CONFLICT: 'Der Vorschlag oder die Regel wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
@@ -571,6 +573,7 @@ export function createAdminContentAgentController(dependencies) {
     },
 
     async articlePerformancePage(req, res, next) {
+      res.set('Cache-Control', 'no-store');
       if (typeof adminRepository?.getArticlePerformanceDetail !== 'function'
           || typeof presentation?.presentArticlePerformanceDetail !== 'function') {
         return unavailable(res);
@@ -582,7 +585,8 @@ export function createAdminContentAgentController(dependencies) {
           return res.status(404).send('Veröffentlichter Artikel nicht gefunden.');
         }
         return res.render('admin/contentAgent/articlePerformance', {
-          performance: presentation.presentArticlePerformanceDetail(rawPerformance)
+          performance: presentation.presentArticlePerformanceDetail(rawPerformance),
+          ...(req.query?.revision === 'queued' ? { revision: 'queued' } : {})
         });
       } catch (error) {
         return sendKnownError(error, res, next);
@@ -1303,6 +1307,57 @@ export function createAdminContentAgentController(dependencies) {
           });
         }
         return res.redirect('/admin/content-agent/existing-content?optimization=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async createPerformanceRevisionAction(req, res, next) {
+      try {
+        if (req.body?.confirmation !== 'performance_revision') {
+          throw Object.assign(new Error('Die Performance-Revision muss ausdrücklich bestätigt werden.'), {
+            code: 'CONTENT_CONFIRMATION_REQUIRED'
+          });
+        }
+        const postId = postgresIntegerId(req.params.id);
+        const snapshotId = postgresIntegerId(req.body?.snapshot_id);
+        const evidenceHash = String(req.body?.evidence_hash || '');
+        if (!/^[0-9a-f]{64}$/.test(evidenceHash)) {
+          throw Object.assign(new Error('Der Evidenz-Hash ist ungültig.'), {
+            code: 'CONTENT_ACTION_VALIDATION_FAILED'
+          });
+        }
+        const admin = adminFromRequest(req);
+        const adminId = postgresIntegerId(admin.id);
+        const settings = await requireAdminEnqueueEnabled();
+        if (typeof revisionService?.prepareExistingPostOptimization !== 'function'
+            || typeof jobRepository?.enqueuePerformanceRevisionJob !== 'function') {
+          return unavailable(res);
+        }
+        const prepared = await revisionService.prepareExistingPostOptimization(postId);
+        const baseLiveHash = String(prepared?.baseLiveHash || '');
+        if (!/^[0-9a-f]{64}$/.test(baseLiveHash)) {
+          throw Object.assign(new Error('Der Livehash ist ungültig.'), {
+            code: 'CONTENT_ACTION_VALIDATION_FAILED'
+          });
+        }
+        const job = await jobRepository.enqueuePerformanceRevisionJob({
+          postId,
+          adminId,
+          baseLiveHash,
+          snapshotId,
+          evidenceHash,
+          maxAttempts: Math.min(
+            Number(settings.maximum_attempts),
+            Number(runtimeConfig.maxAttempts)
+          )
+        });
+        if (!job || !['queued', 'running', 'needs_manual_attention'].includes(job.status)) {
+          throw Object.assign(new Error('Performance-Revision nicht verfügbar.'), {
+            code: 'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect(`/admin/content-agent/existing-content/${postId}/performance?revision=queued`);
       } catch (error) {
         return sendKnownError(error, res, next);
       }

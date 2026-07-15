@@ -332,6 +332,46 @@ test('statischer Artikel wird in fester Reihenfolge geprüft und ausschließlich
   assert.equal(dependencies.calls.finishes.at(-1).status, 'completed');
 });
 
+test('Performanceoptimierung nutzt nur aktuelle begrenzte Evidenz und speichert ausschließlich eine Draft-Revision', async () => {
+  const post = publishedPost();
+  const evidenceHash = 'a'.repeat(64);
+  const input = createJobInput(post);
+  input.claim.payload_json = {
+    source: 'article_performance',
+    post_id: post.id,
+    admin_id: 7,
+    base_live_hash: liveHashForPost(post),
+    snapshot_id: 91,
+    evidence_hash: evidenceHash,
+    diagnosis_codes: ['snippet_or_intent_opportunity']
+  };
+  const dependencies = createSuccessfulDependencies({ post });
+  dependencies.performanceRepository = {
+    async getLatestSnapshot(postId) {
+      assert.equal(postId, post.id);
+      return {
+        id: 91,
+        post_id: post.id,
+        evidence_hash: evidenceHash,
+        data_eligible: true,
+        status: 'opportunity',
+        diagnoses_json: [{ code: 'snippet_or_intent_opportunity' }],
+        windows_json: { 28: { impressions: 70, clicks: 0, ctr: 0, averagePosition: 12, queries: Array.from({ length: 12 }, (_, index) => ({ query: `Query ${index}`, impressions: 10, clicks: 0, ctr: 0, averagePosition: 12 })) } },
+        cohort_json: { available: true, source: 'cluster', size: 4, medianImpressions: 90 }
+      };
+    }
+  };
+
+  const result = await runExistingPostOptimizationJob(input, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.liveWrites, 0);
+  assert.equal(dependencies.calls.revisions[0].status, undefined);
+  assert.equal(dependencies.calls.optimizationInputs[0].performanceEvidence.queries.length, 10);
+  assert.deepEqual(dependencies.calls.optimizationInputs[0].performanceEvidence.diagnosisCodes, ['snippet_or_intent_opportunity']);
+  assert.equal(dependencies.calls.revisions[0].report.performanceEvidence.evidenceHash, undefined);
+});
+
 test('GSC-Ausfall wird protokolliert und blockiert die Optimierung nicht', async () => {
   const post = publishedPost();
   const dependencies = createSuccessfulDependencies({
@@ -838,7 +878,7 @@ test('vollständige OpenAI-Antwort mit Legacy-EJS-Änderung wird persistiert, ab
     },
     responseId: 'resp-legacy-completed',
     usage: { input_tokens: 120, output_tokens: 40 },
-    promptVersion: '2026-07-14.2',
+    promptVersion: '2026-07-15.1',
     baseLiveHash: liveHashForPost(post),
     reservationMonth: '2026-07',
     actualCost: 0.037

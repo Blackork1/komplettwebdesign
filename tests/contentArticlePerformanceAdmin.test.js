@@ -129,7 +129,8 @@ test('Performance-Detailview rendert nur präsentierte Werte und mobile Struktur
   assert.match(html, /content-agent-performance-grid/);
   assert.match(html, /&lt;script&gt;Artikel&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>Artikel<\/script>/);
-  assert.doesNotMatch(html, /windows_json|evidence_hash|explanation_json/);
+  assert.doesNotMatch(html, /windows_json|explanation_json/);
+  assert.match(html, /type="hidden" name="evidence_hash"/);
 });
 
 test('Performance-Detailseite ist ausschließlich admin-geschützt', () => {
@@ -139,3 +140,9 @@ test('Performance-Detailseite ist ausschließlich admin-geschützt', () => {
   );
 });
 
+test('Performance-Revision ist ausschließlich als bestätigter Admin-POST mit CSRF erreichbar', () => {
+  const source = readFileSync(new URL('../routes/adminContentAgentRoutes.js', import.meta.url), 'utf8');
+  assert.match(source,
+    /router\.post\(\s*'\/admin\/content-agent\/existing-content\/:id\/performance\/revision',\s*isAdmin,\s*verifyCsrfToken,\s*controller\.createPerformanceRevisionAction\s*\)/
+  );
+});

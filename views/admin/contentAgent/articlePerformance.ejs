@@ -7,6 +7,7 @@
   const safeQueries = Array.isArray(safePerformance.queries) ? safePerformance.queries : [];
   const safeStrengths = Array.isArray(safePerformance.strengths) ? safePerformance.strengths : [];
   const safeImprovements = Array.isArray(safePerformance.improvements) ? safePerformance.improvements : [];
+  const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
 %>
 <div class="content-agent-page content-agent-performance">
   <header class="content-agent-pagehead">
@@ -23,6 +24,8 @@
 
   <%- include('_tabs', { activeTab: 'drafts' }) %>
   <div class="content-agent-subnav"><a href="/admin/content-agent/drafts">KI-Entwürfe</a><a class="is-active" href="/admin/content-agent/existing-content" aria-current="page">Bestehende Inhalte</a></div>
+
+  <% if (typeof revision !== 'undefined' && revision === 'queued') { %><div class="alert alert-success" role="status">Die performancebasierte KI-Revision wurde eingeplant. Der Liveartikel bleibt unverändert.</div><% } %>
 
   <% if (!safePerformance.hasSnapshot) { %>
     <div class="content-agent-empty"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><div><strong>Noch keine GSC-Daten für diesen Artikel</strong><p>Nach der nächsten täglichen Auswertung erscheinen hier die Zeiträume 7, 14 und 28 Tage. Der Artikel wird bis dahin nicht negativ bewertet.</p></div></div>
@@ -55,6 +58,16 @@
         <article><h3><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> Was geprüft werden sollte</h3><% if (safeImprovements.length) { %><ul><% safeImprovements.forEach((item) => { %><li><%= item %></li><% }) %></ul><% } else { %><p>Aktuell ist keine konkrete Verschlechterung belegt.</p><% } %></article>
       </div>
       <div class="content-agent-notice mt-3"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i><div><strong>Nächster sinnvoller Schritt</strong><p><%= safePerformance.nextCheck %></p></div></div>
+      <% if (safePerformance.revisionAction && safePerformance.revisionAction.available) { %>
+        <form class="content-agent-performance-revision mt-3" method="post" action="<%= safePerformance.revisionAction.url %>" data-confirm="Aus den aktuellen Performance-Hinweisen eine KI-Revision erstellen? Die Livefassung bleibt unverändert und jede Änderung muss später manuell freigegeben werden.">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input type="hidden" name="confirmation" value="performance_revision">
+          <input type="hidden" name="snapshot_id" value="<%= safePerformance.revisionAction.snapshotId %>">
+          <input type="hidden" name="evidence_hash" value="<%= safePerformance.revisionAction.evidenceHash %>">
+          <div><strong>Belastbares Optimierungspotenzial vorhanden</strong><p>Die KI erhält nur die aktuelle Diagnose, begrenzte Messwerte und maximal zehn Suchanfragen. Das Ergebnis wird ausschließlich als getrennte Draft-Revision gespeichert.</p></div>
+          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> KI-Revision anlegen</button>
+        </form>
+      <% } %>
     </section>
 
     <section class="content-agent-panel" aria-labelledby="performance-comparison-heading">

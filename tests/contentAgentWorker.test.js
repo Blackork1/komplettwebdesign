@@ -1905,6 +1905,46 @@ test('Worker akzeptiert ausschließlich minimalen Bestandsoptimierungs-Payload',
   assert.deepEqual(calls[1][2], { optimization: true });
 });
 
+test('Worker akzeptiert gebundene Performance-Evidenz und lehnt zusätzliche Felder ab', async () => {
+  const handled = [];
+  const handler = createProductionJobHandler({
+    technicalConfig: { enabled: true, webSearchCostPerCallEur: 0.01 },
+    async getSettings() { return { settings_version: 1 }; },
+    resolveRuntimeConfig() { return { timezone: 'Europe/Berlin', webSearchCostPerCallEur: 0.01 }; },
+    createJobSnapshot({ runtimeConfig }) { return runtimeConfig; },
+    async createRun({ runtimeSnapshot }) {
+      return { id: 88, status: 'running', runtime_snapshot_json: runtimeSnapshot };
+    },
+    async runPipeline() { assert.fail('Performance-Revisionen dürfen keine Entwurfspipeline starten.'); },
+    async createExistingPostOptimizationDependencies() { return { safe: true }; },
+    async runExistingPostOptimizationJob(context) {
+      handled.push(context.claim.payload_json);
+      return { status: 'completed', revisionId: 71, postId: 19 };
+    }
+  });
+  const payload = {
+    source: 'article_performance',
+    post_id: 19,
+    admin_id: 7,
+    base_live_hash: 'a'.repeat(64),
+    snapshot_id: 91,
+    evidence_hash: 'b'.repeat(64),
+    diagnosis_codes: ['ranking_opportunity']
+  };
+  await handler({ id: 41, job_type: 'optimize_existing_post', payload_json: payload }, {
+    leaseGuard: async () => true
+  });
+  assert.deepEqual(handled, [payload]);
+
+  await assert.rejects(handler({
+    id: 42,
+    job_type: 'optimize_existing_post',
+    payload_json: { ...payload, contact_email: 'nicht-erlaubt@example.test' }
+  }, { leaseGuard: async () => true }), (error) => (
+    error?.code === 'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID'
+  ));
+});
+
 test('Worker übernimmt für Revalidierungen ausschließlich den gebundenen Ursprungssnapshot', async () => {
   const runtimeSnapshot = createContentAgentJobSnapshot({
     runtimeConfig: {

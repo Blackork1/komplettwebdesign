@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  enqueuePerformanceRevisionJob,
   claimNextJob,
   completeJob,
   discardDeterministicExistingOptimizationJobForAdmin,
@@ -96,6 +97,28 @@ function createTransactionalRecorder(rowsByCall = []) {
     }
   };
 }
+
+test('Performance-Revision lehnt veraltete Evidenz atomar und ohne Job ab', async () => {
+  const db = createTransactionalRecorder([
+    { rows: [] },
+    { rows: [{ id: 19, published: true }] },
+    { rows: [{ has_draft_revision: false }] },
+    { rows: [{ id: 92, evidence_hash: 'b'.repeat(64), data_eligible: true, status: 'opportunity', diagnoses_json: [{ code: 'ranking_opportunity' }] }] },
+    { rows: [] }
+  ]);
+
+  await assert.rejects(enqueuePerformanceRevisionJob({
+    postId: 19,
+    adminId: 7,
+    baseLiveHash: 'c'.repeat(64),
+    snapshotId: 91,
+    evidenceHash: 'a'.repeat(64),
+    maxAttempts: 3
+  }, db), (error) => error?.code === 'CONTENT_PERFORMANCE_EVIDENCE_STALE');
+
+  assert.equal(db.client.calls.some(({ sql }) => /INSERT INTO content_jobs/i.test(sql)), false);
+  assert.equal(db.events.at(-1).type, 'release');
+});
 
 test('claimNextJob reserviert atomar genau einen Job in derselben Transaktion', async () => {
   const claimed = { id: 17, status: 'running', locked_by: 'worker-1', attempts: 1 };

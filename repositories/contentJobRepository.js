@@ -23,7 +23,10 @@ import { reviewHasOnlyTechnicalBlockingIssues } from '../services/contentAgent/e
 import {
   DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
 } from '../services/contentAgent/existingPostOptimizationDiscardPolicy.js';
-import { lockContentPostRevisionInvariant } from './contentPostRevisionInvariant.js';
+import {
+  hasDraftContentRevision,
+  lockContentPostRevisionInvariant
+} from './contentPostRevisionInvariant.js';
 
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
@@ -170,6 +173,127 @@ export function enqueuePerformanceExplanationJob({ snapshotId, evidenceHash }, d
     payload: { snapshot_id: normalizedSnapshotId, evidence_hash: normalizedHash },
     maxAttempts: 3
   }, db);
+}
+
+const PERFORMANCE_DIAGNOSIS_CODES = new Set([
+  'visibility_opportunity',
+  'snippet_or_intent_opportunity',
+  'ranking_opportunity',
+  'content_or_cta_opportunity',
+  'contact_path_opportunity'
+]);
+
+function performanceRevisionError(code, message) {
+  return Object.assign(new Error(message), { code });
+}
+
+export async function enqueuePerformanceRevisionJob({
+  postId,
+  adminId,
+  baseLiveHash,
+  snapshotId,
+  evidenceHash,
+  maxAttempts = null
+} = {}, db = pool) {
+  const normalizedPostId = positiveJobInteger(postId, 'postId');
+  const normalizedAdminId = positiveJobInteger(adminId, 'adminId');
+  const normalizedSnapshotId = positiveJobInteger(snapshotId, 'snapshotId');
+  const normalizedLiveHash = String(baseLiveHash || '');
+  const normalizedEvidenceHash = String(evidenceHash || '');
+  if (!/^[0-9a-f]{64}$/.test(normalizedLiveHash)
+      || !/^[0-9a-f]{64}$/.test(normalizedEvidenceHash)) {
+    throw new TypeError('Die Performance-Revision benötigt gültige Live- und Evidenz-Hashes.');
+  }
+  if (!db || typeof db.connect !== 'function') {
+    throw new TypeError('Die Performance-Revision benötigt eine transaktionsfähige Datenbank.');
+  }
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const post = await lockContentPostRevisionInvariant(client, normalizedPostId);
+    if (!post || post.published !== true) {
+      throw performanceRevisionError(
+        'CONTENT_POST_NOT_FOUND',
+        'Der veröffentlichte Artikel wurde nicht gefunden.'
+      );
+    }
+    if (await hasDraftContentRevision(client, normalizedPostId)) {
+      throw performanceRevisionError(
+        'CONTENT_REVISION_CONFLICT',
+        'Für diesen Artikel ist bereits eine Draft-Revision vorhanden.'
+      );
+    }
+    const snapshotResult = await client.query(`
+      SELECT id, evidence_hash, data_eligible, status, diagnoses_json
+      FROM content_article_performance_snapshots
+      WHERE post_id = $1
+      ORDER BY evaluated_through_date DESC, id DESC
+      LIMIT 1
+      FOR SHARE
+    `, [normalizedPostId]);
+    const snapshot = snapshotResult.rows[0] || null;
+    const diagnosisCodes = [...new Set(
+      (Array.isArray(snapshot?.diagnoses_json) ? snapshot.diagnoses_json : [])
+        .map((item) => String(item?.code || ''))
+        .filter((code) => PERFORMANCE_DIAGNOSIS_CODES.has(code))
+    )].sort();
+    if (!snapshot
+        || Number(snapshot.id) !== normalizedSnapshotId
+        || snapshot.evidence_hash !== normalizedEvidenceHash
+        || snapshot.data_eligible !== true
+        || snapshot.status !== 'opportunity'
+        || diagnosisCodes.length === 0) {
+      throw performanceRevisionError(
+        'CONTENT_PERFORMANCE_EVIDENCE_STALE',
+        'Die Performance-Evidenz ist nicht mehr aktuell oder noch nicht belastbar.'
+      );
+    }
+    const payload = {
+      source: 'article_performance',
+      post_id: normalizedPostId,
+      admin_id: normalizedAdminId,
+      base_live_hash: normalizedLiveHash,
+      snapshot_id: normalizedSnapshotId,
+      evidence_hash: normalizedEvidenceHash,
+      diagnosis_codes: diagnosisCodes
+    };
+    const idempotencyKey = `article-performance-revision:${normalizedPostId}:${normalizedSnapshotId}:${normalizedEvidenceHash}`;
+    const inserted = await client.query(`
+      INSERT INTO content_jobs (
+        job_type, idempotency_key, payload_json, max_attempts
+      )
+      SELECT 'optimize_existing_post', $1, $2::jsonb, $3
+      FROM content_agent_settings settings
+      WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+      ON CONFLICT DO NOTHING
+      RETURNING id, status, attempts, max_attempts, created_at, updated_at
+    `, [idempotencyKey, payload, normalizeMaxAttempts(maxAttempts)]);
+    let job = inserted.rows[0] || null;
+    if (!job) {
+      const active = await client.query(`
+        SELECT id, status, attempts, max_attempts, created_at, updated_at
+        FROM content_jobs
+        WHERE job_type = 'optimize_existing_post'
+          AND payload_json ->> 'post_id' = $1::text
+          AND status IN ('queued', 'running', 'needs_manual_attention')
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+        FOR SHARE
+      `, [normalizedPostId]);
+      job = active.rows[0] || null;
+    }
+    await client.query('COMMIT');
+    return job;
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // Der ursprüngliche Fehler bleibt maßgeblich.
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function positiveJobInteger(value, field) {

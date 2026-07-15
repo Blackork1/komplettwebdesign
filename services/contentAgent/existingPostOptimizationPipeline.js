@@ -34,6 +34,13 @@ const PERMANENT_ASSESSMENT_ERRORS = new Set([
 const DETERMINISTIC_OPTIMIZATION_FAILURE_CODES = Object.freeze([
   'OPENAI_LEGACY_EJS_CONTENT_CHANGED'
 ]);
+const PERFORMANCE_DIAGNOSIS_CODES = new Set([
+  'visibility_opportunity',
+  'snippet_or_intent_opportunity',
+  'ranking_opportunity',
+  'content_or_cta_opportunity',
+  'contact_path_opportunity'
+]);
 
 function pipelineError(code, message, { retryable = false } = {}) {
   return Object.assign(new Error(message), { code, retryable });
@@ -155,6 +162,62 @@ function normalizeGscSignals(values) {
     if (signal) signals.push(signal);
   }
   return signals;
+}
+
+function performanceMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function performanceEvidenceFromSnapshot(snapshot, payload) {
+  if (!plainObject(snapshot)
+      || positiveInteger(snapshot.id) !== positiveInteger(payload.snapshot_id)
+      || positiveInteger(snapshot.post_id) !== positiveInteger(payload.post_id)
+      || snapshot.evidence_hash !== payload.evidence_hash
+      || snapshot.data_eligible !== true
+      || snapshot.status !== 'opportunity') return null;
+  const snapshotCodes = [...new Set(
+    (Array.isArray(snapshot.diagnoses_json) ? snapshot.diagnoses_json : [])
+      .map((item) => String(item?.code || ''))
+      .filter((code) => PERFORMANCE_DIAGNOSIS_CODES.has(code))
+  )].sort();
+  const payloadCodes = [...new Set(
+    (Array.isArray(payload.diagnosis_codes) ? payload.diagnosis_codes : [])
+      .map(String)
+      .filter((code) => PERFORMANCE_DIAGNOSIS_CODES.has(code))
+  )].sort();
+  if (snapshotCodes.length === 0 || stableJson(snapshotCodes) !== stableJson(payloadCodes)) return null;
+  const metrics = snapshot.windows_json?.[28] ?? snapshot.windows_json?.['28'] ?? {};
+  const queries = (Array.isArray(metrics.queries) ? metrics.queries : [])
+    .slice(0, 10)
+    .map((row) => ({
+      query: normalizeGscQuery(row?.query),
+      impressions: performanceMetric(row?.impressions),
+      clicks: performanceMetric(row?.clicks),
+      ctr: Math.min(1, performanceMetric(row?.ctr)),
+      averagePosition: performanceMetric(row?.averagePosition)
+    }))
+    .filter((row) => row.query);
+  const cohort = plainObject(snapshot.cohort_json) ? snapshot.cohort_json : {};
+  return {
+    diagnosisCodes: snapshotCodes,
+    metrics28Days: {
+      coverageDayCount: Math.min(28, Math.max(0, Math.trunc(performanceMetric(metrics.coverageDayCount)))),
+      impressions: performanceMetric(metrics.impressions),
+      clicks: performanceMetric(metrics.clicks),
+      ctr: Math.min(1, performanceMetric(metrics.ctr)),
+      averagePosition: performanceMetric(metrics.averagePosition),
+      ctaClicks: performanceMetric(metrics.ctaClicks),
+      contactSubmits: performanceMetric(metrics.contactSubmits)
+    },
+    cohort: {
+      available: cohort.available === true,
+      source: ['cluster', 'age_fallback'].includes(cohort.source) ? cohort.source : 'unavailable',
+      size: Math.max(0, Math.trunc(performanceMetric(cohort.size))),
+      medianImpressions: performanceMetric(cohort.medianImpressions)
+    },
+    queries
+  };
 }
 
 function parseGscStage(value, baseLiveHash) {
@@ -423,8 +486,16 @@ export async function runExistingPostOptimizationJob({
   const jobId = positiveInteger(claim?.id);
   const runId = positiveInteger(run?.id);
   const adminId = positiveInteger(payload?.admin_id);
+  const performanceSource = payload?.source === 'article_performance';
+  const regularSource = payload?.source === 'admin_existing_content';
   const trustedContext = readExistingPostTrustedContextSnapshot(runtimeSnapshot);
-  if (!postId || !jobId || !runId || !adminId || !HASH.test(String(payload?.base_live_hash || ''))
+  if (!postId || !jobId || !runId || !adminId || (!regularSource && !performanceSource)
+      || !HASH.test(String(payload?.base_live_hash || ''))
+      || (performanceSource && (
+        !positiveInteger(payload?.snapshot_id)
+        || !HASH.test(String(payload?.evidence_hash || ''))
+        || !Array.isArray(payload?.diagnosis_codes)
+      ))
       || !runtimeSnapshot || typeof runtimeSnapshot !== 'object' || Array.isArray(runtimeSnapshot)
       || typeof runtimeSnapshot.webSearchCostPerCallEur !== 'number'
       || !Number.isFinite(runtimeSnapshot.webSearchCostPerCallEur)
@@ -458,6 +529,7 @@ export async function runExistingPostOptimizationJob({
     optimizationRepository,
     validateArticle
   });
+  let performanceEvidence = null;
 
   async function updateStage(currentStage, stageResult = {}, stageId = currentStage) {
     await assertLease();
@@ -571,6 +643,22 @@ export async function runExistingPostOptimizationJob({
       };
     }
     return { value: result.value, envelope: result.envelope };
+  }
+
+  if (performanceSource) {
+    requiredFunction(
+      dependencies.performanceRepository?.getLatestSnapshot,
+      'performanceRepository.getLatestSnapshot'
+    );
+    await assertLease();
+    const latestSnapshot = await dependencies.performanceRepository.getLatestSnapshot(postId);
+    performanceEvidence = performanceEvidenceFromSnapshot(latestSnapshot, payload);
+    if (!performanceEvidence) {
+      return finishFailed(
+        'CONTENT_PERFORMANCE_EVIDENCE_STALE',
+        'Die Performance-Evidenz ist nicht mehr aktuell oder nicht belastbar.'
+      );
+    }
   }
 
   const liveStage = await loadValidatedStage(
@@ -728,8 +816,19 @@ export async function runExistingPostOptimizationJob({
     post: articleFromPost(post),
     audit: {
       score: audit.score,
-      findings: [...audit.findings, ...extraFindings]
+      findings: [
+        ...audit.findings,
+        ...(performanceEvidence ? performanceEvidence.diagnosisCodes.map((code) => ({
+          code: `performance_${code}`,
+          severity: 'warning',
+          field: code === 'snippet_or_intent_opportunity' ? 'metaTitle' : 'contentHtml',
+          message: `Belastbare Performance-Diagnose: ${code}.`,
+          evidence: `28 Tage: ${performanceEvidence.metrics28Days.impressions} Impressionen, ${performanceEvidence.metrics28Days.clicks} Klicks, ${performanceEvidence.metrics28Days.ctaClicks} CTA-Klicks und ${performanceEvidence.metrics28Days.contactSubmits} Kontaktanfragen.`
+        })) : []),
+        ...extraFindings
+      ]
     },
+    ...(performanceEvidence ? { performanceEvidence } : {}),
     gscSignals,
     sources,
     allowedInternalLinks,
@@ -869,7 +968,8 @@ export async function runExistingPostOptimizationJob({
           type: 'existing_post_targeted_optimization',
           audit,
           freshness,
-          targetedScope: assessment.scope
+          targetedScope: assessment.scope,
+          ...(performanceEvidence ? { performanceEvidence } : {})
         },
         article: optimizedArticle(post, fields),
         sourceReferences: sources,
@@ -886,6 +986,7 @@ export async function runExistingPostOptimizationJob({
       freshness,
       sources,
       gscSignals,
+      ...(performanceEvidence ? { performanceEvidence } : {}),
       targetedScope: assessment.scope,
       validation: {
         passed: assessment.validation.passed,
