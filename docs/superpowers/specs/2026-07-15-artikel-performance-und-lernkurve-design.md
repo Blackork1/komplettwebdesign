@@ -374,7 +374,7 @@ Ein täglicher beziehungsweise vorhandener Wartungsjob löscht abgelaufene anony
 
 ## Deployment und Konfiguration
 
-Die bestehende GSC-Konfiguration und die vorhandenen OpenAI-Werte werden wiederverwendet. Es sind keine neuen Pflichtwerte in `.env` und keine Änderungen an `docker-compose.yml` vorgesehen.
+Die bestehende GSC-Konfiguration und die vorhandenen OpenAI-Werte werden wiederverwendet. Es entstehen keine neuen Pflichtwerte in `.env` und keine Änderungen an `docker-compose.yml`. Weil die bisherige VPS-Anleitung den bestehenden Wert `CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0` setzt, muss ausschließlich diese vorhandene Zeile auf `CONTENT_AGENT_GSC_SCHEDULE=30 5 * * *` geändert werden. Andernfalls würde der VPS trotz neuem Code weiterhin nur sonntags synchronisieren.
 
 Der Rollout benötigt:
 
