@@ -711,6 +711,7 @@ export async function runExistingPostOptimizationJob({
     runtimeSnapshot,
     'reviewer'
   );
+  const currentYear = snapshotCurrentYear(runtimeSnapshot);
   const inventory = allowedInternalLinks.map((url) => ({ url }));
   const auditStage = await loadValidatedStage(
     'existing_content_audit',
@@ -729,7 +730,7 @@ export async function runExistingPostOptimizationJob({
         content: articleFromPost(post).contentHtml
       },
       inventory,
-      currentYear: snapshotCurrentYear(runtimeSnapshot)
+      currentYear
     });
     await assertLease();
     const persistedAudit = await auditRepository.createAuditIdempotent({
@@ -1002,6 +1003,16 @@ export async function runExistingPostOptimizationJob({
       execute: () => openaiService.reviewArticle({
         briefing: {
           type: 'existing_post_targeted_optimization',
+          currentYear,
+          immutableFields: [
+            'slug',
+            'contentFormat',
+            'imageUrl',
+            'published',
+            'status',
+            'publishedAt',
+            'scheduledPublishAt'
+          ],
           audit,
           freshness,
           targetedScope: assessment.scope,

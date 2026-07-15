@@ -332,6 +332,22 @@ test('statischer Artikel wird in fester Reihenfolge geprüft und ausschließlich
   assert.equal(dependencies.calls.finishes.at(-1).status, 'completed');
 });
 
+test('Bestandsreview erhält das feste Prüfjahr und die unveränderlichen Felder', async () => {
+  const post = publishedPost();
+  const input = createJobInput(post);
+  input.runtimeSnapshot.currentYear = 2026;
+  const dependencies = createSuccessfulDependencies({ post });
+
+  const result = await runExistingPostOptimizationJob(input, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.reviewInputs[0].briefing.currentYear, 2026);
+  assert.deepEqual(
+    dependencies.calls.reviewInputs[0].briefing.immutableFields,
+    ['slug', 'contentFormat', 'imageUrl', 'published', 'status', 'publishedAt', 'scheduledPublishAt']
+  );
+});
+
 test('Performanceoptimierung nutzt nur aktuelle begrenzte Evidenz und speichert ausschließlich eine Draft-Revision', async () => {
   const post = publishedPost();
   const evidenceHash = 'a'.repeat(64);

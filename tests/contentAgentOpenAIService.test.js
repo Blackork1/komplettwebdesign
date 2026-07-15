@@ -547,6 +547,10 @@ test('Reviewer-Prompt überlässt HTML, CTA, FAQ und Metadaten ausschließlich d
   assert.match(prompt, /FAQ.*nicht.*strukturell/i);
   assert.match(prompt, /Metadaten.*nicht.*technisch/i);
   assert.match(prompt, /nur.*redaktionell|redaktionelle/i);
+  assert.match(prompt, /internen Links.*serverseitig.*bestanden/i);
+  assert.match(prompt, /Slug.*unveränderlich.*beanstand/i);
+  assert.match(prompt, /Vorjahresvergleich.*nicht.*veraltet/i);
+  assert.match(prompt, /statisches Preisrisiko.*konkreten Betrag/i);
   assert.doesNotMatch(prompt, /gegen.*HTML-Regeln/i);
 });
 
@@ -674,6 +678,174 @@ test('Review-Service erzwingt einen echten redaktionellen Blocker auch bei wider
   assert.equal(result.value.requiresManualReview, true);
   assert.equal(result.value.score, 94);
   assert.deepEqual(result.value.issues.map(({ code }) => code), ['unsupported_claim']);
+});
+
+test('Bestandsreview verwirft technische Link-, falsche Preis- und falsche Jahresblocker evidenzbasiert', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 54,
+    requiresManualReview: true,
+    risks: {
+      currentClaims: true,
+      legalClaims: true,
+      privacyClaims: true,
+      softwareVersionClaims: false,
+      staticPrices: true
+    },
+    issues: [
+      {
+        code: 'unknown_internal_link',
+        severity: 'error',
+        message: 'Der interne Link sei nicht freigegeben.',
+        repairInstruction: 'Entferne den Link.',
+        blocking: true,
+        sectionHeading: 'Agentur und Full-Service',
+        evidenceExcerpt: '<a href="/pakete">Unsere Pakete</a>',
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'static_price_claim',
+        severity: 'error',
+        message: 'Die Frage enthalte angeblich einen statischen Preis.',
+        repairInstruction: 'Entferne den Preis.',
+        blocking: true,
+        sectionHeading: 'Kopfbereich',
+        evidenceExcerpt: 'Was kostet eine Website 2026 für Selbstständige?',
+        verificationType: 'price',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'stale_year_in_title_slug_meta',
+        severity: 'error',
+        message: 'Das aktuelle Jahr sei angeblich veraltet.',
+        repairInstruction: 'Entferne das Jahr.',
+        blocking: true,
+        sectionHeading: 'Website-Kosten 2026 einfach erklärt',
+        evidenceExcerpt: 'Website-Kosten 2026 einfach erklärt',
+        verificationType: 'date',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'stale_year_claim',
+        severity: 'error',
+        message: 'Ein ausdrücklicher Vorjahresvergleich sei angeblich veraltet.',
+        repairInstruction: 'Entferne den Vergleich.',
+        blocking: true,
+        sectionHeading: '2025 vs. 2026 im Kurzvergleich',
+        evidenceExcerpt: '2025 | 2026',
+        verificationType: 'date',
+        sourceRequired: true,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'stale_year_mismatch',
+        severity: 'error',
+        message: 'Ein Vorjahresverweis sei angeblich veraltet.',
+        repairInstruction: 'Entferne den Vorjahresverweis.',
+        blocking: true,
+        sectionHeading: 'Welche Faktoren Website-Kosten in Berlin prägen',
+        evidenceExcerpt: 'Wenn du zuerst die Ausgangsbasis aus dem Vorjahr lesen möchtest',
+        verificationType: 'date',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'legal_privacy_claim',
+        severity: 'warning',
+        message: 'Die Formulierung sollte redaktionell geprüft werden.',
+        repairInstruction: 'Prüfe die Formulierung bei der Freigabe.',
+        blocking: false,
+        sectionHeading: 'Checkliste',
+        evidenceExcerpt: 'DSGVO-konformes Formular',
+        verificationType: 'legal',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      }
+    ]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: {
+      type: 'existing_post_targeted_optimization',
+      currentYear: 2026,
+      immutableFields: ['slug']
+    },
+    article: {
+      ...validArticle,
+      title: 'Website-Kosten 2026 einfach erklärt',
+      slug: 'website-kosten-2026-vergleich-2025',
+      contentHtml: [
+        '<section>',
+        '<h2>Agentur und Full-Service</h2>',
+        '<p><a href="/pakete">Unsere Pakete</a></p>',
+        '<h2>2025 vs. 2026 im Kurzvergleich</h2>',
+        '<p>2025 | 2026</p>',
+        '<h2>Checkliste</h2>',
+        '<p>DSGVO-konformes Formular</p>',
+        '</section>'
+      ].join('')
+    },
+    sourceReferences
+  });
+
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['legal_privacy_claim']);
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 80);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.risks, validRisk);
+});
+
+test('Bestandsreview behält einen ausdrücklichen statischen Preis als echten Blocker', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 62,
+    requiresManualReview: true,
+    risks: { ...validRisk, staticPrices: true },
+    issues: [{
+      code: 'static_price_claim',
+      severity: 'error',
+      message: 'Der feste Preis muss gegen die aktuelle Preisliste geprüft werden.',
+      repairInstruction: 'Entferne oder aktualisiere den Betrag.',
+      blocking: true,
+      sectionHeading: 'Projektkosten',
+      evidenceExcerpt: 'Das Paket kostet 2.990 €.',
+      verificationType: 'price',
+      sourceRequired: true,
+      autoPublishBlocking: true
+    }]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: {
+      type: 'existing_post_targeted_optimization',
+      currentYear: 2026,
+      immutableFields: ['slug']
+    },
+    article: {
+      ...validArticle,
+      contentHtml: '<section><h2>Projektkosten</h2><p>Das Paket kostet 2.990 €.</p></section>'
+    },
+    sourceReferences
+  });
+
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['static_price_claim']);
+  assert.equal(result.value.passed, false);
+  assert.equal(result.value.requiresManualReview, true);
+  assert.equal(result.value.risks.staticPrices, true);
 });
 
 test('fehlendes output_parsed führt zu einem klaren Fehler', async () => {

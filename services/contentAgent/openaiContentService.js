@@ -566,7 +566,7 @@ export function createOpenAIContentService({
       ...prompt,
       promptVersion: articleReviewerPromptVersion
     });
-    return { ...result, value: normalizeEditorialReview(result.value) };
+    return { ...result, value: normalizeEditorialReview(result.value, input) };
   }
 
   async function repairArticle(input) {
