@@ -173,7 +173,7 @@ function approvedRevision(overrides = {}) {
           snapshotFingerprint: fingerprint,
           review: approvedReview(92),
           score: 92,
-          minimumScore: 88,
+          minimumScore: 80,
           unresolvedAuditCodes: []
         }
       },
@@ -220,9 +220,20 @@ test('nur die aktuelle version- und fingerprintgebundene Revalidierung erlaubt d
   assert.equal(evaluateExistingPostRevisionApproval({ revision: oldReviewOnly }).allowed, false);
 });
 
-test('Freigabepolicy erzwingt höheren Originalscore, Risikofreiheit und gelöste Auditbefunde', () => {
+test('Freigabe vergleicht den lokalen Auditwert nicht mit dem redaktionellen Reviewwert', () => {
+  const { revision } = approvedRevision();
+  revision.optimization_report_json.beforeScore = 100;
+  revision.optimization_report_json.afterScore = 92;
+  revision.optimization_report_json.revalidation.minimumScore = 80;
+
+  assert.deepEqual(
+    evaluateExistingPostRevisionApproval({ revision }),
+    { allowed: true, reasonCode: 'approved', reasonLabel: 'Aktueller Revisionsstand vollständig geprüft' }
+  );
+});
+
+test('Freigabepolicy erzwingt Risikofreiheit und gelöste Auditbefunde', () => {
   const cases = [
-    (revision) => { revision.optimization_report_json.beforeScore = 94; },
     (revision) => { revision.optimization_report_json.revalidation.review.risks.legal = true; },
     (revision) => { revision.optimization_report_json.revalidation.review.requiresManualReview = true; },
     (revision) => { revision.optimization_report_json.revalidation.review.issues.push({ blocking: true }); },
@@ -238,9 +249,9 @@ test('Freigabepolicy erzwingt höheren Originalscore, Risikofreiheit und gelöst
   }
 });
 
-test('Mindestscore stammt ausschließlich aus beforeScore und niemals aus afterScore', () => {
+test('Mindestscore nutzt bei gültigem Audit eine feste redaktionelle Untergrenze', () => {
   assert.equal(minimumExistingPostRevisionScore({ beforeScore: 72, afterScore: 99 }), 80);
-  assert.equal(minimumExistingPostRevisionScore({ beforeScore: 91, afterScore: 70 }), 91);
+  assert.equal(minimumExistingPostRevisionScore({ beforeScore: 91, afterScore: 70 }), 80);
   assert.equal(minimumExistingPostRevisionScore({ beforeScore: null, afterScore: 99 }), null);
   assert.equal(minimumExistingPostRevisionScore({ beforeScore: '91', afterScore: 70 }), null);
 
@@ -253,7 +264,7 @@ test('Mindestscore stammt ausschließlich aus beforeScore und niemals aus afterS
   const aboveEighty = approvedRevision().revision;
   aboveEighty.optimization_report_json.beforeScore = 91;
   aboveEighty.optimization_report_json.afterScore = 70;
-  aboveEighty.optimization_report_json.revalidation.minimumScore = 91;
+  aboveEighty.optimization_report_json.revalidation.minimumScore = 80;
   assert.equal(evaluateExistingPostRevisionApproval({ revision: aboveEighty }).allowed, true);
 });
 
@@ -334,7 +345,7 @@ function runnerFixture() {
           status: 'pending',
           revisionVersion: 4,
           snapshotFingerprint: fingerprint,
-          minimumScore: 88
+          minimumScore: 80
         }
       }
     },
@@ -566,7 +577,7 @@ test('Revalidierungsworker bindet Quellen und Review an Version/Fingerprint und 
   assert.equal(state.completeCalls.length, 2);
   assert.equal(state.completeCalls[0].revisionVersion, 4);
   assert.equal(state.completeCalls[0].snapshotFingerprint, fixture.fingerprint);
-  assert.equal(state.completeCalls[0].minimumScore, 88);
+  assert.equal(state.completeCalls[0].minimumScore, 80);
   assert.deepEqual(state.completeCalls[0].unresolvedAuditCodes, []);
   assert.deepEqual(state.reviewInputs[0].sourceReferences, fixture.context.revision.optimization_report_json.sources);
   assert.equal(state.storedStage.revisionFence, `71:4:${fixture.fingerprint}`);
@@ -743,7 +754,7 @@ function markFixtureRevalidationPassed(fixture, review = approvedReview(92)) {
     snapshotFingerprint: fixture.fingerprint,
     review,
     score: review.score,
-    minimumScore: 88,
+    minimumScore: 80,
     auditCodes: [],
     unresolvedAuditCodes: []
   };

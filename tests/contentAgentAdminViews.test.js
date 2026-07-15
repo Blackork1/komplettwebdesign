@@ -1269,6 +1269,7 @@ test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async ()
       revalidationStatusLabel: 'Erneut geprüft',
       approvalEnabled: true,
       qualityScore: 92,
+      beforeQualityScore: 100,
       changeCount: 1,
       live: {
         title: '<script>Website-Relaunch planen</script>',
@@ -1314,7 +1315,8 @@ test('Vergleich zeigt Livefassung, Revision, Sprungmarken und Quellen', async ()
   assert.match(html, /Optimierte Revision/);
   assert.match(html, /href="#change-[0-9a-f]{64}"/);
   assert.match(html, /id="change-[0-9a-f]{64}"/);
-  assert.match(html, /Qualität 92\/100/);
+  assert.match(html, /Redaktionelles Review 92\/100/);
+  assert.match(html, /Lokaler Ausgangsaudit 100\/100/);
   assert.match(html, /Verwendete Quellen/);
   assert.match(html, /Geändert/);
   assert.match(html, /fa-pen/);

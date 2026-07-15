@@ -38,7 +38,7 @@
     </div>
     <div>
       <span class="content-agent-compare__summary-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
-      <p><strong><%= item.qualityScore === null || item.qualityScore === undefined ? 'Qualität noch offen' : `Qualität ${item.qualityScore}/100` %></strong><span><%= item.beforeQualityScore === null || item.beforeQualityScore === undefined ? 'nach redaktioneller Prüfung' : `zuvor ${item.beforeQualityScore}/100` %></span></p>
+      <p><strong><%= item.qualityScore === null || item.qualityScore === undefined ? 'Redaktionelles Review noch offen' : `Redaktionelles Review ${item.qualityScore}/100` %></strong><span><%= item.beforeQualityScore === null || item.beforeQualityScore === undefined ? 'lokaler Ausgangsaudit nicht verfügbar' : `Lokaler Ausgangsaudit ${item.beforeQualityScore}/100` %></span></p>
     </div>
   </section>
 

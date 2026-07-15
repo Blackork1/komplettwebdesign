@@ -27,7 +27,8 @@ function validReview(review, minimumScore) {
 export function minimumExistingPostRevisionScore(report) {
   const beforeScore = report?.beforeScore;
   if (!Number.isInteger(beforeScore) || beforeScore < 0 || beforeScore > 100) return null;
-  return Math.max(80, beforeScore);
+  // Lokaler Auditwert und redaktioneller Reviewwert stammen aus unterschiedlichen Skalen.
+  return 80;
 }
 
 export function evaluateExistingPostRevisionApproval({ revision, snapshotFingerprint } = {}) {
