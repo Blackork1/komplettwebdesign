@@ -1227,23 +1227,33 @@ test('researchCurrentSources lehnt weniger als zwei belastbare Quellen ab', asyn
 
 test('researchExistingPostSources nutzt das Content-Modell und liefert höchstens sechs HTTPS-Quellen', async () => {
   const requests = [];
-  const citations = Array.from({ length: 8 }, (_, index) => ({
-    type: 'url_citation',
+  const sources = Array.from({ length: 6 }, (_, index) => ({
     url: `https://example.com/quelle-${index + 1}`,
     title: `Quelle ${index + 1}`
   }));
   const client = {
     responses: {
-      async create(request) {
+      async parse(request) {
         requests.push(request);
         return {
           id: 'existing-source-response-1',
           status: 'completed',
           usage: { input_tokens: 24, output_tokens: 11 },
-          output: [{
-            type: 'message',
-            content: [{ type: 'output_text', annotations: citations }]
-          }]
+          output_parsed: { sources },
+          output: [
+            {
+              type: 'web_search_call',
+              status: 'completed',
+              action: {
+                type: 'search',
+                sources: sources.map(({ url }) => ({ type: 'url', url }))
+              }
+            },
+            {
+              type: 'message',
+              content: [{ type: 'output_text', text: 'Strukturierte Quellen.', annotations: [] }]
+            }
+          ]
         };
       }
     }
@@ -1268,25 +1278,113 @@ test('researchExistingPostSources nutzt das Content-Modell und liefert höchsten
     value: result.value,
     responseId: 'existing-source-response-1',
     usage: { input_tokens: 24, output_tokens: 11 },
-    promptVersion: '2026-07-14.2',
-    webSearchCallCount: 0
+    promptVersion: '2026-07-15.1',
+    webSearchCallCount: 1
   });
+});
+
+test('researchExistingPostSources verbindet strukturierte Titel ausschließlich mit echten Websuchtreffern', async () => {
+  const requests = [];
+  const response = {
+    id: 'existing-source-grounded-response',
+    status: 'completed',
+    output_parsed: {
+      sources: [
+        {
+          title: 'Offizielle Preisseite',
+          url: 'https://example.com/preise',
+          publisher: 'Example'
+        },
+        {
+          title: 'Amtliche Rechtsgrundlage',
+          url: 'https://example.org/recht'
+        },
+        {
+          title: 'Nicht durch die Websuche belegter Treffer',
+          url: 'https://unbelegt.example/halluzination'
+        }
+      ]
+    },
+    output: [
+      {
+        type: 'web_search_call',
+        status: 'completed',
+        action: {
+          type: 'search',
+          sources: [
+            { type: 'url', url: 'https://example.com/preise' },
+            { type: 'url', url: 'https://example.org/recht' }
+          ]
+        }
+      },
+      {
+        type: 'message',
+        content: [{ type: 'output_text', text: 'Strukturierte Quellen.', annotations: [] }]
+      }
+    ],
+    usage: { input_tokens: 24, output_tokens: 11 }
+  };
+  const client = {
+    responses: {
+      async create(request) {
+        requests.push(request);
+        return response;
+      },
+      async parse(request) {
+        requests.push(request);
+        return response;
+      }
+    }
+  };
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.researchExistingPostSources({
+    post: { title: 'Website-Kosten 2026', slug: 'website-kosten-2026' },
+    freshness: { reasons: ['stale_year', 'static_price'] }
+  });
+
+  assert.deepEqual(result.value, [
+    {
+      title: 'Offizielle Preisseite',
+      url: 'https://example.com/preise',
+      publisher: 'Example'
+    },
+    {
+      title: 'Amtliche Rechtsgrundlage',
+      url: 'https://example.org/recht'
+    }
+  ]);
+  assert.equal(result.webSearchCallCount, 1);
+  assert.deepEqual(requests[0].tools, [{ type: 'web_search' }]);
+  assert.equal(requests[0].tool_choice, 'required');
+  assert.deepEqual(requests[0].include, ['web_search_call.action.sources']);
+  assert.equal(typeof requests[0].text?.format, 'object');
 });
 
 test('researchExistingPostSources zählt einen und mehrere tatsächliche Web-Suchaufrufe', async () => {
   for (const expectedCount of [1, 3]) {
     const client = {
       responses: {
-        async create() {
+        async parse() {
+          const sources = [
+            { title: 'Quelle A', url: 'https://example.com/a' },
+            { title: 'Quelle B', url: 'https://example.com/b' }
+          ];
           return {
             id: `existing-source-calls-${expectedCount}`,
             status: 'completed',
+            output_parsed: { sources },
             output: [
               ...Array.from({ length: expectedCount }, (_, index) => ({
                 id: `search-${index + 1}`,
                 type: 'web_search_call',
                 status: 'completed',
-                action: { type: 'search', sources: [] }
+                action: {
+                  type: 'search',
+                  sources: index === 0
+                    ? sources.map(({ url }) => ({ type: 'url', url }))
+                    : []
+                }
               })),
               {
                 type: 'message',
@@ -1317,7 +1415,7 @@ test('researchExistingPostSources zählt einen und mehrere tatsächliche Web-Suc
 test('researchExistingPostSources verwirft unvollständige Responses vor der Quellenextraktion', async () => {
   const client = {
     responses: {
-      async create() {
+      async parse() {
         return {
           id: 'existing-source-incomplete',
           status: 'incomplete',

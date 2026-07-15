@@ -112,6 +112,10 @@ export const SourceReferenceSchema = z.object({
   retrievedAt: z.string().regex(ISO_DATE, 'Das Abrufdatum muss YYYY-MM-DD verwenden.').nullish()
 }).strict();
 
+export const ExistingPostSourceResearchSchema = z.object({
+  sources: z.array(SourceReferenceSchema).min(2).max(6)
+}).strict();
+
 export const WeeklyTopicResearchCandidateSchema = TopicCandidateSchema.extend({
   isTesterTopic: z.boolean()
 });

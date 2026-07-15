@@ -3,6 +3,7 @@ import { zodTextFormat } from 'openai/helpers/zod';
 
 import {
   ArticleOutputSchema,
+  ExistingPostSourceResearchSchema,
   ReviewOutputSchema,
   SeoBriefSchema,
   TopicCandidatesSchema,
@@ -228,6 +229,28 @@ export function extractWebSources(response) {
     .slice(0, 6);
 }
 
+function groundedStructuredSources(sources, response) {
+  const searchedUrls = new Set();
+  for (const item of Array.isArray(response?.output) ? response.output : []) {
+    if (item?.type !== 'web_search_call') continue;
+    for (const source of Array.isArray(item.action?.sources) ? item.action.sources : []) {
+      const url = normalizeSafeHttpsUrl(source?.url, {
+        allowSurroundingWhitespace: true,
+        stripHash: true
+      });
+      if (url) searchedUrls.add(url);
+    }
+  }
+
+  return sources.flatMap((source) => {
+    const url = normalizeSafeHttpsUrl(source?.url, {
+      allowSurroundingWhitespace: true,
+      stripHash: true
+    });
+    return url && searchedUrls.has(url) ? [{ ...source, url }] : [];
+  });
+}
+
 const TESTER_TOPIC_PATTERN = /\b(?:website|seo|geo|meta|broken[-\s]?links?)[-\s]?tester\b|\bwebsite[-\s]?test\b/i;
 
 function classifyWeeklyTesterTopic(candidate) {
@@ -443,18 +466,33 @@ export function createOpenAIContentService({
 
   async function researchExistingPostSources(input) {
     const prompt = buildExistingPostSourceResearchPrompt(input);
-    const response = await openai.responses.create({
+    const format = zodTextFormat(
+      ExistingPostSourceResearchSchema,
+      'existing_post_source_research'
+    );
+    schemaCompatibilityValidator(format.schema);
+    const response = await openai.responses.parse({
       model: config.contentModel,
       input: [
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user }
       ],
       tools: [{ type: 'web_search' }],
-      include: ['web_search_call.action.sources']
+      tool_choice: 'required',
+      include: ['web_search_call.action.sources'],
+      text: { format }
     });
     assertCompletedResponse(response);
+    const parsed = ExistingPostSourceResearchSchema.safeParse(response.output_parsed);
+    if (!parsed.success) {
+      throw new OpenAIContentResponseError({
+        code: 'OPENAI_STRUCTURED_OUTPUT_INVALID',
+        responseId: response.id,
+        message: 'OpenAI lieferte für die Bestandsquellen kein schemakonformes strukturiertes Ergebnis.'
+      });
+    }
     return {
-      value: extractWebSources(response),
+      value: groundedStructuredSources(parsed.data.sources, response),
       responseId: response.id,
       usage: response.usage || {},
       promptVersion: existingPostSourceResearchPromptVersion,
