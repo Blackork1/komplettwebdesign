@@ -1441,8 +1441,11 @@ export function presentExistingContentOptimizationState(row = {}) {
     : null;
   const unsafeProviderState = UNSAFE_EXISTING_PROVIDER_CODES.has(errorCode);
   const revisionId = presentedPositiveInteger(row.optimization_revision_id);
+  const revisionStatus = ['draft', 'approved', 'rejected'].includes(
+    row.optimization_revision_status
+  ) ? row.optimization_revision_status : null;
   const hasDraftRevision = revisionId !== null
-    && row.optimization_revision_status === 'draft';
+    && revisionStatus === 'draft';
   const hasAnyDraftRevision = hasDraftRevision || row.has_draft_revision === true;
   const postId = presentedPositiveInteger(row.id);
   const canDiscard = postId !== null && canDiscardDeterministicExistingPostOptimization({
@@ -1453,10 +1456,22 @@ export function presentExistingContentOptimizationState(row = {}) {
     openProviderReservationCount: row.open_provider_reservation_count,
     hasDraftRevision: hasAnyDraftRevision
   });
+  const completedMessage = revisionStatus === 'draft'
+    ? 'Die Optimierung ist abgeschlossen. Die Revision wartet auf deine Freigabe; die Livefassung ist noch unverändert.'
+    : revisionStatus === 'approved'
+      ? row.outcome_evaluation_status === 'evaluated'
+        || row.outcome_evaluation_status === 'insufficient_data'
+        ? 'Die Optimierung wurde auf die Livefassung übernommen. Die 28-Tage-Auswertung ist abgeschlossen.'
+        : row.outcome_evaluation_status
+          ? 'Die Optimierung wurde auf die Livefassung übernommen. Die 28-Tage-Auswertung läuft.'
+          : 'Die Optimierung wurde auf die Livefassung übernommen.'
+      : revisionStatus === 'rejected'
+        ? 'Die Optimierungsrevision wurde abgelehnt. Die Livefassung blieb unverändert.'
+        : 'Die Optimierung ist abgeschlossen. Es wurde keine Revision übernommen; die Livefassung blieb unverändert.';
   const messages = {
     queued: 'Die KI-Optimierung wurde eingeplant und wartet auf den Worker.',
     running: `Die KI-Optimierung läuft: ${stageLabel}.`,
-    completed: 'Die Optimierung ist abgeschlossen. Die Livefassung blieb unverändert.',
+    completed: completedMessage,
     failed: 'Die KI-Optimierung ist fehlgeschlagen. Ein neuer, sicherer Start ist möglich.',
     cancelled: 'Der deterministische Auftrag wurde sicher geschlossen. Ein neuer Start ist möglich.',
     manual_attention: unsafeProviderState
@@ -1468,7 +1483,13 @@ export function presentExistingContentOptimizationState(row = {}) {
   const labels = {
     queued: 'Eingeplant',
     running: 'In Bearbeitung',
-    completed: hasDraftRevision ? 'Revision bereit' : 'Abgeschlossen',
+    completed: revisionStatus === 'draft'
+      ? 'Revision bereit'
+      : revisionStatus === 'approved'
+        ? 'Übernommen'
+        : revisionStatus === 'rejected'
+          ? 'Abgelehnt'
+          : 'Abgeschlossen',
     failed: 'Fehlgeschlagen',
     cancelled: 'Sicher geschlossen',
     manual_attention: 'Manuelle Prüfung nötig'

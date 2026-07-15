@@ -950,11 +950,67 @@ test('fertige Bestandsoptimierung verweist nur auf die deterministisch gewählte
     state: 'completed', active: false, terminal: true, canStart: false,
     canDiscard: false, discardActionUrl: null,
     statusLabel: 'Revision bereit', stageLabel: 'Revision erstellt',
-    message: 'Die Optimierung ist abgeschlossen. Die Livefassung blieb unverändert.',
+    message: 'Die Optimierung ist abgeschlossen. Die Revision wartet auf deine Freigabe; die Livefassung ist noch unverändert.',
     jobId: 44, revisionId: 71,
     revisionUrl: '/admin/content-agent/revisions/71/edit', errorCode: null,
     unsafeProviderState: false, updatedAt: '2026-07-14T10:05:00.000Z'
   });
+});
+
+test('abgeschlossene Bestandsoptimierung zeigt die übernommene Livefassung und laufende Nachmessung korrekt an', () => {
+  const result = presentExistingContentOptimizationState({
+    optimization_job_id: 44,
+    optimization_job_status: 'completed',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'completed',
+    optimization_current_stage: 'revision_creation',
+    optimization_revision_id: 71,
+    optimization_revision_status: 'approved',
+    outcome_evaluation_status: 'ready'
+  });
+
+  assert.equal(result.statusLabel, 'Übernommen');
+  assert.equal(
+    result.message,
+    'Die Optimierung wurde auf die Livefassung übernommen. Die 28-Tage-Auswertung läuft.'
+  );
+});
+
+test('übernommene Bestandsoptimierung meldet eine abgeschlossene Nachmessung nicht mehr als laufend', () => {
+  const result = presentExistingContentOptimizationState({
+    optimization_job_id: 44,
+    optimization_job_status: 'completed',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'completed',
+    optimization_current_stage: 'revision_creation',
+    optimization_revision_id: 71,
+    optimization_revision_status: 'approved',
+    outcome_evaluation_status: 'evaluated'
+  });
+
+  assert.equal(result.statusLabel, 'Übernommen');
+  assert.equal(
+    result.message,
+    'Die Optimierung wurde auf die Livefassung übernommen. Die 28-Tage-Auswertung ist abgeschlossen.'
+  );
+});
+
+test('abgeschlossene Bestandsoptimierung zeigt eine abgelehnte Revision ohne Liveänderung korrekt an', () => {
+  const result = presentExistingContentOptimizationState({
+    optimization_job_id: 44,
+    optimization_job_status: 'completed',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'completed',
+    optimization_current_stage: 'revision_creation',
+    optimization_revision_id: 71,
+    optimization_revision_status: 'rejected'
+  });
+
+  assert.equal(result.statusLabel, 'Abgelehnt');
+  assert.equal(
+    result.message,
+    'Die Optimierungsrevision wurde abgelehnt. Die Livefassung blieb unverändert.'
+  );
 });
 
 test('abgeschlossene Bestandsoptimierung gibt nach übernommener oder verworfener Revision einen neuen Start frei', () => {
