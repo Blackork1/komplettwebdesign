@@ -342,6 +342,8 @@ export function createContentAgentAdminRepository(db = pool) {
     async listExistingContent() {
       const { rows } = await db.query(`
         SELECT p.id, p.title, p.slug, p.updated_at,
+               COALESCE(admin_preference.hidden_from_zero_impression_list, FALSE)
+                 AS zero_impression_hidden,
                audit.id AS audit_id, audit.score AS audit_score,
                audit.status AS audit_status, audit.findings_json,
                revision.id AS revision_id, revision.status AS revision_status,
@@ -394,6 +396,8 @@ export function createContentAgentAdminRepository(db = pool) {
                performance.explanation_status AS performance_explanation_status,
                performance.explanation_json AS performance_explanation_json
         FROM posts p
+        LEFT JOIN content_existing_post_admin_preferences admin_preference
+          ON admin_preference.post_id = p.id
         LEFT JOIN LATERAL (
           SELECT a.id, a.score, a.status, a.findings_json
           FROM content_post_audits a
@@ -494,6 +498,138 @@ export function createContentAgentAdminRepository(db = pool) {
         LIMIT 100
       `);
       return rows;
+    },
+
+    async setExistingContentZeroImpressionHidden({ postId, hidden } = {}) {
+      const normalizedPostId = positivePostgresInteger(postId, 'postId');
+      if (typeof hidden !== 'boolean') {
+        throw new TypeError('hidden muss ein boolescher Wert sein.');
+      }
+
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const post = await client.query(`
+          SELECT p.id
+          FROM posts p
+          WHERE p.id = $1::integer
+            AND p.published = TRUE
+          FOR UPDATE
+        `, [normalizedPostId]);
+        if (!post.rows[0]) {
+          await client.query('COMMIT');
+          return { status: 'not_found' };
+        }
+
+        if (hidden) {
+          const eligibility = await client.query(`
+            SELECT latest.id
+            FROM (
+              SELECT snapshot.id, snapshot.article_age_days,
+                     snapshot.evaluated_through_date, snapshot.windows_json
+              FROM content_article_performance_snapshots snapshot
+              WHERE snapshot.post_id = $1::integer
+              ORDER BY snapshot.evaluated_through_date DESC, snapshot.id DESC
+              LIMIT 1
+            ) latest
+            WHERE latest.article_age_days >= 28
+              AND latest.evaluated_through_date IS NOT NULL
+              AND COALESCE(
+                (latest.windows_json -> '28' ->> 'complete')::boolean,
+                FALSE
+              ) = TRUE
+              AND COALESCE(
+                (latest.windows_json -> '28' ->> 'coverageDayCount')::integer,
+                0
+              ) >= 28
+              AND COALESCE(
+                (latest.windows_json -> '28' ->> 'impressions')::numeric,
+                0
+              ) = 0
+          `, [normalizedPostId]);
+          if (!eligibility.rows[0]) {
+            await client.query('COMMIT');
+            return { status: 'not_eligible' };
+          }
+        }
+
+        await client.query(`
+          INSERT INTO content_existing_post_admin_preferences (
+            post_id, hidden_from_zero_impression_list, created_at, updated_at
+          ) VALUES ($1::integer, $2::boolean, NOW(), NOW())
+          ON CONFLICT (post_id) DO UPDATE SET
+            hidden_from_zero_impression_list = EXCLUDED.hidden_from_zero_impression_list,
+            updated_at = NOW()
+        `, [normalizedPostId, hidden]);
+        await client.query('COMMIT');
+        return { status: 'updated' };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async setAllExistingContentZeroImpressionHidden(hidden) {
+      if (typeof hidden !== 'boolean') {
+        throw new TypeError('hidden muss ein boolescher Wert sein.');
+      }
+
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const result = hidden
+          ? await client.query(`
+              INSERT INTO content_existing_post_admin_preferences AS admin_preference (
+                post_id, hidden_from_zero_impression_list, created_at, updated_at
+              )
+              SELECT p.id, TRUE, NOW(), NOW()
+              FROM posts p
+              JOIN LATERAL (
+                SELECT snapshot.article_age_days, snapshot.evaluated_through_date,
+                       snapshot.windows_json
+                FROM content_article_performance_snapshots snapshot
+                WHERE snapshot.post_id = p.id
+                ORDER BY snapshot.evaluated_through_date DESC, snapshot.id DESC
+                LIMIT 1
+              ) performance ON TRUE
+              WHERE p.published = TRUE
+                AND performance.article_age_days >= 28
+                AND performance.evaluated_through_date IS NOT NULL
+                AND COALESCE(
+                  (performance.windows_json -> '28' ->> 'complete')::boolean,
+                  FALSE
+                ) = TRUE
+                AND COALESCE(
+                  (performance.windows_json -> '28' ->> 'coverageDayCount')::integer,
+                  0
+                ) >= 28
+                AND COALESCE(
+                  (performance.windows_json -> '28' ->> 'impressions')::numeric,
+                  0
+                ) = 0
+              ON CONFLICT (post_id) DO UPDATE SET
+                hidden_from_zero_impression_list = TRUE,
+                updated_at = NOW()
+              WHERE admin_preference.hidden_from_zero_impression_list IS DISTINCT FROM TRUE
+              RETURNING post_id
+            `)
+          : await client.query(`
+              UPDATE content_existing_post_admin_preferences
+              SET hidden_from_zero_impression_list = FALSE,
+                  updated_at = NOW()
+              WHERE hidden_from_zero_impression_list = TRUE
+              RETURNING post_id
+            `);
+        await client.query('COMMIT');
+        return { changedCount: result.rows.length };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async getArticlePerformanceDetail(postId) {

@@ -1949,7 +1949,7 @@ function berlinCalendarDate(value) {
   return DateTime.fromJSDate(value).setZone('Europe/Berlin').toISODate();
 }
 
-test('echtes PostgreSQL: Migrationen 002–013 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–014 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -2012,6 +2012,12 @@ test('echtes PostgreSQL: Migrationen 002–013 und Generate→Notify→Approve�
 
     await runContentAgentMigration(pool);
     await runContentAgentMigration(pool);
+    assert.equal(
+      (await pool.query(`
+        SELECT to_regclass('content_existing_post_admin_preferences')::text AS table_name
+      `)).rows[0].table_name,
+      'content_existing_post_admin_preferences'
+    );
 
     const optimizationTransaction = await pool.connect();
     const rollbackSlug = `pg-existing-rollback-${schemaName.slice(-12)}`;

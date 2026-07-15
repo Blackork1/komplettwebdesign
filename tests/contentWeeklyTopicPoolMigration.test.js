@@ -35,5 +35,5 @@ test('Migrationsrunner führt Migration 010 direkt nach Migration 009 aus', asyn
 
   assert.ok(migration009 >= 0);
   assert.ok(migration010 > migration009);
-  assert.match(source, /Migration 002 bis 013 erfolgreich/);
+  assert.match(source, /Migration 002 bis 014 erfolgreich/);
 });

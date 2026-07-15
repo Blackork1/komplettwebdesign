@@ -58,6 +58,41 @@ function createTransactionDatabase(handler, { published = true, hasDraft = false
   };
 }
 
+function createPreferenceTransactionDb({
+  published = true,
+  eligible = true,
+  changedPostIds = [19],
+  failOnWrite = false
+} = {}) {
+  const calls = [];
+  let releases = 0;
+  const client = {
+    async query(sql, params = []) {
+      const normalized = normalizeSql(sql);
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+      if (/SELECT p\.id FROM posts p/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
+        return { rows: published ? [{ id: params[0] }] : [] };
+      }
+      if (/FROM \( SELECT snapshot\.id/i.test(normalized)) {
+        return { rows: eligible ? [{ id: 71 }] : [] };
+      }
+      if (/INSERT INTO content_existing_post_admin_preferences/i.test(normalized)
+          || /UPDATE content_existing_post_admin_preferences/i.test(normalized)) {
+        if (failOnWrite) throw new Error('Schreibfehler');
+        return { rows: changedPostIds.map((postId) => ({ post_id: postId })) };
+      }
+      return { rows: [] };
+    },
+    release() { releases += 1; }
+  };
+  return {
+    calls,
+    get releases() { return releases; },
+    async connect() { return client; }
+  };
+}
+
 test('Bestandsliste lädt den neuesten Performance-Snapshot ohne N+1-Abfragen', async () => {
   const db = {
     calls: [],
@@ -73,6 +108,145 @@ test('Bestandsliste lädt den neuesten Performance-Snapshot ohne N+1-Abfragen', 
   assert.equal(db.calls.length, 1);
   assert.match(db.calls[0].sql, /LEFT JOIN LATERAL \( SELECT snapshot\.id/i);
   assert.match(db.calls[0].sql, /ORDER BY snapshot\.evaluated_through_date DESC/i);
+});
+
+test('Bestandsliste lädt den Adminstatus ohne N+1-Abfrage', async () => {
+  const db = createQueryRecorder();
+  const repository = createContentAgentAdminRepository(db);
+
+  await repository.listExistingContent();
+
+  assert.match(
+    db.calls[0].sql,
+    /LEFT JOIN content_existing_post_admin_preferences admin_preference ON admin_preference\.post_id = p\.id/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /COALESCE\(admin_preference\.hidden_from_zero_impression_list, FALSE\) AS zero_impression_hidden/i
+  );
+});
+
+test('Ausblenden verlangt den neuesten vollständigen Null-Impressions-Snapshot', async () => {
+  const db = createPreferenceTransactionDb({ published: true, eligible: true });
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.deepEqual(
+    await repository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: true }),
+    { status: 'updated' }
+  );
+
+  const eligibility = db.calls.find(({ sql }) => /FROM \( SELECT snapshot\.id/i.test(sql));
+  assert.match(eligibility.sql, /ORDER BY snapshot\.evaluated_through_date DESC, snapshot\.id DESC LIMIT 1/i);
+  assert.match(eligibility.sql, /latest\.article_age_days >= 28/i);
+  assert.match(eligibility.sql, /latest\.evaluated_through_date IS NOT NULL/i);
+  assert.match(eligibility.sql, /'complete'\)::boolean, FALSE\s*\) = TRUE/i);
+  assert.match(eligibility.sql, /'coverageDayCount'\)::integer, 0\s*\) >= 28/i);
+  assert.match(eligibility.sql, /'impressions'\)::numeric, 0\s*\) = 0/i);
+  const write = db.calls.find(({ sql }) => /INSERT INTO content_existing_post_admin_preferences/i.test(sql));
+  assert.deepEqual(write.params, [19, true]);
+  assert.match(write.sql, /ON CONFLICT \(post_id\) DO UPDATE SET/i);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+  assert.equal(db.releases, 1);
+});
+
+test('neue Impressionen blockieren Ausblenden ohne Präferenzschreibzugriff', async () => {
+  const db = createPreferenceTransactionDb({ published: true, eligible: false });
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.deepEqual(
+    await repository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: true }),
+    { status: 'not_eligible' }
+  );
+  assert.equal(db.calls.some(({ sql }) =>
+    /INSERT INTO content_existing_post_admin_preferences/i.test(sql)), false);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('Einblenden setzt eine gespeicherte Präferenz auch ohne Null-Impressions-Eignung zurück', async () => {
+  const db = createPreferenceTransactionDb({ published: true, eligible: false });
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.deepEqual(
+    await repository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: false }),
+    { status: 'updated' }
+  );
+  assert.equal(db.calls.some(({ sql }) => /FROM \( SELECT snapshot\.id/i.test(sql)), false);
+  const write = db.calls.find(({ sql }) => /INSERT INTO content_existing_post_admin_preferences/i.test(sql));
+  assert.deepEqual(write.params, [19, false]);
+});
+
+test('Einzelpräferenz unterscheidet fehlende Liveartikel und rollt Schreibfehler zurück', async () => {
+  const missingDb = createPreferenceTransactionDb({ published: false });
+  const missingRepository = createContentAgentAdminRepository(missingDb);
+  assert.deepEqual(
+    await missingRepository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: true }),
+    { status: 'not_found' }
+  );
+  assert.equal(missingDb.calls.at(-1).sql, 'COMMIT');
+
+  const failingDb = createPreferenceTransactionDb({ failOnWrite: true });
+  const failingRepository = createContentAgentAdminRepository(failingDb);
+  await assert.rejects(
+    failingRepository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: true }),
+    /Schreibfehler/
+  );
+  assert.equal(failingDb.calls.at(-1).sql, 'ROLLBACK');
+  assert.equal(failingDb.releases, 1);
+});
+
+test('Sammelausblendung berechnet aktuelle vollständige Null-Impressions-Artikel serverseitig', async () => {
+  const db = createPreferenceTransactionDb({ changedPostIds: [19, 20] });
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.deepEqual(
+    await repository.setAllExistingContentZeroImpressionHidden(true),
+    { changedCount: 2 }
+  );
+
+  const write = db.calls.find(({ sql }) => /INSERT INTO content_existing_post_admin_preferences/i.test(sql));
+  assert.deepEqual(write.params, []);
+  assert.match(write.sql, /FROM posts p/i);
+  assert.match(write.sql, /JOIN LATERAL \( SELECT snapshot\.article_age_days/i);
+  assert.match(write.sql, /ORDER BY snapshot\.evaluated_through_date DESC, snapshot\.id DESC LIMIT 1/i);
+  assert.match(write.sql, /p\.published = TRUE/i);
+  assert.match(write.sql, /performance\.article_age_days >= 28/i);
+  assert.match(write.sql, /'complete'\)::boolean, FALSE\s*\) = TRUE/i);
+  assert.match(write.sql, /'coverageDayCount'\)::integer, 0\s*\) >= 28/i);
+  assert.match(write.sql, /'impressions'\)::numeric, 0\s*\) = 0/i);
+  assert.match(write.sql, /ON CONFLICT \(post_id\) DO UPDATE SET/i);
+  assert.match(write.sql, /RETURNING post_id/i);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
+});
+
+test('Sammel-Einblendung setzt ausschließlich aktive Präferenzen idempotent zurück', async () => {
+  const db = createPreferenceTransactionDb({ changedPostIds: [] });
+  const repository = createContentAgentAdminRepository(db);
+
+  assert.deepEqual(
+    await repository.setAllExistingContentZeroImpressionHidden(false),
+    { changedCount: 0 }
+  );
+
+  const write = db.calls.find(({ sql }) => /UPDATE content_existing_post_admin_preferences/i.test(sql));
+  assert.match(write.sql, /SET hidden_from_zero_impression_list = FALSE/i);
+  assert.match(write.sql, /WHERE hidden_from_zero_impression_list = TRUE/i);
+  assert.match(write.sql, /RETURNING post_id/i);
+});
+
+test('Präferenzmethoden lehnen ungültige Eingaben vor Datenbankzugriff ab', async () => {
+  const db = createPreferenceTransactionDb();
+  const repository = createContentAgentAdminRepository(db);
+
+  await assert.rejects(
+    repository.setExistingContentZeroImpressionHidden({ postId: '19', hidden: true }),
+    TypeError
+  );
+  await assert.rejects(
+    repository.setExistingContentZeroImpressionHidden({ postId: 19, hidden: 'true' }),
+    TypeError
+  );
+  await assert.rejects(repository.setAllExistingContentZeroImpressionHidden('true'), TypeError);
+  assert.equal(db.calls.length, 0);
 });
 
 test('Performance-Detail liefert nur gebundene Artikel-, Snapshot- und Lernfelder', async () => {

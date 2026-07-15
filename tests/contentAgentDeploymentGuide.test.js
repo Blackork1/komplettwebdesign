@@ -261,6 +261,19 @@ test('VPS-Anleitung beschreibt die tägliche Artikel-Performance ohne neue Laufz
   assert.match(guide, /Search Console jetzt synchronisieren[\s\S]*Performance/i);
 });
 
+test('VPS-Anleitung beschreibt Migration 014 und die rein administrative Null-Impressions-Übersicht', () => {
+  assert.match(guide, /014_create_existing_content_admin_preferences\.sql/);
+  assert.match(guide, /content_existing_post_admin_preferences/);
+  assert.match(guide, /Null-Impressions-Übersicht.*keine neue `\.env`-Variable/i);
+  assert.match(
+    guide,
+    /Null-Impressions-Übersicht.*keine (?:Änderung|Anpassung).*`docker-compose\.yml`/i
+  );
+  assert.match(guide, /vier (?:Bestandsgruppen|Artikelgruppen)/i);
+  assert.match(guide, /einzeln.*ausblenden.*wieder einblenden/i);
+  assert.match(guide, /alle Null-Impressions-Artikel.*ausblenden.*wieder einblenden/i);
+});
+
 test('VPS-Anleitung dokumentiert den vollständigen SMTP-Vertrag und den nötigen Recreate', () => {
   for (const name of ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM']) {
     assert.match(guide, new RegExp(`^${name}=`, 'm'));
@@ -407,7 +420,7 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
-test('wiederholbares Deploy prüft Migration 011 bis 013 vor Dry-Run und Worker-Recreate', () => {
+test('wiederholbares Deploy prüft Migration 011 bis 014 vor Dry-Run und Worker-Recreate', () => {
   const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
   const migrations = [
     ...deploy.matchAll(
@@ -443,7 +456,8 @@ test('wiederholbares Deploy prüft Migration 011 bis 013 vor Dry-Run und Worker-
     'evaluation_claimed_at',
     'content_revision_optimization_outcomes_claim_consistent',
     'content_article_events',
-    'content_article_performance_snapshots'
+    'content_article_performance_snapshots',
+    'content_existing_post_admin_preferences'
   ]) assert.match(catalogCheck, new RegExp(databaseObject));
   assert.match(catalogCheck, /information_schema\.columns/);
   assert.match(catalogCheck, /pg_constraint/);
@@ -451,7 +465,7 @@ test('wiederholbares Deploy prüft Migration 011 bis 013 vor Dry-Run und Worker-
   assert.match(catalogCheck, /Object\.values\(rows\[0\]\)\.some/);
   assert.match(
     catalogCheck,
-    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012\/013 ist unvollständig\."/
+    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012\/013\/014 ist unvollständig\."/
   );
 });
 

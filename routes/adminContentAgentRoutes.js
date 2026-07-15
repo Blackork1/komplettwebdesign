@@ -79,6 +79,10 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/reschedule', isAdmin, verifyCsrfToken, controller.rescheduleDraftAction);
   router.post('/admin/content-agent/drafts/:id/notification/retry', isAdmin, verifyCsrfToken, controller.retryDraftNotificationAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
+  router.post('/admin/content-agent/existing-content/zero-impressions/hide-all', isAdmin, verifyCsrfToken, controller.hideAllZeroImpressionsAction);
+  router.post('/admin/content-agent/existing-content/zero-impressions/show-all', isAdmin, verifyCsrfToken, controller.showAllZeroImpressionsAction);
+  router.post('/admin/content-agent/existing-content/:id/hide-zero-impressions', isAdmin, verifyCsrfToken, controller.hideZeroImpressionAction);
+  router.post('/admin/content-agent/existing-content/:id/show-zero-impressions', isAdmin, verifyCsrfToken, controller.showZeroImpressionAction);
   router.post('/admin/content-agent/existing-content/:id/optimize', isAdmin, verifyCsrfToken, controller.optimizeExistingContentAction);
   router.post(
     '/admin/content-agent/existing-content/:id/performance/revision',

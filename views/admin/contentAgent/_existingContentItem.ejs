@@ -1,0 +1,123 @@
+<%
+  const optimization = item.optimization || {
+    state: 'idle', active: false, canStart: true,
+    statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+    message: 'Noch keine KI-Optimierung gestartet.', revisionUrl: null,
+    unsafeProviderState: false
+  };
+%>
+<article class="content-existing-item" data-existing-content-optimization data-state="<%= optimization.state %>" data-active="<%= optimization.active === true ? 'true' : 'false' %>"<% if (optimization.active === true) { %> data-status-url="/admin/content-agent/existing-content/<%= item.id %>/optimization-status"<% } %>>
+  <div class="content-existing-item__main">
+    <header class="content-existing-item__head">
+      <div>
+        <strong class="content-existing-item__title"><%= item.title %></strong>
+        <code class="content-existing-item__slug"><%= item.slug %></code>
+      </div>
+      <span class="content-existing-item__date"><%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('de-DE') : '–' %></span>
+    </header>
+
+    <% if (item.performance) { %>
+      <div class="content-performance-mini" aria-label="Performance für <%= item.title %>">
+        <strong><%= item.performance.headline %></strong>
+        <div class="content-performance-mini__windows">
+          <% item.performance.windows.forEach((metric) => { %>
+            <span><b><%= metric.label %></b><%= metric.hasData ? `${metric.impressionsLabel} Impressionen · ${metric.clicksLabel} Klicks` : metric.emptyLabel %></span>
+          <% }) %>
+        </div>
+        <a href="<%= item.performance.detailUrl %>">Performance im Detail öffnen</a>
+      </div>
+    <% } %>
+
+    <div class="content-existing-item__grid">
+      <section aria-label="Prüfung und Optimierung">
+        <% if (item.auditId) { %>
+          <span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span>
+        <% } else { %>
+          <span class="content-agent-quiet">Noch nicht geprüft</span>
+        <% } %>
+        <div class="mt-2">
+          <strong data-existing-content-optimization-label><%= optimization.statusLabel %></strong><br>
+          <span data-existing-content-optimization-stage><%= optimization.stageLabel %></span><br>
+          <small class="content-agent-quiet" data-existing-content-optimization-message><%= optimization.message %></small>
+        </div>
+      </section>
+
+      <section aria-label="Befunde">
+        <strong>Befunde</strong>
+        <% if (item.findings && item.findings.length) { %>
+          <ul class="mb-0">
+            <% item.findings.slice(0, 4).forEach((finding) => { %>
+              <li><%= finding.message || finding.code %></li>
+            <% }) %>
+          </ul>
+          <% if (item.findings.length > 4) { %><small>+ <%= item.findings.length - 4 %> weitere</small><% } %>
+        <% } else { %>
+          <span class="content-agent-quiet">Keine offenen Befunde</span>
+        <% } %>
+      </section>
+    </div>
+
+    <% if (item.outcome) { %>
+      <div class="content-existing-item__outcome" data-revision-outcome data-state="<%= item.outcome.state %>">
+        <strong><%= item.outcome.label %></strong>
+        <% if (item.outcome.state !== 'waiting') { %>
+          <div class="small mt-1">
+            <span>Basis: <%= item.outcome.baseline.clicksLabel %> Klicks, <%= item.outcome.baseline.impressionsLabel %> Impressionen, CTR <%= item.outcome.baseline.ctrLabel %>, Position <%= item.outcome.baseline.averagePositionLabel %></span><br>
+            <span>Danach: <%= item.outcome.followup.clicksLabel %> Klicks, <%= item.outcome.followup.impressionsLabel %> Impressionen, CTR <%= item.outcome.followup.ctrLabel %>, Position <%= item.outcome.followup.averagePositionLabel %></span><br>
+            <span>Änderung: <%= item.outcome.changes.clicksLabel %> Klicks, <%= item.outcome.changes.impressionsLabel %> Impressionen, CTR <%= item.outcome.changes.ctrLabel %>, Position <%= item.outcome.changes.averagePositionLabel %></span>
+          </div>
+          <% if (item.outcome.newImportantQueries.length) { %>
+            <small>Neue wichtige Suchanfragen:</small>
+            <ul class="mb-1"><% item.outcome.newImportantQueries.forEach((query) => { %><li><%= query.query %> (<%= query.clicksLabel %> Klicks, <%= query.impressionsLabel %> Impressionen)</li><% }) %></ul>
+          <% } %>
+          <% if (item.outcome.lostImportantQueries.length) { %>
+            <small>Verlorene wichtige Suchanfragen:</small>
+            <ul class="mb-1"><% item.outcome.lostImportantQueries.forEach((query) => { %><li><%= query.query %> (<%= query.clicksLabel %> Klicks, <%= query.impressionsLabel %> Impressionen)</li><% }) %></ul>
+          <% } %>
+          <small class="content-agent-quiet"><%= item.outcome.note %></small>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <footer class="content-existing-item__footer">
+    <div class="content-agent-actions">
+      <a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel öffnen</a>
+      <% if (visibilityAction) { %>
+        <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/<%= visibilityAction.path %>" data-confirm="<%= visibilityAction.confirmation %>">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn btn-sm btn-outline-secondary" type="submit"><%= visibilityAction.label %></button>
+        </form>
+      <% } %>
+      <% if (item.auditId && item.auditStatus !== 'resolved' && !item.revisionId) { %>
+        <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/revision">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input type="hidden" name="audit_id" value="<%= item.auditId %>">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Revision anlegen</button>
+        </form>
+      <% } %>
+      <div data-existing-content-primary-action>
+        <% if (optimization.active === true) { %>
+          <button class="btn btn-sm btn-primary" type="button" disabled><%= optimization.state === 'queued' ? 'Optimierung eingeplant' : 'Optimierung läuft' %></button>
+        <% } else if (optimization.revisionUrl) { %>
+          <a class="btn btn-sm btn-primary" href="<%= optimization.revisionUrl %>">Revision bearbeiten</a>
+        <% } else if (item.revisionId) { %>
+          <a class="btn btn-sm btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit">Revision bearbeiten</a>
+        <% } else if (optimization.canDiscard === true && optimization.discardActionUrl) { %>
+          <form method="post" action="<%= optimization.discardActionUrl %>" data-confirm="Diesen deterministisch fehlgeschlagenen Auftrag sicher schließen? Die Livefassung bleibt unverändert. Offene Providerreservierungen oder unklare Providerzustände können hiermit nicht geschlossen werden.">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="confirmed" value="true">
+            <button class="btn btn-sm btn-primary" type="submit">Auftrag sicher schließen</button>
+          </form>
+        <% } else if (optimization.canStart === true) { %>
+          <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/optimize" data-confirm="KI-Optimierung für diesen Artikel starten? Die Livefassung bleibt unverändert.">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="btn btn-sm btn-primary" type="submit">KI-Optimierung starten</button>
+          </form>
+        <% } else { %>
+          <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
+        <% } %>
+      </div>
+    </div>
+  </footer>
+</article>

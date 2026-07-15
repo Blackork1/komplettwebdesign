@@ -1040,6 +1040,7 @@ export function buildExistingContentListPresentation(rows = []) {
       title: row.title,
       slug: row.slug,
       updatedAt: row.updated_at,
+      zeroImpressionHidden: row.zero_impression_hidden === true,
       performance: {
         ...performance,
         detailUrl: `/admin/content-agent/existing-content/${row.id}/performance`
@@ -1058,6 +1059,59 @@ export function buildExistingContentListPresentation(rows = []) {
       } : {})
     });
   });
+}
+
+function rawPerformanceWindow28(row = {}) {
+  const windows = row.performance_windows_json;
+  if (!windows || typeof windows !== 'object' || Array.isArray(windows)) return null;
+  const window28 = windows[28] ?? windows['28'];
+  return window28 && typeof window28 === 'object' && !Array.isArray(window28)
+    ? window28
+    : null;
+}
+
+function isFiniteNonNegativeNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+export function buildExistingContentGroupsPresentation(rows = []) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  const items = buildExistingContentListPresentation(sourceRows);
+  const groups = {
+    totalCount: items.length,
+    visibleArticles: [],
+    collectingArticles: [],
+    zeroImpressionArticles: [],
+    hiddenZeroImpressionArticles: []
+  };
+
+  items.forEach((item, index) => {
+    const window28 = item.performance?.windows?.find(({ days }) => days === 28);
+    const rawWindow28 = rawPerformanceWindow28(sourceRows[index]);
+    const hasReliableMetrics = rawWindow28?.complete === true
+      && isFiniteNonNegativeNumber(rawWindow28.coverageDayCount)
+      && rawWindow28.coverageDayCount >= 28
+      && isFiniteNonNegativeNumber(rawWindow28.impressions);
+    const complete = item.performance?.hasSnapshot === true
+      && item.performance.evaluatedThroughDateLabel !== null
+      && Number.isFinite(item.performance.articleAgeDays)
+      && item.performance.articleAgeDays >= 28
+      && window28?.complete === true
+      && window28.coverageDayCount >= 28
+      && hasReliableMetrics;
+
+    if (!complete) {
+      groups.collectingArticles.push(item);
+    } else if (window28.impressions > 0) {
+      groups.visibleArticles.push(item);
+    } else if (item.zeroImpressionHidden) {
+      groups.hiddenZeroImpressionArticles.push(item);
+    } else {
+      groups.zeroImpressionArticles.push(item);
+    }
+  });
+
+  return groups;
 }
 
 const REVISION_COMPARISON_GROUPS = Object.freeze([

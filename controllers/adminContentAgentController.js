@@ -27,6 +27,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE',
+  'CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE',
   'CONTENT_PERFORMANCE_EVIDENCE_STALE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
@@ -62,6 +63,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE: 'Der Optimierungsauftrag kann in diesem Zustand nicht sicher geschlossen werden.',
+  CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE: 'Der Artikel gehört nicht mehr zu den Artikeln ohne Impressionen. Bitte lade die Übersicht neu.',
   CONTENT_PERFORMANCE_EVIDENCE_STALE: 'Die Performance-Auswertung wurde zwischenzeitlich aktualisiert oder ist nicht mehr belastbar. Bitte lade die Seite neu.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
@@ -72,6 +74,12 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
 const LEARNING_RESULT_MESSAGES = new Set(['activated', 'rejected', 'revised', 'status-changed']);
 const SEARCH_CONSOLE_PROPERTY = 'komplettwebdesign.de';
+const ZERO_IMPRESSION_RESULT_MESSAGES = Object.freeze({
+  hidden: 'Der Artikel wurde aus der Null-Impressions-Arbeitsansicht ausgeblendet.',
+  shown: 'Der Artikel wird wieder in der Null-Impressions-Arbeitsansicht angezeigt.',
+  'all-hidden': 'Alle aktuell qualifizierten Null-Impressions-Artikel wurden ausgeblendet.',
+  'all-shown': 'Alle ausgeblendeten Artikel wurden wieder eingeblendet.'
+});
 
 function reviewStatusFilter(value) {
   return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
@@ -565,8 +573,70 @@ export function createAdminContentAgentController(dependencies) {
     async existingContentPage(req, res, next) {
       try {
         const rows = await adminRepository.listExistingContent();
-        const existingContent = presentation.buildExistingContentListPresentation(rows);
-        return res.render('admin/contentAgent/existingContent', { existingContent });
+        const existingContentGroups = presentation.buildExistingContentGroupsPresentation(rows);
+        return res.render('admin/contentAgent/existingContent', {
+          existingContentGroups,
+          visibilityMessage: ZERO_IMPRESSION_RESULT_MESSAGES[req.query?.visibility] || null
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async hideZeroImpressionAction(req, res, next) {
+      try {
+        const result = await adminRepository.setExistingContentZeroImpressionHidden({
+          postId: postgresIntegerId(req.params.id),
+          hidden: true
+        });
+        if (result?.status === 'not_found') {
+          throw Object.assign(new Error('Veröffentlichter Beitrag nicht gefunden.'), {
+            code: 'CONTENT_POST_NOT_FOUND'
+          });
+        }
+        if (result?.status === 'not_eligible') {
+          throw Object.assign(new Error('Artikel ist nicht mehr qualifiziert.'), {
+            code: 'CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE'
+          });
+        }
+        if (result?.status !== 'updated') throw new Error('Unerwarteter Präferenzstatus.');
+        return res.redirect('/admin/content-agent/existing-content?visibility=hidden');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async showZeroImpressionAction(req, res, next) {
+      try {
+        const result = await adminRepository.setExistingContentZeroImpressionHidden({
+          postId: postgresIntegerId(req.params.id),
+          hidden: false
+        });
+        if (result?.status === 'not_found') {
+          throw Object.assign(new Error('Veröffentlichter Beitrag nicht gefunden.'), {
+            code: 'CONTENT_POST_NOT_FOUND'
+          });
+        }
+        if (result?.status !== 'updated') throw new Error('Unerwarteter Präferenzstatus.');
+        return res.redirect('/admin/content-agent/existing-content?visibility=shown');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async hideAllZeroImpressionsAction(req, res, next) {
+      try {
+        await adminRepository.setAllExistingContentZeroImpressionHidden(true);
+        return res.redirect('/admin/content-agent/existing-content?visibility=all-hidden');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async showAllZeroImpressionsAction(req, res, next) {
+      try {
+        await adminRepository.setAllExistingContentZeroImpressionHidden(false);
+        return res.redirect('/admin/content-agent/existing-content?visibility=all-shown');
       } catch (error) {
         return sendKnownError(error, res, next);
       }
