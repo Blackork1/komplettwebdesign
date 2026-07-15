@@ -57,7 +57,9 @@ function priceIssue(issue) {
 }
 
 function staleYearIssue(issue) {
-  return /(?:^|_)stale_year(?:_|$)/iu.test(String(issue?.code || ''));
+  return /(?:^|_)(?:stale_year|year_mismatch|year_reference)(?:_|$)/iu.test(
+    String(issue?.code || '')
+  );
 }
 
 function unsubstantiatedExistingPostIssue(issue, context) {

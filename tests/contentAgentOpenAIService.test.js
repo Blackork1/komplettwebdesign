@@ -755,6 +755,18 @@ test('Bestandsreview verwirft technische Link-, falsche Preis- und falsche Jahre
         autoPublishBlocking: true
       },
       {
+        code: 'year_mismatch',
+        severity: 'error',
+        message: 'Das aktuelle Veröffentlichungsdatum sei angeblich ein Jahreskonflikt.',
+        repairInstruction: 'Entferne das aktuelle Veröffentlichungsdatum.',
+        blocking: true,
+        sectionHeading: 'Einleitung',
+        evidenceExcerpt: '12. März 2026',
+        verificationType: 'date',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
         code: 'legal_privacy_claim',
         severity: 'warning',
         message: 'Die Formulierung sollte redaktionell geprüft werden.',

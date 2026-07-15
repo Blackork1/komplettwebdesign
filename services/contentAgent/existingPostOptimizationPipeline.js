@@ -826,12 +826,15 @@ export async function runExistingPostOptimizationJob({
     }
   }
 
-  const optimizationInput = (extraFindings = []) => ({
+  const optimizationInput = (
+    extraFindings = [],
+    optimizationBase = articleFromPost(post)
+  ) => ({
     ...(runtimeSnapshot.brand !== undefined ? { brand: runtimeSnapshot.brand } : {}),
     ...(runtimeSnapshot.targetAudience !== undefined
       ? { targetAudience: runtimeSnapshot.targetAudience }
       : {}),
-    post: articleFromPost(post),
+    post: optimizationBase,
     audit: {
       score: audit.score,
       findings: [
@@ -1073,7 +1076,10 @@ export async function runExistingPostOptimizationJob({
       stageId: 'repair',
       schema: ExistingPostOptimizationOutputSchema,
       deterministicFailureCodes: DETERMINISTIC_OPTIMIZATION_FAILURE_CODES,
-      execute: () => openaiService.optimizeExistingPost(optimizationInput(findings))
+      execute: () => openaiService.optimizeExistingPost(optimizationInput(
+        findings,
+        optimizedArticle(post, fields)
+      ))
     });
     if (repair.terminal) return repair.terminal;
     fields = repair.value;

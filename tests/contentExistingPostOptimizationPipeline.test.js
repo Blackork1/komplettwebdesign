@@ -1094,6 +1094,11 @@ test('Reviewfehler löst höchstens eine Reparatur aus und bleibt danach termina
   assert.equal(dependencies.calls.optimization, 2);
   assert.equal(dependencies.calls.review, 2);
   assert.equal(dependencies.calls.revisions.length, 0);
+  assert.equal(
+    dependencies.calls.optimizationInputs[1].post.contentHtml,
+    optimizedPost(post).contentHtml,
+    'Die Reparatur muss auf dem ersten geprüften Optimierungsvorschlag statt erneut auf dem Liveartikel aufbauen.'
+  );
   assert.deepEqual(
     dependencies.calls.optimizationInputs[1].audit.findings.at(-1),
     {
