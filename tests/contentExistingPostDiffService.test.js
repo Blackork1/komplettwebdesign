@@ -404,6 +404,54 @@ test('35 Prozent geänderte vorhandene Textblöcke liegen exakt innerhalb der Gr
   });
 });
 
+test('Entfernen eines strukturellen Bootstrap-Wrappers wird unabhängig vom Textumfang abgelehnt', () => {
+  const stable = Array.from({ length: 10 }, (_, index) => `<p>Stabiler Inhalt ${index}.</p>`).join('');
+  const table = '<table><tbody><tr><td>Leistung</td></tr></tbody></table>';
+  const before = article({
+    contentHtml: `<section>${stable}<div class="table-responsive">${table}</div></section>`
+  });
+  const after = article({ contentHtml: `<section>${stable}${table}</section>` });
+
+  assert.deepEqual(validateTargetedOptimizationScope({ before, after }), {
+    passed: false,
+    code: 'HTML_STRUCTURE_CHANGED',
+    changedBlockRatio: 0,
+    wordCountDeltaRatio: 0
+  });
+});
+
+test('Verschieben eines bestehenden Inhaltsblocks in einen anderen Elternwrapper wird abgelehnt', () => {
+  const stable = Array.from({ length: 10 }, (_, index) => `<p>Stabiler Inhalt ${index}.</p>`).join('');
+  const before = article({
+    contentHtml: `<section>${stable}<div class="row"><div class="col-lg-6"><p>Zuordnung bleibt eindeutig.</p></div><div class="col-lg-6"></div></div></section>`
+  });
+  const after = article({
+    contentHtml: `<section>${stable}<div class="row"><div class="col-lg-6"></div><div class="col-lg-6"><p>Zuordnung bleibt eindeutig.</p></div></div></section>`
+  });
+
+  assert.equal(validateTargetedOptimizationScope({ before, after }).code, 'HTML_STRUCTURE_CHANGED');
+  assert.equal(validateTargetedOptimizationScope({ before, after }).passed, false);
+});
+
+test('reine Textoptimierungen innerhalb derselben Wrapperstruktur bleiben zulässig', () => {
+  const blocks = Array.from({ length: 10 }, (_, index) => `<p>Abschnitt ${index} bleibt konkret.</p>`);
+  const changed = [...blocks];
+  changed[0] = '<p>Abschnitt 0 wird präziser.</p>';
+  const before = article({
+    contentHtml: `<section><div class="container"><div class="row"><div class="col-lg-12">${blocks.join('')}</div></div></div></section>`
+  });
+  const after = article({
+    contentHtml: `<section><div class="container"><div class="row"><div class="col-lg-12">${changed.join('')}</div></div></div></section>`
+  });
+
+  assert.deepEqual(validateTargetedOptimizationScope({ before, after }), {
+    passed: true,
+    code: null,
+    changedBlockRatio: 0.1,
+    wordCountDeltaRatio: 0
+  });
+});
+
 test('hinzugefügte Blöcke zählen nicht als geänderte vorhandene Blöcke, aber zur Netto-Wortzahl', () => {
   const stable = Array.from({ length: 10 }, (_, index) => `<p>${words(`bestand${index}-`, 10)}</p>`);
   const before = article({ contentHtml: stable.join('') });

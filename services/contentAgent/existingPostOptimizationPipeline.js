@@ -203,8 +203,13 @@ function parseScopeStage(value, baseLiveHash, candidateFingerprint) {
       || value.wordCountDeltaRatio < 0) return null;
   const semanticallyPassed = value.changedBlockRatio <= 0.35
     && value.wordCountDeltaRatio <= 0.25;
-  if (value.passed !== semanticallyPassed
-      || value.code !== (semanticallyPassed ? null : 'TARGETED_SCOPE_EXCEEDED')) return null;
+  const validOutcome = value.passed === true
+    ? semanticallyPassed && value.code === null
+    : value.passed === false && (
+      value.code === 'HTML_STRUCTURE_CHANGED'
+        || (!semanticallyPassed && value.code === 'TARGETED_SCOPE_EXCEEDED')
+    );
+  if (!validOutcome) return null;
   return {
     passed: value.passed,
     code: value.code,
@@ -329,12 +334,19 @@ function safeIssues(issues = []) {
 function repairFindings(assessment, review) {
   const findings = [];
   if (assessment?.scope?.passed === false) {
-    findings.push({
-      code: 'targeted_scope_exceeded',
-      severity: 'error',
-      field: 'contentHtml',
-      message: `Die Änderung überschreitet den gezielten Umfang (Blöcke: ${assessment.scope.changedBlockRatio}, Wörter: ${assessment.scope.wordCountDeltaRatio}).`
-    });
+    findings.push(assessment.scope.code === 'HTML_STRUCTURE_CHANGED'
+      ? {
+          code: 'html_structure_changed',
+          severity: 'error',
+          field: 'contentHtml',
+          message: 'Die bestehende HTML-Wrapperstruktur oder die Zuordnung eines Inhaltsblocks wurde verändert.'
+        }
+      : {
+          code: 'targeted_scope_exceeded',
+          severity: 'error',
+          field: 'contentHtml',
+          message: `Die Änderung überschreitet den gezielten Umfang (Blöcke: ${assessment.scope.changedBlockRatio}, Wörter: ${assessment.scope.wordCountDeltaRatio}).`
+        });
   }
   findings.push(...safeIssues(assessment?.validation?.issues));
   findings.push(...safeIssues(review?.issues));

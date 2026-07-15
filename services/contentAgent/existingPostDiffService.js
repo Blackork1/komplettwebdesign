@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as cheerio from 'cheerio';
 
-export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v1';
+export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v2';
 
 const SIMPLE_FIELDS = Object.freeze([
   'title',
@@ -55,6 +55,22 @@ const HTML_BLOCK_SELECTOR = [
   'table'
 ].join(',');
 const MAX_HTML_BLOCKS = 2_000;
+const STRUCTURAL_WRAPPER_TAGS = new Set([
+  'article', 'aside', 'div', 'footer', 'form', 'header', 'main', 'nav', 'section'
+]);
+const STRUCTURAL_CLASS_PATTERNS = Object.freeze([
+  /^container(?:-fluid)?$/,
+  /^row$/,
+  /^col(?:$|-)/,
+  /^offset(?:$|-)/,
+  /^order(?:$|-)/,
+  /^table-responsive(?:$|-)/,
+  /^d-(?:flex|grid|inline-flex|inline-grid)$/,
+  /^flex(?:$|-)/,
+  /^justify-content(?:$|-)/,
+  /^align-(?:content|items|self)(?:$|-)/,
+  /^gap(?:$|-)/
+]);
 
 function serviceError(code, message, details = {}) {
   return Object.assign(new Error(message), { code, ...details });
@@ -136,6 +152,69 @@ function hasSelectedAncestor($, element) {
   return false;
 }
 
+function structuralClasses($, element) {
+  return String($(element).attr('class') || '')
+    .split(/\s+/u)
+    .filter(Boolean)
+    .filter((className) => STRUCTURAL_CLASS_PATTERNS.some((pattern) => pattern.test(className)))
+    .sort();
+}
+
+function structuralWrapperToken($, element) {
+  const tagName = String(element.tagName || element.name || '').toLowerCase();
+  const classes = structuralClasses($, element);
+  return classes.length === 0 ? tagName : `${tagName}.${classes.join('.')}`;
+}
+
+function structuralWrapperOrdinal(element) {
+  const siblings = (element.parent?.children || []).filter((candidate) => (
+    candidate.type === 'tag'
+      && STRUCTURAL_WRAPPER_TAGS.has(
+        String(candidate.tagName || candidate.name || '').toLowerCase()
+      )
+  ));
+  return siblings.indexOf(element) + 1;
+}
+
+function structuralParentPath($, element) {
+  const parts = [];
+  let current = element.parent;
+  while (current && current.type === 'tag') {
+    const tagName = String(current.tagName || current.name || '').toLowerCase();
+    if (STRUCTURAL_WRAPPER_TAGS.has(tagName)) {
+      parts.unshift(`${structuralWrapperToken($, current)}:${structuralWrapperOrdinal(current)}`);
+    }
+    current = current.parent;
+  }
+  return parts.join('>');
+}
+
+function structuralWrapperSkeleton($) {
+  let wrapperCount = 0;
+  function walk(nodes) {
+    const result = [];
+    for (const node of nodes || []) {
+      if (node.type !== 'tag') continue;
+      const tagName = String(node.tagName || node.name || '').toLowerCase();
+      const children = walk(node.children);
+      if (STRUCTURAL_WRAPPER_TAGS.has(tagName)) {
+        wrapperCount += 1;
+        if (wrapperCount > MAX_HTML_BLOCKS) {
+          throw serviceError(
+            'EXISTING_POST_DIFF_INPUT_INVALID',
+            `Artikel dürfen höchstens ${MAX_HTML_BLOCKS} strukturelle HTML-Wrapper enthalten.`
+          );
+        }
+        result.push({ token: structuralWrapperToken($, node), children });
+      } else {
+        result.push(...children);
+      }
+    }
+    return result;
+  }
+  return walk($.root()[0]?.children);
+}
+
 function parseHtmlBlocks(html) {
   const $ = cheerio.load(String(html ?? ''), null, false);
   const blocks = $(HTML_BLOCK_SELECTOR).toArray()
@@ -149,6 +228,7 @@ function parseHtmlBlocks(html) {
         html: outerHtml,
         text: $(element).text().normalize('NFKC').trim().replace(/\s+/gu, ' '),
         fingerprint: fingerprint(outerHtml),
+        structuralParentPath: structuralParentPath($, element),
         element
       };
     });
@@ -162,7 +242,7 @@ function parseHtmlBlocks(html) {
     block.previousFingerprint = blocks[index - 1]?.fingerprint || null;
     block.nextFingerprint = blocks[index + 1]?.fingerprint || null;
   }
-  return { $, blocks };
+  return { $, blocks, structureFingerprint: fingerprint(structuralWrapperSkeleton($)) };
 }
 
 function blockKey(block) {
@@ -601,9 +681,18 @@ export function validateTargetedOptimizationScope({ before = {}, after = {} } = 
   const beforeHtml = readField(before, 'contentHtml').value;
   const afterContent = readField(after, 'contentHtml');
   const afterHtml = afterContent.present ? afterContent.value : beforeHtml;
-  const beforeBlocks = parseHtmlBlocks(beforeHtml).blocks;
-  const afterBlocks = parseHtmlBlocks(afterHtml).blocks;
+  const beforeDocument = parseHtmlBlocks(beforeHtml);
+  const afterDocument = parseHtmlBlocks(afterHtml);
+  const beforeBlocks = beforeDocument.blocks;
+  const afterBlocks = afterDocument.blocks;
   const operations = alignHtmlBlocks(beforeBlocks, afterBlocks);
+  const pairedBlockChangedParent = operations.some(({ before: beforeBlock, after: afterBlock }) => (
+    beforeBlock
+      && afterBlock
+      && beforeBlock.structuralParentPath !== afterBlock.structuralParentPath
+  ));
+  const structureChanged = beforeDocument.structureFingerprint !== afterDocument.structureFingerprint
+    || pairedBlockChangedParent;
   const changedExistingBlocks = operations.filter(({ type }) => (
     type === 'modified'
     || type === 'removed'
@@ -618,11 +707,12 @@ export function validateTargetedOptimizationScope({ before = {}, after = {} } = 
   const rawWordCountDeltaRatio = beforeWords === 0
     ? (afterWords === 0 ? 0 : 1)
     : Math.abs(afterWords - beforeWords) / beforeWords;
-  const passed = rawChangedBlockRatio <= 0.35 && rawWordCountDeltaRatio <= 0.25;
+  const ratioPassed = rawChangedBlockRatio <= 0.35 && rawWordCountDeltaRatio <= 0.25;
+  const passed = ratioPassed && !structureChanged;
 
   return {
     passed,
-    code: passed ? null : 'TARGETED_SCOPE_EXCEEDED',
+    code: passed ? null : structureChanged ? 'HTML_STRUCTURE_CHANGED' : 'TARGETED_SCOPE_EXCEEDED',
     changedBlockRatio: ratio(rawChangedBlockRatio),
     wordCountDeltaRatio: ratio(rawWordCountDeltaRatio)
   };

@@ -881,6 +881,30 @@ test('Scopeüberschreitung erhält genau eine erfolgreiche Reparatur mit servers
   assert.equal(dependencies.calls.revisions.length, 1);
 });
 
+test('strukturelle Wrapperänderung wird gezielt repariert und als eigener Befund erklärt', async () => {
+  const post = publishedPost();
+  const withoutSectionWrapper = optimizedPost(post, {
+    contentHtml: optimizedPost(post).contentHtml
+      .replace(/^<section>/, '')
+      .replace(/<\/section>$/, '')
+  });
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [withoutSectionWrapper, optimizedPost(post)]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.optimization, 2);
+  assert.deepEqual(dependencies.calls.optimizationInputs[1].audit.findings.at(-1), {
+    code: 'html_structure_changed',
+    severity: 'error',
+    field: 'contentHtml',
+    message: 'Die bestehende HTML-Wrapperstruktur oder die Zuordnung eines Inhaltsblocks wurde verändert.'
+  });
+});
+
 test('zweite Scopeüberschreitung endet fail-closed ohne weitere Reparatur', async () => {
   const post = publishedPost();
   const excessive = optimizedPost(post, {
