@@ -64,7 +64,7 @@ test('Migration 008 erweitert freie KI-Metadaten ohne Datenverlust auf TEXT', ()
   assert.doesNotMatch(metadataSql, /DROP\s+(?:TABLE|COLUMN)/i);
 });
 
-test('Migrationsrunner führt 002 bis 013 sequenziell unter einer Transaktionssperre aus', async () => {
+test('Migrationsrunner führt 002 bis 014 sequenziell unter einer Transaktionssperre aus', async () => {
   const queries = [];
   let released = false;
   const client = {
@@ -105,11 +105,12 @@ test('Migrationsrunner führt 002 bis 013 sequenziell unter einer Transaktionssp
   assert.match(queries[12], /content_revision_optimization_outcomes_claim_consistent/i);
   assert.match(queries[13], /CREATE TABLE IF NOT EXISTS content_article_events/i);
   assert.match(queries[13], /CREATE TABLE IF NOT EXISTS content_article_performance_snapshots/i);
-  assert.equal(queries[14], 'COMMIT');
+  assert.match(queries[14], /CREATE TABLE IF NOT EXISTS content_existing_post_admin_preferences/i);
+  assert.equal(queries[15], 'COMMIT');
   assert.equal(released, true);
 });
 
-test('Migrationsrunner benennt den vollständigen Bereich 002 bis 013 in Statusmeldungen', () => {
-  assert.match(runnerSource, /Migration 002 bis 013 erfolgreich/);
-  assert.match(runnerSource, /Migration 002 bis 013 fehlgeschlagen/);
+test('Migrationsrunner benennt den vollständigen Bereich 002 bis 014 in Statusmeldungen', () => {
+  assert.match(runnerSource, /Migration 002 bis 014 erfolgreich/);
+  assert.match(runnerSource, /Migration 002 bis 014 fehlgeschlagen/);
 });
