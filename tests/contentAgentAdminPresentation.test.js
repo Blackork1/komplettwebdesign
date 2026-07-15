@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildDashboardPresentation,
   buildDraftListPresentation,
+  buildExistingContentGroupsPresentation,
   buildExistingContentListPresentation,
   buildJobListPresentation,
   buildSchedulePresentation,
@@ -13,6 +14,37 @@ import {
   presentContentLearningDashboard,
   presentExistingContentOptimizationState
 } from '../services/contentAgent/adminPresentationService.js';
+
+function existingContentPerformanceRow({
+  id,
+  impressions = 0,
+  complete = true,
+  coverageDayCount = 28,
+  articleAgeDays = 30,
+  hidden = false,
+  hasSnapshot = true
+} = {}) {
+  return {
+    id,
+    title: `Artikel ${id}`,
+    slug: `artikel-${id}`,
+    updated_at: '2026-07-15T08:00:00.000Z',
+    zero_impression_hidden: hidden,
+    ...(hasSnapshot ? {
+      performance_snapshot_id: 100 + id,
+      performance_evaluated_through_date: '2026-07-14',
+      performance_article_age_days: articleAgeDays,
+      performance_windows_json: {
+        7: { complete: true, coverageDayCount: 7, impressions },
+        14: { complete: true, coverageDayCount: 14, impressions },
+        28: { complete, coverageDayCount, impressions }
+      },
+      performance_status: 'stable',
+      performance_data_eligible: true,
+      performance_learning_eligible: false
+    } : {})
+  };
+}
 
 test('Search-Console-Präsentation bildet Variante A mit Zeitraum, Themenblöcken und Nicht-Tester-Chancen ab', () => {
   const result = buildSearchConsolePresentation({
@@ -735,6 +767,7 @@ test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
     title: 'Artikel',
     slug: 'artikel',
     updatedAt: '2026-07-11T12:00:00.000Z',
+    zeroImpressionHidden: false,
     optimization: {
       state: 'idle', active: false, terminal: false, canStart: true,
       canDiscard: false, discardActionUrl: null,
@@ -757,6 +790,60 @@ test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
   ]);
   assert.equal(performance.detailUrl, '/admin/content-agent/existing-content/4/performance');
   assert.doesNotMatch(JSON.stringify(presented), /Rohinhalt|payload_json|geheim/);
+});
+
+test('Bestandsgruppen trennen Sichtbarkeit, Datensammlung, null und ausgeblendet', () => {
+  const groups = buildExistingContentGroupsPresentation([
+    existingContentPerformanceRow({ id: 1, impressions: 4 }),
+    existingContentPerformanceRow({
+      id: 2, impressions: 0, complete: false, coverageDayCount: 12
+    }),
+    existingContentPerformanceRow({ id: 3, impressions: 0 }),
+    existingContentPerformanceRow({ id: 4, impressions: 0, hidden: true }),
+    existingContentPerformanceRow({ id: 5, hasSnapshot: false })
+  ]);
+
+  assert.equal(groups.totalCount, 5);
+  assert.deepEqual(groups.visibleArticles.map(({ id }) => id), [1]);
+  assert.deepEqual(groups.collectingArticles.map(({ id }) => id), [2, 5]);
+  assert.deepEqual(groups.zeroImpressionArticles.map(({ id }) => id), [3]);
+  assert.deepEqual(groups.hiddenZeroImpressionArticles.map(({ id }) => id), [4]);
+  assert.equal(groups.zeroImpressionArticles[0].zeroImpressionHidden, false);
+  assert.equal(groups.hiddenZeroImpressionArticles[0].zeroImpressionHidden, true);
+});
+
+test('gespeicherte Ausblendung wird bei neuen Impressionen ignoriert', () => {
+  const groups = buildExistingContentGroupsPresentation([
+    existingContentPerformanceRow({ id: 6, impressions: 1, hidden: true })
+  ]);
+
+  assert.deepEqual(groups.visibleArticles.map(({ id }) => id), [6]);
+  assert.equal(groups.hiddenZeroImpressionArticles.length, 0);
+});
+
+test('junge, unvollständige und fehlerhafte Messwerte bleiben in der Datensammlung', () => {
+  const malformed = existingContentPerformanceRow({ id: 10 });
+  malformed.performance_windows_json[28].impressions = 'keine Kennzahl';
+  const groups = buildExistingContentGroupsPresentation([
+    existingContentPerformanceRow({ id: 7, articleAgeDays: 27 }),
+    existingContentPerformanceRow({ id: 8, coverageDayCount: 27 }),
+    existingContentPerformanceRow({ id: 9, complete: false }),
+    malformed
+  ]);
+
+  assert.deepEqual(groups.collectingArticles.map(({ id }) => id), [7, 8, 9, 10]);
+  assert.equal(groups.zeroImpressionArticles.length, 0);
+  assert.equal(groups.hiddenZeroImpressionArticles.length, 0);
+});
+
+test('Bestandsgruppen reichen weder Snapshotrohfelder noch unbekannte Präferenzen durch', () => {
+  const row = existingContentPerformanceRow({ id: 11, impressions: 0 });
+  row.unbekannte_praeferenz = 'geheim';
+  const groups = buildExistingContentGroupsPresentation([row]);
+  const serialized = JSON.stringify(groups);
+
+  assert.doesNotMatch(serialized, /performance_windows_json|unbekannte_praeferenz|geheim/);
+  assert.match(serialized, /zeroImpressionHidden/);
 });
 
 test('Bestandspräsentation zeigt Outcomes ausschließlich neutral, endlich und mit begrenzten Queries', () => {
