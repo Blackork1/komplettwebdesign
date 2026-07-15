@@ -484,21 +484,63 @@ test('jede Bestandsgruppe zeigt ihre Anzahl und einen neutralen Leerzustand', as
   assert.equal((html.match(/<strong>Keine Artikel<\/strong>/g) || []).length, 4);
 });
 
-test('Bestandsgruppen verwenden ein responsives Kartenraster ohne mobilen Seitenüberlauf', async () => {
+test('Bestandsartikel zeigt Kerndaten kompakt und hält Sekundärdaten standardmäßig geschlossen', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Website-Relaunch planen',
+      slug: 'website-relaunch-planen',
+      updatedAt: '2026-07-14T10:00:00.000Z',
+      auditId: 31,
+      auditScore: 88,
+      findings: [{ message: 'CTA präzisieren' }],
+      performance: {
+        headline: 'Suchintention prüfen',
+        detailUrl: '/admin/content-agent/existing-content/19/performance',
+        windows: [
+          { days: 7, label: '7 Tage', hasData: true, impressionsLabel: '14', clicksLabel: '1' },
+          { days: 14, label: '14 Tage', hasData: true, impressionsLabel: '33', clicksLabel: '2' },
+          { days: 28, label: '28 Tage', hasData: true, impressionsLabel: '68', clicksLabel: '3' }
+        ]
+      },
+      optimization: {
+        state: 'idle', active: false, canStart: true,
+        statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+        message: 'Noch keine KI-Optimierung gestartet.', revisionUrl: null
+      }
+    }]
+  });
+
+  assert.match(html, /class="content-existing-item__summary"/);
+  assert.match(
+    html,
+    /class="content-existing-item__metric content-existing-item__metric--28"[\s\S]*?68 Impressionen[\s\S]*?3 Klicks/
+  );
+  assert.match(html, /88\/100/);
+  assert.match(html, /Noch nicht gestartet/);
+  assert.match(html, /14\.7\.2026/);
+  assert.match(html, /<details class="content-existing-item__details">/);
+  assert.doesNotMatch(html, /<details class="content-existing-item__details" open/);
+  assert.match(html, /<summary[\s\S]*?Details anzeigen/);
+  assert.match(html, /7 Tage[\s\S]*?14 Impressionen[\s\S]*?14 Tage[\s\S]*?33 Impressionen/);
+  assert.match(html, /CTA präzisieren/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+});
+
+test('Bestandsgruppen verwenden kompakte responsive Artikelzeilen ohne mobilen Seitenüberlauf', async () => {
   const adminCss = await readFile(new URL('../public/admin.css', import.meta.url), 'utf8');
 
   assert.match(adminCss, /\.content-existing-group__summary\s*\{/);
   assert.match(
     adminCss,
-    /\.content-existing-item__grid\s*\{[\s\S]*?grid-template-columns:/
+    /\.content-existing-item__summary\s*\{[\s\S]*?display:\s*grid/
   );
+  assert.match(adminCss, /\.content-existing-item__details\s*>\s*summary\s*\{/);
+  assert.match(adminCss, /\.content-existing-item__details\[open\]\s*>\s*summary/);
   assert.match(
     adminCss,
-    /@media\s*\(max-width:\s*767\.98px\)[\s\S]*?\.content-existing-item__grid\s*\{[\s\S]*?grid-template-columns:\s*1fr/
-  );
-  assert.match(
-    adminCss,
-    /@media\s*\(max-width:\s*767\.98px\)[\s\S]*?\.content-existing-item__footer[\s\S]*?flex-direction:\s*column/
+    /@media\s*\(max-width:\s*767\.98px\)[\s\S]*?\.content-existing-item__summary\s*\{[\s\S]*?grid-template-columns:\s*1fr/
   );
   assert.match(adminCss, /\.content-existing-item\s*\{[\s\S]*?min-width:\s*0/);
   assert.match(adminCss, /\.content-existing-item__slug\s*\{[\s\S]*?overflow-wrap:\s*anywhere/);
