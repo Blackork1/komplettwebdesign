@@ -76,7 +76,7 @@ Migration `014_create_existing_content_admin_preferences.sql` erstellt additiv:
 
 ```text
 content_existing_post_admin_preferences
-- post_id                         BIGINT PRIMARY KEY
+- post_id                         INTEGER PRIMARY KEY
 - hidden_from_zero_impression_list BOOLEAN NOT NULL DEFAULT FALSE
 - created_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW()
