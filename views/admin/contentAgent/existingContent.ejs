@@ -66,13 +66,13 @@
                     <a class="btn btn-sm btn-primary" href="<%= optimization.revisionUrl %>">Revision bearbeiten</a>
                   <% } else if (item.revisionId) { %>
                     <a class="btn btn-sm btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit">Revision bearbeiten</a>
-                  <% } else if (optimization.state === 'manual_attention' || optimization.state === 'completed') { %>
-                    <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
                   <% } else if (optimization.canStart === true) { %>
                     <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/optimize" data-confirm="KI-Optimierung für diesen Artikel starten? Die Livefassung bleibt unverändert.">
                       <input type="hidden" name="_csrf" value="<%= csrf %>">
                       <button class="btn btn-sm btn-primary" type="submit">KI-Optimierung starten</button>
                     </form>
+                  <% } else if (optimization.state === 'manual_attention' || optimization.state === 'completed') { %>
+                    <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
                   <% } else { %>
                     <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
                   <% } %>

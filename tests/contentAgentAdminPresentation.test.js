@@ -787,6 +787,40 @@ test('fertige Bestandsoptimierung verweist nur auf die deterministisch gewählte
   });
 });
 
+test('abgeschlossene Bestandsoptimierung gibt nach übernommener oder verworfener Revision einen neuen Start frei', () => {
+  for (const revisionStatus of ['approved', 'rejected']) {
+    const result = presentExistingContentOptimizationState({
+      optimization_job_id: 44,
+      optimization_job_status: 'completed',
+      optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+      optimization_run_status: 'completed',
+      optimization_current_stage: 'revision_creation',
+      optimization_revision_id: 71,
+      optimization_revision_status: revisionStatus,
+      has_draft_revision: false
+    });
+
+    assert.equal(result.canStart, true, revisionStatus);
+    assert.equal(result.revisionId, null, revisionStatus);
+    assert.equal(result.revisionUrl, null, revisionStatus);
+  }
+});
+
+test('eine verbleibende Draft-Revision sperrt einen neuen Optimierungsauftrag trotz abgeschlossenem Job', () => {
+  const result = presentExistingContentOptimizationState({
+    optimization_job_id: 44,
+    optimization_job_status: 'completed',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'completed',
+    optimization_current_stage: 'revision_creation',
+    optimization_revision_id: 71,
+    optimization_revision_status: 'approved',
+    has_draft_revision: true
+  });
+
+  assert.equal(result.canStart, false);
+});
+
 test('unsicherer Providerzustand bleibt gesperrt und bietet keinen normalen Neustart', () => {
   const result = presentExistingContentOptimizationState({
     optimization_job_id: 44,

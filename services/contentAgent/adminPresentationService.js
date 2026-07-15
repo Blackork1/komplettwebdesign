@@ -1122,6 +1122,7 @@ export function presentExistingContentOptimizationState(row = {}) {
   const revisionId = presentedPositiveInteger(row.optimization_revision_id);
   const hasDraftRevision = revisionId !== null
     && row.optimization_revision_status === 'draft';
+  const hasAnyDraftRevision = hasDraftRevision || row.has_draft_revision === true;
   const messages = {
     queued: 'Die KI-Optimierung wurde eingeplant und wartet auf den Worker.',
     running: `Die KI-Optimierung läuft: ${stageLabel}.`,
@@ -1143,7 +1144,9 @@ export function presentExistingContentOptimizationState(row = {}) {
     state,
     active,
     terminal,
-    canStart: state === 'failed' && !unsafeProviderState,
+    canStart: ['completed', 'failed'].includes(state)
+      && !unsafeProviderState
+      && !hasAnyDraftRevision,
     statusLabel: labels[state],
     stageLabel,
     message: messages[state],

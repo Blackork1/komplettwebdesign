@@ -201,6 +201,8 @@ test('Bestandsliste wählt neuesten Job, Run und Optimierungsrevision determinis
   );
   assert.match(projection, /optimization_run\.current_stage AS optimization_current_stage/i);
   assert.match(projection, /optimization_revision_id/i);
+  assert.match(projection, /draft_revision\.has_draft_revision/i);
+  assert.match(sql, /FROM content_post_revisions pending_revision[\s\S]*pending_revision\.post_id = p\.id[\s\S]*pending_revision\.status = 'draft'/i);
 });
 
 test('kompakter Optimierungsstatus ist auf veröffentlichte INT32-Artikel begrenzt', async () => {
@@ -218,6 +220,7 @@ test('kompakter Optimierungsstatus ist auf veröffentlichte INT32-Artikel begren
   assert.equal(await repository.getExistingContentOptimizationState(19), row);
   assert.deepEqual(db.calls[0].params, [19]);
   assert.match(db.calls[0].sql, /p\.id = \$1::integer AND p\.published = TRUE/i);
+  assert.match(db.calls[0].sql, /draft_revision\.has_draft_revision/i);
   assert.doesNotMatch(db.calls[0].sql, /stage_results_json|runtime_snapshot_json|openai_response_ids_json|optimization_report_json|snapshot_json/i);
   await assert.rejects(() => repository.getExistingContentOptimizationState(2147483648), TypeError);
   assert.equal(db.calls.length, 1);

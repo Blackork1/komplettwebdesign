@@ -439,6 +439,29 @@ test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau ein
   assert.match(html, /Livefassung bleibt unverändert/i);
 });
 
+test('Bestandszeile bietet nach abgeschlossener und übernommener Revision einen neuen sicheren Start an', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Website-Relaunch planen',
+      slug: 'website-relaunch-planen',
+      updatedAt: '2026-07-14T10:00:00.000Z',
+      optimization: {
+        state: 'completed', active: false, terminal: true, canStart: true,
+        statusLabel: 'Abgeschlossen', stageLabel: 'Revision erstellt',
+        message: 'Die Optimierung ist abgeschlossen.', jobId: 44,
+        revisionId: null, revisionUrl: null, errorCode: null,
+        unsafeProviderState: false, updatedAt: '2026-07-14T10:05:00.000Z'
+      }
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.match(html, /KI-Optimierung starten/);
+  assert.doesNotMatch(html, /Jobs &amp; Protokolle öffnen/);
+});
+
 test('Bestandszeile escaped Outcome-Queries und formuliert die Nachmessung ausschließlich neutral', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,
