@@ -420,6 +420,58 @@ test('Entfernen eines strukturellen Bootstrap-Wrappers wird unabhängig vom Text
   });
 });
 
+test('Änderungen an freigegebenen Container- und Präsentationsklassen werden vollständig erkannt', async (t) => {
+  const cases = [
+    {
+      name: 'responsiver Container',
+      before: '<section><div class="container-sm"><p>Inhalt bleibt.</p></div></section>',
+      after: '<section><div class="container-xl"><p>Inhalt bleibt.</p></div></section>'
+    },
+    {
+      name: 'Präsentationsklassen',
+      before: '<section><div class="bg-light border rounded p-4"><p>Inhalt bleibt.</p></div></section>',
+      after: '<section><div><p>Inhalt bleibt.</p></div></section>'
+    },
+    {
+      name: 'Listengruppe',
+      before: '<section><ul class="list-group"><li class="list-group-item">Inhalt bleibt.</li></ul></section>',
+      after: '<section><ul><li class="list-group-item">Inhalt bleibt.</li></ul></section>'
+    },
+    {
+      name: 'responsive Tabelle',
+      before: '<section><div class="table-responsive"><table><tbody><tr><td>Inhalt bleibt.</td></tr></tbody></table></div></section>',
+      after: '<section><div><table><tbody><tr><td>Inhalt bleibt.</td></tr></tbody></table></div></section>'
+    }
+  ];
+
+  for (const currentCase of cases) {
+    await t.test(currentCase.name, () => {
+      const result = validateTargetedOptimizationScope({
+        before: article({ contentHtml: currentCase.before }),
+        after: article({ contentHtml: currentCase.after })
+      });
+      assert.equal(result.passed, false);
+      assert.equal(result.code, 'HTML_STRUCTURE_CHANGED');
+    });
+  }
+});
+
+test('die Reihenfolge unveränderter freigegebener Wrapperklassen ist nicht strukturell relevant', () => {
+  const before = article({
+    contentHtml: '<section><div class="bg-light border rounded p-4"><p>Inhalt bleibt.</p></div></section>'
+  });
+  const after = article({
+    contentHtml: '<section><div class="p-4 rounded bg-light border"><p>Inhalt bleibt.</p></div></section>'
+  });
+
+  assert.deepEqual(validateTargetedOptimizationScope({ before, after }), {
+    passed: true,
+    code: null,
+    changedBlockRatio: 0,
+    wordCountDeltaRatio: 0
+  });
+});
+
 test('Verschieben eines bestehenden Inhaltsblocks in einen anderen Elternwrapper wird abgelehnt', () => {
   const stable = Array.from({ length: 10 }, (_, index) => `<p>Stabiler Inhalt ${index}.</p>`).join('');
   const before = article({

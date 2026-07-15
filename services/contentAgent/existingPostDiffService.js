@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import * as cheerio from 'cheerio';
+import { ALLOWED_ARTICLE_CLASSES } from './articleHtmlContract.js';
 
-export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v2';
+export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v3';
 
 const SIMPLE_FIELDS = Object.freeze([
   'title',
@@ -56,21 +57,10 @@ const HTML_BLOCK_SELECTOR = [
 ].join(',');
 const MAX_HTML_BLOCKS = 2_000;
 const STRUCTURAL_WRAPPER_TAGS = new Set([
-  'article', 'aside', 'div', 'footer', 'form', 'header', 'main', 'nav', 'section'
+  'article', 'aside', 'div', 'footer', 'form', 'header', 'main', 'nav', 'ol',
+  'section', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul'
 ]);
-const STRUCTURAL_CLASS_PATTERNS = Object.freeze([
-  /^container(?:-fluid)?$/,
-  /^row$/,
-  /^col(?:$|-)/,
-  /^offset(?:$|-)/,
-  /^order(?:$|-)/,
-  /^table-responsive(?:$|-)/,
-  /^d-(?:flex|grid|inline-flex|inline-grid)$/,
-  /^flex(?:$|-)/,
-  /^justify-content(?:$|-)/,
-  /^align-(?:content|items|self)(?:$|-)/,
-  /^gap(?:$|-)/
-]);
+const STRUCTURAL_ALLOWED_CLASSES = new Set(ALLOWED_ARTICLE_CLASSES);
 
 function serviceError(code, message, details = {}) {
   return Object.assign(new Error(message), { code, ...details });
@@ -153,11 +143,16 @@ function hasSelectedAncestor($, element) {
 }
 
 function structuralClasses($, element) {
-  return String($(element).attr('class') || '')
+  return [...new Set(String($(element).attr('class') || '')
     .split(/\s+/u)
     .filter(Boolean)
-    .filter((className) => STRUCTURAL_CLASS_PATTERNS.some((pattern) => pattern.test(className)))
+    .filter((className) => STRUCTURAL_ALLOWED_CLASSES.has(className)))]
     .sort();
+}
+
+function isStructuralPresentationNode($, element) {
+  const tagName = String(element.tagName || element.name || '').toLowerCase();
+  return STRUCTURAL_WRAPPER_TAGS.has(tagName) || structuralClasses($, element).length > 0;
 }
 
 function structuralWrapperToken($, element) {
@@ -195,9 +190,8 @@ function structuralWrapperSkeleton($) {
     const result = [];
     for (const node of nodes || []) {
       if (node.type !== 'tag') continue;
-      const tagName = String(node.tagName || node.name || '').toLowerCase();
       const children = walk(node.children);
-      if (STRUCTURAL_WRAPPER_TAGS.has(tagName)) {
+      if (isStructuralPresentationNode($, node)) {
         wrapperCount += 1;
         if (wrapperCount > MAX_HTML_BLOCKS) {
           throw serviceError(
