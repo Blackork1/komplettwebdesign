@@ -23,6 +23,7 @@ import { reviewHasOnlyTechnicalBlockingIssues } from '../services/contentAgent/e
 import {
   DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
 } from '../services/contentAgent/existingPostOptimizationDiscardPolicy.js';
+import { lockContentPostRevisionInvariant } from './contentPostRevisionInvariant.js';
 
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
@@ -535,7 +536,18 @@ export async function discardDeterministicExistingOptimizationJobForAdmin({
   const normalizedJobId = positivePostgresInteger(jobId, 'jobId');
   const normalizedPostId = positivePostgresInteger(postId, 'postId');
   const normalizedAdminId = positivePostgresInteger(adminId, 'adminId');
-  const { rows } = await db.query(`
+  const client = await db.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    const lockedPost = await lockContentPostRevisionInvariant(client, normalizedPostId);
+    if (!lockedPost || lockedPost.published !== true) {
+      await client.query('COMMIT');
+      transactionStarted = false;
+      return null;
+    }
+    const { rows } = await client.query(`
     WITH locked_job AS MATERIALIZED (
       SELECT job.*
       FROM content_jobs AS job
@@ -636,13 +648,21 @@ export async function discardDeterministicExistingOptimizationJobForAdmin({
     SELECT * FROM already_discarded
     WHERE NOT EXISTS (SELECT 1 FROM cancelled_job)
     LIMIT 1
-  `, [
-    normalizedJobId,
-    normalizedPostId,
-    normalizedAdminId,
-    DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
-  ]);
-  return rows[0] || null;
+    `, [
+      normalizedJobId,
+      normalizedPostId,
+      normalizedAdminId,
+      DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
+    ]);
+    await client.query('COMMIT');
+    transactionStarted = false;
+    return rows[0] || null;
+  } catch (error) {
+    if (transactionStarted) await rollbackRecoveryQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 const PROVIDER_RECOVERY_RESERVATION_KEY = /^budget:(\d{4}-(?:0[1-9]|1[0-2])):(.+)$/;

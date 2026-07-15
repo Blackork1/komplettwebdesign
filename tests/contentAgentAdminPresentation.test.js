@@ -861,6 +861,30 @@ test('deterministischer manueller Bestandsfehler bietet nur die bestätigte Schl
   assert.equal(result.discardActionUrl, '/admin/content-agent/existing-content/19/optimization-jobs/44/discard');
 });
 
+test('Revisionskonflikt wird erst ohne Draft und Providerreservierung sicher schließbar', () => {
+  const base = {
+    id: 19,
+    optimization_job_id: 44,
+    optimization_job_status: 'needs_manual_attention',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'needs_manual_attention',
+    optimization_current_stage: 'revision_creation',
+    optimization_error_code: 'CONTENT_REVISION_CONFLICT',
+    open_provider_reservation_count: 0,
+    has_draft_revision: false
+  };
+
+  assert.equal(presentExistingContentOptimizationState(base).canDiscard, true);
+  assert.equal(presentExistingContentOptimizationState({
+    ...base,
+    has_draft_revision: true
+  }).canDiscard, false);
+  assert.equal(presentExistingContentOptimizationState({
+    ...base,
+    open_provider_reservation_count: 1
+  }).canDiscard, false);
+});
+
 test('Jobpräsentation bietet für Bestandsoptimierungen keinen generischen Retry an', () => {
   const [job] = buildJobListPresentation([{
     id: 44,

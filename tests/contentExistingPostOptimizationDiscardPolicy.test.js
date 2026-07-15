@@ -20,6 +20,7 @@ function candidate(overrides = {}) {
 test('nur ausdrücklich erlaubte deterministische Bestandsfehler dürfen geschlossen werden', () => {
   for (const errorCode of [
     'existing_post_optimization_repair_failed',
+    'CONTENT_REVISION_CONFLICT',
     'CONTENT_REVISION_STALE',
     'live_post_hash_mismatch'
   ]) {

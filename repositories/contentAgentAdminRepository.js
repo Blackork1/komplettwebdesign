@@ -1,5 +1,9 @@
 import pool from '../util/db.js';
 import { getMonthlyContentCost } from '../services/contentAgent/contentCostService.js';
+import {
+  hasDraftContentRevision,
+  lockContentPostRevisionInvariant
+} from './contentPostRevisionInvariant.js';
 
 const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
@@ -551,23 +555,29 @@ export function createContentAgentAdminRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        const lockedPost = await lockContentPostRevisionInvariant(client, normalized.postId);
+        if (!lockedPost || lockedPost.published !== true) {
+          await client.query('COMMIT');
+          return null;
+        }
+        if (await hasDraftContentRevision(client, normalized.postId)) {
+          await client.query('COMMIT');
+          return null;
+        }
         const inserted = await client.query(`
           INSERT INTO content_jobs (
             job_type, idempotency_key, payload_json, max_attempts
           )
           SELECT $1, $2, $3::jsonb, $4
-          FROM posts p
-          CROSS JOIN content_agent_settings settings
-          WHERE p.id = $5::integer AND p.published = TRUE
-            AND settings.id = 1 AND settings.agent_enabled = TRUE
+          FROM content_agent_settings settings
+          WHERE settings.id = 1 AND settings.agent_enabled = TRUE
           ON CONFLICT DO NOTHING
           RETURNING id, status, attempts, max_attempts, created_at, updated_at
         `, [
           normalized.jobType,
           normalized.idempotencyKey,
           normalized.payload,
-          normalized.maxAttempts,
-          normalized.postId
+          normalized.maxAttempts
         ]);
         let job = inserted.rows[0] || null;
         if (!job) {

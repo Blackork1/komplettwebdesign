@@ -62,6 +62,7 @@ import { learningRulesForStage } from '../services/contentAgent/contentLearningS
 import { buildArticleWriterPrompt } from '../services/contentAgent/prompts/articleWriterPrompt.js';
 import { createContentExistingPostOptimizationRepository } from '../repositories/contentExistingPostOptimizationRepository.js';
 import { createRevisionSnapshot } from '../services/contentAgent/contentRevisionService.js';
+import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
 import { buildExistingPostDiff } from '../services/contentAgent/existingPostDiffService.js';
 
 const connectionString = process.env.CONTENT_AGENT_PG_TEST_URL;
@@ -69,6 +70,216 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
+});
+
+async function assertOperationWaitsForPostLock(operation, label) {
+  const outcome = await Promise.race([
+    operation.then(
+      () => ({ settled: true, rejected: false }),
+      (error) => ({ settled: true, rejected: true, error })
+    ),
+    new Promise((resolve) => setTimeout(() => resolve({ settled: false }), 40))
+  ]);
+  assert.equal(outcome.settled, false, `${label} lief vor Freigabe der Postsperre weiter.`);
+}
+
+test('echtes PostgreSQL: Post-Lock serialisiert Enqueue, manuelle Revision und sichere Schließung', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE posts (
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        excerpt TEXT,
+        content TEXT NOT NULL,
+        content_format TEXT NOT NULL,
+        meta_title TEXT,
+        meta_description TEXT,
+        og_title TEXT,
+        og_description TEXT,
+        faq_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+        image_url TEXT,
+        image_alt TEXT,
+        published BOOLEAN NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE content_agent_settings (
+        id INTEGER PRIMARY KEY,
+        agent_enabled BOOLEAN NOT NULL
+      );
+      CREATE TABLE content_jobs (
+        id BIGSERIAL PRIMARY KEY,
+        job_type VARCHAR(80) NOT NULL,
+        status VARCHAR(32) NOT NULL DEFAULT 'queued',
+        idempotency_key VARCHAR(180) NOT NULL UNIQUE,
+        payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 3,
+        run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        locked_at TIMESTAMPTZ,
+        locked_by TEXT,
+        last_error VARCHAR(120),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_runs (
+        id BIGSERIAL PRIMARY KEY,
+        job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        error_report_json JSONB,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_post_audits (
+        id BIGSERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        job_id BIGINT REFERENCES content_jobs(id),
+        audit_type TEXT NOT NULL,
+        score INTEGER,
+        findings_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+        recommended_actions_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+        status VARCHAR(32) NOT NULL
+      );
+      CREATE TABLE content_post_revisions (
+        id BIGSERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        audit_id BIGINT REFERENCES content_post_audits(id),
+        snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        status VARCHAR(32) NOT NULL,
+        admin_id INTEGER,
+        admin_username TEXT,
+        optimization_job_id BIGINT REFERENCES content_jobs(id),
+        optimization_report_json JSONB,
+        revision_version INTEGER NOT NULL DEFAULT 1,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      INSERT INTO posts (
+        id, title, slug, excerpt, content, content_format, meta_title,
+        meta_description, og_title, og_description, faq_json, image_url,
+        image_alt, published
+      ) VALUES (
+        19, 'Race-Test', 'race-test', 'Kurz', '<section><p>Inhalt</p></section>',
+        'static_html', 'Meta', 'Beschreibung', 'OG', 'OG-Beschreibung',
+        '[]'::jsonb, '/uploads/race.webp', 'Race-Bild', TRUE
+      );
+      INSERT INTO content_agent_settings (id, agent_enabled) VALUES (1, TRUE);
+      INSERT INTO content_post_audits (
+        post_id, audit_type, score, status
+      ) VALUES (19, 'manual_audit', 70, 'open');
+    `);
+
+    const adminRepository = createContentAgentAdminRepository(pool);
+    const revisionRepository = createContentRevisionRepository(pool);
+    const auditId = Number((await pool.query(
+      "SELECT id FROM content_post_audits WHERE post_id = 19"
+    )).rows[0].id);
+
+    const draftHolder = await pool.connect();
+    await draftHolder.query('BEGIN');
+    await draftHolder.query('SELECT id FROM posts WHERE id = 19 FOR UPDATE');
+    await draftHolder.query(`
+      INSERT INTO content_post_revisions (post_id, audit_id, snapshot_json, status)
+      VALUES (19, $1, '{}'::jsonb, 'draft')
+    `, [auditId]);
+    const enqueue = adminRepository.enqueueExistingPostOptimizationJob({
+      jobType: 'optimize_existing_post',
+      idempotencyKey: 'pg-post-lock-enqueue',
+      payload: {
+        source: 'admin_existing_content', post_id: 19, admin_id: 7,
+        base_live_hash: 'a'.repeat(64)
+      },
+      maxAttempts: 3
+    });
+    await assertOperationWaitsForPostLock(enqueue, 'Bestands-Enqueue');
+    await draftHolder.query('COMMIT');
+    draftHolder.release();
+    assert.equal(await enqueue, null);
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM content_jobs')).rows[0].count, 0);
+
+    await pool.query("DELETE FROM content_post_revisions WHERE post_id = 19 AND status = 'draft'");
+    const jobHolder = await pool.connect();
+    await jobHolder.query('BEGIN');
+    await jobHolder.query('SELECT id FROM posts WHERE id = 19 FOR UPDATE');
+    const activeJobId = Number((await jobHolder.query(`
+      INSERT INTO content_jobs (
+        job_type, status, idempotency_key, payload_json, last_error
+      ) VALUES (
+        'optimize_existing_post', 'needs_manual_attention', 'pg-post-lock-active',
+        '{"source":"admin_existing_content","post_id":19}'::jsonb,
+        'CONTENT_REVISION_CONFLICT'
+      ) RETURNING id
+    `)).rows[0].id);
+    const manualRevision = revisionRepository.createRevisionFromAudit({
+      postId: 19,
+      auditId,
+      admin: { id: 7, username: 'admin' },
+      createSnapshot: createRevisionSnapshot
+    });
+    await assertOperationWaitsForPostLock(manualRevision, 'manuelle Revisionsanlage');
+    await jobHolder.query('COMMIT');
+    jobHolder.release();
+    await assert.rejects(manualRevision, { code: 'CONTENT_REVISION_CONFLICT' });
+    assert.equal((await pool.query(
+      "SELECT COUNT(*)::int AS count FROM content_post_revisions WHERE status = 'draft'"
+    )).rows[0].count, 0);
+
+    await pool.query(`
+      INSERT INTO content_runs (
+        job_id, status, error_report_json, stage_results_json
+      ) VALUES (
+        $1, 'needs_manual_attention', '{"code":"CONTENT_REVISION_CONFLICT"}'::jsonb,
+        '{}'::jsonb
+      )
+    `, [activeJobId]);
+    const closeHolder = await pool.connect();
+    await closeHolder.query('BEGIN');
+    await closeHolder.query('SELECT id FROM posts WHERE id = 19 FOR UPDATE');
+    await closeHolder.query(`
+      INSERT INTO content_post_revisions (post_id, audit_id, snapshot_json, status)
+      VALUES (19, $1, '{}'::jsonb, 'draft')
+    `, [auditId]);
+    const close = discardDeterministicExistingOptimizationJobForAdmin({
+      jobId: activeJobId,
+      postId: 19,
+      adminId: 7
+    }, pool);
+    await assertOperationWaitsForPostLock(close, 'sichere Schließaktion');
+    await closeHolder.query('COMMIT');
+    closeHolder.release();
+    assert.equal(await close, null);
+    assert.equal((await pool.query(
+      'SELECT status FROM content_jobs WHERE id = $1',
+      [activeJobId]
+    )).rows[0].status, 'needs_manual_attention');
+
+    await pool.query("DELETE FROM content_post_revisions WHERE post_id = 19 AND status = 'draft'");
+    assert.equal((await discardDeterministicExistingOptimizationJobForAdmin({
+      jobId: activeJobId,
+      postId: 19,
+      adminId: 7
+    }, pool)).status, 'cancelled');
+  } finally {
+    if (pool) await pool.end();
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
 });
 
 test('echtes PostgreSQL: deterministische Bestandsfehler werden atomar und idempotent geschlossen', {

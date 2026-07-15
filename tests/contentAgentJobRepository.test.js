@@ -1215,7 +1215,12 @@ test('markJobNeedsManualAttention persistiert einen eigenen gefencten Terminalzu
 
 test('bestätigte deterministische Bestandsfehler werden atomar, protokolliert und ohne Liveartikelmutation geschlossen', async () => {
   const discarded = { id: 44, status: 'cancelled' };
-  const db = createQueryRecorder([{ rows: [discarded] }]);
+  const db = createTransactionalRecorder([
+    { rows: [] },
+    { rows: [{ id: 19, published: true }] },
+    { rows: [discarded] },
+    { rows: [] }
+  ]);
 
   assert.equal(await discardDeterministicExistingOptimizationJobForAdmin({
     jobId: 44,
@@ -1223,31 +1228,42 @@ test('bestätigte deterministische Bestandsfehler werden atomar, protokolliert u
     adminId: 7
   }, db), discarded);
 
-  assert.deepEqual(db.calls[0].params.slice(0, 3), [44, 19, 7]);
-  assert.match(db.calls[0].sql, /^WITH locked_job AS MATERIALIZED/i);
-  assert.match(db.calls[0].sql, /job\.job_type = 'optimize_existing_post'/i);
-  assert.match(db.calls[0].sql, /job\.status = 'needs_manual_attention'/i);
-  assert.match(db.calls[0].sql, /run\.status = 'needs_manual_attention'/i);
-  assert.match(db.calls[0].sql, /payload_json ->> 'post_id' = \$2::text/i);
-  assert.match(db.calls[0].sql, /NOT EXISTS[\s\S]*content_post_revisions[\s\S]*status = 'draft'/i);
-  assert.match(db.calls[0].sql, /jsonb_each[\s\S]*value ->> 'status' = 'reserved'/i);
-  assert.match(db.calls[0].sql, /existing_optimization_discard:admin/i);
-  assert.match(db.calls[0].sql, /jsonb_build_object[\s\S]*'adminId',[\s\S]*\$3::integer/i);
-  assert.match(db.calls[0].sql, /UPDATE content_jobs AS job[\s\S]*status = 'cancelled'/i);
-  assert.doesNotMatch(db.calls[0].sql, /UPDATE posts|DELETE FROM posts/i);
+  const calls = db.client.calls;
+  assert.equal(calls[0].sql, 'BEGIN');
+  assert.match(calls[1].sql, /SELECT id, published FROM posts[\s\S]*FOR UPDATE/i);
+  assert.deepEqual(calls[1].params, [19]);
+  assert.deepEqual(calls[2].params.slice(0, 3), [44, 19, 7]);
+  assert.match(calls[2].sql, /^WITH locked_job AS MATERIALIZED/i);
+  assert.match(calls[2].sql, /job\.job_type = 'optimize_existing_post'/i);
+  assert.match(calls[2].sql, /job\.status = 'needs_manual_attention'/i);
+  assert.match(calls[2].sql, /run\.status = 'needs_manual_attention'/i);
+  assert.match(calls[2].sql, /payload_json ->> 'post_id' = \$2::text/i);
+  assert.match(calls[2].sql, /NOT EXISTS[\s\S]*content_post_revisions[\s\S]*status = 'draft'/i);
+  assert.match(calls[2].sql, /jsonb_each[\s\S]*value ->> 'status' = 'reserved'/i);
+  assert.match(calls[2].sql, /existing_optimization_discard:admin/i);
+  assert.match(calls[2].sql, /jsonb_build_object[\s\S]*'adminId',[\s\S]*\$3::integer/i);
+  assert.match(calls[2].sql, /UPDATE content_jobs AS job[\s\S]*status = 'cancelled'/i);
+  assert.doesNotMatch(calls[2].sql, /UPDATE posts|DELETE FROM posts/i);
+  assert.equal(calls[3].sql, 'COMMIT');
+  assert.equal(db.events.at(-1).type, 'release');
 });
 
 test('Schließaktion bleibt bei Doppelklick idempotent und verwirft keine ungeklärte Providerreservierung', async () => {
-  const db = createQueryRecorder([{ rows: [{ id: 44, status: 'cancelled' }] }]);
+  const db = createTransactionalRecorder([
+    { rows: [] },
+    { rows: [{ id: 19, published: true }] },
+    { rows: [{ id: 44, status: 'cancelled' }] },
+    { rows: [] }
+  ]);
   await discardDeterministicExistingOptimizationJobForAdmin({
     jobId: 44,
     postId: 19,
     adminId: 7
   }, db);
 
-  assert.match(db.calls[0].sql, /already_discarded/i);
-  assert.match(db.calls[0].sql, /provider_execution_uncertain/i);
-  assert.match(db.calls[0].sql, /provider_stage_persistence_uncertain/i);
+  assert.match(db.client.calls[2].sql, /already_discarded/i);
+  assert.match(db.client.calls[2].sql, /provider_execution_uncertain/i);
+  assert.match(db.client.calls[2].sql, /provider_stage_persistence_uncertain/i);
 });
 
 test('createRun liefert pro job_id atomar denselben wiederaufnehmbaren Lauf', async () => {

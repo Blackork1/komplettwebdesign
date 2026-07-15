@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import pool from '../util/db.js';
+import { lockContentPostRevisionInvariant } from './contentPostRevisionInvariant.js';
 
 function conflict(code, message) {
   return Object.assign(new Error(message), { code });
@@ -54,9 +55,31 @@ export function createContentRevisionRepository(db = pool) {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
-        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
-        const { rows: posts } = await client.query(`SELECT ${POST_COLUMNS} FROM posts WHERE id = $1 AND published = TRUE FOR UPDATE`, [postId]);
+        const lockedPost = await lockContentPostRevisionInvariant(client, postId);
+        if (!lockedPost || lockedPost.published !== true) {
+          throw conflict('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+        }
+        const { rows: posts } = await client.query(`
+          SELECT ${POST_COLUMNS}
+          FROM posts
+          WHERE id = $1::integer AND published = TRUE
+        `, [postId]);
         if (!posts[0]) throw conflict('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
+        const { rows: activeOptimizations } = await client.query(`
+          SELECT id
+          FROM content_jobs
+          WHERE job_type = 'optimize_existing_post'
+            AND payload_json ->> 'post_id' = $1::text
+            AND status IN ('queued', 'running', 'needs_manual_attention')
+          ORDER BY id
+          FOR UPDATE
+        `, [postId]);
+        if (activeOptimizations.length > 0) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Für diesen Artikel läuft bereits eine KI-Optimierung.'
+          );
+        }
         const { rows: existing } = await client.query(`
           SELECT * FROM content_post_revisions
           WHERE post_id = $1 AND status = 'draft'

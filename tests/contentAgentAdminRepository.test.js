@@ -31,7 +31,7 @@ function createQueryRecorder() {
   };
 }
 
-function createTransactionDatabase(handler) {
+function createTransactionDatabase(handler, { published = true, hasDraft = false } = {}) {
   const calls = [];
   let releases = 0;
   const client = {
@@ -40,6 +40,12 @@ function createTransactionDatabase(handler) {
       calls.push({ sql: normalized, params });
       if (normalized === 'BEGIN' || normalized === 'COMMIT' || normalized === 'ROLLBACK') {
         return { rows: [] };
+      }
+      if (/SELECT id, published FROM posts/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
+        return { rows: [{ id: params[0], published }] };
+      }
+      if (/AS has_draft_revision/i.test(normalized)) {
+        return { rows: [{ has_draft_revision: hasDraft }] };
       }
       return handler({ sql: normalized, params, calls });
     },
@@ -254,21 +260,48 @@ test('Bestands-Enqueue prüft Agent und Liveartikel atomar und respektiert den a
 
   assert.equal(result, inserted);
   assert.equal(db.calls[0].sql, 'BEGIN');
+  const postLock = db.calls.find(({ sql }) => /SELECT id, published FROM posts/i.test(sql));
+  const draftGuard = db.calls.find(({ sql }) => /AS has_draft_revision/i.test(sql));
+  assert.match(postLock.sql, /WHERE id = \$1::integer[\s\S]*FOR UPDATE/i);
+  assert.deepEqual(postLock.params, [19]);
+  assert.ok(db.calls.indexOf(postLock) < db.calls.indexOf(draftGuard));
   const insert = db.calls.find(({ sql }) => /INSERT INTO content_jobs/i.test(sql));
   assert.deepEqual(insert.params, [
     'optimize_existing_post',
     'existing-post-optimization:19:uuid',
     { source: 'admin_existing_content', post_id: 19, admin_id: 7, base_live_hash: 'a'.repeat(64) },
-    3,
-    19
+    3
   ]);
-  assert.match(insert.sql, /FROM posts p[\s\S]*content_agent_settings settings/i);
-  assert.match(insert.sql, /p\.id = \$5::integer AND p\.published = TRUE/i);
+  assert.match(insert.sql, /FROM content_agent_settings settings/i);
   assert.match(insert.sql, /settings\.agent_enabled = TRUE/i);
   assert.match(insert.sql, /ON CONFLICT DO NOTHING/i);
   assert.doesNotMatch(insert.sql, /ON CONFLICT \(idempotency_key\)/i);
   assert.equal(db.calls.at(-1).sql, 'COMMIT');
   assert.equal(db.releases, 1);
+});
+
+test('Bestands-Enqueue erzeugt bei einer offenen Draft-Revision keinen kostenpflichtigen Job', async () => {
+  const db = createTransactionDatabase(({ sql }) => {
+    if (/INSERT INTO content_jobs/i.test(sql)) {
+      assert.fail('Bei offener Draft-Revision darf kein Job erzeugt werden.');
+    }
+    return { rows: [] };
+  }, { hasDraft: true });
+  const repository = createContentAgentAdminRepository(db);
+
+  const result = await repository.enqueueExistingPostOptimizationJob({
+    jobType: 'optimize_existing_post',
+    idempotencyKey: 'existing-post-optimization:19:draft-guard',
+    payload: {
+      source: 'admin_existing_content', post_id: 19, admin_id: 7,
+      base_live_hash: 'a'.repeat(64)
+    },
+    maxAttempts: 3
+  });
+
+  assert.equal(result, null);
+  assert.equal(db.calls.some(({ sql }) => /INSERT INTO content_jobs/i.test(sql)), false);
+  assert.equal(db.calls.at(-1).sql, 'COMMIT');
 });
 
 test('paralleler Bestandsstart gibt den bereits aktiven sicheren Zustand statt Duplikat oder 500 zurück', async () => {
@@ -331,6 +364,12 @@ test('zwei tatsächlich parallele Starts mit verschiedenen Schlüsseln teilen de
         async query(sql, params = []) {
           const normalized = normalizeSql(sql);
           if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)) return { rows: [] };
+          if (/SELECT id, published FROM posts/i.test(normalized) && /FOR UPDATE/i.test(normalized)) {
+            return { rows: [{ id: params[0], published: true }] };
+          }
+          if (/AS has_draft_revision/i.test(normalized)) {
+            return { rows: [{ has_draft_revision: false }] };
+          }
           if (/INSERT INTO content_jobs/i.test(normalized)) {
             if (persistedJob) return { rows: [] };
             insertedJobs += 1;

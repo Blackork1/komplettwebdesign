@@ -55,7 +55,7 @@ const approvalInput = {
   validateSnapshot: async () => true
 };
 
-function revisionCreationHarness(existingDraft) {
+function revisionCreationHarness(existingDraft, { activeOptimization = false } = {}) {
   const calls = [];
   const client = {
     async query(sql, params = []) {
@@ -63,7 +63,13 @@ function revisionCreationHarness(existingDraft) {
       calls.push({ sql: normalized, params });
       if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)
           || normalized.startsWith('LOCK TABLE posts')) return { rows: [] };
+      if (normalized.startsWith('SELECT id, published FROM posts')) {
+        return { rows: [{ id: 7, published: true }] };
+      }
       if (normalized.startsWith('SELECT id, title, slug')) return { rows: [livePost] };
+      if (normalized.startsWith('SELECT id FROM content_jobs')) {
+        return { rows: activeOptimization ? [{ id: 44 }] : [] };
+      }
       if (normalized.startsWith('SELECT * FROM content_post_revisions')) {
         return { rows: existingDraft ? [existingDraft] : [] };
       }
@@ -117,6 +123,26 @@ test('Revisionsanlage weist einen postweiten Draft eines anderen Audits fail-clo
   assert.ok(calls.some(({ sql }) => sql === 'ROLLBACK'));
   assert.equal(calls.some(({ sql }) => sql.startsWith('INSERT INTO content_post_revisions')), false);
   assert.equal(calls.some(({ sql }) => sql === 'COMMIT'), false);
+});
+
+test('manuelle Revisionsanlage wird nach dem Post-Lock bei aktiver KI-Optimierung geschlossen abgewiesen', async () => {
+  const { calls, repository } = revisionCreationHarness(null, { activeOptimization: true });
+
+  await assert.rejects(repository.createRevisionFromAudit({
+    postId: 7,
+    auditId: 5,
+    admin: { id: 1, username: 'admin' },
+    createSnapshot: createRevisionSnapshot
+  }), { code: 'CONTENT_REVISION_CONFLICT' });
+
+  const postLock = calls.findIndex(({ sql }) => sql.startsWith('SELECT id, published FROM posts'));
+  const activeJobCheck = calls.findIndex(({ sql }) => sql.startsWith('SELECT id FROM content_jobs'));
+  assert.ok(postLock > 0 && activeJobCheck > postLock);
+  assert.match(calls[postLock].sql, /FOR UPDATE/i);
+  assert.match(calls[activeJobCheck].sql, /job_type = 'optimize_existing_post'/i);
+  assert.match(calls[activeJobCheck].sql, /status IN \('queued', 'running', 'needs_manual_attention'\)/i);
+  assert.equal(calls.some(({ sql }) => sql.startsWith('INSERT INTO content_post_revisions')), false);
+  assert.ok(calls.some(({ sql }) => sql === 'ROLLBACK'));
 });
 
 test('Freigabe sperrt Tabelle, Post, Revision und Audit in dieser Reihenfolge und ändert nur die Allowlist', async () => {
