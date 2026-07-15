@@ -8,6 +8,7 @@ import { runContentAgentMigration } from '../scripts/runContentAgentMigration.js
 import {
   claimNextJob,
   completeJob,
+  discardDeterministicExistingOptimizationJobForAdmin,
   enqueueJob,
   failJob,
   markJobNeedsManualAttention,
@@ -68,6 +69,100 @@ const resetGuard = evaluateContentAgentPgResetGuard({
   connectionString,
   allowReset: process.env.CONTENT_AGENT_PG_TEST_ALLOW_RESET === 'true',
   resetToken: process.env.CONTENT_AGENT_PG_TEST_TOKEN
+});
+
+test('echtes PostgreSQL: deterministische Bestandsfehler werden atomar und idempotent geschlossen', {
+  skip: resetGuard.allowed ? false : resetGuard.reason
+}, async () => {
+  const schemaName = createContentAgentPgTestSchemaName();
+  const adminPool = new pg.Pool({ connectionString, statement_timeout: 5_000, query_timeout: 7_000 });
+  let pool;
+  let schemaCreated = false;
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+    schemaCreated = true;
+    pool = new pg.Pool({
+      connectionString,
+      options: `-c search_path=${schemaName},pg_catalog`,
+      statement_timeout: 5_000,
+      query_timeout: 7_000
+    });
+    await pool.query(`
+      CREATE TABLE posts (
+        id INTEGER PRIMARY KEY,
+        published BOOLEAN NOT NULL
+      );
+      CREATE TABLE content_jobs (
+        id BIGINT PRIMARY KEY,
+        job_type VARCHAR(80) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        payload_json JSONB NOT NULL,
+        last_error VARCHAR(120),
+        locked_at TIMESTAMPTZ,
+        locked_by TEXT,
+        finished_at TIMESTAMPTZ,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE content_runs (
+        id BIGINT PRIMARY KEY,
+        job_id BIGINT NOT NULL REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        error_report_json JSONB,
+        stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+        finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_post_revisions (
+        id BIGSERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        status VARCHAR(32) NOT NULL
+      );
+      INSERT INTO posts (id, published) VALUES (19, TRUE);
+      INSERT INTO content_jobs (
+        id, job_type, status, payload_json, last_error
+      ) VALUES (
+        44,
+        'optimize_existing_post',
+        'needs_manual_attention',
+        '{"source":"admin_existing_content","post_id":19}'::jsonb,
+        'existing_post_optimization_repair_failed'
+      );
+      INSERT INTO content_runs (
+        id, job_id, status, error_report_json, stage_results_json
+      ) VALUES (
+        51,
+        44,
+        'needs_manual_attention',
+        '{"code":"existing_post_optimization_repair_failed"}'::jsonb,
+        '{}'::jsonb
+      );
+    `);
+
+    const input = { jobId: 44, postId: 19, adminId: 7 };
+    assert.equal(
+      (await discardDeterministicExistingOptimizationJobForAdmin(input, pool)).status,
+      'cancelled'
+    );
+    assert.equal(
+      (await discardDeterministicExistingOptimizationJobForAdmin(input, pool)).status,
+      'cancelled'
+    );
+    const { rows: [run] } = await pool.query(`
+      SELECT status,
+             stage_results_json #>> ARRAY['existing_optimization_discard:admin', 'status'] AS discard_status,
+             stage_results_json #>> ARRAY['existing_optimization_discard:admin', 'adminId'] AS admin_id
+      FROM content_runs
+      WHERE id = 51
+    `);
+    assert.deepEqual(run, {
+      status: 'failed',
+      discard_status: 'discarded',
+      admin_id: '7'
+    });
+  } finally {
+    if (pool) await pool.end();
+    if (schemaCreated) await adminPool.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    await adminPool.end();
+  }
 });
 
 test('echtes PostgreSQL: Lease-Recovery übernimmt normale Runs und reconciliiert terminale Revalidierungsruns', {
