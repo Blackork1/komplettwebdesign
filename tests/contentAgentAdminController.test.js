@@ -1209,26 +1209,132 @@ test('Ablehnungskonflikt wird als 409 ohne interne Details ausgegeben', async ()
   assert.doesNotMatch(res.body, /interner Status/);
 });
 
-test('Bestehende Inhalte rendert ein sicheres Präsentationsmodell statt 501', async () => {
+test('Bestehende Inhalte rendert gruppierte Inhalte und nur allowlistete Sichtbarkeitsmeldungen', async () => {
   const rows = [{ id: 5, title: 'Artikel', content: '<p>Rohinhalt</p>' }];
-  const safeItems = [{ id: 5, title: 'Artikel' }];
+  const safeGroups = {
+    totalCount: 1,
+    visibleArticles: [{ id: 5, title: 'Artikel' }],
+    collectingArticles: [],
+    zeroImpressionArticles: [],
+    hiddenZeroImpressionArticles: []
+  };
   const controller = createAdminContentAgentController(baseDependencies({
     adminRepository: { async listExistingContent() { return rows; } },
     presentation: {
-      buildExistingContentListPresentation(input) {
+      buildExistingContentGroupsPresentation(input) {
         assert.equal(input, rows);
-        return safeItems;
+        return safeGroups;
       }
     }
   }));
   const res = response();
 
-  await controller.existingContentPage({}, res, assert.fail);
+  await controller.existingContentPage({ query: { visibility: 'hidden' } }, res, assert.fail);
 
   assert.deepEqual(res.rendered, {
     view: 'admin/contentAgent/existingContent',
-    locals: { existingContent: safeItems }
+    locals: {
+      existingContentGroups: safeGroups,
+      visibilityMessage: 'Der Artikel wurde aus der Null-Impressions-Arbeitsansicht ausgeblendet.'
+    }
   });
+
+  const invalid = response();
+  await controller.existingContentPage({ query: { visibility: '<script>' } }, invalid, assert.fail);
+  assert.equal(invalid.rendered.locals.visibilityMessage, null);
+});
+
+test('Einzelaktionen blenden ausschließlich serverseitig geprüfte Artikel ein und aus', async () => {
+  const calls = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async setExistingContentZeroImpressionHidden(input) {
+        calls.push(input);
+        return { status: 'updated' };
+      }
+    }
+  }));
+
+  const hidden = response();
+  await controller.hideZeroImpressionAction({ params: { id: '19' } }, hidden, assert.fail);
+  const shown = response();
+  await controller.showZeroImpressionAction({ params: { id: '20' } }, shown, assert.fail);
+
+  assert.deepEqual(calls, [
+    { postId: 19, hidden: true },
+    { postId: 20, hidden: false }
+  ]);
+  assert.equal(
+    hidden.redirectedTo,
+    '/admin/content-agent/existing-content?visibility=hidden'
+  );
+  assert.equal(
+    shown.redirectedTo,
+    '/admin/content-agent/existing-content?visibility=shown'
+  );
+});
+
+test('Sammelaktionen ändern keine vom Browser übermittelte Artikelauswahl', async () => {
+  const calls = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async setAllExistingContentZeroImpressionHidden(hidden) {
+        calls.push(hidden);
+        return { changedCount: 3 };
+      }
+    }
+  }));
+
+  const hidden = response();
+  await controller.hideAllZeroImpressionsAction({
+    body: { post_ids: [1, 2], impressions: 0 }
+  }, hidden, assert.fail);
+  const shown = response();
+  await controller.showAllZeroImpressionsAction({
+    body: { post_ids: [9], hidden: true }
+  }, shown, assert.fail);
+
+  assert.deepEqual(calls, [true, false]);
+  assert.equal(
+    hidden.redirectedTo,
+    '/admin/content-agent/existing-content?visibility=all-hidden'
+  );
+  assert.equal(
+    shown.redirectedTo,
+    '/admin/content-agent/existing-content?visibility=all-shown'
+  );
+});
+
+test('Sichtbarkeitsaktionen liefern sichere 404-, 409- und Validierungsantworten', async () => {
+  for (const scenario of [
+    { status: 'not_found', expectedStatus: 404, forbidden: 'interne Datenbank-ID' },
+    { status: 'not_eligible', expectedStatus: 409, forbidden: 'interner Snapshotfehler' }
+  ]) {
+    const controller = createAdminContentAgentController(baseDependencies({
+      adminRepository: {
+        async setExistingContentZeroImpressionHidden() {
+          return scenario.status === 'not_found'
+            ? { status: scenario.status, internal: 'interne Datenbank-ID' }
+            : { status: scenario.status, internal: 'interner Snapshotfehler' };
+        }
+      }
+    }));
+    const res = response();
+    await controller.hideZeroImpressionAction({ params: { id: '19' } }, res, assert.fail);
+    assert.equal(res.statusCode, scenario.expectedStatus);
+    assert.doesNotMatch(res.body, new RegExp(scenario.forbidden, 'i'));
+  }
+
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async setExistingContentZeroImpressionHidden() {
+        assert.fail('Ungültige IDs dürfen das Repository nicht erreichen.');
+      }
+    }
+  }));
+  const invalid = response();
+  await controller.hideZeroImpressionAction({ params: { id: '2147483648' } }, invalid, assert.fail);
+  assert.equal(invalid.statusCode, 400);
 });
 
 test('Artikel-Performance rendert ausschließlich das sichere Detailmodell', async () => {
