@@ -84,7 +84,7 @@ const baseLocals = {
   jsAsset: (value) => `/assets/${value}`
 };
 
-async function executeExistingContentPolling(statusPayload) {
+async function executeExistingContentPolling(statusPayload, { sessionValues = new Map() } = {}) {
   const script = await readFile(
     new URL('../public/js/admin-existing-content-optimization.js', import.meta.url),
     'utf8'
@@ -115,8 +115,14 @@ async function executeExistingContentPolling(statusPayload) {
     querySelector(selector) { return elements.get(selector) || null; }
   };
   const timers = [];
+  let reloads = 0;
   const windowTarget = {
     fetch: async () => ({ ok: true, json: async () => statusPayload }),
+    location: { reload() { reloads += 1; } },
+    sessionStorage: {
+      getItem(key) { return sessionValues.get(key) || null; },
+      setItem(key, value) { sessionValues.set(key, String(value)); }
+    },
     clearTimeout() {},
     setTimeout(callback, delay) {
       timers.push({ callback, delay });
@@ -135,7 +141,7 @@ async function executeExistingContentPolling(statusPayload) {
   timers[0].callback();
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
-  return { attributes, label, stage, message, primaryAction, timers };
+  return { attributes, label, stage, message, primaryAction, timers, reloads, sessionValues };
 }
 
 test('Cockpit enthält bestätigte sieben Reiter und sichere Aktionsformulare', async () => {
@@ -615,7 +621,9 @@ test('Bestandsoptimierungs-JavaScript pollt nur aktive Zustände alle drei Sekun
   assert.match(script, /textContent/);
   assert.match(script, /content-agent\\\/revisions/);
   assert.match(script, /\/admin\/content-agent\/jobs/);
-  assert.doesNotMatch(script, /innerHTML|insertAdjacentHTML|outerHTML|eval\(|location\.reload|window\.location\s*=/);
+  assert.match(script, /sessionStorage/);
+  assert.match(script, /location\.reload/);
+  assert.doesNotMatch(script, /innerHTML|insertAdjacentHTML|outerHTML|eval\(|window\.location\s*=/);
 });
 
 test('strukturell ungültige 2xx-Statusantwort beendet Polling sichtbar und sicher', async () => {
@@ -624,6 +632,8 @@ test('strukturell ungültige 2xx-Statusantwort beendet Polling sichtbar und sich
     active: 'true',
     terminal: false,
     canStart: false,
+    canDiscard: false,
+    discardActionUrl: null,
     statusLabel: 'In Bearbeitung',
     stageLabel: 'Gezielte Optimierung',
     message: 'Manipulierte Statusantwort',
@@ -647,6 +657,8 @@ test('gültiger terminaler Status bleibt gezielt stehen und verlinkt die fertige
     active: false,
     terminal: true,
     canStart: false,
+    canDiscard: false,
+    discardActionUrl: null,
     statusLabel: 'Revision bereit',
     stageLabel: 'Revision erstellt',
     message: 'Die Revision kann jetzt geprüft werden.',
@@ -664,6 +676,34 @@ test('gültiger terminaler Status bleibt gezielt stehen und verlinkt die fertige
   assert.equal(state.primaryAction.child.href, '/admin/content-agent/revisions/71/edit');
   assert.equal(state.primaryAction.child.textContent, 'Revision bearbeiten');
   assert.equal(state.timers.length, 1);
+});
+
+test('sicher schließbarer manueller Status lädt genau einmal neu und zeigt danach die Serveraktion', async () => {
+  const payload = {
+    state: 'manual_attention',
+    active: false,
+    terminal: true,
+    canStart: false,
+    canDiscard: true,
+    discardActionUrl: '/admin/content-agent/existing-content/19/optimization-jobs/44/discard',
+    statusLabel: 'Manuelle Prüfung nötig',
+    stageLabel: 'Revision erstellt',
+    message: 'Der deterministische Lauf kann sicher geschlossen werden.',
+    jobId: 44,
+    revisionId: null,
+    revisionUrl: null,
+    errorCode: 'CONTENT_REVISION_CONFLICT',
+    unsafeProviderState: false,
+    updatedAt: '2026-07-14T10:04:00.000Z'
+  };
+  const sessionValues = new Map();
+
+  const first = await executeExistingContentPolling(payload, { sessionValues });
+  const second = await executeExistingContentPolling(payload, { sessionValues });
+
+  assert.equal(first.reloads, 1);
+  assert.equal(second.reloads, 0);
+  assert.match(first.message.textContent, /sicher geschlossen/i);
 });
 
 test('Draftübersicht bietet Statusfilter, Termin- und Maildetails sowie sicheren CSRF-Retry', async () => {

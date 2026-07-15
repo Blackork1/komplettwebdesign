@@ -47,6 +47,13 @@
       : null;
   }
 
+  function safeDiscardActionUrl(value) {
+    var url = String(value || '');
+    return /^\/admin\/content-agent\/existing-content\/[1-9]\d*\/optimization-jobs\/[1-9]\d*\/discard$/.test(url)
+      ? url
+      : null;
+  }
+
   function setText(row, selector, value) {
     var target = row.querySelector(selector);
     if (target) target.textContent = typeof value === 'string' ? value : '';
@@ -59,11 +66,19 @@
     var expectedActive = activeStates.includes(state);
     var expectedTerminal = terminalStates.includes(state);
     var revisionUrl = data.revisionUrl === null ? null : safeActionUrl(data.revisionUrl);
+    var discardActionUrl = data.discardActionUrl === null
+      ? null
+      : safeDiscardActionUrl(data.discardActionUrl);
     if (typeof data.active !== 'boolean'
         || data.active !== expectedActive
         || typeof data.terminal !== 'boolean'
         || data.terminal !== expectedTerminal
         || typeof data.canStart !== 'boolean'
+        || typeof data.canDiscard !== 'boolean'
+        || (data.discardActionUrl !== null && discardActionUrl === null)
+        || (data.canDiscard !== (discardActionUrl !== null))
+        || (discardActionUrl !== null
+          && !discardActionUrl.endsWith('/optimization-jobs/' + data.jobId + '/discard'))
         || !safeStatusText(data.statusLabel)
         || !safeStatusText(data.stageLabel)
         || !safeStatusText(data.message)
@@ -78,6 +93,24 @@
         || typeof data.unsafeProviderState !== 'boolean'
         || !safeTimestamp(data.updatedAt)) return null;
     return state;
+  }
+
+  function reloadOnceForSafeDiscard(data, state) {
+    if (state !== 'manual_attention' || data.canDiscard !== true) return false;
+    if (!safeDiscardActionUrl(data.discardActionUrl)
+        || !data.jobId
+        || !window.location
+        || typeof window.location.reload !== 'function') return false;
+    var key = 'content-agent-existing-safe-discard:' + data.jobId;
+    try {
+      var storage = window.sessionStorage;
+      if (!storage || storage.getItem(key) === 'reloaded') return false;
+      storage.setItem(key, 'reloaded');
+      window.location.reload();
+      return true;
+    } catch (_error) {
+      return false;
+    }
   }
 
   function replacePrimaryAction(row, data, state) {
@@ -121,6 +154,7 @@
     setText(row, '[data-existing-content-optimization-stage]', data.stageLabel);
     setText(row, '[data-existing-content-optimization-message]', data.message);
     replacePrimaryAction(row, data, state);
+    reloadOnceForSafeDiscard(data, state);
     return { valid: true, active: active };
   }
 
