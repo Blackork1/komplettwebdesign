@@ -329,6 +329,39 @@ test('Jobpräsentation zeigt bereinigte Fehler und letzte sichere Stufe', () => 
   assert.doesNotMatch(job.lastError, /sk-abcdefgh12345678|Interner Stack/);
 });
 
+test('Jobpräsentation öffnet Bestandsrevisionen statt veröffentlichte Artikel als KI-Entwurf', () => {
+  const [job] = buildJobListPresentation([{
+    id: 3085,
+    job_type: 'optimize_existing_post',
+    status: 'completed',
+    post_id: 40,
+    post_is_ai_draft: false,
+    optimization_revision_id: 3,
+    optimization_revision_status: 'draft',
+    attempts: 1,
+    max_attempts: 3
+  }]);
+
+  assert.equal(job.contentActionLabel, 'Revision öffnen');
+  assert.equal(job.contentUrl, '/admin/content-agent/revisions/3/edit');
+  assert.doesNotMatch(job.contentUrl, /\/drafts\/40/);
+});
+
+test('Jobpräsentation behält die Vorschau für echte unveröffentlichte KI-Entwürfe bei', () => {
+  const [job] = buildJobListPresentation([{
+    id: 51,
+    job_type: 'generate_weekly_draft',
+    status: 'completed',
+    post_id: 19,
+    post_is_ai_draft: true,
+    attempts: 1,
+    max_attempts: 3
+  }]);
+
+  assert.equal(job.contentActionLabel, 'Entwurf öffnen');
+  assert.equal(job.contentUrl, '/admin/content-agent/drafts/19/preview');
+});
+
 test('Jobpräsentation blendet den Retry am manuellen Sicherheitslimit aus', () => {
   const [job] = buildJobListPresentation([{
     id: 8,

@@ -843,6 +843,9 @@ export function createContentAgentAdminRepository(db = pool) {
         SELECT j.id, j.job_type, j.status, j.attempts, j.max_attempts,
                j.last_error, j.created_at, j.updated_at, j.finished_at,
                r.current_stage, r.post_id, r.cost_estimate, r.status AS run_status,
+               (draft_post.id IS NOT NULL) AS post_is_ai_draft,
+               optimization_revision.id AS optimization_revision_id,
+               optimization_revision.status AS optimization_revision_status,
                r.error_report_json,
                r.stage_results_json #> '{review:3,value,issues}' AS latest_review_issues,
                provider_recovery.open_provider_reservation_count,
@@ -867,6 +870,18 @@ export function createContentAgentAdminRepository(db = pool) {
                ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
         FROM content_jobs j
         LEFT JOIN content_runs r ON r.job_id = j.id
+        LEFT JOIN posts draft_post
+          ON draft_post.id = r.post_id
+         AND draft_post.generated_by_ai = TRUE
+         AND draft_post.published = FALSE
+         AND draft_post.content_format = 'static_html'
+        LEFT JOIN LATERAL (
+          SELECT revision.id, revision.status
+          FROM content_post_revisions revision
+          WHERE revision.optimization_job_id = j.id
+          ORDER BY revision.created_at DESC, revision.id DESC
+          LIMIT 1
+        ) optimization_revision ON TRUE
         LEFT JOIN LATERAL (
           SELECT COUNT(*)::int AS open_provider_reservation_count,
                  MIN(substring(entry.key FROM '^budget:[0-9]{4}-[0-9]{2}:(.+)$'))

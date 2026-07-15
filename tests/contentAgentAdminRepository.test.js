@@ -179,6 +179,13 @@ test('Jobliste projiziert nur die eindeutige offene Providerreservierung', async
   assert.match(call.sql, /AS provider_rejected_stage/i);
   assert.match(call.sql, /AS quality_gate_structure_repairable/i);
   assert.match(call.sql, /AS quality_gate_manifest_repairable/i);
+  assert.match(call.sql, /AS post_is_ai_draft/i);
+  assert.match(call.sql, /AS optimization_revision_id/i);
+  assert.match(call.sql, /AS optimization_revision_status/i);
+  assert.match(
+    call.sql,
+    /FROM content_post_revisions revision[\s\S]*revision\.optimization_job_id = j\.id/i
+  );
   assert.match(call.sql, /entry\.value ->> 'status' = 'reserved'/i);
   const projection = call.sql.match(/^SELECT[\s\S]*?FROM content_jobs/i)?.[0] || '';
   assert.doesNotMatch(projection, /r\.stage_results_json\s*(?:,|AS)/i);

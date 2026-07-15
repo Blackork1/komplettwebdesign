@@ -776,6 +776,27 @@ test('Jobliste rendert fehlgeschlagene Jobs ohne explizites canRetry fail-closed
   assert.doesNotMatch(html, /jobs\/77\/retry|Job fortsetzen/);
 });
 
+test('Jobliste rendert ausschließlich das serverseitig geprüfte Inhaltsziel', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 3085,
+      jobType: 'optimize_existing_post',
+      status: 'completed',
+      statusLabel: 'Abgeschlossen',
+      attempts: 1,
+      maxAttempts: 3,
+      lastSafeStageLabel: 'Revision erstellt',
+      postId: 40,
+      contentActionLabel: 'Revision öffnen',
+      contentUrl: '/admin/content-agent/revisions/3/edit'
+    }]
+  });
+
+  assert.match(html, /href="\/admin\/content-agent\/revisions\/3\/edit"[^>]*>Revision öffnen<\/a>/);
+  assert.doesNotMatch(html, /\/admin\/content-agent\/drafts\/40\/preview|Entwurf öffnen/);
+});
+
 test('Jobliste trennt die bestätigte Providerwiederherstellung vom normalen Retry', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
     ...baseLocals,

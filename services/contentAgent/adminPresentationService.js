@@ -1517,6 +1517,20 @@ export function buildJobListPresentation(rows = []) {
       .slice(0, 8)
       .map((issue) => safeError(issue?.message))
       .filter(Boolean);
+    const postId = presentedPositiveInteger(row.post_id);
+    const revisionId = presentedPositiveInteger(row.optimization_revision_id);
+    const contentAction = revisionId !== null
+      && row.optimization_revision_status === 'draft'
+      ? {
+          label: 'Revision öffnen',
+          url: `/admin/content-agent/revisions/${revisionId}/edit`
+        }
+      : postId !== null && row.post_is_ai_draft === true
+        ? {
+            label: 'Entwurf öffnen',
+            url: `/admin/content-agent/drafts/${postId}/preview`
+          }
+        : null;
     return {
       id: row.id,
       jobType: row.job_type,
@@ -1561,7 +1575,9 @@ export function buildJobListPresentation(rows = []) {
       attempts: Number(row.attempts || 0),
       maxAttempts: Number(row.max_attempts || 0),
       lastError: safeError(row.last_error),
-      postId: row.post_id || null,
+      postId,
+      contentActionLabel: contentAction?.label || null,
+      contentUrl: contentAction?.url || null,
       costEur: Number(row.cost_estimate || 0),
       lastSafeStageLabel: STAGE_LABELS[String(row.current_stage || '').split(':')[0]] || 'Noch keine Stufe',
       createdAt: row.created_at,
