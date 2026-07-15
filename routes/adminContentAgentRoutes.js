@@ -50,6 +50,7 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
   router.get('/admin/content-agent/drafts/:id/review-optimization-status', isAdmin, controller.reviewOptimizationStatusAction);
+  router.get('/admin/content-agent/existing-content/:id/performance', isAdmin, controller.articlePerformancePage);
   router.get('/admin/content-agent/existing-content/:id/optimization-status', isAdmin, controller.existingContentOptimizationStatusAction);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
   router.post('/admin/content-agent/jobs/manual-draft', isAdmin, verifyCsrfToken, controller.enqueueManualDraftAction);

@@ -801,14 +801,231 @@ function presentRevisionOutcome(row) {
   };
 }
 
+const ARTICLE_PERFORMANCE_HEADLINES = Object.freeze({
+  visibility_opportunity: 'Organische Sichtbarkeit aufbauen',
+  snippet_or_intent_opportunity: 'Suchergebnis oder Suchintention prüfen',
+  ranking_opportunity: 'Rankingchance gezielt nutzen',
+  content_or_cta_opportunity: 'Artikelwirkung und CTA prüfen',
+  contact_path_opportunity: 'Anfrageweg prüfen'
+});
+
+const ARTICLE_PERFORMANCE_STATUS = Object.freeze({
+  collecting_data: 'Daten werden noch gesammelt',
+  insufficient_impressions: 'Noch nicht genügend Impressionen',
+  positive: 'Positives Muster erkannt',
+  stable: 'Unauffällige Entwicklung',
+  opportunity: 'Optimierungspotenzial erkannt'
+});
+
+function performanceNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
+function performanceWindow(raw, days, hasSnapshot) {
+  const metrics = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const coverageDayCount = Math.min(days, Math.max(0, Math.trunc(performanceNumber(metrics.coverageDayCount))));
+  const impressions = performanceNumber(metrics.impressions);
+  const clicks = performanceNumber(metrics.clicks);
+  const ctr = performanceNumber(metrics.ctr);
+  const averagePosition = performanceNumber(metrics.averagePosition);
+  const ctaClicks = performanceNumber(metrics.ctaClicks);
+  const contactSubmits = performanceNumber(metrics.contactSubmits);
+  const complete = metrics.complete === true && coverageDayCount >= days;
+  return {
+    days,
+    label: `${days} Tage`,
+    hasData: hasSnapshot && coverageDayCount > 0,
+    complete,
+    coverageDayCount,
+    emptyLabel: !hasSnapshot
+      ? 'Noch keine GSC-Daten'
+      : complete ? null : `${coverageDayCount} von ${days} Tagen`,
+    impressions,
+    impressionsLabel: germanNumber(impressions, { maximumFractionDigits: 0 }),
+    clicks,
+    clicksLabel: germanNumber(clicks, { maximumFractionDigits: 0 }),
+    ctr,
+    ctrLabel: germanNumber(ctr, { style: 'percent', maximumFractionDigits: 1 }),
+    averagePosition,
+    averagePositionLabel: averagePosition > 0
+      ? germanNumber(averagePosition, { maximumFractionDigits: 1 })
+      : '–',
+    ctaClicks,
+    ctaClicksLabel: germanNumber(ctaClicks, { maximumFractionDigits: 0 }),
+    contactSubmits,
+    contactSubmitsLabel: germanNumber(contactSubmits, { maximumFractionDigits: 0 })
+  };
+}
+
+function performanceHeadline(snapshot) {
+  if (!snapshot) return 'Noch keine GSC-Daten';
+  const diagnoses = Array.isArray(snapshot.diagnoses_json) ? snapshot.diagnoses_json : [];
+  const diagnosis = diagnoses.find((item) => ARTICLE_PERFORMANCE_HEADLINES[item?.code]);
+  if (diagnosis) return ARTICLE_PERFORMANCE_HEADLINES[diagnosis.code];
+  return ARTICLE_PERFORMANCE_STATUS[snapshot.status] || 'Performance wird ausgewertet';
+}
+
+export function presentArticlePerformanceSummary(snapshot) {
+  const hasSnapshot = Boolean(snapshot && typeof snapshot === 'object');
+  const windows = hasSnapshot && snapshot.windows_json && typeof snapshot.windows_json === 'object'
+    ? snapshot.windows_json
+    : {};
+  return {
+    hasSnapshot,
+    headline: performanceHeadline(hasSnapshot ? snapshot : null),
+    status: hasSnapshot ? sanitizeLearningText(snapshot.status, 32) || 'unknown' : 'missing',
+    isEligible: hasSnapshot && snapshot.data_eligible === true,
+    learningEligible: hasSnapshot && snapshot.learning_eligible === true,
+    evaluatedThroughDateLabel: hasSnapshot ? berlinDate(snapshot.evaluated_through_date) : null,
+    articleAgeDays: hasSnapshot ? Math.max(0, Number(snapshot.article_age_days) || 0) : null,
+    windows: [7, 14, 28].map((days) => performanceWindow(windows[days] ?? windows[String(days)], days, hasSnapshot))
+  };
+}
+
+function prefixedPerformanceSnapshot(row = {}) {
+  if (!row.performance_snapshot_id) return null;
+  return {
+    id: row.performance_snapshot_id,
+    post_id: row.id,
+    evaluated_through_date: row.performance_evaluated_through_date,
+    article_age_days: row.performance_article_age_days,
+    windows_json: row.performance_windows_json,
+    previous_windows_json: row.performance_previous_windows_json,
+    cohort_json: row.performance_cohort_json,
+    status: row.performance_status,
+    diagnoses_json: row.performance_diagnoses_json,
+    positive_signals_json: row.performance_positive_signals_json,
+    data_eligible: row.performance_data_eligible,
+    learning_eligible: row.performance_learning_eligible,
+    explanation_status: row.performance_explanation_status,
+    explanation_json: row.performance_explanation_json
+  };
+}
+
+function performanceDelta(current, previous, key, options = {}) {
+  const currentValue = performanceNumber(current?.[key]);
+  const previousValue = performanceNumber(previous?.[key]);
+  const difference = currentValue - previousValue;
+  return {
+    currentLabel: germanNumber(currentValue, options),
+    previousLabel: germanNumber(previousValue, options),
+    differenceLabel: germanNumber(difference, { ...options, signDisplay: 'exceptZero' }),
+    direction: difference > 0 ? 'up' : difference < 0 ? 'down' : 'same'
+  };
+}
+
+function performanceQueries(snapshot) {
+  const current28 = snapshot?.windows_json?.[28] ?? snapshot?.windows_json?.['28'] ?? {};
+  return (Array.isArray(current28.queries) ? current28.queries : []).slice(0, 10).map((row) => {
+    const impressions = performanceNumber(row?.impressions);
+    const clicks = performanceNumber(row?.clicks);
+    const ctr = performanceNumber(row?.ctr);
+    const averagePosition = performanceNumber(row?.averagePosition);
+    return {
+      query: sanitizeLearningText(row?.query, 180) || 'Unbekannte Suchanfrage',
+      impressionsLabel: germanNumber(impressions, { maximumFractionDigits: 0 }),
+      clicksLabel: germanNumber(clicks, { maximumFractionDigits: 0 }),
+      ctrLabel: germanNumber(ctr, { style: 'percent', maximumFractionDigits: 1 }),
+      averagePositionLabel: averagePosition > 0
+        ? germanNumber(averagePosition, { maximumFractionDigits: 1 })
+        : '–'
+    };
+  });
+}
+
+export function presentArticlePerformanceDetail(raw = {}) {
+  const post = raw.post && typeof raw.post === 'object' ? raw.post : {};
+  const snapshot = raw.snapshot && typeof raw.snapshot === 'object' ? raw.snapshot : null;
+  const summary = presentArticlePerformanceSummary(snapshot);
+  const current28 = snapshot?.windows_json?.[28] ?? snapshot?.windows_json?.['28'] ?? {};
+  const previous28 = snapshot?.previous_windows_json?.[28] ?? snapshot?.previous_windows_json?.['28'] ?? {};
+  const cohort = snapshot?.cohort_json && typeof snapshot.cohort_json === 'object'
+    ? snapshot.cohort_json
+    : {};
+  const explanation = snapshot?.explanation_status === 'ready'
+    && snapshot.explanation_json && typeof snapshot.explanation_json === 'object'
+    ? snapshot.explanation_json
+    : {};
+  const strengths = (Array.isArray(explanation.strengths) ? explanation.strengths : [])
+    .slice(0, 4).map((item) => sanitizeLearningText(item, 500)).filter(Boolean);
+  const improvements = (Array.isArray(explanation.improvements) ? explanation.improvements : [])
+    .slice(0, 4).map((item) => sanitizeLearningText(item, 500)).filter(Boolean);
+  const learning = raw.learning && typeof raw.learning === 'object' ? raw.learning : {};
+  const pendingCount = Math.max(0, Number(learning.pendingCount) || 0);
+  const activeCount = Math.max(0, Number(learning.activeCount) || 0);
+  return {
+    post: {
+      id: safePositiveInteger(post.id),
+      title: sanitizeLearningText(post.title, 240) || 'Unbenannter Artikel',
+      slug: sanitizeLearningText(post.slug, 240) || '',
+      liveUrl: post.slug ? `/blog/${encodeURIComponent(String(post.slug))}` : null,
+      contentCluster: sanitizeLearningText(post.contentCluster, 120) || 'Nicht zugeordnet',
+      primaryKeyword: sanitizeLearningText(post.primaryKeyword, 180) || null,
+      searchIntent: sanitizeLearningText(post.searchIntent, 80) || null,
+      publishedAtLabel: berlinDate(post.publishedAt),
+      updatedAtLabel: berlinDate(post.updatedAt)
+    },
+    ...summary,
+    summaryText: sanitizeLearningText(explanation.summary, 700)
+      || (summary.hasSnapshot ? 'Die Kennzahlen werden regelbasiert und ohne vorschnelle Kausalannahmen eingeordnet.' : 'Für diesen Artikel liegt noch kein täglicher Performance-Snapshot vor.'),
+    windows: summary.windows,
+    comparison: {
+      available: previous28?.complete === true,
+      impressions: performanceDelta(current28, previous28, 'impressions', { maximumFractionDigits: 0 }),
+      clicks: performanceDelta(current28, previous28, 'clicks', { maximumFractionDigits: 0 }),
+      ctr: performanceDelta(current28, previous28, 'ctr', { style: 'percent', maximumFractionDigits: 1 }),
+      averagePosition: performanceDelta(current28, previous28, 'averagePosition', { maximumFractionDigits: 1 })
+    },
+    cohort: {
+      available: cohort.available === true,
+      sourceLabel: cohort.source === 'cluster' ? 'Ähnliche Artikel im Themencluster' : 'Artikel ähnlichen Alters',
+      size: Math.max(0, Number(cohort.size) || 0),
+      medianImpressionsLabel: germanNumber(performanceNumber(cohort.medianImpressions), { maximumFractionDigits: 0 })
+    },
+    funnel: [
+      { label: 'Impressionen', valueLabel: germanNumber(performanceNumber(current28.impressions), { maximumFractionDigits: 0 }) },
+      { label: 'Organische Klicks', valueLabel: germanNumber(performanceNumber(current28.clicks), { maximumFractionDigits: 0 }) },
+      { label: 'CTA-Klicks', valueLabel: germanNumber(performanceNumber(current28.ctaClicks), { maximumFractionDigits: 0 }) },
+      { label: 'Kontaktanfragen', valueLabel: germanNumber(performanceNumber(current28.contactSubmits), { maximumFractionDigits: 0 }) }
+    ],
+    queries: performanceQueries(snapshot),
+    strengths,
+    improvements,
+    nextCheck: sanitizeLearningText(explanation.nextCheck, 500)
+      || (summary.isEligible ? 'Nach der nächsten vollständigen Messperiode erneut prüfen.' : 'Zunächst weitere belastbare Daten sammeln.'),
+    explanationReady: snapshot?.explanation_status === 'ready',
+    opportunity: raw.opportunity ? {
+      typeLabel: raw.opportunity.opportunityType === 'meta_refresh' ? 'Meta-Daten prüfen' : 'Inhalt prüfen',
+      scoreLabel: germanNumber(performanceNumber(raw.opportunity.score), { maximumFractionDigits: 0 }),
+      statusLabel: raw.opportunity.status === 'open' ? 'Offen' : 'Bereits bearbeitet'
+    } : null,
+    learning: {
+      pendingCount,
+      activeCount,
+      statusLabel: activeCount > 0
+        ? `${activeCount} aktive Lernregel${activeCount === 1 ? '' : 'n'}`
+        : pendingCount > 0
+          ? `${pendingCount} Lernvorschlag${pendingCount === 1 ? '' : 'e'} wartet auf Freigabe`
+          : summary.learningEligible ? 'Als Lernsignal freigegeben' : 'Noch kein belastbares Lernsignal',
+      dashboardUrl: '/admin/content-agent/learning-rules'
+    }
+  };
+}
+
 export function buildExistingContentListPresentation(rows = []) {
   return rows.map((row) => {
     const outcome = presentRevisionOutcome(row);
+    const performance = presentArticlePerformanceSummary(prefixedPerformanceSnapshot(row));
     return ({
       id: row.id,
       title: row.title,
       slug: row.slug,
       updatedAt: row.updated_at,
+      performance: {
+        ...performance,
+        detailUrl: `/admin/content-agent/existing-content/${row.id}/performance`
+      },
       optimization: presentExistingContentOptimizationState(row),
       ...(outcome ? { outcome } : {}),
       ...(Object.hasOwn(row, 'audit_id') ? {

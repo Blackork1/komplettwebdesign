@@ -379,7 +379,20 @@ export function createContentAgentAdminRepository(db = pool) {
                outcome.outcome_followup_average_position,
                outcome.outcome_changes_json,
                outcome.outcome_new_queries_json,
-               outcome.outcome_lost_queries_json
+               outcome.outcome_lost_queries_json,
+               performance.id AS performance_snapshot_id,
+               performance.evaluated_through_date AS performance_evaluated_through_date,
+               performance.article_age_days AS performance_article_age_days,
+               performance.windows_json AS performance_windows_json,
+               performance.previous_windows_json AS performance_previous_windows_json,
+               performance.cohort_json AS performance_cohort_json,
+               performance.status AS performance_status,
+               performance.diagnoses_json AS performance_diagnoses_json,
+               performance.positive_signals_json AS performance_positive_signals_json,
+               performance.data_eligible AS performance_data_eligible,
+               performance.learning_eligible AS performance_learning_eligible,
+               performance.explanation_status AS performance_explanation_status,
+               performance.explanation_json AS performance_explanation_json
         FROM posts p
         LEFT JOIN LATERAL (
           SELECT a.id, a.score, a.status, a.findings_json
@@ -463,11 +476,137 @@ export function createContentAgentAdminRepository(db = pool) {
           ORDER BY outcome.applied_at DESC, outcome.revision_id DESC
           LIMIT 1
         ) outcome ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT snapshot.id, snapshot.evaluated_through_date,
+                 snapshot.article_age_days, snapshot.windows_json,
+                 snapshot.previous_windows_json, snapshot.cohort_json,
+                 snapshot.status, snapshot.diagnoses_json,
+                 snapshot.positive_signals_json, snapshot.data_eligible,
+                 snapshot.learning_eligible, snapshot.explanation_status,
+                 snapshot.explanation_json
+          FROM content_article_performance_snapshots snapshot
+          WHERE snapshot.post_id = p.id
+          ORDER BY snapshot.evaluated_through_date DESC, snapshot.id DESC
+          LIMIT 1
+        ) performance ON TRUE
         WHERE p.published = TRUE
         ORDER BY p.updated_at DESC
         LIMIT 100
       `);
       return rows;
+    },
+
+    async getArticlePerformanceDetail(postId) {
+      const normalizedPostId = positivePostgresInteger(postId, 'postId');
+      const { rows } = await db.query(`
+        SELECT p.id, p.title, p.slug, p.published_at, p.updated_at,
+               metadata.content_cluster, metadata.primary_keyword,
+               metadata.search_intent,
+               snapshot.id AS snapshot_id,
+               snapshot.evaluated_through_date,
+               snapshot.article_age_days,
+               snapshot.windows_json,
+               snapshot.previous_windows_json,
+               snapshot.cohort_json,
+               snapshot.status AS performance_status,
+               snapshot.diagnoses_json,
+               snapshot.positive_signals_json,
+               snapshot.data_eligible,
+               snapshot.learning_eligible,
+               snapshot.explanation_status,
+               snapshot.explanation_json,
+               opportunity.id AS opportunity_id,
+               opportunity.opportunity_type,
+               opportunity.score AS opportunity_score,
+               opportunity.status AS opportunity_status,
+               learning.pending_count,
+               learning.active_count
+        FROM posts p
+        LEFT JOIN content_post_metadata metadata ON metadata.post_id = p.id
+        LEFT JOIN LATERAL (
+          SELECT performance.*
+          FROM content_article_performance_snapshots performance
+          WHERE performance.post_id = p.id
+          ORDER BY performance.evaluated_through_date DESC, performance.id DESC
+          LIMIT 1
+        ) snapshot ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT candidate.id, candidate.opportunity_type,
+                 candidate.score, candidate.status
+          FROM content_opportunities candidate
+          WHERE candidate.post_id = p.id
+            AND candidate.analysis_key LIKE 'article-performance:' || p.id::text || ':%'
+          ORDER BY candidate.created_at DESC, candidate.id DESC
+          LIMIT 1
+        ) opportunity ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT
+            (
+              SELECT COUNT(*)::integer
+              FROM content_learning_rule_proposals proposal
+              WHERE proposal.status = 'pending'
+                AND proposal.evidence_json @> jsonb_build_array(
+                  jsonb_build_object('post_id', p.id)
+                )
+            ) AS pending_count,
+            (
+              SELECT COUNT(DISTINCT rule.id)::integer
+              FROM content_learning_rules rule
+              WHERE rule.status = 'active'
+                AND EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(
+                    COALESCE(snapshot.diagnoses_json, '[]'::jsonb)
+                    || COALESCE(snapshot.positive_signals_json, '[]'::jsonb)
+                  ) signal
+                  WHERE signal ->> 'categoryKey' = rule.category_key
+                )
+            ) AS active_count
+        ) learning ON TRUE
+        WHERE p.id = $1
+          AND p.published = TRUE
+        LIMIT 1
+      `, [normalizedPostId]);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        post: {
+          id: row.id,
+          title: row.title,
+          slug: row.slug,
+          publishedAt: row.published_at,
+          updatedAt: row.updated_at,
+          contentCluster: row.content_cluster,
+          primaryKeyword: row.primary_keyword,
+          searchIntent: row.search_intent
+        },
+        snapshot: row.snapshot_id ? {
+          id: row.snapshot_id,
+          post_id: row.id,
+          evaluated_through_date: row.evaluated_through_date,
+          article_age_days: row.article_age_days,
+          windows_json: row.windows_json,
+          previous_windows_json: row.previous_windows_json,
+          cohort_json: row.cohort_json,
+          status: row.performance_status,
+          diagnoses_json: row.diagnoses_json,
+          positive_signals_json: row.positive_signals_json,
+          data_eligible: row.data_eligible,
+          learning_eligible: row.learning_eligible,
+          explanation_status: row.explanation_status,
+          explanation_json: row.explanation_json
+        } : null,
+        opportunity: row.opportunity_id ? {
+          id: row.opportunity_id,
+          opportunityType: row.opportunity_type,
+          score: row.opportunity_score,
+          status: row.opportunity_status
+        } : null,
+        learning: {
+          pendingCount: Number(row.pending_count) || 0,
+          activeCount: Number(row.active_count) || 0
+        }
+      };
     },
 
     async getExistingContentOptimizationState(postId) {

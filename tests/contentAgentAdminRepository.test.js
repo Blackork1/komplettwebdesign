@@ -58,6 +58,62 @@ function createTransactionDatabase(handler, { published = true, hasDraft = false
   };
 }
 
+test('Bestandsliste lädt den neuesten Performance-Snapshot ohne N+1-Abfragen', async () => {
+  const db = {
+    calls: [],
+    async query(sql, params = []) {
+      this.calls.push({ sql: normalizeSql(sql), params });
+      return { rows: [{ id: 7, performance_snapshot_id: 19 }] };
+    }
+  };
+  const repository = createContentAgentAdminRepository(db);
+  const rows = await repository.listExistingContent();
+
+  assert.equal(rows[0].performance_snapshot_id, 19);
+  assert.equal(db.calls.length, 1);
+  assert.match(db.calls[0].sql, /LEFT JOIN LATERAL \( SELECT snapshot\.id/i);
+  assert.match(db.calls[0].sql, /ORDER BY snapshot\.evaluated_through_date DESC/i);
+});
+
+test('Performance-Detail liefert nur gebundene Artikel-, Snapshot- und Lernfelder', async () => {
+  const db = {
+    calls: [],
+    async query(sql, params = []) {
+      this.calls.push({ sql: normalizeSql(sql), params });
+      return { rows: [{
+        id: 7,
+        title: 'Artikel',
+        slug: 'artikel',
+        content_cluster: 'SEO',
+        snapshot_id: 19,
+        evaluated_through_date: '2026-07-15',
+        article_age_days: 31,
+        windows_json: { 28: { impressions: 50 } },
+        previous_windows_json: {},
+        cohort_json: {},
+        performance_status: 'stable',
+        diagnoses_json: [],
+        positive_signals_json: [],
+        data_eligible: true,
+        learning_eligible: true,
+        explanation_status: 'ready',
+        explanation_json: { summary: 'Sicher.' },
+        pending_count: 1,
+        active_count: 0
+      }] };
+    }
+  };
+  const repository = createContentAgentAdminRepository(db);
+  const detail = await repository.getArticlePerformanceDetail(7);
+
+  assert.equal(detail.post.id, 7);
+  assert.equal(detail.snapshot.id, 19);
+  assert.deepEqual(detail.learning, { pendingCount: 1, activeCount: 0 });
+  assert.deepEqual(db.calls[0].params, [7]);
+  assert.doesNotMatch(db.calls[0].sql, /SELECT\s+\*/i);
+  await assert.rejects(repository.getArticlePerformanceDetail('7'), /positive PostgreSQL/);
+});
+
 test('Dashboardabfragen laden keine Rohpayloads, Artikel oder Modellantworten', async () => {
   const db = createQueryRecorder();
   const repository = createContentAgentAdminRepository(db);

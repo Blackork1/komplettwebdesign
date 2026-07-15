@@ -25,6 +25,7 @@ const GET_PATHS = [
   '/admin/content-agent/drafts/:id/edit',
   '/admin/content-agent/drafts/:id/review-optimization-status',
   '/admin/content-agent/existing-content/:id/optimization-status',
+  '/admin/content-agent/existing-content/:id/performance',
   '/admin/content-agent/revisions/:id/edit'
 ];
 

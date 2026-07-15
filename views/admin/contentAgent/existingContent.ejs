@@ -27,7 +27,20 @@
           };
         %>
           <tr data-existing-content-optimization data-state="<%= optimization.state %>" data-active="<%= optimization.active === true ? 'true' : 'false' %>"<% if (optimization.active === true) { %> data-status-url="/admin/content-agent/existing-content/<%= item.id %>/optimization-status"<% } %>>
-            <td><strong><%= item.title %></strong><br><code><%= item.slug %></code></td>
+            <td>
+              <strong><%= item.title %></strong><br><code><%= item.slug %></code>
+              <% if (item.performance) { %>
+                <div class="content-performance-mini mt-3" aria-label="Performance für <%= item.title %>">
+                  <strong><%= item.performance.headline %></strong>
+                  <div class="content-performance-mini__windows">
+                    <% item.performance.windows.forEach((metric) => { %>
+                      <span><b><%= metric.label %></b><%= metric.hasData ? `${metric.impressionsLabel} Impressionen · ${metric.clicksLabel} Klicks` : metric.emptyLabel %></span>
+                    <% }) %>
+                  </div>
+                  <a href="<%= item.performance.detailUrl %>">Performance im Detail öffnen</a>
+                </div>
+              <% } %>
+            </td>
             <td>
               <% if (item.auditId) { %><span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span><% } else { %><span class="content-agent-quiet">Noch nicht geprüft</span><% } %>
               <div class="mt-2"><strong data-existing-content-optimization-label><%= optimization.statusLabel %></strong><br><span data-existing-content-optimization-stage><%= optimization.stageLabel %></span><br><small class="content-agent-quiet" data-existing-content-optimization-message><%= optimization.message %></small></div>

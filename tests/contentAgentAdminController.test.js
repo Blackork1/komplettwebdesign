@@ -1231,6 +1231,33 @@ test('Bestehende Inhalte rendert ein sicheres Präsentationsmodell statt 501', a
   });
 });
 
+test('Artikel-Performance rendert ausschließlich das sichere Detailmodell', async () => {
+  const raw = { post: { id: 5, title: 'Artikel' }, snapshot: { id: 9 } };
+  const safe = { post: { id: 5, title: 'Artikel' }, hasSnapshot: true };
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: { async getArticlePerformanceDetail(postId) { assert.equal(postId, 5); return raw; } },
+    presentation: {
+      presentArticlePerformanceDetail(value) { assert.equal(value, raw); return safe; }
+    }
+  }));
+  const res = response();
+  await controller.articlePerformancePage({ params: { id: '5' } }, res, assert.fail);
+  assert.deepEqual(res.rendered, {
+    view: 'admin/contentAgent/articlePerformance',
+    locals: { performance: safe }
+  });
+});
+
+test('Artikel-Performance liefert für unbekannte veröffentlichte Artikel 404', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: { async getArticlePerformanceDetail() { return null; } },
+    presentation: { presentArticlePerformanceDetail() { assert.fail('Präsentation darf nicht laufen'); } }
+  }));
+  const res = response();
+  await controller.articlePerformancePage({ params: { id: '5' } }, res, assert.fail);
+  assert.equal(res.statusCode, 404);
+});
+
 test('Startaktion erzwingt Agent-Aktivierung und ausschließlich serverseitigen Minimalpayload', async () => {
   let enqueued = null;
   let prepared = null;

@@ -570,6 +570,25 @@ export function createAdminContentAgentController(dependencies) {
       }
     },
 
+    async articlePerformancePage(req, res, next) {
+      if (typeof adminRepository?.getArticlePerformanceDetail !== 'function'
+          || typeof presentation?.presentArticlePerformanceDetail !== 'function') {
+        return unavailable(res);
+      }
+      try {
+        const postId = postgresIntegerId(req.params.id);
+        const rawPerformance = await adminRepository.getArticlePerformanceDetail(postId);
+        if (!rawPerformance) {
+          return res.status(404).send('Veröffentlichter Artikel nicht gefunden.');
+        }
+        return res.render('admin/contentAgent/articlePerformance', {
+          performance: presentation.presentArticlePerformanceDetail(rawPerformance)
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
     async existingContentOptimizationStatusAction(req, res, next) {
       res.set('Cache-Control', 'no-store');
       if (typeof adminRepository?.getExistingContentOptimizationState !== 'function'

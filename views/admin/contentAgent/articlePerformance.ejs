@@ -1,0 +1,85 @@
+<%- include('../../partials/admin_header') %>
+<%
+  const safePerformance = performance || {};
+  const safePost = safePerformance.post || {};
+  const safeWindows = Array.isArray(safePerformance.windows) ? safePerformance.windows : [];
+  const safeFunnel = Array.isArray(safePerformance.funnel) ? safePerformance.funnel : [];
+  const safeQueries = Array.isArray(safePerformance.queries) ? safePerformance.queries : [];
+  const safeStrengths = Array.isArray(safePerformance.strengths) ? safePerformance.strengths : [];
+  const safeImprovements = Array.isArray(safePerformance.improvements) ? safePerformance.improvements : [];
+%>
+<div class="content-agent-page content-agent-performance">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Artikel-Performance · Search Console &amp; Anfrageweg</p>
+      <h1 class="admin-page-title mb-1"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> <%= safePost.title %></h1>
+      <p class="content-agent-lead"><%= safePerformance.headline %><% if (safePerformance.evaluatedThroughDateLabel) { %> · Datenstand <%= safePerformance.evaluatedThroughDateLabel %><% } %></p>
+    </div>
+    <div class="content-agent-actions">
+      <a class="btn btn-outline-secondary" href="/admin/content-agent/existing-content"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Zur Bestandsübersicht</a>
+      <% if (safePost.liveUrl) { %><a class="btn btn-primary" href="<%= safePost.liveUrl %>" target="_blank" rel="noopener">Liveartikel öffnen</a><% } %>
+    </div>
+  </header>
+
+  <%- include('_tabs', { activeTab: 'drafts' }) %>
+  <div class="content-agent-subnav"><a href="/admin/content-agent/drafts">KI-Entwürfe</a><a class="is-active" href="/admin/content-agent/existing-content" aria-current="page">Bestehende Inhalte</a></div>
+
+  <% if (!safePerformance.hasSnapshot) { %>
+    <div class="content-agent-empty"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><div><strong>Noch keine GSC-Daten für diesen Artikel</strong><p>Nach der nächsten täglichen Auswertung erscheinen hier die Zeiträume 7, 14 und 28 Tage. Der Artikel wird bis dahin nicht negativ bewertet.</p></div></div>
+  <% } else { %>
+    <section class="content-agent-panel" aria-labelledby="performance-periods-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Direkter Überblick</p><h2 id="performance-periods-heading">7, 14 und 28 Tage</h2></div><span class="content-agent-readonly"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Datenbasiert, keine Kausalitätsbehauptung</span></div>
+      <div class="content-agent-performance-grid">
+        <% safeWindows.forEach((metric) => { %>
+          <article class="content-agent-performance-card">
+            <header><h3><%= metric.label %></h3><span class="content-agent-status <%= metric.complete ? 'is-success' : 'is-warning' %>"><%= metric.complete ? 'Vollständig' : metric.emptyLabel %></span></header>
+            <dl>
+              <div><dt>Impressionen</dt><dd><%= metric.impressionsLabel %></dd></div>
+              <div><dt>Klicks</dt><dd><%= metric.clicksLabel %></dd></div>
+              <div><dt>CTR</dt><dd><%= metric.ctrLabel %></dd></div>
+              <div><dt>Ø Position</dt><dd><%= metric.averagePositionLabel %></dd></div>
+            </dl>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="article-effect-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Artikelwirkung</p><h2 id="article-effect-heading">Vom Suchergebnis bis zur Anfrage</h2></div></div>
+      <p class="content-agent-lead"><%= safePerformance.summaryText %></p>
+      <div class="content-agent-performance-funnel">
+        <% safeFunnel.forEach((stage, index) => { %><article><span><%= index + 1 %></span><div><strong><%= stage.valueLabel %></strong><small><%= stage.label %></small></div></article><% }) %>
+      </div>
+      <div class="content-agent-performance-insights">
+        <article><h3><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Was gut läuft</h3><% if (safeStrengths.length) { %><ul><% safeStrengths.forEach((item) => { %><li><%= item %></li><% }) %></ul><% } else { %><p>Noch kein belastbares positives Muster erkannt.</p><% } %></article>
+        <article><h3><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> Was geprüft werden sollte</h3><% if (safeImprovements.length) { %><ul><% safeImprovements.forEach((item) => { %><li><%= item %></li><% }) %></ul><% } else { %><p>Aktuell ist keine konkrete Verschlechterung belegt.</p><% } %></article>
+      </div>
+      <div class="content-agent-notice mt-3"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i><div><strong>Nächster sinnvoller Schritt</strong><p><%= safePerformance.nextCheck %></p></div></div>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="performance-comparison-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Einordnung</p><h2 id="performance-comparison-heading">Vorperiode und Vergleichsgruppe</h2></div></div>
+      <% if (safePerformance.comparison && safePerformance.comparison.available) { %>
+        <div class="content-agent-performance-grid is-comparison">
+          <% [['Impressionen', safePerformance.comparison.impressions], ['Klicks', safePerformance.comparison.clicks], ['CTR', safePerformance.comparison.ctr], ['Ø Position', safePerformance.comparison.averagePosition]].forEach(([label, metric]) => { %>
+            <article class="content-agent-performance-card"><h3><%= label %></h3><p class="content-agent-performance-delta"><strong><%= metric.currentLabel %></strong><span>vorher <%= metric.previousLabel %> · Änderung <%= metric.differenceLabel %></span></p></article>
+          <% }) %>
+        </div>
+      <% } else { %><p class="content-agent-quiet">Für einen belastbaren Vergleich fehlen noch vollständige 28-Tage-Vorperioden.</p><% } %>
+      <% if (safePerformance.cohort && safePerformance.cohort.available) { %><p class="mt-3"><strong><%= safePerformance.cohort.sourceLabel %>:</strong> <%= safePerformance.cohort.size %> Vergleichsartikel · Median <%= safePerformance.cohort.medianImpressionsLabel %> Impressionen.</p><% } else { %><p class="content-agent-quiet mt-3">Noch keine ausreichend große Vergleichsgruppe verfügbar.</p><% } %>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="performance-queries-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Suchintention</p><h2 id="performance-queries-heading">Wichtigste Suchanfragen</h2></div></div>
+      <% if (!safeQueries.length) { %><div class="content-agent-empty"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><div><strong>Noch keine einzelnen Suchanfragen</strong><p>Bei sehr kleinen Datenmengen schützt Google einzelne Abfragen oder es liegen noch keine Impressionen vor.</p></div></div><% } else { %>
+        <div class="table-responsive content-agent-performance-table"><table class="table content-agent-table align-middle"><caption>Maximal zehn Suchanfragen aus dem aktuellen 28-Tage-Zeitraum</caption><thead><tr><th scope="col">Suchanfrage</th><th scope="col">Impressionen</th><th scope="col">Klicks</th><th scope="col">CTR</th><th scope="col">Ø Position</th></tr></thead><tbody><% safeQueries.forEach((query) => { %><tr><td><strong><%= query.query %></strong></td><td><%= query.impressionsLabel %></td><td><%= query.clicksLabel %></td><td><%= query.ctrLabel %></td><td><%= query.averagePositionLabel %></td></tr><% }) %></tbody></table></div>
+      <% } %>
+    </section>
+
+    <section class="content-agent-panel" aria-labelledby="performance-learning-heading">
+      <div class="content-agent-panel__head"><div><p class="content-agent-eyebrow">Lernkurve</p><h2 id="performance-learning-heading">Was zukünftige Artikel daraus lernen</h2></div><a href="<%= safePerformance.learning.dashboardUrl %>">Lernregeln öffnen</a></div>
+      <div class="content-agent-notice"><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><div><strong><%= safePerformance.learning.statusLabel %></strong><p>Ein einzelner Artikel ändert keine Schreibregel. Erst dasselbe belastbare Muster in mindestens drei Artikeln erzeugt einen Vorschlag, der im Adminbereich freigegeben werden muss.</p></div></div>
+    </section>
+  <% } %>
+</div>
+<%- include('../../partials/admin_footer') %>
