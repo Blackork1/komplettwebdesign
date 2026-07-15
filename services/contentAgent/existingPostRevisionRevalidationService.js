@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { ReviewOutputSchema } from './articleSchemas.js';
 import {
   canonicalJson,
@@ -116,6 +117,12 @@ function reviewPasses(review, minimumScore, unresolvedAuditCodes) {
     && Array.isArray(review.issues)
     && !review.issues.some((issue) => issue?.blocking === true || issue?.autoPublishBlocking === true)
     && unresolvedAuditCodes.length === 0;
+}
+
+function berlinCalendarYear(startedAt) {
+  const instant = DateTime.fromISO(String(startedAt || ''), { setZone: true });
+  if (!instant.isValid) return null;
+  return instant.setZone('Europe/Berlin').year;
 }
 
 function persistedCleanupReview(run, fence) {
@@ -473,10 +480,14 @@ export async function runExistingPostRevisionRevalidationJob(input = {}, depende
   }
 
   const originalAuditCodes = auditCodes(context.audit);
+  const currentYear = berlinCalendarYear(runtimeSnapshot.startedAt);
+  if (currentYear === null) {
+    return failClosedOrPreserveCompleteCleanup('CONTENT_REVISION_REVALIDATION_CONTEXT_INVALID');
+  }
   const currentAudit = auditExistingPost({
     post: postFromSnapshot(context.post, context.revision.snapshot_json),
     inventory: runtimeSnapshot.allowedInternalLinks.map((url) => ({ url })),
-    currentYear: new Date(runtimeSnapshot.startedAt).getUTCFullYear()
+    currentYear
   });
   const reaudit = evaluateExistingContentReaudit({
     originalFindings: context.audit.findings_json,

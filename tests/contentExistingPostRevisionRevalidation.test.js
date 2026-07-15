@@ -1859,6 +1859,35 @@ test('Re-Audit blockiert fortbestehende ursprüngliche sowie neue Preis- und Jah
   }
 });
 
+test('Re-Audit verwendet am Jahreswechsel das Kalenderjahr aus Europe/Berlin statt UTC', async () => {
+  const fixture = runnerFixture();
+  const berlinNewYearInstant = '2026-12-31T23:30:00.000Z';
+  const content = '<section><h2>Planung</h2><p>Bestehender Inhalt für 2026.</p></section>';
+  fixture.runtimeSnapshot = {
+    ...fixture.runtimeSnapshot,
+    startedAt: berlinNewYearInstant
+  };
+  fixture.context.runtimeSnapshot = structuredClone(fixture.runtimeSnapshot);
+  fixture.context.audit.findings_json = [];
+  fixture.context.post.content = content;
+  fixture.context.revision.snapshot_json.fields.content = content;
+  fixture.fingerprint = snapshotFingerprint(fixture.context.revision.snapshot_json);
+  fixture.context.revision.optimization_report_json.revalidation.snapshotFingerprint = fixture.fingerprint;
+  fixture.claim.payload_json.snapshot_fingerprint = fixture.fingerprint;
+  const { dependencies, state } = runnerDependencies(fixture);
+
+  const result = await runExistingPostRevisionRevalidationJob({
+    claim: fixture.claim,
+    run: { id: 197, status: 'running' },
+    runtimeSnapshot: fixture.runtimeSnapshot,
+    leaseGuard: async () => true
+  }, dependencies);
+
+  assert.equal(result.status, 'needs_manual_attention');
+  assert.equal(result.code, 'CONTENT_REVISION_REVALIDATION_QUALITY_FAILED');
+  assert.equal(state.providerCalls, 0);
+});
+
 test('Re-Audit erlaubt einen neuen nichtblockierenden lokalen Hinweis', async () => {
   const fixture = runnerFixture();
   fixture.context.audit.findings_json = [];
