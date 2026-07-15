@@ -128,9 +128,9 @@ p > strong {
 }
 
 /* ===== Layout-Grundgerüst ===== */
-/* #ContainerMarginSetup {
+#ContainerMarginSetup {
   margin: 0 140px;
-} */
+}
 #ContainerCenterWidthSetup {
   margin: 0 auto;
   max-width: 1160px;
@@ -1802,11 +1802,11 @@ ul li {
   padding-left: 1.25rem;
 }
 
-/* @media (max-width: 1400px) {
+@media (max-width: 1400px) {
   #ContainerMarginSetup {
     margin: 0 40px;
   }
-} */
+}
 
 @media (max-width: 1100px) {
   .flexVorteile {
@@ -1828,9 +1828,9 @@ ul li {
 
 /* Optional etwas responsive */
 @media (max-width: 800px) {
-  /* #ContainerMarginSetup {
+  #ContainerMarginSetup {
     margin: 0 20px;
-  } */
+  }
   .heroRight {
     top: 0;
     right: -20%;

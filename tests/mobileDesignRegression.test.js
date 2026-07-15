@@ -10,9 +10,11 @@ const leistungenCss = read('public/leistungen.css');
 const packageListCss = read('public/package-list.css');
 const webdesignBerlinCss = read('public/webdesign-berlin.css');
 const homeCss = read('public/home.css');
+const branchenCss = read('public/branchen.css');
 const interactionPolish = read('public/js/interaction-polish.js');
 const interactionPolishCss = read('public/interaction-polish.css');
 const localSeoTemplate = read('views/static/local-seo-berlin.ejs');
+const industryShowTemplate = read('views/industries/show.ejs');
 const footerPartial = read('views/partials/footer.ejs');
 
 const ruleBlock = (source, selector) => {
@@ -22,6 +24,26 @@ const ruleBlock = (source, selector) => {
   const close = source.indexOf('}', open);
   return source.slice(open + 1, close);
 };
+
+const withoutCssComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '');
+
+test('industry detail pages keep responsive inline gutters through the layout wrapper', () => {
+  const activeBranchenCss = withoutCssComments(branchenCss);
+
+  assert.match(industryShowTemplate, /id="ContainerMarginSetup"/);
+  assert.match(
+    activeBranchenCss,
+    /#ContainerMarginSetup\s*\{[\s\S]*?margin:\s*0 140px;/
+  );
+  assert.match(
+    activeBranchenCss,
+    /@media\s*\(max-width:\s*1400px\)\s*\{[\s\S]*?#ContainerMarginSetup\s*\{[\s\S]*?margin:\s*0 40px;/
+  );
+  assert.match(
+    activeBranchenCss,
+    /@media\s*\(max-width:\s*800px\)\s*\{[\s\S]*?#ContainerMarginSetup\s*\{[\s\S]*?margin:\s*0 20px;/
+  );
+});
 
 test('mobile related-link and intro-card grids keep visible vertical spacing', () => {
   const seoLandingCss = read('public/seo-landing.css');
