@@ -225,6 +225,29 @@ test('Optimierungsprompt akzeptiert bekannte nullable Felder aus einem rohen Sna
   assert.deepEqual(user.sources, [{ url: 'https://example.com/quelle' }]);
 });
 
+test('Optimierungsprompt normalisiert bestehende JSON-LD-FAQ ohne den Liveartikel zu verändern', () => {
+  const prompt = buildExistingPostOptimizationPrompt(optimizationInput({
+    post: {
+      ...optimizationInput().post,
+      contentFormat: 'legacy_ejs',
+      faqJson: [{
+        '@type': 'Question',
+        name: 'Wie wird ein Blumenladen lokal gefunden?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Mit einer klaren lokalen Ausrichtung und vollständigen Unternehmensdaten.'
+        }
+      }]
+    }
+  }));
+  const user = JSON.parse(prompt.user);
+
+  assert.deepEqual(user.post.faqJson, [{
+    question: 'Wie wird ein Blumenladen lokal gefunden?',
+    answer: 'Mit einer klaren lokalen Ausrichtung und vollständigen Unternehmensdaten.'
+  }]);
+});
+
 test('Optimierungsprompt verlangt Inhaltsformat und Artikelinhalt als begrenzte Strings', () => {
   const basePost = optimizationInput().post;
   assertPromptInputError(

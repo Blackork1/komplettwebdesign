@@ -543,6 +543,30 @@ test('unklare Providerfehler bleiben ohne Freigabe und Wiederholung manuell', as
   }]);
 });
 
+test('lokale Prompt-Eingabefehler geben die Reservierung frei und werden nicht als Providerfehler gewertet', async () => {
+  const { dependencies, state } = stageDependencies();
+  const promptError = Object.assign(new TypeError('FAQ-Frage 1 muss Text sein.'), {
+    code: 'CONTENT_EXISTING_POST_PROMPT_INPUT_INVALID',
+    providerRequestStarted: false
+  });
+  const result = await executePaidStructuredTextStage(stageInput({
+    async execute() { throw promptError; }
+  }), dependencies);
+
+  assert.deepEqual(result, {
+    failed: {
+      code: 'CONTENT_EXISTING_POST_PROMPT_INPUT_INVALID',
+      message: 'FAQ-Frage 1 muss Text sein.'
+    }
+  });
+  assert.deepEqual(state.releases, [{
+    runId: 7,
+    stageId: 'targeted_optimization',
+    reservationMonth: '2026-07'
+  }]);
+  assert.deepEqual(state.providerResults, []);
+});
+
 test('explizit sicherer Providerfehler wird erst nach atomarer Reservierungsfreigabe wiederholbar', async () => {
   const providerError = Object.assign(new Error('Sicher vor Versand fehlgeschlagen'), {
     safeToRetry: true

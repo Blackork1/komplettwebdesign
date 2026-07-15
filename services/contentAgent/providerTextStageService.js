@@ -84,6 +84,11 @@ function uncertainProviderResult(message = 'Der Providerzustand ist nicht eindeu
   return { manual: { code: 'provider_execution_uncertain', message } };
 }
 
+function localPromptInputFailure(error) {
+  return error?.providerRequestStarted === false
+    && error?.code === 'CONTENT_EXISTING_POST_PROMPT_INPUT_INVALID';
+}
+
 async function executeNewProviderStage(input, dependencies, reservation) {
   let result;
   let deterministicFailure = null;
@@ -92,6 +97,25 @@ async function executeNewProviderStage(input, dependencies, reservation) {
     result = await input.execute();
   } catch (error) {
     if (error?.code === 'CONTENT_JOB_LEASE_LOST') throw error;
+    if (localPromptInputFailure(error)) {
+      try {
+        await dependencies.costService.releaseMonthlyBudgetReservation({
+          runId: input.run.id,
+          stageId: input.stageId,
+          reservationMonth: reservation.reservationMonth
+        });
+      } catch {
+        return uncertainProviderResult(
+          'Die Budgetreservierung konnte nach einem lokalen Eingabefehler nicht sicher freigegeben werden.'
+        );
+      }
+      return {
+        failed: {
+          code: error.code,
+          message: safeFailureMessage(error.message)
+        }
+      };
+    }
     deterministicFailure = completedProviderFailure(error, input);
     if (deterministicFailure) {
       result = deterministicFailure;

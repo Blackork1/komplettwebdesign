@@ -41,9 +41,18 @@ function normalizeBrand(value) {
 function normalizeFaqJson(value) {
   return exactList(value, 'Die bestehenden FAQ', 20, (item, index) => {
     const faq = plainObject(item, `FAQ ${index + 1}`);
+    const question = faq.question ?? faq.name;
+    let answer = faq.answer;
+    if (answer === undefined) {
+      const acceptedAnswer = plainObject(
+        faq.acceptedAnswer,
+        `Die akzeptierte Antwort in FAQ ${index + 1}`
+      );
+      answer = acceptedAnswer.text;
+    }
     return {
-      question: exactString(faq.question, `FAQ-Frage ${index + 1}`, 500),
-      answer: exactString(faq.answer, `FAQ-Antwort ${index + 1}`, 5_000)
+      question: exactString(question, `FAQ-Frage ${index + 1}`, 500),
+      answer: exactString(answer, `FAQ-Antwort ${index + 1}`, 5_000)
     };
   });
 }
