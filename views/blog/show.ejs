@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="<%= cssAsset('ratgeber.css') %>" />
 <link rel="stylesheet" href="<%= cssAsset('blog.css') %>" />
 
-<main class="rg-page blog-page blog-detail-page" id="hero">
+<main class="rg-page blog-page blog-detail-page" id="hero"<% if (!isPreview) { %> data-content-post-id="<%= post.id %>" data-content-csrf-token="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>"<% } %>>
   <% if (isPreview) { %>
   <aside class="content-agent-preview-banner" role="status" aria-label="Geschützte Entwurfsvorschau">
     <div class="container content-agent-preview-banner__inner">
@@ -163,6 +163,9 @@
 </main>
 <% if (commentsEnabled) { %>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/blog-comments.js') : '/js/blog-comments.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<% } %>
+<% if (!isPreview) { %>
+<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/content-article-tracking.js') : '/js/content-article-tracking.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 <% } %>
 
 <% if (isPreview) { %>

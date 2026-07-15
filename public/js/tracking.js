@@ -1,5 +1,6 @@
 (function () {
   var EVENT_NAMES = new Set([
+    "content_article_cta_click",
     "page_cta_click",
     "header_cta_click",
     "footer_cta_click",

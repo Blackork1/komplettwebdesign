@@ -74,6 +74,11 @@ export async function listPostsPage(req, res) {
 export async function showPost(req, res) {
   const rawPost = await BlogPostModel.findBySlug(req.params.slug);
   if (!rawPost) return res.status(404).send('Artikel nicht gefunden');
+  try {
+    req.app.get('contentAttributionService')?.rememberArticle(req, rawPost);
+  } catch {
+    // Die öffentliche Artikelseite bleibt auch bei einem Trackingfehler erreichbar.
+  }
   return res.render('blog/show', buildBlogPostPageModel({
     post: rawPost,
     pricing: res.locals.packagePricing || {},

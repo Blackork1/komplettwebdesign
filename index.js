@@ -78,6 +78,9 @@ import adminLeistungenRoutes from './routes/adminLeistungenRoutes.js';
 import leistungenRoutes from './routes/leistungenRoutes.js';
 import { footerNavigation, headerCta, headerNavigation } from './data/siteNavigation.js';
 import { trackingPageContextForPath } from './data/trackingEvents.js';
+import { createContentArticlePerformanceRepository } from './repositories/contentArticlePerformanceRepository.js';
+import { createContentAttributionService } from './services/contentAgent/contentAttributionService.js';
+import { createContentTrackingRouter } from './routes/contentTrackingRoutes.js';
 import {
   escapeHtml,
   escapeJsonForHtml,
@@ -320,6 +323,11 @@ app.use(accessLog({
 // DB, Cloudinary & Stripe auf app setzen
 app.set('db', pool);
 app.set('cloudinary', cloudinary);
+const contentAttributionService = createContentAttributionService({
+  repository: createContentArticlePerformanceRepository(pool),
+  secret: process.env.SESSION_SECRET
+});
+app.set('contentAttributionService', contentAttributionService);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 app.set('stripe', stripe);
 
@@ -392,6 +400,7 @@ app.use(bookingRoutes);
 app.use(adminRoutes);
 app.use(widgetApiRoutes);
 app.use(newsletterRoutes);
+app.use(createContentTrackingRouter({ attributionService: contentAttributionService }));
 app.use(blogRoutes);
 app.use(adminBlogRoutes);
 app.use(adminContentAgentRoutes);

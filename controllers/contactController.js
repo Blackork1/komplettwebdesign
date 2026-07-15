@@ -1434,6 +1434,11 @@ export const processForm = [
                 appointmentTime: slot ? slot.start_time : null
 
             });
+            try {
+                await req.app.get('contentAttributionService')?.recordContactSubmit(req);
+            } catch {
+                // Die Kontaktanfrage ist bereits gespeichert; Attribution bleibt Best Effort.
+            }
 
             /* 5) Bestätigungs-Mails ----------------------------------------- */
             // <tr><th>Weitere Wünsche:</th><td>${req.body.weitereWuensche || 'Keine'}</td></tr>
@@ -1792,6 +1797,11 @@ export async function processWebdesignBerlinForm(req, res) {
             images: "",
             appointmentTime: null
         });
+        try {
+            await req.app.get('contentAttributionService')?.recordContactSubmit(req);
+        } catch {
+            // Die Kontaktanfrage ist bereits gespeichert; Attribution bleibt Best Effort.
+        }
     } catch (err) {
         logSafeError("❌ Fehler beim Speichern der Webdesign-Berlin-Anfrage:", err);
     }

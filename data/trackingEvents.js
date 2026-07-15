@@ -27,6 +27,7 @@ const PAGE_CONTEXTS = Object.freeze([
 ]);
 
 export const trackingEventNames = Object.freeze([
+  'content_article_cta_click',
   'page_cta_click',
   'header_cta_click',
   'footer_cta_click',

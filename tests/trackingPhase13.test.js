@@ -117,3 +117,29 @@ test('tracking page context is rendered from server-side route context', () => {
   assert.match(data, /\/leistungen\/landingpage-erstellen-lassen/);
   assert.match(data, /\/leistungen\/website-audit/);
 });
+
+test('Blogartikel erfassen anonyme CTA-Ereignisse nur mit Einwilligung und niemals in der Vorschau', () => {
+  const tracking = read('public/js/content-article-tracking.js');
+  const blogView = read('views/blog/show.ejs');
+  const blogController = read('controllers/blogController.js');
+  const contactController = read('controllers/contactController.js');
+  const trackingEvents = read('data/trackingEvents.js');
+  const index = read('index.js');
+
+  assert.match(tracking, /cookieConsentState\.analytics === true/);
+  assert.match(tracking, /\[data-track="cta"\]\s+a/);
+  assert.match(tracking, /crypto\.randomUUID/);
+  assert.match(tracking, /keepalive:\s*true/);
+  assert.match(tracking, /x-csrf-token/);
+  assert.doesNotMatch(tracking, /preventDefault/);
+  assert.doesNotMatch(tracking, /FormData|["'](?:email|phone|name|message)["']/);
+
+  assert.match(blogView, /data-content-post-id/);
+  assert.match(blogView, /data-content-csrf-token/);
+  assert.match(blogView, /content-article-tracking\.js/);
+  assert.match(blogView, /if \(!isPreview\)/);
+  assert.match(blogController, /rememberArticle/);
+  assert.ok((contactController.match(/recordContactSubmit/g) || []).length >= 2);
+  assert.match(trackingEvents, /content_article_cta_click/);
+  assert.match(index, /createContentTrackingRouter/);
+});
