@@ -14,7 +14,11 @@ import {
   minimumExistingPostRevisionScore
 } from './existingPostRevisionApprovalPolicy.js';
 import { captureRevisionBaseline } from './contentRevisionOutcomeService.js';
-import { requiresLegacyBytePreservation } from './legacyContentPolicy.js';
+import {
+  isLegacyStaticHtml,
+  requiresLegacyBytePreservation
+} from './legacyContentPolicy.js';
+import { validateLegacyStaticOptimization } from './legacyStaticValidationService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -183,11 +187,21 @@ function validationArticle(snapshot) {
     ogDescription: snapshot.fields.og_description,
     imageAlt: snapshot.fields.image_alt,
     faqJson: snapshot.fields.faq_json,
-    contentHtml: snapshot.fields.content
+    contentHtml: snapshot.fields.content,
+    contentFormat: snapshot.base.content_format
   };
 }
 
-async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
+function splitValidationContext(context = {}) {
+  const source = context && typeof context === 'object' ? context : {};
+  const { post, baselinePost, ...validationContext } = source;
+  return {
+    validationContext,
+    baselinePost: baselinePost || post || null
+  };
+}
+
+async function assertSnapshotValid(snapshot, validateArticle, context = {}, baselineSnapshot = null) {
   assertRequiredFields(snapshot?.fields);
   const contentFormat = snapshot?.base?.content_format;
   const content = String(snapshot.fields?.content || '');
@@ -195,15 +209,46 @@ async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
   if (!['static_html', 'legacy_ejs'].includes(contentFormat)) {
     throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Das Inhaltsformat ist nicht freigegeben.');
   }
+  const splitContext = splitValidationContext(context);
+  const normalizedContext = {
+    ...splitContext.validationContext,
+    existingSlugs: (splitContext.validationContext.existingSlugs || [])
+      .filter((slug) => slug !== snapshot.base.slug),
+    allowedInternalLinks: Array.isArray(splitContext.validationContext.allowedInternalLinks)
+      ? splitContext.validationContext.allowedInternalLinks
+      : []
+  };
+  if (isLegacyStaticHtml({ contentFormat, contentHtml: content })) {
+    const baseline = baselineSnapshot || (
+      splitContext.baselinePost ? createRevisionSnapshot(splitContext.baselinePost) : null
+    );
+    if (!baseline) {
+      throw revisionError(
+        'CONTENT_REVISION_VALIDATION_FAILED',
+        'Für statischen Legacy-Inhalt fehlt die unveränderliche Vergleichsbasis.'
+      );
+    }
+    const validation = await validateLegacyStaticOptimization({
+      before: validationArticle(baseline),
+      after: validationArticle(snapshot),
+      validateArticle,
+      context: normalizedContext
+    });
+    if (validation.passed !== true) {
+      throw revisionError(
+        'CONTENT_REVISION_VALIDATION_FAILED',
+        'Die differenzielle Altartikelprüfung ist fehlgeschlagen.',
+        validation.issues
+      );
+    }
+    return;
+  }
+
   const sanitized = sanitizeArticleHtml(content);
   if (sanitized !== content || /<%|%>/.test(content)) {
     throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Das Artikel-HTML enthält nicht erlaubte Inhalte.');
   }
-  const validation = await validateArticle(validationArticle(snapshot), {
-    ...context,
-    existingSlugs: (context.existingSlugs || []).filter((slug) => slug !== snapshot.base.slug),
-    allowedInternalLinks: Array.isArray(context.allowedInternalLinks) ? context.allowedInternalLinks : []
-  });
+  const validation = await validateArticle(validationArticle(snapshot), normalizedContext);
   if (validation?.passed !== true || validation.sanitizedHtml !== content) {
     throw revisionError(
       'CONTENT_REVISION_VALIDATION_FAILED',
@@ -218,7 +263,12 @@ export async function assertOptimizationSnapshotRevalidated(
   validateArticle,
   { post, report, validationContext = {} } = {}
 ) {
-  await assertSnapshotValid(snapshot, validateArticle, validationContext);
+  await assertSnapshotValid(
+    snapshot,
+    validateArticle,
+    validationContext,
+    createRevisionSnapshot(post)
+  );
   const before = validationArticle(createRevisionSnapshot(post));
   const after = validationArticle(snapshot);
   const scope = validateTargetedOptimizationScope({ before, after });
@@ -331,6 +381,7 @@ function optimizedRevisionInput(input = {}) {
     auditId: positiveId(input.auditId, 'auditId'),
     jobId: positiveId(input.jobId, 'jobId'),
     baseLiveHash,
+    baselineSnapshot: createRevisionSnapshot(post),
     snapshot,
     report,
     admin: normalizeAdmin(input.admin),
@@ -363,7 +414,8 @@ export function createContentRevisionService({
       await assertSnapshotValid(
         normalized.snapshot,
         validateArticle,
-        normalized.validationContext
+        normalized.validationContext,
+        normalized.baselineSnapshot
       );
       return optimizationRepository.createOptimizedRevision({
         postId: normalized.postId,
@@ -477,6 +529,7 @@ export function createContentRevisionService({
         });
       }
       const snapshot = structuredClone(revision.snapshot_json);
+      const baselineSnapshot = structuredClone(revision.snapshot_json);
       if (requiresLegacyBytePreservation({
         contentFormat: snapshot.base.content_format,
         contentHtml: snapshot.fields.content
@@ -486,7 +539,12 @@ export function createContentRevisionService({
         throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Legacy-EJS-Inhalt bleibt unveränderlich.');
       }
       Object.assign(snapshot.fields, patch);
-      await assertSnapshotValid(snapshot, validateArticle, revision.validation_context || {});
+      await assertSnapshotValid(
+        snapshot,
+        validateArticle,
+        revision.validation_context || {},
+        baselineSnapshot
+      );
       const updated = await repository.updateDraftRevision({ revisionId: id, snapshot, expectedVersion });
       if (!updated) throw revisionError('CONTENT_REVISION_CONFLICT', 'Die Revision wurde zwischenzeitlich verändert.');
       return updated;

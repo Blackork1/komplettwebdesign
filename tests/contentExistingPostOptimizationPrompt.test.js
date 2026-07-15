@@ -181,7 +181,8 @@ test('falsch klassifiziertes Legacy-HTML ohne EJS darf nach statischen Regeln op
 
   assert.match(prompt.system, /legacy_ejs.*kein EJS-Template/iu);
   assert.match(prompt.system, /contentHtml.*Ausgabeschema/iu);
-  assert.match(prompt.system, /vollständige statische Inhaltsprüfung/iu);
+  assert.match(prompt.system, /differenzielle Altartikelprüfung/iu);
+  assert.match(prompt.system, /übrigen Zeichen.*bytegenau/iu);
   assert.doesNotMatch(prompt.system, /contentHtml.*nicht Teil der Provider-Ausgabe/iu);
 });
 

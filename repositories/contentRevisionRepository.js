@@ -190,7 +190,10 @@ export function createContentRevisionRepository(db = pool) {
             || base.live_hash !== currentHash(post)) {
           throw conflict('CONTENT_REVISION_STALE', 'Der Livebeitrag wurde seit Erstellung der Revision verändert.');
         }
-        await validateSnapshot(revision.snapshot_json, await trustedValidationContext(post.id, client));
+        await validateSnapshot(revision.snapshot_json, {
+          ...(await trustedValidationContext(post.id, client)),
+          post
+        });
         if (typeof validateApproval === 'function') {
           await validateApproval({ revision, post }, client);
         }

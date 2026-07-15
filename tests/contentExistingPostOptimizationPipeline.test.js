@@ -821,7 +821,7 @@ test('falsch klassifiziertes Legacy-HTML ohne EJS wird validiert und als gesch√º
   const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
 
   assert.equal(result.status, 'completed');
-  assert.equal(dependencies.calls.validation, 2);
+  assert.equal(dependencies.calls.validation, 4);
   assert.equal(dependencies.calls.revisions.length, 1);
   assert.equal(dependencies.calls.revisions[0].snapshot.fields.content, optimizedContent);
   assert.equal(dependencies.calls.liveWrites, 0);
@@ -900,7 +900,7 @@ test('Legacy-EJS wird aus der Provider-Ausgabe ausgeschlossen, serverseitig erg√
     },
     responseId: 'resp-legacy-completed',
     usage: { input_tokens: 120, output_tokens: 40 },
-    promptVersion: '2026-07-15.3',
+    promptVersion: '2026-07-15.4',
     baseLiveHash: liveHashForPost(post),
     reservationMonth: '2026-07',
     actualCost: 0.037

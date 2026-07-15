@@ -45,9 +45,10 @@ test('Revisionssnapshot hat eine explizite Feldfreigabe und unveränderliche Bas
 
 test('Legacy-Inhalt bleibt bei der Bearbeitung konservativ unveränderlich', async () => {
   const saved = [];
+  const templatePost = { ...post, content: '<p><%= post.title %></p>' };
   const service = createContentRevisionService({
     repository: {
-      getRevisionForEdit: async () => ({ id: 3, status: 'draft', revision_version: 1, snapshot_json: createRevisionSnapshot(post) }),
+      getRevisionForEdit: async () => ({ id: 3, status: 'draft', revision_version: 1, snapshot_json: createRevisionSnapshot(templatePost) }),
       updateDraftRevision: async (input) => { saved.push(input); return input; }
     }
   });
@@ -93,8 +94,8 @@ test('falsch klassifiziertes Legacy-HTML ohne EJS darf nur nach vollständiger V
   });
 
   assert.equal(saved.length, 1);
-  assert.equal(validations.length, 1);
-  assert.equal(validations[0].article.contentHtml.includes('Reparierter'), true);
+  assert.equal(validations.length, 2);
+  assert.equal(validations[1].article.contentHtml.includes('Reparierter'), true);
   assert.deepEqual(validations[0].context.allowedInternalLinks, ['/kontakt']);
 });
 

@@ -14,7 +14,7 @@ import {
 import { normalizeSafeHttpsUrl } from '../httpsUrlSafety.js';
 import { requiresLegacyBytePreservation } from '../legacyContentPolicy.js';
 
-export const promptVersion = '2026-07-15.3';
+export const promptVersion = '2026-07-15.4';
 const MAX_CONTENT_HTML_LENGTH = 250_000;
 
 function normalizeBrand(value) {
@@ -295,7 +295,10 @@ function formatInstruction(post) {
   if (post.contentFormat === 'legacy_ejs') {
     return [
       'Der Formatmodus ist legacy_ejs, der vorhandene Artikel enthält jedoch kein EJS-Template und wird deshalb als statischer Altinhalt behandelt.',
-      'contentHtml ist Teil des Ausgabeschemas und darf gezielt geändert werden. Der vollständige Inhalt durchläuft anschließend die vollständige statische Inhaltsprüfung einschließlich Sanitizer, Linkinventar und Artikelvalidator.'
+      'contentHtml ist Teil des Ausgabeschemas und darf ausschließlich an den durch Auditcodes exakt belegten Fragmenten geändert werden.',
+      'Kopiere alle übrigen Zeichen des bestehenden contentHtml bytegenau. Verändere außerhalb der belegten Fragmente weder Tags, Klassen, IDs, Anker, Überschriftenebenen, Inhaltsverzeichnis, CTA, FAQ, Reihenfolge, Einrückung noch Leerraum.',
+      'Erstelle kein neues Layout und modernisiere keine bestehende Bootstrap-Struktur. Ergänze keine neue Klasse und entferne keine bestehende Klasse, sofern ein Auditbefund nicht exakt diese Klasse beanstandet.',
+      'Der vollständige Vorschlag durchläuft anschließend eine differenzielle Altartikelprüfung: Bereits vorhandene ungefährliche Abweichungen dürfen unverändert bleiben; jeder neue Validatorbefund, aktive Inhalt oder unsichere Link wird abgelehnt.'
     ].join('\n');
   }
   return 'Der Formatmodus ist static_html. Erhalte die bestehende Artikelstruktur und ändere contentHtml nur an den durch Auditbefunde belegten Stellen.';
