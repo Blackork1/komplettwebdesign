@@ -35,6 +35,8 @@ export const REPRODUCIBLE_EXISTING_CONTENT_REAUDIT_CODES = Object.freeze([
 const REPRODUCIBLE_REAUDIT_CODE_SET = new Set(
   REPRODUCIBLE_EXISTING_CONTENT_REAUDIT_CODES
 );
+const HISTORICAL_YEAR_REFERENCE_PATTERN =
+  /(?:aus dem vorjahr (?:lesen|nachlesen)|vorjahres(?:artikel|beitrag)|jahresrückblick)/u;
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -221,10 +223,14 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
     if (year >= Number(currentYear)) return false;
     const before = visibleText.slice(Math.max(0, match.index - 30), match.index).toLocaleLowerCase('de-DE');
     const after = visibleText.slice(match.index + 4, match.index + 35).toLocaleLowerCase('de-DE');
+    const referenceContext = visibleText
+      .slice(Math.max(0, match.index - 90), match.index + 94)
+      .toLocaleLowerCase('de-DE');
     return !(/(?:seit|gegründet|gegruendet|eröffnet|eroeffnet)\s*$/u.test(before)
       || /^\s*(?:gegründet|gegruendet|eröffnet|eroeffnet)\b/u.test(after)
       || /^\s*(?:bis|[-–])\s*(?:19|20)\d{2}\b/u.test(after)
-      || /(?:19|20)\d{2}\s*(?:bis|[-–])\s*$/u.test(before));
+      || /(?:19|20)\d{2}\s*(?:bis|[-–])\s*$/u.test(before)
+      || HISTORICAL_YEAR_REFERENCE_PATTERN.test(referenceContext));
   }).map((match) => Number(match[0])))]
     .sort((a, b) => a - b);
   if (years.length) findings.push(finding('stale_year', 'Der Artikel enthält möglicherweise veraltete Jahresangaben.', { years: years.slice(0, 10) }));

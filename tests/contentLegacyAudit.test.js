@@ -259,6 +259,32 @@ test('Jahresprüfung ignoriert Gründung und abgeschlossene Bereiche, meldet abe
   }
 });
 
+test('Jahresprüfung behandelt eindeutig bezeichnete Vorjahresartikel nicht als veraltete Aussage', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 21,
+      title: 'Website-Kosten aktuell einordnen',
+      slug: 'website-kosten-aktuell',
+      excerpt: '',
+      content: [
+        '<p>Wenn du die Ausgangsbasis aus dem Vorjahr lesen möchtest, ',
+        '<a href="/blog/website-kosten-2025-einfach-erklaert">Website-Kosten 2025 einfach erklärt</a>.</p>',
+        '<h3>Website-Kosten 2025 einfach erklärt</h3>',
+        '<p>Der passende Vorjahresbeitrag zeigt die damalige Ausgangslage.</p>'
+      ].join(''),
+      content_format: 'legacy_ejs',
+      meta_title: 'Meta',
+      meta_description: 'Beschreibung',
+      image_alt: 'Alt',
+      faq_json: []
+    },
+    inventory: [{ url: '/blog/website-kosten-2025-einfach-erklaert' }],
+    currentYear: 2026
+  });
+
+  assert.equal(result.findings.some(({ code }) => code === 'stale_year'), false);
+});
+
 test('Bestandsaudit normalisiert vertrauenswürdige Links und meldet unbekannte sowie unsichere Ziele begrenzt', () => {
   const result = auditExistingPost({
     post: {
