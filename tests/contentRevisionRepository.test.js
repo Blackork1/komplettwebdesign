@@ -169,6 +169,10 @@ test('Freigabe sperrt Tabelle, Post, Revision und Audit in dieser Reihenfolge un
     assert.match(sql, /status = 'revision_created'/i);
   }
   assert.match(auditUpdate, /RETURNING id/i);
+  assert.match(
+    calls.find((sql) => sql.startsWith('SELECT url FROM (')),
+    /'\/branchen\/'\s*\|\|\s*CASE\s+WHEN\s+slug\s+LIKE\s+'webdesign-%'/i
+  );
   assert.ok(calls.includes('COMMIT'));
   assert.equal(calls.includes('ROLLBACK'), false);
 });

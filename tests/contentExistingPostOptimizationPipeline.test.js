@@ -827,6 +827,47 @@ test('falsch klassifiziertes Legacy-HTML ohne EJS wird validiert und als geschü
   assert.equal(dependencies.calls.liveWrites, 0);
 });
 
+test('bekannter Legacy-href-Defekt wird vor Prompt, Diff und Scope deterministisch normalisiert', async () => {
+  const malformed = originalHtml().replace(
+    'Alte Fassung.',
+    'Alte Fassung. <a href="/branchen/webdesign-blumenladen><strong>Blumenladen</strong></a>.'
+  );
+  const normalized = malformed.replace(
+    'href="/branchen/webdesign-blumenladen><strong>',
+    'href="/branchen/webdesign-blumenladen"><strong>'
+  );
+  const post = publishedPost({ content_format: 'legacy_ejs', content: malformed });
+  const optimizedContent = normalized.replace('Alte Fassung.', 'Gezielt reparierte Fassung.');
+  const input = createJobInput(post);
+  input.runtimeSnapshot.allowedInternalLinks.push('/branchen/webdesign-blumenladen');
+  input.runtimeSnapshot.existingPostTrustedContext = buildExistingPostTrustedContext(
+    { existingSlugs: [], metadata: null },
+    input.runtimeSnapshot.allowedInternalLinks
+  );
+  input.runtimeSnapshot.existingPostTrustedContextHash = canonicalSha256(
+    input.runtimeSnapshot.existingPostTrustedContext
+  );
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [optimizedPost(post, { contentHtml: optimizedContent })],
+    trustedContext: {
+      allowedInternalLinks: ['/kontakt', '/branchen/webdesign-blumenladen']
+    }
+  });
+
+  const result = await runExistingPostOptimizationJob(input, dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(
+    dependencies.calls.optimizationInputs[0].post.contentHtml.includes(
+      'href="/branchen/webdesign-blumenladen"><strong>'
+    ),
+    true
+  );
+  assert.equal(dependencies.calls.revisions[0].snapshot.fields.content, optimizedContent);
+  assert.equal(dependencies.calls.liveWrites, 0);
+});
+
 test('Legacy-EJS wird aus der Provider-Ausgabe ausgeschlossen, serverseitig ergänzt und unverändert in die Revision übernommen', async () => {
   const originalContent = '<p><%= post.title %></p>\n';
   const post = publishedPost({

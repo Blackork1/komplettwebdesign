@@ -268,6 +268,21 @@ test('validator accepts central internal-link entries and source-reference objec
   assert.deepEqual(result.issues, []);
 });
 
+test('validator unterscheidet vorhandene und fehlende Sprungziele', () => {
+  const contentHtml = validHtml()
+    .replace(
+      '<h2>Die wichtigsten Schritte</h2>',
+      '<h2 id="schritte">Die wichtigsten Schritte</h2><a href="#schritte">Zu den Schritten</a><a href="#fehlt">Fehlendes Ziel</a>'
+    );
+  const result = validateArticle(validArticle({ contentHtml }), validContext);
+  const fragmentIssues = result.issues.filter(({ code }) => code === 'fragment_target_missing');
+
+  assert.deepEqual(fragmentIssues.map(({ href }) => href), ['#fehlt']);
+  assert.equal(result.issues.some(({ code, href }) => (
+    code === 'link_scheme_forbidden' && href === '#schritte'
+  )), false);
+});
+
 test('validator rejects style elements from the original HTML', () => {
   const result = validateArticle(validArticle({
     contentHtml: validHtml().replace('<h2>Ein verständlicher Einstieg</h2>', '<style>.lead{color:red}</style><h2>Ein verständlicher Einstieg</h2>')

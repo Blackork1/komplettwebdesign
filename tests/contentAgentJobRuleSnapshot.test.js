@@ -102,7 +102,7 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
     '/blog',
     '/blog/bestehender-artikel',
     '/branchen',
-    '/branchen/handwerker',
+    '/branchen/webdesign-handwerker',
     '/kontakt',
     '/leistungen',
     '/leistungen/seo',

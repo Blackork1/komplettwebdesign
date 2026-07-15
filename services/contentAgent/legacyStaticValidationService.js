@@ -1,7 +1,8 @@
 import * as cheerio from 'cheerio';
 import { isLegacyStaticHtml } from './legacyContentPolicy.js';
+import { normalizeLegacyStaticOptimizationBaseline } from './legacyStaticBaselineService.js';
 
-const ACTIVE_CONTENT_PATTERN = /<\s*(?:script|style|iframe|object|embed|svg|math)\b|\s(?:on[a-z]+|style)\s*=|\b(?:href|src)\s*=\s*["']?\s*(?:javascript:|data\s*:\s*text\/html)|<%|%>/iu;
+const ACTIVE_CONTENT_PATTERN = /<\s*(?:script|style|iframe|object|embed|svg|math)\b|\son[a-z]+\s*=|\b(?:href|src)\s*=\s*["']?\s*(?:javascript:|data\s*:\s*text\/html)|<%|%>/iu;
 const SANITIZER_ALLOWED_TAGS = new Set([
   'section', 'div', 'p', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'strong', 'em',
   'blockquote', 'a', 'span', 'small', 'hr', 'table', 'thead', 'tbody', 'tr',
@@ -94,6 +95,7 @@ export async function validateLegacyStaticOptimization({
     throw new TypeError('Die differenzielle Prüfung benötigt einen Artikelvalidator.');
   }
 
+  const normalizedBefore = normalizeLegacyStaticOptimizationBaseline(before);
   const candidateHtml = articleContent(after);
   if (ACTIVE_CONTENT_PATTERN.test(candidateHtml)) {
     return {
@@ -106,7 +108,7 @@ export async function validateLegacyStaticOptimization({
     };
   }
 
-  const sanitizerRegressions = newSanitizerFeatures(articleContent(before), candidateHtml);
+  const sanitizerRegressions = newSanitizerFeatures(articleContent(normalizedBefore), candidateHtml);
   if (sanitizerRegressions.length > 0) {
     return {
       passed: false,
@@ -120,7 +122,7 @@ export async function validateLegacyStaticOptimization({
   }
 
   const [baselineValidation, candidateValidation] = await Promise.all([
-    validateArticle(before, context),
+    validateArticle(normalizedBefore, context),
     validateArticle(after, context)
   ]);
   const issues = newIssuesComparedWithBaseline(

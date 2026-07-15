@@ -17,6 +17,7 @@ import {
   isLegacyStaticHtml,
   requiresLegacyBytePreservation
 } from './legacyContentPolicy.js';
+import { normalizeLegacyStaticOptimizationBaselineHtml } from './legacyStaticBaselineService.js';
 import { validateLegacyStaticOptimization } from './legacyStaticValidationService.js';
 import { classifyExistingPostFreshness } from './existingPostFreshnessService.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
@@ -323,12 +324,19 @@ function serializedReportBytes(report, diff) {
 }
 
 function articleFromPost(post) {
+  const rawContent = typeof post?.content === 'string' ? post.content : '';
+  const contentHtml = isLegacyStaticHtml({
+    contentFormat: post?.content_format,
+    contentHtml: rawContent
+  })
+    ? normalizeLegacyStaticOptimizationBaselineHtml(rawContent)
+    : rawContent;
   return {
     id: Number(post.id),
     title: post.title,
     slug: post.slug,
     shortDescription: post.excerpt,
-    contentHtml: post.content,
+    contentHtml,
     contentFormat: post.content_format,
     metaTitle: post.meta_title,
     metaDescription: post.meta_description,
@@ -715,7 +723,11 @@ export async function runExistingPostOptimizationJob({
     ({ auditId, ...audit } = auditStage.value);
   } else {
     audit = (dependencies.auditExistingPost || auditExistingPost)({
-      post: { ...post, ...(trustedContext?.metadata || {}) },
+      post: {
+        ...post,
+        ...(trustedContext?.metadata || {}),
+        content: articleFromPost(post).contentHtml
+      },
       inventory,
       currentYear: snapshotCurrentYear(runtimeSnapshot)
     });

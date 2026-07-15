@@ -1,7 +1,7 @@
 const CORE_INTERNAL_PATHS = Object.freeze([
   '/kontakt', '/pakete', '/webdesign-berlin', '/blog', '/ratgeber', '/leistungen', '/branchen'
 ]);
-export const INTERNAL_LINK_NORMALIZATION_VERSION = 'trusted-links-v1';
+export const INTERNAL_LINK_NORMALIZATION_VERSION = 'trusted-links-v2';
 const CANONICAL_HOSTS = new Set(['komplettwebdesign.de', 'www.komplettwebdesign.de']);
 
 function normalizedPath(url) {
@@ -14,6 +14,11 @@ export function normalizeInternalHref(value) {
   const href = original.trim();
   if (!href) return { kind: 'invalid', href };
   if (href !== original || href.startsWith('//') || href.includes('\\')) return { kind: 'unsafe', href };
+  if (href.startsWith('#')) {
+    return /^#[a-z][a-z0-9_:.-]*$/iu.test(href)
+      ? { kind: 'fragment', href, fragment: href.slice(1) }
+      : { kind: 'unsafe', href };
+  }
   try {
     const rootRelative = href.startsWith('/');
     const rawPath = href.split(/[?#]/, 1)[0];
@@ -47,7 +52,10 @@ export function buildTrustedInternalPaths(inventory = []) {
     const prefix = item.type === 'guide' ? '/ratgeber/'
       : item.type === 'service' ? '/leistungen/'
         : item.type === 'industry' ? '/branchen/' : '/blog/';
-    paths.add(`${prefix}${slug}`);
+    const routedSlug = item.type === 'industry' && !slug.startsWith('webdesign-')
+      ? `webdesign-${slug}`
+      : slug;
+    paths.add(`${prefix}${routedSlug}`);
   }
   return [...paths].sort();
 }

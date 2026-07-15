@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { calculateCannibalizationRisk } from './cannibalizationService.js';
 import { buildTrustedInternalPaths, normalizeInternalHref } from './trustedInternalLinkService.js';
 
-export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v2';
+export const EXISTING_CONTENT_AUDIT_TYPE = 'local_content_v3';
 const MAX_AUDIT_POSTS = 500;
 const MAX_CONTENT_LENGTH = 250_000;
 const EXISTING_CONTENT_FINDING_POLICY = Object.freeze({
@@ -234,6 +234,9 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
 
   const hrefs = [...new Set($('a[href]').toArray().map((node) => text($(node).attr('href'))))].slice(0, 100);
   const inspectedLinks = hrefs.map(normalizeInternalHref);
+  const fragmentTargets = new Set($('[id]').toArray()
+    .map((node) => text($(node).attr('id')))
+    .filter(Boolean));
   const trustedPaths = new Set(buildTrustedInternalPaths(inventory));
   if (!inspectedLinks.some((item) => item.kind === 'internal' && item.path === '/kontakt')) {
     findings.push(finding('missing_contact_cta', 'Ein klarer Kontakt-CTA fehlt.'));
@@ -241,7 +244,11 @@ export function auditExistingPost({ post, inventory = [], currentYear = new Date
   if (!inspectedLinks.some((item) => item.kind === 'internal' && trustedPaths.has(item.path))) {
     findings.push(finding('missing_internal_links', 'Der Artikel enthält keine gültigen internen Links.'));
   }
-  const brokenHrefs = inspectedLinks.filter((item) => item.kind === 'unsafe' || item.kind === 'invalid').map(({ href }) => href).slice(0, 20);
+  const brokenHrefs = inspectedLinks.filter((item) => (
+    item.kind === 'unsafe'
+    || item.kind === 'invalid'
+    || (item.kind === 'fragment' && !fragmentTargets.has(item.fragment))
+  )).map(({ href }) => href).slice(0, 20);
   if (brokenHrefs.length) findings.push(finding('broken_internal_link', 'Der Artikel enthält unsichere oder ungültige Linkziele.', { hrefs: brokenHrefs }));
   const unknownHrefs = inspectedLinks.filter((item) => item.kind === 'internal' && !trustedPaths.has(item.path)).map(({ href }) => href).slice(0, 20);
   if (unknownHrefs.length) findings.push(finding('unknown_internal_link', 'Der Artikel enthält nicht im Website-Inventar gefundene interne Ziele.', { hrefs: unknownHrefs }));

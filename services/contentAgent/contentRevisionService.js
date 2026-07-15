@@ -18,6 +18,7 @@ import {
   isLegacyStaticHtml,
   requiresLegacyBytePreservation
 } from './legacyContentPolicy.js';
+import { normalizeLegacyStaticOptimizationBaseline } from './legacyStaticBaselineService.js';
 import { validateLegacyStaticOptimization } from './legacyStaticValidationService.js';
 
 const EDITABLE_FIELDS = Object.freeze([
@@ -269,7 +270,9 @@ export async function assertOptimizationSnapshotRevalidated(
     validationContext,
     createRevisionSnapshot(post)
   );
-  const before = validationArticle(createRevisionSnapshot(post));
+  const before = normalizeLegacyStaticOptimizationBaseline(
+    validationArticle(createRevisionSnapshot(post))
+  );
   const after = validationArticle(snapshot);
   const scope = validateTargetedOptimizationScope({ before, after });
   if (scope.passed !== true) {

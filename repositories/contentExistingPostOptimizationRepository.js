@@ -807,7 +807,10 @@ export function createContentExistingPostOptimizationRepository(
             UNION SELECT '/blog/' || slug FROM posts WHERE published = TRUE
             UNION SELECT '/ratgeber/' || slug FROM ratgeber WHERE published = TRUE
             UNION SELECT '/leistungen/' || slug FROM leistungen_pages WHERE is_published = TRUE
-            UNION SELECT '/branchen/' || slug FROM industries
+            UNION SELECT '/branchen/' || CASE
+              WHEN slug LIKE 'webdesign-%' THEN slug
+              ELSE 'webdesign-' || slug
+            END FROM industries
           ) trusted_urls
           ORDER BY url
           LIMIT 5000

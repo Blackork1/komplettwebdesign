@@ -89,7 +89,10 @@ export function createContentAuditRepository(db = pool) {
           SELECT '/blog/' || slug AS url, 'blog' AS type FROM posts WHERE published = TRUE
           UNION SELECT '/ratgeber/' || slug, 'guide' FROM ratgeber WHERE published = TRUE
           UNION SELECT '/leistungen/' || slug, 'service' FROM leistungen_pages WHERE is_published = TRUE
-          UNION SELECT '/branchen/' || slug, 'industry' FROM industries
+          UNION SELECT '/branchen/' || CASE
+            WHEN slug LIKE 'webdesign-%' THEN slug
+            ELSE 'webdesign-' || slug
+          END, 'industry' FROM industries
         ) trusted_urls
         ORDER BY url LIMIT 5000
       `);

@@ -115,3 +115,49 @@ test('differenzielle Legacy-Prüfung toleriert ausschließlich bereits vorhanden
   assert.equal(result.passed, true);
   assert.deepEqual(result.issues, []);
 });
+
+test('differenzielle Legacy-Prüfung toleriert unveränderte historische Inline-Styles', async () => {
+  const legacyBefore = {
+    ...before,
+    contentHtml: '<section class="alte-klasse"><p style="color: #123">Alter Inhalt.</p></section>'
+  };
+  const result = await validateLegacyStaticOptimization({
+    before: legacyBefore,
+    after: {
+      ...legacyBefore,
+      contentHtml: legacyBefore.contentHtml.replace('Alter Inhalt', 'Gezielt optimierter Inhalt')
+    },
+    validateArticle: async (article) => ({
+      passed: false,
+      sanitizedHtml: article.contentHtml.replace(' style="color: #123"', ''),
+      issues: [{ code: 'inline_style_forbidden', message: 'Historischer Inline-Style.' }]
+    }),
+    context: {}
+  });
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.issues, []);
+});
+
+test('differenzielle Legacy-Prüfung blockiert veränderte historische Inline-Styles', async () => {
+  const legacyBefore = {
+    ...before,
+    contentHtml: '<section class="alte-klasse"><p style="color: #123">Alter Inhalt.</p></section>'
+  };
+  const result = await validateLegacyStaticOptimization({
+    before: legacyBefore,
+    after: {
+      ...legacyBefore,
+      contentHtml: legacyBefore.contentHtml.replace('color: #123', 'color: #456')
+    },
+    validateArticle: async (article) => ({
+      passed: false,
+      sanitizedHtml: article.contentHtml.replace(/ style="[^"]+"/u, ''),
+      issues: [{ code: 'inline_style_forbidden', message: 'Historischer Inline-Style.' }]
+    }),
+    context: {}
+  });
+
+  assert.equal(result.passed, false);
+  assert.equal(result.issues[0].code, 'legacy_sanitizer_regression');
+});

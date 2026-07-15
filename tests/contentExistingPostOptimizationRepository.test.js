@@ -266,6 +266,10 @@ test('Vertrauenskontext lädt Slugs, Links, Metadaten und aktive Lernregeln mit 
   assert.equal(calls.length, 4);
   assert.ok(calls.every(({ sql }) => /\bLIMIT\s+(?:1|100|5000)\b/i.test(sql)));
   assert.deepEqual(calls.find(({ sql }) => /SELECT p\.slug FROM posts p/i.test(sql)).params, [19]);
+  assert.match(
+    calls.find(({ sql }) => /trusted_urls/i.test(sql)).sql,
+    /'\/branchen\/'\s*\|\|\s*CASE\s+WHEN\s+slug\s+LIKE\s+'webdesign-%'/i
+  );
 });
 
 test('Audit wird idempotent und mit expliziten PostgreSQL-Typen gespeichert', async () => {

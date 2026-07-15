@@ -276,6 +276,23 @@ test('Bestandsaudit normalisiert vertrauenswürdige Links und meldet unbekannte 
   assert.deepEqual(byCode.broken_internal_link.hrefs, ['//evil.example/path']);
 });
 
+test('Bestandsaudit akzeptiert vorhandene Sprungziele und meldet nur fehlende Fragmente', () => {
+  const result = auditExistingPost({
+    post: {
+      id: 1, title: 'Inhaltsverzeichnis', slug: 'inhaltsverzeichnis', excerpt: '',
+      content: '<nav><a href="#abschnitt-1">Abschnitt 1</a><a href="#fehlt">Fehlt</a></nav><h2 id="abschnitt-1">Abschnitt 1</h2><a href="/kontakt">Kontakt</a>',
+      content_format: 'legacy_ejs', meta_title: 'Meta', meta_description: 'Beschreibung',
+      image_alt: 'Alt', faq_json: []
+    },
+    inventory: [{ url: '/kontakt' }],
+    currentYear: 2026
+  });
+  const broken = result.findings.find(({ code }) => code === 'broken_internal_link');
+
+  assert.deepEqual(broken.hrefs, ['#fehlt']);
+  assert.equal(result.findings.some(({ code }) => code === 'unknown_internal_link'), false);
+});
+
 test('Auditjob bleibt lokal, idempotent pro Job/Post/Typ und verändert keine Posts', async () => {
   const persisted = [];
   const uniqueAudits = new Map();

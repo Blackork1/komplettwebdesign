@@ -247,11 +247,22 @@ export function validateArticle(article = {}, context = {}) {
 
   const allowedInternalLinks = normalizeTrustedInternalPaths(context.allowedInternalLinks);
   const allowedExternalUrls = new Set(sourceUrlsFromContext(context));
+  const fragmentTargets = new Set($raw('[id]').toArray()
+    .map((element) => normalizeText($raw(element).attr('id')))
+    .filter(Boolean));
   $sanitized('a[href]').each((_, element) => {
     const href = $sanitized(element).attr('href');
     const normalized = normalizeInternalHref(href);
     if (normalized.kind === 'unsafe' || normalized.kind === 'invalid') return;
-    if (normalized.kind === 'external') {
+    if (normalized.kind === 'fragment') {
+      if (!fragmentTargets.has(normalized.fragment)) {
+        issues.push(createIssue(
+          'fragment_target_missing',
+          `Das Sprungziel ${href} ist im Artikel nicht vorhanden.`,
+          { href }
+        ));
+      }
+    } else if (normalized.kind === 'external') {
       if (!allowedExternalUrls.has(href)) {
         issues.push(createIssue('external_link_forbidden', `Der externe Link ${href} ist in den Quellenreferenzen nicht freigegeben.`));
       }
