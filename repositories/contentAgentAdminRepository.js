@@ -348,6 +348,7 @@ export function createContentAgentAdminRepository(db = pool) {
                optimization_job.optimization_job_updated_at,
                optimization_run.optimization_run_id,
                optimization_run.optimization_run_status,
+               optimization_run.open_provider_reservation_count,
                optimization_run.current_stage AS optimization_current_stage,
                CASE
                  WHEN COALESCE(
@@ -407,7 +408,13 @@ export function createContentAgentAdminRepository(db = pool) {
           SELECT run.id AS optimization_run_id,
                  run.status AS optimization_run_status,
                  run.current_stage,
-                 run.error_report_json ->> 'code' AS run_error_code
+                 run.error_report_json ->> 'code' AS run_error_code,
+                 (
+                   SELECT COUNT(*)::integer
+                   FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb)) AS stage(key, value)
+                   WHERE stage.key LIKE 'budget:%'
+                     AND stage.value ->> 'status' = 'reserved'
+                 ) AS open_provider_reservation_count
           FROM content_runs run
           WHERE run.job_id = optimization_job.optimization_job_id
           ORDER BY run.started_at DESC, run.id DESC
@@ -470,6 +477,7 @@ export function createContentAgentAdminRepository(db = pool) {
                optimization_job.optimization_job_updated_at,
                optimization_run.optimization_run_id,
                optimization_run.optimization_run_status,
+               optimization_run.open_provider_reservation_count,
                optimization_run.current_stage AS optimization_current_stage,
                CASE
                  WHEN COALESCE(
@@ -503,7 +511,13 @@ export function createContentAgentAdminRepository(db = pool) {
           SELECT run.id AS optimization_run_id,
                  run.status AS optimization_run_status,
                  run.current_stage,
-                 run.error_report_json ->> 'code' AS run_error_code
+                 run.error_report_json ->> 'code' AS run_error_code,
+                 (
+                   SELECT COUNT(*)::integer
+                   FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb)) AS stage(key, value)
+                   WHERE stage.key LIKE 'budget:%'
+                     AND stage.value ->> 'status' = 'reserved'
+                 ) AS open_provider_reservation_count
           FROM content_runs run
           WHERE run.job_id = optimization_job.optimization_job_id
           ORDER BY run.started_at DESC, run.id DESC

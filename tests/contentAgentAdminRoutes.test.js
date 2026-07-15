@@ -51,6 +51,7 @@ const POST_PATHS = [
   '/admin/content-agent/drafts/:id/notification/retry',
   '/admin/content-agent/existing-content/audit',
   '/admin/content-agent/existing-content/:id/optimize',
+  '/admin/content-agent/existing-content/:id/optimization-jobs/:jobId/discard',
   '/admin/content-agent/existing-content/:id/revision',
   '/admin/content-agent/revisions/:id',
   '/admin/content-agent/revisions/:id/changes/:changeId/revert',

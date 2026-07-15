@@ -15,11 +15,16 @@ export const DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY =
 
 const RETRYABLE_JOB_STATUSES = new Set(['failed', 'needs_manual_attention']);
 const ADMIN_REVIEW_NOTIFICATION_JOB = 'send_admin_review_notification';
+const JOBS_WITH_DEDICATED_RECOVERY = new Set([
+  'optimize_existing_post',
+  'revalidate_existing_post_revision'
+]);
 
 export function canRetryContentJobManually({ jobType, status, attempts, lastError } = {}) {
   const normalizedAttempts = Number(attempts);
   return lastError !== 'provider_execution_uncertain'
     && jobType !== ADMIN_REVIEW_NOTIFICATION_JOB
+    && !JOBS_WITH_DEDICATED_RECOVERY.has(jobType)
     && RETRYABLE_JOB_STATUSES.has(status)
     && Number.isSafeInteger(normalizedAttempts)
     && normalizedAttempts >= 0

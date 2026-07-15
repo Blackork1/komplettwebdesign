@@ -26,6 +26,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVIEW_VERSION_STALE',
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE',
+  'CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE',
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
   'CONTENT_LEARNING_VERSION_CONFLICT',
@@ -59,6 +60,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
+  CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE: 'Der Optimierungsauftrag kann in diesem Zustand nicht sicher geschlossen werden.',
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
   CONTENT_LEARNING_VERSION_CONFLICT: 'Der Vorschlag oder die Regel wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
@@ -1282,6 +1284,29 @@ export function createAdminContentAgentController(dependencies) {
           });
         }
         return res.redirect('/admin/content-agent/existing-content?optimization=queued');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async discardExistingOptimizationJobAction(req, res, next) {
+      try {
+        requiredConfirmation(req.body?.confirmed);
+        if (typeof jobRepository?.discardDeterministicExistingOptimizationJobForAdmin !== 'function') {
+          return unavailable(res);
+        }
+        const admin = adminFromRequest(req);
+        const discarded = await jobRepository.discardDeterministicExistingOptimizationJobForAdmin({
+          jobId: postgresIntegerId(req.params.jobId),
+          postId: postgresIntegerId(req.params.id),
+          adminId: postgresIntegerId(admin.id)
+        });
+        if (!discarded) {
+          throw Object.assign(new Error('Sicheres Schließen nicht verfügbar.'), {
+            code: 'CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE'
+          });
+        }
+        return res.redirect('/admin/content-agent/existing-content?optimization=discarded');
       } catch (error) {
         return sendKnownError(error, res, next);
       }

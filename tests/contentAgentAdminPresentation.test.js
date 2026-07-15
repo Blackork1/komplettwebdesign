@@ -670,6 +670,7 @@ test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
     updatedAt: '2026-07-11T12:00:00.000Z',
     optimization: {
       state: 'idle', active: false, terminal: false, canStart: true,
+      canDiscard: false, discardActionUrl: null,
       statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
       message: 'Noch keine KI-Optimierung gestartet.', jobId: null,
       revisionId: null, revisionUrl: null, errorCode: null,
@@ -760,6 +761,7 @@ test('Bestandsoptimierungsstatus präsentiert laufende Stufe ausschließlich üb
 
   assert.deepEqual(result, {
     state: 'running', active: true, terminal: false, canStart: false,
+    canDiscard: false, discardActionUrl: null,
     statusLabel: 'In Bearbeitung', stageLabel: 'Gezielte Optimierung',
     message: 'Die KI-Optimierung läuft: Gezielte Optimierung.', jobId: 44,
     revisionId: null, revisionUrl: null, errorCode: null,
@@ -779,6 +781,7 @@ test('fertige Bestandsoptimierung verweist nur auf die deterministisch gewählte
     optimization_revision_status: 'draft'
   }), {
     state: 'completed', active: false, terminal: true, canStart: false,
+    canDiscard: false, discardActionUrl: null,
     statusLabel: 'Revision bereit', stageLabel: 'Revision erstellt',
     message: 'Die Optimierung ist abgeschlossen. Die Livefassung blieb unverändert.',
     jobId: 44, revisionId: 71,
@@ -838,6 +841,40 @@ test('unsicherer Providerzustand bleibt gesperrt und bietet keinen normalen Neus
   assert.equal(result.errorCode, 'provider_execution_uncertain');
   assert.match(result.message, /manuelle Prüfung/i);
   assert.doesNotMatch(JSON.stringify(result), /Bearer|Authorization|raw_provider_error/);
+});
+
+test('deterministischer manueller Bestandsfehler bietet nur die bestätigte Schließaktion an', () => {
+  const result = presentExistingContentOptimizationState({
+    id: 19,
+    optimization_job_id: 44,
+    optimization_job_status: 'needs_manual_attention',
+    optimization_job_updated_at: '2026-07-14T10:05:00.000Z',
+    optimization_run_status: 'needs_manual_attention',
+    optimization_current_stage: 'repair',
+    optimization_error_code: 'existing_post_optimization_repair_failed',
+    open_provider_reservation_count: 0,
+    has_draft_revision: false
+  });
+
+  assert.equal(result.canStart, false);
+  assert.equal(result.canDiscard, true);
+  assert.equal(result.discardActionUrl, '/admin/content-agent/existing-content/19/optimization-jobs/44/discard');
+});
+
+test('Jobpräsentation bietet für Bestandsoptimierungen keinen generischen Retry an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 44,
+    job_type: 'optimize_existing_post',
+    status: 'needs_manual_attention',
+    attempts: 1,
+    max_attempts: 3,
+    last_error: 'existing_post_optimization_repair_failed',
+    run_status: 'needs_manual_attention',
+    post_id: 19,
+    open_provider_reservation_count: 0
+  }]);
+
+  assert.equal(job.canRetry, false);
 });
 
 test('unbekannte Status-, Stufen- und Fehlerwerte werden fail-closed präsentiert', () => {

@@ -574,6 +574,33 @@ test('unsicherer Providerzustand bietet keinen normalen Retry und verweist siche
   assert.equal((html.match(/data-existing-content-primary-action/g) || []).length, 1);
 });
 
+test('deterministischer manueller Bestandsfehler zeigt nur die bestätigte Schließaktion', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19, title: 'Artikel', slug: 'artikel',
+      optimization: {
+        state: 'manual_attention', active: false, terminal: true, canStart: false,
+        canDiscard: true,
+        discardActionUrl: '/admin/content-agent/existing-content/19/optimization-jobs/44/discard',
+        statusLabel: 'Manuelle Prüfung nötig', stageLabel: 'Gezielte Reparatur',
+        message: 'Der deterministische Lauf kann sicher geschlossen werden.', jobId: 44,
+        revisionId: null, revisionUrl: null,
+        errorCode: 'existing_post_optimization_repair_failed', unsafeProviderState: false,
+        updatedAt: '2026-07-14T10:03:00.000Z'
+      }
+    }]
+  });
+
+  const form = html.match(/<form[^>]*action="\/admin\/content-agent\/existing-content\/19\/optimization-jobs\/44\/discard"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.match(form, /method="post"/);
+  assert.match(form, /name="_csrf" value="csrf-test"/);
+  assert.match(form, /name="confirmed" value="true"/);
+  assert.match(form, /Auftrag sicher schließen/);
+  assert.doesNotMatch(form, /name="(?:post_id|admin_id|error_code)"/i);
+  assert.doesNotMatch(html, /Job fortsetzen/);
+});
+
 test('Bestandsoptimierungs-JavaScript pollt nur aktive Zustände alle drei Sekunden und schreibt kein HTML', async () => {
   const script = await readFile(
     new URL('../public/js/admin-existing-content-optimization.js', import.meta.url),

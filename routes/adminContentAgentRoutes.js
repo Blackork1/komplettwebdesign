@@ -12,6 +12,7 @@ import {
   enqueueJob,
   enqueueReviewOptimizationJob,
   getLatestReviewOptimizationJob,
+  discardDeterministicExistingOptimizationJobForAdmin,
   recoverDraftPersistenceForAdmin,
   recoverEditorialReviewForAdmin,
   recoverQualityGateJobForAdmin,
@@ -77,6 +78,7 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/notification/retry', isAdmin, verifyCsrfToken, controller.retryDraftNotificationAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
   router.post('/admin/content-agent/existing-content/:id/optimize', isAdmin, verifyCsrfToken, controller.optimizeExistingContentAction);
+  router.post('/admin/content-agent/existing-content/:id/optimization-jobs/:jobId/discard', isAdmin, verifyCsrfToken, controller.discardExistingOptimizationJobAction);
   router.post('/admin/content-agent/existing-content/:id/revision', isAdmin, verifyCsrfToken, controller.createRevisionAction);
   router.get('/admin/content-agent/revisions/:id/compare', isAdmin, controller.revisionComparePage);
   router.get('/admin/content-agent/revisions/:id/edit', isAdmin, controller.revisionEditPage);
@@ -110,6 +112,7 @@ const controller = createAdminContentAgentController({
     enqueueReviewOptimizationJob: (input) => enqueueReviewOptimizationJob(input, pool),
     getLatestReviewOptimizationJob: (input) => getLatestReviewOptimizationJob(input, pool),
     enqueueExistingPostOptimizationJob: (input) => adminRepository.enqueueExistingPostOptimizationJob(input),
+    discardDeterministicExistingOptimizationJobForAdmin: (input) => discardDeterministicExistingOptimizationJobForAdmin(input, pool),
     enqueueManualSearchConsoleSyncJob: (input) => enqueueManualSearchConsoleSyncJob(input, pool),
     retryContentJobForAdmin: (input) => retryContentJobForAdmin(input, pool),
     recoverUncertainProviderJobForAdmin: (input) => recoverUncertainProviderJobForAdmin(input, pool),

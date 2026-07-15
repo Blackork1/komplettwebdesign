@@ -20,6 +20,9 @@ import { aggregateSearchConsoleCategories } from './searchConsoleCategoryService
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
 import { evaluateExistingPostRevisionApproval } from './existingPostRevisionApprovalPolicy.js';
+import {
+  canDiscardDeterministicExistingPostOptimization
+} from './existingPostOptimizationDiscardPolicy.js';
 
 const STAGE_LABELS = Object.freeze({
   inventory: 'Bestandsaufnahme',
@@ -71,6 +74,7 @@ const SAFE_EXISTING_OPTIMIZATION_ERROR_CODES = new Set([
   'CONTENT_JOB_LEASE_LOST',
   'CONTENT_POST_NOT_FOUND',
   'CONTENT_PROVIDER_SAFE_RETRY',
+  'CONTENT_REVISION_STALE',
   'CONTENT_RULE_MANIFEST_MISMATCH',
   'CONTENT_RUN_FINISH_FAILED',
   'CONTENT_RUNTIME_SNAPSHOT_INVALID',
@@ -1085,6 +1089,8 @@ export function presentExistingContentOptimizationState(row = {}) {
       active: false,
       terminal: false,
       canStart: true,
+      canDiscard: false,
+      discardActionUrl: null,
       statusLabel: 'Noch nicht gestartet',
       stageLabel: 'Noch keine Stufe',
       message: 'Noch keine KI-Optimierung gestartet.',
@@ -1102,7 +1108,7 @@ export function presentExistingContentOptimizationState(row = {}) {
     : '';
   const state = rawStatus === 'needs_manual_attention'
     ? 'manual_attention'
-    : ['queued', 'running', 'completed', 'failed'].includes(rawStatus)
+    : ['queued', 'running', 'completed', 'failed', 'cancelled'].includes(rawStatus)
       ? rawStatus
       : 'manual_attention';
   const active = state === 'queued' || state === 'running';
@@ -1123,20 +1129,33 @@ export function presentExistingContentOptimizationState(row = {}) {
   const hasDraftRevision = revisionId !== null
     && row.optimization_revision_status === 'draft';
   const hasAnyDraftRevision = hasDraftRevision || row.has_draft_revision === true;
+  const postId = presentedPositiveInteger(row.id);
+  const canDiscard = postId !== null && canDiscardDeterministicExistingPostOptimization({
+    jobType: 'optimize_existing_post',
+    jobStatus: rawStatus,
+    runStatus: row.optimization_run_status,
+    errorCode,
+    openProviderReservationCount: row.open_provider_reservation_count,
+    hasDraftRevision: hasAnyDraftRevision
+  });
   const messages = {
     queued: 'Die KI-Optimierung wurde eingeplant und wartet auf den Worker.',
     running: `Die KI-Optimierung läuft: ${stageLabel}.`,
     completed: 'Die Optimierung ist abgeschlossen. Die Livefassung blieb unverändert.',
     failed: 'Die KI-Optimierung ist fehlgeschlagen. Ein neuer, sicherer Start ist möglich.',
+    cancelled: 'Der deterministische Auftrag wurde sicher geschlossen. Ein neuer Start ist möglich.',
     manual_attention: unsafeProviderState
       ? 'Der Providerzustand ist nicht eindeutig und benötigt eine manuelle Prüfung.'
-      : 'Der Lauf benötigt eine manuelle Prüfung.'
+      : canDiscard
+        ? 'Der deterministische Lauf kann sicher geschlossen werden.'
+        : 'Der Lauf benötigt eine manuelle Prüfung.'
   };
   const labels = {
     queued: 'Eingeplant',
     running: 'In Bearbeitung',
     completed: hasDraftRevision ? 'Revision bereit' : 'Abgeschlossen',
     failed: 'Fehlgeschlagen',
+    cancelled: 'Sicher geschlossen',
     manual_attention: 'Manuelle Prüfung nötig'
   };
 
@@ -1144,9 +1163,13 @@ export function presentExistingContentOptimizationState(row = {}) {
     state,
     active,
     terminal,
-    canStart: ['completed', 'failed'].includes(state)
+    canStart: ['completed', 'failed', 'cancelled'].includes(state)
       && !unsafeProviderState
       && !hasAnyDraftRevision,
+    canDiscard,
+    discardActionUrl: canDiscard
+      ? `/admin/content-agent/existing-content/${postId}/optimization-jobs/${jobId}/discard`
+      : null,
     statusLabel: labels[state],
     stageLabel,
     message: messages[state],

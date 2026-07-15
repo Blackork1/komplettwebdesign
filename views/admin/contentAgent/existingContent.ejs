@@ -66,6 +66,12 @@
                     <a class="btn btn-sm btn-primary" href="<%= optimization.revisionUrl %>">Revision bearbeiten</a>
                   <% } else if (item.revisionId) { %>
                     <a class="btn btn-sm btn-primary" href="/admin/content-agent/revisions/<%= item.revisionId %>/edit">Revision bearbeiten</a>
+                  <% } else if (optimization.canDiscard === true && optimization.discardActionUrl) { %>
+                    <form method="post" action="<%= optimization.discardActionUrl %>" data-confirm="Diesen deterministisch fehlgeschlagenen Auftrag sicher schließen? Die Livefassung bleibt unverändert. Offene Providerreservierungen oder unklare Providerzustände können hiermit nicht geschlossen werden.">
+                      <input type="hidden" name="_csrf" value="<%= csrf %>">
+                      <input type="hidden" name="confirmed" value="true">
+                      <button class="btn btn-sm btn-primary" type="submit">Auftrag sicher schließen</button>
+                    </form>
                   <% } else if (optimization.canStart === true) { %>
                     <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/optimize" data-confirm="KI-Optimierung für diesen Artikel starten? Die Livefassung bleibt unverändert.">
                       <input type="hidden" name="_csrf" value="<%= csrf %>">

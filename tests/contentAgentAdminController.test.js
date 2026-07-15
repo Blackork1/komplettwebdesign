@@ -1595,3 +1595,54 @@ test('Ablehnungscontroller verlangt die literale Bestätigung und leitet Konflik
   assert.equal(conflictRes.statusCode, 409);
   assert.doesNotMatch(conflictRes.body, /interner Revisionszustand/);
 });
+
+test('Schließcontroller verlangt Bestätigung und bindet Admin, Artikel und Job exakt', async () => {
+  const inputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async discardDeterministicExistingOptimizationJobForAdmin(input) {
+        inputs.push(input);
+        return { id: 44, status: 'cancelled' };
+      }
+    }
+  }));
+
+  for (const confirmed of [undefined, 'on', '1', 'false', false]) {
+    const invalidRes = response();
+    await controller.discardExistingOptimizationJobAction({
+      params: { id: '19', jobId: '44' },
+      body: { confirmed },
+      session: { user: { id: 7, username: 'Redaktion' } }
+    }, invalidRes, assert.fail);
+    assert.equal(invalidRes.statusCode, 400);
+  }
+  assert.equal(inputs.length, 0);
+
+  const res = response();
+  await controller.discardExistingOptimizationJobAction({
+    params: { id: '19', jobId: '44' },
+    body: { confirmed: 'true', post_id: '999', admin_id: '999' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+
+  assert.deepEqual(inputs, [{ jobId: 44, postId: 19, adminId: 7 }]);
+  assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?optimization=discarded');
+});
+
+test('Schließcontroller meldet verlorenen CAS ohne interne Fehlerdetails', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    jobRepository: {
+      async discardDeterministicExistingOptimizationJobForAdmin() { return null; }
+    }
+  }));
+  const res = response();
+
+  await controller.discardExistingOptimizationJobAction({
+    params: { id: '19', jobId: '44' },
+    body: { confirmed: 'true' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 409);
+  assert.doesNotMatch(res.body, /SQL|provider|Reservierung/i);
+});

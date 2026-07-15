@@ -20,6 +20,9 @@ import {
 } from '../services/contentAgent/contentRuleManifest.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
 import { reviewHasOnlyTechnicalBlockingIssues } from '../services/contentAgent/editorialReviewPolicy.js';
+import {
+  DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
+} from '../services/contentAgent/existingPostOptimizationDiscardPolicy.js';
 
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
@@ -513,6 +516,132 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
     `,
     [jobId, cap]
   );
+  return rows[0] || null;
+}
+
+function positivePostgresInteger(value, fieldName) {
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized <= 0 || normalized > POSTGRES_INTEGER_MAX) {
+    throw new TypeError(`${fieldName} muss eine positive PostgreSQL-Integer-ID sein.`);
+  }
+  return normalized;
+}
+
+export async function discardDeterministicExistingOptimizationJobForAdmin({
+  jobId,
+  postId,
+  adminId
+} = {}, db = pool) {
+  const normalizedJobId = positivePostgresInteger(jobId, 'jobId');
+  const normalizedPostId = positivePostgresInteger(postId, 'postId');
+  const normalizedAdminId = positivePostgresInteger(adminId, 'adminId');
+  const { rows } = await db.query(`
+    WITH locked_job AS MATERIALIZED (
+      SELECT job.*
+      FROM content_jobs AS job
+      WHERE job.id = $1::bigint
+      FOR UPDATE
+    ),
+    locked_run AS MATERIALIZED (
+      SELECT run.*
+      FROM content_runs AS run
+      JOIN locked_job AS job ON job.id = run.job_id
+      FOR UPDATE OF run
+    ),
+    eligible AS MATERIALIZED (
+      SELECT job.id AS job_id,
+             run.id AS run_id,
+             COALESCE(run.error_report_json ->> 'code', job.last_error) AS error_code
+      FROM locked_job AS job
+      JOIN locked_run AS run ON run.job_id = job.id
+      WHERE job.job_type = 'optimize_existing_post'
+        AND job.status = 'needs_manual_attention'
+        AND run.status = 'needs_manual_attention'
+        AND job.payload_json ->> 'post_id' = $2::text
+        AND job.payload_json ->> 'source' = 'admin_existing_content'
+        AND COALESCE(run.error_report_json ->> 'code', job.last_error) = ANY($4::text[])
+        AND COALESCE(run.error_report_json ->> 'code', job.last_error) NOT IN (
+          'provider_execution_uncertain',
+          'provider_stage_persistence_uncertain'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM posts AS live_post
+          WHERE live_post.id = $2::integer
+            AND live_post.published = TRUE
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM content_post_revisions AS revision
+          WHERE revision.post_id = $2::integer
+            AND revision.status = 'draft'
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb)) AS stage(key, value)
+          WHERE stage.key LIKE 'budget:%'
+            AND stage.value ->> 'status' = 'reserved'
+        )
+    ),
+    audited_run AS (
+      UPDATE content_runs AS run
+      SET status = 'failed',
+          finished_at = COALESCE(run.finished_at, NOW()),
+          stage_results_json = jsonb_set(
+            COALESCE(run.stage_results_json, '{}'::jsonb),
+            ARRAY['existing_optimization_discard:admin'],
+            jsonb_build_object(
+              'status', 'discarded',
+              'jobId', eligible.job_id,
+              'postId', $2::integer,
+              'errorCode', eligible.error_code,
+              'adminId', $3::integer,
+              'discardedAt', to_jsonb(NOW())
+            ),
+            TRUE
+          )
+      FROM eligible
+      WHERE run.id = eligible.run_id
+      RETURNING run.id, run.job_id
+    ),
+    cancelled_job AS (
+      UPDATE content_jobs AS job
+      SET status = 'cancelled',
+          locked_at = NULL,
+          locked_by = NULL,
+          finished_at = COALESCE(job.finished_at, NOW()),
+          updated_at = NOW()
+      FROM eligible
+      WHERE job.id = eligible.job_id
+        AND EXISTS (
+          SELECT 1
+          FROM audited_run
+          WHERE audited_run.job_id = job.id
+        )
+      RETURNING job.*
+    ),
+    already_discarded AS (
+      SELECT job.*
+      FROM locked_job AS job
+      JOIN locked_run AS run ON run.job_id = job.id
+      WHERE job.job_type = 'optimize_existing_post'
+        AND job.status = 'cancelled'
+        AND job.payload_json ->> 'post_id' = $2::text
+        AND run.stage_results_json #>> ARRAY['existing_optimization_discard:admin', 'status'] = 'discarded'
+        AND run.stage_results_json #>> ARRAY['existing_optimization_discard:admin', 'jobId'] = $1::text
+        AND run.stage_results_json #>> ARRAY['existing_optimization_discard:admin', 'postId'] = $2::text
+    )
+    SELECT * FROM cancelled_job
+    UNION ALL
+    SELECT * FROM already_discarded
+    WHERE NOT EXISTS (SELECT 1 FROM cancelled_job)
+    LIMIT 1
+  `, [
+    normalizedJobId,
+    normalizedPostId,
+    normalizedAdminId,
+    DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
+  ]);
   return rows[0] || null;
 }
 

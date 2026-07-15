@@ -2,7 +2,7 @@
   'use strict';
 
   var activeStates = ['queued', 'running'];
-  var terminalStates = ['completed', 'failed', 'manual_attention'];
+  var terminalStates = ['completed', 'failed', 'manual_attention', 'cancelled'];
   var passiveStates = ['idle'];
 
   function knownState(value) {
