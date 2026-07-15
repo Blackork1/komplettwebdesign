@@ -132,6 +132,19 @@ export function createArticlePerformanceService({
         }
       }
 
+      if (typeof repository.pruneArticleEvents === 'function') {
+        try {
+          await leaseGuard?.assertActive?.();
+          const current = now();
+          const currentDate = current instanceof Date ? current : new Date(current);
+          if (Number.isNaN(currentDate.getTime())) throw new Error('Ungültiger Wartungszeitpunkt.');
+          const beforeDate = new Date(currentDate.getTime() - 180 * 24 * 60 * 60 * 1000);
+          result.retentionPruned = await repository.pruneArticleEvents({ beforeDate });
+        } catch {
+          result.retentionFailed = true;
+        }
+      }
+
       return result;
     }
   };

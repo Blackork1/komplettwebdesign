@@ -143,3 +143,47 @@ test('Lernvorschläge werden nach der Auswertung getrennt verarbeitet und Fehler
   assert.equal(result.learningFailed, true);
   assert.equal(result.evaluated, 0);
 });
+
+test('anonyme Artikelereignisse werden nach 180 Tagen gelöscht', async () => {
+  let prunedBefore = null;
+  const service = createArticlePerformanceService({
+    repository: {
+      async listPublishedArticles() { return []; },
+      async getPerformanceInputs() { throw new Error('nicht erwartet'); },
+      async upsertPerformanceSnapshot() { throw new Error('nicht erwartet'); },
+      async pruneArticleEvents({ beforeDate }) { prunedBefore = beforeDate; return 3; }
+    },
+    async enqueueExplanationJob() {},
+    opportunityRepository: { async upsertOpenOpportunities() {} },
+    now: () => new Date('2026-07-15T03:30:00.000Z')
+  });
+
+  const result = await service.evaluateAllPublishedArticles({ evaluatedThroughDate: '2026-07-12' });
+
+  assert.equal(prunedBefore.toISOString(), '2026-01-16T03:30:00.000Z');
+  assert.equal(result.retentionPruned, 3);
+});
+
+test('fehlgeschlagene Aufbewahrungsbereinigung verwirft keine gespeicherte Auswertung', async () => {
+  const stored = [];
+  const service = createArticlePerformanceService({
+    repository: {
+      async listPublishedArticles() { return [{ id: 8 }]; },
+      async getPerformanceInputs() { return completeInputFor(8); },
+      async upsertPerformanceSnapshot(input) {
+        stored.push(input);
+        return { id: 108, explanation_status: 'not_needed' };
+      },
+      async pruneArticleEvents() { throw new Error('Bereinigung vorübergehend nicht verfügbar'); }
+    },
+    async enqueueExplanationJob() {},
+    opportunityRepository: { async upsertOpenOpportunities() {} },
+    now: () => new Date('2026-07-15T03:30:00.000Z')
+  });
+
+  const result = await service.evaluateAllPublishedArticles({ evaluatedThroughDate: '2026-07-12' });
+
+  assert.equal(stored.length, 1);
+  assert.equal(result.evaluated, 1);
+  assert.equal(result.retentionFailed, true);
+});

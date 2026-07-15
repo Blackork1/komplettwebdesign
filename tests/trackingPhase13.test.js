@@ -143,3 +143,18 @@ test('Blogartikel erfassen anonyme CTA-Ereignisse nur mit Einwilligung und niema
   assert.match(trackingEvents, /content_article_cta_click/);
   assert.match(index, /createContentTrackingRouter/);
 });
+
+test('Trackingplan und Datenschutzerklärung dokumentieren die anonyme Artikelattribution vollständig', () => {
+  const plan = read('docs/tracking-plan.md');
+  const privacy = read('views/static/datenschutz.ejs');
+
+  for (const source of [plan, privacy]) {
+    assert.match(source, /Analytics-Einwilligung/i);
+    assert.match(source, /7-Tage-Last-Touch/i);
+    assert.match(source, /keine personenbezogenen Daten/i);
+    assert.match(source, /180 Tage/i);
+  }
+  assert.match(plan, /cta_click/);
+  assert.match(plan, /contact_submit/);
+  assert.match(plan, /Untererfassung|Unterzählung/i);
+});

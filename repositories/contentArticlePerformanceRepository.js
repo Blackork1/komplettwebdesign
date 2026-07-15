@@ -459,9 +459,9 @@ export function createContentArticlePerformanceRepository(db = pool) {
     async pruneArticleEvents({ beforeDate } = {}) {
       const { rows } = await db.query(`
         DELETE FROM content_article_events
-        WHERE occurred_at < $1::date
+        WHERE occurred_at < $1::timestamptz
         RETURNING id
-      `, [isoDate(beforeDate, 'beforeDate')]);
+      `, [beforeDate]);
       return rows.length;
     }
   };

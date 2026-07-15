@@ -10,6 +10,8 @@ Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhal
 
 **Hinweis für die KI-Bestandsoptimierung:** Dieses Update benötigt keine neue `.env`-Variable und keinen neuen Docker-Dienst. Die bestehende OpenAI-, PostgreSQL- und GSC-Konfiguration wird weiterverwendet. Erforderlich sind ein geprüftes Datenbankbackup, der Migrationslauf einschließlich `011_create_existing_post_optimization.sql` und `012_upgrade_revision_outcome_claims.sql`, die nachfolgende Schema-Prüfung sowie erst danach der gemeinsame Recreate von `app` und `content-worker`. Migration 011 ergänzt die geschützten Optimierungsrevisionen und GSC-Ergebnisse; Migration 012 aktualisiert bereits vorhandene Outcome-Tabellen migrationssicher um die Claim-Spalten und den validierten Claim-Constraint.
 
+**Hinweis für die Artikel-Performance:** Dieses Update benötigt keine neue `.env`-Variable und keine Änderung an `docker-compose.yml`. Erforderlich sind ein geprüftes Datenbankbackup, Migration `013_create_article_performance_learning.sql`, die Schema-Prüfung sowie der gemeinsame Recreate von `app` und `content-worker`. Der bereits vorhandene Search-Console-Zeitplan wird auf den täglichen Lauf um 05:30 Uhr gesetzt.
+
 ## 1. Projektpfad und Ausgangslage prüfen
 
 Alle kopierbaren Hostbefehle dieser Anleitung beginnen am bereits geöffneten Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$`. Der feste Host-Betriebsordner ist `~/apps/komplettwebdesign`; ausschließlich `server/` wird per Git automatisch aktualisiert, also `~/apps/komplettwebdesign/server`. Die Dateien `.env`, `docker-compose.yml` und `deploy/deploy.sh` werden manuell gepflegt und vor jeder Änderung gesichert. Sie liegen direkt unter `~/apps/komplettwebdesign` und dürfen nicht durch einen Checkout im Unterordner `server/` überschrieben werden.
@@ -203,7 +205,7 @@ SMTP_PASS=<separates-sicheres-smtp-passwort>
 SMTP_FROM=kontakt@komplettwebdesign.de
 SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign.de
 GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json
-CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0
+CONTENT_AGENT_GSC_SCHEDULE=30 5 * * *
 ```
 
 `SMTP_PASS` ist ein Geheimnis und darf weder in Git eingecheckt noch in Tickets, Logs oder Chatnachrichten kopiert werden. `SMTP_FROM` ist die technische Absenderadresse für Admin-Prüfmails und Blog-Newsletter; sie muss beim SMTP-Konto als Absender zulässig sein. Nach jeder späteren Änderung an den SMTP- oder Search-Console-Werten müssen App und Worker neu erzeugt werden, weil beide Prozesse die `.env` beim Containerstart laden. Beim Erstrollout an dieser Stelle ausdrücklich noch keinen Recreate ausführen: Zuerst die Abschnitte 5 bis 7 mit Image-Build, getrennter Testmigration, geprüftem Produktionsbackup, Produktionsmigration und Dry-Run vollständig abschließen. Der erste gemeinsame Recreate steht danach am Ende von Abschnitt 7.
@@ -214,7 +216,7 @@ CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0
 
 In `.env` bleiben außerdem nur die Namen der bereits vorhandenen Geheimnisse relevant: `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `SMTP_PASS`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` und `SESSION_SECRET`. Ihre Werte werden weder in diese Anleitung noch in Tickets, Git, Shell-Ausgaben oder Chatnachrichten kopiert.
 
-Die Search-Console-Integration ist jetzt vorbereitet. `CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0` plant den getrennten, wöchentlichen Abruf sonntags um 06:00 Uhr in der im Dashboard hinterlegten IANA-Zeitzone. Der Abruf importiert ausschließlich Leistungsdaten und erzeugt redaktionelle Hinweise; er ändert oder veröffentlicht keine Artikel.
+Die Search-Console-Integration ist jetzt vorbereitet. `CONTENT_AGENT_GSC_SCHEDULE=30 5 * * *` plant den getrennten, täglichen Abruf um 05:30 Uhr in der im Dashboard hinterlegten IANA-Zeitzone. Nach dem GSC-Import wertet derselbe kontrollierte Lauf die 7-, 14- und 28-Tage-Performance veröffentlichter Artikel aus. Er ändert oder veröffentlicht keine Artikel.
 
 ## 5. Konfiguration validieren und Image bauen
 
@@ -320,7 +322,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009, 010, 011 und 012 erfolgreich melden. Danach müssen sowohl der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish als auch die isolierten Verträge für KI-Bestandsoptimierung, GSC-Basis, 28-Tage-Folgefenster und migrationssichere Outcome-Claims bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, einer der E2E-Tests oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012 und 013 erfolgreich melden. Danach müssen sowohl der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish als auch die isolierten Verträge für KI-Bestandsoptimierung, GSC-Basis, Artikel-Performance, 28-Tage-Folgefenster und migrationssichere Outcome-Claims bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, einer der E2E-Tests oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
 Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
@@ -342,7 +344,7 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql`, `010_create_weekly_topic_pools.sql`, `011_create_existing_post_optimization.sql` und `012_upgrade_revision_outcome_claims.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Migration 011 ergänzt die Tabellen `content_revision_optimization_outcomes` und `content_revision_optimization_feedback`, den eindeutigen aktiven Jobindex `ux_content_jobs_active_existing_optimization` sowie den fälligen Outcome-Index `idx_content_revision_outcomes_pending`. Migration 012 ergänzt bei bereits ausgeführter Migration 011 die Claim-Spalten idempotent und erzwingt den validierten Constraint `content_revision_optimization_outcomes_claim_consistent`. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 012 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql`, `010_create_weekly_topic_pools.sql`, `011_create_existing_post_optimization.sql`, `012_upgrade_revision_outcome_claims.sql` und `013_create_article_performance_learning.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Migration 011 ergänzt die Tabellen `content_revision_optimization_outcomes` und `content_revision_optimization_feedback`, den eindeutigen aktiven Jobindex `ux_content_jobs_active_existing_optimization` sowie den fälligen Outcome-Index `idx_content_revision_outcomes_pending`. Migration 012 ergänzt bei bereits ausgeführter Migration 011 die Claim-Spalten idempotent und erzwingt den validierten Constraint `content_revision_optimization_outcomes_claim_consistent`. Migration 013 ergänzt die anonymen Artikelereignisse in `content_article_events`, die aggregierten Leistungsstände in `content_article_performance_snapshots` sowie die dafür benötigten Indizes und Prüfbedingungen. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 013 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
 docker compose run --rm app npm run migrate:content-agent
@@ -369,6 +371,8 @@ try {
     SELECT
       to_regclass('public.content_revision_optimization_outcomes') IS NOT NULL AS outcomes_table,
       to_regclass('public.content_revision_optimization_feedback') IS NOT NULL AS feedback_table,
+      to_regclass('public.content_article_events') IS NOT NULL AS article_events_table,
+      to_regclass('public.content_article_performance_snapshots') IS NOT NULL AS article_performance_snapshots_table,
       to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
       to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
       EXISTS (
@@ -391,7 +395,7 @@ try {
       ) AS claim_constraint
   `);
   if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
-    throw new Error('Migration 011/012 ist nicht vollständig wirksam.');
+    throw new Error('Migration 011/012/013 ist nicht vollständig wirksam.');
   }
   process.stdout.write('ok\n');
 } finally {
@@ -410,7 +414,7 @@ docker compose run --rm app npm run content-agent:dry-run
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
 
-Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration bis einschließlich 012, Schema-Prüfung und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 012 und demselben geprüften Image:
+Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration bis einschließlich 013, Schema-Prüfung und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 013 und demselben geprüften Image:
 
 ```bash
 docker compose up -d --no-deps --force-recreate app content-worker
@@ -771,6 +775,8 @@ try {
     SELECT
       to_regclass('public.content_revision_optimization_outcomes') IS NOT NULL AS outcomes_table,
       to_regclass('public.content_revision_optimization_feedback') IS NOT NULL AS feedback_table,
+      to_regclass('public.content_article_events') IS NOT NULL AS article_events_table,
+      to_regclass('public.content_article_performance_snapshots') IS NOT NULL AS article_performance_snapshots_table,
       to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
       to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
       EXISTS (
@@ -793,7 +799,7 @@ try {
       ) AS claim_constraint
   `);
   if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
-    throw new Error('Migration 011/012 ist nicht vollständig wirksam.');
+    throw new Error('Migration 011/012/013 ist nicht vollständig wirksam.');
   }
   process.stdout.write('ok\n');
 } finally {
@@ -801,7 +807,7 @@ try {
 }
 NODE
 )"
-test "$CONTENT_AGENT_SCHEMA_OK" = "ok" || fail "Content-Agent-Schema nach Migration 011/012 ist unvollständig."
+test "$CONTENT_AGENT_SCHEMA_OK" = "ok" || fail "Content-Agent-Schema nach Migration 011/012/013 ist unvollständig."
 DRY_RUN_OUTPUT_FILE="$(mktemp "$ROOT/data/.content-agent-dry-run.XXXXXX")"
 if ! docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run > "$DRY_RUN_OUTPUT_FILE" 2>&1; then
   cat "$DRY_RUN_OUTPUT_FILE" >&2
@@ -832,7 +838,7 @@ bash -n deploy/deploy.sh
 ./deploy/deploy.sh
 ```
 
-Das Skript benötigt auf dem Linux-VPS `flock` und hält eine gemeinsame, nicht blockierende Sperre für Deploy und Rollback während des gesamten Ablaufs. Es bricht bei einem parallelen Betriebsbefehl, einem unbekannten Datenbankzustand, einem vorhandenen aber gestoppten App-Container, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, einer unvollständigen Katalogprüfung für Migration 011/012, einem nicht eindeutig sicheren Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Die Katalogprüfung läuft bei jedem wiederholbaren Release unmittelbar nach der zweiten Migration und noch vor Dry-Run oder Neustart; sie liest ausschließlich PostgreSQL-Systemkataloge. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build, Migration und Katalogprüfung weiter und wird erst beim finalen Recreate ersetzt.
+Das Skript benötigt auf dem Linux-VPS `flock` und hält eine gemeinsame, nicht blockierende Sperre für Deploy und Rollback während des gesamten Ablaufs. Es bricht bei einem parallelen Betriebsbefehl, einem unbekannten Datenbankzustand, einem vorhandenen aber gestoppten App-Container, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, einer unvollständigen Katalogprüfung für Migration 011/012/013, einem nicht eindeutig sicheren Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Die Katalogprüfung läuft bei jedem wiederholbaren Release unmittelbar nach der zweiten Migration und noch vor Dry-Run oder Neustart; sie liest ausschließlich PostgreSQL-Systemkataloge. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build, Migration und Katalogprüfung weiter und wird erst beim finalen Recreate ersetzt.
 
 Vor `git fetch`, `git reset` und Build ermittelt das Skript den tatsächlich laufenden App-Container und liest dessen exakte `.Image`-SHA aus. Nur diese SHA erhält einen unveränderlichen Rollback-Tag; der bewegliche Tag `komplettwebdesign-app:local` ist ausdrücklich keine Snapshot-Quelle. Nach einem fehlgeschlagenen Build kann `komplettwebdesign-app:local` bereits ersetzt sein, obwohl das neue Image nie produktiv gestartet wurde; der nächste Rollback verweist trotzdem auf das richtige laufende Image.
 
@@ -896,7 +902,7 @@ Der Auto-Publish-Modus bleibt während der Einführungsphase gesperrt. Er darf f
 
 Nach Migration, Recreate und erfolgreichem Worker-Healthcheck im Adminbereich den Reiter „Search Console“ öffnen. Vor dem Funktionstest müssen der technische und fachliche Hauptschalter aktiv sein: `CONTENT_AGENT_ENABLED=true` muss beim Containerstart geladen worden sein und der Content-Agent muss im Dashboard aktiviert sein. Der Betriebsmodus darf weiterhin `review` bleiben.
 
-Mit „Search Console jetzt synchronisieren“ genau einen manuellen Abruf für die letzten 28 abgeschlossenen Tage einplanen. Die Erfolgsmeldung bestätigt nur, dass der Job sicher in die Queue aufgenommen wurde. Anschließend Workerstatus und Logs prüfen:
+Mit „Search Console jetzt synchronisieren“ genau einen manuellen Abruf für die letzten 28 abgeschlossenen Tage einplanen. Die Erfolgsmeldung bestätigt nur, dass der Job sicher in die Queue aufgenommen wurde. Nach dem erfolgreichen Import wird die Performance der veröffentlichten Artikel automatisch auf Basis der neuen GSC-Daten ausgewertet. Anschließend Workerstatus und Logs prüfen:
 
 ```bash
 docker compose ps app content-worker postgres

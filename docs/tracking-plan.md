@@ -97,6 +97,21 @@ Diese Werte werden nicht an Analytics gesendet.
 
 Die Danke-Seite ist `noindex,nofollow`. Sie sendet `thank_you_view`, `contact_form_submit_success` und `lead_received` über `window.KWDTracking`, nachdem der Lead serverseitig verarbeitet wurde. Eine interne Lead-ID wird nur zur Session-Deduplizierung genutzt und nicht als Analytics-Parameter übergeben.
 
+## Anonyme Blogartikel-Attribution
+
+Die interne Erfolgsmessung für Blogartikel wird ausschließlich nach einer erteilten Analytics-Einwilligung aktiviert. Sie arbeitet als 7-Tage-Last-Touch-Modell: Eine erfolgreich gesendete Kontaktanfrage wird höchstens sieben Tage lang dem zuletzt besuchten beziehungsweise zuletzt angeklickten Blogartikel zugeordnet.
+
+Intern werden dafür nur zwei Ereignisarten verarbeitet:
+
+- `cta_click` für einen Klick auf einen Kontakt-CTA innerhalb eines Blogartikels,
+- `contact_submit` für eine serverseitig erfolgreich verarbeitete Kontaktanfrage mit gültigem Artikelbezug.
+
+Die Ereignisse enthalten ausschließlich die interne Artikel-ID, Ereignisart, Zeitpunkt, eine begrenzte CTA-Position beziehungsweise ein begrenztes CTA-Ziel und einen HMAC-basierten Ereignisschlüssel zur Deduplizierung. Es werden keine personenbezogenen Daten wie Name, E-Mail-Adresse, Telefonnummer, Nachricht, IP-Adresse oder dauerhafte Sitzungskennung in der Artikel-Performance gespeichert.
+
+Anonyme Rohereignisse werden nach 180 Tagen automatisch gelöscht. Die daraus errechneten aggregierten 7-, 14- und 28-Tage-Snapshots bleiben als nicht personenbezogene Leistungsstatistik und als überprüfbare Grundlage für redaktionelle Lernvorschläge erhalten.
+
+Die Conversionwerte sind bewusst als Untererfassung zu lesen: Ohne Analytics-Einwilligung, bei blockiertem JavaScript, durch Werbe- oder Trackingblocker sowie nach Ablauf des 7-Tage-Zeitraums findet keine Zuordnung statt. Das System darf aus null erfassten Conversions deshalb nicht ableiten, dass ein Artikel tatsächlich keine Anfrage unterstützt hat.
+
 ## UTM und Referrer
 
 UTM-Werte werden in der Tracking-Schicht nur akzeptiert, wenn sie kurz und technisch unkritisch sind. Es wurde keine dauerhafte UTM-Speicherung eingebaut. Falls später eine persistente Attribution gewünscht ist, muss sie consent-kompatibel und ohne personenbezogene Daten geplant werden.
@@ -113,7 +128,6 @@ UTM-Werte werden in der Tracking-Schicht nur akzeptiert, wenn sie kurz und techn
 
 ## Folgeaufgaben
 
-- Optionales serverseitiges Lead-Attributionsmodell prüfen.
 - Auswertung in GA4, Matomo oder Plausible konkret konfigurieren, falls bewusst entschieden.
 - Weitere Toolseiten wie Website-Tester, SEO-Tester und GEO-Tester mit derselben Event-Taxonomie verfeinern.
 - Optional: Dashboard für Lead-Kategorien und Paketinteresse bauen.

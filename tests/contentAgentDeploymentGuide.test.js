@@ -127,7 +127,7 @@ test('Search-Console-Konfiguration verwendet die Domain-Property und ausschließ
   for (const value of [
     'SEARCH_CONSOLE_SITE_URL=sc-domain:komplettwebdesign.de',
     'GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gsc-service-account.json',
-    'CONTENT_AGENT_GSC_SCHEDULE=0 6 * * 0'
+    'CONTENT_AGENT_GSC_SCHEDULE=30 5 * * *'
   ]) assert.match(guide, new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
 
   assert.match(guide, /https:\/\/www\.googleapis\.com\/auth\/webmasters\.readonly/);
@@ -248,6 +248,17 @@ test('VPS-Anleitung migriert Bestandsoptimierung 011 und Outcome-Upgrade 012 vor
 
   assert.match(guide, /tests\/contentRevisionOutcomePostgresIntegration\.test\.js/);
   assert.match(guide, /kontrollierten KI-Bestandsoptimierungsauftrag/i);
+});
+
+test('VPS-Anleitung beschreibt die tägliche Artikel-Performance ohne neue Laufzeitkonfiguration', () => {
+  assert.match(guide, /013_create_article_performance_learning\.sql/);
+  assert.match(guide, /CONTENT_AGENT_GSC_SCHEDULE=30 5 \* \* \*/);
+  assert.match(guide, /täglich.*05:30/i);
+  assert.match(guide, /content_article_events/);
+  assert.match(guide, /content_article_performance_snapshots/);
+  assert.match(guide, /Artikel-Performance.*keine neue `\.env`-Variable/i);
+  assert.match(guide, /Artikel-Performance.*keine (?:Änderung|Anpassung).*`docker-compose\.yml`/i);
+  assert.match(guide, /Search Console jetzt synchronisieren[\s\S]*Performance/i);
 });
 
 test('VPS-Anleitung dokumentiert den vollständigen SMTP-Vertrag und den nötigen Recreate', () => {
@@ -396,7 +407,7 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
-test('wiederholbares Deploy prüft Migration 011 und 012 vor Dry-Run und Worker-Recreate', () => {
+test('wiederholbares Deploy prüft Migration 011 bis 013 vor Dry-Run und Worker-Recreate', () => {
   const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
   const migrations = [
     ...deploy.matchAll(
@@ -430,7 +441,9 @@ test('wiederholbares Deploy prüft Migration 011 und 012 vor Dry-Run und Worker-
     'idx_content_revision_outcomes_pending',
     'evaluation_claim_token',
     'evaluation_claimed_at',
-    'content_revision_optimization_outcomes_claim_consistent'
+    'content_revision_optimization_outcomes_claim_consistent',
+    'content_article_events',
+    'content_article_performance_snapshots'
   ]) assert.match(catalogCheck, new RegExp(databaseObject));
   assert.match(catalogCheck, /information_schema\.columns/);
   assert.match(catalogCheck, /pg_constraint/);
@@ -438,7 +451,7 @@ test('wiederholbares Deploy prüft Migration 011 und 012 vor Dry-Run und Worker-
   assert.match(catalogCheck, /Object\.values\(rows\[0\]\)\.some/);
   assert.match(
     catalogCheck,
-    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012 ist unvollständig\."/
+    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012\/013 ist unvollständig\."/
   );
 });
 
