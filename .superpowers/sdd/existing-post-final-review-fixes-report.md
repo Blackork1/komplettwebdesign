@@ -4,7 +4,7 @@ Stand: 15. Juli 2026
 
 ## Ergebnis
 
-Alle vier abschließenden Reviewbefunde wurden testgetrieben behoben. Die Änderungen verändern veröffentlichte Artikel niemals direkt. Neue oder wiederholte Optimierungen bleiben an den vorhandenen Draft-, Job-, Lease-, Kosten- und Revisionszäunen gebunden.
+Alle sieben abschließenden Reviewbefunde wurden testgetrieben behoben. Die Änderungen verändern veröffentlichte Artikel niemals direkt. Neue oder wiederholte Optimierungen bleiben an den vorhandenen Draft-, Job-, Lease-, Kosten- und Revisionszäunen gebunden.
 
 ## Behobene Befunde
 
@@ -47,14 +47,41 @@ Commit: `6189d16 fix: HTML-Struktur bei Bestandsoptimierung schützen`
 
 Commit: `a6d7a95 fix: Re-Auditjahr in Berlinzeit bestimmen`
 
+### 5. Gemeinsame Transaktionssperre pro Artikel
+
+- KI-Aufträge, manuelle Revisionen und das sichere Schließen deterministischer Fehler verwenden dieselbe PostgreSQL-Zeilensperre des veröffentlichten Artikels.
+- Nach dem Erwerb der Sperre werden offene Revisionen und aktive Optimierungsaufträge jeweils mit einem frischen `READ COMMITTED`-Snapshot geprüft.
+- Dadurch kann parallel weder ein kostenpflichtiger KI-Auftrag neben einer manuellen Revision entstehen noch ein Auftrag geschlossen werden, während gleichzeitig eine Revision angelegt wird.
+- `CONTENT_REVISION_CONFLICT` kann nur dann sicher geschlossen werden, wenn tatsächlich keine Revision und keine offene Providerreservierung mehr vorhanden ist.
+- Ein echter PostgreSQL-Parallelitätstest hält die Artikelsperre gezielt und belegt alle drei Konfliktrichtungen.
+
+Commit: `6143640 fix: Bestandsentwürfe pro Artikel serialisieren`
+
+### 6. Vollständiger Schutz der HTML- und Bootstrap-Struktur
+
+- Der Strukturvergleich erfasst jetzt alle relevanten Wrapper-Tags sowie sämtliche erlaubten Bootstrap-Darstellungsklassen des Artikelvertrags.
+- Auch Klassen auf inhaltlichen Elementen wie `lead`, `btn` oder `list-group-item` sind Teil des unveränderlichen Strukturfingerabdrucks.
+- Das Entfernen, Austauschen oder Verschieben von Container-, Grid-, Tabellen-, Listen-, Rahmen-, Abstands- und CTA-Klassen wird erkannt.
+- Eine reine Änderung der Klassenreihenfolge oder des Textinhalts bleibt weiterhin zulässig.
+
+Commit: `2b45243 fix: vollständige Artikelwrapper unverändert halten`
+
+### 7. Sichtbare sichere Schließaktion direkt im Entwurf
+
+- Sobald die Hintergrundoptimierung in einen sicher schließbaren manuellen Zustand wechselt, lädt die Entwurfsansicht einmal neu.
+- Dadurch wird die serverseitig geprüfte Schließaktion direkt in der Entwurfsliste sichtbar, ohne dass der Admin zu „Jobs & Protokolle“ wechseln muss.
+- Eine sitzungsgebundene Markierung verhindert Reload-Schleifen; unsichere oder nicht zum Job passende Aktions-URLs werden verworfen.
+
+Commit: `8cb0f0b fix: sichere Schließaktion im Entwurf anzeigen`
+
 ## Verifikation
 
 - `npm run build`: erfolgreich; 41 CSS-Quelldateien, Manifest unverändert.
-- `OPENAI_API_KEY=test-key npm test`: 1.875 Tests, 1.860 bestanden, 15 erwartungsgemäß ohne PostgreSQL-Opt-in übersprungen, 0 fehlgeschlagen.
-- Echte PostgreSQL-Integrationssuiten mit freigegebener lokaler Testdatenbank: 15/15 bestanden, 0 übersprungen, 0 fehlgeschlagen.
-- Enthalten sind der neue atomare und idempotente Schließpfad sowie die vollständige Migration- und Veröffentlichungsintegration.
+- `OPENAI_API_KEY=test-key npm test`: 1.886 Tests, 1.870 bestanden, 16 erwartungsgemäß ohne PostgreSQL-Opt-in übersprungen, 0 fehlgeschlagen.
+- Echte PostgreSQL-Integrationssuiten mit freigegebener lokaler Testdatenbank: 16/16 bestanden, 0 übersprungen, 0 fehlgeschlagen.
+- Enthalten sind der neue atomare und idempotente Schließpfad, die gemeinsame Artikelsperre unter echter Parallelität sowie die vollständige Migration- und Veröffentlichungsintegration.
 - `git diff --check`: erfolgreich.
 
 ## Verbleibende Hinweise
 
-Für diese vier Reviewbefunde bestehen keine bekannten offenen technischen Punkte. Vor einem VPS-Deploy gelten weiterhin die vorhandenen Migrations-, Backup- und Workerstart-Anweisungen des Gesamtprojekts.
+Für diese sieben Reviewbefunde bestehen keine bekannten offenen technischen Punkte. Vor einem VPS-Deploy gelten weiterhin die vorhandenen Migrations-, Backup- und Workerstart-Anweisungen des Gesamtprojekts.
