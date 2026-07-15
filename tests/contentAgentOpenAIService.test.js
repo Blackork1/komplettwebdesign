@@ -209,6 +209,28 @@ function createParseClient(outputParsed) {
   };
 }
 
+test('Performance-Erklärung verwendet das Reviewmodell und ein striktes strukturiertes Schema', async () => {
+  const value = {
+    summary: 'Kurze Zusammenfassung',
+    strengths: ['Stärke'],
+    improvements: ['Verbesserung'],
+    nextCheck: 'In 28 Tagen erneut prüfen.',
+    learningSuggestion: 'Muster weiter beobachten.'
+  };
+  const client = createParseClient(value);
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.explainArticlePerformance({
+    system: 'Sichere Systemanweisung',
+    user: '{"metrics":{}}'
+  });
+
+  assert.deepEqual(result.value, value);
+  assert.equal(client.requests[0].model, config.reviewModel);
+  assert.equal(client.requests[0].text.format.name, 'article_performance_explanation');
+  assert.equal(client.requests[0].text.format.strict, true);
+});
+
 function containsArrayValuedItems(value) {
   if (!value || typeof value !== 'object') return false;
   if (Array.isArray(value.items)) return true;

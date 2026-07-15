@@ -14,6 +14,7 @@ import {
   createProductionJobHandler,
   createProductionRuntime,
   createShutdownController,
+  EXPLANATION_JOB_TYPES,
   EXISTING_POST_OPTIMIZATION_JOB_TYPES,
   EXISTING_POST_REVALIDATION_JOB_TYPES,
   loadProductionModules,
@@ -1206,6 +1207,11 @@ test('der Produktionshandler unterstützt lokale Outcome- und Artikel-Performanc
   assert.equal(SUPPORTED_JOB_TYPES.has('evaluate_article_performance'), true);
 });
 
+test('der Produktionshandler unterstützt sichere Performance-Erklärungen', () => {
+  assert.deepEqual([...EXPLANATION_JOB_TYPES], ['explain_article_performance']);
+  assert.equal(SUPPORTED_JOB_TYPES.has('explain_article_performance'), true);
+});
+
 test('der Search-Console-Sync enqueued Analyse, Outcome- und Artikel-Performance-Auswertung', async () => {
   const events = [];
   const leaseGuard = async () => { events.push('lease'); return true; };
@@ -1287,6 +1293,51 @@ test('Artikel-Performance-Job akzeptiert ausschließlich einen lokalen ISO-Stich
         && error.retryable === false
     ));
   }
+});
+
+test('Performance-Erklärjob validiert den Evidenz-Fence und erzeugt keinen Content-Run', async () => {
+  const calls = [];
+  const leaseGuard = async () => { calls.push('lease'); return true; };
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für Performance-Erklärungen darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für Performance-Erklärungen darf keine Artikelpipeline starten.'); },
+    async explainArticlePerformance(input) {
+      calls.push(['explain', input.snapshotId, input.expectedEvidenceHash]);
+      return { status: 'ready' };
+    }
+  });
+
+  assert.deepEqual(await handler({
+    id: 913,
+    job_type: 'explain_article_performance',
+    payload_json: { snapshot_id: 4, evidence_hash: 'a'.repeat(64) }
+  }, { leaseGuard }), { status: 'completed' });
+  assert.deepEqual(calls, [
+    'lease',
+    ['explain', 4, 'a'.repeat(64)],
+    'lease'
+  ]);
+});
+
+test('unklarer Providerausgang einer Performance-Erklärung wird nicht blind wiederholt', async () => {
+  const uncertain = Object.assign(new Error('Unklar'), {
+    code: 'provider_execution_uncertain',
+    retryable: false
+  });
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('nicht erwartet'); },
+    async runPipeline() { assert.fail('nicht erwartet'); },
+    async explainArticlePerformance() { throw uncertain; }
+  });
+
+  assert.deepEqual(await handler({
+    id: 914,
+    job_type: 'explain_article_performance',
+    payload_json: { snapshot_id: 4, evidence_hash: 'a'.repeat(64) }
+  }, { leaseGuard: async () => true }), {
+    status: 'needs_manual_attention',
+    code: 'provider_execution_uncertain'
+  });
 });
 
 test('Outcome-Job akzeptiert ausschließlich endDate und verwendet keine GSC- oder Artikelpipeline', async () => {

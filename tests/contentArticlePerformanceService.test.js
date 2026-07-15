@@ -47,7 +47,7 @@ test('Auswertung isoliert Artikelfehler und speichert die übrigen Snapshots', a
         return { id: 99, explanation_status: input.explanationStatus };
       }
     },
-    async enqueueJob(input) { queued.push(input); },
+    async enqueueExplanationJob(input) { queued.push(input); },
     opportunityRepository: {
       async upsertOpenOpportunities(input) { opportunities.push(...input); }
     },
@@ -62,7 +62,8 @@ test('Auswertung isoliert Artikelfehler und speichert die übrigen Snapshots', a
   assert.equal(stored[0].postId, 2);
   assert.equal(stored[0].evaluatedThroughDate, '2026-07-12');
   assert.match(stored[0].evidenceHash, /^[0-9a-f]{64}$/);
-  assert.equal(queued[0].jobType, 'explain_article_performance');
+  assert.equal(queued[0].snapshotId, 99);
+  assert.match(queued[0].evidenceHash, /^[0-9a-f]{64}$/);
   assert.equal(opportunities[0].opportunityType, 'meta_refresh');
 });
 
@@ -85,7 +86,7 @@ test('Unveränderte neutrale Daten erzeugen keinen Erklärungsjob und keine Chan
         return { id: 100, explanation_status: input.explanationStatus };
       }
     },
-    async enqueueJob(input) { queued.push(input); },
+    async enqueueExplanationJob(input) { queued.push(input); },
     opportunityRepository: {
       async upsertOpenOpportunities(input) { opportunities.push(...input); }
     }
@@ -110,7 +111,7 @@ test('Lease wird vor jedem Artikel geprüft', async () => {
         return { id: input.postId, explanation_status: 'not_needed' };
       }
     },
-    async enqueueJob() {},
+    async enqueueExplanationJob() {},
     opportunityRepository: { async upsertOpenOpportunities() {} }
   });
 

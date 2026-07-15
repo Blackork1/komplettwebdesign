@@ -41,7 +41,7 @@ function buildOpportunities({ article, assessment, input, evaluatedThroughDate }
 
 export function createArticlePerformanceService({
   repository,
-  enqueueJob,
+  enqueueExplanationJob,
   opportunityRepository,
   now = () => new Date()
 } = {}) {
@@ -50,7 +50,7 @@ export function createArticlePerformanceService({
       typeof repository.upsertPerformanceSnapshot !== 'function') {
     throw new TypeError('Ein vollständiges Artikel-Performance-Repository wird benötigt.');
   }
-  if (typeof enqueueJob !== 'function') {
+  if (typeof enqueueExplanationJob !== 'function') {
     throw new TypeError('Eine Funktion zum Einreihen von Jobs wird benötigt.');
   }
   if (!opportunityRepository || typeof opportunityRepository.upsertOpenOpportunities !== 'function') {
@@ -107,15 +107,10 @@ export function createArticlePerformanceService({
           }
 
           if (snapshot?.explanation_status === 'pending') {
-            await enqueueJob({
-              jobType: 'explain_article_performance',
-              idempotencyKey: `article-performance-explanation:${snapshot.id}:${hash}`,
-              payload: {
-                snapshot_id: snapshot.id,
-                evidence_hash: hash,
-                requested_at: now().toISOString()
-              },
-              maxAttempts: 3
+            await enqueueExplanationJob({
+              snapshotId: snapshot.id,
+              evidenceHash: hash,
+              requestedAt: now().toISOString()
             });
             result.explanationJobs += 1;
           }

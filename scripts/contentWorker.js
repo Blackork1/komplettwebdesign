@@ -41,6 +41,7 @@ export const OUTCOME_JOB_TYPES = new Set([
   'evaluate_revision_outcomes',
   'evaluate_article_performance'
 ]);
+export const EXPLANATION_JOB_TYPES = new Set(['explain_article_performance']);
 export const SUPPORTED_JOB_TYPES = new Set([
   ...GENERATION_JOB_TYPES,
   ...REGENERATION_JOB_TYPES,
@@ -52,7 +53,8 @@ export const SUPPORTED_JOB_TYPES = new Set([
   ...PUBLICATION_JOB_TYPES,
   ...NEWSLETTER_JOB_TYPES,
   ...SEARCH_CONSOLE_JOB_TYPES,
-  ...OUTCOME_JOB_TYPES
+  ...OUTCOME_JOB_TYPES,
+  ...EXPLANATION_JOB_TYPES
 ]);
 
 const MAX_DATABASE_ID = 2_147_483_647;
@@ -111,6 +113,20 @@ function articlePerformanceJobPayload(claim) {
       || !Object.hasOwn(payload, 'evaluated_through_date')) return null;
   const evaluatedThroughDate = canonicalIsoDate(payload.evaluated_through_date);
   return evaluatedThroughDate ? { evaluatedThroughDate } : null;
+}
+
+function performanceExplanationJobPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+      || Object.keys(payload).length !== 2
+      || !Object.hasOwn(payload, 'snapshot_id')
+      || !Object.hasOwn(payload, 'evidence_hash')
+      || !positiveSafePayloadInteger(payload.snapshot_id)
+      || !/^[0-9a-f]{64}$/.test(String(payload.evidence_hash || ''))) return null;
+  return {
+    snapshotId: payload.snapshot_id,
+    expectedEvidenceHash: payload.evidence_hash
+  };
 }
 
 function searchConsoleJobPayload(claim) {
@@ -389,6 +405,7 @@ export function createProductionJobHandler({
   upsertSearchOpportunities,
   evaluateRevisionOutcomes,
   evaluateArticlePerformance,
+  explainArticlePerformance,
   recordProviderResult,
   enqueueJob
 }) {
@@ -700,6 +717,46 @@ export function createProductionJobHandler({
         throw retryableJobError(
           'Die lokale Outcome-Auswertung ist vorübergehend fehlgeschlagen.',
           'CONTENT_REVISION_OUTCOME_EVALUATION_FAILED',
+          error
+        );
+      }
+      await assertActiveLease(leaseGuard);
+      return { status: 'completed' };
+    }
+    if (EXPLANATION_JOB_TYPES.has(claim.job_type)) {
+      if (typeof leaseGuard !== 'function') {
+        throw permanentJobError(
+          'Für Performance-Erklärungen wird eine aktive Job-Lease benötigt.',
+          'CONTENT_JOB_LEASE_REQUIRED'
+        );
+      }
+      const payload = performanceExplanationJobPayload(claim);
+      if (!payload) {
+        throw permanentJobError(
+          'Der Performance-Erklärjob enthält keinen gültigen Evidenz-Fence.',
+          'CONTENT_ARTICLE_PERFORMANCE_EXPLANATION_PAYLOAD_INVALID'
+        );
+      }
+      required(explainArticlePerformance, 'explainArticlePerformance');
+      await assertActiveLease(leaseGuard);
+      try {
+        await explainArticlePerformance({
+          ...payload,
+          leaseGuard: { assertActive: () => assertActiveLease(leaseGuard) }
+        });
+      } catch (error) {
+        if (error?.code === 'CONTENT_ARTICLE_PERFORMANCE_EVIDENCE_STALE') {
+          return { status: 'completed' };
+        }
+        if (error?.code === 'provider_execution_uncertain' || error?.retryable === false) {
+          return {
+            status: 'needs_manual_attention',
+            code: error?.code || 'CONTENT_ARTICLE_PERFORMANCE_EXPLANATION_FAILED'
+          };
+        }
+        throw retryableJobError(
+          'Die Performance-Erklärung ist vorübergehend fehlgeschlagen.',
+          'CONTENT_ARTICLE_PERFORMANCE_EXPLANATION_FAILED',
           error
         );
       }
@@ -1231,6 +1288,10 @@ function bindRepositories(database, modules) {
     enqueueLearningObservationJob: (input) => (
       modules.jobRepository.enqueueLearningObservationJob(input, database)
     ),
+    enqueuePerformanceExplanationJob:
+      typeof modules.jobRepository.enqueuePerformanceExplanationJob === 'function'
+        ? (input) => modules.jobRepository.enqueuePerformanceExplanationJob(input, database)
+        : null,
     claimNextJob: (workerId) => modules.jobRepository.claimNextJob(workerId, database),
     renewJobLease: (claim) => modules.jobRepository.renewJobLease(claim, database),
     completeJob: (claim) => modules.jobRepository.completeJob(claim, database),
@@ -1352,10 +1413,28 @@ export function createProductionRuntime({
   const articlePerformanceService = articlePerformanceRepository
     && searchOpportunityRepository
     && typeof modules.createArticlePerformanceService === 'function'
+    && typeof repositories.jobRepository.enqueuePerformanceExplanationJob === 'function'
     ? modules.createArticlePerformanceService({
       repository: articlePerformanceRepository,
-      enqueueJob: repositories.jobRepository.enqueueJob,
+      enqueueExplanationJob: (input) => (
+        repositories.jobRepository.enqueuePerformanceExplanationJob(input)
+      ),
       opportunityRepository: searchOpportunityRepository
+    })
+    : null;
+  const articlePerformanceExplanationService = articlePerformanceRepository
+    && typeof modules.createArticlePerformanceExplanationService === 'function'
+    ? modules.createArticlePerformanceExplanationService({
+      repository: articlePerformanceRepository,
+      providerTextStageService: {
+        async runStructuredStage(input) {
+          const openaiService = modules.createOpenAIContentService({
+            apiKey: env.OPENAI_API_KEY,
+            config
+          });
+          return openaiService.explainArticlePerformance(input);
+        }
+      }
     })
     : null;
   const searchConsoleSyncService = searchConsoleModulesAvailable
@@ -1567,6 +1646,9 @@ export function createProductionRuntime({
     evaluateArticlePerformance: articlePerformanceService
       ? (input) => articlePerformanceService.evaluateAllPublishedArticles(input)
       : null,
+    explainArticlePerformance: articlePerformanceExplanationService
+      ? (input) => articlePerformanceExplanationService.explainSnapshot(input)
+      : null,
     recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database),
     enqueueJob: repositories.jobRepository.enqueueJob,
     pipelineDependencies
@@ -1699,7 +1781,8 @@ export async function loadProductionModules() {
     existingPostRevisionRevalidationModule,
     contentRevisionOutcomeModule,
     articlePerformanceRepositoryModule,
-    articlePerformanceServiceModule
+    articlePerformanceServiceModule,
+    articlePerformanceExplanationServiceModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1745,7 +1828,8 @@ export async function loadProductionModules() {
     import('../services/contentAgent/existingPostRevisionRevalidationService.js'),
     import('../services/contentAgent/contentRevisionOutcomeService.js'),
     import('../repositories/contentArticlePerformanceRepository.js'),
-    import('../services/contentAgent/articlePerformanceService.js')
+    import('../services/contentAgent/articlePerformanceService.js'),
+    import('../services/contentAgent/articlePerformanceExplanationService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1800,7 +1884,9 @@ export async function loadProductionModules() {
     evaluateDueRevisionOutcomes: contentRevisionOutcomeModule.evaluateDueRevisionOutcomes,
     createContentArticlePerformanceRepository:
       articlePerformanceRepositoryModule.createContentArticlePerformanceRepository,
-    createArticlePerformanceService: articlePerformanceServiceModule.createArticlePerformanceService
+    createArticlePerformanceService: articlePerformanceServiceModule.createArticlePerformanceService,
+    createArticlePerformanceExplanationService:
+      articlePerformanceExplanationServiceModule.createArticlePerformanceExplanationService
   };
 }
 

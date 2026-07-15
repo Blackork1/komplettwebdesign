@@ -8,6 +8,7 @@ import {
   enqueueAdminReviewNotificationJob,
   enqueueLearningObservationJob,
   enqueueManualSearchConsoleSyncJob,
+  enqueuePerformanceExplanationJob,
   enqueueJob,
   enqueueReviewOptimizationJob,
   failJob,
@@ -57,6 +58,23 @@ function createQueryRecorder(rowsByCall = []) {
     }
   };
 }
+
+test('Performance-Erklärjob verwendet Snapshot und Evidenz als Idempotenzschlüssel', async () => {
+  const row = { id: 91, job_type: 'explain_article_performance' };
+  const db = createQueryRecorder([{ rows: [row] }]);
+
+  assert.equal(await enqueuePerformanceExplanationJob({
+    snapshotId: 12,
+    evidenceHash: 'a'.repeat(64)
+  }, db), row);
+  assert.deepEqual(db.calls[0].params.slice(0, 5), [
+    'explain_article_performance',
+    `article-performance-explanation:12:${'a'.repeat(64)}`,
+    { snapshot_id: 12, evidence_hash: 'a'.repeat(64) },
+    null,
+    3
+  ]);
+});
 
 function createTransactionalRecorder(rowsByCall = []) {
   const events = [];

@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import { createContentArticlePerformanceRepository } from '../repositories/contentArticlePerformanceRepository.js';
 
+const HASH_FOR_TEST = 'f'.repeat(64);
+
 function createQueryRecorder(responses = []) {
   const calls = [];
   let responseIndex = 0;
@@ -168,4 +170,26 @@ test('Alte anonyme Ereignisse können mit einem ISO-Datum entfernt werden', asyn
   assert.equal(result, 2);
   assert.match(db.calls[0].sql, /DELETE FROM content_article_events/i);
   assert.deepEqual(db.calls[0].params, ['2026-01-01']);
+});
+
+test('Erklärungen werden nur unter dem erwarteten Evidenz-Hash gespeichert', async () => {
+  const db = createQueryRecorder([
+    { rows: [{ id: 4, evidenceHash: HASH_FOR_TEST }] },
+    { rows: [{ id: 4 }] }
+  ]);
+  const repository = createContentArticlePerformanceRepository(db);
+
+  assert.deepEqual(await repository.getSnapshotForExplanation(4), {
+    id: 4,
+    evidenceHash: HASH_FOR_TEST
+  });
+  assert.deepEqual(await repository.saveSnapshotExplanation({
+    snapshotId: 4,
+    expectedEvidenceHash: HASH_FOR_TEST,
+    explanation: { summary: 'Erklärung' }
+  }), { id: 4 });
+
+  assert.match(db.calls[1].sql, /evidence_hash = \$2/i);
+  assert.match(db.calls[1].sql, /explanation_status = 'pending'/i);
+  assert.deepEqual(db.calls[1].params, [4, HASH_FOR_TEST, { summary: 'Erklärung' }]);
 });

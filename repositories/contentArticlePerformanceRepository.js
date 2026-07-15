@@ -397,6 +397,53 @@ export function createContentArticlePerformanceRepository(db = pool) {
       return rows[0] || null;
     },
 
+    async getSnapshotForExplanation(snapshotId) {
+      const { rows } = await db.query(`
+        SELECT snapshot.id,
+               snapshot.post_id AS "postId",
+               snapshot.evidence_hash AS "evidenceHash",
+               snapshot.windows_json AS windows,
+               snapshot.previous_windows_json AS "previousWindows",
+               snapshot.cohort_json AS cohort,
+               snapshot.diagnoses_json AS diagnoses,
+               snapshot.positive_signals_json AS "positiveSignals",
+               snapshot.explanation_status AS "explanationStatus",
+               post.title,
+               COALESCE(post.excerpt, post.description, '') AS "shortDescription",
+               metadata.content_cluster AS "contentCluster",
+               metadata.search_intent AS "searchIntent"
+        FROM content_article_performance_snapshots snapshot
+        JOIN posts post ON post.id = snapshot.post_id
+        LEFT JOIN content_post_metadata metadata ON metadata.post_id = post.id
+        WHERE snapshot.id = $1
+        LIMIT 1
+      `, [positiveInteger(snapshotId, 'snapshotId')]);
+      return rows[0] || null;
+    },
+
+    async saveSnapshotExplanation({ snapshotId, expectedEvidenceHash, explanation } = {}) {
+      const normalizedHash = String(expectedEvidenceHash || '');
+      if (!SHA256.test(normalizedHash)) throw new TypeError('Ungültiger Evidenzhash.');
+      if (!explanation || typeof explanation !== 'object' || Array.isArray(explanation)) {
+        throw new TypeError('Die Erklärung muss ein Objekt sein.');
+      }
+      const { rows } = await db.query(`
+        UPDATE content_article_performance_snapshots
+        SET explanation_json = $3::jsonb,
+            explanation_status = 'ready',
+            updated_at = NOW()
+        WHERE id = $1
+          AND evidence_hash = $2
+          AND explanation_status = 'pending'
+        RETURNING id
+      `, [
+        positiveInteger(snapshotId, 'snapshotId'),
+        normalizedHash,
+        explanation
+      ]);
+      return rows[0] || null;
+    },
+
     async listLatestSnapshots(postIds) {
       const ids = normalizePostIds(postIds);
       if (ids.length === 0) return [];

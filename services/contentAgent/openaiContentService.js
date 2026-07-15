@@ -10,6 +10,7 @@ import {
 } from './articleSchemas.js';
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
+import { ArticlePerformanceExplanationSchema } from './articlePerformanceExplanationService.js';
 import {
   buildTopicResearchPrompt,
   promptVersion as topicResearchPromptVersion
@@ -539,6 +540,17 @@ export function createOpenAIContentService({
     });
   }
 
+  async function explainArticlePerformance({ system, user }) {
+    return parse({
+      model: config.reviewModel,
+      schema: ArticlePerformanceExplanationSchema,
+      schemaName: 'article_performance_explanation',
+      system,
+      user,
+      promptVersion: 'article-performance-explanation-v1'
+    });
+  }
+
   return {
     createTopicCandidates,
     createWeeklyTopicPool,
@@ -549,6 +561,7 @@ export function createOpenAIContentService({
     generateArticle,
     reviewArticle,
     repairArticle,
-    classifyLearningIssues
+    classifyLearningIssues,
+    explainArticlePerformance
   };
 }

@@ -157,6 +157,21 @@ export async function enqueueJob({
   return rows[0] || null;
 }
 
+export function enqueuePerformanceExplanationJob({ snapshotId, evidenceHash }, db = pool) {
+  const normalizedSnapshotId = Number(snapshotId);
+  const normalizedHash = String(evidenceHash || '');
+  if (!Number.isSafeInteger(normalizedSnapshotId) || normalizedSnapshotId <= 0 ||
+      !/^[0-9a-f]{64}$/.test(normalizedHash)) {
+    throw new TypeError('Der Performance-Erklärjob benötigt Snapshot-ID und Evidenz-Hash.');
+  }
+  return enqueueJob({
+    jobType: 'explain_article_performance',
+    idempotencyKey: `article-performance-explanation:${normalizedSnapshotId}:${normalizedHash}`,
+    payload: { snapshot_id: normalizedSnapshotId, evidence_hash: normalizedHash },
+    maxAttempts: 3
+  }, db);
+}
+
 function positiveJobInteger(value, field) {
   const normalized = Number(value);
   if (!Number.isSafeInteger(normalized) || normalized < 1) {
