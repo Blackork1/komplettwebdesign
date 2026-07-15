@@ -18,7 +18,6 @@ function requireSameOrigin(req, res, next) {
   }
   return next();
 }
-
 function sessionRateLimit(req, res, next) {
   if (!req.session) return res.status(429).send('Zu viele Anfragen');
   const currentTime = Date.now();
@@ -56,4 +55,3 @@ export function createContentTrackingRouter({ attributionService } = {}) {
   );
   return router;
 }
-

@@ -8,7 +8,6 @@ function positiveInteger(value) {
   const normalized = Number(value);
   return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : null;
 }
-
 function hasAnalyticsConsent(req) {
   return req?.session?.cookieConsent?.analytics === true;
 }
@@ -116,4 +115,3 @@ export function createContentAttributionService({ repository, secret, now = () =
     }
   };
 }
-

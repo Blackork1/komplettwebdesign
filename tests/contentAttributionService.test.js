@@ -47,7 +47,6 @@ test('merkt einen veröffentlichten Artikel nur mit Analytics-Einwilligung vor',
   assert.equal(denied.session.contentArticleLastTouch, undefined);
   assert.equal(service.rememberArticle(request(), { id: 42, published: false }), false);
 });
-
 test('speichert einen gültigen CTA-Klick als anonymen, deduplizierbaren Hash', async () => {
   const repository = createRepository();
   const secret = 'ein-ausreichend-langes-testgeheimnis';
@@ -148,4 +147,3 @@ test('ordnet eine Kontaktanfrage höchstens sieben Tage anonym dem letzten Artik
   assert.equal(repository.calls[0].ctaTarget, '/kontakt');
   assert.match(repository.calls[0].eventKeyHash, /^[0-9a-f]{64}$/);
 });
-
