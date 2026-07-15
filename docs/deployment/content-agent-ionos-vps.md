@@ -753,6 +753,55 @@ test "$BUILT_WORKER_CONTRACT" = "$CURRENT_WORKER_CONTRACT"
 
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent
+CONTENT_AGENT_SCHEMA_OK="$(
+  docker compose -f "$COMPOSE_FILE" run --rm --no-deps -T app node --input-type=module <<'NODE'
+import pg from 'pg';
+
+const client = new pg.Client({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+try {
+  await client.connect();
+  const { rows } = await client.query(`
+    SELECT
+      to_regclass('public.content_revision_optimization_outcomes') IS NOT NULL AS outcomes_table,
+      to_regclass('public.content_revision_optimization_feedback') IS NOT NULL AS feedback_table,
+      to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
+      to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'content_revision_optimization_outcomes'
+          AND column_name IN ('evaluation_claim_token', 'evaluation_claimed_at')
+        HAVING COUNT(*) = 2
+      ) AS claim_columns,
+      EXISTS (
+        SELECT 1
+        FROM pg_constraint constraint_row
+        JOIN pg_class table_row ON table_row.oid = constraint_row.conrelid
+        JOIN pg_namespace schema_row ON schema_row.oid = table_row.relnamespace
+        WHERE schema_row.nspname = 'public'
+          AND table_row.relname = 'content_revision_optimization_outcomes'
+          AND constraint_row.conname = 'content_revision_optimization_outcomes_claim_consistent'
+          AND constraint_row.convalidated = TRUE
+      ) AS claim_constraint
+  `);
+  if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
+    throw new Error('Migration 011/012 ist nicht vollständig wirksam.');
+  }
+  process.stdout.write('ok\n');
+} finally {
+  await client.end().catch(() => {});
+}
+NODE
+)"
+test "$CONTENT_AGENT_SCHEMA_OK" = "ok" || fail "Content-Agent-Schema nach Migration 011/012 ist unvollständig."
 DRY_RUN_OUTPUT_FILE="$(mktemp "$ROOT/data/.content-agent-dry-run.XXXXXX")"
 if ! docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run > "$DRY_RUN_OUTPUT_FILE" 2>&1; then
   cat "$DRY_RUN_OUTPUT_FILE" >&2
@@ -783,7 +832,7 @@ bash -n deploy/deploy.sh
 ./deploy/deploy.sh
 ```
 
-Das Skript benötigt auf dem Linux-VPS `flock` und hält eine gemeinsame, nicht blockierende Sperre für Deploy und Rollback während des gesamten Ablaufs. Es bricht bei einem parallelen Betriebsbefehl, einem unbekannten Datenbankzustand, einem vorhandenen aber gestoppten App-Container, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, einem nicht eindeutig sicheren Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build und Migration weiter und wird erst beim finalen Recreate ersetzt.
+Das Skript benötigt auf dem Linux-VPS `flock` und hält eine gemeinsame, nicht blockierende Sperre für Deploy und Rollback während des gesamten Ablaufs. Es bricht bei einem parallelen Betriebsbefehl, einem unbekannten Datenbankzustand, einem vorhandenen aber gestoppten App-Container, einem unbekannten oder von null abweichenden Jobzähler, einem ungeprüften Backup, ungültigen Git-Commits, einem fehlgeschlagenen Build, einem der beiden idempotenten Migrationsläufe, einer unvollständigen Katalogprüfung für Migration 011/012, einem nicht eindeutig sicheren Dry-Run, dem Recreate oder dem Healthcheck durch `set -Eeuo pipefail` sofort ab. Die Katalogprüfung läuft bei jedem wiederholbaren Release unmittelbar nach der zweiten Migration und noch vor Dry-Run oder Neustart; sie liest ausschließlich PostgreSQL-Systemkataloge. Nur `server/` ist ein disponibler Git-Checkout; `git reset --hard origin/main` verwirft dort absichtlich lokale Änderungen. Die Rootdateien bleiben unberührt. Die bisherige App läuft während Pause, Backup, Git-Update, Image-Build, Migration und Katalogprüfung weiter und wird erst beim finalen Recreate ersetzt.
 
 Vor `git fetch`, `git reset` und Build ermittelt das Skript den tatsächlich laufenden App-Container und liest dessen exakte `.Image`-SHA aus. Nur diese SHA erhält einen unveränderlichen Rollback-Tag; der bewegliche Tag `komplettwebdesign-app:local` ist ausdrücklich keine Snapshot-Quelle. Nach einem fehlgeschlagenen Build kann `komplettwebdesign-app:local` bereits ersetzt sein, obwohl das neue Image nie produktiv gestartet wurde; der nächste Rollback verweist trotzdem auf das richtige laufende Image.
 

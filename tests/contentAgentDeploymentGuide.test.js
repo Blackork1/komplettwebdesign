@@ -396,6 +396,52 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
+test('wiederholbares Deploy prüft Migration 011 und 012 vor Dry-Run und Worker-Recreate', () => {
+  const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
+  const migrations = [
+    ...deploy.matchAll(
+      /^docker compose -f "\$COMPOSE_FILE" run --rm --no-deps app npm run migrate:content-agent$/gm
+    )
+  ];
+  assert.equal(migrations.length, 2, 'beide idempotenten Migrationsläufe müssen vorhanden sein');
+
+  const lastMigration = migrations[1].index;
+  const schemaVerification = deploy.indexOf('CONTENT_AGENT_SCHEMA_OK=', lastMigration);
+  const dryRun = deploy.indexOf('npm run content-agent:dry-run', lastMigration);
+  const recreate = deploy.indexOf(
+    'up -d --no-deps --force-recreate app content-worker',
+    lastMigration
+  );
+
+  assert.ok(schemaVerification > lastMigration, 'Katalogprüfung muss nach beiden Migrationen laufen');
+  assert.ok(dryRun > schemaVerification, 'Dry-Run darf erst nach erfolgreicher Katalogprüfung laufen');
+  assert.ok(recreate > dryRun, 'Worker-Recreate muss nach Katalogprüfung und Dry-Run liegen');
+  assert.match(
+    deploy.slice(lastMigration, dryRun),
+    /npm run migrate:content-agent\nCONTENT_AGENT_SCHEMA_OK=/,
+    'die Katalogprüfung muss unmittelbar auf den zweiten Migrationslauf folgen'
+  );
+
+  const catalogCheck = deploy.slice(schemaVerification, dryRun);
+  for (const databaseObject of [
+    'content_revision_optimization_outcomes',
+    'content_revision_optimization_feedback',
+    'ux_content_jobs_active_existing_optimization',
+    'idx_content_revision_outcomes_pending',
+    'evaluation_claim_token',
+    'evaluation_claimed_at',
+    'content_revision_optimization_outcomes_claim_consistent'
+  ]) assert.match(catalogCheck, new RegExp(databaseObject));
+  assert.match(catalogCheck, /information_schema\.columns/);
+  assert.match(catalogCheck, /pg_constraint/);
+  assert.match(catalogCheck, /constraint_row\.convalidated = TRUE/);
+  assert.match(catalogCheck, /Object\.values\(rows\[0\]\)\.some/);
+  assert.match(
+    catalogCheck,
+    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012 ist unvollständig\."/
+  );
+});
+
 test('Deploy sichert die exakte Image-SHA des laufenden App-Containers vor Reset und Build', () => {
   const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
   const runningContainer = deploy.indexOf('RUNNING_APP_CONTAINER_ID=');
