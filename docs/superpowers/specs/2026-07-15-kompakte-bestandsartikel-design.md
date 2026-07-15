@@ -1,7 +1,7 @@
 # Kompakte Bestandsartikel im Content-Agent
 
-**Datum:** 15. Juli 2026  
-**Status:** Visuelles Konzept vom Nutzer freigegeben, schriftliche Spezifikation zur Abnahme  
+**Datum:** 15. Juli 2026
+**Status:** Visuelles Konzept vom Nutzer freigegeben, schriftliche Spezifikation zur Abnahme
 **Geltungsbereich:** Content-Agent → Bestehende Inhalte
 
 ## 1. Ziel
