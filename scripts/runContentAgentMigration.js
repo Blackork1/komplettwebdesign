@@ -13,7 +13,8 @@ const MIGRATIONS = [
   './migrations/009_create_content_learning_rules.sql',
   './migrations/010_create_weekly_topic_pools.sql',
   './migrations/011_create_existing_post_optimization.sql',
-  './migrations/012_upgrade_revision_outcome_claims.sql'
+  './migrations/012_upgrade_revision_outcome_claims.sql',
+  './migrations/013_create_article_performance_learning.sql'
 ];
 
 export async function runContentAgentMigration(db = pool) {
@@ -42,11 +43,11 @@ const entryFile = process.argv[1]
 if (currentFile === entryFile) {
   runContentAgentMigration()
     .then(async () => {
-      console.log('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 + 007 + 008 + 009 + 010 + 011 + 012 erfolgreich.');
+      console.log('Content-Agent-Migration 002 bis 013 erfolgreich.');
       await pool.end();
     })
     .catch(async (error) => {
-      console.error('Content-Agent-Migration 002 + 003 + 004 + 005 + 006 + 007 + 008 + 009 + 010 + 011 + 012 fehlgeschlagen:', error.message);
+      console.error('Content-Agent-Migration 002 bis 013 fehlgeschlagen:', error.message);
       await pool.end();
       process.exitCode = 1;
     });

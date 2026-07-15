@@ -64,7 +64,7 @@ test('Migration 008 erweitert freie KI-Metadaten ohne Datenverlust auf TEXT', ()
   assert.doesNotMatch(metadataSql, /DROP\s+(?:TABLE|COLUMN)/i);
 });
 
-test('Migrationsrunner führt 002 bis 012 sequenziell unter einer Transaktionssperre aus', async () => {
+test('Migrationsrunner führt 002 bis 013 sequenziell unter einer Transaktionssperre aus', async () => {
   const queries = [];
   let released = false;
   const client = {
@@ -103,11 +103,13 @@ test('Migrationsrunner führt 002 bis 012 sequenziell unter einer Transaktionssp
   assert.match(queries[11], /CREATE TABLE IF NOT EXISTS content_revision_optimization_feedback/i);
   assert.match(queries[12], /ADD COLUMN IF NOT EXISTS evaluation_claim_token UUID/i);
   assert.match(queries[12], /content_revision_optimization_outcomes_claim_consistent/i);
-  assert.equal(queries[13], 'COMMIT');
+  assert.match(queries[13], /CREATE TABLE IF NOT EXISTS content_article_events/i);
+  assert.match(queries[13], /CREATE TABLE IF NOT EXISTS content_article_performance_snapshots/i);
+  assert.equal(queries[14], 'COMMIT');
   assert.equal(released, true);
 });
 
-test('Migrationsrunner benennt alle elf ausgeführten Migrationen in Statusmeldungen', () => {
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 \+ 012 erfolgreich/);
-  assert.match(runnerSource, /Migration 002 \+ 003 \+ 004 \+ 005 \+ 006 \+ 007 \+ 008 \+ 009 \+ 010 \+ 011 \+ 012 fehlgeschlagen/);
+test('Migrationsrunner benennt den vollständigen Bereich 002 bis 013 in Statusmeldungen', () => {
+  assert.match(runnerSource, /Migration 002 bis 013 erfolgreich/);
+  assert.match(runnerSource, /Migration 002 bis 013 fehlgeschlagen/);
 });
