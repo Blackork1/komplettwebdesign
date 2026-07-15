@@ -64,6 +64,23 @@ test('der Sonntagstermin enqueued das 28-Tage-Fenster bis zum Vortag', async () 
   }]);
 });
 
+test('ein täglicher Zeitplan enqueued an jedem Wochentag genau den Vortag', async () => {
+  const enqueued = [];
+
+  const result = await runSearchConsoleSchedulerTick({
+    configured: true,
+    schedule: '30 5 * * *',
+    timezone: 'Europe/Berlin',
+    getSettings: async () => ({ agent_enabled: true }),
+    enqueueJob: async (job) => { enqueued.push(job); return job; },
+    now: () => new Date('2026-07-15T03:30:00.000Z')
+  });
+
+  assert.equal(result.payload.endDate, '2026-07-14');
+  assert.equal(result.idempotencyKey, 'gsc-sync:2026-07-15');
+  assert.equal(enqueued.length, 1);
+});
+
 test('außerhalb der konfigurierten lokalen Minute entsteht kein Job', async () => {
   const enqueued = [];
 

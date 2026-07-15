@@ -1197,12 +1197,16 @@ test('der Produktionshandler unterstützt beide Search-Console-Jobtypen als eige
   }
 });
 
-test('der Produktionshandler unterstützt die lokale Outcome-Auswertung als eigenen Jobtyp', () => {
-  assert.deepEqual([...OUTCOME_JOB_TYPES], ['evaluate_revision_outcomes']);
+test('der Produktionshandler unterstützt lokale Outcome- und Artikel-Performance-Auswertungen', () => {
+  assert.deepEqual([...OUTCOME_JOB_TYPES], [
+    'evaluate_revision_outcomes',
+    'evaluate_article_performance'
+  ]);
   assert.equal(SUPPORTED_JOB_TYPES.has('evaluate_revision_outcomes'), true);
+  assert.equal(SUPPORTED_JOB_TYPES.has('evaluate_article_performance'), true);
 });
 
-test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueued Analyse sowie Outcome-Auswertung', async () => {
+test('der Search-Console-Sync enqueued Analyse, Outcome- und Artikel-Performance-Auswertung', async () => {
   const events = [];
   const leaseGuard = async () => { events.push('lease'); return true; };
   const handler = createProductionJobHandler({
@@ -1239,9 +1243,50 @@ test('der Search-Console-Sync dispatcht vor Content-Run und Pipeline und enqueue
       jobType: 'evaluate_revision_outcomes',
       idempotencyKey: 'revision-outcomes:2026-07-18',
       payload: { endDate: '2026-07-18' }
+    }],
+    ['enqueue', {
+      jobType: 'evaluate_article_performance',
+      idempotencyKey: 'article-performance:2026-07-18',
+      payload: { evaluated_through_date: '2026-07-18' },
+      maxAttempts: 3
     }]
   ]);
   assert.equal(events.filter((event) => event === 'lease').length >= 3, true);
+});
+
+test('Artikel-Performance-Job akzeptiert ausschließlich einen lokalen ISO-Stichtag', async () => {
+  const calls = [];
+  const leaseGuard = async () => { calls.push('lease'); return true; };
+  const handler = createProductionJobHandler({
+    async createRun() { assert.fail('Für Performance darf kein Content-Run entstehen.'); },
+    async runPipeline() { assert.fail('Für Performance darf keine Artikelpipeline starten.'); },
+    async evaluateArticlePerformance(input) {
+      calls.push(['evaluate', input.evaluatedThroughDate]);
+      return { evaluated: 2, failed: 0 };
+    }
+  });
+
+  assert.deepEqual(await handler({
+    id: 911,
+    job_type: 'evaluate_article_performance',
+    payload_json: { evaluated_through_date: '2026-08-11' }
+  }, { leaseGuard }), { status: 'completed' });
+  assert.deepEqual(calls, ['lease', ['evaluate', '2026-08-11'], 'lease']);
+
+  for (const payload_json of [
+    {},
+    { evaluated_through_date: '11.08.2026' },
+    { evaluated_through_date: '2026-08-11', extra: true }
+  ]) {
+    await assert.rejects(handler({
+      id: 912,
+      job_type: 'evaluate_article_performance',
+      payload_json
+    }, { leaseGuard }), (error) => (
+      error.code === 'CONTENT_ARTICLE_PERFORMANCE_JOB_PAYLOAD_INVALID'
+        && error.retryable === false
+    ));
+  }
 });
 
 test('Outcome-Job akzeptiert ausschließlich endDate und verwendet keine GSC- oder Artikelpipeline', async () => {
@@ -3815,7 +3860,7 @@ test('Produktionsruntime reconciliiert Cleanup ohne API-Key oder Providerfactory
   assert.equal(budgetCalls, 0);
 });
 
-test('die Produktionsruntime verdrahtet GSC-Client, Repositories und beide frühen Dispatchpfade', async () => {
+test('die Produktionsruntime verdrahtet GSC-Client, Repositories und alle frühen Dispatchpfade', async () => {
   const claims = [{
     id: 201,
     job_type: 'sync_search_console',
@@ -3938,11 +3983,12 @@ test('die Produktionsruntime verdrahtet GSC-Client, Repositories und beide früh
   assert.equal(events.some(([type]) => type === 'build'), true);
   assert.equal(events.some(([type]) => type === 'opportunities'), true);
   assert.equal(events.filter(([type]) => type === 'provider').length, 1);
-  assert.equal(events.filter(([type]) => type === 'enqueue').length, 2);
+  assert.equal(events.filter(([type]) => type === 'enqueue').length, 3);
   assert.deepEqual(events.filter(([type]) => type === 'enqueue').at(-1)[1], {
-    jobType: 'evaluate_revision_outcomes',
-    idempotencyKey: 'revision-outcomes:2026-07-18',
-    payload: { endDate: '2026-07-18' }
+    jobType: 'evaluate_article_performance',
+    idempotencyKey: 'article-performance:2026-07-18',
+    payload: { evaluated_through_date: '2026-07-18' },
+    maxAttempts: 3
   });
 });
 

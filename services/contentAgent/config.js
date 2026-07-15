@@ -46,7 +46,7 @@ export function getContentAgentTechnicalConfig(env = process.env) {
     jobLeaseMinutes: integer(env.CONTENT_AGENT_JOB_LEASE_MINUTES, 30, 5, 180),
     searchConsoleSiteUrl: env.SEARCH_CONSOLE_SITE_URL || '',
     googleCredentialsPath: env.GOOGLE_APPLICATION_CREDENTIALS || '',
-    searchConsoleSchedule: env.CONTENT_AGENT_GSC_SCHEDULE || '0 6 * * 0',
+    searchConsoleSchedule: env.CONTENT_AGENT_GSC_SCHEDULE || '30 5 * * *',
     searchConsoleConfigured: configured(env.SEARCH_CONSOLE_SITE_URL)
       && configured(env.GOOGLE_APPLICATION_CREDENTIALS),
     openaiConfigured: configured(env.OPENAI_API_KEY),

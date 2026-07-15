@@ -5,7 +5,7 @@ function parseSchedule(value) {
   const [minute, hour, dayOfMonth, month, weekday] = fields;
   const validMinute = /^(?:[0-9]|[0-5][0-9])$/.test(minute || '');
   const validHour = /^(?:[0-9]|[01][0-9]|2[0-3])$/.test(hour || '');
-  const validWeekday = /^[0-6]$/.test(weekday || '');
+  const validWeekday = weekday === '*' || /^[0-6]$/.test(weekday || '');
   if (
     fields.length !== 5
     || !validMinute
@@ -16,7 +16,11 @@ function parseSchedule(value) {
   ) {
     throw new TypeError('Ungültiger Search-Console-Zeitplan.');
   }
-  return { minute: Number(minute), hour: Number(hour), weekday: Number(weekday) };
+  return {
+    minute: Number(minute),
+    hour: Number(hour),
+    weekday: weekday === '*' ? null : Number(weekday)
+  };
 }
 
 export async function runSearchConsoleSchedulerTick({
@@ -37,7 +41,8 @@ export async function runSearchConsoleSchedulerTick({
   const { minute, hour, weekday } = parseSchedule(schedule);
   const local = DateTime.fromJSDate(now(), { zone: timezone });
   if (!local.isValid) throw new TypeError('Ungültige IANA-Zeitzone.');
-  if (local.minute !== minute || local.hour !== hour || local.weekday % 7 !== weekday) return null;
+  if (local.minute !== minute || local.hour !== hour) return null;
+  if (weekday !== null && local.weekday % 7 !== weekday) return null;
   const localDate = local.toISODate();
   return enqueueJob({
     jobType: 'sync_search_console',

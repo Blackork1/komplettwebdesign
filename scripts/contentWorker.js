@@ -37,7 +37,10 @@ export const SEARCH_CONSOLE_JOB_TYPES = new Set([
   'sync_search_console',
   'analyze_search_opportunities'
 ]);
-export const OUTCOME_JOB_TYPES = new Set(['evaluate_revision_outcomes']);
+export const OUTCOME_JOB_TYPES = new Set([
+  'evaluate_revision_outcomes',
+  'evaluate_article_performance'
+]);
 export const SUPPORTED_JOB_TYPES = new Set([
   ...GENERATION_JOB_TYPES,
   ...REGENERATION_JOB_TYPES,
@@ -99,6 +102,15 @@ function canonicalIsoDate(value) {
   return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value
     ? null
     : value;
+}
+
+function articlePerformanceJobPayload(claim) {
+  const payload = claim?.payload_json;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+      || Object.keys(payload).length !== 1
+      || !Object.hasOwn(payload, 'evaluated_through_date')) return null;
+  const evaluatedThroughDate = canonicalIsoDate(payload.evaluated_through_date);
+  return evaluatedThroughDate ? { evaluatedThroughDate } : null;
 }
 
 function searchConsoleJobPayload(claim) {
@@ -376,6 +388,7 @@ export function createProductionJobHandler({
   buildSearchOpportunities,
   upsertSearchOpportunities,
   evaluateRevisionOutcomes,
+  evaluateArticlePerformance,
   recordProviderResult,
   enqueueJob
 }) {
@@ -646,6 +659,32 @@ export function createProductionJobHandler({
           'CONTENT_JOB_LEASE_REQUIRED'
         );
       }
+      if (claim.job_type === 'evaluate_article_performance') {
+        const payload = articlePerformanceJobPayload(claim);
+        if (!payload) {
+          throw permanentJobError(
+            'Der Artikel-Performance-Job enthält keinen gültigen lokalen Stichtag.',
+            'CONTENT_ARTICLE_PERFORMANCE_JOB_PAYLOAD_INVALID'
+          );
+        }
+        required(evaluateArticlePerformance, 'evaluateArticlePerformance');
+        await assertActiveLease(leaseGuard);
+        try {
+          await evaluateArticlePerformance({
+            ...payload,
+            leaseGuard: { assertActive: () => assertActiveLease(leaseGuard) }
+          });
+        } catch (error) {
+          throw retryableJobError(
+            'Die lokale Artikel-Performance-Auswertung ist vorübergehend fehlgeschlagen.',
+            'CONTENT_ARTICLE_PERFORMANCE_EVALUATION_FAILED',
+            error
+          );
+        }
+        await assertActiveLease(leaseGuard);
+        return { status: 'completed' };
+      }
+
       const payload = revisionOutcomeJobPayload(claim);
       if (!payload) {
         throw permanentJobError(
@@ -728,6 +767,19 @@ export function createProductionJobHandler({
           throw retryableJobError(
             'Die lokale Outcome-Auswertung konnte noch nicht eingeplant werden.',
             'CONTENT_REVISION_OUTCOME_ENQUEUE_DEFERRED'
+          );
+        }
+        await assertActiveLease(leaseGuard);
+        const performanceJob = await enqueueJob({
+          jobType: 'evaluate_article_performance',
+          idempotencyKey: `article-performance:${payload.endDate}`,
+          payload: { evaluated_through_date: payload.endDate },
+          maxAttempts: 3
+        });
+        if (!performanceJob) {
+          throw retryableJobError(
+            'Die Artikel-Performance-Auswertung konnte noch nicht eingeplant werden.',
+            'CONTENT_ARTICLE_PERFORMANCE_ENQUEUE_DEFERRED'
           );
         }
         return { status: 'completed' };
@@ -1294,6 +1346,18 @@ export function createProductionRuntime({
   const searchOpportunityRepository = searchConsoleModulesAvailable
     ? modules.createContentSearchOpportunityRepository(database)
     : null;
+  const articlePerformanceRepository = typeof modules.createContentArticlePerformanceRepository === 'function'
+    ? modules.createContentArticlePerformanceRepository(database)
+    : null;
+  const articlePerformanceService = articlePerformanceRepository
+    && searchOpportunityRepository
+    && typeof modules.createArticlePerformanceService === 'function'
+    ? modules.createArticlePerformanceService({
+      repository: articlePerformanceRepository,
+      enqueueJob: repositories.jobRepository.enqueueJob,
+      opportunityRepository: searchOpportunityRepository
+    })
+    : null;
   const searchConsoleSyncService = searchConsoleModulesAvailable
     ? modules.createSearchConsoleSyncService({
       client: searchConsoleClient,
@@ -1500,6 +1564,9 @@ export function createProductionRuntime({
         searchMetricsRepository
       })
       : null,
+    evaluateArticlePerformance: articlePerformanceService
+      ? (input) => articlePerformanceService.evaluateAllPublishedArticles(input)
+      : null,
     recordProviderResult: (input) => modules.providerStateRepository.recordProviderResult(input, database),
     enqueueJob: repositories.jobRepository.enqueueJob,
     pipelineDependencies
@@ -1630,7 +1697,9 @@ export async function loadProductionModules() {
     existingPostOptimizationPipelineModule,
     existingPostOptimizationRepositoryModule,
     existingPostRevisionRevalidationModule,
-    contentRevisionOutcomeModule
+    contentRevisionOutcomeModule,
+    articlePerformanceRepositoryModule,
+    articlePerformanceServiceModule
   ] = await Promise.all([
     import('openai'),
     import('cloudinary'),
@@ -1674,7 +1743,9 @@ export async function loadProductionModules() {
     import('../services/contentAgent/existingPostOptimizationPipeline.js'),
     import('../repositories/contentExistingPostOptimizationRepository.js'),
     import('../services/contentAgent/existingPostRevisionRevalidationService.js'),
-    import('../services/contentAgent/contentRevisionOutcomeService.js')
+    import('../services/contentAgent/contentRevisionOutcomeService.js'),
+    import('../repositories/contentArticlePerformanceRepository.js'),
+    import('../services/contentAgent/articlePerformanceService.js')
   ]);
   return {
     OpenAI: openaiModule.default,
@@ -1726,7 +1797,10 @@ export async function loadProductionModules() {
       existingPostRevisionRevalidationModule.runExistingPostRevisionRevalidationJob,
     createContentExistingPostOptimizationRepository:
       existingPostOptimizationRepositoryModule.createContentExistingPostOptimizationRepository,
-    evaluateDueRevisionOutcomes: contentRevisionOutcomeModule.evaluateDueRevisionOutcomes
+    evaluateDueRevisionOutcomes: contentRevisionOutcomeModule.evaluateDueRevisionOutcomes,
+    createContentArticlePerformanceRepository:
+      articlePerformanceRepositoryModule.createContentArticlePerformanceRepository,
+    createArticlePerformanceService: articlePerformanceServiceModule.createArticlePerformanceService
   };
 }
 

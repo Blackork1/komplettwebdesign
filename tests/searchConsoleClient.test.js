@@ -133,3 +133,10 @@ test('Search-Console-Konfiguration bleibt in der Technikpräsentation auf den St
   const serialized = JSON.stringify(presentation);
   assert.doesNotMatch(serialized, /google-search-console\.json|googleCredentialsPath|searchConsoleSiteUrl|searchConsoleSchedule/i);
 });
+
+test('technische Standardkonfiguration synchronisiert GSC täglich um 05:30 Uhr', () => {
+  const config = getContentAgentTechnicalConfig({});
+
+  assert.equal(config.searchConsoleSchedule, '30 5 * * *');
+  assert.equal(config.timezone, 'Europe/Berlin');
+});

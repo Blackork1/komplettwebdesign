@@ -94,7 +94,9 @@ function requiresEnabledAgent(jobType, payload) {
   return [
     'sync_search_console',
     'analyze_search_opportunities',
-    'evaluate_revision_outcomes'
+    'evaluate_revision_outcomes',
+    'evaluate_article_performance',
+    'explain_article_performance'
   ].includes(jobType)
     || (jobType === 'generate_weekly_draft' && payload?.source === 'weekly-schedule')
     || (jobType === 'generate_manual_draft' && payload?.source === 'admin_manual')
