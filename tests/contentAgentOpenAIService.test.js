@@ -1377,7 +1377,7 @@ test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte C
     value,
     responseId: 'response-1',
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: '2026-07-15.1'
+    promptVersion: '2026-07-15.2'
   });
 });
 
@@ -1406,32 +1406,35 @@ test('optimizeExistingPost lehnt zusätzliche gesperrte Felder aus strukturierte
   );
 });
 
-test('optimizeExistingPost lehnt verändertes Legacy-EJS nach der Schema-Prüfung mit Response-ID ab', async () => {
+test('optimizeExistingPost schließt Legacy-EJS aus der Provider-Ausgabe aus und ergänzt es serverseitig', async () => {
   const originalHtml = '<p><%= post.title %></p>\n';
-  const client = createParseClient({
-    ...validExistingPostOptimization(),
-    contentHtml: '<p>Vom Modell verändert</p>'
-  });
+  const providerValue = validExistingPostOptimization();
+  delete providerValue.contentHtml;
+  const client = createParseClient(providerValue);
   const service = createOpenAIContentService({ config, client });
 
-  await assert.rejects(
-    service.optimizeExistingPost({
-      post: {
-        slug: 'legacy-beitrag',
-        contentFormat: 'legacy_ejs',
-        contentHtml: originalHtml
-      }
-    }),
-    (error) => {
-      assert.equal(error.code, 'OPENAI_LEGACY_EJS_CONTENT_CHANGED');
-      assert.equal(error.responseId, 'response-1');
-      assert.deepEqual(error.usage, { input_tokens: 12, output_tokens: 7 });
-      assert.equal(error.promptVersion, '2026-07-15.1');
-      assert.equal(error.providerResponseCompleted, true);
-      assert.doesNotMatch(error.message, /Vom Modell verändert|post\.title/);
-      return true;
+  const result = await service.optimizeExistingPost({
+    post: {
+      slug: 'legacy-beitrag',
+      contentFormat: 'legacy_ejs',
+      contentHtml: originalHtml
     }
+  });
+
+  assert.equal(result.value.contentHtml, originalHtml);
+  assert.equal(
+    Object.hasOwn(client.requests[0].text.format.schema.properties, 'contentHtml'),
+    false
   );
+  assert.deepEqual(
+    client.requests[0].text.format.schema.required.includes('contentHtml'),
+    false
+  );
+  assert.equal(
+    client.requests[0].text.format.name,
+    'existing_post_legacy_targeted_optimization'
+  );
+  assert.equal(result.promptVersion, '2026-07-15.2');
 });
 
 test('optimizeExistingPost lehnt überlanges Legacy-EJS vor dem Provideraufruf ab und kürzt es nicht', async () => {

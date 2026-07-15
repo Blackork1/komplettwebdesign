@@ -9,7 +9,10 @@ import {
   WeeklyTopicResearchSchema
 } from './articleSchemas.js';
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
-import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
+import {
+  ExistingPostOptimizationOutputSchema,
+  LegacyExistingPostOptimizationOutputSchema
+} from './existingPostOptimizationSchemas.js';
 import { ArticlePerformanceExplanationSchema } from './articlePerformanceExplanationService.js';
 import {
   buildTopicResearchPrompt,
@@ -462,26 +465,28 @@ export function createOpenAIContentService({
     const originalPost = input?.post && typeof input.post === 'object' ? input.post : {};
     const originalFormat = originalPost.contentFormat ?? originalPost.content_format;
     const originalHtml = originalPost.contentHtml ?? originalPost.content;
-    return createStructuredResponse({
+    const isLegacyEjs = originalFormat === 'legacy_ejs';
+    const result = await createStructuredResponse({
       model: config.contentModel,
-      schema: ExistingPostOptimizationOutputSchema,
-      schemaName: 'existing_post_targeted_optimization',
+      schema: isLegacyEjs
+        ? LegacyExistingPostOptimizationOutputSchema
+        : ExistingPostOptimizationOutputSchema,
+      schemaName: isLegacyEjs
+        ? 'existing_post_legacy_targeted_optimization'
+        : 'existing_post_targeted_optimization',
       system: prompt.system,
       user: prompt.user,
-      promptVersion: existingPostOptimizationPromptVersion,
-      validateValue(value, response) {
-        if (originalFormat === 'legacy_ejs' && value.contentHtml !== originalHtml) {
-          throw new OpenAIContentResponseError({
-            code: 'OPENAI_LEGACY_EJS_CONTENT_CHANGED',
-            responseId: response.id,
-            message: 'OpenAI hat den unveränderlichen Legacy-EJS-Inhalt verändert.',
-            usage: response.usage || {},
-            promptVersion: existingPostOptimizationPromptVersion,
-            providerResponseCompleted: true
-          });
-        }
-      }
+      promptVersion: existingPostOptimizationPromptVersion
     });
+
+    if (!isLegacyEjs) return result;
+    return {
+      ...result,
+      value: {
+        ...result.value,
+        contentHtml: originalHtml
+      }
+    };
   }
 
   async function createSeoBrief(input) {

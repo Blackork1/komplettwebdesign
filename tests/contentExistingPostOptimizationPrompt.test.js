@@ -164,7 +164,8 @@ test('Legacy-EJS muss contentHtml exakt und ohne Normalisierung zurückgeben', (
   }));
 
   assert.match(prompt.system, /legacy_ejs/iu);
-  assert.match(prompt.system, /contentHtml.*exakt.*unverändert/iu);
+  assert.match(prompt.system, /contentHtml.*nicht Teil der Provider-Ausgabe/iu);
+  assert.match(prompt.system, /serverseitig.*unverändert/iu);
   assert.match(prompt.system, /bytegenau/iu);
   assert.equal(JSON.parse(prompt.user).post.contentHtml, legacyHtml);
 });
