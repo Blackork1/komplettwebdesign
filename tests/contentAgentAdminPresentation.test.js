@@ -108,6 +108,38 @@ test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus',
   assert.equal(dashboard.events[0].eventLabel, 'Neue Regelversion aktiviert');
   assert.doesNotMatch(JSON.stringify(dashboard), /runtime_snapshot_json|raw_provider_response|providerResponse|article_html|vollständig|geheim/i);
 });
+
+test('Performance-Lernbelege werden mit Messstand und sicherem Artikellink präsentiert', () => {
+  const dashboard = presentContentLearningDashboard({
+    proposals: [{
+      id: 21,
+      category_key: 'performance_snippet_intent',
+      status: 'pending',
+      proposal_version: 1,
+      suggested_rule_text: 'Plane Titel, Meta-Description und Einstieg so, dass Nutzen und Suchintention präzise übereinstimmen.',
+      target_stages: ['seo_brief', 'writer', 'reviewer'],
+      evidence_count: 3,
+      evidence_json: [{
+        post_id: 12,
+        snapshot_id: 44,
+        evaluated_through_date: '2026-07-15',
+        evidence_code: 'snippet_or_intent_opportunity',
+        evidence_kind: 'diagnosis',
+        windows: { 28: { impressions: 80, clicks: 0 } },
+        query: '<script>niemals ausgeben</script>'
+      }],
+      expected_effect: 'Suchergebnis und Einstieg vermitteln denselben Nutzen.',
+      overfit_warning: 'Kein Clickbait und keine Überanpassung.'
+    }]
+  });
+  const evidence = dashboard.proposals[0].evidence[0];
+  assert.equal(evidence.sourceLabel, 'Performance');
+  assert.equal(evidence.measurementDateLabel, '15.07.2026');
+  assert.equal(evidence.impressions, 80);
+  assert.equal(evidence.clicks, 0);
+  assert.equal(evidence.articleUrl, '/admin/content-agent/existing-content/12/performance');
+  assert.equal(JSON.stringify(evidence).includes('script'), false);
+});
 import {
   canRetryContentJobManually
 } from '../services/contentAgent/contentJobRetryPolicy.js';

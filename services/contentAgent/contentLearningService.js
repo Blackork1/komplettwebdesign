@@ -2,6 +2,7 @@ import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
 import { providerFailureIsSafeToRetry } from './providerRetryPolicy.js';
 import {
   CONTENT_LEARNING_TAXONOMY_VERSION,
+  PERFORMANCE_LEARNING_CATEGORY_KEYS,
   classifyLearningIssueLocally,
   createLearningIssueFingerprint,
   getLearningCategory,
@@ -11,6 +12,8 @@ import {
 export const CONTENT_LEARNING_JOB_TYPE = 'process_learning_observations';
 const PROVIDER_CONFIDENCE_THRESHOLD = 0.75;
 const MAX_PROVIDER_CLASSIFICATIONS = 12;
+const PERFORMANCE_EVIDENCE_KINDS = new Set(['diagnosis', 'positive']);
+const PERFORMANCE_EVIDENCE_CODE = /^[a-z0-9_]{1,80}$/;
 
 function learningError(code, message, { retryable = false } = {}) {
   return Object.assign(new Error(message), { code, retryable });
@@ -19,6 +22,89 @@ function learningError(code, message, { retryable = false } = {}) {
 function positiveInteger(value) {
   const normalized = Number(value);
   return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : null;
+}
+
+function performanceEvidenceRow(row) {
+  const postId = positiveInteger(row?.postId ?? row?.post_id);
+  const snapshotId = positiveInteger(row?.snapshotId ?? row?.snapshot_id);
+  const evaluatedThroughDate = sanitizeLearningText(
+    row?.evaluatedThroughDate ?? row?.evaluated_through_date,
+    10
+  );
+  const categoryKey = sanitizeLearningText(row?.categoryKey ?? row?.category_key, 80);
+  const evidenceCode = sanitizeLearningText(row?.evidenceCode ?? row?.evidence_code, 80);
+  const evidenceKind = sanitizeLearningText(row?.evidenceKind ?? row?.evidence_kind, 20);
+  if (!postId || !snapshotId || !/^\d{4}-\d{2}-\d{2}$/.test(evaluatedThroughDate)
+      || !PERFORMANCE_LEARNING_CATEGORY_KEYS.includes(categoryKey)
+      || !PERFORMANCE_EVIDENCE_CODE.test(evidenceCode)
+      || !PERFORMANCE_EVIDENCE_KINDS.has(evidenceKind)) {
+    return null;
+  }
+  const rawWindow = row?.windows?.[28] ?? row?.windows?.['28'] ?? {};
+  const metric = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : 0;
+  };
+  return {
+    post_id: postId,
+    snapshot_id: snapshotId,
+    evaluated_through_date: evaluatedThroughDate,
+    category_key: categoryKey,
+    evidence_code: evidenceCode,
+    evidence_kind: evidenceKind,
+    windows: {
+      28: {
+        impressions: metric(rawWindow.impressions),
+        clicks: metric(rawWindow.clicks),
+        ctaClicks: metric(rawWindow.ctaClicks),
+        contactSubmits: metric(rawWindow.contactSubmits)
+      }
+    }
+  };
+}
+
+export function buildPerformanceLearningCandidates(evidenceRows = []) {
+  if (!Array.isArray(evidenceRows)) return [];
+  const byCategory = new Map();
+  for (const rawRow of evidenceRows) {
+    const row = performanceEvidenceRow(rawRow);
+    if (!row) continue;
+    const categoryRows = byCategory.get(row.category_key) || new Map();
+    if (!categoryRows.has(row.post_id)) categoryRows.set(row.post_id, row);
+    byCategory.set(row.category_key, categoryRows);
+  }
+
+  return [...byCategory.entries()]
+    .filter(([, rows]) => rows.size >= 3)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([categoryKey, rows]) => {
+      const definition = getLearningCategory(categoryKey);
+      return {
+        categoryKey,
+        suggestedRuleText: definition.defaultRule,
+        targetStages: [...definition.targetStages],
+        evidenceCount: rows.size,
+        evidenceJson: [...rows.values()]
+          .sort((left, right) => left.post_id - right.post_id)
+          .slice(0, 5),
+        expectedEffect: definition.expectedEffect,
+        overfitWarning: definition.overfitWarning
+      };
+    });
+}
+
+export async function processPerformanceLearningEvidence({ repository } = {}) {
+  requiredFunction(repository?.listPerformanceEvidence, 'repository.listPerformanceEvidence');
+  requiredFunction(repository?.upsertPerformanceRuleProposal, 'repository.upsertPerformanceRuleProposal');
+  const rows = await repository.listPerformanceEvidence({
+    categoryKeys: PERFORMANCE_LEARNING_CATEGORY_KEYS
+  });
+  const proposals = [];
+  for (const candidate of buildPerformanceLearningCandidates(rows)) {
+    const proposal = await repository.upsertPerformanceRuleProposal(candidate);
+    if (proposal) proposals.push(proposal);
+  }
+  return proposals;
 }
 
 function requiredFunction(value, name) {

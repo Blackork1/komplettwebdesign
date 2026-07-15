@@ -101,8 +101,65 @@ export const CONTENT_LEARNING_CATEGORIES = Object.freeze({
     expectedEffect: 'Neue Artikel klingen konsistenter nach Komplett Webdesign und weniger nach austauschbarem Werbetext.',
     overfitWarning: 'Der Stil soll natürlich bleiben und nicht aus starren wiederkehrenden Formulierungen bestehen.',
     signals: [/tonalität/iu, /marken(?:stil|wirkung|passung)/iu, /du-ansprache/iu, /werbeversprechen/iu]
+  }),
+  performance_visibility: category({
+    label: 'Organische Sichtbarkeit',
+    description: 'Der Artikel baut trotz belastbarer Messdauer weniger organische Sichtbarkeit als die Vergleichsgruppe auf.',
+    defaultRule: 'Plane eine vollständige Suchintentionsabdeckung und passende interne Links, damit der Artikel realistische Sichtbarkeit aufbauen kann.',
+    expectedEffect: 'Zukünftige Artikel erhalten eine klarere Themenabdeckung und einen sinnvolleren internen Einstiegspfad.',
+    overfitWarning: 'Einzelne Suchanfragen, Titel oder vorübergehende Messwerte dürfen nicht als allgemeine Regel kopiert werden.',
+    signals: []
+  }),
+  performance_snippet_intent: category({
+    label: 'Suchergebnis und Suchintention',
+    description: 'Der Artikel erhält Impressionen, aber das Suchergebnis oder die Suchintention führen noch nicht zu Klicks.',
+    defaultRule: 'Plane Titel, Meta-Description und Einstieg so, dass Nutzen und Suchintention präzise übereinstimmen.',
+    expectedEffect: 'Suchergebnis und Artikelanfang vermitteln denselben konkreten Nutzen für die Zielgruppe.',
+    overfitWarning: 'Die Regel darf nicht zu clickbaitigen Titeln oder künstlicher Keyword-Wiederholung führen.',
+    signals: []
+  }),
+  performance_ranking: category({
+    label: 'Rankingchance',
+    description: 'Der Artikel besitzt Sichtbarkeit in realistischer Nähe zur ersten Ergebnisseite.',
+    defaultRule: 'Vertiefe entscheidungsrelevante Teilfragen und plane interne Links, wenn ein Thema bereits nahe an der ersten Ergebnisseite sichtbar ist.',
+    expectedEffect: 'Artikel nutzen vorhandene Rankingchancen mit relevanter Vertiefung und interner Verknüpfung besser.',
+    overfitWarning: 'Einzelne Positionswerte sind keine dauerhafte Garantie und dürfen nicht ungeprüft verallgemeinert werden.',
+    signals: []
+  }),
+  performance_content_engagement: category({
+    label: 'Artikelwirkung und CTA',
+    description: 'Organische Besucher erreichen den Artikel, nutzen den vorgesehenen nächsten Schritt aber noch nicht.',
+    defaultRule: 'Ordne den CTA dem konkreten Entscheidungsschritt des Artikels zu und begründe den nächsten Schritt sichtbar.',
+    expectedEffect: 'CTA und Artikelinhalt bilden einen verständlichen, thematisch passenden nächsten Schritt.',
+    overfitWarning: 'CTA-Anzahl, Kontaktziel und technische Struktur bleiben durch den Artikelvertrag begrenzt.',
+    signals: []
+  }),
+  performance_conversion_path: category({
+    label: 'Anfrageweg',
+    description: 'CTA-Klicks führen noch nicht zu einer abgeschickten Kontaktanfrage.',
+    defaultRule: 'Stimme Artikelversprechen, CTA-Ziel und Kontaktweg so aufeinander ab, dass der erwartete nächste Schritt konsistent bleibt.',
+    expectedEffect: 'Leser finden nach dem CTA einen konsistenten und verständlichen Anfrageweg vor.',
+    overfitWarning: 'Geringe Fallzahlen und externe Einflüsse dürfen nicht als eindeutige Ursache dargestellt werden.',
+    signals: []
+  }),
+  performance_positive_pattern: category({
+    label: 'Bewährtes Leistungsmuster',
+    description: 'Mehrere Artikel zeigen ein belastbares positives Muster gegenüber Vorperiode oder Vergleichsgruppe.',
+    defaultRule: 'Erhalte nachweislich wirksame Strukturprinzipien, ohne einzelne Titel, Suchanfragen oder temporäre Messwerte zu kopieren.',
+    expectedEffect: 'Nachweislich hilfreiche Strukturprinzipien bleiben in neuen Artikeln erhalten.',
+    overfitWarning: 'Positive Einzelwerte dürfen nicht als allgemeine Erfolgsformel oder Rankinggarantie behandelt werden.',
+    signals: []
   })
 });
+
+export const PERFORMANCE_LEARNING_CATEGORY_KEYS = Object.freeze([
+  'performance_visibility',
+  'performance_snippet_intent',
+  'performance_ranking',
+  'performance_content_engagement',
+  'performance_conversion_path',
+  'performance_positive_pattern'
+]);
 
 export function sanitizeLearningText(value, maxLength = 500) {
   if (typeof value !== 'string' || !Number.isInteger(maxLength) || maxLength < 1) return '';

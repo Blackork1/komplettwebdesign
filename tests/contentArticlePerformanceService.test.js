@@ -122,3 +122,24 @@ test('Lease wird vor jedem Artikel geprüft', async () => {
 
   assert.equal(activeChecks, 2);
 });
+
+test('Lernvorschläge werden nach der Auswertung getrennt verarbeitet und Fehler bleiben isoliert', async () => {
+  let learningCalls = 0;
+  const service = createArticlePerformanceService({
+    repository: {
+      async listPublishedArticles() { return []; },
+      async getPerformanceInputs() { throw new Error('nicht erwartet'); },
+      async upsertPerformanceSnapshot() { throw new Error('nicht erwartet'); }
+    },
+    async enqueueExplanationJob() {},
+    opportunityRepository: { async upsertOpenOpportunities() {} },
+    async processPerformanceLearningEvidence() {
+      learningCalls += 1;
+      throw new Error('Lernablage vorübergehend nicht verfügbar');
+    }
+  });
+  const result = await service.evaluateAllPublishedArticles({ evaluatedThroughDate: '2026-07-12' });
+  assert.equal(learningCalls, 1);
+  assert.equal(result.learningFailed, true);
+  assert.equal(result.evaluated, 0);
+});

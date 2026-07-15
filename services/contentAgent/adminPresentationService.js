@@ -215,6 +215,16 @@ function berlinDateTime(value) {
     : null;
 }
 
+function berlinDate(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const instant = value instanceof Date
+    ? DateTime.fromJSDate(value)
+    : DateTime.fromISO(String(value), { zone: 'Europe/Berlin' });
+  return instant.isValid
+    ? instant.setZone('Europe/Berlin').setLocale('de').toFormat('dd.LL.yyyy')
+    : null;
+}
+
 const WEEKDAY_LABELS = Object.freeze({
   1: 'Montag',
   2: 'Dienstag',
@@ -387,14 +397,29 @@ export function presentContentLearningDashboard(raw = {}) {
     ruleText: sanitizeLearningText(row.suggested_rule_text, 800),
     ...learningTargetStages(row.target_stages),
     evidenceCount: Math.max(0, Number(row.evidence_count) || 0),
-    evidence: (Array.isArray(row.evidence_json) ? row.evidence_json : []).slice(0, 5).map((item) => ({
-      postId: safePositiveInteger(item.post_id),
-      reviewVersion: safePositiveInteger(item.review_version),
-      reason: sanitizeLearningText(item.reason, 500),
-      instruction: sanitizeLearningText(item.instruction, 500),
-      section: sanitizeLearningText(item.section_name, 180) || null,
-      anchor: sanitizeLearningText(item.anchor, 220) || null
-    })).filter((item) => item.postId),
+    evidence: (Array.isArray(row.evidence_json) ? row.evidence_json : []).slice(0, 5).map((item) => {
+      const postId = safePositiveInteger(item.post_id);
+      const performance = safePositiveInteger(item.snapshot_id) != null;
+      const metrics = item?.windows?.[28] ?? item?.windows?.['28'] ?? {};
+      return {
+        postId,
+        sourceType: performance ? 'performance' : 'editorial',
+        sourceLabel: performance ? 'Performance' : 'Redaktionell',
+        articleUrl: performance && postId
+          ? `/admin/content-agent/existing-content/${postId}/performance`
+          : postId ? `/admin/content-agent/drafts/${postId}/edit` : null,
+        reviewVersion: safePositiveInteger(item.review_version),
+        snapshotId: safePositiveInteger(item.snapshot_id),
+        measurementDateLabel: performance ? berlinDate(item.evaluated_through_date) : null,
+        impressions: performance ? Math.max(0, Number(metrics.impressions) || 0) : null,
+        clicks: performance ? Math.max(0, Number(metrics.clicks) || 0) : null,
+        reason: sanitizeLearningText(item.reason, 500),
+        instruction: sanitizeLearningText(item.instruction, 500),
+        section: sanitizeLearningText(item.section_name, 180) || null,
+        anchor: sanitizeLearningText(item.anchor, 220) || null,
+        evidenceCode: performance ? sanitizeLearningText(item.evidence_code, 80) : null
+      };
+    }).filter((item) => item.postId && item.articleUrl),
     expectedEffect: sanitizeLearningText(row.expected_effect, 500),
     overfitWarning: sanitizeLearningText(row.overfit_warning, 500),
     decidedBy: sanitizeLearningText(row.decided_by_admin_name, 180) || null,

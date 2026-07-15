@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { enqueueLearningObservationJob } from '../repositories/contentJobRepository.js';
-import { runContentLearningJob } from '../services/contentAgent/contentLearningService.js';
+import {
+  buildPerformanceLearningCandidates,
+  processPerformanceLearningEvidence,
+  runContentLearningJob
+} from '../services/contentAgent/contentLearningService.js';
 
 function reviewRow(items, overrides = {}) {
   return {
@@ -243,4 +247,52 @@ test('Lernjob-Payload wird streng validiert und idempotent eingereiht', async ()
     enqueueLearningObservationJob({ postId: 0, reviewVersion: 3 }, db),
     { code: 'CONTENT_LEARNING_JOB_PAYLOAD_INVALID' }
   );
+});
+
+test('Performancevorschlag entsteht erst aus drei unterschiedlichen Artikeln', () => {
+  const row = (postId, evaluatedThroughDate = '2026-07-15') => ({
+    postId,
+    snapshotId: postId * 10,
+    evaluatedThroughDate,
+    categoryKey: 'performance_snippet_intent',
+    evidenceCode: 'snippet_or_intent_opportunity',
+    evidenceKind: 'diagnosis',
+    windows: { 28: { impressions: 80, clicks: 0 } }
+  });
+  assert.deepEqual(buildPerformanceLearningCandidates([
+    row(1), row(1, '2026-07-14'), row(2)
+  ]), []);
+  const candidates = buildPerformanceLearningCandidates([row(1), row(2), row(3)]);
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].categoryKey, 'performance_snippet_intent');
+  assert.equal(candidates[0].evidenceCount, 3);
+  assert.equal(candidates[0].evidenceJson.length, 3);
+});
+
+test('Performance-Lernbelege werden lokal und ohne Provider ausgewertet', async () => {
+  const proposals = [];
+  const rows = [1, 2, 3].map((postId) => ({
+    postId,
+    snapshotId: postId,
+    evaluatedThroughDate: '2026-07-15',
+    categoryKey: 'performance_ranking',
+    evidenceCode: 'ranking_opportunity',
+    evidenceKind: 'diagnosis',
+    windows: { 28: { impressions: 100, clicks: 4 } }
+  }));
+  const result = await processPerformanceLearningEvidence({
+    repository: {
+      async listPerformanceEvidence({ categoryKeys }) {
+        assert.ok(categoryKeys.includes('performance_ranking'));
+        return rows;
+      },
+      async upsertPerformanceRuleProposal(candidate) {
+        proposals.push(candidate);
+        return { id: 7, ...candidate };
+      }
+    }
+  });
+  assert.equal(result.length, 1);
+  assert.equal(proposals.length, 1);
+  assert.match(proposals[0].suggestedRuleText, /interne Links/);
 });

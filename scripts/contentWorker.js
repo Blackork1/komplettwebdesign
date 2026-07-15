@@ -1419,7 +1419,14 @@ export function createProductionRuntime({
       enqueueExplanationJob: (input) => (
         repositories.jobRepository.enqueuePerformanceExplanationJob(input)
       ),
-      opportunityRepository: searchOpportunityRepository
+      opportunityRepository: searchOpportunityRepository,
+      ...(contentLearningRepository && typeof modules.processPerformanceLearningEvidence === 'function'
+        ? {
+          processPerformanceLearningEvidence: () => modules.processPerformanceLearningEvidence({
+            repository: contentLearningRepository
+          })
+        }
+        : {})
     })
     : null;
   const articlePerformanceExplanationService = articlePerformanceRepository
@@ -1873,6 +1880,7 @@ export async function loadProductionModules() {
     searchConsoleSchedulerService: searchConsoleSchedulerModule,
     runContentLearningJob: contentLearningServiceModule.runContentLearningJob,
     createContentLearningRepository: contentLearningRepositoryModule.createContentLearningRepository,
+    processPerformanceLearningEvidence: contentLearningServiceModule.processPerformanceLearningEvidence,
     createContentWeeklyTopicPoolRepository:
       weeklyTopicPoolRepositoryModule.createContentWeeklyTopicPoolRepository,
     runExistingPostOptimizationJob:

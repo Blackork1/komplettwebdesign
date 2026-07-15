@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import pool from '../util/db.js';
 import {
   CONTENT_LEARNING_TAXONOMY_VERSION,
+  PERFORMANCE_LEARNING_CATEGORY_KEYS,
   getLearningCategory,
   sanitizeLearningText,
   validateLearningRuleText
@@ -17,6 +18,7 @@ const RULE_STATUS_TRANSITIONS = Object.freeze({
   paused: new Set(['active', 'disabled']),
   disabled: new Set()
 });
+const PERFORMANCE_EVIDENCE_CODE = /^[a-z0-9_]{1,80}$/;
 
 function inputError(message) {
   return Object.assign(new TypeError(message), { code: 'CONTENT_LEARNING_INPUT_INVALID' });
@@ -127,6 +129,136 @@ function normalizeClassification(value) {
 
 export function createContentLearningRepository(db = pool) {
   return {
+    async listPerformanceEvidence({ categoryKeys } = {}) {
+      if (!Array.isArray(categoryKeys) || categoryKeys.length < 1
+          || categoryKeys.some((key) => !PERFORMANCE_LEARNING_CATEGORY_KEYS.includes(key))) {
+        throw inputError('Die Performance-Lernkategorien sind ungültig.');
+      }
+      const uniqueKeys = [...new Set(categoryKeys)];
+      const { rows } = await db.query(`
+        WITH latest_snapshot AS (
+          SELECT DISTINCT ON (post_id)
+                 post_id, id AS snapshot_id, evaluated_through_date,
+                 windows_json, diagnoses_json, positive_signals_json
+          FROM content_article_performance_snapshots
+          WHERE learning_eligible = TRUE
+          ORDER BY post_id, evaluated_through_date DESC, id DESC
+        ), evidence AS (
+          SELECT post_id, snapshot_id, evaluated_through_date, windows_json,
+                 item ->> 'categoryKey' AS category_key,
+                 item ->> 'code' AS evidence_code,
+                 'diagnosis' AS evidence_kind
+          FROM latest_snapshot
+          CROSS JOIN LATERAL jsonb_array_elements(diagnoses_json) item
+          UNION ALL
+          SELECT post_id, snapshot_id, evaluated_through_date, windows_json,
+                 item ->> 'categoryKey', item ->> 'code', 'positive'
+          FROM latest_snapshot
+          CROSS JOIN LATERAL jsonb_array_elements(positive_signals_json) item
+        )
+        SELECT DISTINCT ON (post_id, category_key)
+               post_id AS "postId", snapshot_id AS "snapshotId",
+               evaluated_through_date AS "evaluatedThroughDate",
+               windows_json AS windows, category_key AS "categoryKey",
+               evidence_code AS "evidenceCode", evidence_kind AS "evidenceKind"
+        FROM evidence
+        WHERE category_key = ANY($1::text[])
+        ORDER BY post_id, category_key, evaluated_through_date DESC
+      `, [uniqueKeys]);
+      return rows;
+    },
+
+    async upsertPerformanceRuleProposal(input) {
+      const categoryKey = sanitizeLearningText(input?.categoryKey, 80);
+      if (!PERFORMANCE_LEARNING_CATEGORY_KEYS.includes(categoryKey)) {
+        throw inputError('Der Performancevorschlag verwendet keine kontrollierte Kategorie.');
+      }
+      const suggestedRuleText = validateLearningRuleText(input?.suggestedRuleText);
+      const targetStages = normalizeTargetStages(input?.targetStages);
+      const evidenceCount = positiveInteger(input?.evidenceCount, 'Die Anzahl der Performancebelege');
+      if (evidenceCount < 3 || !Array.isArray(input?.evidenceJson)
+          || input.evidenceJson.length < 3 || input.evidenceJson.length > 5) {
+        throw inputError('Ein Performancevorschlag benötigt Belege aus mindestens drei Artikeln.');
+      }
+      const seenPosts = new Set();
+      const evidenceJson = input.evidenceJson.map((row) => {
+        const postId = positiveInteger(row?.post_id, 'Die Performance-Artikel-ID');
+        const snapshotId = positiveInteger(row?.snapshot_id, 'Die Performance-Snapshot-ID');
+        const date = sanitizeLearningText(row?.evaluated_through_date, 10);
+        const evidenceCode = sanitizeLearningText(row?.evidence_code, 80);
+        const evidenceKind = sanitizeLearningText(row?.evidence_kind, 20);
+        if (seenPosts.has(postId) || !/^\d{4}-\d{2}-\d{2}$/.test(date)
+            || !PERFORMANCE_EVIDENCE_CODE.test(evidenceCode)
+            || !['diagnosis', 'positive'].includes(evidenceKind)) {
+          throw inputError('Die Performancebelege sind ungültig oder doppelt.');
+        }
+        seenPosts.add(postId);
+        const metrics = row?.windows?.[28] ?? row?.windows?.['28'] ?? {};
+        const safeMetric = (value) => Math.max(0, Number(value) || 0);
+        return {
+          post_id: postId,
+          snapshot_id: snapshotId,
+          evaluated_through_date: date,
+          evidence_code: evidenceCode,
+          evidence_kind: evidenceKind,
+          windows: { 28: {
+            impressions: safeMetric(metrics.impressions),
+            clicks: safeMetric(metrics.clicks),
+            ctaClicks: safeMetric(metrics.ctaClicks),
+            contactSubmits: safeMetric(metrics.contactSubmits)
+          } }
+        };
+      });
+      if (seenPosts.size < 3 || evidenceCount < seenPosts.size) {
+        throw inputError('Die Zahl unterschiedlicher Performanceartikel ist nicht plausibel.');
+      }
+      const expectedEffect = sanitizeLearningText(input?.expectedEffect, 500);
+      const overfitWarning = sanitizeLearningText(input?.overfitWarning, 500);
+      if (!expectedEffect || !overfitWarning) {
+        throw inputError('Erwartete Wirkung und Hinweis gegen Überanpassung fehlen.');
+      }
+
+      return inTransaction(db, async (client) => {
+        await client.query(
+          "SELECT pg_advisory_xact_lock(hashtext('content-learning:' || $1::text))",
+          [categoryKey]
+        );
+        const result = await client.query(`
+          INSERT INTO content_learning_rule_proposals (
+            category_key, suggested_rule_text, target_stages, evidence_count,
+            evidence_json, expected_effect, overfit_warning
+          )
+          SELECT $1::varchar(80), $2::varchar(800), $3::text[], $4::integer,
+                 $5::jsonb, $6::varchar(500), $7::varchar(500)
+          WHERE NOT EXISTS (
+            SELECT 1 FROM content_learning_rules WHERE category_key = $1::varchar(80)
+          )
+          ON CONFLICT (category_key) WHERE status = 'pending' DO NOTHING
+          RETURNING *
+        `, [
+          categoryKey,
+          suggestedRuleText,
+          targetStages,
+          evidenceCount,
+          JSON.stringify(evidenceJson),
+          expectedEffect,
+          overfitWarning
+        ]);
+        const proposal = result.rows[0] || null;
+        if (proposal) {
+          await client.query(`
+            INSERT INTO content_learning_events (
+              category_key, proposal_id, event_type, details_json
+            ) VALUES ($1, $2, 'proposal_created', $3::jsonb)
+          `, [categoryKey, proposal.id, JSON.stringify({
+            evidenceCount,
+            source: 'performance'
+          })]);
+        }
+        return proposal;
+      });
+    },
+
     async loadReview({ postId, reviewVersion }) {
       const normalizedPostId = positiveInteger(postId, 'Die Artikel-ID');
       const normalizedReviewVersion = positiveInteger(reviewVersion, 'Die Review-Version');

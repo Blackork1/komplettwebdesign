@@ -57,7 +57,7 @@
               </div></fieldset>
               <div class="content-learning-guidance"><p><strong>Erwartete Wirkung:</strong> <%= proposal.expectedEffect %></p><p><strong>Überanpassung vermeiden:</strong> <%= proposal.overfitWarning %></p></div>
               <details class="content-learning-evidence"><summary>Belege prüfen (<%= proposal.evidence.length %>)</summary><ol>
-                <% proposal.evidence.forEach((evidence) => { %><li><a href="/admin/content-agent/drafts/<%= evidence.postId %>/edit">Entwurf #<%= evidence.postId %></a><span>Reviewversion <%= evidence.reviewVersion || '–' %></span><p><strong>Begründung:</strong> <%= evidence.reason %></p><p><strong>Prüfanweisung:</strong> <%= evidence.instruction %></p></li><% }) %>
+                <% proposal.evidence.forEach((evidence) => { %><li><a href="<%= evidence.articleUrl %>"><%= evidence.sourceType === 'performance' ? 'Artikel' : 'Entwurf' %> #<%= evidence.postId %></a><span class="content-agent-status <%= evidence.sourceType === 'performance' ? 'content-agent-status--success' : 'content-agent-status--neutral' %>"><%= evidence.sourceLabel %></span><% if (evidence.sourceType === 'performance') { %><p><strong>Messstand:</strong> <%= evidence.measurementDateLabel || 'Noch nicht verfügbar' %> · 28 Tage: <%= evidence.impressions %> Impressionen · <%= evidence.clicks %> Klicks</p><% } else { %><span>Reviewversion <%= evidence.reviewVersion || '–' %></span><p><strong>Begründung:</strong> <%= evidence.reason %></p><p><strong>Prüfanweisung:</strong> <%= evidence.instruction %></p><% } %></li><% }) %>
               </ol></details>
               <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Regel aktivieren</button>
             </form>

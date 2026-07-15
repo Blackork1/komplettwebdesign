@@ -250,3 +250,66 @@ test('Dashboardmetriken ordnen nur exakt gesnapshottete Regelversionen zu und ag
   assert.match(query, /snapshot_rule ->> 'version'/i);
   assert.match(query, /content_search_metrics/i);
 });
+
+test('Performancebelege verwenden nur den neuesten lernfähigen Snapshot je Artikel und Kategorie', async () => {
+  const calls = [];
+  const repository = createContentLearningRepository({
+    async query(sql, params) {
+      calls.push({ sql, params });
+      return { rows: [{
+        postId: 7,
+        snapshotId: 8,
+        evaluatedThroughDate: '2026-07-15',
+        windows: { 28: { impressions: 100, clicks: 3 } },
+        categoryKey: 'performance_ranking',
+        evidenceCode: 'ranking_opportunity',
+        evidenceKind: 'diagnosis'
+      }] };
+    }
+  });
+  const rows = await repository.listPerformanceEvidence({
+    categoryKeys: ['performance_ranking']
+  });
+  assert.equal(rows[0].postId, 7);
+  assert.match(calls[0].sql, /DISTINCT ON \(post_id\)/i);
+  assert.match(calls[0].sql, /DISTINCT ON \(post_id, category_key\)/i);
+  assert.match(calls[0].sql, /learning_eligible = TRUE/i);
+  assert.deepEqual(calls[0].params, [['performance_ranking']]);
+});
+
+test('Performancevorschläge werden transaktional und nur für kontrollierte Kategorien gespeichert', async () => {
+  const queries = [];
+  const client = {
+    async query(sql, params = []) {
+      queries.push({ sql, params });
+      if (/INSERT INTO content_learning_rule_proposals/i.test(sql)) {
+        return { rows: [{ id: 9, category_key: params[0], status: 'pending' }] };
+      }
+      return { rows: [] };
+    },
+    release() {}
+  };
+  const repository = createContentLearningRepository({ async connect() { return client; } });
+  const proposal = await repository.upsertPerformanceRuleProposal({
+    categoryKey: 'performance_ranking',
+    suggestedRuleText: 'Vertiefe entscheidungsrelevante Teilfragen und plane passende interne Links für realistische Rankingchancen.',
+    targetStages: ['seo_brief', 'writer', 'reviewer'],
+    evidenceCount: 3,
+    evidenceJson: [1, 2, 3].map((postId) => ({
+      post_id: postId,
+      snapshot_id: postId,
+      evaluated_through_date: '2026-07-15',
+      evidence_code: 'ranking_opportunity',
+      evidence_kind: 'diagnosis',
+      windows: { 28: { impressions: 90, clicks: 3 } }
+    })),
+    expectedEffect: 'Relevante Artikel nutzen vorhandene Rankingchancen besser.',
+    overfitWarning: 'Einzelne Suchanfragen werden nicht als allgemeine Regel übernommen.'
+  });
+  assert.equal(proposal.id, 9);
+  assert.equal(queries[0].sql.trim(), 'BEGIN');
+  assert.equal(queries.at(-1).sql.trim(), 'COMMIT');
+  await assert.rejects(repository.upsertPerformanceRuleProposal({
+    categoryKey: 'provider_freie_kategorie'
+  }), { code: 'CONTENT_LEARNING_INPUT_INVALID' });
+});

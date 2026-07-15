@@ -43,6 +43,7 @@ export function createArticlePerformanceService({
   repository,
   enqueueExplanationJob,
   opportunityRepository,
+  processPerformanceLearningEvidence,
   now = () => new Date()
 } = {}) {
   if (!repository || typeof repository.listPublishedArticles !== 'function' ||
@@ -117,6 +118,17 @@ export function createArticlePerformanceService({
           result.evaluated += 1;
         } catch {
           result.failed += 1;
+        }
+      }
+
+      if (typeof processPerformanceLearningEvidence === 'function') {
+        try {
+          const proposals = await processPerformanceLearningEvidence();
+          if (Array.isArray(proposals) && proposals.length > 0) {
+            result.learningProposals = proposals.length;
+          }
+        } catch {
+          result.learningFailed = true;
         }
       }
 

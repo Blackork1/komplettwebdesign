@@ -215,7 +215,10 @@ test('Lernregelseite zeigt sichere Vorschläge, Regeln, Beobachtungen und Verlau
       statusLabel: 'Freigabe offen', expectedVersion: 2,
       ruleText: '<script>nicht ausführen</script> Sichere Regel mit genügend Inhalt für eine redaktionelle Prüfung.',
       targetStages: ['writer', 'reviewer'], targetStageLabels: ['Artikelerstellung', 'Redaktionelle Prüfung'],
-      evidenceCount: 3, evidence: [{ postId: 11, reviewVersion: 4, reason: 'Wiederholung', instruction: 'Unterscheiden' }],
+      evidenceCount: 3, evidence: [
+        { postId: 11, sourceType: 'editorial', sourceLabel: 'Redaktionell', articleUrl: '/admin/content-agent/drafts/11/edit', reviewVersion: 4, reason: 'Wiederholung', instruction: 'Unterscheiden' },
+        { postId: 12, sourceType: 'performance', sourceLabel: 'Performance', articleUrl: '/admin/content-agent/existing-content/12/performance', measurementDateLabel: '15.07.2026', impressions: 80, clicks: 0 }
+      ],
       expectedEffect: 'Weniger Wiederholung', overfitWarning: 'Nicht übertreiben'
     }],
     rules: [{
@@ -248,6 +251,9 @@ test('Lernregelseite zeigt sichere Vorschläge, Regeln, Beobachtungen und Verlau
   assert.match(html, /Verlauf/);
   assert.match(html, /Revision empfohlen/);
   assert.match(html, /Search-Console-Kontext/);
+  assert.match(html, /Performance/);
+  assert.match(html, /28 Tage: 80 Impressionen · 0 Klicks/);
+  assert.match(html, /existing-content\/12\/performance/);
   assert.match(html, /name="_csrf" value="csrf-test"/);
   assert.match(html, /name="expected_version" value="2"/);
   assert.match(html, /name="confirmed" value="true"/);
