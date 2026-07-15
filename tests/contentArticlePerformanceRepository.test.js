@@ -102,11 +102,16 @@ test('Snapshots behalten Erklärungen bei unveränderter Evidenz', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 23 }] }]);
   const repository = createContentArticlePerformanceRepository(db);
 
-  await repository.upsertPerformanceSnapshot(validSnapshot());
+  await repository.upsertPerformanceSnapshot(validSnapshot({
+    diagnoses: [{ code: 'ranking_opportunity' }],
+    positiveSignals: [{ code: 'ctr_improved' }]
+  }));
 
   assert.match(db.calls[0].sql, /ON CONFLICT \(post_id, evaluated_through_date\) DO UPDATE/i);
   assert.match(db.calls[0].sql, /evidence_hash = EXCLUDED\.evidence_hash/i);
   assert.match(db.calls[0].sql, /THEN content_article_performance_snapshots\.explanation_json/i);
+  assert.equal(db.calls[0].params[7], '[{"code":"ranking_opportunity"}]');
+  assert.equal(db.calls[0].params[8], '[{"code":"ctr_improved"}]');
 });
 
 test('Neueste Snapshots können einzeln und gebündelt gelesen werden', async () => {

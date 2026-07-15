@@ -1949,7 +1949,7 @@ function berlinCalendarDate(value) {
   return DateTime.fromJSDate(value).setZone('Europe/Berlin').toISODate();
 }
 
-test('echtes PostgreSQL: Migrationen 002–012 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–013 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();

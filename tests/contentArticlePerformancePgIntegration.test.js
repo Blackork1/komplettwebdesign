@@ -91,15 +91,15 @@ test('echtes PostgreSQL: Artikelereignisse und Snapshots bleiben idempotent', {
         post_id, metric_date, page_url, query, device,
         clicks, impressions, ctr, average_position
       )
-      SELECT $1, day::date, 'https://www.komplettwebdesign.de/blog/performance',
+      SELECT $1::integer, day::date, 'https://www.komplettwebdesign.de/blog/performance',
              'alpha', 'DESKTOP', 1, 10, 0.1, 10
       FROM generate_series('2026-06-15'::date, '2026-07-12'::date, '1 day') day
       UNION ALL
-      SELECT $1, day::date, 'https://www.komplettwebdesign.de/blog/performance',
+      SELECT $1::integer, day::date, 'https://www.komplettwebdesign.de/blog/performance',
              'beta', 'MOBILE', 0, 5, 0, 20
       FROM generate_series('2026-06-15'::date, '2026-07-12'::date, '1 day') day
       UNION ALL
-      SELECT $1, day::date, 'https://www.komplettwebdesign.de/blog/performance',
+      SELECT $1::integer, day::date, 'https://www.komplettwebdesign.de/blog/performance',
              'vorher', 'DESKTOP', 0, 2, 0, 30
       FROM generate_series('2026-05-18'::date, '2026-06-14'::date, '1 day') day
     `, [post.id]);
@@ -119,7 +119,7 @@ test('echtes PostgreSQL: Artikelereignisse und Snapshots bleiben idempotent', {
     const event = {
       postId: post.id,
       eventType: 'cta_click',
-      occurredAt: '2026-07-14T10:00:00Z',
+      occurredAt: '2026-07-12T10:00:00Z',
       ctaLocation: 'blog_final',
       ctaTarget: '/kontakt',
       eventKeyHash: 'c'.repeat(64)
@@ -164,10 +164,10 @@ test('echtes PostgreSQL: Artikelereignisse und Snapshots bleiben idempotent', {
     const firstSnapshot = await repository.upsertPerformanceSnapshot(snapshot);
     const repeatedSnapshot = await repository.upsertPerformanceSnapshot({
       ...snapshot,
-      positiveSignals: [{ code: 'growing_visibility' }]
+      positiveSignals: [{ code: 'ctr_improved' }]
     });
     assert.equal(firstSnapshot.id, repeatedSnapshot.id);
-    assert.deepEqual(repeatedSnapshot.positive_signals_json, [{ code: 'growing_visibility' }]);
+    assert.deepEqual(repeatedSnapshot.positive_signals_json, [{ code: 'ctr_improved' }]);
   } finally {
     try {
       if (pool) await pool.end();

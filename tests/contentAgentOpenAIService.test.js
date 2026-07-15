@@ -1377,7 +1377,7 @@ test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte C
     value,
     responseId: 'response-1',
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: '2026-07-14.2'
+    promptVersion: '2026-07-15.1'
   });
 });
 
@@ -1426,7 +1426,7 @@ test('optimizeExistingPost lehnt verändertes Legacy-EJS nach der Schema-Prüfun
       assert.equal(error.code, 'OPENAI_LEGACY_EJS_CONTENT_CHANGED');
       assert.equal(error.responseId, 'response-1');
       assert.deepEqual(error.usage, { input_tokens: 12, output_tokens: 7 });
-      assert.equal(error.promptVersion, '2026-07-14.2');
+      assert.equal(error.promptVersion, '2026-07-15.1');
       assert.equal(error.providerResponseCompleted, true);
       assert.doesNotMatch(error.message, /Vom Modell verändert|post\.title/);
       return true;

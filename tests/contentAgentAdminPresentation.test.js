@@ -688,14 +688,16 @@ test('Providerfehler bleibt bei identischen Erfolgs- und Fehlerzeitstempeln sich
 });
 
 test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
-  assert.deepEqual(buildExistingContentListPresentation([{
+  const [presented] = buildExistingContentListPresentation([{
     id: 4,
     title: 'Artikel',
     slug: 'artikel',
     updated_at: '2026-07-11T12:00:00.000Z',
     content: '<p>Rohinhalt</p>',
     payload_json: { geheim: true }
-  }]), [{
+  }]);
+  const { performance, ...rest } = presented;
+  assert.deepEqual(rest, {
     id: 4,
     title: 'Artikel',
     slug: 'artikel',
@@ -708,7 +710,20 @@ test('Bestandspräsentation verwirft unbekannte Rohfelder', () => {
       revisionId: null, revisionUrl: null, errorCode: null,
       unsafeProviderState: false, updatedAt: null
     }
-  }]);
+  });
+  assert.deepEqual(Object.keys(performance).sort(), [
+    'articleAgeDays',
+    'detailUrl',
+    'evaluatedThroughDateLabel',
+    'hasSnapshot',
+    'headline',
+    'isEligible',
+    'learningEligible',
+    'status',
+    'windows'
+  ]);
+  assert.equal(performance.detailUrl, '/admin/content-agent/existing-content/4/performance');
+  assert.doesNotMatch(JSON.stringify(presented), /Rohinhalt|payload_json|geheim/);
 });
 
 test('Bestandspräsentation zeigt Outcomes ausschließlich neutral, endlich und mit begrenzten Queries', () => {

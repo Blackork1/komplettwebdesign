@@ -11,7 +11,7 @@ import {
   validateLearningRuleText
 } from '../services/contentAgent/contentLearningTaxonomy.js';
 
-test('Taxonomie enthält genau die zehn freigegebenen stabilen Kategorien', () => {
+test('Taxonomie enthält die zehn redaktionellen und sechs Performance-Kategorien', () => {
   assert.match(CONTENT_LEARNING_TAXONOMY_VERSION, /^content-learning-taxonomy-v\d+$/);
   assert.deepEqual(Object.keys(CONTENT_LEARNING_CATEGORIES).sort(), [
     'claims_and_sources',
@@ -20,6 +20,12 @@ test('Taxonomie enthält genau die zehn freigegebenen stabilen Kategorien', () =
     'examples_or_local_relevance',
     'generic_content',
     'internal_linking',
+    'performance_content_engagement',
+    'performance_conversion_path',
+    'performance_positive_pattern',
+    'performance_ranking',
+    'performance_snippet_intent',
+    'performance_visibility',
     'search_intent_coverage',
     'structure_or_readability',
     'technical_precision',
