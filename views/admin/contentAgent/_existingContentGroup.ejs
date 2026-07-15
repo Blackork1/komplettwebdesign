@@ -1,0 +1,33 @@
+<details class="content-existing-group content-existing-group--<%= group.key %>" <%= group.open ? 'open' : '' %>>
+  <summary class="content-existing-group__summary">
+    <span class="content-existing-group__title">
+      <strong><%= group.heading %></strong>
+      <small><%= group.description %></small>
+    </span>
+    <span class="content-existing-group__count" aria-label="<%= group.items.length %> Artikel"><%= group.items.length %></span>
+  </summary>
+  <div class="content-existing-group__body">
+    <% if (group.bulkAction && group.items.length) { %>
+      <form method="post" action="<%= group.bulkAction.url %>" class="content-existing-group__bulk" data-confirm="<%= group.bulkAction.confirmation %>">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button type="submit" class="btn btn-sm btn-outline-secondary"><%= group.bulkAction.label %></button>
+      </form>
+    <% } %>
+    <% if (!group.items.length) { %>
+      <div class="content-agent-empty">
+        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+        <div><strong>Keine Artikel</strong><p><%= group.emptyText %></p></div>
+      </div>
+    <% } else { %>
+      <div class="content-existing-list">
+        <% group.items.forEach((item) => { %>
+          <%- include('_existingContentItem', {
+            item,
+            csrf,
+            visibilityAction: group.itemVisibilityAction
+          }) %>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</details>

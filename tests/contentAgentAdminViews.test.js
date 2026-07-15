@@ -423,6 +423,67 @@ test('Entwürfe, Bestandsinhalte, Jobs und Technik bleiben über sichere Viewmod
   }
 });
 
+test('Bestandsansicht trennt vier Arbeitsgruppen mit sicheren Einzel- und Sammelaktionen', async () => {
+  const article = (id, title) => ({
+    id,
+    title,
+    slug: `artikel-${id}`,
+    updatedAt: '2026-07-15T08:00:00.000Z',
+    optimization: {
+      state: 'idle', active: false, terminal: false, canStart: true,
+      statusLabel: 'Noch nicht gestartet', stageLabel: 'Noch keine Stufe',
+      message: 'Noch keine KI-Optimierung gestartet.', jobId: null,
+      revisionId: null, revisionUrl: null, errorCode: null,
+      unsafeProviderState: false, updatedAt: null
+    }
+  });
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    visibilityMessage: 'Alle aktuell qualifizierten Null-Impressions-Artikel wurden ausgeblendet.',
+    existingContentGroups: {
+      totalCount: 4,
+      visibleArticles: [article(1, 'Artikel mit Sichtbarkeit')],
+      collectingArticles: [article(2, 'Daten werden gesammelt')],
+      zeroImpressionArticles: [article(3, '<script>Nullartikel</script>')],
+      hiddenZeroImpressionArticles: [article(4, 'Ausgeblendeter Artikel')]
+    }
+  });
+
+  assert.match(html, /Artikel mit Sichtbarkeit/);
+  assert.match(html, /Daten werden gesammelt/);
+  assert.match(html, /0 Impressionen in 28 Tagen/);
+  assert.match(html, /Ausgeblendete Artikel/);
+  assert.match(html, /content-existing-group--visible" open/);
+  assert.doesNotMatch(html, /content-existing-group--(?:collecting|zero|hidden)" open/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/3\/hide-zero-impressions"/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/4\/show-zero-impressions"/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/zero-impressions\/hide-all"/);
+  assert.match(html, /action="\/admin\/content-agent\/existing-content\/zero-impressions\/show-all"/);
+  assert.doesNotMatch(html, /name="(?:post_id|impressions|published|hidden)"/i);
+  assert.doesNotMatch(html, /<script>Nullartikel<\/script>/);
+  assert.match(html, /&lt;script&gt;Nullartikel&lt;\/script&gt;/);
+  assert.equal((html.match(/name="_csrf" value="csrf-test"/g) || []).length >= 8, true);
+  assert.match(html, /Alle aktuell qualifizierten Null-Impressions-Artikel wurden ausgeblendet/);
+});
+
+test('jede Bestandsgruppe zeigt ihre Anzahl und einen neutralen Leerzustand', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContentGroups: {
+      totalCount: 0,
+      visibleArticles: [],
+      collectingArticles: [],
+      zeroImpressionArticles: [],
+      hiddenZeroImpressionArticles: []
+    },
+    visibilityMessage: null
+  });
+
+  assert.equal((html.match(/class="content-existing-group__count"/g) || []).length, 4);
+  assert.equal((html.match(/aria-label="0 Artikel">0<\/span>/g) || []).length, 4);
+  assert.equal((html.match(/<strong>Keine Artikel<\/strong>/g) || []).length, 4);
+});
+
 test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau eine primäre Aktion', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,
