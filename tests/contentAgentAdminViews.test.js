@@ -484,6 +484,26 @@ test('jede Bestandsgruppe zeigt ihre Anzahl und einen neutralen Leerzustand', as
   assert.equal((html.match(/<strong>Keine Artikel<\/strong>/g) || []).length, 4);
 });
 
+test('Bestandsgruppen verwenden ein responsives Kartenraster ohne mobilen Seitenüberlauf', async () => {
+  const adminCss = await readFile(new URL('../public/admin.css', import.meta.url), 'utf8');
+
+  assert.match(adminCss, /\.content-existing-group__summary\s*\{/);
+  assert.match(
+    adminCss,
+    /\.content-existing-item__grid\s*\{[\s\S]*?grid-template-columns:/
+  );
+  assert.match(
+    adminCss,
+    /@media\s*\(max-width:\s*767\.98px\)[\s\S]*?\.content-existing-item__grid\s*\{[\s\S]*?grid-template-columns:\s*1fr/
+  );
+  assert.match(
+    adminCss,
+    /@media\s*\(max-width:\s*767\.98px\)[\s\S]*?\.content-existing-item__footer[\s\S]*?flex-direction:\s*column/
+  );
+  assert.match(adminCss, /\.content-existing-item\s*\{[\s\S]*?min-width:\s*0/);
+  assert.match(adminCss, /\.content-existing-item__slug\s*\{[\s\S]*?overflow-wrap:\s*anywhere/);
+});
+
 test('Bestandszeile sendet beim Start nur CSRF und Pfad-ID und besitzt genau eine primäre Aktion', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,

@@ -8,7 +8,7 @@
 %>
 <article class="content-existing-item" data-existing-content-optimization data-state="<%= optimization.state %>" data-active="<%= optimization.active === true ? 'true' : 'false' %>"<% if (optimization.active === true) { %> data-status-url="/admin/content-agent/existing-content/<%= item.id %>/optimization-status"<% } %>>
   <div class="content-existing-item__main">
-    <header class="content-existing-item__header">
+    <header class="content-existing-item__head">
       <div>
         <strong class="content-existing-item__title"><%= item.title %></strong>
         <code class="content-existing-item__slug"><%= item.slug %></code>
@@ -28,7 +28,7 @@
       </div>
     <% } %>
 
-    <div class="content-existing-item__details">
+    <div class="content-existing-item__grid">
       <section aria-label="Prüfung und Optimierung">
         <% if (item.auditId) { %>
           <span class="content-agent-status <%= item.auditScore >= 85 ? 'is-success' : 'is-warning' %>"><%= item.auditScore %>/100</span>
@@ -80,7 +80,7 @@
     <% } %>
   </div>
 
-  <footer class="content-existing-item__actions">
+  <footer class="content-existing-item__footer">
     <div class="content-agent-actions">
       <a class="btn btn-sm btn-outline-secondary" href="/blog/<%= item.slug %>" target="_blank" rel="noopener">Liveartikel öffnen</a>
       <% if (visibilityAction) { %>
