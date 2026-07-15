@@ -14,6 +14,7 @@ import {
   minimumExistingPostRevisionScore
 } from './existingPostRevisionApprovalPolicy.js';
 import { captureRevisionBaseline } from './contentRevisionOutcomeService.js';
+import { requiresLegacyBytePreservation } from './legacyContentPolicy.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -188,11 +189,12 @@ function validationArticle(snapshot) {
 
 async function assertSnapshotValid(snapshot, validateArticle, context = {}) {
   assertRequiredFields(snapshot?.fields);
-  if (snapshot?.base?.content_format === 'legacy_ejs') return;
-  if (snapshot?.base?.content_format !== 'static_html') {
+  const contentFormat = snapshot?.base?.content_format;
+  const content = String(snapshot.fields?.content || '');
+  if (requiresLegacyBytePreservation({ contentFormat, contentHtml: content })) return;
+  if (!['static_html', 'legacy_ejs'].includes(contentFormat)) {
     throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Das Inhaltsformat ist nicht freigegeben.');
   }
-  const content = String(snapshot.fields?.content || '');
   const sanitized = sanitizeArticleHtml(content);
   if (sanitized !== content || /<%|%>/.test(content)) {
     throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Das Artikel-HTML enthält nicht erlaubte Inhalte.');
@@ -285,7 +287,10 @@ function optimizedRevisionInput(input = {}) {
     faq_json: fields.faqJson,
     image_alt: fields.imageAlt
   });
-  if (snapshot.base.content_format === 'legacy_ejs' && snapshot.fields.content !== post.content) {
+  if (requiresLegacyBytePreservation({
+    contentFormat: snapshot.base.content_format,
+    contentHtml: post.content
+  }) && snapshot.fields.content !== post.content) {
     throw revisionError('LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN', 'Legacy-EJS-Inhalt bleibt bytegenau unveränderlich.');
   }
 
@@ -454,7 +459,10 @@ export function createContentRevisionService({
           admin: normalizedAdmin,
           buildValidatedUpdate: async (lockedSnapshot, context) => {
             const snapshot = structuredClone(lockedSnapshot);
-            if (snapshot.base.content_format === 'legacy_ejs'
+            if (requiresLegacyBytePreservation({
+              contentFormat: snapshot.base.content_format,
+              contentHtml: snapshot.fields.content
+            })
                 && Object.hasOwn(patch, 'content')
                 && patch.content !== snapshot.fields.content) {
               throw revisionError(
@@ -469,7 +477,10 @@ export function createContentRevisionService({
         });
       }
       const snapshot = structuredClone(revision.snapshot_json);
-      if (snapshot.base.content_format === 'legacy_ejs'
+      if (requiresLegacyBytePreservation({
+        contentFormat: snapshot.base.content_format,
+        contentHtml: snapshot.fields.content
+      })
           && Object.hasOwn(patch, 'content')
           && patch.content !== snapshot.fields.content) {
         throw revisionError('CONTENT_REVISION_VALIDATION_FAILED', 'Legacy-EJS-Inhalt bleibt unveränderlich.');

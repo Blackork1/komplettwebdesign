@@ -597,6 +597,30 @@ test('Legacy-EJS erlaubt ausschließlich bytegenau unveränderten Artikeltext', 
   }), { code: 'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN' });
 });
 
+test('falsch klassifiziertes Legacy-HTML ohne EJS erhält einen normalen Inhaltsdiff', () => {
+  const before = article({
+    contentFormat: 'legacy_ejs',
+    contentHtml: '<section><h2>Altartikel</h2><p>Alter statischer Inhalt.</p></section>'
+  });
+  const after = {
+    ...before,
+    contentHtml: '<section><h2>Altartikel</h2><p>Gezielt reparierter statischer Inhalt.</p></section>'
+  };
+
+  const diff = buildExistingPostDiff({
+    before,
+    after,
+    reasons: [{
+      field: 'contentHtml',
+      auditCodes: ['broken_internal_link'],
+      reason: 'Der statische Altinhalt wurde gezielt repariert.',
+      sourceUrls: []
+    }]
+  });
+
+  assert.equal(diff.changes.some(({ field }) => field === 'contentHtml'), true);
+});
+
 test('Slug, Bild-URL, Inhaltsformat und Veröffentlichungszustand sind gesperrt', () => {
   const before = article({
     slug: 'website-relaunch',

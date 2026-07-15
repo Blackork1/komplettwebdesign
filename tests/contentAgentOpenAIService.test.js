@@ -1377,7 +1377,7 @@ test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte C
     value,
     responseId: 'response-1',
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: '2026-07-15.2'
+    promptVersion: '2026-07-15.3'
   });
 });
 
@@ -1434,7 +1434,31 @@ test('optimizeExistingPost schließt Legacy-EJS aus der Provider-Ausgabe aus und
     client.requests[0].text.format.name,
     'existing_post_legacy_targeted_optimization'
   );
-  assert.equal(result.promptVersion, '2026-07-15.2');
+  assert.equal(result.promptVersion, '2026-07-15.3');
+});
+
+test('optimizeExistingPost behandelt falsch klassifiziertes Legacy-HTML ohne EJS als statisch optimierbar', async () => {
+  const providerValue = validExistingPostOptimization();
+  const client = createParseClient(providerValue);
+  const service = createOpenAIContentService({ config, client });
+
+  const result = await service.optimizeExistingPost({
+    post: {
+      slug: 'legacy-statisch',
+      contentFormat: 'legacy_ejs',
+      contentHtml: '<section><h2>Altartikel</h2><p>Statischer Inhalt.</p></section>'
+    }
+  });
+
+  assert.equal(result.value.contentHtml, providerValue.contentHtml);
+  assert.equal(
+    Object.hasOwn(client.requests[0].text.format.schema.properties, 'contentHtml'),
+    true
+  );
+  assert.equal(
+    client.requests[0].text.format.name,
+    'existing_post_legacy_static_targeted_optimization'
+  );
 });
 
 test('optimizeExistingPost lehnt überlanges Legacy-EJS vor dem Provideraufruf ab und kürzt es nicht', async () => {

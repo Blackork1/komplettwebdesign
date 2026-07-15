@@ -806,6 +806,27 @@ test('Legacy-EJS-Inhalts채nderung endet als dauerhafter Fehler mit Runabschluss'
   assert.equal(dependencies.calls.liveWrites, 0);
 });
 
+test('falsch klassifiziertes Legacy-HTML ohne EJS wird validiert und als gesch체tzte Revision angelegt', async () => {
+  const post = publishedPost({
+    content_format: 'legacy_ejs',
+    content: originalHtml()
+  });
+  const optimizedContent = post.content.replace('Alte Fassung.', 'Gezielt reparierte Fassung.');
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [optimizedPost(post, { contentHtml: optimizedContent })],
+    validationResults: [{ passed: true, sanitizedHtml: optimizedContent, issues: [] }]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.validation, 2);
+  assert.equal(dependencies.calls.revisions.length, 1);
+  assert.equal(dependencies.calls.revisions[0].snapshot.fields.content, optimizedContent);
+  assert.equal(dependencies.calls.liveWrites, 0);
+});
+
 test('Legacy-EJS wird aus der Provider-Ausgabe ausgeschlossen, serverseitig erg채nzt und unver채ndert in die Revision 체bernommen', async () => {
   const originalContent = '<p><%= post.title %></p>\n';
   const post = publishedPost({
@@ -879,7 +900,7 @@ test('Legacy-EJS wird aus der Provider-Ausgabe ausgeschlossen, serverseitig erg�
     },
     responseId: 'resp-legacy-completed',
     usage: { input_tokens: 120, output_tokens: 40 },
-    promptVersion: '2026-07-15.2',
+    promptVersion: '2026-07-15.3',
     baseLiveHash: liveHashForPost(post),
     reservationMonth: '2026-07',
     actualCost: 0.037

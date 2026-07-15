@@ -59,6 +59,45 @@ test('Legacy-Inhalt bleibt bei der Bearbeitung konservativ unveränderlich', asy
   assert.equal(saved.length, 0);
 });
 
+test('falsch klassifiziertes Legacy-HTML ohne EJS darf nur nach vollständiger Validierung geändert werden', async () => {
+  const saved = [];
+  const validations = [];
+  const legacyStaticPost = {
+    ...post,
+    content: '<section><h2>Altartikel</h2><p>Statischer Inhalt.</p></section>'
+  };
+  const service = createContentRevisionService({
+    repository: {
+      getRevisionForEdit: async () => ({
+        id: 8,
+        status: 'draft',
+        revision_version: 1,
+        snapshot_json: createRevisionSnapshot(legacyStaticPost),
+        validation_context: { existingSlugs: [], allowedInternalLinks: ['/kontakt'] }
+      }),
+      updateDraftRevision: async (input) => { saved.push(input); return input; }
+    },
+    validateArticle: async (article, context) => {
+      validations.push({ article, context });
+      return { passed: true, sanitizedHtml: article.contentHtml, issues: [] };
+    }
+  });
+
+  await service.updateRevision({
+    revisionId: 8,
+    input: {
+      revision_version: '1',
+      content: '<section><h2>Altartikel</h2><p>Reparierter statischer Inhalt.</p></section>'
+    },
+    admin: { id: 1, username: 'admin' }
+  });
+
+  assert.equal(saved.length, 1);
+  assert.equal(validations.length, 1);
+  assert.equal(validations[0].article.contentHtml.includes('Reparierter'), true);
+  assert.deepEqual(validations[0].context.allowedInternalLinks, ['/kontakt']);
+});
+
 test('Slug und Veröffentlichungsfelder sind auch im Revisionspayload gesperrt', async () => {
   const service = createContentRevisionService({
     repository: {
@@ -698,7 +737,12 @@ test('manuelle Bearbeitung einer KI-Revision verwendet den atomaren Feedbackpfad
         });
         return { ...revision, revision_version: 4, snapshot_json: next };
       }
-    }
+    },
+    validateArticle: async (article) => ({
+      passed: true,
+      sanitizedHtml: article.contentHtml,
+      issues: []
+    })
   });
 
   const result = await service.updateRevision({

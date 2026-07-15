@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as cheerio from 'cheerio';
 import { ALLOWED_ARTICLE_CLASSES } from './articleHtmlContract.js';
+import { requiresLegacyBytePreservation } from './legacyContentPolicy.js';
 
 export const EXISTING_POST_DIFF_POLICY_VERSION = 'existing-post-diff-policy-v3';
 
@@ -607,12 +608,15 @@ function htmlChanges(beforeHtml, afterHtml, reasons) {
 export function buildExistingPostDiff({ before = {}, after = {}, reasons = [] } = {}) {
   assertImmutableFields(before, after);
   const beforeFormat = readField(before, 'contentFormat').value;
-  const afterFormat = readField(after, 'contentFormat');
-  const effectiveFormat = afterFormat.present ? afterFormat.value : beforeFormat;
   const beforeContent = readField(before, 'contentHtml');
   const afterContent = readField(after, 'contentHtml');
 
-  if (beforeFormat === 'legacy_ejs' && afterContent.present
+  const preserveLegacyBytes = requiresLegacyBytePreservation({
+    contentFormat: beforeFormat,
+    contentHtml: beforeContent.value
+  });
+
+  if (preserveLegacyBytes && afterContent.present
       && !Object.is(beforeContent.value, afterContent.value)) {
     throw serviceError(
       'LEGACY_EJS_CONTENT_CHANGE_FORBIDDEN',
@@ -635,7 +639,7 @@ export function buildExistingPostDiff({ before = {}, after = {}, reasons = [] } 
   const afterFaq = readField(after, 'faqJson');
   if (afterFaq.present) changes.push(...faqChanges(beforeFaq.value, afterFaq.value, reasons));
 
-  if (effectiveFormat !== 'legacy_ejs' && afterContent.present) {
+  if (!preserveLegacyBytes && afterContent.present) {
     changes.push(...htmlChanges(beforeContent.value, afterContent.value, reasons));
   }
 

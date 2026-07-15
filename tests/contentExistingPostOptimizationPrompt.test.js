@@ -170,6 +170,21 @@ test('Legacy-EJS muss contentHtml exakt und ohne Normalisierung zurückgeben', (
   assert.equal(JSON.parse(prompt.user).post.contentHtml, legacyHtml);
 });
 
+test('falsch klassifiziertes Legacy-HTML ohne EJS darf nach statischen Regeln optimiert werden', () => {
+  const prompt = buildExistingPostOptimizationPrompt(optimizationInput({
+    post: {
+      ...optimizationInput().post,
+      contentFormat: 'legacy_ejs',
+      contentHtml: '<section><h2>Altartikel</h2><p>Statischer Inhalt.</p></section>'
+    }
+  }));
+
+  assert.match(prompt.system, /legacy_ejs.*kein EJS-Template/iu);
+  assert.match(prompt.system, /contentHtml.*Ausgabeschema/iu);
+  assert.match(prompt.system, /vollständige statische Inhaltsprüfung/iu);
+  assert.doesNotMatch(prompt.system, /contentHtml.*nicht Teil der Provider-Ausgabe/iu);
+});
+
 test('Optimierungsprompt akzeptiert bekannte nullable Felder aus einem rohen Snake-Case-DB-Post', () => {
   const legacyHtml = '<p><%= post.title %></p>\n';
   const prompt = buildExistingPostOptimizationPrompt(optimizationInput({

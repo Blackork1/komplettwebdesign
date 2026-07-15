@@ -13,6 +13,7 @@ import {
   buildExistingPostDiff,
   validateTargetedOptimizationScope
 } from './existingPostDiffService.js';
+import { requiresLegacyBytePreservation } from './legacyContentPolicy.js';
 import { classifyExistingPostFreshness } from './existingPostFreshnessService.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
 import { auditExistingPost } from './legacyAuditService.js';
@@ -907,7 +908,10 @@ export async function runExistingPostOptimizationJob({
         ...persistedValidation.value,
         sanitizedHtml: fields.contentHtml
       };
-    } else if (post.content_format === 'legacy_ejs') {
+    } else if (requiresLegacyBytePreservation({
+      contentFormat: post.content_format,
+      contentHtml: post.content
+    })) {
       validation = { passed: true, sanitizedHtml: fields.contentHtml, issues: [] };
     } else {
       validation = await validateArticle(after, {

@@ -57,6 +57,10 @@ import {
 } from './prompts/contentLearningClassifierPrompt.js';
 import { calculateGscTopicRelevance } from './searchConsoleCategoryService.js';
 import { normalizeSafeHttpsUrl } from './httpsUrlSafety.js';
+import {
+  isLegacyStaticHtml,
+  requiresLegacyBytePreservation
+} from './legacyContentPolicy.js';
 
 const ANSI_ESCAPE = /\u001B(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
 
@@ -465,21 +469,25 @@ export function createOpenAIContentService({
     const originalPost = input?.post && typeof input.post === 'object' ? input.post : {};
     const originalFormat = originalPost.contentFormat ?? originalPost.content_format;
     const originalHtml = originalPost.contentHtml ?? originalPost.content;
-    const isLegacyEjs = originalFormat === 'legacy_ejs';
+    const legacyInput = { contentFormat: originalFormat, contentHtml: originalHtml };
+    const preserveLegacyBytes = requiresLegacyBytePreservation(legacyInput);
+    const legacyStaticHtml = isLegacyStaticHtml(legacyInput);
     const result = await createStructuredResponse({
       model: config.contentModel,
-      schema: isLegacyEjs
+      schema: preserveLegacyBytes
         ? LegacyExistingPostOptimizationOutputSchema
         : ExistingPostOptimizationOutputSchema,
-      schemaName: isLegacyEjs
+      schemaName: preserveLegacyBytes
         ? 'existing_post_legacy_targeted_optimization'
+        : legacyStaticHtml
+          ? 'existing_post_legacy_static_targeted_optimization'
         : 'existing_post_targeted_optimization',
       system: prompt.system,
       user: prompt.user,
       promptVersion: existingPostOptimizationPromptVersion
     });
 
-    if (!isLegacyEjs) return result;
+    if (!preserveLegacyBytes) return result;
     return {
       ...result,
       value: {
