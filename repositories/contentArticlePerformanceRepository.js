@@ -97,33 +97,243 @@ export function createContentArticlePerformanceRepository(db = pool) {
       return rows[0] || null;
     },
 
-    async getPerformanceInputs({ postId, evaluatedThroughDate } = {}) {
-      const normalizedDate = isoDate(evaluatedThroughDate, 'evaluatedThroughDate');
-      const params = postId === undefined
-        ? [normalizedDate]
-        : [normalizedDate, positiveInteger(postId, 'postId')];
-      const postFilter = postId === undefined ? '' : 'AND p.id = $2';
+    async listPublishedArticles({ evaluatedThroughDate } = {}) {
       const { rows } = await db.query(`
-        SELECT p.id AS "postId",
+        SELECT p.id,
                p.title,
                p.slug,
                p.published_at AS "publishedAt",
-               COUNT(DISTINCT metric.id)::integer AS "metricRowCount",
-               COUNT(DISTINCT event.id)::integer AS "eventCount"
+               metadata.content_cluster AS "contentCluster"
         FROM posts p
-        LEFT JOIN content_search_metrics metric
-          ON metric.post_id = p.id
-         AND metric.metric_date <= $1::date
-        LEFT JOIN content_article_events event
-          ON event.post_id = p.id
-         AND event.occurred_at < ($1::date + INTERVAL '1 day')
+        LEFT JOIN content_post_metadata metadata ON metadata.post_id = p.id
         WHERE p.published = TRUE
+          AND p.published_at IS NOT NULL
           AND p.published_at::date <= $1::date
-          ${postFilter}
-        GROUP BY p.id, p.title, p.slug, p.published_at
-        ORDER BY p.id ASC
-      `, params);
-      return postId === undefined ? rows : (rows[0] || null);
+        ORDER BY p.published_at ASC, p.id ASC
+      `, [isoDate(evaluatedThroughDate, 'evaluatedThroughDate')]);
+      return rows;
+    },
+
+    async getPerformanceInputs({ postId, evaluatedThroughDate } = {}) {
+      const normalizedPostId = positiveInteger(postId, 'postId');
+      const normalizedDate = isoDate(evaluatedThroughDate, 'evaluatedThroughDate');
+      const { rows } = await db.query(`
+        WITH target AS (
+          SELECT p.id,
+                 p.published_at,
+                 ($2::date - p.published_at::date)::integer AS article_age_days,
+                 metadata.content_cluster,
+                 CASE
+                   WHEN ($2::date - p.published_at::date) < 28 THEN 'collecting'
+                   WHEN ($2::date - p.published_at::date) < 60 THEN '28-59'
+                   WHEN ($2::date - p.published_at::date) < 120 THEN '60-119'
+                   WHEN ($2::date - p.published_at::date) < 240 THEN '120-239'
+                   ELSE '240-plus'
+                 END AS age_bucket
+          FROM posts p
+          LEFT JOIN content_post_metadata metadata ON metadata.post_id = p.id
+          WHERE p.id = $1
+            AND p.published = TRUE
+            AND p.published_at IS NOT NULL
+            AND p.published_at::date <= $2::date
+        ),
+        window_bounds AS (
+          SELECT 'current'::text AS kind,
+                 days,
+                 ($2::date - (days - 1))::date AS start_date,
+                 $2::date AS end_date
+          FROM (VALUES (7), (14), (28)) AS requested(days)
+          UNION ALL
+          SELECT 'previous'::text AS kind,
+                 days,
+                 ($2::date - ((days * 2) - 1))::date AS start_date,
+                 ($2::date - days)::date AS end_date
+          FROM (VALUES (7), (14), (28)) AS requested(days)
+        ),
+        window_aggregates AS (
+          SELECT bounds.kind,
+                 bounds.days,
+                 bounds.start_date,
+                 bounds.end_date,
+                 coverage.coverage_day_count,
+                 metrics.impressions,
+                 metrics.clicks,
+                 metrics.ctr,
+                 metrics.average_position,
+                 events.cta_clicks,
+                 events.contact_submits,
+                 CASE WHEN bounds.kind = 'current' THEN queries.items ELSE '[]'::jsonb END AS queries
+          FROM window_bounds bounds
+          LEFT JOIN LATERAL (
+            SELECT COUNT(DISTINCT sync_day.metric_date)::integer AS coverage_day_count
+            FROM content_search_metric_sync_days sync_day
+            WHERE sync_day.metric_date BETWEEN bounds.start_date AND bounds.end_date
+          ) coverage ON TRUE
+          LEFT JOIN LATERAL (
+            SELECT COALESCE(SUM(metric.impressions), 0)::double precision AS impressions,
+                   COALESCE(SUM(metric.clicks), 0)::double precision AS clicks,
+                   COALESCE(
+                     SUM(metric.clicks) / NULLIF(SUM(metric.impressions), 0),
+                     0
+                   )::double precision AS ctr,
+                   (
+                     SUM(metric.average_position * metric.impressions)
+                     / NULLIF(SUM(metric.impressions), 0)
+                   )::double precision AS average_position
+            FROM content_search_metrics metric
+            WHERE metric.post_id = $1
+              AND metric.metric_date BETWEEN bounds.start_date AND bounds.end_date
+          ) metrics ON TRUE
+          LEFT JOIN LATERAL (
+            SELECT COUNT(*) FILTER (WHERE event.event_type = 'cta_click')::integer AS cta_clicks,
+                   COUNT(*) FILTER (WHERE event.event_type = 'contact_submit')::integer AS contact_submits
+            FROM content_article_events event
+            WHERE event.post_id = $1
+              AND event.occurred_at >= bounds.start_date::timestamptz
+              AND event.occurred_at < (bounds.end_date + 1)::timestamptz
+          ) events ON TRUE
+          LEFT JOIN LATERAL (
+            SELECT COALESCE(
+              jsonb_agg(jsonb_build_object(
+                'query', query_row.query,
+                'clicks', query_row.clicks,
+                'impressions', query_row.impressions,
+                'ctr', query_row.ctr,
+                'averagePosition', query_row.average_position
+              ) ORDER BY query_row.impressions DESC, query_row.query ASC),
+              '[]'::jsonb
+            ) AS items
+            FROM (
+              SELECT metric.query,
+                     SUM(metric.clicks)::double precision AS clicks,
+                     SUM(metric.impressions)::double precision AS impressions,
+                     COALESCE(
+                       SUM(metric.clicks) / NULLIF(SUM(metric.impressions), 0),
+                       0
+                     )::double precision AS ctr,
+                     (
+                       SUM(metric.average_position * metric.impressions)
+                       / NULLIF(SUM(metric.impressions), 0)
+                     )::double precision AS average_position
+              FROM content_search_metrics metric
+              WHERE bounds.kind = 'current'
+                AND metric.post_id = $1
+                AND metric.metric_date BETWEEN bounds.start_date AND bounds.end_date
+              GROUP BY metric.query
+              ORDER BY SUM(metric.impressions) DESC, metric.query ASC
+              LIMIT 10
+            ) query_row
+          ) queries ON TRUE
+        ),
+        packed_windows AS (
+          SELECT COALESCE(
+                   jsonb_object_agg(days::text, jsonb_build_object(
+                     'startDate', start_date,
+                     'endDate', end_date,
+                     'coverageDayCount', coverage_day_count,
+                     'complete', coverage_day_count = days,
+                     'impressions', impressions,
+                     'clicks', clicks,
+                     'ctr', ctr,
+                     'averagePosition', average_position,
+                     'ctaClicks', cta_clicks,
+                     'contactSubmits', contact_submits,
+                     'queries', queries
+                   )) FILTER (WHERE kind = 'current'),
+                   '{}'::jsonb
+                 ) AS current_windows,
+                 COALESCE(
+                   jsonb_object_agg(days::text, jsonb_build_object(
+                     'startDate', start_date,
+                     'endDate', end_date,
+                     'coverageDayCount', coverage_day_count,
+                     'complete', coverage_day_count = days,
+                     'impressions', impressions,
+                     'clicks', clicks,
+                     'ctr', ctr,
+                     'averagePosition', average_position,
+                     'ctaClicks', cta_clicks,
+                     'contactSubmits', contact_submits,
+                     'queries', queries
+                   )) FILTER (WHERE kind = 'previous'),
+                   '{}'::jsonb
+                 ) AS previous_windows
+          FROM window_aggregates
+        ),
+        cohort_candidates AS (
+          SELECT candidate.id,
+                 candidate_metadata.content_cluster,
+                 CASE
+                   WHEN ($2::date - candidate.published_at::date) < 28 THEN 'collecting'
+                   WHEN ($2::date - candidate.published_at::date) < 60 THEN '28-59'
+                   WHEN ($2::date - candidate.published_at::date) < 120 THEN '60-119'
+                   WHEN ($2::date - candidate.published_at::date) < 240 THEN '120-239'
+                   ELSE '240-plus'
+                 END AS age_bucket,
+                 COALESCE(SUM(metric.impressions), 0)::double precision AS impressions,
+                 COALESCE(SUM(metric.clicks), 0)::double precision AS clicks,
+                 COALESCE(SUM(metric.clicks) / NULLIF(SUM(metric.impressions), 0), 0)::double precision AS ctr
+          FROM posts candidate
+          LEFT JOIN content_post_metadata candidate_metadata ON candidate_metadata.post_id = candidate.id
+          LEFT JOIN content_search_metrics metric
+            ON metric.post_id = candidate.id
+           AND metric.metric_date BETWEEN ($2::date - 27) AND $2::date
+          WHERE candidate.published = TRUE
+            AND candidate.published_at IS NOT NULL
+            AND candidate.published_at::date <= $2::date
+            AND candidate.id <> $1
+          GROUP BY candidate.id, candidate.published_at, candidate_metadata.content_cluster
+        ),
+        cohort_stats AS (
+          SELECT target.id,
+                 COUNT(*) FILTER (
+                   WHERE candidate.age_bucket = target.age_bucket
+                     AND target.content_cluster IS NOT NULL
+                     AND candidate.content_cluster = target.content_cluster
+                 )::integer AS cluster_size,
+                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY candidate.impressions) FILTER (
+                   WHERE candidate.age_bucket = target.age_bucket
+                     AND target.content_cluster IS NOT NULL
+                     AND candidate.content_cluster = target.content_cluster
+                 )::double precision AS cluster_median_impressions,
+                 COUNT(*) FILTER (WHERE candidate.age_bucket = target.age_bucket)::integer AS fallback_size,
+                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY candidate.impressions) FILTER (
+                   WHERE candidate.age_bucket = target.age_bucket
+                 )::double precision AS fallback_median_impressions
+          FROM target
+          LEFT JOIN cohort_candidates candidate ON TRUE
+          GROUP BY target.id
+        )
+        SELECT target.id AS "postId",
+               target.article_age_days AS "articleAgeDays",
+               target.age_bucket AS "ageBucket",
+               packed_windows.current_windows AS current,
+               packed_windows.previous_windows AS previous,
+               jsonb_build_object(
+                 'available', CASE
+                   WHEN cohort_stats.cluster_size >= 3 THEN TRUE
+                   WHEN cohort_stats.fallback_size >= 3 THEN TRUE
+                   ELSE FALSE
+                 END,
+                 'source', CASE
+                   WHEN cohort_stats.cluster_size >= 3 THEN 'cluster'
+                   WHEN cohort_stats.fallback_size >= 3 THEN 'age_fallback'
+                   ELSE 'unavailable'
+                 END,
+                 'size', CASE
+                   WHEN cohort_stats.cluster_size >= 3 THEN cohort_stats.cluster_size
+                   ELSE cohort_stats.fallback_size
+                 END,
+                 'medianImpressions', CASE
+                   WHEN cohort_stats.cluster_size >= 3 THEN cohort_stats.cluster_median_impressions
+                   ELSE cohort_stats.fallback_median_impressions
+                 END
+               ) AS cohort
+        FROM target
+        CROSS JOIN packed_windows
+        JOIN cohort_stats ON cohort_stats.id = target.id
+      `, [normalizedPostId, normalizedDate]);
+      return rows[0] || null;
     },
 
     async upsertPerformanceSnapshot(input) {

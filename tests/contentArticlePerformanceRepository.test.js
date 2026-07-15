@@ -125,21 +125,38 @@ test('Neueste Snapshots können einzeln und gebündelt gelesen werden', async ()
   assert.deepEqual(db.calls[1].params, [[7, 8]]);
 });
 
-test('Performance-Eingaben werden nur für veröffentlichte Artikel bis zum Stichtag geladen', async () => {
-  const rows = [{ postId: 7, publishedAt: '2026-06-01T10:00:00.000Z' }];
-  const db = createQueryRecorder([{ rows }]);
+test('Veröffentlichte Artikel und Performance-Eingaben werden getrennt und gebunden geladen', async () => {
+  const articles = [{ id: 7, publishedAt: '2026-06-01T10:00:00.000Z' }];
+  const performanceRow = {
+    postId: 7,
+    articleAgeDays: 43,
+    current: { 7: {}, 14: {}, 28: {} },
+    previous: { 7: {}, 14: {}, 28: {} },
+    cohort: { available: false }
+  };
+  const db = createQueryRecorder([{ rows: articles }, { rows: [performanceRow] }]);
   const repository = createContentArticlePerformanceRepository(db);
 
+  const published = await repository.listPublishedArticles({
+    evaluatedThroughDate: '2026-07-14'
+  });
   const result = await repository.getPerformanceInputs({
+    postId: 7,
     evaluatedThroughDate: '2026-07-14'
   });
 
-  assert.deepEqual(result, rows);
+  assert.deepEqual(published, articles);
+  assert.deepEqual(result, performanceRow);
   assert.deepEqual(db.calls[0].params, ['2026-07-14']);
   assert.match(db.calls[0].sql, /FROM posts p/i);
   assert.match(db.calls[0].sql, /p\.published = TRUE/i);
-  assert.match(db.calls[0].sql, /content_search_metrics/i);
-  assert.match(db.calls[0].sql, /content_article_events/i);
+  assert.deepEqual(db.calls[1].params, [7, '2026-07-14']);
+  assert.match(db.calls[1].sql, /content_search_metric_sync_days/i);
+  assert.match(db.calls[1].sql, /content_search_metrics/i);
+  assert.match(db.calls[1].sql, /content_article_events/i);
+  assert.match(db.calls[1].sql, /SUM\(metric\.average_position \* metric\.impressions\)/i);
+  assert.match(db.calls[1].sql, /PERCENTILE_CONT\(0\.5\)/i);
+  assert.match(db.calls[1].sql, /LIMIT 10/i);
 });
 
 test('Alte anonyme Ereignisse können mit einem ISO-Datum entfernt werden', async () => {
