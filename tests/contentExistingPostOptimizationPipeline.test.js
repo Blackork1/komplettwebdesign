@@ -957,7 +957,7 @@ test('Legacy-EJS wird aus der Provider-Ausgabe ausgeschlossen, serverseitig erg√
     },
     responseId: 'resp-legacy-completed',
     usage: { input_tokens: 120, output_tokens: 40 },
-    promptVersion: '2026-07-15.4',
+    promptVersion: '2026-07-15.5',
     baseLiveHash: liveHashForPost(post),
     reservationMonth: '2026-07',
     actualCost: 0.037

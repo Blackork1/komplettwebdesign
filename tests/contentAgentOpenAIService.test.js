@@ -1647,8 +1647,43 @@ test('optimizeExistingPost nutzt ein striktes Zod-Schema und das konfigurierte C
     value,
     responseId: 'response-1',
     usage: { input_tokens: 12, output_tokens: 7 },
-    promptVersion: '2026-07-15.4'
+    promptVersion: '2026-07-15.5'
   });
+});
+
+test('Reparatur eines Bestandsartikels behält Quellenbedarf und konkrete Prüfanweisung vollständig bei', async () => {
+  const client = createParseClient(validExistingPostOptimization());
+  const service = createOpenAIContentService({ config, client });
+  const finding = {
+    code: 'unbelegter_jahresvergleich',
+    severity: 'error',
+    message: 'Der Vergleich zwischen 2026 und 2025 ist nicht belegt.',
+    field: 'contentHtml',
+    evidence: '2026 ist die Preisrealität anspruchsvoller geworden.',
+    repairInstruction: 'Entferne den Jahresvergleich, wenn ihn keine freigegebene Quelle belegt.',
+    sectionHeading: 'Website-Kosten 2026 im Vergleich zu 2025',
+    verificationType: 'date',
+    sourceRequired: true
+  };
+
+  await service.optimizeExistingPost({
+    post: {
+      slug: 'website-kosten-2026-berlin-vergleich-2025',
+      contentFormat: 'static_html',
+      contentHtml: '<section><h2>Website-Kosten 2026 im Vergleich zu 2025</h2><p>2026 ist die Preisrealität anspruchsvoller geworden.</p></section>'
+    },
+    audit: { score: 68, findings: [finding] },
+    sources: [
+      { title: 'Allgemeine SEO-Grundlagen', url: 'https://example.com/seo' },
+      { title: 'Allgemeine Seitenerfahrung', url: 'https://example.org/page-experience' }
+    ]
+  });
+
+  const userInput = JSON.parse(client.requests[0].input[1].content);
+  assert.deepEqual(userInput.audit.findings[0], finding);
+  assert.match(client.requests[0].input[0].content, /sourceRequired=true/i);
+  assert.match(client.requests[0].input[0].content, /neutralisiere oder entferne/i);
+  assert.match(client.requests[0].input[0].content, /keinen neuen Jahresvergleich/i);
 });
 
 test('optimizeExistingPost lehnt zusätzliche gesperrte Felder aus strukturierten Doubles ab', async () => {
@@ -1704,7 +1739,7 @@ test('optimizeExistingPost schließt Legacy-EJS aus der Provider-Ausgabe aus und
     client.requests[0].text.format.name,
     'existing_post_legacy_targeted_optimization'
   );
-  assert.equal(result.promptVersion, '2026-07-15.4');
+  assert.equal(result.promptVersion, '2026-07-15.5');
 });
 
 test('optimizeExistingPost behandelt falsch klassifiziertes Legacy-HTML ohne EJS als statisch optimierbar', async () => {
