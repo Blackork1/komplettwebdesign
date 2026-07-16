@@ -62,6 +62,26 @@ function staleYearIssue(issue) {
   );
 }
 
+function immutableSlugOnlyYearIssue(issue, context, currentYear) {
+  const immutableFields = Array.isArray(context?.briefing?.immutableFields)
+    ? context.briefing.immutableFields
+    : [];
+  if (!immutableFields.includes('slug')) return false;
+
+  const slug = typeof context?.article?.slug === 'string' ? context.article.slug.trim() : '';
+  const evidence = issueEvidence(issue);
+  if (!slug || !evidence.includes(slug)) return false;
+
+  const staleYears = [...new Set(evidence.match(YEAR_PATTERN) || [])]
+    .map(Number)
+    .filter((year) => year < currentYear);
+  if (staleYears.length === 0) return false;
+
+  const { slug: _immutableSlug, ...mutableArticle } = context.article || {};
+  const mutableText = JSON.stringify(mutableArticle);
+  return staleYears.every((year) => !new RegExp(`\\b${year}\\b`, 'u').test(mutableText));
+}
+
 function unsubstantiatedExistingPostIssue(issue, context) {
   const evidence = issueEvidence(issue);
   if (priceIssue(issue) && !EXPLICIT_PRICE_AMOUNT_PATTERN.test(evidence)) return true;
@@ -69,6 +89,7 @@ function unsubstantiatedExistingPostIssue(issue, context) {
 
   const currentYear = Number(context?.briefing?.currentYear);
   if (!Number.isSafeInteger(currentYear)) return false;
+  if (immutableSlugOnlyYearIssue(issue, context, currentYear)) return true;
   const sectionHeading = typeof issue?.sectionHeading === 'string'
     ? issue.sectionHeading
     : '';

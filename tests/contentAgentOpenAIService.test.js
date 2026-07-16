@@ -860,6 +860,68 @@ test('Bestandsreview behält einen ausdrücklichen statischen Preis als echten B
   assert.equal(result.value.risks.staticPrices, true);
 });
 
+test('Bestandsreview verwirft einen Jahresblocker, dessen einziger Beleg der unveränderliche Slug ist', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 58,
+    requiresManualReview: true,
+    risks: { ...validRisk, currentClaims: true },
+    issues: [
+      {
+        code: 'stale_year',
+        severity: 'error',
+        message: 'Die Jahreszahl im Seitenslug sei veraltet.',
+        repairInstruction: 'Ändere die Jahreszahl.',
+        blocking: true,
+        sectionHeading: 'Website-Kosten einfach erklärt',
+        evidenceExcerpt: 'slug":"website-kosten-2025-einfach-erklaert"',
+        verificationType: 'date',
+        sourceRequired: false,
+        autoPublishBlocking: true
+      },
+      {
+        code: 'learning_rules_missing',
+        severity: 'warning',
+        message: 'Es gelten keine zusätzlichen Lernregeln.',
+        repairInstruction: 'Keine Reparatur erforderlich.',
+        blocking: false,
+        sectionHeading: 'Kurzfazit',
+        evidenceExcerpt: 'learningRules":[]',
+        verificationType: 'none',
+        sourceRequired: false,
+        autoPublishBlocking: false
+      }
+    ]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: {
+      type: 'existing_post_targeted_optimization',
+      currentYear: 2026,
+      immutableFields: ['slug']
+    },
+    article: {
+      ...validArticle,
+      title: 'Website-Kosten einfach erklärt',
+      slug: 'website-kosten-2025-einfach-erklaert',
+      contentHtml: '<section><h2>Website-Kosten einfach erklärt</h2><p>Aktueller Ratgeber ohne Jahresangabe.</p></section>'
+    },
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.deepEqual(result.value.issues.map(({ code }) => code), ['learning_rules_missing']);
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 80);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.risks, validRisk);
+});
+
 test('fehlendes output_parsed führt zu einem klaren Fehler', async () => {
   const client = {
     responses: {
