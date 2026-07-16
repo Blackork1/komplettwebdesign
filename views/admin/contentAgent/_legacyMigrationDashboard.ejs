@@ -1,0 +1,133 @@
+<%
+  const safeDashboard = dashboard && typeof dashboard === 'object' ? dashboard : {};
+  const migrationGroups = [
+    {
+      key: 'ready',
+      label: 'Sicher gesammelt migrierbar',
+      items: Array.isArray(safeDashboard.readyStatic) ? safeDashboard.readyStatic : [],
+      open: true,
+      emptyText: 'Derzeit ist kein statischer Legacy-Artikel für die Sammelmigration freigegeben.'
+    },
+    {
+      key: 'review',
+      label: 'Einzelprüfung erforderlich',
+      items: Array.isArray(safeDashboard.reviewRequired) ? safeDashboard.reviewRequired : [],
+      open: false,
+      emptyText: 'Aktuell wartet kein Artikel mit aktivem EJS auf eine Einzelprüfung.'
+    },
+    {
+      key: 'blocked',
+      label: 'Blockiert',
+      items: Array.isArray(safeDashboard.blocked) ? safeDashboard.blocked : [],
+      open: false,
+      emptyText: 'Der Scan hat keine technisch blockierten Legacy-Artikel gefunden.'
+    },
+    {
+      key: 'migrated',
+      label: 'Migriert',
+      items: Array.isArray(safeDashboard.migrated) ? safeDashboard.migrated : [],
+      open: false,
+      emptyText: 'Es wurde noch kein Legacy-Artikel zu statischem HTML migriert.'
+    }
+  ];
+%>
+<section class="content-agent-panel legacy-migration-dashboard" aria-labelledby="legacy-migration-heading">
+  <div class="content-agent-panel__head legacy-migration-dashboard__head">
+    <div>
+      <p class="content-agent-eyebrow">Technische Modernisierung</p>
+      <h2 id="legacy-migration-heading">Legacy-Migration</h2>
+      <p class="content-agent-lead">
+        Veröffentlichte EJS-Inhalte werden zuerst verlustfrei geprüft und erst nach deiner Bestätigung als statisches HTML gespeichert.
+      </p>
+      <% if (safeDashboard.lastScanLabel) { %>
+        <small>Letzter Scan: <%= safeDashboard.lastScanLabel %></small>
+      <% } %>
+    </div>
+    <div class="content-agent-actions legacy-migration-dashboard__actions">
+      <form method="post"
+        action="/admin/content-agent/existing-content/legacy-migrations/scan"
+        data-confirm="Alle veröffentlichten Legacy-Artikel jetzt neu prüfen? Liveinhalte werden dabei nicht verändert.">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <button class="btn btn-outline-primary" type="submit">
+          <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+          Legacy-Artikel neu prüfen
+        </button>
+      </form>
+      <% if (Number(safeDashboard.readyStaticCount) > 0) { %>
+        <form method="post"
+          action="/admin/content-agent/existing-content/legacy-migrations/migrate-safe"
+          data-confirm="Alle serverseitig als sicher eingestuften statischen Legacy-Artikel jetzt migrieren? Jeder Artikel wird unmittelbar vor dem Schreiben erneut geprüft.">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input type="hidden" name="confirmed" value="true">
+          <button class="btn btn-primary" type="submit">
+            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+            Alle sicheren Artikel migrieren
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="legacy-migration-metrics" aria-label="Legacy-Migrationsstatus">
+    <article><strong><%= Number(safeDashboard.readyStaticCount) || 0 %></strong><span>Sicher</span></article>
+    <article><strong><%= Number(safeDashboard.reviewRequiredCount) || 0 %></strong><span>Einzelprüfung</span></article>
+    <article><strong><%= Number(safeDashboard.blockedCount) || 0 %></strong><span>Blockiert</span></article>
+    <article><strong><%= Number(safeDashboard.migratedCount) || 0 %></strong><span>Migriert</span></article>
+  </div>
+
+  <div class="legacy-migration-groups">
+    <% migrationGroups.forEach((group) => { %>
+      <details class="legacy-migration-group legacy-migration-group--<%= group.key %>" <%= group.open ? 'open' : '' %>>
+        <summary>
+          <span><%= group.label %></span>
+          <strong><%= group.items.length %></strong>
+        </summary>
+        <div class="legacy-migration-list">
+          <% if (group.items.length === 0) { %>
+            <p class="legacy-migration-empty"><%= group.emptyText %></p>
+          <% } %>
+          <% group.items.forEach((item) => { %>
+            <article class="legacy-migration-row" data-legacy-migration-id="<%= item.id %>">
+              <div class="legacy-migration-row__identity">
+                <strong><%= item.title %></strong>
+                <code><%= item.slug %></code>
+                <% if (item.primaryIssue) { %>
+                  <small><%= item.primaryIssue %></small>
+                <% } %>
+              </div>
+              <div class="legacy-migration-row__meta">
+                <span class="content-agent-status is-<%= item.statusTone %>"><%= item.statusLabel %></span>
+                <small><%= Number(item.ejsCount) || 0 %> EJS-Blöcke</small>
+                <% if (item.updatedLabel) { %><small><%= item.updatedLabel %></small><% } %>
+              </div>
+              <div class="legacy-migration-row__actions">
+                <% if (item.previewUrl) { %>
+                  <a class="btn btn-outline-secondary btn-sm" href="<%= item.previewUrl %>">Vorschau</a>
+                <% } %>
+                <% if (item.canMigrate && item.migrateUrl) { %>
+                  <form method="post"
+                    action="<%= item.migrateUrl %>"
+                    data-confirm="Diesen geprüften Legacy-Artikel jetzt zu statischem HTML migrieren?">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <input type="hidden" name="confirmed" value="true">
+                    <button class="btn btn-primary btn-sm" type="submit">Migrieren</button>
+                  </form>
+                <% } %>
+                <% if (item.canRollback && item.rollbackUrl) { %>
+                  <form method="post"
+                    action="<%= item.rollbackUrl %>"
+                    data-confirm="Diese Migration zurücknehmen und den gesicherten Legacy-Inhalt wiederherstellen? Spätere Artikeländerungen sperren diese Aktion.">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <input type="hidden" name="confirmed" value="true">
+                    <button class="btn btn-outline-danger btn-sm" type="submit">Zurücknehmen</button>
+                  </form>
+                <% } %>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </details>
+    <% }) %>
+  </div>
+</section>

@@ -1,0 +1,86 @@
+<%- include('../../partials/admin_header') %>
+<div class="content-agent-page legacy-migration-preview">
+  <header class="content-agent-pagehead">
+    <div>
+      <p class="content-agent-eyebrow">Legacy-Migration</p>
+      <h1 class="admin-page-title"><%= migration.title %></h1>
+      <p class="content-agent-lead"><code><%= migration.slug %></code></p>
+    </div>
+    <a class="btn btn-outline-secondary" href="/admin/content-agent/existing-content">
+      Zur Bestandsübersicht
+    </a>
+  </header>
+
+  <% if (migration.status === 'stale') { %>
+    <div class="content-agent-notice is-warning" role="alert">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>
+        <strong>Diese Vorschau ist veraltet</strong>
+        <p>Der Liveartikel wurde seit dem Scan verändert. Starte einen neuen Legacy-Scan.</p>
+      </div>
+    </div>
+  <% } %>
+
+  <section class="legacy-migration-compare" aria-label="Vorher-Nachher-Vergleich">
+    <article>
+      <h2>Aktueller Live-Renderstand</h2>
+      <div class="legacy-migration-render"><%- migration.currentHtml %></div>
+    </article>
+    <article>
+      <h2>Statischer Kandidat</h2>
+      <div class="legacy-migration-render"><%- migration.candidateHtml %></div>
+    </article>
+  </section>
+
+  <section class="content-agent-panel" aria-labelledby="legacy-technical-heading">
+    <div class="content-agent-panel__head">
+      <div>
+        <p class="content-agent-eyebrow">Deterministische Analyse</p>
+        <h2 id="legacy-technical-heading">Technische Prüfung</h2>
+      </div>
+    </div>
+    <dl class="legacy-migration-technical">
+      <div><dt>Migrationsklasse</dt><dd><%= migration.migrationClass %></dd></div>
+      <div><dt>EJS-Blöcke</dt><dd><%= Number(migration.analysis?.ejsCount) || 0 %></dd></div>
+      <div><dt>Quellgröße</dt><dd><%= Number(migration.analysis?.sourceBytes) || 0 %> Byte</dd></div>
+      <div><dt>Kandidatengröße</dt><dd><%= Number(migration.analysis?.candidateBytes) || 0 %> Byte</dd></div>
+    </dl>
+
+    <% if (Array.isArray(migration.blockingIssues) && migration.blockingIssues.length > 0) { %>
+      <div class="legacy-migration-findings">
+        <h3>Blockierende Befunde</h3>
+        <ul>
+          <% migration.blockingIssues.forEach((item) => { %>
+            <li><%= item.message %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <% if (Array.isArray(migration.sanitizerReport?.transforms) && migration.sanitizerReport.transforms.length > 0) { %>
+      <div class="legacy-migration-findings">
+        <h3>Automatische Normalisierungen</h3>
+        <ul>
+          <% migration.sanitizerReport.transforms.forEach((item) => { %>
+            <li><code><%= item.code %></code>: <%= Number(item.count) || 0 %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+  </section>
+
+  <% if (migration.canMigrate) { %>
+    <form class="legacy-migration-preview__action"
+      method="post"
+      action="/admin/content-agent/existing-content/legacy-migrations/<%= migration.id %>/migrate"
+      data-confirm="Diesen geprüften Legacy-Artikel jetzt zu statischem HTML migrieren?">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="confirmed" value="true">
+      <button class="btn btn-primary" type="submit">
+        Geprüft zu statischem HTML migrieren
+      </button>
+    </form>
+  <% } %>
+</div>
+<script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>
+<%- include('../../partials/admin_footer') %>

@@ -175,6 +175,92 @@ test('Cockpit enthält bestätigte sieben Reiter und sichere Aktionsformulare', 
   assert.doesNotMatch(script, /XMLHttpRequest|localStorage/);
 });
 
+test('Bestandsseite zeigt Legacy-Migration kompakt und ohne Freigabeaktion für Blocker', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    currentPathname: '/admin/content-agent/existing-content',
+    existingContentGroups: {
+      totalCount: 0,
+      visibleArticles: [],
+      collectingArticles: [],
+      zeroImpressionArticles: [],
+      hiddenZeroImpressionArticles: []
+    },
+    visibilityMessage: null,
+    legacyMigrationMessage: '3 Legacy-Artikel geprüft.',
+    legacyMigrationDashboard: {
+      totalCount: 3,
+      readyStaticCount: 1,
+      reviewRequiredCount: 1,
+      blockedCount: 1,
+      migratedCount: 0,
+      lastScanLabel: '16.07.2026, 12:00 Uhr',
+      readyStatic: [{
+        id: 10,
+        title: 'Statisch',
+        slug: 'statisch',
+        ejsCount: 0,
+        statusLabel: 'Freigabefähig',
+        statusTone: 'success',
+        primaryIssue: null,
+        previewUrl: '/admin/content-agent/existing-content/legacy-migrations/10/preview',
+        migrateUrl: '/admin/content-agent/existing-content/legacy-migrations/10/migrate',
+        canMigrate: true
+      }],
+      reviewRequired: [],
+      blocked: [{
+        id: 12,
+        title: 'Blockiert',
+        slug: 'blockiert',
+        ejsCount: 0,
+        statusLabel: 'Blockiert',
+        statusTone: 'danger',
+        primaryIssue: 'Eingebettete Styles benötigen eine Einzelprüfung.',
+        previewUrl: '/admin/content-agent/existing-content/legacy-migrations/12/preview',
+        migrateUrl: '/admin/content-agent/existing-content/legacy-migrations/12/migrate',
+        canMigrate: false
+      }],
+      migrated: []
+    }
+  });
+
+  assert.match(html, /Legacy-Migration/);
+  assert.match(html, /Alle sicheren Artikel migrieren/);
+  assert.match(html, /legacy-migrations\/10\/preview/);
+  assert.match(html, /name="_csrf" value="csrf-test"/);
+  const blockedRow = html.match(/data-legacy-migration-id="12"[\s\S]*?<\/article>/)?.[0] || '';
+  assert.match(blockedRow, /Eingebettete Styles benötigen eine Einzelprüfung/);
+  assert.doesNotMatch(blockedRow, /legacy-migrations\/12\/migrate/);
+});
+
+test('Legacy-Vorschau zeigt beide Renderstände und sperrt eine veraltete Migration', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('legacyMigrationPreview.ejs')), {
+    ...baseLocals,
+    currentPathname: '/admin/content-agent/existing-content/legacy-migrations/8/preview',
+    migration: {
+      id: 8,
+      title: 'Legacy-Artikel',
+      slug: 'legacy-artikel',
+      status: 'stale',
+      migrationClass: 'active_ejs',
+      currentHtml: '<p>Aktueller Live-Renderstand</p>',
+      candidateHtml: '<p>Statischer Kandidat</p>',
+      analysis: { ejsCount: 2, sourceBytes: 120, candidateBytes: 95 },
+      blockingIssues: [{ message: 'Ein Link benötigt eine Einzelprüfung.' }],
+      sanitizerReport: { transforms: [{ code: 'duplicate_jsonld_removed', count: 1 }] },
+      canMigrate: false
+    }
+  });
+
+  assert.match(html, /Aktueller Live-Renderstand/);
+  assert.match(html, /Statischer Kandidat/);
+  assert.match(html, /Technische Prüfung/);
+  assert.match(html, /Ein Link benötigt eine Einzelprüfung/);
+  assert.match(html, /Diese Vorschau ist veraltet/);
+  assert.doesNotMatch(html, /Geprüft zu statischem HTML migrieren/);
+  assert.doesNotMatch(html, /&lt;p&gt;Aktueller Live-Renderstand/);
+});
+
 test('Entwurfsoptimierung sperrt Doppelklicks und aktualisiert nur die Statusbox', async () => {
   const script = await readFile(new URL('../public/js/admin-content-agent.js', import.meta.url), 'utf8');
 

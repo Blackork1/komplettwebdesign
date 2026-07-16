@@ -32,9 +32,9 @@
     "admin.css": {
       "source": "admin.css",
       "output": "admin.min.css",
-      "href": "/admin.min.css?v=ca644b1f6d22",
-      "hash": "ca644b1f6d22",
-      "bytes": 72945
+      "href": "/admin.min.css?v=b46846d2baf2",
+      "hash": "b46846d2baf2",
+      "bytes": 77203
     },
     "assets/css/bundle.css": {
       "source": "assets/css/bundle.css",

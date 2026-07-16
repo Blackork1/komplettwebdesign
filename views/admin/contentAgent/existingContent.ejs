@@ -20,6 +20,26 @@
     && typeof visibilityMessage === 'string'
     ? visibilityMessage
     : null;
+  const safeLegacyMigrationMessage = typeof legacyMigrationMessage !== 'undefined'
+    && typeof legacyMigrationMessage === 'string'
+    ? legacyMigrationMessage
+    : null;
+  const safeLegacyMigrationDashboard = typeof legacyMigrationDashboard !== 'undefined'
+    && legacyMigrationDashboard
+    && typeof legacyMigrationDashboard === 'object'
+    ? legacyMigrationDashboard
+    : {
+      totalCount: 0,
+      readyStaticCount: 0,
+      reviewRequiredCount: 0,
+      blockedCount: 0,
+      migratedCount: 0,
+      lastScanLabel: null,
+      readyStatic: [],
+      reviewRequired: [],
+      blocked: [],
+      migrated: []
+    };
   const groups = [
     {
       key: 'visible',
@@ -108,6 +128,21 @@
       <div><strong>Ansicht aktualisiert</strong><p><%= safeVisibilityMessage %></p></div>
     </div>
   <% } %>
+
+  <% if (safeLegacyMigrationMessage) { %>
+    <div class="content-agent-notice is-success" role="status">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      <div>
+        <strong>Legacy-Migration aktualisiert</strong>
+        <p><%= safeLegacyMigrationMessage %></p>
+      </div>
+    </div>
+  <% } %>
+
+  <%- include('_legacyMigrationDashboard', {
+    dashboard: safeLegacyMigrationDashboard,
+    csrf
+  }) %>
 
   <section class="content-agent-panel" aria-labelledby="stock-heading">
     <div class="content-agent-panel__head">
