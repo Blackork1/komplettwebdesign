@@ -77,7 +77,7 @@ test('sanitizer keeps only the documented static article surface', () => {
     '<h2 style="color:red">Titel</h2><p onclick="alert(1)">Text <strong>stark</strong></p>',
     '<a href="/kontakt">Intern</a><a href="https://example.com/quelle">Extern</a>',
     '<a href="javascript:alert(1)">Unsicher</a><a href="//example.com/pfad">Protokollrelativ</a>',
-    '<h1>Verbotene Überschrift</h1><img src="x.webp"><script>alert(1)</script>',
+    '<h1>Verbotene Überschrift</h1><iframe src="https://example.com"></iframe><script>alert(1)</script>',
     '</section>'
   ].join(''));
 
@@ -85,7 +85,21 @@ test('sanitizer keeps only the documented static article surface', () => {
   assert.match(sanitized, /href="\/kontakt"/);
   assert.match(sanitized, /href="https:\/\/example\.com\/quelle"/);
   assert.doesNotMatch(sanitized, /style=|onclick=|javascript:|href="\/\//);
-  assert.doesNotMatch(sanitized, /<\/?(?:h1|img|script)\b/i);
+  assert.doesNotMatch(sanitized, /<\/?(?:h1|iframe|script)\b/i);
+});
+
+test('sanitizer erhält sichere Legacy-Darstellungselemente ohne aktive Inhalte', () => {
+  const sanitized = sanitizeArticleHtml(`
+    <figure><img src="/images/test.webp" alt="Test"><figcaption>Text</figcaption></figure>
+    <pre><code>const safe = true;</code></pre>
+    <a href="javascript:alert(1)" onclick="alert(1)">Unsicher</a>
+    <style>body { display:none }</style>
+  `);
+
+  assert.match(sanitized, /<figure>/);
+  assert.match(sanitized, /<img[^>]+alt="Test"/);
+  assert.match(sanitized, /<pre><code>/);
+  assert.doesNotMatch(sanitized, /javascript:|onclick|<style/i);
 });
 
 test('validator accepts a complete article with approved links, CTA tracking and matching visible FAQ', () => {
@@ -127,7 +141,8 @@ test('validator reports every forbidden raw HTML construct before sanitizing it'
     assert.ok(result.issues.some((issue) => issue.code === code), `Fehlender Issue-Code: ${code}`);
   }
   assert.equal(typeof result.sanitizedHtml, 'string');
-  assert.doesNotMatch(result.sanitizedHtml, /<\/?(?:h1|script|img)\b|style=|<%/i);
+  assert.match(result.sanitizedHtml, /<img src="bild\.webp"/i);
+  assert.doesNotMatch(result.sanitizedHtml, /<\/?(?:h1|script)\b|style=|<%/i);
 });
 
 test('outer container means one top-level Bootstrap container while comments and whitespace are ignored', () => {
