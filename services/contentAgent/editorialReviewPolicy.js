@@ -34,6 +34,7 @@ const EMPTY_RISKS = Object.freeze({
   softwareVersionClaims: false,
   staticPrices: false
 });
+export const EDITORIAL_REVIEW_POLICY_VERSION = '2026-07-16.2';
 
 function technicalIssue(issue) {
   const code = typeof issue?.code === 'string' ? issue.code.trim() : '';
@@ -147,6 +148,49 @@ function existingPostRisks(issues) {
   return risks;
 }
 
+function hasUsableSourceReferences(context) {
+  const references = context?.sourceReferences;
+  const articleHtml = typeof context?.article?.contentHtml === 'string'
+    ? context.article.contentHtml
+    : '';
+  return Array.isArray(references)
+    && references.length >= 2
+    && references.length <= 6
+    && references.every(({ url } = {}) => {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' && !parsed.username && !parsed.password;
+      } catch {
+        return false;
+      }
+    })
+    && references.some(({ url }) => articleHtml.includes(url));
+}
+
+function resolvedCurrentClaimRisk(risks, issues, context) {
+  if (
+    risks?.currentClaims !== true
+    || risks?.legalClaims === true
+    || risks?.privacyClaims === true
+    || risks?.softwareVersionClaims === true
+    || risks?.staticPrices === true
+    || issues.some(blocksEditorialApproval)
+    || !hasUsableSourceReferences(context)
+  ) {
+    return false;
+  }
+  const sourceIssues = issues.filter((issue) => (
+    issue?.sourceRequired === true
+    || ['source', 'date'].includes(issue?.verificationType)
+  ));
+  return sourceIssues.length > 0
+    && sourceIssues.every((issue) => (
+      issue?.sourceRequired === true
+      && ['source', 'date'].includes(issue?.verificationType)
+      && !blocksEditorialApproval(issue)
+    ));
+}
+
 export function normalizeEditorialReview(review = {}, context = {}) {
   const rawIssues = Array.isArray(review.issues) ? review.issues : [];
   const isExistingPostReview = existingPostReview(context);
@@ -157,9 +201,12 @@ export function normalizeEditorialReview(review = {}, context = {}) {
       !isExistingPostReview || !unsubstantiatedExistingPostIssue(issue, context)
     ));
   const hasEditorialBlocker = editorialIssues.some(blocksEditorialApproval);
-  const risks = isExistingPostReview
+  let risks = isExistingPostReview
     ? existingPostRisks(editorialIssues)
-    : review.risks;
+    : { ...review.risks };
+  if (!isExistingPostReview && resolvedCurrentClaimRisk(risks, editorialIssues, context)) {
+    risks = { ...risks, currentClaims: false };
+  }
   const activeRisk = hasActiveRisk(risks);
   const approvalBlocked = hasEditorialBlocker || activeRisk;
 

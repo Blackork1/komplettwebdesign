@@ -362,6 +362,7 @@ test('Jobliste projiziert nur die eindeutige offene Providerreservierung', async
   assert.match(call.sql, /AS quality_gate_structure_repairable/i);
   assert.match(call.sql, /AS quality_gate_editorial_repairable/i);
   assert.match(call.sql, /AS quality_gate_manifest_repairable/i);
+  assert.match(call.sql, /AS editorial_policy_recheckable/i);
   assert.match(call.sql, /AS post_is_ai_draft/i);
   assert.match(call.sql, /AS optimization_revision_id/i);
   assert.match(call.sql, /AS optimization_revision_status/i);

@@ -1675,8 +1675,12 @@ export function buildJobListPresentation(rows = []) {
       currentStage: row.current_stage,
       postId: row.post_id,
       openReservationCount: row.open_provider_reservation_count,
+      editorialPolicyRecheckable: row.editorial_policy_recheckable === true,
       editorialReviewRecoverable: row.editorial_review_recoverable === true
     });
+    const editorialReviewRecoveryKind = canRecoverEditorial
+      ? row.editorial_policy_recheckable === true ? 'policy_recheck' : 'provider_review'
+      : null;
     const canRecoverDraft = canRecoverDraftPersistence({
       jobType: row.job_type,
       status: row.status,
@@ -1745,8 +1749,11 @@ export function buildJobListPresentation(rows = []) {
         ? 'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
         : null,
       canRecoverEditorialReview: canRecoverEditorial,
+      editorialReviewRecoveryKind,
       editorialReviewRecoveryActionLabel: canRecoverEditorial
-        ? 'Nur redaktionelle Prüfung erneut ausführen'
+        ? editorialReviewRecoveryKind === 'policy_recheck'
+          ? 'Gespeicherten Review ohne neue OpenAI-Kosten neu bewerten'
+          : 'Nur redaktionelle Prüfung erneut ausführen'
         : null,
       canRecoverDraftPersistence: canRecoverDraft,
       draftPersistenceRecoveryActionLabel: canRecoverDraft

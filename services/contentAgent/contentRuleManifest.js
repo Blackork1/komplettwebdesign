@@ -25,6 +25,7 @@ import {
 } from './contentLearningSnapshotService.js';
 import { REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION } from './reviewIssueOptimizationService.js';
 import { TOPIC_SCORING_VERSION } from './topicScoringService.js';
+import { EDITORIAL_REVIEW_POLICY_VERSION } from './editorialReviewPolicy.js';
 import {
   INTERNAL_LINK_NORMALIZATION_VERSION,
   buildTrustedInternalPaths,
@@ -78,6 +79,7 @@ export const CONTENT_AGENT_RULE_MANIFEST = Object.freeze({
   contentLearningClassifierPrompt,
   contentLearningSnapshot: CONTENT_LEARNING_SNAPSHOT_VERSION,
   contentLearningTaxonomy: CONTENT_LEARNING_TAXONOMY_VERSION,
+  editorialReviewPolicy: EDITORIAL_REVIEW_POLICY_VERSION,
   existingPostDiffPolicy: EXISTING_POST_DIFF_POLICY_VERSION,
   existingPostFreshnessPolicy: EXISTING_POST_FRESHNESS_POLICY_VERSION,
   existingPostOptimizationPrompt,

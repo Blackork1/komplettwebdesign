@@ -736,6 +736,34 @@ test('technisch bestandener Artikel bietet nach falschem KI-Strukturblocker nur 
   ]);
 });
 
+test('widersprüchlicher gespeicherter Review bietet eine kostenfreie deterministische Neubewertung an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 4377,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 6,
+    max_attempts: 6,
+    last_error: 'quality_gate_failed',
+    current_stage: 'review',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    editorial_policy_recheckable: true,
+    editorial_review_recoverable: false,
+    latest_review_issues: [{
+      code: 'current-year-claim_requires_source_context',
+      message: 'Der Jahresbezug könnte noch enger an die Quellen angebunden werden.'
+    }]
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverEditorialReview, true);
+  assert.equal(job.editorialReviewRecoveryKind, 'policy_recheck');
+  assert.equal(
+    job.editorialReviewRecoveryActionLabel,
+    'Gespeicherten Review ohne neue OpenAI-Kosten neu bewerten'
+  );
+});
+
 test('Bestandsjob mit gespeichertem Review darf nach Policy-Korrektur kostenfrei fortgesetzt werden', () => {
   const [job] = buildJobListPresentation([{
     id: 4374,

@@ -1263,6 +1263,41 @@ test('Jobliste erklärt die einmalige redaktionelle Neuprüfung ohne Artikelrepa
   assert.doesNotMatch(html, /repair:4|Artikel erneut reparieren/);
 });
 
+test('Jobliste erklärt die deterministische Review-Neubewertung ohne neue OpenAI-Kosten', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 4377,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 6,
+      maxAttempts: 6,
+      lastSafeStageLabel: 'Redaktionelle Prüfung',
+      lastError: 'quality_gate_failed',
+      costEur: 0.75,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: false,
+      canRecoverQualityGateManifest: false,
+      canRecoverEditorialReview: true,
+      editorialReviewRecoveryKind: 'policy_recheck',
+      editorialReviewRecoveryActionLabel:
+        'Gespeicherten Review ohne neue OpenAI-Kosten neu bewerten',
+      qualityIssues: [
+        'Der Jahresbezug könnte noch enger an die Quellen angebunden werden.'
+      ]
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/4377\/recover-editorial-review"/);
+  assert.match(html, /kein neuer OpenAI-Aufruf/i);
+  assert.match(html, /bereits bezahlte Review/i);
+  assert.match(html, /Gespeicherten Review ohne neue OpenAI-Kosten neu bewerten/);
+  assert.doesNotMatch(html, /übliche.*Reviewkosten/i);
+});
+
 test('Jobliste erklärt die einmalige Entwurfsfertigstellung und die neuen Bildkosten', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
     ...baseLocals,

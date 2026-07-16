@@ -69,6 +69,88 @@ function fixture() {
   };
 }
 
+function policyRecheckFixture() {
+  const previousManifest = { ...CONTENT_AGENT_RULE_MANIFEST };
+  delete previousManifest.editorialReviewPolicy;
+  const sources = [
+    { title: 'Google Quelle A', url: 'https://developers.google.com/search/docs/quelle-a' },
+    { title: 'Google Quelle B', url: 'https://support.google.com/business/answer/123' }
+  ];
+  return {
+    job_id: 1,
+    job_type: 'generate_weekly_draft',
+    job_status: 'needs_manual_attention',
+    attempts: 6,
+    max_attempts: 6,
+    last_error: 'quality_gate_failed',
+    run_id: 11,
+    run_status: 'needs_manual_attention',
+    current_stage: 'review',
+    post_id: null,
+    error_report_json: {
+      code: 'quality_gate_failed',
+      message: 'Der Artikel hat die Qualitätsprüfung nicht bestanden.'
+    },
+    runtime_snapshot_json: {
+      timezone: 'Europe/Berlin',
+      allowedInternalLinks: ['/kontakt'],
+      allowedInternalLinksHash: canonicalSha256(['/kontakt']),
+      ruleManifest: previousManifest,
+      ruleManifestHash: canonicalSha256(previousManifest)
+    },
+    stage_results_json: {
+      article_generation: { value: { title: 'Bezahlter Artikel' } },
+      'budget:2026-07:article_generation': { status: 'settled' },
+      source_research: { value: sources },
+      'budget:2026-07:source_research': { status: 'settled' },
+      'repair:3': {
+        value: {
+          title: 'Validierte dritte Reparatur',
+          sourceReferences: sources,
+          contentHtml: `<p><a href="${sources[0].url}">Offizielle Quelle</a></p>`
+        }
+      },
+      'budget:2026-07:repair:3': { status: 'settled' },
+      'validation:3': { passed: true, issues: [] },
+      'review:3': {
+        value: {
+          passed: false,
+          score: 89,
+          requiresManualReview: true,
+          issues: [{
+            code: 'current-year-claim_requires_source_context',
+            severity: 'info',
+            message: 'Der Jahresbezug könnte noch enger an die Quellen angebunden werden.',
+            repairInstruction: 'Binde den Jahresbezug enger an die freigegebenen Quellen.',
+            blocking: false,
+            sectionHeading: 'Aktuelle Einordnung',
+            evidenceExcerpt: 'Google beschreibt die relevanten Signale.',
+            verificationType: 'source',
+            sourceRequired: true,
+            autoPublishBlocking: false
+          }],
+          risks: {
+            currentClaims: true,
+            legalClaims: false,
+            privacyClaims: false,
+            softwareVersionClaims: false,
+            staticPrices: false
+          }
+        }
+      },
+      'budget:2026-07:review:3': { status: 'settled' },
+      'quality_gate_recovery:structure_contract:attempt-7': {
+        status: 'authorized_after_quality_gate',
+        stageId: 'repair:3',
+        baseMaxRevisions: 2,
+        additionalRevisionCount: 1,
+        recoveryKind: 'editorial_sources',
+        adminId: 7
+      }
+    }
+  };
+}
+
 function createDb(row, { failRunUpdate = false } = {}) {
   const events = [];
   let runUpdates = 0;
@@ -136,6 +218,36 @@ test('redaktionelle Wiederaufnahme aktualisiert den Regelstand und reiht ausschl
   ]);
   const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
   assert.deepEqual(jobUpdate.params, [1, 10, 9]);
+});
+
+test('redaktionelle Wiederaufnahme bewertet einen widersprüchlichen gespeicherten Review ohne neuen Provideraufruf neu', async () => {
+  const module = await import('../repositories/contentJobRepository.js');
+  const row = policyRecheckFixture();
+  const previousHash = row.runtime_snapshot_json.ruleManifestHash;
+  const db = createDb(row);
+
+  const result = await module.recoverEditorialReviewForAdmin({ jobId: 1, adminId: 9 }, db);
+
+  assert.equal(result.job.max_attempts, 7);
+  assert.equal(result.recoveredStage, 'review:3');
+  assert.equal(result.recoveryKind, 'policy_recheck');
+  assert.equal(
+    result.auditKey,
+    'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7'
+  );
+  const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.match(runUpdate.sql, /authorized_after_editorial_policy_change/i);
+  assert.match(runUpdate.sql, /kein neuer Provideraufruf/i);
+  assert.deepEqual(runUpdate.params, [
+    11,
+    'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7',
+    CONTENT_AGENT_RULE_MANIFEST,
+    CONTENT_AGENT_RULE_MANIFEST_HASH,
+    previousHash,
+    9
+  ]);
+  const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
+  assert.deepEqual(jobUpdate.params, [1, 7, 6]);
 });
 
 for (const [label, mutate] of [

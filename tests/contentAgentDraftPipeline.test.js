@@ -2683,6 +2683,158 @@ test('bestätigte redaktionelle Wiederaufnahme nutzt repair:3 unverändert und b
   );
 });
 
+test('gespeichertes Review wird mit der aktuellen deterministischen Richtlinie neu bewertet', async () => {
+  const sourceReferences = [
+    { title: 'Google Quelle A', url: 'https://developers.google.com/search/docs/quelle-a' },
+    { title: 'Google Quelle B', url: 'https://support.google.com/business/answer/123' }
+  ];
+  const sourcedTopic = { ...schemaTopic, requiresCurrentSources: true };
+  const sourcedBrief = {
+    ...schemaSeoBrief,
+    sourceRequirements: {
+      requiresCurrentSources: true,
+      requiredTopics: ['Aktuelle Local-SEO-Einordnung']
+    },
+    sourceReferences
+  };
+  const sourcedArticle = {
+    ...schemaArticle,
+    ...createValidatorValidArticle(),
+    lead: schemaArticle.lead,
+    qualitySelfCheck: schemaArticle.qualitySelfCheck,
+    sourceReferences,
+    contentHtml: [
+      createValidatorValidArticle().contentHtml,
+      `<p>${'Validierter hilfreicher Local-SEO-Inhalt. '.repeat(210)}</p>`,
+      '<p>Die Einordnung folgt den ',
+      '<a href="https://developers.google.com/search/docs/quelle-a">Hinweisen von Google</a>.</p>'
+    ].join('')
+  };
+  const blockingReview = {
+    ...review,
+    passed: false,
+    score: 70,
+    requiresManualReview: true,
+    issues: [{
+      code: 'unsupported_current_claim',
+      severity: 'error',
+      message: 'Die aktuelle Aussage ist noch nicht ausreichend belegt.',
+      repairInstruction: 'Belege oder neutralisiere die Aussage.',
+      blocking: true,
+      sectionHeading: 'Aktuelle Einordnung',
+      evidenceExcerpt: 'Aktuelle Entwicklung',
+      verificationType: 'source',
+      sourceRequired: true,
+      autoPublishBlocking: true
+    }],
+    risks: { ...review.risks, currentClaims: true }
+  };
+  const contradictoryReview = {
+    ...review,
+    passed: false,
+    score: 89,
+    requiresManualReview: true,
+    issues: [{
+      code: 'current-year-claim_requires_source_context',
+      severity: 'info',
+      message: 'Der Jahresbezug könnte noch enger an die Quellen angebunden werden.',
+      repairInstruction: 'Binde den Jahresbezug enger an die freigegebenen Quellen.',
+      blocking: false,
+      sectionHeading: 'Aktuelle Einordnung',
+      evidenceExcerpt: 'Google beschreibt die relevanten Signale.',
+      verificationType: 'source',
+      sourceRequired: true,
+      autoPublishBlocking: false
+    }],
+    risks: { ...review.risks, currentClaims: true }
+  };
+  const inventory = {
+    blogPosts: [], guides: [], servicePages: [], industries: [], packages: [], approvedLinks: []
+  };
+  const persistedStages = {
+    inventory: {
+      inventory,
+      counts: { blogPosts: 0, guides: 0, servicePages: 0, industries: 0, packages: 0 }
+    },
+    topic_research: persistedEnvelope({ candidates: [sourcedTopic] }, 'resp-topic-paid'),
+    topic_persistence: { topic: { ...sourcedTopic, id: 17 } },
+    source_research: persistedEnvelope(sourceReferences, 'resp-sources-paid'),
+    seo_brief: persistedEnvelope(sourcedBrief, 'resp-brief-paid'),
+    article_generation: persistedEnvelope(sourcedArticle, 'resp-article-paid'),
+    review: persistedEnvelope(blockingReview, 'resp-review-paid'),
+    'repair:1': persistedEnvelope(sourcedArticle, 'resp-repair-1-paid'),
+    'review:1': persistedEnvelope(blockingReview, 'resp-review-1-paid'),
+    'repair:2': persistedEnvelope(sourcedArticle, 'resp-repair-2-paid'),
+    'review:2': persistedEnvelope(blockingReview, 'resp-review-2-paid'),
+    'repair:3': persistedEnvelope(sourcedArticle, 'resp-repair-3-paid'),
+    'review:3': persistedEnvelope(contradictoryReview, 'resp-review-3-paid'),
+    'quality_gate_recovery:structure_contract:attempt-7': {
+      status: 'authorized_after_quality_gate',
+      stageId: 'repair:3',
+      baseMaxRevisions: 2,
+      additionalRevisionCount: 1,
+      recoveryKind: 'editorial_sources',
+      adminId: 7
+    },
+    'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7': {
+      status: 'authorized_after_editorial_policy_change',
+      stageId: 'review:3',
+      adminId: 7
+    }
+  };
+  const paidStageIds = new Set([
+    'topic_research', 'source_research', 'seo_brief', 'article_generation',
+    'review', 'repair:1', 'review:1', 'repair:2', 'review:2', 'repair:3', 'review:3'
+  ]);
+  const reservations = [];
+  const base = createDependencies();
+  const harness = createDependencies({
+    openaiService: {
+      createTopicCandidates() { assert.fail('Bezahlte Themenrecherche darf nicht wiederholt werden.'); },
+      researchCurrentSources() { assert.fail('Bezahlte Quellenrecherche darf nicht wiederholt werden.'); },
+      createSeoBrief() { assert.fail('Bezahltes SEO-Briefing darf nicht wiederholt werden.'); },
+      generateArticle() { assert.fail('Bezahlte Artikelerstellung darf nicht wiederholt werden.'); },
+      reviewArticle() { assert.fail('Bezahlte Reviews dürfen nicht wiederholt werden.'); },
+      repairArticle() { assert.fail('Bezahlte Reparaturen dürfen nicht wiederholt werden.'); }
+    },
+    costService: {
+      async reserveMonthlyBudget(input) {
+        reservations.push(input.stageId);
+        return paidStageIds.has(input.stageId)
+          ? { created: false, status: 'settled', reservationMonth: '2026-07' }
+          : { created: true, status: 'reserved', reservationMonth: '2026-07' };
+      },
+      async settleMonthlyBudget() { return { status: 'settled' }; },
+      async getPersistedStageResult({ stageId }) {
+        return persistedStages[stageId] ?? null;
+      },
+      estimateTextCost() { return 0.01; }
+    },
+    validateArticle(value) {
+      return { passed: true, sanitizedHtml: value.contentHtml, issues: [] };
+    },
+    topicScoringService: { selectBestTopic: (candidates) => candidates[0] },
+    inventoryService: base.dependencies.inventoryService
+  });
+
+  const result = await runDraftPipeline({ runId: 1 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed', JSON.stringify({
+    result,
+    finishCalls: harness.finishCalls,
+    createdDrafts: harness.createdDrafts.length,
+    reservations,
+    stageUpdates: harness.stageUpdates.map(({ stageId, currentStage }) => ({ stageId, currentStage }))
+  }));
+  assert.equal(harness.createdDrafts.length, 1);
+  assert.equal(harness.imageCalls.length, 1);
+  assert.equal(
+    harness.createdDrafts[0].metadata.quality_report_json.risks.currentClaims,
+    false
+  );
+  assert.equal(harness.createdDrafts[0].metadata.quality_score, 89);
+});
+
 test('bestätigte Metadatenwiederaufnahme bewahrt alle Textstufen und erzeugt nur ein Ersatzbild', async () => {
   const longSearchIntent = 'informational mit klarer kommerzieller Nähe; Leser sucht eine umsetzbare Relaunch-Checkliste und Orientierung, ob ein Audit oder professionelle Unterstützung sinnvoll ist.';
   const recoveryBrief = { ...schemaSeoBrief, searchIntent: longSearchIntent };

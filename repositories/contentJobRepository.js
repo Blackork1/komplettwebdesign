@@ -6,6 +6,8 @@ import {
   REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP,
   QUALITY_GATE_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_RETRY_CAP,
+  EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY,
+  EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP,
   QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
@@ -19,7 +21,10 @@ import {
   canonicalSha256
 } from '../services/contentAgent/contentRuleManifest.js';
 import { sanitizeErrorMessage } from './contentErrorSanitizer.js';
-import { reviewHasOnlyTechnicalBlockingIssues } from '../services/contentAgent/editorialReviewPolicy.js';
+import {
+  normalizeEditorialReview,
+  reviewHasOnlyTechnicalBlockingIssues
+} from '../services/contentAgent/editorialReviewPolicy.js';
 import {
   DETERMINISTIC_EXISTING_OPTIMIZATION_DISCARD_CODES
 } from '../services/contentAgent/existingPostOptimizationDiscardPolicy.js';
@@ -1628,6 +1633,48 @@ function validEditorialReviewRecoveryState(row) {
     && !hasAnyBudgetStage(stageResults, 'review:4');
 }
 
+function validEditorialPolicyRecheckState(row) {
+  const stageResults = row?.stage_results_json;
+  const qualityRecovery = stageResults?.[QUALITY_GATE_RECOVERY_AUDIT_KEY];
+  const validation = stageResults?.['validation:3'];
+  const review = stageResults?.['review:3']?.value;
+  const sourceReferences = stageResults?.source_research?.value;
+  const article = stageResults?.['repair:3']?.value;
+  const normalizedReview = normalizeEditorialReview(review, {
+    article,
+    sourceReferences
+  });
+  return row
+    && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
+    && row.job_status === 'needs_manual_attention'
+    && row.last_error === 'quality_gate_failed'
+    && Number(row.attempts) === EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP - 1
+    && row.run_status === 'needs_manual_attention'
+    && row.current_stage === 'review'
+    && row.post_id == null
+    && row.error_report_json?.code === 'quality_gate_failed'
+    && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)
+    && row.runtime_snapshot_json.ruleManifestHash !== CONTENT_AGENT_RULE_MANIFEST_HASH
+    && !hasOpenProviderReservation(stageResults)
+    && hasSettledStage(stageResults, 'article_generation')
+    && hasSettledStage(stageResults, 'source_research')
+    && hasSettledStage(stageResults, 'repair:3')
+    && hasSettledStage(stageResults, 'review:3')
+    && validation?.passed === true
+    && Array.isArray(validation?.issues)
+    && validation.issues.length === 0
+    && qualityRecovery?.status === 'authorized_after_quality_gate'
+    && qualityRecovery?.stageId === 'repair:3'
+    && qualityRecovery?.recoveryKind === 'editorial_sources'
+    && review?.passed === false
+    && review?.requiresManualReview === true
+    && review?.risks?.currentClaims === true
+    && normalizedReview.passed === true
+    && normalizedReview.requiresManualReview === false
+    && normalizedReview.risks?.currentClaims === false
+    && !Object.hasOwn(stageResults, EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY);
+}
+
 export async function recoverEditorialReviewForAdmin({
   jobId,
   adminId
@@ -1667,6 +1714,87 @@ export async function recoverEditorialReviewForAdmin({
       [jobId]
     );
     const state = rows[0];
+    if (validEditorialPolicyRecheckState(state)) {
+      const previousManifestHash = state.runtime_snapshot_json.ruleManifestHash;
+      const runResult = await client.query(
+        `
+          UPDATE content_runs
+          SET status = 'running',
+              runtime_snapshot_json = runtime_snapshot_json || jsonb_build_object(
+                'ruleManifest', $3::jsonb,
+                'ruleManifestHash', $4::text
+              ),
+              stage_results_json = stage_results_json || jsonb_build_object(
+                $2::text,
+                jsonb_build_object(
+                  'status', 'authorized_after_editorial_policy_change',
+                  'stageId', 'review:3',
+                  'previousManifestHash', $5::text,
+                  'currentManifestHash', $4::text,
+                  'adminId', $6::bigint,
+                  'authorizedAt', NOW()
+                )
+              ),
+              error_report_json = jsonb_build_object(
+                'code', 'editorial_review_policy_recovery_authorized',
+                'stage', 'review:3',
+                'message', 'Der gespeicherte Review wird mit der aktuellen deterministischen Richtlinie neu bewertet; es erfolgt kein neuer Provideraufruf.'
+              ),
+              finished_at = NULL
+          WHERE id = $1
+            AND status = 'needs_manual_attention'
+            AND post_id IS NULL
+            AND runtime_snapshot_json ->> 'ruleManifestHash' = $5::text
+            AND NOT (stage_results_json ? $2::text)
+          RETURNING id
+        `,
+        [
+          state.run_id,
+          EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY,
+          CONTENT_AGENT_RULE_MANIFEST,
+          CONTENT_AGENT_RULE_MANIFEST_HASH,
+          previousManifestHash,
+          adminId
+        ]
+      );
+      if (!runResult.rows[0]) {
+        throw new Error('Die Review-Richtlinienprüfung konnte nicht atomar protokolliert werden.');
+      }
+
+      const attempts = Number(state.attempts);
+      const jobResult = await client.query(
+        `
+          UPDATE content_jobs
+          SET status = 'queued',
+              max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+              run_after = NOW(),
+              locked_at = NULL,
+              locked_by = NULL,
+              last_error = NULL,
+              finished_at = NULL,
+              updated_at = NOW()
+          WHERE id = $1
+            AND status = 'needs_manual_attention'
+            AND last_error = 'quality_gate_failed'
+            AND attempts = $3
+            AND attempts < $2
+          RETURNING *
+        `,
+        [jobId, EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP, attempts]
+      );
+      if (!jobResult.rows[0]) {
+        throw new Error('Der Job konnte nicht atomar zur Richtlinienprüfung eingereiht werden.');
+      }
+
+      await client.query('COMMIT');
+      return {
+        job: jobResult.rows[0],
+        runId: state.run_id,
+        recoveredStage: 'review:3',
+        recoveryKind: 'policy_recheck',
+        auditKey: EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY
+      };
+    }
     if (!validEditorialReviewRecoveryState(state)
         || Object.hasOwn(state.stage_results_json, EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY)) {
       await client.query('COMMIT');

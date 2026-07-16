@@ -23,6 +23,7 @@ test('Regelmanifest enthält alle prompt- und entscheidungsrelevanten Versionen 
     'contentLearningClassifierPrompt',
     'contentLearningSnapshot',
     'contentLearningTaxonomy',
+    'editorialReviewPolicy',
     'existingPostDiffPolicy',
     'existingPostFreshnessPolicy',
     'existingPostOptimizationPrompt',

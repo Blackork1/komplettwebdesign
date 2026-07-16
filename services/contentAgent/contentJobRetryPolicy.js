@@ -3,6 +3,9 @@ export const PROVIDER_SCHEMA_REPAIR_RETRY_CAP = 6;
 export const REJECTED_PROVIDER_SCHEMA_REPAIR_RETRY_CAP = 7;
 export const QUALITY_GATE_RECOVERY_RETRY_CAP = 8;
 export const QUALITY_GATE_RECOVERY_AUDIT_KEY = 'quality_gate_recovery:structure_contract:attempt-7';
+export const EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP = 7;
+export const EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY =
+  'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7';
 export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP = 9;
 export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY =
   'rule_manifest_recovery:quality_gate:attempt-8';
@@ -169,16 +172,25 @@ export function canRecoverEditorialReview({
   currentStage,
   postId,
   openReservationCount,
+  editorialPolicyRecheckable = false,
   editorialReviewRecoverable = false
 } = {}) {
-  return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
+  const commonEligible = ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
     && status === 'needs_manual_attention'
-    && Number(attempts) === EDITORIAL_REVIEW_RECOVERY_RETRY_CAP - 1
     && lastError === 'quality_gate_failed'
     && currentStage === 'review'
     && postId == null
-    && Number(openReservationCount) === 0
-    && editorialReviewRecoverable === true;
+    && Number(openReservationCount) === 0;
+  return commonEligible && (
+    (
+      Number(attempts) === EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP - 1
+      && editorialPolicyRecheckable === true
+    )
+    || (
+      Number(attempts) === EDITORIAL_REVIEW_RECOVERY_RETRY_CAP - 1
+      && editorialReviewRecoverable === true
+    )
+  );
 }
 
 export function canRecoverDraftPersistence({

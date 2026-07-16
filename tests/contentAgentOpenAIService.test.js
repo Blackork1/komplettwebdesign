@@ -684,6 +684,105 @@ test('Review-Service lässt reine redaktionelle Hinweise ohne Blocker den validi
   assert.deepEqual(result.value.issues.map(({ code }) => code), ['wording_repetition']);
 });
 
+test('Review-Service verwirft ein widersprüchliches currentClaims-Risiko bei belegten nicht blockierenden Quellenhinweisen', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 89,
+    requiresManualReview: true,
+    risks: { ...validRisk, currentClaims: true },
+    issues: [
+      {
+        code: 'current-year-claim_requires_source_context',
+        severity: 'info',
+        message: 'Der aktuelle Jahresbezug könnte noch enger an die Quellen angebunden werden.',
+        repairInstruction: 'Binde den Jahresbezug enger an die freigegebenen Quellen.',
+        blocking: false,
+        sectionHeading: 'Warum Local SEO aktuell wichtig bleibt',
+        evidenceExcerpt: 'Google beschreibt die relevanten lokalen Signale in seinen Hilfeseiten.',
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      },
+      {
+        code: 'time-sensitive-local-seo-generalization',
+        severity: 'info',
+        message: 'Die Einordnung ist plausibel, aber allgemein formuliert.',
+        repairInstruction: 'Kennzeichne die Passage weiterhin als redaktionelle Einordnung.',
+        blocking: false,
+        sectionHeading: 'Was sich für lokale Unternehmen verschiebt',
+        evidenceExcerpt: 'Aus den freigegebenen Google-Quellen lässt sich diese Priorisierung ableiten.',
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      }
+    ]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: {
+      ...validArticle,
+      contentHtml: `${validArticle.contentHtml}<p><a href="${sourceReferences[0].url}">Offizielle Quelle</a></p>`
+    },
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 89);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.risks, validRisk);
+  assert.deepEqual(
+    result.value.issues.map(({ code }) => code),
+    [
+      'current-year-claim_requires_source_context',
+      'time-sensitive-local-seo-generalization'
+    ]
+  );
+});
+
+test('Review-Service behält currentClaims ohne sichtbaren Quellenlink als manuellen Blocker', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 89,
+    requiresManualReview: true,
+    risks: { ...validRisk, currentClaims: true },
+    issues: [{
+      code: 'current-year-claim_requires_source_context',
+      severity: 'info',
+      message: 'Der aktuelle Jahresbezug könnte noch enger an die Quellen angebunden werden.',
+      repairInstruction: 'Binde den Jahresbezug enger an die freigegebenen Quellen.',
+      blocking: false,
+      sectionHeading: 'Aktuelle Einordnung',
+      evidenceExcerpt: 'Aktuelle Local-SEO-Einordnung.',
+      verificationType: 'source',
+      sourceRequired: true,
+      autoPublishBlocking: false
+    }]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.equal(result.value.passed, false);
+  assert.equal(result.value.requiresManualReview, true);
+  assert.equal(result.value.risks.currentClaims, true);
+});
+
 test('Review-Service erzwingt einen echten redaktionellen Blocker auch bei widersprüchlichem Providerstatus', async () => {
   const providerReview = {
     ...validReview,

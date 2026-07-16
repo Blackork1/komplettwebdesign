@@ -10,9 +10,11 @@ import {
 import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
+import { normalizeEditorialReview } from './editorialReviewPolicy.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 import {
   DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
+  EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_AUDIT_KEY
 } from './contentJobRetryPolicy.js';
@@ -398,6 +400,16 @@ function authorizedEditorialReviewRecovery(value, maximumRevisions) {
   );
 }
 
+function authorizedEditorialPolicyRecheck(value, stageId) {
+  return Boolean(
+    value
+    && value.status === 'authorized_after_editorial_policy_change'
+    && value.stageId === stageId
+    && Number.isSafeInteger(Number(value.adminId))
+    && Number(value.adminId) > 0
+  );
+}
+
 function authorizedDraftPersistenceRecovery(value) {
   return Boolean(
     value
@@ -666,7 +678,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     operation,
     input: operationInput,
     returnEnvelope = false,
-    recoveryOnly = false
+    recoveryOnly = false,
+    normalizeRecoveredValue = null
   }) {
     let providerExecutionPhase = 'not_started';
     let providerResponseId = null;
@@ -699,7 +712,17 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }
       if (reservation.created !== true) {
         providerExecutionPhase = 'prior_attempt_present';
-        return await recoverProviderStage(stageId, stage, reservation, returnEnvelope);
+        const recovered = await recoverProviderStage(
+          stageId,
+          stage,
+          reservation,
+          returnEnvelope
+        );
+        if (typeof normalizeRecoveredValue !== 'function') return recovered;
+        if (returnEnvelope) {
+          return { ...recovered, value: normalizeRecoveredValue(recovered.value) };
+        }
+        return normalizeRecoveredValue(recovered);
       }
       await assertLease();
       providerExecutionPhase = 'request_started';
@@ -1353,17 +1376,28 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     await updateStage('validation', { passed: validation.passed, issues: validation.issues });
 
     const reviewableArticle = () => ({ ...currentArticle, contentHtml: validation.sanitizedHtml });
+    const reviewInput = () => ({
+      briefing,
+      article: reviewableArticle(),
+      sourceReferences,
+      learningRules: activeLearningRules(config, 'reviewer')
+    });
+    const editorialPolicyRecheck = await readPersistedStage(
+      EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY
+    );
+    const recoveredReviewNormalizer = (stageId, input) => (
+      authorizedEditorialPolicyRecheck(editorialPolicyRecheck, stageId)
+        ? (value) => normalizeEditorialReview(value, input)
+        : null
+    );
     let currentReview = null;
     if (validation.passed) {
+      const input = reviewInput();
       currentReview = await paidTextOperation({
         stage: 'review',
         operation: openaiService.reviewArticle,
-        input: {
-          briefing,
-          article: reviewableArticle(),
-          sourceReferences,
-          learningRules: activeLearningRules(config, 'reviewer')
-        }
+        input,
+        normalizeRecoveredValue: recoveredReviewNormalizer('review', input)
       });
       if (reviewRequiresSources(currentReview)) {
         const requiredSources = await requireValidSources(sourceReferences);
@@ -1419,16 +1453,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       }, { stageId: `validation:${revision}` });
 
       if (validation.passed) {
+        const input = reviewInput();
         currentReview = await paidTextOperation({
           stage: 'review',
           stageId: `review:${revision}`,
           operation: openaiService.reviewArticle,
-          input: {
-            briefing,
-            article: reviewableArticle(),
-            sourceReferences,
-            learningRules: activeLearningRules(config, 'reviewer')
-          }
+          input,
+          normalizeRecoveredValue: recoveredReviewNormalizer(`review:${revision}`, input)
         });
         if (reviewRequiresSources(currentReview)) {
           const requiredSources = await requireValidSources(sourceReferences);
@@ -1442,16 +1473,16 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     if (!approved()
         && validation.passed
         && authorizedEditorialReviewRecovery(editorialReviewRecovery, maximumRevisions)) {
+      const input = reviewInput();
       currentReview = await paidTextOperation({
         stage: 'review',
         stageId: `review:${maximumRevisions + 1}`,
         operation: openaiService.reviewArticle,
-        input: {
-          briefing,
-          article: reviewableArticle(),
-          sourceReferences,
-          learningRules: activeLearningRules(config, 'reviewer')
-        }
+        input,
+        normalizeRecoveredValue: recoveredReviewNormalizer(
+          `review:${maximumRevisions + 1}`,
+          input
+        )
       });
       if (reviewRequiresSources(currentReview)) {
         const requiredSources = await requireValidSources(sourceReferences);

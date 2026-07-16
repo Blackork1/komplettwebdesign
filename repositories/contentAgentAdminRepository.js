@@ -9,6 +9,98 @@ const OVERVIEW_DRAFT_LIMIT = 10;
 const OVERVIEW_JOB_LIMIT = 10;
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
+const EDITORIAL_POLICY_RECHECKABLE_SQL = `(
+  r.error_report_json ->> 'code' = 'quality_gate_failed'
+  AND r.stage_results_json -> 'validation:3' ->> 'passed' = 'true'
+  AND jsonb_array_length(
+    COALESCE(r.stage_results_json -> 'validation:3' -> 'issues', '[]'::jsonb)
+  ) = 0
+  AND r.stage_results_json
+    -> 'quality_gate_recovery:structure_contract:attempt-7'
+    ->> 'status' = 'authorized_after_quality_gate'
+  AND r.stage_results_json
+    -> 'quality_gate_recovery:structure_contract:attempt-7'
+    ->> 'stageId' = 'repair:3'
+  AND r.stage_results_json
+    -> 'quality_gate_recovery:structure_contract:attempt-7'
+    ->> 'recoveryKind' = 'editorial_sources'
+  AND r.stage_results_json -> 'review:3' -> 'value' ->> 'passed' = 'false'
+  AND r.stage_results_json -> 'review:3' -> 'value' ->> 'requiresManualReview' = 'true'
+  AND r.stage_results_json
+    -> 'review:3' -> 'value' -> 'risks' ->> 'currentClaims' = 'true'
+  AND NOT (
+    CASE
+      WHEN jsonb_typeof(r.stage_results_json -> 'review:3' -> 'value' -> 'risks') = 'object'
+        THEN r.stage_results_json -> 'review:3' -> 'value' -> 'risks'
+      ELSE '{}'::jsonb
+    END
+    @? '$.keyvalue() ? (@.key != "currentClaims" && @.value == true)'
+  )
+  AND jsonb_array_length(
+    CASE
+      WHEN jsonb_typeof(r.stage_results_json -> 'review:3' -> 'value' -> 'issues') = 'array'
+        THEN r.stage_results_json -> 'review:3' -> 'value' -> 'issues'
+      ELSE '[]'::jsonb
+    END
+  ) > 0
+  AND NOT EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(r.stage_results_json -> 'review:3' -> 'value' -> 'issues') = 'array'
+          THEN r.stage_results_json -> 'review:3' -> 'value' -> 'issues'
+        ELSE '[]'::jsonb
+      END
+    ) AS issue
+    WHERE COALESCE((issue ->> 'blocking')::boolean, FALSE)
+       OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+  )
+  AND EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(r.stage_results_json -> 'review:3' -> 'value' -> 'issues') = 'array'
+          THEN r.stage_results_json -> 'review:3' -> 'value' -> 'issues'
+        ELSE '[]'::jsonb
+      END
+    ) AS issue
+    WHERE COALESCE((issue ->> 'sourceRequired')::boolean, FALSE)
+      AND issue ->> 'verificationType' IN ('source', 'date')
+  )
+  AND jsonb_array_length(
+    CASE
+      WHEN jsonb_typeof(r.stage_results_json -> 'source_research' -> 'value') = 'array'
+        THEN r.stage_results_json -> 'source_research' -> 'value'
+      ELSE '[]'::jsonb
+    END
+  ) BETWEEN 2 AND 6
+  AND jsonb_array_length(
+    CASE
+      WHEN jsonb_typeof(r.stage_results_json -> 'repair:3' -> 'value' -> 'sourceReferences') = 'array'
+        THEN r.stage_results_json -> 'repair:3' -> 'value' -> 'sourceReferences'
+      ELSE '[]'::jsonb
+    END
+  ) BETWEEN 2 AND 6
+  AND EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(r.stage_results_json -> 'repair:3' -> 'value' -> 'sourceReferences') = 'array'
+          THEN r.stage_results_json -> 'repair:3' -> 'value' -> 'sourceReferences'
+        ELSE '[]'::jsonb
+      END
+    ) AS source
+    WHERE source ->> 'url' LIKE 'https://%'
+      AND POSITION(
+        source ->> 'url'
+        IN COALESCE(r.stage_results_json -> 'repair:3' -> 'value' ->> 'contentHtml', '')
+      ) > 0
+  )
+  AND NOT (
+    r.stage_results_json
+    ? 'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7'
+  )
+)`;
 const DRAFT_PERSISTENCE_RECOVERABLE_SQL = `(
   r.error_report_json ->> 'code' = 'pipeline_failed'
   AND r.error_report_json ->> 'message' = 'value too long for type character varying(80)'
@@ -154,6 +246,7 @@ export function createContentAgentAdminRepository(db = pool) {
                  quality_recovery.quality_gate_structure_repairable,
                  quality_recovery.quality_gate_editorial_repairable,
                  quality_recovery.quality_gate_manifest_repairable,
+                 quality_recovery.editorial_policy_recheckable,
                  quality_recovery.editorial_review_recoverable,
                  ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
           FROM content_jobs j
@@ -200,6 +293,7 @@ export function createContentAgentAdminRepository(db = pool) {
                 )
               )
             ) AS quality_gate_structure_repairable,
+            ${EDITORIAL_POLICY_RECHECKABLE_SQL} AS editorial_policy_recheckable,
             (
               r.error_report_json ->> 'code' = 'quality_gate_failed'
               AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'true'
@@ -1096,6 +1190,7 @@ export function createContentAgentAdminRepository(db = pool) {
                quality_recovery.quality_gate_structure_repairable,
                quality_recovery.quality_gate_editorial_repairable,
                quality_recovery.quality_gate_manifest_repairable,
+               quality_recovery.editorial_policy_recheckable,
                quality_recovery.editorial_review_recoverable,
                ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
         FROM content_jobs j
@@ -1154,6 +1249,7 @@ export function createContentAgentAdminRepository(db = pool) {
               )
             )
           ) AS quality_gate_structure_repairable,
+          ${EDITORIAL_POLICY_RECHECKABLE_SQL} AS editorial_policy_recheckable,
           (
             r.error_report_json ->> 'code' = 'quality_gate_failed'
             AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'true'
