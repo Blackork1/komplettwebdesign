@@ -1671,6 +1671,12 @@ test('echtes PostgreSQL: Metadatenfehler bewahrt Textkosten und reiht nur das Er
       query_timeout: 7_000
     });
     await pool.query(`
+      CREATE TABLE posts (
+        id SERIAL PRIMARY KEY,
+        generated_by_ai BOOLEAN NOT NULL DEFAULT FALSE,
+        published BOOLEAN NOT NULL DEFAULT FALSE,
+        content_format VARCHAR(32) NOT NULL DEFAULT 'legacy_ejs'
+      );
       CREATE TABLE content_jobs (
         id BIGSERIAL PRIMARY KEY,
         job_type VARCHAR(64) NOT NULL,
@@ -1696,6 +1702,12 @@ test('echtes PostgreSQL: Metadatenfehler bewahrt Textkosten und reiht nur das Er
         runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         finished_at TIMESTAMPTZ
+      );
+      CREATE TABLE content_post_revisions (
+        id BIGSERIAL PRIMARY KEY,
+        optimization_job_id BIGINT REFERENCES content_jobs(id),
+        status VARCHAR(32) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
     const inserted = await pool.query(`
@@ -1949,7 +1961,7 @@ function berlinCalendarDate(value) {
   return DateTime.fromJSDate(value).setZone('Europe/Berlin').toISODate();
 }
 
-test('echtes PostgreSQL: Migrationen 002–014 und Generate→Notify→Approve→Publish laufen genau einmal', {
+test('echtes PostgreSQL: Migrationen 002–015 und Generate→Notify→Approve→Publish laufen genau einmal', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -2017,6 +2029,12 @@ test('echtes PostgreSQL: Migrationen 002–014 und Generate→Notify→Approve�
         SELECT to_regclass('content_existing_post_admin_preferences')::text AS table_name
       `)).rows[0].table_name,
       'content_existing_post_admin_preferences'
+    );
+    assert.equal(
+      (await pool.query(`
+        SELECT to_regclass('content_legacy_migrations')::text AS table_name
+      `)).rows[0].table_name,
+      'content_legacy_migrations'
     );
 
     const optimizationTransaction = await pool.connect();
