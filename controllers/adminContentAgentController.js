@@ -33,7 +33,11 @@ const CONFLICT_CODES = new Set([
   'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED',
   'CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED',
   'CONTENT_LEARNING_VERSION_CONFLICT',
-  'CONTENT_LEARNING_STATE_CONFLICT'
+  'CONTENT_LEARNING_STATE_CONFLICT',
+  'CONTENT_LEGACY_MIGRATION_NOT_READY',
+  'CONTENT_LEGACY_MIGRATION_CONFLICT',
+  'CONTENT_LEGACY_MIGRATION_STALE',
+  'CONTENT_LEGACY_ROLLBACK_CONFLICT'
 ]);
 
 const SAFE_ERROR_MESSAGES = Object.freeze({
@@ -72,7 +76,12 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED: 'Die Search Console ist technisch nicht konfiguriert.',
   CONTENT_SEARCH_CONSOLE_SYNC_NOT_QUEUED: 'Die Search-Console-Synchronisierung wurde nicht eingeplant.',
   CONTENT_LEARNING_VERSION_CONFLICT: 'Der Vorschlag oder die Regel wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
-  CONTENT_LEARNING_STATE_CONFLICT: 'Die Lernregel befindet sich nicht mehr im erwarteten Zustand.'
+  CONTENT_LEARNING_STATE_CONFLICT: 'Die Lernregel befindet sich nicht mehr im erwarteten Zustand.',
+  CONTENT_LEGACY_MIGRATION_NOT_READY: 'Diese Legacy-Migration ist noch nicht freigabefähig.',
+  CONTENT_LEGACY_MIGRATION_CONFLICT: 'Der Artikel wird bereits bearbeitet oder hat sich zwischenzeitlich geändert.',
+  CONTENT_LEGACY_MIGRATION_STALE: 'Die Legacy-Vorschau ist veraltet. Bitte starte einen neuen Scan.',
+  CONTENT_LEGACY_MIGRATION_INVALID: 'Der statische Migrationskandidat ist technisch nicht sicher.',
+  CONTENT_LEGACY_ROLLBACK_CONFLICT: 'Die Migration kann nach einer späteren Artikeländerung nicht automatisch zurückgenommen werden.'
 });
 
 const REVIEW_STATUS_FILTERS = new Set(['review', 'approved', 'missed', 'published']);
@@ -85,6 +94,34 @@ const ZERO_IMPRESSION_RESULT_MESSAGES = Object.freeze({
   'all-shown': 'Alle ausgeblendeten Artikel wurden wieder eingeblendet.'
 });
 
+function resultCount(value) {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 0 && number <= 10_000
+    ? number
+    : 0;
+}
+
+function legacyMigrationResultMessage(query = {}) {
+  if (query.legacy === 'scan-complete') {
+    return `${resultCount(query.scanned)} Legacy-Artikel geprüft: `
+      + `${resultCount(query.ready)} freigabefähig, `
+      + `${resultCount(query.blocked)} blockiert.`;
+  }
+  if (query.legacy === 'batch-complete') {
+    return `Sammelmigration abgeschlossen: ${resultCount(query.migrated)} migriert, `
+      + `${resultCount(query.skipped)} übersprungen, `
+      + `${resultCount(query.blocked)} blockiert, `
+      + `${resultCount(query.failed)} fehlgeschlagen.`;
+  }
+  if (query.legacy === 'migrated') {
+    return 'Der geprüfte Artikel wurde zu statischem HTML migriert.';
+  }
+  if (query.legacy === 'rolled-back') {
+    return 'Die Legacy-Migration wurde sicher zurückgenommen.';
+  }
+  return null;
+}
+
 function reviewStatusFilter(value) {
   return REVIEW_STATUS_FILTERS.has(value) ? value : 'review';
 }
@@ -96,7 +133,8 @@ export function contentAgentStatus(error) {
   if (code.includes('VALIDATION')
       || code === 'CONTENT_CONFIRMATION_REQUIRED'
       || code === 'CONTENT_SCHEDULE_INVALID'
-      || code === 'CONTENT_SCHEDULE_MUST_BE_FUTURE') {
+      || code === 'CONTENT_SCHEDULE_MUST_BE_FUTURE'
+      || code === 'CONTENT_LEGACY_MIGRATION_INVALID') {
     return 400;
   }
   return 500;
@@ -420,6 +458,7 @@ export function createAdminContentAgentController(dependencies) {
     blogPostPresentation,
     scheduledPublicationService,
     learningAdminService,
+    legacyMigrationService,
     now = () => new Date()
   } = dependencies;
 
@@ -583,12 +622,102 @@ export function createAdminContentAgentController(dependencies) {
 
     async existingContentPage(req, res, next) {
       try {
-        const rows = await adminRepository.listExistingContent();
+        const [rows, rawLegacyMigrationDashboard] = await Promise.all([
+          adminRepository.listExistingContent(),
+          legacyMigrationService.getDashboard()
+        ]);
         const existingContentGroups = presentation.buildExistingContentGroupsPresentation(rows);
+        const legacyMigrationDashboard =
+          presentation.presentLegacyMigrationDashboard(rawLegacyMigrationDashboard);
         return res.render('admin/contentAgent/existingContent', {
           existingContentGroups,
-          visibilityMessage: ZERO_IMPRESSION_RESULT_MESSAGES[req.query?.visibility] || null
+          visibilityMessage: ZERO_IMPRESSION_RESULT_MESSAGES[req.query?.visibility] || null,
+          legacyMigrationDashboard,
+          legacyMigrationMessage: legacyMigrationResultMessage(req.query)
         });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async legacyMigrationPreviewPage(req, res, next) {
+      res.set('X-Robots-Tag', 'noindex, nofollow');
+      res.set('Cache-Control', 'no-store');
+      try {
+        const migration = await legacyMigrationService.getPreview({
+          migrationId: postgresIntegerId(req.params.migrationId),
+          pricing: res.locals?.packagePricing || {},
+          canonicalBaseUrl: res.locals?.canonicalBaseUrl || process.env.BASE_URL
+        });
+        return res.render('admin/contentAgent/legacyMigrationPreview', {
+          migration,
+          csrfToken: res.locals?.csrfToken || res.locals?.csrf || ''
+        });
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async legacyMigrationScanAction(req, res, next) {
+      try {
+        requiredConfirmation(req.body?.confirmed);
+        const result = await legacyMigrationService.scan({
+          admin: adminFromRequest(req),
+          pricing: res.locals?.packagePricing || {},
+          allowedInternalLinks: await revisionService.getTrustedInternalLinks()
+        });
+        const query = new URLSearchParams({
+          legacy: 'scan-complete',
+          scanned: String(result.scanned),
+          ready: String(result.ready),
+          blocked: String(result.blocked)
+        });
+        return res.redirect(`/admin/content-agent/existing-content?${query}`);
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async legacyMigrationBatchAction(req, res, next) {
+      try {
+        requiredConfirmation(req.body?.confirmed);
+        const result = await legacyMigrationService.migrateSafeBatch({
+          admin: adminFromRequest(req)
+        });
+        const query = new URLSearchParams({
+          legacy: 'batch-complete',
+          migrated: String(result.migrated),
+          skipped: String(result.skipped),
+          blocked: String(result.blocked),
+          failed: String(result.failed)
+        });
+        return res.redirect(`/admin/content-agent/existing-content?${query}`);
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async legacyMigrationMigrateAction(req, res, next) {
+      try {
+        requiredConfirmation(req.body?.confirmed);
+        await legacyMigrationService.migrateOne({
+          migrationId: postgresIntegerId(req.params.migrationId),
+          admin: adminFromRequest(req)
+        });
+        return res.redirect('/admin/content-agent/existing-content?legacy=migrated');
+      } catch (error) {
+        return sendKnownError(error, res, next);
+      }
+    },
+
+    async legacyMigrationRollbackAction(req, res, next) {
+      try {
+        requiredConfirmation(req.body?.confirmed);
+        await legacyMigrationService.rollback({
+          migrationId: postgresIntegerId(req.params.migrationId),
+          admin: adminFromRequest(req)
+        });
+        return res.redirect('/admin/content-agent/existing-content?legacy=rolled-back');
       } catch (error) {
         return sendKnownError(error, res, next);
       }

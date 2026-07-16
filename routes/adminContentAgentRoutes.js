@@ -34,6 +34,22 @@ import { createContentRevisionService } from '../services/contentAgent/contentRe
 import { createContentRevisionRepository } from '../repositories/contentRevisionRepository.js';
 import { createContentLearningRepository } from '../repositories/contentLearningRepository.js';
 import { createContentLearningAdminService } from '../services/contentAgent/contentLearningAdminService.js';
+import {
+  createContentLegacyMigrationRepository
+} from '../repositories/contentLegacyMigrationRepository.js';
+import {
+  createLegacyContentMigrationAnalysisService
+} from '../services/contentAgent/legacyContentMigrationAnalysisService.js';
+import {
+  createLegacyContentMigrationService
+} from '../services/contentAgent/legacyContentMigrationService.js';
+import {
+  buildLegacyRenderLocals,
+  renderLegacyEjsStrict
+} from '../services/contentAgent/legacyEjsRenderService.js';
+import {
+  normalizeLegacyStaticHtml
+} from '../services/contentAgent/legacyStaticHtmlNormalizer.js';
 import * as blogPostPresentation from '../services/blogPostPresentationService.js';
 import * as presentation from '../services/contentAgent/adminPresentationService.js';
 import pool from '../util/db.js';
@@ -51,6 +67,7 @@ export function createAdminContentAgentRouter(controller) {
   router.get('/admin/content-agent/drafts/:id/preview', isAdmin, controller.draftPreviewPage);
   router.get('/admin/content-agent/drafts/:id/edit', isAdmin, controller.draftEditPage);
   router.get('/admin/content-agent/drafts/:id/review-optimization-status', isAdmin, controller.reviewOptimizationStatusAction);
+  router.get('/admin/content-agent/existing-content/legacy-migrations/:migrationId/preview', isAdmin, controller.legacyMigrationPreviewPage);
   router.get('/admin/content-agent/existing-content/:id/performance', isAdmin, controller.articlePerformancePage);
   router.get('/admin/content-agent/existing-content/:id/optimization-status', isAdmin, controller.existingContentOptimizationStatusAction);
   router.post('/admin/content-agent/settings', isAdmin, verifyCsrfToken, controller.updateSettingsAction);
@@ -79,6 +96,10 @@ export function createAdminContentAgentRouter(controller) {
   router.post('/admin/content-agent/drafts/:id/reschedule', isAdmin, verifyCsrfToken, controller.rescheduleDraftAction);
   router.post('/admin/content-agent/drafts/:id/notification/retry', isAdmin, verifyCsrfToken, controller.retryDraftNotificationAction);
   router.post('/admin/content-agent/existing-content/audit', isAdmin, verifyCsrfToken, controller.enqueueAuditAction);
+  router.post('/admin/content-agent/existing-content/legacy-migrations/scan', isAdmin, verifyCsrfToken, controller.legacyMigrationScanAction);
+  router.post('/admin/content-agent/existing-content/legacy-migrations/migrate-safe', isAdmin, verifyCsrfToken, controller.legacyMigrationBatchAction);
+  router.post('/admin/content-agent/existing-content/legacy-migrations/:migrationId/migrate', isAdmin, verifyCsrfToken, controller.legacyMigrationMigrateAction);
+  router.post('/admin/content-agent/existing-content/legacy-migrations/:migrationId/rollback', isAdmin, verifyCsrfToken, controller.legacyMigrationRollbackAction);
   router.post('/admin/content-agent/existing-content/zero-impressions/hide-all', isAdmin, verifyCsrfToken, controller.hideAllZeroImpressionsAction);
   router.post('/admin/content-agent/existing-content/zero-impressions/show-all', isAdmin, verifyCsrfToken, controller.showAllZeroImpressionsAction);
   router.post('/admin/content-agent/existing-content/:id/hide-zero-impressions', isAdmin, verifyCsrfToken, controller.hideZeroImpressionAction);
@@ -113,6 +134,17 @@ const revisionService = createContentRevisionService({
 const learningAdminService = createContentLearningAdminService({
   repository: createContentLearningRepository(pool)
 });
+const legacyMigrationRepository = createContentLegacyMigrationRepository(pool);
+const legacyMigrationAnalysisService = createLegacyContentMigrationAnalysisService({
+  normalizer: normalizeLegacyStaticHtml,
+  strictRenderer: renderLegacyEjsStrict,
+  buildRenderLocals: buildLegacyRenderLocals
+});
+const legacyMigrationService = createLegacyContentMigrationService({
+  repository: legacyMigrationRepository,
+  analysisService: legacyMigrationAnalysisService,
+  blogPostPresentation
+});
 const adminRepository = createContentAgentAdminRepository(pool);
 const controller = createAdminContentAgentController({
   adminRepository,
@@ -145,6 +177,7 @@ const controller = createAdminContentAgentController({
   scheduledPublicationService,
   revisionService,
   learningAdminService,
+  legacyMigrationService,
   blogPostPresentation
 });
 

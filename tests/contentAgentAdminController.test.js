@@ -1218,12 +1218,33 @@ test('Bestehende Inhalte rendert gruppierte Inhalte und nur allowlistete Sichtba
     zeroImpressionArticles: [],
     hiddenZeroImpressionArticles: []
   };
+  const rawLegacyDashboard = {
+    totalCount: 0,
+    readyStatic: [],
+    reviewRequired: [],
+    blocked: [],
+    migrated: []
+  };
+  const safeLegacyDashboard = {
+    totalCount: 0,
+    readyStaticCount: 0,
+    reviewRequiredCount: 0,
+    blockedCount: 0,
+    migratedCount: 0
+  };
   const controller = createAdminContentAgentController(baseDependencies({
     adminRepository: { async listExistingContent() { return rows; } },
+    legacyMigrationService: {
+      async getDashboard() { return rawLegacyDashboard; }
+    },
     presentation: {
       buildExistingContentGroupsPresentation(input) {
         assert.equal(input, rows);
         return safeGroups;
+      },
+      presentLegacyMigrationDashboard(input) {
+        assert.equal(input, rawLegacyDashboard);
+        return safeLegacyDashboard;
       }
     }
   }));
@@ -1235,13 +1256,126 @@ test('Bestehende Inhalte rendert gruppierte Inhalte und nur allowlistete Sichtba
     view: 'admin/contentAgent/existingContent',
     locals: {
       existingContentGroups: safeGroups,
-      visibilityMessage: 'Der Artikel wurde aus der Null-Impressions-Arbeitsansicht ausgeblendet.'
+      visibilityMessage: 'Der Artikel wurde aus der Null-Impressions-Arbeitsansicht ausgeblendet.',
+      legacyMigrationDashboard: safeLegacyDashboard,
+      legacyMigrationMessage: null
     }
   });
 
   const invalid = response();
   await controller.existingContentPage({ query: { visibility: '<script>' } }, invalid, assert.fail);
   assert.equal(invalid.rendered.locals.visibilityMessage, null);
+});
+
+test('Legacy-Migration bietet geschützte Vorschau und ausschließlich bestätigte Schreibaktionen', async () => {
+  const calls = [];
+  const legacyMigrationService = {
+    async getPreview(input) {
+      calls.push(['preview', input]);
+      return { id: 8, canMigrate: true };
+    },
+    async scan(input) {
+      calls.push(['scan', input]);
+      return { scanned: 2, ready: 1, blocked: 1 };
+    },
+    async migrateSafeBatch(input) {
+      calls.push(['batch', input]);
+      return { migrated: 1, skipped: 1, blocked: 0, failed: 0 };
+    },
+    async migrateOne(input) {
+      calls.push(['migrate', input]);
+      return { status: 'migrated' };
+    },
+    async rollback(input) {
+      calls.push(['rollback', input]);
+      return { status: 'rolled_back' };
+    }
+  };
+  const controller = createAdminContentAgentController(baseDependencies({
+    legacyMigrationService,
+    revisionService: {
+      async getTrustedInternalLinks() {
+        return ['/kontakt', '/pakete'];
+      }
+    }
+  }));
+  const session = { user: { id: 7, username: 'admin' } };
+
+  const previewResponse = response();
+  previewResponse.locals = { packagePricing: { packages: [] } };
+  await controller.legacyMigrationPreviewPage({
+    params: { migrationId: '8' },
+    session
+  }, previewResponse, assert.fail);
+  assert.equal(previewResponse.rendered.view, 'admin/contentAgent/legacyMigrationPreview');
+  assert.equal(previewResponse.rendered.locals.migration.id, 8);
+  assert.equal(previewResponse.headers['X-Robots-Tag'], 'noindex, nofollow');
+  assert.equal(previewResponse.headers['Cache-Control'], 'no-store');
+
+  for (const action of [
+    'legacyMigrationScanAction',
+    'legacyMigrationBatchAction',
+    'legacyMigrationMigrateAction',
+    'legacyMigrationRollbackAction'
+  ]) {
+    const denied = response();
+    await controller[action]({
+      params: { migrationId: '8' },
+      body: {},
+      session
+    }, denied, assert.fail);
+    assert.equal(denied.statusCode, 400);
+    assert.equal(denied.body, 'Die erforderliche Bestätigung fehlt.');
+  }
+
+  const scanResponse = response();
+  scanResponse.locals = { packagePricing: { packages: [] } };
+  await controller.legacyMigrationScanAction({
+    body: { confirmed: 'true' },
+    session
+  }, scanResponse, assert.fail);
+  assert.equal(
+    scanResponse.redirectedTo,
+    '/admin/content-agent/existing-content?legacy=scan-complete&scanned=2&ready=1&blocked=1'
+  );
+
+  const batchResponse = response();
+  await controller.legacyMigrationBatchAction({
+    body: { confirmed: 'true' },
+    session
+  }, batchResponse, assert.fail);
+  assert.equal(
+    batchResponse.redirectedTo,
+    '/admin/content-agent/existing-content?legacy=batch-complete&migrated=1&skipped=1&blocked=0&failed=0'
+  );
+
+  const migrateResponse = response();
+  await controller.legacyMigrationMigrateAction({
+    params: { migrationId: '8' },
+    body: { confirmed: 'true' },
+    session
+  }, migrateResponse, assert.fail);
+  assert.equal(
+    migrateResponse.redirectedTo,
+    '/admin/content-agent/existing-content?legacy=migrated'
+  );
+
+  const rollbackResponse = response();
+  await controller.legacyMigrationRollbackAction({
+    params: { migrationId: '8' },
+    body: { confirmed: 'true' },
+    session
+  }, rollbackResponse, assert.fail);
+  assert.equal(
+    rollbackResponse.redirectedTo,
+    '/admin/content-agent/existing-content?legacy=rolled-back'
+  );
+
+  assert.equal(calls.filter(([type]) => type === 'scan').length, 1);
+  assert.deepEqual(calls.find(([type]) => type === 'scan')[1].allowedInternalLinks, [
+    '/kontakt',
+    '/pakete'
+  ]);
 });
 
 test('Einzelaktionen blenden ausschließlich serverseitig geprüfte Artikel ein und aus', async () => {

@@ -12,7 +12,8 @@ import {
   buildTechnologyPresentation,
   deriveReviewState,
   presentContentLearningDashboard,
-  presentExistingContentOptimizationState
+  presentExistingContentOptimizationState,
+  presentLegacyMigrationDashboard
 } from '../services/contentAgent/adminPresentationService.js';
 
 function existingContentPerformanceRow({
@@ -80,6 +81,82 @@ test('Search-Console-Präsentation bildet Variante A mit Zeitraum, Themenblöcke
   assert.equal(result.categories[0].subcategories.find((item) => item.key === 'seo').impressions, '1.000');
   assert.equal(result.contentOpportunities[0].query, 'seo für ki suche');
   assert.equal(result.contentOpportunities[0].categoryLabel, 'Blog & Ratgeber');
+});
+
+test('Legacy-Migrationsdashboard gibt ausschließlich normalisierte Darstellungswerte aus', () => {
+  const result = presentLegacyMigrationDashboard({
+    totalCount: 4,
+    lastScanAt: '2026-07-16T10:00:00.000Z',
+    readyStatic: [{
+      id: 10,
+      post_id: 1,
+      title: 'Statischer Artikel',
+      slug: 'statischer-artikel',
+      status: 'ready',
+      migration_class: 'static_legacy',
+      analysis_json: { ejsCount: 0 },
+      blocking_issues_json: [],
+      updated_at: '2026-07-16T10:00:00.000Z'
+    }],
+    reviewRequired: [{
+      id: 11,
+      post_id: 2,
+      title: 'Aktives EJS',
+      slug: 'aktives-ejs',
+      status: 'ready',
+      migration_class: 'active_ejs',
+      analysis_json: { ejsCount: 2 },
+      blocking_issues_json: [],
+      updated_at: '2026-07-16T09:00:00.000Z'
+    }],
+    blocked: [{
+      id: 12,
+      post_id: 3,
+      title: 'Blockiert',
+      slug: 'blockiert',
+      status: 'blocked',
+      migration_class: 'static_legacy',
+      analysis_json: { ejsCount: 0 },
+      blocking_issues_json: [{ message: 'Eingebettete Styles benötigen eine Einzelprüfung.' }],
+      updated_at: '2026-07-16T08:00:00.000Z'
+    }],
+    migrated: [{
+      id: 13,
+      post_id: 4,
+      title: 'Migriert',
+      slug: 'migriert',
+      status: 'migrated',
+      migration_class: 'static_legacy',
+      analysis_json: { ejsCount: 0 },
+      blocking_issues_json: [],
+      updated_at: '2026-07-16T07:00:00.000Z'
+    }]
+  });
+
+  assert.equal(result.totalCount, 4);
+  assert.equal(result.readyStaticCount, 1);
+  assert.equal(result.reviewRequiredCount, 1);
+  assert.equal(result.blockedCount, 1);
+  assert.equal(result.migratedCount, 1);
+  assert.match(result.lastScanLabel, /16\.07\.2026/);
+  assert.deepEqual(result.readyStatic[0], {
+    id: 10,
+    postId: 1,
+    title: 'Statischer Artikel',
+    slug: 'statischer-artikel',
+    previewUrl: '/admin/content-agent/existing-content/legacy-migrations/10/preview',
+    migrateUrl: '/admin/content-agent/existing-content/legacy-migrations/10/migrate',
+    rollbackUrl: '/admin/content-agent/existing-content/legacy-migrations/10/rollback',
+    statusLabel: 'Freigabefähig',
+    statusTone: 'success',
+    ejsCount: 0,
+    updatedLabel: '16.07.2026, 12:00 Uhr (MESZ)',
+    primaryIssue: null,
+    canMigrate: true,
+    canRollback: false
+  });
+  assert.equal(result.blocked[0].primaryIssue, 'Eingebettete Styles benötigen eine Einzelprüfung.');
+  assert.equal(result.migrated[0].canRollback, true);
 });
 
 test('Lernregel-Dashboard gibt nur begrenzte, sichere Präsentationsfelder aus', () => {

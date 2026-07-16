@@ -43,6 +43,19 @@ test('Revisionssnapshot hat eine explizite Feldfreigabe und unveränderliche Bas
   assert.equal(snapshot.fields.published, undefined);
 });
 
+test('vertrauenswürdige interne Links werden unverändert aus dem Repository weitergegeben', async () => {
+  const expected = ['/kontakt', '/pakete', '/blog/artikel'];
+  const service = createContentRevisionService({
+    repository: {
+      async listTrustedInternalLinks() {
+        return expected;
+      }
+    }
+  });
+
+  assert.equal(await service.getTrustedInternalLinks(), expected);
+});
+
 test('Legacy-Inhalt bleibt bei der Bearbeitung konservativ unveränderlich', async () => {
   const saved = [];
   const templatePost = { ...post, content: '<p><%= post.title %></p>' };

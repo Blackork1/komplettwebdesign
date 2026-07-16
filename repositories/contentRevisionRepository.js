@@ -42,6 +42,10 @@ export async function trustedValidationContext(postId, client) {
 
 export function createContentRevisionRepository(db = pool) {
   return {
+    async listTrustedInternalLinks(client = db) {
+      return (await trustedValidationContext(0, client)).allowedInternalLinks;
+    },
+
     async enqueueAuditJob({ admin }) {
       const idempotencyKey = `existing-content-audit:${randomUUID()}`;
       const { rows } = await db.query(`

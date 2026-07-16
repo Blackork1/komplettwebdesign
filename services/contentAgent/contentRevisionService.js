@@ -379,6 +379,10 @@ export function createContentRevisionService({
   timezone = 'Europe/Berlin'
 } = {}) {
   return {
+    async getTrustedInternalLinks() {
+      return repository.listTrustedInternalLinks();
+    },
+
     async prepareExistingPostOptimization(postId) {
       const post = await optimizationRepository.getPublishedPostSnapshot(
         positiveId(postId, 'postId')

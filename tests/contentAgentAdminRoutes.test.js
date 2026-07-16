@@ -24,6 +24,7 @@ const GET_PATHS = [
   '/admin/content-agent/drafts/:id/preview',
   '/admin/content-agent/drafts/:id/edit',
   '/admin/content-agent/drafts/:id/review-optimization-status',
+  '/admin/content-agent/existing-content/legacy-migrations/:migrationId/preview',
   '/admin/content-agent/existing-content/:id/optimization-status',
   '/admin/content-agent/existing-content/:id/performance',
   '/admin/content-agent/revisions/:id/edit'
@@ -51,6 +52,10 @@ const POST_PATHS = [
   '/admin/content-agent/drafts/:id/reschedule',
   '/admin/content-agent/drafts/:id/notification/retry',
   '/admin/content-agent/existing-content/audit',
+  '/admin/content-agent/existing-content/legacy-migrations/scan',
+  '/admin/content-agent/existing-content/legacy-migrations/migrate-safe',
+  '/admin/content-agent/existing-content/legacy-migrations/:migrationId/migrate',
+  '/admin/content-agent/existing-content/legacy-migrations/:migrationId/rollback',
   '/admin/content-agent/existing-content/zero-impressions/hide-all',
   '/admin/content-agent/existing-content/zero-impressions/show-all',
   '/admin/content-agent/existing-content/:id/hide-zero-impressions',
@@ -117,6 +122,16 @@ test('Produktionsrouter bindet das transaktionale Bestands-Enqueue aus dem Admin
     routes,
     /enqueueExistingPostOptimizationJob:\s*\(input\)\s*=>\s*adminRepository\.enqueueExistingPostOptimizationJob\(input\)/
   );
+});
+
+test('der Produktionsrouter injiziert den vollständigen Legacy-Migrationsablauf', () => {
+  assert.match(routes, /createContentLegacyMigrationRepository\(pool\)/);
+  assert.match(routes, /createLegacyContentMigrationAnalysisService\(\{/);
+  assert.match(routes, /normalizer:\s*normalizeLegacyStaticHtml/);
+  assert.match(routes, /strictRenderer:\s*renderLegacyEjsStrict/);
+  assert.match(routes, /buildRenderLocals:\s*buildLegacyRenderLocals/);
+  assert.match(routes, /createLegacyContentMigrationService\(\{/);
+  assert.match(routes, /legacyMigrationService,/);
 });
 
 test('alte Blog-Schreibrouten verlangen ebenfalls Admin und CSRF', () => {

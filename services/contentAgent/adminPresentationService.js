@@ -1115,6 +1115,70 @@ export function buildExistingContentGroupsPresentation(rows = []) {
   return groups;
 }
 
+function legacyMigrationRowPresentation(row = {}) {
+  const id = safePositiveInteger(row.id);
+  const postId = safePositiveInteger(row.post_id);
+  const status = String(row.status || '');
+  const migrationClass = String(row.migration_class || '');
+  const statusPresentation = status === 'migrated'
+    ? { label: 'Migriert', tone: 'info' }
+    : status === 'blocked'
+      ? { label: 'Blockiert', tone: 'danger' }
+      : migrationClass === 'active_ejs'
+        ? { label: 'Einzelprüfung erforderlich', tone: 'warning' }
+        : { label: 'Freigabefähig', tone: 'success' };
+  const issues = Array.isArray(row.blocking_issues_json)
+    ? row.blocking_issues_json
+    : [];
+  const ejsCount = Number(row.analysis_json?.ejsCount);
+
+  return {
+    id,
+    postId,
+    title: sanitizeLearningText(row.title, 240) || 'Unbenannter Artikel',
+    slug: sanitizeLearningText(row.slug, 240),
+    previewUrl: id
+      ? `/admin/content-agent/existing-content/legacy-migrations/${id}/preview`
+      : null,
+    migrateUrl: id
+      ? `/admin/content-agent/existing-content/legacy-migrations/${id}/migrate`
+      : null,
+    rollbackUrl: id
+      ? `/admin/content-agent/existing-content/legacy-migrations/${id}/rollback`
+      : null,
+    statusLabel: statusPresentation.label,
+    statusTone: statusPresentation.tone,
+    ejsCount: Number.isSafeInteger(ejsCount) && ejsCount >= 0
+      ? Math.min(ejsCount, 100_000)
+      : 0,
+    updatedLabel: berlinDateTime(row.updated_at),
+    primaryIssue: sanitizeLearningText(issues[0]?.message, 500) || null,
+    canMigrate: id !== null && status === 'ready',
+    canRollback: id !== null && status === 'migrated'
+  };
+}
+
+export function presentLegacyMigrationDashboard(raw = {}) {
+  const readyStatic = Array.from(raw.readyStatic || []).map(legacyMigrationRowPresentation);
+  const reviewRequired = Array.from(raw.reviewRequired || []).map(legacyMigrationRowPresentation);
+  const blocked = Array.from(raw.blocked || []).map(legacyMigrationRowPresentation);
+  const migrated = Array.from(raw.migrated || []).map(legacyMigrationRowPresentation);
+  const totalCount = Number(raw.totalCount);
+
+  return {
+    totalCount: Number.isSafeInteger(totalCount) && totalCount >= 0 ? totalCount : 0,
+    readyStaticCount: readyStatic.length,
+    reviewRequiredCount: reviewRequired.length,
+    blockedCount: blocked.length,
+    migratedCount: migrated.length,
+    lastScanLabel: berlinDateTime(raw.lastScanAt),
+    readyStatic,
+    reviewRequired,
+    blocked,
+    migrated
+  };
+}
+
 const REVISION_COMPARISON_GROUPS = Object.freeze([
   Object.freeze({ key: 'metadata', label: 'Meta-Daten', icon: 'fa-tags' }),
   Object.freeze({ key: 'content', label: 'Inhalt', icon: 'fa-align-left' }),

@@ -227,6 +227,48 @@ test('Revisionsspeicherung verwendet einen atomaren Versionsvergleich', async ()
   assert.equal(calls[0].params[2], 4);
 });
 
+test('vertrauenswürdige interne Links werden read-only aus allen erlaubten Seitentypen geladen', async () => {
+  const calls = [];
+  const repository = createContentRevisionRepository({
+    async query(sql, params) {
+      const normalized = String(sql).replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (normalized.startsWith('SELECT slug FROM posts')) return { rows: [] };
+      if (normalized.startsWith('SELECT url FROM (')) {
+        return {
+          rows: [
+            { url: '/kontakt' },
+            { url: '/pakete' },
+            { url: '/blog/artikel' },
+            { url: '/ratgeber/ratgeber' },
+            { url: '/leistungen/webdesign' },
+            { url: '/branchen/webdesign-blumenladen' }
+          ]
+        };
+      }
+      throw new Error(`Unerwartetes SQL: ${normalized}`);
+    }
+  });
+
+  const links = await repository.listTrustedInternalLinks();
+
+  assert.deepEqual(links, [
+    '/kontakt',
+    '/pakete',
+    '/blog/artikel',
+    '/ratgeber/ratgeber',
+    '/leistungen/webdesign',
+    '/branchen/webdesign-blumenladen'
+  ]);
+  const trustedQuery = calls.find(({ sql }) => sql.startsWith('SELECT url FROM (')).sql;
+  assert.match(trustedQuery, /'\/kontakt'/);
+  assert.match(trustedQuery, /'\/pakete'/);
+  assert.match(trustedQuery, /FROM posts WHERE published = TRUE/i);
+  assert.match(trustedQuery, /FROM ratgeber WHERE published = TRUE/i);
+  assert.match(trustedQuery, /FROM leistungen_pages WHERE is_published = TRUE/i);
+  assert.match(trustedQuery, /FROM industries/i);
+});
+
 test('manuelle Draft-Revision wird atomar verworfen und der Auditbefund wieder geöffnet', async () => {
   const calls = [];
   const revision = {
