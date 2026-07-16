@@ -224,7 +224,19 @@ export function extractWebSources(response) {
     }
   }
 
-  return [...sourcesByUrl.values()]
+  const sources = [...sourcesByUrl.values()];
+  const citedSources = sources.filter((source) => (
+    typeof source.title === 'string' && source.title.length > 0
+  ));
+  if (citedSources.length >= 2) return citedSources.slice(0, 6);
+
+  for (const source of sources) {
+    if (source.title) continue;
+    const hostname = new URL(source.url).hostname.replace(/^www\./iu, '');
+    source.title = `Webquelle von ${hostname}`;
+  }
+
+  return sources
     .filter((source) => typeof source.title === 'string' && source.title.length > 0)
     .slice(0, 6);
 }
@@ -441,6 +453,18 @@ export function createOpenAIContentService({
     });
   }
 
+  async function retrieveWeeklyTopicPoolSources(responseId) {
+    const normalizedResponseId = normalizeResponseId(responseId);
+    if (!normalizedResponseId || normalizedResponseId !== responseId) {
+      throw new TypeError('Die OpenAI-Response-ID für die Wochenrecherche ist ungültig.');
+    }
+    const response = await openai.responses.retrieve(normalizedResponseId, {
+      include: ['web_search_call.action.sources']
+    });
+    assertCompletedResponse(response);
+    return extractWebSources(response);
+  }
+
   async function researchCurrentSources(input) {
     const prompt = buildWebResearchPrompt(input);
     const response = await openai.responses.create({
@@ -605,6 +629,7 @@ export function createOpenAIContentService({
   return {
     createTopicCandidates,
     createWeeklyTopicPool,
+    retrieveWeeklyTopicPoolSources,
     researchCurrentSources,
     researchExistingPostSources,
     optimizeExistingPost,

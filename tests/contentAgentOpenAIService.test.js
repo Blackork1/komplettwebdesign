@@ -400,6 +400,43 @@ test('createWeeklyTopicPool begrenzt Kandidaten und Tester-Anteil deterministisc
   assert.equal(result.value.candidates.every(({ gscRelevance }) => gscRelevance === 0), true);
 });
 
+test('retrieveWeeklyTopicPoolSources lädt eine bezahlte Webantwort ohne neue Generierung erneut', async () => {
+  const retrievals = [];
+  const client = {
+    responses: {
+      async retrieve(responseId, query) {
+        retrievals.push({ responseId, query });
+        return {
+          id: responseId,
+          status: 'completed',
+          output: [{
+            type: 'web_search_call',
+            action: {
+              type: 'search',
+              sources: [
+                { type: 'url', url: 'https://example.com/aktuell' },
+                { type: 'url', url: 'https://developers.google.com/search/docs' }
+              ]
+            }
+          }]
+        };
+      }
+    }
+  };
+  const service = createOpenAIContentService({ config, client });
+
+  const sources = await service.retrieveWeeklyTopicPoolSources('resp_weekly_paid');
+
+  assert.deepEqual(retrievals, [{
+    responseId: 'resp_weekly_paid',
+    query: { include: ['web_search_call.action.sources'] }
+  }]);
+  assert.deepEqual(sources, [
+    { title: 'Webquelle von example.com', url: 'https://example.com/aktuell' },
+    { title: 'Webquelle von developers.google.com', url: 'https://developers.google.com/search/docs' }
+  ]);
+});
+
 test('die strukturierten Operationen wählen jeweils passendes Schema, Prompt und Modell', async () => {
   const client = createParseClient([validSeoBrief, validArticle, validReview, validArticle]);
   const service = createOpenAIContentService({ config, client });
@@ -1104,6 +1141,32 @@ test('extractWebSources priorisiert betitelte Zitate vor titellosen Action-Quell
   assert.deepEqual(extractWebSources(response), [
     { title: 'Quelle A', url: 'https://example.com/a' },
     { title: 'Quelle B', url: 'https://example.org/b' }
+  ]);
+});
+
+test('extractWebSources nutzt transparente Domainbezeichnungen, wenn Websuche keine Zitationsannotationen liefert', () => {
+  const response = {
+    output: [{
+      type: 'web_search_call',
+      action: {
+        type: 'search',
+        sources: [
+          { type: 'url', url: 'https://www.example.com/aktuelle-studie' },
+          { type: 'url', url: 'https://developers.google.com/search/docs' }
+        ]
+      }
+    }, {
+      type: 'message',
+      content: [{
+        type: 'output_text',
+        annotations: []
+      }]
+    }]
+  };
+
+  assert.deepEqual(extractWebSources(response), [
+    { title: 'Webquelle von example.com', url: 'https://www.example.com/aktuelle-studie' },
+    { title: 'Webquelle von developers.google.com', url: 'https://developers.google.com/search/docs' }
   ]);
 });
 

@@ -592,6 +592,46 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     throw new ManualAttentionStop(result);
   }
 
+  async function recoverWeeklyTopicPoolEnvelope(rawEnvelope) {
+    if (!rawEnvelope || typeof rawEnvelope !== 'object' || Array.isArray(rawEnvelope)
+        || typeof rawEnvelope.responseId !== 'string'
+        || typeof openaiService.retrieveWeeklyTopicPoolSources !== 'function') return null;
+
+    const recoveryStageId = 'weekly_topic_research_sources_recovery';
+    const storedRecovery = parseProviderEnvelope(
+      await readPersistedStage(recoveryStageId),
+      'weekly_topic_research'
+    );
+    if (storedRecovery) return storedRecovery;
+
+    let recoveredSources;
+    try {
+      recoveredSources = await openaiService.retrieveWeeklyTopicPoolSources(
+        rawEnvelope.responseId
+      );
+    } catch (error) {
+      recordAuditWarning(error, 'WEEKLY_TOPIC_SOURCE_RECOVERY_FAILED');
+      return null;
+    }
+    const sourceInspection = inspectSourceReferences(recoveredSources, { required: true });
+    if (!sourceInspection.valid) return null;
+
+    const recoveredEnvelope = {
+      ...rawEnvelope,
+      value: {
+        ...rawEnvelope.value,
+        sourceReferences: sourceInspection.sources
+      }
+    };
+    const parsed = parseProviderEnvelope(recoveredEnvelope, 'weekly_topic_research');
+    if (!parsed) return null;
+    await updateStage('weekly_topic_research', recoveredEnvelope, {
+      stageId: recoveryStageId,
+      responseIds: [rawEnvelope.responseId]
+    });
+    return parsed;
+  }
+
   async function recoverProviderStage(stageId, stage, reservation, returnEnvelope = false) {
     if (reservation.status === 'reserved') {
       return stopForRecovery(
@@ -605,10 +645,11 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         'Die bereits abgerechnete Providerstufe kann ohne dauerhaftes Ergebnis nicht sicher fortgesetzt werden.'
       );
     }
-    const persisted = parseProviderEnvelope(
-      await costService.getPersistedStageResult({ runId, stageId }),
-      stage
-    );
+    const rawPersisted = await costService.getPersistedStageResult({ runId, stageId });
+    let persisted = parseProviderEnvelope(rawPersisted, stage);
+    if (!persisted && stage === 'weekly_topic_research') {
+      persisted = await recoverWeeklyTopicPoolEnvelope(rawPersisted);
+    }
     if (!persisted) {
       return stopForRecovery(
         'provider_recovery_result_missing',
@@ -624,13 +665,38 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     stageId = stage,
     operation,
     input: operationInput,
-    returnEnvelope = false
+    returnEnvelope = false,
+    recoveryOnly = false
   }) {
     let providerExecutionPhase = 'not_started';
     let providerResponseId = null;
 
     try {
       const reservation = await reserve(stageId, stage);
+      if (recoveryOnly && reservation.created === true) {
+        if (typeof costService.releaseMonthlyBudgetReservation !== 'function') {
+          return await stopForRecovery(
+            'provider_retry_release_failed',
+            'Die fehlende Providerstufe konnte ihre vorsorgliche Budgetreservierung nicht freigeben.'
+          );
+        }
+        try {
+          await costService.releaseMonthlyBudgetReservation({
+            runId,
+            stageId,
+            reservationMonth: reservation.reservationMonth
+          });
+        } catch {
+          return await stopForRecovery(
+            'provider_retry_release_failed',
+            'Die fehlende Providerstufe konnte ihre vorsorgliche Budgetreservierung nicht atomar freigeben.'
+          );
+        }
+        return await stopForRecovery(
+          'provider_recovery_result_missing',
+          'Die als bezahlt markierte Wochenrecherche besitzt keine abgerechnete Providerstufe; ein neuer Aufruf bleibt gesperrt.'
+        );
+      }
       if (reservation.created !== true) {
         providerExecutionPhase = 'prior_attempt_present';
         return await recoverProviderStage(stageId, stage, reservation, returnEnvelope);
@@ -966,7 +1032,13 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
               ...identity,
               generationRunId: runId
             });
-            if (!researchAttempt?.acquired) {
+            const recoverableInvalidPool = !researchAttempt?.acquired
+              && researchAttempt?.ownerGenerationRunId === runId
+              && researchAttempt?.status === 'needs_manual_attention'
+              && researchAttempt?.errorCode === 'weekly_topic_pool_invalid'
+              && typeof researchAttempt?.responseId === 'string'
+              && researchAttempt.responseId.trim() !== '';
+            if (!researchAttempt?.acquired && !recoverableInvalidPool) {
               return {
                 manualResult: await finishManual(
                   'weekly_topic_research_already_attempted',
@@ -1001,7 +1073,8 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
                   searchConsoleSignals,
                   maxCandidates: config.maxTopicCandidates || 9
                 },
-                returnEnvelope: true
+                returnEnvelope: true,
+                recoveryOnly: recoverableInvalidPool
               });
             } catch (error) {
               const safelyNotExecuted = error?.providerExecutionPhase === 'not_started'
