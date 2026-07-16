@@ -53,6 +53,29 @@ export function createContentPublishEventRepository(db = pool) {
       };
     },
 
+    async updateFocusedReview({ postId, focusedReview, expectedReviewVersion }, client) {
+      const target = queryTarget(client, db);
+      const { rows } = await target.query(`
+        UPDATE content_post_metadata metadata
+        SET quality_report_json = jsonb_set(
+              COALESCE(metadata.quality_report_json, '{}'::jsonb),
+              '{focusedReview}',
+              $2::jsonb,
+              TRUE
+            ),
+            updated_at = NOW()
+        FROM posts post
+        WHERE metadata.post_id = $1
+          AND post.id = metadata.post_id
+          AND post.generated_by_ai = TRUE
+          AND post.published = FALSE
+          AND post.content_format = 'static_html'
+          AND post.review_version = $3
+        RETURNING metadata.*
+      `, [postId, JSON.stringify(focusedReview), expectedReviewVersion]);
+      return rows[0] || null;
+    },
+
     async publishDraft(postId, client) {
       const target = queryTarget(client, db);
       const { rows } = await target.query(`
@@ -379,6 +402,7 @@ export function createContentPublishEventRepository(db = pool) {
 const defaultRepository = createContentPublishEventRepository();
 export const getDraftWithMetadataForUpdate = defaultRepository.getDraftWithMetadataForUpdate;
 export const getValidationContext = defaultRepository.getValidationContext;
+export const updateFocusedReview = defaultRepository.updateFocusedReview;
 export const publishDraft = defaultRepository.publishDraft;
 export const approveDraftForSchedule = defaultRepository.approveDraftForSchedule;
 export const rescheduleApprovedDraft = defaultRepository.rescheduleApprovedDraft;

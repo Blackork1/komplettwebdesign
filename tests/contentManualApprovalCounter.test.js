@@ -86,6 +86,32 @@ test('Publikation verwendet dieselbe globale Lock-Reihenfolge wie der Draftedito
   assert.match(client.calls[1].sql, /FOR UPDATE OF p$/i);
 });
 
+test('Risikobericht wird unter Reviewversions-CAS ausschließlich in den Metadaten ersetzt', async () => {
+  const client = sqlClient([{ rows: [{ post_id: 9, quality_report_json: { focusedReview: { blocked: false } } }] }]);
+  const repository = createContentPublishEventRepository();
+  const focusedReview = {
+    blocked: false,
+    items: [],
+    riskFlags: [],
+    sourceCount: 2
+  };
+
+  const result = await repository.updateFocusedReview({
+    postId: 9,
+    focusedReview,
+    expectedReviewVersion: 4
+  }, client);
+
+  assert.equal(result.post_id, 9);
+  assert.equal(client.calls.length, 1);
+  assert.match(client.calls[0].sql, /^UPDATE content_post_metadata metadata/i);
+  assert.match(client.calls[0].sql, /jsonb_set\(/i);
+  assert.match(client.calls[0].sql, /'\{focusedReview\}'/i);
+  assert.match(client.calls[0].sql, /post\.review_version = \$3/i);
+  assert.doesNotMatch(client.calls[0].sql, /SET\s+content\s*=|SET\s+published\s*=/i);
+  assert.deepEqual(client.calls[0].params, [9, JSON.stringify(focusedReview), 4]);
+});
+
 test('manuelles Event ist per Partial-Unique-Insert genau einmal anlegbar und enthält keine Rohinhalte', async () => {
   const client = sqlClient([{ rows: [{ id: 31, decision: 'manual' }] }]);
   const repository = createContentPublishEventRepository();

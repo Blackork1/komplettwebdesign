@@ -103,6 +103,14 @@ function harness({ draft = validDraft(), validation, failAt, existingAutoEvent =
       calls.push(['context', postId, current, transaction]);
       return { existingSlugs: ['anderer-slug'], allowedInternalLinks: current.metadata.internal_links_json, sourceReferences: [] };
     },
+    async updateFocusedReview(input, transaction) {
+      calls.push(['focused-review-update', input, transaction]);
+      draft.metadata.quality_report_json = {
+        ...draft.metadata.quality_report_json,
+        focusedReview: input.focusedReview
+      };
+      return draft.metadata;
+    },
     async publishDraft(postId, transaction) {
       calls.push(['publish', postId, transaction]);
       if (failAt === 'publish') throw new Error('Publish fehlgeschlagen');
@@ -254,6 +262,56 @@ test('gezielt optimierter Entwurf bleibt nach neuer Reviewversion konsistent ver
   assert.equal(calls.includes('ROLLBACK'), false);
 });
 
+test('veralteter fokussierter Jahresrisikobericht wird unter der Postsperre aktualisiert', async () => {
+  const staleDraft = validDraft({
+    metadata: {
+      quality_report_json: {
+        passed: true,
+        score: 92,
+        summary: 'Der Jahresbezug wurde redaktionell eingeordnet.',
+        strengths: ['Die Aussagen sind nachvollziehbar.'],
+        issues: [],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: safeRisks,
+        focusedReview: {
+          blocked: true,
+          items: [{
+            code: 'risk_current_claims',
+            severity: 'warning',
+            section: 'Gesamter Artikel',
+            excerpt: null,
+            reason: 'Der Artikel enthält zeitbezogene oder aktuelle Aussagen.',
+            instruction: 'Aktualität und zeitbezogene Aussagen prüfen.',
+            verificationType: 'date',
+            sourceRequired: true,
+            blocking: true,
+            anchor: 'pruefung-gesamter-artikel'
+          }],
+          riskFlags: ['currentClaims'],
+          sourceCount: 0
+        }
+      }
+    }
+  });
+  const { service, calls } = harness({ draft: staleDraft });
+
+  const result = await service.publishDraftManually({ postId: 9, admin, confirmed: true });
+
+  const repairs = calls.filter((entry) => Array.isArray(entry) && entry[0] === 'focused-review-update');
+  assert.equal(repairs.length, 1);
+  assert.equal(repairs[0][1].postId, 9);
+  assert.equal(repairs[0][1].expectedReviewVersion, 2);
+  assert.deepEqual(repairs[0][1].focusedReview, {
+    blocked: false,
+    items: [],
+    riskFlags: [],
+    sourceCount: 0
+  });
+  assert.equal(result.post.published, true);
+  assert.equal(calls.includes('COMMIT'), true);
+});
+
 test('geplante Veröffentlichung kann denselben vollständigen Validator im Freigabezustand verwenden', async () => {
   let validationCalls = 0;
   const scheduledDraft = validDraft({
@@ -310,7 +368,7 @@ test('Veröffentlichung blockiert falschen Zustand, fehlende Bilddaten und Score
   }
 });
 
-test('unvollständige oder widersprüchliche Quality-Reports blockieren fail-closed', async () => {
+test('unvollständige oder widersprüchliche Abschluss-Reviews blockieren fail-closed', async () => {
   const validReport = validDraft().metadata.quality_report_json;
   const variants = [
     { ...validReport, passed: false },
@@ -319,9 +377,6 @@ test('unvollständige oder widersprüchliche Quality-Reports blockieren fail-clo
     { ...validReport, risks: { ...safeRisks, staticPrices: true } },
     { ...validReport, risks: { ...safeRisks, staticPrices: undefined } },
     { ...validReport, risks: { currentClaims: false } },
-    { ...validReport, focusedReview: { blocked: false, items: [], riskFlags: [] } },
-    { ...validReport, focusedReview: { ...validReport.focusedReview, blocked: true } },
-    { ...validReport, focusedReview: { ...validReport.focusedReview, items: 'ungültig' } },
     {
       ...validReport,
       issues: [{

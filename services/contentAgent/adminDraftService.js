@@ -1,7 +1,8 @@
 import pool from '../../util/db.js';
 import { CONTENT_AGENT_LINKS } from '../../data/contentAgentLinks.js';
-import { FaqItemSchema } from './articleSchemas.js';
+import { FaqItemSchema, ReviewOutputSchema } from './articleSchemas.js';
 import { validateArticle as validateArticleDefault } from './articleValidator.js';
+import { buildFocusedRiskReport } from './riskReportService.js';
 
 const MAX_CONTENT_LENGTH = 250_000;
 export const ADMIN_EDIT_HISTORY_LIMIT = 50;
@@ -128,6 +129,29 @@ function splitDraftRow(row) {
   if (!row) return null;
   const { metadata, notification, ...post } = row;
   return { post, metadata: metadata || null, notification: notification || null };
+}
+
+function persistedReview(metadata) {
+  const report = metadata?.quality_report_json;
+  if (!report || typeof report !== 'object' || Array.isArray(report)) return null;
+  const { focusedReview: _focusedReview, ...candidate } = report;
+  const parsed = ReviewOutputSchema.safeParse(candidate);
+  return parsed.success ? parsed.data : null;
+}
+
+function draftArticle(post) {
+  return {
+    title: String(post?.title || ''),
+    shortDescription: String(post?.excerpt || ''),
+    slug: String(post?.slug || ''),
+    metaTitle: String(post?.meta_title || ''),
+    metaDescription: String(post?.meta_description || ''),
+    ogTitle: String(post?.og_title || ''),
+    ogDescription: String(post?.og_description || ''),
+    imageAlt: String(post?.image_alt || ''),
+    faqJson: Array.isArray(post?.faq_json) ? post.faq_json : [],
+    contentHtml: String(post?.content || '')
+  };
 }
 
 export function deriveDraftReviewActions(post = {}, notification = null, now = new Date()) {
@@ -466,6 +490,23 @@ export function createAdminDraftService({
         throw draftError('CONTENT_DRAFT_NOT_FOUND', 'KI-Entwurf nicht gefunden.');
       }
       const { post, metadata = {}, notification = null } = current;
+      let riskReview = metadata.quality_report_json?.focusedReview || null;
+      const review = persistedReview(metadata);
+      if (review) {
+        const article = draftArticle(post);
+        const context = await repository.getValidationContext(post.id, current);
+        const validation = await validateArticle(article, context);
+        if (validation?.passed === true
+            && typeof validation?.sanitizedHtml === 'string'
+            && validation.sanitizedHtml === article.contentHtml) {
+          riskReview = buildFocusedRiskReport({
+            article: { ...article, risk: review.risks },
+            review,
+            validation,
+            sources: context.sourceReferences
+          });
+        }
+      }
       return {
         post,
         metadata,
@@ -482,7 +523,7 @@ export function createAdminDraftService({
         faqJsonText: JSON.stringify(Array.isArray(post.faq_json) ? post.faq_json : [], null, 2),
         contentHtml: post.content || '',
         reviewVersion: Number(post.review_version),
-        riskReview: metadata.quality_report_json?.focusedReview || null,
+        riskReview,
         actions: deriveDraftReviewActions(post, notification, now())
       };
     },

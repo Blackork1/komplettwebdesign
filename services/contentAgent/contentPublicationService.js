@@ -149,22 +149,11 @@ function parsePersistedQualityReport(metadata, qualityScore) {
   }
   const { focusedReview, ...reviewCandidate } = report;
   const parsed = ReviewOutputSchema.safeParse(reviewCandidate);
-  const focusedComplete = focusedReview
-    && typeof focusedReview === 'object'
-    && !Array.isArray(focusedReview)
-    && focusedReview.blocked === false
-    && Array.isArray(focusedReview.items)
-    && focusedReview.items.every((item) => item && typeof item === 'object')
-    && Array.isArray(focusedReview.riskFlags)
-    && focusedReview.riskFlags.length === 0
-    && Number.isInteger(focusedReview.sourceCount)
-    && focusedReview.sourceCount >= 0;
   if (!parsed.success
       || parsed.data.passed !== true
       || parsed.data.requiresManualReview !== false
       || parsed.data.score !== qualityScore
-      || Object.values(parsed.data.risks).some((active) => active !== false)
-      || !focusedComplete) {
+      || Object.values(parsed.data.risks).some((active) => active !== false)) {
     throw publicationError(
       'CONTENT_DRAFT_VALIDATION_FAILED',
       'Der persistierte Qualitätsbericht ist unvollständig oder widersprüchlich.',
@@ -280,10 +269,26 @@ export function createContentPublicationService({
       sources: context.sourceReferences
     });
     if (!isDeepStrictEqual(derivedFocusedReview, focusedReview)) {
+      const updatedMetadata = await repository.updateFocusedReview({
+        postId,
+        focusedReview: derivedFocusedReview,
+        expectedReviewVersion: draft.post.review_version
+      }, client);
+      if (!updatedMetadata) {
+        throw publicationError(
+          'CONTENT_REVIEW_VERSION_STALE',
+          'Der Entwurf wurde während der erneuten Risikoprüfung verändert.'
+        );
+      }
+      draft.metadata = updatedMetadata;
+    }
+    if (derivedFocusedReview.blocked === true
+        || derivedFocusedReview.riskFlags.length > 0
+        || derivedFocusedReview.items.some(({ blocking }) => blocking === true)) {
       throw publicationError(
         'CONTENT_DRAFT_VALIDATION_FAILED',
-        'Der persistierte Risikobericht widerspricht der erneuten Prüfung.',
-        [{ code: 'risk_review_inconsistent', field: 'riskReview' }]
+        'Der aktuelle Risikobericht blockiert die Veröffentlichung.',
+        derivedFocusedReview.items
       );
     }
     return {

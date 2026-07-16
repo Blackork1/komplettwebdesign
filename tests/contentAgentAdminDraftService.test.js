@@ -12,6 +12,13 @@ const faqItems = Array.from({ length: 5 }, (_, index) => ({
   question: `Wie funktioniert Schritt ${index + 1}?`,
   answer: `Schritt ${index + 1} wird verständlich erklärt.`
 }));
+const safeRisks = {
+  currentClaims: false,
+  legalClaims: false,
+  privacyClaims: false,
+  softwareVersionClaims: false,
+  staticPrices: false
+};
 
 function draft(overrides = {}) {
   return {
@@ -190,6 +197,64 @@ test('getDraftForReview liefert Editorwerte und serialisiertes FAQ ohne Roh-Mass
   assert.equal(JSON.parse(result.faqJsonText).length, 5);
   assert.deepEqual(result.riskReview, { items: [] });
   assert.equal(Object.hasOwn(result, 'published'), false);
+});
+
+test('getDraftForReview bewertet einen veralteten Jahresrisikobericht ohne Provideraufruf neu', async () => {
+  const current = draft({
+    metadata: {
+      ...draft().metadata,
+      source_references_json: [
+        { title: 'Google-Quelle A', url: 'https://example.test/a' },
+        { title: 'Google-Quelle B', url: 'https://example.test/b' }
+      ],
+      quality_report_json: {
+        passed: true,
+        score: 92,
+        summary: 'Der Artikel ist redaktionell geprüft.',
+        strengths: ['Der Jahresbezug ist nachvollziehbar eingeordnet.'],
+        issues: [{
+          code: 'current-year-claim_requires_source_context',
+          severity: 'warning',
+          message: 'Den Jahresbezug redaktionell einordnen.',
+          repairInstruction: 'Den Jahresbezug mit den vorhandenen Quellen verbinden.',
+          blocking: false,
+          sectionHeading: 'Inhalt',
+          evidenceExcerpt: null,
+          verificationType: 'source',
+          sourceRequired: true,
+          autoPublishBlocking: false
+        }],
+        recommendedActions: [],
+        requiresManualReview: false,
+        risks: safeRisks,
+        focusedReview: {
+          blocked: true,
+          items: [{
+            code: 'risk_current_claims',
+            blocking: true
+          }],
+          riskFlags: ['currentClaims'],
+          sourceCount: 2
+        }
+      }
+    }
+  });
+  let validations = 0;
+  const { service } = harness({
+    current,
+    validation(article) {
+      validations += 1;
+      return { passed: true, sanitizedHtml: article.contentHtml, issues: [] };
+    }
+  });
+
+  const result = await service.getDraftForReview(3);
+
+  assert.equal(validations, 1);
+  assert.equal(result.riskReview.blocked, false);
+  assert.deepEqual(result.riskReview.riskFlags, []);
+  assert.equal(result.riskReview.items.some(({ code }) => code === 'risk_current_claims'), false);
+  assert.equal(result.riskReview.items[0].blocking, false);
 });
 
 test('Repository aktualisiert Post und Metadata atomar, auditiert den Admin und widerruft jede Freigabe', async () => {

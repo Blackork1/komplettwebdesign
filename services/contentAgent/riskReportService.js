@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import slugify from 'slugify';
 
-export const RISK_REPORT_VERSION = 'focused-risk-v1';
+export const RISK_REPORT_VERSION = 'focused-risk-v2';
 
 const GENERAL_SECTION = 'Gesamter Artikel';
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
@@ -96,6 +96,7 @@ const RISK_DEFINITIONS = Object.freeze([
 ]);
 
 const RISK_BY_KEY = new Map(RISK_DEFINITIONS.map((definition) => [definition.key, definition]));
+const REVIEW_RISK_KEYS = Object.freeze(RISK_DEFINITIONS.map(({ key }) => key));
 
 function normalizeText(value, maxLength = MAX_MESSAGE_LENGTH) {
   if (typeof value !== 'string') return '';
@@ -238,6 +239,14 @@ function activeRiskDefinitions(...riskObjects) {
   return [...known, ...unknown];
 }
 
+function hasCompleteReviewRisks(risks) {
+  if (!risks || typeof risks !== 'object' || Array.isArray(risks)) return false;
+  const keys = Object.keys(risks);
+  return keys.length === REVIEW_RISK_KEYS.length
+    && keys.every((key) => REVIEW_RISK_KEYS.includes(key))
+    && REVIEW_RISK_KEYS.every((key) => typeof risks[key] === 'boolean');
+}
+
 export function buildFocusedRiskReport({ article = {}, review = {}, validation = {}, sources = [] } = {}) {
   const articleSections = extractArticleSections(article?.contentHtml);
   const reviewIssues = Array.isArray(review?.issues) ? review.issues : [];
@@ -247,7 +256,9 @@ export function buildFocusedRiskReport({ article = {}, review = {}, validation =
     ...validationIssues.map((issue, index) => normalizeIssue(issue, index, 'validation', articleSections))
   ];
   const items = normalizedIssues.map(({ item }) => item);
-  const riskDefinitions = activeRiskDefinitions(article?.risk, review?.risks);
+  const riskDefinitions = hasCompleteReviewRisks(review?.risks)
+    ? activeRiskDefinitions(review.risks)
+    : activeRiskDefinitions(article?.risk);
 
   for (const definition of riskDefinitions) {
     const locatedIssue = normalizedIssues.find(({ item, locationVerified }) => (

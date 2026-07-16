@@ -206,7 +206,81 @@ test('Prüflisten-Partial rendert ohne Bericht einen sicheren Leerzustand', asyn
   assert.equal(html.trim(), '');
 });
 
-test('Riskflags aus dem finalen Review werden mit Artikel-Riskflags vereinigt', () => {
+test('vollständiger Abschluss-Review überstimmt ältere Artikel-Roh-Risiken', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: [
+        '<h2>Einordnung 2026</h2>',
+        '<p><a href="https://example.test/source">Google-Quelle</a></p>'
+      ].join(''),
+      risk: { currentClaims: true }
+    },
+    review: {
+      issues: [{
+        code: 'current-year-claim_requires_source_context',
+        severity: 'warning',
+        message: 'Den Jahresbezug redaktionell einordnen.',
+        repairInstruction: 'Den Jahresbezug mit der vorhandenen Quelle verbinden.',
+        blocking: false,
+        sectionHeading: 'Einordnung 2026',
+        evidenceExcerpt: null,
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      }],
+      risks: {
+        currentClaims: false,
+        legalClaims: false,
+        privacyClaims: false,
+        softwareVersionClaims: false,
+        staticPrices: false
+      }
+    },
+    validation: { issues: [] },
+    sources: [{ title: 'Google-Quelle', url: 'https://example.test/source' }]
+  });
+
+  assert.equal(report.blocked, false);
+  assert.deepEqual(report.riskFlags, []);
+  assert.equal(report.items.some(({ code }) => code === 'risk_current_claims'), false);
+  assert.equal(report.items[0].sourceRequired, true);
+  assert.equal(report.items[0].blocking, false);
+});
+
+test('nicht blockierende Jahreshinweise werden in der Vorschau als Hinweise dargestellt', async () => {
+  const report = buildFocusedRiskReport({
+    article: { contentHtml: '<h2>Einordnung 2026</h2><p>Redaktionelle Einordnung.</p>' },
+    review: {
+      issues: [{
+        code: 'current-year-editorial-context',
+        severity: 'warning',
+        message: 'Der Jahresbezug ist redaktionell eingeordnet.',
+        repairInstruction: 'Die Einordnung bei späteren Aktualisierungen erneut prüfen.',
+        blocking: false,
+        sectionHeading: 'Einordnung 2026',
+        evidenceExcerpt: 'Redaktionelle Einordnung.',
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      }],
+      risks: {
+        currentClaims: false,
+        legalClaims: false,
+        privacyClaims: false,
+        softwareVersionClaims: false,
+        staticPrices: false
+      }
+    }
+  });
+
+  const html = await renderFile(riskChecklistPath, { riskReview: report });
+
+  assert.match(html, /Hinweise vorhanden/);
+  assert.doesNotMatch(html, /Veröffentlichung blockiert/);
+  assert.doesNotMatch(html, />Blockierend</);
+});
+
+test('vollständige Riskflags aus dem finalen Review sind maßgeblich', () => {
   const report = buildFocusedRiskReport({
     article: {
       contentHtml: '<h2>Technik</h2><p>Der Artikel selbst meldet kein Versionsrisiko.</p>',
@@ -214,12 +288,35 @@ test('Riskflags aus dem finalen Review werden mit Artikel-Riskflags vereinigt', 
     },
     review: {
       issues: [],
-      risks: { currentClaims: false, softwareVersionClaims: true }
+      risks: {
+        currentClaims: false,
+        legalClaims: false,
+        privacyClaims: false,
+        softwareVersionClaims: true,
+        staticPrices: false
+      }
     }
   });
 
-  assert.deepEqual(report.riskFlags, ['currentClaims', 'softwareVersionClaims']);
+  assert.deepEqual(report.riskFlags, ['softwareVersionClaims']);
   assert.equal(report.items.some(({ code, blocking }) => code === 'risk_software_version_claims' && blocking), true);
+});
+
+test('unvollständige Review-Riskflags fallen sicher auf die Artikel-Roh-Risiken zurück', () => {
+  const report = buildFocusedRiskReport({
+    article: {
+      contentHtml: '<h2>Einordnung 2026</h2><p>Der Jahresbezug muss geprüft werden.</p>',
+      risk: { currentClaims: true }
+    },
+    review: {
+      issues: [],
+      risks: { currentClaims: false }
+    }
+  });
+
+  assert.deepEqual(report.riskFlags, ['currentClaims']);
+  assert.equal(report.blocked, true);
+  assert.equal(report.items.some(({ code }) => code === 'risk_current_claims'), true);
 });
 
 test('eine beliebige date-Prüfung dedupliziert kein currentClaims-Riskflag', () => {
