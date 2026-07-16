@@ -16,6 +16,17 @@ const EXPLICIT_PRICE_AMOUNT_PATTERN = /(?:\b\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?\
 const YEAR_PATTERN = /\b(?:19|20)\d{2}\b/gu;
 const YEAR_COMPARISON_PATTERN = /(?:vs\.?|versus|vergleich|gegenüber|vorjahr)/iu;
 const EXISTING_POST_REVIEW_TYPE = 'existing_post_targeted_optimization';
+const EDITORIALLY_MUTABLE_ARTICLE_FIELDS = Object.freeze([
+  'title',
+  'shortDescription',
+  'metaTitle',
+  'metaDescription',
+  'ogTitle',
+  'ogDescription',
+  'contentHtml',
+  'faqJson',
+  'imageAlt'
+]);
 const EMPTY_RISKS = Object.freeze({
   currentClaims: false,
   legalClaims: false,
@@ -77,8 +88,12 @@ function immutableSlugOnlyYearIssue(issue, context, currentYear) {
     .filter((year) => year < currentYear);
   if (staleYears.length === 0) return false;
 
-  const { slug: _immutableSlug, ...mutableArticle } = context.article || {};
-  const mutableText = JSON.stringify(mutableArticle);
+  const article = context.article && typeof context.article === 'object'
+    ? context.article
+    : {};
+  const mutableText = JSON.stringify(Object.fromEntries(
+    EDITORIALLY_MUTABLE_ARTICLE_FIELDS.map((field) => [field, article[field]])
+  ));
   return staleYears.every((year) => !new RegExp(`\\b${year}\\b`, 'u').test(mutableText));
 }
 

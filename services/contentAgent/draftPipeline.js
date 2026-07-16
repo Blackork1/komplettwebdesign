@@ -49,6 +49,16 @@ function required(value, name) {
   return value;
 }
 
+function normalizeRunId(value) {
+  const normalized = typeof value === 'string' && /^[1-9]\d*$/u.test(value)
+    ? Number(value)
+    : value;
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new TypeError('runId muss eine positive sichere Ganzzahl sein.');
+  }
+  return normalized;
+}
+
 function textRates(config, stage) {
   return stage === 'review'
     ? { inputRate: config.reviewInputCostPerMtok, outputRate: config.reviewOutputCostPerMtok }
@@ -444,7 +454,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
   required(imageService.generateAndUploadImage, 'imageService.generateAndUploadImage');
   required(imageService.deleteImage, 'imageService.deleteImage');
 
-  const runId = input.runId;
+  const runId = normalizeRunId(input.runId);
   const snapshotInternalLinks = Array.isArray(config.allowedInternalLinks)
     ? config.allowedInternalLinks
     : [];

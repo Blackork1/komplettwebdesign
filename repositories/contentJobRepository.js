@@ -590,6 +590,8 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
         SELECT run.id,
                run.job_id,
                run.status,
+               run.current_stage,
+               run.post_id,
                run.stage_results_json
         FROM content_runs AS run
         JOIN locked_job AS job ON job.id = run.job_id
@@ -599,7 +601,38 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
         SELECT job.id,
                job.job_type,
                run.id AS run_id,
-               run.status AS run_status
+               run.status AS run_status,
+               (
+                 job.job_type = 'optimize_existing_post'
+                 AND job.last_error = 'existing_post_editorial_review_failed'
+                 AND run.status = 'needs_manual_attention'
+                 AND run.current_stage = 'editorial_review:repair'
+                 AND run.post_id IS NOT NULL
+                 AND run.stage_results_json ? 'targeted_optimization'
+                 AND run.stage_results_json ? 'repair'
+                 AND run.stage_results_json ? 'editorial_review:repair'
+                 AND EXISTS (
+                   SELECT 1
+                   FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb))
+                     AS settled(key, value)
+                   WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:targeted_optimization$'
+                     AND settled.value ->> 'status' = 'settled'
+                 )
+                 AND EXISTS (
+                   SELECT 1
+                   FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb))
+                     AS settled(key, value)
+                   WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair$'
+                     AND settled.value ->> 'status' = 'settled'
+                 )
+                 AND EXISTS (
+                   SELECT 1
+                   FROM jsonb_each(COALESCE(run.stage_results_json, '{}'::jsonb))
+                     AS settled(key, value)
+                   WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:editorial_review:repair$'
+                     AND settled.value ->> 'status' = 'settled'
+                 )
+               ) AS existing_editorial_policy_retry
         FROM locked_job AS job
         LEFT JOIN locked_run AS run ON run.job_id = job.id
         WHERE job.job_type <> 'send_admin_review_notification'
@@ -610,6 +643,12 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
             OR (
               job.last_error IN ('CONTENT_PROVIDER_SAFE_RETRY', 'CONTENT_JOB_LEASE_LOST')
               AND run.status = 'running'
+            )
+            OR (
+              job.job_type = 'optimize_existing_post'
+              AND job.last_error = 'existing_post_editorial_review_failed'
+              AND run.status = 'needs_manual_attention'
+              AND run.current_stage = 'editorial_review:repair'
             )
           )
           AND NOT EXISTS (
@@ -630,7 +669,10 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
             finished_at = NULL
         FROM eligible_retry AS candidate
         WHERE run.id = candidate.run_id
-          AND candidate.job_type NOT IN ('optimize_existing_post', 'revalidate_existing_post_revision')
+          AND (
+            candidate.job_type NOT IN ('optimize_existing_post', 'revalidate_existing_post_revision')
+            OR candidate.existing_editorial_policy_retry = TRUE
+          )
           AND candidate.run_status IN ('failed', 'needs_manual_attention')
         RETURNING run.id, run.job_id
       )

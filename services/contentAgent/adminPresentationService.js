@@ -1712,7 +1712,10 @@ export function buildJobListPresentation(rows = []) {
         jobType: row.job_type,
         status: row.status,
         attempts: row.attempts,
-        lastError: row.last_error
+        lastError: row.last_error,
+        currentStage: row.current_stage,
+        postId: row.post_id,
+        openReservationCount: row.open_provider_reservation_count
       }),
       canRecoverProvider,
       providerRecoveryStageLabel: canRecoverProvider ? providerStageLabel : null,

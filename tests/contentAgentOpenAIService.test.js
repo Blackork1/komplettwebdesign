@@ -909,7 +909,9 @@ test('Bestandsreview verwirft einen Jahresblocker, dessen einziger Beleg der unv
       ...validArticle,
       title: 'Website-Kosten einfach erklärt',
       slug: 'website-kosten-2025-einfach-erklaert',
-      contentHtml: '<section><h2>Website-Kosten einfach erklärt</h2><p>Aktueller Ratgeber ohne Jahresangabe.</p></section>'
+      contentHtml: '<section><h2>Website-Kosten einfach erklärt</h2><p>Aktueller Ratgeber ohne Jahresangabe.</p></section>',
+      publishedAt: '2025-07-11T08:00:00.000Z',
+      updatedAt: '2025-07-12T09:30:00.000Z'
     },
     sourceReferences,
     learningRules: []

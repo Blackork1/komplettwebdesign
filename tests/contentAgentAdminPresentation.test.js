@@ -712,6 +712,47 @@ test('technisch bestandener Artikel bietet nach falschem KI-Strukturblocker nur 
   ]);
 });
 
+test('Bestandsjob mit gespeichertem Review darf nach Policy-Korrektur kostenfrei fortgesetzt werden', () => {
+  const [job] = buildJobListPresentation([{
+    id: 4374,
+    job_type: 'optimize_existing_post',
+    status: 'needs_manual_attention',
+    attempts: 1,
+    max_attempts: 3,
+    last_error: 'existing_post_editorial_review_failed',
+    current_stage: 'editorial_review:repair',
+    post_id: 26,
+    open_provider_reservation_count: 0,
+    error_report_json: {
+      code: 'existing_post_editorial_review_failed'
+    }
+  }]);
+
+  assert.equal(job.canRetry, true);
+  assert.equal(job.canRecoverProvider, false);
+  assert.equal(job.canRecoverEditorialReview, false);
+});
+
+test('Bestandsreview-Policy-Retry bleibt bei offener Reservierung oder falscher Stufe gesperrt', () => {
+  for (const row of [
+    { current_stage: 'editorial_review:repair', open_provider_reservation_count: 1 },
+    { current_stage: 'repair', open_provider_reservation_count: 0 }
+  ]) {
+    const [job] = buildJobListPresentation([{
+      id: 4374,
+      job_type: 'optimize_existing_post',
+      status: 'needs_manual_attention',
+      attempts: 1,
+      max_attempts: 3,
+      last_error: 'existing_post_editorial_review_failed',
+      post_id: 26,
+      ...row
+    }]);
+
+    assert.equal(job.canRetry, false);
+  }
+});
+
 test('fehlgeschlagene Metadatenspeicherung bietet nur die sichere Entwurfsfertigstellung an', () => {
   const [job] = buildJobListPresentation([{
     id: 1,

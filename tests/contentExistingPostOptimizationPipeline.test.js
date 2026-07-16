@@ -1034,6 +1034,61 @@ test('Reviewfehler löst höchstens eine Reparatur aus und bleibt danach termina
   );
 });
 
+test('Wiederaufnahme normalisiert einen alten Slug-Jahresblocker ohne erneuten Provideraufruf', async () => {
+  const post = publishedPost({
+    slug: 'website-kosten-2025-einfach-erklaert',
+    title: 'Website-Kosten 2025 einfach erklärt',
+    published_at: '2025-07-11T08:00:00.000Z',
+    updated_at: '2025-07-12T09:30:00.000Z'
+  });
+  const optimized = optimizedPost(post, {
+    title: 'Website-Kosten einfach erklärt',
+    contentHtml: post.content.replace('Alte Fassung.', 'Aktuelle Einordnung ohne Jahresangabe.')
+  });
+  const stalePersistedReview = reviewResult({
+    passed: false,
+    score: 62,
+    requiresManualReview: true,
+    risks: {
+      currentClaims: true,
+      legalClaims: false,
+      privacyClaims: false,
+      softwareVersionClaims: false,
+      staticPrices: false
+    },
+    issues: [{
+      code: 'stale_year',
+      severity: 'warning',
+      message: 'Die Jahreszahl im Slug sei redaktionell veraltet.',
+      repairInstruction: 'Prüfe den aktuellen Artikelinhalt.',
+      blocking: true,
+      sectionHeading: 'Website-Kosten einfach erklärt',
+      evidenceExcerpt: 'website-kosten-2025-einfach-erklaert',
+      verificationType: 'date',
+      sourceRequired: false,
+      autoPublishBlocking: true
+    }]
+  });
+  const dependencies = createSuccessfulDependencies({
+    post,
+    optimizationResults: [optimized],
+    reviewResults: [stalePersistedReview],
+    researchSources: [
+      { title: 'Primärquelle A', url: 'https://example.com/a' },
+      { title: 'Primärquelle B', url: 'https://example.com/b' }
+    ]
+  });
+
+  const result = await runExistingPostOptimizationJob(createJobInput(post), dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(dependencies.calls.optimization, 1);
+  assert.equal(dependencies.calls.review, 1);
+  assert.equal(dependencies.calls.revisions.length, 1);
+  assert.equal(dependencies.calls.revisions[0].report.review.passed, true);
+  assert.deepEqual(dependencies.calls.revisions[0].report.review.issues, []);
+});
+
 test('zu großer UTF-8-Optimierungsbericht stoppt vor Review und Revision', async () => {
   const beforeBlock = 'ä'.repeat(220_000);
   const afterBlock = 'ö'.repeat(220_000);

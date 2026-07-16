@@ -626,7 +626,7 @@ test('echtes PostgreSQL: mehrere Cleanup-Reschedules bewahren Intent, Versuch un
   }
 });
 
-test('echtes PostgreSQL: Admin-Retry öffnet nur zulässige Generierungsruns für den Worker', {
+test('echtes PostgreSQL: Admin-Retry öffnet Generierungsruns und gespeicherte Bestandsreviews sicher', {
   skip: resetGuard.allowed ? false : resetGuard.reason
 }, async () => {
   const schemaName = createContentAgentPgTestSchemaName();
@@ -664,6 +664,7 @@ test('echtes PostgreSQL: Admin-Retry öffnet nur zulässige Generierungsruns fü
         job_id BIGINT NOT NULL UNIQUE REFERENCES content_jobs(id),
         status VARCHAR(32) NOT NULL,
         current_stage VARCHAR(64) NOT NULL DEFAULT 'inventory',
+        post_id INTEGER,
         runtime_snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         stage_results_json JSONB NOT NULL DEFAULT '{}'::jsonb,
         error_report_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -677,18 +678,39 @@ test('echtes PostgreSQL: Admin-Retry öffnet nur zulässige Generierungsruns fü
         ) VALUES
           ('generate_manual_draft', 'failed', 'admin-retry-generation', '{"source":"admin_manual"}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
           ('optimize_existing_post', 'failed', 'admin-retry-existing', '{"source":"admin_existing_content","post_id":19}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
+          ('optimize_existing_post', 'needs_manual_attention', 'admin-retry-existing-editorial', '{"source":"admin_existing_content","post_id":26}'::jsonb, 1, 3, 'existing_post_editorial_review_failed', NOW()),
           ('generate_manual_draft', 'failed', 'admin-retry-reserved', '{"source":"admin_manual"}'::jsonb, 1, 3, 'CONTENT_VALIDATION_FAILED', NOW()),
           ('send_admin_review_notification', 'failed', 'admin-retry-mail', '{}'::jsonb, 1, 3, 'SMTP_FAILED', NOW())
         RETURNING id, idempotency_key
       )
       INSERT INTO content_runs (
-        job_id, status, runtime_snapshot_json, stage_results_json, finished_at
+        job_id, status, current_stage, post_id, runtime_snapshot_json,
+        stage_results_json, finished_at
       )
       SELECT id,
-             'failed',
+             CASE idempotency_key
+               WHEN 'admin-retry-existing-editorial' THEN 'needs_manual_attention'
+               ELSE 'failed'
+             END,
+             CASE idempotency_key
+               WHEN 'admin-retry-existing-editorial' THEN 'editorial_review:repair'
+               ELSE 'inventory'
+             END,
+             CASE idempotency_key
+               WHEN 'admin-retry-existing-editorial' THEN 26
+               ELSE NULL
+             END,
              '{"timezone":"Europe/Berlin"}'::jsonb,
              CASE idempotency_key
                WHEN 'admin-retry-reserved' THEN '{"budget:2026-07:article_generation":{"status":"reserved"}}'::jsonb
+               WHEN 'admin-retry-existing-editorial' THEN '{
+                 "targeted_optimization":{"value":{}},
+                 "repair":{"value":{}},
+                 "editorial_review:repair":{"value":{}},
+                 "budget:2026-07:targeted_optimization":{"status":"settled"},
+                 "budget:2026-07:repair":{"status":"settled"},
+                 "budget:2026-07:editorial_review:repair":{"status":"settled"}
+               }'::jsonb
                ELSE '{}'::jsonb
              END,
              NOW()
@@ -721,6 +743,13 @@ test('echtes PostgreSQL: Admin-Retry öffnet nur zulässige Generierungsruns fü
     });
     assert.equal((await handler({ ...retried, status: 'running' })).status, 'completed');
     assert.equal(pipelineCalls, 1);
+
+    const editorial = byKey.get('admin-retry-existing-editorial');
+    const retriedEditorial = await retryContentJobForAdmin({
+      jobId: Number(editorial.id)
+    }, pool);
+    assert.equal(retriedEditorial.status, 'queued');
+    assert.equal((await findRunByJobId(editorial.id, pool)).status, 'running');
 
     for (const idempotencyKey of [
       'admin-retry-existing',

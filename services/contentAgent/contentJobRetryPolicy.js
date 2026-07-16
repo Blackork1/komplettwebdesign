@@ -20,15 +20,35 @@ const JOBS_WITH_DEDICATED_RECOVERY = new Set([
   'revalidate_existing_post_revision'
 ]);
 
-export function canRetryContentJobManually({ jobType, status, attempts, lastError } = {}) {
+export function canRetryContentJobManually({
+  jobType,
+  status,
+  attempts,
+  lastError,
+  currentStage,
+  postId,
+  openReservationCount
+} = {}) {
   const normalizedAttempts = Number(attempts);
-  return lastError !== 'provider_execution_uncertain'
+  const existingEditorialPolicyRetry = jobType === 'optimize_existing_post'
+    && status === 'needs_manual_attention'
+    && lastError === 'existing_post_editorial_review_failed'
+    && currentStage === 'editorial_review:repair'
+    && Number.isSafeInteger(Number(postId))
+    && Number(postId) > 0
+    && Number(openReservationCount) === 0
+    && Number.isSafeInteger(normalizedAttempts)
+    && normalizedAttempts >= 0
+    && normalizedAttempts < ADMIN_CONTENT_JOB_RETRY_CAP;
+  return existingEditorialPolicyRetry || (
+    lastError !== 'provider_execution_uncertain'
     && jobType !== ADMIN_REVIEW_NOTIFICATION_JOB
     && !JOBS_WITH_DEDICATED_RECOVERY.has(jobType)
     && RETRYABLE_JOB_STATUSES.has(status)
     && Number.isSafeInteger(normalizedAttempts)
     && normalizedAttempts >= 0
-    && normalizedAttempts < ADMIN_CONTENT_JOB_RETRY_CAP;
+    && normalizedAttempts < ADMIN_CONTENT_JOB_RETRY_CAP
+  );
 }
 
 export function canRecoverUncertainProviderJob({
