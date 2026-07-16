@@ -1426,7 +1426,7 @@ test('runDraftPipeline erstellt nach bestandener Validierung und Review einen un
   assert.deepEqual(inventoryStage.stageResult.inventory.approvedLinks, [{ url: '/kontakt' }]);
 });
 
-test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf nutzt ihn ohne weitere Poolkosten erneut', async () => {
+test('der erste Wochenlauf normalisiert eine PostgreSQL-BIGINT-ID und der zweite nutzt den Themenpool ohne weitere Poolkosten', async () => {
   const weeklySources = [
     { title: 'Aktueller Bericht', url: 'https://example.test/aktuell' },
     { title: 'Offizielle Dokumentation', url: 'https://example.org/dokumentation' }
@@ -1505,7 +1505,7 @@ test('der erste Wochenlauf recherchiert einen Web-Themenpool und der zweite Lauf
 
   const monday = weeklyDependencies();
   const firstResult = await runDraftPipeline(
-    { runId: 901, currentDate: '2026-07-13', regionFocus: 'Berlin und Brandenburg' },
+    { runId: '901', currentDate: '2026-07-13', regionFocus: 'Berlin und Brandenburg' },
     monday.dependencies
   );
   const thursday = weeklyDependencies();
