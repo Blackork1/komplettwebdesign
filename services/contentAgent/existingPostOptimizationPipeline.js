@@ -21,6 +21,7 @@ import { normalizeLegacyStaticOptimizationBaselineHtml } from './legacyStaticBas
 import { validateLegacyStaticOptimization } from './legacyStaticValidationService.js';
 import { classifyExistingPostFreshness } from './existingPostFreshnessService.js';
 import { ExistingPostOptimizationOutputSchema } from './existingPostOptimizationSchemas.js';
+import { normalizeEditorialReview } from './editorialReviewPolicy.js';
 import { auditExistingPost } from './legacyAuditService.js';
 import { executePaidStructuredTextStage } from './providerTextStageService.js';
 import { readExistingPostTrustedContextSnapshot } from './contentRuleManifest.js';
@@ -1008,33 +1009,39 @@ export async function runExistingPostOptimizationJob({
   }
 
   async function editorialReview(fields, assessment, stageId) {
-    return paidStage({
+    const reviewInput = {
+      briefing: {
+        type: 'existing_post_targeted_optimization',
+        currentYear,
+        immutableFields: [
+          'slug',
+          'contentFormat',
+          'imageUrl',
+          'published',
+          'status',
+          'publishedAt',
+          'scheduledPublishAt'
+        ],
+        audit,
+        freshness,
+        targetedScope: assessment.scope,
+        ...(performanceEvidence ? { performanceEvidence } : {})
+      },
+      article: optimizedArticle(post, fields),
+      sourceReferences: sources,
+      learningRules: reviewerLearningRules
+    };
+    const result = await paidStage({
       stageId,
       kind: 'review',
       schema: ReviewOutputSchema,
-      execute: () => openaiService.reviewArticle({
-        briefing: {
-          type: 'existing_post_targeted_optimization',
-          currentYear,
-          immutableFields: [
-            'slug',
-            'contentFormat',
-            'imageUrl',
-            'published',
-            'status',
-            'publishedAt',
-            'scheduledPublishAt'
-          ],
-          audit,
-          freshness,
-          targetedScope: assessment.scope,
-          ...(performanceEvidence ? { performanceEvidence } : {})
-        },
-        article: optimizedArticle(post, fields),
-        sourceReferences: sources,
-        learningRules: reviewerLearningRules
-      })
+      execute: () => openaiService.reviewArticle(reviewInput)
     });
+    if (result.terminal) return result;
+    return {
+      ...result,
+      value: normalizeEditorialReview(result.value, reviewInput)
+    };
   }
 
   function buildReport(fields, assessment, review) {

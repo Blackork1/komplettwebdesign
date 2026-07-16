@@ -503,6 +503,30 @@ test('Admin-Retry lässt Bestandsoptimierungen nur nach sicheren Fehlern ohne of
   );
 });
 
+test('Admin-Retry öffnet eine gespeicherte Bestandsprüfung nach Policy-Korrektur atomar erneut', async () => {
+  const db = createQueryRecorder([{ rows: [{
+    id: 4374,
+    job_type: 'optimize_existing_post',
+    status: 'queued'
+  }] }]);
+
+  const result = await retryContentJobForAdmin({ jobId: 4374 }, db);
+
+  assert.equal(result.status, 'queued');
+  assert.match(
+    db.calls[0].sql,
+    /job\.last_error = 'existing_post_editorial_review_failed'[\s\S]*run\.status = 'needs_manual_attention'[\s\S]*run\.current_stage = 'editorial_review:repair'/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /existing_editorial_policy_retry/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /UPDATE content_runs AS run SET status = 'running'/i
+  );
+});
+
 test('Admin-Retry öffnet nur zulässige terminale Nicht-Bestandsruns unter demselben Reservierungszaun', async () => {
   const db = createQueryRecorder([{ rows: [] }]);
 
