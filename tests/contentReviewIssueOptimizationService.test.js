@@ -7,6 +7,7 @@ import {
   selectOptimizationIssues
 } from '../services/contentAgent/reviewIssueOptimizationService.js';
 import { buildLearningRuleSnapshot } from '../services/contentAgent/contentLearningSnapshotService.js';
+import { buildFocusedRiskReport } from '../services/contentAgent/riskReportService.js';
 
 const faq = Array.from({ length: 5 }, (_, index) => ({
   question: `Frage ${index + 1}?`,
@@ -275,6 +276,58 @@ test('Selektionsvertrag lehnt stale, blockierte, leere und ungültige Anfragen a
   assert.throws(() => selectOptimizationIssues(empty, { expected_review_version: 3, issue_mode: 'all' }), /Hinweis/i);
   assert.throws(() => selectOptimizationIssues(draft(), { expected_review_version: 3, issue_mode: 'unknown' }), /Modus/i);
   assert.throws(() => selectOptimizationIssues(draft(), { expected_review_version: 3, issue_mode: 'single', issue_index: 9 }), /Index/i);
+});
+
+test('aktualisiert einen veralteten blockierten Prüfbericht vor der kostenpflichtigen Optimierung', async () => {
+  const current = draft();
+  current.metadata.quality_report_json = {
+    ...successfulReview({
+      issues: [{
+        code: 'current-year-editorial-context',
+        severity: 'warning',
+        message: 'Der Jahresbezug sollte redaktionell klarer eingeordnet werden.',
+        repairInstruction: 'Den Jahresbezug als redaktionelle Einordnung präzisieren.',
+        blocking: false,
+        sectionHeading: 'Relaunch planen',
+        evidenceExcerpt: null,
+        verificationType: 'source',
+        sourceRequired: true,
+        autoPublishBlocking: false
+      }]
+    }),
+    focusedReview: {
+      blocked: true,
+      items: [{
+        code: 'risk_current_claims',
+        severity: 'warning',
+        section: 'Gesamter Artikel',
+        excerpt: null,
+        reason: 'Der Artikel enthält zeitbezogene oder aktuelle Aussagen.',
+        instruction: 'Aktualität und zeitbezogene Aussagen anhand aktueller Quellen prüfen.',
+        verificationType: 'date',
+        sourceRequired: true,
+        blocking: true,
+        anchor: 'pruefung-gesamter-artikel'
+      }],
+      riskFlags: ['currentClaims'],
+      sourceCount: 0
+    }
+  };
+  const deps = dependencies();
+  deps.optimizationRepository.getDraftWithMetadata = async () => structuredClone(current);
+  deps.buildFocusedRiskReport = buildFocusedRiskReport;
+
+  const result = await runReviewIssueOptimizationJob(input({ issue_mode: 'all' }), deps);
+
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(deps.reservations.map(({ stageId }) => stageId), [
+    'optimize_review_issues:19:repair',
+    'optimize_review_issues:19:review'
+  ]);
+  const repairCall = deps.calls.find(([name]) => name === 'repair');
+  assert.deepEqual(repairCall[1].issues.map(({ code }) => code), [
+    'current-year-editorial-context'
+  ]);
 });
 
 test('führt Reparatur, deterministische Prüfung, Review und atomaren Commit aus', async () => {

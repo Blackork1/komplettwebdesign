@@ -91,6 +91,45 @@ function currentArticleFromDraft(draft) {
   };
 }
 
+function persistedReviewFromDraft(draft) {
+  const report = draft?.metadata?.quality_report_json;
+  if (!report || typeof report !== 'object' || Array.isArray(report)) return null;
+  const { focusedReview: _focusedReview, ...candidate } = report;
+  const parsed = ReviewOutputSchema.safeParse(candidate);
+  return parsed.success ? parsed.data : null;
+}
+
+async function refreshFocusedReviewForSelection(draft, postId, dependencies, reportBuilder) {
+  const review = persistedReviewFromDraft(draft);
+  if (!review) return draft;
+
+  const article = currentArticleFromDraft(draft);
+  const context = await dependencies.optimizationRepository.getValidationContext(postId, draft);
+  const validation = await dependencies.validateArticle(article, context);
+  if (validation?.passed !== true
+      || typeof validation?.sanitizedHtml !== 'string'
+      || validation.sanitizedHtml !== article.contentHtml) {
+    return draft;
+  }
+
+  const focusedReview = reportBuilder({
+    article: { ...article, risk: review.risks },
+    review,
+    validation,
+    sources: context.sourceReferences
+  });
+  return {
+    ...draft,
+    metadata: {
+      ...draft.metadata,
+      quality_report_json: {
+        ...draft.metadata.quality_report_json,
+        focusedReview
+      }
+    }
+  };
+}
+
 export function selectOptimizationIssues(draft, payload = {}) {
   const currentVersion = positiveInteger(draft?.post?.review_version);
   const expectedVersion = positiveInteger(payload.expected_review_version);
@@ -253,9 +292,16 @@ export async function runReviewIssueOptimizationJob(
     }
   }
 
+  const reportBuilder = dependencies.buildFocusedRiskReport || buildFocusedRiskReportDefault;
+  const selectionDraft = await refreshFocusedReviewForSelection(
+    draft,
+    postId,
+    dependencies,
+    reportBuilder
+  );
   let selectedIssues;
   try {
-    selectedIssues = selectOptimizationIssues(draft, payload);
+    selectedIssues = selectOptimizationIssues(selectionDraft, payload);
   } catch (error) {
     return finishManual(run, postId, {
       code: error.code || 'CONTENT_REVIEW_OPTIMIZATION_INVALID',
@@ -320,7 +366,6 @@ export async function runReviewIssueOptimizationJob(
     }, guarded);
     if (reviewResult.manual) return finishManual(run, postId, reviewResult.manual, guarded);
 
-    const reportBuilder = dependencies.buildFocusedRiskReport || buildFocusedRiskReportDefault;
     const focusedReview = reportBuilder({
       article: candidate,
       review: reviewResult.value,
