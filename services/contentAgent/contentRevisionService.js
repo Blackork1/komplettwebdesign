@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { sanitizeArticleHtml } from './articleSanitizer.js';
 import { validateArticle as defaultValidateArticle } from './articleValidator.js';
 import { createContentRevisionRepository } from '../../repositories/contentRevisionRepository.js';
@@ -20,6 +19,10 @@ import {
 } from './legacyContentPolicy.js';
 import { normalizeLegacyStaticOptimizationBaseline } from './legacyStaticBaselineService.js';
 import { validateLegacyStaticOptimization } from './legacyStaticValidationService.js';
+import {
+  canonicalContentPostLiveState,
+  liveHashForContentPost
+} from './contentPostLiveState.js';
 
 const EDITABLE_FIELDS = Object.freeze([
   'title', 'excerpt', 'content', 'meta_title', 'meta_description',
@@ -43,43 +46,17 @@ function revisionError(code, message, issues = []) {
   return Object.assign(new Error(message), { code, issues });
 }
 
-function normalizedTimestamp(value) {
-  if (value instanceof Date) return value.toISOString();
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value || '') : date.toISOString();
-}
-
-function canonicalLiveState(post) {
-  const fields = Object.fromEntries(EDITABLE_FIELDS.map((key) => [key, post?.[key] ?? (key === 'faq_json' ? [] : '')]));
-  return {
-    slug: String(post?.slug || ''),
-    content_format: String(post?.content_format || 'legacy_ejs'),
-    updated_at: normalizedTimestamp(post?.updated_at),
-    fields
-  };
-}
-
-function stableJson(value) {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
-
-export function liveHashForPost(post) {
-  return createHash('sha256').update(stableJson(canonicalLiveState(post))).digest('hex');
-}
+export const liveHashForPost = liveHashForContentPost;
 
 export function createRevisionSnapshot(post) {
-  const live = canonicalLiveState(post);
+  const live = canonicalContentPostLiveState(post);
   return {
     version: 1,
     base: {
       slug: live.slug,
       content_format: live.content_format,
       updated_at: live.updated_at,
-      live_hash: liveHashForPost(post)
+      live_hash: liveHashForContentPost(post)
     },
     fields: live.fields
   };
