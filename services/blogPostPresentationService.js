@@ -5,6 +5,7 @@ import { isoOffset } from '../util/date.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
+import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -57,14 +58,11 @@ function renderStaticContent(content, pricing) {
 }
 
 function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
-  const legacyLocals = {
-    post: { ...post, description: post.description },
+  const legacyLocals = buildLegacyRenderLocals({
+    post,
     modifiedISO,
-    publishedISO,
-    og_image: post.image_url,
-    locale: 'de_DE',
-    helpers: { date: (value) => new Date(value).toLocaleDateString('de-DE') }
-  };
+    publishedISO
+  });
   return demoteContentH1(normalizeLegacyPublicCopy(
     renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing)
   ));
