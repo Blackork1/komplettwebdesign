@@ -1054,8 +1054,8 @@ export function buildExistingContentListPresentation(rows = []) {
           : Number(row.audit_score),
         auditStatus: row.audit_status || null,
         findings: Array.isArray(row.findings_json) ? row.findings_json : [],
-        revisionId: row.revision_id || null,
-        revisionStatus: row.revision_status || null
+        revisionId: row.revision_id || row.open_draft_revision_id || null,
+        revisionStatus: row.revision_status || (row.open_draft_revision_id ? 'draft' : null)
       } : {})
     });
   });
@@ -1399,19 +1399,26 @@ function presentedTimestamp(value) {
 export function presentExistingContentOptimizationState(row = {}) {
   const jobId = presentedPositiveInteger(row.optimization_job_id);
   if (jobId === null) {
+    const openDraftRevisionId = presentedPositiveInteger(row.open_draft_revision_id);
+    const hasOpenDraftRevision = openDraftRevisionId !== null
+      || row.has_draft_revision === true;
     return {
       state: 'idle',
       active: false,
       terminal: false,
-      canStart: true,
+      canStart: !hasOpenDraftRevision,
       canDiscard: false,
       discardActionUrl: null,
-      statusLabel: 'Noch nicht gestartet',
-      stageLabel: 'Noch keine Stufe',
-      message: 'Noch keine KI-Optimierung gestartet.',
+      statusLabel: hasOpenDraftRevision ? 'Revision offen' : 'Noch nicht gestartet',
+      stageLabel: hasOpenDraftRevision ? 'Freigabe ausstehend' : 'Noch keine Stufe',
+      message: hasOpenDraftRevision
+        ? 'Für diesen Artikel besteht bereits eine offene Revision. Bearbeite, übernimm oder lehne sie ab, bevor du eine neue KI-Optimierung startest.'
+        : 'Noch keine KI-Optimierung gestartet.',
       jobId: null,
-      revisionId: null,
-      revisionUrl: null,
+      revisionId: openDraftRevisionId,
+      revisionUrl: openDraftRevisionId === null
+        ? null
+        : `/admin/content-agent/revisions/${openDraftRevisionId}/edit`,
       errorCode: null,
       unsafeProviderState: false,
       updatedAt: null

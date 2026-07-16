@@ -445,7 +445,12 @@ test('Bestandsliste wählt neuesten Job, Run und Optimierungsrevision determinis
   assert.match(projection, /optimization_run\.current_stage AS optimization_current_stage/i);
   assert.match(projection, /optimization_revision_id/i);
   assert.match(projection, /draft_revision\.has_draft_revision/i);
+  assert.match(projection, /draft_revision\.open_draft_revision_id/i);
   assert.match(sql, /FROM content_post_revisions pending_revision[\s\S]*pending_revision\.post_id = p\.id[\s\S]*pending_revision\.status = 'draft'/i);
+  assert.match(
+    sql,
+    /SELECT pending_revision\.id AS open_draft_revision_id,[\s\S]*TRUE AS has_draft_revision[\s\S]*ORDER BY pending_revision\.created_at DESC, pending_revision\.id DESC[\s\S]*LIMIT 1/i
+  );
 });
 
 test('kompakter Optimierungsstatus ist auf veröffentlichte INT32-Artikel begrenzt', async () => {
@@ -464,6 +469,7 @@ test('kompakter Optimierungsstatus ist auf veröffentlichte INT32-Artikel begren
   assert.deepEqual(db.calls[0].params, [19]);
   assert.match(db.calls[0].sql, /p\.id = \$1::integer AND p\.published = TRUE/i);
   assert.match(db.calls[0].sql, /draft_revision\.has_draft_revision/i);
+  assert.match(db.calls[0].sql, /draft_revision\.open_draft_revision_id/i);
   const projection = db.calls[0].sql.match(/^SELECT[\s\S]*?FROM posts p/i)?.[0] || '';
   assert.doesNotMatch(
     projection,

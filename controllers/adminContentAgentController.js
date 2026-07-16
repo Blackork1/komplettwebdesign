@@ -26,6 +26,7 @@ const CONFLICT_CODES = new Set([
   'CONTENT_REVIEW_VERSION_STALE',
   'CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE',
   'CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE',
+  'CONTENT_EXISTING_REVISION_ALREADY_OPEN',
   'CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE',
   'CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE',
   'CONTENT_PERFORMANCE_EVIDENCE_STALE',
@@ -62,6 +63,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
+  CONTENT_EXISTING_REVISION_ALREADY_OPEN: 'Für diesen Artikel besteht bereits eine offene Revision. Bearbeite, übernimm oder lehne sie zuerst ab.',
   CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE: 'Der Optimierungsauftrag kann in diesem Zustand nicht sicher geschlossen werden.',
   CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE: 'Der Artikel gehört nicht mehr zu den Artikeln ohne Impressionen. Bitte lade die Übersicht neu.',
   CONTENT_PERFORMANCE_EVIDENCE_STALE: 'Die Performance-Auswertung wurde zwischenzeitlich aktualisiert oder ist nicht mehr belastbar. Bitte lade die Seite neu.',
@@ -312,6 +314,13 @@ function postgresIntegerId(value) {
     throw Object.assign(new Error('Ungültige ID.'), { code: 'CONTENT_ACTION_VALIDATION_FAILED' });
   }
   return id;
+}
+
+function postgresIntegerIdOrNull(value) {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id >= 1 && id <= 2_147_483_647
+    ? id
+    : null;
 }
 
 function strictPositiveInteger(value) {
@@ -1347,6 +1356,22 @@ export function createAdminContentAgentController(dependencies) {
         if (typeof revisionService?.prepareExistingPostOptimization !== 'function'
             || typeof jobRepository?.enqueueExistingPostOptimizationJob !== 'function') {
           return unavailable(res);
+        }
+        if (typeof adminRepository?.getExistingContentOptimizationState === 'function') {
+          const currentState = await adminRepository.getExistingContentOptimizationState(postId);
+          const openDraftRevisionId = postgresIntegerIdOrNull(
+            currentState?.open_draft_revision_id
+          );
+          if (currentState?.has_draft_revision === true) {
+            if (openDraftRevisionId !== null) {
+              return res.redirect(
+                `/admin/content-agent/revisions/${openDraftRevisionId}/edit?optimization=revision-open`
+              );
+            }
+            throw Object.assign(new Error('Für diesen Artikel besteht bereits eine offene Revision.'), {
+              code: 'CONTENT_EXISTING_REVISION_ALREADY_OPEN'
+            });
+          }
         }
         const prepared = await revisionService.prepareExistingPostOptimization(postId);
         const liveHash = typeof prepared?.baseLiveHash === 'string'

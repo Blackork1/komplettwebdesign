@@ -662,6 +662,37 @@ test('Bestandszeile bewahrt die manuelle Audit-Revision als CSRF-geschützte sek
   assert.equal((html.match(/btn btn-sm btn-primary/g) || []).length, 1);
 });
 
+test('offene ältere Revision wird direkt angeboten und verhindert einen zweiten KI-Auftrag', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Full-Service Webdesign Berlin',
+      slug: 'full-service-webdesign-in-berlin',
+      auditId: 72,
+      auditStatus: 'open',
+      auditScore: 84,
+      revisionId: 71,
+      revisionStatus: 'draft',
+      optimization: {
+        state: 'idle', active: false, terminal: false, canStart: false,
+        canDiscard: false, discardActionUrl: null,
+        statusLabel: 'Revision offen', stageLabel: 'Freigabe ausstehend',
+        message: 'Für diesen Artikel besteht bereits eine offene Revision.',
+        jobId: null, revisionId: 71,
+        revisionUrl: '/admin/content-agent/revisions/71/edit',
+        errorCode: null, unsafeProviderState: false, updatedAt: null
+      }
+    }]
+  });
+
+  assert.match(html, /Revision offen/);
+  assert.match(html, /href="\/admin\/content-agent\/revisions\/71\/edit"/);
+  assert.match(html, />Revision bearbeiten<\/a>/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.doesNotMatch(html, />KI-Optimierung starten<\/button>/);
+});
+
 test('laufende Bestandsoptimierung zeigt Stufe, deaktiviert die Einzelaktion und aktiviert Statuspolling', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,

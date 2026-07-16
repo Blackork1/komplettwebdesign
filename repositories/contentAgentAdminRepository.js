@@ -369,6 +369,7 @@ export function createContentAgentAdminRepository(db = pool) {
                END AS optimization_error_code,
                optimization_revision.optimization_revision_id,
                optimization_revision.optimization_revision_status,
+               draft_revision.open_draft_revision_id,
                draft_revision.has_draft_revision,
                outcome.outcome_evaluation_status,
                outcome.outcome_baseline_clicks,
@@ -451,12 +452,13 @@ export function createContentAgentAdminRepository(db = pool) {
           LIMIT 1
         ) optimization_revision ON TRUE
         LEFT JOIN LATERAL (
-          SELECT EXISTS (
-            SELECT 1
-            FROM content_post_revisions pending_revision
-            WHERE pending_revision.post_id = p.id
-              AND pending_revision.status = 'draft'
-          ) AS has_draft_revision
+          SELECT pending_revision.id AS open_draft_revision_id,
+                 TRUE AS has_draft_revision
+          FROM content_post_revisions pending_revision
+          WHERE pending_revision.post_id = p.id
+            AND pending_revision.status = 'draft'
+          ORDER BY pending_revision.created_at DESC, pending_revision.id DESC
+          LIMIT 1
         ) draft_revision ON TRUE
         LEFT JOIN LATERAL (
           SELECT outcome.evaluation_status AS outcome_evaluation_status,
@@ -792,6 +794,7 @@ export function createContentAgentAdminRepository(db = pool) {
                END AS optimization_error_code,
                optimization_revision.optimization_revision_id,
                optimization_revision.optimization_revision_status,
+               draft_revision.open_draft_revision_id,
                draft_revision.has_draft_revision
         FROM posts p
         LEFT JOIN LATERAL (
@@ -833,12 +836,13 @@ export function createContentAgentAdminRepository(db = pool) {
           LIMIT 1
         ) optimization_revision ON TRUE
         LEFT JOIN LATERAL (
-          SELECT EXISTS (
-            SELECT 1
-            FROM content_post_revisions pending_revision
-            WHERE pending_revision.post_id = p.id
-              AND pending_revision.status = 'draft'
-          ) AS has_draft_revision
+          SELECT pending_revision.id AS open_draft_revision_id,
+                 TRUE AS has_draft_revision
+          FROM content_post_revisions pending_revision
+          WHERE pending_revision.post_id = p.id
+            AND pending_revision.status = 'draft'
+          ORDER BY pending_revision.created_at DESC, pending_revision.id DESC
+          LIMIT 1
         ) draft_revision ON TRUE
         WHERE p.id = $1::integer AND p.published = TRUE
         LIMIT 1

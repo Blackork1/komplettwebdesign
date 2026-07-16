@@ -1455,6 +1455,53 @@ test('Startaktion erzwingt Agent-Aktivierung und ausschließlich serverseitigen 
   assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?optimization=queued');
 });
 
+test('Startaktion öffnet eine bereits vorhandene Draft-Revision statt einen zweiten KI-Job abzulehnen', async () => {
+  let prepared = 0;
+  let enqueued = 0;
+  const controller = createAdminContentAgentController(baseDependencies({
+    adminRepository: {
+      async getExistingContentOptimizationState(postId) {
+        assert.equal(postId, 19);
+        return {
+          id: 19,
+          open_draft_revision_id: 71,
+          has_draft_revision: true
+        };
+      }
+    },
+    settingsRepository: {
+      async getSettings() {
+        return { agent_enabled: true, maximum_attempts: 3 };
+      }
+    },
+    revisionService: {
+      async prepareExistingPostOptimization() {
+        prepared += 1;
+        return { baseLiveHash: 'a'.repeat(64) };
+      }
+    },
+    jobRepository: {
+      async enqueueExistingPostOptimizationJob() {
+        enqueued += 1;
+        return { id: 44, status: 'queued' };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.optimizeExistingContentAction({
+    params: { id: '19' },
+    session: { user: { id: 7, username: 'Admin' } }
+  }, res, assert.fail);
+
+  assert.equal(prepared, 0);
+  assert.equal(enqueued, 0);
+  assert.equal(
+    res.redirectedTo,
+    '/admin/content-agent/revisions/71/edit?optimization=revision-open'
+  );
+});
+
 test('deaktivierter Agent und ungültige PostgreSQL-INT32-IDs verhindern die Bestandsoptimierung', async () => {
   let prepares = 0;
   let enqueues = 0;

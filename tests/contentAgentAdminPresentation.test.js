@@ -1047,6 +1047,33 @@ test('eine verbleibende Draft-Revision sperrt einen neuen Optimierungsauftrag tr
   assert.equal(result.canStart, false);
 });
 
+test('offene Bestandsrevision wird ohne früheren KI-Job sichtbar und ersetzt den irreführenden Neustart', () => {
+  const result = presentExistingContentOptimizationState({
+    id: 19,
+    optimization_job_id: null,
+    open_draft_revision_id: 71,
+    has_draft_revision: true
+  });
+
+  assert.deepEqual(result, {
+    state: 'idle',
+    active: false,
+    terminal: false,
+    canStart: false,
+    canDiscard: false,
+    discardActionUrl: null,
+    statusLabel: 'Revision offen',
+    stageLabel: 'Freigabe ausstehend',
+    message: 'Für diesen Artikel besteht bereits eine offene Revision. Bearbeite, übernimm oder lehne sie ab, bevor du eine neue KI-Optimierung startest.',
+    jobId: null,
+    revisionId: 71,
+    revisionUrl: '/admin/content-agent/revisions/71/edit',
+    errorCode: null,
+    unsafeProviderState: false,
+    updatedAt: null
+  });
+});
+
 test('unsicherer Providerzustand bleibt gesperrt und bietet keinen normalen Neustart', () => {
   const result = presentExistingContentOptimizationState({
     optimization_job_id: 44,
