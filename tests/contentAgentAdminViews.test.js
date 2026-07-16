@@ -1169,6 +1169,35 @@ test('Jobliste erklärt die gezielte Qualitätswiederaufnahme ohne erneute Grund
   assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
 });
 
+test('Jobliste erklärt die zusätzliche Quellenreparatur ohne erneute Grundlagenerstellung', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
+    ...baseLocals,
+    jobs: [{
+      id: 1,
+      jobType: 'generate_weekly_draft',
+      status: 'needs_manual_attention',
+      statusLabel: 'Manuelle Prüfung nötig',
+      attempts: 5,
+      maxAttempts: 5,
+      lastSafeStageLabel: 'Redaktionelle Prüfung',
+      lastError: 'quality_gate_failed',
+      costEur: 0.62,
+      canRetry: false,
+      canRecoverProvider: false,
+      canRecoverRejectedProvider: false,
+      canRecoverQualityGate: true,
+      qualityGateRecoveryKind: 'editorial',
+      qualityGateRecoveryActionLabel: 'Quellenbezug gezielt reparieren und erneut prüfen'
+    }]
+  });
+
+  assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-quality-gate"/);
+  assert.match(html, /vorhandene Artikel und alle bisherigen Recherchen bleiben erhalten/i);
+  assert.match(html, /zusätzliche redaktionelle Reparatur/i);
+  assert.match(html, /Quellenbezug gezielt reparieren und erneut prüfen/);
+  assert.doesNotMatch(html, /HTML-Strukturreparatur/);
+});
+
 test('Jobliste erklärt die sichere Manifestübernahme nach dem kostenfreien Vorabstopp', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('jobs.ejs')), {
     ...baseLocals,

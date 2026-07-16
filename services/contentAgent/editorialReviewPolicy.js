@@ -40,6 +40,17 @@ function technicalIssue(issue) {
   return TECHNICAL_ISSUE_CODE_PATTERNS.some((pattern) => pattern.test(code));
 }
 
+function learningRuleContextIssue(issue, context) {
+  if (!Array.isArray(context?.learningRules)) return false;
+  const marker = [
+    issue?.code,
+    issue?.message,
+    issue?.repairInstruction,
+    issue?.evidenceExcerpt
+  ].filter((value) => typeof value === 'string').join(' ');
+  return /learning[\s_-]*rules?|lernregel/iu.test(marker);
+}
+
 function blocksEditorialApproval(issue) {
   return issue?.blocking === true || issue?.autoPublishBlocking === true;
 }
@@ -141,6 +152,7 @@ export function normalizeEditorialReview(review = {}, context = {}) {
   const isExistingPostReview = existingPostReview(context);
   const editorialIssues = rawIssues
     .filter((issue) => !technicalIssue(issue))
+    .filter((issue) => !learningRuleContextIssue(issue, context))
     .filter((issue) => (
       !isExistingPostReview || !unsubstantiatedExistingPostIssue(issue, context)
     ));

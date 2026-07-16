@@ -1212,6 +1212,34 @@ function hasOnlyRepairableQualityIssues(stageResults, validationStageId) {
     && issues.every(({ code }) => QUALITY_STRUCTURE_ISSUE_CODES.has(code));
 }
 
+function hasOnlyRepairableEditorialIssues(stageResults, reviewStageId) {
+  const review = stageResults?.[reviewStageId]?.value;
+  const issues = Array.isArray(review?.issues) ? review.issues : [];
+  const blockingIssues = issues.filter((issue) => (
+    issue?.blocking === true || issue?.autoPublishBlocking === true
+  ));
+  const risks = review?.risks;
+  const forbiddenRisk = !risks
+    || typeof risks !== 'object'
+    || Array.isArray(risks)
+    || risks.legalClaims === true
+    || risks.privacyClaims === true
+    || risks.softwareVersionClaims === true
+    || risks.staticPrices === true;
+  return review?.passed === false
+    && review?.requiresManualReview === true
+    && !forbiddenRisk
+    && blockingIssues.length > 0
+    && blockingIssues.every((issue) => (
+      ['source', 'date'].includes(issue?.verificationType)
+      && issue?.sourceRequired === true
+      && typeof issue?.evidenceExcerpt === 'string'
+      && issue.evidenceExcerpt.trim() !== ''
+      && typeof issue?.repairInstruction === 'string'
+      && issue.repairInstruction.trim() !== ''
+    ));
+}
+
 function hasSelfConsistentRuleManifest(snapshot) {
   return Boolean(
     snapshot
@@ -1228,20 +1256,32 @@ function hasSelfConsistentRuleManifest(snapshot) {
 function validQualityGateRecoveryState(row, baseMaxRevisions) {
   const lastRepairStageId = `repair:${baseMaxRevisions}`;
   const lastValidationStageId = `validation:${baseMaxRevisions}`;
-  return row
+  const commonState = row
     && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
     && row.job_status === 'needs_manual_attention'
     && row.last_error === 'quality_gate_failed'
-    && Number(row.attempts) === QUALITY_GATE_RECOVERY_RETRY_CAP - 1
     && row.run_status === 'needs_manual_attention'
-    && row.current_stage === 'validation'
     && row.post_id == null
     && row.error_report_json?.code === 'quality_gate_failed'
     && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)
     && !hasOpenProviderReservation(row.stage_results_json)
     && hasSettledStage(row.stage_results_json, 'article_generation')
     && hasSettledStage(row.stage_results_json, lastRepairStageId)
+    && !Object.hasOwn(row.stage_results_json, `repair:${baseMaxRevisions + 1}`)
+    && !hasAnyBudgetStage(row.stage_results_json, `repair:${baseMaxRevisions + 1}`);
+  const structureState = commonState
+    && Number(row.attempts) === QUALITY_GATE_RECOVERY_RETRY_CAP - 1
+    && row.current_stage === 'validation'
     && hasOnlyRepairableQualityIssues(row.stage_results_json, lastValidationStageId);
+  const editorialState = commonState
+    && Number(row.attempts) === ADMIN_CONTENT_JOB_RETRY_CAP
+    && row.current_stage === 'review'
+    && row.stage_results_json?.[lastValidationStageId]?.passed === true
+    && Array.isArray(row.stage_results_json?.[lastValidationStageId]?.issues)
+    && row.stage_results_json[lastValidationStageId].issues.length === 0
+    && hasSettledStage(row.stage_results_json, `review:${baseMaxRevisions}`)
+    && hasOnlyRepairableEditorialIssues(row.stage_results_json, `review:${baseMaxRevisions}`);
+  return structureState || editorialState;
 }
 
 export async function recoverQualityGateJobForAdmin({
@@ -1293,6 +1333,9 @@ export async function recoverQualityGateJobForAdmin({
 
     const attempts = Number(state.attempts);
     const recoveredStage = `repair:${baseMaxRevisions + 1}`;
+    const recoveryKind = state.current_stage === 'review'
+      ? 'editorial_sources'
+      : 'structure_contract';
     const previousManifestHash = state.runtime_snapshot_json.ruleManifestHash;
     const runResult = await client.query(
       `
@@ -1305,6 +1348,7 @@ export async function recoverQualityGateJobForAdmin({
                 'stageId', $3::text,
                 'baseMaxRevisions', $4::integer,
                 'additionalRevisionCount', 1,
+                'recoveryKind', $9::text,
                 'adminId', $5::bigint,
                 'previousManifestHash', $8::text,
                 'currentManifestHash', $7::text,
@@ -1318,7 +1362,11 @@ export async function recoverQualityGateJobForAdmin({
             error_report_json = jsonb_build_object(
               'code', 'quality_gate_recovery_authorized',
               'stage', $3::text,
-              'message', 'Die gezielte zusätzliche HTML-Strukturreparatur wurde durch einen Administrator freigegeben.'
+              'message', CASE
+                WHEN $9::text = 'editorial_sources'
+                  THEN 'Die gezielte zusätzliche redaktionelle Quellenreparatur wurde durch einen Administrator freigegeben.'
+                ELSE 'Die gezielte zusätzliche HTML-Strukturreparatur wurde durch einen Administrator freigegeben.'
+              END
             ),
             finished_at = NULL
         WHERE id = $1
@@ -1336,7 +1384,8 @@ export async function recoverQualityGateJobForAdmin({
         adminId,
         CONTENT_AGENT_RULE_MANIFEST,
         CONTENT_AGENT_RULE_MANIFEST_HASH,
-        previousManifestHash
+        previousManifestHash,
+        recoveryKind
       ]
     );
     if (!runResult.rows[0]) {

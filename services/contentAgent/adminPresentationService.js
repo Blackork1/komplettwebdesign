@@ -1651,8 +1651,12 @@ export function buildJobListPresentation(rows = []) {
       currentStage: row.current_stage,
       postId: row.post_id,
       openReservationCount: row.open_provider_reservation_count,
-      structureRepairable: row.quality_gate_structure_repairable === true
+      structureRepairable: row.quality_gate_structure_repairable === true,
+      editorialRepairable: row.quality_gate_editorial_repairable === true
     });
+    const qualityGateRecoveryKind = canRecoverQualityGate
+      ? row.quality_gate_editorial_repairable === true ? 'editorial' : 'structure'
+      : null;
     const canRecoverQualityGateManifest = canRecoverQualityGateRuleManifest({
       jobType: row.job_type,
       status: row.status,
@@ -1730,8 +1734,11 @@ export function buildJobListPresentation(rows = []) {
         ? `${rejectedProviderStageLabel} nach Schema-Korrektur fortsetzen`
         : null,
       canRecoverQualityGate,
+      qualityGateRecoveryKind,
       qualityGateRecoveryActionLabel: canRecoverQualityGate
-        ? 'HTML-Struktur gezielt reparieren und erneut prüfen'
+        ? qualityGateRecoveryKind === 'editorial'
+          ? 'Quellenbezug gezielt reparieren und erneut prüfen'
+          : 'HTML-Struktur gezielt reparieren und erneut prüfen'
         : null,
       canRecoverQualityGateManifest,
       qualityGateManifestRecoveryActionLabel: canRecoverQualityGateManifest

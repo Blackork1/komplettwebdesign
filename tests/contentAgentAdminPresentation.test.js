@@ -614,6 +614,30 @@ test('HTML-Vertragsfehler bietet genau eine bestätigte gezielte Qualitätswiede
   assert.equal(job.qualityGateRecoveryActionLabel, 'HTML-Struktur gezielt reparieren und erneut prüfen');
 });
 
+test('quellenbezogene Reviewblocker bieten nach Versuch fünf eine gezielte redaktionelle Reparatur an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 1,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 5,
+    max_attempts: 5,
+    last_error: 'quality_gate_failed',
+    current_stage: 'review',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    quality_gate_structure_repairable: false,
+    quality_gate_editorial_repairable: true
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverQualityGate, true);
+  assert.equal(job.qualityGateRecoveryKind, 'editorial');
+  assert.equal(
+    job.qualityGateRecoveryActionLabel,
+    'Quellenbezug gezielt reparieren und erneut prüfen'
+  );
+});
+
 test('Qualitätswiederaufnahme bleibt mit offener Reservierung oder nach dem Sonderversuch gesperrt', () => {
   for (const input of [
     { attempts: 7, openReservationCount: 1 },

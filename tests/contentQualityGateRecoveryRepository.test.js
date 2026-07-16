@@ -53,6 +53,42 @@ function fixture() {
   };
 }
 
+function editorialFixture() {
+  const row = fixture();
+  row.attempts = 5;
+  row.max_attempts = 5;
+  row.current_stage = 'review';
+  row.stage_results_json['validation:2'] = { passed: true, issues: [] };
+  row.stage_results_json['budget:2026-07:review:2'] = { status: 'settled' };
+  row.stage_results_json['review:2'] = {
+    value: {
+      passed: false,
+      score: 74,
+      requiresManualReview: true,
+      risks: {
+        currentClaims: true,
+        legalClaims: false,
+        privacyClaims: false,
+        softwareVersionClaims: false,
+        staticPrices: false
+      },
+      issues: [{
+        code: 'UNBELEGTE_2026_ENTWICKLUNG',
+        severity: 'error',
+        message: 'Die aktuelle Entwicklung ist nicht eindeutig belegt.',
+        repairInstruction: 'Binde eine freigegebene Quelle ein oder formuliere neutral.',
+        blocking: true,
+        sectionHeading: 'Local SEO 2026',
+        evidenceExcerpt: 'Local SEO lässt sich 2026 nicht auf ein Profil reduzieren.',
+        verificationType: 'date',
+        sourceRequired: true,
+        autoPublishBlocking: true
+      }]
+    }
+  };
+  return row;
+}
+
 function createDb(row, { failRunUpdate = false } = {}) {
   const events = [];
   let runUpdates = 0;
@@ -76,7 +112,7 @@ function createDb(row, { failRunUpdate = false } = {}) {
           id: row.job_id,
           status: 'queued',
           attempts: row.attempts,
-          max_attempts: params[1]
+          max_attempts: Math.min(params[1], Math.max(row.max_attempts, row.attempts + 1))
         }] };
       }
       throw new Error(`Unerwartete SQL-Abfrage: ${normalized}`);
@@ -121,11 +157,63 @@ test('Qualitätsfehler übernimmt protokolliert den aktuellen Regelstand und erh
     7,
     CONTENT_AGENT_RULE_MANIFEST,
     CONTENT_AGENT_RULE_MANIFEST_HASH,
-    previousHash
+    previousHash,
+    'structure_contract'
   ]);
   const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
   assert.deepEqual(jobUpdate.params, [1, 8, 7]);
 });
+
+test('quellenbezogene redaktionelle Blocker erhalten nach Versuch fünf genau eine zusätzliche Reparatur', async () => {
+  const module = await import('../repositories/contentJobRepository.js');
+  const db = createDb(editorialFixture());
+
+  const result = await module.recoverQualityGateJobForAdmin({
+    jobId: 1,
+    adminId: 7,
+    baseMaxRevisions: 2
+  }, db);
+
+  assert.equal(result.job.max_attempts, 6);
+  assert.equal(result.recoveredStage, 'repair:3');
+  assert.equal(result.auditKey, 'quality_gate_recovery:structure_contract:attempt-7');
+  assert.equal(db.runUpdates, 1);
+  assert.equal(db.jobUpdates, 1);
+  const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
+  assert.deepEqual(jobUpdate.params, [1, 8, 5]);
+  const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.equal(runUpdate.params.at(-1), 'editorial_sources');
+});
+
+for (const [label, mutate] of [
+  ['rechtlichem Risiko', (row) => {
+    row.stage_results_json['review:2'].value.risks.legalClaims = true;
+  }],
+  ['Datenschutzrisiko', (row) => {
+    row.stage_results_json['review:2'].value.risks.privacyClaims = true;
+  }],
+  ['Preisrisiko', (row) => {
+    row.stage_results_json['review:2'].value.risks.staticPrices = true;
+  }],
+  ['fehlender Fundstelle', (row) => {
+    row.stage_results_json['review:2'].value.issues[0].evidenceExcerpt = null;
+  }],
+  ['nicht quellenbezogenem Blocker', (row) => {
+    row.stage_results_json['review:2'].value.issues[0].verificationType = 'legal';
+  }]
+]) {
+  test(`redaktionelle Qualitätswiederaufnahme bleibt bei ${label} gesperrt`, async () => {
+    const module = await import('../repositories/contentJobRepository.js');
+    const row = editorialFixture();
+    mutate(row);
+    const result = await module.recoverQualityGateJobForAdmin({
+      jobId: 1,
+      adminId: 7,
+      baseMaxRevisions: 2
+    }, createDb(row));
+    assert.equal(result, null);
+  });
+}
 
 for (const [label, mutate] of [
   ['offener Reservierung', (row) => {

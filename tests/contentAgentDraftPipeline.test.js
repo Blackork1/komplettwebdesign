@@ -2543,6 +2543,7 @@ test('bestätigte Qualitätswiederaufnahme nutzt bezahlte Stufen und erlaubt gen
 
   assert.equal(result.status, 'completed');
   assert.equal(harness.repairInputs.length, 1);
+  assert.deepEqual(harness.repairInputs[0].sourceReferences, []);
   assert.equal(harness.reviewInputs.length, 1);
   assert.equal(harness.imageCalls.length, 1);
   assert.equal(harness.createdDrafts.length, 1);

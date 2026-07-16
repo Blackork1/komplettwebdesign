@@ -1401,6 +1401,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           briefing,
           article: reviewableArticle(),
           issues: [...issues, pricingLockIssue(lockedPricingTokens)],
+          sourceReferences,
           learningRules: activeLearningRules(config, 'writer')
         }
       });

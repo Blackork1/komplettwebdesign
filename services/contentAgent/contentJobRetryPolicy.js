@@ -119,16 +119,26 @@ export function canRecoverQualityGateJob({
   currentStage,
   postId,
   openReservationCount,
-  structureRepairable = false
+  structureRepairable = false,
+  editorialRepairable = false
 } = {}) {
-  return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
+  const commonEligible = ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
     && status === 'needs_manual_attention'
-    && Number(attempts) === QUALITY_GATE_RECOVERY_RETRY_CAP - 1
     && lastError === 'quality_gate_failed'
-    && currentStage === 'validation'
     && postId == null
-    && Number(openReservationCount) === 0
-    && structureRepairable === true;
+    && Number(openReservationCount) === 0;
+  return commonEligible && (
+    (
+      Number(attempts) === QUALITY_GATE_RECOVERY_RETRY_CAP - 1
+      && currentStage === 'validation'
+      && structureRepairable === true
+    )
+    || (
+      Number(attempts) === ADMIN_CONTENT_JOB_RETRY_CAP
+      && currentStage === 'review'
+      && editorialRepairable === true
+    )
+  );
 }
 
 export function canRecoverQualityGateRuleManifest({

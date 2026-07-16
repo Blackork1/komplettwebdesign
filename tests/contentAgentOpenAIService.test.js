@@ -954,7 +954,45 @@ test('Bestandsreview verwirft einen Jahresblocker, dessen einziger Beleg der unv
     learningRules: []
   });
 
-  assert.deepEqual(result.value.issues.map(({ code }) => code), ['learning_rules_missing']);
+  assert.deepEqual(result.value.issues, []);
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 80);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.risks, validRisk);
+});
+
+test('Review ignoriert erfundene Beanstandungen an einer gültigen leeren Lernregelliste', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 72,
+    requiresManualReview: true,
+    issues: [{
+      code: 'LEARNING_RULES_NICHT_DOKUMENTIERT',
+      severity: 'error',
+      message: 'Die Lernregeln seien nicht dokumentiert.',
+      repairInstruction: 'Ergänze learningRules.',
+      blocking: true,
+      sectionHeading: null,
+      evidenceExcerpt: 'learningRules":[]',
+      verificationType: 'none',
+      sourceRequired: false,
+      autoPublishBlocking: true
+    }]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.deepEqual(result.value.issues, []);
   assert.equal(result.value.passed, true);
   assert.equal(result.value.score, 80);
   assert.equal(result.value.requiresManualReview, false);
@@ -1322,6 +1360,24 @@ test('Lernregeln werden in allen redaktionellen Promptstufen ausdrücklich als f
     assert.deepEqual(JSON.parse(prompt.user).learningRules, approvedLearningRules);
     assert.doesNotMatch(prompt.user, /secret|darf nicht/);
   }
+});
+
+test('Repair erhält die freigegebenen Quellen und eine eindeutige Quellenbindungsregel', () => {
+  const prompt = buildArticleRepairPrompt({
+    briefing: validSeoBrief,
+    article: validArticle,
+    issues: [{
+      code: 'current_claim',
+      repairInstruction: 'Belege oder neutralisiere die aktuelle Aussage.'
+    }],
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.deepEqual(JSON.parse(prompt.user).sourceReferences, sourceReferences);
+  assert.match(prompt.system, /zeitkritische.*Aussage/iu);
+  assert.match(prompt.system, /freigegebene[nr]? externe[nr]? Quelle/iu);
+  assert.match(prompt.system, /neutral/iu);
 });
 
 test('Promptbuilder lassen fehlende optionale Allowlist-Felder weg', () => {

@@ -152,6 +152,7 @@ export function createContentAgentAdminRepository(db = pool) {
                  ) AS provider_rejected_schema_repairable,
                  r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                  quality_recovery.quality_gate_structure_repairable,
+                 quality_recovery.quality_gate_editorial_repairable,
                  quality_recovery.quality_gate_manifest_repairable,
                  quality_recovery.editorial_review_recoverable,
                  ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
@@ -199,6 +200,84 @@ export function createContentAgentAdminRepository(db = pool) {
                 )
               )
             ) AS quality_gate_structure_repairable,
+            (
+              r.error_report_json ->> 'code' = 'quality_gate_failed'
+              AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'true'
+              AND jsonb_array_length(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                    THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                  ELSE '[]'::jsonb
+                END
+              ) = 0
+              AND r.stage_results_json -> 'review:2' -> 'value' ->> 'passed' = 'false'
+              AND r.stage_results_json -> 'review:2' -> 'value' ->> 'requiresManualReview' = 'true'
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:2$'
+                  AND settled.value ->> 'status' = 'settled'
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:2$'
+                  AND settled.value ->> 'status' = 'settled'
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(
+                  CASE
+                    WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'issues') = 'array'
+                      THEN r.stage_results_json -> 'review:2' -> 'value' -> 'issues'
+                    ELSE '[]'::jsonb
+                  END
+                ) AS issue
+                WHERE COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                   OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+              )
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(
+                  CASE
+                    WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'issues') = 'array'
+                      THEN r.stage_results_json -> 'review:2' -> 'value' -> 'issues'
+                    ELSE '[]'::jsonb
+                  END
+                ) AS issue
+                WHERE (
+                  COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                  OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+                )
+                  AND (
+                    COALESCE(issue ->> 'verificationType', '') NOT IN ('source', 'date')
+                    OR COALESCE((issue ->> 'sourceRequired')::boolean, FALSE) IS NOT TRUE
+                    OR btrim(COALESCE(issue ->> 'evidenceExcerpt', '')) = ''
+                    OR btrim(COALESCE(issue ->> 'repairInstruction', '')) = ''
+                  )
+              )
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_each(
+                  CASE
+                    WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'risks') = 'object'
+                      THEN r.stage_results_json -> 'review:2' -> 'value' -> 'risks'
+                    ELSE '{}'::jsonb
+                  END
+                ) AS risk(key, value)
+                WHERE risk.key IN (
+                  'legalClaims', 'privacyClaims', 'softwareVersionClaims', 'staticPrices'
+                )
+                  AND risk.value = 'true'::jsonb
+              )
+              AND NOT (r.stage_results_json ? 'quality_gate_recovery:structure_contract:attempt-7')
+              AND NOT (r.stage_results_json ? 'repair:3')
+              AND NOT EXISTS (
+                SELECT 1
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
+                WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+              )
+            ) AS quality_gate_editorial_repairable,
             (
               r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
               AND r.stage_results_json
@@ -1015,6 +1094,7 @@ export function createContentAgentAdminRepository(db = pool) {
                ) AS provider_rejected_schema_repairable,
                r.error_report_json #>> '{providerDiagnostic,stage}' AS provider_rejected_stage,
                quality_recovery.quality_gate_structure_repairable,
+               quality_recovery.quality_gate_editorial_repairable,
                quality_recovery.quality_gate_manifest_repairable,
                quality_recovery.editorial_review_recoverable,
                ${DRAFT_PERSISTENCE_RECOVERABLE_SQL} AS draft_persistence_recoverable
@@ -1074,6 +1154,84 @@ export function createContentAgentAdminRepository(db = pool) {
               )
             )
           ) AS quality_gate_structure_repairable,
+          (
+            r.error_report_json ->> 'code' = 'quality_gate_failed'
+            AND r.stage_results_json -> 'validation:2' ->> 'passed' = 'true'
+            AND jsonb_array_length(
+              CASE
+                WHEN jsonb_typeof(r.stage_results_json -> 'validation:2' -> 'issues') = 'array'
+                  THEN r.stage_results_json -> 'validation:2' -> 'issues'
+                ELSE '[]'::jsonb
+              END
+            ) = 0
+            AND r.stage_results_json -> 'review:2' -> 'value' ->> 'passed' = 'false'
+            AND r.stage_results_json -> 'review:2' -> 'value' ->> 'requiresManualReview' = 'true'
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:2$'
+                AND settled.value ->> 'status' = 'settled'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:review:2$'
+                AND settled.value ->> 'status' = 'settled'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'issues') = 'array'
+                    THEN r.stage_results_json -> 'review:2' -> 'value' -> 'issues'
+                  ELSE '[]'::jsonb
+                END
+              ) AS issue
+              WHERE COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                 OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'issues') = 'array'
+                    THEN r.stage_results_json -> 'review:2' -> 'value' -> 'issues'
+                  ELSE '[]'::jsonb
+                END
+              ) AS issue
+              WHERE (
+                COALESCE((issue ->> 'blocking')::boolean, FALSE)
+                OR COALESCE((issue ->> 'autoPublishBlocking')::boolean, FALSE)
+              )
+                AND (
+                  COALESCE(issue ->> 'verificationType', '') NOT IN ('source', 'date')
+                  OR COALESCE((issue ->> 'sourceRequired')::boolean, FALSE) IS NOT TRUE
+                  OR btrim(COALESCE(issue ->> 'evidenceExcerpt', '')) = ''
+                  OR btrim(COALESCE(issue ->> 'repairInstruction', '')) = ''
+                )
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_each(
+                CASE
+                  WHEN jsonb_typeof(r.stage_results_json -> 'review:2' -> 'value' -> 'risks') = 'object'
+                    THEN r.stage_results_json -> 'review:2' -> 'value' -> 'risks'
+                  ELSE '{}'::jsonb
+                END
+              ) AS risk(key, value)
+              WHERE risk.key IN (
+                'legalClaims', 'privacyClaims', 'softwareVersionClaims', 'staticPrices'
+              )
+                AND risk.value = 'true'::jsonb
+            )
+            AND NOT (r.stage_results_json ? 'quality_gate_recovery:structure_contract:attempt-7')
+            AND NOT (r.stage_results_json ? 'repair:3')
+            AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
+              WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+            )
+          ) AS quality_gate_editorial_repairable,
           (
             r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
             AND r.stage_results_json
