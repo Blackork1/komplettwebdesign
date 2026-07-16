@@ -488,6 +488,17 @@ export function createContentRevisionService({
       });
     },
 
+    async discardManualRevision(input = {}) {
+      if (input.confirmed !== true) {
+        throw revisionError('CONTENT_CONFIRMATION_REQUIRED', 'Die erforderliche Bestätigung fehlt.');
+      }
+      return repository.discardDraftRevisionTransaction({
+        revisionId: postgresInteger(input.revisionId, 'revisionId'),
+        expectedVersion: postgresInteger(input.expectedVersion, 'expectedVersion'),
+        admin: normalizeAdmin(input.admin)
+      });
+    },
+
     async renderRevisionEdit(revisionId, req, res) {
       const revision = await this.getRevisionForEdit(revisionId);
       return res.render('admin/contentAgent/revisionEdit', {

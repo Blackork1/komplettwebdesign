@@ -1628,6 +1628,25 @@ test('manuelle Audit-Revision erhält keinen toten Link zum KI-Vergleich', async
   assert.doesNotMatch(html, /revisions\/9\/compare/);
   assert.match(html, /action="\/admin\/content-agent\/revisions\/9"/);
   assert.match(html, /action="\/admin\/content-agent\/revisions\/9\/publish"/);
+  assert.match(html, /action="\/admin\/content-agent\/revisions\/9\/discard"/);
+  assert.match(html, /name="expected_revision_version" value="1"/);
+  assert.match(html, /name="confirmed" value="true"/);
+  assert.match(html, /Revision verwerfen/);
+});
+
+test('KI-Revisionseditor zeigt keinen manuellen Verwerfpfad', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('revisionEdit.ejs')), {
+    ...baseLocals,
+    revision: {
+      id: 10,
+      optimization_job_id: 44,
+      revision_version: 2,
+      snapshot_json: { base: { content_format: 'static_html' }, fields: {} }
+    },
+    saved: false
+  });
+
+  assert.doesNotMatch(html, /revisions\/10\/discard/);
 });
 
 test('Vergleichs-CSS baut gleichwertige Spalten, feste Sprungnavigation und mobile Live-zuerst-Reihenfolge', async () => {

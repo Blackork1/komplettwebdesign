@@ -227,6 +227,122 @@ test('Revisionsspeicherung verwendet einen atomaren Versionsvergleich', async ()
   assert.equal(calls[0].params[2], 4);
 });
 
+test('manuelle Draft-Revision wird atomar verworfen und der Auditbefund wieder geöffnet', async () => {
+  const calls = [];
+  const revision = {
+    id: 3,
+    post_id: 7,
+    audit_id: 5,
+    status: 'draft',
+    revision_version: 4,
+    optimization_job_id: null
+  };
+  const client = {
+    async query(sql, params = []) {
+      const normalized = String(sql).replace(/\s+/g, ' ').trim();
+      calls.push({ sql: normalized, params });
+      if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(normalized)
+          || normalized.startsWith('LOCK TABLE posts')) return { rows: [] };
+      if (normalized.startsWith('SELECT post_id FROM content_post_revisions')) {
+        return { rows: [{ post_id: 7 }] };
+      }
+      if (normalized.startsWith('SELECT id FROM posts')) return { rows: [{ id: 7 }] };
+      if (normalized.startsWith('SELECT * FROM content_post_revisions')) {
+        return { rows: [revision] };
+      }
+      if (normalized.startsWith('SELECT id FROM content_post_audits')) {
+        return { rows: [{ id: 5 }] };
+      }
+      if (normalized.startsWith('UPDATE content_post_revisions')) {
+        return { rows: [{ ...revision, status: 'rejected', revision_version: 5 }] };
+      }
+      if (normalized.startsWith('UPDATE content_post_audits')) return { rows: [{ id: 5 }] };
+      throw new Error(`Unerwartetes SQL: ${normalized}`);
+    },
+    release() { calls.push({ sql: 'RELEASE', params: [] }); }
+  };
+  const repository = createContentRevisionRepository({
+    async connect() { return client; }
+  });
+
+  const result = await repository.discardDraftRevisionTransaction({
+    revisionId: 3,
+    expectedVersion: 4,
+    admin: { id: 1, username: 'admin' }
+  });
+
+  assert.equal(result.status, 'rejected');
+  assert.equal(result.revision_version, 5);
+  const positions = [
+    calls.findIndex(({ sql }) => sql.startsWith('LOCK TABLE posts')),
+    calls.findIndex(({ sql }) => sql.startsWith('SELECT id FROM posts')),
+    calls.findIndex(({ sql }) => sql.startsWith('SELECT * FROM content_post_revisions')),
+    calls.findIndex(({ sql }) => sql.startsWith('SELECT id FROM content_post_audits')),
+    calls.findIndex(({ sql }) => sql.startsWith('UPDATE content_post_revisions')),
+    calls.findIndex(({ sql }) => sql.startsWith('UPDATE content_post_audits'))
+  ];
+  assert.deepEqual(positions, [...positions].sort((a, b) => a - b));
+  assert.match(
+    calls.find(({ sql }) => sql.startsWith('SELECT * FROM content_post_revisions')).sql,
+    /optimization_job_id IS NULL[\s\S]*FOR UPDATE/i
+  );
+  assert.match(
+    calls.find(({ sql }) => sql.startsWith('UPDATE content_post_revisions')).sql,
+    /status = 'rejected'[\s\S]*revision_version = revision_version \+ 1[\s\S]*optimization_job_id IS NULL/i
+  );
+  assert.match(
+    calls.find(({ sql }) => sql.startsWith('UPDATE content_post_audits')).sql,
+    /SET status = 'open'[\s\S]*status = 'revision_created'/i
+  );
+  assert.ok(calls.some(({ sql }) => sql === 'COMMIT'));
+  assert.equal(calls.some(({ sql }) => sql === 'ROLLBACK'), false);
+});
+
+test('manueller Verwerfpfad lehnt KI-Revisionen und veraltete Versionen fail-closed ab', async () => {
+  for (const revision of [
+    {
+      id: 3, post_id: 7, audit_id: 5, status: 'draft',
+      revision_version: 4, optimization_job_id: 44
+    },
+    {
+      id: 3, post_id: 7, audit_id: 5, status: 'draft',
+      revision_version: 5, optimization_job_id: null
+    }
+  ]) {
+    const calls = [];
+    const client = {
+      async query(sql) {
+        const normalized = String(sql).replace(/\s+/g, ' ').trim();
+        calls.push(normalized);
+        if (['BEGIN', 'ROLLBACK'].includes(normalized)
+            || normalized.startsWith('LOCK TABLE posts')) return { rows: [] };
+        if (normalized.startsWith('SELECT post_id FROM content_post_revisions')) {
+          return { rows: [{ post_id: 7 }] };
+        }
+        if (normalized.startsWith('SELECT id FROM posts')) return { rows: [{ id: 7 }] };
+        if (normalized.startsWith('SELECT * FROM content_post_revisions')) {
+          return { rows: [revision] };
+        }
+        throw new Error(`Unerwartetes SQL: ${normalized}`);
+      },
+      release() { calls.push('RELEASE'); }
+    };
+    const repository = createContentRevisionRepository({
+      async connect() { return client; }
+    });
+
+    await assert.rejects(repository.discardDraftRevisionTransaction({
+      revisionId: 3,
+      expectedVersion: 4,
+      admin: { id: 1, username: 'admin' }
+    }), { code: 'CONTENT_REVISION_CONFLICT' });
+
+    assert.ok(calls.includes('ROLLBACK'));
+    assert.equal(calls.some((sql) => sql.startsWith('UPDATE content_post_revisions')), false);
+    assert.equal(calls.includes('COMMIT'), false);
+  }
+});
+
 test('Übernahmefeedback läuft vor dem Commit in derselben Freigabetransaktion und rollt bei Fehlern live zurück', async () => {
   const { repository, calls } = approvalHarness();
   let callbackClient;

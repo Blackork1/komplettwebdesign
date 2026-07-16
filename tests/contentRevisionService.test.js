@@ -201,6 +201,43 @@ test('Freigabe benötigt Bestätigung und delegiert die atomare Sperrtransaktion
   assert.equal(approvals[0].expectedVersion, 1);
 });
 
+test('manuelle Revision kann nur bestätigt und über den atomaren Repositorypfad verworfen werden', async () => {
+  const discards = [];
+  const service = createContentRevisionService({
+    repository: {
+      async discardDraftRevisionTransaction(input) {
+        discards.push(input);
+        return { id: 3, status: 'rejected', revision_version: 5 };
+      }
+    }
+  });
+
+  await assert.rejects(
+    service.discardManualRevision({
+      revisionId: 3,
+      expectedVersion: 4,
+      confirmed: false,
+      admin: { id: 1, username: 'admin' }
+    }),
+    { code: 'CONTENT_CONFIRMATION_REQUIRED' }
+  );
+  assert.equal(discards.length, 0);
+
+  const result = await service.discardManualRevision({
+    revisionId: 3,
+    expectedVersion: 4,
+    confirmed: true,
+    admin: { id: 1, username: 'admin' }
+  });
+
+  assert.equal(result.status, 'rejected');
+  assert.deepEqual(discards[0], {
+    revisionId: 3,
+    expectedVersion: 4,
+    admin: { id: 1, username: 'admin' }
+  });
+});
+
 test('Vorbereitung einer KI-Optimierung liefert ausschließlich den serverseitigen Livehash', async () => {
   const service = createContentRevisionService({
     optimizationRepository: {

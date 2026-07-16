@@ -60,6 +60,7 @@ const POST_PATHS = [
   '/admin/content-agent/existing-content/:id/revision',
   '/admin/content-agent/revisions/:id',
   '/admin/content-agent/revisions/:id/changes/:changeId/revert',
+  '/admin/content-agent/revisions/:id/discard',
   '/admin/content-agent/revisions/:id/reject',
   '/admin/content-agent/revisions/:id/publish'
 ];

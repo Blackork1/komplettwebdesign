@@ -58,6 +58,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVISION_CONFLICT: 'Die Revision kann in ihrem aktuellen Zustand nicht übernommen werden.',
   CONTENT_REVISION_CHANGE_CONFLICT: 'Die Änderung kann wegen eines Revisionskonflikts nicht sicher zurückgenommen werden.',
   CONTENT_REVISION_STALE: 'Der Liveartikel wurde zwischenzeitlich geändert. Bitte erstelle eine neue Revision.',
+  CONTENT_REVISION_VALIDATION_FAILED: 'Die Revision erfüllt die aktuellen Inhaltsanforderungen nicht und wurde nicht gespeichert.',
   CONTENT_SCHEDULE_SETTINGS_STALE: 'Der Zeitplan wurde zwischenzeitlich geändert. Bitte lade den Entwurf neu.',
   CONTENT_DRAFT_EDIT_CONFLICT: 'Der Entwurf wurde zwischenzeitlich geändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
@@ -1534,6 +1535,22 @@ export function createAdminContentAgentController(dependencies) {
           admin: adminFromRequest(req)
         }],
         redirect: '/admin/content-agent/existing-content?revision_rejected=1',
+        res,
+        next
+      });
+    },
+
+    discardManualRevisionAction(req, res, next) {
+      return actionCapability({
+        capability: revisionService,
+        method: 'discardManualRevision',
+        args: () => [{
+          revisionId: postgresIntegerId(req.params.id),
+          expectedVersion: strictPositiveInteger(req.body?.expected_revision_version),
+          confirmed: requiredConfirmation(req.body?.confirmed),
+          admin: adminFromRequest(req)
+        }],
+        redirect: '/admin/content-agent/existing-content?revision_discarded=1',
         res,
         next
       });

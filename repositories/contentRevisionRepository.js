@@ -151,6 +151,106 @@ export function createContentRevisionRepository(db = pool) {
       return rows[0] || null;
     },
 
+    async discardDraftRevisionTransaction({
+      revisionId,
+      expectedVersion,
+      admin
+    }) {
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('LOCK TABLE posts IN SHARE ROW EXCLUSIVE MODE');
+        const { rows: identity } = await client.query(`
+          SELECT post_id
+          FROM content_post_revisions
+          WHERE id = $1::bigint
+        `, [revisionId]);
+        if (!identity[0]) {
+          throw conflict('CONTENT_REVISION_NOT_FOUND', 'Revision nicht gefunden.');
+        }
+        const { rows: posts } = await client.query(`
+          SELECT id
+          FROM posts
+          WHERE id = $1::integer
+          FOR UPDATE
+        `, [identity[0].post_id]);
+        if (!posts[0]) {
+          throw conflict('CONTENT_REVISION_CONFLICT', 'Der zugehörige Artikel ist nicht mehr vorhanden.');
+        }
+        const { rows: revisions } = await client.query(`
+          SELECT *
+          FROM content_post_revisions
+          WHERE id = $1::bigint
+            AND optimization_job_id IS NULL
+          FOR UPDATE
+        `, [revisionId]);
+        const revision = revisions[0];
+        if (!revision
+            || revision.optimization_job_id != null
+            || revision.status !== 'draft'
+            || Number(revision.revision_version) !== Number(expectedVersion)) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Die manuelle Revision wurde bereits verändert oder kann hier nicht verworfen werden.'
+          );
+        }
+        const { rows: audits } = await client.query(`
+          SELECT id
+          FROM content_post_audits
+          WHERE id = $1::bigint
+            AND post_id = $2::integer
+            AND status = 'revision_created'
+          FOR UPDATE
+        `, [revision.audit_id, revision.post_id]);
+        if (!audits[0]) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Der zugehörige Auditbefund ist nicht mehr eindeutig gebunden.'
+          );
+        }
+        const { rows: discarded } = await client.query(`
+          UPDATE content_post_revisions
+          SET status = 'rejected',
+              revision_version = revision_version + 1,
+              admin_id = $3::integer,
+              admin_username = $4::varchar(255),
+              updated_at = NOW()
+          WHERE id = $1::bigint
+            AND status = 'draft'
+            AND revision_version = $2::integer
+            AND optimization_job_id IS NULL
+          RETURNING *
+        `, [revisionId, expectedVersion, admin.id, admin.username]);
+        if (!discarded[0]) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Die manuelle Revision wurde zwischenzeitlich verändert.'
+          );
+        }
+        const { rows: reopenedAudits } = await client.query(`
+          UPDATE content_post_audits
+          SET status = 'open'
+          WHERE id = $1::bigint
+            AND post_id = $2::integer
+            AND status = 'revision_created'
+          RETURNING id
+        `, [revision.audit_id, revision.post_id]);
+        if (reopenedAudits.length !== 1) {
+          throw conflict(
+            'CONTENT_REVISION_CONFLICT',
+            'Der Auditbefund konnte nicht eindeutig wieder geöffnet werden.'
+          );
+        }
+        await client.query('COMMIT');
+        return discarded[0];
+      } catch (error) {
+        await rollback(client);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
     async approveRevisionTransaction({
       revisionId,
       expectedVersion,

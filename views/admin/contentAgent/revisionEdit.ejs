@@ -52,6 +52,16 @@
         <button class="btn btn-success" type="submit">Ausdrücklich freigeben</button>
       </form>
     </section>
+    <section class="content-agent-panel mt-4">
+      <h2>Manuelle Revision verwerfen</h2>
+      <p>Die unveröffentlichte Revision wird geschlossen, der Liveartikel bleibt unverändert und anschließend kann eine neue KI-Optimierung gestartet werden.</p>
+      <form method="post" action="/admin/content-agent/revisions/<%= item.id %>/discard" data-confirm="Diese manuelle Revision wirklich verwerfen? Der Liveartikel bleibt unverändert.">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="confirmed" value="true">
+        <input type="hidden" name="expected_revision_version" value="<%= item.revision_version || 1 %>">
+        <button class="btn btn-outline-danger" type="submit">Revision verwerfen</button>
+      </form>
+    </section>
   <% } %>
 </div>
 <script src="<%= typeof jsAsset === 'function' ? jsAsset('js/admin-content-agent.js') : '/js/admin-content-agent.js' %>" defer></script>

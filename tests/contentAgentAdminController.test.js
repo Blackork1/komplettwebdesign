@@ -1817,6 +1817,70 @@ test('Ablehnungscontroller verlangt die literale Bestätigung und leitet Konflik
   assert.doesNotMatch(conflictRes.body, /interner Revisionszustand/);
 });
 
+test('Controller verwirft manuelle Revisionen nur bestätigt und mit exakter Version', async () => {
+  const inputs = [];
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async discardManualRevision(input) {
+        inputs.push(input);
+        return { id: 9, status: 'rejected' };
+      }
+    }
+  }));
+
+  const res = response();
+  await controller.discardManualRevisionAction({
+    params: { id: '9' },
+    body: { expected_revision_version: '2', confirmed: 'true' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+  assert.equal(res.redirectedTo, '/admin/content-agent/existing-content?revision_discarded=1');
+  assert.deepEqual(inputs[0], {
+    revisionId: 9,
+    expectedVersion: 2,
+    confirmed: true,
+    admin: { id: 7, username: 'Redaktion' }
+  });
+
+  for (const body of [
+    { expected_revision_version: '2', confirmed: 'on' },
+    { expected_revision_version: '02', confirmed: 'true' },
+    { expected_revision_version: '0', confirmed: 'true' }
+  ]) {
+    const invalidRes = response();
+    await controller.discardManualRevisionAction({
+      params: { id: '9' },
+      body,
+      session: { user: { id: 7, username: 'Redaktion' } }
+    }, invalidRes, assert.fail);
+    assert.equal(invalidRes.statusCode, 400);
+  }
+  assert.equal(inputs.length, 1);
+});
+
+test('Revisionsvalidierungsfehler zeigt einen sicheren konkreten Hinweis', async () => {
+  const controller = createAdminContentAgentController(baseDependencies({
+    revisionService: {
+      async updateRevision() {
+        throw Object.assign(new Error('interne Validierungsdetails'), {
+          code: 'CONTENT_REVISION_VALIDATION_FAILED'
+        });
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.updateRevisionAction({
+    params: { id: '9' },
+    body: { revision_version: '1' },
+    session: { user: { id: 7, username: 'Redaktion' } }
+  }, res, assert.fail);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body, /aktuellen Inhaltsanforderungen/i);
+  assert.doesNotMatch(res.body, /interne Validierungsdetails/);
+});
+
 test('Schließcontroller verlangt Bestätigung und bindet Admin, Artikel und Job exakt', async () => {
   const inputs = [];
   const controller = createAdminContentAgentController(baseDependencies({
