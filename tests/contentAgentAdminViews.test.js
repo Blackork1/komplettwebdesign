@@ -662,6 +662,46 @@ test('Bestandszeile bewahrt die manuelle Audit-Revision als CSRF-geschützte sek
   assert.equal((html.match(/btn btn-sm btn-primary/g) || []).length, 1);
 });
 
+test('Bestandszeile bietet bei aktivem Legacy-EJS nur den klassischen Blogeditor an', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
+    ...baseLocals,
+    existingContent: [{
+      id: 19,
+      title: 'Full-Service Webdesign Berlin',
+      slug: 'full-service-webdesign-in-berlin',
+      auditId: 72,
+      auditStatus: 'open',
+      auditScore: 84,
+      revisionId: null,
+      optimization: {
+        state: 'idle',
+        active: false,
+        terminal: false,
+        canStart: false,
+        legacyEjsBlocked: true,
+        manualEditUrl: '/admin/blog/19/edit',
+        canDiscard: false,
+        discardActionUrl: null,
+        statusLabel: 'Nur manuell optimierbar',
+        stageLabel: 'Aktiver EJS-Inhalt',
+        message: 'Der Hauptinhalt enthält aktiven EJS-Code. Nutze den Blogeditor.',
+        jobId: null,
+        revisionId: null,
+        revisionUrl: null,
+        errorCode: null,
+        unsafeProviderState: false,
+        updatedAt: null
+      }
+    }]
+  });
+
+  assert.doesNotMatch(html, />Revision anlegen<\/button>/);
+  assert.match(html, /Nur manuell optimierbar/);
+  assert.match(html, /href="\/admin\/blog\/19\/edit"[^>]*>Im Blogeditor bearbeiten<\/a>/);
+  assert.doesNotMatch(html, /action="\/admin\/content-agent\/existing-content\/19\/optimize"/);
+  assert.doesNotMatch(html, />KI-Optimierung starten<\/button>/);
+});
+
 test('offene ältere Revision wird direkt angeboten und verhindert einen zweiten KI-Auftrag', async () => {
   const html = await renderFile(fileURLToPath(viewUrl('existingContent.ejs')), {
     ...baseLocals,

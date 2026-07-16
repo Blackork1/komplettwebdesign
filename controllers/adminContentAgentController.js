@@ -64,6 +64,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   CONTENT_REVIEW_VERSION_STALE: 'Der Entwurf wurde seit dem Öffnen verändert. Bitte lade ihn neu.',
   CONTENT_REVIEW_OPTIMIZATION_NOT_AVAILABLE: 'Die automatische Prüfhinweis-Optimierung ist für diesen Entwurf nicht verfügbar.',
   CONTENT_EXISTING_OPTIMIZATION_NOT_AVAILABLE: 'Die KI-Optimierung ist für diesen Artikel derzeit nicht verfügbar.',
+  CONTENT_LEGACY_EJS_AI_OPTIMIZATION_UNAVAILABLE: 'Dieser Artikel enthält aktiven EJS-Code. Eine automatische KI-Änderung des Hauptinhalts ist aus Sicherheitsgründen nicht möglich. Nutze bitte den klassischen Blogeditor.',
   CONTENT_EXISTING_REVISION_ALREADY_OPEN: 'Für diesen Artikel besteht bereits eine offene Revision. Bearbeite, übernimm oder lehne sie zuerst ab.',
   CONTENT_EXISTING_OPTIMIZATION_DISCARD_NOT_AVAILABLE: 'Der Optimierungsauftrag kann in diesem Zustand nicht sicher geschlossen werden.',
   CONTENT_ZERO_IMPRESSION_NOT_ELIGIBLE: 'Der Artikel gehört nicht mehr zu den Artikeln ohne Impressionen. Bitte lade die Übersicht neu.',

@@ -342,6 +342,7 @@ export function createContentAgentAdminRepository(db = pool) {
     async listExistingContent() {
       const { rows } = await db.query(`
         SELECT p.id, p.title, p.slug, p.updated_at,
+               legacy_guard.has_active_legacy_ejs,
                COALESCE(admin_preference.hidden_from_zero_impression_list, FALSE)
                  AS zero_impression_hidden,
                audit.id AS audit_id, audit.score AS audit_score,
@@ -397,6 +398,15 @@ export function createContentAgentAdminRepository(db = pool) {
                performance.explanation_status AS performance_explanation_status,
                performance.explanation_json AS performance_explanation_json
         FROM posts p
+        LEFT JOIN LATERAL (
+          SELECT (
+            p.content_format = 'legacy_ejs'
+            AND (
+              POSITION('<%' IN p.content) > 0
+              OR POSITION('%>' IN p.content) > 0
+            )
+          ) AS has_active_legacy_ejs
+        ) legacy_guard ON TRUE
         LEFT JOIN content_existing_post_admin_preferences admin_preference
           ON admin_preference.post_id = p.id
         LEFT JOIN LATERAL (

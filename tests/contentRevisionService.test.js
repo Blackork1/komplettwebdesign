@@ -253,6 +253,26 @@ test('Vorbereitung einer KI-Optimierung liefert ausschließlich den serverseitig
   });
 });
 
+test('Vorbereitung stoppt aktiven Legacy-EJS-Inhalt vor dem KI-Auftrag', async () => {
+  const service = createContentRevisionService({
+    optimizationRepository: {
+      async getPublishedPostSnapshot() {
+        return {
+          ...post,
+          content: '<section><% districts.forEach((district) => { %><p><%= district.name %></p><% }) %></section>'
+        };
+      }
+    }
+  });
+
+  await assert.rejects(
+    service.prepareExistingPostOptimization(7),
+    {
+      code: 'CONTENT_LEGACY_EJS_AI_OPTIMIZATION_UNAVAILABLE'
+    }
+  );
+});
+
 test('Vorbereitung lehnt fehlende oder unveröffentlichte Artikel ab', async () => {
   for (const repositoryPost of [null, { ...post, published: false }]) {
     const service = createContentRevisionService({

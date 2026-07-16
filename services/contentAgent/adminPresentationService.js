@@ -71,6 +71,7 @@ const SAFE_EXISTING_OPTIMIZATION_ERROR_CODES = new Set([
   'CONTENT_EXISTING_OPTIMIZATION_INPUT_INVALID',
   'CONTENT_EXISTING_OPTIMIZATION_PAYLOAD_INVALID',
   'CONTENT_EXISTING_OPTIMIZATION_RUNTIME_SNAPSHOT_INVALID',
+  'CONTENT_LEGACY_EJS_AI_OPTIMIZATION_UNAVAILABLE',
   'CONTENT_JOB_LEASE_LOST',
   'CONTENT_POST_NOT_FOUND',
   'CONTENT_PERFORMANCE_EVIDENCE_STALE',
@@ -1397,23 +1398,36 @@ function presentedTimestamp(value) {
 }
 
 export function presentExistingContentOptimizationState(row = {}) {
+  const legacyEjsBlocked = row.has_active_legacy_ejs === true;
+  const existingPostId = presentedPositiveInteger(row.id);
   const jobId = presentedPositiveInteger(row.optimization_job_id);
   if (jobId === null) {
     const openDraftRevisionId = presentedPositiveInteger(row.open_draft_revision_id);
     const hasOpenDraftRevision = openDraftRevisionId !== null
       || row.has_draft_revision === true;
+    const manualLegacyRevision = legacyEjsBlocked && !hasOpenDraftRevision;
     return {
       state: 'idle',
       active: false,
       terminal: false,
-      canStart: !hasOpenDraftRevision,
+      canStart: !hasOpenDraftRevision && !legacyEjsBlocked,
       canDiscard: false,
       discardActionUrl: null,
-      statusLabel: hasOpenDraftRevision ? 'Revision offen' : 'Noch nicht gestartet',
-      stageLabel: hasOpenDraftRevision ? 'Freigabe ausstehend' : 'Noch keine Stufe',
+      statusLabel: hasOpenDraftRevision
+        ? 'Revision offen'
+        : manualLegacyRevision
+          ? 'Nur manuell optimierbar'
+          : 'Noch nicht gestartet',
+      stageLabel: hasOpenDraftRevision
+        ? 'Freigabe ausstehend'
+        : manualLegacyRevision
+          ? 'Aktiver EJS-Inhalt'
+          : 'Noch keine Stufe',
       message: hasOpenDraftRevision
         ? 'Für diesen Artikel besteht bereits eine offene Revision. Bearbeite, übernimm oder lehne sie ab, bevor du eine neue KI-Optimierung startest.'
-        : 'Noch keine KI-Optimierung gestartet.',
+        : manualLegacyRevision
+          ? 'Der Hauptinhalt enthält aktiven EJS-Code und wird aus Sicherheitsgründen nicht an die KI zur Änderung übergeben. Bearbeite ihn im klassischen Blogeditor.'
+          : 'Noch keine KI-Optimierung gestartet.',
       jobId: null,
       revisionId: openDraftRevisionId,
       revisionUrl: openDraftRevisionId === null
@@ -1421,7 +1435,11 @@ export function presentExistingContentOptimizationState(row = {}) {
         : `/admin/content-agent/revisions/${openDraftRevisionId}/edit`,
       errorCode: null,
       unsafeProviderState: false,
-      updatedAt: null
+      updatedAt: null,
+      ...(legacyEjsBlocked ? {
+        legacyEjsBlocked: true,
+        manualEditUrl: existingPostId === null ? null : `/admin/blog/${existingPostId}/edit`
+      } : {})
     };
   }
 
@@ -1454,7 +1472,7 @@ export function presentExistingContentOptimizationState(row = {}) {
   const hasDraftRevision = revisionId !== null
     && revisionStatus === 'draft';
   const hasAnyDraftRevision = hasDraftRevision || row.has_draft_revision === true;
-  const postId = presentedPositiveInteger(row.id);
+  const postId = existingPostId;
   const canDiscard = postId !== null && canDiscardDeterministicExistingPostOptimization({
     jobType: 'optimize_existing_post',
     jobStatus: rawStatus,
@@ -1463,6 +1481,7 @@ export function presentExistingContentOptimizationState(row = {}) {
     openProviderReservationCount: row.open_provider_reservation_count,
     hasDraftRevision: hasAnyDraftRevision
   });
+  const legacyEjsTerminal = legacyEjsBlocked && !active && !canDiscard;
   const completedMessage = revisionStatus === 'draft'
     ? 'Die Optimierung ist abgeschlossen. Die Revision wartet auf deine Freigabe; die Livefassung ist noch unverändert.'
     : revisionStatus === 'approved'
@@ -1508,14 +1527,17 @@ export function presentExistingContentOptimizationState(row = {}) {
     terminal,
     canStart: ['completed', 'failed', 'cancelled'].includes(state)
       && !unsafeProviderState
-      && !hasAnyDraftRevision,
+      && !hasAnyDraftRevision
+      && !legacyEjsBlocked,
     canDiscard,
     discardActionUrl: canDiscard
       ? `/admin/content-agent/existing-content/${postId}/optimization-jobs/${jobId}/discard`
       : null,
-    statusLabel: labels[state],
-    stageLabel,
-    message: messages[state],
+    statusLabel: legacyEjsTerminal ? 'Nur manuell optimierbar' : labels[state],
+    stageLabel: legacyEjsTerminal ? 'Aktiver EJS-Inhalt' : stageLabel,
+    message: legacyEjsTerminal
+      ? 'Der Hauptinhalt enthält aktiven EJS-Code und wird aus Sicherheitsgründen nicht an die KI zur Änderung übergeben. Bearbeite ihn im klassischen Blogeditor.'
+      : messages[state],
     jobId,
     revisionId: hasDraftRevision ? revisionId : null,
     revisionUrl: hasDraftRevision
@@ -1523,7 +1545,11 @@ export function presentExistingContentOptimizationState(row = {}) {
       : null,
     errorCode,
     unsafeProviderState,
-    updatedAt: presentedTimestamp(row.optimization_job_updated_at)
+    updatedAt: presentedTimestamp(row.optimization_job_updated_at),
+    ...(legacyEjsBlocked ? {
+      legacyEjsBlocked: true,
+      manualEditUrl: postId === null ? null : `/admin/blog/${postId}/edit`
+    } : {})
   };
 }
 

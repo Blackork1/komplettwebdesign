@@ -124,6 +124,14 @@ test('Bestandsliste lädt den Adminstatus ohne N+1-Abfrage', async () => {
     db.calls[0].sql,
     /COALESCE\(admin_preference\.hidden_from_zero_impression_list, FALSE\) AS zero_impression_hidden/i
   );
+  assert.match(
+    db.calls[0].sql,
+    /legacy_guard\.has_active_legacy_ejs/i
+  );
+  assert.match(
+    db.calls[0].sql,
+    /p\.content_format = 'legacy_ejs'[\s\S]*POSITION\('<%' IN p\.content\)/i
+  );
 });
 
 test('Ausblenden verlangt den neuesten vollständigen Null-Impressions-Snapshot', async () => {

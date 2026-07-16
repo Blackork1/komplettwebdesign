@@ -409,6 +409,15 @@ export function createContentRevisionService({
       if (!post || post.published !== true) {
         throw revisionError('CONTENT_POST_NOT_FOUND', 'Veröffentlichter Beitrag nicht gefunden.');
       }
+      if (requiresLegacyBytePreservation({
+        contentFormat: post.content_format,
+        contentHtml: post.content
+      })) {
+        throw revisionError(
+          'CONTENT_LEGACY_EJS_AI_OPTIMIZATION_UNAVAILABLE',
+          'Der Artikel enthält aktiven EJS-Code und kann nur im klassischen Blogeditor sicher bearbeitet werden.'
+        );
+      }
       return { baseLiveHash: liveHashForPost(post) };
     },
 

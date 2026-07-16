@@ -45,7 +45,7 @@
         <button class="btn btn-sm btn-outline-secondary" type="submit"><%= visibilityAction.label %></button>
       </form>
     <% } %>
-    <% if (item.auditId && item.auditStatus !== 'resolved' && !item.revisionId) { %>
+    <% if (item.auditId && item.auditStatus !== 'resolved' && !item.revisionId && optimization.legacyEjsBlocked !== true) { %>
       <form method="post" action="/admin/content-agent/existing-content/<%= item.id %>/revision">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <input type="hidden" name="audit_id" value="<%= item.auditId %>">
@@ -70,6 +70,8 @@
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <button class="btn btn-sm btn-primary" type="submit">KI-Optimierung starten</button>
         </form>
+      <% } else if (optimization.legacyEjsBlocked === true && optimization.manualEditUrl) { %>
+        <a class="btn btn-sm btn-primary" href="<%= optimization.manualEditUrl %>">Im Blogeditor bearbeiten</a>
       <% } else { %>
         <a class="btn btn-sm btn-primary" href="/admin/content-agent/jobs">Jobs &amp; Protokolle öffnen</a>
       <% } %>

@@ -698,6 +698,15 @@ export async function runExistingPostOptimizationJob({
       'Der Liveartikel wurde seit dem Start der Optimierung verändert.'
     );
   }
+  if (requiresLegacyBytePreservation({
+    contentFormat: post.content_format,
+    contentHtml: post.content
+  })) {
+    return finishFailed(
+      'CONTENT_LEGACY_EJS_AI_OPTIMIZATION_UNAVAILABLE',
+      'Der Artikel enthält aktiven EJS-Code und kann nur im klassischen Blogeditor sicher bearbeitet werden.'
+    );
+  }
 
   const allowedInternalLinks = snapshotInternalLinks(
     runtimeSnapshot,

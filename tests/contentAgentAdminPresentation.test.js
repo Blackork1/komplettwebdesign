@@ -1074,6 +1074,39 @@ test('offene Bestandsrevision wird ohne früheren KI-Job sichtbar und ersetzt de
   });
 });
 
+test('aktiver Legacy-EJS-Inhalt wird als nur manuell optimierbar dargestellt', () => {
+  const result = presentExistingContentOptimizationState({
+    id: 19,
+    optimization_job_id: null,
+    has_active_legacy_ejs: true,
+    has_draft_revision: false
+  });
+
+  assert.equal(result.canStart, false);
+  assert.equal(result.legacyEjsBlocked, true);
+  assert.equal(result.manualEditUrl, '/admin/blog/19/edit');
+  assert.equal(result.statusLabel, 'Nur manuell optimierbar');
+  assert.equal(result.stageLabel, 'Aktiver EJS-Inhalt');
+  assert.match(result.message, /Blogeditor/i);
+});
+
+test('geschlossener Auftrag gibt aktiven Legacy-EJS-Inhalt nicht erneut für die KI frei', () => {
+  const result = presentExistingContentOptimizationState({
+    id: 19,
+    has_active_legacy_ejs: true,
+    optimization_job_id: 44,
+    optimization_job_status: 'cancelled',
+    optimization_run_status: 'failed',
+    optimization_job_updated_at: '2026-07-16T10:00:00.000Z',
+    has_draft_revision: false
+  });
+
+  assert.equal(result.canStart, false);
+  assert.equal(result.legacyEjsBlocked, true);
+  assert.equal(result.manualEditUrl, '/admin/blog/19/edit');
+  assert.equal(result.statusLabel, 'Nur manuell optimierbar');
+});
+
 test('unsicherer Providerzustand bleibt gesperrt und bietet keinen normalen Neustart', () => {
   const result = presentExistingContentOptimizationState({
     optimization_job_id: 44,
