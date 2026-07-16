@@ -22,9 +22,9 @@ test('Migration 014 erstellt nur additive Adminpräferenzen', () => {
   assert.doesNotMatch(sql, /DROP\s+(?:TABLE|COLUMN)|TRUNCATE|DELETE\s+FROM/i);
 });
 
-test('Runner führt 014 direkt nach 013 aus und meldet 002 bis 014', () => {
+test('Runner führt 014 direkt nach 013 aus und meldet 002 bis 015', () => {
   assert.ok(runner.indexOf('014_create_existing_content_admin_preferences.sql')
     > runner.indexOf('013_create_article_performance_learning.sql'));
-  assert.match(runner, /Migration 002 bis 014 erfolgreich/);
-  assert.match(runner, /Migration 002 bis 014 fehlgeschlagen/);
+  assert.match(runner, /Migration 002 bis 015 erfolgreich/);
+  assert.match(runner, /Migration 002 bis 015 fehlgeschlagen/);
 });

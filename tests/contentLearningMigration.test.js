@@ -51,5 +51,5 @@ test('der Migrationsrunner führt Migration 009 nach Migration 008 aus', async (
   const migration009 = source.indexOf('009_create_content_learning_rules.sql');
   assert.ok(migration008 >= 0);
   assert.ok(migration009 > migration008);
-  assert.match(source, /Migration 002 bis 014 erfolgreich/);
+  assert.match(source, /Migration 002 bis 015 erfolgreich/);
 });
