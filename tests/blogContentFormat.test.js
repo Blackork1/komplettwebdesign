@@ -99,6 +99,7 @@ test('gemeinsames Viewmodel trennt statisches HTML ausdrücklich vom Legacy-EJS-
   assert.match(presentationSource, /post\.content_format === 'legacy_ejs'/);
   assert.match(presentationSource, /sanitizeArticleHtml/);
   assert.match(presentationSource, /renderDbEjs/);
+  assert.match(presentationSource, /buildLegacyRenderLocals/);
   assert.match(presentationSource, /post\.meta_title \|\| post\.title/);
   assert.match(presentationSource, /post\.meta_description \|\| post\.description/);
   assert.match(presentationSource, /structuredDataBlocks/);

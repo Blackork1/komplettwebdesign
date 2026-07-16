@@ -352,6 +352,17 @@ test('PostgreSQL-Integrationstest verlangt exakten Datenbanknamen und exaktes Fr
   assert.match(guide, /Produktionsdatenbank[^\n]*(?:nie|nicht)/i);
 });
 
+test('Legacy-Migration 015 ist dokumentiert und benötigt keine neue Infrastrukturkonfiguration', () => {
+  assert.match(guide, /015_create_legacy_content_migrations\.sql/);
+  assert.match(guide, /content_legacy_migrations/);
+  assert.match(guide, /Keine Änderung an `?\.env`? erforderlich/i);
+  assert.match(guide, /Keine Änderung an `?docker-compose\.yml`? erforderlich/i);
+  assert.ok(
+    guide.indexOf('015_create_legacy_content_migrations.sql')
+      > guide.indexOf('014_create_existing_content_admin_preferences.sql')
+  );
+});
+
 test('temporärer pgvector-Container bleibt bis nach dem echten E2E-Test bestehen', () => {
   const testDatabase = blockContaining(bashBlocks, /TEST_DB_CONTAINER=/, 'Testdatenbank-Migrationsblock');
   const firstMigration = testDatabase.indexOf('npm run migrate:content-agent');
@@ -420,7 +431,7 @@ test('Deploy aktualisiert nur server deterministisch und hält die App bis zum R
   assert.match(deploy, /docker compose -f "\$COMPOSE_FILE" logs --tail=100 app content-worker/);
 });
 
-test('wiederholbares Deploy prüft Migration 011 bis 014 vor Dry-Run und Worker-Recreate', () => {
+test('wiederholbares Deploy prüft Migration 011 bis 015 vor Dry-Run und Worker-Recreate', () => {
   const deploy = blockContaining(bashBlocks, /git reset --hard origin\/main/, 'deploy.sh-Block');
   const migrations = [
     ...deploy.matchAll(
@@ -457,7 +468,12 @@ test('wiederholbares Deploy prüft Migration 011 bis 014 vor Dry-Run und Worker-
     'content_revision_optimization_outcomes_claim_consistent',
     'content_article_events',
     'content_article_performance_snapshots',
-    'content_existing_post_admin_preferences'
+    'content_existing_post_admin_preferences',
+    'content_legacy_migrations',
+    'base_live_hash',
+    'rendered_static_html',
+    'migrated_live_hash',
+    'rolled_back_at'
   ]) assert.match(catalogCheck, new RegExp(databaseObject));
   assert.match(catalogCheck, /information_schema\.columns/);
   assert.match(catalogCheck, /pg_constraint/);
@@ -465,7 +481,7 @@ test('wiederholbares Deploy prüft Migration 011 bis 014 vor Dry-Run und Worker-
   assert.match(catalogCheck, /Object\.values\(rows\[0\]\)\.some/);
   assert.match(
     catalogCheck,
-    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012\/013\/014 ist unvollständig\."/
+    /test "\$CONTENT_AGENT_SCHEMA_OK" = "ok" \|\| fail "Content-Agent-Schema nach Migration 011\/012\/013\/014\/015 ist unvollständig\."/
   );
 });
 

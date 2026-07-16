@@ -14,6 +14,8 @@ Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhal
 
 **Hinweis für die Null-Impressions-Übersicht:** Dieses rein administrative Update benötigt keine neue `.env`-Variable und keine Änderung an `docker-compose.yml`. Erforderlich sind ein geprüftes Datenbankbackup, Migration `014_create_existing_content_admin_preferences.sql`, die Schema-Prüfung sowie der gemeinsame Recreate von `app` und `content-worker`. Die gespeicherten Einstellungen verändern weder die öffentliche Sichtbarkeit noch Sitemap oder Indexierung eines Blogartikels.
 
+**Hinweis für die Legacy-EJS-Migration:** Dieses Update stellt veröffentlichte `legacy_ejs`-Blogartikel nach einer kontrollierten Vorher-Nachher-Prüfung auf `static_html` um. Keine Änderung an `.env` erforderlich. Keine Änderung an `docker-compose.yml` erforderlich. Es gibt keinen automatischen Migrationslauf beim Deployment. Erforderlich sind ein geprüftes Backup, Migration `015_create_legacy_content_migrations.sql`, die Schema-Prüfung und der gemeinsame Recreate von `app` und `content-worker`. Danach wird der Scan im Adminbereich bewusst gestartet; eine einzelne Migration oder Sammelmigration erfolgt ausschließlich nach ausdrücklicher Adminbestätigung.
+
 ## 1. Projektpfad und Ausgangslage prüfen
 
 Alle kopierbaren Hostbefehle dieser Anleitung beginnen am bereits geöffneten Prompt `webadmin@ubuntu:~/apps/komplettwebdesign$`. Der feste Host-Betriebsordner ist `~/apps/komplettwebdesign`; ausschließlich `server/` wird per Git automatisch aktualisiert, also `~/apps/komplettwebdesign/server`. Die Dateien `.env`, `docker-compose.yml` und `deploy/deploy.sh` werden manuell gepflegt und vor jeder Änderung gesichert. Sie liegen direkt unter `~/apps/komplettwebdesign` und dürfen nicht durch einen Checkout im Unterordner `server/` überschrieben werden.
@@ -316,7 +318,8 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
     komplettwebdesign-app:local node --test \
       tests/contentAgentPostgresIntegration.test.js \
       tests/contentRevisionOutcomePostgresIntegration.test.js \
-      tests/contentExistingPostAdminPreferencesPgIntegration.test.js
+      tests/contentExistingPostAdminPreferencesPgIntegration.test.js \
+      tests/contentLegacyMigrationPgIntegration.test.js
 
   docker exec -e PGPASSWORD="$TEST_DB_PASSWORD" "$TEST_DB_CONTAINER" \
     psql -v ON_ERROR_STOP=1 -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c '\dt content_*'
@@ -325,7 +328,7 @@ Das temporäre Kennwort wird erst zur Laufzeit erzeugt, nie ausgegeben und nicht
 )
 ```
 
-Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013 und 014 erfolgreich melden. Danach müssen sowohl der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish als auch die isolierten Verträge für KI-Bestandsoptimierung, GSC-Basis, Artikel-Performance, 28-Tage-Folgefenster, migrationssichere Outcome-Claims und die dauerhafte administrative Null-Impressions-Ausblendung bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, einer der E2E-Tests oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
+Beide Migrationsläufe müssen die Content-Agent-Migrationen 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014 und 015 erfolgreich melden. Danach müssen sowohl der E2E-Test für den terminierten Ablauf Generate → Notify → Approve → Publish als auch die isolierten Verträge für KI-Bestandsoptimierung, GSC-Basis, Artikel-Performance, 28-Tage-Folgefenster, migrationssichere Outcome-Claims, die dauerhafte administrative Null-Impressions-Ausblendung und die atomare Legacy-Migration bestehen. Schlägt Export, Wiederherstellung, einer der beiden Migrationsläufe, einer der E2E-Tests oder die Tabellenprüfung fehl, beendet der Block mit einem Fehler und räumt trotzdem auf. Dann keine Produktionsmigration durchführen.
 
 Der Node-Integrationstest besitzt zusätzlich eine eigene, ausfallsichere Sperre. Er akzeptiert ausschließlich den exakten Datenbanknamen `kwd_content_agent_integration_test`, `CONTENT_AGENT_PG_TEST_ALLOW_RESET=true`, das exakte Token `CONTENT_AGENT_PG_TEST_TOKEN=KWDCONTENTAGENT_TEST_RESET_V1` und entweder einen Loopback-Host oder einen Container mit dem Präfix `kwd-content-agent-pg-test-`. Verbindungsoptionen in der URL sind nicht erlaubt. Eine Produktionsdatenbank darf für diesen Test nie verwendet werden. Ohne alle Bedingungen wird der Test sicher übersprungen, bevor er eine Verbindung öffnet.
 
@@ -347,9 +350,10 @@ docker compose exec -T postgres pg_restore -l < "$BACKUP_FILE" >/dev/null
 printf 'Geprüftes Backup: %s\n' "$BACKUP_FILE"
 ```
 
-Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql`, `010_create_weekly_topic_pools.sql`, `011_create_existing_post_optimization.sql`, `012_upgrade_revision_outcome_claims.sql`, `013_create_article_performance_learning.sql` und `014_create_existing_content_admin_preferences.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Migration 011 ergänzt die Tabellen `content_revision_optimization_outcomes` und `content_revision_optimization_feedback`, den eindeutigen aktiven Jobindex `ux_content_jobs_active_existing_optimization` sowie den fälligen Outcome-Index `idx_content_revision_outcomes_pending`. Migration 012 ergänzt bei bereits ausgeführter Migration 011 die Claim-Spalten idempotent und erzwingt den validierten Constraint `content_revision_optimization_outcomes_claim_consistent`. Migration 013 ergänzt die anonymen Artikelereignisse in `content_article_events`, die aggregierten Leistungsstände in `content_article_performance_snapshots` sowie die dafür benötigten Indizes und Prüfbedingungen. Migration 014 ergänzt ausschließlich die Tabelle `content_existing_post_admin_preferences` für dauerhaft gespeicherte Admin-Ausblendungen. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 014 ist bereits in der separaten Testdatenbank erfolgt:
+Nur fortfahren, wenn sowohl `test -s` als auch `pg_restore -l` mit Exitcode `0` enden. Der Zeitstempel verhindert das Überschreiben eines älteren Backups. Der Migrationsrunner führt reproduzierbar und in dieser Reihenfolge `002_create_content_agent_core.sql`, `003_create_content_agent_admin_dashboard.sql`, `004_create_scheduled_content_review.sql`, `005_upgrade_admin_notification_retry_index.sql`, `006_add_schedule_revisions_and_admin_review_lookup.sql`, `007_create_content_search_metrics.sql`, `008_expand_generated_content_metadata.sql`, `009_create_content_learning_rules.sql`, `010_create_weekly_topic_pools.sql`, `011_create_existing_post_optimization.sql`, `012_upgrade_revision_outcome_claims.sql`, `013_create_article_performance_learning.sql`, `014_create_existing_content_admin_preferences.sql` und `015_create_legacy_content_migrations.sql` innerhalb derselben Transaktion aus. Migration 005 ersetzt auf bereits migrierten Installationen den alten Admin-Mailindex. Migration 006 ergänzt ohne Datenlöschung die getrennte Zeitplanhistorie und den Index `idx_content_notification_deliveries_post_type_latest` für die neueste Admin-Prüfmail. Migration 007 ergänzt ausschließlich additive Tabellen und Indizes für Search-Console-Metriken und redaktionelle Chancen. Migration 008 erweitert ausschließlich die zuvor zu engen Metadatenfelder. Migration 009 ergänzt Beobachtungen, Vorschläge, versionierte Lernregeln und deren Auditverlauf; sie veröffentlicht und verändert keine Artikel. Migration 010 ergänzt den wiederverwendbaren Wochenpool und die eindeutige Themenbeanspruchung pro Generierungslauf. Migration 011 ergänzt die Tabellen `content_revision_optimization_outcomes` und `content_revision_optimization_feedback`, den eindeutigen aktiven Jobindex `ux_content_jobs_active_existing_optimization` sowie den fälligen Outcome-Index `idx_content_revision_outcomes_pending`. Migration 012 ergänzt bei bereits ausgeführter Migration 011 die Claim-Spalten idempotent und erzwingt den validierten Constraint `content_revision_optimization_outcomes_claim_consistent`. Migration 013 ergänzt die anonymen Artikelereignisse in `content_article_events`, die aggregierten Leistungsstände in `content_article_performance_snapshots` sowie die dafür benötigten Indizes und Prüfbedingungen. Migration 014 ergänzt ausschließlich die Tabelle `content_existing_post_admin_preferences` für dauerhaft gespeicherte Admin-Ausblendungen. Migration 015 ergänzt die Audit- und Sicherungstabelle `content_legacy_migrations`; sie verändert beim Migrationslauf selbst keinen Artikel. Anschließend die Migration genau einmal auf der Produktion ausführen; die zweimalige Idempotenzprüfung der Migrationen 002 bis 015 ist bereits in der separaten Testdatenbank erfolgt:
 
 ```bash
+docker compose run --rm app npm run migrate:content-agent
 docker compose run --rm app npm run migrate:content-agent
 ```
 
@@ -377,6 +381,7 @@ try {
       to_regclass('public.content_article_events') IS NOT NULL AS article_events_table,
       to_regclass('public.content_article_performance_snapshots') IS NOT NULL AS article_performance_snapshots_table,
       to_regclass('public.content_existing_post_admin_preferences') IS NOT NULL AS existing_content_admin_preferences_table,
+      to_regclass('public.content_legacy_migrations') IS NOT NULL AS content_legacy_migrations_table,
       to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
       to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
       EXISTS (
@@ -389,6 +394,19 @@ try {
       ) AS claim_columns,
       EXISTS (
         SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'content_legacy_migrations'
+          AND column_name IN (
+            'post_id', 'status', 'migration_class', 'base_live_hash',
+            'source_content', 'rendered_static_html', 'analysis_json',
+            'blocking_issues_json', 'migrated_live_hash', 'migrated_at',
+            'rolled_back_at'
+          )
+        HAVING COUNT(*) = 11
+      ) AS legacy_migration_columns,
+      EXISTS (
+        SELECT 1
         FROM pg_constraint constraint_row
         JOIN pg_class table_row ON table_row.oid = constraint_row.conrelid
         JOIN pg_namespace schema_row ON schema_row.oid = table_row.relnamespace
@@ -399,7 +417,7 @@ try {
       ) AS claim_constraint
   `);
   if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
-    throw new Error('Migration 011/012/013/014 ist nicht vollständig wirksam.');
+    throw new Error('Migration 011/012/013/014/015 ist nicht vollständig wirksam.');
   }
   process.stdout.write('ok\n');
 } finally {
@@ -418,7 +436,7 @@ docker compose run --rm app npm run content-agent:dry-run
 
 Ein abweichendes Ergebnis ist ein Abbruchkriterium; in diesem Fall den Worker nicht starten.
 
-Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration bis einschließlich 014, Schema-Prüfung und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 014 und demselben geprüften Image:
+Nur wenn Build, getrennte Testmigration, geprüftes Produktionsbackup, Produktionsmigration bis einschließlich 015, Schema-Prüfung und Dry-Run erfolgreich waren, App und Worker für den Erstrollout gemeinsam neu erzeugen. Dadurch starten App und Worker mit dem vollständigen Schema bis Migration 015 und demselben geprüften Image:
 
 ```bash
 docker compose up -d --no-deps --force-recreate app content-worker
@@ -428,6 +446,21 @@ docker compose logs --tail=100 app content-worker
 ```
 
 Schlägt Recreate, App-Start oder Worker-Healthcheck fehl, den Content-Agent nicht im Dashboard aktivieren. Zuerst Containerstatus und Logs prüfen.
+
+### 7.0 Legacy-Artikel kontrolliert migrieren
+
+Migration 015 stellt beim Deployment noch keinen Artikel um. Nach dem erfolgreichen Recreate im Adminbereich „Bestehende Inhalte“ öffnen und ausschließlich „Legacy-Artikel neu prüfen“ ausführen. Danach:
+
+1. Scananzahlen und konkrete Blocker prüfen.
+2. Einen als sicher eingestuften Artikel in der Vorher-Nachher-Vorschau öffnen.
+3. Slug, Canonical, Titel, sichtbaren Text, Beitragsbild, Bild-Alt-Text, interne Links, Codeblöcke, FAQ und Preisdarstellung vergleichen.
+4. Erst diesen einzelnen Artikel migrieren.
+5. Seine unveränderte öffentliche URL öffnen und Rendering sowie GSC-Zuordnung prüfen.
+6. Kontrollieren, dass die KI-Bestandsoptimierung für den migrierten `static_html`-Artikel verfügbar ist.
+7. Eine Rücknahme nur testen, solange seit der Migration keine Revision und kein Optimierungsauftrag angelegt wurde.
+8. „Alle sicheren Artikel migrieren“ erst nach diesem erfolgreichen Einzeltest verwenden.
+
+Artikel mit aktivem EJS, unbekannten Datenabhängigkeiten, entfernten Styles, unbekanntem JSON-LD oder anderen Blockern bleiben in der Einzelprüfung oder blockiert. Sie werden durch die Sammelaktion nicht freigegeben.
 
 ### 7.1 Wiederholbare Releases mit `deploy/deploy.sh`
 
@@ -782,6 +815,7 @@ try {
       to_regclass('public.content_article_events') IS NOT NULL AS article_events_table,
       to_regclass('public.content_article_performance_snapshots') IS NOT NULL AS article_performance_snapshots_table,
       to_regclass('public.content_existing_post_admin_preferences') IS NOT NULL AS existing_content_admin_preferences_table,
+      to_regclass('public.content_legacy_migrations') IS NOT NULL AS content_legacy_migrations_table,
       to_regclass('public.ux_content_jobs_active_existing_optimization') IS NOT NULL AS active_job_index,
       to_regclass('public.idx_content_revision_outcomes_pending') IS NOT NULL AS pending_outcome_index,
       EXISTS (
@@ -794,6 +828,19 @@ try {
       ) AS claim_columns,
       EXISTS (
         SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'content_legacy_migrations'
+          AND column_name IN (
+            'post_id', 'status', 'migration_class', 'base_live_hash',
+            'source_content', 'rendered_static_html', 'analysis_json',
+            'blocking_issues_json', 'migrated_live_hash', 'migrated_at',
+            'rolled_back_at'
+          )
+        HAVING COUNT(*) = 11
+      ) AS legacy_migration_columns,
+      EXISTS (
+        SELECT 1
         FROM pg_constraint constraint_row
         JOIN pg_class table_row ON table_row.oid = constraint_row.conrelid
         JOIN pg_namespace schema_row ON schema_row.oid = table_row.relnamespace
@@ -804,7 +851,7 @@ try {
       ) AS claim_constraint
   `);
   if (!rows[0] || Object.values(rows[0]).some((value) => value !== true)) {
-    throw new Error('Migration 011/012/013/014 ist nicht vollständig wirksam.');
+    throw new Error('Migration 011/012/013/014/015 ist nicht vollständig wirksam.');
   }
   process.stdout.write('ok\n');
 } finally {
@@ -812,7 +859,7 @@ try {
 }
 NODE
 )"
-test "$CONTENT_AGENT_SCHEMA_OK" = "ok" || fail "Content-Agent-Schema nach Migration 011/012/013/014 ist unvollständig."
+test "$CONTENT_AGENT_SCHEMA_OK" = "ok" || fail "Content-Agent-Schema nach Migration 011/012/013/014/015 ist unvollständig."
 DRY_RUN_OUTPUT_FILE="$(mktemp "$ROOT/data/.content-agent-dry-run.XXXXXX")"
 if ! docker compose -f "$COMPOSE_FILE" run --rm --no-deps app npm run content-agent:dry-run > "$DRY_RUN_OUTPUT_FILE" 2>&1; then
   cat "$DRY_RUN_OUTPUT_FILE" >&2

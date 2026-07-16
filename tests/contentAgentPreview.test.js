@@ -180,6 +180,52 @@ test('Legacy-EJS wird ausschließlich im öffentlichen legacy_ejs-Pfad ausgefüh
   assert.equal(globalThis.__unknownFormatPayload, undefined);
 });
 
+test('migrierter statischer Artikel bewahrt Medien, Code, interne Links, FAQ und Canonical', () => {
+  const model = buildBlogPostPageModel({
+    post: post({
+      title: 'Migrierter Artikel',
+      slug: 'unveraenderter-slug',
+      excerpt: 'Sicher migrierter Inhalt',
+      content_format: 'static_html',
+      generated_by_ai: false,
+      published: true,
+      workflow_status: 'published',
+      content: [
+        '<section>',
+        '<h2>Migration geprüft</h2>',
+        '<img src="/uploads/beitragsbild.webp" alt="Beitragsbild" onerror="alert(1)">',
+        '<pre><code>const status = "statisch";</code></pre>',
+        '<p><a href="/kontakt">Beratung anfragen</a></p>',
+        '<p>{{package:start.priceLabel}}</p>',
+        '<script>alert(2)</script>',
+        '</section>'
+      ].join(''),
+      faq_json: [{
+        '@type': 'Question',
+        name: 'Bleibt die URL erhalten?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Ja.' }
+      }]
+    }),
+    previewMode: false,
+    canonicalBaseUrl: 'https://example.test',
+    pricing: {
+      packageByKey: { start: { name: 'Start' } },
+      priceLabel() { return 'ab 1.234 €'; }
+    }
+  });
+
+  assert.match(model.renderedContent, /<img[^>]+alt="Beitragsbild"/);
+  assert.match(model.renderedContent, /<pre><code>/);
+  assert.match(model.renderedContent, /href="\/kontakt"/);
+  assert.match(model.renderedContent, /ab 1\.234 €/);
+  assert.doesNotMatch(model.renderedContent, /<%|%>|<script|<style|onerror=/i);
+  assert.equal(model.canonicalUrl, 'https://example.test/blog/unveraenderter-slug');
+  assert.equal(
+    model.structuredDataBlocks.some((block) => block['@type'] === 'FAQPage'),
+    true
+  );
+});
+
 test('reservierter Gesamtartikel-Wrapper kollidiert nicht mit echten gleichnamigen Überschriften', async () => {
   const collisionPost = post({
     content: [

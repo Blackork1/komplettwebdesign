@@ -1184,6 +1184,22 @@ test('geschlossener Auftrag gibt aktiven Legacy-EJS-Inhalt nicht erneut für die
   assert.equal(result.statusLabel, 'Nur manuell optimierbar');
 });
 
+test('migrierter statischer Artikel ist wieder für die KI-Bestandsoptimierung freigegeben', () => {
+  const [migrated] = buildExistingContentListPresentation([{
+    id: 44,
+    title: 'Migrierter Artikel',
+    slug: 'migrierter-artikel',
+    content_format: 'static_html',
+    has_active_legacy_ejs: false,
+    optimization_job_status: null,
+    open_draft_revision_id: null,
+    has_draft_revision: false
+  }]);
+
+  assert.equal(migrated.optimization.canStart, true);
+  assert.equal(migrated.optimization.legacyEjsBlocked, undefined);
+});
+
 test('unsicherer Providerzustand bleibt gesperrt und bietet keinen normalen Neustart', () => {
   const result = presentExistingContentOptimizationState({
     optimization_job_id: 44,
