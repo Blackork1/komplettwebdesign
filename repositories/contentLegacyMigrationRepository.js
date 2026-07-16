@@ -169,7 +169,7 @@ export function createContentLegacyMigrationRepository(db = pool) {
 
   async function getMigrationForPreview(migrationId) {
     const { rows } = await db.query(`
-      SELECT migration.*, ${POST_COLUMNS}
+      SELECT migration.*, to_jsonb(p) AS post
       FROM content_legacy_migrations migration
       JOIN posts p ON p.id = migration.post_id
       WHERE migration.id = $1::bigint
