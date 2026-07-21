@@ -29,6 +29,7 @@ test('Regelmanifest enthält alle prompt- und entscheidungsrelevanten Versionen 
     'existingPostOptimizationPrompt',
     'existingPostOptimizationSchema',
     'existingPostSourceResearchPrompt',
+    'generatedArticleTechnicalNormalizer',
     'internalLinkNormalization',
     'riskReport',
     'reviewIssueOptimizationPolicy',

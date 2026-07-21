@@ -16,6 +16,7 @@ import { promptVersion as existingPostSourceResearchPrompt } from './prompts/exi
 import { EXISTING_POST_DIFF_POLICY_VERSION } from './existingPostDiffService.js';
 import { EXISTING_POST_FRESHNESS_POLICY_VERSION } from './existingPostFreshnessService.js';
 import { EXISTING_POST_OPTIMIZATION_SCHEMA_VERSION } from './existingPostOptimizationSchemas.js';
+import { GENERATED_ARTICLE_TECHNICAL_NORMALIZER_VERSION } from './generatedArticleTechnicalNormalizer.js';
 import { RISK_REPORT_VERSION } from './riskReportService.js';
 import { CONTENT_LEARNING_TAXONOMY_VERSION } from './contentLearningTaxonomy.js';
 import {
@@ -85,6 +86,7 @@ export const CONTENT_AGENT_RULE_MANIFEST = Object.freeze({
   existingPostOptimizationPrompt,
   existingPostOptimizationSchema: EXISTING_POST_OPTIMIZATION_SCHEMA_VERSION,
   existingPostSourceResearchPrompt,
+  generatedArticleTechnicalNormalizer: GENERATED_ARTICLE_TECHNICAL_NORMALIZER_VERSION,
   internalLinkNormalization: INTERNAL_LINK_NORMALIZATION_VERSION,
   riskReport: RISK_REPORT_VERSION,
   reviewIssueOptimizationPolicy: REVIEW_ISSUE_OPTIMIZATION_POLICY_VERSION,

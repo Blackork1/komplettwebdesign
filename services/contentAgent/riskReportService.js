@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import slugify from 'slugify';
+import { isActionableEditorialIssue } from './editorialReviewPolicy.js';
 
 export const RISK_REPORT_VERSION = 'focused-risk-v2';
 
@@ -249,7 +250,9 @@ function hasCompleteReviewRisks(risks) {
 
 export function buildFocusedRiskReport({ article = {}, review = {}, validation = {}, sources = [] } = {}) {
   const articleSections = extractArticleSections(article?.contentHtml);
-  const reviewIssues = Array.isArray(review?.issues) ? review.issues : [];
+  const reviewIssues = Array.isArray(review?.issues)
+    ? review.issues.filter(isActionableEditorialIssue)
+    : [];
   const validationIssues = Array.isArray(validation?.issues) ? validation.issues : [];
   const normalizedIssues = [
     ...reviewIssues.map((issue, index) => normalizeIssue(issue, index, 'review', articleSections)),

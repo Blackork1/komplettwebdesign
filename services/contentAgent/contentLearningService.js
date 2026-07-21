@@ -1,4 +1,5 @@
 import { LearningClassificationBatchSchema } from './contentLearningSchemas.js';
+import { isActionableEditorialIssue } from './editorialReviewPolicy.js';
 import { providerFailureIsSafeToRetry } from './providerRetryPolicy.js';
 import {
   CONTENT_LEARNING_TAXONOMY_VERSION,
@@ -318,7 +319,9 @@ async function classifyWithProvider({
 function normalizeReviewItems(review) {
   const focusedReview = review?.quality_report_json?.focusedReview;
   if (!focusedReview || typeof focusedReview !== 'object' || focusedReview.blocked === true) return [];
-  return Array.isArray(focusedReview.items) ? focusedReview.items.slice(0, 24) : [];
+  return Array.isArray(focusedReview.items)
+    ? focusedReview.items.filter(isActionableEditorialIssue).slice(0, 24)
+    : [];
 }
 
 export async function runContentLearningJob(

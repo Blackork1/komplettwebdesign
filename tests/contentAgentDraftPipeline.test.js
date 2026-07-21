@@ -2464,6 +2464,59 @@ test('Reparaturen sind begrenzt und werden mit eindeutigen IDs erneut validiert 
   );
 });
 
+test('technische Nachbearbeitung behebt Meta-Länge und konkurrierende CTA-Links ohne Providerreparatur', async () => {
+  const generatedArticle = createValidatorValidArticle({
+    metaTitle: 'Website-Relaunch: Inhalte vor dem Löschen prüfen'
+  });
+  generatedArticle.contentHtml = generatedArticle.contentHtml
+    .replace(
+      'data-cta-location="blog_early">',
+      'data-cta-location="blog_early"><p>Vorab ein <a href="/website-tester">Website-Audit</a> durchführen.</p>'
+    )
+    .replace(
+      'data-cta-location="blog_mid">',
+      'data-cta-location="blog_mid"><p>Den <a href="/website-tester">Website-Test</a> nutzen.</p>'
+    );
+  const harness = createDependencies({
+    config: {
+      ...createDependencies().dependencies.config,
+      maxRevisions: 0
+    },
+    openaiService: {
+      ...createDependencies().dependencies.openaiService,
+      generateArticle: operation(generatedArticle, 'resp-article-technical-normalization'),
+      async reviewArticle(input) {
+        harness.reviewInputs.push(input);
+        return operation(review, 'resp-review-technical-normalization')();
+      },
+      async repairArticle() {
+        assert.fail('Deterministische Strukturfehler dürfen keine Providerreparatur auslösen.');
+      }
+    },
+    validateArticle: validateRealArticle
+  });
+
+  const result = await runDraftPipeline({ runId: 15940 }, harness.dependencies);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(harness.repairInputs.length, 0);
+  assert.equal(harness.createdDrafts.length, 1);
+  const post = harness.createdDrafts[0].post;
+  assert.equal(post.meta_title.length >= 50 && post.meta_title.length <= 60, true);
+  assert.doesNotMatch(post.content, /<a[^>]+href="\/website-tester"/i);
+  assert.match(post.content, /Website-Audit/);
+  assert.match(post.content, /Website-Test/);
+  assert.equal(validateRealArticle({
+    ...generatedArticle,
+    metaTitle: post.meta_title,
+    contentHtml: post.content
+  }, {
+    existingSlugs: [],
+    allowedInternalLinks: ['/kontakt', '/website-tester'],
+    sourceReferences: []
+  }).passed, true);
+});
+
 test('bestätigte Qualitätswiederaufnahme nutzt bezahlte Stufen und erlaubt genau repair:3', async () => {
   const persistedArticle = (label) => ({
     ...schemaArticle,

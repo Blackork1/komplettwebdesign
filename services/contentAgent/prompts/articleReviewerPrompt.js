@@ -1,6 +1,6 @@
 import { buildBrandPolicy, pickPromptInput } from './brandPolicy.js';
 
-export const promptVersion = '2026-07-16.1';
+export const promptVersion = '2026-07-16.2';
 const ARTICLE_REVIEWER_INPUT_KEYS = ['briefing', 'article', 'sourceReferences', 'learningRules'];
 
 export function buildArticleReviewerPrompt(input) {
@@ -21,6 +21,9 @@ export function buildArticleReviewerPrompt(input) {
       'Eine zeitkritische Aussage benötigt nicht allein wegen ihrer Aktualität eine manuelle Prüfung, wenn sie unmittelbar und inhaltlich passend auf eine freigegebene Quelle verweist oder eindeutig als vorsichtige redaktionelle Einordnung ohne Kausalitätsbehauptung formuliert ist.',
       'Ein aktuelles Jahr im Titel oder als Aktualitätsrahmen ist kein Beleg für eine neue Entwicklung, aber auch nicht automatisch ein Risiko. Beanstande nur konkrete unbelegte Entwicklungs-, Wirkungs- oder Kausalitätsaussagen.',
       'Melde konkrete, reproduzierbare Issues mit Schweregrad, klarer Reparaturanweisung und Blockierungsstatus.',
+      'Wenn keine ungelösten redaktionellen oder faktischen Probleme vorliegen, gib issues: [] als leere Liste zurück.',
+      'Positive Prüfergebnisse gehören ausschließlich in summary und strengths; gib sie niemals als Issue aus.',
+      'Erzeuge niemals ein Issue mit Reparaturanweisungen wie „Kein Handlungsbedarf“, „Keine Reparatur erforderlich“ oder einer gleichbedeutenden Aussage.',
       'Nenne für jede Tatsachen- oder Risikoaussage als sectionHeading den exakten vorhandenen H2- oder H3-Titel und als evidenceExcerpt einen höchstens 280 Zeichen langen, wörtlich vorhandenen Ausschnitt.',
       'Gib für jedes Issue die Prüfart verificationType, den Quellenbedarf sourceRequired und den Auto-Publish-Blocker autoPublishBlocking an.',
       'Erzeuge keine HTML-IDs, Anker oder Sprungmarken; diese werden ausschließlich serverseitig aus vorhandenen Überschriften gebildet.',

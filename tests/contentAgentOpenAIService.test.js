@@ -572,6 +572,18 @@ test('Reviewer-Prompt fordert echte H2/H3-Fundstellen ohne erfundene HTML-IDs', 
   assert.match(prompt, /keine HTML-IDs/i);
 });
 
+test('Reviewer-Prompt verbietet positive Aussagen als reparierbare Issues', () => {
+  const prompt = buildArticleReviewerPrompt({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  }).system;
+
+  assert.match(prompt, /keine.*Issues.*leere Liste|issues:\s*\[\]/i);
+  assert.match(prompt, /positive.*summary.*strengths/i);
+  assert.match(prompt, /kein Handlungsbedarf/i);
+});
+
 test('Reviewer-Prompt überlässt HTML, CTA, FAQ und Metadaten ausschließlich dem technischen Validator', () => {
   const prompt = buildArticleReviewerPrompt({
     briefing: validSeoBrief,
@@ -589,6 +601,38 @@ test('Reviewer-Prompt überlässt HTML, CTA, FAQ und Metadaten ausschließlich d
   assert.match(prompt, /Vorjahresvergleich.*nicht.*veraltet/i);
   assert.match(prompt, /statisches Preisrisiko.*konkreten Betrag/i);
   assert.doesNotMatch(prompt, /gegen.*HTML-Regeln/i);
+});
+
+test('Review-Service entfernt einen widersprüchlichen Hinweis ohne Handlungsbedarf', async () => {
+  const providerReview = {
+    ...validReview,
+    issues: [{
+      code: 'review_ok',
+      severity: 'warning',
+      message: 'Im Artikel sind keine ungelösten redaktionellen oder faktischen Blocker erkennbar.',
+      repairInstruction: 'Kein Handlungsbedarf.',
+      blocking: false,
+      sectionHeading: null,
+      evidenceExcerpt: null,
+      verificationType: 'none',
+      sourceRequired: false,
+      autoPublishBlocking: false
+    }]
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: validArticle,
+    sourceReferences
+  });
+
+  assert.deepEqual(result.value.issues, []);
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.requiresManualReview, false);
 });
 
 test('Review-Service entfernt technische Strukturblocker aus der redaktionellen Entscheidung', async () => {

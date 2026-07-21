@@ -206,6 +206,42 @@ test('Prüflisten-Partial rendert ohne Bericht einen sicheren Leerzustand', asyn
   assert.equal(html.trim(), '');
 });
 
+test('positiver Reviewtext ohne Handlungsbedarf wird nicht als Prüfpunkt dargestellt', async () => {
+  const report = buildFocusedRiskReport({
+    article: { contentHtml: '<h2>Fazit</h2><p>Der Artikel ist vollständig geprüft.</p>' },
+    review: {
+      issues: [{
+        code: 'review_ok',
+        severity: 'warning',
+        message: 'Im Artikel sind keine ungelösten redaktionellen oder faktischen Blocker erkennbar.',
+        repairInstruction: 'Kein Handlungsbedarf.',
+        blocking: false,
+        sectionHeading: null,
+        evidenceExcerpt: null,
+        verificationType: 'none',
+        sourceRequired: false,
+        autoPublishBlocking: false
+      }],
+      risks: {
+        currentClaims: false,
+        legalClaims: false,
+        privacyClaims: false,
+        softwareVersionClaims: false,
+        staticPrices: false
+      }
+    },
+    validation: { issues: [] },
+    sources: []
+  });
+
+  assert.deepEqual(report.items, []);
+  const html = await renderFile(riskChecklistPath, {
+    riskReview: report,
+    actionsEnabled: true
+  });
+  assert.equal(html.trim(), '');
+});
+
 test('vollständiger Abschluss-Review überstimmt ältere Artikel-Roh-Risiken', () => {
   const report = buildFocusedRiskReport({
     article: {

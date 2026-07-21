@@ -15,6 +15,11 @@ const TECHNICAL_ISSUE_CODE_PATTERNS = Object.freeze([
 const EXPLICIT_PRICE_AMOUNT_PATTERN = /(?:\b\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?\s*(?:€|EUR\b|Euro\b)|(?:€|EUR\b|Euro\b)\s*\d)/iu;
 const YEAR_PATTERN = /\b(?:19|20)\d{2}\b/gu;
 const YEAR_COMPARISON_PATTERN = /(?:vs\.?|versus|vergleich|gegenüber|vorjahr)/iu;
+const NO_ACTION_INSTRUCTION_PATTERNS = Object.freeze([
+  /^(?:aktuell\s+|derzeit\s+)?kein(?:\s+weiterer)?\s+handlungsbedarf(?:\s+erkennbar)?[.!]?$/iu,
+  /^(?:es\s+ist\s+)?keine\s+(?:reparatur|korrektur|änderung|anpassung|optimierung|überarbeitung)\s+(?:erforderlich|notwendig|nötig)[.!]?$/iu,
+  /^(?:es\s+ist\s+)?nichts\s+zu\s+(?:ändern|beheben|korrigieren|optimieren|überarbeiten)[.!]?$/iu
+]);
 const EXISTING_POST_REVIEW_TYPE = 'existing_post_targeted_optimization';
 const EDITORIALLY_MUTABLE_ARTICLE_FIELDS = Object.freeze([
   'title',
@@ -54,6 +59,24 @@ function learningRuleContextIssue(issue, context) {
 
 function blocksEditorialApproval(issue) {
   return issue?.blocking === true || issue?.autoPublishBlocking === true;
+}
+
+function issueInstruction(issue) {
+  const value = issue?.instruction ?? issue?.repairInstruction;
+  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+export function isActionableEditorialIssue(issue = {}) {
+  if (!issue || typeof issue !== 'object' || Array.isArray(issue)) return true;
+  if (blocksEditorialApproval(issue) || issue.sourceRequired === true) return true;
+
+  const verificationType = typeof issue.verificationType === 'string'
+    ? issue.verificationType.trim()
+    : 'none';
+  if (verificationType && verificationType !== 'none') return true;
+
+  const instruction = issueInstruction(issue);
+  return !NO_ACTION_INSTRUCTION_PATTERNS.some((pattern) => pattern.test(instruction));
 }
 
 function hasActiveRisk(risks) {
@@ -199,7 +222,8 @@ export function normalizeEditorialReview(review = {}, context = {}) {
     .filter((issue) => !learningRuleContextIssue(issue, context))
     .filter((issue) => (
       !isExistingPostReview || !unsubstantiatedExistingPostIssue(issue, context)
-    ));
+    ))
+    .filter(isActionableEditorialIssue);
   const hasEditorialBlocker = editorialIssues.some(blocksEditorialApproval);
   let risks = isExistingPostReview
     ? existingPostRisks(editorialIssues)

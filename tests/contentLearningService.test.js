@@ -217,6 +217,25 @@ test('blockierter oder veralteter Prüfbericht beendet den Lernjob ohne Beobacht
   assert.equal(stale.calls.finished[0].status, 'completed');
 });
 
+test('Prüfhinweise ohne Handlungsbedarf erzeugen weder Lernbeobachtung noch Providerkosten', async () => {
+  const deps = dependencies(reviewRow([issue({
+    reason: 'Im Artikel sind keine ungelösten redaktionellen oder faktischen Blocker erkennbar.',
+    instruction: 'Kein Handlungsbedarf.',
+    blocking: false,
+    verificationType: 'none',
+    sourceRequired: false
+  })]));
+
+  const result = await runContentLearningJob(context(), deps);
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.skipped, true);
+  assert.equal(result.observations, 0);
+  assert.equal(deps.calls.classified, 0);
+  assert.equal(deps.calls.reserved, 0);
+  assert.equal(deps.calls.recorded.length, 0);
+});
+
 test('offene ungeklärte Providerreservierung wird nicht erneut ausgeführt', async () => {
   const unknown = issue({ reason: 'Sonderfall ohne lokale Kategorie.', instruction: 'Individuell prüfen.' });
   const deps = dependencies(reviewRow([unknown]));

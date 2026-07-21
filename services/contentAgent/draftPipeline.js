@@ -11,6 +11,7 @@ import { ContentBudgetLimitError } from './contentCostService.js';
 import { buildFocusedRiskReport } from './riskReportService.js';
 import { AUTO_PUBLISH_POLICY_VERSION } from './autoPublishPolicy.js';
 import { normalizeEditorialReview } from './editorialReviewPolicy.js';
+import { normalizeGeneratedArticleTechnicalFields } from './generatedArticleTechnicalNormalizer.js';
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 import {
   DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
@@ -1337,7 +1338,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       );
     }
 
-    let currentArticle = await paidTextOperation({
+    let currentArticle = normalizeGeneratedArticleTechnicalFields(await paidTextOperation({
       stage: 'article_generation',
       operation: openaiService.generateArticle,
       input: {
@@ -1345,7 +1346,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
         pricingContext,
         learningRules: activeLearningRules(config, 'writer')
       }
-    });
+    }));
     const invalidArticleSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
     if (invalidArticleSources) return invalidArticleSources;
     if (articleRequiresSources(currentArticle)) {
@@ -1427,7 +1428,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           'Entferne alle statischen Preisangaben aus sämtlichen persistierten Artikelfeldern.'
         ));
       }
-      currentArticle = await paidTextOperation({
+      currentArticle = normalizeGeneratedArticleTechnicalFields(await paidTextOperation({
         stage: 'repair',
         stageId: `repair:${revision}`,
         operation: openaiService.repairArticle,
@@ -1438,7 +1439,7 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
           sourceReferences,
           learningRules: activeLearningRules(config, 'writer')
         }
-      });
+      }));
       const invalidRepairSources = await validateOptionalSourceBoundary(currentArticle.sourceReferences, sourceReferences);
       if (invalidRepairSources) return invalidRepairSources;
       if (articleRequiresSources(currentArticle)) {
