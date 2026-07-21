@@ -39,7 +39,7 @@ const EMPTY_RISKS = Object.freeze({
   softwareVersionClaims: false,
   staticPrices: false
 });
-export const EDITORIAL_REVIEW_POLICY_VERSION = '2026-07-16.2';
+export const EDITORIAL_REVIEW_POLICY_VERSION = '2026-07-21.1';
 
 function technicalIssue(issue) {
   const code = typeof issue?.code === 'string' ? issue.code.trim() : '';
@@ -206,8 +206,8 @@ function resolvedCurrentClaimRisk(risks, issues, context) {
     issue?.sourceRequired === true
     || ['source', 'date'].includes(issue?.verificationType)
   ));
-  return sourceIssues.length > 0
-    && sourceIssues.every((issue) => (
+  return sourceIssues.length === 0
+    || sourceIssues.every((issue) => (
       issue?.sourceRequired === true
       && ['source', 'date'].includes(issue?.verificationType)
       && !blocksEditorialApproval(issue)

@@ -15,7 +15,6 @@ import { normalizeGeneratedArticleTechnicalFields } from './generatedArticleTech
 import { normalizeInternalHref, normalizeTrustedInternalPaths } from './trustedInternalLinkService.js';
 import {
   DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
-  EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
   QUALITY_GATE_RECOVERY_AUDIT_KEY
 } from './contentJobRetryPolicy.js';
@@ -396,16 +395,6 @@ function authorizedEditorialReviewRecovery(value, maximumRevisions) {
     && value.status === 'authorized_after_editorial_scope_change'
     && value.stageId === `review:${maximumRevisions + 1}`
     && value.previousReviewStageId === `review:${maximumRevisions}`
-    && Number.isSafeInteger(Number(value.adminId))
-    && Number(value.adminId) > 0
-  );
-}
-
-function authorizedEditorialPolicyRecheck(value, stageId) {
-  return Boolean(
-    value
-    && value.status === 'authorized_after_editorial_policy_change'
-    && value.stageId === stageId
     && Number.isSafeInteger(Number(value.adminId))
     && Number(value.adminId) > 0
   );
@@ -1383,13 +1372,12 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
       sourceReferences,
       learningRules: activeLearningRules(config, 'reviewer')
     });
-    const editorialPolicyRecheck = await readPersistedStage(
-      EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY
-    );
+    const editorialReviewRecovery = await readPersistedStage(EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY);
     const recoveredReviewNormalizer = (stageId, input) => (
-      authorizedEditorialPolicyRecheck(editorialPolicyRecheck, stageId)
-        ? (value) => normalizeEditorialReview(value, input)
-        : null
+      editorialReviewRecovery?.status === 'authorized_after_editorial_scope_change'
+        && editorialReviewRecovery.previousReviewStageId === stageId
+        ? null
+        : (value) => normalizeEditorialReview(value, input)
     );
     let currentReview = null;
     if (validation.passed) {
@@ -1410,7 +1398,6 @@ export async function runDraftPipeline(input = {}, dependencies = {}) {
     const maximumRevisions = config.maxRevisions + (
       authorizedQualityRecovery(qualityRecovery, config.maxRevisions) ? 1 : 0
     );
-    const editorialReviewRecovery = await readPersistedStage(EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY);
     let revision = 0;
     const approved = () => validation.passed
       && currentReview?.passed === true

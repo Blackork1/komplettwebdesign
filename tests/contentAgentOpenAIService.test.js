@@ -790,6 +790,37 @@ test('Review-Service verwirft ein widersprüchliches currentClaims-Risiko bei be
   );
 });
 
+test('Review-Service verwirft ein unbegründetes currentClaims-Risiko ohne zugehörige Beanstandung', async () => {
+  const providerReview = {
+    ...validReview,
+    passed: false,
+    score: 92,
+    requiresManualReview: true,
+    risks: { ...validRisk, currentClaims: true },
+    issues: []
+  };
+  const service = createOpenAIContentService({
+    config,
+    client: createParseClient(providerReview)
+  });
+
+  const result = await service.reviewArticle({
+    briefing: validSeoBrief,
+    article: {
+      ...validArticle,
+      contentHtml: `${validArticle.contentHtml}<p><a href="${sourceReferences[0].url}">Offizielle Quelle</a></p>`
+    },
+    sourceReferences,
+    learningRules: []
+  });
+
+  assert.equal(result.value.passed, true);
+  assert.equal(result.value.score, 92);
+  assert.equal(result.value.requiresManualReview, false);
+  assert.deepEqual(result.value.risks, validRisk);
+  assert.deepEqual(result.value.issues, []);
+});
+
 test('Review-Service behält currentClaims ohne sichtbaren Quellenlink als manuellen Blocker', async () => {
   const providerReview = {
     ...validReview,
