@@ -668,7 +668,7 @@ test('Manifestfehler nach Qualitätsfreigabe bietet nur die kontrollierte Regels
     attempts: 8,
     max_attempts: 8,
     last_error: 'CONTENT_RULE_MANIFEST_MISMATCH',
-    current_stage: 'validation',
+    current_stage: 'review',
     post_id: null,
     open_provider_reservation_count: 0,
     quality_gate_manifest_repairable: true

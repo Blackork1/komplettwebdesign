@@ -123,6 +123,22 @@ test('früher Manifestfehler übernimmt den aktuellen Regelstand ohne künstlich
   assert.deepEqual(jobUpdate.params, [15940, 3]);
 });
 
+test('Manifestfehler nach redaktioneller Prüfung übernimmt den aktuellen Regelstand', async () => {
+  const module = await import('../repositories/contentJobRepository.js');
+  const row = fixture();
+  row.attempts = 5;
+  row.max_attempts = 5;
+  row.current_stage = 'review';
+  const db = createDb(row);
+
+  const result = await module.recoverQualityGateRuleManifestForAdmin({ jobId: 15940, adminId: 9 }, db);
+
+  assert.equal(result.recoveredStage, 'review');
+  assert.equal(result.job.max_attempts, 6);
+  const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.equal(runUpdate.params[6], 'review');
+});
+
 test('Manifestfehler übernimmt genau einmal den aktuellen Regelstand ohne Kosten- oder Inhaltsmutation', async () => {
   const module = await import('../repositories/contentJobRepository.js');
   assert.equal(typeof module.recoverQualityGateRuleManifestForAdmin, 'function');

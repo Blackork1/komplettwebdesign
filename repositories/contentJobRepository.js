@@ -1450,7 +1450,7 @@ function validQualityGateRuleManifestRecoveryState(row) {
     && Number(row.attempts) >= 0
     && Number(row.attempts) < POSTGRES_INTEGER_MAX
     && row.run_status === 'needs_manual_attention'
-    && row.current_stage === 'validation'
+    && ['validation', 'review'].includes(row.current_stage)
     && row.post_id == null
     && row.error_report_json?.code === 'CONTENT_RULE_MANIFEST_MISMATCH'
     && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)

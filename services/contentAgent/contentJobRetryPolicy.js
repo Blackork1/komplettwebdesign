@@ -156,7 +156,7 @@ export function canRecoverQualityGateRuleManifest({
   return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
     && status === 'needs_manual_attention'
     && lastError === 'CONTENT_RULE_MANIFEST_MISMATCH'
-    && currentStage === 'validation'
+    && ['validation', 'review'].includes(currentStage)
     && postId == null
     && Number(openReservationCount) === 0
     && Number.isSafeInteger(normalizedAttempts)
