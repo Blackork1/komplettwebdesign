@@ -8,8 +8,6 @@ import {
   QUALITY_GATE_RECOVERY_RETRY_CAP,
   EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY,
   EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP,
-  QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY,
-  QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP,
   EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY,
   EDITORIAL_REVIEW_RECOVERY_RETRY_CAP,
   DRAFT_PERSISTENCE_RECOVERY_AUDIT_KEY,
@@ -643,6 +641,7 @@ export async function retryContentJobForAdmin({ jobId }, db = pool) {
         WHERE job.job_type <> 'send_admin_review_notification'
           AND job.status IN ('failed', 'needs_manual_attention')
           AND COALESCE(job.last_error, '') <> 'provider_execution_uncertain'
+          AND COALESCE(job.last_error, '') <> 'CONTENT_RULE_MANIFEST_MISMATCH'
           AND (
             job.job_type NOT IN ('optimize_existing_post', 'revalidate_existing_post_revision')
             OR (
@@ -1443,12 +1442,13 @@ function hasAnyBudgetStage(stageResults, stageId) {
 }
 
 function validQualityGateRuleManifestRecoveryState(row) {
-  const qualityRecovery = row?.stage_results_json?.[QUALITY_GATE_RECOVERY_AUDIT_KEY];
   return row
     && ['generate_weekly_draft', 'generate_manual_draft'].includes(row.job_type)
     && row.job_status === 'needs_manual_attention'
     && row.last_error === 'CONTENT_RULE_MANIFEST_MISMATCH'
-    && Number(row.attempts) === QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP - 1
+    && Number.isInteger(Number(row.attempts))
+    && Number(row.attempts) >= 0
+    && Number(row.attempts) < POSTGRES_INTEGER_MAX
     && row.run_status === 'needs_manual_attention'
     && row.current_stage === 'validation'
     && row.post_id == null
@@ -1456,15 +1456,11 @@ function validQualityGateRuleManifestRecoveryState(row) {
     && hasSelfConsistentRuleManifest(row.runtime_snapshot_json)
     && row.runtime_snapshot_json.ruleManifestHash !== CONTENT_AGENT_RULE_MANIFEST_HASH
     && !hasOpenProviderReservation(row.stage_results_json)
-    && hasSettledStage(row.stage_results_json, 'article_generation')
-    && hasSettledStage(row.stage_results_json, 'repair:2')
-    && hasOnlyRepairableQualityIssues(row.stage_results_json, 'validation:2')
-    && qualityRecovery?.status === 'authorized_after_quality_gate'
-    && qualityRecovery?.stageId === 'repair:3'
-    && Number(qualityRecovery?.baseMaxRevisions) === 2
-    && Number(qualityRecovery?.additionalRevisionCount) === 1
-    && !Object.hasOwn(row.stage_results_json, 'repair:3')
-    && !hasAnyBudgetStage(row.stage_results_json, 'repair:3');
+    && hasSettledStage(row.stage_results_json, 'article_generation');
+}
+
+function manifestRecoveryAuditKey(previousManifestHash) {
+  return `rule_manifest_recovery:${previousManifestHash.slice(0, 12)}:${CONTENT_AGENT_RULE_MANIFEST_HASH.slice(0, 12)}`;
 }
 
 export async function recoverQualityGateRuleManifestForAdmin({
@@ -1507,17 +1503,18 @@ export async function recoverQualityGateRuleManifestForAdmin({
       [jobId]
     );
     const state = rows[0];
-    if (!validQualityGateRuleManifestRecoveryState(state)
-        || Object.hasOwn(
-          state.stage_results_json,
-          QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY
-        )) {
+    if (!validQualityGateRuleManifestRecoveryState(state)) {
       await client.query('COMMIT');
       return null;
     }
 
     const previousManifestHash = state.runtime_snapshot_json.ruleManifestHash;
-    const recoveredStage = 'repair:3';
+    const auditKey = manifestRecoveryAuditKey(previousManifestHash);
+    if (Object.hasOwn(state.stage_results_json, auditKey)) {
+      await client.query('COMMIT');
+      return null;
+    }
+    const recoveredStage = state.current_stage;
     const runResult = await client.query(
       `
         UPDATE content_runs
@@ -1530,7 +1527,7 @@ export async function recoverQualityGateRuleManifestForAdmin({
               $2::text,
               jsonb_build_object(
                 'status', 'authorized_after_manifest_mismatch',
-                'stageId', 'repair:3',
+                'stageId', $7::text,
                 'previousManifestHash', $5::text,
                 'currentManifestHash', $4::text,
                 'adminId', $6::bigint,
@@ -1539,8 +1536,8 @@ export async function recoverQualityGateRuleManifestForAdmin({
             ),
             error_report_json = jsonb_build_object(
               'code', 'content_rule_manifest_recovery_authorized',
-              'stage', 'repair:3',
-              'message', 'Der aktuelle signierte Regelstand wurde für die ausstehende Strukturreparatur freigegeben.'
+              'stage', $7::text,
+              'message', 'Der aktuelle signierte Regelstand wurde für die sichere Fortsetzung des vorhandenen Entwurfs freigegeben.'
             ),
             finished_at = NULL
         WHERE id = $1
@@ -1552,11 +1549,12 @@ export async function recoverQualityGateRuleManifestForAdmin({
       `,
       [
         state.run_id,
-        QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY,
+        auditKey,
         CONTENT_AGENT_RULE_MANIFEST,
         CONTENT_AGENT_RULE_MANIFEST_HASH,
         previousManifestHash,
-        adminId
+        adminId,
+        recoveredStage
       ]
     );
     if (!runResult.rows[0]) {
@@ -1568,7 +1566,7 @@ export async function recoverQualityGateRuleManifestForAdmin({
       `
         UPDATE content_jobs
         SET status = 'queued',
-            max_attempts = LEAST($2, GREATEST(max_attempts, attempts + 1)),
+            max_attempts = GREATEST(max_attempts, attempts + 1),
             run_after = NOW(),
             locked_at = NULL,
             locked_by = NULL,
@@ -1578,11 +1576,11 @@ export async function recoverQualityGateRuleManifestForAdmin({
         WHERE id = $1
           AND status = 'needs_manual_attention'
           AND last_error = 'CONTENT_RULE_MANIFEST_MISMATCH'
-          AND attempts = $3
-          AND attempts < $2
+          AND attempts = $2
+          AND attempts < 2147483647
         RETURNING *
       `,
-      [jobId, QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP, attempts]
+      [jobId, attempts]
     );
     if (!jobResult.rows[0]) {
       throw new Error('Der Manifestjob konnte nicht atomar erneut eingereiht werden.');
@@ -1593,7 +1591,7 @@ export async function recoverQualityGateRuleManifestForAdmin({
       job: jobResult.rows[0],
       runId: state.run_id,
       recoveredStage,
-      auditKey: QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY
+      auditKey
     };
   } catch (error) {
     if (transactionStarted) await rollbackRecoveryQuietly(client);

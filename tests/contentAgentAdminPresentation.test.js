@@ -679,14 +679,37 @@ test('Manifestfehler nach Qualitätsfreigabe bietet nur die kontrollierte Regels
   assert.equal(job.canRecoverQualityGateManifest, true);
   assert.equal(
     job.qualityGateManifestRecoveryActionLabel,
-    'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
+    'Aktuellen Regelstand übernehmen und Entwurf fortsetzen'
   );
 });
 
-test('Manifestwiederaufnahme bleibt mit Providerreservierung oder nach Versuch neun gesperrt', () => {
+test('früher Manifestfehler bietet statt normalem Retry die bestätigte Regelstand-Übernahme an', () => {
+  const [job] = buildJobListPresentation([{
+    id: 15940,
+    job_type: 'generate_weekly_draft',
+    status: 'needs_manual_attention',
+    attempts: 3,
+    max_attempts: 3,
+    last_error: 'CONTENT_RULE_MANIFEST_MISMATCH',
+    current_stage: 'validation',
+    post_id: null,
+    open_provider_reservation_count: 0,
+    quality_gate_manifest_repairable: true
+  }]);
+
+  assert.equal(job.canRetry, false);
+  assert.equal(job.canRecoverQualityGate, false);
+  assert.equal(job.canRecoverQualityGateManifest, true);
+  assert.equal(
+    job.qualityGateManifestRecoveryActionLabel,
+    'Aktuellen Regelstand übernehmen und Entwurf fortsetzen'
+  );
+});
+
+test('Manifestwiederaufnahme bleibt mit Providerreservierung oder außerhalb des PostgreSQL-Versuchsbereichs gesperrt', () => {
   for (const input of [
     { attempts: 8, openReservationCount: 1 },
-    { attempts: 9, openReservationCount: 0 }
+    { attempts: 2147483647, openReservationCount: 0 }
   ]) {
     const [job] = buildJobListPresentation([{
       id: 1,

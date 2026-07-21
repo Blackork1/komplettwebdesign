@@ -1746,7 +1746,7 @@ export function buildJobListPresentation(rows = []) {
         : null,
       canRecoverQualityGateManifest,
       qualityGateManifestRecoveryActionLabel: canRecoverQualityGateManifest
-        ? 'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
+        ? 'Aktuellen Regelstand übernehmen und Entwurf fortsetzen'
         : null,
       canRecoverEditorialReview: canRecoverEditorial,
       editorialReviewRecoveryKind,

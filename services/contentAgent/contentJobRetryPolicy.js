@@ -6,9 +6,6 @@ export const QUALITY_GATE_RECOVERY_AUDIT_KEY = 'quality_gate_recovery:structure_
 export const EDITORIAL_REVIEW_POLICY_RECHECK_RETRY_CAP = 7;
 export const EDITORIAL_REVIEW_POLICY_RECHECK_AUDIT_KEY =
   'editorial_review_policy_recovery:nonblocking_current_claims:attempt-7';
-export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP = 9;
-export const QUALITY_GATE_RULE_MANIFEST_RECOVERY_AUDIT_KEY =
-  'rule_manifest_recovery:quality_gate:attempt-8';
 export const EDITORIAL_REVIEW_RECOVERY_RETRY_CAP = 10;
 export const EDITORIAL_REVIEW_RECOVERY_AUDIT_KEY =
   'editorial_review_recovery:review_scope:attempt-9';
@@ -45,6 +42,7 @@ export function canRetryContentJobManually({
     && normalizedAttempts < ADMIN_CONTENT_JOB_RETRY_CAP;
   return existingEditorialPolicyRetry || (
     lastError !== 'provider_execution_uncertain'
+    && lastError !== 'CONTENT_RULE_MANIFEST_MISMATCH'
     && jobType !== ADMIN_REVIEW_NOTIFICATION_JOB
     && !JOBS_WITH_DEDICATED_RECOVERY.has(jobType)
     && RETRYABLE_JOB_STATUSES.has(status)
@@ -154,13 +152,16 @@ export function canRecoverQualityGateRuleManifest({
   openReservationCount,
   manifestRepairable = false
 } = {}) {
+  const normalizedAttempts = Number(attempts);
   return ['generate_weekly_draft', 'generate_manual_draft'].includes(jobType)
     && status === 'needs_manual_attention'
-    && Number(attempts) === QUALITY_GATE_RULE_MANIFEST_RECOVERY_RETRY_CAP - 1
     && lastError === 'CONTENT_RULE_MANIFEST_MISMATCH'
     && currentStage === 'validation'
     && postId == null
     && Number(openReservationCount) === 0
+    && Number.isSafeInteger(normalizedAttempts)
+    && normalizedAttempts >= 0
+    && normalizedAttempts < 2147483647
     && manifestRepairable === true;
 }
 

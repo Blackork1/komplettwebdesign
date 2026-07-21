@@ -535,6 +535,7 @@ test('Admin-Retry öffnet nur zulässige terminale Nicht-Bestandsruns unter dems
   const { sql } = db.calls[0];
   assert.match(sql, /eligible_retry AS MATERIALIZED/i);
   assert.match(sql, /COALESCE\(job\.last_error, ''\) <> 'provider_execution_uncertain'/i);
+  assert.match(sql, /COALESCE\(job\.last_error, ''\) <> 'CONTENT_RULE_MANIFEST_MISMATCH'/i);
   assert.match(sql, /stage_result\.value ->> 'status' = 'reserved'/i);
   assert.match(sql, /candidate\.job_type NOT IN \('optimize_existing_post', 'revalidate_existing_post_revision'\)/i);
   assert.match(sql, /candidate\.run_status IN \('failed', 'needs_manual_attention'\)/i);

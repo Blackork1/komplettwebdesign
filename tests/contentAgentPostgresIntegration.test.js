@@ -1493,8 +1493,10 @@ test('echtes PostgreSQL: vorzeitig gestoppter Manifestfehler wird ohne Inhaltsve
     const jobId = Number(inserted.rows[0].job_id);
 
     const result = await recoverQualityGateRuleManifestForAdmin({ jobId, adminId: 9 }, pool);
+    const expectedAuditKey = `rule_manifest_recovery:${previousHash.slice(0, 12)}:${CONTENT_AGENT_RULE_MANIFEST_HASH.slice(0, 12)}`;
 
-    assert.equal(result.recoveredStage, 'repair:3');
+    assert.equal(result.recoveredStage, 'validation');
+    assert.equal(result.auditKey, expectedAuditKey);
     const job = (await pool.query(
       'SELECT status, attempts, max_attempts, last_error FROM content_jobs WHERE id = $1',
       [jobId]
@@ -1513,7 +1515,8 @@ test('echtes PostgreSQL: vorzeitig gestoppter Manifestfehler wird ohne Inhaltsve
     assert.deepEqual(run.runtime_snapshot_json.allowedInternalLinks, ['/kontakt']);
     assert.equal(run.stage_results_json.article_generation.value.title, 'Bezahlter Artikel');
     assert.equal(run.stage_results_json['repair:2'].value.title, 'Zweite Reparatur');
-    const audit = run.stage_results_json['rule_manifest_recovery:quality_gate:attempt-8'];
+    const audit = run.stage_results_json[expectedAuditKey];
+    assert.equal(audit.stageId, 'validation');
     assert.equal(audit.previousManifestHash, previousHash);
     assert.equal(audit.currentManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
 

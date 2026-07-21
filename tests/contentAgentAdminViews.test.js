@@ -1217,16 +1217,16 @@ test('Jobliste erklärt die sichere Manifestübernahme nach dem kostenfreien Vor
       canRecoverQualityGate: false,
       canRecoverQualityGateManifest: true,
       qualityGateManifestRecoveryActionLabel:
-        'Aktuellen Regelstand übernehmen und Strukturreparatur fortsetzen'
+        'Aktuellen Regelstand übernehmen und Entwurf fortsetzen'
     }]
   });
 
   assert.match(html, /action="\/admin\/content-agent\/jobs\/1\/recover-rule-manifest"/);
   assert.match(html, /name="_csrf" value="csrf-test"/);
   assert.match(html, /name="confirmed" value="true"/);
-  assert.match(html, /Der abgebrochene Versuch hat keinen OpenAI-Aufruf ausgelöst/);
-  assert.match(html, /Themenrecherche, SEO-Briefing und Artikel bleiben erhalten/);
-  assert.match(html, /nächste Strukturreparatur und Prüfung verursachen reguläre OpenAI-Kosten/);
+  assert.match(html, /Der abgebrochene Versuch hat keinen neuen OpenAI-Aufruf ausgelöst/);
+  assert.match(html, /Bereits bezahlte Recherche-, Briefing- und Artikelstufen bleiben erhalten/);
+  assert.match(html, /Nur noch nicht ausgeführte Providerstufen können reguläre Kosten verursachen/);
   assert.doesNotMatch(html, /jobs\/1\/retry|Mögliche doppelte Providerkosten/);
 });
 

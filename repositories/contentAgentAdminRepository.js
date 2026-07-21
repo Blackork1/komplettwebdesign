@@ -374,17 +374,12 @@ export function createContentAgentAdminRepository(db = pool) {
             ) AS quality_gate_editorial_repairable,
             (
               r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
-              AND r.stage_results_json
-                -> 'quality_gate_recovery:structure_contract:attempt-7'
-                ->> 'status' = 'authorized_after_quality_gate'
-              AND r.stage_results_json
-                -> 'quality_gate_recovery:structure_contract:attempt-7'
-                ->> 'stageId' = 'repair:3'
-              AND NOT (r.stage_results_json ? 'repair:3')
-              AND NOT EXISTS (
+              AND r.stage_results_json ? 'article_generation'
+              AND EXISTS (
                 SELECT 1
-                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
-                WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+                FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+                WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:article_generation$'
+                  AND settled.value ->> 'status' = 'settled'
               )
             ) AS quality_gate_manifest_repairable,
             (
@@ -1330,17 +1325,12 @@ export function createContentAgentAdminRepository(db = pool) {
           ) AS quality_gate_editorial_repairable,
           (
             r.error_report_json ->> 'code' = 'CONTENT_RULE_MANIFEST_MISMATCH'
-            AND r.stage_results_json
-              -> 'quality_gate_recovery:structure_contract:attempt-7'
-              ->> 'status' = 'authorized_after_quality_gate'
-            AND r.stage_results_json
-              -> 'quality_gate_recovery:structure_contract:attempt-7'
-              ->> 'stageId' = 'repair:3'
-            AND NOT (r.stage_results_json ? 'repair:3')
-            AND NOT EXISTS (
+            AND r.stage_results_json ? 'article_generation'
+            AND EXISTS (
               SELECT 1
-              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS repair_budget(key, value)
-              WHERE repair_budget.key ~ '^budget:[0-9]{4}-[0-9]{2}:repair:3$'
+              FROM jsonb_each(COALESCE(r.stage_results_json, '{}'::jsonb)) AS settled(key, value)
+              WHERE settled.key ~ '^budget:[0-9]{4}-[0-9]{2}:article_generation$'
+                AND settled.value ->> 'status' = 'settled'
             )
           ) AS quality_gate_manifest_repairable,
           (

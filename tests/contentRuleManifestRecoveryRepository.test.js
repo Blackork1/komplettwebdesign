@@ -80,7 +80,7 @@ function createDb(row, { failRunUpdate = false } = {}) {
           id: row.job_id,
           status: 'queued',
           attempts: row.attempts,
-          max_attempts: params[1]
+          max_attempts: Math.max(row.max_attempts, row.attempts + 1)
         }] };
       }
       throw new Error(`Unerwartete SQL-Abfrage: ${normalized}`);
@@ -95,6 +95,34 @@ function createDb(row, { failRunUpdate = false } = {}) {
   };
 }
 
+test('früher Manifestfehler übernimmt den aktuellen Regelstand ohne künstliche Versuch-8-Voraussetzung', async () => {
+  const module = await import('../repositories/contentJobRepository.js');
+  const row = fixture();
+  row.attempts = 3;
+  row.max_attempts = 3;
+  delete row.stage_results_json['quality_gate_recovery:structure_contract:attempt-7'];
+  const previousHash = row.runtime_snapshot_json.ruleManifestHash;
+  const expectedAuditKey = `rule_manifest_recovery:${previousHash.slice(0, 12)}:${CONTENT_AGENT_RULE_MANIFEST_HASH.slice(0, 12)}`;
+  const db = createDb(row);
+
+  const result = await module.recoverQualityGateRuleManifestForAdmin({ jobId: 15940, adminId: 9 }, db);
+
+  assert.equal(result.job.max_attempts, 4);
+  assert.equal(result.recoveredStage, 'validation');
+  assert.equal(result.auditKey, expectedAuditKey);
+  const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
+  assert.equal(runUpdate.params[1], expectedAuditKey);
+  assert.deepEqual(runUpdate.params.slice(2), [
+    CONTENT_AGENT_RULE_MANIFEST,
+    CONTENT_AGENT_RULE_MANIFEST_HASH,
+    previousHash,
+    9,
+    'validation'
+  ]);
+  const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
+  assert.deepEqual(jobUpdate.params, [15940, 3]);
+});
+
 test('Manifestfehler übernimmt genau einmal den aktuellen Regelstand ohne Kosten- oder Inhaltsmutation', async () => {
   const module = await import('../repositories/contentJobRepository.js');
   assert.equal(typeof module.recoverQualityGateRuleManifestForAdmin, 'function');
@@ -103,10 +131,11 @@ test('Manifestfehler übernimmt genau einmal den aktuellen Regelstand ohne Koste
   const db = createDb(row);
 
   const result = await module.recoverQualityGateRuleManifestForAdmin({ jobId: 1, adminId: 9 }, db);
+  const expectedAuditKey = `rule_manifest_recovery:${previousHash.slice(0, 12)}:${CONTENT_AGENT_RULE_MANIFEST_HASH.slice(0, 12)}`;
 
   assert.equal(result.job.max_attempts, 9);
-  assert.equal(result.recoveredStage, 'repair:3');
-  assert.equal(result.auditKey, 'rule_manifest_recovery:quality_gate:attempt-8');
+  assert.equal(result.recoveredStage, 'validation');
+  assert.equal(result.auditKey, expectedAuditKey);
   assert.equal(db.runUpdates, 1);
   assert.equal(db.jobUpdates, 1);
   const runUpdate = db.events.find(({ sql }) => /UPDATE content_runs/i.test(sql));
@@ -116,32 +145,36 @@ test('Manifestfehler übernimmt genau einmal den aktuellen Regelstand ohne Koste
   assert.doesNotMatch(runUpdate.sql, /stage_results_json\s*-/i);
   assert.deepEqual(runUpdate.params, [
     11,
-    'rule_manifest_recovery:quality_gate:attempt-8',
+    expectedAuditKey,
     CONTENT_AGENT_RULE_MANIFEST,
     CONTENT_AGENT_RULE_MANIFEST_HASH,
     previousHash,
-    9
+    9,
+    'validation'
   ]);
   const jobUpdate = db.events.find(({ sql }) => /UPDATE content_jobs/i.test(sql));
-  assert.deepEqual(jobUpdate.params, [1, 9, 8]);
+  assert.deepEqual(jobUpdate.params, [1, 8]);
 });
 
 for (const [label, mutate] of [
   ['manipuliertem alten Manifesthash', (row) => {
     row.runtime_snapshot_json.ruleManifestHash = '0'.repeat(64);
   }],
-  ['fehlender Qualitätsfreigabe', (row) => {
-    delete row.stage_results_json['quality_gate_recovery:structure_contract:attempt-7'];
+  ['fehlender bezahlter Artikelerstellung', (row) => {
+    delete row.stage_results_json['budget:2026-07:article_generation'];
   }],
-  ['bereits vorhandener dritter Reparatur', (row) => {
-    row.stage_results_json['repair:3'] = { value: { title: 'Schon ausgeführt' } };
+  ['offener Providerreservierung', (row) => {
+    row.stage_results_json['budget:2026-07:review'] = { status: 'reserved' };
   }],
-  ['bereits reservierter dritter Reparatur', (row) => {
-    row.stage_results_json['budget:2026-07:repair:3'] = { status: 'reserved' };
+  ['bereits protokollierter gleicher Manifestübernahme', (row) => {
+    const previousHash = row.runtime_snapshot_json.ruleManifestHash;
+    row.stage_results_json[
+      `rule_manifest_recovery:${previousHash.slice(0, 12)}:${CONTENT_AGENT_RULE_MANIFEST_HASH.slice(0, 12)}`
+    ] = { status: 'authorized_after_manifest_mismatch' };
   }],
-  ['ausgeschöpftem Manifest-Sonderversuch', (row) => {
-    row.attempts = 9;
-    row.max_attempts = 9;
+  ['ausgeschöpftem PostgreSQL-Versuchsbereich', (row) => {
+    row.attempts = 2147483647;
+    row.max_attempts = 2147483647;
   }]
 ]) {
   test(`Manifestwiederaufnahme bleibt bei ${label} gesperrt`, async () => {
