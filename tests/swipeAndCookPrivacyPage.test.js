@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import express from 'express';
 
 import { footerNavigation } from '../data/siteNavigation.js';
 import { INDEXABLE_STATIC_ROUTES } from '../helpers/seoPagePolicy.js';
+import staticPagesRouter from '../routes/staticPages.js';
 
 function read(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -22,6 +24,7 @@ test('registers the canonical Swipe & Cook privacy route with its own CSS', () =
 test('publishes the full approved privacy information without internal paths', () => {
   const view = read('views/static/swipeandcook-datenschutz.ejs');
 
+  assert.match(view, /id="hero"/);
   assert.match(view, /Datenschutzhinweise für die App/);
   assert.match(view, /Konto und Anmeldung/);
   assert.match(view, /Rezept- und Nutzungsdaten/);
@@ -34,6 +37,34 @@ test('publishes the full approved privacy information without internal paths', (
   assert.match(view, /kontakt@komplettwebdesign\.de/);
   assert.match(view, /href="\/datenschutz"/);
   assert.doesNotMatch(view, /docs\/privacy|s0-google-apple|Status:\s*Entwurf/i);
+});
+
+test('serves both privacy routes successfully over HTTP', async () => {
+  const app = express();
+  app.use((_req, res, next) => {
+    res.render = (view, locals = {}) => res.status(200).json({ view, locals });
+    next();
+  });
+  app.use(staticPagesRouter);
+
+  const server = app.listen(0, '127.0.0.1');
+
+  try {
+    await new Promise((resolve) => server.once('listening', resolve));
+    const { port } = server.address();
+
+    const swipeResponse = await fetch(`http://127.0.0.1:${port}/swipeandcook-datenschutz`);
+    assert.equal(swipeResponse.status, 200);
+    assert.equal((await swipeResponse.json()).view, 'static/swipeandcook-datenschutz');
+
+    const generalResponse = await fetch(`http://127.0.0.1:${port}/datenschutz`);
+    assert.equal(generalResponse.status, 200);
+    assert.equal((await generalResponse.json()).view, 'static/datenschutz');
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (
+      error ? reject(error) : resolve()
+    )));
+  }
 });
 
 test('links the page from the legal footer and static sitemap', () => {
