@@ -29,6 +29,7 @@ export const INDEXABLE_STATIC_ROUTES = [
   { path: '/branchen', changefreq: 'monthly', priority: 0.75 },
   { path: '/faq', changefreq: 'monthly', priority: 0.7 },
   { path: '/datenschutz', changefreq: 'yearly', priority: 0.2 },
+  { path: '/swipeandcook-datenschutz', changefreq: 'yearly', priority: 0.2 },
   { path: '/hinweise-rechtstexte-seo-datenschutz', changefreq: 'yearly', priority: 0.2 },
   { path: '/impressum', changefreq: 'yearly', priority: 0.2 },
   { path: '/webdesign-cafe/kosten', changefreq: 'yearly', priority: 0.4 },

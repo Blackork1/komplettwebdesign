@@ -267,6 +267,13 @@
       "hash": "82de11089fe3",
       "bytes": 16398
     },
+    "swipeandcook-privacy.css": {
+      "source": "swipeandcook-privacy.css",
+      "output": "swipeandcook-privacy.min.css",
+      "href": "/swipeandcook-privacy.min.css?v=1807b0b43a4e",
+      "hash": "1807b0b43a4e",
+      "bytes": 3071
+    },
     "unified-hero.css": {
       "source": "unified-hero.css",
       "output": "unified-hero.min.css",

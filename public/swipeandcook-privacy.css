@@ -1,0 +1,196 @@
+.swipe-privacy-page {
+  --swipe-navy: #071f32;
+  --swipe-navy-soft: #0b2a46;
+  --swipe-blue: #0b6fc2;
+  --swipe-blue-soft: #e9f4fc;
+  --swipe-text: #152633;
+  --swipe-muted: #60717e;
+  --swipe-line: #dbe4ea;
+  background: #fff;
+  color: var(--swipe-text);
+}
+
+.swipe-privacy-hero {
+  padding: clamp(5.5rem, 9vw, 8rem) 0 clamp(2.75rem, 5vw, 4.5rem);
+  border-bottom: 1px solid var(--swipe-line);
+  background: linear-gradient(155deg, #f8fcff 0%, var(--swipe-blue-soft) 100%);
+}
+
+.swipe-privacy-hero__inner,
+.swipe-privacy-content {
+  max-width: 860px;
+}
+
+.swipe-privacy-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  margin: 0 0 1rem;
+  color: var(--swipe-blue);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.swipe-privacy-eyebrow span {
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background: #4cff00;
+  box-shadow: 0 0 0 .28rem rgba(76, 255, 0, .14);
+}
+
+.swipe-privacy-hero h1 {
+  max-width: 760px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--swipe-navy);
+  font-size: clamp(2.35rem, 6vw, 4.6rem);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.swipe-privacy-lead {
+  max-width: 680px;
+  margin: 1.25rem 0 0;
+  color: #385162;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.55;
+}
+
+.swipe-privacy-date {
+  margin: 1.25rem 0 0;
+  color: var(--swipe-muted);
+  font-size: .9rem;
+  font-weight: 650;
+}
+
+.swipe-privacy-content {
+  padding-top: clamp(2rem, 5vw, 4rem);
+  padding-bottom: clamp(4rem, 7vw, 7rem);
+}
+
+.swipe-privacy-summary {
+  margin-bottom: 2rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid #c9e3f5;
+  border-radius: 1rem;
+  background: #f4faff;
+}
+
+.swipe-privacy-summary h2 {
+  margin: 0 0 .55rem;
+  color: var(--swipe-navy);
+  font-size: 1.25rem;
+}
+
+.swipe-privacy-summary p,
+.swipe-privacy-intro {
+  margin: 0;
+  color: #3e5667;
+  line-height: 1.7;
+}
+
+.swipe-privacy-intro {
+  margin-bottom: 2.25rem;
+}
+
+.swipe-privacy-article > section {
+  padding: clamp(2rem, 5vw, 3.5rem) 0;
+  border-top: 1px solid var(--swipe-line);
+}
+
+.swipe-privacy-article h2,
+.swipe-privacy-article h3 {
+  color: var(--swipe-navy);
+}
+
+.swipe-privacy-article h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  letter-spacing: -.025em;
+}
+
+.swipe-privacy-article h3 {
+  margin: 1.75rem 0 .65rem;
+  font-size: 1.2rem;
+}
+
+.swipe-privacy-article p,
+.swipe-privacy-article li {
+  color: #425766;
+  line-height: 1.75;
+}
+
+.swipe-privacy-article ul {
+  padding-left: 1.3rem;
+}
+
+.swipe-privacy-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.swipe-privacy-provider {
+  padding: 1.25rem;
+  border: 1px solid var(--swipe-line);
+  border-radius: .9rem;
+  background: #fbfcfd;
+}
+
+.swipe-privacy-provider h3 {
+  margin: 0 0 .7rem;
+}
+
+.swipe-privacy-provider p:last-child {
+  margin-bottom: 0;
+}
+
+.swipe-privacy-article .swipe-privacy-contact {
+  margin-top: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border: 0;
+  border-radius: 1rem;
+  background: var(--swipe-navy);
+}
+
+.swipe-privacy-contact h2,
+.swipe-privacy-contact p {
+  color: #fff;
+}
+
+.swipe-privacy-contact a {
+  color: #8ed6ff;
+  font-weight: 750;
+}
+
+.swipe-privacy-page a:focus-visible {
+  outline: 3px solid #4cff00;
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .swipe-privacy-hero {
+    padding-top: 4.75rem;
+  }
+
+  .swipe-privacy-hero h1 {
+    font-size: 2.35rem;
+  }
+
+  .swipe-privacy-content {
+    padding-inline: 1.1rem;
+  }
+
+  .swipe-privacy-provider-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .swipe-privacy-article p,
+  .swipe-privacy-article li {
+    font-size: .98rem;
+  }
+}

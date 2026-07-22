@@ -240,6 +240,19 @@ router.get('/datenschutz', (req, res) => {
 });
 
 /**
+ *  GET /swipeandcook-datenschutz
+ *  app-specific privacy information
+ */
+router.get('/swipeandcook-datenschutz', (_req, res) => {
+  res.render('static/swipeandcook-datenschutz', {
+    title: 'Swipe & Cook Datenschutz | Komplett Webdesign',
+    description: 'Datenschutzhinweise zur Verarbeitung von Konto-, Anmelde- und Rezeptdaten in der App Swipe & Cook.',
+    currentPathname: '/swipeandcook-datenschutz',
+    extraCssAssets: ['swipeandcook-privacy.css']
+  });
+});
+
+/**
  *  GET /hinweise-rechtstexte-seo-datenschutz
  *  notes referenced by contact form consent
  */

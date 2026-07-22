@@ -1,0 +1,111 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main class="swipe-privacy-page" id="main-content">
+  <section class="swipe-privacy-hero" aria-labelledby="swipe-privacy-title">
+    <div class="container swipe-privacy-hero__inner">
+      <p class="swipe-privacy-eyebrow"><span aria-hidden="true"></span>Swipe &amp; Cook</p>
+      <h1 id="swipe-privacy-title">Datenschutzhinweise für die App „Swipe &amp; Cook“</h1>
+      <p class="swipe-privacy-lead">Wie deine Daten bei Konto, Anmeldung und persönlicher Rezeptnutzung verarbeitet werden.</p>
+      <p class="swipe-privacy-date">Stand: 22. Juli 2026</p>
+    </div>
+  </section>
+
+  <div class="container swipe-privacy-content">
+    <aside class="swipe-privacy-summary" aria-label="Kurz zusammengefasst">
+      <h2>Kurz zusammengefasst</h2>
+      <p>Swipe &amp; Cook nutzt nur die für Anmeldung und App-Funktionen erforderlichen Daten. Passwörter und Google- oder Apple-Tokens werden nicht im eigenen Produktbackend gespeichert.</p>
+    </aside>
+
+    <p class="swipe-privacy-intro">Diese Hinweise ergänzen die <a href="/datenschutz">allgemeine Datenschutzerklärung</a>. Die dort genannten Angaben zum Verantwortlichen, zu den Kontaktdaten und zu den allgemeinen Rechten gelten auch für die App „Swipe &amp; Cook“.</p>
+
+    <article class="swipe-privacy-article">
+      <section aria-labelledby="swipe-purpose">
+        <h2 id="swipe-purpose">1. Wofür Daten verarbeitet werden</h2>
+
+        <h3>Konto und Anmeldung</h3>
+        <p>Für Registrierung, Anmeldung und Kontoschutz verarbeitet Swipe &amp; Cook je nach gewählter Methode:</p>
+        <ul>
+          <li>E-Mail-Adresse beziehungsweise von Apple bereitgestellte Private-Relay-Adresse;</li>
+          <li>technischen Provider und eine eindeutige Providerkennung;</li>
+          <li>interne, zufällig erzeugte Benutzerkennung;</li>
+          <li>Zeitpunkte von Anmeldung, Bestätigung, Verknüpfung, Entfernung und Sitzungsnutzung;</li>
+          <li>pseudonymisierte Sicherheitsmerkmale und technische Anfragekennungen.</li>
+        </ul>
+        <p>Swipe &amp; Cook speichert keine Passwörter und keine Google- oder Apple-Tokens im eigenen Produktbackend. E-Mail-Codes sind sechs Stellen lang, zehn Minuten gültig und werden im eigenen Backend nur als kryptografischer Hash gespeichert.</p>
+        <p>Die Verarbeitung ist erforderlich, um das Nutzerkonto und die vereinbarten Anmeldefunktionen bereitzustellen (Art. 6 Abs. 1 Buchst. b DSGVO). Die Missbrauchsabwehr, Protokollierung sicherheitsrelevanter Änderungen und Störungsanalyse beruhen zusätzlich auf dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb (Art. 6 Abs. 1 Buchst. f DSGVO).</p>
+
+        <h3>Rezept- und Nutzungsdaten</h3>
+        <p>Bei der Verwendung der App können persönliche Rezeptaktionen verarbeitet werden, insbesondere Likes, gespeicherte Rezepte, Bewertungen, Feedback, ausgeblendete Rezepte, lokales Archiv, Feed-Nutzung, Kochabschlüsse und Anfragen zur Rezeptgenerierung. Diese Daten werden ausschließlich der internen Benutzerkennung zugeordnet. Die Verarbeitung erfolgt zur Bereitstellung der App-Funktionen nach Art. 6 Abs. 1 Buchst. b DSGVO.</p>
+
+        <h3>Sicherheits- und Betriebsprotokolle</h3>
+        <p>Das eigene Backend protokolliert technische Anfragekennungen, Ergebnis- und Fehlerklassen sowie pseudonymisierte Sicherheitsmerkmale. Eigene Anwendungslogs enthalten keine vollständigen E-Mail-Adressen, Einmalcodes, Bearer-/Refresh-Tokens oder vollständigen Providerkennungen. Zweck sind Angriffserkennung, Fehleranalyse, Verfügbarkeit und Nachweis sicherheitsrelevanter Änderungen (Art. 6 Abs. 1 Buchst. f DSGVO).</p>
+      </section>
+
+      <section aria-labelledby="swipe-services">
+        <h2 id="swipe-services">2. Empfänger und eingesetzte Dienste</h2>
+        <div class="swipe-privacy-provider-grid">
+          <article class="swipe-privacy-provider">
+            <h3>Supabase</h3>
+            <p><strong>Aufgabe:</strong> Authentifizierung und Sitzungsverwaltung; Projektregion Frankfurt.</p>
+            <p><strong>Daten:</strong> E-Mail-/Relay-Adresse, Providerkennung, Auth- und Sitzungsmetadaten.</p>
+          </article>
+          <article class="swipe-privacy-provider">
+            <h3>IONOS</h3>
+            <p><strong>Aufgabe:</strong> Betrieb des eigenen App-Backends und der PostgreSQL-Datenbank.</p>
+            <p><strong>Daten:</strong> interne Benutzerkennung, Rezept- und Betriebsdaten.</p>
+          </article>
+          <article class="swipe-privacy-provider">
+            <h3>Manitu</h3>
+            <p><strong>Aufgabe:</strong> Versand von Anmelde- und Sicherheits-E-Mails.</p>
+            <p><strong>Daten:</strong> Zieladresse, Nachrichteninhalt und Zustellmetadaten.</p>
+          </article>
+          <article class="swipe-privacy-provider">
+            <h3>Google</h3>
+            <p><strong>Aufgabe:</strong> optionale Anmeldung mit Google.</p>
+            <p><strong>Daten:</strong> verifizierte E-Mail-Adresse, Google-Kennung sowie bereitgestellte Standard-Profilangaben wie Name und Profilbild.</p>
+          </article>
+          <article class="swipe-privacy-provider">
+            <h3>Apple</h3>
+            <p><strong>Aufgabe:</strong> optionale Anmeldung mit Apple und gegebenenfalls Private Email Relay.</p>
+            <p><strong>Daten:</strong> Apple-Kennung und freigegebene E-Mail- oder Relay-Adresse; ein Name wird nicht angefordert.</p>
+          </article>
+        </div>
+
+        <p>Supabase, IONOS und Manitu werden für die weisungsgebundene Verarbeitung nur nach rechtsverbindlicher Einbeziehung der jeweiligen Auftragsverarbeitungsbedingungen eingesetzt. Google Ireland Limited und Apple Distribution International Limited erbringen den jeweiligen Anmeldedienst in eigener datenschutzrechtlicher Verantwortlichkeit.</p>
+        <p>Swipe &amp; Cook fordert bei Google nur die für Supabase Auth erforderlichen Standardbereiche <code>openid</code>, <code>email</code> und <code>profile</code> an; es besteht kein Zugriff auf Gmail, Drive, Kontakte oder andere Google-Inhalte. Bei Apple wird ausschließlich die E-Mail-Adresse angefordert, wobei auch eine Relay-Adresse gewählt werden kann.</p>
+        <p>Google und Apple können Providerdaten außerhalb des Europäischen Wirtschaftsraums verarbeiten. Google verweist für erfasste US-Übermittlungen auf das EU-US Data Privacy Framework und ergänzend auf Standardvertragsklauseln. Apple nennt für internationale Übermittlungen aus dem EWR Standardvertragsklauseln.</p>
+      </section>
+
+      <section aria-labelledby="swipe-retention">
+        <h2 id="swipe-retention">3. Aufbewahrung und Löschung</h2>
+        <ul>
+          <li>Konto-, Anmelde- und persönliche Rezeptdaten werden grundsätzlich so lange gespeichert, wie das Konto besteht und die jeweilige App-Funktion genutzt wird.</li>
+          <li>Pseudonymisierte Sicherheits- und Änderungsereignisse werden höchstens zwölf Monate aufbewahrt. Technisch notwendige aktive Identitätszuordnungen und Tombstones bewusst entfernter Anmeldemethoden bleiben davon unberührt, solange das Konto besteht oder der Konfliktschutz erforderlich ist.</li>
+          <li>Eigene Backend- und Betriebslogs werden höchstens 30 Tage aufbewahrt und können durch kapazitätsbedingte Rotation früher entfallen.</li>
+          <li>Nach einem bestätigten Löschverlangen wird das Konto für weitere Nutzung gesperrt und die zuordenbaren Daten werden grundsätzlich innerhalb von 30 Tagen gelöscht oder irreversibel anonymisiert, soweit keine gesetzlichen Pflichten oder zwingenden Sicherheitsgründe eine begrenzte weitere Aufbewahrung erfordern.</li>
+          <li>Verschlüsselte Datenbanksicherungen werden täglich erstellt und nach 30 Tagen automatisch entfernt. Sie werden nicht erneut produktiv genutzt. Eine Wiederherstellung übernimmt den zu diesem Zeitpunkt gültigen Löschungsstand erneut.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="swipe-rights">
+        <h2 id="swipe-rights">4. Rechte und Kontakt</h2>
+        <p>Betroffene Personen können insbesondere Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch verlangen. Zur Vermeidung einer unbefugten Herausgabe oder Löschung kann eine angemessene Bestätigung über die im Konto hinterlegte E-Mail- oder Relay-Adresse erforderlich sein. Swipe &amp; Cook fragt dabei niemals nach einem Einmalcode, Passwort, Provider-Token oder privaten Schlüssel.</p>
+        <p>Für die Datenverarbeitung innerhalb der Google- oder Apple-Kontodienste können Rechte zusätzlich unmittelbar gegenüber dem jeweiligen Anbieter ausgeübt werden. Das Entfernen einer Anmeldemethode in Swipe &amp; Cook löscht nicht das zugrunde liegende Google- oder Apple-Konto.</p>
+        <p>Außerdem besteht das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren. Weitere Angaben stehen in der <a href="/datenschutz">allgemeinen Datenschutzerklärung</a>.</p>
+      </section>
+
+      <section aria-labelledby="swipe-changes">
+        <h2 id="swipe-changes">5. Änderungen</h2>
+        <p>Diese Hinweise werden angepasst, wenn sich Funktionen, Empfänger, Rechtsgrundlagen oder Aufbewahrungsregeln wesentlich ändern. Die jeweils veröffentlichte Fassung enthält ein Aktualisierungsdatum.</p>
+      </section>
+
+      <section class="swipe-privacy-contact" aria-labelledby="swipe-contact">
+        <h2 id="swipe-contact">Fragen zum Datenschutz?</h2>
+        <p>Schreib uns jederzeit an<br><a href="mailto:kontakt@komplettwebdesign.de">kontakt@komplettwebdesign.de</a></p>
+      </section>
+    </article>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

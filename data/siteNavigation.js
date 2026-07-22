@@ -149,6 +149,7 @@ export const footerNavigation = Object.freeze([
     links: [
       { label: 'Impressum', labelEn: 'Legal notice', href: '/impressum' },
       { label: 'Datenschutz', labelEn: 'Privacy policy', href: '/datenschutz' },
+      { label: 'Swipe & Cook Datenschutz', labelEn: 'Swipe & Cook privacy', href: '/swipeandcook-datenschutz' },
       { label: 'Hinweisseite', labelEn: 'Notes page', href: '/hinweise-rechtstexte-seo-datenschutz' }
     ]
   }
