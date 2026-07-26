@@ -266,18 +266,26 @@ sha256sum --check "$NACHWEIS_DIR/SHA256SUMS"
 Frühestens 48 Stunden nach dem dokumentierten Beginn muss auf demselben Kandidaten-Commit ein Abschluss-Live-Audit ausgeführt werden. Der Ablauf setzt keine alten Shellvariablen voraus: Nur der dauerhafte Metadatenpfad wird angegeben; Zeit, Tag, Commit und Nachweisverzeichnis werden daraus validiert und rekonstruiert.
 
 ```bash
+set -euo pipefail
 METADATA_FILE="docs/seo/audit-nachweise/welle-1/<LAUF-ID>/deployment-metadata.json"
 test -s "$METADATA_FILE"
-mapfile -t DEPLOY_METADATA < <(
-  node --input-type=module - "$METADATA_FILE" <<'NODE'
-import { readFileSync } from 'node:fs';
+META_VALUES_FILE="$(mktemp)"
+cleanup_meta_values() {
+  rm -f "$META_VALUES_FILE"
+}
+trap cleanup_meta_values EXIT HUP INT TERM
+
+node --input-type=module - "$METADATA_FILE" "$META_VALUES_FILE" <<'NODE'
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const metadata = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+const outputFile = process.argv[3];
 const commitPattern = /^[0-9a-f]{40}$/;
 if (!metadata.deploy_utc || !Number.isFinite(Date.parse(metadata.deploy_utc))) {
   throw new Error('deploy_utc fehlt oder ist ungültig.');
 }
-if (!metadata.candidate_tag || !commitPattern.test(metadata.candidate_commit || '')) {
+if (!/^[A-Za-z0-9._-]+$/.test(metadata.candidate_tag || '')
+    || !commitPattern.test(metadata.candidate_commit || '')) {
   throw new Error('Kandidaten-Tag oder Kandidaten-Commit ist ungültig.');
 }
 if (!commitPattern.test(metadata.rollback_commit || '')) {
@@ -290,20 +298,31 @@ const elapsedMs = Date.now() - Date.parse(metadata.deploy_utc);
 if (elapsedMs < 48 * 60 * 60 * 1000) {
   throw new Error(`48-Stunden-Fenster noch nicht erreicht: ${Math.floor(elapsedMs / 3600000)} Stunden.`);
 }
-process.stdout.write([
+writeFileSync(outputFile, `${[
   metadata.deploy_utc,
   metadata.candidate_tag,
   metadata.candidate_commit,
   metadata.rollback_commit,
   metadata.evidence_dir
-].join('\n'));
+].join('\t')}\n`);
 NODE
-)
-DEPLOY_UTC="${DEPLOY_METADATA[0]}"
-CANDIDATE_TAG="${DEPLOY_METADATA[1]}"
-KANDIDAT_COMMIT="${DEPLOY_METADATA[2]}"
-ROLLBACK_COMMIT="${DEPLOY_METADATA[3]}"
-NACHWEIS_DIR="${DEPLOY_METADATA[4]}"
+
+test "$(wc -l < "$META_VALUES_FILE" | tr -d '[:space:]')" = "1"
+test "$(awk -F '\t' 'NR == 1 { print NF }' "$META_VALUES_FILE")" = "5"
+EXTRA_FIELD=""
+IFS=$'\t' read -r \
+  DEPLOY_UTC \
+  CANDIDATE_TAG \
+  KANDIDAT_COMMIT \
+  ROLLBACK_COMMIT \
+  NACHWEIS_DIR \
+  EXTRA_FIELD < "$META_VALUES_FILE"
+test -n "$DEPLOY_UTC"
+test -n "$CANDIDATE_TAG"
+test -n "$KANDIDAT_COMMIT"
+test -n "$ROLLBACK_COMMIT"
+test -n "$NACHWEIS_DIR"
+test -z "$EXTRA_FIELD"
 test "$METADATA_FILE" = "$NACHWEIS_DIR/deployment-metadata.json"
 test "$(git rev-parse "${CANDIDATE_TAG}^{commit}")" = "$KANDIDAT_COMMIT"
 npm run audit:seo-recovery -- \
