@@ -182,12 +182,14 @@ test('reference detail template renders relaunch comparison gallery controls', (
   assert.match(showTemplate, /additionalScreens/);
 });
 
-test('reference templates handle projects without testimonials and use screen alt texts', () => {
+test('reference templates omit testimonial UI for projects without testimonials and use screen alt texts', () => {
   const indexTemplate = fs.readFileSync(new URL('../views/references/index.ejs', import.meta.url), 'utf8');
   const showTemplate = fs.readFileSync(new URL('../views/references/show.ejs', import.meta.url), 'utf8');
 
-  assert.match(indexTemplate, /if \(project\.quote\)/);
-  assert.match(indexTemplate, /Für dieses Projekt liegt keine öffentliche Kundenstimme vor\./);
+  assert.match(indexTemplate, /if \(project\.quote\)[\s\S]*<dt>Kundenstimme<\/dt>/);
+  assert.doesNotMatch(indexTemplate, /keine öffentliche Kundenstimme/);
+  assert.match(showTemplate, /if \(project\.quote\)[\s\S]*reference-testimonial/);
+  assert.doesNotMatch(showTemplate, /keine öffentliche Kundenstimme/);
   assert.match(showTemplate, /screen\.alt/);
   assert.match(showTemplate, /project\.additionalScreensEyebrow/);
   assert.match(showTemplate, /project\.additionalScreensTitle/);

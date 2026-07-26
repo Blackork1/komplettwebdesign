@@ -173,22 +173,18 @@
       </ul>
     </section>
 
+    <% if (project.quote) { %>
     <section class="references-container reference-section reference-testimonial" aria-labelledby="reference-quote-title">
       <p class="references-eyebrow">Kundenstimme</p>
       <h2 id="reference-quote-title">Feedback zum Projekt</h2>
-      <% if (project.quote) { %>
       <blockquote>
         <p><%= project.quote %></p>
         <% if (project.quoteAuthor) { %>
         <cite><%= project.quoteAuthor %></cite>
         <% } %>
       </blockquote>
-      <% } else { %>
-      <p class="reference-testimonial__fallback">
-        Für diese Referenz ist aktuell keine öffentliche Kundenstimme freigegeben. Die Projektseite zeigt deshalb nur freigegebene Inhalte und qualitative Ergebnisse.
-      </p>
-      <% } %>
     </section>
+    <% } %>
 
     <section class="references-container references-cta" aria-labelledby="reference-cta-title">
       <div>

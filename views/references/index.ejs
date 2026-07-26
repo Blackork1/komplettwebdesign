@@ -62,17 +62,15 @@
               <dt>Ergebnis</dt>
               <dd><%= project.primaryOutcome %></dd>
             </div>
+            <% if (project.quote) { %>
             <div>
               <dt>Kundenstimme</dt>
               <dd>
-                <% if (project.quote) { %>
                 <q><%= project.quote %></q>
                 <% if (project.quoteAuthor) { %><small>– <%= project.quoteAuthor %></small><% } %>
-                <% } else { %>
-                <span>Für dieses Projekt liegt keine öffentliche Kundenstimme vor.</span>
-                <% } %>
               </dd>
             </div>
+            <% } %>
           </dl>
           <div class="reference-card__actions">
             <a class="reference-card__link" href="/referenzen/<%= project.slug %>">Projekt im Detail ansehen</a>
