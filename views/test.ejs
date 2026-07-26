@@ -270,6 +270,41 @@
 
     <section class="wt-section">
       <div class="wt-shell">
+        <article class="wt-panel tester-method">
+          <h2><%= isEn ? 'What the test checks' : 'Was der Test prüft' %></h2>
+          <p><%= isEn
+            ? 'The test evaluates publicly reachable signals. It does not replace a complete manual website audit and does not access protected accounts or internal business data.'
+            : 'Der Test bewertet öffentlich erreichbare Signale. Er ersetzt keinen vollständigen manuellen Website-Audit und greift nicht auf geschützte Konten oder interne Geschäftsdaten zu.' %></p>
+          <ul>
+            <li><%= isEn ? 'Indexing, canonical, sitemap and robots signals' : 'Indexierung, Canonical, Sitemap und Robots-Signale' %></li>
+            <li><%= isEn ? 'Title, description, H1 and content structure' : 'Titel, Description, H1 und Inhaltsstruktur' %></li>
+            <li><%= isEn ? 'Internal links, technical reachability and selected performance signals' : 'interne Links, technische Erreichbarkeit und ausgewählte Performance-Signale' %></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel tester-example">
+          <h2><%= isEn ? 'Example evaluation' : 'Beispielauswertung' %></h2>
+          <p><%= isEn
+            ? 'A finding is presented as a problem, impact and next step. Uncertain points or points that cannot be checked publicly are explicitly marked as limitations.'
+            : 'Ein Befund wird als Problem, Auswirkung und nächster Schritt ausgegeben. Unsichere oder nicht öffentlich prüfbare Punkte werden ausdrücklich als Grenze markiert.' %></p>
+          <p class="wt-result-meta">
+            <a class="btn btn-primary" href="/leistungen/website-audit">
+              <%= isEn ? 'View website audit' : 'Website-Audit ansehen' %>
+            </a>
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+              <%= isEn ? 'Contact us' : 'Kontakt aufnehmen' %>
+            </a>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
         <div class="wt-panel">
           <h2><%= isEn ? 'FAQ: website tester & website update check' : 'FAQ: Website-Tester & Website-Update-Check' %></h2>
           <div class="wt-faq">

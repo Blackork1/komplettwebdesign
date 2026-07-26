@@ -16,13 +16,13 @@
               : 'Wir helfen dir, die wirkungsvollsten SEO-Maßnahmen für bessere Rankings, Auffindbarkeit und Lead-Qualität zu priorisieren.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="/leistungen/website-audit">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              <%= isEn ? 'View website audit' : 'Website-Audit ansehen' %>
+            </a>
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-comments"></i>
               <%= isEn ? 'Request consultation' : 'Beratung anfragen' %>
-            </a>
-            <a class="btn btn-secondary" href="/booking">
-              <i class="fa-solid fa-calendar-check"></i>
-              <%= isEn ? 'Book appointment' : 'Termin buchen' %>
             </a>
           </div>
         </article>
@@ -133,32 +133,32 @@
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-code"></i> <%= isEn ? 'On-page structure' : 'OnPage-Struktur' %></h3>
               <p><%= isEn
-                ? 'Title lengths and uniqueness, meta description quality, H1 hierarchy, heading order, alt text coverage, URL patterns, and language declaration. Weak signals here often cost 15–30% of organic CTR.'
-                : 'Title-Längen & Einmaligkeit, Description-Qualität, H1-Hierarchie, Überschriften-Reihenfolge, Alt-Text-Abdeckung, URL-Muster und Sprachdeklaration. Schwache Signale kosten oft 15–30% der organischen CTR.' %></p>
+                ? 'Title lengths and uniqueness, meta description quality, H1 hierarchy, heading order, alt text coverage, URL patterns, and language declaration.'
+                : 'Title-Längen und Einmaligkeit, Description-Qualität, H1-Hierarchie, Überschriften-Reihenfolge, Alt-Text-Abdeckung, URL-Muster und Sprachdeklaration.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-magnifying-glass"></i> <%= isEn ? 'Indexing signals' : 'Indexierungs-Signale' %></h3>
               <p><%= isEn
-                ? 'Robots.txt directives, sitemap.xml presence and reachability, canonical tags, noindex flags, hreflang consistency. A single wrong noindex has taken down six-figure monthly traffic in cases we audited.'
-                : 'Robots.txt-Direktiven, Sitemap.xml-Präsenz und -Erreichbarkeit, Canonical-Tags, Noindex-Flags, Hreflang-Konsistenz. Ein falsches Noindex hat in unseren Audits schon sechsstelligen monatlichen Traffic gekostet.' %></p>
+                ? 'Robots.txt directives, sitemap.xml presence and reachability, canonical tags, noindex flags, and hreflang consistency.'
+                : 'Robots.txt-Direktiven, Sitemap.xml-Präsenz und -Erreichbarkeit, Canonical-Tags, Noindex-Flags und Hreflang-Konsistenz.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-bolt"></i> <%= isEn ? 'Technical quality' : 'Technik-Qualität' %></h3>
               <p><%= isEn
-                ? 'HTTPS, HTTP/2, compression, response times, image weight, render-blocking resources, mobile viewport, and Core Web Vitals proxies. Weighted heavily because Google uses them as ranking factors directly.'
-                : 'HTTPS, HTTP/2, Komprimierung, Antwortzeiten, Bild-Gewicht, render-blockierende Ressourcen, Mobile-Viewport und Core-Web-Vitals-Proxies. Stark gewichtet, weil Google sie direkt als Ranking-Faktoren nutzt.' %></p>
+                ? 'HTTPS, HTTP/2, compression, response times, image weight, render-blocking resources, mobile viewport, and Core Web Vitals proxies.'
+                : 'HTTPS, HTTP/2, Komprimierung, Antwortzeiten, Bild-Gewicht, render-blockierende Ressourcen, Mobile-Viewport und Core-Web-Vitals-Proxies.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-file-lines"></i> <%= isEn ? 'Content quality' : 'Content-Qualität' %></h3>
               <p><%= isEn
-                ? 'Word count per page, thin-content detection, keyword-topic alignment, duplicate-content risk, paragraph structure, and readability. Good for classic search and for being cited by AI answer systems.'
-                : 'Wortzahl pro Seite, Thin-Content-Erkennung, Keyword-Thema-Abgleich, Duplicate-Content-Risiko, Absatzstruktur und Lesbarkeit. Relevant für klassische Suche und für Zitierungen in KI-Antwort-Systemen.' %></p>
+                ? 'Word count per page, thin-content detection, keyword-topic alignment, duplicate-content risk, paragraph structure, and readability.'
+                : 'Wortzahl pro Seite, Thin-Content-Erkennung, Keyword-Thema-Abgleich, Duplicate-Content-Risiko, Absatzstruktur und Lesbarkeit.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-diagram-project"></i> <%= isEn ? 'Internal linking' : 'Interne Verlinkung' %></h3>
               <p><%= isEn
-                ? 'Link depth from the homepage, anchor text variance, orphan pages, link equity distribution, and navigation clarity. Often the fastest lever to raise rankings without creating new content.'
-                : 'Link-Tiefe ab Startseite, Anchor-Text-Varianz, Orphan Pages, Link-Equity-Verteilung und Navigations-Klarheit. Oft der schnellste Hebel, um Rankings ohne neuen Content anzuheben.' %></p>
+                ? 'Link depth from the homepage, anchor text variance, orphan pages, link equity distribution, and navigation clarity.'
+                : 'Link-Tiefe ab Startseite, Anchor-Text-Varianz, Orphan Pages, Link-Equity-Verteilung und Navigations-Klarheit.' %></p>
             </div>
             <div class="wt-method-card">
               <h3><i class="fa-solid fa-sitemap"></i> <%= isEn ? 'Structured data' : 'Strukturierte Daten' %></h3>
@@ -229,6 +229,33 @@
 
     <section class="wt-section">
       <div class="wt-shell">
+        <article class="wt-panel tester-method">
+          <h2><%= isEn ? 'What the test checks' : 'Was der Test prüft' %></h2>
+          <p><%= isEn
+            ? 'The test evaluates publicly reachable signals. It does not replace a complete manual website audit and does not access protected accounts or internal business data.'
+            : 'Der Test bewertet öffentlich erreichbare Signale. Er ersetzt keinen vollständigen manuellen Website-Audit und greift nicht auf geschützte Konten oder interne Geschäftsdaten zu.' %></p>
+          <ul>
+            <li><%= isEn ? 'Indexing, canonical, sitemap and robots signals' : 'Indexierung, Canonical, Sitemap und Robots-Signale' %></li>
+            <li><%= isEn ? 'Title, description, H1 and content structure' : 'Titel, Description, H1 und Inhaltsstruktur' %></li>
+            <li><%= isEn ? 'Internal links, technical reachability and selected performance signals' : 'interne Links, technische Erreichbarkeit und ausgewählte Performance-Signale' %></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
+        <article class="wt-panel tester-example">
+          <h2><%= isEn ? 'Example evaluation' : 'Beispielauswertung' %></h2>
+          <p><%= isEn
+            ? 'A finding is presented as a problem, impact and next step. Uncertain points or points that cannot be checked publicly are explicitly marked as limitations.'
+            : 'Ein Befund wird als Problem, Auswirkung und nächster Schritt ausgegeben. Unsichere oder nicht öffentlich prüfbare Punkte werden ausdrücklich als Grenze markiert.' %></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wt-section">
+      <div class="wt-shell">
         <div class="wt-panel">
           <h2><%= isEn ? 'FAQ: SEO tester' : 'FAQ: SEO-Tester' %></h2>
           <div class="wt-faq">
@@ -253,13 +280,13 @@
               : 'Wir helfen dir, SEO-Befunde in eine praktische Roadmap mit klaren Prioritäten zu übersetzen.' %>
           </p>
           <div class="wt-result-meta">
-            <a class="btn btn-primary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
+            <a class="btn btn-primary" href="/leistungen/website-audit">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              <%= isEn ? 'View website audit' : 'Website-Audit ansehen' %>
+            </a>
+            <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>">
               <i class="fa-solid fa-paper-plane"></i>
               <%= isEn ? 'Request SEO consultation' : 'SEO-Beratung anfragen' %>
-            </a>
-            <a class="btn btn-secondary" href="/booking">
-              <i class="fa-solid fa-calendar-days"></i>
-              <%= isEn ? 'Book a call' : 'Call buchen' %>
             </a>
           </div>
         </article>

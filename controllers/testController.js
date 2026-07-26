@@ -35,8 +35,8 @@ import { t as tError } from '../util/testerI18n.js';
 
 const PAGE_I18N = {
   de: {
-    title: 'Website testen kostenlos: Ist meine Website noch aktuell? | Website-Tester',
-    description: 'Kostenloser Website-Tester für SEO, GEO, Technik & Vertrauen. Prüfe sofort: Ist meine Website noch aktuell, sichtbar und update-reif?',
+    title: 'Kostenloser Website-Test: SEO, Technik und Sichtbarkeit',
+    description: 'Teste deine Website kostenlos auf SEO, Technik, Ladezeit, Vertrauen und Auffindbarkeit. Du erhältst eine direkte Auswertung mit priorisierten Hinweisen.',
     keywords: 'website testen, website tester kostenlos, website kostenlos testen, ist meine website noch aktuell, muss ich meine website updaten, seo check website, geo check website',
     ogTitle: 'Website testen kostenlos | Ist meine Website noch aktuell?',
     ogDescription: 'Starte den kostenlosen Website-Check für SEO, GEO, Technik, Vertrauen und Conversion in wenigen Sekunden.',
@@ -356,8 +356,8 @@ const GEO_PAGE_I18N = {
 
 const SEO_PAGE_I18N = {
   de: {
-    title: 'SEO Tester kostenlos: Website auf SEO-Kriterien prüfen',
-    description: 'Kostenloser SEO-Tester für deine Website mit Unterseiten-Scan. Erhalte SEO-Score, Potenzial und den detaillierten Maßnahmenreport per Newsletter-Double-Opt-in.',
+    title: 'Kostenloser SEO-Test für Websites | Komplett Webdesign',
+    description: 'Prüfe deine Website kostenlos auf Onpage-SEO, Indexierung, interne Links, Inhalte und strukturierte Daten. Mit verständlicher Auswertung und Prioritäten.',
     keywords: 'seo tester, website seo testen, seo check website, suchmaschinenoptimierung website prüfen, seo analyse kostenlos',
     ogTitle: 'SEO Tester kostenlos',
     ogDescription: 'Prüfe deine Website auf wichtige SEO- und Technik-Kriterien und erhalte einen detaillierten SEO-Report per E-Mail.',
