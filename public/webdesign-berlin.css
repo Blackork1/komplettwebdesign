@@ -267,19 +267,6 @@
   color: #ffffff;
 }
 
-.wd-decision-card {
-  color: inherit;
-  display: block;
-  text-decoration: none;
-  transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
-.wd-decision-card:is(:hover, :focus-visible) {
-  box-shadow: 0 22px 44px rgba(11, 42, 70, 0.14);
-  transform: translateY(-4px);
-}
-
-.wd-decision-card__price,
 .wd-reference-card__industry {
   color: var(--wd-accent);
   display: inline-block;

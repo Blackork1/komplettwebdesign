@@ -394,26 +394,6 @@ const wdIndustryImages = [
     </div>
   </section>
 
-  <section id="decisionGuide" class="wd-section" aria-labelledby="wd-decision-title">
-    <div class="wd-container">
-      <div class="wd-section-head animate-on-scroll">
-        <span class="wd-chip">Entscheidungshilfe</span>
-        <h2 id="wd-decision-title"><%= page.decisionGuide.title %></h2>
-        <p class="wd-lead"><%= page.decisionGuide.lead %></p>
-      </div>
-      <div class="wd-grid wd-grid--two wd-decision-grid">
-        <% page.decisionGuide.items.forEach(function (item) { %>
-          <a class="wd-card wd-decision-card animate-on-scroll" href="<%= item.href %>">
-            <span class="wd-decision-card__price"><%= item.priceLabel %></span>
-            <h3><%= item.title %></h3>
-            <p><%= item.text %></p>
-            <span class="wd-card-title-link">Paket im Detail ansehen <span aria-hidden="true">→</span></span>
-          </a>
-        <% }) %>
-      </div>
-    </div>
-  </section>
-
   <section id="packageTeaser" class="wd-section wd-section--soft" aria-labelledby="wd-packages-title">
     <div class="wd-container">
       <div class="wd-section-head animate-on-scroll">

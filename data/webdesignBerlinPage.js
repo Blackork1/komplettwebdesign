@@ -196,25 +196,6 @@ export const webdesignBerlinPage = Object.freeze({
       }
     ]
   },
-  decisionGuide: {
-    title: 'Welche Website-Größe passt zu deinem Unternehmen?',
-    lead: 'Wähle nicht nach möglichst vielen Funktionen, sondern nach Angebotsumfang, Zielgruppen und dem nächsten sinnvollen Entwicklungsschritt.',
-    items: packages.map((pkg) => {
-      const cases = {
-        start: 'Eine kompakte Seite für ein klar begrenztes Angebot und einen eindeutigen Kontaktweg.',
-        business: 'Eine Unternehmenswebsite mit mehreren Seiten für Leistungen, Unternehmen und Kontakt.',
-        wachstum: 'Ein umfangreicher Relaunch oder mehrere Leistungen und Zielgruppen mit stärkerer Inhaltsstruktur.',
-        individuell: 'Sonderfunktionen, Shop, Buchung, Schnittstellen oder besondere digitale Abläufe.'
-      };
-      return Object.freeze({
-        packageId: pkg.id,
-        title: pkg.name,
-        text: cases[pkg.id],
-        priceLabel: `{{price.${pkg.id}}}`,
-        href: pkg.canonicalPath
-      });
-    })
-  },
   packageTeaser: {
     title: 'Pakete für Webdesign in Berlin',
     lead: 'Die Pakete sind Orientierung für typische Website-Projekte. Sonderfunktionen, laufende Kosten und Drittanbieter-Dienste werden separat besprochen.',
@@ -448,7 +429,6 @@ function requiredSections() {
     { id: 'servicesOverview', label: 'Leistungen' },
     { id: 'districtPages', label: 'Berliner Bezirke' },
     { id: 'comparison', label: 'Vergleich' },
-    { id: 'decisionGuide', label: 'Website-Größe' },
     { id: 'packageTeaser', label: 'Pakete' },
     { id: 'references', label: 'Referenzen' },
     { id: 'included', label: 'Enthalten' },

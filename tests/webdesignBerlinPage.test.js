@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { load } from 'cheerio';
+import { renderFile } from 'ejs';
 import { webdesignBerlinPage } from '../data/webdesignBerlinPage.js';
 import { packages } from '../data/packages.js';
 
@@ -22,6 +25,38 @@ function collectText(value, out = []) {
   return out;
 }
 
+const webdesignBerlinViewPath = fileURLToPath(
+  new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url)
+);
+
+function buildPageRenderLocals() {
+  return {
+    page: webdesignBerlinPage,
+    districtCards: [],
+    canonicalBaseUrl: 'https://komplettwebdesign.de',
+    canonicalUrl: 'https://komplettwebdesign.de/webdesign-berlin',
+    assetVersion: 'test',
+    robots: 'noindex',
+    alternateUrls: null,
+    currentPathname: '/webdesign-berlin',
+    currentSearch: '',
+    headerNavigation: [],
+    footerNavigation: [],
+    lng: 'de',
+    csrfToken: '',
+    disableTracking: true,
+    disableInteractionPolish: true,
+    cssAsset: (assetPath) => `/${assetPath}`,
+    jsAsset: (assetPath) => `/${assetPath}`,
+    asset: (assetPath) => `/${assetPath}`,
+    escapeJsonForHtml: (value) => JSON.stringify(value)
+  };
+}
+
+function renderWebdesignBerlinPage() {
+  return renderFile(webdesignBerlinViewPath, buildPageRenderLocals());
+}
+
 const requiredSectionIds = [
   'hero',
   'intro',
@@ -33,7 +68,6 @@ const requiredSectionIds = [
   'servicesOverview',
   'districtPages',
   'comparison',
-  'decisionGuide',
   'packageTeaser',
   'references',
   'included',
@@ -144,16 +178,16 @@ test('webdesign berlin canonical page uses the new central package logic', () =>
   assert.match(webdesignBerlinPage.priceNote, /§ 19 UStG/);
 });
 
-test('webdesign berlin gibt eine konkrete Paketentscheidung und reale Projektbelege', () => {
-  assert.deepEqual(
-    webdesignBerlinPage.decisionGuide.items.map((item) => item.packageId),
-    ['start', 'business', 'wachstum', 'individuell']
-  );
-  assert.match(webdesignBerlinPage.decisionGuide.items[0].text, /kompakte Seite/i);
-  assert.match(webdesignBerlinPage.decisionGuide.items[1].text, /mehreren Seiten|bis zu fünf Seiten/i);
-  assert.match(webdesignBerlinPage.decisionGuide.items[2].text, /Relaunch|mehrere Leistungen/i);
-  assert.match(webdesignBerlinPage.decisionGuide.items[3].text, /Sonderfunktionen|Shop|Buchung/i);
+test('webdesign berlin rendert den vollständigen Paketbereich genau einmal', async () => {
+  const html = await renderWebdesignBerlinPage();
+  const $ = load(html);
 
+  assert.equal($('#decisionGuide').length, 0);
+  assert.equal($('#packageTeaser').length, 1);
+  assert.equal($('#packageTeaser .wd-package').length, 4);
+});
+
+test('webdesign berlin zeigt reale Projektbelege und ordnet laufende Kosten ein', () => {
   assert.deepEqual(
     webdesignBerlinPage.referenceProof.projects.map((project) => project.href),
     ['/referenzen/zur-alten-backstube', '/referenzen/tm-sauber-mehr']
