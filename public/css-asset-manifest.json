@@ -242,9 +242,9 @@
     "references.css": {
       "source": "references.css",
       "output": "references.min.css",
-      "href": "/references.min.css?v=df5bf4f43185",
-      "hash": "df5bf4f43185",
-      "bytes": 12832
+      "href": "/references.min.css?v=c4fd9033c86f",
+      "hash": "c4fd9033c86f",
+      "bytes": 14480
     },
     "seo-landing.css": {
       "source": "seo-landing.css",

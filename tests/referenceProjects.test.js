@@ -18,7 +18,13 @@ const REQUIRED_FIELDS = [
   'quote',
   'quoteAuthor',
   'image',
-  'liveUrl'
+  'imageAlt',
+  'liveUrl',
+  'services',
+  'suitableFor',
+  'relatedServiceHref',
+  'primaryOutcome',
+  'nextStepLabel'
 ];
 
 const EXPECTED_TESTIMONIALS = {
@@ -57,7 +63,14 @@ test('reference projects include all required proof fields', () => {
     assert.equal(typeof project.quote, 'string');
     assert.equal(typeof project.quoteAuthor, 'string');
     assert.equal(typeof project.image, 'string');
+    assert.equal(typeof project.imageAlt, 'string');
     assert.equal(typeof project.liveUrl, 'string');
+    assert.ok(Array.isArray(project.services));
+    assert.ok(project.services.length >= 2);
+    assert.equal(typeof project.suitableFor, 'string');
+    assert.match(project.relatedServiceHref, /^\//);
+    assert.equal(typeof project.primaryOutcome, 'string');
+    assert.equal(typeof project.nextStepLabel, 'string');
   });
 });
 
@@ -122,6 +135,33 @@ test('reference detail template renders relaunch comparison gallery controls', (
   assert.match(showTemplate, /data-reference-lightbox-next/);
   assert.match(showTemplate, /data-reference-lightbox-close/);
   assert.match(showTemplate, /additionalScreens/);
+});
+
+test('Referenzkarten ziehen Ausgangslage, Kernleistungen, Ergebnis, Kundenstimme und passende Leistung vor', () => {
+  const indexTemplate = fs.readFileSync(new URL('../views/references/index.ejs', import.meta.url), 'utf8');
+  const showTemplate = fs.readFileSync(new URL('../views/references/show.ejs', import.meta.url), 'utf8');
+
+  assert.match(indexTemplate, /Ausgangslage[\s\S]*project\.problem/);
+  assert.match(indexTemplate, /Kernleistungen[\s\S]*project\.services/);
+  assert.match(indexTemplate, /Ergebnis[\s\S]*project\.primaryOutcome/);
+  assert.match(indexTemplate, /Kundenstimme[\s\S]*project\.quote/);
+  assert.match(indexTemplate, /project\.relatedServiceHref/);
+  assert.match(indexTemplate, /alt="<%= project\.imageAlt %>"/);
+
+  assert.match(showTemplate, /project\.suitableFor/);
+  assert.match(showTemplate, /project\.relatedServiceHref/);
+  assert.match(showTemplate, /project\.nextStepLabel/);
+  assert.match(showTemplate, /alt="<%= project\.imageAlt %>"/);
+});
+
+test('Referenzen führen passend zu Gastronomie-Webdesign oder Relaunch', () => {
+  const backstube = getReferenceProjectBySlug('zur-alten-backstube');
+  const relaunch = getReferenceProjectBySlug('tm-sauber-mehr');
+
+  assert.equal(backstube.relatedServiceHref, '/branchen/webdesign-cafe');
+  assert.equal(backstube.nextStepLabel, 'Ähnliches Website-Projekt besprechen');
+  assert.equal(relaunch.relatedServiceHref, '/leistungen/website-relaunch');
+  assert.equal(relaunch.nextStepLabel, 'Relaunch für mein Unternehmen prüfen');
 });
 
 test('reference project copy avoids unsupported numeric metrics and percentage claims', () => {

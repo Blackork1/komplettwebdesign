@@ -167,6 +167,7 @@
 .references-page .reference-more,
 .references-page .reference-section,
 .references-page .reference-proof-grid,
+.references-page .reference-project-fit,
 .references-page .references-cta {
   padding: clamp(48px, 7vw, 88px) 0;
 }
@@ -219,13 +220,69 @@
   text-decoration: none;
 }
 
+.references-page .reference-card__facts {
+  display: grid;
+  gap: 16px;
+  margin: 22px 0 0;
+}
+
+.references-page .reference-card__facts > div {
+  border-top: 1px solid var(--references-line);
+  padding-top: 14px;
+}
+
+.references-page .reference-card__facts dt {
+  color: var(--references-ink);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.references-page .reference-card__facts dd {
+  color: var(--references-muted);
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.references-page .reference-card__facts ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.references-page .reference-card__facts q {
+  color: var(--references-ink);
+}
+
+.references-page .reference-card__facts small {
+  display: block;
+  margin-top: 6px;
+}
+
+.references-page .reference-card__actions {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
 .references-page .reference-card__link,
 .references-page .references-back-link {
   display: inline-flex;
-  margin-top: 20px;
   color: var(--references-accent-dark);
   font-weight: 700;
   text-decoration: none;
+}
+
+.references-page .reference-card__service {
+  color: var(--references-ink) !important;
+  font-weight: 750;
+  text-decoration: underline !important;
+  text-decoration-color: var(--references-accent) !important;
+  text-underline-offset: 4px;
 }
 
 .references-page .references-cta {
@@ -271,6 +328,33 @@
   margin: 14px 0 0;
   color: var(--references-muted);
   line-height: 1.7;
+}
+
+.references-page .reference-project-fit {
+  align-items: center;
+  background: var(--references-soft);
+  border: 1px solid var(--references-line);
+  border-radius: 8px;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: clamp(12px, 3vw, 32px);
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.references-page .reference-project-fit p:last-child {
+  color: var(--references-muted);
+  line-height: 1.65;
+  margin: 8px 0 0;
+  max-width: 760px;
+}
+
+.references-page .reference-project-fit > a {
+  color: var(--references-ink);
+  flex: 0 0 auto;
+  font-weight: 800;
+  text-decoration-color: var(--references-accent);
+  text-underline-offset: 4px;
 }
 
 .references-page .reference-before-after {
@@ -622,6 +706,11 @@
   }
 
   .references-page .references-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .references-page .reference-project-fit {
     align-items: flex-start;
     flex-direction: column;
   }

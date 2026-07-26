@@ -24,11 +24,11 @@
             <% if (project.relaunchUrl) { %>
             <a class="btn btn-primary" href="<%= project.relaunchUrl %>">Mehr zum Relaunch</a>
             <% } %>
-            <a class="btn btn-secondary" href="/kontakt">Ähnliches Projekt anfragen</a>
+            <a class="btn btn-secondary" href="<%= project.nextStepHref %>"><%= project.nextStepLabel %></a>
           </div>
         </div>
         <figure class="reference-detail-hero__image unified-hero__media-frame">
-          <img src="<%= project.image %>" alt="Referenzbild <%= project.name %>" />
+          <img src="<%= project.image %>" alt="<%= project.imageAlt %>" />
         </figure>
       </div>
     </header>
@@ -44,6 +44,14 @@
         <h2>Was die Website leisten sollte</h2>
         <p><%= project.goal %></p>
       </div>
+    </section>
+
+    <section class="references-container reference-project-fit" aria-label="Passender Projektkontext">
+      <div>
+        <p class="references-eyebrow">Geeignet für</p>
+        <p><%= project.suitableFor %></p>
+      </div>
+      <a href="<%= project.relatedServiceHref %>"><%= project.relatedServiceLabel %></a>
     </section>
 
     <section class="references-container reference-section reference-section--split" aria-labelledby="reference-implementation-title">
@@ -178,7 +186,7 @@
         <h2 id="reference-cta-title">Soll deine Website genauso klar werden?</h2>
         <p>Schick kurz deine Ausgangslage. Danach klären wir, welche Struktur, Inhalte und nächsten Schritte sinnvoll sind.</p>
       </div>
-      <a class="btn btn-primary" href="/kontakt">Projekt besprechen</a>
+      <a class="btn btn-primary" href="<%= project.nextStepHref %>"><%= project.nextStepLabel %></a>
     </section>
 
     <% if ((otherProjects || []).length) { %>
@@ -191,7 +199,7 @@
         <% otherProjects.forEach(function(item) { %>
         <article class="reference-card">
           <a class="reference-card__media" href="/referenzen/<%= item.slug %>" aria-label="<%= item.name %> ansehen">
-            <img src="<%= item.image %>" alt="Referenzbild <%= item.name %>" loading="lazy" />
+            <img src="<%= item.image %>" alt="<%= item.imageAlt %>" loading="lazy" />
           </a>
           <div class="reference-card__body">
             <p class="reference-card__industry"><%= item.industry %></p>

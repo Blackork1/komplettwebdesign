@@ -22,7 +22,19 @@ export const referenceProjects = [
     quote: 'Das Ergebnis sieht einfach super aus. Es ist jetzt viel einfacher Tische zu reservieren.',
     quoteAuthor: 'Feirefiz',
     image: '/images/review-bg.webp',
-    liveUrl: 'https://www.zuraltenbackstube.de'
+    imageAlt: 'Website der alten Backstube mit warmer Bildsprache für Café und Reservierung',
+    liveUrl: 'https://www.zuraltenbackstube.de',
+    services: [
+      'Seitenstruktur für Angebot, Atmosphäre und Besuchsinformationen',
+      'Individuelle Bild- und Textsprache für den lokalen Betrieb',
+      'Sichtbare Kontakt- und Reservierungswege'
+    ],
+    suitableFor: 'Lokale Cafés, Backstuben und Gastronomiebetriebe, die Angebot, Atmosphäre und Besuchsinformationen klar verbinden möchten.',
+    relatedServiceHref: '/branchen/webdesign-cafe',
+    relatedServiceLabel: 'Webdesign für Cafés ansehen',
+    primaryOutcome: 'Der Betrieb wird online greifbarer und Gäste finden Angebot, Atmosphäre und Reservierungsweg schneller.',
+    nextStepLabel: 'Ähnliches Website-Projekt besprechen',
+    nextStepHref: '/kontakt?projektart=webdesign'
   },
   {
     slug: 'tm-sauber-mehr',
@@ -47,8 +59,20 @@ export const referenceProjects = [
     quote: 'Super Service und top Preis-Leistung. Alle unsere Wünsche wurden schnell, professionell und unkompliziert umgesetzt.',
     quoteAuthor: 'TM Sauber & Mehr',
     image: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1778179218/admin_gallery/lfhdeq3nkirr9wijelqb.webp',
+    imageAlt: 'Neu gestaltete Website von TM Sauber und Mehr mit klarer Leistungsübersicht',
     liveUrl: '',
     relaunchUrl: '/leistungen/website-relaunch',
+    services: [
+      'Relaunch von Startseite und Leistungsdarstellung',
+      'Klarere Struktur für Leistungen und Kontaktwege',
+      'Neue Team-Seite mit persönlichen Ansprechpartnern'
+    ],
+    suitableFor: 'Lokale Dienstleistungsbetriebe, deren bestehende Website Inhalte, Leistungen und Vertrauen nicht mehr klar genug vermittelt.',
+    relatedServiceHref: '/leistungen/website-relaunch',
+    relatedServiceLabel: 'Website-Relaunch ansehen',
+    primaryOutcome: 'Leistungen, persönliche Ansprechpartner und Anfragewege lassen sich nach dem Relaunch schneller einordnen.',
+    nextStepLabel: 'Relaunch für mein Unternehmen prüfen',
+    nextStepHref: '/kontakt?projektart=website-relaunch',
     beforeAfterComparisons: [
       {
         title: 'Startseite',

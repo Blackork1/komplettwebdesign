@@ -30,29 +30,6 @@
     </div>
   </section>
 
-  <section class="references-container reference-section reference-section--split" aria-labelledby="references-context-title">
-    <div class="reference-section__copy">
-      <p class="references-eyebrow">Wie du die Referenzen lesen kannst</p>
-      <h2 id="references-context-title">Keine künstlichen Zahlen, sondern nachvollziehbare Projektlogik</h2>
-      <p>
-        Referenzen zeigen hier nicht nur ein fertiges Bild. Wichtig ist, welche Ausgangslage vorlag,
-        welches Ziel die Website erfüllen sollte und wie Struktur, Inhalte, Design und Technik darauf abgestimmt wurden.
-        Veröffentlichte Kennzahlen, Bewertungen oder Kundenstimmen erscheinen nur, wenn sie tatsächlich freigegeben sind.
-      </p>
-      <p>
-        Wenn dein Projekt anders gelagert ist, ist das normal. Eine kleine Unternehmenswebsite, ein Relaunch,
-        eine Landingpage oder ein lokaler Branchenauftritt braucht jeweils andere Prioritäten. Die Referenzen helfen dir,
-        die Arbeitsweise einzuschätzen, ohne daraus eine Garantie für Rankings, Anfragen oder Umsätze abzuleiten.
-      </p>
-    </div>
-    <ul class="reference-check-list">
-      <li>Ausgangslage und Ziel werden pro Projekt getrennt beschrieben</li>
-      <li>Umsetzung und Ergebnis bleiben qualitativ und nachvollziehbar</li>
-      <li>Es werden keine erfundenen Bewertungen oder Kundenzahlen ergänzt</li>
-      <li>Der nächste Schritt führt zu Paketvergleich oder unverbindlicher Anfrage</li>
-    </ul>
-  </section>
-
   <section class="references-container references-list" aria-labelledby="references-list-title">
     <div class="references-section-head">
       <p class="references-eyebrow">Ausgewählte Projekte</p>
@@ -63,17 +40,57 @@
       <% (projects || []).forEach(function(project) { %>
       <article class="reference-card">
         <a class="reference-card__media" href="/referenzen/<%= project.slug %>" aria-label="<%= project.name %> ansehen">
-          <img src="<%= project.image %>" alt="Referenzbild <%= project.name %>" loading="lazy" />
+          <img src="<%= project.image %>" alt="<%= project.imageAlt %>" loading="lazy" />
         </a>
         <div class="reference-card__body">
           <p class="reference-card__industry"><%= project.industry %></p>
           <h3><a href="/referenzen/<%= project.slug %>"><%= project.name %></a></h3>
-          <p><%= project.summary %></p>
-          <a class="reference-card__link" href="/referenzen/<%= project.slug %>">Projekt ansehen</a>
+          <dl class="reference-card__facts">
+            <div>
+              <dt>Ausgangslage</dt>
+              <dd><%= project.problem %></dd>
+            </div>
+            <div>
+              <dt>Kernleistungen</dt>
+              <dd>
+                <ul>
+                  <% project.services.forEach(function(service){ %><li><%= service %></li><% }); %>
+                </ul>
+              </dd>
+            </div>
+            <div>
+              <dt>Ergebnis</dt>
+              <dd><%= project.primaryOutcome %></dd>
+            </div>
+            <div>
+              <dt>Kundenstimme</dt>
+              <dd><q><%= project.quote %></q> <small>– <%= project.quoteAuthor %></small></dd>
+            </div>
+          </dl>
+          <div class="reference-card__actions">
+            <a class="reference-card__link" href="/referenzen/<%= project.slug %>">Projekt im Detail ansehen</a>
+            <a class="reference-card__service" href="<%= project.relatedServiceHref %>"><%= project.relatedServiceLabel %></a>
+          </div>
         </div>
       </article>
       <% }); %>
     </div>
+  </section>
+
+  <section class="references-container reference-section reference-section--split" aria-labelledby="references-context-title">
+    <div class="reference-section__copy">
+      <p class="references-eyebrow">Wie du die Referenzen lesen kannst</p>
+      <h2 id="references-context-title">Keine künstlichen Zahlen, sondern nachvollziehbare Projektlogik</h2>
+      <p>
+        Gezeigt werden die tatsächliche Ausgangslage, umgesetzte Leistungen und qualitative Ergebnisse.
+        Kennzahlen oder Kundenstimmen erscheinen nur, wenn sie freigegeben sind.
+      </p>
+    </div>
+    <ul class="reference-check-list">
+      <li>Struktur, Priorisierung und Anfragewege sind nachvollziehbar</li>
+      <li>Ergebnisse bleiben qualitativ, wenn keine Kennzahlen belegt sind</li>
+      <li>Die passende Leistung wird direkt am Projekt verlinkt</li>
+    </ul>
   </section>
 
   <section class="references-container references-cta" aria-labelledby="references-cta-title">
