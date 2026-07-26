@@ -37,7 +37,7 @@ export const ctas = Object.freeze({
   },
   maintenanceRequest: {
     label: 'Wartung anfragen',
-    url: '/kontakt?projektart=maintenance'
+    url: '/kontakt?projektart=website-wartung'
   }
 });
 

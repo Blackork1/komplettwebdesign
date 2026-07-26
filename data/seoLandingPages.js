@@ -206,7 +206,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     ],
     cta: {
       label: 'Relaunch besprechen',
-      href: '/kontakt?projektart=relaunch',
+      href: '/kontakt?projektart=website-relaunch',
       text: 'Beschreibe kurz deine aktuelle Website, was nicht mehr passt und welche Ziele du mit dem Relaunch erreichen möchtest. Danach klären wir Umfang, Risiken und sinnvolle Paketlogik.'
     },
     secondaryCta: {
@@ -215,7 +215,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     },
     finalCta: {
       label: 'Website-Relaunch anfragen',
-      href: '/kontakt?projektart=relaunch',
+      href: '/kontakt?projektart=website-relaunch',
       text: 'Wenn deine Website nicht mehr zu deinem Unternehmen passt, planen wir den Neustart mit Struktur, Technik, Inhalten und realistischen Grenzen.',
       secondaryLabel: 'Pakete ansehen',
       secondaryHref: '/pakete'
@@ -310,11 +310,11 @@ export const SEO_LANDING_PAGES = Object.freeze([
       { label: 'Individuell', href: '/pakete/individuell', text: 'Sonderfunktionen, Migration oder größere Anforderungen' },
       { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor dem Relaunch vertieft prüfen' },
       { label: 'Website-Tester', href: '/website-tester', text: 'Aktuelle Website vor dem Relaunch prüfen' },
-      { label: 'Audit anfragen', href: '/kontakt?projektart=audit', text: 'Vertiefte Relaunch-Analyse separat besprechen' },
+      { label: 'Audit anfragen', href: '/kontakt?projektart=website-audit', text: 'Vertiefte Relaunch-Analyse separat besprechen' },
       { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Sichtbarkeit beim Relaunch mitplanen' },
       { label: 'Laufende Kosten', href: '/leistungen/laufende-kosten-website', text: 'Hosting, Domain, E-Mail und externe Tools einordnen' },
       { label: 'Website-Wartung', href: '/leistungen/website-wartung', text: 'Support nach dem Livegang separat planen' },
-      { label: 'Kontakt', href: '/kontakt?projektart=relaunch', text: 'Relaunch-Aufwand einschätzen lassen' }
+      { label: 'Kontakt', href: '/kontakt?projektart=website-relaunch', text: 'Relaunch-Aufwand einschätzen lassen' }
     ],
     todos: [
       'Nach Livegang prüfen, ob mehr interne Links von Paketdetailseiten auf /leistungen/website-relaunch sinnvoll sind.'
@@ -543,7 +543,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     ],
     cta: {
       label: 'Website-Audit anfragen',
-      href: '/kontakt?projektart=audit',
+      href: '/kontakt?projektart=website-audit',
       text: 'Schick mir die Website-URL und beschreibe kurz, was dich aktuell unsicher macht. Danach klären wir, ob ein Kurz-Audit, Standard-Audit oder Relaunch-Audit sinnvoll ist.'
     },
     secondaryCta: {
@@ -552,7 +552,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     },
     finalCta: {
       label: 'Website prüfen lassen',
-      href: '/kontakt?projektart=audit',
+      href: '/kontakt?projektart=website-audit',
       text: 'Wenn du wissen möchtest, ob Optimierung, Relaunch oder Local SEO der richtige nächste Schritt ist, liefert ein Audit eine klare Entscheidungsgrundlage.',
       secondaryLabel: 'Relaunch besprechen',
       secondaryHref: '/leistungen/website-relaunch'
@@ -640,7 +640,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       }
     ],
     internalLinks: [
-      { label: 'Kontakt', href: '/kontakt?projektart=audit', text: 'Website-Audit mit URL und Ziel anfragen' },
+      { label: 'Kontakt', href: '/kontakt?projektart=website-audit', text: 'Website-Audit mit URL und Ziel anfragen' },
       { label: 'Kostenloser Website-Tester', href: '/website-tester', text: 'Erste Orientierung vor dem bezahlten Audit starten' },
       { label: 'Website-Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Audit-Ergebnisse für Relaunch-Entscheidungen nutzen' },
       { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Sichtbarkeit als Folgethema einordnen' },

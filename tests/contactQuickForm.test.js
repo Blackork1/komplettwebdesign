@@ -42,11 +42,13 @@ test('contact quick form posts localized recaptcha-protected requests with requi
   assert.match(quickForm, /<input type="hidden" name="token">/);
   assert.match(quickForm, /<input[^>]*name="startedAt"/);
   assert.match(quickForm, /<select[^>]*name="projectType"[\s\S]*?required/);
-  assert.match(quickForm, /<select[^>]*name="packageInterest"/);
-  assert.match(quickForm, /<select[^>]*name="budgetRange"/);
   assert.match(quickForm, /<input[^>]*name="name"[\s\S]*?required>/);
   assert.match(quickForm, /<input[^>]*name="email"[\s\S]*?required>/);
-  assert.match(quickForm, /<input[^>]*name="phone"[\s\S]*?>/);
+  assert.match(quickForm, /<input[^>]*name="existingWebsiteUrl"[^>]*type="url"/);
+  assert.match(quickForm, /data-quick-website-field/);
+  assert.doesNotMatch(quickForm, /name="packageInterest"/);
+  assert.doesNotMatch(quickForm, /name="budgetRange"/);
+  assert.doesNotMatch(quickForm, /name="phone"/);
   const quickMessageTag = quickForm.match(/<textarea id="quick-message"[^>]*>/)?.[0] || '';
   assert.match(quickMessageTag, /name="message"/);
   assert.doesNotMatch(quickMessageTag, /required/);
@@ -55,6 +57,7 @@ test('contact quick form posts localized recaptcha-protected requests with requi
   assert.match(quickForm, /<input type="hidden" name="source" value="contact-quick">/);
   assert.match(quickForm, /<input type="hidden" name="locale"/);
   assert.match(quickForm, /name="privacyConsent"[\s\S]*required/);
+  assert.match(quickForm, /Ich prüfe deine Angaben und melde mich mit einer ersten Einordnung zum passenden Paket oder nächsten Schritt\. Die Anfrage ist unverbindlich\./);
 });
 
 test('contact quick request accepts an empty message after required contact and consent checks', () => {
@@ -106,6 +109,16 @@ test('contact controller sanitizes query preselects and requires spam token for 
   assert.match(contactControllerSource, /currentSearch:\s*buildContactSafeSearch\(req\.query,\s*packageOptions\)/);
   assert.match(contactControllerSource, /isContactQuick\s*&&\s*!token/);
   assert.match(contactControllerSource, /Der Spamschutz konnte nicht abgeschlossen werden/);
+  assert.match(contactControllerSource, /normalizeContactProjectTypePreselect/);
+  assert.match(contactControllerSource, /QUICK_PROJECT_TYPES_REQUIRING_URL/);
+});
+
+test('Schnellanfrage fordert die Website-URL nur für Audit, Relaunch und Wartung an', () => {
+  assert.match(kontaktJs, /website-relaunch/);
+  assert.match(kontaktJs, /website-audit/);
+  assert.match(kontaktJs, /website-wartung/);
+  assert.match(kontaktJs, /websiteField\.required = requiresWebsite/);
+  assert.match(kontaktJs, /websiteFieldWrapper\.hidden = !requiresWebsite/);
 });
 
 test('contact routes are mounted for German and English contact paths', () => {

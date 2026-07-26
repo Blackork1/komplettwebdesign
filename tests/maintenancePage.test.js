@@ -63,7 +63,7 @@ test('maintenance page uses central maintenance plans with current prices and sc
   assert.ok(maintenancePage, 'missing maintenancePage data module');
   assert.deepEqual(maintenancePage.plans.map((plan) => plan.id), maintenancePlans.map((plan) => plan.id));
   assert.deepEqual(maintenancePlans.map((plan) => plan.priceFrom), [39, 79, 129]);
-  assert.ok(maintenancePlans.every((plan) => plan.ctaUrl === '/kontakt?projektart=maintenance'));
+  assert.ok(maintenancePlans.every((plan) => plan.ctaUrl === '/kontakt?projektart=website-wartung'));
   assert.ok(maintenancePlans.every((plan) => plan.targetGroup?.length));
   assert.ok(maintenancePlans.every((plan) => plan.emergencyNote && plan.thirdPartyNote));
 
@@ -103,7 +103,7 @@ test('maintenance FAQ, route, template, CTA, footer and sitemap are wired to the
   assert.match(templateSource, /BreadcrumbList/);
   assert.match(templateSource, /Service/);
   assert.match(templateSource, /<h1 class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll"><%=\s*page\.h1\s*%><\/h1>/);
-  assert.equal(ctas.maintenanceRequest.url, '/kontakt?projektart=maintenance');
+  assert.equal(ctas.maintenanceRequest.url, '/kontakt?projektart=website-wartung');
   assert.ok(
     INDEXABLE_STATIC_ROUTES.some((route) => route.path === '/leistungen/website-wartung'),
     'maintenance page missing from sitemap policy'
@@ -120,7 +120,7 @@ test('maintenance FAQ, route, template, CTA, footer and sitemap are wired to the
       maintenancePage.cta.primary.url,
       maintenancePage.finalCta.primary.url
     ]),
-    new Set(['/kontakt?projektart=maintenance']),
+    new Set(['/kontakt?projektart=website-wartung']),
     'Website-Wartung hat genau einen primären nächsten Schritt'
   );
 });

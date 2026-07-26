@@ -181,11 +181,11 @@ test('website relaunch phase 10b contains required sections, cautious pricing an
     '/pakete/individuell',
     '/leistungen/website-audit',
     '/website-tester',
-    '/kontakt?projektart=audit',
+    '/kontakt?projektart=website-audit',
     '/leistungen/local-seo',
     '/leistungen/laufende-kosten-website',
     '/leistungen/website-wartung',
-    '/kontakt?projektart=relaunch'
+    '/kontakt?projektart=website-relaunch'
   ].forEach((href) => assert.ok(page.internalLinks.some((link) => link.href === href), `${href} missing`));
 
   assert.ok(page.internalLinks.some((link) => link.href === '/leistungen/website-audit'), '/leistungen/website-audit must be linked once the page exists');
@@ -264,7 +264,7 @@ test('website audit phase 10d contains required sections, cautious pricing and s
   ].forEach((snippet) => assert.match(pageText, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))));
 
   [
-    '/kontakt?projektart=audit',
+    '/kontakt?projektart=website-audit',
     '/website-tester',
     '/leistungen/website-relaunch',
     '/leistungen/local-seo',
@@ -275,7 +275,7 @@ test('website audit phase 10d contains required sections, cautious pricing and s
   ].forEach((href) => assert.ok(page.internalLinks.some((link) => link.href === href), `${href} missing`));
   assert.deepEqual(
     new Set([page.cta.href]),
-    new Set(['/kontakt?projektart=audit']),
+    new Set(['/kontakt?projektart=website-audit']),
     'Website-Audit hat genau einen primären nächsten Schritt'
   );
 });

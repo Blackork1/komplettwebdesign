@@ -40,6 +40,11 @@
   const testerHref = isEn ? '/en/website-tester' : '/website-tester';
   const privacyHref = '/datenschutz';
   const noticesHref = '/hinweise-rechtstexte-seo-datenschutz';
+  const quickProjectOptions = Array.isArray(quickContactProjectTypeOptions) ? quickContactProjectTypeOptions : [];
+  const selectedQuickProjectType = quickContactProjectTypePreselect || 'webdesign';
+  const quickProjectRequiresWebsite = quickProjectOptions.some((option) => (
+    option.value === selectedQuickProjectType && option.requiresWebsiteUrl
+  ));
 %>
 <link rel="stylesheet" href="<%= cssAsset('kontakt.css') %>">
 <noscript>
@@ -185,27 +190,15 @@
             <div class="contact-field">
               <label for="quick-project-type"><%= isEn ? 'What do you want to request?' : 'Was möchtest du anfragen?' %> *</label>
               <select id="quick-project-type" name="projectType" required data-contact-event="project_type_selected">
-                <% getOptions('projectType').forEach((option) => { %>
-                  <option value="<%= option.value %>" <%= isOptionSelected('projectType', option.value, 'unsure') %>><%= option.label %></option>
+                <% quickProjectOptions.forEach((option) => { %>
+                  <option value="<%= option.value %>" <%= option.value === selectedQuickProjectType ? 'selected' : '' %>><%= option.label %></option>
                 <% }) %>
               </select>
             </div>
-            <div class="contact-field" data-quick-package-field>
-              <label for="quick-package-interest"><%= isEn ? 'If this is about a new website: which package are you interested in?' : 'Falls es um eine neue Website geht: welches Paket interessiert dich?' %></label>
-              <select id="quick-package-interest" name="packageInterest" data-contact-event="package_interest_selected">
-                <% getOptions('packageInterest').forEach((option) => { %>
-                  <option value="<%= option.value %>" <%= isOptionSelected('packageInterest', option.value, 'unsure') %>><%= option.label %></option>
-                <% }) %>
-              </select>
-            </div>
-            <div class="contact-field">
-              <label for="quick-budget-range"><%= isEn ? 'Rough budget range' : 'Grober Budgetrahmen' %></label>
-              <select id="quick-budget-range" name="budgetRange" data-contact-event="budget_range_selected">
-                <% getOptions('budgetRange').forEach((option) => { %>
-                  <option value="<%= option.value %>" <%= isOptionSelected('budgetRange', option.value, 'open') %>><%= option.label %></option>
-                <% }) %>
-              </select>
-              <p class="contact-help"><%= isEn ? 'This helps with a realistic recommendation.' : 'Das hilft bei einer realistischen Empfehlung.' %></p>
+            <div class="contact-field contact-field--full" data-quick-website-field <%= quickProjectRequiresWebsite ? '' : 'hidden' %>>
+              <label for="quick-existing-website-url"><%= isEn ? 'Website URL' : 'Website-URL' %> *</label>
+              <input id="quick-existing-website-url" name="existingWebsiteUrl" type="url" inputmode="url" autocomplete="url" maxlength="500" value="<%= inputValue('existingWebsiteUrl') %>" placeholder="https://beispiel.de" <%= quickProjectRequiresWebsite ? 'required' : '' %>>
+              <p class="contact-help"><%= isEn ? 'Required only for an audit, relaunch or maintenance request.' : 'Nur für Audit, Relaunch oder Wartung erforderlich.' %></p>
             </div>
             <div class="contact-field">
               <label for="quick-name"><%= isEn ? 'Name' : 'Name' %> *</label>
@@ -214,10 +207,6 @@
             <div class="contact-field">
               <label for="quick-email"><%= isEn ? 'Email' : 'E-Mail' %> *</label>
               <input id="quick-email" name="email" type="email" autocomplete="email" maxlength="180" required>
-            </div>
-            <div class="contact-field">
-              <label for="quick-phone"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
-              <input id="quick-phone" name="phone" type="tel" autocomplete="tel" maxlength="80" placeholder="+49 ...">
             </div>
             <div class="contact-field contact-field--full">
               <label for="quick-message"><%= isEn ? 'What should I assess? (optional)' : 'Was soll ich einschätzen? (optional)' %></label>
@@ -238,7 +227,10 @@
           </label>
 
           <button class="contact-submit" type="submit" data-event="contact_form_submit"><%= isEn ? 'Request assessment' : 'Einschätzung anfragen' %></button>
-          <p class="contact-submit-note"><%= isEn ? 'The request is non-binding.' : 'Die Anfrage ist unverbindlich.' %></p>
+          <p class="contact-submit-note"><%= isEn
+            ? 'I will review your details and respond with an initial assessment of the suitable package or next step. The request is non-binding.'
+            : 'Ich prüfe deine Angaben und melde mich mit einer ersten Einordnung zum passenden Paket oder nächsten Schritt. Die Anfrage ist unverbindlich.'
+          %></p>
         </form>
       </div>
     </section>
@@ -813,10 +805,16 @@
     });
 
     var contactParams = new URLSearchParams(window.location.search || '');
-    var hasDetailedPreselect = contactParams.has('projektart') || contactParams.has('projectType') || contactParams.get('source') === 'website-tester';
+    var canonicalQuickProjectTypes = ['webdesign', 'website-relaunch', 'website-audit', 'local-seo', 'website-wartung', 'landingpage'];
+    var requestedProjectType = contactParams.get('projektart') || contactParams.get('projectType') || '';
+    var hasQuickPreselect = canonicalQuickProjectTypes.indexOf(requestedProjectType) !== -1;
+    var hasDetailedPreselect = contactParams.has('paket')
+      || contactParams.get('source') === 'website-tester'
+      || ((contactParams.has('projektart') || contactParams.has('projectType')) && !hasQuickPreselect);
 
     if (window.location.hash === '#schnellanfrage') showPanel('quick', false);
     else if (window.location.hash === '#projektanfrage' || hasDetailedPreselect || document.querySelector('[data-form-has-errors="true"]')) showPanel('detailed', false);
+    else if (hasQuickPreselect) showPanel('quick', false);
     else hidePanels(false);
   });
 </script>

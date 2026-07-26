@@ -83,7 +83,7 @@ test('DB-8 service maps add-on and maintenance DB rows to public page models', a
         response_time: 'priorisiert im Rahmen der Möglichkeiten',
         content_change_allowance: 'kleine Änderungen im definierten Zeitrahmen',
         emergency_note: 'Akute Probleme werden eingeordnet',
-        cta_url: '/kontakt?projektart=maintenance',
+        cta_url: '/kontakt?projektart=website-wartung',
         is_recommended: true,
         is_active: true,
         is_visible: true

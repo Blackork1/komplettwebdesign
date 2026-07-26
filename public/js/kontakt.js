@@ -289,6 +289,31 @@
     });
   }
 
+  function bindQuickWebsiteRequirement(form) {
+    if (!form || form.id !== "contactQuickForm") return;
+    const projectTypeField = form.querySelector('select[name="projectType"]');
+    const websiteFieldWrapper = form.querySelector("[data-quick-website-field]");
+    const websiteField = websiteFieldWrapper?.querySelector('input[name="existingWebsiteUrl"]');
+    if (!projectTypeField || !websiteFieldWrapper || !websiteField) return;
+
+    const projectTypesRequiringWebsite = new Set([
+      "website-relaunch",
+      "website-audit",
+      "website-wartung"
+    ]);
+
+    function updateWebsiteRequirement() {
+      const requiresWebsite = projectTypesRequiringWebsite.has(projectTypeField.value);
+      websiteField.required = requiresWebsite;
+      websiteFieldWrapper.hidden = !requiresWebsite;
+      websiteField.disabled = !requiresWebsite;
+      if (!requiresWebsite) websiteField.setCustomValidity("");
+    }
+
+    updateWebsiteRequirement();
+    projectTypeField.addEventListener("change", updateWebsiteRequirement);
+  }
+
   function escapeSelector(value) {
     if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(value);
     return String(value).replace(/["\\]/g, "\\$&");
@@ -666,6 +691,7 @@
     forms.forEach((form) => {
       bindRecaptcha(form);
       bindOptionalFeatureLogic(form);
+      bindQuickWebsiteRequirement(form);
       bindDetailedWizard(form);
       if (form.dataset.formHasErrors === "true") {
         dispatchContactEvent("contact_form_submit_error", {

@@ -39,7 +39,7 @@ export const maintenancePlans = Object.freeze([
     thirdPartyNote: 'Externe Tools, Anbietergebühren und fremde Systeme sind nicht automatisch vollständig enthalten.',
     cancellationNote: 'Kündigungsfristen werden im Angebot festgelegt.',
     ctaLabel: 'Wartung Basis anfragen',
-    ctaUrl: '/kontakt?projektart=maintenance',
+    ctaUrl: '/kontakt?projektart=website-wartung',
     isRecommended: false,
     order: 1
   },
@@ -73,7 +73,7 @@ export const maintenancePlans = Object.freeze([
     thirdPartyNote: 'Probleme mit Drittanbieter-Tools können geprüft werden, zusätzlicher Aufwand bleibt separat.',
     cancellationNote: 'Kündigungsfristen werden im Angebot festgelegt.',
     ctaLabel: 'Wartung Standard anfragen',
-    ctaUrl: '/kontakt?projektart=maintenance',
+    ctaUrl: '/kontakt?projektart=website-wartung',
     isRecommended: true,
     order: 2
   },
@@ -107,7 +107,7 @@ export const maintenancePlans = Object.freeze([
     thirdPartyNote: 'Externe Dienste und Schnittstellen liegen nicht vollständig im Einflussbereich und können Zusatzaufwand auslösen.',
     cancellationNote: 'Kündigungsfristen werden im Angebot festgelegt.',
     ctaLabel: 'Wartung Plus anfragen',
-    ctaUrl: '/kontakt?projektart=maintenance',
+    ctaUrl: '/kontakt?projektart=website-wartung',
     isRecommended: false,
     order: 3
   }

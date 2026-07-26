@@ -86,6 +86,42 @@ export const contactBranchOptionGroups = Object.freeze({
 const commonContactFields = Object.freeze(["preferredContact", "name", "email", "privacyConsent"]);
 const commonBudgetFields = Object.freeze(["budgetRange", "timeline"]);
 
+export const contactProjectTypePreselects = Object.freeze([
+  Object.freeze({ value: "webdesign", internalValue: "new-website", label: "Neue Website", labelEn: "New website", requiresWebsiteUrl: false }),
+  Object.freeze({ value: "website-relaunch", internalValue: "relaunch", label: "Website-Relaunch", labelEn: "Website relaunch", requiresWebsiteUrl: true }),
+  Object.freeze({ value: "website-audit", internalValue: "audit", label: "Website-Audit", labelEn: "Website audit", requiresWebsiteUrl: true }),
+  Object.freeze({ value: "local-seo", internalValue: "local-seo", label: "Local SEO", labelEn: "Local SEO", requiresWebsiteUrl: false }),
+  Object.freeze({ value: "website-wartung", internalValue: "maintenance", label: "Website-Wartung", labelEn: "Website maintenance", requiresWebsiteUrl: true }),
+  Object.freeze({ value: "landingpage", internalValue: "landingpage", label: "Landingpage", labelEn: "Landing page", requiresWebsiteUrl: false })
+]);
+
+const contactProjectTypeAliasMap = Object.freeze({
+  webdesign: "webdesign",
+  "new-website": "webdesign",
+  "neue-website": "webdesign",
+  "website-relaunch": "website-relaunch",
+  relaunch: "website-relaunch",
+  "website-audit": "website-audit",
+  audit: "website-audit",
+  "website-check": "website-audit",
+  "local-seo": "local-seo",
+  seo: "local-seo",
+  "website-wartung": "website-wartung",
+  maintenance: "website-wartung",
+  wartung: "website-wartung",
+  landingpage: "landingpage"
+});
+
+export function normalizeContactProjectTypePreselect(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return contactProjectTypeAliasMap[normalized] || "";
+}
+
+export function toInternalContactProjectType(value) {
+  const canonical = normalizeContactProjectTypePreselect(value);
+  return contactProjectTypePreselects.find((option) => option.value === canonical)?.internalValue || "";
+}
+
 export const contactFlowDefinitions = Object.freeze({
   "new-website": Object.freeze({
     label: "Neue Website",
@@ -153,7 +189,8 @@ export const contactFlowDefinitions = Object.freeze({
 });
 
 export function getContactFlow(projectType) {
-  return contactFlowDefinitions[projectType] || contactFlowDefinitions.unsure;
+  const internalProjectType = toInternalContactProjectType(projectType) || projectType;
+  return contactFlowDefinitions[internalProjectType] || contactFlowDefinitions.unsure;
 }
 
 export function getRequiredFieldsForProjectType(projectType) {

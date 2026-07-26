@@ -4,10 +4,29 @@ import fs from 'node:fs';
 
 import { projectTypeOptions } from '../data/packages.js';
 import {
+  contactProjectTypePreselects,
   contactFlowDefinitions,
   getRequiredFieldsForProjectType,
-  isFieldRequiredForProjectType
+  isFieldRequiredForProjectType,
+  normalizeContactProjectTypePreselect,
+  toInternalContactProjectType
 } from '../data/contactFlows.js';
+
+test('kurze Kontaktvorauswahl verwendet genau die sechs kanonischen Projektarten', () => {
+  assert.deepEqual(contactProjectTypePreselects.map((option) => option.value), [
+    'webdesign',
+    'website-relaunch',
+    'website-audit',
+    'local-seo',
+    'website-wartung',
+    'landingpage'
+  ]);
+  assert.equal(normalizeContactProjectTypePreselect('website-relaunch'), 'website-relaunch');
+  assert.equal(normalizeContactProjectTypePreselect('relaunch'), 'website-relaunch');
+  assert.equal(normalizeContactProjectTypePreselect('unbekannt'), '');
+  assert.equal(toInternalContactProjectType('website-audit'), 'audit');
+  assert.equal(toInternalContactProjectType('website-wartung'), 'maintenance');
+});
 
 test('every contact project type has an explicit branch flow', () => {
   const projectTypes = projectTypeOptions.map((option) => option.value);

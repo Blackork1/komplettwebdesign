@@ -34,11 +34,13 @@ import {
     timelineOptions
 } from "../data/packages.js";
 import {
+    contactProjectTypePreselects,
     contactFlowDefinitions,
     contactBranchOptionGroups,
     getRequiredFieldsForProjectType,
     getSummaryFieldsForProjectType,
-    isFieldRequiredForProjectType
+    isFieldRequiredForProjectType,
+    normalizeContactProjectTypePreselect
 } from "../data/contactFlows.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,6 +53,7 @@ const ALLOWED_GENERAL_UPLOAD_TYPES = new Set([
     "image/webp",
     "image/gif"
 ]);
+const QUICK_PROJECT_TYPES_REQUIRING_URL = new Set(["relaunch", "audit", "maintenance"]);
 
 function logSafeError(label, err) {
     console.error(label, err?.message || "Unbekannter Fehler");
@@ -315,7 +318,7 @@ function normalizeWebdesignBerlinBody(body, packageOptions = []) {
         phone,
         company,
         website,
-        projectType: normalizeContactOption("projectType", projectType, projectType),
+        projectType: normalizeContactOption("projectType", projectType, CONTACT_DEFAULTS.projectType),
         packageInterest: normalizeContactOption("packageInterest", packageInterest, CONTACT_DEFAULTS.packageInterest, packageOptions),
         goals,
         budget: normalizeContactOption("budgetRange", budget, budget),
@@ -424,6 +427,7 @@ const CONTENT_RELEVANT_PROJECT_TYPES = new Set([
 
 const CONTACT_VALUE_ALIASES = Object.freeze({
     projectType: {
+        webdesign: "new-website",
         "neue-website": "new-website",
         "website-relaunch": "relaunch",
         "website-wartung": "maintenance",
@@ -667,7 +671,7 @@ function buildContactPreselect(query = {}, packageOptions = []) {
 function buildContactSafeSearch(query = {}, packageOptions = []) {
     const params = new URLSearchParams();
     const packageInterest = normalizeContactOption("packageInterest", query.paket || query.packageInterest, "", packageOptions);
-    const projectType = normalizeContactOption("projectType", query.projektart || query.projectType, "");
+    const projectType = normalizeContactProjectTypePreselect(query.projektart || query.projectType);
     if (packageInterest) params.set("paket", packageInterest);
     if (projectType) params.set("projektart", projectType);
     const value = params.toString();
@@ -1084,6 +1088,8 @@ async function buildContactViewModel(req, res, overrides = {}) {
         sitekey: process.env.RECAPTCHA_SITEKEY,
         testerPrefill,
         contactFormOptions: buildContactFormOptions(lng, packageOptions),
+        quickContactProjectTypeOptions: contactProjectTypePreselects.map(option => localizedOption(option, lng)),
+        quickContactProjectTypePreselect: normalizeContactProjectTypePreselect(req.query?.projektart || req.query?.projectType) || "webdesign",
         contactFlowStepsJson: JSON.stringify(contactFlowSteps).replace(/</g, "\\u003c"),
         packageContactOptions: packageOptions,
         lowestPackagePriceLabel: lowestLabel,
@@ -1605,10 +1611,23 @@ export async function processWebdesignBerlinForm(req, res) {
     }
 
     if (isContactQuick) {
+        const canonicalProjectType = normalizeContactProjectTypePreselect(bodyData.projectType);
+        const websiteUrlRequired = QUICK_PROJECT_TYPES_REQUIRING_URL.has(normalized.projectType);
+        const websiteUrlValid = !websiteUrlRequired
+            || (Boolean(normalized.existingWebsiteUrl) && isValidOptionalUrl(normalized.existingWebsiteUrl));
         const startedAt = Number(bodyData.startedAt);
         const timingOk = Number.isFinite(startedAt) && Date.now() - startedAt >= 2500;
         const honeypotOk = !toCleanString(bodyData.contactWebsite);
         const privacyOk = bodyData.privacyConsent === "yes";
+        if (!canonicalProjectType || !websiteUrlValid) {
+            const message = lng === "en"
+                ? "Please choose a valid project type and add a valid website URL where required."
+                : "Bitte wähle eine gültige Projektart und ergänze bei Audit, Relaunch oder Wartung eine gültige Website-URL.";
+            if (expectsJson(req)) {
+                return res.status(422).json({ success: false, message });
+            }
+            return res.status(422).send(message);
+        }
         if (!privacyOk || !timingOk || !honeypotOk) {
             const message = lng === "en"
                 ? "Please confirm the privacy notice and submit the form again."

@@ -212,7 +212,7 @@ export function mapMaintenancePlan(row) {
     thirdPartyNote: value(row, 'thirdPartyNote', 'third_party_note'),
     cancellationNote: value(row, 'cancellationNote', 'cancellation_note'),
     ctaLabel: value(row, 'ctaLabel', 'cta_label') || `${value(row, 'name', 'name') || 'Wartung'} anfragen`,
-    ctaUrl: value(row, 'ctaUrl', 'cta_url') || '/kontakt?projektart=maintenance',
+    ctaUrl: value(row, 'ctaUrl', 'cta_url') || '/kontakt?projektart=website-wartung',
     isRecommended: Boolean(value(row, 'isRecommended', 'is_recommended')),
     isActive: Boolean(value(row, 'isActive', 'is_active')),
     isVisible: Boolean(value(row, 'isVisible', 'is_visible')),
