@@ -47,6 +47,6 @@ test('Migrationsrunner führt 015 direkt nach 014 aus', () => {
     runner.indexOf('015_create_legacy_content_migrations.sql')
       > runner.indexOf('014_create_existing_content_admin_preferences.sql')
   );
-  assert.match(runner, /Migration 002 bis 015 erfolgreich/);
-  assert.match(runner, /Migration 002 bis 015 fehlgeschlagen/);
+  assert.match(runner, /Migration 002 bis 016 erfolgreich/);
+  assert.match(runner, /Migration 002 bis 016 fehlgeschlagen/);
 });
