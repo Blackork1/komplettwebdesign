@@ -30,6 +30,7 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
     '/referenzen',
     '/referenzen/zur-alten-backstube',
     '/referenzen/tm-sauber-mehr',
+    '/referenzen/kurdisches-filmfestival',
     '/ablauf',
     '/website-tester',
     '/website-tester/broken-links',

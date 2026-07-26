@@ -43,6 +43,7 @@ export const INDEXABLE_STATIC_ROUTES = [
   { path: '/referenzen', changefreq: 'monthly', priority: 0.8 },
   { path: '/referenzen/zur-alten-backstube', changefreq: 'monthly', priority: 0.7 },
   { path: '/referenzen/tm-sauber-mehr', changefreq: 'monthly', priority: 0.7 },
+  { path: '/referenzen/kurdisches-filmfestival', changefreq: 'monthly', priority: 0.7 },
   { path: '/ablauf', changefreq: 'monthly', priority: 0.8 },
   { path: '/en/webdesign-berlin', changefreq: 'weekly', priority: 0.9 }
 ];
