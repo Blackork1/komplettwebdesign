@@ -34,6 +34,26 @@ test('nur das wahrscheinliche LCP-Bild lädt eager und high priority', () => {
   assert.match(phoneImage, /loading="lazy"/);
 });
 
+test('komplette Hero-Copy ist ohne Animations-JavaScript sichtbar', () => {
+  const heroStart = view.indexOf('<section class="hero hero-main" id="hero">');
+  const heroEnd = view.indexOf("    <%- include('partials/hero-highlight-marquee'");
+  const hero = view.slice(heroStart, heroEnd);
+  const revealRule = ruleBlock(css, '.hero-main .home-hero-reveal.animate-on-scroll');
+
+  [
+    /class="hero-badge[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /<h1 class="[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /class="home-hero-claim[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /<h2 class="[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /<li class="[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /class="hero-ctas[^"]*home-hero-reveal[^"]*animate-on-scroll"/,
+    /class="home-hero-trust-note[^"]*home-hero-reveal[^"]*animate-on-scroll"/
+  ].forEach((pattern) => assert.match(hero, pattern));
+
+  assert.match(revealRule, /opacity:\s*1/);
+  assert.doesNotMatch(revealRule, /opacity:\s*0/);
+});
+
 test('LCP-Inhalt ist vor Animations-JavaScript sichtbar', () => {
   const mainRule = ruleBlock(
     css,

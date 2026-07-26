@@ -30,7 +30,7 @@
   }
 
   .hero-main .home-hero-reveal.animate-on-scroll {
-    opacity: 0;
+    opacity: 1;
     transform: translate3d(0, 28px, 0);
     transition:
       opacity 0.68s cubic-bezier(0.22, 1, 0.36, 1),
