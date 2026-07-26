@@ -38,11 +38,12 @@ const EXPECTED_TESTIMONIALS = {
   }
 };
 
-test('referenceProjects exports exactly two current proof projects', () => {
-  assert.equal(referenceProjects.length, 2);
+test('referenceProjects exports all current proof projects', () => {
+  assert.equal(referenceProjects.length, 3);
   assert.deepEqual(referenceProjects.map((project) => project.slug), [
     'zur-alten-backstube',
-    'tm-sauber-mehr'
+    'tm-sauber-mehr',
+    'kurdisches-filmfestival'
   ]);
 });
 
@@ -77,10 +78,54 @@ test('reference projects include all required proof fields', () => {
 test('reference projects include the available customer testimonials', () => {
   referenceProjects.forEach((project) => {
     const expected = EXPECTED_TESTIMONIALS[project.slug];
-    assert.ok(expected, `${project.slug} must have expected testimonial coverage`);
-    assert.equal(project.quote, expected.quote);
-    assert.equal(project.quoteAuthor, expected.quoteAuthor);
+
+    if (expected) {
+      assert.equal(project.quote, expected.quote);
+      assert.equal(project.quoteAuthor, expected.quoteAuthor);
+      return;
+    }
+
+    assert.equal(project.quote, '', `${project.slug} must not invent a testimonial`);
+    assert.equal(project.quoteAuthor, '', `${project.slug} must not invent a testimonial author`);
   });
+});
+
+test('kurdisches filmfestival reference documents the approved platform features with local imagery', () => {
+  const project = getReferenceProjectBySlug('kurdisches-filmfestival');
+
+  assert.ok(project);
+  assert.equal(project.liveUrl, 'https://www.kurdisches-filmfestival.de');
+  assert.equal(project.relatedServiceHref, '/pakete/individuell');
+  assert.equal(project.quote, '');
+  assert.equal(project.quoteAuthor, '');
+  assert.ok(Array.isArray(project.additionalScreens));
+  assert.equal(project.additionalScreens.length, 6);
+
+  const images = [
+    { image: project.image, alt: project.imageAlt },
+    ...project.additionalScreens.map((screen) => ({ image: screen.image, alt: screen.alt }))
+  ];
+
+  images.forEach(({ image, alt }) => {
+    assert.match(image, /^\/images\/references\/kurdisches-filmfestival\/[^/]+\.webp$/);
+    assert.equal(typeof alt, 'string');
+    assert.ok(alt.length >= 20, `${image} needs a descriptive alt text`);
+    assert.ok(
+      fs.existsSync(new URL(`../public${image}`, import.meta.url)),
+      `${image} must exist as a local project screenshot`
+    );
+  });
+
+  const featureCopy = project.additionalScreens
+    .map((screen) => `${screen.title} ${screen.text}`)
+    .join('\n');
+
+  assert.match(featureCopy, /Mediathek|Video/i);
+  assert.match(featureCopy, /Galerie/i);
+  assert.match(featureCopy, /News|Blog/i);
+  assert.match(featureCopy, /Ticket/i);
+  assert.match(featureCopy, /Newsletter/i);
+  assert.match(featureCopy, /Spende/i);
 });
 
 test('reference projects include enough implementation and result proof points', () => {
@@ -137,6 +182,20 @@ test('reference detail template renders relaunch comparison gallery controls', (
   assert.match(showTemplate, /additionalScreens/);
 });
 
+test('reference templates handle projects without testimonials and use screen alt texts', () => {
+  const indexTemplate = fs.readFileSync(new URL('../views/references/index.ejs', import.meta.url), 'utf8');
+  const showTemplate = fs.readFileSync(new URL('../views/references/show.ejs', import.meta.url), 'utf8');
+
+  assert.match(indexTemplate, /if \(project\.quote\)/);
+  assert.match(indexTemplate, /Für dieses Projekt liegt keine öffentliche Kundenstimme vor\./);
+  assert.match(showTemplate, /screen\.alt/);
+  assert.match(showTemplate, /project\.additionalScreensEyebrow/);
+  assert.match(showTemplate, /project\.additionalScreensTitle/);
+  assert.match(showTemplate, /project\.implementationIntro/);
+  assert.match(showTemplate, /project\.boundaryText/);
+  assert.match(showTemplate, /project\.boundaryPoints/);
+});
+
 test('Referenzkarten ziehen Ausgangslage, Kernleistungen, Ergebnis, Kundenstimme und passende Leistung vor', () => {
   const indexTemplate = fs.readFileSync(new URL('../views/references/index.ejs', import.meta.url), 'utf8');
   const showTemplate = fs.readFileSync(new URL('../views/references/show.ejs', import.meta.url), 'utf8');
@@ -188,6 +247,7 @@ test('reference project copy avoids unsupported numeric metrics and percentage c
 test('getReferenceProjectBySlug returns projects and null for missing slugs', () => {
   assert.equal(getReferenceProjectBySlug('zur-alten-backstube')?.name, 'Zur alten Backstube');
   assert.equal(getReferenceProjectBySlug('tm-sauber-mehr')?.name, 'TM Sauber & Mehr');
+  assert.equal(getReferenceProjectBySlug('kurdisches-filmfestival')?.name, 'Kurdisches Filmfestival Berlin');
   assert.equal(getReferenceProjectBySlug('unbekannt'), null);
   assert.equal(getReferenceProjectBySlug(''), null);
 });

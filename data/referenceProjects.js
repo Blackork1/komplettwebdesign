@@ -114,6 +114,93 @@ export const referenceProjects = [
         image: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1778179354/admin_gallery/hdgcjjbhneyscgl2wpqm.webp'
       }
     ]
+  },
+  {
+    slug: 'kurdisches-filmfestival',
+    name: 'Kurdisches Filmfestival Berlin',
+    industry: 'Kultur, Festival und Streaming',
+    title: 'Kurdisches Filmfestival Berlin: Festivalplattform mit Mediathek und Ticketshop',
+    metaDescription: 'Referenzprojekt Kurdisches Filmfestival Berlin: mehrsprachige Festivalplattform mit Mediathek, News, Galerie, Ticketshop, Newsletter und Spendenbereich.',
+    summary: 'Eine mehrsprachige Festivalplattform, die Filme, redaktionelle Inhalte, Ticketwege und Unterstützungsmöglichkeiten in einem eigenständigen digitalen Auftritt verbindet.',
+    problem: 'Das Festival brauchte mehr als eine klassische Veranstaltungsseite. Filme, aktuelle Inhalte, Tickets, Spenden, Newsletter und mehrere Sprachfassungen mussten in einem verständlichen System zusammengeführt werden.',
+    goal: 'Besucher sollten das Festival entdecken, Filme und Neuigkeiten finden, zwischen Kino- und Online-Zugang wählen und das Festival direkt unterstützen können.',
+    implementationIntro: 'Der Schwerpunkt lag auf einer eigenständigen Plattform, die redaktionelle Inhalte, Medien und Transaktionen klar zusammenführt und für neue Festivalausgaben weiterverwendet werden kann.',
+    implementation: [
+      'Eine mehrsprachige Seitenstruktur für Deutsch, Englisch und Kurdisch aufgebaut',
+      'Mediathek, Filmkategorien und ausführliche Filmdetails mit Online-Zugang verbunden',
+      'Newsbereich und Galerie als redaktionell pflegbare Inhaltsbereiche umgesetzt',
+      'Online- und Kinotickets, Newsletter sowie Spendenwege in die Nutzerführung integriert',
+      'Consent-Management, geschützte Sitzungen und Zahlungsabläufe als technische Grundlage ergänzt'
+    ],
+    result: [
+      'Programm, Filme, Neuigkeiten und Festivalmomente sind in einem konsistenten Auftritt gebündelt',
+      'Besucher können zwischen digitalem Zugang und Kinoerlebnis unterscheiden und den passenden Weg direkt aufrufen',
+      'Das Festivalteam verfügt über wiederverwendbare Bereiche für neue Inhalte, Bilder und künftige Festivalausgaben',
+      'Newsletter und Spendenseite ergänzen die Website um direkte Wege für Bindung und Unterstützung'
+    ],
+    quote: '',
+    quoteAuthor: '',
+    image: '/images/references/kurdisches-filmfestival/startseite.webp',
+    imageAlt: 'Startseite des Kurdischen Filmfestivals Berlin mit mehrsprachiger Navigation und Festivalmotiv',
+    liveUrl: 'https://www.kurdisches-filmfestival.de',
+    services: [
+      'Mehrsprachige Festivalplattform mit eigenständigem Design',
+      'Mediathek und Ticketshop für digitale und lokale Angebote',
+      'News, Galerie, Newsletter und Spendenbereich'
+    ],
+    suitableFor: 'Festivals, Kulturveranstalter und Organisationen, die redaktionelle Inhalte, Medien, Ticketing und Unterstützungsmöglichkeiten in einer individuellen Plattform verbinden möchten.',
+    relatedServiceHref: '/pakete/individuell',
+    relatedServiceLabel: 'Individuelles Webdesign-Projekt ansehen',
+    primaryOutcome: 'Die zentralen Festivalangebote sind in einer mehrsprachigen Plattform gebündelt und führen verständlich zu Filmen, Tickets, News, Newsletter und Spenden.',
+    nextStepLabel: 'Individuelle Plattform besprechen',
+    nextStepHref: '/kontakt?paket=individuell',
+    additionalScreensEyebrow: 'Funktionsumfang',
+    additionalScreensTitle: 'Zentrale Bereiche der Festivalplattform',
+    additionalScreens: [
+      {
+        title: 'Mediathek und Filmdetails',
+        text: 'Filmübersichten, Kategorien und ausführliche Filmdetails verbinden Vorschau, Hintergrundinformationen sowie Online- und Kinotickets.',
+        image: '/images/references/kurdisches-filmfestival/mediathek.webp',
+        alt: 'Mediathek des Kurdischen Filmfestivals mit Filmmotiv, Filmdaten und Ticketverlinkungen'
+      },
+      {
+        title: 'Kategorisierte Galerie',
+        text: 'Die Galerie ordnet Bilder und Videos nach Filmen, Veranstaltungen und Festivalmomenten und macht sie in einer vergrößerbaren Ansicht erlebbar.',
+        image: '/images/references/kurdisches-filmfestival/galerie.webp',
+        alt: 'Galerie des Kurdischen Filmfestivals mit Bildern aus Filmen, Veranstaltungen und Festivalmomenten'
+      },
+      {
+        title: 'News und Blog',
+        text: 'Ein redaktioneller Bereich veröffentlicht Festivalmeldungen, Hintergründe, Veranstaltungen und ausführliche Beiträge mit eigenen Medien.',
+        image: '/images/references/kurdisches-filmfestival/news.webp',
+        alt: 'Blogartikel des Kurdischen Filmfestivals mit Überschrift, Beitragsbild und redaktionellem Inhalt'
+      },
+      {
+        title: 'Ticketshop und Online-Pass',
+        text: 'Der Ticketbereich trennt Online-Pässe und Kinotickets klar und erklärt, welcher Zugang zum gewünschten Festivalerlebnis führt.',
+        image: '/images/references/kurdisches-filmfestival/tickets.webp',
+        alt: 'Ticketbereich des Kurdischen Filmfestivals mit Online-Pass und Auswahl für Kinotickets'
+      },
+      {
+        title: 'Newsletter nach Interessen',
+        text: 'Besucher können sich für Festivalnews und Videoveröffentlichungen anmelden und selbst auswählen, welche Informationen sie erhalten möchten.',
+        image: '/images/references/kurdisches-filmfestival/newsletter.webp',
+        alt: 'Newsletterformular des Kurdischen Filmfestivals mit Auswahl für News und Videoveröffentlichungen'
+      },
+      {
+        title: 'Spendenseite mit Zahlungsweg',
+        text: 'Vordefinierte oder freie Beträge, Kontaktdaten und die anschließende Zahlungsabwicklung bilden einen verständlichen Spendenprozess.',
+        image: '/images/references/kurdisches-filmfestival/spenden.webp',
+        alt: 'Spendenseite des Kurdischen Filmfestivals mit Betragsauswahl und Formular für Spenderdaten'
+      }
+    ],
+    boundaryText: 'Die Referenz zeigt, wie sich eine umfangreiche Kulturplattform mit Medien, redaktionellen Inhalten und Transaktionen verständlich strukturieren lässt. Umfang, Rechte, Zahlungsanbieter und laufende Redaktion müssen für jedes vergleichbare Projekt separat geplant werden.',
+    boundaryPoints: [
+      'Übertragbar sind Informationsarchitektur, Mehrsprachigkeit und die Verbindung verschiedener Nutzerwege',
+      'Mediathek, Ticketing und Spenden benötigen eine projektspezifische Rechte- und Zahlungslogik',
+      'Film-, Bild- und Textrechte werden vom jeweiligen Betreiber bereitgestellt und freigegeben',
+      'Reichweite, Ticketverkäufe oder Spendenergebnisse werden nicht pauschal versprochen'
+    ]
   }
 ];
 

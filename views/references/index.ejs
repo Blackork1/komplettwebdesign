@@ -15,7 +15,7 @@
         </nav>
         <h1 id="references-title" class="home-hero-reveal home-hero-reveal--h1 animate-on-scroll">Websites, die im echten Betrieb funktionieren.</h1>
         <p class="references-lead unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll">
-          Zwei aktuelle Projekte mit klarer Ausgangslage, konkreter Umsetzung und nachvollziehbarem Ergebnis.
+          Ausgewählte aktuelle Projekte mit klarer Ausgangslage, konkreter Umsetzung und nachvollziehbarem Ergebnis.
           Ohne erfundene Kennzahlen, sondern mit Blick auf Struktur, Vertrauen und Nutzbarkeit.
         </p>
         <div class="references-actions unified-hero__actions home-hero-reveal home-hero-reveal--actions animate-on-scroll">
@@ -64,7 +64,14 @@
             </div>
             <div>
               <dt>Kundenstimme</dt>
-              <dd><q><%= project.quote %></q> <small>– <%= project.quoteAuthor %></small></dd>
+              <dd>
+                <% if (project.quote) { %>
+                <q><%= project.quote %></q>
+                <% if (project.quoteAuthor) { %><small>– <%= project.quoteAuthor %></small><% } %>
+                <% } else { %>
+                <span>Für dieses Projekt liegt keine öffentliche Kundenstimme vor.</span>
+                <% } %>
+              </dd>
             </div>
           </dl>
           <div class="reference-card__actions">

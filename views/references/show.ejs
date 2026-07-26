@@ -58,7 +58,7 @@
       <div class="reference-section__copy">
         <p class="references-eyebrow">Umsetzung</p>
         <h2 id="reference-implementation-title">So wurde das Projekt aufgebaut</h2>
-        <p>Der Fokus lag auf einer Website, die den Betrieb erkennbar macht und Besucher schnell zu den richtigen Informationen führt.</p>
+        <p><%= project.implementationIntro || 'Der Fokus lag auf einer Website, die den Betrieb erkennbar macht und Besucher schnell zu den richtigen Informationen führt.' %></p>
       </div>
       <ul class="reference-check-list">
         <% project.implementation.forEach(function(item) { %>
@@ -113,14 +113,14 @@
     <% if ((project.additionalScreens || []).length) { %>
     <section class="references-container reference-section reference-added-screens" aria-labelledby="reference-added-screens-title">
       <div class="references-section-head">
-        <p class="references-eyebrow">Ergänzung</p>
-        <h2 id="reference-added-screens-title">Zusätzliche Seiten im Relaunch</h2>
+        <p class="references-eyebrow"><%= project.additionalScreensEyebrow || 'Ergänzung' %></p>
+        <h2 id="reference-added-screens-title"><%= project.additionalScreensTitle || 'Zusätzliche Seiten im Relaunch' %></h2>
       </div>
       <div class="reference-added-screens__grid">
         <% project.additionalScreens.forEach(function(screen) { %>
         <article class="reference-added-screen">
           <figure>
-            <img src="<%= screen.image %>" alt="<%= screen.title %> für <%= project.name %>" loading="lazy" />
+            <img src="<%= screen.image %>" alt="<%= screen.alt || `${screen.title} für ${project.name}` %>" loading="lazy" />
           </figure>
           <div>
             <h3><%= screen.title %></h3>
@@ -150,16 +150,26 @@
         <p class="references-eyebrow">Einordnung</p>
         <h2 id="reference-boundary-title">Was aus dieser Referenz ableitbar ist</h2>
         <p>
+          <% if (project.boundaryText) { %>
+          <%= project.boundaryText %>
+          <% } else { %>
           Dieses Projekt zeigt, wie ein lokaler Betrieb online verständlicher präsentiert werden kann:
           mit klarer Seitenführung, passender Bildsprache, sichtbaren Kontaktwegen und einer technischen Grundlage,
           die später erweitert werden kann. Es ist kein pauschales Versprechen für andere Branchen oder Ausgangslagen.
+          <% } %>
         </p>
       </div>
       <ul class="reference-check-list">
+        <% if ((project.boundaryPoints || []).length) { %>
+        <% project.boundaryPoints.forEach(function(item) { %>
+        <li><%= item %></li>
+        <% }); %>
+        <% } else { %>
         <li>Übertragbar sind Struktur, Priorisierung und klare Anfragewege</li>
         <li>Nicht übertragbar sind feste Ergebnisse, Rankings oder Anfragezahlen</li>
         <li>Zusatzfunktionen werden je nach Projekt separat geprüft</li>
         <li>Rechtstexte, Tracking, Wartung und laufende Kosten werden vorab abgegrenzt</li>
+        <% } %>
       </ul>
     </section>
 
