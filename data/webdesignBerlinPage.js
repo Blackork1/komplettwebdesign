@@ -104,18 +104,26 @@ export const webdesignBerlinPage = Object.freeze({
     ]
   },
   targetGroups: {
-    title: 'Für wen Webdesign Berlin passt',
+    eyebrow: 'Passt das zu deinem Vorhaben?',
+    title: 'Webdesign Berlin passt zu dir, wenn Klarheit wichtiger ist als eine Standardschablone',
+    lead: 'Das Angebot richtet sich an kleinere Unternehmen und Selbstständige, die ihre Leistungen verständlich zeigen und Interessenten gezielt zu einer Anfrage führen möchten.',
+    image: MARKETING_IMAGES.webdesignFit,
     goodFit: [
-      'kleine Unternehmen mit einem klaren lokalen Angebot',
-      'Selbstständige, Berater, Praxen, Handwerk und Dienstleistung',
-      'Anbieter in Berlin und Brandenburg, die ihre Leistungen verständlicher darstellen möchten',
-      'bestehende Websites, die technisch oder inhaltlich geordnet neu aufgebaut werden sollen'
+      'du ein klares lokales Angebot verständlich darstellen möchtest',
+      'du selbstständig bist oder ein kleines Unternehmen, eine Praxis, Beratung oder einen Handwerksbetrieb führst',
+      'deine Leistungen in Berlin oder Brandenburg besser auffindbar und nachvollziehbar werden sollen',
+      'deine bestehende Website technisch oder inhaltlich geordnet neu aufgebaut werden soll'
     ],
+    notFitTitle: 'Nicht passend, wenn …',
     notFit: [
-      'große Plattformen, Marktplätze oder Enterprise-Projekte',
-      'Projekte ohne klare Inhalte, Zielgruppe oder Ansprechpartner',
-      'Vorhaben, bei denen Ranking, Umsatz oder rechtliche Prüfung zugesagt werden sollen'
-    ]
+      'eine große Plattform, ein Marktplatz oder ein Enterprise-Projekt entstehen soll',
+      'Inhalte, Zielgruppe und verantwortliche Ansprechpartner noch vollständig offen sind',
+      'Ranking, Umsatz oder eine rechtliche Prüfung garantiert werden sollen'
+    ],
+    cta: {
+      label: 'Webdesign-Projekt besprechen',
+      href: '/kontakt?projektart=webdesign'
+    }
   },
   individualWebdesign: {
     title: 'Individuelles Webdesign statt Standard-Schablone',

@@ -66,7 +66,6 @@ const faqSchema = {
 };
 const structuredDataBlocks = [webPageSchema, serviceSchema, breadcrumbSchema, districtItemListSchema, faqSchema].filter(Boolean);
 const wdSectionImages = {
-  targetGroups: { src: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1761846940/admin_gallery/qhi0ozk9fqclwv8r1fzj.webp', alt: 'Webdesign für Selbstständige und kleine Unternehmen in Berlin' },
   websiteCheck: { src: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1760634492/admin_gallery/psckvurmyqzchazrx3ec.webp', alt: 'Website-Tester Vorschau für Webdesign Berlin' },
   individualWebdesign: { src: '/images/webdesign-berlin-individuelles-webdesign.webp', alt: 'Individuelles Webdesign als strukturierte Website-Vorschau' },
   localBenefits: { src: '/images/webdesign-berlin-lokaler-berlin-bezug.webp', alt: 'Lokaler Berlin-Bezug für eine Website-Struktur' },
@@ -219,23 +218,30 @@ const wdIndustryImages = [
   </section>
 
   <section id="targetGroups" class="wd-section wd-section--soft" aria-labelledby="wd-target-title">
-    <div class="wd-container wd-grid wd-grid--two animate-on-scroll">
-      <article class="wd-card">
+    <div class="wd-container wd-target-layout">
+      <figure class="wd-target-photo animate-on-scroll">
+        <img src="<%= page.targetGroups.image.src %>" width="1200" height="1800" alt="<%= page.targetGroups.image.alt %>" loading="lazy" decoding="async">
+        <figcaption>Bild: <%= page.targetGroups.image.source.creator %> / <a href="<%= page.targetGroups.image.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+      </figure>
+      <article class="wd-target-fit-panel animate-on-scroll">
+        <span class="wd-chip"><%= page.targetGroups.eyebrow %></span>
         <h2 id="wd-target-title"><%= page.targetGroups.title %></h2>
+        <p class="wd-lead"><%= page.targetGroups.lead %></p>
         <ul class="wd-list wd-list--checks">
           <% page.targetGroups.goodFit.forEach(function (item) { %>
             <li><%= item %></li>
           <% }) %>
         </ul>
+        <a class="btn btn-primary" href="<%= page.targetGroups.cta.href %>"><%= page.targetGroups.cta.label %></a>
       </article>
-      <article class="wd-card">
-        <h3 class="wd-not-fit-title">Für wen Webdesign Berlin nicht passt</h3>
+      <aside class="wd-target-boundary animate-on-scroll" aria-labelledby="wd-target-boundary-title">
+        <h3 id="wd-target-boundary-title"><%= page.targetGroups.notFitTitle %></h3>
         <ul class="wd-list wd-list--crosses">
           <% page.targetGroups.notFit.forEach(function (item) { %>
             <li><%= item %></li>
           <% }) %>
         </ul>
-      </article>
+      </aside>
     </div>
   </section>
 

@@ -49,6 +49,17 @@ export const MARKETING_IMAGES = Object.freeze({
       licenseUrl: PEXELS_LICENSE_URL
     }
   }),
+  webdesignFit: freezeImage({
+    src: '/images/editorial/webdesign-zielgruppe.webp',
+    alt: 'Beraterin und Unternehmer besprechen gemeinsam ein Website-Projekt am Laptop',
+    source: {
+      kind: 'external',
+      provider: 'Pexels',
+      creator: 'Alena Darmel',
+      pageUrl: 'https://www.pexels.com/photo/business-man-and-woman-in-the-office-near-glass-window-8133862/',
+      licenseUrl: PEXELS_LICENSE_URL
+    }
+  }),
   webdesignProcess: freezeImage({
     src: '/images/webdesign-ablauf.webp',
     alt: 'Ablauf einer Website-Erstellung von der Anfrage über das Design bis zur Freigabe',
@@ -146,6 +157,7 @@ export const REQUIRED_VISUAL_ROLES = Object.freeze([
   'homeTrust',
   'webdesignHero',
   'webdesignPlanning',
+  'webdesignFit',
   'webdesignProcess',
   'packageStart',
   'packageBusiness',

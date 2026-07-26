@@ -79,11 +79,6 @@
   line-height: 1.25;
 }
 
-.webdesign-berlin .wd-not-fit-title {
-  font-size: clamp(1.08rem, 1.55vw, 1.28rem);
-  max-width: 420px;
-}
-
 .webdesign-berlin p,
 .webdesign-berlin li {
   color: var(--wd-muted);
@@ -268,6 +263,114 @@
 
 .webdesign-berlin .wd-planning-image figcaption a {
   color: #ffffff;
+}
+
+.webdesign-berlin .wd-target-layout {
+  align-items: stretch;
+  display: grid;
+  gap: clamp(18px, 3vw, 30px);
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+}
+
+.webdesign-berlin .wd-target-photo {
+  border: 1px solid rgba(11, 42, 70, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(11, 42, 70, 0.14);
+  margin: 0;
+  min-height: 620px;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.webdesign-berlin .wd-target-photo img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+}
+
+.webdesign-berlin .wd-target-photo figcaption {
+  background: rgba(11, 42, 70, 0.88);
+  bottom: 0;
+  color: #ffffff;
+  font-size: 0.75rem;
+  left: 0;
+  padding: 0.45rem 0.7rem;
+  position: absolute;
+}
+
+.webdesign-berlin .wd-target-photo figcaption a {
+  color: #ffffff;
+}
+
+.webdesign-berlin .wd-target-fit-panel {
+  background:
+    radial-gradient(circle at 100% 0, rgba(239, 75, 28, 0.22), transparent 34%),
+    var(--wd-ink);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(11, 42, 70, 0.18);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: clamp(28px, 5vw, 58px);
+}
+
+.webdesign-berlin .wd-target-fit-panel .wd-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffb39c;
+}
+
+.webdesign-berlin .wd-target-fit-panel h2,
+.webdesign-berlin .wd-target-fit-panel p,
+.webdesign-berlin .wd-target-fit-panel li {
+  color: #ffffff;
+}
+
+.webdesign-berlin .wd-target-fit-panel h2 {
+  font-size: clamp(1.8rem, 3vw, 2.75rem);
+}
+
+.webdesign-berlin .wd-target-fit-panel .wd-lead {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0;
+  margin-top: 1.15rem;
+}
+
+.webdesign-berlin .wd-target-fit-panel .wd-list {
+  margin-bottom: 28px;
+}
+
+.webdesign-berlin .wd-target-fit-panel .btn {
+  align-self: flex-start;
+}
+
+.webdesign-berlin .wd-target-boundary {
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid var(--wd-line);
+  border-left: 4px solid var(--wd-accent);
+  border-radius: 12px;
+  box-shadow: 0 14px 36px rgba(11, 42, 70, 0.07);
+  display: grid;
+  gap: 18px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(180px, 0.32fr) minmax(0, 1fr);
+  min-width: 0;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.webdesign-berlin .wd-target-boundary h3 {
+  font-size: clamp(1.08rem, 1.55vw, 1.28rem);
+}
+
+.webdesign-berlin .wd-target-boundary .wd-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
 }
 
 .wd-reference-card__industry {
@@ -1350,6 +1453,17 @@
     padding: 0;
   }
 
+  .webdesign-berlin .wd-target-layout,
+  .webdesign-berlin .wd-target-boundary,
+  .webdesign-berlin .wd-target-boundary .wd-list {
+    grid-template-columns: 1fr;
+  }
+
+  .webdesign-berlin .wd-target-photo {
+    aspect-ratio: 4 / 5;
+    min-height: 0;
+  }
+
   .webdesign-berlin .wd-hero {
     padding-left: 16px;
     padding-right: 16px;
@@ -1390,6 +1504,11 @@
   }
 
   .webdesign-berlin .wd-actions .btn {
+    width: 100%;
+  }
+
+  .webdesign-berlin .wd-target-fit-panel .btn {
+    align-self: stretch;
     width: 100%;
   }
 

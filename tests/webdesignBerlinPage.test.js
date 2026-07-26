@@ -346,6 +346,38 @@ test('webdesign berlin lädt im Beratungsablauf kein Video ein', async () => {
   assert.equal(section.find('iframe, video, [data-youtube-id]').length, 0);
 });
 
+test('webdesign berlin führt passende Zielgruppen persönlich zum Kontakt', async () => {
+  assert.ok(webdesignBerlinPage.targetGroups.image, 'eigenständiges Zielgruppenfoto fehlt');
+  assert.deepEqual(webdesignBerlinPage.targetGroups.cta, {
+    label: 'Webdesign-Projekt besprechen',
+    href: '/kontakt?projektart=webdesign'
+  });
+  assert.equal(webdesignBerlinPage.targetGroups.notFitTitle, 'Nicht passend, wenn …');
+
+  const html = await renderWebdesignBerlinPage();
+  const $ = load(html);
+  const section = $('#targetGroups');
+  const image = section.find('.wd-target-photo img');
+  const sourceLink = section.find('.wd-target-photo figcaption a');
+  const cta = section.find('.wd-target-fit-panel .btn');
+
+  assert.equal(section.find('.wd-target-layout').length, 1);
+  assert.equal(section.find('.wd-target-photo').length, 1);
+  assert.equal(section.find('.wd-target-fit-panel').length, 1);
+  assert.equal(section.find('.wd-target-boundary').length, 1);
+  assert.equal(section.find('.wd-target-fit-panel .wd-list--checks > li').length, 4);
+  assert.equal(section.find('.wd-target-boundary .wd-list--crosses > li').length, 3);
+  assert.equal(section.find(':scope > .wd-container > .wd-card').length, 0);
+  assert.equal(image.attr('src'), '/images/editorial/webdesign-zielgruppe.webp');
+  assert.match(image.attr('alt'), /Beraterin und Unternehmer/);
+  assert.equal(
+    sourceLink.attr('href'),
+    'https://www.pexels.com/photo/business-man-and-woman-in-the-office-near-glass-window-8133862/'
+  );
+  assert.equal(cta.text().trim(), 'Webdesign-Projekt besprechen');
+  assert.equal(cta.attr('href'), '/kontakt?projektart=webdesign');
+});
+
 test('webdesign berlin website tester card uses compact mobile spacing', () => {
   const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
   const cssSource = readFileSync(new URL('../public/webdesign-berlin.css', import.meta.url), 'utf8');

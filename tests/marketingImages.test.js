@@ -43,3 +43,19 @@ test('Bildnachweise verweisen ausschließlich auf lokale Auslieferungsdateien', 
     assert.ok(['own', 'external'].includes(image.source.kind));
   }
 });
+
+test('der Zielgruppenbereich verwendet ein eigenes dokumentiertes Foto', () => {
+  const image = MARKETING_IMAGES.webdesignFit;
+
+  assert.ok(image, 'Bildrolle webdesignFit fehlt');
+  assert.equal(image.src, '/images/editorial/webdesign-zielgruppe.webp');
+  assert.notEqual(image.src, MARKETING_IMAGES.contactConversation.src);
+  assert.notEqual(image.src, MARKETING_IMAGES.webdesignPlanning.src);
+  assert.match(image.alt, /Beraterin und Unternehmer/);
+  assert.equal(image.source.creator, 'Alena Darmel');
+  assert.equal(
+    image.source.pageUrl,
+    'https://www.pexels.com/photo/business-man-and-woman-in-the-office-near-glass-window-8133862/'
+  );
+  assert.equal(existsSync(new URL(`.${image.src}`, PUBLIC_ROOT)), true);
+});
