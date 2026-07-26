@@ -135,6 +135,22 @@ test('package offer copy does not expose retired page-count or included-feature 
   assert.doesNotMatch(publicOfferData, /Ranking garantiert|garantiert mehr Kunden|alles inklusive|keine versteckten Kosten/i);
 });
 
+test('jedes Paket besitzt eine klare Entscheidung, Abgrenzung und paketbezogene Handlung', () => {
+  const expected = {
+    start: ['kompakter Einstieg', 'Start-Paket anfragen'],
+    business: ['empfohlene Standardwahl', 'Business-Website planen'],
+    wachstum: ['mehr Seiten oder Relaunch', 'Wachstumsprojekt besprechen'],
+    individuell: ['Sonderfunktionen', 'Individuelle Lösung anfragen']
+  };
+
+  for (const pkg of packages) {
+    assert.match(pkg.bestFor, new RegExp(expected[pkg.id][0], 'i'));
+    assert.ok(pkg.notFor.length >= 3);
+    assert.equal(pkg.nextStepLabel, expected[pkg.id][1]);
+    assert.equal(pkg.ctaUrl, `/kontakt?paket=${pkg.id}`);
+  }
+});
+
 test('legacy package URLs are explicit 301 redirect routes before dynamic package routes', () => {
   const source = readFileSync(new URL('../routes/packages.js', import.meta.url), 'utf8');
   const basisRouteIndex = source.indexOf("router.get('/pakete/basis'");

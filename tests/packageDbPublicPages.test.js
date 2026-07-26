@@ -39,6 +39,20 @@ test('package overview template renders prices and comparison data from DB varia
   assert.match(packagesListTemplate, /pkg\.priceLabel/);
 });
 
+test('package overview starts with four decision questions and separates follow-up costs', () => {
+  assert.match(packagesListTemplate, /id="paketfinder"/);
+  assert.match(packagesListTemplate, /Brauche ich nur eine kompakte Seite\?/);
+  assert.match(packagesListTemplate, /Möchte ich Leistungen, Unternehmen und Kontakt auf mehreren Seiten darstellen\?/);
+  assert.match(packagesListTemplate, /Plane ich einen Relaunch oder deutlich mehr Inhalte\?/);
+  assert.match(packagesListTemplate, /Benötige ich Buchung, Shop, Schnittstellen oder andere Sonderfunktionen\?/);
+
+  assert.match(packagesListTemplate, /Im Website-Paket enthalten/);
+  assert.match(packagesListTemplate, /Optional ergänzbar/);
+  assert.match(packagesListTemplate, /Laufende Kosten nach dem Launch/);
+  assert.match(packagesListTemplate, /href="\/leistungen\/zusatzleistungen-webdesign"/);
+  assert.match(packagesListTemplate, /href="\/leistungen\/laufende-kosten-website"/);
+});
+
 test('package overview comparison price row uses current package prices instead of stored static values', () => {
   assert.match(controllerSource, /row\.rowKey === ['"]price['"]/);
   assert.match(controllerSource, /dynamicPriceMap/);

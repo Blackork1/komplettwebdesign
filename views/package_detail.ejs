@@ -53,6 +53,16 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
         return imageByPackage[pkg && pkg.slug] || '/images/preiseHero.webp';
       }
 
+      function packageRequestLabel() {
+        const labels = {
+          start: isEnglish ? 'Request Start package' : 'Start-Paket anfragen',
+          business: isEnglish ? 'Plan business website' : 'Business-Website planen',
+          wachstum: isEnglish ? 'Discuss growth project' : 'Wachstumsprojekt besprechen',
+          individuell: isEnglish ? 'Request custom solution' : 'Individuelle Lösung anfragen'
+        };
+        return labels[slug] || pack.ctaLabel || (isEnglish ? 'Request package' : 'Paket anfragen');
+      }
+
       function faqQuestion(item) {
         return item && (item.question || item.q || item.title || '');
       }
@@ -189,7 +199,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
                 </span>
               </div>
               <div class="hero-actions unified-hero__actions">
-                <a class="btn btn-primary" href="#kontaktformular" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_hero_contact_<%= slug %>" data-cta-location="package_detail_hero" data-package-id="<%= slug %>"><%= pack.ctaLabel || (isEnglish ? 'Request package' : 'Paket anfragen') %></a>
+                <a class="btn btn-primary" href="#kontaktformular" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_hero_contact_<%= slug %>" data-cta-location="package_detail_hero" data-package-id="<%= slug %>"><%= packageRequestLabel() %></a>
                 <a class="btn btn-secondary" href="<%= overviewComparePath %>" data-track="cta" data-event-name="package_detail_cta_click" data-cta-name="package_detail_hero_compare_<%= slug %>" data-cta-location="package_detail_hero" data-package-id="<%= slug %>"><%= isEnglish ? 'Compare packages' : 'Pakete vergleichen' %></a>
               </div>
             </div>
@@ -402,7 +412,7 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
     <section class="package-contact" id="kontaktformular">
       <div class="container contact-inner">
         <div class="contact-copy">
-          <h2><%= isEnglish ? 'Request this package' : 'Dieses Paket anfragen' %></h2>
+          <h2><%= packageRequestLabel() %></h2>
           <p>
             <%= isEnglish
               ? 'Send a non-binding request. I will review the project scope and come back with the next realistic step.'

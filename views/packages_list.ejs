@@ -95,6 +95,32 @@
     };
     return imageMap[pkg.packageKey || pkg.slug] || '/images/preiseHero.webp';
   }
+
+  function packageKey(pkg) {
+    return String(pkg && (pkg.packageKey || pkg.slug) || '').toLowerCase();
+  }
+
+  function packageContactUrl(pkg) {
+    const key = packageKey(pkg);
+    return `${contactPath}${key ? `?paket=${encodeURIComponent(key)}` : ''}`;
+  }
+
+  function packageRequestLabel(pkg) {
+    const labels = {
+      start: isEn ? 'Request Start package' : 'Start-Paket anfragen',
+      business: isEn ? 'Plan business website' : 'Business-Website planen',
+      wachstum: isEn ? 'Discuss growth project' : 'Wachstumsprojekt besprechen',
+      individuell: isEn ? 'Request custom solution' : 'Individuelle Lösung anfragen'
+    };
+    return labels[packageKey(pkg)] || (isEn ? 'Request package' : 'Paket anfragen');
+  }
+
+  const packageFinderQuestions = {
+    start: isEn ? 'Do I only need a compact website?' : 'Brauche ich nur eine kompakte Seite?',
+    business: isEn ? 'Do I want services, company and contact on multiple pages?' : 'Möchte ich Leistungen, Unternehmen und Kontakt auf mehreren Seiten darstellen?',
+    wachstum: isEn ? 'Am I planning a relaunch or substantially more content?' : 'Plane ich einen Relaunch oder deutlich mehr Inhalte?',
+    individuell: isEn ? 'Do I need booking, shop, interfaces or other custom functions?' : 'Benötige ich Buchung, Shop, Schnittstellen oder andere Sonderfunktionen?'
+  };
 %>
 <%- include('partials/head', { structuredDataBlocks, extraCssAssets: ['package-list.css'] }) %>
 
@@ -180,6 +206,32 @@
       </div>
     </section>
 
+    <section id="paketfinder" class="packages-section packages-finder">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Package finder' : 'Paketfinder' %></span>
+          <h2><%= isEn ? 'Which starting point describes your project?' : 'Welche Frage beschreibt dein Projekt am besten?' %></h2>
+          <p class="section-lead"><%= isEn ? 'Choose the closest case. The detail page shows the exact scope and limits.' : 'Wähle den Fall, der deiner Ausgangslage am nächsten kommt. Auf der Detailseite siehst du den genauen Umfang und die Grenzen.' %></p>
+        </header>
+        <div class="packages-finder-grid">
+          <% visiblePackages.forEach((pkg) => { %>
+            <% const key = packageKey(pkg); %>
+            <% if (packageFinderQuestions[key]) { %>
+            <a class="packages-finder-card<%= pkg.isRecommended ? ' is-recommended' : '' %>" href="<%= packageUrl(pkg) %>">
+              <img src="<%= packageImage(pkg) %>" alt="Visualisierung für das <%= packageTitle(pkg) %>" width="720" height="480" loading="lazy" decoding="async">
+              <div>
+                <span><%= pkg.priceLabel %></span>
+                <h3><%= packageFinderQuestions[key] %></h3>
+                <p><%= packageText(pkg) %></p>
+                <strong><%= packageTitle(pkg) %> ansehen →</strong>
+              </div>
+            </a>
+            <% } %>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
     <section id="paket-angebote" class="package-collection">
       <div class="container">
         <% if (visiblePackages.length) { %>
@@ -189,14 +241,14 @@
           <div class="package-visual">
             <div class="package-frame">
               <a class="package-image-link" href="<%= packageUrl(pkg) %>" aria-label="<%= canShowPackageDetail(pkg) ? (isEn ? `Learn more about ${pkg.name}` : `Mehr erfahren über ${pkg.name}`) : (isEn ? `Request ${pkg.name}` : `${pkg.name}-Paket anfragen`) %>" data-track="cta" data-cta-name="packages_image_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
-                <img src="<%= packageImage(pkg) %>" alt="<%= packageTitle(pkg) %>" loading="lazy" />
+                <img src="<%= packageImage(pkg) %>" alt="Visualisierung des Leistungsumfangs für <%= packageTitle(pkg) %>" loading="lazy" />
               </a>
             </div>
             <div class="package-actions package-actions--image">
               <a class="btn btn-primary" href="<%= packageUrl(pkg) %>" data-track="cta" data-cta-name="packages_details_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
                 <%= packagePrimaryCtaLabel(pkg) %>
               </a>
-              <a class="btn btn-secondary" href="<%= isEn ? '/en/kontakt' : '/kontakt' %>" data-track="cta" data-cta-name="packages_consult_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>"><%= isEn ? 'Get consultation now' : 'Jetzt beraten lassen' %></a>
+              <a class="btn btn-secondary" href="<%= packageContactUrl(pkg) %>" data-track="cta" data-cta-name="packages_consult_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>"><%= packageRequestLabel(pkg) %></a>
             </div>
           </div>
           <div class="package-content">
@@ -248,7 +300,7 @@
           </p>
         </header>
         <div class="fit-grid">
-          <% visiblePackages.slice(0, 3).forEach((pkg) => { %>
+          <% visiblePackages.forEach((pkg) => { %>
           <article class="fit-card <%= pkg.isRecommended ? 'is-highlighted' : '' %>">
             <span class="fit-phase"><%= pkg.priceLabel %></span>
             <h3><%= packageTitle(pkg) %></h3>
@@ -298,6 +350,35 @@
       </div>
     </section>
     <% } %>
+
+    <section id="kostenabgrenzung" class="packages-section packages-scope-split">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-eyebrow"><%= isEn ? 'Clear cost separation' : 'Klare Kostenabgrenzung' %></span>
+          <h2><%= isEn ? 'Included, optional and ongoing' : 'Was im Projektpreis steckt – und was danach dazukommen kann' %></h2>
+        </header>
+        <div class="packages-scope-grid">
+          <article>
+            <img src="/images/icons/check.svg" alt="" width="34" height="34" loading="lazy">
+            <h3>Im Website-Paket enthalten</h3>
+            <p>Der vereinbarte Seitenumfang, individuelles Layout, responsive Umsetzung, technische SEO-Grundlagen und die festgelegten Feedbackrunden.</p>
+            <a href="#vergleich">Leistungsumfang vergleichen</a>
+          </article>
+          <article>
+            <img src="/images/icons/individual1.svg" alt="" width="34" height="34" loading="lazy">
+            <h3>Optional ergänzbar</h3>
+            <p>Zusatzseiten, umfangreiche Texte, Local SEO, Buchungssystem, CMS, Shop, Mehrsprachigkeit oder besondere Schnittstellen.</p>
+            <a href="/leistungen/zusatzleistungen-webdesign">Zusatzleistungen ansehen</a>
+          </article>
+          <article>
+            <img src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
+            <h3>Laufende Kosten nach dem Launch</h3>
+            <p>Domain, E-Mail, Hosting, Wartung, Lizenzen und externe Tools werden getrennt vom einmaligen Projektpreis betrachtet.</p>
+            <a href="/leistungen/laufende-kosten-website">Laufende Kosten einordnen</a>
+          </article>
+        </div>
+      </div>
+    </section>
 
     <% if (dbGlobalNotes.length) { %>
     <section id="hinweise" class="packages-section packages-addons">

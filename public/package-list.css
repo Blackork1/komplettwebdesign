@@ -849,6 +849,109 @@
   }
 }
 
+.packages-page .packages-finder {
+  background: linear-gradient(180deg, #f7fafc 0%, #ffffff 100%);
+}
+
+.packages-page .packages-finder-grid {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.4rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.packages-page .packages-finder-card {
+  background: #ffffff;
+  border: 1px solid rgba(11, 42, 70, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 16px 38px rgba(11, 42, 70, 0.08);
+  color: var(--packages-ink);
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.2fr);
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.packages-page .packages-finder-card.is-recommended {
+  border-color: var(--packages-accent);
+}
+
+.packages-page .packages-finder-card:is(:hover, :focus-visible) {
+  box-shadow: 0 24px 52px rgba(11, 42, 70, 0.15);
+  transform: translateY(-4px);
+}
+
+.packages-page .packages-finder-card > img {
+  height: 100%;
+  min-height: 260px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.packages-page .packages-finder-card > div {
+  align-self: center;
+  padding: clamp(1.2rem, 2.8vw, 2rem);
+}
+
+.packages-page .packages-finder-card span {
+  color: var(--packages-accent);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.packages-page .packages-finder-card h3 {
+  margin: 0.5rem 0;
+}
+
+.packages-page .packages-finder-card strong {
+  color: var(--packages-accent);
+}
+
+.packages-page .packages-scope-split {
+  background: #f7fafc;
+}
+
+.packages-page .packages-scope-grid {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.4rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.packages-page .packages-scope-grid article {
+  background: #ffffff;
+  border: 1px solid rgba(11, 42, 70, 0.12);
+  border-radius: 18px;
+  padding: clamp(1.3rem, 2.5vw, 2rem);
+}
+
+.packages-page .packages-scope-grid article > img {
+  height: 34px;
+  margin-bottom: 0.8rem;
+  width: 34px;
+}
+
+.packages-page .packages-scope-grid a {
+  color: var(--packages-accent);
+  font-weight: 850;
+}
+
+@media (max-width: 860px) {
+  .packages-page .packages-finder-grid,
+  .packages-page .packages-scope-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .packages-page .packages-finder-card {
+    grid-template-columns: 1fr;
+  }
+
+  .packages-page .packages-finder-card > img {
+    min-height: 210px;
+  }
+}
+
 /* Packages page focused correction */
 .packages-page {
   --packages-accent: #ef4b1c;
