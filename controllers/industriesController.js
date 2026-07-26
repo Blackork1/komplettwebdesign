@@ -22,6 +22,12 @@ const DEFAULT_PRIMARY_INDUSTRY_CTA = Object.freeze({
   supportingText: 'Kontaktiere uns für eine kostenlose Erstberatung!'
 });
 
+const DEFAULT_PRICING_INDUSTRY_CTA = Object.freeze({
+  label: 'Kostenlose Einschätzung anfragen',
+  href: '/kontakt',
+  trackingName: 'pricing_contact'
+});
+
 const INDUSTRY_PRIMARY_CTAS = Object.freeze({
   blumenladen: Object.freeze({
     label: 'Pakete ansehen',
@@ -74,9 +80,11 @@ export function getIndustryContextLinks(slug) {
   return [...(INDUSTRY_CONTEXT_LINKS[normalizedSlug] || [])];
 }
 
-export function getIndustryPrimaryCta(slug) {
+export function getIndustryPrimaryCta(slug, { placement = 'primary' } = {}) {
   const normalizedSlug = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
-  return INDUSTRY_PRIMARY_CTAS[normalizedSlug] || DEFAULT_PRIMARY_INDUSTRY_CTA;
+  const industryCta = INDUSTRY_PRIMARY_CTAS[normalizedSlug];
+  if (industryCta) return industryCta;
+  return placement === 'pricing' ? DEFAULT_PRICING_INDUSTRY_CTA : DEFAULT_PRIMARY_INDUSTRY_CTA;
 }
 
 /* --- NEU: Branchen-Übersicht (/branchen) --- */
@@ -150,6 +158,7 @@ export async function showIndustryPage(req, res) {
       industry,
       industryContextLinks: getIndustryContextLinks(industry.slug),
       industryPrimaryCta: getIndustryPrimaryCta(industry.slug),
+      industryPricingCta: getIndustryPrimaryCta(industry.slug, { placement: 'pricing' }),
       packages: await getIndustryPackages(res),
       jsonLd
     });

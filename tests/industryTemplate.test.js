@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { getIndustryPrimaryCta } from '../controllers/industriesController.js';
+
 const template = readFileSync(new URL('../views/industries/show.ejs', import.meta.url), 'utf8');
 const branchenCss = readFileSync(new URL('../public/branchen.css', import.meta.url), 'utf8');
 
@@ -36,6 +38,19 @@ test('industry CTA uses current package images with readable package titles', ()
 test('industry template can use a page-specific primary next step', () => {
   assert.match(template, /primaryIndustryCta\.href/);
   assert.match(template, /primaryIndustryCta\.label/);
+});
+
+test('price CTA keeps the legacy contact action outside the Blumenladen package journey', () => {
+  const blumenladenPricingCta = getIndustryPrimaryCta('blumenladen', { placement: 'pricing' });
+  const restaurantPricingCta = getIndustryPrimaryCta('restaurant', { placement: 'pricing' });
+
+  assert.equal(blumenladenPricingCta.href, '/pakete');
+  assert.equal(blumenladenPricingCta.trackingName, 'blumenladen_pakete_ansehen');
+  assert.equal(restaurantPricingCta.label, 'Kostenlose Einschätzung anfragen');
+  assert.equal(restaurantPricingCta.href, '/kontakt');
+  assert.equal(restaurantPricingCta.trackingName, 'pricing_contact');
+  assert.match(template, /industryPricingCta\.href/);
+  assert.match(template, /industryPricingCta\.trackingName/);
 });
 
 test('industry CTA package images rotate toward the opposite side', () => {
