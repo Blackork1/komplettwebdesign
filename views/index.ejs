@@ -475,37 +475,117 @@ const homePackageImages = {
 
     <!-- 6) Branchenwege -->
     <section class="section" id="branchenwege">
+      <%
+      const homeIndustryCopy = isEn ? {
+        kicker: 'Industry solutions',
+        title: 'Four industries. Four different paths to an enquiry.',
+        lead: 'Every industry needs different content, images and contact paths. Choose the entry point closest to your offer.',
+        overview: 'Compare all industry solutions',
+        scrollHint: 'Swipe to explore all industries'
+      } : {
+        kicker: 'Branchenlösungen',
+        title: 'Vier Branchen. Vier unterschiedliche Wege zur Anfrage.',
+        lead: 'Jede Branche braucht andere Inhalte, Bilder und Kontaktwege. Wähle den Einstieg, der deinem Angebot am nächsten kommt.',
+        overview: 'Alle Branchenlösungen vergleichen',
+        scrollHint: 'Wischen, um alle Branchen zu entdecken'
+      };
+
+      const homeIndustryStories = [
+        {
+          number: '01',
+          href: '/branchen/webdesign-fitnesscoach',
+          name: isEn ? 'Health & Coaching' : 'Gesundheit & Coaching',
+          detail: isEn ? 'Trust, services and appointment paths' : 'Vertrauen, Angebote und Terminwege',
+          image: homeMarketingImages.industryHealthCoaching,
+          imageAlt: isEn
+            ? 'Personal trainer supporting a client during guided exercise in a gym'
+            : homeMarketingImages.industryHealthCoaching.alt
+        },
+        {
+          number: '02',
+          href: '/branchen/webdesign-immobilienmakler',
+          name: isEn ? 'Real Estate' : 'Immobilien',
+          detail: isEn ? 'Region, properties and personal advice' : 'Region, Objekte und persönliche Beratung',
+          image: homeMarketingImages.industryRealEstate,
+          imageAlt: isEn
+            ? 'Real estate agent discussing property documents with clients'
+            : homeMarketingImages.industryRealEstate.alt
+        },
+        {
+          number: '03',
+          href: '/branchen/webdesign-blumenladen',
+          name: isEn ? 'Florists' : 'Blumenladen',
+          detail: isEn ? 'Products, seasons and local presence' : 'Sortiment, Saison und lokaler Standort',
+          image: homeMarketingImages.industryFlorist,
+          imageAlt: isEn
+            ? 'Florist arranging a colourful selection of flowers'
+            : homeMarketingImages.industryFlorist.alt
+        },
+        {
+          number: '04',
+          href: '/branchen/webdesign-cafe',
+          name: isEn ? 'Cafés & Hospitality' : 'Café & Gastronomie',
+          detail: isEn ? 'Atmosphere, opening hours and reservations' : 'Atmosphäre, Öffnungszeiten und Reservierung',
+          image: {
+            src: '/images/cafe-min.webp',
+            source: { kind: 'own', provider: 'Komplett Webdesign' }
+          },
+          imageAlt: isEn
+            ? 'Welcoming café interior with a clearly visible hospitality offer'
+            : 'Café mit einladender Atmosphäre und sichtbarem gastronomischem Angebot'
+        }
+      ];
+      %>
       <div class="container">
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
-            <span class="home-section-kicker"><i class="fas fa-map-signs" aria-hidden="true"></i><%= isEn ? 'Industries' : 'Passende Branchenwege' %></span>
-            <h2><%= isEn ? 'See the website requirements for your industry' : 'Was deine Branche auf der Website sichtbar machen muss' %></h2>
-            <p class="home-section-lead"><%= isEn ? 'Each industry needs different content, images and contact paths.' : 'Ein Handwerksbetrieb braucht andere Belege als ein Blumenladen, Café oder Immobilienbüro. Wähle den Einstieg, der deiner Ausgangslage am nächsten kommt.' %></p>
-            <div class="home-industry-grid">
-              <a class="home-industry-card animate-on-scroll" href="/handwerker">
-                <figure><img src="/images/handwerker-min.webp" alt="Handwerker bei der Ausführung einer lokalen Dienstleistung" width="720" height="540" loading="lazy" decoding="async"></figure>
-                <div><h3>Handwerk</h3><p>Leistungen, Einsatzgebiet, Projektbelege und ein schneller Anfrageweg.</p><span>Branchenlösung ansehen →</span></div>
-              </a>
-              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-immobilienmakler">
-                <figure>
-                  <img src="<%= homeMarketingImages.industryRealEstate?.src || '/images/editorial/immobilienberatung.webp' %>" alt="<%= homeMarketingImages.industryRealEstate?.alt || 'Immobilienberatung mit persönlichen Ansprechpartnern' %>" width="720" height="540" loading="lazy" decoding="async">
-                  <% if (homeMarketingImages.industryRealEstate?.source?.pageUrl) { %><figcaption>Bild: <%= homeMarketingImages.industryRealEstate.source.creator %> / <a href="<%= homeMarketingImages.industryRealEstate.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption><% } %>
-                </figure>
-                <div><h3>Immobilien</h3><p>Vertrauen, lokales Gebiet, Objektdarstellung und getrennte Kontaktwege.</p><span>Branchenlösung ansehen →</span></div>
-              </a>
-              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-blumenladen">
-                <figure>
-                  <img src="<%= homeMarketingImages.industryFlorist?.src || '/images/editorial/floristik.webp' %>" alt="<%= homeMarketingImages.industryFlorist?.alt || 'Floristin arrangiert ein Blumensortiment' %>" width="720" height="540" loading="lazy" decoding="async">
-                  <% if (homeMarketingImages.industryFlorist?.source?.pageUrl) { %><figcaption>Bild: <%= homeMarketingImages.industryFlorist.source.creator %> / <a href="<%= homeMarketingImages.industryFlorist.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption><% } %>
-                </figure>
-                <div><h3>Blumenladen</h3><p>Sortiment, Saisonangebote, Öffnungszeiten und lokale Auffindbarkeit.</p><span>Branchenlösung ansehen →</span></div>
-              </a>
-              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-cafe">
-                <figure><img src="/images/cafe-min.webp" alt="Café mit einladender Atmosphäre und sichtbarem Angebot" width="720" height="540" loading="lazy" decoding="async"></figure>
-                <div><h3>Café und Gastronomie</h3><p>Angebot, Atmosphäre, Öffnungszeiten und Reservierung verständlich verbinden.</p><span>Branchenlösung ansehen →</span></div>
+            <div class="home-industry-intro">
+              <span class="home-section-kicker">
+                <i class="fas fa-map-signs" aria-hidden="true"></i><%= homeIndustryCopy.kicker %>
+              </span>
+              <h2 id="home-industry-title"><%= homeIndustryCopy.title %></h2>
+              <p class="home-section-lead"><%= homeIndustryCopy.lead %></p>
+            </div>
+
+            <div class="home-industry-stories" aria-labelledby="home-industry-title">
+              <% homeIndustryStories.forEach((story) => { %>
+                <a
+                  class="home-industry-story animate-on-scroll"
+                  href="<%= story.href %>"
+                  aria-label="<%= `${story.name}: ${story.detail}` %>"
+                >
+                  <figure class="home-industry-story__media">
+                    <img
+                      src="<%= story.image.src %>"
+                      alt="<%= story.imageAlt %>"
+                      width="720"
+                      height="900"
+                      loading="lazy"
+                      decoding="async"
+                    >
+                    <% if (story.image.source?.kind === 'external') { %>
+                      <figcaption>Bild: <%= story.image.source.creator %> / <%= story.image.source.provider %></figcaption>
+                    <% } %>
+                  </figure>
+                  <span class="home-industry-story__number" aria-hidden="true"><%= story.number %></span>
+                  <div class="home-industry-story__copy">
+                    <h3><%= story.name %></h3>
+                    <p><%= story.detail %></p>
+                    <span class="home-industry-story__arrow" aria-hidden="true">→</span>
+                  </div>
+                </a>
+              <% }); %>
+            </div>
+
+            <p class="home-industry-scroll-hint">
+              <span aria-hidden="true">↔</span> <%= homeIndustryCopy.scrollHint %>
+            </p>
+
+            <div class="home-industry-actions">
+              <a class="btn btn-secondary home-industry-overview-link" href="/branchen">
+                <%= homeIndustryCopy.overview %>
               </a>
             </div>
-            <p class="home-note"><a class="linkColor" href="/branchen">Alle vorhandenen Branchenlösungen vergleichen</a></p>
           </div>
         </div>
       </div>
