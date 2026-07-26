@@ -172,39 +172,30 @@ const wdIndustryImages = [
   <section class="wd-section wd-section--video wd-section--soft" aria-labelledby="wd-video-title">
     <div class="wd-container">
       <div class="wd-video">
-        <span class="wd-chip animate-on-scroll">Erklärung</span>
-        <h2 id="wd-video-title" class="animate-on-scroll">Was wir im Erstgespräch für dein Webdesign-Projekt klären</h2>
-        <p class="wd-lead animate-on-scroll">Im Erstgespräch für dein Webdesign in Berlin ordne ich deine Vorstellungen, die vorhandenen Voraussetzungen und den realistischen Projektumfang ein. So wird früh klar, ob ein kompaktes Start-Paket, eine Business-Website, ein Wachstum-Projekt oder ein individuelles Angebot sinnvoll ist.</p>
-        <figure class="wd-planning-image animate-on-scroll">
-          <img src="<%= page.planningImage.src %>" alt="<%= page.planningImage.alt %>" width="1600" height="2400" loading="lazy" decoding="async">
-          <figcaption>Bild: <%= page.planningImage.source.creator %> / <a href="<%= page.planningImage.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
-        </figure>
-        <div class="wd-grid wd-grid--three wd-consultation-grid">
-          <article class="wd-card wd-consultation-step animate-on-scroll">
-            <div class="wd-consultation-step__head">
-              <span class="wd-consultation-step__number" aria-hidden="true">1</span>
-              <h3>Ausgangslage und Ziele</h3>
-            </div>
-            <p>Wir besprechen, ob bereits eine Website vorhanden ist, ob ein Relaunch ansteht oder ob du komplett neu startest. Dazu gehören Zielgruppe, Leistungen, gewünschte Anfragewege, vorhandene Inhalte und wichtige Anforderungen an deine neue Website.</p>
-          </article>
-          <article class="wd-card wd-consultation-step animate-on-scroll">
-            <div class="wd-consultation-step__head">
-              <span class="wd-consultation-step__number" aria-hidden="true">2</span>
-              <h3>Umfang, Zeitrahmen und Paketlogik</h3>
-            </div>
-            <p>Danach klären wir den gewünschten Seitenumfang, mögliche Zusatzleistungen, Texte, Bilder, Local-SEO-Grundlagen, laufende Kosten und den zeitlichen Rahmen. Dadurch lässt sich besser einschätzen, welches Website-Paket zu deinem Vorhaben passt.</p>
-          </article>
-          <article class="wd-card wd-consultation-step animate-on-scroll">
-            <div class="wd-consultation-step__head">
-              <span class="wd-consultation-step__number" aria-hidden="true">3</span>
-              <h3>Preisbereich und erste Designidee</h3>
-            </div>
-            <p>Auf Basis deiner Angaben nenne ich dir einen unverbindlichen Preisbereich für die Website-Erstellung. Wenn der Rahmen passt, starten wir mit einer ersten Designidee, besprechen diese gemeinsam und entwickeln daraus Schritt für Schritt die passende Website.</p>
-          </article>
+        <div class="wd-consultation-intro">
+          <div class="wd-consultation-copy animate-on-scroll">
+            <span class="wd-chip"><%= page.consultation.eyebrow %></span>
+            <h2 id="wd-video-title"><%= page.consultation.title %></h2>
+            <p class="wd-lead"><%= page.consultation.lead %></p>
+          </div>
+          <figure class="wd-planning-image animate-on-scroll">
+            <img src="<%= page.consultation.image.src %>" alt="<%= page.consultation.image.alt %>" width="1600" height="1200" loading="lazy" decoding="async">
+            <figcaption>Bild: <%= page.consultation.image.source.creator %> / <a href="<%= page.consultation.image.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+          </figure>
         </div>
+        <ol class="wd-consultation-steps">
+          <% page.consultation.steps.forEach(function (step, index) { %>
+            <li class="wd-consultation-step animate-on-scroll">
+              <span class="wd-consultation-step__number" aria-hidden="true"><%= index + 1 %></span>
+              <div>
+                <h3><%= step.title %></h3>
+                <p><%= step.text %></p>
+              </div>
+            </li>
+          <% }) %>
+        </ol>
         <div class="wd-actions wd-consultation-actions animate-on-scroll">
-          <a class="btn btn-primary" href="/kontakt">Erstgespräch anfragen</a>
-          <a class="btn btn-secondary" href="/pakete">Pakete ansehen</a>
+          <a class="btn btn-primary" href="<%= page.consultation.cta.href %>"><%= page.consultation.cta.label %></a>
         </div>
       </div>
     </div>

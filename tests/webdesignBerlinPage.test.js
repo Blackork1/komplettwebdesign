@@ -195,13 +195,32 @@ test('webdesign berlin zeigt reale Projektbelege und ordnet laufende Kosten ein'
   assert.match(webdesignBerlinPage.runningCosts.title, /Einmalige Projektkosten und laufende Kosten/);
 });
 
-test('webdesign berlin zeigt die Planung mit dokumentiertem Alt-Text und Bildnachweis', () => {
-  const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
-  assert.equal(webdesignBerlinPage.planningImage.src, '/images/editorial/webdesign-planung.webp');
-  assert.match(webdesignBerlinPage.planningImage.alt, /planen gemeinsam/i);
-  assert.match(webdesignBerlinPage.planningImage.source.pageUrl, /^https:\/\/www\.pexels\.com\/photo\//);
-  assert.match(templateSource, /page\.planningImage\.alt/);
-  assert.match(templateSource, /page\.planningImage\.source\.pageUrl/);
+test('webdesign berlin rendert die Planung als redaktionellen Beratungsablauf', async () => {
+  assert.ok(webdesignBerlinPage.consultation, 'strukturierte Beratungsdaten fehlen');
+  assert.equal(webdesignBerlinPage.consultation.steps.length, 3);
+  assert.deepEqual(webdesignBerlinPage.consultation.cta, {
+    label: 'Erstgespräch anfragen',
+    href: '/kontakt?projektart=webdesign'
+  });
+
+  const html = await renderWebdesignBerlinPage();
+  const $ = load(html);
+  const section = $('#wd-video-title').closest('section');
+  const image = section.find('.wd-planning-image img');
+  const sourceLink = section.find('.wd-planning-image figcaption a');
+  const actions = section.find('.wd-consultation-actions a');
+
+  assert.equal(section.find('.wd-consultation-intro').length, 1);
+  assert.equal(section.find('.wd-consultation-copy').length, 1);
+  assert.equal(section.find('ol.wd-consultation-steps > li').length, 3);
+  assert.equal(image.attr('src'), '/images/editorial/webdesign-planung.webp');
+  assert.match(image.attr('alt'), /planen gemeinsam/i);
+  assert.match(sourceLink.attr('href'), /^https:\/\/www\.pexels\.com\/photo\//);
+  assert.equal(actions.length, 1);
+  assert.equal(actions.text().trim(), 'Erstgespräch anfragen');
+  assert.equal(actions.attr('href'), '/kontakt?projektart=webdesign');
+  assert.doesNotMatch(section.text(), /Pakete ansehen/);
+  assert.equal(section.find('a[href="/pakete"]').length, 0);
 });
 
 test('webdesign berlin canonical page avoids retired pricing and risky promises', () => {
@@ -319,22 +338,12 @@ test('webdesign berlin intro renders the compressed greeting image after the cop
   assert.match(cssSource, /\.wd-intro-image\s*\{[^}]*max-width:\s*1160px/s);
 });
 
-test('webdesign berlin first consultation section is text based without video embed', () => {
-  const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
-  const cssSource = readFileSync(new URL('../public/webdesign-berlin.css', import.meta.url), 'utf8');
+test('webdesign berlin lädt im Beratungsablauf kein Video ein', async () => {
+  const html = await renderWebdesignBerlinPage();
+  const $ = load(html);
+  const section = $('#wd-video-title').closest('section');
 
-  assert.match(templateSource, /Was wir im Erstgespräch für dein Webdesign-Projekt klären/);
-  assert.match(templateSource, /Ausgangslage und Ziele/);
-  assert.match(templateSource, /Umfang, Zeitrahmen und Paketlogik/);
-  assert.match(templateSource, /Preisbereich und erste Designidee/);
-  assert.match(templateSource, /unverbindlichen Preisbereich/);
-  assert.match(templateSource, /ersten Designidee/);
-  assert.match(templateSource, /class="wd-consultation-step__head"/);
-  assert.match(cssSource, /\.wd-consultation-step__head\s*\{[\s\S]*?display:\s*flex;/);
-  assert.match(cssSource, /\.wd-consultation-step__head\s*\{[\s\S]*?align-items:\s*flex-start;/);
-  assert.match(cssSource, /\.wd-consultation-step__number\s*\{[\s\S]*?flex:\s*0 0 34px;/);
-  assert.match(cssSource, /\.wd-video\s*\{[^}]*max-width:\s*1160px/s);
-  assert.doesNotMatch(templateSource, /youtube-wrapper|data-youtube-id|img\.youtube\.com|youtube-consent-btn|VideoObject/);
+  assert.equal(section.find('iframe, video, [data-youtube-id]').length, 0);
 });
 
 test('webdesign berlin website tester card uses compact mobile spacing', () => {

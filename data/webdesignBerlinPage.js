@@ -40,7 +40,30 @@ export const webdesignBerlinPage = Object.freeze({
   h1: 'Website erstellen lassen in Berlin',
   canonicalPath: '/webdesign-berlin',
   priceNote: PACKAGE_GLOBAL_NOTES.vatNote,
-  planningImage: MARKETING_IMAGES.webdesignPlanning,
+  consultation: {
+    eyebrow: 'Erstgespräch',
+    title: 'Was ich im Erstgespräch für dein Webdesign-Projekt kläre',
+    lead: 'Ich ordne deine Ausgangslage, den realistischen Projektumfang und den passenden nächsten Schritt ein. Du erhältst eine verständliche Einschätzung statt einer vorschnellen Paketempfehlung.',
+    image: MARKETING_IMAGES.webdesignPlanning,
+    steps: [
+      {
+        title: 'Ausgangslage und Ziele',
+        text: 'Du beschreibst, ob du neu startest oder eine bestehende Website überarbeiten möchtest. Dazu gehören Zielgruppe, Leistungen, vorhandene Inhalte und der wichtigste Kontaktweg.'
+      },
+      {
+        title: 'Umfang und Zeitrahmen',
+        text: 'Ich ordne Seitenumfang, Texte, Bilder, Zusatzfunktionen, Local-SEO-Grundlagen, laufende Kosten und den realistischen zeitlichen Rahmen.'
+      },
+      {
+        title: 'Preisbereich und erste Empfehlung',
+        text: 'Auf Basis deiner Angaben erhältst du einen unverbindlichen Preisbereich und eine Empfehlung für den sinnvollsten nächsten Projektschritt.'
+      }
+    ],
+    cta: {
+      label: 'Erstgespräch anfragen',
+      href: '/kontakt?projektart=webdesign'
+    }
+  },
   hero: {
     eyebrow: 'Individuelles Webdesign aus Berlin',
     lead: 'Ich plane und entwickle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister. Leistungen, Inhalte, Pakete und technische Umsetzung werden so geordnet, dass Besucher das Angebot schnell verstehen.',

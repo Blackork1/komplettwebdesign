@@ -238,22 +238,25 @@
   }
 }
 
-.wd-planning-image {
+.webdesign-berlin .wd-planning-image {
+  aspect-ratio: 4 / 3;
+  border: 1px solid rgba(11, 42, 70, 0.12);
   border-radius: 24px;
-  margin: clamp(1.4rem, 3vw, 2.3rem) 0;
-  max-height: 520px;
+  box-shadow: 0 24px 70px rgba(11, 42, 70, 0.16);
+  margin: 0;
   overflow: hidden;
   position: relative;
 }
 
-.wd-planning-image img {
+.webdesign-berlin .wd-planning-image img {
+  display: block;
   height: 100%;
   object-fit: cover;
-  object-position: center 42%;
+  object-position: center 72%;
   width: 100%;
 }
 
-.wd-planning-image figcaption {
+.webdesign-berlin .wd-planning-image figcaption {
   background: rgba(11, 42, 70, 0.84);
   bottom: 0;
   color: #ffffff;
@@ -263,7 +266,7 @@
   position: absolute;
 }
 
-.wd-planning-image figcaption a {
+.webdesign-berlin .wd-planning-image figcaption a {
   color: #ffffff;
 }
 
@@ -456,6 +459,10 @@
   text-align: center;
 }
 
+.webdesign-berlin .wd-section-head > .wd-lead {
+  margin-inline: auto;
+}
+
 .webdesign-berlin #intro .wd-section-head {
   max-width: 1160px;
 }
@@ -603,38 +610,59 @@
 .webdesign-berlin .wd-video {
   margin: 0 auto;
   max-width: 1160px;
-  text-align: center;
 }
 
-.webdesign-berlin .wd-video > p {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 940px;
+.webdesign-berlin .wd-consultation-intro {
+  align-items: center;
+  display: grid;
+  gap: clamp(28px, 5vw, 64px);
+  grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
 }
 
-.webdesign-berlin .wd-video__wrap {
-  margin-top: 24px;
-}
-
-.webdesign-berlin .wd-consultation-grid {
-  margin-top: clamp(24px, 4vw, 36px);
+.webdesign-berlin .wd-consultation-copy {
   text-align: left;
-  margin-bottom: clamp(20px, 4vw, 30px);
+}
+
+.webdesign-berlin .wd-consultation-copy .wd-lead {
+  margin-bottom: 0;
+}
+
+.webdesign-berlin .wd-consultation-steps {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: clamp(34px, 5vw, 56px) 0 0;
+  padding: 0;
+  position: relative;
+  text-align: left;
+}
+
+.webdesign-berlin .wd-consultation-steps::before {
+  background: rgba(239, 75, 28, 0.28);
+  content: "";
+  height: 2px;
+  left: calc(16.666% + 17px);
+  position: absolute;
+  right: calc(16.666% + 17px);
+  top: 17px;
 }
 
 .webdesign-berlin .wd-consultation-step {
   display: grid;
-  gap: 12px;
-}
-
-.webdesign-berlin .wd-consultation-step__head {
-  align-items: flex-start;
-  display: flex;
   gap: 14px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  margin: 0;
+  padding: 0 clamp(12px, 2vw, 24px);
+  position: relative;
 }
 
-.webdesign-berlin .wd-consultation-step__head h3 {
+.webdesign-berlin .wd-consultation-step h3 {
   margin: 0;
+}
+
+.webdesign-berlin .wd-consultation-step p {
+  margin: 0.7rem 0 0;
 }
 
 .webdesign-berlin .wd-consultation-step__number {
@@ -650,11 +678,14 @@
   font-weight: 850;
   height: 34px;
   justify-content: center;
+  position: relative;
   width: 34px;
+  z-index: 1;
 }
 
 .webdesign-berlin .wd-consultation-actions {
   justify-content: center;
+  margin-top: clamp(26px, 4vw, 40px);
 }
 
 .webdesign-berlin .wd-card__figure {
@@ -1295,6 +1326,28 @@
   .webdesign-berlin .wd-media-grid,
   .webdesign-berlin .wd-tech-grid {
     grid-template-columns: 1fr;
+  }
+
+  .webdesign-berlin .wd-consultation-intro,
+  .webdesign-berlin .wd-consultation-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .webdesign-berlin .wd-consultation-steps {
+    gap: 22px;
+  }
+
+  .webdesign-berlin .wd-consultation-steps::before {
+    bottom: 17px;
+    height: auto;
+    left: 17px;
+    right: auto;
+    top: 17px;
+    width: 2px;
+  }
+
+  .webdesign-berlin .wd-consultation-step {
+    padding: 0;
   }
 
   .webdesign-berlin .wd-hero {
