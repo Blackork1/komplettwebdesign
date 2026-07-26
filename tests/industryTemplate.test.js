@@ -147,6 +147,8 @@ test('Blumenladen und Immobilienmakler verbinden Leistung und bestehenden Ratgeb
   ]);
   assert.match(template, /industryCommercialGuide/);
   assert.match(template, /industry-guide__media[\s\S]*alt="<%= renderedIndustryGuide\.image\.alt %>"/);
+  assert.match(template, /class="industry-context-links"/);
+  assert.doesNotMatch(template, /<nav aria-label="Passende Branchenartikel">/);
 });
 
 test('price CTA keeps the legacy contact action outside the Blumenladen package journey', () => {

@@ -98,6 +98,16 @@ test('webdesign berlin canonical page exposes the requested canonical page model
   assert.deepEqual(webdesignBerlinPage.sections.map((section) => section.id), requiredSectionIds);
 });
 
+test('deutsche und englische Webdesign-Hauptseite geben wechselseitige Sprachalternativen aus', () => {
+  const controllerSource = readFileSync(new URL('../controllers/districtController.js', import.meta.url), 'utf8');
+  const englishRender = controllerSource.slice(controllerSource.indexOf('return res.render("bereiche/webdesign-berlin-en"'));
+
+  assert.match(englishRender, /alternateUrls:\s*\{/);
+  assert.match(englishRender, /de:\s*`\$\{pageBaseUrl\}\/webdesign-berlin`/);
+  assert.match(englishRender, /en:\s*`\$\{pageBaseUrl\}\/en\/webdesign-berlin`/);
+  assert.match(englishRender, /xDefault:\s*`\$\{pageBaseUrl\}\/webdesign-berlin`/);
+});
+
 test('webdesign berlin preserves the retired page’s website-creation guidance', () => {
   assert.deepEqual(webdesignBerlinPage.websiteCreation, {
     title: 'Website-Erstellung von der Struktur bis zum geprüften Livegang',

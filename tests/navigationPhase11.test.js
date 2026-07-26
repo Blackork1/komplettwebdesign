@@ -43,6 +43,11 @@ test('phase 11 header uses the new lean primary navigation and project CTA', () 
   assert.doesNotMatch(header, /Branchen Untermenü|Website-Tester Untermenü|Website Tester<\/a>/);
 });
 
+test('Paketübersicht verbindet die Auswahlhilfe kontextuell mit Webdesign Berlin', () => {
+  assert.match(packagesList, /isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin'/);
+  assert.match(packagesList, /Website-Erstellung in Berlin einordnen/);
+});
+
 test('phase 11 mobile navigation exposes accessible controls', () => {
   const navToggle = read('public/js/navToggle.js');
 

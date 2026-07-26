@@ -8,6 +8,7 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import compression from 'compression';
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -285,6 +286,14 @@ app.set('views', path.join(__dirname, 'views'));
 const staticOpts = isProd
   ? { immutable: true, maxAge: '365d' }
   : { maxAge: 0 };
+app.get('/demo/cq-compare', async (_req, res, next) => {
+  try {
+    const html = await fs.readFile(path.join(publicDir, 'demo', 'cq-compare', 'index.html'), 'utf8');
+    res.status(200).type('html').send(html);
+  } catch (error) {
+    next(error);
+  }
+});
 app.use(express.static(publicDir, staticOpts));
 app.get('/assets/js/axios.min.js', (_req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/axios/dist/axios.min.js'));

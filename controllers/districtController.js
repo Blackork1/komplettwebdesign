@@ -1385,6 +1385,11 @@ export function renderWebdesignBerlinHub(req, res) {
     metaTitle,
     metaDescription,
     canonical: webdesignBerlinUrl,
+    alternateUrls: {
+      de: `${pageBaseUrl}/webdesign-berlin`,
+      en: `${pageBaseUrl}/en/webdesign-berlin`,
+      xDefault: `${pageBaseUrl}/webdesign-berlin`
+    },
     contact: {
       phone: SITE_FACTS.phone,
       phoneDisplay: SITE_FACTS.phoneDisplay,

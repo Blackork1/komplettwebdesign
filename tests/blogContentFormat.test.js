@@ -257,6 +257,25 @@ test('öffentliche View nutzt Bild-Alt-Fallback und enthält nur die Titel-H1', 
   assert.match(viewSource, /structuredDataBlocks/);
 });
 
+test('priorisierte Bestandsartikel erhalten passende kontextuelle Folgelinks', async () => {
+  const seoArticle = await renderControllerPost(postFixture({
+    slug: 'seo-fuer-blumenladen'
+  }));
+  const costArticle = await renderControllerPost(postFixture({
+    slug: 'website-kosten-2025-einfach-erklaert'
+  }));
+
+  assert.deepEqual(
+    seoArticle.contextLinks.map((link) => link.href),
+    ['/leistungen/local-seo', '/branchen/webdesign-blumenladen']
+  );
+  assert.deepEqual(
+    costArticle.contextLinks.map((link) => link.href),
+    ['/pakete', '/leistungen/laufende-kosten-website']
+  );
+  assert.match(viewSource, /partials\/related-links/);
+});
+
 test('öffentliche und Admin-Queries reichen neue Postfelder unverändert durch', async () => {
   const originalQuery = pool.query;
   const row = postFixture({

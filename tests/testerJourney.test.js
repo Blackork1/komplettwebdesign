@@ -52,3 +52,8 @@ test('Nach dem Ergebnis stehen vier getrennte Wege bereit', () => {
   assert.match(journeyPartial, /Website neu aufbauen/);
   assert.match(journeyPartial, /Projekt besprechen/);
 });
+
+test('SEO-Tester verlinkt die Übersicht zusätzlich außerhalb der Breadcrumb-Navigation', () => {
+  assert.match(seoView, /class="btn btn-secondary" href="<%= isEn \? '\/en\/website-tester' : '\/website-tester' %>"/);
+  assert.match(seoView, /Alle Website-Tests/);
+});

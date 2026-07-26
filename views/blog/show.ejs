@@ -69,6 +69,15 @@
         <%- renderedContent %>
       </div>
 
+      <% if (!isPreview && Array.isArray(contextLinks) && contextLinks.length) { %>
+        <%- include('../partials/related-links', {
+          eyebrow: 'Passend zum Thema',
+          title: 'Nächster sinnvoller Schritt',
+          sectionId: 'blog-context-links-title',
+          links: contextLinks
+        }) %>
+      <% } %>
+
       <% if (commentsEnabled) { %>
       <section id="blog-comments" class="comment-section" data-post-slug="<%= post.slug %>" data-recaptcha-sitekey="<%= process.env.RECAPTCHA_SITEKEY || '' %>">
         <div class="comment-section-head">

@@ -6,6 +6,7 @@ import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
 import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.js';
+import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -208,6 +209,12 @@ export function buildBlogPostPageModel({
   const base = normalizeBaseUrl(canonicalBaseUrl);
   const publicBlogUrl = `${base}/blog`;
   const canonicalUrl = previewMode ? publicBlogUrl : `${publicBlogUrl}/${post.slug}`;
+  const recoveryTarget = previewMode ? null : getSeoRecoveryTarget(`/blog/${post.slug}`);
+  const contextLinks = recoveryTarget
+    ? [recoveryTarget.primaryAction, recoveryTarget.supportingAction]
+      .filter((link) => link?.href && link?.label)
+      .map((link) => ({ href: link.href, label: link.label }))
+    : [];
   const organizationId = `${base}/#organization`;
   const structuredDataBlocks = previewMode ? [] : [
     {
@@ -274,6 +281,7 @@ export function buildBlogPostPageModel({
     publishedISO,
     modifiedISO,
     renderedContent,
+    contextLinks,
     structuredDataBlocks,
     seoExtra,
     robots: previewMode ? 'noindex,nofollow' : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1',

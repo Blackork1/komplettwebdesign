@@ -204,7 +204,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
             von der ersten Idee bis zur optionalen Weiterentwicklung deiner Online-Präsenz.
           </p>
           <% if (renderedIndustryContextLinks.length) { %>
-          <nav aria-label="Passende Branchenartikel">
+          <div class="industry-context-links" aria-label="Passende Branchenartikel">
             <p>
               Vertiefung:
               <% renderedIndustryContextLinks.forEach(function(link, index) { %>
@@ -212,7 +212,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
                 <a href="<%= link.href %>"><%= link.label %></a>
               <% }); %>
             </p>
-          </nav>
+          </div>
           <% } %>
         </div>
 
