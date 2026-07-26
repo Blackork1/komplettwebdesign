@@ -75,6 +75,15 @@ test('maintenance page uses central maintenance plans with current prices and sc
   ].forEach((snippet) => assert.match(pageText, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))));
 });
 
+test('maintenance page makes rhythm, response path, exclusions and running costs visible', () => {
+  assert.deepEqual(
+    maintenancePage.overview.items.map((item) => item.label),
+    ['Prüfturnus', 'Backups', 'Aktualisierungen', 'Reaktionsweg', 'Ausschlüsse', 'Laufende Kosten']
+  );
+  assert.equal(maintenancePage.editorialImage.src, '/images/leistungen/website-wartung-hero.webp');
+  assert.ok(maintenancePage.editorialImage.alt.length >= 20);
+});
+
 test('maintenance page avoids retired maintenance prices and unrealistic promises', () => {
   assert.doesNotMatch(pageText, /Wartung ab 5|5\s*€\/Monat|5\s*EUR\/Monat/i);
   assert.doesNotMatch(pageText, /Wartung inklusive|unbegrenzte Wartung|unbegrenzter Support|alle Änderungen inklusive/i);

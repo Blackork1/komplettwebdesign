@@ -88,6 +88,20 @@ test('local SEO page uses central add-on pricing and separates Local SEO from pa
   assert.match(routeSource, /interpolatePricingTokens/);
 });
 
+test('local SEO trennt die fünf Arbeitsbereiche sichtbar und bebildert', () => {
+  assert.deepEqual(
+    localSeoPage.overview.items.map((item) => item.label),
+    ['Website-Signale', 'Google-Unternehmensprofil', 'Lokale Inhalte', 'Bewertungen und Erwähnungen', 'Laufende Arbeit']
+  );
+  assert.equal(localSeoPage.editorialImage.src, '/images/leistungen/local-seo-hero.webp');
+  assert.ok(localSeoPage.editorialImage.alt.length >= 20);
+  assert.deepEqual(localSeoPage.overview.links.map((link) => link.href), [
+    '/webdesign-berlin',
+    '/branchen/webdesign-blumenladen',
+    '/blog/seo-fuer-blumenladen'
+  ]);
+});
+
 test('local SEO page avoids prohibited ranking, review, legal and cost promises', () => {
   const text = collectText(localSeoPage).join('\n');
   const forbiddenPatterns = [

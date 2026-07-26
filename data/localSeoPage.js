@@ -1,5 +1,6 @@
 import { getAddOnById } from './addOns.js';
 import { PACKAGE_GLOBAL_NOTES, packages } from './packages.js';
+import { MARKETING_IMAGES } from './marketingImages.js';
 
 const addOnIds = ['local-seo-basis', 'google-business-profil', 'seo-leistungsseite'];
 const localSeoAddOns = addOnIds.map((id) => getAddOnById(id)).filter(Boolean);
@@ -29,6 +30,22 @@ export const localSeoPage = Object.freeze({
     'Local SEO für Unternehmen in Berlin: Website-Struktur, lokale Inhalte, Google-Unternehmensprofil und nachvollziehbare Maßnahmen für bessere Auffindbarkeit.',
   h1: 'Local SEO Berlin für kleine Unternehmen',
   primaryKeyword: 'Local SEO Berlin',
+  editorialImage: MARKETING_IMAGES.serviceLocalSeo,
+  overview: {
+    title: 'Fünf Arbeitsbereiche für lokale Sichtbarkeit',
+    items: [
+      { label: 'Website-Signale', text: 'Leistungsseiten, lokale Begriffe, Kontaktdaten, interne Links und strukturierte Informationen bilden die technische Grundlage.' },
+      { label: 'Google-Unternehmensprofil', text: 'Kategorie, Leistungen, Öffnungszeiten, Kontaktdaten, Website-Link und Bilder müssen korrekt und konsistent gepflegt sein.' },
+      { label: 'Lokale Inhalte', text: 'Hilfreiche Inhalte verbinden echte Leistungen, Einzugsgebiet, häufige Fragen und konkrete lokale Suchabsichten.' },
+      { label: 'Bewertungen und Erwähnungen', text: 'Echte Bewertungen, nachvollziehbare Antworten und seriöse lokale Erwähnungen schaffen Vertrauen; Bewertungen werden nicht gekauft.' },
+      { label: 'Laufende Arbeit', text: 'Profil, Inhalte, Fotos und Kontaktdaten benötigen Pflege. Einzelmaßnahmen ersetzen keine fortlaufende Beobachtung des lokalen Markts.' }
+    ],
+    links: [
+      { label: 'Webdesign Berlin', href: '/webdesign-berlin' },
+      { label: 'Branchenlösung Blumenladen', href: '/branchen/webdesign-blumenladen' },
+      { label: 'Local-SEO-Ratgeber für Blumenläden', href: '/blog/seo-fuer-blumenladen' }
+    ]
+  },
   secondaryKeywords: [
     'lokale Suchmaschinenoptimierung Berlin',
     'Google Business Profile optimieren',

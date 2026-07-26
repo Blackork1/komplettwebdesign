@@ -40,6 +40,35 @@
       </div>
     </header>
 
+    <% if (page.overview?.items?.length && page.editorialImage?.src) { %>
+    <section class="seo-landing__container seo-landing__overview" aria-labelledby="seo-landing-overview-title">
+      <figure class="seo-landing__overview-media">
+        <img src="<%= page.editorialImage.src %>" alt="<%= page.editorialImage.alt %>" width="1200" height="900" loading="lazy" decoding="async">
+        <% if (page.editorialImage.source?.kind === 'external') { %>
+        <figcaption>Bild: <%= page.editorialImage.source.creator %> / <a href="<%= page.editorialImage.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+        <% } %>
+      </figure>
+      <div class="seo-landing__overview-content">
+        <p class="seo-landing__eyebrow">Schnelle Einordnung</p>
+        <h2 id="seo-landing-overview-title"><%= page.overview.title %></h2>
+        <div class="seo-landing__overview-grid">
+          <% page.overview.items.forEach(function(item) { %>
+          <article>
+            <h3><%= item.label %></h3>
+            <p><%= item.text %></p>
+          </article>
+          <% }) %>
+        </div>
+        <% if (page.overview.proof) { %>
+        <a class="seo-landing__proof-link" href="<%= page.overview.proof.href %>">
+          <strong><%= page.overview.proof.label %></strong>
+          <span><%= page.overview.proof.text %></span>
+        </a>
+        <% } %>
+      </div>
+    </section>
+    <% } %>
+
     <% if (page.visual?.image?.src) { %>
     <section class="seo-landing__container seo-landing__visual-feature" aria-labelledby="seo-landing-visual-title">
       <figure class="seo-landing__visual-frame">

@@ -1,6 +1,7 @@
 import { ctas } from './ctas.js';
 import { maintenancePlans } from './maintenancePlans.js';
 import { PACKAGE_GLOBAL_NOTES } from './packages.js';
+import { MARKETING_IMAGES } from './marketingImages.js';
 
 const planComparisonRows = Object.freeze([
   {
@@ -229,6 +230,18 @@ export const maintenancePage = Object.freeze({
     'Website-Wartung für Unternehmen in Berlin: Pflege, Backups, technische Kontrollen und klar abgegrenzter Support nach vereinbartem Leistungsumfang.',
   h1: 'Website-Wartung und Support in Berlin',
   primaryKeyword: 'Website Wartung Berlin',
+  editorialImage: MARKETING_IMAGES.serviceMaintenance,
+  overview: {
+    title: 'Wartung auf einen Blick',
+    items: [
+      { label: 'Prüfturnus', text: 'Technische Kontrollen erfolgen im vereinbarten Rhythmus des gewählten Wartungsumfangs, nicht als lückenlose Dauerüberwachung.' },
+      { label: 'Backups', text: 'Sicherung und Wiederherstellung richten sich nach Hosting-Setup, Datenquellen und dem konkret vereinbarten Leistungsumfang.' },
+      { label: 'Aktualisierungen', text: 'Kleine technische oder inhaltliche Änderungen werden nur innerhalb des gebuchten Zeitkontingents und der festgelegten Grenzen umgesetzt.' },
+      { label: 'Reaktionsweg', text: 'Anfragen laufen über den vereinbarten Kontaktweg und werden nach Paket, Dringlichkeit und verfügbarer Kapazität eingeordnet.' },
+      { label: 'Ausschlüsse', text: 'Neue Seiten, Sonderfunktionen, Drittanbieter-Probleme, Rechtsberatung, dauerhafte SEO-Betreuung und Notfallgarantien sind nicht automatisch enthalten.' },
+      { label: 'Laufende Kosten', text: 'Wartung, Hosting, Domain, E-Mail, Lizenzen und externe Dienste werden monatlich oder jährlich separat ausgewiesen.' }
+    ]
+  },
   secondaryKeywords: [
     'Website Wartung',
     'Website Support Berlin',

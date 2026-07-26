@@ -120,6 +120,26 @@
       </div>
     </section>
 
+    <section id="wartung-ueberblick" class="maintenance-section maintenance-section--soft">
+      <div class="maintenance-shell maintenance-overview">
+        <figure class="maintenance-overview__media animate-on-scroll">
+          <img src="<%= page.editorialImage.src %>" alt="<%= page.editorialImage.alt %>" width="1200" height="900" loading="lazy" decoding="async">
+        </figure>
+        <div class="animate-on-scroll">
+          <p class="maintenance-kicker">Schnelle Einordnung</p>
+          <h2><%= page.overview.title %></h2>
+          <div class="maintenance-overview__grid">
+            <% page.overview.items.forEach(function(item) { %>
+            <article>
+              <h3><%= item.label %></h3>
+              <p><%= item.text %></p>
+            </article>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="why-maintenance" class="maintenance-section maintenance-section--soft">
       <div class="maintenance-shell animate-on-scroll">
         <p class="maintenance-section-kicker"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>Warum Wartung</p>

@@ -1,5 +1,6 @@
 import { PACKAGE_GLOBAL_NOTES, packages } from './packages.js';
 import { getAddOnById } from './addOns.js';
+import { MARKETING_IMAGES } from './marketingImages.js';
 
 const packageById = new Map(packages.map((pkg) => [pkg.id, pkg]));
 
@@ -24,6 +25,23 @@ export const SEO_LANDING_PAGES = Object.freeze([
     title: 'Website Relaunch Berlin | Website modernisieren',
     description: 'Website-Relaunch in Berlin: veraltete Website modernisieren, Struktur verbessern, Weiterleitungen beachten und technisch sauber mit Node.js/EJS umsetzen.',
     h1: 'Website Relaunch Berlin für moderne Unternehmenswebsites',
+    editorialImage: MARKETING_IMAGES.serviceRelaunch,
+    overview: {
+      title: 'Relaunch auf einen Blick',
+      items: [
+        { label: 'Ausgangslage', text: 'Die bestehende Website passt in Struktur, Design, Technik oder Inhalt nicht mehr zum Unternehmen.' },
+        { label: 'Leistungsumfang', text: 'Bestandsaufnahme, URL- und Weiterleitungsplan, Inhaltsübernahme, neue Struktur, Design und technische Umsetzung.' },
+        { label: 'Nicht enthalten', text: 'Vollständige Migration, alle Weiterleitungen, neue Langtexte, Sonderfunktionen und laufende SEO-Betreuung nur nach Vereinbarung.' },
+        { label: 'Ablauf', text: 'Bestand prüfen, Ziele und URLs ordnen, Inhalte vorbereiten, umsetzen, testen, freigeben und nach dem Livegang kontrollieren.' },
+        { label: 'Ergebnis oder Beleg', text: 'Ein nachvollziehbarer Neustart mit geprüften Kontaktwegen; das reale Relaunch-Projekt TM Sauber & Mehr zeigt den Ansatz.' },
+        { label: 'Kosten und nächster Schritt', text: 'Der Preis richtet sich nach Umfang, Migration und Funktionen. Eine kurze Anfrage klärt Paket und Risiken.' }
+      ],
+      proof: {
+        label: 'Relaunch-Referenz TM Sauber & Mehr ansehen',
+        href: '/referenzen/tm-sauber-mehr',
+        text: 'Reales Projekt mit neuer Seitenstruktur, klarerer Leistungsdarstellung und persönlicher Team-Seite.'
+      }
+    },
     intro: 'Deine bestehende Website wirkt veraltet, ist mobil schwach, bringt zu wenig Anfragen oder passt nicht mehr zu deinem Angebot. Ich plane Website-Relaunches für kleine Unternehmen in Berlin und Brandenburg mit neuer Struktur, sauberer Technik, bewusster SEO-Risiko-Prüfung und klaren Anfragewegen.',
     service: {
       name: 'Website Relaunch Berlin',
@@ -310,6 +328,23 @@ export const SEO_LANDING_PAGES = Object.freeze([
     title: 'Website-Audit: SEO, Technik und Inhalte prüfen',
     description: 'Website-Audit für SEO, Technik, Inhalte, Ladezeit und Nutzerführung. Du erhältst priorisierte Empfehlungen für Optimierung oder einen geplanten Relaunch.',
     h1: 'Website Audit: Website prüfen und gezielt verbessern',
+    editorialImage: MARKETING_IMAGES.serviceAudit,
+    overview: {
+      title: 'Website-Audit auf einen Blick',
+      items: [
+        { label: 'Ausgangslage', text: 'Die Website hat sichtbare oder vermutete Schwächen, aber der sinnvollste nächste Schritt ist noch unklar.' },
+        { label: 'Leistungsumfang', text: 'SEO, Technik, Ladezeit, mobile Nutzung, Inhalte, Trust und Anfragewege werden im vereinbarten Rahmen zusammen geprüft.' },
+        { label: 'Nicht enthalten', text: 'Kein Penetration-Test, kein Rechtsgutachten, keine vollständige Langzeit-SEO-Analyse und keine automatische Umsetzung aller Empfehlungen.' },
+        { label: 'Ablauf', text: 'Ziel und Website-URL klären, Bereiche untersuchen, Auffälligkeiten bewerten, Maßnahmen priorisieren und Ergebnis besprechen.' },
+        { label: 'Ergebnis oder Beleg', text: 'Eine priorisierte Beispielausgabe zeigt Status, Problem, Relevanz, erste Handlung und die Grenze der Prüfung.' },
+        { label: 'Kosten und nächster Schritt', text: 'Der Umfang bestimmt den Preisrahmen. Der kostenlose Tester bleibt der sinnvolle Einstieg vor einer individuellen Analyse.' }
+      ],
+      proof: {
+        label: 'Kostenlosen Website-Tester starten',
+        href: '/website-tester',
+        text: 'Beispielausgabe mit priorisierten Hinweisen ansehen und danach entscheiden, ob ein individuelles Audit nötig ist.'
+      }
+    },
     intro: 'Du hast eine bestehende Website und weißt nicht, ob kleine Optimierungen reichen oder ein Relaunch sinnvoller ist. Im Website-Audit prüfe ich SEO, Technik, Ladezeit, mobile Nutzung, Trust, Conversion, Inhalte und Local SEO als vertiefte Analyse mit priorisierten Empfehlungen statt pauschaler Versprechen.',
     service: {
       name: 'Website Audit',
@@ -627,6 +662,23 @@ export const SEO_LANDING_PAGES = Object.freeze([
     title: 'Landingpage erstellen lassen | Individuell & klar',
     description: 'Individuelle Landingpage erstellen lassen: klare Struktur, überzeugende Inhalte, CTA-Führung und technische Umsetzung mit Node.js/EJS.',
     h1: 'Landingpage erstellen lassen',
+    editorialImage: MARKETING_IMAGES.homeSolution,
+    overview: {
+      title: 'Landingpage auf einen Blick',
+      items: [
+        { label: 'Ausgangslage', text: 'Ein konkretes Angebot, eine Kampagne oder eine Zielgruppe braucht einen fokussierten Weg ohne konkurrierende Botschaften.' },
+        { label: 'Leistungsumfang', text: 'Struktur, Bildsprache, Textführung, Vertrauenselemente, Formular und genau eine priorisierte Zielhandlung werden geplant.' },
+        { label: 'Nicht enthalten', text: 'Keine vollständige Unternehmenswebsite, keine laufende Anzeigenbetreuung, keine Conversion-Garantie und kein pauschales Tracking-Setup.' },
+        { label: 'Ablauf', text: 'Angebot und Zielgruppe klären, Inhalte sammeln, Seitenlogik entwerfen, gestalten, umsetzen, testen und freigeben.' },
+        { label: 'Ergebnis oder Beleg', text: 'Die fokussierte Zielseite konzentriert sich auf ein Conversion-Ziel, eine klare Argumentationsfolge und eine nachvollziehbare Kontaktmöglichkeit.' },
+        { label: 'Kosten und nächster Schritt', text: 'Der Preis hängt von Inhalt, Formular, Tracking und Einbindung ab. Die Anfrage klärt, ob Landingpage oder Website sinnvoller ist.' }
+      ],
+      proof: {
+        label: 'Unterschied zur vollständigen Website verstehen',
+        href: '/webdesign-berlin',
+        text: 'Eine Landingpage bündelt die Argumentation auf ein Conversion-Ziel. Die Webdesign-Hauptseite zeigt, wann mehrere Leistungen, Seiten und Zielgruppen eine vollständige Website benötigen.'
+      }
+    },
     intro: 'Du möchtest eine Landingpage erstellen lassen, die ein konkretes Angebot verständlich erklärt und Besucher zu einer klaren Handlung führt. Ich entwickle individuelle Zielseiten für kleine Unternehmen, Dienstleister und Kampagnen in Berlin und Brandenburg mit sauberer Struktur, serverseitig gerendertem HTML und realistischen Grenzen statt Erfolgsversprechen.',
     service: {
       name: 'Landingpage erstellen lassen',

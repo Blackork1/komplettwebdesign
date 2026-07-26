@@ -121,6 +121,29 @@
       </div>
     </section>
 
+    <section class="local-seo-section local-seo-section--soft" id="arbeitsbereiche">
+      <div class="local-seo-shell local-seo-overview">
+        <figure class="local-seo-overview__media animate-on-scroll">
+          <img src="<%= page.editorialImage.src %>" alt="<%= page.editorialImage.alt %>" width="1200" height="900" loading="lazy" decoding="async">
+        </figure>
+        <div class="animate-on-scroll">
+          <span class="local-seo-kicker">Auf einen Blick</span>
+          <h2><%= page.overview.title %></h2>
+          <div class="local-seo-overview__grid">
+            <% page.overview.items.forEach(function(item) { %>
+            <article>
+              <h3><%= item.label %></h3>
+              <p><%= item.text %></p>
+            </article>
+            <% }) %>
+          </div>
+          <nav class="local-seo-overview__links" aria-label="Passende Praxisbeispiele">
+            <% page.overview.links.forEach(function(link) { %><a href="<%= link.href %>"><%= link.label %></a><% }) %>
+          </nav>
+        </div>
+      </div>
+    </section>
+
     <section class="local-seo-section local-seo-section--soft" id="targetGroups">
       <div class="local-seo-shell">
         <div class="local-seo-section-head animate-on-scroll">

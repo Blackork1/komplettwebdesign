@@ -19,6 +19,39 @@ function uniqueValues(items, field) {
   return new Set(items.map((item) => item[field]));
 }
 
+test('kommerzielle Landingpages zeigen Ausgangslage, Umfang, Grenzen, Ablauf, Ergebnis und Übergang', () => {
+  const pages = [
+    getSeoLandingPage('website-relaunch-berlin'),
+    getSeoLandingPage('website-audit'),
+    getSeoLandingPage('landingpage-erstellen-lassen')
+  ];
+
+  for (const page of pages) {
+    assert.deepEqual(
+      page.overview.items.map((item) => item.label),
+      ['Ausgangslage', 'Leistungsumfang', 'Nicht enthalten', 'Ablauf', 'Ergebnis oder Beleg', 'Kosten und nächster Schritt']
+    );
+    assert.ok(page.overview.items.every((item) => item.text.length >= 35));
+    assert.ok(page.editorialImage?.src);
+    assert.ok(page.editorialImage?.alt.length >= 20);
+    assert.ok(page.faq.length >= 8);
+    assert.match(page.cta.href, /^\/kontakt\?/);
+    assert.ok(page.internalLinks.length >= 2);
+  }
+});
+
+test('Relaunch, Audit und Landingpage besitzen den jeweils entscheidenden Beleg', () => {
+  const relaunch = getSeoLandingPage('website-relaunch-berlin');
+  const audit = getSeoLandingPage('website-audit');
+  const landingpage = getSeoLandingPage('landingpage-erstellen-lassen');
+
+  assert.equal(relaunch.overview.proof.href, '/referenzen/tm-sauber-mehr');
+  assert.match(audit.overview.proof.text, /priorisierte|Beispielausgabe/i);
+  assert.equal(audit.overview.proof.href, '/website-tester');
+  assert.match(landingpage.overview.proof.text, /ein Conversion-Ziel/i);
+  assert.equal(landingpage.overview.proof.href, '/webdesign-berlin');
+});
+
 test('seo landing pages expose exactly the planned static money pages', () => {
   assert.deepEqual(SEO_LANDING_PAGES.map((page) => page.slug), EXPECTED_SLUGS);
   assert.deepEqual(SEO_LANDING_PAGES.map((page) => page.path), [
