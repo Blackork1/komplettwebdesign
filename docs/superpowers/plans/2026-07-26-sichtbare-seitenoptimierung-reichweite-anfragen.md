@@ -20,6 +20,10 @@
 - Reichweite wird ohne GA4 ausgewertet: maßgeblich sind Google Search Console, HTTP-Status-/Indexierungsprüfungen und tatsächlich eingegangene Anfragen.
 - Vor einem weiteren Server-Deployment erhält der Nutzer eine lokale Vorschau und eine verständliche Liste der sichtbaren Änderungen.
 - Minifizierte CSS-Dateien und das Asset-Manifest werden ausschließlich über `npm run build` erzeugt.
+- Jede zentrale Seite erhält ein eigenes, zum Inhalt passendes Leitmotiv; dasselbe Bild wird nicht als Leitmotiv mehrerer Kernseiten wiederverwendet.
+- Vorhandene eigene Bilder werden zuerst genutzt. Fehlende Motive dürfen aus öffentlichen Bilddatenbanken ergänzt werden, wenn Urheber, Originalseite und Lizenz dauerhaft dokumentiert sind.
+- Informative Bilder werden als echte `<img>`-Elemente mit aussagekräftigem deutschem Alt-Text ausgegeben. Rein dekorative Icons bleiben mit leerem Alt-Attribut für Screenreader stumm.
+- Neue Rasterbilder werden lokal, responsiv und komprimiert ausgeliefert; externe Hotlinks werden vermieden.
 
 ---
 
