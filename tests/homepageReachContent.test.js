@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { load } from 'cheerio';
 import { render } from 'ejs';
+import postcss from 'postcss';
 
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
@@ -99,4 +100,46 @@ test('der englische Branchenbereich enthält vollständig englische Beschriftung
   assert.match(text, /Cafés & Hospitality/);
   assert.match(text, /Compare all industry solutions/);
   assert.doesNotMatch(text, /Branchenlösungen|Gesundheit|Immobilien|Blumenladen|Öffnungszeiten/);
+});
+
+test('die vier Bildgeschichten wechseln von Desktop-Rhythmus zu mobilem Scroll-Snap', () => {
+  const css = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.home-industry-stories\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/
+  );
+  assert.match(
+    css,
+    /\.home-industry-story:nth-child\(even\)\s*\{[\s\S]*?margin-top:\s*28px;/
+  );
+  assert.match(
+    css,
+    /@media \(max-width:\s*900px\)[\s\S]*?\.home-industry-stories\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/
+  );
+  assert.match(
+    css,
+    /@media \(max-width:\s*640px\)[\s\S]*?\.home-industry-stories\s*\{[\s\S]*?display:\s*flex;[\s\S]*?overflow-x:\s*auto;[\s\S]*?scroll-snap-type:\s*x mandatory;/
+  );
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.home-industry-story[\s\S]*?transition:\s*none\s*!important;/
+  );
+  assert.match(
+    css,
+    /\.home-industry-story:nth-child\(2\)[\s\S]*?\.home-industry-story__media img\s*\{[\s\S]*?transform:\s*scale\(1\.3\);/
+  );
+});
+
+test('der grundlegende Branchenstil gilt unabhängig von reduzierter Bewegung', () => {
+  const css = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
+  const root = postcss.parse(css);
+  const topLevelIndustryRule = root.nodes.find(
+    (node) => node.type === 'rule' && node.selector === '.home-page .home-industry-stories'
+  );
+
+  assert.ok(
+    topLevelIndustryRule,
+    'Der grundlegende Branchenstil darf nicht in einer Medienabfrage verschachtelt sein'
+  );
 });
