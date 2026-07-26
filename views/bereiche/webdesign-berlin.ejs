@@ -154,6 +154,21 @@ const wdIndustryImages = [
     </div>
   </section>
 
+  <section id="websiteCreation" class="wd-section wd-section--soft" aria-labelledby="wd-creation-title">
+    <div class="wd-container animate-on-scroll">
+      <article class="wd-card">
+        <span class="wd-chip">Website-Erstellung</span>
+        <h2 id="wd-creation-title"><%= page.websiteCreation.title %></h2>
+        <p class="wd-lead"><%= page.websiteCreation.text %></p>
+        <ul class="wd-list wd-list--checks">
+          <% page.websiteCreation.points.forEach(function (item) { %>
+            <li><%= item %></li>
+          <% }) %>
+        </ul>
+      </article>
+    </div>
+  </section>
+
   <section class="wd-section wd-section--video wd-section--soft" aria-labelledby="wd-video-title">
     <div class="wd-container">
       <div class="wd-video">

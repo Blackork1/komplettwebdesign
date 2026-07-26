@@ -7,13 +7,6 @@ const heroImageEntries = [
     }
   ],
   [
-    '/website-erstellen-lassen-berlin',
-    {
-      src: '/images/leistungen/landingpage-erstellen-lassen-hero.webp',
-      alt: 'Landingpage-Visualisierung mit fokussierter Zielseite und Kampagnen-Elementen'
-    }
-  ],
-  [
     '/leistungen/website-relaunch',
     {
       src: '/images/leistungen/website-relaunch-hero.webp',

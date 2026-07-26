@@ -5,7 +5,6 @@ import test from 'node:test';
 
 const expectedHeroImages = Object.freeze({
   '/leistungen': '/images/leistungen/leistungen-uebersicht-hero.webp',
-  '/website-erstellen-lassen-berlin': '/images/leistungen/landingpage-erstellen-lassen-hero.webp',
   '/leistungen/website-relaunch': '/images/leistungen/website-relaunch-hero.webp',
   '/leistungen/local-seo': '/images/leistungen/local-seo-hero.webp',
   '/leistungen/landingpage-erstellen-lassen': '/images/leistungen/landingpage-erstellen-lassen-hero.webp',

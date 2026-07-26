@@ -25,6 +25,7 @@ function collectText(value, out = []) {
 const requiredSectionIds = [
   'hero',
   'intro',
+  'websiteCreation',
   'targetGroups',
   'individualWebdesign',
   'techUsp',
@@ -94,6 +95,23 @@ test('webdesign berlin canonical page exposes the requested canonical page model
   assert.match(webdesignBerlinPage.hero.lead, /Berlin/i);
   assert.match(webdesignBerlinPage.hero.lead, /individuell/i);
   assert.deepEqual(webdesignBerlinPage.sections.map((section) => section.id), requiredSectionIds);
+});
+
+test('webdesign berlin preserves the retired page’s website-creation guidance', () => {
+  assert.deepEqual(webdesignBerlinPage.websiteCreation, {
+    title: 'Website-Erstellung von der Struktur bis zum geprüften Livegang',
+    text: 'Vor dem Design werden Zielgruppe, Leistungen, Suchabsichten und Kontaktwege geklärt. Danach werden Inhalte, Gestaltung und technische Umsetzung als zusammenhängendes Projekt aufgebaut.',
+    points: [
+      'Ziele, Leistungen und wichtigste Suchabsichten vor dem Layout klären',
+      'Texte, Design und mobile Umsetzung auf eine gemeinsame Struktur ausrichten',
+      'Formulare, Canonicals, Sitemap und wichtige Links vor dem Livegang prüfen'
+    ]
+  });
+
+  const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
+  assert.match(templateSource, /id="websiteCreation"/);
+  assert.match(templateSource, /page\.websiteCreation\.title/);
+  assert.match(templateSource, /page\.websiteCreation\.points\.forEach/);
 });
 
 test('webdesign berlin canonical page uses the new central package logic', () => {

@@ -833,7 +833,7 @@ export function renderWebdesignBerlinHub(req, res) {
   ];
 
   const resources = [
-    { label: "Website erstellen lassen Berlin", href: "/website-erstellen-lassen-berlin" },
+    { label: "Webdesign Berlin", href: "/webdesign-berlin" },
     { label: "Website Relaunch Berlin", href: "/leistungen/website-relaunch" },
     { label: "Ablauf Webdesign Berlin", href: "/ablauf" },
     { label: "Was kostet eine Website in Berlin?", href: "/ratgeber/website-kosten-berlin" },

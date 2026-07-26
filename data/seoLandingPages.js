@@ -17,82 +17,6 @@ function addOnPricePoint(id, fallbackName, fallbackPriceLabel, text) {
 
 export const SEO_LANDING_PAGES = Object.freeze([
   {
-    slug: 'website-erstellen-lassen-berlin',
-    path: '/website-erstellen-lassen-berlin',
-    primaryKeyword: 'website erstellen lassen berlin',
-    parentBreadcrumb: { label: 'Leistungen', href: '/leistungen' },
-    title: 'Website erstellen lassen Berlin | Komplett Webdesign',
-    description: 'Website erstellen lassen in Berlin: klare Struktur, Texte, Technik und SEO-Grundlage für kleine Unternehmen, die professionell online sichtbar werden wollen.',
-    h1: 'Website erstellen lassen in Berlin',
-    intro: 'Du willst eine Website erstellen lassen, die nicht nur gut aussieht, sondern dein Angebot verständlich macht und Anfragen erleichtert. Komplett Webdesign plant, textet und baut Websites für Berliner Unternehmen mit klarer Struktur, mobilem Design und sauberer SEO-Grundlage.',
-    sections: [
-      {
-        eyebrow: 'Positionierung',
-        heading: 'Erst klären, was die Website leisten soll',
-        body: 'Vor dem Design geht es um Zielgruppe, Leistungen, lokale Suchbegriffe und Kontaktwege. So entsteht eine Seitenstruktur, die Besucher schnell führt und später sinnvoll erweitert werden kann.',
-        points: [
-          'Ziele, Leistungen und wichtigste Suchintentionen klären',
-          'Seitenstruktur für lokale Sichtbarkeit vorbereiten',
-          'Anfragewege vor der Umsetzung festlegen'
-        ]
-      },
-      {
-        eyebrow: 'Umsetzung',
-        heading: 'Design, Texte und Technik aus einer Hand',
-        body: 'Texte, Layout und technische Grundlage werden gemeinsam gedacht. Dadurch passen Headline, Leistungsabschnitte, Formular, mobile Darstellung und Ladezeit zusammen, statt nachträglich zusammengesetzt zu wirken.',
-        points: [
-          'Mobilfreundliches Layout für Smartphone und Desktop',
-          'Verständliche Website-Texte ohne unnötige Fachsprache',
-          'SEO-Grundlage mit Title, Description, H1 und interner Verlinkung'
-        ]
-      },
-      {
-        eyebrow: 'Launch',
-        heading: 'Sauber online gehen statt nur veröffentlichen',
-        body: 'Vor dem Livegang werden gelieferte Pflichtseiten technisch eingebunden, Formulare, technische Signale, Sitemap und grundlegende Tracking-Punkte geprüft. Das reduziert Reibung direkt nach dem Start und schafft eine belastbare Grundlage für weitere Optimierung.',
-        points: [
-          'Kontaktformular und wichtige Links prüfen',
-          'Canonical, Sitemap und Indexierung vorbereiten',
-          'Weiterentwicklung nach Launch nachvollziehbar planen'
-        ]
-      }
-    ],
-    cta: {
-      label: 'Website-Projekt anfragen',
-      href: '/kontakt',
-      text: 'Beschreibe kurz, welche Website du brauchst. Danach klären wir Umfang, Inhalte und sinnvolle nächste Schritte.'
-    },
-    secondaryCta: {
-      label: 'Pakete ansehen',
-      href: '/pakete'
-    },
-    faq: [
-      {
-        question: 'Was kostet es, eine Website in Berlin erstellen zu lassen?',
-        answer: 'Bei Komplett Webdesign starten Websites bei {{lowestPackagePriceLabel}}. Der genaue Preis hängt von Seitenanzahl, Textumfang, Funktionen und SEO-Struktur ab.'
-      },
-      {
-        question: 'Wie lange dauert ein Website-Projekt?',
-        answer: 'Kleine Websites dauern meist 2 bis 4 Wochen. Mehrseitige Firmenwebsites liegen häufig bei 4 bis 6 Wochen, umfangreichere Projekte bei 6 bis 8 Wochen.'
-      },
-      {
-        question: 'Sind Texte und SEO enthalten?',
-        answer: 'Ja. Die Website wird mit passenden Texten, sinnvoller Seitenstruktur und einer SEO-Grundlage aus Title, Description, H1, internen Links und sauberer Technik aufgebaut.'
-      },
-      {
-        question: 'Kann eine bestehende Website überarbeitet werden?',
-        answer: 'Ja. Wenn Struktur oder Technik noch tragfähig sind, kann eine Optimierung reichen. Wenn Design, Inhalte und Technik gleichzeitig bremsen, ist ein Relaunch meist sauberer.'
-      }
-    ],
-    internalLinks: [
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Lokale Webdesign-Leistung für Berliner Unternehmen' },
-      { label: 'Website-Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Bestehende Website neu ausrichten' },
-      { label: 'Website-Kosten Berlin', href: '/ratgeber/website-kosten-berlin', text: 'Preise und laufende Kosten einordnen' },
-      { label: 'Projektablauf', href: '/ablauf', text: 'So läuft ein Website-Projekt Schritt für Schritt' },
-      { label: 'Referenzen', href: '/referenzen', text: 'Ausgewählte Projekte ansehen' }
-    ]
-  },
-  {
     slug: 'website-relaunch-berlin',
     path: '/leistungen/website-relaunch',
     primaryKeyword: 'website relaunch berlin',
@@ -362,7 +286,6 @@ export const SEO_LANDING_PAGES = Object.freeze([
     ],
     internalLinks: [
       { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Die Hauptseite für Webdesign in Berlin' },
-      { label: 'Website erstellen lassen', href: '/website-erstellen-lassen-berlin', text: 'Neue Website statt Relaunch planen' },
       { label: 'Pakete vergleichen', href: '/pakete', text: 'Business, Wachstum und Individuell einordnen' },
       { label: 'Business-Paket', href: '/pakete/business', text: 'Kleinerer Relaunch mit klarer Struktur' },
       { label: 'Wachstum-Paket', href: '/pakete/wachstum', text: 'Umfangreicherer Relaunch mit mehreren Leistungsseiten' },
@@ -1043,7 +966,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       }
     ],
     internalLinks: [
-      { label: 'Website erstellen lassen', href: '/website-erstellen-lassen-berlin', text: 'Komplette Website-Erstellung in Berlin' },
+      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Komplette Website-Erstellung in Berlin' },
       { label: 'Pakete', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen' },
       { label: 'Website-Tester', href: '/website-tester', text: 'Bestehende Website kostenlos prüfen' },
       { label: 'Kontakt', href: '/kontakt', text: 'Projektumfang einschätzen lassen' }
@@ -1137,7 +1060,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       }
     ],
     internalLinks: [
-      { label: 'Website erstellen lassen Berlin', href: '/website-erstellen-lassen-berlin', text: 'Vom Ablauf direkt zur Projektanfrage' },
+      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Vom Ablauf direkt zur Projektanfrage' },
       { label: 'Website Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Bestehende Website neu strukturieren' },
       { label: 'Webdesign kleine Unternehmen', href: '/webdesign-kleine-unternehmen-berlin', text: 'Webdesign-Prozess für kleine Betriebe' },
       { label: 'Website-Kosten', href: '/ratgeber/website-kosten-berlin', text: 'Budget und laufende Kosten einordnen' },

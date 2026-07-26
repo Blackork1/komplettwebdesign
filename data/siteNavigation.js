@@ -104,7 +104,6 @@ export const footerNavigation = Object.freeze([
     labelEn: 'Offer',
     links: [
       { label: 'Webdesign Berlin', labelEn: 'Webdesign Berlin', href: '/webdesign-berlin', hrefEn: '/en/webdesign-berlin' },
-      { label: 'Website erstellen lassen Berlin', labelEn: 'Website creation Berlin', href: '/website-erstellen-lassen-berlin' },
       { label: 'Pakete & Preise', labelEn: 'Packages & pricing', href: '/pakete', hrefEn: '/en/pakete' },
       { label: 'Website-Relaunch', labelEn: 'Website relaunch', href: '/leistungen/website-relaunch' },
       { label: 'Landingpage', labelEn: 'Landing page', href: '/leistungen/landingpage-erstellen-lassen' },

@@ -95,6 +95,8 @@ test('phase 11 footer groups offer, cost, visibility, trust and legal links', ()
     assert.ok(allNavigationHrefs.includes(href), `missing footer/header href ${href}`);
   }
 
+  assert.doesNotMatch(JSON.stringify(footerNavigation), /website-erstellen-lassen-berlin/);
+  assert.match(JSON.stringify(footerNavigation), /webdesign-berlin/);
   assert.match(footer, /footerNavigation/);
 });
 

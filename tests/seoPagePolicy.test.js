@@ -16,7 +16,6 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
   [
     '/',
     '/webdesign-berlin',
-    '/website-erstellen-lassen-berlin',
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
@@ -47,6 +46,8 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
     '/hinweise-rechtstexte-seo-datenschutz',
     '/impressum'
   ].forEach((path) => assert.ok(routes.includes(path), `${path} missing from static sitemap policy`));
+
+  assert.equal(routes.includes('/website-erstellen-lassen-berlin'), false);
 });
 
 test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {

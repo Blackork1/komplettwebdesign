@@ -83,10 +83,10 @@ test('contact page starts with a request type choice instead of showing both for
   assert.match(files.contact, /id="contact-detailed-panel"[\s\S]*?hidden/);
 });
 
-test('important website-erstellen-lassen landing page is linked from global and core pages', () => {
-  assert.ok(footerHrefs.includes('/website-erstellen-lassen-berlin'));
-  assert.match(files.index, /href="\/website-erstellen-lassen-berlin"/);
-  assert.match(files.webdesignBerlin, /\/website-erstellen-lassen-berlin/);
+test('the canonical Berlin page is linked from global and core pages', () => {
+  assert.ok(footerHrefs.includes('/webdesign-berlin'));
+  assert.match(files.index, /href="\/webdesign-berlin"/);
+  assert.match(files.webdesignBerlin, /\/webdesign-berlin/);
 });
 
 test('important website-relaunch landing page is linked from global and core pages', () => {

@@ -8,7 +8,6 @@ const DEFAULT_HERO_KICKER = Object.freeze({
 });
 
 const HERO_KICKERS = Object.freeze({
-  'website-erstellen-lassen-berlin': { icon: 'fa-pen-ruler', label: 'Website-Erstellung' },
   'website-relaunch-berlin': { icon: 'fa-arrows-rotate', label: 'Website-Relaunch' },
   'website-audit': { icon: 'fa-magnifying-glass-chart', label: 'Website-Prüfung' },
   'landingpage-erstellen-lassen': { icon: 'fa-bullseye', label: 'Landingpage-Fokus' },
@@ -17,15 +16,6 @@ const HERO_KICKERS = Object.freeze({
 });
 
 const HERO_PANELS = Object.freeze({
-  'website-erstellen-lassen-berlin': {
-    title: 'Was du realistisch bekommst',
-    text: 'Die Website-Erstellung wird als Projekt mit klarer Struktur geplant. Ich kläre, welche Seiten, Inhalte und technischen Grundlagen für dein Unternehmen sinnvoll sind.',
-    items: [
-      { icon: 'fa-diagram-project', text: 'Ziele, Seitenstruktur und Inhalte zuerst klären.' },
-      { icon: 'fa-pen-ruler', text: 'Design, Texte und Technik zusammenführen.' },
-      { icon: 'fa-circle-check', text: 'Launch mit Prüfung und klaren Anfragewegen vorbereiten.' }
-    ]
-  },
   'website-relaunch-berlin': {
     title: 'Was du realistisch bekommst',
     text: 'Ein Relaunch wird als strukturierte Erneuerung geplant. Ich prüfe, welche Inhalte, Nutzerwege und technischen Schritte für deinen Umfang sinnvoll sind.',

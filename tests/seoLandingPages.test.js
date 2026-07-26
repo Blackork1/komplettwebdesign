@@ -6,7 +6,6 @@ import { SEO_LANDING_PAGES, getSeoLandingPage } from '../data/seoLandingPages.js
 import { INDEXABLE_STATIC_ROUTES } from '../helpers/seoPagePolicy.js';
 
 const EXPECTED_SLUGS = [
-  'website-erstellen-lassen-berlin',
   'website-relaunch-berlin',
   'website-audit',
   'landingpage-erstellen-lassen',
@@ -21,7 +20,6 @@ function uniqueValues(items, field) {
 test('seo landing pages expose exactly the planned static money pages', () => {
   assert.deepEqual(SEO_LANDING_PAGES.map((page) => page.slug), EXPECTED_SLUGS);
   assert.deepEqual(SEO_LANDING_PAGES.map((page) => page.path), [
-    '/website-erstellen-lassen-berlin',
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
@@ -57,14 +55,21 @@ test('seo landing pages include complete metadata content faq internal links and
   });
 });
 
-test('website-erstellen-lassen page is distinct from the webdesign berlin hub', () => {
-  const page = getSeoLandingPage('website-erstellen-lassen-berlin');
-  assert.ok(page);
-  assert.equal(page.path, '/website-erstellen-lassen-berlin');
-  assert.notEqual(page.path, '/webdesign-berlin');
-  assert.notEqual(page.primaryKeyword, 'webdesign berlin');
-  assert.doesNotMatch(page.h1, /^Webdesign Berlin$/i);
-  assert.match(page.h1, /Website erstellen lassen/i);
+test('website-erstellen-lassen-berlin redirects directly to the canonical Berlin page', () => {
+  const routeSource = fs.readFileSync(new URL('../routes/seoLandingRoutes.js', import.meta.url), 'utf8');
+
+  assert.match(
+    routeSource,
+    /router\.get\('\/website-erstellen-lassen-berlin'[\s\S]*?res\.redirect\(301,\s*'\/webdesign-berlin'\)/
+  );
+});
+
+test('the retired duplicate is absent from landing data and sitemap', () => {
+  assert.equal(getSeoLandingPage('website-erstellen-lassen-berlin'), null);
+  assert.equal(
+    INDEXABLE_STATIC_ROUTES.some((route) => route.path === '/website-erstellen-lassen-berlin'),
+    false
+  );
 });
 
 test('website relaunch page is available as a distinct seo landing page', () => {
@@ -74,7 +79,7 @@ test('website relaunch page is available as a distinct seo landing page', () => 
   assert.equal(page.primaryKeyword, 'website relaunch berlin');
   assert.match(page.h1, /Website Relaunch/i);
   assert.ok(page.sections.length >= 14);
-  assert.ok(page.internalLinks.some((link) => link.href === '/website-erstellen-lassen-berlin'));
+  assert.ok(page.internalLinks.some((link) => link.href === '/webdesign-berlin'));
 });
 
 test('website relaunch phase 10b contains required sections, cautious pricing and safe links', () => {
@@ -319,7 +324,7 @@ test('landingpage phase 10c avoids conversion, ads, tracking and legal guarantee
 });
 
 test('website intent landing pages use leistungen as breadcrumb parent', () => {
-  ['website-erstellen-lassen-berlin', 'website-relaunch-berlin', 'website-audit', 'landingpage-erstellen-lassen', 'ablauf'].forEach((slug) => {
+  ['website-relaunch-berlin', 'website-audit', 'landingpage-erstellen-lassen', 'ablauf'].forEach((slug) => {
     const page = getSeoLandingPage(slug);
     assert.equal(page.parentBreadcrumb?.label, 'Leistungen');
     assert.equal(page.parentBreadcrumb?.href, '/leistungen');
@@ -340,7 +345,7 @@ test('ablauf page has berlin-specific project process intent', () => {
 });
 
 test('seo landing route lookup returns known pages and null for missing slugs', () => {
-  assert.equal(getSeoLandingPage('website-erstellen-lassen-berlin')?.path, '/website-erstellen-lassen-berlin');
+  assert.equal(getSeoLandingPage('website-erstellen-lassen-berlin'), null);
   assert.equal(getSeoLandingPage('website-relaunch-berlin')?.primaryKeyword, 'website relaunch berlin');
   assert.equal(getSeoLandingPage('website-audit')?.primaryKeyword, 'website audit');
   assert.equal(getSeoLandingPage('landingpage-erstellen-lassen')?.primaryKeyword, 'landingpage erstellen lassen');
@@ -377,7 +382,6 @@ test('sitemap includes the static seo landing routes', () => {
   const routes = INDEXABLE_STATIC_ROUTES.map((route) => route.path);
 
   [
-    '/website-erstellen-lassen-berlin',
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',

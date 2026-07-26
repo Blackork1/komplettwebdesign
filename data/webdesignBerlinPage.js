@@ -54,6 +54,15 @@ export const webdesignBerlinPage = Object.freeze({
       alt: 'Persönliche Begrüßung zum Webdesign-Erstgespräch in Berlin'
     }
   },
+  websiteCreation: {
+    title: 'Website-Erstellung von der Struktur bis zum geprüften Livegang',
+    text: 'Vor dem Design werden Zielgruppe, Leistungen, Suchabsichten und Kontaktwege geklärt. Danach werden Inhalte, Gestaltung und technische Umsetzung als zusammenhängendes Projekt aufgebaut.',
+    points: [
+      'Ziele, Leistungen und wichtigste Suchabsichten vor dem Layout klären',
+      'Texte, Design und mobile Umsetzung auf eine gemeinsame Struktur ausrichten',
+      'Formulare, Canonicals, Sitemap und wichtige Links vor dem Livegang prüfen'
+    ]
+  },
   targetGroups: {
     title: 'Für wen Webdesign Berlin passt',
     goodFit: [
@@ -390,6 +399,7 @@ function requiredSections() {
   return Object.freeze([
     { id: 'hero', label: 'Hero' },
     { id: 'intro', label: 'Einordnung' },
+    { id: 'websiteCreation', label: 'Website-Erstellung' },
     { id: 'targetGroups', label: 'Zielgruppen' },
     { id: 'individualWebdesign', label: 'Individuelles Webdesign' },
     { id: 'techUsp', label: 'Technik-USP' },

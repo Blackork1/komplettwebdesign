@@ -10,9 +10,8 @@ function renderLanding(slug) {
   };
 }
 
-router.get('/website-erstellen-lassen-berlin', (req, res, next) => {
-  req.params.slug = 'website-erstellen-lassen-berlin';
-  return showSeoLandingPage(req, res, next);
+router.get('/website-erstellen-lassen-berlin', (_req, res) => {
+  return res.redirect(301, '/webdesign-berlin');
 });
 
 router.get('/website-relaunch-berlin', (_req, res) => res.redirect(301, '/leistungen/website-relaunch'));
