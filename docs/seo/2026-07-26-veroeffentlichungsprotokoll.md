@@ -493,6 +493,268 @@ sha256sum --check "$NACHWEIS_DIR/SHA256SUMS"
 
 `nachweis.md` muss den UTC-Prüfzeitpunkt, Kandidaten-Tag, vollständigen Kandidaten-Commit, Rollback-Commit, Befehle, Exitcodes, Audit-Zusammenfassung und Lighthouse-Werte enthalten. Es werden keine Lighthouse-Werte behauptet, bevor ein vollständiges, erfolgreiches Artefakt vorliegt.
 
+## 28-Tage-Auswertung und Conversion-Gate
+
+**Status:** Für die spätere Auswertung vorbereitet, noch nicht auswertbar. Welle 2 ist nicht veröffentlicht; deshalb existieren weder ein Live-Datum von Welle 2 noch ein abgeschlossenes 28-Tage-Nachher-Fenster. Die folgenden Platzhalter sind verpflichtende Gates und dürfen erst durch tatsächlich belegte Daten ersetzt werden.
+
+### Dokumentiertes 37-Tage-Störungsfenster
+
+Das Fenster vom 17. Juni bis einschließlich 23. Juli 2026 umfasst 37 Tage und beschreibt den Einbruch seit dem Relaunch. Es ist kein zulässiger direkter Vorher-Nachher-Vergleich für die spätere 28-Tage-Auswertung.
+
+| Kennzahl | Dokumentierter Wert |
+| --- | ---: |
+| Impressionen | 28.053 |
+| Klicks | 0 |
+| Impressionen auf Position 41 oder schlechter | 27.254 |
+
+Die Seitenaggregation für dieses Störungsfenster lautet:
+
+```sql
+SELECT
+  page_url,
+  SUM(clicks) AS clicks,
+  SUM(impressions) AS impressions,
+  ROUND(
+    SUM(average_position * impressions) / NULLIF(SUM(impressions), 0),
+    2
+  ) AS weighted_position
+FROM content_search_metrics
+WHERE metric_date BETWEEN DATE '2026-06-17' AND DATE '2026-07-23'
+GROUP BY page_url
+ORDER BY impressions DESC;
+```
+
+Am 26. Juli 2026 wurden die bekannten Summen gegen die ursprünglich konfigurierte lokale Projektdatenbank ausschließlich lesend in einer `READ ONLY`-Transaktion geprüft. Beide Tabellen waren vorhanden, `content_search_metric_sync_days` enthielt alle 37 Tage vom 17. Juni bis 23. Juli 2026, und die Summen ergaben 28.053 Impressionen, 0 Klicks sowie 27.254 Impressionen für Messzeilen mit `average_position > 40`. Damit bezeichnet „Position 41+“ hier Positionen schlechter als 40. Es wurden keine Zugangsdaten ausgegeben und keine Daten verändert.
+
+### Verpflichtende Zeit- und Vollständigkeits-Gates
+
+| Gate | Einzutragender Nachweis | Aktueller Stand |
+| --- | --- | --- |
+| Live-Datum Welle 2 | tatsächliches Veröffentlichungsdatum im Format `YYYY-MM-DD` | **[PFLICHTGATE: unbekannt; Welle 2 nicht veröffentlicht]** |
+| Vorher-Fenster | Start- und Enddatum des jüngsten vollständig synchronisierten 28-Tage-Fensters vor Welle 2 | **[PFLICHTGATE: erst nach bekanntem Live-Datum bestimmen]** |
+| Sync-Abdeckung vorher | exakt 28 unterschiedliche Sync-Tage | **[PFLICHTGATE: `28/28` belegen]** |
+| Nachher-Fenster | erster vollständiger Tag nach Welle 2 bis einschließlich Tag 28 | **[PFLICHTGATE: Start- und Enddatum liegen in der Zukunft]** |
+| Sync-Abdeckung nachher | exakt 28 unterschiedliche Sync-Tage nach Erreichen des Enddatums | **[PFLICHTGATE: `28/28` belegen]** |
+| Auswertungszeitpunkt | UTC-Zeitpunkt, ausführende Person und unveränderte Abfrage | **[PFLICHTGATE: noch nicht ausgeführt]** |
+
+Der Veröffentlichungstag selbst wird wegen seines unvollständigen Tagesanteils nicht dem Nachher-Fenster zugerechnet. `$1` ist in den folgenden Abfragen das tatsächlich dokumentierte Live-Datum von Welle 2. Diese Abfrage bestimmt das jüngste vollständige Vorher-Fenster, das feste Nachher-Fenster und die jeweilige Sync-Abdeckung:
+
+```sql
+WITH params AS (
+  SELECT $1::date AS wave_2_live_date
+),
+candidate_before AS (
+  SELECT candidate.metric_date AS end_date
+  FROM content_search_metric_sync_days candidate
+  CROSS JOIN params
+  WHERE candidate.metric_date < params.wave_2_live_date
+    AND (
+      SELECT COUNT(DISTINCT covered.metric_date)
+      FROM content_search_metric_sync_days covered
+      WHERE covered.metric_date BETWEEN candidate.metric_date - 27
+        AND candidate.metric_date
+    ) = 28
+  ORDER BY candidate.metric_date DESC
+  LIMIT 1
+),
+windows AS (
+  SELECT
+    'vorher'::text AS window_name,
+    end_date - 27 AS start_date,
+    end_date
+  FROM candidate_before
+
+  UNION ALL
+
+  SELECT
+    'nachher'::text AS window_name,
+    wave_2_live_date + 1 AS start_date,
+    wave_2_live_date + 28 AS end_date
+  FROM params
+)
+SELECT
+  windows.window_name,
+  windows.start_date,
+  windows.end_date,
+  COUNT(DISTINCT sync_day.metric_date)::integer AS sync_days,
+  COUNT(DISTINCT sync_day.metric_date) = 28 AS is_complete
+FROM windows
+LEFT JOIN content_search_metric_sync_days sync_day
+  ON sync_day.metric_date BETWEEN windows.start_date AND windows.end_date
+GROUP BY windows.window_name, windows.start_date, windows.end_date
+ORDER BY windows.start_date;
+```
+
+Fehlt das Vorher-Fenster oder liefert eines der beiden Fenster nicht `sync_days = 28` und `is_complete = true`, wird keine Vergleichszahl veröffentlicht und keine SEO- oder Conversion-Entscheidung aus unvollständigen Daten abgeleitet.
+
+### Vergleich nach Query, Zielseite und Seitengruppe
+
+Nach bestandener Sync-Prüfung wird mit denselben Fenstergrenzen nach Query und Zielseite gruppiert. Die Seitengruppen machen Kernseiten, Blumenladen-, Kosten- und Tester-Inhalte getrennt sichtbar; der Pfad wird aus absoluten Search-Console-URLs normalisiert.
+
+```sql
+WITH params AS (
+  SELECT $1::date AS wave_2_live_date
+),
+candidate_before AS (
+  SELECT candidate.metric_date AS end_date
+  FROM content_search_metric_sync_days candidate
+  CROSS JOIN params
+  WHERE candidate.metric_date < params.wave_2_live_date
+    AND (
+      SELECT COUNT(DISTINCT covered.metric_date)
+      FROM content_search_metric_sync_days covered
+      WHERE covered.metric_date BETWEEN candidate.metric_date - 27
+        AND candidate.metric_date
+    ) = 28
+  ORDER BY candidate.metric_date DESC
+  LIMIT 1
+),
+windows AS (
+  SELECT 'vorher'::text AS window_name, end_date - 27 AS start_date, end_date
+  FROM candidate_before
+  UNION ALL
+  SELECT
+    'nachher'::text,
+    wave_2_live_date + 1,
+    wave_2_live_date + 28
+  FROM params
+),
+coverage AS (
+  SELECT
+    windows.window_name,
+    windows.start_date,
+    windows.end_date,
+    COUNT(DISTINCT sync_day.metric_date)::integer AS sync_days
+  FROM windows
+  LEFT JOIN content_search_metric_sync_days sync_day
+    ON sync_day.metric_date BETWEEN windows.start_date AND windows.end_date
+  GROUP BY windows.window_name, windows.start_date, windows.end_date
+),
+normalized_metrics AS (
+  SELECT
+    coverage.window_name,
+    coverage.start_date,
+    coverage.end_date,
+    COALESCE(
+      NULLIF(REGEXP_REPLACE(metric.page_url, '^https?://[^/]+', ''), ''),
+      '/'
+    ) AS page_path,
+    metric.query,
+    metric.clicks,
+    metric.impressions,
+    metric.average_position
+  FROM coverage
+  JOIN content_search_metrics metric
+    ON metric.metric_date BETWEEN coverage.start_date AND coverage.end_date
+  WHERE coverage.sync_days = 28
+)
+SELECT
+  window_name,
+  start_date,
+  end_date,
+  CASE
+    WHEN page_path IN (
+      '/', '/webdesign-berlin', '/pakete',
+      '/leistungen/website-audit', '/leistungen/website-wartung',
+      '/leistungen/local-seo'
+    ) THEN 'kernseiten'
+    WHEN page_path IN (
+      '/branchen/webdesign-blumenladen',
+      '/blog/seo-fuer-blumenladen'
+    ) THEN 'blumenladen'
+    WHEN page_path LIKE '/blog/website-kosten-%'
+      OR page_path = '/leistungen/laufende-kosten-website'
+      THEN 'kosten'
+    WHEN page_path LIKE '/website-tester%' THEN 'tester'
+    ELSE 'sonstige'
+  END AS page_group,
+  page_path,
+  query,
+  query !~* '(komplett\s*webdesign|komplettwebdesign)' AS is_non_brand,
+  SUM(clicks) AS clicks,
+  SUM(impressions) AS impressions,
+  SUM(impressions) FILTER (
+    WHERE average_position > 0 AND average_position <= 10
+  ) AS impressions_position_1_10,
+  SUM(impressions) FILTER (
+    WHERE average_position > 10 AND average_position <= 20
+  ) AS impressions_position_11_20,
+  ROUND(
+    SUM(average_position * impressions) / NULLIF(SUM(impressions), 0),
+    2
+  ) AS weighted_position
+FROM normalized_metrics
+GROUP BY
+  window_name, start_date, end_date, page_group, page_path, query, is_non_brand
+ORDER BY window_name, page_group, impressions DESC;
+```
+
+Für die fachliche Auswertung wird am Auswertungstag zusätzlich die Liste der als `active` geführten kommerziellen Seiten aus der Intent-Registry versioniert festgehalten. Aus den Ergebnissen werden mindestens folgende Werte verglichen:
+
+- nicht markenbezogene Klicks auf aktive kommerzielle Seiten,
+- Impressionen auf Position 1 bis 10 und 11 bis 20,
+- gewichtete Position der Kernseiten,
+- Klicks und Positionen der beiden Blumenladen-Seiten,
+- Klicks der Kosten- und Tester-Inhalte,
+- Gesamtzahl qualifizierter Anfragen aus Formularen, E-Mails und Anrufen.
+
+### Feste Entscheidungsregeln
+
+Für die erste vollständige Auswertung gelten ohne nachträgliche Umdeutung folgende Regeln:
+
+| Beobachtung | Verbindliche Entscheidung |
+| --- | --- |
+| Position steigt, Impressionen steigen, Klicks fehlen | Titel und Description einmalig nachschärfen. |
+| Position und Impressionen steigen | Seite stabil lassen; keine neue URL erstellen. |
+| Position stagniert trotz vollständiger Onpage-Sanierung | Externe Autorität, Referenzen und Links priorisieren. |
+| Zwei Seiten ranken wieder für dieselbe Kaufabsicht | Intent-Registry und interne Links korrigieren; keine dritte Seite erstellen. |
+| Seite erhält keine Impressionen und besitzt keinen Geschäfts- oder Informationswert | Konsolidierung oder `noindex` in einer eigenen geprüften Änderung planen. |
+
+### Acht-Wochen-Gate für neue Seiten
+
+Der Beginn und das Ende des Acht-Wochen-Zeitraums sind mit dem tatsächlichen Start der veröffentlichten Sanierung nachzutragen: **[PFLICHTGATE: Startdatum, Enddatum und Release-Nachweis fehlen]**. Vor Ablauf dieses Zeitraums wird keine neue indexierbare SEO-Zielseite veröffentlicht. Danach ist eine neue Seite nur zulässig, wenn alle sechs Bedingungen aus Abschnitt 14 der Spezifikation einzeln belegt sind:
+
+1. Search Console, SERP-Prüfung oder belastbare Keyword-Daten zeigen eine relevante Nachfrage.
+2. Die Suchabsicht unterscheidet sich eindeutig von allen vorhandenen Seiten.
+3. Das Thema besitzt einen nachvollziehbaren geschäftlichen Wert.
+4. Die Nutzerfrage kann nicht sinnvoll in eine bestehende Seite integriert werden.
+5. Die verantwortliche Zielseite, interne Verlinkung und spätere Pflege sind vor Veröffentlichung definiert.
+6. Es existiert kein anderer Entwurf oder Liveinhalt mit derselben primären Suchabsicht.
+
+Fehlt auch nur eine Bedingung oder ihr Nachweis, wird die bestehende passendste Seite verbessert und keine neue URL angelegt.
+
+### Conversion-Schwelle
+
+Eine vertiefte Conversion-Spezifikation ist nur für eine Zielseite zulässig, die im vollständigen Nachher-Fenster mindestens 100 nicht markenbezogene organische Klicks erreicht. `$1` und `$2` sind das durch die Sync-Prüfung belegte Start- und Enddatum des Nachher-Fensters:
+
+```sql
+SELECT
+  page_url,
+  SUM(clicks) AS non_brand_clicks
+FROM content_search_metrics
+WHERE metric_date BETWEEN $1::date AND $2::date
+  AND query !~* '(komplett\s*webdesign|komplettwebdesign)'
+GROUP BY page_url
+HAVING SUM(clicks) >= 100
+ORDER BY non_brand_clicks DESC;
+```
+
+**Aktueller Gate-Stand:** **[PFLICHTGATE: Nachher-Fenster und Abfrageergebnis fehlen]**. Deshalb wurde keine Conversion-Spezifikation unter `docs/superpowers/specs/conversion-prioritaetsseiten-design.md` angelegt. Bis die Abfrage eine Zielseite zurückgibt, bleiben Änderungen auf ein klares Angebot, Belege, funktionierende Kontaktwege und genau einen primären nächsten Schritt begrenzt.
+
+### Vergleich qualifizierter Anfragen ohne GA4-Attribution
+
+Für exakt dieselben beiden 28-Tage-Fenster wird die Gesamtzahl qualifizierter Anfragen kanalübergreifend verglichen. Als qualifiziert zählen reale, zum Leistungsangebot passende Anfragen; Spam, Tests und erkennbare Duplikate werden nach derselben Regel in beiden Fenstern ausgeschlossen.
+
+| Kennzahl | Vorher | Nachher |
+| --- | ---: | ---: |
+| Qualifizierte Formularanfragen | **[PFLICHTGATE]** | **[PFLICHTGATE]** |
+| Qualifizierte E-Mail-Anfragen | **[PFLICHTGATE]** | **[PFLICHTGATE]** |
+| Qualifizierte Anrufe | **[PFLICHTGATE]** | **[PFLICHTGATE]** |
+| Qualifizierte Anfragen gesamt | **[PFLICHTGATE]** | **[PFLICHTGATE]** |
+| Absolute und prozentuale Veränderung | nicht anwendbar | **[PFLICHTGATE]** |
+
+Quelle, Zählregel, Auswertungszeitpunkt und verantwortliche Person müssen mit den Summen dokumentiert werden. Ohne reparierte und geprüfte GA4-Attribution wird keine einzelne Anfrage einer bestimmten organischen Landingpage zugeschrieben. Der Vergleich ist ausschließlich ein Gesamtvergleich der Anfrageentwicklung und kein Nachweis einer seitenbezogenen SEO-Conversion.
+
 ## Google Search Console
 
 **Status:** Nicht verändert. Es lag weder eine autorisierte Search-Console-Sitzung noch das erforderliche Veröffentlichungs- und 48-Stunden-Fenster vor.
@@ -523,5 +785,9 @@ Für alle 123 Seiten wird keine massenhafte manuelle Indexierungsanforderung ges
 - [ ] Welle 3 deployen, live auditieren und Lighthouse vollständig messen.
 - [ ] Alle erfolgreichen Live- und Lighthouse-Artefakte mit `nachweis.md` und `SHA256SUMS` unter `docs/seo/audit-nachweise/` versionieren und archivieren.
 - [ ] Search Console nach erfolgreichem Veröffentlichungsfenster gezielt aktualisieren.
+- [ ] Live-Datum von Welle 2 sowie vollständige 28-Tage-Vorher- und Nachher-Fenster mit jeweils `28/28` Sync-Tagen belegen.
+- [ ] Query-, Zielseiten- und Seitengruppenvergleich sowie den Gesamtvergleich qualifizierter Anfragen ausführen.
+- [ ] Beginn und Ende des Acht-Wochen-Zeitraums belegen und das Neue-Seiten-Gate anwenden.
+- [ ] Conversion-Schwelle erst im vollständigen Nachher-Fenster prüfen und nur bei mindestens 100 nicht markenbezogenen Klicks auf einer Zielseite eine vertiefte Spezifikation anlegen.
 
 Bis alle für die jeweilige Welle geltenden Punkte belegt sind, lautet die Entscheidung: **keine Veröffentlichung**.
