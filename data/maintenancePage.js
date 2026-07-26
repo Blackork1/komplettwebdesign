@@ -224,9 +224,9 @@ const detailBlocks = Object.freeze([
 export const maintenancePage = Object.freeze({
   slug: 'website-wartung',
   canonicalPath: '/leistungen/website-wartung',
-  title: 'Website Wartung Berlin | Support, Backups & Pflege',
+  title: 'Website-Wartung Berlin | Pflege, Backups und Support',
   description:
-    'Website-Wartung für kleine Unternehmen: Backups, Monitoring, Sicherheitschecks, kleine Inhaltsänderungen und Support im vereinbarten Umfang.',
+    'Website-Wartung für Unternehmen in Berlin: Pflege, Backups, technische Kontrollen und klar abgegrenzter Support nach vereinbartem Leistungsumfang.',
   h1: 'Website-Wartung und Support in Berlin',
   primaryKeyword: 'Website Wartung Berlin',
   secondaryKeywords: [
@@ -465,6 +465,7 @@ export const maintenancePage = Object.freeze({
     { label: 'Zusatzleistungen Webdesign', href: '/leistungen/zusatzleistungen-webdesign', text: 'Einmalige Erweiterungen und stundenweise Unterstützung ansehen' },
     { label: 'Website-Pakete', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen' },
     { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Hauptleistung und lokale Umsetzung ansehen' },
+    { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor größerer Pflege oder Optimierung strukturiert prüfen lassen' },
     { label: 'Website-Relaunch', href: '/leistungen/website-relaunch', text: 'Größere technische und inhaltliche Erneuerung planen' },
     { label: 'Kontakt aufnehmen', href: '/kontakt', text: 'Wartung oder Website-Betreuung besprechen' }
   ],

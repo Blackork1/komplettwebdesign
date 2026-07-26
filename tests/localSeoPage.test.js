@@ -32,10 +32,10 @@ function collectText(value, out = []) {
 test('local SEO page exposes canonical URL, SEO metadata, hero and requested section model', () => {
   assert.equal(localSeoPage.slug, 'local-seo');
   assert.equal(localSeoPage.canonicalPath, '/leistungen/local-seo');
-  assert.equal(localSeoPage.title, 'Local SEO Berlin | Lokale Sichtbarkeit verbessern');
+  assert.equal(localSeoPage.title, 'Local SEO Berlin | Sichtbarkeit für lokale Unternehmen');
   assert.equal(
     localSeoPage.description,
-    'Local SEO für kleine Unternehmen in Berlin: technische SEO-Grundlagen, Google Business Profile, lokale Seitenstruktur und klare Optimierung ohne Ranking-Garantie.'
+    'Local SEO für Unternehmen in Berlin: Website-Struktur, lokale Inhalte, Google-Unternehmensprofil und nachvollziehbare Maßnahmen für bessere Auffindbarkeit.'
   );
   assert.equal(localSeoPage.h1, 'Local SEO Berlin für kleine Unternehmen');
   assert.equal(localSeoPage.primaryKeyword, 'Local SEO Berlin');
@@ -136,9 +136,20 @@ test('local SEO FAQ, internal links, route, template and sitemap are wired safel
     '/website-tester',
     '/leistungen/website-relaunch',
     '/kontakt?projektart=local-seo',
-    '/leistungen/laufende-kosten-website'
+    '/leistungen/laufende-kosten-website',
+    '/blog/seo-fuer-blumenladen',
+    '/branchen/webdesign-blumenladen'
   ].forEach((href) => assert.equal(links.has(href), true, `${href} fehlt`));
   assert.equal(links.has('/website-audit'), false, '/website-audit ist lokal keine Canonical-URL');
+  assert.deepEqual(
+    new Set([
+      localSeoPage.hero.primaryCta.url,
+      localSeoPage.cta.primary.url,
+      localSeoPage.finalCta.primary.url
+    ]),
+    new Set(['/kontakt?projektart=local-seo']),
+    'Local SEO hat genau einen primären nächsten Schritt'
+  );
 
   assert.match(routeSource, /router\.get\('\/local-seo-berlin'/);
   assert.match(routeSource, /router\.get\('\/leistungen\/local-seo'/);

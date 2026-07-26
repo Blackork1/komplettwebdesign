@@ -20,9 +20,13 @@ test('maintenance page exposes canonical URL, SEO metadata and required sections
   assert.ok(maintenancePage, 'missing maintenancePage data module');
   assert.equal(maintenancePage.slug, 'website-wartung');
   assert.equal(maintenancePage.canonicalPath, '/leistungen/website-wartung');
-  assert.equal(maintenancePage.title, 'Website Wartung Berlin | Support, Backups & Pflege');
+  assert.equal(maintenancePage.title, 'Website-Wartung Berlin | Pflege, Backups und Support');
+  assert.equal(
+    maintenancePage.description,
+    'Website-Wartung für Unternehmen in Berlin: Pflege, Backups, technische Kontrollen und klar abgegrenzter Support nach vereinbartem Leistungsumfang.'
+  );
   assert.equal(maintenancePage.h1, 'Website-Wartung und Support in Berlin');
-  assert.match(maintenancePage.description, /Backups, Monitoring, Sicherheitschecks/i);
+  assert.match(maintenancePage.description, /Pflege, Backups, technische Kontrollen/i);
 
   const requiredSectionIds = [
     'hero',
@@ -97,4 +101,17 @@ test('maintenance FAQ, route, template, CTA, footer and sitemap are wired to the
   );
   assert.ok(footerHrefs.includes('/leistungen/website-wartung'));
   assert.match(runningCostsSource, /href:\s*'\/leistungen\/website-wartung'/);
+  assert.ok(
+    maintenancePage.internalLinks.some((link) => link.href === '/leistungen/website-audit'),
+    'Website-Wartung verweist bei bestehender Website auf das Website-Audit'
+  );
+  assert.deepEqual(
+    new Set([
+      maintenancePage.hero.primaryCta.url,
+      maintenancePage.cta.primary.url,
+      maintenancePage.finalCta.primary.url
+    ]),
+    new Set(['/kontakt?projektart=maintenance']),
+    'Website-Wartung hat genau einen primären nächsten Schritt'
+  );
 });

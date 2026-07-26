@@ -51,6 +51,15 @@ const wachstumPriceLabel = industryPackageById.wachstum?.price || (typeof packag
 const renderedIndustryContextLinks = Array.isArray(
   typeof industryContextLinks === 'undefined' ? null : industryContextLinks
 ) ? industryContextLinks : [];
+const primaryIndustryCta = typeof industryPrimaryCta === 'object' && industryPrimaryCta
+  ? industryPrimaryCta
+  : {
+      label: 'Beratungsgespräch vereinbaren',
+      href: '/kontakt',
+      ariaLabel: 'Zur Kontaktseite',
+      trackingName: 'beratungsgespraech_vereinbaren',
+      supportingText: 'Kontaktiere uns für eine kostenlose Erstberatung!'
+    };
 
 // für das Carousel die Positionen
 const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--far-right"];
@@ -109,9 +118,9 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
 
           <div class="lowerHero">
-            <a id="cta-hero" class="hoverElement" href="/kontakt" data-track="cta" data-cta-name="lass_dich_beraten">
-              Lass dich beraten
-            </a> <a class="triggerElement" href="/kontakt" aria-label="Zur Kontaktseite">
+            <a id="cta-hero" class="hoverElement" href="<%= primaryIndustryCta.href %>" data-track="cta" data-cta-name="<%= primaryIndustryCta.trackingName %>">
+              <%= primaryIndustryCta.label %>
+            </a> <a class="triggerElement" href="<%= primaryIndustryCta.href %>" aria-label="<%= primaryIndustryCta.ariaLabel %>">
               <img src="/images/icons/ArrowRight.svg" alt="" />
             </a>
             <div class="hoverBorder"></div>
@@ -377,7 +386,7 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
         <h2 class="alignCenter animate-on-scroll">Was kostet eine professionelle <%= industry.name %>-Website <%= pageYear %>?</h2>
         <p class="alignCenter animate-on-scroll"><strong>Viele fragen: „Welches Website-Paket passt zu meinem Umfang, meinen Inhalten und meinen Anfragezielen?“</strong></p>
         <p class="alignCenter animate-on-scroll">Eine professionelle Website startet bei uns im Start-Paket <%= startPriceLabel || 'nach Angebot' %>. Business-Projekte starten <%= businessPriceLabel || 'nach Angebot' %>, umfangreichere Vorhaben <%= wachstumPriceLabel || 'nach Angebot' %>; individuelle Funktionen wie Buchungssystem oder Shop kalkulieren wir passend zum Aufwand. So bleibt dein Budget planbar und du bekommst eine Website, die zu Branche, Zielgruppe und lokaler Suche passt. <br>
-          <a href="/kontakt" class="primaryColor" data-track="cta" data-cta-name="pricing_contact">Kostenlose Einschätzung anfragen</a>
+          <a href="<%= primaryIndustryCta.href %>" class="primaryColor" data-track="cta" data-cta-name="<%= primaryIndustryCta.trackingName %>"><%= primaryIndustryCta.label %></a>
         </p>
 
         <div class="pricing-grid marginPricingGrid">
@@ -537,11 +546,11 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           </div>
 
           <div class="alignCenter animate-on-scroll">
-            <a id="cta-footer" class="btn btn-primary" href="/kontakt" data-track="cta" data-cta-name="beratungsgespraech_vereinbaren">
-              Beratungsgespräch vereinbaren
+            <a id="cta-footer" class="btn btn-primary" href="<%= primaryIndustryCta.href %>" data-track="cta" data-cta-name="<%= primaryIndustryCta.trackingName %>">
+              <%= primaryIndustryCta.label %>
             </a>
           </div>
-          <p class="alignCenter animate-on-scroll">Kontaktiere uns für eine kostenlose Erstberatung!</p>
+          <p class="alignCenter animate-on-scroll"><%= primaryIndustryCta.supportingText %></p>
         </div>
       </section>
 

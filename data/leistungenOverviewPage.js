@@ -45,13 +45,13 @@ export const leistungenOverviewPage = Object.freeze({
     Object.freeze({
       title: 'Website-Audit',
       href: '/leistungen/website-audit',
-      text: 'Bestehende Website technisch, inhaltlich und strukturell prüfen lassen.',
+      text: 'SEO, Technik, Inhalte, Ladezeit und Nutzerführung einer bestehenden Website priorisiert prüfen lassen.',
       icon: 'fa-magnifying-glass-chart'
     }),
     Object.freeze({
       title: 'Wartung & Support',
       href: '/leistungen/website-wartung',
-      text: 'Technische Betreuung, Backups, Monitoring und kleine Änderungen nach dem Launch einordnen.',
+      text: 'Pflege, Backups, technische Kontrollen und Support nach vereinbartem Leistungsumfang einordnen.',
       icon: 'fa-screwdriver-wrench'
     }),
     Object.freeze({

@@ -307,8 +307,8 @@ export const SEO_LANDING_PAGES = Object.freeze([
     path: '/leistungen/website-audit',
     primaryKeyword: 'website audit',
     parentBreadcrumb: { label: 'Leistungen', href: '/leistungen' },
-    title: 'Website Audit | SEO, Technik & Conversion prüfen',
-    description: 'Website-Audit für SEO, Technik, Ladezeit, UX, Trust, Conversion und Local SEO. Mit konkreten Empfehlungen für Optimierung oder Relaunch.',
+    title: 'Website-Audit: SEO, Technik und Inhalte prüfen',
+    description: 'Website-Audit für SEO, Technik, Inhalte, Ladezeit und Nutzerführung. Du erhältst priorisierte Empfehlungen für Optimierung oder einen geplanten Relaunch.',
     h1: 'Website Audit: Website prüfen und gezielt verbessern',
     intro: 'Du hast eine bestehende Website und weißt nicht, ob kleine Optimierungen reichen oder ein Relaunch sinnvoller ist. Im Website-Audit prüfe ich SEO, Technik, Ladezeit, mobile Nutzung, Trust, Conversion, Inhalte und Local SEO als vertiefte Analyse mit priorisierten Empfehlungen statt pauschaler Versprechen.',
     service: {

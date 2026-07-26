@@ -189,10 +189,10 @@ test('website audit phase 10d contains required sections, cautious pricing and s
 
   assert.ok(page);
   assert.equal(page.path, '/leistungen/website-audit');
-  assert.equal(page.title, 'Website Audit | SEO, Technik & Conversion prüfen');
+  assert.equal(page.title, 'Website-Audit: SEO, Technik und Inhalte prüfen');
   assert.equal(
     page.description,
-    'Website-Audit für SEO, Technik, Ladezeit, UX, Trust, Conversion und Local SEO. Mit konkreten Empfehlungen für Optimierung oder Relaunch.'
+    'Website-Audit für SEO, Technik, Inhalte, Ladezeit und Nutzerführung. Du erhältst priorisierte Empfehlungen für Optimierung oder einen geplanten Relaunch.'
   );
   assert.equal(page.h1, 'Website Audit: Website prüfen und gezielt verbessern');
   assert.deepEqual(
@@ -240,6 +240,11 @@ test('website audit phase 10d contains required sections, cautious pricing and s
     '/leistungen/zusatzleistungen-webdesign',
     '/leistungen/laufende-kosten-website'
   ].forEach((href) => assert.ok(page.internalLinks.some((link) => link.href === href), `${href} missing`));
+  assert.deepEqual(
+    new Set([page.cta.href]),
+    new Set(['/kontakt?projektart=audit']),
+    'Website-Audit hat genau einen primären nächsten Schritt'
+  );
 });
 
 test('website audit phase 10d avoids legal, SEO, conversion and completeness promises', () => {

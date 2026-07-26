@@ -24,9 +24,9 @@ const packageSummaries = packages.map((pkg) => ({
 export const localSeoPage = Object.freeze({
   slug: 'local-seo',
   canonicalPath: '/leistungen/local-seo',
-  title: 'Local SEO Berlin | Lokale Sichtbarkeit verbessern',
+  title: 'Local SEO Berlin | Sichtbarkeit für lokale Unternehmen',
   description:
-    'Local SEO für kleine Unternehmen in Berlin: technische SEO-Grundlagen, Google Business Profile, lokale Seitenstruktur und klare Optimierung ohne Ranking-Garantie.',
+    'Local SEO für Unternehmen in Berlin: Website-Struktur, lokale Inhalte, Google-Unternehmensprofil und nachvollziehbare Maßnahmen für bessere Auffindbarkeit.',
   h1: 'Local SEO Berlin für kleine Unternehmen',
   primaryKeyword: 'Local SEO Berlin',
   secondaryKeywords: [
@@ -437,6 +437,16 @@ export const localSeoPage = Object.freeze({
       label: 'Laufende Website-Kosten',
       href: '/leistungen/laufende-kosten-website',
       text: 'Hosting, Wartung, Domain, E-Mail und externe Tools getrennt betrachten.'
+    },
+    {
+      label: 'SEO für Blumenläden',
+      href: '/blog/seo-fuer-blumenladen',
+      text: 'Lokale Auffindbarkeit für Floristikbetriebe im bestehenden Ratgeber einordnen.'
+    },
+    {
+      label: 'Webdesign für Blumenläden',
+      href: '/branchen/webdesign-blumenladen',
+      text: 'Website, Sortiment, Öffnungszeiten und Kontaktwege für einen Blumenladen planen.'
     }
   ],
   preChangeAudit: {

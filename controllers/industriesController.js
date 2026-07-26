@@ -14,6 +14,24 @@ const INDUSTRY_CONTEXT_LINKS = Object.freeze({
   ])
 });
 
+const DEFAULT_PRIMARY_INDUSTRY_CTA = Object.freeze({
+  label: 'Beratungsgespräch vereinbaren',
+  href: '/kontakt',
+  ariaLabel: 'Zur Kontaktseite',
+  trackingName: 'beratungsgespraech_vereinbaren',
+  supportingText: 'Kontaktiere uns für eine kostenlose Erstberatung!'
+});
+
+const INDUSTRY_PRIMARY_CTAS = Object.freeze({
+  blumenladen: Object.freeze({
+    label: 'Pakete ansehen',
+    href: '/pakete',
+    ariaLabel: 'Website-Pakete für Blumenläden ansehen',
+    trackingName: 'blumenladen_pakete_ansehen',
+    supportingText: 'Vergleiche die Website-Pakete und ordne sie dem Umfang deines Blumenladens zu.'
+  })
+});
+
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
   const proto = req.headers['cf-visitor']
@@ -54,6 +72,11 @@ async function getIndustryPackages(res) {
 export function getIndustryContextLinks(slug) {
   const normalizedSlug = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
   return [...(INDUSTRY_CONTEXT_LINKS[normalizedSlug] || [])];
+}
+
+export function getIndustryPrimaryCta(slug) {
+  const normalizedSlug = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
+  return INDUSTRY_PRIMARY_CTAS[normalizedSlug] || DEFAULT_PRIMARY_INDUSTRY_CTA;
 }
 
 /* --- NEU: Branchen-Übersicht (/branchen) --- */
@@ -126,6 +149,7 @@ export async function showIndustryPage(req, res) {
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
       industryContextLinks: getIndustryContextLinks(industry.slug),
+      industryPrimaryCta: getIndustryPrimaryCta(industry.slug),
       packages: await getIndustryPackages(res),
       jsonLd
     });

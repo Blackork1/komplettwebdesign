@@ -33,6 +33,11 @@ test('industry CTA uses current package images with readable package titles', ()
   assert.doesNotMatch(template, /v17588135|BasisPaket|basis\.webp/);
 });
 
+test('industry template can use a page-specific primary next step', () => {
+  assert.match(template, /primaryIndustryCta\.href/);
+  assert.match(template, /primaryIndustryCta\.label/);
+});
+
 test('industry CTA package images rotate toward the opposite side', () => {
   assert.match(template, /class="imageCTALeft animate-on-scroll-right"/);
   assert.match(template, /class="imageCTARight animate-on-scroll-left"/);
