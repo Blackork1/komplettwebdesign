@@ -102,6 +102,17 @@ website relaunch berlin
 website wartung berlin
 ```
 
+### Verbindliche Keyword-Zielseiten-Zuordnung
+
+Wenn nach Welle 2 eine Suchkampagne freigegeben wird, nutzt jede Anzeige genau diese Zuordnung. Abweichende Landingpages werden nicht verwendet.
+
+| Zielbegriff | Bestehende kanonische Zielseite |
+| --- | --- |
+| website erstellen lassen berlin | https://www.komplettwebdesign.de/webdesign-berlin |
+| webdesign berlin kleine unternehmen | https://www.komplettwebdesign.de/webdesign-kleine-unternehmen-berlin |
+| website relaunch berlin | https://www.komplettwebdesign.de/leistungen/website-relaunch |
+| website wartung berlin | https://www.komplettwebdesign.de/leistungen/website-wartung |
+
 Negative Begriffe:
 
 ```text
@@ -116,4 +127,4 @@ baukasten
 kurs
 ```
 
-Jede Anzeige führt ausschließlich auf eine passende bestehende Zielseite. Der Website-Tester wird nicht mit kommerziellen Webdesign-Keywords beworben.
+Jede Anzeige führt ausschließlich auf die in der Keyword-Zielseiten-Zuordnung festgelegte bestehende Zielseite. Der Website-Tester wird nicht mit kommerziellen Webdesign-Keywords beworben.
