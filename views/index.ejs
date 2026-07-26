@@ -298,10 +298,11 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             <span class="home-section-kicker"><i class="fas fa-user-check" aria-hidden="true"></i><%= isEn ? 'Fit' : 'Für wen das Angebot passt' %></span>
             <h2><%= isEn ? 'Custom websites for small businesses in Berlin' : 'Individuelle Websites für kleine Unternehmen in Berlin' %></h2>
             <p class="home-section-lead">
-              <%= isEn
-                ? 'Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.'
-                : 'Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und eine Website brauchst, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.'
-              %>
+              <% if (isEn) { %>
+                Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.
+              <% } else { %>
+                Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a> möchtest: mit einer Website, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.
+              <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
               <img src="/images/home-fit-beratung.webp" alt="<%= isEn ? 'Personal website consultation for a small local business' : 'Persönliches Website-Beratungsgespräch für ein kleines lokales Unternehmen' %>" width="1280" height="720" loading="lazy" decoding="async">

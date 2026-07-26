@@ -89,11 +89,10 @@ const requiredFaqQuestions = [
 
 test('webdesign berlin canonical page exposes the requested canonical page model', () => {
   assert.equal(webdesignBerlinPage.canonicalPath, '/webdesign-berlin');
-  assert.match(webdesignBerlinPage.title, /Webdesign Berlin/i);
+  assert.equal(webdesignBerlinPage.title, 'Website erstellen lassen Berlin | Webdesign & Preise');
   assert.match(webdesignBerlinPage.description, /kleine Unternehmen/i);
-  assert.match(webdesignBerlinPage.h1, /Webdesign Berlin/i);
-  assert.match(webdesignBerlinPage.hero.lead, /Berlin/i);
-  assert.match(webdesignBerlinPage.hero.lead, /individuell/i);
+  assert.equal(webdesignBerlinPage.h1, 'Website erstellen lassen in Berlin');
+  assert.equal(webdesignBerlinPage.hero.lead, 'Ich plane und entwickle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister. Leistungen, Inhalte, Pakete und technische Umsetzung werden so geordnet, dass Besucher das Angebot schnell verstehen.');
   assert.deepEqual(webdesignBerlinPage.sections.map((section) => section.id), requiredSectionIds);
 });
 

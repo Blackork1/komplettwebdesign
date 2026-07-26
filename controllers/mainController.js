@@ -39,7 +39,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Gibt es eine Ranking-Garantie?',
-      a: 'Nein. Ich setze technische SEO-Grundlagen um und achte auf saubere Struktur, Metadaten und Ladezeit. Bestimmte Platzierungen bei Google können nicht garantiert werden.'
+      a: 'Nein. Ich setze technische SEO-Grundlagen um und achte auf saubere Struktur, Metadaten und Ladezeit. Bestimmte Platzierungen bei Google sind nicht zusagbar.'
     },
     {
       q: 'Sind Impressum und Datenschutzerklärung enthalten?',
@@ -104,15 +104,15 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Website erstellen lassen Berlin | Webdesign ab {{lowestPackagePriceLabel}}',
-    seoDescription: 'Professionelles Webdesign aus Berlin für Selbstständige, kleine Unternehmen und lokale Dienstleister. Ohne Baukasten, mit klaren Paketen ab {{lowestPackagePriceLabel}} und Fokus auf Kontaktanfragen.',
+    seoTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
+    seoDescription: 'Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik.',
     seoKeywords: 'website erstellen lassen berlin, webdesign berlin, webdesigner berlin, website für kleine unternehmen berlin, webdesign preise berlin, website pakete berlin, webdesign brandenburg, local seo berlin',
-    ogTitle: 'Website erstellen lassen Berlin | Webdesign ab {{lowestPackagePriceLabel}}',
-    ogDescription: 'Professionelles Webdesign aus Berlin für Selbstständige, kleine Unternehmen und lokale Dienstleister. Ohne Baukasten, mit klaren Paketen ab {{lowestPackagePriceLabel}}.',
-    heroBadge: 'Webdesign aus Berlin · ohne Baukasten',
-    heroTitle: 'Website erstellen lassen in Berlin',
-    heroTitle2: 'klar, modern und auf Anfragen optimiert',
-    heroSubline: 'Ich erstelle Websites für Selbstständige, kleine Unternehmen und lokale Dienstleister in Berlin & Brandenburg – technisch sauber, verständlich kalkuliert und ohne Standard-Theme.',
+    ogTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
+    ogDescription: 'Individuelle Websites für kleine Unternehmen in Berlin mit klaren Leistungen, transparenten Paketen und persönlicher Umsetzung.',
+    heroBadge: 'Komplett Webdesign aus Berlin',
+    heroTitle: 'Komplett Webdesign für kleine Unternehmen in Berlin',
+    heroTitle2: 'individuell entwickelt und verständlich geplant',
+    heroSubline: 'Ich verbinde Struktur, Gestaltung und technische Umsetzung zu einer Website, die dein Angebot verständlich präsentiert und eine solide Grundlage für organische Sichtbarkeit schafft.',
     heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
@@ -122,8 +122,8 @@ const HOMEPAGE_I18N = {
     heroBadge1: 'Start {{price.start}}',
     heroBadge2: 'Business {{price.business}}',
     heroBadge3: 'Wachstum {{price.wachstum}}',
-    introTitleStrong: 'Website erstellen lassen in Berlin',
-    introTitleRest: 'mit persönlicher Betreuung bei',
+    introTitleStrong: 'Webdesign, Pakete und persönliche Umsetzung',
+    introTitleRest: 'aus einer Hand bei',
     featuresTitle: 'Warum Komplett Webdesign anders arbeitet',
     timelineTitle: 'So läuft dein Website-Projekt ab',
     timelineNote: 'Klare Einschätzung, abgegrenztes Angebot, individuelle Umsetzung und Feedbackrunden im vereinbarten Umfang.',

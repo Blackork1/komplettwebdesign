@@ -19,14 +19,14 @@ const packageTeaserItems = packages.map((pkg) => Object.freeze({
 }));
 
 export const webdesignBerlinPage = Object.freeze({
-  title: 'Webdesign Berlin | Individuelle Websites ab {{lowestPackagePriceLabel}}',
-  description: 'Webdesign Berlin für kleine Unternehmen, Selbstständige und lokale Anbieter: individuelle Websites mit Node.js, EJS, CSS und JavaScript ab {{lowestPackagePriceLabel}}.',
-  h1: 'Webdesign Berlin für kleine Unternehmen',
+  title: 'Website erstellen lassen Berlin | Webdesign & Preise',
+  description: 'Website erstellen lassen in Berlin: individuelles Webdesign für kleine Unternehmen mit klarer Struktur, transparenten Paketen und persönlicher Umsetzung.',
+  h1: 'Website erstellen lassen in Berlin',
   canonicalPath: '/webdesign-berlin',
   priceNote: PACKAGE_GLOBAL_NOTES.vatNote,
   hero: {
-    eyebrow: 'Webdesign Berlin',
-    lead: 'Ich entwickle individuelle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin und Brandenburg. Der Fokus liegt auf klarer Angebotsstruktur, serverseitig gerendertem HTML und Anfragewegen, die Besucher ohne Umwege verstehen.',
+    eyebrow: 'Individuelles Webdesign aus Berlin',
+    lead: 'Ich plane und entwickle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister. Leistungen, Inhalte, Pakete und technische Umsetzung werden so geordnet, dass Besucher das Angebot schnell verstehen.',
     highlights: [
       'Start {{price.start}} mit klar begrenztem Umfang',
       'Business {{price.business}} als häufig passende Unternehmenswebsite',

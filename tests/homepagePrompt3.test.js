@@ -245,12 +245,12 @@ test('homepage trust media links to references and zooms gently on hover', () =>
 test('homepage hero uses the final recommended copy and a quieter CTA hierarchy', () => {
   const joined = `${homepage}\n${controller}`;
 
-  assert.match(controller, /seoTitle:\s*'Website erstellen lassen Berlin \| Webdesign ab \{\{lowestPackagePriceLabel\}\}'/);
-  assert.match(controller, /Professionelles Webdesign aus Berlin für Selbstständige, kleine Unternehmen und lokale Dienstleister/);
-  assert.match(controller, /heroBadge:\s*'Webdesign aus Berlin · ohne Baukasten'/);
-  assert.match(controller, /heroTitle:\s*'Website erstellen lassen in Berlin'/);
-  assert.match(controller, /heroTitle2:\s*'klar, modern und auf Anfragen optimiert'/);
-  assert.match(controller, /heroSubline:\s*'Ich erstelle Websites für Selbstständige, kleine Unternehmen und lokale Dienstleister in Berlin & Brandenburg/);
+  assert.match(controller, /seoTitle:\s*'Komplett Webdesign Berlin \| Websites für kleine Unternehmen'/);
+  assert.match(controller, /Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik\./);
+  assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
+  assert.match(controller, /heroTitle:\s*'Komplett Webdesign für kleine Unternehmen in Berlin'/);
+  assert.match(controller, /heroTitle2:\s*'individuell entwickelt und verständlich geplant'/);
+  assert.match(controller, /heroSubline:\s*'Ich verbinde Struktur, Gestaltung und technische Umsetzung zu einer Website, die dein Angebot verständlich präsentiert und eine solide Grundlage für organische Sichtbarkeit schafft\.'/);
   assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);
   assert.match(controller, /heroBullet2:\s*'Klare Pakete ab \{\{lowestPackagePriceLabel\}\} mit transparentem Leistungsumfang'/);
   assert.match(controller, /heroBullet3:\s*'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen'/);
@@ -258,6 +258,7 @@ test('homepage hero uses the final recommended copy and a quieter CTA hierarchy'
   assert.match(controller, /heroTrustNote:\s*'Kostenlose Ersteinschätzung'/);
 
   assert.match(homepage, /class="home-hero-trust-note home-hero-reveal home-hero-reveal--trust animate-on-scroll"/);
+  assert.match(homepageTemplate, /<a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a>/);
   assert.doesNotMatch(homepage, /heroBadgePackages/);
   assert.doesNotMatch(homepage, /badge text-bg-success/);
   assert.doesNotMatch(joined, /Antwort meist innerhalb von 24 Stunden/);
@@ -272,7 +273,7 @@ test('homepage prompt 3 copy uses cautious offer, legal and SEO positioning', ()
   assert.match(joined, /serverseitig/i);
   assert.match(joined, /Keine Standard-Templates|kein Standard-Theme/i);
   assert.match(joined, /Alle Preise verstehen sich gemäß § 19 UStG/i);
-  assert.match(joined, /Bestimmte Platzierungen bei Google können nicht garantiert werden/i);
+  assert.match(joined, /Bestimmte Platzierungen bei Google sind nicht zusagbar/i);
   assert.match(joined, /Die Erstellung oder rechtliche Prüfung .* ist keine Rechtsberatung/i);
   assert.match(joined, /Domain, E-Mail, Hosting, Wartung und Drittanbieter/i);
 

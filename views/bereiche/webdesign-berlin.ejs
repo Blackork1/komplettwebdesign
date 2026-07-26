@@ -262,24 +262,6 @@ const wdIndustryImages = [
     </div>
   </section>
 
-  <section id="techUsp" class="wd-section wd-section--soft" aria-labelledby="wd-tech-title">
-    <div class="wd-container">
-      <div class="wd-section-head animate-on-scroll">
-        <span class="wd-chip">Technik</span>
-        <h2 id="wd-tech-title"><%= page.techUsp.title %></h2>
-        <p class="wd-lead"><%= page.techUsp.lead %></p>
-      </div>
-      <div class="wd-grid wd-tech-grid">
-        <% page.techUsp.cards.forEach(function (card) { %>
-          <article class="wd-card animate-on-scroll">
-            <h3><%= card.title %></h3>
-            <p><%= card.text %></p>
-          </article>
-        <% }) %>
-      </div>
-    </div>
-  </section>
-
   <section id="localBenefits" class="wd-section" aria-labelledby="wd-local-title">
     <div class="wd-container wd-split wd-split--media-third is-reversed animate-on-scroll">
       <figure class="wd-visual">
@@ -452,6 +434,24 @@ const wdIndustryImages = [
       <div class="wd-link-row wd-link-row--split wd-link-row--center animate-on-scroll">
         <% page.packageTeaser.links.forEach(function (link) { %>
           <a href="<%= link.href %>"><%= link.label %></a>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section id="techUsp" class="wd-section wd-section--soft" aria-labelledby="wd-tech-title">
+    <div class="wd-container">
+      <div class="wd-section-head animate-on-scroll">
+        <span class="wd-chip">Technik</span>
+        <h2 id="wd-tech-title"><%= page.techUsp.title %></h2>
+        <p class="wd-lead"><%= page.techUsp.lead %></p>
+      </div>
+      <div class="wd-grid wd-tech-grid">
+        <% page.techUsp.cards.forEach(function (card) { %>
+          <article class="wd-card animate-on-scroll">
+            <h3><%= card.title %></h3>
+            <p><%= card.text %></p>
+          </article>
         <% }) %>
       </div>
     </div>
