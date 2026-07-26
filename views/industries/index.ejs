@@ -13,6 +13,9 @@ const structuredDataBlocks = [
 const renderedExistingIndustryPages = Array.isArray(
   typeof existingIndustryPages === 'undefined' ? null : existingIndustryPages
 ) ? existingIndustryPages : [];
+const renderedIndustryGroups = Array.isArray(
+  typeof industryGroups === 'undefined' ? null : industryGroups
+) ? industryGroups : [];
 %>
 <%- include('../partials/head', { title, description, structuredDataBlocks }) %>
 <%- include('../partials/header') %>
@@ -86,85 +89,37 @@ const renderedExistingIndustryPages = Array.isArray(
     </div>
   </section>
 
-  <div class="row">
-    <!-- Hauptliste der Blogposts (linke Spalte) -->
-    <div class="col-md-8">
-      <h2 class="mb-4">Wichtige Branchen</h2>
-      <div class="post-list">
-        <!-- <<< Neuer Wrapper -->
-        <% (others && others.length ? others : []).forEach(function(ind){ %>
-        <div class="post-card mb-4">
-          <!-- Verlinkter Artikel -->
-          <a href="<%= toPath(ind) %>" class="post-card-link">
-            <!-- Hintergrundbild + Overlay -->
-            <div class="post-card-bg">
-              <% if (ind.og_image_url) { %>
-                <img class="post-card-bg__image" src="<%= ind.og_image_url %>" alt="" loading="lazy" decoding="async">
+  <div class="industry-groups" aria-label="Branchen nach Bedarf">
+    <% renderedIndustryGroups.forEach(function(group){ %>
+      <% if (group.items && group.items.length) { %>
+      <section class="industry-group" aria-labelledby="industry-group-<%= group.key %>">
+        <div class="industry-group__head">
+          <p class="text-uppercase fw-bold accentColor mb-2">Passender Website-Weg</p>
+          <h2 id="industry-group-<%= group.key %>"><%= group.title %></h2>
+          <p><%= group.description %></p>
+        </div>
+        <div class="industry-group__grid">
+          <% group.items.forEach(function(item){ %>
+          <article class="industry-overview-card">
+            <figure class="industry-overview-card__media">
+              <a href="<%= item.href %>">
+                <img src="<%= item.image.src %>" alt="<%= item.image.alt %>" width="720" height="540" loading="lazy" decoding="async">
+              </a>
+              <% if (item.image.source?.kind === 'external' && item.image.source?.pageUrl) { %>
+                <figcaption>Bild: <%= item.image.source.creator %> / <a href="<%= item.image.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
               <% } %>
-              <div class="post-card-content">
-                <div class="post-card-overlay">
-                  <h2 class="post-card-title alignCenter">
-                    <%= ind.name %>
-                  </h2>
-                </div>
-              </div>
+            </figure>
+            <div class="industry-overview-card__body">
+              <h3><a href="<%= item.href %>"><%= item.title %></a></h3>
+              <p><%= item.description %></p>
+              <a class="industry-overview-card__link" href="<%= item.href %>">Branchenlösung ansehen</a>
             </div>
-          </a>
+          </article>
+          <% }); %>
         </div>
-        <% }); %>
-        <% renderedExistingIndustryPages.forEach(function(industryPage){ %>
-        <div class="post-card mb-4">
-          <a href="<%= industryPage.href %>" class="post-card-link">
-            <div class="post-card-bg">
-              <div class="post-card-content">
-                <div class="post-card-overlay">
-                  <h2 class="post-card-title alignCenter"><%= industryPage.title %></h2>
-                  <p><%= industryPage.description %></p>
-                </div>
-              </div>
-            </div>
-          </a>
-        </div>
-        <% }); %>
-      </div>
-    </div>
-
-    <!-- Featured Posts Sidebar (nur Desktop, rechts) -->
-    <div class="col-md-4 d-none d-md-block">
-      <h3>Neue Branchen</h3>
-      <% featured.forEach(function(ind){ %>
-      <div class="featured-post-card mb-3">
-        <a href="<%= toPath(ind) %>" class="d-flex">
-          <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img" />
-          <div class="featured-post-info">
-            <h5 class="featured-post-title">
-              <%= ind.title %>
-            </h5>
-            <p class="featured-post-excerpt">
-              <%= (ind.excerpt) %>
-            </p>
-          </div>
-        </a>
-      </div>
-      <% }); %>
-    </div>
-  </div>
-
-  <!-- Featured Posts horizontal (mobil sichtbar) -->
-  <div class="d-block d-md-none mt-4">
-    <h4>Neue Branchen</h4>
-    <div class="featured-mobile-scroll d-flex">
-      <% featured.forEach(function(ind){  %>
-      <div class="featured-post-card-mobile me-3">
-        <a href="<%= toPath(ind) %>">
-          <img src="<%= ind.og_image_url %>" alt="<%= ind.title %>" class="featured-post-img-mobile" />
-          <h5 class="featured-post-title-mobile">
-            <%= ind.title %>
-          </h5>
-        </a>
-      </div>
-      <% }); %>
-    </div>
+      </section>
+      <% } %>
+    <% }); %>
   </div>
 </div>
 

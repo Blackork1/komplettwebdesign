@@ -4,7 +4,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import ejs from 'ejs';
 
-import { getIndustryPrimaryCta } from '../controllers/industriesController.js';
+import {
+  buildIndustryGroups,
+  getIndustryCommercialGuide,
+  getIndustryContextLinks,
+  getIndustryPrimaryCta
+} from '../controllers/industriesController.js';
 import { footerNavigation, headerCta, headerNavigation } from '../data/siteNavigation.js';
 import { escapeJsonForHtml, safeUrl, sanitizeHtml } from '../util/security.js';
 
@@ -54,6 +59,7 @@ function buildIndustryRenderLocals(slug) {
       cta_text: ''
     },
     industryContextLinks: [],
+    industryCommercialGuide: getIndustryCommercialGuide(slug),
     industryPrimaryCta: getIndustryPrimaryCta(slug),
     industryPricingCta: getIndustryPrimaryCta(slug, { placement: 'pricing' }),
     packages: [],
@@ -92,6 +98,55 @@ test('industry CTA uses current package images with readable package titles', ()
 test('industry template can use a page-specific primary next step', () => {
   assert.match(template, /primaryIndustryCta\.href/);
   assert.match(template, /primaryIndustryCta\.label/);
+});
+
+test('Branchenübersicht gruppiert nur vorhandene Seiten nach Nutzungssituation', () => {
+  const groups = buildIndustryGroups([
+    { slug: 'webdesign-fitnesscoach', name: 'Fitnesscoach', description: 'Termine gewinnen' },
+    { slug: 'webdesign-reinigungsfirma', name: 'Reinigungsfirma', description: 'Lokale Aufträge' },
+    { slug: 'webdesign-cafe', name: 'Café', description: 'Speisekarte und Besuch' },
+    { slug: 'webdesign-immobilienmakler', name: 'Immobilienmakler', description: 'Beratung und Objekte' }
+  ]);
+
+  assert.deepEqual(groups.map((group) => group.title), [
+    'Termine und Buchungen',
+    'Lokale Dienstleistungen',
+    'Gastronomie und Verkauf',
+    'Beratung und Immobilien'
+  ]);
+  assert.equal(groups.flatMap((group) => group.items).length, 5);
+  assert.ok(groups.flatMap((group) => group.items).every((item) => item.href.startsWith('/branchen/') || item.href === '/handwerker'));
+  assert.ok(groups.flatMap((group) => group.items).every((item) => item.image?.src && item.image?.alt));
+});
+
+test('Blumenladen und Immobilienmakler verbinden Leistung und bestehenden Ratgeber', () => {
+  assert.deepEqual(getIndustryContextLinks('webdesign-blumenladen'), [{
+    label: 'SEO für Blumenläden im Blog',
+    href: '/blog/seo-fuer-blumenladen'
+  }]);
+  assert.deepEqual(getIndustryContextLinks('webdesign-immobilienmakler'), [{
+    label: 'Immobilienmakler-Website im Blog planen',
+    href: '/blog/immobilienmakler-website-erstelle'
+  }]);
+
+  const flowerGuide = getIndustryCommercialGuide('blumenladen');
+  const realEstateGuide = getIndustryCommercialGuide('webdesign-immobilienmakler');
+  assert.deepEqual(flowerGuide.sections.map((section) => section.title), [
+    'Produkte, Öffnungszeiten und lokale Auffindbarkeit',
+    'Saisonale Angebote ohne Seitenchaos',
+    'Anfrage, Vorbestellung oder Abholung',
+    'Geeignete Paketgröße',
+    'Local-SEO-Grundlagen für Blumenläden'
+  ]);
+  assert.deepEqual(realEstateGuide.sections.map((section) => section.title), [
+    'Vertrauen und lokales Einsatzgebiet',
+    'Leistungen für Verkäufer, Käufer und Vermieter',
+    'Objektdarstellung und Kontaktwege',
+    'Technische und rechtliche Abgrenzung',
+    'Geeignete Paketgröße'
+  ]);
+  assert.match(template, /industryCommercialGuide/);
+  assert.match(template, /industry-guide__media[\s\S]*alt="<%= renderedIndustryGuide\.image\.alt %>"/);
 });
 
 test('price CTA keeps the legacy contact action outside the Blumenladen package journey', () => {

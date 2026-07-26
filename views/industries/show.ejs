@@ -51,6 +51,9 @@ const wachstumPriceLabel = industryPackageById.wachstum?.price || (typeof packag
 const renderedIndustryContextLinks = Array.isArray(
   typeof industryContextLinks === 'undefined' ? null : industryContextLinks
 ) ? industryContextLinks : [];
+const renderedIndustryGuide = typeof industryCommercialGuide === 'object' && industryCommercialGuide
+  ? industryCommercialGuide
+  : null;
 const primaryIndustryCta = typeof industryPrimaryCta === 'object' && industryPrimaryCta
   ? industryPrimaryCta
   : {
@@ -136,6 +139,30 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <div class="heroBorder"></div>
         </div>
       </section>
+
+      <% if (renderedIndustryGuide) { %>
+      <section class="industry-guide" aria-labelledby="industry-guide-title">
+        <figure class="industry-guide__media animate-on-scroll">
+          <img src="<%= renderedIndustryGuide.image.src %>" alt="<%= renderedIndustryGuide.image.alt %>" width="720" height="540" loading="lazy" decoding="async">
+          <% if (renderedIndustryGuide.image.source?.kind === 'external' && renderedIndustryGuide.image.source?.pageUrl) { %>
+            <figcaption>Bild: <%= renderedIndustryGuide.image.source.creator %> / <a href="<%= renderedIndustryGuide.image.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+          <% } %>
+        </figure>
+        <div class="industry-guide__content animate-on-scroll">
+          <p class="industry-guide__eyebrow"><%= renderedIndustryGuide.eyebrow %></p>
+          <h2 id="industry-guide-title"><%= renderedIndustryGuide.title %></h2>
+          <div class="industry-guide__grid">
+            <% renderedIndustryGuide.sections.forEach(function(section){ %>
+            <article>
+              <h3><%= section.title %></h3>
+              <p><%= section.text %></p>
+            </article>
+            <% }); %>
+          </div>
+          <a class="industry-guide__action" href="<%= renderedIndustryGuide.action.href %>"><%= renderedIndustryGuide.action.label %></a>
+        </div>
+      </section>
+      <% } %>
 
       <!-- ===================== WARUM WEBSITE ===================== -->
       <section id="WarumWebsite">
