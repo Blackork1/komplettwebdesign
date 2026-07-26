@@ -67,7 +67,7 @@ test('blog index paginates articles and loads more through axios without a full 
   assert.match(blogController, /findPage\(\{ limit: BLOG_PAGE_SIZE, offset \}\)/);
   assert.match(blogController, /export async function listPostsPage/);
   assert.match(blogModel, /static async findPage/);
-  assert.match(blogModel, /LIMIT \$1\s+OFFSET \$2/);
+  assert.match(blogModel, /LIMIT \$2\s+OFFSET \$3/);
   assert.match(blogModel, /static async countPublished/);
   assert.match(blogRoutes, /router\.get\('\/blog\/posts',\s*listPostsPage\)/);
   assert.ok(

@@ -4,6 +4,7 @@ import pool from '../util/db.js';              // dein pg-Pool (ES-Export)
 import slugify from 'slugify';
 import { enqueueAdminReviewNotificationJob } from '../repositories/contentJobRepository.js';
 import { createAdminReviewDelivery } from '../repositories/contentNotificationRepository.js';
+import { REDIRECTED_BLOG_SLUGS } from '../data/blogRedirects.js';
 
 export default class BlogPostModel {
   /* ---------- CREATE ---------- */
@@ -197,11 +198,13 @@ export default class BlogPostModel {
   }
 
   /* ---------- READ ---------- */
-  static async findAll() {
-    const { rows } = await pool.query(
+  static async findAll(db = pool) {
+    const { rows } = await db.query(
       `SELECT * FROM posts
        WHERE published = true
-       ORDER BY created_at DESC`
+         AND slug <> ALL($1::text[])
+       ORDER BY created_at DESC`,
+      [REDIRECTED_BLOG_SLUGS]
     );
     return rows;
   }
@@ -217,40 +220,47 @@ export default class BlogPostModel {
     const { rows } = await db.query(
       `SELECT * FROM posts
        WHERE published = true
+         AND slug <> ALL($1::text[])
        ORDER BY created_at DESC
-       LIMIT $1
-       OFFSET $2`,
-      [limit, offset]
+       LIMIT $2
+       OFFSET $3`,
+      [REDIRECTED_BLOG_SLUGS, limit, offset]
     );
     return rows;
   }
 
-  static async countPublished() {
-    const { rows } = await pool.query(
+  static async countPublished(db = pool) {
+    const { rows } = await db.query(
       `SELECT COUNT(*)::int AS count
        FROM posts
-       WHERE published = true`
+       WHERE published = true
+         AND slug <> ALL($1::text[])`,
+      [REDIRECTED_BLOG_SLUGS]
     );
     return Number(rows[0]?.count || 0);
   }
 
-  static async findFeatured(limit = 5) {
-    const { rows } = await pool.query(
+  static async findFeatured(limit = 5, db = pool) {
+    const { rows } = await db.query(
       `SELECT * FROM posts
-       WHERE featured = true AND published = true
+       WHERE featured = true
+         AND published = true
+         AND slug <> ALL($1::text[])
        ORDER BY created_at DESC
-       LIMIT $1`,
-      [limit]
+       LIMIT $2`,
+      [REDIRECTED_BLOG_SLUGS, limit]
     );
     return rows;
   }
 
-  static async findBySlug(slug) {
-    const { rows } = await pool.query(
+  static async findBySlug(slug, db = pool) {
+    const { rows } = await db.query(
       `SELECT * FROM posts
-       WHERE slug = $1 AND published = true
+       WHERE slug = $1
+         AND published = true
+         AND slug <> ALL($2::text[])
        LIMIT 1`,
-      [slug]
+      [slug, REDIRECTED_BLOG_SLUGS]
     );
     return rows[0] ?? null;
   }

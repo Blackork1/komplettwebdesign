@@ -2,6 +2,7 @@
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import { REDIRECTED_BLOG_SLUGS } from "../data/blogRedirects.js";
 import pricingService from "../services/pricingService.js";
 import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
 import {
@@ -69,8 +70,9 @@ export async function sitemapXml(req, res, next) {
       `SELECT slug,
               COALESCE(updated_at, created_at, now()) AS updated_at
          FROM posts
-        WHERE published = true`,
-      [],
+        WHERE published = true
+          AND slug <> ALL($1::text[])`,
+      [REDIRECTED_BLOG_SLUGS],
       "posts"
     );
 

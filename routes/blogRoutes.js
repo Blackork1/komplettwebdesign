@@ -8,6 +8,9 @@ const router = Router();
 
 router.get('/blog',        listPosts);
 router.get('/blog/posts',  listPostsPage);
+router.get('/blog/website-kosten-2026-berlin-vergleich-2025', (_req, res) => {
+  return res.redirect(301, '/blog/website-kosten-2025-einfach-erklaert');
+});
 router.get('/blog/:slug',  showPost);
 router.get('/blog/:slug/comments', listComments);
 router.post('/blog/:slug/comments', addComment);
