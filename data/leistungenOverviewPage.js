@@ -73,6 +73,13 @@ export const leistungenOverviewPage = Object.freeze({
       icon: 'fa-hammer'
     })
   ]),
+  relatedContent: Object.freeze([
+    Object.freeze({
+      label: 'Website-Kosten im Blog erklärt',
+      href: '/blog/website-kosten-2025-einfach-erklaert',
+      text: 'Einmalige Projektkosten und typische Preisfaktoren im bestehenden Blogartikel nachvollziehen.'
+    })
+  ]),
   nextSteps: Object.freeze([
     'Wenn du noch unsicher bist, starte mit einer kurzen Projektanfrage.',
     'Wenn bereits eine Website vorhanden ist, kann ein Website-Audit sinnvoll sein.',

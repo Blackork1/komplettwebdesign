@@ -7,6 +7,7 @@ import {
 } from '../services/contentAgent/trustedInternalLinkService.js';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import { leistungenOverviewPage } from '../data/leistungenOverviewPage.js';
+import { runningCostsPage } from '../data/runningCostsPage.js';
 import pool from '../util/db.js';
 import { listIndustries } from '../controllers/industriesController.js';
 import * as industriesController from '../controllers/industriesController.js';
@@ -111,4 +112,26 @@ test('Blumenladen-Seite erhält den passenden vorhandenen Blogartikel als Kontex
     }]
   );
   assert.deepEqual(industriesController.getIndustryContextLinks('webdesign-cafe'), []);
+});
+
+test('Leistungsübersicht und laufende Kosten verlinken stabil auf den kanonischen Kostenartikel', () => {
+  const canonicalTarget = '/blog/website-kosten-2025-einfach-erklaert';
+
+  assert.deepEqual(
+    (leistungenOverviewPage.relatedContent || []).find((link) => link.href === canonicalTarget),
+    {
+      label: 'Website-Kosten im Blog erklärt',
+      href: canonicalTarget,
+      text: 'Einmalige Projektkosten und typische Preisfaktoren im bestehenden Blogartikel nachvollziehen.'
+    },
+    '/leistungen muss den kanonischen Kostenartikel kontextuell verlinken'
+  );
+  assert.deepEqual(
+    runningCostsPage.internalLinks.find((link) => link.href === canonicalTarget),
+    {
+      label: 'Einmalige Website-Kosten im Blog',
+      href: canonicalTarget
+    },
+    '/leistungen/laufende-kosten-website muss den kanonischen Kostenartikel kontextuell verlinken'
+  );
 });

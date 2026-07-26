@@ -104,6 +104,25 @@
       </div>
     </section>
 
+    <section class="service-section service-section--soft" id="wissen">
+      <div class="service-shell">
+        <div class="service-section__head animate-on-scroll">
+          <span class="service-kicker leistungen-overview-kicker">Weiterführendes Wissen</span>
+          <h2>Kosten und Projektumfang besser einordnen</h2>
+          <p>Bestehende Artikel vertiefen einzelne Fragen, bevor du Leistungen und Pakete vergleichst.</p>
+        </div>
+        <div class="service-card-grid leistungen-overview-grid">
+          <% page.relatedContent.forEach(function(item) { %>
+            <a class="service-link-card leistungen-overview-card animate-on-scroll" href="<%= item.href %>">
+              <span class="leistungen-overview-card__icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
+              <h3><%= item.label %></h3>
+              <p><%= item.text %></p>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
     <section class="service-section service-section--soft" id="naechste-schritte">
       <div class="service-shell">
         <div class="service-section__head animate-on-scroll">
