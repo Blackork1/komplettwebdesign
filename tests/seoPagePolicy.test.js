@@ -58,6 +58,20 @@ test('englische Paketseiten stehen bis zur Vollübersetzung nicht in der Sitemap
   assert.equal(paths.includes('/pakete/start'), true);
 });
 
+test('deaktivierte statische Routen stehen nicht in der Sitemap', async () => {
+  const routeSource = await readFile(new URL('../routes/staticPages.js', import.meta.url), 'utf8');
+  const disabledRoutes = [...routeSource.matchAll(/^\s*\/\/\s*router\.get\(['"]([^'"]+)['"]/gm)]
+    .map((match) => match[1]);
+  const sitemapRoutes = new Set(INDEXABLE_STATIC_ROUTES.map((entry) => entry.path));
+
+  assert.ok(disabledRoutes.includes('/ratgeber/kosten-einfache-website'));
+  assert.ok(disabledRoutes.includes('/ratgeber/website-kosten-zeitplan'));
+
+  for (const route of disabledRoutes) {
+    assert.equal(sitemapRoutes.has(route), false, `${route} ist deaktiviert und darf nicht in der Sitemap stehen`);
+  }
+});
+
 test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {
   assert.deepEqual(
     PRIORITY_INDUSTRY_SLUGS,

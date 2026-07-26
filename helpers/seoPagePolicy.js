@@ -29,8 +29,6 @@ export const INDEXABLE_STATIC_ROUTES = [
   { path: '/impressum', changefreq: 'yearly', priority: 0.2 },
   { path: '/webdesign-cafe/kosten', changefreq: 'yearly', priority: 0.4 },
   { path: '/webdesign-blumenladen/kosten', changefreq: 'yearly', priority: 0.4 },
-  { path: '/ratgeber/website-kosten-zeitplan', changefreq: 'monthly', priority: 0.7 },
-  { path: '/ratgeber/kosten-einfache-website', changefreq: 'monthly', priority: 0.7 },
   { path: '/webdesign-berlin', changefreq: 'weekly', priority: 1.0 },
   { path: '/leistungen', changefreq: 'monthly', priority: 0.8 },
   { path: '/leistungen/website-relaunch', changefreq: 'monthly', priority: 0.9 },
