@@ -34,3 +34,14 @@ test('die zentrale Berliner Seite ist Eigentümerin der kommerziellen Hauptabsic
   );
   assert.equal(getSeoRecoveryTarget('/webdesign-berlin')?.state, 'active');
 });
+
+test('priorisierte Seiten besitzen eine eindeutige Inhaltsrolle und Handlung', () => {
+  const active = SEO_RECOVERY_TARGETS.filter((entry) => entry.state === 'active');
+  for (const entry of active) {
+    assert.ok(entry.contentRole, `${entry.path} besitzt keine Inhaltsrolle`);
+    assert.ok(entry.primaryAction?.label, `${entry.path} besitzt keine Bezeichnung für die primäre Handlung`);
+    assert.ok(entry.primaryAction?.href, `${entry.path} besitzt keine primäre Handlung`);
+    assert.notEqual(entry.primaryAction.href, entry.path);
+    assert.ok(entry.supportingAction?.href, `${entry.path} besitzt keine unterstützende Handlung`);
+  }
+});
