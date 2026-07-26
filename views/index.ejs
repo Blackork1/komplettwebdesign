@@ -269,7 +269,13 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
           <div class="home-usp-item">
             <img class="home-usp-icon" src="/images/icons/gift1.svg" alt="" width="34" height="34" loading="lazy">
             <strong><%= isEn ? 'Personal implementation' : 'Persönliche Umsetzung' %></strong>
-            <span><%= isEn ? 'One direct contact from first call to launch.' : 'Ein direkter Ansprechpartner vom Erstgespräch bis zum Launch.' %></span>
+            <span>
+              <% if (isEn) { %>
+                One direct contact from first call to launch.
+              <% } else { %>
+                Wenn du <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a> möchtest, hast du vom Erstgespräch bis zum Launch einen direkten Ansprechpartner.
+              <% } %>
+            </span>
           </div>
           <div class="home-usp-item">
             <img class="home-usp-icon" src="/images/icons/individual1.svg" alt="" width="34" height="34" loading="lazy">
@@ -301,7 +307,7 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
               <% if (isEn) { %>
                 Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.
               <% } else { %>
-                Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a> möchtest: mit einer Website, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.
+                Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und eine Website brauchst, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.
               <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
