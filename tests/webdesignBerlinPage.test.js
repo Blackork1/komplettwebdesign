@@ -4,6 +4,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { load } from 'cheerio';
 import { renderFile } from 'ejs';
+import postcss from 'postcss';
 import { webdesignBerlinPage } from '../data/webdesignBerlinPage.js';
 import { packages } from '../data/packages.js';
 
@@ -55,6 +56,21 @@ function buildPageRenderLocals() {
 
 function renderWebdesignBerlinPage() {
   return renderFile(webdesignBerlinViewPath, buildPageRenderLocals());
+}
+
+function resolvePseudoElementContent(cssSource, selector) {
+  let content = 'normal';
+  const stylesheet = postcss.parse(cssSource);
+
+  stylesheet.walkRules((rule) => {
+    if (!rule.selectors?.includes(selector)) return;
+
+    rule.walkDecls('content', (declaration) => {
+      content = declaration.value;
+    });
+  });
+
+  return content;
 }
 
 const requiredSectionIds = [
@@ -221,6 +237,15 @@ test('webdesign berlin rendert die Planung als redaktionellen Beratungsablauf', 
   assert.equal(actions.attr('href'), '/kontakt?projektart=webdesign');
   assert.doesNotMatch(section.text(), /Pakete ansehen/);
   assert.equal(section.find('a[href="/pakete"]').length, 0);
+});
+
+test('webdesign berlin zeichnet keine Linie durch die Überschriften des Beratungsablaufs', () => {
+  const cssSource = readFileSync(new URL('../public/webdesign-berlin.css', import.meta.url), 'utf8');
+
+  assert.equal(
+    resolvePseudoElementContent(cssSource, '.webdesign-berlin .wd-consultation-steps::before'),
+    'normal'
+  );
 });
 
 test('webdesign berlin canonical page avoids retired pricing and risky promises', () => {
