@@ -136,3 +136,17 @@ test('package overview hero uses the compressed package hero image', () => {
   assert.match(template, /fetchpriority="high"/);
   assert.match(controller, /imagePath:\s*'\/images\/heroPakete\.webp'/);
 });
+
+test('Business und Individuell verwenden die verbindlichen deutschen Meta-Descriptions', () => {
+  const businessPackage = packages.find((pkg) => pkg.slug === 'business');
+  const individualPackage = packages.find((pkg) => pkg.slug === 'individuell');
+
+  assert.equal(
+    businessPackage.metaDescription,
+    'Business-Website für kleine Unternehmen in Berlin: mehrere Leistungsseiten, klare Angebotsstruktur, technische SEO-Grundlagen und persönlicher Projektablauf.'
+  );
+  assert.equal(
+    individualPackage.metaDescription,
+    'Individuelles Webdesign für Sonderfunktionen, CMS, Buchung, Mehrsprachigkeit oder größere Anforderungen. Umfang und Preis werden vorab transparent geplant.'
+  );
+});

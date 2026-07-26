@@ -192,20 +192,12 @@ export async function sitemapXml(req, res, next) {
 
     const packageRoutes = pricingPackages
       .filter((pkg) => pkg?.allowDetailPage && pkg?.canonicalPath)
-      .flatMap((pkg) => [
-        {
-          loc: `${base}${pkg.canonicalPath}`,
-          lastmod: nowIso,
-          changefreq: "monthly",
-          priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
-        },
-        {
-          loc: `${base}/en${pkg.canonicalPath}`,
-          lastmod: nowIso,
-          changefreq: "monthly",
-          priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
-        }
-      ]);
+      .map((pkg) => ({
+        loc: `${base}${pkg.canonicalPath}`,
+        lastmod: nowIso,
+        changefreq: "monthly",
+        priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
+      }));
 
     const allUrlsRaw = [
       ...staticRoutes,

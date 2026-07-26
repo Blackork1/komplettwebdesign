@@ -165,3 +165,26 @@ test('package contact success schema uses the DB canonical path', () => {
   assert.match(handleContactSource, /const packageCanonicalPath = pack\.canonicalPath \|\| `\/pakete\/\$\{slug\}`/);
   assert.match(handleContactSource, /url:\s*`\$\{baseUrl\}\$\{isEn \? '\/en' : ''\}\$\{packageCanonicalPath\}`/);
 });
+
+test('unvollständig übersetzte englische Paketseiten bleiben erreichbar aber noindex', () => {
+  const renderPaths = [
+    controllerSource.slice(controllerSource.indexOf('export async function listPackages'), controllerSource.indexOf('export async function showPackage')),
+    controllerSource.slice(controllerSource.indexOf('export async function showPackage'), controllerSource.indexOf('export async function handleContact')),
+    controllerSource.slice(controllerSource.indexOf('export async function handleContact'))
+  ];
+
+  renderPaths.forEach((source) => {
+    assert.match(source, /robots:\s*isEn\s*\?\s*'noindex,follow'\s*:\s*undefined/);
+  });
+});
+
+test('Paket-Hreflang verweist bis zur Vollübersetzung nicht auf englische Seiten', () => {
+  const seoExtraSource = controllerSource.slice(
+    controllerSource.indexOf('function buildPackagesSeoExtra'),
+    controllerSource.indexOf('function resolveAddOnsTickerDurationSeconds')
+  );
+
+  assert.doesNotMatch(seoExtraSource, /hreflang="en-US"/);
+  assert.match(seoExtraSource, /hreflang="de-DE"/);
+  assert.match(seoExtraSource, /hreflang="x-default"/);
+});

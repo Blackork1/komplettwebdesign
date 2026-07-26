@@ -50,6 +50,14 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
   assert.equal(routes.includes('/website-erstellen-lassen-berlin'), false);
 });
 
+test('englische Paketseiten stehen bis zur Vollübersetzung nicht in der Sitemap', () => {
+  const paths = INDEXABLE_STATIC_ROUTES.map((entry) => entry.path);
+
+  assert.equal(paths.some((path) => path === '/en/pakete' || path.startsWith('/en/pakete/')), false);
+  assert.equal(paths.includes('/pakete'), true);
+  assert.equal(paths.includes('/pakete/start'), true);
+});
+
 test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {
   assert.deepEqual(
     PRIORITY_INDUSTRY_SLUGS,
@@ -93,4 +101,13 @@ test('sitemap cms pages query only references columns present in the pages table
   assert.ok(pagesQuery, 'pages sitemap query not found');
   assert.match(pagesQuery[1], /COALESCE\(created_at, now\(\)\) AS updated_at/);
   assert.doesNotMatch(pagesQuery[1], /COALESCE\(updated_at/);
+});
+
+test('dynamische Paket-Sitemap enthält ausschließlich deutsche Detail-URLs', async () => {
+  const source = await readFile(new URL('../controllers/sitemapController.js', import.meta.url), 'utf8');
+  const packageRoutesSource = source.slice(source.indexOf('const packageRoutes'), source.indexOf('const allUrlsRaw'));
+
+  assert.match(packageRoutesSource, /\.map\(\(pkg\)\s*=>\s*\(\{/);
+  assert.match(packageRoutesSource, /loc:\s*`\$\{base\}\$\{pkg\.canonicalPath\}`/);
+  assert.doesNotMatch(packageRoutesSource, /\/en\$\{pkg\.canonicalPath\}/);
 });

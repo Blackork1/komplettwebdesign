@@ -9,7 +9,7 @@ export const packageSeoMeta = Object.freeze({
   },
   '/pakete/business': {
     title: 'Business-Paket Webdesign | Kleine Unternehmen Berlin',
-    description: 'Business-Website ab 1.499 € für kleine Unternehmen in Berlin. Mehr Seiten, klare Struktur und persönliche Umsetzung.'
+    description: 'Business-Website für kleine Unternehmen in Berlin: mehrere Leistungsseiten, klare Angebotsstruktur, technische SEO-Grundlagen und persönlicher Projektablauf.'
   },
   '/pakete/wachstum': {
     title: 'Wachstum-Paket Webdesign | Relaunch & SEO-Struktur',
@@ -17,7 +17,7 @@ export const packageSeoMeta = Object.freeze({
   },
   '/pakete/individuell': {
     title: 'Individuelles Webdesign-Projekt | Sonderfunktionen',
-    description: 'Individuelle Websites ab 3.500 € oder nach Aufwand: Buchung, CMS, Mehrsprachigkeit und Sonderfunktionen nach Prüfung.'
+    description: 'Individuelles Webdesign für Sonderfunktionen, CMS, Buchung, Mehrsprachigkeit oder größere Anforderungen. Umfang und Preis werden vorab transparent geplant.'
   }
 });
 

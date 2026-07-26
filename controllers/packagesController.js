@@ -214,16 +214,18 @@ function buildPackagesSeoExtra({ req, baseUrl: configuredBaseUrl, isEn, title, d
     : `${baseUrl}${imagePath || '/images/preiseHero.webp'}`;
   const safeCanonical = escapeHtmlAttribute(canonical);
   const safeDeUrl = escapeHtmlAttribute(deUrl);
-  const safeEnUrl = escapeHtmlAttribute(enUrl);
   const safeTitle = escapeHtmlAttribute(title);
   const safeDescription = escapeHtmlAttribute(description);
   const safeImage = escapeHtmlAttribute(image);
+  const hreflangLinks = isEn
+    ? ''
+    : `
+  <link rel="alternate" hreflang="de-DE" href="${safeDeUrl}">
+  <link rel="alternate" hreflang="x-default" href="${safeDeUrl}">`;
 
   return `
   <link rel="canonical" href="${safeCanonical}">
-  <link rel="alternate" hreflang="de-DE" href="${safeDeUrl}">
-  <link rel="alternate" hreflang="en-US" href="${safeEnUrl}">
-  <link rel="alternate" hreflang="x-default" href="${safeDeUrl}">
+  ${hreflangLinks}
   <meta property="og:type" content="website">
   <meta property="og:title" content="${safeTitle}">
   <meta property="og:description" content="${safeDescription}">
@@ -302,6 +304,7 @@ export async function listPackages(req, res) {
       packageSummaryLabel,
       lng,
       isEn,
+      robots: isEn ? 'noindex,follow' : undefined,
       ...pageMeta
     });
   } catch (err) {
@@ -371,6 +374,7 @@ export async function showPackage(req, res) {
       title: detailMeta.title,
       description: detailMeta.description,
       keywords: detailMeta.keywords,
+      robots: isEn ? 'noindex,follow' : undefined,
       seoExtra: buildPackagesSeoExtra({
         req,
         baseUrl: res.locals.canonicalBaseUrl,
@@ -524,6 +528,7 @@ export async function handleContact(req, res) {
       title: detailMeta.title,
       description: detailMeta.description,
       keywords: detailMeta.keywords,
+      robots: isEn ? 'noindex,follow' : undefined,
       seoExtra: buildPackagesSeoExtra({
         req,
         baseUrl: res.locals.canonicalBaseUrl,
