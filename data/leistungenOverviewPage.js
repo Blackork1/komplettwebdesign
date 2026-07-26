@@ -1,3 +1,5 @@
+import { MARKETING_IMAGES } from './marketingImages.js';
+
 export const leistungenOverviewPage = Object.freeze({
   canonicalPath: '/leistungen',
   title: 'Leistungen Webdesign Berlin | Überblick',
@@ -71,6 +73,54 @@ export const leistungenOverviewPage = Object.freeze({
       href: '/handwerker',
       text: 'Leistungen und Anfragewege für Handwerksbetriebe in Berlin passend einordnen.',
       icon: 'fa-hammer'
+    })
+  ]),
+  guidance: Object.freeze({
+    title: 'Du weißt noch nicht, was du brauchst?',
+    text: 'Starte mit dem kostenlosen Website-Tester oder beschreibe kurz deine Ausgangslage. So musst du keine Leistung auswählen, bevor klar ist, welches Problem zuerst gelöst werden sollte.',
+    primary: Object.freeze({ label: 'Website kostenlos testen', href: '/website-tester' }),
+    secondary: Object.freeze({ label: 'Ausgangslage beschreiben', href: '/kontakt?projektart=website-audit' })
+  }),
+  serviceGroups: Object.freeze([
+    Object.freeze({
+      title: 'Neue Website',
+      description: 'Angebot, Umfang und Anfrageweg für einen neuen Auftritt festlegen.',
+      image: MARKETING_IMAGES.webdesignHero,
+      items: Object.freeze([
+        Object.freeze({ title: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Website-Struktur, Gestaltung und Umsetzung gemeinsam planen.' }),
+        Object.freeze({ title: 'Pakete & Preise', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen.' }),
+        Object.freeze({ title: 'Landingpage', href: '/leistungen/landingpage-erstellen-lassen', text: 'Eine fokussierte Seite für ein Angebot oder eine Kampagne erstellen.' })
+      ])
+    }),
+    Object.freeze({
+      title: 'Bestehende Website verbessern',
+      description: 'Prüfen, neu strukturieren oder gezielt ausbauen.',
+      image: MARKETING_IMAGES.serviceAudit,
+      items: Object.freeze([
+        Object.freeze({ title: 'Website-Audit', href: '/leistungen/website-audit', text: 'Technik, Inhalte, SEO und Nutzerführung priorisiert prüfen.' }),
+        Object.freeze({ title: 'Website-Relaunch', href: '/leistungen/website-relaunch', text: 'Struktur, Design und Weiterleitungen für den Neustart planen.' }),
+        Object.freeze({ title: 'Inhalte & Texte', href: '/leistungen/inhalte-texte-content', text: 'Bestehende Inhalte verständlicher strukturieren und ergänzen.' }),
+        Object.freeze({ title: 'Responsives Design', href: '/leistungen/responsives-design-mobile', text: 'Darstellung und Bedienung auf mobilen Geräten verbessern.' })
+      ])
+    }),
+    Object.freeze({
+      title: 'Sichtbarkeit erhöhen',
+      description: 'Lokale Signale, Suchstruktur und technische Grundlagen stärken.',
+      image: MARKETING_IMAGES.serviceLocalSeo,
+      items: Object.freeze([
+        Object.freeze({ title: 'Local SEO', href: '/leistungen/local-seo', text: 'Website, lokale Inhalte und Google-Unternehmensprofil zusammendenken.' }),
+        Object.freeze({ title: 'Website-Tester', href: '/website-tester', text: 'Kostenlosen technischen Einstiegstest durchführen.' })
+      ])
+    }),
+    Object.freeze({
+      title: 'Website betreiben',
+      description: 'Betrieb, Erweiterungen und laufende Kosten nachvollziehbar planen.',
+      image: MARKETING_IMAGES.serviceMaintenance,
+      items: Object.freeze([
+        Object.freeze({ title: 'Website-Wartung', href: '/leistungen/website-wartung', text: 'Prüfungen, Backups und Support im vereinbarten Umfang.' }),
+        Object.freeze({ title: 'Zusatzleistungen', href: '/leistungen/zusatzleistungen-webdesign', text: 'Neue Funktionen oder Inhalte separat ergänzen.' }),
+        Object.freeze({ title: 'Laufende Kosten', href: '/leistungen/laufende-kosten-website', text: 'Hosting, Domain, E-Mail, Tools und Wartung einordnen.' })
+      ])
     })
   ]),
   relatedContent: Object.freeze([

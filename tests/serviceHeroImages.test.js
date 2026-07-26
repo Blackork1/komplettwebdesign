@@ -61,7 +61,6 @@ test('generic Leistung hero CSS overrides the shared unified hero background for
 
 test('service templates render a dynamic hero background image hook', () => {
   const templatePaths = [
-    '../views/static/leistungen.ejs',
     '../views/seo_landing/show.ejs',
     '../views/leistungen/show.ejs',
     '../views/static/local-seo-berlin.ejs',
@@ -75,4 +74,8 @@ test('service templates render a dynamic hero background image hook', () => {
     assert.match(source, /heroImage/, `${templatePath} does not receive or render heroImage`);
     assert.match(source, /--service-hero-image/, `${templatePath} does not expose the hero background CSS variable`);
   }
+
+  const overviewSource = readFileSync(new URL('../views/static/leistungen.ejs', import.meta.url), 'utf8');
+  assert.match(overviewSource, /heroImage/);
+  assert.match(overviewSource, /<img src="<%= heroImage\.src %>" alt="<%= heroImage\.alt %>"/);
 });

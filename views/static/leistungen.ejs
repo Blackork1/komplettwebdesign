@@ -47,7 +47,7 @@
   <%- include('../partials/header') %>
 
   <main id="main-content">
-    <section class="service-hero hero leistungen-service-hero unified-hero" id="hero"<% if (heroImage?.src) { %> style="--service-hero-image: url('<%= heroImage.src %>');"<% } %>>
+    <section class="service-hero hero leistungen-service-hero unified-hero" id="hero">
       <div class="leistungen-hero-shell">
         <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
           <ol>
@@ -72,6 +72,11 @@
 
           <aside class="service-hero__panel leistungen-hero-panel unified-hero__panel" aria-label="Kurzüberblick">
             <div class="leistungen-hero-panel__reveal home-hero-reveal home-hero-reveal--visual animate-on-scroll">
+              <% if (heroImage?.src) { %>
+              <figure class="leistungen-hero-visual">
+                <img src="<%= heroImage.src %>" alt="<%= heroImage.alt %>" width="1200" height="800" loading="eager" fetchpriority="high" decoding="async">
+              </figure>
+              <% } %>
               <h2><%= page.panel.title %></h2>
               <p><%= page.panel.text %></p>
               <div class="leistungen-hero-mini-list">
@@ -85,20 +90,53 @@
       </div>
     </section>
 
-    <section class="service-section" id="uebersicht">
+    <section class="service-section" id="auswahlhilfe">
+      <div class="service-shell">
+        <div class="leistungen-guidance animate-on-scroll">
+          <div>
+            <span class="service-kicker leistungen-overview-kicker">Erster Schritt</span>
+            <h2><%= page.guidance.title %></h2>
+            <p><%= page.guidance.text %></p>
+          </div>
+          <div class="hero-cta-variants">
+            <a class="btn btn-primary" href="<%= page.guidance.primary.href %>"><%= page.guidance.primary.label %></a>
+            <a class="btn btn-secondary" href="<%= page.guidance.secondary.href %>"><%= page.guidance.secondary.label %></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="service-section service-section--soft" id="uebersicht">
       <div class="service-shell">
         <div class="service-section__head animate-on-scroll">
-          <span class="service-kicker leistungen-overview-kicker">Überblick</span>
-          <h2>Welche Leistung passt zu deinem Projekt?</h2>
-          <p>Die einzelnen Seiten erklären Umfang, Grenzen, Preislogik und sinnvolle nächste Schritte genauer.</p>
+          <span class="service-kicker leistungen-overview-kicker">Vier Nutzerwege</span>
+          <h2>Welche Leistung passt zu deiner Ausgangslage?</h2>
+          <p>Wähle zuerst dein Ziel. Die vorhandenen Leistungen sind darunter ohne neue oder doppelte Seiten gruppiert.</p>
         </div>
-        <div class="service-card-grid leistungen-overview-grid">
-          <% page.services.forEach(function(item) { %>
-            <a class="service-link-card leistungen-overview-card animate-on-scroll" href="<%= item.href %>">
-              <span class="leistungen-overview-card__icon"><i class="fa-solid <%= item.icon %>" aria-hidden="true"></i></span>
-              <h3><%= item.title %></h3>
-              <p><%= item.text %></p>
-            </a>
+        <div class="leistungen-group-list">
+          <% page.serviceGroups.forEach(function(group, groupIndex) { %>
+          <article class="leistungen-group animate-on-scroll<%= groupIndex % 2 === 1 ? ' is-reversed' : '' %>">
+            <figure class="leistungen-group__media">
+              <img src="<%= group.image.src %>" alt="<%= group.image.alt %>" width="960" height="720" loading="lazy" decoding="async">
+              <% if (group.image.source?.kind === 'external') { %>
+              <figcaption>Bild: <%= group.image.source.creator %> / <a href="<%= group.image.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+              <% } %>
+            </figure>
+            <div class="leistungen-group__content">
+              <span class="leistungen-group__number"><%= String(groupIndex + 1).padStart(2, '0') %></span>
+              <h3><%= group.title %></h3>
+              <p><%= group.description %></p>
+              <div class="leistungen-group__links">
+                <% group.items.forEach(function(item) { %>
+                <a href="<%= item.href %>">
+                  <strong><%= item.title %></strong>
+                  <span><%= item.text %></span>
+                  <em>Mehr erfahren →</em>
+                </a>
+                <% }) %>
+              </div>
+            </div>
+          </article>
           <% }) %>
         </div>
       </div>

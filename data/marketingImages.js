@@ -100,6 +100,11 @@ export const MARKETING_IMAGES = Object.freeze({
     alt: 'Lokale Suchmaschinenoptimierung mit Standortsignalen, Website und Analysebereichen',
     source: ownSource
   }),
+  serviceMaintenance: freezeImage({
+    src: '/images/leistungen/website-wartung-hero.webp',
+    alt: 'Website-Wartung mit Monitoring, Datensicherung und geordneten Support-Aufgaben',
+    source: ownSource
+  }),
   industryFlorist: freezeImage({
     src: '/images/editorial/floristik.webp',
     alt: 'Floristin arrangiert ein farbenfrohes Blumensortiment für Kundinnen und Kunden',
@@ -150,6 +155,7 @@ export const REQUIRED_VISUAL_ROLES = Object.freeze([
   'serviceRelaunch',
   'serviceAudit',
   'serviceLocalSeo',
+  'serviceMaintenance',
   'industryFlorist',
   'industryRealEstate',
   'testerOverview',
