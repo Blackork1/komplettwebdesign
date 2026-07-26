@@ -21,6 +21,7 @@ Alle folgenden Bilder stammen von Pexels. Es gilt die [Pexels-Lizenz](https://ww
 | `/images/editorial/website-audit.webp` | Website-Audit | Tiger Lily | [A Laptop Showing Graphs](https://www.pexels.com/photo/a-laptop-showing-graphs-7109316/) | Person prüft Diagramme und Kennzahlen einer Website auf einem Laptop |
 | `/images/editorial/floristik.webp` | Branchenlösung Blumenladen | Anna Shvets | [A Florist Arranging Flowers](https://www.pexels.com/photo/a-florist-arranging-flowers-5894063/) | Floristin arrangiert ein farbenfrohes Blumensortiment für Kundinnen und Kunden |
 | `/images/editorial/immobilienberatung.webp` | Branchenlösung Immobilienmakler | Pavel Danilyuk | [Real Estate Agent Talking to Clients](https://www.pexels.com/photo/real-estate-agent-talking-to-clients-7937312/) | Immobilienberater bespricht mit einem Paar Unterlagen zu einer Immobilie |
+| `/images/editorial/gesundheit-coaching.webp` | Startseite, Branchenweg Gesundheit & Coaching | Julia Larson | [Black Woman Training on Gym Equipment While Trainer Helping](https://www.pexels.com/photo/black-woman-training-on-gym-equipment-while-trainer-helping-6455895/) | Personal Trainer unterstützt eine Kundin beim begleiteten Training im Fitnessstudio |
 
 ## Vorhandene eigene Medien
 

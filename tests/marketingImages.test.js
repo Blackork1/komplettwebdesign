@@ -59,3 +59,19 @@ test('der Zielgruppenbereich verwendet ein eigenes dokumentiertes Foto', () => {
   );
   assert.equal(existsSync(new URL(`.${image.src}`, PUBLIC_ROOT)), true);
 });
+
+test('der Startseitenweg Gesundheit und Coaching besitzt ein eigenständiges dokumentiertes Foto', () => {
+  const image = MARKETING_IMAGES.industryHealthCoaching;
+
+  assert.ok(image, 'Bildrolle industryHealthCoaching fehlt');
+  assert.equal(image.src, '/images/editorial/gesundheit-coaching.webp');
+  assert.match(image.alt, /Trainerin|Trainer|Training|Coaching/i);
+  assert.equal(image.source.creator, 'Julia Larson');
+  assert.equal(
+    image.source.pageUrl,
+    'https://www.pexels.com/photo/black-woman-training-on-gym-equipment-while-trainer-helping-6455895/'
+  );
+  assert.notEqual(image.src, MARKETING_IMAGES.industryFlorist.src);
+  assert.notEqual(image.src, MARKETING_IMAGES.industryRealEstate.src);
+  assert.equal(existsSync(new URL(`.${image.src}`, PUBLIC_ROOT)), true);
+});

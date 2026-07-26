@@ -138,6 +138,17 @@ export const MARKETING_IMAGES = Object.freeze({
       licenseUrl: PEXELS_LICENSE_URL
     }
   }),
+  industryHealthCoaching: freezeImage({
+    src: '/images/editorial/gesundheit-coaching.webp',
+    alt: 'Personal Trainer unterstützt eine Kundin beim begleiteten Training im Fitnessstudio',
+    source: {
+      kind: 'external',
+      provider: 'Pexels',
+      creator: 'Julia Larson',
+      pageUrl: 'https://www.pexels.com/photo/black-woman-training-on-gym-equipment-while-trainer-helping-6455895/',
+      licenseUrl: PEXELS_LICENSE_URL
+    }
+  }),
   testerOverview: freezeImage({
     src: '/images/site_speed_uplift_de.webp',
     alt: 'Beispielhafte Auswertung einer Website-Prüfung mit priorisierten technischen Hinweisen',
@@ -170,6 +181,7 @@ export const REQUIRED_VISUAL_ROLES = Object.freeze([
   'serviceMaintenance',
   'industryFlorist',
   'industryRealEstate',
+  'industryHealthCoaching',
   'testerOverview',
   'contactConversation'
 ]);
