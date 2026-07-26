@@ -586,7 +586,7 @@ Sie verlinkt kontextuell auf `/webdesign-berlin`, `/branchen/webdesign-blumenlad
 
 - [ ] **Step 6: Website-Wartung und Landingpage konkretisieren**
 
-Website-Wartung zeigt Reaktionsweg, Prüfturnus, Backups, Aktualisierungen, Ausschlüsse und laufende Kosten.  
+Website-Wartung zeigt Reaktionsweg, Prüfturnus, Backups, Aktualisierungen, Ausschlüsse und laufende Kosten.
 Landingpage erklärt Einsatzfall, benötigte Inhalte, einzelnes Conversion-Ziel und den Unterschied zu einer vollständigen Unternehmenswebsite.
 
 - [ ] **Step 7: Tests und Build ausführen**
@@ -773,7 +773,7 @@ passende Leistung
 
 - [ ] **Step 4: Detailseiten auf Anfragekontext ausrichten**
 
-`Zur alten Backstube` verlinkt auf passende Gastronomie-/Webdesign-Angebote.  
+`Zur alten Backstube` verlinkt auf passende Gastronomie-/Webdesign-Angebote.
 `TM Sauber & Mehr` verlinkt auf `/leistungen/website-relaunch`.
 
 Der Abschluss-CTA lautet je nach Projekt:
