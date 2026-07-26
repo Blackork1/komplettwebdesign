@@ -3575,7 +3575,17 @@
     .add-ons-overlay__nav,
     .add-ons-overlay__slide {
       transition: none;
-}
+    }
+
+    .add-ons-overview-card--interactive:hover,
+    .add-ons-overview-card--interactive:focus-within,
+    .add-ons-overlay__icon-button:hover,
+    .add-ons-overlay__icon-button:focus-visible,
+    .add-ons-overlay__nav:hover,
+    .add-ons-overlay__nav:focus-visible {
+      transform: none;
+    }
+  }
 
 .leistungen-overview-page .leistungen-hero-visual {
   aspect-ratio: 16 / 9;
@@ -3715,16 +3725,6 @@
     min-height: 300px;
   }
 }
-
-    .add-ons-overview-card--interactive:hover,
-    .add-ons-overview-card--interactive:focus-within,
-    .add-ons-overlay__icon-button:hover,
-    .add-ons-overlay__icon-button:focus-visible,
-    .add-ons-overlay__nav:hover,
-    .add-ons-overlay__nav:focus-visible {
-      transform: none;
-    }
-  }
 
 
 /* Extracted from views/static/website-wartung-berlin.ejs */

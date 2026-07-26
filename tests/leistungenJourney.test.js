@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import postcss from 'postcss';
 
 import { leistungenOverviewPage } from '../data/leistungenOverviewPage.js';
 
 const template = readFileSync(new URL('../views/static/leistungen.ejs', import.meta.url), 'utf8');
+const stylesheet = readFileSync(new URL('../public/leistungen.css', import.meta.url), 'utf8');
 
 test('die Leistungsübersicht gruppiert vorhandene Angebote nach vier Nutzerzielen', () => {
   assert.deepEqual(
@@ -49,4 +51,17 @@ test('unsichere Besucher können kostenlos testen oder ihre Ausgangslage beschre
   assert.equal(leistungenOverviewPage.guidance.title, 'Du weißt noch nicht, was du brauchst?');
   assert.equal(leistungenOverviewPage.guidance.primary.href, '/website-tester');
   assert.equal(leistungenOverviewPage.guidance.secondary.href, '/kontakt?projektart=website-audit');
+});
+
+test('die Bildgruppen der Leistungsübersicht gelten unabhängig von reduzierten Animationen', () => {
+  const root = postcss.parse(stylesheet);
+  const topLevelOverviewRule = root.nodes.find((node) => (
+    node.type === 'rule'
+    && node.selector === '.leistungen-overview-page .leistungen-hero-visual'
+  ));
+
+  assert.ok(
+    topLevelOverviewRule,
+    'Die Bild- und Gruppenregeln dürfen nicht versehentlich in einem Media-Query verschachtelt sein.'
+  );
 });
