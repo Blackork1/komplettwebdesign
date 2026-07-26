@@ -143,7 +143,7 @@ Der aktuelle Entwicklungsbranch ist kein pauschaler Deploymentkandidat. Für jed
 
 | Welle | Einzuschließende Tasks | Auszuschließende Tasks | Quellbereich |
 | --- | --- | --- | --- |
-| 1 | Tasks 1–4 und die Sitemap-404-Korrektur aus Fix-Runde 1 | Tasks 5–11; Task 12 außer der Sitemap-Korrektur | `8172029..7960c61` plus Task-12-Fix-Commit |
+| 1 | Tasks 1–4 und ein separat erzeugter Code-only-Backport der Sitemap-404-Korrektur | Tasks 5–11 und sämtliche Task-12-Dokumentation | `8172029..7960c61` plus neuer Backport-Commit mit exakt zwei Dateien |
 | 2 | bereits freigegebene Welle 1 sowie Tasks 5–9 | Tasks 10–11; reine Task-12-Dokumentation | `7960c61..1772a13` auf dem Welle-1-Kandidaten |
 | 3 | bereits freigegebene Wellen 1–2 sowie Task 10 | Task 11; reine Task-12-Dokumentation | `1772a13..eb56110` auf dem Welle-2-Kandidaten |
 
@@ -151,23 +151,39 @@ Vor Welle 1 wird der Rollback-Commit aus dem laufenden App-Image gelesen und als
 
 ```bash
 RUNNING_APP_CONTAINER="$(docker compose ps -q app)"
+test -n "$RUNNING_APP_CONTAINER"
+RUNNING_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$RUNNING_APP_CONTAINER")"
+test -n "$RUNNING_IMAGE_ID"
 ROLLBACK_COMMIT="$(docker image inspect \
   --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' \
-  "$RUNNING_APP_CONTAINER")"
+  "$RUNNING_IMAGE_ID")"
 git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
 ```
 
-Beispiel für Welle 1; `<TASK-12-FIX-COMMIT>` wird durch den vollständigen Hash dieses Fix-Commits ersetzt:
+Der gemischte Fix-Commit `dd4c61b` darf nicht cherry-gepickt werden, weil er neben der Sitemap-Korrektur Task-12-Dokumentation enthält. Auf dem Welle-1-Release-Branch wird stattdessen ein neuer Code-only-Backport erzeugt; seine Commit-ID entsteht erst dabei und wird anschließend protokolliert:
 
 ```bash
 git switch -c release/seo-sanierung-welle-1 "$ROLLBACK_COMMIT"
 git cherry-pick 8172029..7960c61
-git cherry-pick <TASK-12-FIX-COMMIT>
+git restore --source=dd4c61b -- \
+  helpers/seoPagePolicy.js \
+  tests/seoPagePolicy.test.js
+git add helpers/seoPagePolicy.js tests/seoPagePolicy.test.js
+test "$(git diff --cached --name-only | sort)" = \
+  "$(printf '%s\n' helpers/seoPagePolicy.js tests/seoPagePolicy.test.js | sort)"
+git diff --cached --check
+git commit -m "fix: deaktivierte Ratgeber aus Sitemap entfernen"
+SITEMAP_BACKPORT_COMMIT="$(git rev-parse HEAD)"
+test "$(git show --format= --name-only "$SITEMAP_BACKPORT_COMMIT" | sed '/^$/d' | sort)" = \
+  "$(printf '%s\n' helpers/seoPagePolicy.js tests/seoPagePolicy.test.js | sort)"
+git diff --exit-code dd4c61b -- helpers/seoPagePolicy.js tests/seoPagePolicy.test.js
 CANDIDATE_TAG="seo-sanierung-welle-1-kandidat-<YYYYMMDD>"
 git tag -a "$CANDIDATE_TAG" -m "SEO-Sanierung Welle 1 Kandidat"
 CANDIDATE_COMMIT="$(git rev-parse "${CANDIDATE_TAG}^{commit}")"
 test "$(git rev-parse HEAD)" = "$CANDIDATE_COMMIT"
 ```
+
+Der neu entstandene `SITEMAP_BACKPORT_COMMIT` wird im Welle-1-Nachweis eingetragen. `dd4c61b`, `3d29a17` und andere reine oder gemischte Task-12-Dokumentationscommits bleiben deployment-neutral und sind aus allen Release-Kandidaten ausgeschlossen.
 
 Welle 2 wird aus dem freigegebenen Welle-1-Kandidaten erstellt und ergänzt ausschließlich den angegebenen Quellbereich:
 
@@ -214,28 +230,90 @@ Direkt nach einem autorisierten Deployment wird ein dauerhafter Nachweisordner f
 
 ```bash
 PRUEFZEITPUNKT_UTC="$(date -u +%Y%m%dT%H%M%SZ)"
+DEPLOY_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 KANDIDAT_COMMIT="$(git rev-parse "${CANDIDATE_TAG}^{commit}")"
 NACHWEIS_DIR="docs/seo/audit-nachweise/welle-1/${PRUEFZEITPUNKT_UTC}-${KANDIDAT_COMMIT}"
 mkdir -p "$NACHWEIS_DIR"
+node --input-type=module - \
+  "$NACHWEIS_DIR/deployment-metadata.json" \
+  "$DEPLOY_UTC" \
+  "$CANDIDATE_TAG" \
+  "$KANDIDAT_COMMIT" \
+  "$ROLLBACK_COMMIT" \
+  "$NACHWEIS_DIR" <<'NODE'
+import { writeFileSync } from 'node:fs';
+
+const [, , file, deployUtc, candidateTag, candidateCommit, rollbackCommit, evidenceDir] = process.argv;
+writeFileSync(file, `${JSON.stringify({
+  deploy_utc: deployUtc,
+  candidate_tag: candidateTag,
+  candidate_commit: candidateCommit,
+  rollback_commit: rollbackCommit,
+  evidence_dir: evidenceDir
+}, null, 2)}\n`);
+NODE
 npm run audit:seo-recovery -- \
   --base-url https://www.komplettwebdesign.de \
   --out "$NACHWEIS_DIR/seo-live-t0.json" \
   --fail-on error
-sha256sum "$NACHWEIS_DIR/seo-live-t0.json" > "$NACHWEIS_DIR/SHA256SUMS"
+sha256sum "$NACHWEIS_DIR/deployment-metadata.json" "$NACHWEIS_DIR/seo-live-t0.json" \
+  > "$NACHWEIS_DIR/SHA256SUMS"
 sha256sum --check "$NACHWEIS_DIR/SHA256SUMS"
 ```
 
-In `nachweis.md` werden Beginn des Fensters, UTC-Prüfzeitpunkt, Kandidaten-Tag, vollständiger Kandidaten-Commit, Rollback-Commit, Exitcode und Audit-Zusammenfassung eingetragen.
+`deployment-metadata.json` ist die maschinenlesbare, persistente Quelle für den späteren Abschlusslauf. In `nachweis.md` werden zusätzlich Beginn des Fensters, UTC-Prüfzeitpunkt, Kandidaten-Tag, vollständiger Kandidaten-Commit, Rollback-Commit, Exitcode und Audit-Zusammenfassung eingetragen.
 
-Frühestens 48 Stunden nach dem dokumentierten Beginn muss auf demselben Kandidaten-Commit ein Abschluss-Live-Audit ausgeführt werden:
+Frühestens 48 Stunden nach dem dokumentierten Beginn muss auf demselben Kandidaten-Commit ein Abschluss-Live-Audit ausgeführt werden. Der Ablauf setzt keine alten Shellvariablen voraus: Nur der dauerhafte Metadatenpfad wird angegeben; Zeit, Tag, Commit und Nachweisverzeichnis werden daraus validiert und rekonstruiert.
 
 ```bash
+METADATA_FILE="docs/seo/audit-nachweise/welle-1/<LAUF-ID>/deployment-metadata.json"
+test -s "$METADATA_FILE"
+mapfile -t DEPLOY_METADATA < <(
+  node --input-type=module - "$METADATA_FILE" <<'NODE'
+import { readFileSync } from 'node:fs';
+
+const metadata = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+const commitPattern = /^[0-9a-f]{40}$/;
+if (!metadata.deploy_utc || !Number.isFinite(Date.parse(metadata.deploy_utc))) {
+  throw new Error('deploy_utc fehlt oder ist ungültig.');
+}
+if (!metadata.candidate_tag || !commitPattern.test(metadata.candidate_commit || '')) {
+  throw new Error('Kandidaten-Tag oder Kandidaten-Commit ist ungültig.');
+}
+if (!commitPattern.test(metadata.rollback_commit || '')) {
+  throw new Error('Rollback-Commit ist ungültig.');
+}
+if (!/^docs\/seo\/audit-nachweise\/welle-1\/[^/]+$/.test(metadata.evidence_dir || '')) {
+  throw new Error('Nachweisverzeichnis ist ungültig.');
+}
+const elapsedMs = Date.now() - Date.parse(metadata.deploy_utc);
+if (elapsedMs < 48 * 60 * 60 * 1000) {
+  throw new Error(`48-Stunden-Fenster noch nicht erreicht: ${Math.floor(elapsedMs / 3600000)} Stunden.`);
+}
+process.stdout.write([
+  metadata.deploy_utc,
+  metadata.candidate_tag,
+  metadata.candidate_commit,
+  metadata.rollback_commit,
+  metadata.evidence_dir
+].join('\n'));
+NODE
+)
+DEPLOY_UTC="${DEPLOY_METADATA[0]}"
+CANDIDATE_TAG="${DEPLOY_METADATA[1]}"
+KANDIDAT_COMMIT="${DEPLOY_METADATA[2]}"
+ROLLBACK_COMMIT="${DEPLOY_METADATA[3]}"
+NACHWEIS_DIR="${DEPLOY_METADATA[4]}"
+test "$METADATA_FILE" = "$NACHWEIS_DIR/deployment-metadata.json"
 test "$(git rev-parse "${CANDIDATE_TAG}^{commit}")" = "$KANDIDAT_COMMIT"
 npm run audit:seo-recovery -- \
   --base-url https://www.komplettwebdesign.de \
   --out "$NACHWEIS_DIR/seo-live-t48h.json" \
   --fail-on error
-sha256sum "$NACHWEIS_DIR/seo-live-t0.json" "$NACHWEIS_DIR/seo-live-t48h.json" \
+sha256sum \
+  "$NACHWEIS_DIR/deployment-metadata.json" \
+  "$NACHWEIS_DIR/seo-live-t0.json" \
+  "$NACHWEIS_DIR/seo-live-t48h.json" \
   > "$NACHWEIS_DIR/SHA256SUMS"
 sha256sum --check "$NACHWEIS_DIR/SHA256SUMS"
 ```
