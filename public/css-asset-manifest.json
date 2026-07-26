@@ -291,9 +291,9 @@
     "website-tester.css": {
       "source": "website-tester.css",
       "output": "website-tester.min.css",
-      "href": "/website-tester.min.css?v=ca29a8bc4e46",
-      "hash": "ca29a8bc4e46",
-      "bytes": 16436
+      "href": "/website-tester.min.css?v=033bc1a6fcf5",
+      "hash": "033bc1a6fcf5",
+      "bytes": 18865
     }
   }
 }

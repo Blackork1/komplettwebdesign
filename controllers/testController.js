@@ -32,6 +32,7 @@ import {
 } from '../services/brokenLinkTesterLeadService.js';
 import { notifyWebsiteTesterScanCompleted } from '../services/websiteTesterScanNotificationService.js';
 import { t as tError } from '../util/testerI18n.js';
+import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
 const PAGE_I18N = {
   de: {
@@ -789,6 +790,7 @@ export async function testPage(req, res) {
     keywords: copy.keywords,
     canonicalUrl: canonical,
     faq: copy.faq || [],
+    testerMarketingImage: MARKETING_IMAGES.testerOverview,
     seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.website)
   });
 }
@@ -840,6 +842,7 @@ export async function seoTestPage(req, res) {
     keywords: copy.keywords,
     canonicalUrl: canonical,
     faq: copy.faq || [],
+    testerMarketingImage: MARKETING_IMAGES.testerOverview,
     seoExtra: buildTesterSeoExtra(base, canonical, copy, locale, TESTER_SEO_CONFIG.seo)
   });
 }

@@ -1,0 +1,69 @@
+<%
+const testerImage = typeof testerMarketingImage === 'object' && testerMarketingImage
+  ? testerMarketingImage
+  : {
+      src: '/images/site_speed_uplift_de.webp',
+      alt: 'Beispielhafte Auswertung einer Website-Prüfung mit priorisierten technischen Hinweisen'
+    };
+%>
+<section class="wt-section wt-journey" aria-labelledby="tester-journey-title">
+  <div class="wt-shell">
+    <div class="wt-section-heading">
+      <span class="wt-eyebrow"><i class="fa-solid fa-route" aria-hidden="true"></i> <%= isEn ? 'From check to action' : 'Vom Check zur Handlung' %></span>
+      <h2 id="tester-journey-title"><%= isEn ? 'What the free result can — and cannot — tell you' : 'Was dir das kostenlose Ergebnis zeigt – und wo seine Grenze liegt' %></h2>
+      <p><%= isEn ? 'Use the result as a first orientation. You decide whether to implement a point yourself or have the whole website assessed in context.' : 'Nutze das Ergebnis als erste Orientierung. Danach entscheidest du, ob du einen Punkt selbst umsetzt oder die gesamte Website im Zusammenhang prüfen lässt.' %></p>
+    </div>
+
+    <div class="wt-journey__intro">
+      <figure class="wt-journey__media">
+        <img src="<%= testerImage.src %>" alt="<%= testerImage.alt %>" width="960" height="720" loading="lazy" decoding="async">
+      </figure>
+      <div class="wt-journey__answers">
+        <article>
+          <h3><%= isEn ? 'What is checked for free?' : 'Was wird kostenlos geprüft?' %></h3>
+          <p><%= isEn ? 'Publicly accessible signals for indexing, metadata, structure, links, selected technical quality, accessibility, trust and inquiry paths.' : 'Öffentlich erreichbare Signale zu Indexierung, Metadaten, Struktur, Links, ausgewählter Technik, Barrierefreiheit, Vertrauen und Anfragewegen.' %></p>
+        </article>
+        <article>
+          <h3><%= isEn ? 'What is not checked?' : 'Was wird nicht geprüft?' %></h3>
+          <p><%= isEn ? 'Protected accounts, internal business data, legal compliance, long-term ranking development and a complete manual evaluation of every page.' : 'Geschützte Konten, interne Geschäftsdaten, rechtliche Konformität, langfristige Rankingentwicklung und die vollständige manuelle Bewertung jeder Seite.' %></p>
+        </article>
+        <article>
+          <h3><%= isEn ? 'What does a result look like?' : 'Wie sieht ein Ergebnis aus?' %></h3>
+          <p><%= isEn ? 'Each relevant finding receives a status, an explanation, an initial action and a visible limitation.' : 'Jeder relevante Befund erhält einen Status, eine verständliche Einordnung, eine erste Handlung und eine sichtbare Prüfgrenze.' %></p>
+        </article>
+        <article>
+          <h3><%= isEn ? 'What can I do myself?' : 'Was kann ich selbst tun?' %></h3>
+          <p><%= isEn ? 'Simple metadata, broken links, missing alt text and unclear headings can often be corrected with the matching guide and careful review.' : 'Einfache Metadaten, defekte Links, fehlende Alt-Texte und unklare Überschriften kannst du häufig mit dem passenden Ratgeber und einer sorgfältigen Kontrolle selbst korrigieren.' %></p>
+        </article>
+        <article>
+          <h3><%= isEn ? 'When is an individual audit useful?' : 'Wann ist ein individuelles Audit sinnvoll?' %></h3>
+          <p><%= isEn ? 'When several findings interact, visibility has dropped, a relaunch is planned or the right priority cannot be determined automatically.' : 'Wenn mehrere Befunde zusammenwirken, Sichtbarkeit verloren ging, ein Relaunch geplant ist oder die richtige Priorität automatisch nicht sicher bestimmt werden kann.' %></p>
+        </article>
+      </div>
+    </div>
+
+    <article class="wt-example-finding" aria-labelledby="tester-example-finding-title">
+      <div class="wt-example-finding__head">
+        <p class="wt-eyebrow"><%= isEn ? 'Illustrative example' : 'Sachliches Beispiel' %></p>
+        <h3 id="tester-example-finding-title"><%= isEn ? 'How one finding is explained' : 'So wird ein einzelner Befund erklärt' %></h3>
+      </div>
+      <dl>
+        <div><dt><%= isEn ? 'Status' : 'Status' %></dt><dd><%= isEn ? 'Review with high priority' : 'Mit hoher Priorität prüfen' %></dd></div>
+        <div><dt><%= isEn ? 'Detected problem' : 'Gefundenes Problem' %></dt><dd><%= isEn ? 'The main page has no distinct meta description.' : 'Die Hauptseite besitzt keine eigenständige Meta-Description.' %></dd></div>
+        <div><dt><%= isEn ? 'Why it matters' : 'Warum relevant' %></dt><dd><%= isEn ? 'Search engines lack a concise summary and may compose the search snippet from other text.' : 'Suchmaschinen fehlt eine kurze Zusammenfassung und sie können den Suchausschnitt aus anderem Text zusammensetzen.' %></dd></div>
+        <div><dt><%= isEn ? 'First action' : 'Erste Handlung' %></dt><dd><%= isEn ? 'Write a page-specific description that names the offer, target group and region naturally.' : 'Eine seitenspezifische Beschreibung verfassen, die Angebot, Zielgruppe und Region natürlich nennt.' %></dd></div>
+        <div><dt><%= isEn ? 'Limit of the automated check' : 'Grenze der automatischen Prüfung' %></dt><dd><%= isEn ? 'The tester can detect the signal, but cannot guarantee how Google displays or ranks the page.' : 'Der Tester erkennt das Signal, kann aber nicht garantieren, wie Google die Seite darstellt oder einordnet.' %></dd></div>
+      </dl>
+    </article>
+
+    <div class="wt-next-paths" aria-labelledby="tester-next-paths-title">
+      <h3 id="tester-next-paths-title"><%= isEn ? 'Choose your next step' : 'Wähle deinen passenden nächsten Schritt' %></h3>
+      <div class="wt-next-paths__grid">
+        <a href="/ratgeber"><strong><%= isEn ? 'Implement it yourself' : 'Selbst umsetzen' %></strong><span><%= isEn ? 'Use existing guides for individual corrections.' : 'Vorhandene Ratgeber für einzelne Korrekturen nutzen.' %></span></a>
+        <a href="/leistungen/website-audit"><strong><%= isEn ? 'Review the whole website' : 'Website umfassend prüfen' %></strong><span><%= isEn ? 'Assess findings, priorities and interactions manually.' : 'Befunde, Prioritäten und Zusammenhänge manuell bewerten.' %></span></a>
+        <a href="/webdesign-berlin"><strong><%= isEn ? 'Rebuild the website' : 'Website neu aufbauen' %></strong><span><%= isEn ? 'Plan structure, content and technical foundation together.' : 'Struktur, Inhalte und technische Grundlage gemeinsam planen.' %></span></a>
+        <a href="/kontakt?projektart=website-audit"><strong><%= isEn ? 'Discuss the project' : 'Projekt besprechen' %></strong><span><%= isEn ? 'Send the initial situation for a non-binding assessment.' : 'Ausgangslage für eine unverbindliche Einordnung senden.' %></span></a>
+      </div>
+    </div>
+  </div>
+</section>
