@@ -146,6 +146,87 @@ test('Audit behandelt rechtliche Metadaten tolerant und markiert unpassende Spra
   assert.ok(report.violations.some((item) => item.code === 'mixed_language' && item.path === '/angebot'));
 });
 
+test('Audit meldet einen direkten 302-Redirect als fehlerhafte Redirect-Kette', async () => {
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response('<?xml version="1.0"?><urlset></urlset>')],
+    ['https://example.test/alt', response('', 302, { location: '/neu' })],
+    ['https://example.test/neu', response('<html></html>')]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: [{ path: '/alt', state: 'redirect', redirectTo: '/neu', requiredLinks: [] }]
+  });
+
+  assert.ok(report.violations.some((item) => item.code === 'redirect_chain' && item.path === '/alt'));
+});
+
+test('Audit meldet noindex auf einer aktiven deutschen Zielseite als Fehler', async () => {
+  const sitemap = '<?xml version="1.0"?><urlset><url><loc>https://example.test/pakete</loc></url></urlset>';
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/pakete', response(`
+      <html lang="de"><head><title>Webdesign-Pakete für Unternehmen in Berlin</title>
+      <meta name="description" content="${'a'.repeat(130)}"><meta name="robots" content="noindex,follow">
+      <link rel="canonical" href="https://example.test/pakete"></head>
+      <body><h1>Webdesign-Pakete</h1></body></html>
+    `)]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: [{ path: '/pakete', state: 'active', requiredLinks: [] }]
+  });
+
+  assert.ok(report.violations.some((item) => item.code === 'noindex_active_target' && item.severity === 'error'));
+});
+
+test('Audit erlaubt noindex auf den definierten englischen Paketseiten', async () => {
+  const sitemap = '<?xml version="1.0"?><urlset><url><loc>https://example.test/en/pakete</loc></url></urlset>';
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/en/pakete', response(`
+      <html lang="en"><head><title>Website packages for small businesses in Berlin</title>
+      <meta name="description" content="${'a'.repeat(130)}"><meta name="robots" content="noindex,follow">
+      <link rel="canonical" href="https://example.test/en/pakete"></head>
+      <body><h1>Website packages</h1><p>Clear packages for small businesses in Berlin.</p></body></html>
+    `)]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: [{ path: '/en/pakete', state: 'active', requiredLinks: [] }]
+  });
+
+  assert.equal(report.violations.some((item) => item.code === 'noindex_active_target'), false);
+});
+
+test('Audit warnt bei deutschem Inhalt auf einer englischen Paketseite', async () => {
+  const sitemap = '<?xml version="1.0"?><urlset><url><loc>https://example.test/en/pakete</loc></url></urlset>';
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/en/pakete', response(`
+      <html lang="en"><head><title>Website packages for small businesses in Berlin</title>
+      <meta name="description" content="${'a'.repeat(130)}"><meta name="robots" content="noindex,follow">
+      <link rel="canonical" href="https://example.test/en/pakete"></head>
+      <body><h1>Website packages</h1>
+      <p>Unsere Pakete sind für kleine Unternehmen in Berlin gedacht. Wir erstellen deine Website mit klaren Preisen und persönlicher Beratung.</p>
+      </body></html>
+    `)]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: [{ path: '/en/pakete', state: 'active', requiredLinks: [] }]
+  });
+
+  assert.ok(report.violations.some((item) => item.code === 'mixed_language' && item.path === '/en/pakete'));
+});
+
 test('CLI schreibt den Audit-Bericht und erlaubt Fehler mit fail-on none', async (t) => {
   let baseUrl = '';
   const server = http.createServer((request, response) => {

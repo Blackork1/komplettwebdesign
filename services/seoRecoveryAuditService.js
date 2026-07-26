@@ -10,6 +10,7 @@ const ERROR_CODES = new Set([
   'redirect_chain',
   'redirect_target_status',
   'indexable_redirect_source',
+  'noindex_active_target',
   'missing_required_link',
   'orphan_priority_page'
 ]);
@@ -26,6 +27,15 @@ const TITLE_MAX_LENGTH = 60;
 const DESCRIPTION_MIN_LENGTH = 120;
 const DESCRIPTION_MAX_LENGTH = 165;
 const LEGAL_PATH_PATTERN = /^\/(impressum|datenschutz|agb|widerruf|cookie|cookies|haftungsausschluss)(\/|$)/i;
+const ENGLISH_PACKAGE_PATH_PATTERN = /^\/en\/pakete(?:\/|$)/;
+const GERMAN_CONTENT_MARKERS = new Set([
+  'unsere', 'pakete', 'sind', 'für', 'kleine', 'unternehmen', 'gedacht',
+  'wir', 'erstellen', 'deine', 'klaren', 'preisen', 'persönlicher', 'beratung'
+]);
+const ENGLISH_CONTENT_MARKERS = new Set([
+  'clear', 'packages', 'for', 'small', 'businesses', 'website', 'websites',
+  'pricing', 'prices', 'consultation', 'your', 'our', 'with'
+]);
 
 function normalizeUrl(rawUrl, baseUrl) {
   const url = new URL(String(rawUrl), baseUrl);
@@ -42,8 +52,8 @@ function isSuccessfulStatus(status) {
   return status >= 200 && status < 300;
 }
 
-function isRedirectStatus(status) {
-  return status >= 300 && status < 400;
+function isDirectPermanentRedirect(status) {
+  return status === 301;
 }
 
 function isLegalPath(pathname) {
@@ -56,6 +66,26 @@ function robotsIncludesNoindex(robots = '') {
     .split(',')
     .map((item) => item.trim())
     .includes('noindex');
+}
+
+function isEnglishPackagePath(pathname) {
+  return ENGLISH_PACKAGE_PATH_PATTERN.test(pathname);
+}
+
+function markerCount(text, markers) {
+  return (String(text).toLowerCase().match(/\p{L}+/gu) || [])
+    .filter((word) => markers.has(word))
+    .length;
+}
+
+function hasMixedLanguageContent(lang, bodyText) {
+  const language = String(lang).split('-')[0];
+  if (language !== 'de' && language !== 'en') return false;
+
+  const germanMarkers = markerCount(bodyText, GERMAN_CONTENT_MARKERS);
+  const englishMarkers = markerCount(bodyText, ENGLISH_CONTENT_MARKERS);
+  if (language === 'en') return germanMarkers >= 4 && germanMarkers >= englishMarkers;
+  return englishMarkers >= 4 && englishMarkers >= germanMarkers;
 }
 
 function extractPageDetails(html, url, siteOrigin) {
@@ -76,12 +106,14 @@ function extractPageDetails(html, url, siteOrigin) {
   });
 
   const htmlLanguage = ($('html').attr('lang') || '').trim().toLowerCase();
+  const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
   return {
     title: text('title'),
     description: attribute('meta[name="description"]', 'content'),
     robots: attribute('meta[name="robots"]', 'content'),
     canonical: attribute('link[rel="canonical"]', 'href'),
     lang: htmlLanguage,
+    mixedLanguage: hasMixedLanguageContent(htmlLanguage, bodyText),
     h1Count: $('h1').length,
     internalLinks: [...internalLinks].sort()
   };
@@ -138,7 +170,7 @@ function validatePage(page, violations, siteOrigin) {
   }
 
   const language = page.lang.split('-')[0];
-  if (language && language !== 'de' && language !== 'en') {
+  if ((language && language !== 'de' && language !== 'en') || page.mixedLanguage) {
     violations.push(violation('mixed_language', page, { lang: page.lang }));
   }
 }
@@ -261,6 +293,9 @@ export async function auditSeoRecoverySite({
     const targetPage = pages.find((page) => page.path === targetPath);
     const requiredLinks = Array.isArray(target.requiredLinks) ? target.requiredLinks : [];
     if (targetPage && isSuccessfulStatus(targetPage.status)) {
+      if (robotsIncludesNoindex(targetPage.robots) && !isEnglishPackagePath(targetPath)) {
+        violations.push(violation('noindex_active_target', targetPage));
+      }
       const linkedPaths = new Set(targetPage.internalLinks.map((url) => normalizePath(url, normalizedBaseUrl)));
       for (const requiredLink of requiredLinks) {
         const requiredPath = normalizePath(requiredLink, normalizedBaseUrl);
@@ -304,7 +339,7 @@ export async function auditSeoRecoverySite({
       location: resolvedLocation || location
     });
 
-    if (isRedirectStatus(sourcePage.status)) {
+    if (isDirectPermanentRedirect(sourcePage.status)) {
       if (resolvedLocation !== targetUrl) {
         violations.push(violation('redirect_chain', sourcePage, { expectedTarget: targetUrl, location: resolvedLocation || location }));
       }
@@ -333,5 +368,7 @@ export const __testables = {
   normalizePath,
   extractPageDetails,
   isLegalPath,
-  robotsIncludesNoindex
+  robotsIncludesNoindex,
+  isEnglishPackagePath,
+  hasMixedLanguageContent
 };
