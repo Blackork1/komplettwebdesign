@@ -33,7 +33,9 @@ const requiredSectionIds = [
   'servicesOverview',
   'districtPages',
   'comparison',
+  'decisionGuide',
   'packageTeaser',
+  'references',
   'included',
   'notIncluded',
   'process',
@@ -132,6 +134,32 @@ test('webdesign berlin canonical page uses the new central package logic', () =>
   assert.match(webdesignBerlinPage.priceNote, /§ 19 UStG/);
 });
 
+test('webdesign berlin gibt eine konkrete Paketentscheidung und reale Projektbelege', () => {
+  assert.deepEqual(
+    webdesignBerlinPage.decisionGuide.items.map((item) => item.packageId),
+    ['start', 'business', 'wachstum', 'individuell']
+  );
+  assert.match(webdesignBerlinPage.decisionGuide.items[0].text, /kompakte Seite/i);
+  assert.match(webdesignBerlinPage.decisionGuide.items[1].text, /mehreren Seiten|bis zu fünf Seiten/i);
+  assert.match(webdesignBerlinPage.decisionGuide.items[2].text, /Relaunch|mehrere Leistungen/i);
+  assert.match(webdesignBerlinPage.decisionGuide.items[3].text, /Sonderfunktionen|Shop|Buchung/i);
+
+  assert.deepEqual(
+    webdesignBerlinPage.referenceProof.projects.map((project) => project.href),
+    ['/referenzen/zur-alten-backstube', '/referenzen/tm-sauber-mehr']
+  );
+  assert.match(webdesignBerlinPage.runningCosts.title, /Einmalige Projektkosten und laufende Kosten/);
+});
+
+test('webdesign berlin zeigt die Planung mit dokumentiertem Alt-Text und Bildnachweis', () => {
+  const templateSource = readFileSync(new URL('../views/bereiche/webdesign-berlin.ejs', import.meta.url), 'utf8');
+  assert.equal(webdesignBerlinPage.planningImage.src, '/images/editorial/webdesign-planung.webp');
+  assert.match(webdesignBerlinPage.planningImage.alt, /planen gemeinsam/i);
+  assert.match(webdesignBerlinPage.planningImage.source.pageUrl, /^https:\/\/www\.pexels\.com\/photo\//);
+  assert.match(templateSource, /page\.planningImage\.alt/);
+  assert.match(templateSource, /page\.planningImage\.source\.pageUrl/);
+});
+
 test('webdesign berlin canonical page avoids retired pricing and risky promises', () => {
   const pageText = collectText(webdesignBerlinPage).join('\n');
   const forbiddenPatterns = [
@@ -155,10 +183,12 @@ test('webdesign berlin canonical page avoids retired pricing and risky promises'
 });
 
 test('webdesign berlin canonical page keeps german tone consistent', () => {
-  const pageText = collectText(webdesignBerlinPage).join('\n');
+  const { referenceProof, ...editorialPage } = webdesignBerlinPage;
+  const pageText = collectText(editorialPage).join('\n');
   assert.doesNotMatch(pageText, /\bwir\b|\buns\b|\bunser(?:e|er|em|en|es)?\b|\bSie\b/);
   assert.match(pageText, /\bich\b/i);
   assert.match(pageText, /\bdu\b/i);
+  assert.ok(referenceProof.projects.every((project) => project.quote && project.quoteAuthor));
 });
 
 test('webdesign berlin canonical page links only to existing canonical targets', () => {

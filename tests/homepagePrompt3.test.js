@@ -32,13 +32,14 @@ test('homepage prompt 3 renders the requested guided section order', () => {
     'id="passt"',
     'id="leistungen"',
     'id="preise"',
+    'id="branchenwege"',
     'id="enthalten-optional"',
-    'id="technik"',
     'id="ablauf"',
     'id="trust"',
     'id="sichtbarkeit"',
     'id="website-check"',
     'id="faq"',
+    'id="technik"',
     'id="cta"'
   ];
 
@@ -233,7 +234,7 @@ test('homepage trust media links to references and zooms gently on hover', () =>
 
   assert.match(
     trustSection,
-    /<figure class="home-wide-media animate-on-scroll">[\s\S]*?<a href="\/referenzen" class="home-wide-media-link" aria-label="<%= isEn \? 'View references' : 'Referenzen anzeigen' %>">[\s\S]*?<img src="\/images\/review-bg\.webp"[\s\S]*?<span class="home-wide-media-cta" aria-hidden="true"><%= isEn \? 'View references' : 'Referenzen anzeigen' %><\/span>/
+    /<figure class="home-wide-media animate-on-scroll">[\s\S]*?<a href="\/referenzen" class="home-wide-media-link" aria-label="<%= isEn \? 'View references' : 'Referenzen anzeigen' %>">[\s\S]*?homeMarketingImages\.homeTrust[\s\S]*?<span class="home-wide-media-cta" aria-hidden="true"><%= isEn \? 'View references' : 'Referenzen anzeigen' %><\/span>/
   );
   assert.match(homeCss, /\.home-page \.home-wide-media-link\s*{[\s\S]*?display:\s*block[\s\S]*?height:\s*100%[\s\S]*?position:\s*relative/);
   assert.match(homeCss, /\.home-page \.home-wide-media-link img\s*{[\s\S]*?transition:\s*transform 0\.28s ease/);
@@ -248,12 +249,13 @@ test('homepage hero uses the final recommended copy and a quieter CTA hierarchy'
   assert.match(controller, /seoTitle:\s*'Komplett Webdesign Berlin \| Websites für kleine Unternehmen'/);
   assert.match(controller, /Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik\./);
   assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
-  assert.match(controller, /heroTitle:\s*'Komplett Webdesign für kleine Unternehmen in Berlin'/);
-  assert.match(controller, /heroTitle2:\s*'individuell entwickelt und verständlich geplant'/);
-  assert.match(controller, /heroSubline:\s*'Ich verbinde Struktur, Gestaltung und technische Umsetzung zu einer Website, die dein Angebot verständlich präsentiert und eine solide Grundlage für organische Sichtbarkeit schafft\.'/);
+  assert.match(controller, /heroTitle:\s*'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand'/);
+  assert.match(controller, /heroTitle2:\s*''/);
+  assert.match(controller, /heroSubline:\s*'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin\./);
   assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);
   assert.match(controller, /heroBullet2:\s*'Klare Pakete ab \{\{lowestPackagePriceLabel\}\} mit transparentem Leistungsumfang'/);
   assert.match(controller, /heroBullet3:\s*'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen'/);
+  assert.match(controller, /heroCtaPrimary:\s*'Beratungsgespräch anfragen'/);
   assert.match(controller, /heroCtaSecondary:\s*'Pakete ansehen'/);
   assert.match(controller, /heroTrustNote:\s*'Kostenlose Ersteinschätzung'/);
 

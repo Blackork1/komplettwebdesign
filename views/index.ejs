@@ -200,6 +200,13 @@ const structuredDataBlocks = [
 const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' && Array.isArray(heroBridgeHighlights))
   ? heroBridgeHighlights
   : [];
+const homeMarketingImages = (typeof marketingImages !== 'undefined' && marketingImages) ? marketingImages : {};
+const homePackageImages = {
+  start: homeMarketingImages.packageStart,
+  business: homeMarketingImages.packageBusiness,
+  wachstum: homeMarketingImages.packageGrowth,
+  individuell: homeMarketingImages.packageCustom
+};
 %>
 <%- include('partials/head', { structuredDataBlocks, alternateUrls: (typeof alternateUrls !== 'undefined' ? alternateUrls : null), extraCssAssets: ['home.css'] }) %>
 
@@ -246,7 +253,7 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             </div>
             <div class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="<%= isEn ? 'Website examples in desktop, booking and mobile views' : 'Website-Beispiele als Desktop-, Termin- und Mobile-Ansicht' %>">
               <figure class="home-hero-showcase__main">
-                <img src="/images/home-hero-klarblick-desktop.webp" alt="<%= isEn ? 'Desktop website mockup for Klarblick Dental' : 'Desktop-Website-Mockup für Klarblick Dental' %>" width="1586" height="992" fetchpriority="high" loading="eager" decoding="async">
+                <img src="<%= homeMarketingImages.homeHero?.src || '/images/home-hero-klarblick-desktop.webp' %>" alt="<%= isEn ? 'Desktop website mockup for a clearly structured business website' : (homeMarketingImages.homeHero?.alt || 'Desktop-Entwurf einer klar strukturierten Unternehmenswebsite') %>" width="1586" height="992" fetchpriority="high" loading="eager" decoding="async">
               </figure>
               <figure class="home-hero-showcase__detail">
                 <img src="/images/home-hero-klarblick-termin-crop.webp" alt="<%= isEn ? 'Appointment booking and contact section of the Klarblick Dental website' : 'Termin- und Kontaktbereich der Klarblick-Dental-Website' %>" width="1180" height="557" fetchpriority="low" loading="lazy" decoding="async">
@@ -302,16 +309,16 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-user-check" aria-hidden="true"></i><%= isEn ? 'Fit' : 'Für wen das Angebot passt' %></span>
-            <h2><%= isEn ? 'Custom websites for small businesses in Berlin' : 'Individuelle Websites für kleine Unternehmen in Berlin' %></h2>
+            <h2><%= isEn ? 'When an unclear website costs trust and inquiries' : 'Wenn eine unklare Website Vertrauen und Anfragen kostet' %></h2>
             <p class="home-section-lead">
               <% if (isEn) { %>
                 Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.
               <% } else { %>
-                Komplett Webdesign passt, wenn du einen persönlichen Webdesigner suchst und eine Website brauchst, die auf Anfragen, lokale Sichtbarkeit und eine wartbare technische Grundlage ausgerichtet ist.
+                Besucher springen ab, wenn Leistungen, Zielgruppe oder der nächste Schritt nicht schnell erkennbar sind. Ich ordne Inhalte, Bildsprache und Kontaktwege so, dass dein Angebot verständlich wird und eine belastbare Grundlage für organische Reichweite erhält.
               <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
-              <img src="/images/home-fit-beratung.webp" alt="<%= isEn ? 'Personal website consultation for a small local business' : 'Persönliches Website-Beratungsgespräch für ein kleines lokales Unternehmen' %>" width="1280" height="720" loading="lazy" decoding="async">
+              <img src="<%= homeMarketingImages.homeProblem?.src || '/images/home-fit-beratung.webp' %>" alt="<%= isEn ? 'Personal website consultation for a small local business' : (homeMarketingImages.homeProblem?.alt || 'Entscheidungshilfe für ein Website-Projekt') %>" width="1280" height="720" loading="lazy" decoding="async">
               <figcaption>
                 <h3><%= isEn ? 'A website that explains your offer quickly' : 'Ein Auftritt, der dein Angebot schnell verständlich macht' %></h3>
                 <p>
@@ -351,7 +358,7 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-layer-group" aria-hidden="true"></i><%= isEn ? 'Services' : 'Leistungen' %></span>
-            <h2><%= copy.servicesTitle %></h2>
+            <h2><%= isEn ? copy.servicesTitle : 'Die Lösung: Angebot, Inhalte und Technik als ein gemeinsames System' %></h2>
             <p class="home-section-lead">
               <%= isEn
                 ? 'The homepage, package pages and inquiry path are planned together so visitors quickly understand your offer and can contact you without friction.'
@@ -361,7 +368,7 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             <div class="home-card-grid">
               <article class="home-card home-service-card animate-on-scroll">
                 <figure class="home-card-media">
-                  <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1754413079/admin_gallery/eqsitsnild5vbpwp8th4.webp" alt="<%= isEn ? 'Custom web design example' : 'Beispiel für individuelles Webdesign' %>" width="540" height="338" loading="lazy" decoding="async">
+                  <img src="<%= homeMarketingImages.homeSolution?.src || '/images/webdesign-berlin-individuelles-webdesign.webp' %>" alt="<%= isEn ? 'Custom web design example' : (homeMarketingImages.homeSolution?.alt || 'Beispiel für individuelles Webdesign') %>" width="540" height="338" loading="lazy" decoding="async">
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Website strategy and structure' : 'Website-Strategie und Struktur' %></h3>
@@ -431,9 +438,15 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
               <div class="home-pricing-track" data-pricing-slider tabindex="0" aria-label="<%= isEn ? 'Website packages, horizontally scrollable' : 'Website-Pakete, horizontal scrollbar' %>">
                 <% homePackages.forEach((pkg) => { %>
                 <% const packageSlug = String(pkg.slug || '').toLowerCase(); %>
+                <% const packageImage = homePackageImages[packageSlug]; %>
                 <article class="pricing-card home-pricing-card animate-on-scroll<%= packageSlug === 'business' ? ' is-featured' : '' %>" id="pkg-<%= pkg.id %>">
                   <% if (packageSlug === 'business') { %>
                   <span class="home-price-tag"><%= isEn ? 'Often suitable' : 'Häufig passend' %></span>
+                  <% } %>
+                  <% if (packageImage) { %>
+                  <figure class="home-package-media">
+                    <img src="<%= packageImage.src %>" alt="<%= packageImage.alt %>" width="640" height="420" loading="lazy" decoding="async">
+                  </figure>
                   <% } %>
                   <h3><%= pkg.name %></h3>
                   <div class="p1rem">
@@ -460,7 +473,45 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
       </div>
     </section>
 
-    <!-- 6) Enthalten und optional -->
+    <!-- 6) Branchenwege -->
+    <section class="section" id="branchenwege">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-map-signs" aria-hidden="true"></i><%= isEn ? 'Industries' : 'Passende Branchenwege' %></span>
+            <h2><%= isEn ? 'See the website requirements for your industry' : 'Was deine Branche auf der Website sichtbar machen muss' %></h2>
+            <p class="home-section-lead"><%= isEn ? 'Each industry needs different content, images and contact paths.' : 'Ein Handwerksbetrieb braucht andere Belege als ein Blumenladen, Café oder Immobilienbüro. Wähle den Einstieg, der deiner Ausgangslage am nächsten kommt.' %></p>
+            <div class="home-industry-grid">
+              <a class="home-industry-card animate-on-scroll" href="/handwerker">
+                <figure><img src="/images/handwerker-min.webp" alt="Handwerker bei der Ausführung einer lokalen Dienstleistung" width="720" height="540" loading="lazy" decoding="async"></figure>
+                <div><h3>Handwerk</h3><p>Leistungen, Einsatzgebiet, Projektbelege und ein schneller Anfrageweg.</p><span>Branchenlösung ansehen →</span></div>
+              </a>
+              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-immobilienmakler">
+                <figure>
+                  <img src="<%= homeMarketingImages.industryRealEstate?.src || '/images/editorial/immobilienberatung.webp' %>" alt="<%= homeMarketingImages.industryRealEstate?.alt || 'Immobilienberatung mit persönlichen Ansprechpartnern' %>" width="720" height="540" loading="lazy" decoding="async">
+                  <% if (homeMarketingImages.industryRealEstate?.source?.pageUrl) { %><figcaption>Bild: <%= homeMarketingImages.industryRealEstate.source.creator %> / <a href="<%= homeMarketingImages.industryRealEstate.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption><% } %>
+                </figure>
+                <div><h3>Immobilien</h3><p>Vertrauen, lokales Gebiet, Objektdarstellung und getrennte Kontaktwege.</p><span>Branchenlösung ansehen →</span></div>
+              </a>
+              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-blumenladen">
+                <figure>
+                  <img src="<%= homeMarketingImages.industryFlorist?.src || '/images/editorial/floristik.webp' %>" alt="<%= homeMarketingImages.industryFlorist?.alt || 'Floristin arrangiert ein Blumensortiment' %>" width="720" height="540" loading="lazy" decoding="async">
+                  <% if (homeMarketingImages.industryFlorist?.source?.pageUrl) { %><figcaption>Bild: <%= homeMarketingImages.industryFlorist.source.creator %> / <a href="<%= homeMarketingImages.industryFlorist.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption><% } %>
+                </figure>
+                <div><h3>Blumenladen</h3><p>Sortiment, Saisonangebote, Öffnungszeiten und lokale Auffindbarkeit.</p><span>Branchenlösung ansehen →</span></div>
+              </a>
+              <a class="home-industry-card animate-on-scroll" href="/branchen/webdesign-cafe">
+                <figure><img src="/images/cafe-min.webp" alt="Café mit einladender Atmosphäre und sichtbarem Angebot" width="720" height="540" loading="lazy" decoding="async"></figure>
+                <div><h3>Café und Gastronomie</h3><p>Angebot, Atmosphäre, Öffnungszeiten und Reservierung verständlich verbinden.</p><span>Branchenlösung ansehen →</span></div>
+              </a>
+            </div>
+            <p class="home-note"><a class="linkColor" href="/branchen">Alle vorhandenen Branchenlösungen vergleichen</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7) Enthalten und optional -->
     <section class="section" id="enthalten-optional">
       <div class="container">
         <div class="outer-wrapper">
@@ -493,46 +544,6 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
                 : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter sind nicht automatisch im einmaligen Projektpreis enthalten. Sie werden als Folgeaufgabe dokumentiert oder separat kalkuliert.'
               %>
             </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 7) Technischer USP -->
-    <section class="section" id="technik">
-      <div class="container">
-        <div class="outer-wrapper">
-          <div class="inner-wrapper text-left animate-on-scroll">
-            <span class="home-section-kicker"><i class="fas fa-code" aria-hidden="true"></i><%= isEn ? 'Technology' : 'Technik' %></span>
-            <h2><%= isEn ? 'Built with Node.js, EJS, CSS and JavaScript' : 'Entwickelt mit Node.js, EJS, CSS und JavaScript' %></h2>
-            <figure class="home-card-media home-wide-media animate-on-scroll-left">
-              <img src="/images/code.webp" alt="<%= isEn ? 'Node.js, EJS, CSS and JavaScript code' : 'Node.js-, EJS-, CSS- und JavaScript-Code' %>" width="920" height="520" loading="lazy" decoding="async">
-            </figure>
-            <div class="home-split home-tech-grid">
-              <div>
-                <p class="home-section-lead">
-                  <%= isEn
-                    ? 'The website is rendered server-side as HTML and not assembled from a generic builder template. That creates a clean base for performance, structured content and search-engine readability.'
-                    : 'Die Website wird serverseitig als HTML gerendert und nicht aus einem generischen Baukasten-Template zusammengesetzt. Das schafft eine saubere Grundlage für Performance, strukturierte Inhalte und Suchmaschinenlesbarkeit.'
-                  %>
-                </p>
-                <ul class="home-list">
-                  <li><%= isEn ? 'server-rendered HTML with EJS templates.' : 'serverseitig gerendertes HTML mit EJS-Templates.' %></li>
-                  <li><%= isEn ? 'custom CSS and JavaScript instead of overloaded theme logic.' : 'individuelles CSS und JavaScript statt überladener Theme-Logik.' %></li>
-                  <li><%= isEn ? 'clear metadata, headings and internal links in the agreed scope.' : 'klare Metadaten, Überschriften und interne Links im vereinbarten Umfang.' %></li>
-                </ul>
-              </div>
-              <div class="home-card animate-on-scroll-right">
-                <img class="home-card-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
-                <h3><%= isEn ? 'Important boundary' : 'Wichtige Abgrenzung' %></h3>
-                <p>
-                  <%= isEn
-                    ? 'Technical SEO basics improve the foundation. Specific Google positions, inquiry volume or sales results cannot be guaranteed.'
-                    : 'Technische SEO-Grundlagen verbessern die technische Grundlage. Bestimmte Platzierungen bei Google können nicht garantiert werden; auch Anfragen oder Umsätze hängen von Markt, Angebot und Wettbewerb ab.'
-                  %>
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -576,7 +587,7 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
             <p class="home-section-lead"><%= copy.trustSubline %></p>
             <figure class="home-wide-media animate-on-scroll">
               <a href="/referenzen" class="home-wide-media-link" aria-label="<%= isEn ? 'View references' : 'Referenzen anzeigen' %>">
-                <img src="/images/review-bg.webp" alt="<%= isEn ? 'Project preview and reference presentation' : 'Projektvorschau und Referenzdarstellung' %>" width="920" height="520" loading="lazy" decoding="async">
+                <img src="<%= homeMarketingImages.homeTrust?.src || '/images/review-bg.webp' %>" alt="<%= isEn ? 'Project preview and reference presentation' : (homeMarketingImages.homeTrust?.alt || 'Projektvorschau und Referenzdarstellung') %>" width="920" height="520" loading="lazy" decoding="async">
                 <span class="home-wide-media-cta" aria-hidden="true"><%= isEn ? 'View references' : 'Referenzen anzeigen' %></span>
               </a>
             </figure>
@@ -769,6 +780,31 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
       </div>
     </section>
     <% } %>
+
+    <!-- Technische Grundlage bewusst nach Bedarf, Angebot, Belegen und FAQ -->
+    <section class="section" id="technik">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-code" aria-hidden="true"></i><%= isEn ? 'Technology' : 'Technische Grundlage' %></span>
+            <h2><%= isEn ? 'A lean technical foundation' : 'Schlanke Technik, damit Inhalte und Bedienung im Mittelpunkt stehen' %></h2>
+            <div class="home-split home-tech-grid">
+              <figure class="home-card-media home-wide-media animate-on-scroll-left">
+                <img src="/images/code.webp" alt="<%= isEn ? 'Node.js, EJS, CSS and JavaScript code' : 'Quellcode der serverseitig gerenderten Website mit Node.js, EJS, CSS und JavaScript' %>" width="920" height="520" loading="lazy" decoding="async">
+              </figure>
+              <div>
+                <p class="home-section-lead"><%= isEn ? 'Server-rendered HTML, focused CSS and purposeful JavaScript keep the implementation understandable.' : 'Serverseitig gerendertes HTML, gezieltes CSS und dosiertes JavaScript schaffen eine nachvollziehbare Grundlage für Performance, Suchmaschinenlesbarkeit und spätere Erweiterungen.' %></p>
+                <ul class="home-list">
+                  <li><%= isEn ? 'clear HTML structure and metadata.' : 'klare HTML-Struktur, Metadaten und interne Links.' %></li>
+                  <li><%= isEn ? 'responsive layouts without a generic theme.' : 'responsive Layouts ohne überladenes Standard-Theme.' %></li>
+                  <li><%= isEn ? 'no ranking or inquiry guarantees.' : 'keine Ranking-, Anfrage- oder Umsatzgarantien.' %></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- 13) Finaler CTA -->
     <section class="section" id="cta">

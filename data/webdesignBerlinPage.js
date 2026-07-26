@@ -1,5 +1,7 @@
 import { packages, PACKAGE_GLOBAL_NOTES } from './packages.js';
 import ctas from './ctas.js';
+import { MARKETING_IMAGES } from './marketingImages.js';
+import { referenceProjects } from './referenceProjects.js';
 
 const packageTeaserItems = packages.map((pkg) => Object.freeze({
   id: pkg.id,
@@ -18,12 +20,27 @@ const packageTeaserItems = packages.map((pkg) => Object.freeze({
   ctaLabel: pkg.ctaLabel
 }));
 
+const referenceProofProjects = referenceProjects
+  .filter((project) => ['zur-alten-backstube', 'tm-sauber-mehr'].includes(project.slug))
+  .map((project) => Object.freeze({
+    name: project.name,
+    industry: project.industry,
+    href: `/referenzen/${project.slug}`,
+    image: project.image,
+    imageAlt: `Website-Projekt ${project.name} aus dem Bereich ${project.industry}`,
+    startingPoint: project.problem,
+    outcome: project.result[0],
+    quote: project.quote,
+    quoteAuthor: project.quoteAuthor
+  }));
+
 export const webdesignBerlinPage = Object.freeze({
   title: 'Website erstellen lassen Berlin | Webdesign & Preise',
   description: 'Website erstellen lassen in Berlin: individuelles Webdesign für kleine Unternehmen mit klarer Struktur, transparenten Paketen und persönlicher Umsetzung.',
   h1: 'Website erstellen lassen in Berlin',
   canonicalPath: '/webdesign-berlin',
   priceNote: PACKAGE_GLOBAL_NOTES.vatNote,
+  planningImage: MARKETING_IMAGES.webdesignPlanning,
   hero: {
     eyebrow: 'Individuelles Webdesign aus Berlin',
     lead: 'Ich plane und entwickle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister. Leistungen, Inhalte, Pakete und technische Umsetzung werden so geordnet, dass Besucher das Angebot schnell verstehen.',
@@ -179,6 +196,25 @@ export const webdesignBerlinPage = Object.freeze({
       }
     ]
   },
+  decisionGuide: {
+    title: 'Welche Website-Größe passt zu deinem Unternehmen?',
+    lead: 'Wähle nicht nach möglichst vielen Funktionen, sondern nach Angebotsumfang, Zielgruppen und dem nächsten sinnvollen Entwicklungsschritt.',
+    items: packages.map((pkg) => {
+      const cases = {
+        start: 'Eine kompakte Seite für ein klar begrenztes Angebot und einen eindeutigen Kontaktweg.',
+        business: 'Eine Unternehmenswebsite mit mehreren Seiten für Leistungen, Unternehmen und Kontakt.',
+        wachstum: 'Ein umfangreicher Relaunch oder mehrere Leistungen und Zielgruppen mit stärkerer Inhaltsstruktur.',
+        individuell: 'Sonderfunktionen, Shop, Buchung, Schnittstellen oder besondere digitale Abläufe.'
+      };
+      return Object.freeze({
+        packageId: pkg.id,
+        title: pkg.name,
+        text: cases[pkg.id],
+        priceLabel: `{{price.${pkg.id}}}`,
+        href: pkg.canonicalPath
+      });
+    })
+  },
   packageTeaser: {
     title: 'Pakete für Webdesign in Berlin',
     lead: 'Die Pakete sind Orientierung für typische Website-Projekte. Sonderfunktionen, laufende Kosten und Drittanbieter-Dienste werden separat besprochen.',
@@ -187,6 +223,11 @@ export const webdesignBerlinPage = Object.freeze({
       { label: 'Paketübersicht öffnen', href: '/pakete' },
       { label: 'Kosten- und Preisseite öffnen', href: '/webdesign-berlin/kosten-preise-pakete' }
     ]
+  },
+  referenceProof: {
+    title: 'Reale Website-Projekte statt allgemeiner Versprechen',
+    lead: 'Die Beispiele zeigen konkrete Ausgangslagen, umgesetzte Schwerpunkte und qualitative Ergebnisse. Es werden keine unbelegten Reichweiten- oder Umsatzwerte ergänzt.',
+    projects: referenceProofProjects
   },
   included: {
     title: 'Was je nach Paket Teil des Projektumfangs sein kann',
@@ -407,7 +448,9 @@ function requiredSections() {
     { id: 'servicesOverview', label: 'Leistungen' },
     { id: 'districtPages', label: 'Berliner Bezirke' },
     { id: 'comparison', label: 'Vergleich' },
+    { id: 'decisionGuide', label: 'Website-Größe' },
     { id: 'packageTeaser', label: 'Pakete' },
+    { id: 'references', label: 'Referenzen' },
     { id: 'included', label: 'Enthalten' },
     { id: 'notIncluded', label: 'Nicht enthalten' },
     { id: 'process', label: 'Ablauf' },

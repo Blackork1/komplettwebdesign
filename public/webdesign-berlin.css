@@ -238,6 +238,99 @@
   }
 }
 
+.wd-planning-image {
+  border-radius: 24px;
+  margin: clamp(1.4rem, 3vw, 2.3rem) 0;
+  max-height: 520px;
+  overflow: hidden;
+  position: relative;
+}
+
+.wd-planning-image img {
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  width: 100%;
+}
+
+.wd-planning-image figcaption {
+  background: rgba(11, 42, 70, 0.84);
+  bottom: 0;
+  color: #ffffff;
+  font-size: 0.75rem;
+  left: 0;
+  padding: 0.4rem 0.65rem;
+  position: absolute;
+}
+
+.wd-planning-image figcaption a {
+  color: #ffffff;
+}
+
+.wd-decision-card {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.wd-decision-card:is(:hover, :focus-visible) {
+  box-shadow: 0 22px 44px rgba(11, 42, 70, 0.14);
+  transform: translateY(-4px);
+}
+
+.wd-decision-card__price,
+.wd-reference-card__industry {
+  color: var(--wd-accent);
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+}
+
+.wd-reference-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.wd-reference-card figure {
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  overflow: hidden;
+}
+
+.wd-reference-card figure img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease;
+  width: 100%;
+}
+
+.wd-reference-card:hover figure img {
+  transform: scale(1.03);
+}
+
+.wd-reference-card__body {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.wd-reference-card blockquote {
+  border-left: 4px solid var(--wd-accent);
+  color: var(--wd-muted);
+  margin: 1rem 0;
+  padding-left: 1rem;
+}
+
+.wd-reference-card cite {
+  display: block;
+  font-size: 0.84rem;
+  font-style: normal;
+  font-weight: 800;
+  margin-top: 0.4rem;
+}
+
 .webdesign-berlin .wd-hero__copy.kwd-scroll-reveal {
   filter: none !important;
   opacity: 1 !important;

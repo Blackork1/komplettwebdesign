@@ -175,6 +175,10 @@ const wdIndustryImages = [
         <span class="wd-chip animate-on-scroll">Erklärung</span>
         <h2 id="wd-video-title" class="animate-on-scroll">Was wir im Erstgespräch für dein Webdesign-Projekt klären</h2>
         <p class="wd-lead animate-on-scroll">Im Erstgespräch für dein Webdesign in Berlin ordne ich deine Vorstellungen, die vorhandenen Voraussetzungen und den realistischen Projektumfang ein. So wird früh klar, ob ein kompaktes Start-Paket, eine Business-Website, ein Wachstum-Projekt oder ein individuelles Angebot sinnvoll ist.</p>
+        <figure class="wd-planning-image animate-on-scroll">
+          <img src="<%= page.planningImage.src %>" alt="<%= page.planningImage.alt %>" width="1600" height="2400" loading="lazy" decoding="async">
+          <figcaption>Bild: <%= page.planningImage.source.creator %> / <a href="<%= page.planningImage.source.pageUrl %>" rel="noopener noreferrer">Pexels</a></figcaption>
+        </figure>
         <div class="wd-grid wd-grid--three wd-consultation-grid">
           <article class="wd-card wd-consultation-step animate-on-scroll">
             <div class="wd-consultation-step__head">
@@ -390,6 +394,26 @@ const wdIndustryImages = [
     </div>
   </section>
 
+  <section id="decisionGuide" class="wd-section" aria-labelledby="wd-decision-title">
+    <div class="wd-container">
+      <div class="wd-section-head animate-on-scroll">
+        <span class="wd-chip">Entscheidungshilfe</span>
+        <h2 id="wd-decision-title"><%= page.decisionGuide.title %></h2>
+        <p class="wd-lead"><%= page.decisionGuide.lead %></p>
+      </div>
+      <div class="wd-grid wd-grid--two wd-decision-grid">
+        <% page.decisionGuide.items.forEach(function (item) { %>
+          <a class="wd-card wd-decision-card animate-on-scroll" href="<%= item.href %>">
+            <span class="wd-decision-card__price"><%= item.priceLabel %></span>
+            <h3><%= item.title %></h3>
+            <p><%= item.text %></p>
+            <span class="wd-card-title-link">Paket im Detail ansehen <span aria-hidden="true">→</span></span>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
   <section id="packageTeaser" class="wd-section wd-section--soft" aria-labelledby="wd-packages-title">
     <div class="wd-container">
       <div class="wd-section-head animate-on-scroll">
@@ -434,6 +458,33 @@ const wdIndustryImages = [
       <div class="wd-link-row wd-link-row--split wd-link-row--center animate-on-scroll">
         <% page.packageTeaser.links.forEach(function (link) { %>
           <a href="<%= link.href %>"><%= link.label %></a>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section id="references" class="wd-section" aria-labelledby="wd-references-title">
+    <div class="wd-container">
+      <div class="wd-section-head animate-on-scroll">
+        <span class="wd-chip">Reale Projekte</span>
+        <h2 id="wd-references-title"><%= page.referenceProof.title %></h2>
+        <p class="wd-lead"><%= page.referenceProof.lead %></p>
+      </div>
+      <div class="wd-grid wd-grid--two wd-reference-grid">
+        <% page.referenceProof.projects.forEach(function (project) { %>
+          <article class="wd-card wd-reference-card animate-on-scroll">
+            <figure>
+              <img src="<%= project.image %>" alt="<%= project.imageAlt %>" width="960" height="600" loading="lazy" decoding="async">
+            </figure>
+            <div class="wd-reference-card__body">
+              <span class="wd-reference-card__industry"><%= project.industry %></span>
+              <h3><%= project.name %></h3>
+              <p><strong>Ausgangslage:</strong> <%= project.startingPoint %></p>
+              <p><strong>Ergebnis:</strong> <%= project.outcome %></p>
+              <blockquote>„<%= project.quote %>“ <cite>– <%= project.quoteAuthor %></cite></blockquote>
+              <a class="wd-card-title-link" href="<%= project.href %>">Projekt im Detail ansehen <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
         <% }) %>
       </div>
     </div>

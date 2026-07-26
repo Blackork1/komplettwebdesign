@@ -8,6 +8,7 @@ import {
   interpolatePricingTokens
 } from '../util/pricingViewModel.js';
 import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
+import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
 // Öffentliches Google-Profil (aus sameAs im JSON-LD) – zentral hier gepflegt,
 // damit Trust-Sektion und "Alle Bewertungen"-Button konsistent bleiben.
@@ -110,13 +111,13 @@ const HOMEPAGE_I18N = {
     ogTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
     ogDescription: 'Individuelle Websites für kleine Unternehmen in Berlin mit klaren Leistungen, transparenten Paketen und persönlicher Umsetzung.',
     heroBadge: 'Komplett Webdesign aus Berlin',
-    heroTitle: 'Komplett Webdesign für kleine Unternehmen in Berlin',
-    heroTitle2: 'individuell entwickelt und verständlich geplant',
-    heroSubline: 'Ich verbinde Struktur, Gestaltung und technische Umsetzung zu einer Website, die dein Angebot verständlich präsentiert und eine solide Grundlage für organische Sichtbarkeit schafft.',
+    heroTitle: 'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand',
+    heroTitle2: '',
+    heroSubline: 'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin. Mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
     heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
-    heroCtaPrimary: 'Website-Projekt anfragen',
+    heroCtaPrimary: 'Beratungsgespräch anfragen',
     heroCtaSecondary: 'Pakete ansehen',
     heroTrustNote: 'Kostenlose Ersteinschätzung',
     heroBadge1: 'Start {{price.start}}',
@@ -395,6 +396,7 @@ export async function getIndex(req, res) {
       googleReviewUrl: GOOGLE_REVIEW_URL,
       faq: homepageFaq,
       heroBridgeHighlights,
+      marketingImages: MARKETING_IMAGES,
       lowestPackagePriceLabel: localizedLowestPackagePriceLabel,
       lng,
       copy,
