@@ -202,15 +202,17 @@ function validatePage(page, violations, siteOrigin) {
 
   if (page.h1Count !== 1) violations.push(violation('h1_count', page, { h1Count: page.h1Count }));
 
-  if (!isLegalPath(page.path)) {
-    if (!page.title) {
-      violations.push(violation('title_missing', page));
-    } else if (page.title.length < TITLE_MIN_LENGTH || page.title.length > TITLE_MAX_LENGTH) {
+  if (!page.title) {
+    violations.push(violation('title_missing', page));
+  } else if (!isLegalPath(page.path)) {
+    if (page.title.length < TITLE_MIN_LENGTH || page.title.length > TITLE_MAX_LENGTH) {
       violations.push(violation('title_length', page, { length: page.title.length }));
     }
-    if (!page.description) {
-      violations.push(violation('description_missing', page));
-    } else if (page.description.length < DESCRIPTION_MIN_LENGTH || page.description.length > DESCRIPTION_MAX_LENGTH) {
+  }
+  if (!page.description) {
+    violations.push(violation('description_missing', page));
+  } else if (!isLegalPath(page.path)) {
+    if (page.description.length < DESCRIPTION_MIN_LENGTH || page.description.length > DESCRIPTION_MAX_LENGTH) {
       violations.push(violation('description_length', page, { length: page.description.length }));
     }
   }
@@ -283,7 +285,6 @@ function buildSummary(pages, redirects, violations) {
 async function validateHreflangs({
   pages,
   load,
-  siteOrigin,
   violations
 }) {
   for (const page of pages.filter((item) => isSuccessfulStatus(item.status))) {
@@ -313,8 +314,7 @@ async function validateHreflangs({
       }
 
       const targetUrl = new URL(alternate.targetUrl);
-      if (targetUrl.origin !== siteOrigin) continue;
-      const target = await load(alternate.targetUrl);
+      const target = await load(targetUrl.toString());
       if (!isSuccessfulStatus(target.page.status)) {
         violations.push(violation('hreflang_target_status', page, {
           hreflang: alternate.language,
@@ -336,9 +336,24 @@ async function validateHreflangs({
         }
       }
 
-      const reciprocal = target.page.hreflangs.some((candidate) => (
-        candidate.targetUrl === page.url
-      ));
+      const sourceLanguages = new Set(page.hreflangs
+        .filter((candidate) => (
+          candidate.targetUrl === page.url
+          && isValidHreflang(candidate.language)
+          && normalizeHreflang(candidate.language) !== 'x-default'
+        ))
+        .map((candidate) => normalizeHreflang(candidate.language)));
+      const reciprocal = target.page.hreflangs.some((candidate) => {
+        if (candidate.targetUrl !== page.url) return false;
+        if (normalizedLanguage === 'x-default') return true;
+
+        const candidateLanguage = normalizeHreflang(candidate.language);
+        if (!isValidHreflang(candidate.language) || candidateLanguage === 'x-default') return false;
+        if (sourceLanguages.size > 0) return sourceLanguages.has(candidateLanguage);
+
+        const sourceLanguage = String(page.lang || '').split('-')[0];
+        return Boolean(sourceLanguage) && candidateLanguage.split('-')[0] === sourceLanguage;
+      });
       if (!reciprocal) {
         violations.push(violation('hreflang_not_reciprocal', page, {
           hreflang: alternate.language,
@@ -428,7 +443,7 @@ export async function auditSeoRecoverySite({
     validatePage(page, violations, siteOrigin);
   }
   validateUniqueMetadata(pages, violations);
-  await validateHreflangs({ pages, load, siteOrigin, violations });
+  await validateHreflangs({ pages, load, violations });
 
   const incomingSources = new Map(sitemapUrls.map((url) => [url, new Set()]));
   for (const page of pages) {

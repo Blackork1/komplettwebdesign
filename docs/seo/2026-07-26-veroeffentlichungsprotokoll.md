@@ -183,8 +183,25 @@ Erst nach bestandenem R1-Gate wird auf dem Welle-1-Release-Branch ein neuer Code
 ```bash
 set -euo pipefail
 R1_GATE_DIR="docs/seo/audit-nachweise/redirect-entscheidungen/R1/<UTC-Zeitstempel>"
-for DATEI in gsc-url-metriken.csv backlinks.csv inhaltsvergleich.md interne-links.json zielpruefung.json entscheidung.md SHA256SUMS; do
+NACHWEISDATEIEN=(
+  gsc-url-metriken.csv
+  backlinks.csv
+  inhaltsvergleich.md
+  interne-links.json
+  zielpruefung.json
+  entscheidung.md
+)
+test -s "$R1_GATE_DIR/SHA256SUMS"
+for DATEI in "${NACHWEISDATEIEN[@]}"; do
   test -s "$R1_GATE_DIR/$DATEI"
+  awk -v erwartet="$DATEI" '
+    {
+      name = $0
+      sub(/^[[:xdigit:]]{64}[[:space:]]+\*?/, "", name)
+      if (name == erwartet) gefunden = 1
+    }
+    END { exit gefunden ? 0 : 1 }
+  ' "$R1_GATE_DIR/SHA256SUMS" || exit 1
 done
 grep -Fxq 'Entscheidung: FREIGEGEBEN' "$R1_GATE_DIR/entscheidung.md"
 (cd "$R1_GATE_DIR" && sha256sum --check SHA256SUMS)
@@ -216,8 +233,25 @@ Welle 2 wird aus dem freigegebenen Welle-1-Kandidaten erstellt und ergänzt auss
 ```bash
 set -euo pipefail
 R2_GATE_DIR="docs/seo/audit-nachweise/redirect-entscheidungen/R2/<UTC-Zeitstempel>"
-for DATEI in gsc-url-metriken.csv backlinks.csv inhaltsvergleich.md interne-links.json zielpruefung.json entscheidung.md SHA256SUMS; do
+NACHWEISDATEIEN=(
+  gsc-url-metriken.csv
+  backlinks.csv
+  inhaltsvergleich.md
+  interne-links.json
+  zielpruefung.json
+  entscheidung.md
+)
+test -s "$R2_GATE_DIR/SHA256SUMS"
+for DATEI in "${NACHWEISDATEIEN[@]}"; do
   test -s "$R2_GATE_DIR/$DATEI"
+  awk -v erwartet="$DATEI" '
+    {
+      name = $0
+      sub(/^[[:xdigit:]]{64}[[:space:]]+\*?/, "", name)
+      if (name == erwartet) gefunden = 1
+    }
+    END { exit gefunden ? 0 : 1 }
+  ' "$R2_GATE_DIR/SHA256SUMS" || exit 1
 done
 grep -Fxq 'Entscheidung: FREIGEGEBEN' "$R2_GATE_DIR/entscheidung.md"
 (cd "$R2_GATE_DIR" && sha256sum --check SHA256SUMS)

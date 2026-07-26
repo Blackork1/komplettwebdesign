@@ -164,6 +164,35 @@ test('Audit behandelt rechtliche Metadaten tolerant und markiert unpassende Spra
   assert.ok(report.violations.some((item) => item.code === 'mixed_language' && item.path === '/angebot'));
 });
 
+test('Audit meldet fehlende Metadaten auch auf Rechtsseiten als Fehler', async () => {
+  const sitemap = '<?xml version="1.0"?><urlset><url><loc>https://example.test/impressum</loc></url></urlset>';
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/impressum', response(`
+      <html lang="de"><head>
+      <link rel="canonical" href="https://example.test/impressum"></head>
+      <body><h1>Impressum</h1></body></html>
+    `)]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: []
+  });
+
+  assert.ok(report.violations.some((item) => (
+    item.code === 'title_missing'
+    && item.path === '/impressum'
+    && item.severity === 'error'
+  )));
+  assert.ok(report.violations.some((item) => (
+    item.code === 'description_missing'
+    && item.path === '/impressum'
+    && item.severity === 'error'
+  )));
+});
+
 test('Audit meldet einen direkten 302-Redirect als fehlerhafte Redirect-Kette', async () => {
   const pages = new Map([
     ['https://example.test/sitemap.xml', response('<?xml version="1.0"?><urlset></urlset>')],
@@ -330,13 +359,13 @@ test('Audit akzeptiert valide gegenseitige Hreflang-Paare', async () => {
     <url><loc>https://example.test/en</loc></url>
   </urlset>`;
   const deAlternates = `
-    <link rel="alternate" hreflang="de-DE" href="https://example.test/de">
-    <link rel="alternate" hreflang="en-US" href="https://example.test/en">
-    <link rel="alternate" hreflang="x-default" href="https://example.test/de">`;
+    <link rel="alternate" hreflang="de-DE" href="https://example.test/de/">
+    <link rel="alternate" hreflang="en-US" href="https://example.test/en/">
+    <link rel="alternate" hreflang="x-default" href="https://example.test/de/">`;
   const enAlternates = `
-    <link rel="alternate" hreflang="en-US" href="https://example.test/en">
-    <link rel="alternate" hreflang="de-DE" href="https://example.test/de">
-    <link rel="alternate" hreflang="x-default" href="https://example.test/de">`;
+    <link rel="alternate" hreflang="en-US" href="https://example.test/en/">
+    <link rel="alternate" hreflang="de-DE" href="https://example.test/de/">
+    <link rel="alternate" hreflang="x-default" href="https://example.test/de/">`;
   const pages = new Map([
     ['https://example.test/sitemap.xml', response(sitemap)],
     ['https://example.test/de', response(validPage({
@@ -361,6 +390,77 @@ test('Audit akzeptiert valide gegenseitige Hreflang-Paare', async () => {
   });
 
   assert.equal(report.violations.some((item) => item.code.startsWith('hreflang_')), false);
+});
+
+test('Audit akzeptiert einen x-default-Rücklink nicht als sprachlich reziprokes Gegenpaar', async () => {
+  const sitemap = `<?xml version="1.0"?><urlset>
+    <url><loc>https://example.test/en</loc></url>
+    <url><loc>https://example.test/de</loc></url>
+  </urlset>`;
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/en', response(validPage({
+      path: '/en',
+      lang: 'en',
+      head: `
+        <link rel="alternate" hreflang="en-US" href="https://example.test/en">
+        <link rel="alternate" hreflang="de-DE" href="https://example.test/de">`,
+      title: 'English source page with an incomplete reciprocal pair',
+      description: `${'E'.repeat(130)}`
+    }))],
+    ['https://example.test/de', response(validPage({
+      path: '/de',
+      head: `
+        <link rel="alternate" hreflang="de-DE" href="https://example.test/de">
+        <link rel="alternate" hreflang="x-default" href="https://example.test/en">`,
+      title: 'Deutsche Zielseite ohne englisch annotiertes Gegenpaar',
+      description: `${'D'.repeat(130)}`
+    }))]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: []
+  });
+
+  assert.ok(report.violations.some((item) => (
+    item.code === 'hreflang_not_reciprocal'
+    && item.path === '/en'
+    && item.hreflang === 'de-DE'
+    && item.severity === 'error'
+  )));
+});
+
+test('Audit prüft auch externe Hreflang-Ziele auf Erreichbarkeit', async () => {
+  const sitemap = '<?xml version="1.0"?><urlset><url><loc>https://example.test/en</loc></url></urlset>';
+  const pages = new Map([
+    ['https://example.test/sitemap.xml', response(sitemap)],
+    ['https://example.test/en', response(validPage({
+      path: '/en',
+      lang: 'en',
+      head: `
+        <link rel="alternate" hreflang="en-US" href="https://example.test/en">
+        <link rel="alternate" hreflang="de-DE" href="https://external.test/de">`,
+      title: 'English source page with an unreachable external alternate',
+      description: `${'X'.repeat(130)}`
+    }))],
+    ['https://external.test/de', response('', 404)]
+  ]);
+
+  const report = await auditSeoRecoverySite({
+    baseUrl: 'https://example.test',
+    fetchImpl: async (url) => pages.get(String(url)) || response('', 404),
+    targets: []
+  });
+
+  assert.ok(report.violations.some((item) => (
+    item.code === 'hreflang_target_status'
+    && item.path === '/en'
+    && item.href === 'https://external.test/de'
+    && item.targetStatus === 404
+    && item.severity === 'error'
+  )));
 });
 
 test('Audit meldet ungültige, sprachlich falsche und nicht gegenseitige Hreflang-Verweise', async () => {

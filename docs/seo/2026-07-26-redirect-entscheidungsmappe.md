@@ -106,16 +106,26 @@ Die Freigabe ist nur gültig, wenn alle Dateien vorhanden sind und die Prüfsumm
 ```bash
 set -euo pipefail
 GATE_DIR="docs/seo/audit-nachweise/redirect-entscheidungen/<R1-oder-R2>/<UTC-Zeitstempel>"
-for DATEI in \
-  gsc-url-metriken.csv \
-  backlinks.csv \
-  inhaltsvergleich.md \
-  interne-links.json \
-  zielpruefung.json \
-  entscheidung.md \
-  SHA256SUMS
+NACHWEISDATEIEN=(
+  gsc-url-metriken.csv
+  backlinks.csv
+  inhaltsvergleich.md
+  interne-links.json
+  zielpruefung.json
+  entscheidung.md
+)
+test -s "$GATE_DIR/SHA256SUMS"
+for DATEI in "${NACHWEISDATEIEN[@]}"
 do
   test -s "$GATE_DIR/$DATEI"
+  awk -v erwartet="$DATEI" '
+    {
+      name = $0
+      sub(/^[[:xdigit:]]{64}[[:space:]]+\*?/, "", name)
+      if (name == erwartet) gefunden = 1
+    }
+    END { exit gefunden ? 0 : 1 }
+  ' "$GATE_DIR/SHA256SUMS" || exit 1
 done
 grep -Fxq 'Entscheidung: FREIGEGEBEN' "$GATE_DIR/entscheidung.md"
 (cd "$GATE_DIR" && sha256sum --check SHA256SUMS)
