@@ -26,6 +26,17 @@ test('parseBlogPage normalisiert fehlende, ungültige und nicht-positive Werte',
   assert.equal(blogController.parseBlogPage('nicht-zahl'), 1);
 });
 
+test('parseBlogPage akzeptiert nur vollständige sichere positive Ganzzahlen', () => {
+  assert.equal(blogController.parseBlogPage('2abc'), 1);
+  assert.equal(blogController.parseBlogPage('2.5'), 1);
+  assert.equal(blogController.parseBlogPage(' 2 '), 1);
+  assert.equal(blogController.parseBlogPage(['2']), 1);
+  assert.equal(blogController.parseBlogPage({ page: '2' }), 1);
+  assert.equal(blogController.parseBlogPage(String(Number.MAX_SAFE_INTEGER)), Number.MAX_SAFE_INTEGER);
+  assert.equal(blogController.parseBlogPage(String(Number.MAX_SAFE_INTEGER + 1)), 1);
+  assert.equal(blogController.parseBlogPage('9'.repeat(200)), 1);
+});
+
 test('Blogseite zwei nutzt den absoluten Offset und seitenbezogene Metadaten', async () => {
   const originals = {
     findPage: BlogPostModel.findPage,
@@ -80,7 +91,11 @@ test('Blogseiten außerhalb des Bereichs liefern die 404-Seite', async () => {
     countPublished: BlogPostModel.countPublished,
     findFeatured: BlogPostModel.findFeatured
   };
-  BlogPostModel.findPage = async () => [];
+  let findPageCalls = 0;
+  BlogPostModel.findPage = async () => {
+    findPageCalls += 1;
+    throw new Error('Für eine Seite außerhalb des Bereichs darf keine OFFSET-Abfrage laufen.');
+  };
   BlogPostModel.countPublished = async () => 11;
   BlogPostModel.findFeatured = async () => [];
 
@@ -107,6 +122,7 @@ test('Blogseiten außerhalb des Bereichs liefern die 404-Seite', async () => {
   }
 
   assert.equal(statusCode, 404);
+  assert.equal(findPageCalls, 0);
   assert.deepEqual(rendered, {
     view: '404',
     values: {
@@ -114,4 +130,43 @@ test('Blogseiten außerhalb des Bereichs liefern die 404-Seite', async () => {
       description: 'Die angeforderte Blogseite existiert nicht.'
     }
   });
+});
+
+test('extrem große, aber sichere Seitenzahlen lösen keine OFFSET-Abfrage aus', async () => {
+  const originals = {
+    findPage: BlogPostModel.findPage,
+    countPublished: BlogPostModel.countPublished,
+    findFeatured: BlogPostModel.findFeatured
+  };
+  let findPageCalls = 0;
+  BlogPostModel.findPage = async () => {
+    findPageCalls += 1;
+    throw new Error('Für eine unerreichbare Seite darf keine OFFSET-Abfrage laufen.');
+  };
+  BlogPostModel.countPublished = async () => 25;
+  BlogPostModel.findFeatured = async () => [];
+
+  let statusCode;
+  try {
+    await blogController.listPosts(
+      { query: { page: String(Number.MAX_SAFE_INTEGER) } },
+      {
+        locals: {},
+        status(value) {
+          statusCode = value;
+          return this;
+        },
+        render(view, values) {
+          return { view, values };
+        }
+      }
+    );
+  } finally {
+    BlogPostModel.findPage = originals.findPage;
+    BlogPostModel.countPublished = originals.countPublished;
+    BlogPostModel.findFeatured = originals.findFeatured;
+  }
+
+  assert.equal(statusCode, 404);
+  assert.equal(findPageCalls, 0);
 });

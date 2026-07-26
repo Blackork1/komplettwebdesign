@@ -13,8 +13,12 @@ function parseNonNegativeInteger(value, fallback = 0) {
 }
 
 export function parseBlogPage(value) {
-  const page = Number.parseInt(String(value || '1'), 10);
-  return Number.isInteger(page) && page > 0 ? page : 1;
+  if (value === undefined || value === null || value === '') return 1;
+  if (typeof value !== 'string' && typeof value !== 'number') return 1;
+  const rawValue = String(value);
+  if (!/^[1-9]\d*$/.test(rawValue)) return 1;
+  const page = Number(rawValue);
+  return Number.isSafeInteger(page) ? page : 1;
 }
 
 function renderPostCard(res, post, idx) {
@@ -31,12 +35,7 @@ function renderPostCard(res, post, idx) {
 
 export async function listPosts(req, res) {
   const page = parseBlogPage(req.query.page);
-  const offset = (page - 1) * BLOG_PAGE_SIZE;
-  const [rawPosts, totalPosts, rawFeaturedPosts] = await Promise.all([
-    BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset }),
-    BlogPostModel.countPublished(),
-    BlogPostModel.findFeatured(5)
-  ]);
+  const totalPosts = await BlogPostModel.countPublished();
   const totalPages = Math.max(1, Math.ceil(totalPosts / BLOG_PAGE_SIZE));
   if (page > totalPages) {
     return res.status(404).render('404', {
@@ -44,6 +43,11 @@ export async function listPosts(req, res) {
       description: 'Die angeforderte Blogseite existiert nicht.'
     });
   }
+  const offset = (page - 1) * BLOG_PAGE_SIZE;
+  const [rawPosts, rawFeaturedPosts] = await Promise.all([
+    BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset }),
+    BlogPostModel.findFeatured(5)
+  ]);
 
   const pricing = res.locals.packagePricing || {};
   const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, pricing));

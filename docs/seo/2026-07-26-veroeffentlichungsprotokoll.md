@@ -4,7 +4,7 @@
 
 **Branch:** `codex/seo-reichweiten-sanierung`
 
-**Geprüfter Ausgangs-Commit:** `cb12b2d`
+**Prüfstand:** wird für jeden Kandidaten reproduzierbar aus dem annotierten Kandidaten-Tag ermittelt; der aktuelle Branch-`HEAD` ist kein Freigabenachweis
 
 **Gesamtstatus:** Nicht zur Veröffentlichung freigegeben
 
@@ -14,12 +14,27 @@ Dieses Dokument ist das Abnahme- und Deploymentprotokoll für die gestaffelte Ve
 
 | Prüfung | Befehl | Ergebnis | Status |
 | --- | --- | --- | --- |
-| Vollständige Testsuite | `OPENAI_API_KEY=test-only-placeholder npm test` | 2.168 Tests: 2.149 bestanden, 0 fehlgeschlagen, 19 übersprungen; Exitcode 0 | Bestanden |
-| Produktions-Build | `npm run build` | 42 CSS-Quelldateien gebaut; Manifest unverändert; Exitcode 0 | Bestanden |
-| Arbeitsbaum vor der Dokumentation | `git status --short` | Sauber | Bestanden |
-| Patchprüfung vor der Dokumentation | `git diff --check` | Kein Befund | Bestanden |
+| Vollständige Testsuite | `OPENAI_API_KEY=test-only-placeholder npm test` | Historischer Lauf war grün; für den Kandidaten zwingend neu ausführen und unverändert archivieren | Offen je Kandidat |
+| Produktions-Build | `npm run build` | Historischer Lauf war grün; für den Kandidaten zwingend neu ausführen und unverändert archivieren | Offen je Kandidat |
+| Arbeitsbaum | `git status --short` | Muss für den Kandidaten leer sein | Offen je Kandidat |
+| Patchprüfung | `git diff --check` | Muss für den Kandidaten ohne Befund sein | Offen je Kandidat |
 
-Die übersprungenen Tests sind als solche ausgewiesen und werden nicht als bestanden gezählt. Test und Build belegen den statisch und isoliert prüfbaren Codestand, ersetzen aber weder den vollständigen lokalen Audit mit Datenbank noch einen Live-Audit.
+Die frühere absolute Testanzahl wird nicht als aktueller Nachweis fortgeschrieben. Stattdessen wird der unveränderliche Prüfcommit dynamisch ermittelt und die vollständige Ausgabe pro Kandidat archiviert:
+
+```bash
+set -euo pipefail
+KANDIDAT_COMMIT="$(git rev-parse "${CANDIDATE_TAG}^{commit}")"
+test "$(git rev-parse HEAD)" = "$KANDIDAT_COMMIT"
+test -z "$(git status --short)"
+NACHWEIS_DIR="docs/seo/audit-nachweise/welle-<N>/<UTC-Zeitstempel>-${KANDIDAT_COMMIT}"
+mkdir -p "$NACHWEIS_DIR"
+printf '%s\n' "$KANDIDAT_COMMIT" > "$NACHWEIS_DIR/gepruefter-commit.txt"
+OPENAI_API_KEY=test-only-placeholder npm test 2>&1 | tee "$NACHWEIS_DIR/npm-test.txt"
+npm run build 2>&1 | tee "$NACHWEIS_DIR/npm-build.txt"
+git diff --check 2>&1 | tee "$NACHWEIS_DIR/git-diff-check.txt"
+```
+
+Übersprungene Tests werden nicht als bestanden gezählt. Test und Build belegen den statisch und isoliert prüfbaren Codestand, ersetzen aber weder den vollständigen lokalen Audit mit Datenbank noch einen Live-Audit.
 
 ## Lokaler vollständiger Audit
 
@@ -134,6 +149,7 @@ Eine Welle darf erst veröffentlicht werden, wenn:
 5. der Content-Agent weiterhin im Betriebsmodus `review` läuft und Auto-Publish aus ist,
 6. der Deploymentprozess den Commit aus dem Kandidaten-Tag verwendet und nicht den jeweils aktuellen `HEAD`,
 7. nach dem Deployment der Live-Audit 0 Fehler meldet und dauerhaft mit Datum, Commit, Pfad und Prüfsumme archiviert ist.
+8. für jeden enthaltenen Redirect der vollständige R1- beziehungsweise R2-Nachweis aus der [Redirect-Entscheidungsmappe](2026-07-26-redirect-entscheidungsmappe.md) vorliegt.
 
 In den ersten acht Wochen werden keine neuen SEO-Zielseiten veröffentlicht. Es gibt keine massenhafte URL-Migration und keine Ranking-, Besucher- oder Anfragegarantie.
 
@@ -143,8 +159,8 @@ Der aktuelle Entwicklungsbranch ist kein pauschaler Deploymentkandidat. Für jed
 
 | Welle | Einzuschließende Tasks | Auszuschließende Tasks | Quellbereich |
 | --- | --- | --- | --- |
-| 1 | Tasks 1–4 und ein separat erzeugter Code-only-Backport der Sitemap-404-Korrektur | Tasks 5–11 und sämtliche Task-12-Dokumentation | `8172029..7960c61` plus neuer Backport-Commit mit exakt zwei Dateien |
-| 2 | bereits freigegebene Welle 1 sowie Tasks 5–9 | Tasks 10–11; reine Task-12-Dokumentation | `7960c61..1772a13` auf dem Welle-1-Kandidaten |
+| 1 | Tasks 1–4 und ein separat erzeugter Code-only-Backport der Sitemap-404-Korrektur, aber Task 3 erst nach R1-Freigabe | Bis R1: Redirectcommits `dce016a` und `010cac4`; außerdem Tasks 5–11 und sämtliche Task-12-Dokumentation | erst nach R1: `8172029..7960c61` plus neuer Backport-Commit mit exakt zwei Dateien |
+| 2 | bereits freigegebene Welle 1 sowie Tasks 5–9, aber Task 7 erst nach R2-Freigabe | Bis R2: Redirectcommit `c503733`; außerdem Tasks 10–11 und reine Task-12-Dokumentation | erst nach R2: `7960c61..1772a13` auf dem Welle-1-Kandidaten |
 | 3 | bereits freigegebene Wellen 1–2 sowie Task 10 | Task 11; reine Task-12-Dokumentation | `1772a13..eb56110` auf dem Welle-2-Kandidaten |
 
 Vor Welle 1 wird der Rollback-Commit aus dem laufenden App-Image gelesen und als vollständige Commit-ID validiert:
@@ -160,9 +176,19 @@ ROLLBACK_COMMIT="$(docker image inspect \
 git cat-file -e "${ROLLBACK_COMMIT}^{commit}"
 ```
 
-Der gemischte Fix-Commit `dd4c61b` darf nicht cherry-gepickt werden, weil er neben der Sitemap-Korrektur Task-12-Dokumentation enthält. Auf dem Welle-1-Release-Branch wird stattdessen ein neuer Code-only-Backport erzeugt; seine Commit-ID entsteht erst dabei und wird anschließend protokolliert:
+Der gemischte Fix-Commit `dd4c61b` darf nicht cherry-gepickt werden, weil er neben der Sitemap-Korrektur Task-12-Dokumentation enthält. Zusätzlich muss R1 vor jedem `git switch`, `git cherry-pick` oder Kandidaten-Tag vollständig bestanden sein. Ohne R1 bleiben `dce016a` und `010cac4` ausgeschlossen; wegen des bereits aktiven Registry-Vertrags ist dieser Holdback-Stand nicht deploybar und erhält keinen vollständigen Welle-1-Kandidaten-Tag.
+
+Erst nach bestandenem R1-Gate wird auf dem Welle-1-Release-Branch ein neuer Code-only-Backport erzeugt; seine Commit-ID entsteht erst dabei und wird anschließend protokolliert:
 
 ```bash
+set -euo pipefail
+R1_GATE_DIR="docs/seo/audit-nachweise/redirect-entscheidungen/R1/<UTC-Zeitstempel>"
+for DATEI in gsc-url-metriken.csv backlinks.csv inhaltsvergleich.md interne-links.json zielpruefung.json entscheidung.md SHA256SUMS; do
+  test -s "$R1_GATE_DIR/$DATEI"
+done
+grep -Fxq 'Entscheidung: FREIGEGEBEN' "$R1_GATE_DIR/entscheidung.md"
+(cd "$R1_GATE_DIR" && sha256sum --check SHA256SUMS)
+
 git switch -c release/seo-sanierung-welle-1 "$ROLLBACK_COMMIT"
 git cherry-pick 8172029..7960c61
 git restore --source=dd4c61b -- \
@@ -185,9 +211,17 @@ test "$(git rev-parse HEAD)" = "$CANDIDATE_COMMIT"
 
 Der neu entstandene `SITEMAP_BACKPORT_COMMIT` wird im Welle-1-Nachweis eingetragen. `dd4c61b`, `3d29a17` und andere reine oder gemischte Task-12-Dokumentationscommits bleiben deployment-neutral und sind aus allen Release-Kandidaten ausgeschlossen.
 
-Welle 2 wird aus dem freigegebenen Welle-1-Kandidaten erstellt und ergänzt ausschließlich den angegebenen Quellbereich:
+Welle 2 wird aus dem freigegebenen Welle-1-Kandidaten erstellt und ergänzt ausschließlich den angegebenen Quellbereich. Vor Aufnahme von `c503733` muss R2 vollständig bestanden sein. Fehlt R2, bleibt der Commit ausgeschlossen; der dadurch unvollständige Holdback-Stand ist nicht deploybar und erhält keinen vollständigen Welle-2-Kandidaten-Tag:
 
 ```bash
+set -euo pipefail
+R2_GATE_DIR="docs/seo/audit-nachweise/redirect-entscheidungen/R2/<UTC-Zeitstempel>"
+for DATEI in gsc-url-metriken.csv backlinks.csv inhaltsvergleich.md interne-links.json zielpruefung.json entscheidung.md SHA256SUMS; do
+  test -s "$R2_GATE_DIR/$DATEI"
+done
+grep -Fxq 'Entscheidung: FREIGEGEBEN' "$R2_GATE_DIR/entscheidung.md"
+(cd "$R2_GATE_DIR" && sha256sum --check SHA256SUMS)
+
 ROLLBACK_COMMIT="$(git rev-parse "${WELLE_1_TAG}^{commit}")"
 git switch -c release/seo-sanierung-welle-2 "$ROLLBACK_COMMIT"
 git cherry-pick 7960c61..1772a13
@@ -216,6 +250,7 @@ Vor jedem Deployment müssen Kandidaten-Tag, Kandidaten-Commit, inkludierte und 
 | Feld | Protokoll |
 | --- | --- |
 | Status | **Nicht veröffentlicht** |
+| Redirect-Gate R1 | **Gesperrt:** exakter URL-Metrikexport und Live-Backlinkexport fehlen |
 | Kandidaten-Tag | nicht erstellt; Pflichtmuster `seo-sanierung-welle-1-kandidat-<YYYYMMDD>` |
 | Kandidaten-Commit | nicht vorhanden |
 | Inkludiert | Tasks 1–4 und Sitemap-404-Korrektur |
@@ -345,6 +380,7 @@ Der zweite Prüfzeitpunkt, die tatsächlich verstrichene Dauer von mindestens 48
 | --- | --- |
 | Status | **Nicht veröffentlicht** |
 | Voraussetzung | Welle 1 mindestens 48 Stunden regressionsfrei; noch nicht erfüllt |
+| Redirect-Gate R2 | **Gesperrt:** exakte URL-Metriken, Live-Backlinks, Inhaltsfreigabe und Zielstatus 200 fehlen |
 | Kandidaten-Tag | nicht erstellt; Pflichtmuster `seo-sanierung-welle-2-kandidat-<YYYYMMDD>` |
 | Kandidaten-Commit | nicht vorhanden |
 | Inkludiert | freigegebene Welle 1 und Tasks 5–9 |
@@ -427,11 +463,11 @@ Verbindliche Quelle für alle Werte und den autorisierten Ablauf ist der [Conten
 | `/branchen/webdesign-blumenladen` | `Webdesign für Blumenläden \| Website erstellen lassen` | `Webdesign für Blumenläden: individuelle Website, lokale Auffindbarkeit, Sortiment, Öffnungszeiten und klare Kontaktwege für Floristikbetriebe.` | `Webdesign für Blumenläden` | `/blog/seo-fuer-blumenladen`, `/pakete`, `/webdesign-berlin` | `Pakete ansehen` → `/pakete` |
 | `/blog/seo-fuer-blumenladen` | `SEO für Blumenläden: lokal besser gefunden werden` | `So verbessern Blumenläden ihre lokale Sichtbarkeit: Google-Unternehmensprofil, Standortsignale, Sortiment, Bilder, Bewertungen und passende Website-Inhalte.` | `SEO für Blumenläden: lokal besser gefunden werden` | `/branchen/webdesign-blumenladen`, `/leistungen/local-seo` | `Webdesign für Blumenläden ansehen` → `/branchen/webdesign-blumenladen` |
 
-Die beiden Blumenladen-Inhalte müssen unterschiedliche Suchabsichten und primäre Handlungsaufforderungen behalten: Die Branchenseite führt kaufnah zu den Paketen, der Blogartikel informationell zur Branchenseite. Der Kostenartikel führt zur Paketübersicht, ohne einen neuen Artikel anzulegen.
+Die beiden Blumenladen-Inhalte müssen unterschiedliche Suchabsichten und primäre Handlungsaufforderungen behalten: Die Branchenseite führt kaufnah zu den Paketen, der Blogartikel informationell zur Branchenseite. Der Kostenartikel führt zur Paketübersicht, ohne einen neuen Artikel anzulegen. Die Kostenrevision ist zugleich Bestandteil von R2 und muss vor Aufnahme von `c503733` fachlich freigegeben sein; der Brief allein erfüllt dieses Gate nicht.
 
 1. Betriebsmodus im Content-Agent als `review` bestätigen; Auto-Publish bleibt aus.
-2. Unter „Bestehende Inhalte“ den Artikel `website-kosten-2025-einfach-erklaert` nach dem verlinkten Content-Brief und der Tabelle vollständig revidieren.
-3. Fakten, Preise, alle drei Pflichtlinks, CTA und Jahreszahl prüfen, die geprüfte Revision veröffentlichen und `website-kosten-2026-berlin-vergleich-2025` unveröffentlichen.
+2. Vor Bildung des Welle-2-Kandidaten unter „Bestehende Inhalte“ den Artikel `website-kosten-2025-einfach-erklaert` nach dem verlinkten Content-Brief und der Tabelle vollständig revidieren.
+3. Fakten, Preise, alle drei Pflichtlinks, CTA und Jahreszahl prüfen, die geprüfte Zielrevision veröffentlichen und den Vorher-Nachher-Vergleich im R2-Nachweis ablegen. Den Quellartikel erst im autorisierten Deploymentfenster unveröffentlichen, unmittelbar bevor der freigegebene Redirectkandidat live geht.
 4. Unter `/admin/industries` beim bestehenden Datensatz `Blumenladen` ausschließlich SEO-Titel, Meta-Description und Hero-H1 nach Tabelle und Brief aktualisieren; Slug und Veröffentlichungsstatus nicht ändern.
 5. In der Branchenseitenvorschau alle drei Pflichtlinks und `Pakete ansehen` → `/pakete` prüfen.
 6. Unter `/admin/content-agent/existing-content` den Artikel `seo-fuer-blumenladen` als Revision aktualisieren, beide Pflichtlinks, den abweichenden CTA, Vorher-Nachher-Vergleich und Vorschau prüfen und erst dann ausdrücklich freigeben.
@@ -445,11 +481,15 @@ npm run audit:seo-recovery -- \
   --base-url https://www.komplettwebdesign.de \
   --out "$NACHWEIS_DIR/seo-live.json" \
   --fail-on error
-sha256sum "$NACHWEIS_DIR/seo-live.json" > "$NACHWEIS_DIR/SHA256SUMS"
+test -s "$NACHWEIS_DIR/nachweis.md"
+find "$NACHWEIS_DIR" -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+  | LC_ALL=C sort -z \
+  | xargs -0 sha256sum \
+  > "$NACHWEIS_DIR/SHA256SUMS"
 sha256sum --check "$NACHWEIS_DIR/SHA256SUMS"
 ```
 
-Datum, Commit, Migrationsergebnis und jede dynamische Inhaltsfreigabe müssen separat nachgetragen werden.
+Das abschließende Welle-2-`SHA256SUMS` wird erst erzeugt, nachdem Backup-Inhaltsliste, separates Dump-Prüfsummenblatt, Restore- und Migrationsausgaben, R2-Freigabe, Test-/Buildausgaben, Audit, `nachweis.md` und jede dynamische Inhaltsfreigabe im Nachweisordner liegen. Es umfasst alle Dateien dieses Ordners außer sich selbst; ein früheres Teil-Prüfsummenblatt ersetzt diesen Abschluss nicht.
 
 ### Welle 3 – Task 10
 
@@ -775,12 +815,14 @@ Für alle 123 Seiten wird keine massenhafte manuelle Indexierungsanforderung ges
 
 - [ ] Vollständige lokale PostgreSQL-Laufzeit bereitstellen.
 - [ ] Lokalen Audit mit 0 Fehlern wiederholen.
+- [ ] R1 mit exakten URL-Metriken, Live-Backlinkexport, Inhaltsvergleich, kontextuellen Inlinks und Zielprüfung freigeben; bis dahin `dce016a` und `010cac4` aus Kandidaten ausschließen.
 - [ ] Alle 14 Seitentypen auf Mobil und Desktop manuell abnehmen.
 - [ ] Pro Welle Kandidaten-Tag, Kandidaten-Commit, inkludierte und ausgeschlossene Tasks sowie Rollback-Commit festhalten.
 - [ ] Welle 1 autorisiert deployen und live auditieren.
 - [ ] Nach mindestens 48 Stunden den Welle-1-Abschluss-Live-Audit auf demselben Commit ausführen und beide Prüfzeitpunkte sowie Ergebnisse dokumentieren.
 - [ ] Vor Welle 2 Dump-Pfad und Prüfsumme prüfen, `pg_restore --list` und Restore-Test erfolgreich ausführen sowie Migration 016 zweimal idempotent ausführen.
 - [ ] Kosten- und Blumenladen-Inhalte über die autorisierten Adminabläufe freigeben.
+- [ ] R2 mit exakten URL-Metriken, Live-Backlinkexport, Inhaltsübernahme, kontextuellen Inlinks und Zielprüfung freigeben; bis dahin `c503733` aus Kandidaten ausschließen.
 - [ ] Welle 2 live auditieren und dynamische Änderungen separat bestätigen.
 - [ ] Welle 3 deployen, live auditieren und Lighthouse vollständig messen.
 - [ ] Alle erfolgreichen Live- und Lighthouse-Artefakte mit `nachweis.md` und `SHA256SUMS` unter `docs/seo/audit-nachweise/` versionieren und archivieren.

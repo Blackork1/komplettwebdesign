@@ -7,9 +7,21 @@ const ERROR_CODES = new Set([
   'canonical_missing',
   'canonical_mismatch',
   'h1_count',
+  'title_missing',
+  'description_missing',
+  'duplicate_title',
+  'duplicate_description',
   'redirect_chain',
   'redirect_target_status',
   'indexable_redirect_source',
+  'internal_link_target_status',
+  'internal_redirect_link',
+  'hreflang_invalid',
+  'hreflang_duplicate',
+  'hreflang_target_status',
+  'hreflang_language_mismatch',
+  'hreflang_not_reciprocal',
+  'json_ld_parse_error',
   'noindex_active_target',
   'missing_required_link',
   'orphan_priority_page'
@@ -88,23 +100,50 @@ function hasMixedLanguageContent(lang, bodyText) {
   return englishMarkers >= 4 && englishMarkers >= germanMarkers;
 }
 
+function normalizeHreflang(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isValidHreflang(value) {
+  return /^(?:x-default|[a-z]{2,3}(?:-[a-z]{2})?)$/i.test(String(value || '').trim());
+}
+
 function extractPageDetails(html, url, siteOrigin) {
   const $ = cheerio.load(html || '');
   const text = (selector) => $(selector).first().text().replace(/\s+/g, ' ').trim();
   const attribute = (selector, name) => ($(selector).first().attr(name) || '').trim();
   const internalLinks = new Set();
+  const contextualInternalLinks = new Set();
 
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href');
     if (!href || href.startsWith('#')) return;
     try {
       const linkedUrl = normalizeUrl(href, url);
-      if (new URL(linkedUrl).origin === siteOrigin) internalLinks.add(linkedUrl);
+      if (new URL(linkedUrl).origin === siteOrigin) {
+        internalLinks.add(linkedUrl);
+        if ($(element).closest('header, footer, nav').length === 0) {
+          contextualInternalLinks.add(linkedUrl);
+        }
+      }
     } catch {
       // Ungültige Anker sind für diesen SEO-Recovery-Audit nicht auswertbar.
     }
   });
 
+  const hreflangs = $('link[rel~="alternate"][hreflang]').toArray().map((element) => {
+    const language = ($(element).attr('hreflang') || '').trim();
+    const href = ($(element).attr('href') || '').trim();
+    let targetUrl = '';
+    try {
+      targetUrl = href ? normalizeUrl(href, url) : '';
+    } catch {
+      targetUrl = '';
+    }
+    return { language, href, targetUrl };
+  });
+  const jsonLdBlocks = $('script[type="application/ld+json"]').toArray()
+    .map((element) => $(element).html() || '');
   const htmlLanguage = ($('html').attr('lang') || '').trim().toLowerCase();
   const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
   return {
@@ -115,7 +154,10 @@ function extractPageDetails(html, url, siteOrigin) {
     lang: htmlLanguage,
     mixedLanguage: hasMixedLanguageContent(htmlLanguage, bodyText),
     h1Count: $('h1').length,
-    internalLinks: [...internalLinks].sort()
+    internalLinks: [...internalLinks].sort(),
+    contextualInternalLinks: [...contextualInternalLinks].sort(),
+    hreflangs,
+    jsonLdBlocks
   };
 }
 
@@ -161,17 +203,59 @@ function validatePage(page, violations, siteOrigin) {
   if (page.h1Count !== 1) violations.push(violation('h1_count', page, { h1Count: page.h1Count }));
 
   if (!isLegalPath(page.path)) {
-    if (page.title.length < TITLE_MIN_LENGTH || page.title.length > TITLE_MAX_LENGTH) {
+    if (!page.title) {
+      violations.push(violation('title_missing', page));
+    } else if (page.title.length < TITLE_MIN_LENGTH || page.title.length > TITLE_MAX_LENGTH) {
       violations.push(violation('title_length', page, { length: page.title.length }));
     }
-    if (page.description.length < DESCRIPTION_MIN_LENGTH || page.description.length > DESCRIPTION_MAX_LENGTH) {
+    if (!page.description) {
+      violations.push(violation('description_missing', page));
+    } else if (page.description.length < DESCRIPTION_MIN_LENGTH || page.description.length > DESCRIPTION_MAX_LENGTH) {
       violations.push(violation('description_length', page, { length: page.description.length }));
     }
   }
 
+  page.jsonLdBlocks.forEach((block, index) => {
+    try {
+      JSON.parse(block);
+    } catch (error) {
+      violations.push(violation('json_ld_parse_error', page, {
+        block: index + 1,
+        message: error instanceof Error ? error.message : String(error)
+      }));
+    }
+  });
+
   const language = page.lang.split('-')[0];
   if ((language && language !== 'de' && language !== 'en') || page.mixedLanguage) {
     violations.push(violation('mixed_language', page, { lang: page.lang }));
+  }
+}
+
+function validateUniqueMetadata(pages, violations) {
+  const indexablePages = pages.filter((page) => (
+    isSuccessfulStatus(page.status) && !robotsIncludesNoindex(page.robots)
+  ));
+  for (const [field, code] of [
+    ['title', 'duplicate_title'],
+    ['description', 'duplicate_description']
+  ]) {
+    const grouped = new Map();
+    for (const page of indexablePages) {
+      const value = String(page[field] || '').replace(/\s+/g, ' ').trim();
+      if (!value) continue;
+      const key = value.toLocaleLowerCase('de-DE');
+      const matches = grouped.get(key) || [];
+      matches.push(page);
+      grouped.set(key, matches);
+    }
+    for (const matches of grouped.values()) {
+      if (matches.length < 2) continue;
+      violations.push(violation(code, matches[0], {
+        value: matches[0][field],
+        paths: matches.map((page) => page.path).sort()
+      }));
+    }
   }
 }
 
@@ -194,6 +278,75 @@ function buildSummary(pages, redirects, violations) {
     warnings,
     status: errors > 0 ? 'error' : (warnings > 0 ? 'warning' : 'ok')
   };
+}
+
+async function validateHreflangs({
+  pages,
+  load,
+  siteOrigin,
+  violations
+}) {
+  for (const page of pages.filter((item) => isSuccessfulStatus(item.status))) {
+    const seenLanguages = new Set();
+    for (const alternate of page.hreflangs) {
+      const normalizedLanguage = normalizeHreflang(alternate.language);
+      if (!isValidHreflang(alternate.language)) {
+        violations.push(violation('hreflang_invalid', page, {
+          hreflang: alternate.language,
+          href: alternate.href
+        }));
+      } else if (seenLanguages.has(normalizedLanguage)) {
+        violations.push(violation('hreflang_duplicate', page, {
+          hreflang: alternate.language,
+          href: alternate.href
+        }));
+      }
+      seenLanguages.add(normalizedLanguage);
+
+      if (!alternate.targetUrl) {
+        violations.push(violation('hreflang_target_status', page, {
+          hreflang: alternate.language,
+          href: alternate.href,
+          targetStatus: 0
+        }));
+        continue;
+      }
+
+      const targetUrl = new URL(alternate.targetUrl);
+      if (targetUrl.origin !== siteOrigin) continue;
+      const target = await load(alternate.targetUrl);
+      if (!isSuccessfulStatus(target.page.status)) {
+        violations.push(violation('hreflang_target_status', page, {
+          hreflang: alternate.language,
+          href: alternate.targetUrl,
+          targetStatus: target.page.status
+        }));
+        continue;
+      }
+
+      if (isValidHreflang(alternate.language) && normalizedLanguage !== 'x-default') {
+        const expectedLanguage = normalizedLanguage.split('-')[0];
+        const actualLanguage = String(target.page.lang || '').split('-')[0];
+        if (actualLanguage !== expectedLanguage) {
+          violations.push(violation('hreflang_language_mismatch', page, {
+            hreflang: alternate.language,
+            href: alternate.targetUrl,
+            targetLang: target.page.lang
+          }));
+        }
+      }
+
+      const reciprocal = target.page.hreflangs.some((candidate) => (
+        candidate.targetUrl === page.url
+      ));
+      if (!reciprocal) {
+        violations.push(violation('hreflang_not_reciprocal', page, {
+          hreflang: alternate.language,
+          href: alternate.targetUrl
+        }));
+      }
+    }
+  }
 }
 
 /**
@@ -274,10 +427,12 @@ export async function auditSeoRecoverySite({
     sitemapPages.set(url, page);
     validatePage(page, violations, siteOrigin);
   }
+  validateUniqueMetadata(pages, violations);
+  await validateHreflangs({ pages, load, siteOrigin, violations });
 
   const incomingSources = new Map(sitemapUrls.map((url) => [url, new Set()]));
   for (const page of pages) {
-    for (const linkedUrl of page.internalLinks) {
+    for (const linkedUrl of page.contextualInternalLinks) {
       if (linkedUrl !== page.url && sitemapUrlSet.has(linkedUrl)) incomingSources.get(linkedUrl).add(page.url);
     }
   }
@@ -296,7 +451,7 @@ export async function auditSeoRecoverySite({
       if (robotsIncludesNoindex(targetPage.robots) && !isEnglishPackagePath(targetPath)) {
         violations.push(violation('noindex_active_target', targetPage));
       }
-      const linkedPaths = new Set(targetPage.internalLinks.map((url) => normalizePath(url, normalizedBaseUrl)));
+      const linkedPaths = new Set(targetPage.contextualInternalLinks.map((url) => normalizePath(url, normalizedBaseUrl)));
       for (const requiredLink of requiredLinks) {
         const requiredPath = normalizePath(requiredLink, normalizedBaseUrl);
         if (!linkedPaths.has(requiredPath)) {
@@ -316,7 +471,40 @@ export async function auditSeoRecoverySite({
     }
   }
 
-  for (const entry of redirectEntries(effectiveTargets, useRegistryRedirects)) {
+  const configuredRedirects = redirectEntries(effectiveTargets, useRegistryRedirects);
+  const redirectTargetsByPath = new Map(configuredRedirects.map((entry) => [
+    normalizePath(entry.path, normalizedBaseUrl),
+    normalizeUrl(entry.redirectTo, normalizedBaseUrl)
+  ]));
+  const internalTargetSources = new Map();
+  for (const page of pages) {
+    for (const linkedUrl of page.internalLinks) {
+      const sources = internalTargetSources.get(linkedUrl) || new Set();
+      sources.add(page.url);
+      internalTargetSources.set(linkedUrl, sources);
+    }
+  }
+  for (const [linkedUrl, sourceSet] of internalTargetSources) {
+    const linked = await load(linkedUrl);
+    const linkedPath = normalizePath(linkedUrl, normalizedBaseUrl);
+    const expectedTarget = redirectTargetsByPath.get(linkedPath) || '';
+    const sources = [...sourceSet].sort();
+    const isRedirectStatus = linked.page.status >= 300 && linked.page.status < 400;
+    if (expectedTarget || isRedirectStatus) {
+      violations.push(violation('internal_redirect_link', linked.page, {
+        status: linked.page.status,
+        expectedTarget,
+        sources
+      }));
+    } else if (!isSuccessfulStatus(linked.page.status)) {
+      violations.push(violation('internal_link_target_status', linked.page, {
+        status: linked.page.status,
+        sources
+      }));
+    }
+  }
+
+  for (const entry of configuredRedirects) {
     const sourceUrl = normalizeUrl(entry.path, normalizedBaseUrl);
     const targetUrl = normalizeUrl(entry.redirectTo, normalizedBaseUrl);
     const source = await load(sourceUrl);
@@ -367,6 +555,8 @@ export const __testables = {
   normalizeUrl,
   normalizePath,
   extractPageDetails,
+  normalizeHreflang,
+  isValidHreflang,
   isLegalPath,
   robotsIncludesNoindex,
   isEnglishPackagePath,

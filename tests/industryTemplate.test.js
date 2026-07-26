@@ -1,11 +1,65 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import ejs from 'ejs';
 
 import { getIndustryPrimaryCta } from '../controllers/industriesController.js';
+import { footerNavigation, headerCta, headerNavigation } from '../data/siteNavigation.js';
+import { escapeJsonForHtml, safeUrl, sanitizeHtml } from '../util/security.js';
 
 const template = readFileSync(new URL('../views/industries/show.ejs', import.meta.url), 'utf8');
+const viewPath = fileURLToPath(new URL('../views/industries/show.ejs', import.meta.url));
 const branchenCss = readFileSync(new URL('../public/branchen.css', import.meta.url), 'utf8');
+
+function buildIndustryRenderLocals(slug) {
+  const isFlowerShop = slug === 'blumenladen';
+  return {
+    title: `Webdesign für ${isFlowerShop ? 'Blumenläden' : 'Restaurants'}`,
+    description: 'Eine vollständige Beschreibung der Branchenleistung für den echten EJS-Render-Smoke-Test.',
+    ogImage: null,
+    canonicalBaseUrl: 'https://www.komplettwebdesign.de',
+    canonicalUrl: `https://www.komplettwebdesign.de/branchen/webdesign-${slug}`,
+    assetVersion: 'test',
+    robots: 'index,follow',
+    alternateUrls: null,
+    currentPathname: `/branchen/webdesign-${slug}`,
+    currentSearch: '',
+    trackingContext: {},
+    lng: 'de',
+    cssAsset: (assetPath) => `/${assetPath}`,
+    asset: (assetPath) => `/${assetPath}?v=test`,
+    jsAsset: (assetPath) => `/${assetPath}?v=test`,
+    escapeJsonForHtml,
+    safeUrl,
+    sanitizeHtml,
+    footerNavigation,
+    headerCta,
+    headerNavigation,
+    industry: {
+      slug,
+      name: isFlowerShop ? 'Blumenladen' : 'Restaurant',
+      hero_h1: isFlowerShop ? 'Webdesign für Blumenläden' : 'Webdesign für Restaurants',
+      hero_h2: '',
+      hero_checks: [],
+      carousel_items: [],
+      stats_cards: [],
+      seo_items: [],
+      funktionen_items: [],
+      tipps_items: [],
+      faq_items: [],
+      vorteile: { pros: [], cons: [] },
+      blocks: [],
+      cta_headline: '',
+      cta_text: ''
+    },
+    industryContextLinks: [],
+    industryPrimaryCta: getIndustryPrimaryCta(slug),
+    industryPricingCta: getIndustryPrimaryCta(slug, { placement: 'pricing' }),
+    packages: [],
+    jsonLd: []
+  };
+}
 
 test('industry template uses dynamic, page-specific CTA and current-year pricing copy', () => {
   assert.match(template, /industry\.cta_headline/);
@@ -49,8 +103,24 @@ test('price CTA keeps the legacy contact action outside the Blumenladen package 
   assert.equal(restaurantPricingCta.label, 'Kostenlose Einschätzung anfragen');
   assert.equal(restaurantPricingCta.href, '/kontakt');
   assert.equal(restaurantPricingCta.trackingName, 'pricing_contact');
-  assert.match(template, /industryPricingCta\.href/);
-  assert.match(template, /industryPricingCta\.trackingName/);
+  assert.match(template, /resolvedIndustryPricingCta\.href/);
+  assert.match(template, /resolvedIndustryPricingCta\.trackingName/);
+});
+
+test('Standard-Branchenseite rendert den Preis-CTA vollständig mit EJS', async () => {
+  const html = await ejs.renderFile(viewPath, buildIndustryRenderLocals('restaurant'));
+
+  assert.match(html, /href="\/kontakt" class="primaryColor"/);
+  assert.match(html, /data-cta-name="pricing_contact"/);
+  assert.match(html, />Kostenlose Einschätzung anfragen<\/a>/);
+});
+
+test('Blumenladen-Branchenseite rendert den Paket-CTA vollständig mit EJS', async () => {
+  const html = await ejs.renderFile(viewPath, buildIndustryRenderLocals('blumenladen'));
+
+  assert.match(html, /href="\/pakete" class="primaryColor"/);
+  assert.match(html, /data-cta-name="blumenladen_pakete_ansehen"/);
+  assert.match(html, />Pakete ansehen<\/a>/);
 });
 
 test('industry CTA package images rotate toward the opposite side', () => {
