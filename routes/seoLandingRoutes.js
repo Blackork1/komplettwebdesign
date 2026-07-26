@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { showSeoLandingPage } from '../controllers/seoLandingController.js';
+import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ function renderLanding(slug) {
 }
 
 router.get('/website-erstellen-lassen-berlin', (_req, res) => {
-  return res.redirect(301, '/webdesign-berlin');
+  return res.redirect(301, SEO_RECOVERY_REDIRECTS['/website-erstellen-lassen-berlin']);
 });
 
 router.get('/website-relaunch-berlin', (_req, res) => res.redirect(301, '/leistungen/website-relaunch'));

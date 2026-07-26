@@ -3,7 +3,9 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { SEO_LANDING_PAGES, getSeoLandingPage } from '../data/seoLandingPages.js';
+import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 import { INDEXABLE_STATIC_ROUTES } from '../helpers/seoPagePolicy.js';
+import seoLandingRoutes from '../routes/seoLandingRoutes.js';
 
 const EXPECTED_SLUGS = [
   'website-relaunch-berlin',
@@ -55,12 +57,28 @@ test('seo landing pages include complete metadata content faq internal links and
   });
 });
 
-test('website-erstellen-lassen-berlin redirects directly to the canonical Berlin page', () => {
+test('website-erstellen-lassen-berlin uses the recovery registry for its direct permanent redirect', () => {
   const routeSource = fs.readFileSync(new URL('../routes/seoLandingRoutes.js', import.meta.url), 'utf8');
+  const routeLayer = seoLandingRoutes.stack.find(
+    (layer) => layer.route?.path === '/website-erstellen-lassen-berlin'
+  );
+  const redirectCalls = [];
 
+  assert.ok(routeLayer, 'die Redirect-Route muss registriert sein');
+  routeLayer.route.stack[0].handle({}, {
+    redirect(status, target) {
+      redirectCalls.push([status, target]);
+    }
+  });
+
+  assert.deepEqual(
+    redirectCalls,
+    [[301, SEO_RECOVERY_REDIRECTS['/website-erstellen-lassen-berlin']]]
+  );
+  assert.match(routeSource, /import\s*\{\s*SEO_RECOVERY_REDIRECTS\s*\}\s*from/);
   assert.match(
     routeSource,
-    /router\.get\('\/website-erstellen-lassen-berlin'[\s\S]*?res\.redirect\(301,\s*'\/webdesign-berlin'\)/
+    /res\.redirect\(301,\s*SEO_RECOVERY_REDIRECTS\['\/website-erstellen-lassen-berlin'\]\)/
   );
 });
 
