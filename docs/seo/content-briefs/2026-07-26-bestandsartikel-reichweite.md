@@ -1,7 +1,7 @@
 # Content-Brief: Drei vorhandene Artikel für Reichweite überarbeiten
 
-Stand: 26. Juli 2026  
-Status: zur redaktionellen Überarbeitung im bestehenden Content-Agent-Revisionsprozess  
+Stand: 26. Juli 2026
+Status: zur redaktionellen Überarbeitung im bestehenden Content-Agent-Revisionsprozess
 Wichtig: Keine URL ändern und keinen Artikel ungeprüft automatisch veröffentlichen.
 
 ## Gemeinsames Ziel
