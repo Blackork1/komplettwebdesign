@@ -130,9 +130,9 @@
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=51a7105e0b92",
-      "hash": "51a7105e0b92",
-      "bytes": 34412
+      "href": "/extra.min.css?v=3288351b9ba0",
+      "hash": "3288351b9ba0",
+      "bytes": 35988
     },
     "faq.css": {
       "source": "faq.css",

@@ -1,0 +1,33 @@
+<%
+const relatedLinkItems = (Array.isArray(typeof links === 'undefined' ? null : links) ? links : [])
+  .filter((link) => {
+    const href = String(link?.href || '').trim();
+    const label = String(link?.label || '').trim();
+    return label && (href.startsWith('/') || /^#[A-Za-z0-9_-]+$/.test(href));
+  })
+  .map((link) => ({
+    href: String(link.href).trim(),
+    label: String(link.label).trim(),
+    description: String(link.description || link.text || '').trim()
+  }));
+const relatedSectionTitle = String(typeof title === 'undefined' ? 'Passende nächste Schritte' : title).trim();
+const relatedEyebrow = String(typeof eyebrow === 'undefined' ? '' : eyebrow).trim();
+const relatedSectionClass = String(typeof sectionClass === 'undefined' ? '' : sectionClass).trim();
+const relatedSectionId = String(typeof sectionId === 'undefined' ? 'related-links-title' : sectionId).replace(/[^A-Za-z0-9_-]/g, '');
+%>
+<% if (relatedLinkItems.length) { %>
+<section class="related-links <%= relatedSectionClass %>" aria-labelledby="<%= relatedSectionId %>">
+  <div class="related-links__head">
+    <% if (relatedEyebrow) { %><p class="related-links__eyebrow"><%= relatedEyebrow %></p><% } %>
+    <h2 id="<%= relatedSectionId %>"><%= relatedSectionTitle %></h2>
+  </div>
+  <div class="related-links__grid">
+    <% relatedLinkItems.forEach(function(link){ %>
+    <a class="related-links__card" href="<%= link.href %>">
+      <strong><%= link.label %></strong>
+      <% if (link.description) { %><span><%= link.description %></span><% } %>
+    </a>
+    <% }); %>
+  </div>
+</section>
+<% } %>

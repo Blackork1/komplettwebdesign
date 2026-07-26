@@ -105,20 +105,13 @@
       <% }); %>
     </section>
 
-    <section class="seo-landing__container seo-landing__links" aria-labelledby="seo-landing-links-title">
-      <div class="seo-landing__section-head">
-        <p class="seo-landing__eyebrow">Weiterlesen</p>
-        <h2 id="seo-landing-links-title">Passende nächste Seiten</h2>
-      </div>
-      <div class="seo-landing__link-grid">
-        <% page.internalLinks.forEach(function(link) { %>
-        <a class="seo-landing__link-card" href="<%= link.href %>">
-          <span><%= link.label %></span>
-          <small><%= link.text %></small>
-        </a>
-        <% }); %>
-      </div>
-    </section>
+    <%- include('../partials/related-links', {
+      title: 'Passende nächste Seiten',
+      eyebrow: 'Weiterlesen',
+      sectionId: 'seo-landing-links-title',
+      sectionClass: 'seo-landing__container seo-landing__links',
+      links: page.internalLinks
+    }) %>
 
     <% if (Array.isArray(page.faq) && page.faq.length) { %>
     <section class="seo-landing__container seo-landing__faq" id="faq" aria-labelledby="seo-landing-faq-title">

@@ -25,57 +25,79 @@ export const headerNavigation = Object.freeze([
       {
         label: 'Übersicht',
         labelEn: 'Overview',
-        href: '/leistungen/'
-      },
-      {
-        label: 'Website-Relaunch',
-        labelEn: 'Website relaunch',
-        href: '/leistungen/website-relaunch'
-      },
-      {
-        label: 'Local SEO',
-        labelEn: 'Local SEO',
-        href: '/leistungen/local-seo'
+        href: '/leistungen/',
+        group: 'Website erstellen',
+        groupEn: 'Create a website'
       },
       {
         label: 'Landingpage erstellen lassen',
         labelEn: 'Landing page',
-        href: '/leistungen/landingpage-erstellen-lassen'
+        href: '/leistungen/landingpage-erstellen-lassen',
+        group: 'Website erstellen',
+        groupEn: 'Create a website'
+      },
+      {
+        label: 'Website-Relaunch',
+        labelEn: 'Website relaunch',
+        href: '/leistungen/website-relaunch',
+        group: 'Website verbessern',
+        groupEn: 'Improve a website'
       },
       {
         label: 'Website-Audit',
         labelEn: 'Website audit',
-        href: '/leistungen/website-audit'
+        href: '/leistungen/website-audit',
+        group: 'Website verbessern',
+        groupEn: 'Improve a website'
       },
       {
         label: 'Responsives Design & Mobile',
         labelEn: 'Responsive design & mobile',
-        href: '/leistungen/responsives-design-mobile'
+        href: '/leistungen/responsives-design-mobile',
+        group: 'Website verbessern',
+        groupEn: 'Improve a website'
       },
       {
         label: 'Inhalte & Texte',
         labelEn: 'Content & copy',
-        href: '/leistungen/inhalte-texte-content'
+        href: '/leistungen/inhalte-texte-content',
+        group: 'Website verbessern',
+        groupEn: 'Improve a website'
+      },
+      {
+        label: 'Local SEO',
+        labelEn: 'Local SEO',
+        href: '/leistungen/local-seo',
+        group: 'Sichtbarkeit',
+        groupEn: 'Visibility'
       },
       {
         label: 'Rechtliches & Sicherheit',
         labelEn: 'Legal notes & security',
-        href: '/leistungen/rechtliches-sicherheit'
+        href: '/leistungen/rechtliches-sicherheit',
+        group: 'Betrieb und Kosten',
+        groupEn: 'Operation and costs'
       },
       {
         label: 'Wartung & Support',
         labelEn: 'Maintenance & support',
-        href: '/leistungen/website-wartung'
+        href: '/leistungen/website-wartung',
+        group: 'Betrieb und Kosten',
+        groupEn: 'Operation and costs'
       },
       {
         label: 'Zusatzleistungen',
         labelEn: 'Add-ons',
-        href: '/leistungen/zusatzleistungen-webdesign'
+        href: '/leistungen/zusatzleistungen-webdesign',
+        group: 'Betrieb und Kosten',
+        groupEn: 'Operation and costs'
       },
       {
         label: 'Laufende Kosten',
         labelEn: 'Running costs',
-        href: '/leistungen/laufende-kosten-website'
+        href: '/leistungen/laufende-kosten-website',
+        group: 'Betrieb und Kosten',
+        groupEn: 'Operation and costs'
       }
     ]
   },
@@ -103,6 +125,7 @@ export const footerNavigation = Object.freeze([
     label: 'Angebot',
     labelEn: 'Offer',
     links: [
+      { label: 'Leistungsübersicht', labelEn: 'Service overview', href: '/leistungen/' },
       { label: 'Webdesign Berlin', labelEn: 'Webdesign Berlin', href: '/webdesign-berlin', hrefEn: '/en/webdesign-berlin' },
       { label: 'Pakete & Preise', labelEn: 'Packages & pricing', href: '/pakete', hrefEn: '/en/pakete' },
       { label: 'Website-Relaunch', labelEn: 'Website relaunch', href: '/leistungen/website-relaunch' },

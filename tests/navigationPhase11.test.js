@@ -58,15 +58,25 @@ test('phase 11 mobile navigation exposes accessible controls', () => {
 test('phase 11 services dropdown links to canonical service pages only', () => {
   const services = headerNavigation.find((item) => item.label === 'Leistungen');
   const serviceHrefs = services.children.map((item) => item.href);
+  const serviceGroups = [...new Set(services.children.map((item) => item.group))];
+
+  assert.deepEqual(serviceGroups, [
+    'Website erstellen',
+    'Website verbessern',
+    'Sichtbarkeit',
+    'Betrieb und Kosten'
+  ]);
+  assert.match(header, /nav-group-label/);
+  assert.match(header, /child\.group/);
 
   assert.deepEqual(serviceHrefs, [
     '/leistungen/',
-    '/leistungen/website-relaunch',
-    '/leistungen/local-seo',
     '/leistungen/landingpage-erstellen-lassen',
+    '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/responsives-design-mobile',
     '/leistungen/inhalte-texte-content',
+    '/leistungen/local-seo',
     '/leistungen/rechtliches-sicherheit',
     '/leistungen/website-wartung',
     '/leistungen/zusatzleistungen-webdesign',

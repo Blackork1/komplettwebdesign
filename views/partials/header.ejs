@@ -148,7 +148,13 @@
                         </button>
                       </div>
                       <ul class="dropdown-menu">
+                        <% let previousChildGroup = ''; %>
                         <% itemChildren.forEach((child) => { %>
+                          <% const childGroup = isEn && child.groupEn ? child.groupEn : child.group; %>
+                          <% if (childGroup && childGroup !== previousChildGroup) { %>
+                            <li class="nav-group-label" aria-hidden="true"><span><%= childGroup %></span></li>
+                            <% previousChildGroup = childGroup; %>
+                          <% } %>
                           <li>
                             <a href="<%= navHref(child) %>" class="main-color nav-sub-link <%= isActiveSubNavItem(child) ? 'is-active' : '' %>">
                               <span class="mobile-nav-icon"><img src="<%= navIcon(child) %>" alt="" aria-hidden="true" loading="lazy" /></span>
