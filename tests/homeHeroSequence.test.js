@@ -91,8 +91,9 @@ test('homepage hero sequence uses branch-style load timing with staggered delays
   assert.match(homepage, /\.home-hero-reveal--trust \{[\s\S]*?--home-hero-reveal-delay: 720ms/);
   assert.match(homepage, /\.home-hero-reveal--visual \{[\s\S]*?--home-hero-reveal-delay: 260ms/);
   assert.match(homepage, /\.home-page \.home-hero-showcase figure\s*\{[\s\S]*?opacity:\s*1;[\s\S]*?transform:\s*var\(--home-hero-card-transform\);[\s\S]*?will-change:\s*opacity,\s*transform;/);
-  assert.match(homepage, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll:not\(\.visible\) figure\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?transform:\s*var\(--home-hero-card-start-transform\);/);
-  assert.match(homepage, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll\.visible figure\s*\{[\s\S]*?animation:\s*home-hero-card-fly-in 0\.72s cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\) var\(--home-hero-card-delay\) both;/);
+  assert.doesNotMatch(homepage, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll:not\(\.visible\) figure\s*\{/);
+  assert.match(homepage, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll:not\(\.visible\) :is\(\.home-hero-showcase__detail, \.home-hero-showcase__phone\)\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?transform:\s*var\(--home-hero-card-start-transform\);/);
+  assert.match(homepage, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll\.visible :is\(\.home-hero-showcase__detail, \.home-hero-showcase__phone\)\s*\{[\s\S]*?animation:\s*home-hero-card-fly-in 0\.72s cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\) var\(--home-hero-card-delay\) both;/);
   assert.match(homepage, /@keyframes home-hero-card-fly-in\s*\{[\s\S]*?from\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?transform:\s*var\(--home-hero-card-start-transform\);[\s\S]*?to\s*\{[\s\S]*?opacity:\s*1;[\s\S]*?transform:\s*var\(--home-hero-card-transform\);/);
   assert.match(homepage, /\.home-page \.home-hero-showcase figure\.home-hero-showcase__main\s*\{[\s\S]*?--home-hero-card-delay:\s*360ms;[\s\S]*?--home-hero-card-transform:\s*rotate\(-1\.4deg\);/);
   assert.match(homepage, /\.home-page \.home-hero-showcase figure\.home-hero-showcase__detail\s*\{[\s\S]*?--home-hero-card-delay:\s*540ms;[\s\S]*?--home-hero-card-transform:\s*rotate\(4deg\);/);

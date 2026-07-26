@@ -1007,12 +1007,12 @@
     will-change: opacity, transform;
   }
 
-  .home-page .home-hero-showcase.home-hero-reveal.animate-on-scroll:not(.visible) figure {
+  .home-page .home-hero-showcase.home-hero-reveal.animate-on-scroll:not(.visible) :is(.home-hero-showcase__detail, .home-hero-showcase__phone) {
     opacity: 0;
     transform: var(--home-hero-card-start-transform);
   }
 
-  .home-page .home-hero-showcase.home-hero-reveal.animate-on-scroll.visible figure {
+  .home-page .home-hero-showcase.home-hero-reveal.animate-on-scroll.visible :is(.home-hero-showcase__detail, .home-hero-showcase__phone) {
     animation: home-hero-card-fly-in 0.72s cubic-bezier(0.22, 1, 0.36, 1) var(--home-hero-card-delay) both;
   }
 
@@ -1047,6 +1047,7 @@
     width: min(84%, 690px);
     isolation: isolate;
     z-index: 1;
+    opacity: 1;
   }
 
   .home-page .home-hero-showcase__main::before {

@@ -27,6 +27,14 @@ const ruleBlock = (source, selector) => {
 
 const withoutCssComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '');
 
+test('mobile homepage hero keeps the LCP card visible before animation JavaScript runs', () => {
+  assert.doesNotMatch(homeCss, /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll:not\(\.visible\) figure\s*\{/);
+  assert.match(
+    homeCss,
+    /\.home-page \.home-hero-showcase\.home-hero-reveal\.animate-on-scroll:not\(\.visible\) :is\(\.home-hero-showcase__detail, \.home-hero-showcase__phone\)\s*\{/
+  );
+});
+
 test('industry detail pages keep responsive inline gutters through the layout wrapper', () => {
   const activeBranchenCss = withoutCssComments(branchenCss);
 
