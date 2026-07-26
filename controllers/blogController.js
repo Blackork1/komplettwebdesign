@@ -12,6 +12,11 @@ function parseNonNegativeInteger(value, fallback = 0) {
   return parsed;
 }
 
+export function parseBlogPage(value) {
+  const page = Number.parseInt(String(value || '1'), 10);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
 function renderPostCard(res, post, idx) {
   return new Promise((resolve, reject) => {
     res.render('blog/partials/post-card', { post, idx }, (err, html) => {
@@ -25,21 +30,45 @@ function renderPostCard(res, post, idx) {
 }
 
 export async function listPosts(req, res) {
+  const page = parseBlogPage(req.query.page);
+  const offset = (page - 1) * BLOG_PAGE_SIZE;
   const [rawPosts, totalPosts, rawFeaturedPosts] = await Promise.all([
-    BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset: 0 }),
+    BlogPostModel.findPage({ limit: BLOG_PAGE_SIZE, offset }),
     BlogPostModel.countPublished(),
     BlogPostModel.findFeatured(5)
   ]);
+  const totalPages = Math.max(1, Math.ceil(totalPosts / BLOG_PAGE_SIZE));
+  if (page > totalPages) {
+    return res.status(404).render('404', {
+      title: 'Blogseite nicht gefunden',
+      description: 'Die angeforderte Blogseite existiert nicht.'
+    });
+  }
+
   const pricing = res.locals.packagePricing || {};
   const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, pricing));
   const featuredPosts = normalizeLegacyPublicCopy(renderPricingTokens(rawFeaturedPosts, pricing));
-  res.render('blog/index', {
-    title: "Aktuelle Einschätzungen zu Webdesign, SEO und Sichtbarkeit",
-    description: "Aktuelle Einschätzungen zu Webdesign, KI, Performance und SEO. Dauerhafte Grundlagen zu Kosten, Ablauf und Local SEO findest du im Ratgeber.",
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
+  const pagePath = page === 1 ? '/blog' : `/blog?page=${page}`;
+  const pageUrl = (value) => value === 1 ? '/blog' : `/blog?page=${value}`;
+
+  return res.render('blog/index', {
+    title: page === 1
+      ? 'Aktuelle Einschätzungen zu Webdesign, SEO und Sichtbarkeit'
+      : `Webdesign- und SEO-Blog – Seite ${page}`,
+    description: page === 1
+      ? 'Aktuelle Einschätzungen zu Webdesign, KI, Performance und SEO. Dauerhafte Grundlagen zu Kosten, Ablauf und Local SEO findest du im Ratgeber.'
+      : `Weitere Artikel zu Webdesign, SEO, Performance und digitalen Angeboten auf Seite ${page} des Komplett-Webdesign-Blogs.`,
+    canonicalUrl: `${base}${pagePath}`,
     posts,
     featuredPosts,
     totalPosts,
-    pageSize: BLOG_PAGE_SIZE
+    pageSize: BLOG_PAGE_SIZE,
+    initialOffset: offset + posts.length,
+    currentPage: page,
+    totalPages,
+    previousPageUrl: page > 1 ? pageUrl(page - 1) : null,
+    nextPageUrl: page < totalPages ? pageUrl(page + 1) : null
   });
 }
 

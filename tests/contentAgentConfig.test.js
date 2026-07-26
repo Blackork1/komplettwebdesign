@@ -255,6 +255,7 @@ test('mark profile and links expose stable approved context', () => {
     '/leistungen/local-seo',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
+    '/branchen/webdesign-blumenladen',
     '/website-tester'
   ]);
 });

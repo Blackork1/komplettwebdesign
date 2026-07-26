@@ -65,6 +65,12 @@ export const leistungenOverviewPage = Object.freeze({
       href: '/leistungen/laufende-kosten-website',
       text: 'Domain, E-Mail, Hosting, Wartung, externe Tools und Betriebskosten realistisch einordnen.',
       icon: 'fa-server'
+    }),
+    Object.freeze({
+      title: 'Website für Handwerker',
+      href: '/handwerker',
+      text: 'Leistungen und Anfragewege für Handwerksbetriebe in Berlin passend einordnen.',
+      icon: 'fa-hammer'
     })
   ]),
   nextSteps: Object.freeze([

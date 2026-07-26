@@ -5,6 +5,15 @@ import pricingService from '../services/pricingService.js';
 import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 
+const INDUSTRY_CONTEXT_LINKS = Object.freeze({
+  blumenladen: Object.freeze([
+    Object.freeze({
+      label: 'SEO für Blumenläden im Blog',
+      href: '/blog/seo-fuer-blumenladen'
+    })
+  ])
+});
+
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
   const proto = req.headers['cf-visitor']
@@ -42,6 +51,11 @@ async function getIndustryPackages(res) {
     }));
 }
 
+export function getIndustryContextLinks(slug) {
+  const normalizedSlug = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
+  return [...(INDUSTRY_CONTEXT_LINKS[normalizedSlug] || [])];
+}
+
 /* --- NEU: Branchen-Übersicht (/branchen) --- */
 export async function listIndustries(req, res) {
   try {
@@ -77,6 +91,11 @@ export async function listIndustries(req, res) {
       baseUrl,
       featured,
       others,
+      existingIndustryPages: [{
+        title: 'Website für Handwerker',
+        description: 'Webdesign, Leistungen und Anfragewege für Handwerksbetriebe in Berlin.',
+        href: '/handwerker'
+      }],
       toPath
     });
   } catch (err) {
@@ -106,6 +125,7 @@ export async function showIndustryPage(req, res) {
       description: industry.description || (`Website-Erstellung & SEO für ${industry.name}`),
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
+      industryContextLinks: getIndustryContextLinks(industry.slug),
       packages: await getIndustryPackages(res),
       jsonLd
     });

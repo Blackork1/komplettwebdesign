@@ -9,7 +9,12 @@
 const renderedPosts = Array.isArray(posts) ? posts : [];
 const renderedTotalPosts = Number.isFinite(Number(totalPosts)) ? Number(totalPosts) : renderedPosts.length;
 const renderedPageSize = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 10;
-const hasMorePosts = renderedTotalPosts > renderedPosts.length;
+const renderedCurrentPage = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
+const renderedTotalPages = Number.isFinite(Number(totalPages)) ? Number(totalPages) : 1;
+const renderedInitialOffset = Number.isFinite(Number(initialOffset))
+  ? Number(initialOffset)
+  : renderedPosts.length;
+const hasMorePosts = renderedCurrentPage < renderedTotalPages;
 %>
 
 <main class="rg-page blog-page blog-index-page" id="hero">
@@ -111,7 +116,7 @@ const hasMorePosts = renderedTotalPosts > renderedPosts.length;
           class="btn btn-primary blog-load-more__button"
           data-blog-load-more
           data-endpoint="/blog/posts"
-          data-offset="<%= renderedPosts.length %>"
+          data-offset="<%= renderedInitialOffset %>"
           data-limit="<%= renderedPageSize %>"
           <% if (!hasMorePosts) { %>hidden<% } %>
         >
@@ -121,6 +126,17 @@ const hasMorePosts = renderedTotalPosts > renderedPosts.length;
           <%= hasMorePosts ? (renderedPosts.length + ' von ' + renderedTotalPosts + ' Artikeln angezeigt.') : ('Alle ' + renderedTotalPosts + ' Artikel angezeigt.') %>
         </p>
       </div>
+      <% if (totalPages > 1) { %>
+      <nav class="blog-pagination" aria-label="Blogseiten">
+        <% if (previousPageUrl) { %>
+        <a rel="prev" href="<%= previousPageUrl %>">Neuere Artikel</a>
+        <% } %>
+        <span>Seite <%= currentPage %> von <%= totalPages %></span>
+        <% if (nextPageUrl) { %>
+        <a rel="next" href="<%= nextPageUrl %>">Ältere Artikel</a>
+        <% } %>
+      </nav>
+      <% } %>
     </div>
 
     <aside class="rg-side-column">

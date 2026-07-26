@@ -48,6 +48,9 @@ const industryPackageById = Object.fromEntries(industryPackages.map((pkg) => [pk
 const startPriceLabel = industryPackageById.start?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('start') : '');
 const businessPriceLabel = industryPackageById.business?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('business') : '');
 const wachstumPriceLabel = industryPackageById.wachstum?.price || (typeof packagePriceLabel === 'function' ? packagePriceLabel('wachstum') : '');
+const renderedIndustryContextLinks = Array.isArray(
+  typeof industryContextLinks === 'undefined' ? null : industryContextLinks
+) ? industryContextLinks : [];
 
 // für das Carousel die Positionen
 const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--far-right"];
@@ -157,6 +160,17 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
             Mit meinem ganzheitlichen <a href="/webdesign-berlin">Webdesign Berlin</a>-Ansatz erhältst du einen klar abgestimmten Projektprozess –
             von der ersten Idee bis zur optionalen Weiterentwicklung deiner Online-Präsenz.
           </p>
+          <% if (renderedIndustryContextLinks.length) { %>
+          <nav aria-label="Passende Branchenartikel">
+            <p>
+              Vertiefung:
+              <% renderedIndustryContextLinks.forEach(function(link, index) { %>
+                <% if (index > 0) { %><span aria-hidden="true"> · </span><% } %>
+                <a href="<%= link.href %>"><%= link.label %></a>
+              <% }); %>
+            </p>
+          </nav>
+          <% } %>
         </div>
 
 

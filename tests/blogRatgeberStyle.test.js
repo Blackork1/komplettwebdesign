@@ -64,7 +64,7 @@ test('blog css only keeps blog-specific refinements on top of ratgeber styles', 
 
 test('blog index paginates articles and loads more through axios without a full page reload', () => {
   assert.match(blogController, /const BLOG_PAGE_SIZE = 10/);
-  assert.match(blogController, /findPage\(\{ limit: BLOG_PAGE_SIZE, offset: 0 \}\)/);
+  assert.match(blogController, /findPage\(\{ limit: BLOG_PAGE_SIZE, offset \}\)/);
   assert.match(blogController, /export async function listPostsPage/);
   assert.match(blogModel, /static async findPage/);
   assert.match(blogModel, /LIMIT \$1\s+OFFSET \$2/);
