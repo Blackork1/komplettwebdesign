@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -244,6 +245,23 @@ test('ersetzt die allgemeine Kopfzeile vollständig durch eine eigene Swipe-&-Co
       /Projekt anfragen|Website erstellen lassen|Webdesign Berlin/
     );
   }
+});
+
+test('verwendet in der Kopfzeile exakt das offizielle dunkle Swipe-&-Cook-App-Icon', () => {
+  const header = read('views/partials/swipeandcook-header.ejs');
+  const icon = readFileSync(
+    new URL('../public/images/swipeandcook-icon-dark.png', import.meta.url)
+  );
+
+  assert.match(
+    header,
+    /<img[^>]+class="swipe-site-brand__icon"[^>]+src="\/images\/swipeandcook-icon-dark\.png"/
+  );
+  assert.doesNotMatch(header, /swipe-site-brand__mark|S<span>&amp;<\/span>C/);
+  assert.equal(
+    createHash('sha256').update(icon).digest('hex'),
+    '5e845b9fa9b60ed3fb0ccfea114f74a78e46abd69e96b3d39e58d3be8a735154'
+  );
 });
 
 test('der begrenzte Rechtstext-Renderer escaped aktive Inhalte und erlaubt nur sichere Links', () => {
