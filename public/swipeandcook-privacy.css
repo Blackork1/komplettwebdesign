@@ -10,8 +10,135 @@
   color: var(--swipe-text);
 }
 
+.swipe-site-header {
+  --swipe-header-navy: #071f32;
+  --swipe-header-blue: #0b6fc2;
+  --swipe-header-line: #dbe4ea;
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  border-bottom: 1px solid var(--swipe-header-line);
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 .35rem 1.5rem rgba(7, 31, 50, .06);
+  backdrop-filter: blur(16px);
+}
+
+.swipe-site-skip {
+  position: absolute;
+  z-index: 2;
+  top: .5rem;
+  left: .75rem;
+  padding: .65rem .9rem;
+  border-radius: .55rem;
+  background: var(--swipe-header-navy);
+  color: #fff;
+  font-weight: 750;
+  transform: translateY(-180%);
+}
+
+.swipe-site-skip:focus {
+  color: #fff;
+  transform: translateY(0);
+}
+
+.swipe-site-header__inner {
+  display: flex;
+  width: min(1180px, calc(100% - 2.5rem));
+  min-height: 5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 0 auto;
+}
+
+.swipe-site-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .75rem;
+  color: var(--swipe-header-navy);
+  text-decoration: none;
+}
+
+.swipe-site-brand:hover {
+  color: var(--swipe-header-navy);
+}
+
+.swipe-site-brand__mark {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: .85rem;
+  background: var(--swipe-header-navy);
+  color: #fff;
+  font-size: .92rem;
+  font-weight: 850;
+  letter-spacing: -.04em;
+  box-shadow: 0 .45rem 1rem rgba(7, 31, 50, .14);
+}
+
+.swipe-site-brand__mark span {
+  color: #4cff00;
+}
+
+.swipe-site-brand__copy {
+  display: grid;
+  gap: .05rem;
+}
+
+.swipe-site-brand__copy strong {
+  font-size: 1.05rem;
+  letter-spacing: -.015em;
+}
+
+.swipe-site-brand__copy small {
+  color: #60717e;
+  font-size: .74rem;
+}
+
+.swipe-site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .25rem;
+}
+
+.swipe-site-nav a {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  padding: .55rem .78rem;
+  border-radius: .65rem;
+  color: #385162;
+  font-size: .88rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    color .18s ease,
+    background-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.swipe-site-nav a:hover {
+  background: #eef7fd;
+  color: var(--swipe-header-blue);
+}
+
+.swipe-site-nav a[aria-current="page"] {
+  background: #e4f3fd;
+  color: var(--swipe-header-navy);
+  box-shadow: inset 0 0 0 1px #b8ddf5;
+}
+
+.swipe-site-header a:focus-visible {
+  outline: 3px solid #4cff00;
+  outline-offset: 3px;
+}
+
 .swipe-privacy-hero {
-  padding: clamp(5.5rem, 9vw, 8rem) 0 clamp(2.75rem, 5vw, 4.5rem);
+  padding: clamp(3.75rem, 7vw, 6rem) 0 clamp(2.75rem, 5vw, 4.5rem);
   border-bottom: 1px solid var(--swipe-line);
   background: linear-gradient(155deg, #f8fcff 0%, var(--swipe-blue-soft) 100%);
 }
@@ -69,33 +196,6 @@
 .swipe-privacy-content {
   padding-top: clamp(2rem, 5vw, 4rem);
   padding-bottom: clamp(4rem, 7vw, 7rem);
-}
-
-.swipe-legal-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .65rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--swipe-line);
-}
-
-.swipe-legal-nav a {
-  display: inline-flex;
-  min-height: 2.7rem;
-  align-items: center;
-  padding: .55rem .85rem;
-  border: 1px solid #c9e3f5;
-  border-radius: 999px;
-  background: #f4faff;
-  color: var(--swipe-navy-soft);
-  font-size: .9rem;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.swipe-legal-nav a:hover {
-  border-color: var(--swipe-blue);
 }
 
 .swipe-privacy-summary {
@@ -335,9 +435,35 @@
   margin-top: 1.25rem;
 }
 
+@media (max-width: 760px) {
+  .swipe-site-header__inner {
+    width: min(100% - 1.5rem, 34rem);
+    align-items: stretch;
+    flex-direction: column;
+    gap: .65rem;
+    padding: .75rem 0;
+  }
+
+  .swipe-site-brand {
+    justify-content: center;
+  }
+
+  .swipe-site-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .35rem;
+  }
+
+  .swipe-site-nav a {
+    justify-content: center;
+    padding-inline: .45rem;
+    text-align: center;
+  }
+}
+
 @media (max-width: 640px) {
   .swipe-privacy-hero {
-    padding-top: 4.75rem;
+    padding-top: 3.5rem;
   }
 
   .swipe-privacy-hero h1 {
@@ -348,12 +474,10 @@
     padding-inline: 1.1rem;
   }
 
-  .swipe-legal-nav,
   .swipe-deletion-store-links {
     display: grid;
   }
 
-  .swipe-legal-nav a,
   .swipe-deletion-store-links a,
   .swipe-deletion-form button {
     width: 100%;

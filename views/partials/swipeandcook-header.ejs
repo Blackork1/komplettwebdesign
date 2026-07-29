@@ -1,0 +1,42 @@
+<%
+  const swipeCurrentPath = (
+    typeof currentPathname !== 'undefined'
+    && currentPathname
+  ) ? currentPathname : '';
+  const swipeNavigation = [
+    { label: 'Support', href: '/swipeandcook-support' },
+    { label: 'Datenschutz', href: '/swipeandcook-datenschutz' },
+    {
+      label: 'Nutzungsbedingungen',
+      href: '/swipeandcook-nutzungsbedingungen'
+    },
+    { label: 'Konto löschen', href: '/swipeandcook-konto-loeschen' }
+  ];
+%>
+<header class="swipe-site-header">
+  <a class="swipe-site-skip" href="#main-content">Zum Inhalt springen</a>
+  <div class="swipe-site-header__inner">
+    <a
+      class="swipe-site-brand"
+      href="/swipeandcook-support"
+      aria-label="Swipe & Cook Support"
+    >
+      <span class="swipe-site-brand__mark" aria-hidden="true">
+        S<span>&amp;</span>C
+      </span>
+      <span class="swipe-site-brand__copy">
+        <strong>Swipe &amp; Cook</strong>
+        <small>Hilfe und rechtliche Informationen</small>
+      </span>
+    </a>
+
+    <nav class="swipe-site-nav" aria-label="Swipe & Cook">
+      <% swipeNavigation.forEach((item) => { %>
+        <a
+          href="<%= item.href %>"
+          <%- swipeCurrentPath === item.href ? ' aria-current="page"' : '' %>
+        ><%= item.label %></a>
+      <% }) %>
+    </nav>
+  </div>
+</header>

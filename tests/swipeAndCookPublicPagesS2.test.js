@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { load } from 'cheerio';
 import ejs from 'ejs';
 import express from 'express';
 
@@ -180,9 +181,68 @@ test('rendert alle vier vollständigen EJS-Seiten mit Kopfzeile und Footer fehle
     });
 
     assert.equal((html.match(/<h1\b/g) || []).length, 1, contract.path);
-    assert.match(html, /<header>/);
+    assert.match(html, /<header(?:\s|>)/);
     assert.match(html, /<footer class="site-footer">/);
     assert.match(html, new RegExp(`href="${contract.path}"`));
+  }
+});
+
+test('ersetzt die allgemeine Kopfzeile vollständig durch eine eigene Swipe-&-Cook-Navigation', async () => {
+  const expectedNavigation = [
+    '/swipeandcook-support',
+    '/swipeandcook-datenschutz',
+    '/swipeandcook-nutzungsbedingungen',
+    '/swipeandcook-konto-loeschen'
+  ];
+
+  for (const contract of pageContracts) {
+    const template = fileURLToPath(new URL(
+      `../views/${contract.view}.ejs`,
+      import.meta.url
+    ));
+    const html = await ejs.renderFile(template, {
+      title: `Swipe & Cook – ${contract.key}`,
+      description: 'Öffentliche Swipe-&-Cook-Seite',
+      legalPage: loadSwipeAndCookLegalPage(contract.key),
+      canonicalBaseUrl: 'https://www.komplettwebdesign.de',
+      canonicalUrl: `https://www.komplettwebdesign.de${contract.path}`,
+      assetVersion: 'test',
+      asset: (assetPath) => `/${assetPath}`,
+      cssAsset: (assetPath) => `/${assetPath}`,
+      jsAsset: (assetPath) => `/${assetPath}`,
+      csrfToken: 'csrf-test',
+      currentPathname: contract.path,
+      currentSearch: '',
+      headerNavigation: [],
+      footerNavigation,
+      lng: 'de',
+      robots: 'noindex',
+      disableTracking: true,
+      disableInteractionPolish: true,
+      trackingContext: {},
+      escapeJsonForHtml: (value) => JSON.stringify(value)
+    });
+    const $ = load(html);
+
+    assert.equal($('header.swipe-site-header').length, 1, contract.path);
+    assert.deepEqual(
+      $('header.swipe-site-header nav a').map((_index, link) => (
+        $(link).attr('href')
+      )).get(),
+      expectedNavigation,
+      contract.path
+    );
+    assert.equal(
+      $(`header.swipe-site-header a[href="${contract.path}"][aria-current="page"]`).length,
+      1,
+      contract.path
+    );
+    assert.equal($('header .hero-nav, header .navigation, header .logo').length, 0);
+    assert.equal($('.swipe-legal-nav').length, 0);
+    assert.doesNotMatch(
+      $('header.swipe-site-header').text(),
+      /Projekt anfragen|Website erstellen lassen|Webdesign Berlin/
+    );
   }
 });
 
