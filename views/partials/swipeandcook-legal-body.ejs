@@ -1,0 +1,27 @@
+<main class="swipe-privacy-page swipe-legal-page" id="main-content">
+  <section class="swipe-privacy-hero" id="hero" aria-labelledby="swipe-legal-title">
+    <div class="container swipe-privacy-hero__inner">
+      <p class="swipe-privacy-eyebrow"><span aria-hidden="true"></span>Swipe &amp; Cook</p>
+      <h1 id="swipe-legal-title"><%= legalPage.title %></h1>
+      <p class="swipe-privacy-lead"><%= legalPage.lead %></p>
+      <p class="swipe-privacy-date">Stand: <%= legalPage.stand %></p>
+    </div>
+  </section>
+
+  <div class="container swipe-privacy-content">
+    <nav class="swipe-legal-nav" aria-label="Rechtliche Informationen zu Swipe & Cook">
+      <a href="/swipeandcook-datenschutz">Datenschutz</a>
+      <a href="/swipeandcook-nutzungsbedingungen">Nutzungsbedingungen</a>
+      <a href="/swipeandcook-support">Support</a>
+      <a href="/swipeandcook-konto-loeschen">Konto löschen</a>
+    </nav>
+
+    <% if (legalPage.key === 'accountDeletion') { %>
+      <%- include('./swipeandcook-account-deletion-forms') %>
+    <% } %>
+
+    <article class="swipe-privacy-article swipe-legal-article">
+      <%- legalPage.html %>
+    </article>
+  </div>
+</main>

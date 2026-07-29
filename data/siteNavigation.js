@@ -172,6 +172,9 @@ export const footerNavigation = Object.freeze([
       { label: 'Impressum', labelEn: 'Legal notice', href: '/impressum' },
       { label: 'Datenschutz', labelEn: 'Privacy policy', href: '/datenschutz' },
       { label: 'Swipe & Cook Datenschutz', labelEn: 'Swipe & Cook privacy', href: '/swipeandcook-datenschutz' },
+      { label: 'Swipe & Cook Nutzungsbedingungen', labelEn: 'Swipe & Cook terms', href: '/swipeandcook-nutzungsbedingungen' },
+      { label: 'Swipe & Cook Support', labelEn: 'Swipe & Cook support', href: '/swipeandcook-support' },
+      { label: 'Swipe & Cook Konto löschen', labelEn: 'Delete Swipe & Cook account', href: '/swipeandcook-konto-loeschen' },
       { label: 'Hinweisseite', labelEn: 'Notes page', href: '/hinweise-rechtstexte-seo-datenschutz' }
     ]
   }

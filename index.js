@@ -77,10 +77,16 @@ import adminRatgeberRoutes from './routes/adminRatgeberRoutes.js';
 import testRouter from './routes/testRouter.js';
 import adminLeistungenRoutes from './routes/adminLeistungenRoutes.js';
 import leistungenRoutes from './routes/leistungenRoutes.js';
+import {
+  createSwipeAndCookAccountDeletionRouter
+} from './routes/swipeAndCookAccountDeletionRoutes.js';
 import { footerNavigation, headerCta, headerNavigation } from './data/siteNavigation.js';
 import { trackingPageContextForPath } from './data/trackingEvents.js';
 import { createContentArticlePerformanceRepository } from './repositories/contentArticlePerformanceRepository.js';
 import { createContentAttributionService } from './services/contentAgent/contentAttributionService.js';
+import {
+  createSwipeAndCookAccountDeletionGateway
+} from './services/swipeAndCookAccountDeletionGateway.js';
 import { createContentTrackingRouter } from './routes/contentTrackingRoutes.js';
 import {
   escapeHtml,
@@ -339,6 +345,14 @@ const contentAttributionService = createContentAttributionService({
 app.set('contentAttributionService', contentAttributionService);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 app.set('stripe', stripe);
+const swipeAndCookAccountDeletionGateway =
+  createSwipeAndCookAccountDeletionGateway({
+    apiBaseUrl: process.env.SWIPEANDCOOK_API_BASE_URL
+  });
+const swipeAndCookAccountDeletionRoutes =
+  createSwipeAndCookAccountDeletionRouter({
+    gateway: swipeAndCookAccountDeletionGateway
+  });
 
 // CSS-Klassen & Feldkonfiguration
 app.set('cssClasses', getCssClasses());
@@ -414,6 +428,7 @@ app.use(blogRoutes);
 app.use(adminBlogRoutes);
 app.use(adminContentAgentRoutes);
 app.use('/', starticPagesRoutes);
+app.use(swipeAndCookAccountDeletionRoutes);
 app.use(packageRoutes);
 app.use('/en', packageRoutes);
 app.use(faqRoutes);

@@ -1,0 +1,86 @@
+<section
+  class="swipe-deletion-panel"
+  aria-labelledby="swipe-deletion-online-title"
+  data-request-endpoint="/api/swipeandcook/account-deletion-requests"
+  data-verification-endpoint="/api/swipeandcook/account-deletion-verifications"
+  data-swipedeletion-root
+>
+  <div class="swipe-deletion-panel__intro">
+    <p class="swipe-privacy-eyebrow">Sicherer Onlineweg</p>
+    <h2 id="swipe-deletion-online-title">Löschung ohne App anfordern</h2>
+    <p>Gib ausschließlich die E-Mail-Adresse deines Swipe-&amp;-Cook-Kontos ein. Die neutrale Antwort verrät nicht, ob unter der Adresse ein Konto besteht.</p>
+  </div>
+
+  <form id="swipe-deletion-request-form" class="swipe-deletion-form" novalidate>
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <div class="swipe-deletion-field">
+      <label for="swipe-deletion-email">E-Mail-Adresse des Swipe-&amp;-Cook-Kontos</label>
+      <input
+        id="swipe-deletion-email"
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        maxlength="254"
+        required
+      >
+    </div>
+    <div class="swipe-deletion-honeypot" aria-hidden="true">
+      <label for="swipe-deletion-website">Website</label>
+      <input
+        id="swipe-deletion-website"
+        name="website"
+        type="text"
+        autocomplete="off"
+        tabindex="-1"
+        maxlength="200"
+      >
+    </div>
+    <button class="btn btn-primary" type="submit">Verifizierungslink anfordern</button>
+  </form>
+
+  <form id="swipe-deletion-verification-form" class="swipe-deletion-form" hidden novalidate>
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <input type="hidden" name="externalRequestId">
+    <input type="hidden" name="token">
+
+    <div class="swipe-deletion-field">
+      <label for="swipe-deletion-verification-email">E-Mail-Adresse erneut eingeben</label>
+      <input
+        id="swipe-deletion-verification-email"
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        maxlength="254"
+        required
+      >
+    </div>
+
+    <fieldset class="swipe-deletion-options">
+      <legend>Wann soll dein Konto gelöscht werden?</legend>
+      <label>
+        <input type="radio" name="mode" value="immediate" checked>
+        <span><strong>Sofort löschen</strong><small>Der Kontozugang und persönliche Inhalte gehen unmittelbar verloren.</small></span>
+      </label>
+      <label>
+        <input type="radio" name="mode" value="scheduled">
+        <span><strong>Zum Ende der bezahlten Laufzeit</strong><small>Nur möglich, wenn ein aktives Storeabo technisch bestätigt ist.</small></span>
+      </label>
+    </fieldset>
+
+    <label class="swipe-deletion-confirm">
+      <input type="checkbox" name="confirmPaidAccessLoss" required>
+      <span>Ich verstehe, dass „Konto trotzdem löschen“ meinen Kontozugang und eine noch bezahlte Premium-Restlaufzeit sofort beendet. Das Storeabo wird dadurch nicht automatisch gekündigt.</span>
+    </label>
+
+    <button class="btn btn-danger" type="submit">Konto trotzdem löschen</button>
+  </form>
+
+  <p class="swipe-deletion-status" role="status" aria-live="polite" data-swipedeletion-status></p>
+
+  <div class="swipe-deletion-store-links" aria-label="Storeabo verwalten">
+    <a class="btn btn-outline-primary" href="https://apps.apple.com/account/subscriptions">Abo bei Apple verwalten</a>
+    <a class="btn btn-outline-primary" href="https://play.google.com/store/account/subscriptions">Abo bei Google verwalten</a>
+  </div>
+</section>

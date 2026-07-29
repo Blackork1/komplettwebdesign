@@ -8,6 +8,9 @@ import { maintenancePage } from '../data/maintenancePage.js';
 import { runningCostsPage } from '../data/runningCostsPage.js';
 import { withServiceHeroImage } from '../data/serviceHeroImages.js';
 import pricingService from '../services/pricingService.js';
+import {
+  loadSwipeAndCookLegalPage
+} from '../services/swipeAndCookLegalContentService.js';
 import { interpolatePricingTokens } from '../util/pricingViewModel.js';
 const router  = express.Router();
 
@@ -246,9 +249,52 @@ router.get('/datenschutz', (req, res) => {
 router.get('/swipeandcook-datenschutz', (_req, res) => {
   res.render('static/swipeandcook-datenschutz', {
     title: 'Swipe & Cook Datenschutz | Komplett Webdesign',
-    description: 'Datenschutzhinweise zur Verarbeitung von Konto-, Anmelde- und Rezeptdaten in der App Swipe & Cook.',
+    description: 'Datenschutzerklärung für Swipe & Cook zu Konto, Safety-Angaben, Premium und optionaler Produktanalyse.',
     currentPathname: '/swipeandcook-datenschutz',
-    extraCssAssets: ['swipeandcook-privacy.css']
+    extraCssAssets: ['swipeandcook-privacy.css'],
+    legalPage: loadSwipeAndCookLegalPage('privacy')
+  });
+});
+
+/**
+ *  GET /swipeandcook-nutzungsbedingungen
+ *  app-specific terms of use
+ */
+router.get('/swipeandcook-nutzungsbedingungen', (_req, res) => {
+  res.render('static/swipeandcook-nutzungsbedingungen', {
+    title: 'Swipe & Cook Nutzungsbedingungen | Komplett Webdesign',
+    description: 'Nutzungsbedingungen für die Free- und Premiumfunktionen, Abos und Kontoverwaltung von Swipe & Cook.',
+    currentPathname: '/swipeandcook-nutzungsbedingungen',
+    extraCssAssets: ['swipeandcook-privacy.css'],
+    legalPage: loadSwipeAndCookLegalPage('terms')
+  });
+});
+
+/**
+ *  GET /swipeandcook-support
+ *  app-specific support information
+ */
+router.get('/swipeandcook-support', (_req, res) => {
+  res.render('static/swipeandcook-support', {
+    title: 'Swipe & Cook Support | Komplett Webdesign',
+    description: 'Hilfe zu Konto, Premiumabo, Storestatus, Plattformwechsel und Kontolöschung bei Swipe & Cook.',
+    currentPathname: '/swipeandcook-support',
+    extraCssAssets: ['swipeandcook-privacy.css'],
+    legalPage: loadSwipeAndCookLegalPage('support')
+  });
+});
+
+/**
+ *  GET /swipeandcook-konto-loeschen
+ *  app-specific verified account deletion
+ */
+router.get('/swipeandcook-konto-loeschen', (_req, res) => {
+  res.render('static/swipeandcook-konto-loeschen', {
+    title: 'Swipe & Cook Konto löschen | Komplett Webdesign',
+    description: 'Swipe-&-Cook-Konto direkt in der App oder über eine verifizierte E-Mail-Anfrage löschen.',
+    currentPathname: '/swipeandcook-konto-loeschen',
+    extraCssAssets: ['swipeandcook-privacy.css'],
+    legalPage: loadSwipeAndCookLegalPage('accountDeletion')
   });
 });
 

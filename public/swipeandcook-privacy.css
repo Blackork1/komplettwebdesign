@@ -71,6 +71,33 @@
   padding-bottom: clamp(4rem, 7vw, 7rem);
 }
 
+.swipe-legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--swipe-line);
+}
+
+.swipe-legal-nav a {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  padding: .55rem .85rem;
+  border: 1px solid #c9e3f5;
+  border-radius: 999px;
+  background: #f4faff;
+  color: var(--swipe-navy-soft);
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.swipe-legal-nav a:hover {
+  border-color: var(--swipe-blue);
+}
+
 .swipe-privacy-summary {
   margin-bottom: 2rem;
   padding: clamp(1.25rem, 3vw, 1.75rem);
@@ -127,6 +154,22 @@
   padding-left: 1.3rem;
 }
 
+.swipe-privacy-article ol {
+  padding-left: 1.5rem;
+}
+
+.swipe-privacy-article code {
+  padding: .12rem .32rem;
+  border-radius: .3rem;
+  background: #eef3f6;
+  color: #18364a;
+  font-size: .92em;
+}
+
+.swipe-legal-article > section:first-child {
+  border-top: 0;
+}
+
 .swipe-privacy-provider-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -172,6 +215,126 @@
   outline-offset: 3px;
 }
 
+.swipe-deletion-panel {
+  margin: 1rem 0 3rem;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid #bcdcf1;
+  border-radius: 1.1rem;
+  background: #f6fbff;
+}
+
+.swipe-deletion-panel__intro h2 {
+  margin: .35rem 0 .75rem;
+  color: var(--swipe-navy);
+}
+
+.swipe-deletion-panel__intro > p:last-child {
+  color: #425766;
+  line-height: 1.7;
+}
+
+.swipe-deletion-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.swipe-deletion-field {
+  display: grid;
+  gap: .45rem;
+}
+
+.swipe-deletion-field label,
+.swipe-deletion-options legend {
+  color: var(--swipe-navy);
+  font-weight: 750;
+}
+
+.swipe-deletion-field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: .7rem .8rem;
+  border: 1px solid #9cb8ca;
+  border-radius: .55rem;
+  background: #fff;
+  color: var(--swipe-text);
+}
+
+.swipe-deletion-field input:focus-visible {
+  border-color: var(--swipe-blue);
+  outline: 3px solid rgba(11, 111, 194, .2);
+}
+
+.swipe-deletion-honeypot {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  white-space: nowrap !important;
+}
+
+.swipe-deletion-options {
+  display: grid;
+  gap: .7rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.swipe-deletion-options label,
+.swipe-deletion-confirm {
+  display: flex;
+  gap: .7rem;
+  align-items: flex-start;
+  padding: .9rem;
+  border: 1px solid var(--swipe-line);
+  border-radius: .65rem;
+  background: #fff;
+}
+
+.swipe-deletion-options input,
+.swipe-deletion-confirm input {
+  margin-top: .22rem;
+  flex: 0 0 auto;
+}
+
+.swipe-deletion-options span {
+  display: grid;
+  gap: .2rem;
+}
+
+.swipe-deletion-options small {
+  color: var(--swipe-muted);
+  line-height: 1.45;
+}
+
+.swipe-deletion-confirm span {
+  color: #425766;
+  line-height: 1.55;
+}
+
+.swipe-deletion-status {
+  min-height: 1.5rem;
+  margin: 1rem 0 0;
+  font-weight: 700;
+}
+
+.swipe-deletion-status[data-tone="success"] {
+  color: #17653a;
+}
+
+.swipe-deletion-status[data-tone="error"] {
+  color: #a02b2b;
+}
+
+.swipe-deletion-store-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.25rem;
+}
+
 @media (max-width: 640px) {
   .swipe-privacy-hero {
     padding-top: 4.75rem;
@@ -183,6 +346,18 @@
 
   .swipe-privacy-content {
     padding-inline: 1.1rem;
+  }
+
+  .swipe-legal-nav,
+  .swipe-deletion-store-links {
+    display: grid;
+  }
+
+  .swipe-legal-nav a,
+  .swipe-deletion-store-links a,
+  .swipe-deletion-form button {
+    width: 100%;
+    justify-content: center;
   }
 
   .swipe-privacy-provider-grid {

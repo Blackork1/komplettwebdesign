@@ -6,6 +6,9 @@ import express from 'express';
 import { footerNavigation } from '../data/siteNavigation.js';
 import { INDEXABLE_STATIC_ROUTES } from '../helpers/seoPagePolicy.js';
 import staticPagesRouter from '../routes/staticPages.js';
+import {
+  loadSwipeAndCookLegalPage
+} from '../services/swipeAndCookLegalContentService.js';
 
 function read(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -23,20 +26,22 @@ test('registers the canonical Swipe & Cook privacy route with its own CSS', () =
 
 test('publishes the full approved privacy information without internal paths', () => {
   const view = read('views/static/swipeandcook-datenschutz.ejs');
+  const source = read('content/swipeandcook/s2-datenschutzerklaerung.md');
+  const page = loadSwipeAndCookLegalPage('privacy');
 
-  assert.match(view, /id="hero"/);
-  assert.match(view, /Datenschutzhinweise für die App/);
-  assert.match(view, /Konto und Anmeldung/);
-  assert.match(view, /Rezept- und Nutzungsdaten/);
-  assert.match(view, /Sicherheits- und Betriebsprotokolle/);
-  assert.match(view, /Supabase/);
-  assert.match(view, /Google Ireland Limited/);
-  assert.match(view, /Apple Distribution International Limited/);
-  assert.match(view, /höchstens zwölf Monate/);
-  assert.match(view, /grundsätzlich innerhalb von 30 Tagen/);
-  assert.match(view, /kontakt@komplettwebdesign\.de/);
-  assert.match(view, /href="\/datenschutz"/);
-  assert.doesNotMatch(view, /docs\/privacy|s0-google-apple|Status:\s*Entwurf/i);
+  assert.match(view, /swipeandcook-legal-body/);
+  assert.match(source, /Stand: 29\. Juli 2026/);
+  assert.match(source, /Konto, Anmeldung und Appnutzung/);
+  assert.match(source, /Allergien, Unverträglichkeiten und andere Safety-Angaben/);
+  assert.match(source, /Premiumabonnements, Käufe und Wiederherstellung/);
+  assert.match(source, /RevenueCat/);
+  assert.match(source, /Optionale Produktanalyse/);
+  assert.match(source, /Kontolöschung und weiterlaufendes Storeabo/);
+  assert.match(source, /kontakt@komplettwebdesign\.de/);
+  assert.doesNotMatch(
+    page.html,
+    /Vorgesehene öffentliche Adresse|Interner Status|S2-Nachweismatrix|Status:\s*Entwurf/i
+  );
 });
 
 test('serves both privacy routes successfully over HTTP', async () => {
