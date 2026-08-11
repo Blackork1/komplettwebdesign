@@ -80,6 +80,10 @@ import leistungenRoutes from './routes/leistungenRoutes.js';
 import {
   createSwipeAndCookAccountDeletionRouter
 } from './routes/swipeAndCookAccountDeletionRoutes.js';
+import {
+  createSwipeAndCookInviteRouter,
+  loadSwipeAndCookInvitePageConfig
+} from './routes/swipeAndCookInviteRoutes.js';
 import { footerNavigation, headerCta, headerNavigation } from './data/siteNavigation.js';
 import { trackingPageContextForPath } from './data/trackingEvents.js';
 import { createContentArticlePerformanceRepository } from './repositories/contentArticlePerformanceRepository.js';
@@ -87,6 +91,9 @@ import { createContentAttributionService } from './services/contentAgent/content
 import {
   createSwipeAndCookAccountDeletionGateway
 } from './services/swipeAndCookAccountDeletionGateway.js';
+import {
+  loadSwipeAndCookAssociationConfig
+} from './services/swipeAndCookAppAssociationService.js';
 import { createContentTrackingRouter } from './routes/contentTrackingRoutes.js';
 import {
   escapeHtml,
@@ -159,6 +166,7 @@ validateCssAssetManifest(cssAssetManifest, [
   'seo-landing.css',
   'shop.css',
   'styles.css',
+  'swipeandcook-invite.css',
   'unified-hero.css',
   'webdesign-berlin.css',
   'website-tester.css'
@@ -304,6 +312,10 @@ app.use(express.static(publicDir, staticOpts));
 app.get('/assets/js/axios.min.js', (_req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/axios/dist/axios.min.js'));
 });
+app.use(createSwipeAndCookInviteRouter({
+  associationConfig: loadSwipeAndCookAssociationConfig(process.env),
+  invitePageConfig: loadSwipeAndCookInvitePageConfig(process.env)
+}));
 // app.get('/sitemap.xml', (_req, res) => {
 //   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 // });

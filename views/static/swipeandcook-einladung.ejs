@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Öffne eine private Einladung zu einem gemeinsamen Bereich in Swipe & Cook.">
+  <meta name="robots" content="noindex,nofollow">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="<%= cssAsset('swipeandcook-invite.css') %>">
+</head>
+<body class="swipe-invite-page">
+  <a class="swipe-invite-skip" href="#main-content">Zum Inhalt springen</a>
+
+  <header class="swipe-invite-header" aria-label="Swipe & Cook">
+    <div class="swipe-invite-shell swipe-invite-header__inner">
+      <img
+        src="/images/swipeandcook-icon-dark.png"
+        width="56"
+        height="56"
+        alt=""
+        aria-hidden="true"
+      >
+      <div>
+        <strong>Swipe &amp; Cook</strong>
+        <span>Private Einladung</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="swipe-invite-shell" id="main-content" tabindex="-1">
+    <section class="swipe-invite-hero" aria-labelledby="invite-title">
+      <p class="swipe-invite-eyebrow">Gemeinsamer Premium-Bereich</p>
+      <h1 id="invite-title">Deine persönliche Einladung</h1>
+      <p class="swipe-invite-lead">
+        Diese Einladung ist noch kein Beitritt. Du prüfst die Angaben zuerst
+        in Swipe &amp; Cook und stimmst erst danach ausdrücklich zu.
+      </p>
+    </section>
+
+    <section class="swipe-invite-card" aria-labelledby="invite-process-title">
+      <h2 id="invite-process-title">So löst du die Einladung sicher ein</h2>
+      <ol class="swipe-invite-steps">
+        <li>
+          <strong>App öffnen oder installieren</strong>
+          <span>Für den gemeinsamen Bereich benötigst du dein eigenes Swipe-&amp;-Cook-Konto.</span>
+        </li>
+        <li>
+          <strong>Mit dem richtigen Konto anmelden</strong>
+          <span>Verwende das empfohlene Konto beziehungsweise die empfohlene E-Mail-Adresse. Bist du mit dem falschen Konto angemeldet, wechsle das Konto in der App.</span>
+        </li>
+        <li>
+          <strong>Freigaben vor dem Beitritt prüfen</strong>
+          <span>Die App zeigt dir, welche gemeinsamen Angaben sichtbar werden. Dazu gehören die für gemeinsames Kochen freigegebenen Allergien und Unverträglichkeiten.</span>
+        </li>
+        <li>
+          <strong>Bewusst annehmen oder ablehnen</strong>
+          <span>Erst wenn du in der App ausdrücklich zustimmst, wirst du Mitglied. Der Link kann vorher ablaufen oder widerrufen werden.</span>
+        </li>
+      </ol>
+    </section>
+
+    <section class="swipe-invite-card swipe-invite-actions" aria-labelledby="invite-action-title">
+      <h2 id="invite-action-title">Jetzt fortfahren</h2>
+      <p class="swipe-invite-status" data-invite-status role="status" aria-live="polite">
+        Einladung wird im Browser geprüft.
+      </p>
+      <a
+        class="swipe-invite-button swipe-invite-button--primary"
+        href="<%= canonicalInviteUrl %>"
+        data-app-link
+      >Swipe &amp; Cook öffnen</a>
+
+      <div class="swipe-invite-install">
+        <p>Ist die App noch nicht installiert? Nutze deinen bereits freigegebenen privaten Testzugang:</p>
+        <a
+          class="swipe-invite-button swipe-invite-button--secondary"
+          href="<%= testFlightUrl %>"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testflight-link
+        >Über TestFlight installieren</a>
+        <a
+          class="swipe-invite-button swipe-invite-button--secondary"
+          href="<%= googlePlayInternalTestUrl %>"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-google-play-link
+        >Über Google Play Internal Testing installieren</a>
+      </div>
+
+      <p class="swipe-invite-note">
+        Apple oder Google prüfen deine Testerberechtigung. Diese Seite vergibt
+        keine Berechtigung und umgeht keine Zugangsbeschränkung. Kehre nach der
+        Installation zu dieser Einladung zurück und tippe auf „Swipe &amp; Cook öffnen“.
+      </p>
+    </section>
+
+    <aside class="swipe-invite-help" aria-labelledby="invite-help-title">
+      <h2 id="invite-help-title">Du kommst nicht weiter?</h2>
+      <p>Bitte keine Einladungsschlüssel oder Screenshots davon an den Support senden.</p>
+      <nav aria-label="Hilfe und Rechtliches">
+        <a href="/swipeandcook-support">Support</a>
+        <a href="/swipeandcook-datenschutz">Datenschutz</a>
+        <a href="/swipeandcook-nutzungsbedingungen">Nutzungsbedingungen</a>
+        <a href="/swipeandcook-konto-loeschen">Konto löschen</a>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="<%= jsAsset('js/swipeandcook-invite.js') %>" defer></script>
+</body>
+</html>

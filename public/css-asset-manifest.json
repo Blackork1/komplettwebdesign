@@ -267,6 +267,13 @@
       "hash": "82de11089fe3",
       "bytes": 16398
     },
+    "swipeandcook-invite.css": {
+      "source": "swipeandcook-invite.css",
+      "output": "swipeandcook-invite.min.css",
+      "href": "/swipeandcook-invite.min.css?v=6a066b29b429",
+      "hash": "6a066b29b429",
+      "bytes": 3214
+    },
     "swipeandcook-privacy.css": {
       "source": "swipeandcook-privacy.css",
       "output": "swipeandcook-privacy.min.css",
