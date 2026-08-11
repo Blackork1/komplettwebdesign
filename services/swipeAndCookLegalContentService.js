@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 const CONTENT_ROOT = new URL('../content/swipeandcook/', import.meta.url);
+const LEGAL_CONTENT_VERSIONS = new Set(['s2', 's3']);
 
 const PAGE_DEFINITIONS = Object.freeze({
   privacy: Object.freeze({
@@ -217,6 +218,20 @@ export function loadSwipeAndCookLegalPage(key) {
     throw new Error('swipeandcook_legal_page_unknown');
   }
   return readPage(definition);
+}
+
+export function loadSwipeAndCookLegalPageVersion(key, version) {
+  const definition = PAGE_DEFINITIONS[key];
+  if (!definition) {
+    throw new Error('swipeandcook_legal_page_unknown');
+  }
+  if (!LEGAL_CONTENT_VERSIONS.has(version)) {
+    throw new Error('swipeandcook_legal_version_unknown');
+  }
+  return readPage(Object.freeze({
+    ...definition,
+    source: definition.source.replace(/^s2-/u, `${version}-`)
+  }));
 }
 
 export const SWIPE_AND_COOK_LEGAL_PAGES = PAGE_DEFINITIONS;
