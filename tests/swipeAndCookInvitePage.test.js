@@ -158,6 +158,37 @@ test('hält den Einladungstoken ausschließlich im Fragment und sendet ihn nirge
   assert.doesNotMatch(view, /[?&]token=/);
 });
 
+test('verwendet im Browser einen echten, eng begrenzten App-Öffnen-Link', () => {
+  const token = 'A'.repeat(43);
+  const appScheme = 'de.komplettwebdesign.swipeandcook';
+  const expected = `${appScheme}://shared-invite#token=${token}`;
+  const script = read('public/js/swipeandcook-invite.js');
+
+  const attributes = new Map([
+    ['href', 'https://www.komplettwebdesign.de/swipeandcook/einladung']
+  ]);
+  const appLink = {
+    getAttribute: (name) => attributes.get(name) ?? null,
+    setAttribute: (name, value) => attributes.set(name, value),
+    removeAttribute: (name) => attributes.delete(name),
+    addEventListener: () => {}
+  };
+  const status = { textContent: '' };
+  const document = {
+    querySelector: (selector) => selector === '[data-app-link]' ? appLink : status
+  };
+  const window = { location: { hash: `#token=${token}` } };
+
+  Function('window', 'document', script)(window, document);
+
+  assert.equal(attributes.get('href'), expected);
+  assert.equal(
+    status.textContent,
+    'Die Einladung ist bereit. Öffne sie jetzt in der App.'
+  );
+  assert.doesNotMatch(attributes.get('href'), /^https:/);
+});
+
 test('bietet sichtbare Tastaturfoki und lädt nur lokale Seitendateien', () => {
   const css = read('public/swipeandcook-invite.css');
   const view = read('views/static/swipeandcook-einladung.ejs');

@@ -9,8 +9,10 @@
   const tokenMatch = /^#token=([A-Za-z0-9_-]{43})$/u.exec(fragment);
 
   if (tokenMatch) {
-    const baseUrl = appLink.getAttribute('href');
-    appLink.setAttribute('href', `${baseUrl}${fragment}`);
+    appLink.setAttribute(
+      'href',
+      `de.komplettwebdesign.swipeandcook://shared-invite${fragment}`
+    );
     status.textContent = 'Die Einladung ist bereit. Öffne sie jetzt in der App.';
   } else {
     appLink.removeAttribute('href');
