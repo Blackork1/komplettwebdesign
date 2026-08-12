@@ -79,13 +79,15 @@
           rel="noopener noreferrer"
           data-testflight-link
         >Über TestFlight installieren</a>
-        <a
-          class="swipe-invite-button swipe-invite-button--secondary"
-          href="<%= googlePlayInternalTestUrl %>"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-google-play-link
-        >Über Google Play Internal Testing installieren</a>
+        <% if (googlePlayInternalTestUrl) { %>
+          <a
+            class="swipe-invite-button swipe-invite-button--secondary"
+            href="<%= googlePlayInternalTestUrl %>"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-google-play-link
+          >Über Google Play Internal Testing installieren</a>
+        <% } %>
       </div>
 
       <p class="swipe-invite-note">

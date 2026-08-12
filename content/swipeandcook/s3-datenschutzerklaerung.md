@@ -15,14 +15,14 @@ Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
 
 Verantwortlicher im Sinne der Datenschutz-Grundverordnung ist:
 
-Komplett Webdesign  
-Inhaber: Sören Blocksdorf  
-Möllendorffstraße 26  
-10367 Berlin  
-Deutschland  
+Komplett Webdesign
+Inhaber: Sören Blocksdorf
+Möllendorffstraße 26
+10367 Berlin
+Deutschland
 E-Mail: `kontakt@komplettwebdesign.de`
 
-Technischer Support für Swipe & Cook:  
+Technischer Support für Swipe & Cook:
 `swipeandcook@komplettwebdesign.de`
 
 Diese Datenschutzerklärung informiert über die Verarbeitung
@@ -411,8 +411,8 @@ Identitätsnachweis verlangen.
 Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren.
 Für uns ist insbesondere zuständig:
 
-Berliner Beauftragte für Datenschutz und Informationsfreiheit  
-Alt-Moabit 59–61  
+Berliner Beauftragte für Datenschutz und Informationsfreiheit
+Alt-Moabit 59–61
 10555 Berlin
 
 Du kannst dich auch an die Aufsichtsbehörde deines Aufenthaltsorts wenden.

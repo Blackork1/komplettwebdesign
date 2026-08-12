@@ -231,7 +231,7 @@ Voraussetzungen Rechte auf Auskunft, Berichtigung, Einschränkung der
 Verarbeitung, Datenübertragbarkeit, Widerspruch und Widerruf erteilter
 Einwilligungen zu.
 
-Datenschutzanfragen: `kontakt@komplettwebdesign.de`  
+Datenschutzanfragen: `kontakt@komplettwebdesign.de`
 Technischer Support: `swipeandcook@komplettwebdesign.de`
 
 Datenschutzerklärung:

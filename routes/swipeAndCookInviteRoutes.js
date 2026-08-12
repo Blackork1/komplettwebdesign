@@ -65,17 +65,21 @@ export function loadSwipeAndCookInvitePageConfig(env = process.env) {
       && !url.search
     )
   );
-  const googlePlayInternalTestUrl = checkedUrl(
-    env.SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL,
-    (url) => (
-      url.hostname === 'play.google.com'
-      && [
-        '/apps/internaltest/',
-        '/apps/testing/',
-        '/store/apps/testing/'
-      ].some((prefix) => url.pathname.startsWith(prefix))
-    )
-  );
+  const googlePlayInternalTestUrl =
+    typeof env.SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL === 'string'
+    && env.SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL.trim()
+      ? checkedUrl(
+          env.SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL,
+          (url) => (
+            url.hostname === 'play.google.com'
+            && [
+              '/apps/internaltest/',
+              '/apps/testing/',
+              '/store/apps/testing/'
+            ].some((prefix) => url.pathname.startsWith(prefix))
+          )
+        )
+      : null;
 
   return Object.freeze({
     canonicalInviteUrl,

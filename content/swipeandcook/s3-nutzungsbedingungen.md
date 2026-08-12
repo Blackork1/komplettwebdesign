@@ -15,11 +15,11 @@ Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
 
 Anbieter der App „Swipe & Cook“ ist:
 
-Komplett Webdesign  
-Inhaber: Sören Blocksdorf  
-Möllendorffstraße 26  
-10367 Berlin  
-Deutschland  
+Komplett Webdesign
+Inhaber: Sören Blocksdorf
+Möllendorffstraße 26
+10367 Berlin
+Deutschland
 E-Mail: `swipeandcook@komplettwebdesign.de`
 
 Diese Nutzungsbedingungen gelten für die Nutzung der App, des
@@ -434,10 +434,10 @@ Sollte eine Bestimmung dieser Nutzungsbedingungen ganz oder teilweise
 unwirksam sein, bleiben die übrigen Bestimmungen wirksam. An die Stelle
 unwirksamer Regelungen treten die gesetzlichen Vorschriften.
 
-Support: `swipeandcook@komplettwebdesign.de`  
+Support: `swipeandcook@komplettwebdesign.de`
 Datenschutz:
-<https://www.komplettwebdesign.de/swipeandcook-datenschutz>  
+<https://www.komplettwebdesign.de/swipeandcook-datenschutz>
 Supportseite:
-<https://www.komplettwebdesign.de/swipeandcook-support>  
+<https://www.komplettwebdesign.de/swipeandcook-support>
 Kontolöschung:
 <https://www.komplettwebdesign.de/swipeandcook-konto-loeschen>

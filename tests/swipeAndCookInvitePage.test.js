@@ -39,7 +39,7 @@ const invitePageEnv = {
   SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL: 'https://play.google.com/apps/internaltest/example'
 };
 
-async function renderPage() {
+async function renderPage(env = invitePageEnv) {
   const app = express();
   app.engine('ejs', ejs.__express);
   app.set('view engine', 'ejs');
@@ -48,7 +48,7 @@ async function renderPage() {
   app.locals.jsAsset = (assetPath) => `/${assetPath}`;
   app.use(createSwipeAndCookInviteRouter({
     associationConfig,
-    invitePageConfig: loadSwipeAndCookInvitePageConfig(invitePageEnv)
+    invitePageConfig: loadSwipeAndCookInvitePageConfig(env)
   }));
 
   const server = app.listen(0, '127.0.0.1');
@@ -82,6 +82,22 @@ test('validiert kanonische Einladung und ausschließlich private Testerziele', (
       /swipeandcook_invite_page_config_invalid/
     );
   }
+});
+
+test('blendet Google Play aus, solange kein echter privater Testlink konfiguriert ist', async () => {
+  const env = { ...invitePageEnv };
+  delete env.SWIPEANDCOOK_GOOGLE_PLAY_INTERNAL_TEST_URL;
+
+  assert.deepEqual(loadSwipeAndCookInvitePageConfig(env), {
+    canonicalInviteUrl: invitePageEnv.SWIPEANDCOOK_PUBLIC_INVITE_URL,
+    testFlightUrl: invitePageEnv.SWIPEANDCOOK_TESTFLIGHT_URL,
+    googlePlayInternalTestUrl: null
+  });
+
+  const response = await renderPage(env);
+  const $ = load(await response.text());
+  assert.equal($('[data-google-play-link]').length, 0);
+  assert.equal($('[data-testflight-link]').length, 1);
 });
 
 test('rendert eine datensparsame, nicht indexierbare Einladungsseite', async () => {
