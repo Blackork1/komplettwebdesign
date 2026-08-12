@@ -24,10 +24,10 @@ const pageContracts = Object.freeze([
     key: 'privacy',
     path: '/swipeandcook-datenschutz',
     view: 'static/swipeandcook-datenschutz',
-    file: 'content/swipeandcook/s2-datenschutzerklaerung.md',
+    file: 'content/swipeandcook/s3-datenschutzerklaerung.md',
     footerLabel: 'Swipe & Cook Datenschutz',
     required: [
-      'Stand: 29. Juli 2026',
+      'Stand: 12. August 2026',
       'eigenes Swipe-&-Cook-Konto kann erst ab 16 Jahren erstellt werden',
       'Allergien, Unverträglichkeiten und andere Safety-Angaben',
       'Optionale Produktanalyse',
@@ -39,10 +39,10 @@ const pageContracts = Object.freeze([
     key: 'terms',
     path: '/swipeandcook-nutzungsbedingungen',
     view: 'static/swipeandcook-nutzungsbedingungen',
-    file: 'content/swipeandcook/s2-nutzungsbedingungen.md',
+    file: 'content/swipeandcook/s3-nutzungsbedingungen.md',
     footerLabel: 'Swipe & Cook Nutzungsbedingungen',
     required: [
-      'Stand: 29. Juli 2026',
+      'Stand: 12. August 2026',
       'Ein eigenes Swipe-&-Cook-Konto kann erst ab 16 Jahren erstellt werden',
       'drei erfolgreich ausgewählte Einzelgerichte je Kalendermonat',
       '6,99 € pro Monat',
@@ -55,10 +55,10 @@ const pageContracts = Object.freeze([
     key: 'support',
     path: '/swipeandcook-support',
     view: 'static/swipeandcook-support',
-    file: 'content/swipeandcook/s2-supportseite.md',
+    file: 'content/swipeandcook/s3-supportseite.md',
     footerLabel: 'Swipe & Cook Support',
     required: [
-      'Stand: 29. Juli 2026',
+      'Stand: 12. August 2026',
       'Käufe wiederherstellen',
       'Abo verwalten oder kündigen',
       'Plattformwechsel und Doppelabo',
@@ -70,10 +70,10 @@ const pageContracts = Object.freeze([
     key: 'accountDeletion',
     path: '/swipeandcook-konto-loeschen',
     view: 'static/swipeandcook-konto-loeschen',
-    file: 'content/swipeandcook/s2-kontoloeschung.md',
+    file: 'content/swipeandcook/s3-kontoloeschung.md',
     footerLabel: 'Swipe & Cook Konto löschen',
     required: [
-      'Stand: 29. Juli 2026',
+      'Stand: 12. August 2026',
       'Löschung ohne App anfordern',
       'Storeabo separat verwalten oder kündigen',
       'Verifizierungslink',
@@ -117,7 +117,7 @@ test('liefert alle vier Seiten über den echten statischen Router aus', async ()
   }
 });
 
-test('veröffentlicht die freigegebenen S2-Inhalte vollständig und ohne interne Entwurfsvermerke', () => {
+test('veröffentlicht die freigegebenen S3-Inhalte vollständig und ohne interne Entwurfsvermerke', () => {
   for (const contract of pageContracts) {
     const source = read(contract.file);
     for (const required of contract.required) {

@@ -100,15 +100,15 @@ test('Support und Kontolöschung erklären Self Service ohne Geheimnisse', () =>
   ]) assert.match(deletion, new RegExp(required, 'u'));
 });
 
-test('Legalservice rendert S3 explizit, hält öffentliche Routen aber auf S2', () => {
+test('Legalservice veröffentlicht S3 und hält S2 als historische Fassung abrufbar', () => {
   for (const key of Object.keys(files)) {
     const active = loadSwipeAndCookLegalPage(key);
-    const candidate = loadSwipeAndCookLegalPageVersion(key, 's3');
-    assert.match(active.source, /^s2-/u, key);
-    assert.match(candidate.source, /^s3-/u, key);
-    assert.equal(candidate.stand, '12. August 2026');
+    const historical = loadSwipeAndCookLegalPageVersion(key, 's2');
+    assert.match(active.source, /^s3-/u, key);
+    assert.match(historical.source, /^s2-/u, key);
+    assert.equal(active.stand, '12. August 2026');
     assert.doesNotMatch(
-      candidate.html,
+      active.html,
       /Interner Status|Inhaltsabnahme|Vorgesehene öffentliche Adresse/u,
     );
   }
