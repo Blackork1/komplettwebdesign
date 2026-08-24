@@ -1,14 +1,13 @@
 # Support-, Abo- und Kontolöschinformationen für Swipe & Cook
 
-Stand: 12. August 2026
+Stand: 24. August 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-support>
 
 <!--
-Interner Status: S3-Inhaltskandidat auf Grundlage der verbindlichen
-S2-Publikationsfassung. Die öffentlichen Routen bleiben bis zur ausdrücklichen
-Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
+S4-Inhaltsergänzung auf Grundlage der verbindlichen S3-Publikationsfassung.
+Diese Notiz wird vom Rechtstext-Renderer entfernt.
 -->
 
 ## Kontakt und sichere Supportanfrage
@@ -92,6 +91,30 @@ Für Support reichen Request-ID, eigene Support-ID, Einladungsart, sicherer
 Statuscode, ungefähres Zeitfenster, Appversion und Plattform. Übermittle nie
 Einladungstokens, QR-Inhalte, konkrete Allergien, Unverträglichkeiten,
 Profilinhalte oder fremde Kennungen.
+
+## Planung und Einkaufsliste synchronisieren
+
+Persönliche Pläne und Einkaufslisten bleiben nach der Abmeldung serverseitig
+erhalten. Wenn du dich später mit demselben Swipe-&-Cook-Konto anmeldest,
+werden sie wieder geladen. Ein anderes Konto sieht diesen Stand nicht.
+
+Ein weiteres Rezept an einem neuen Tag ergänzt die Einkaufsliste und
+überschreibt vorhandene Einträge nicht. Du kannst die Liste
+nach Lebensmittelkategorie oder nach Rezept sortieren. In der Rezeptansicht
+stehen die Rezepttitel als Überschriften über den zugehörigen Lebensmitteln.
+Manuelle Einträge bleiben getrennt und verständlich gekennzeichnet.
+
+Im gemeinsamen Bereich sehen nur aktive Mitglieder die gemeinsamen Pläne und
+Listeneinträge. Änderungen werden zwischen den angemeldeten Geräten
+synchronisiert. Zum Aktualisieren ziehe die Ansicht nach unten. Meldet die App
+einen Konflikt, lade zuerst den aktuellen Stand und wiederhole die gewünschte
+Änderung auf dieser Grundlage.
+
+Ohne Internetverbindung kannst du einen bereits lokal verfügbaren Stand
+lesen. Neue persönliche Änderungen benötigen eine Verbindung. Eine verlorene
+Serverantwort wird mit derselben sicheren Anfrage wiederholt, damit derselbe
+Eintrag nicht doppelt entsteht. Optionale gemeinsame Offlineänderungen stehen
+nur zur Verfügung, wenn die App sie ausdrücklich aktiviert anzeigt.
 
 ## Abostatus wird geprüft
 

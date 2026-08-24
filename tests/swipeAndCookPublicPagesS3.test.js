@@ -19,12 +19,18 @@ const files = Object.freeze({
 });
 
 test('S3-Fassungen übernehmen den vollständigen S2-Vertrag und sind datiert', () => {
+  const expectedDates = Object.freeze({
+    privacy: '24. August 2026',
+    support: '24. August 2026',
+    terms: '12. August 2026',
+    accountDeletion: '12. August 2026',
+  });
   for (const [key, file] of Object.entries(files)) {
     const s2 = read(file.replace('/s3-', '/s2-'));
     const s3 = read(file);
     const s2Sections = [...s2.matchAll(/^##\s+(.+)$/gmu)]
       .map((match) => match[1]);
-    assert.match(s3, /^Stand: 12\. August 2026$/mu, key);
+    assert.match(s3, new RegExp(`^Stand: ${expectedDates[key]}$`, 'mu'), key);
     for (const section of s2Sections) {
       assert.match(
         s3,
@@ -33,6 +39,73 @@ test('S3-Fassungen übernehmen den vollständigen S2-Vertrag und sind datiert', 
       );
     }
   }
+});
+
+test('öffentliche S4-Fassung erklärt Planung, Einkaufsliste und Löschfristen', () => {
+  const privacy = loadSwipeAndCookLegalPage('privacy');
+  const support = loadSwipeAndCookLegalPage('support');
+  const privacyText = privacy.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
+  const supportText = support.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
+
+  assert.equal(privacy.stand, '24. August 2026');
+  assert.equal(support.stand, '24. August 2026');
+  for (const required of [
+    'persönliche Plan- und Einkaufslistendaten',
+    'Abmeldung und einer späteren erneuten Anmeldung',
+    'aktive Mitglieder des gemeinsamen Bereichs',
+    'begrenzten Bearbeiter- und Zeitbezug',
+    'verschlüsselten lokalen Zwischenspeicher',
+    'höchstens 24 Stunden',
+    'höchstens sieben Tage',
+    'höchstens 30 Tage',
+    'höchstens 90 Tage',
+    'bis zu 30 Tage',
+    'Löschjournal und Kontolöschmarkierungen',
+  ]) assert.match(privacyText, new RegExp(required, 'iu'));
+
+  for (const required of [
+    'bleiben nach der Abmeldung serverseitig erhalten',
+    'ergänzt die Einkaufsliste',
+    'überschreibt vorhandene Einträge nicht',
+    'nach Lebensmittelkategorie oder nach Rezept',
+    'Rezepttitel als Überschriften',
+    'Manuelle Einträge bleiben getrennt',
+    'Zum Aktualisieren ziehe die Ansicht nach unten',
+  ]) assert.match(supportText, new RegExp(required, 'iu'));
+});
+
+test('Kontolöschung anonymisiert Personenbezüge in fortbestehenden Bereichen', () => {
+  const privacyText = loadSwipeAndCookLegalPage('privacy').html
+    .replace(/<[^>]+>/gu, ' ')
+    .replace(/\s+/gu, ' ');
+
+  assert.match(
+    privacyText,
+    /gemeinsamen Inhalte können im fortbestehenden Bereich erhalten bleiben/iu,
+  );
+  assert.match(
+    privacyText,
+    /Teilnehmer-, Claim-, Bearbeiter- und sonstige Personenbezüge.*entfernt oder anonymisiert/iu,
+  );
+});
+
+test('Bereichsauflösung bewahrt nur den inhaltsfreien Synchronisationsstand', () => {
+  const privacyText = loadSwipeAndCookLegalPage('privacy').html
+    .replace(/<[^>]+>/gu, ' ')
+    .replace(/\s+/gu, ' ');
+
+  assert.match(
+    privacyText,
+    /entfernte S4-Fachzeilen, technische Empfangsbelege und minimierte Änderungsereignisse: höchstens 30 Tage/iu,
+  );
+  assert.match(
+    privacyText,
+    /retentionstabiler, inhaltsfreier technischer Synchronisationsstand.*bei der Schließung nicht pauschal gelöscht/iu,
+  );
+  assert.match(
+    privacyText,
+    /enthält keine fremden Inhalts- oder Profildaten.*nicht als Aktivitätsprofil/iu,
+  );
 });
 
 test('Datenschutzfassung erklärt gemeinsame Daten, Consent und alle Fristen', () => {
@@ -106,7 +179,12 @@ test('Legalservice veröffentlicht S3 und hält S2 als historische Fassung abruf
     const historical = loadSwipeAndCookLegalPageVersion(key, 's2');
     assert.match(active.source, /^s3-/u, key);
     assert.match(historical.source, /^s2-/u, key);
-    assert.equal(active.stand, '12. August 2026');
+    assert.equal(
+      active.stand,
+      ['privacy', 'support'].includes(key)
+        ? '24. August 2026'
+        : '12. August 2026',
+    );
     assert.doesNotMatch(
       active.html,
       /Interner Status|Inhaltsabnahme|Vorgesehene öffentliche Adresse/u,

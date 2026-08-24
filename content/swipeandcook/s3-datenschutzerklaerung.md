@@ -1,14 +1,13 @@
 # Datenschutzerklärung für Swipe & Cook
 
-Stand: 12. August 2026
+Stand: 24. August 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-datenschutz>
 
 <!--
-Interner Status: S3-Inhaltskandidat auf Grundlage der verbindlichen
-S2-Publikationsfassung. Die öffentlichen Routen bleiben bis zur ausdrücklichen
-Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
+S4-Inhaltsergänzung auf Grundlage der verbindlichen S3-Publikationsfassung.
+Diese Notiz wird vom Rechtstext-Renderer entfernt.
 -->
 
 ## 1. Verantwortlicher und Kontakt
@@ -61,6 +60,12 @@ Bereitstellung der Appfunktionen verarbeiten wir insbesondere:
   Verlauf;
 - Supportkommunikation und zur Fehlerklärung erforderliche technische
   Referenzen.
+
+Persönliche Plan- und Einkaufslistendaten werden kontogebunden serverseitig
+gespeichert. Dazu gehören Rezept- und Titelsnapshots, Portionen, Zutaten,
+Mengen, manuelle Einträge, Status und die Zuordnung zu geplanten Rezepten.
+Sie bleiben nach einer Abmeldung und einer späteren erneuten Anmeldung mit
+demselben Konto abrufbar. Ein anderes Konto erhält dadurch keinen Zugriff.
 
 Die Verarbeitung ist erforderlich, um das Nutzerkonto und die angeforderten
 Appfunktionen bereitzustellen und den Nutzungsvertrag zu erfüllen (Art. 6
@@ -125,6 +130,9 @@ Für Bereich und Mitgliedschaft verarbeiten wir insbesondere:
 - den öffentlichen Kontonamen mit fünfstelliger Nummer zur eindeutigen
   Einladung, wobei die dauerhafte Zuordnung intern über die Konto-ID erfolgt;
 - Einladungsart, Einladungsstatus, Ablauf- und Zustimmungszeitpunkte;
+- gemeinsame Plan- und Einkaufslistendaten einschließlich Rezept- und
+  Zutatensnapshots, Portionen, manueller Einträge, Status und Zuordnungen;
+- einen begrenzten Bearbeiter- und Zeitbezug für gemeinsame Änderungen;
 - minimierte gemeinsame Aktivitätsereignisse ohne Profil- oder Safetywerte;
 - den serverseitig geprüften Premiumstatus des Owners;
 - Einwilligungsbelege für Mitgliedschaft und gemeinsame
@@ -142,6 +150,11 @@ Nutzungsvertrags erforderlich (Art. 6 Abs. 1 Buchst. b DSGVO). Maßnahmen
 gegen unberechtigte Zugriffe, Replay, Spam und Tenant-Übergriffe beruhen auf
 unserem berechtigten Interesse an einem sicheren Dienst (Art. 6 Abs. 1
 Buchst. f DSGVO).
+
+Gemeinsame Plan- und Einkaufslistentexte sind ausschließlich für aktive
+Mitglieder des gemeinsamen Bereichs in dessen aktueller Verbindung sichtbar.
+Interne Konto-, Bereichs- und Mitgliedschaftskennungen werden dabei nicht als
+Teil der gemeinsamen Fachinhalte angezeigt.
 
 ## 5b. Einladung per E-Mail, Konto-ID oder QR-Code
 
@@ -193,6 +206,26 @@ neuer Zustimmung beider Personen möglich.
 App-Löschung oder Gerätewechsel kann die lokale Sicherung dauerhaft
 verlieren. Nach Ablauf, Widerruf oder Kontolöschung wird sie lokal gelöscht
 beziehungsweise serverseitig als nicht mehr verwendbar abgelehnt.
+
+## 5e. Planung, Einkaufsliste, lokaler Cache und Synchronisierung
+
+Für schnelleres erneutes Laden kann die App persönliche und gemeinsame
+Plan-/Listenstände in einem verschlüsselten lokalen Zwischenspeicher ablegen.
+Der persönliche Cache ist an das angemeldete Konto gebunden. Gemeinsamer Cache
+und eine gegebenenfalls aktivierte optionale Offline-Outbox sind zusätzlich
+an die aktuelle Mitgliedschaft und Bereichsverbindung gebunden. Sie werden
+bei Kontowechsel, Zugriffsverlust oder Wechsel der Bereichsverbindung
+verworfen. Die optionale Offline-Outbox enthält nur den begrenzten
+Änderungsbefehl und keine privaten Safetyangaben.
+
+Bei Auflösung eines Bereichs werden aktive gemeinsame Plan- und
+Einkaufslisteninhalte einschließlich ihrer untergeordneten Einträge sofort
+entfernt. Technische Empfangsbelege und minimierte Änderungsereignisse können
+für Wiederholungs- und Konfliktschutz noch höchstens 30 Tage verbleiben. Ein
+retentionstabiler, inhaltsfreier technischer Synchronisationsstand kann als
+Konsistenznachweis erhalten bleiben und wird bei der Schließung nicht
+pauschal gelöscht. Er enthält keine fremden Inhalts- oder Profildaten und wird
+nicht als Aktivitätsprofil verwendet.
 
 ## 6. Premiumabonnements, Käufe und Wiederherstellung
 
@@ -336,6 +369,12 @@ jeweiligen Zweck erforderlich ist:
   Kontolöschung grundsätzlich innerhalb von sieben Tagen;
 - irreversibel anonymisierte Analyseaggregate: höchstens 24 Monate;
 - Standard-Sicherheitsprotokolle: grundsätzlich höchstens 30 Tage;
+- verschlüsselter persönlicher oder gemeinsamer lokaler Zwischenspeicher:
+  höchstens 24 Stunden;
+- Befehle in einer aktivierten optionalen Offline-Outbox: höchstens sieben
+  Tage;
+- entfernte S4-Fachzeilen, technische Empfangsbelege und minimierte
+  Änderungsereignisse: höchstens 30 Tage;
 - sichtbare gemeinsame Aktivität: höchstens 90 Tage;
 - terminale Einladungs- und Versanddaten: grundsätzlich 30 Tage nach dem
   Endzustand;
@@ -350,7 +389,8 @@ jeweiligen Zweck erforderlich ist:
   anschließend grundsätzlich höchstens 180 Tage;
 - verschlüsselte rotierende Sicherungen: gelöschte Daten können technisch
   noch bis zu 30 Tage enthalten sein; bei einer Wiederherstellung wird der
-  gültige Löschungsstand erneut angewendet;
+  gültige Löschungsstand durch Löschjournal und Kontolöschmarkierungen erneut
+  angewendet;
 - gesetzlich erforderliche Buchhaltungs-, Steuer- und Nachweisunterlagen:
   nur im gesetzlich erforderlichen Umfang und für die gesetzlich
   vorgeschriebene Dauer.
@@ -383,12 +423,23 @@ entkoppelter Datensatz ohne E-Mail-Adresse, Profilangaben, Rezepte, Pläne
 oder Gesundheitsdaten bestehen.
 
 Ist das gelöschte Konto Mitglied eines gemeinsamen Bereichs, enden
-Mitgliedschaft und Zugriff. Ist es Owner, kann die Ownerrolle vorher nach
-erneuter Identitäts- und Premiumprüfung an das Mitglied übergeben werden.
-Ohne abgeschlossene Übergabe wird der gemeinsame Bereich beendet. Offene
+Mitgliedschaft und Zugriff. Die gemeinsamen Inhalte können im fortbestehenden
+Bereich erhalten bleiben; Teilnehmer-, Claim-, Bearbeiter- und sonstige
+Personenbezüge zur gelöschten Person werden entfernt oder anonymisiert. Ist
+das gelöschte Konto Owner, kann die Ownerrolle vorher nach erneuter
+Identitäts- und Premiumprüfung an das Mitglied übergeben werden. Ohne
+abgeschlossene Übergabe wird der gemeinsame Bereich beendet. Offene
 Einladungen und Übergaben werden geschlossen. Lokale Archivgrants des
 gelöschten Kontos werden widerrufen; beim nächsten Onlinekontakt wird die
 zugehörige lokale Sicherung entfernt.
+
+Persönliche Pläne, Einkaufslisten, Einträge, Quellen, Empfangsbelege und
+Importzustände werden bei bestätigter Kontolöschung entfernt. Beim Ende eines
+gemeinsamen Bereichs werden dessen aktive Plan- und Listeninhalte unabhängig
+davon gelöscht, ob zuvor eine optionale lokale Sicherung angelegt werden
+konnte. Bei einer Wiederherstellung aus einer rotierenden Serversicherung
+werden Löschjournal und Kontolöschmarkierungen erneut angewendet, damit
+gelöschte Konten oder beendete Bereichsverbindungen nicht wiederaufleben.
 
 ## 15. Deine Datenschutzrechte
 

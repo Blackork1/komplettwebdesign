@@ -27,7 +27,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-datenschutzerklaerung.md',
     footerLabel: 'Swipe & Cook Datenschutz',
     required: [
-      'Stand: 12. August 2026',
+      'Stand: 24. August 2026',
       'eigenes Swipe-&-Cook-Konto kann erst ab 16 Jahren erstellt werden',
       'Allergien, Unverträglichkeiten und andere Safety-Angaben',
       'Optionale Produktanalyse',
@@ -58,7 +58,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-supportseite.md',
     footerLabel: 'Swipe & Cook Support',
     required: [
-      'Stand: 12. August 2026',
+      'Stand: 24. August 2026',
       'Käufe wiederherstellen',
       'Abo verwalten oder kündigen',
       'Plattformwechsel und Doppelabo',
