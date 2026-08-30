@@ -101,9 +101,23 @@ Während einer bestätigten Grace Period kann Premium vorübergehend
 weiterlaufen. Nach Ende der Nachfrist können neue Premiumaktionen pausiert
 werden, bis der Store die Zahlung bestätigt.
 
-Offline bleiben bereits lokal verfügbare Inhalte nutzbar. Neue
-serverabhängige Auswahlen, Generierungen, Käufe und Statusabgleiche benötigen
-eine Internetverbindung.
+Nach einer bestätigten Anmeldung bleiben vorhandene Übersichten für Free und
+Premium offline lesbar. Free kann Einkaufslisten online weiterhin bearbeiten.
+Mit Premium können vollständig, verschlüsselt und kontogebunden gespeicherte
+private Rezeptdetails mit Zutaten und Kochanleitung offline geöffnet werden.
+Freigegebene Änderungen der privaten Einkaufsliste werden lokal gespeichert
+und später automatisch synchronisiert.
+
+Der Premiumgrant gilt bis zum bestätigten Premiumende; es gibt keine
+zusätzliche Sieben-Tage-Grenze. Eine Erstattung, ein Widerruf oder eine
+nachträgliche Entziehung wird auf einem vollständig offline gebliebenen Gerät
+erst beim nächsten Onlineabgleich erkannt.
+
+Die gemeinsame Einkaufsliste kann offline nur gelesen werden. Für Änderungen
+ist immer eine bestätigte Live-Verbindung nötig. Neue serverabhängige
+Auswahlen, Generierungen, Käufe und Statusabgleiche benötigen ebenfalls eine
+Internetverbindung. Logout, Kontolöschung und ein bestätigter Subjectwechsel
+löschen die zugehörigen lokalen Offline-Daten.
 
 ## Konto löschen
 

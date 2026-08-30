@@ -139,6 +139,25 @@ Freischaltungen beruhen ergänzend auf Art. 6 Abs. 1 Buchst. f DSGVO.
 Gesetzlich erforderliche Aufbewahrung erfolgt auf Art. 6 Abs. 1 Buchst. c
 DSGVO.
 
+### Lokaler Premium-Offlinebetrieb
+
+Nach einer bestätigten Anmeldung können wir einen verschlüsselten,
+kontogebundenen Offline-Sitzungsnachweis speichern. Für Premium können
+zusätzlich ein signierter Premiumgrant bis zum bestätigten Premiumende,
+vollständige private Rezeptpakete einschließlich Zutaten und Kochanleitung
+sowie Aufträge der privaten Einkaufsliste lokal verschlüsselt gespeichert
+werden. Für den Grant gilt keine zusätzliche Sieben-Tage-Grenze.
+
+Private Offline-Aufträge werden später automatisch synchronisiert, sobald eine
+geeignete Verbindung besteht. Free kann Einkaufslisten online weiterhin
+bearbeiten. Die gemeinsame Einkaufsliste kann offline nur gelesen werden und
+benötigt für jede Änderung eine bestätigte Live-Verbindung.
+
+Logout, Kontolöschung und ein bestätigter Subjectwechsel löschen die dem Konto
+zugeordneten lokalen Nachweise, Pakete, Caches und Aufträge. Eine Erstattung,
+ein Widerruf oder eine nachträgliche Entziehung kann auf einem vollständig
+offline gebliebenen Gerät erst beim nächsten Onlineabgleich erkannt werden.
+
 ## 7. Apple und Google
 
 Bei einem Kauf über den Apple App Store oder Google Play verarbeitet der

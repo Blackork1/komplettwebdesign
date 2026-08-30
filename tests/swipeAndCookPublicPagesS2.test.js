@@ -131,6 +131,49 @@ test('veröffentlicht die freigegebenen S2-Inhalte vollständig und ohne interne
   }
 });
 
+test('erklärt den Premium-Offlinebetrieb in Datenschutz, Bedingungen und Support konsistent', () => {
+  const privacy = read('content/swipeandcook/s2-datenschutzerklaerung.md');
+  const terms = read('content/swipeandcook/s2-nutzungsbedingungen.md');
+  const support = read('content/swipeandcook/s2-supportseite.md');
+  const combined = `${privacy}\n${terms}\n${support}`;
+
+  for (const document of [privacy, terms, support]) {
+    const normalized = document.replace(/\s+/g, ' ');
+    for (const required of [
+      'bestätigten Premiumende',
+      'keine zusätzliche Sieben-Tage-Grenze',
+      'später automatisch synchronisiert',
+      'gemeinsame Einkaufsliste',
+      'offline nur gelesen',
+      'nächsten Onlineabgleich'
+    ]) {
+      assert.match(normalized, new RegExp(required, 'iu'), required);
+    }
+  }
+
+  for (const required of [
+    'verschlüsselt',
+    'kontogebunden',
+    'bestätigten Premiumende',
+    'keine zusätzliche Sieben-Tage-Grenze',
+    'Zutaten und Kochanleitung',
+    'privat(?:e|en) Einkaufsliste',
+    'später automatisch synchronisiert',
+    'Free',
+    'online',
+    'gemeinsame Einkaufsliste',
+    'offline nur gelesen',
+    'Kontolöschung',
+    'Subjectwechsel',
+    'Erstattung',
+    'nächsten Onlineabgleich'
+  ]) {
+    assert.match(combined, new RegExp(required, 'iu'), required);
+  }
+
+  assert.doesNotMatch(combined, /Offline-Premium ist jetzt verfügbar/iu);
+});
+
 test('rendert jede freigegebene Fassung als zugängliche Seite mit genau einer H1', async () => {
   const template = fileURLToPath(new URL(
     '../views/partials/swipeandcook-legal-body.ejs',

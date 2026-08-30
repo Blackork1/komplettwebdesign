@@ -132,6 +132,27 @@ Nach Trial-, Abo- oder manueller Premiumbeendigung werden vorhandene Inhalte
 nicht allein deshalb gelöscht. Für neue Aktionen gelten wieder die
 Free-Grenzen.
 
+### Premium-Offlinebetrieb
+
+Nach einer zuvor bestätigten Anmeldung bleiben lokal vorhandene Übersichten
+für Free und Premium offline lesbar. Free kann die private und gemeinsame
+Einkaufsliste online weiterhin bearbeiten. Premium kann vollständig und
+verschlüsselt gespeicherte private Rezeptdetails mit Zutaten und Kochanleitung
+offline öffnen sowie freigegebene Statusaktionen der privaten Einkaufsliste
+lokal speichern; diese werden später automatisch synchronisiert.
+
+Der kontogebundene Premiumgrant gilt bis zum bestätigten Premiumende. Es gibt
+keine zusätzliche Sieben-Tage-Grenze. Vor diesem Ende sicher gespeicherte
+private Aufträge dürfen danach noch terminal synchronisiert werden. Die
+gemeinsame Einkaufsliste kann offline nur gelesen werden und wird nie lokal
+gequeued.
+
+Eine Erstattung, ein Widerruf oder eine nachträgliche Entziehung wird auf einem
+durchgehend offline gebliebenen Gerät erst beim nächsten Onlineabgleich
+erkannt. Logout, Kontolöschung und bestätigter Subjectwechsel löschen die
+betroffenen lokalen Daten. Noch nie auf dem Gerät geladene Inhalte werden
+offline nicht bereitgestellt.
+
 ## 7. Preise und Zahlungsabwicklung
 
 Premium wird als automatisch verlängerndes Monats- oder Jahresabo angeboten.
