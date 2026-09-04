@@ -20,10 +20,10 @@ const files = Object.freeze({
 
 test('S3-Fassungen übernehmen den vollständigen S2-Vertrag und sind datiert', () => {
   const expectedDates = Object.freeze({
-    privacy: '24. August 2026',
-    support: '24. August 2026',
-    terms: '12. August 2026',
-    accountDeletion: '12. August 2026',
+    privacy: '4. September 2026',
+    support: '4. September 2026',
+    terms: '4. September 2026',
+    accountDeletion: '4. September 2026',
   });
   for (const [key, file] of Object.entries(files)) {
     const s2 = read(file.replace('/s3-', '/s2-'));
@@ -47,8 +47,8 @@ test('öffentliche S4-Fassung erklärt Planung, Einkaufsliste und Löschfristen'
   const privacyText = privacy.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
   const supportText = support.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
 
-  assert.equal(privacy.stand, '24. August 2026');
-  assert.equal(support.stand, '24. August 2026');
+  assert.equal(privacy.stand, '4. September 2026');
+  assert.equal(support.stand, '4. September 2026');
   for (const required of [
     'persönliche Plan- und Einkaufslistendaten',
     'Abmeldung und einer späteren erneuten Anmeldung',
@@ -181,9 +181,7 @@ test('Legalservice veröffentlicht S3 und hält S2 als historische Fassung abruf
     assert.match(historical.source, /^s2-/u, key);
     assert.equal(
       active.stand,
-      ['privacy', 'support'].includes(key)
-        ? '24. August 2026'
-        : '12. August 2026',
+      '4. September 2026',
     );
     assert.doesNotMatch(
       active.html,

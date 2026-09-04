@@ -1,6 +1,6 @@
 # Datenschutzerklärung für Swipe & Cook
 
-Stand: 24. August 2026
+Stand: 4. September 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-datenschutz>
@@ -80,6 +80,27 @@ freiwillig und zweckbezogen eingeholt. Bei der Registrierung sind
 Altersbestätigung, Annahme der Nutzungsbedingungen und Kenntnisnahme der
 Datenschutzerklärung nicht vorausgewählt; ohne diese Erklärungen wird kein
 Swipe-&-Cook-Konto aktiviert.
+
+### Gemeinsame Rezeptauswahl (S5)
+
+Wenn dir die gemeinsame Rezeptauswahl angezeigt wird, sehen zwei aktive
+Mitglieder desselben privaten Bereichs denselben sicheren Rezeptstrom. Private
+Swipeentscheidungen bleiben für das andere Mitglied unsichtbar. Erst wenn
+beide dasselbe Rezept angenommen haben, entsteht ein gemeinsames Match. Aus
+einem Match wird nur nach einer ausdrücklichen Auswahl eine gemeinsame
+Planung.
+
+Der gemeinsame Kochstatus enthält nach der Serverbestätigung Beginn,
+Abschluss, Zeitpunkt und die handelnde Person. Im Verlauf kann jedes Mitglied
+freiwillig 1 bis 5 Sterne abgeben. Das andere Mitglied sieht nur „Feedback
+abgegeben“, nicht deinen Sternwert. Es gibt kein Freitextfeedback und keinen
+Feedback-Push.
+
+Pushnachrichten werden nur für Match, Planung, Kochstart und Kochabschluss
+erzeugt. Sie enthalten keine Rezepttitel, Swipeentscheidungen, Safety-Angaben,
+Sternwerte oder Partneridentität. Optionale Produktanalyse bleibt von diesen
+Funktionsereignissen getrennt und wird nur nach deiner bestehenden
+Einwilligung verwendet.
 
 ## 4. Allergien, Unverträglichkeiten und andere Safety-Angaben
 
@@ -394,6 +415,18 @@ jeweiligen Zweck erforderlich ist:
 - gesetzlich erforderliche Buchhaltungs-, Steuer- und Nachweisunterlagen:
   nur im gesetzlich erforderlichen Umfang und für die gesetzlich
   vorgeschriebene Dauer.
+
+Für S5 gilt zusätzlich: Private Rohswipes werden spätestens 30 Tage nach der
+letzten bestätigten Aktivität eines geschlossenen, abgelaufenen oder
+ungültigen Rezeptpools gelöscht. Ein verschlüsselter lokaler Cache bleibt
+höchstens 30 Tage lesbar. Zulässige noch nicht synchronisierte Aktionen
+bleiben in der verschlüsselten Outbox höchstens sieben Tage gespeichert.
+Cache und Outbox sind an Konto und aktuellen gemeinsamen Bereich gebunden und
+werden bei Zugriffs- oder Generationsverlust entfernt. Gemeinsame Matches,
+Planbindungen und bestätigte Kochverläufe folgen dem Lebenszyklus des
+gemeinsamen Bereichs. Bei einer Kontolöschung werden eigene private Swipes und
+das eigene Sternefeedback gelöscht; Personenbezüge an erhaltenen gemeinsamen
+Inhalten werden entfernt oder anonymisiert.
 
 Besteht ein konkreter Rechtsstreit, Sicherheitsvorfall oder
 Missbrauchsverdacht, können die hierfür erforderlichen Daten bis zur

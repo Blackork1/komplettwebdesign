@@ -1,27 +1,29 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import express from 'express';
 
+import staticPagesRouter from '../routes/staticPages.js';
 import {
-  loadSwipeAndCookLegalPageVersion,
+  loadSwipeAndCookLegalPage,
 } from '../services/swipeAndCookLegalContentService.js';
 
 const pages = Object.freeze({
   privacy: Object.freeze({
     path: '/swipeandcook-datenschutz',
-    source: 'content/swipeandcook/s2-datenschutzerklaerung.md',
+    source: 'content/swipeandcook/s3-datenschutzerklaerung.md',
   }),
   terms: Object.freeze({
     path: '/swipeandcook-nutzungsbedingungen',
-    source: 'content/swipeandcook/s2-nutzungsbedingungen.md',
+    source: 'content/swipeandcook/s3-nutzungsbedingungen.md',
   }),
   support: Object.freeze({
     path: '/swipeandcook-support',
-    source: 'content/swipeandcook/s2-supportseite.md',
+    source: 'content/swipeandcook/s3-supportseite.md',
   }),
   accountDeletion: Object.freeze({
     path: '/swipeandcook-konto-loeschen',
-    source: 'content/swipeandcook/s2-kontoloeschung.md',
+    source: 'content/swipeandcook/s3-kontoloeschung.md',
   }),
 });
 
@@ -30,15 +32,46 @@ function source(relativePath) {
 }
 
 function visiblePage(key) {
-  const rendered = loadSwipeAndCookLegalPageVersion(key, 's2');
+  const rendered = loadSwipeAndCookLegalPage(key);
   assert.equal(rendered.path, pages[key].path);
+  assert.equal(rendered.stand, '4. September 2026');
   return rendered.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
 }
 
-test('alle vier kanonischen Seiten enthalten einen gerenderten S5-Hinweis', () => {
+test('der aktive Defaultloader rendert S5 auf allen vier kanonischen Seiten', () => {
   for (const [key, page] of Object.entries(pages)) {
     assert.match(source(page.source), /\bS5\b/u, page.source);
     assert.match(visiblePage(key), /S5/u, page.path);
+  }
+});
+
+test('die vier echten Express-Routen liefern die aktive S5-Fassung', async () => {
+  const app = express();
+  app.use((_request, response, next) => {
+    response.render = (view, locals = {}) => response.status(200).json({
+      view,
+      legalPage: locals.legalPage,
+    });
+    next();
+  });
+  app.use(staticPagesRouter);
+
+  const server = app.listen(0, '127.0.0.1');
+  try {
+    await new Promise((resolve) => server.once('listening', resolve));
+    const { port } = server.address();
+    for (const page of Object.values(pages)) {
+      const response = await fetch(`http://127.0.0.1:${port}${page.path}`);
+      assert.equal(response.status, 200, page.path);
+      const body = await response.json();
+      assert.equal(body.legalPage.path, page.path);
+      assert.match(body.legalPage.source, /^s3-/u, page.path);
+      assert.match(body.legalPage.html, /\bS5\b/u, page.path);
+    }
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (
+      error ? reject(error) : resolve()
+    )));
   }
 });
 
