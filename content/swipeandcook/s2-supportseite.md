@@ -1,6 +1,6 @@
 # Support-, Abo- und Kontolöschinformationen für Swipe & Cook
 
-Stand: 29. Juli 2026
+Stand: 4. September 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-support>
@@ -104,6 +104,26 @@ werden, bis der Store die Zahlung bestätigt.
 Offline bleiben bereits lokal verfügbare Inhalte nutzbar. Neue
 serverabhängige Auswahlen, Generierungen, Käufe und Statusabgleiche benötigen
 eine Internetverbindung.
+
+### Gemeinsame Rezeptauswahl (S5)
+
+Bei einem bereits geladenen Swipe, Kochstart oder Kochabschluss kann offline
+„Wird synchronisiert“ erscheinen. Ein gemeinsames Match oder ein Abschluss
+ist erst nach der Serverbestätigung erfolgt. Eine veraltete Aktion wird nicht
+in einen neuen Rezeptpool oder anderen Bereich übertragen; aktualisiere den
+gemeinsamen Bereich und führe die gewünschte Aktion gegebenenfalls bewusst
+neu aus.
+
+Dein Partner kann deine einzelne Swipeentscheidung nicht sehen. Er sieht erst
+ein gemeinsames Match, wenn ihr beide dasselbe Rezept angenommen habt. Dein
+Partner kann deinen Sternwert nicht sehen, sondern nur, dass du Feedback
+abgegeben hast.
+
+Sende uns zur Fehlerklärung weder deine Swipeentscheidung noch deinen
+Sternwert oder konkrete Safety-Angaben. Nenne nur die angezeigte
+nichttechnische Fehlermeldung, Plattform und Appversion. Passwörter,
+Einmalcodes und Einladungstokens gehören ebenfalls nie in eine
+Supportnachricht.
 
 ## Konto löschen
 

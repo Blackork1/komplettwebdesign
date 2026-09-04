@@ -1,6 +1,6 @@
 # Swipe-&-Cook-Konto löschen
 
-Stand: 29. Juli 2026
+Stand: 4. September 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-konto-loeschen>
@@ -126,6 +126,26 @@ Löschkonzepts insbesondere:
 
 Gelöschte persönliche Inhalte können anschließend nicht wiederhergestellt
 werden.
+
+### Gemeinsame Rezeptauswahl (S5)
+
+Private Swipeentscheidungen und eigenes Sternefeedback werden bei der
+bestätigten Kontolöschung gelöscht. Der verschlüsselte lokale Cache und die
+Outbox werden entfernt. Alte private Swipes werden nach einer
+Wiederherstellung nicht wiederhergestellt und nicht auf ein neues Konto oder
+einen neuen gemeinsamen Bereich übertragen.
+
+Gemeinsame Matches, Planbindungen und bestätigte Kochverläufe können in einem
+fortbestehenden privaten Bereich erhalten bleiben und ihre Personenbezüge
+werden dabei entfernt oder anonymisiert. Löscht der aktuelle Owner sein Konto
+ohne abgeschlossene Übergabe, wird der Bereich nach dem bestehenden
+Löschvertrag geschlossen und der aktive gemeinsame Inhalt entfernt.
+
+Private Rohswipes abgelaufener oder ungültiger Rezeptpools werden spätestens
+30 Tage nach der letzten bestätigten Poolaktivität gelöscht. In rotierenden
+verschlüsselten Sicherungen können bereits gelöschte S5-Daten höchstens 30
+Tage enthalten sein; nach einer Wiederherstellung wird der gültige
+Löschungsstand erneut angewendet.
 
 ## 8. Welche Daten vorübergehend verbleiben können
 

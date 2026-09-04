@@ -1,6 +1,6 @@
 # Nutzungsbedingungen für Swipe & Cook
 
-Stand: 29. Juli 2026
+Stand: 4. September 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-nutzungsbedingungen>
@@ -131,6 +131,28 @@ persönliche Nutzung nicht beschränken.
 Nach Trial-, Abo- oder manueller Premiumbeendigung werden vorhandene Inhalte
 nicht allein deshalb gelöscht. Für neue Aktionen gelten wieder die
 Free-Grenzen.
+
+### Gemeinsame Rezeptauswahl (S5)
+
+Wenn die gemeinsame Rezeptauswahl für deinen privaten Bereich verfügbar ist,
+entscheidet jedes aktive Mitglied unabhängig. Deine Swipeentscheidung bleibt
+privat. Erst zwei gültige Zustimmungen erzeugen ein Match; einseitige
+Zustimmungen, Zähler oder Zeitpunkte werden dem anderen Mitglied nicht
+angezeigt. Ein Match wird nur ausdrücklich in den bestehenden gemeinsamen
+Plan übernommen und nicht automatisch eingeplant.
+
+Kochstart und Abschluss werden erst nach Bestätigung durch den Server als
+gemeinsam erfolgt angezeigt. Kochschritte, Timer und Aufgaben werden nicht
+zwischen Geräten synchronisiert. Sternefeedback ist freiwillig, umfasst 1 bis
+5 Sterne und enthält kein Freitext. Das andere Mitglied sieht nur, dass
+Feedback abgegeben wurde, niemals den Sternwert.
+
+Bereits geladene Inhalte können verschlüsselt offline lesbar sein. Offline
+dürfen nur ein bereits geladener Swipe sowie Kochstart oder Kochabschluss zur
+späteren Synchronisierung vorgemerkt werden. Ein Match, eine Planung oder ein
+gemeinsamer Abschluss wird vor der Serverbestätigung nicht behauptet. Alte
+Aktionen werden nicht auf einen neuen Rezeptpool oder gemeinsamen Bereich
+übertragen.
 
 ## 7. Preise und Zahlungsabwicklung
 
