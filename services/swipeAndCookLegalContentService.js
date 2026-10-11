@@ -1,32 +1,33 @@
 import { readFileSync } from 'node:fs';
 
 const CONTENT_ROOT = new URL('../content/swipeandcook/', import.meta.url);
+const LEGAL_CONTENT_VERSIONS = new Set(['s2', 's3', 's4']);
 
 const PAGE_DEFINITIONS = Object.freeze({
   privacy: Object.freeze({
     key: 'privacy',
-    source: 's2-datenschutzerklaerung.md',
+    source: 's4-datenschutzerklaerung.md',
     path: '/swipeandcook-datenschutz',
     title: 'Datenschutzerklärung für Swipe & Cook',
     lead: 'Wie Swipe & Cook Konto-, Safety-, Premium- und optionale Analysedaten verarbeitet.'
   }),
   terms: Object.freeze({
     key: 'terms',
-    source: 's2-nutzungsbedingungen.md',
+    source: 's3-nutzungsbedingungen.md',
     path: '/swipeandcook-nutzungsbedingungen',
     title: 'Nutzungsbedingungen für Swipe & Cook',
     lead: 'Die Regeln für Konto, Free-Version, Premiumabo, Trial, Kündigung und Kontolöschung.'
   }),
   support: Object.freeze({
     key: 'support',
-    source: 's2-supportseite.md',
+    source: 's3-supportseite.md',
     path: '/swipeandcook-support',
     title: 'Support für Swipe & Cook',
     lead: 'Hilfe bei Konto, Premium, Storestatus, Plattformwechsel und Kontolöschung.'
   }),
   accountDeletion: Object.freeze({
     key: 'accountDeletion',
-    source: 's2-kontoloeschung.md',
+    source: 's3-kontoloeschung.md',
     path: '/swipeandcook-konto-loeschen',
     title: 'Swipe-&-Cook-Konto löschen',
     lead: 'Löschung direkt in der App oder sicher über die verifizierte E-Mail-Adresse anfordern.'
@@ -217,6 +218,20 @@ export function loadSwipeAndCookLegalPage(key) {
     throw new Error('swipeandcook_legal_page_unknown');
   }
   return readPage(definition);
+}
+
+export function loadSwipeAndCookLegalPageVersion(key, version) {
+  const definition = PAGE_DEFINITIONS[key];
+  if (!definition) {
+    throw new Error('swipeandcook_legal_page_unknown');
+  }
+  if (!LEGAL_CONTENT_VERSIONS.has(version) || (version === 's4' && key !== 'privacy')) {
+    throw new Error('swipeandcook_legal_version_unknown');
+  }
+  return readPage(Object.freeze({
+    ...definition,
+    source: definition.source.replace(/^s[234]-/u, `${version}-`)
+  }));
 }
 
 export const SWIPE_AND_COOK_LEGAL_PAGES = PAGE_DEFINITIONS;
