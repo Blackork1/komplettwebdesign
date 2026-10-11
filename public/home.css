@@ -71,7 +71,7 @@
 
   .hero-main .home-hero-reveal--support.animate-on-scroll,
   .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll {
-    transform: translate3d(-18px, 18px, 0);
+    transform: translate3d(0, 18px, 0);
   }
 
   .hero-main .home-hero-reveal--support.animate-on-scroll.visible,
@@ -2226,15 +2226,15 @@
     .home-page .hero-main .hero-content {
       max-width: 760px;
       margin: 0 auto;
-      text-align: center;
+      text-align: left;
     }
 
     .home-page .hero-main h1,
     .home-page .hero-main h2,
     .home-page .hero-main .home-hero-claim,
     .home-page .home-hero-bullets {
-      margin-left: auto;
-      margin-right: auto;
+      margin-left: 0;
+      margin-right: 0;
     }
 
     .home-page .home-hero-bullets {
@@ -2242,7 +2242,7 @@
     }
 
     .home-page .hero-ctas {
-      justify-content: center;
+      justify-content: flex-start;
     }
 
     .home-page .home-hero-showcase {
