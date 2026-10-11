@@ -30,7 +30,8 @@ test('publishes the full approved privacy information without internal paths', (
   const page = loadSwipeAndCookLegalPage('privacy');
 
   assert.match(view, /swipeandcook-legal-body/);
-  assert.match(source, /Stand: 4\. September 2026/);
+  assert.match(source, /Stand: 8\. Oktober 2026/);
+  assert.equal(page.stand, '11. Oktober 2026');
   assert.match(source, /Konto, Anmeldung und Appnutzung/);
   assert.match(source, /Allergien, Unverträglichkeiten und andere Safety-Angaben/);
   assert.match(source, /Premiumabonnements, Käufe und Wiederherstellung/);

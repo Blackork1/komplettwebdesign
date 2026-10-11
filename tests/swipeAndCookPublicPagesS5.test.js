@@ -34,7 +34,7 @@ function source(relativePath) {
 function visiblePage(key) {
   const rendered = loadSwipeAndCookLegalPage(key);
   assert.equal(rendered.path, pages[key].path);
-  assert.equal(rendered.stand, '4. September 2026');
+  assert.equal(rendered.stand, ['privacy', 'accountDeletion'].includes(key) ? '11. Oktober 2026' : '8. Oktober 2026');
   return rendered.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
 }
 
@@ -65,7 +65,7 @@ test('die vier echten Express-Routen liefern die aktive S5-Fassung', async () =>
       assert.equal(response.status, 200, page.path);
       const body = await response.json();
       assert.equal(body.legalPage.path, page.path);
-      assert.match(body.legalPage.source, /^s3-/u, page.path);
+      assert.match(body.legalPage.source, [pages.privacy.path, pages.accountDeletion.path].includes(page.path) ? /^s4-/u : /^s3-/u, page.path);
       assert.match(body.legalPage.html, /\bS5\b/u, page.path);
     }
   } finally {
@@ -84,9 +84,12 @@ test('Datenschutzseite erklärt Privatheit, gemeinsamen Status und Aufbewahrung'
     'Feedback abgegeben',
     'verschlüsselter lokaler Cache',
     'höchstens sieben Tage',
-    'spätestens 30 Tage',
+    'serverseitig bestätigten Bewertung',
     'Kontolöschung',
-  ]) assert.match(privacy, new RegExp(required, 'iu'));
+    '30 Tage (720 Stunden)',
+    'noch gültige Bewertung der anderen Person bleibt unverändert',
+    'keine feste Altersfrist',
+  ]) assert.ok(privacy.toLowerCase().includes(required.toLowerCase()), required);
   assert.match(
     privacy,
     /andere Mitglied[^.]*sieht[^.]*nicht[^.]*Sternwert/iu,

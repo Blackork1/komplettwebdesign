@@ -1,15 +1,9 @@
 # Nutzungsbedingungen für Swipe & Cook
 
-Stand: 4. September 2026
+Stand: 8. Oktober 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-nutzungsbedingungen>
-
-<!--
-Interner Status: S3-Inhaltskandidat auf Grundlage der verbindlichen
-S2-Publikationsfassung. Die öffentlichen Routen bleiben bis zur ausdrücklichen
-Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
--->
 
 ## 1. Anbieter und Geltungsbereich
 
@@ -130,6 +124,27 @@ Nach Trial-, Abo- oder manueller Premiumbeendigung werden vorhandene Inhalte
 nicht allein deshalb gelöscht. Für neue Aktionen gelten wieder die
 Free-Grenzen.
 
+### Premium-Offlinebetrieb
+
+Nach einer zuvor bestätigten Anmeldung bleiben lokal vorhandene Übersichten
+für Free und Premium offline lesbar. Free kann die private und gemeinsame
+Einkaufsliste online weiterhin bearbeiten. Premium kann vollständig und
+verschlüsselt gespeicherte private Rezeptdetails mit Zutaten und Kochanleitung
+offline öffnen sowie freigegebene Statusaktionen der privaten Einkaufsliste
+lokal speichern; diese werden später automatisch synchronisiert.
+
+Der kontogebundene Premiumgrant gilt bis zum bestätigten Premiumende. Es gibt
+keine zusätzliche Sieben-Tage-Grenze. Vor diesem Ende sicher gespeicherte
+private Aufträge dürfen danach noch terminal synchronisiert werden. Die
+gemeinsame Einkaufsliste kann offline nur gelesen werden und wird nie lokal
+gequeued.
+
+Eine Erstattung, ein Widerruf oder eine nachträgliche Entziehung wird auf einem
+durchgehend offline gebliebenen Gerät erst beim nächsten Onlineabgleich
+erkannt. Logout, Kontolöschung und bestätigter Subjectwechsel löschen die
+betroffenen lokalen Daten. Noch nie auf dem Gerät geladene Inhalte werden
+offline nicht bereitgestellt.
+
 ### Gemeinsame Rezeptauswahl (S5)
 
 Wenn die gemeinsame Rezeptauswahl für deinen privaten Bereich verfügbar ist,
@@ -167,10 +182,8 @@ ausdrücklich zustimmen, sich erneut identifizieren und ein eigenes aktives
 Premiumrecht besitzen. Die Übergabe überträgt oder kündigt kein Apple- oder
 Google-Storeabo.
 
-Der aktuelle S3-Umfang schafft die sichere Grundlage für spätere gemeinsame
-Rezepte, Swipes, Matches, Pläne, Einkaufslisten und Kochfunktionen. Solche
-Funktionen gelten erst dann als bereitgestellt, wenn sie in der App
-tatsächlich freigeschaltet und beschrieben sind. Chat, öffentliche Suche,
+Der gemeinsame Bereich umfasst die in deiner App tatsächlich freigeschalteten
+Rezepte, Swipes, Matches, Pläne, Einkaufslisten und Kochfunktionen. Chat, öffentliche Suche,
 Feed und Kontakte in der Umgebung gehören nicht zum aktuellen gemeinsamen
 Bereich.
 
@@ -361,6 +374,40 @@ gesundheitlichen Beschwerden ist medizinische Hilfe in Anspruch zu nehmen.
 
 Diese Hinweise schließen keine Haftung für von Swipe & Cook zu vertretende
 Fehler aus und beschränken keine zwingenden gesetzlichen Rechte.
+
+### Ernährungsfokus und verbindliche Ausschlüsse
+
+Der Ernährungsfokus bestimmt die automatische gemeinsame Vorauswahl und
+kann im gemeinsamen Filter manuell erweitert werden. Abweichungen werden
+gekennzeichnet. Neue persönliche Einstellungen setzen die automatische
+Vorauswahl neu. Allergien, Unverträglichkeiten und ausdrücklich
+ausgeschlossene Lebensmittel oder Gruppen bleiben für neue Kandidaten
+verbindlich; weder „Alle Filter“ noch zwei positive Swipes heben sie auf.
+
+### Gesonderte Risiko-Ausnahme für vorhandene Matches und Pläne
+
+Wird ein zuvor gültiges Match oder ein bereits geplanter Eintrag durch eine
+spätere Ausschlussänderung betroffen, kann eine ausdrücklich angebotene,
+rezeptgebundene Risiko-Ausnahme genutzt werden. Beide aktuellen Mitglieder
+müssen dafür unabhängig den aktuellen Warnhinweis ausdrücklich bestätigen.
+Bis die Voraussetzungen serverseitig bestätigt sind, bleiben die betroffenen
+Planungs- und Kochaktionen gesperrt. Alternativ kann der Eintrag entfernt
+oder ersetzt werden; bei aktivem Kochen muss dieses zunächst beendet werden.
+
+Ein früherer Swipe ist keine Warnbestätigung. Die Zustimmung gilt nur für
+die angezeigte Bindung und Regel-/Rezeptgrundlage. Änderungen können sie
+ungültig machen. Nicht verifizierbare Rezept- oder Sicherheitsinformationen,
+fehlende Gesundheitsdateneinwilligungen und fehlende Zugriffsrechte lassen
+sich damit nicht übersteuern.
+
+Der Hinweis „auf eigene Gefahr“ warnt insbesondere vor möglichen schweren
+gesundheitlichen Reaktionen. Eine Ausnahme macht das Gericht nicht
+gesundheitlich sicher; sie ist weder eine medizinische Empfehlung noch eine
+Aufforderung, bekannte Allergene zu verzehren. Prüfe Zutaten und
+Kreuzkontaminationen selbst und verzichte im Zweifel auf das Gericht.
+Die Bestätigung ersetzt keine gesonderte Datenschutzeinwilligung und ist kein
+Haftungsverzicht. Abschnitt 18 und zwingende gesetzliche Rechte bleiben
+uneingeschränkt maßgeblich.
 
 ## 16. Verfügbarkeit und Wartung
 

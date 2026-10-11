@@ -1,15 +1,9 @@
 # Swipe-&-Cook-Konto löschen
 
-Stand: 4. September 2026
+Stand: 8. Oktober 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-konto-loeschen>
-
-<!--
-Interner Status: S3-Inhaltskandidat auf Grundlage der verbindlichen
-S2-Publikationsfassung. Die öffentlichen Routen bleiben bis zur ausdrücklichen
-Inhaltsabnahme auf S2. Diese Notiz wird vom Rechtstext-Renderer entfernt.
--->
 
 ## 1. Zweck dieser Seite
 
@@ -172,6 +166,27 @@ Private Rohswipes abgelaufener oder ungültiger Rezeptpools werden spätestens
 verschlüsselten Sicherungen können bereits gelöschte S5-Daten höchstens 30
 Tage enthalten sein; nach einer Wiederherstellung wird der gültige
 Löschungsstand erneut angewendet.
+
+### Risiko-Ausnahmen und Pushregistrierungen
+
+Kontogebundene Ursprungs- und Ausnahmebezüge für nachträglich gesperrte
+Matches oder Pläne sowie davon abhängige Warnbestätigungen werden bei
+beteiligter Kontolöschung entfernt. Eine frühere Zustimmung darf weder auf
+ein neues Konto übertragen noch zur Freigabe ohne zwei aktuelle Mitglieder
+verwendet werden. Ein gegebenenfalls anonymisiert erhaltener gemeinsamer
+Verlauf ist keine Wiederherstellung deiner Freigabe.
+
+Kontobezogene Pushregistrierungen und Zustellzuordnungen unterliegen ebenfalls
+dem Löschverfahren. Eine bloße Abmeldung deaktiviert eine Registrierung,
+ist aber keine Kontolöschung. Google/Firebase und Apple können technische
+Daten nach ihren eigenen Datenschutzregeln vorhalten; die Kontolöschung
+kündigt kein Storeabo und löscht nicht dein Google- oder Apple-Konto.
+
+Eine lokale 90-Tage-Bereichssicherung, der laufende Appzwischenspeicher und
+rotierende Serverbackups sind unterschiedliche Speicherarten. Eine Sicherung
+darf gelöschte Kontobezüge oder ungültige Ausnahmebestätigungen nicht wieder
+aktivieren. Weitere Informationen findest du in der
+[Datenschutzerklärung](https://www.komplettwebdesign.de/swipeandcook-datenschutz).
 
 ## 8. Welche Daten vorübergehend verbleiben können
 

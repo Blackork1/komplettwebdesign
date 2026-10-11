@@ -27,7 +27,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-datenschutzerklaerung.md',
     footerLabel: 'Swipe & Cook Datenschutz',
     required: [
-      'Stand: 4. September 2026',
+      'Stand: 8. Oktober 2026',
       'eigenes Swipe-&-Cook-Konto kann erst ab 16 Jahren erstellt werden',
       'Allergien, Unverträglichkeiten und andere Safety-Angaben',
       'Optionale Produktanalyse',
@@ -42,7 +42,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-nutzungsbedingungen.md',
     footerLabel: 'Swipe & Cook Nutzungsbedingungen',
     required: [
-      'Stand: 4. September 2026',
+      'Stand: 8. Oktober 2026',
       'Ein eigenes Swipe-&-Cook-Konto kann erst ab 16 Jahren erstellt werden',
       'drei erfolgreich ausgewählte Einzelgerichte je Kalendermonat',
       '6,99 € pro Monat',
@@ -58,7 +58,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-supportseite.md',
     footerLabel: 'Swipe & Cook Support',
     required: [
-      'Stand: 4. September 2026',
+      'Stand: 8. Oktober 2026',
       'Käufe wiederherstellen',
       'Abo verwalten oder kündigen',
       'Plattformwechsel und Doppelabo',
@@ -73,7 +73,7 @@ const pageContracts = Object.freeze([
     file: 'content/swipeandcook/s3-kontoloeschung.md',
     footerLabel: 'Swipe & Cook Konto löschen',
     required: [
-      'Stand: 4. September 2026',
+      'Stand: 8. Oktober 2026',
       'Löschung ohne App anfordern',
       'Storeabo separat verwalten oder kündigen',
       'Verifizierungslink',

@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 
 const CONTENT_ROOT = new URL('../content/swipeandcook/', import.meta.url);
-const LEGAL_CONTENT_VERSIONS = new Set(['s2', 's3']);
+const LEGAL_CONTENT_VERSIONS = new Set(['s2', 's3', 's4']);
 
 const PAGE_DEFINITIONS = Object.freeze({
   privacy: Object.freeze({
     key: 'privacy',
-    source: 's3-datenschutzerklaerung.md',
+    source: 's4-datenschutzerklaerung.md',
     path: '/swipeandcook-datenschutz',
     title: 'Datenschutzerklärung für Swipe & Cook',
     lead: 'Wie Swipe & Cook Konto-, Safety-, Premium- und optionale Analysedaten verarbeitet.'
@@ -27,7 +27,7 @@ const PAGE_DEFINITIONS = Object.freeze({
   }),
   accountDeletion: Object.freeze({
     key: 'accountDeletion',
-    source: 's3-kontoloeschung.md',
+    source: 's4-kontoloeschung.md',
     path: '/swipeandcook-konto-loeschen',
     title: 'Swipe-&-Cook-Konto löschen',
     lead: 'Löschung direkt in der App oder sicher über die verifizierte E-Mail-Adresse anfordern.'
@@ -225,12 +225,12 @@ export function loadSwipeAndCookLegalPageVersion(key, version) {
   if (!definition) {
     throw new Error('swipeandcook_legal_page_unknown');
   }
-  if (!LEGAL_CONTENT_VERSIONS.has(version)) {
+  if (!LEGAL_CONTENT_VERSIONS.has(version) || (version === 's4' && !['privacy', 'accountDeletion'].includes(key))) {
     throw new Error('swipeandcook_legal_version_unknown');
   }
   return readPage(Object.freeze({
     ...definition,
-    source: definition.source.replace(/^s[23]-/u, `${version}-`)
+    source: definition.source.replace(/^s[234]-/u, `${version}-`)
   }));
 }
 

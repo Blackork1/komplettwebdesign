@@ -20,10 +20,10 @@ const files = Object.freeze({
 
 test('S3-Fassungen übernehmen den vollständigen S2-Vertrag und sind datiert', () => {
   const expectedDates = Object.freeze({
-    privacy: '4. September 2026',
-    support: '4. September 2026',
-    terms: '4. September 2026',
-    accountDeletion: '4. September 2026',
+    privacy: '8. Oktober 2026',
+    support: '8. Oktober 2026',
+    terms: '8. Oktober 2026',
+    accountDeletion: '8. Oktober 2026',
   });
   for (const [key, file] of Object.entries(files)) {
     const s2 = read(file.replace('/s3-', '/s2-'));
@@ -47,8 +47,8 @@ test('öffentliche S4-Fassung erklärt Planung, Einkaufsliste und Löschfristen'
   const privacyText = privacy.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
   const supportText = support.html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ');
 
-  assert.equal(privacy.stand, '4. September 2026');
-  assert.equal(support.stand, '4. September 2026');
+  assert.equal(privacy.stand, '11. Oktober 2026');
+  assert.equal(support.stand, '8. Oktober 2026');
   for (const required of [
     'persönliche Plan- und Einkaufslistendaten',
     'Abmeldung und einer späteren erneuten Anmeldung',
@@ -173,23 +173,25 @@ test('Support und Kontolöschung erklären Self Service ohne Geheimnisse', () =>
   ]) assert.match(deletion, new RegExp(required, 'u'));
 });
 
-test('Legalservice veröffentlicht S3 und hält S2 als historische Fassung abrufbar', () => {
+test('Legalservice veröffentlicht S4-Datenschutz und S3-Seiten mit historisch lesbarem S2', () => {
   for (const key of Object.keys(files)) {
     const active = loadSwipeAndCookLegalPage(key);
     const historical = loadSwipeAndCookLegalPageVersion(key, 's2');
-    assert.match(active.source, /^s3-/u, key);
+    assert.match(active.source, ['privacy', 'accountDeletion'].includes(key) ? /^s4-/u : /^s3-/u, key);
     assert.match(historical.source, /^s2-/u, key);
     assert.equal(
       active.stand,
-      '4. September 2026',
+      ['privacy', 'accountDeletion'].includes(key) ? '11. Oktober 2026' : '8. Oktober 2026',
     );
     assert.doesNotMatch(
       active.html,
       /Interner Status|Inhaltsabnahme|Vorgesehene öffentliche Adresse/u,
     );
   }
-  assert.throws(
-    () => loadSwipeAndCookLegalPageVersion('privacy', 's4'),
-    /swipeandcook_legal_version_unknown/u,
-  );
+  assert.equal(loadSwipeAndCookLegalPageVersion('privacy', 's3').stand, '8. Oktober 2026');
+  assert.equal(loadSwipeAndCookLegalPageVersion('privacy', 's4').stand, '11. Oktober 2026');
+  assert.equal(loadSwipeAndCookLegalPageVersion('accountDeletion', 's4').stand, '11. Oktober 2026');
+  for (const key of ['terms', 'support']) {
+    assert.throws(() => loadSwipeAndCookLegalPageVersion(key, 's4'), /swipeandcook_legal_version_unknown/u);
+  }
 });

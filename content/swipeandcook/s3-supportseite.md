@@ -1,14 +1,9 @@
 # Support-, Abo- und Kontolöschinformationen für Swipe & Cook
 
-Stand: 4. September 2026
+Stand: 8. Oktober 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-support>
-
-<!--
-S4-Inhaltsergänzung auf Grundlage der verbindlichen S3-Publikationsfassung.
-Diese Notiz wird vom Rechtstext-Renderer entfernt.
--->
 
 ## Kontakt und sichere Supportanfrage
 
@@ -111,10 +106,11 @@ einen Konflikt, lade zuerst den aktuellen Stand und wiederhole die gewünschte
 Änderung auf dieser Grundlage.
 
 Ohne Internetverbindung kannst du einen bereits lokal verfügbaren Stand
-lesen. Neue persönliche Änderungen benötigen eine Verbindung. Eine verlorene
-Serverantwort wird mit derselben sicheren Anfrage wiederholt, damit derselbe
-Eintrag nicht doppelt entsteht. Optionale gemeinsame Offlineänderungen stehen
-nur zur Verfügung, wenn die App sie ausdrücklich aktiviert anzeigt.
+lesen. Freigegebene Änderungen der privaten Einkaufsliste können mit Premium
+verschlüsselt vorgemerkt und später synchronisiert werden. Die gemeinsame
+Einkaufsliste benötigt für Änderungen immer eine bestätigte Live-Verbindung.
+Eine verlorene Serverantwort wird mit derselben sicheren Anfrage wiederholt,
+damit derselbe Eintrag nicht doppelt entsteht.
 
 ## Abostatus wird geprüft
 
@@ -190,9 +186,23 @@ Während einer bestätigten Grace Period kann Premium vorübergehend
 weiterlaufen. Nach Ende der Nachfrist können neue Premiumaktionen pausiert
 werden, bis der Store die Zahlung bestätigt.
 
-Offline bleiben bereits lokal verfügbare Inhalte nutzbar. Neue
-serverabhängige Auswahlen, Generierungen, Käufe und Statusabgleiche benötigen
-eine Internetverbindung.
+Nach einer bestätigten Anmeldung bleiben vorhandene Übersichten für Free und
+Premium offline lesbar. Free kann Einkaufslisten online weiterhin bearbeiten.
+Mit Premium können vollständig, verschlüsselt und kontogebunden gespeicherte
+private Rezeptdetails mit Zutaten und Kochanleitung offline geöffnet werden.
+Freigegebene Änderungen der privaten Einkaufsliste werden lokal gespeichert
+und später automatisch synchronisiert.
+
+Der Premiumgrant gilt bis zum bestätigten Premiumende; es gibt keine
+zusätzliche Sieben-Tage-Grenze. Eine Erstattung, ein Widerruf oder eine
+nachträgliche Entziehung wird auf einem vollständig offline gebliebenen Gerät
+erst beim nächsten Onlineabgleich erkannt.
+
+Die gemeinsame Einkaufsliste kann offline nur gelesen werden. Für Änderungen
+ist immer eine bestätigte Live-Verbindung nötig. Neue serverabhängige
+Auswahlen, Generierungen, Käufe und Statusabgleiche benötigen ebenfalls eine
+Internetverbindung. Logout, Kontolöschung und ein bestätigter Subjectwechsel
+löschen die zugehörigen lokalen Offline-Daten.
 
 ### Gemeinsame Rezeptauswahl (S5)
 
@@ -213,6 +223,52 @@ Sternwert oder konkrete Safety-Angaben. Nenne nur die angezeigte
 nichttechnische Fehlermeldung, Plattform und Appversion. Passwörter,
 Einmalcodes und Einladungstokens gehören ebenfalls nie in eine
 Supportnachricht.
+
+## Ernährungsfokus, Ausschlüsse und gesperrte Rezepte
+
+Vegetarisch, vegan und andere Fokus-Einstellungen bestimmen die automatische
+gemeinsame Vorauswahl. Ihr könnt den Fokusfilter manuell erweitern; passende
+Warnhinweise zeigen Abweichungen an. Nach einer Einstellungsänderung wird die
+Vorauswahl neu berechnet. Allergien, Unverträglichkeiten und ausdrücklich
+ausgeschlossene Lebensmittel oder Gruppen bleiben für neue Rezepte gesperrt.
+
+Prüfe bei einem gesperrten vorhandenen Match oder Plan zuerst den Warnhinweis.
+Du kannst das Rezept entfernen oder ersetzen. Ist das Kochen bereits aktiv,
+beende es zuerst, bevor du den Planeintrag entfernst.
+
+Nur für ein zuvor gültiges Match oder einen vorhandenen Plan, der erst nach
+einer Ausschlussänderung betroffen ist, kann eine gesonderte Risiko-Ausnahme
+angeboten werden. Öffnet beide den Warnhinweis und bestätigt unabhängig die
+aktuelle, rezeptgebundene Ausnahme. Erst nach Bestätigung beider und der
+Serverprüfung wird die betroffene Aktion freigegeben. Zwei frühere positive
+Swipes und „Alle Filter“ reichen dafür nicht.
+
+„Auf eigene Gefahr“ bedeutet nicht, dass das Gericht gesundheitlich sicher
+ist. Es können schwere gesundheitliche Reaktionen auftreten. Die Funktion
+ersetzt weder Zutatenprüfung noch medizinische Beratung, ist kein
+Haftungsverzicht und ersetzt keine Gesundheitsdateneinwilligung. Nutzt für
+Funktionstests keine allergenhaltige Mahlzeit zum Verzehr. Wenn die
+Prüfgrundlage fehlt oder eine Bestätigung veraltet ist, bleibt das Rezept
+gesperrt. Änderungen können eine erneute Freigabe erforderlich machen.
+
+## Benachrichtigungen und Datenschutz
+
+Funktionsbenachrichtigungen werden über Google/Firebase und auf iOS zusätzlich
+Apple zugestellt. Technische Installations- und Zustellkennungen sind dafür
+erforderlich. Details stehen in der Datenschutzerklärung, Abschnitt 8a.
+Dein Partner sieht keine einzelnen Swipeentscheidungen oder Sternebewertungen,
+sondern das gemeinsame Match beziehungsweise den Feedbackabgabestatus.
+
+Sichtbare Mitteilungen kannst du in den Systemeinstellungen für Swipe & Cook
+ein- oder ausschalten. Dies ist keine Zustimmung zu Nutzungsanalyse und
+schaltet nicht automatisch sämtliche technische SDK-Verarbeitung aus.
+Die App kann ohne sichtbare Pushnachrichten weiter verwendet werden.
+
+Sende zur Fehlerklärung nur Appversion, Plattform, ungefähres Zeitfenster,
+Support-ID und eine datensparsame Beschreibung. Schwärze in Screenshots Namen,
+E-Mail-Adressen, Rezept- und Profilinhalte sowie Allergien und andere
+Gesundheitsangaben. Übermittle keine FCM-/APNs-Token, Firebase-Kennungen oder
+Einladungstokens.
 
 ## Konto löschen
 
@@ -257,6 +313,7 @@ Hilfe in Anspruch zu nehmen.
 
 ## Rechtliche Informationen
 
+- [Impressum](https://www.komplettwebdesign.de/impressum)
 - [Datenschutzerklärung](https://www.komplettwebdesign.de/swipeandcook-datenschutz)
 - [Nutzungsbedingungen](https://www.komplettwebdesign.de/swipeandcook-nutzungsbedingungen)
 - [Kontolöschung](https://www.komplettwebdesign.de/swipeandcook-konto-loeschen)

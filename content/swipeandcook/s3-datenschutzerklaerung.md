@@ -1,14 +1,9 @@
 # Datenschutzerklärung für Swipe & Cook
 
-Stand: 4. September 2026
+Stand: 8. Oktober 2026
 
 Vorgesehene öffentliche Adresse:
 <https://www.komplettwebdesign.de/swipeandcook-datenschutz>
-
-<!--
-S4-Inhaltsergänzung auf Grundlage der verbindlichen S3-Publikationsfassung.
-Diese Notiz wird vom Rechtstext-Renderer entfernt.
--->
 
 ## 1. Verantwortlicher und Kontakt
 
@@ -214,6 +209,47 @@ Favoriten, persönliche Such- und Nutzungsverläufe, Anmeldemethoden,
 E-Mail-Adressen, Support-ID und Zahlungsdaten. Für gemeinsame Funktionen
 werden nur zweckgebundene Projektionen verwendet.
 
+### Ernährungsfokus, verbindliche Ausschlüsse und Risiko-Ausnahmen
+
+Ein Ernährungsfokus wie vegetarisch oder vegan bestimmt die automatische
+Vorauswahl. Die Mitglieder können die gemeinsame Auswahl manuell erweitern;
+abweichende Rezepte erhalten einen Hinweis. Ändert eine Person ihre
+Einstellungen, wird die automatische Vorauswahl neu berechnet. Ein
+Ernährungsfokus ist nicht mit einer verbindlichen Allergie- oder
+Unverträglichkeitsregel gleichzusetzen.
+
+Allergien, Unverträglichkeiten und ausdrücklich ausgeschlossene Lebensmittel
+oder Gruppen werden bei neuen Kandidaten verbindlich berücksichtigt.
+Zwei positive Swipes oder „Alle Filter“ heben solche Ausschlüsse nicht auf.
+Bereits vorhandene Matches und Pläne werden nach Änderungen erneut geprüft.
+
+Nur wenn ein zuvor gültiges Match oder ein bereits geplanter Eintrag durch
+später hinzugekommene Ausschlüsse betroffen ist, kann die App eine gesonderte
+Risiko-Ausnahme anbieten. Dafür müssen beide aktuellen Mitglieder den
+Warnhinweis für genau dieses Rezept beziehungsweise diesen Planeintrag
+ausdrücklich bestätigen. Bis zur vollständigen serverseitigen Prüfung bleibt
+der betroffene Vorgang gesperrt. Fehlende oder nicht verifizierbare
+Rezept- und Prüfgrundlagen werden durch eine Bestätigung nicht ersetzt.
+
+Für die Ausnahme verarbeiten wir die Rezept-/Match- oder Planbindung,
+Bereichs- und Mitgliedschaftsbezüge, den Prüf- und Ausnahmezustand, die
+maßgeblichen Regel- und Rezeptversionen sowie Version und Zeitpunkt der
+Warnbestätigung jeder Person. Diese Angaben dienen der Durchführung des
+ausdrücklich angeforderten Vorgangs und dem Nachweis seiner Voraussetzungen
+(Art. 6 Abs. 1 Buchst. b DSGVO). Soweit dabei Gesundheitsdaten ausgewertet
+werden, gelten zusätzlich die gesonderten Einwilligungen nach Abschnitt 4
+und diesem Abschnitt. Eine Warnbestätigung ersetzt diese Einwilligungen nicht.
+
+Änderungen der maßgeblichen Ausschlüsse, Einwilligungen, Mitgliedschaft oder
+Rezeptprüfgrundlage können eine Ausnahme ungültig machen; eine alte
+Bestätigung ist keine allgemeine oder dauerhafte Freigabe für andere Rezepte.
+Die andere Person sieht den für die gemeinsame Freigabe erforderlichen
+Warn- und Bestätigungsstatus, nicht private Swipeentscheidungen oder Sterne.
+
+„Auf eigene Gefahr“ bedeutet keine gesundheitliche Sicherheit und keine
+medizinische Empfehlung. Eine solche Bestätigung ist kein Haftungsverzicht
+und schränkt zwingende gesetzliche Rechte nicht ein.
+
 ## 5d. Bereichsende und lokale 90-Tage-Sicherung
 
 Nach Austritt, Entfernung oder Auflösung kann der Owner den gemeinsamen Stand
@@ -275,6 +311,25 @@ Freischaltungen beruhen ergänzend auf Art. 6 Abs. 1 Buchst. f DSGVO.
 Gesetzlich erforderliche Aufbewahrung erfolgt auf Art. 6 Abs. 1 Buchst. c
 DSGVO.
 
+### Lokaler Premium-Offlinebetrieb
+
+Nach einer bestätigten Anmeldung können wir einen verschlüsselten,
+kontogebundenen Offline-Sitzungsnachweis speichern. Für Premium können
+zusätzlich ein signierter Premiumgrant bis zum bestätigten Premiumende,
+vollständige private Rezeptpakete einschließlich Zutaten und Kochanleitung
+sowie Aufträge der privaten Einkaufsliste lokal verschlüsselt gespeichert
+werden. Für den Grant gilt keine zusätzliche Sieben-Tage-Grenze.
+
+Private Offline-Aufträge werden später automatisch synchronisiert, sobald eine
+geeignete Verbindung besteht. Free kann Einkaufslisten online weiterhin
+bearbeiten. Die gemeinsame Einkaufsliste kann offline nur gelesen werden und
+benötigt für jede Änderung eine bestätigte Live-Verbindung.
+
+Logout, Kontolöschung und ein bestätigter Subjectwechsel löschen die dem Konto
+zugeordneten lokalen Nachweise, Pakete, Caches und Aufträge. Eine Erstattung,
+ein Widerruf oder eine nachträgliche Entziehung kann auf einem vollständig
+offline gebliebenen Gerät erst beim nächsten Onlineabgleich erkannt werden.
+
 ## 7. Apple und Google
 
 Bei einem Kauf über den Apple App Store oder Google Play verarbeitet der
@@ -301,9 +356,49 @@ Allergie-, Unverträglichkeits- oder sonstigen Gesundheitsdaten.
 RevenueCat darf besondere Kategorien personenbezogener Daten nicht für uns
 verarbeiten. Unsere technische Konfiguration ist entsprechend beschränkt.
 
+## 8a. Pushbenachrichtigungen über Firebase und Apple
+
+Für technische Pushzustellung verwenden wir Firebase Cloud Messaging von
+Google; auf iOS erfolgt die Zustellung zusätzlich über den Apple Push
+Notification Service. Dabei werden technische Installations- und
+Zustellkennungen verarbeitet, insbesondere Firebase-Installationskennungen,
+FCM-Registrierungstoken und auf iOS APNs-Token. Diese Kennungen sind keine
+Passwörter, können aber eine Appinstallation wiedererkennbar machen.
+
+Unser Backend registriert bei angemeldetem Konto und freigegebenen
+Benachrichtigungen eine zufällig erzeugte Installations-ID, Plattform,
+App-Buildnummer und den FCM-Registrierungstoken mit Kontobezug. Die
+Zustellkennung wird im Backend verschlüsselt gespeichert. Firebase kann
+bereits bei Initialisierung des SDK technische Installationsdaten verarbeiten;
+die Systemfreigabe für sichtbare Mitteilungen ist deshalb nicht mit einem
+vollständigen Abschalten sämtlicher SDK-Verarbeitung gleichzusetzen.
+
+Zweck ist die Zustellung angeforderter Funktionshinweise und die
+Aktualisierung gemeinsamer Ansichten (Art. 6 Abs. 1 Buchst. b DSGVO).
+Für technisch erforderliche Endgerätespeicherung gilt § 25 Abs. 2 TDDDG;
+soweit eine darüber hinausgehende Verarbeitung eine Einwilligung erfordert,
+ist diese gesondert erforderlich. Die Benachrichtigungsfreigabe wird über das
+Betriebssystem verwaltet. Du kannst sichtbare Benachrichtigungen in dessen
+App-Einstellungen jederzeit deaktivieren und die App weiterhin verwenden.
+
+Für gemeinsame Matches, Planung, Kochstart und Kochabschluss werden
+minimierte Funktionsnachrichten übertragen. Sie enthalten keine
+Rezepttitel, Allergien, Unverträglichkeiten, einzelnen Swipeentscheidungen,
+Sternwerte oder Partneridentität. Für Feedback wird keine Pushnachricht
+versandt. Die Kennungen werden für diese Funktion nicht als Werbe-ID oder
+für werbliches Tracking verwendet; optionale Produktanalyse ist getrennt.
+
+Technische Empfänger sind Google/Firebase und auf iOS Apple sowie die zur
+Zustellung erforderliche Infrastruktur. Auch minimierte Mitteilungen können
+auf einem Sperrbildschirm sichtbar sein; die Anzeige steuerst du über die
+Systemeinstellungen. Informationen zur Anbieter-Verarbeitung findest du bei
+[Firebase](https://firebase.google.com/support/privacy) und
+[Apple](https://www.apple.com/legal/privacy/de-ww/).
+
 ## 9. Internationale Datenübermittlungen
 
-RevenueCat und einzelne Unterauftragsverarbeiter können Daten in den USA
+RevenueCat, Google/Firebase, Apple und einzelne Unterauftragsverarbeiter
+können Daten in den USA
 oder anderen Staaten außerhalb des Europäischen Wirtschaftsraums
 verarbeiten. Eine Übermittlung erfolgt nur unter den Voraussetzungen der
 Art. 44 ff. DSGVO.
@@ -371,6 +466,11 @@ Dienstleister übermittelt werden. Soweit diese Dienstleister Daten in
 unserem Auftrag verarbeiten, werden sie nach Art. 28 DSGVO vertraglich
 gebunden.
 
+Zu den technischen Empfängern für Pushzustellung gehören insbesondere
+Google/Firebase und bei iOS Apple (Abschnitt 8a). Die technische Übermittlung
+an einen Dienstleister ist von dessen eigener Verwendung der Daten und von
+werblichem Tracking zu unterscheiden.
+
 Eine aktuelle Übersicht der wesentlichen eingesetzten Dienstleister kann
 unter `kontakt@komplettwebdesign.de` angefordert werden. Die konkret in der
 App verwendeten Anbieter müssen mit den Angaben in den
@@ -427,6 +527,21 @@ Planbindungen und bestätigte Kochverläufe folgen dem Lebenszyklus des
 gemeinsamen Bereichs. Bei einer Kontolöschung werden eigene private Swipes und
 das eigene Sternefeedback gelöscht; Personenbezüge an erhaltenen gemeinsamen
 Inhalten werden entfernt oder anonymisiert.
+
+Rezeptgebundene Ausnahme- und Warnbestätigungsdaten werden für die aktuelle
+Bindung und den Nachweis ihrer Voraussetzungen gespeichert. Ungültige
+Bestätigungen dürfen keine neue Aktion freigeben. Bei beteiligter
+Kontolöschung werden die kontogebundenen Ursprungs- und Ausnahmebezüge samt
+abhängigen Bestätigungen entfernt. Für diese Belege gilt keine pauschale
+Zusage einer eigenen 30-Tage-Löschfrist. Gesetzlich notwendige, gesperrte
+Nachweise werden getrennt und zweckbegrenzt behandelt.
+
+Pushregistrierungen dienen der Zustellbarkeit für die betreffende
+Installation. Abmeldung oder eine als ungültig erkannte Zustellkennung
+deaktiviert die entsprechende Registrierung; Deaktivierung ist nicht
+gleichbedeutend mit sofortiger physischer Löschung. Kontobezogene
+Registrierungen unterliegen dem Kontolöschverfahren. Anbieter können
+technische Daten nach ihren eigenen, verlinkten Datenschutzregeln vorhalten.
 
 Besteht ein konkreter Rechtsstreit, Sicherheitsvorfall oder
 Missbrauchsverdacht, können die hierfür erforderlichen Daten bis zur
