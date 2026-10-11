@@ -1141,8 +1141,8 @@
     max-width: 680px;
     margin: 0.9rem 0 1rem;
     color: var(--home-ink);
-    font-size: clamp(3.15rem, 4.5vw, 4.7rem);
-    line-height: 0.98;
+    font-size: clamp(2.45rem, 3.6vw, 3.8rem);
+    line-height: 1.08;
     letter-spacing: 0;
     overflow-wrap: normal;
     word-break: normal;
@@ -2345,8 +2345,8 @@
       max-width: 16ch;
       margin-left: 0;
       margin-right: 0;
-      font-size: clamp(2.55rem, 13vw, 4rem);
-      line-height: 0.98;
+      font-size: clamp(2rem, 8vw, 2.65rem);
+      line-height: 1.08;
     }
 
     .home-page .hero-main .home-hero-claim {
@@ -2596,7 +2596,7 @@
     }
 
     .home-page .hero-main h1 {
-      font-size: clamp(2.2rem, 12vw, 3.1rem);
+      font-size: clamp(1.85rem, 8vw, 2.2rem);
     }
 
     .home-page h2 {
