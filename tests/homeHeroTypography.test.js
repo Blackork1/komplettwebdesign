@@ -32,3 +32,22 @@ for (const [viewport, minimum, maximum] of [[320, 28, 34], [390, 28, 36],
     assert(typography.lineHeight >= 1.05, 'mehrzeilige Überschrift braucht ausreichenden Zeilenabstand');
   });
 }
+
+test('Hero-Texte behalten auch beim Einblenden eine gemeinsame linke Kante', () => {
+  const support = [];
+  root.walkRules(rule => {
+    if (rule.selector === '.hero-main .home-hero-reveal--support.animate-on-scroll,\n  .hero-main .home-hero-bullets .home-hero-reveal.animate-on-scroll') {
+      rule.walkDecls('transform', declaration => support.push(declaration.value));
+    }
+  });
+  assert.deepEqual(support, ['translate3d(0, 18px, 0)']);
+  root.walkRules('.home-page .hero-main .hero-content', rule => {
+    rule.walkDecls('text-align', declaration => assert.equal(declaration.value, 'left'));
+  });
+  root.walkRules(rule => {
+    if (rule.selector.includes('.home-page .hero-main h1,') && rule.parent.type === 'atrule'
+      && rule.parent.params === '(max-width: 1020px)') {
+      rule.walkDecls('margin-left', declaration => assert.equal(declaration.value, '0'));
+    }
+  });
+});
