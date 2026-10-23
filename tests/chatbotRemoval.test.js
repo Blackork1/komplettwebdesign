@@ -43,7 +43,7 @@ test('FAQ page keeps its answers and accordion while removing the chat form and 
   });
   const $ = load(html);
   assertNoChat($);
-  assert.equal($('#faqAccordion .accordion-button').text().trim(), 'Wie frage ich eine Website an?');
-  assert.equal($('#faqAccordion .accordion-body p').text(), 'Über die Kontaktseite.');
+  assert.equal($('#faqAccordion summary').text().trim(), 'Wie frage ich eine Website an?');
+  assert.equal($('#faqAccordion .faq-answer p').text(), 'Über die Kontaktseite.');
   assert.doesNotMatch($('script:not([src])').text(), /\/faq\/query|\/chat\/(?:message|history)/);
 });

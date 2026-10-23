@@ -130,9 +130,9 @@
     "faq.css": {
       "source": "faq.css",
       "output": "faq.min.css",
-      "href": "/faq.min.css?v=5b66f4bd4132",
-      "hash": "5b66f4bd4132",
-      "bytes": 1389
+      "href": "/faq.min.css?v=71d2708713ce",
+      "hash": "71d2708713ce",
+      "bytes": 5078
     },
     "fonts/fonts.css": {
       "source": "fonts/fonts.css",

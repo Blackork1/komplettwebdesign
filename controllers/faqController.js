@@ -1,116 +1,58 @@
-// controllers/faqController.js
-import {
-  getAllCategories,
-  getFaqsByCategory,
-  getCategoryById
-} from '../models/faqModel.js';
-import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { siteFaqCategories, siteFaqs } from '../data/siteFaqs.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
-/** (Optional) Wenn du später alle FAQs als JSON-LD brauchst,
- *  ohne die Seite zu rendern, nutzen wir diese Hilfsfunktion. */
-async function fetchAllFaqsGrouped() {
-  const cats = await getAllCategories();
-  const out = [];
-  for (const c of cats) {
-    const list = await getFaqsByCategory(c.id);
-    out.push(...list.map(f => ({ ...f, category_id: c.id, category_name: c.name })));
-  }
-  return out;
-}
-
-/** JSON-LD Builder für eine Liste von FAQs (so wie sie gerendert werden) */
-function buildFaqJsonLd(faqRows) {
+function buildFaqJsonLd(faqs) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faqRows.map(r => ({
+    mainEntity: faqs.map(faq => ({
       '@type': 'Question',
-      name: r.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        // Wenn Antworten HTML enthalten, kannst du hier auf Plain-Text „strippen“
-        // (Google erlaubt etwas HTML; so lassen wir es roh aus der DB):
-        text: r.answer
-      }
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer }
     }))
   };
 }
 
-const categoryMeta = {
-  1: { icon: '/images/icons/general.svg',  description: 'Neue hier? Starte mit den Basics.' },
-  2: { icon: '/images/icons/payment.svg',  description: 'Alles zu Bezahlung & Rechnungen.' },
-  3: { icon: '/images/icons/content.svg',  description: 'Abläufe & Inhalte verstehen.' },
-  4: { icon: '/images/icons/tech.svg',     description: 'Technische Details & Hosting.' },
-  5: { icon: '/images/icons/special.svg',  description: 'Unsere besonderen Leistungen.' }
-};
-
-/** HTML-Render der FAQ-Seite + eingebettetes JSON-LD
- *  Das JSON-LD umfasst GENAU die FAQs der ausgewählten Kategorie,
- *  sodass es 1:1 mit den sichtbaren Inhalten übereinstimmt. */
 export async function renderFaqPage(req, res, next) {
+  const rawCategory = req.query.cat;
+  if (rawCategory !== undefined && (typeof rawCategory !== 'string' || !/^[1-9]\d*$/.test(rawCategory))) return next();
+
+  const categories = siteFaqCategories.map(category => ({ ...category }));
+  const selectedId = rawCategory === undefined ? categories[0].id : Number(rawCategory);
+  const selectedCategory = categories.find(category => category.id === selectedId);
+  if (!selectedCategory) return next();
+
   try {
-    // Kategorien + Meta anreichern
-    const catsRaw = await getAllCategories();
-    const categories = catsRaw.map(c => ({
-      id:          c.id,
-      name:        c.name,
-      icon:        categoryMeta[c.id]?.icon || '',
-      description: categoryMeta[c.id]?.description || ''
-    }));
-
-    // Ausgewählte Kategorie (per ?cat=)
-    const rawCategory = req.query.cat;
-    if (rawCategory !== undefined && (typeof rawCategory !== 'string' || !/^[1-9]\d*$/.test(rawCategory))) return next();
-    const selectedId = rawCategory === undefined ? categories[0]?.id : Number(rawCategory);
-    if (!categories.some(category => Number(category.id) === selectedId)) return next();
-    const selectedCategory = await getCategoryById(selectedId);
-    if (!selectedCategory) return next();
-
-    // FAQs der ausgewählten Kategorie
-    const faqs = normalizeLegacyPublicCopy(renderPricingTokens(await getFaqsByCategory(selectedId), res.locals.packagePricing || {}), res.locals.packagePricing || {});
-
-    // JSON-LD nur für die auf der Seite gerenderten FAQs erzeugen
-    const faqJsonLd = buildFaqJsonLd(faqs);
-
-    // Caching für Besucher (anpassen wenn du Login/Personalisierung nutzt)
-    res.set('Cache-Control', 'public, max-age=300');
+    const pricing = res.locals.packagePricing || {};
+    const hasCurrentPrice = Boolean(String(pricing.lowestPackagePriceLabel || '').trim());
+    const faqs = renderPricingTokens(
+      siteFaqs.filter(faq => faq.categoryId === selectedId).map(faq => ({
+        question: faq.question,
+        answer: hasCurrentPrice && faq.answerWithPrice ? faq.answerWithPrice : faq.answer
+      })),
+      pricing
+    );
     const canonical = `${(res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}/faq`;
 
+    res.set('Cache-Control', 'public, max-age=300');
     res.render('faq', {
-      title: 'Häufige Fragen – Komplett Webdesign',
-      description: 'Hier findest du Antworten auf häufig gestellte Fragen zu Leistungen, Preisen, Ablauf, Technik & DSGVO.',
-      keywords: 'faq webdesign berlin, webseite erstellen lassen fragen, webdesign berlin kosten faq',
+      title: 'Häufige Fragen zu deiner Website | Komplett Webdesign',
+      description: 'Antworten zu Website-Paketen, Preisen, Ablauf, Technik, Wartung und SEO. Erfahre, wie die Zusammenarbeit mit Sören von Komplett Webdesign abläuft.',
+      keywords: 'faq webdesign berlin, website erstellen lassen fragen, webdesign kosten faq',
       seoExtra: `
-        <meta property="og:title" content="Häufige Fragen zu Webdesign & Website-Erstellung">
-        <meta property="og:description" content="Antworten zu Preisen, Ablauf, SEO, Technik und Datenschutz bei Komplett Webdesign in Berlin.">
+        <meta property="og:title" content="Häufige Fragen zu deiner Website">
+        <meta property="og:description" content="Antworten zu Leistungen, Kosten und Zusammenarbeit mit Komplett Webdesign in Berlin.">
         <meta property="og:url" content="${canonical}">
         <meta property="og:type" content="website">
       `,
       categories,
       selectedCategory,
       faqs,
-      // Wichtig: als String an EJS geben und dort mit <%- ... %> ungeescaped ausgeben
-      faqJsonLd: JSON.stringify(faqJsonLd)
+      // Das Schema enthält ausschließlich die vier sichtbaren Antworten.
+      faqJsonLd: JSON.stringify(buildFaqJsonLd(faqs)).replace(/</g, '\\u003c')
     });
   } catch (err) {
     console.error('Fehler beim Laden der FAQ-Seite:', err);
     res.status(500).send('Interner Serverfehler');
-  }
-}
-
-/** Optionaler Endpunkt: reines FAQ-JSON-LD siteweit
- *  (nur aktivieren, wenn die Seite irgendwo ALLE Fragen enthält,
- *  sonst kann Google die Nicht-Übereinstimmung bemängeln). */
-export async function serveFaqJsonLd(req, res) {
-  try {
-    const allFaqs = normalizeLegacyPublicCopy(renderPricingTokens(await fetchAllFaqsGrouped(), res.locals.packagePricing || {}), res.locals.packagePricing || {});
-    const jsonLd = buildFaqJsonLd(allFaqs);
-    res.setHeader('Content-Type', 'application/ld+json; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=300');
-    res.send(jsonLd);
-  } catch (err) {
-    console.error('Fehler beim Erzeugen des FAQ-JSON-LD:', err);
-    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }
