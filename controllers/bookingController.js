@@ -5,6 +5,7 @@ import * as Apt from '../models/appointmentModel.js';
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import pool from '../util/db.js';
+import { SITE_FACTS } from '../helpers/siteFacts.js';
 import { verifyToken } from '../util/bookingToken.js';
 import { extractLocaleFromNote, normalizeLocale } from '../util/bookingLocale.js';
 
@@ -58,11 +59,13 @@ export async function listSlots(req, res) {
 
   res.render('booking', {
     lng,
-    title: isEn ? 'Book a consultation' : 'Termin buchen',
+    title: isEn ? 'Free website consultation with Sören' : 'Kennenlerngespräch mit Sören | Komplett Webdesign',
+    siteFacts: SITE_FACTS,
+    disableInteractionPolish: true,
     slots,
     description: isEn
-      ? 'Pick a free consultation slot that works for you.'
-      : 'Wählen Sie einen Termin für Ihre Buchung aus.',
+      ? 'Talk to Sören about your website. Pick an available appointment for a free, no-obligation conversation about your business and your next step.'
+      : 'Sprich mit Sören über deine Website. Wähle einen freien Termin für ein kostenloses, unverbindliches Kennenlerngespräch und kläre deinen nächsten Schritt.',
     booking_context
   });
 }

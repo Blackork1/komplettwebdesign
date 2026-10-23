@@ -1,4 +1,5 @@
-<%- include('partials/head') %>
+<%- include('partials/head', { extraCssAssets: ['kontakt.css'], disableInteractionPolish: true }) %>
+<body class="contact-page">
 <%- include('partials/header') %>
 <%
   const isEn = lng === 'en';
@@ -46,7 +47,6 @@
     option.value === selectedQuickProjectType && option.requiresWebsiteUrl
   ));
 %>
-<link rel="stylesheet" href="<%= cssAsset('kontakt.css') %>">
 <noscript>
   <link rel="stylesheet" href="<%= cssAsset('kontakt-noscript.css') %>">
 </noscript>
@@ -54,67 +54,35 @@
 <main class="contact-page-section">
   <section class="contact-hero" aria-labelledby="contact-title">
     <div class="container contact-hero__inner">
-      <nav class="contact-breadcrumb" aria-label="<%= isEn ? 'Breadcrumb' : 'Breadcrumb' %>">
-        <a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a>
-        <span aria-hidden="true">/</span>
-        <span><%= isEn ? 'Contact' : 'Kontakt' %></span>
+      <nav class="contact-breadcrumb" aria-label="Breadcrumb">
+        <a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a><span aria-hidden="true">/</span><span aria-current="page"><%= isEn ? 'Contact' : 'Kontakt' %></span>
       </nav>
-
-      <p class="contact-eyebrow"><%= isEn ? 'Project request' : 'Projektanfrage' %></p>
-      <h1 id="contact-title"><%= isEn ? 'Request your website project in Berlin' : 'Website-Projekt in Berlin anfragen' %></h1>
-      <p class="contact-hero__lead">
-        <%= isEn
-          ? 'Describe your website project, budget and rough scope. I review which package or project size is likely to fit.'
-          : 'Beschreibe dein Website-Projekt, Budget und den groben Umfang. Ich prüfe, welches Paket oder welcher Projektumfang wahrscheinlich passt.'
-        %>
-      </p>
-      <div class="contact-hero__actions">
-        <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_start" data-cta-location="contact_hero">
-          <%= isEn ? 'Start request' : 'Anfrage starten' %>
-        </a>
-        <a class="contact-button contact-button--secondary" href="<%= packagesHref %>" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_packages" data-cta-location="contact_hero">
-          <%= isEn ? 'View packages' : 'Pakete ansehen' %>
-        </a>
+      <div class="contact-hero__layout">
+        <div class="contact-hero__copy">
+          <p class="contact-eyebrow"><%= isEn ? 'A first idea is enough.' : 'Eine erste Idee reicht.' %></p>
+          <h1 id="contact-title"><%= isEn ? 'Tell me about' : 'Erzähl mir von' %> <em><%= isEn ? 'your website.' : 'deiner Website.' %></em></h1>
+          <p class="contact-hero__lead"><%= isEn ? 'A new website, a relaunch or support for your current site: tell me what you need. I’ll look at your project personally and get back to you with a useful next step.' : 'Ob neue Website, Relaunch oder Unterstützung für deinen bestehenden Auftritt: Schick mir kurz, was du brauchst. Ich schaue mir dein Vorhaben persönlich an und melde mich mit einem passenden nächsten Schritt.' %></p>
+          <div class="contact-hero__actions">
+            <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_start" data-cta-location="contact_hero"><%= isEn ? 'Start my request' : 'Meine Anfrage starten' %><span aria-hidden="true"> →</span></a>
+            <a class="contact-button contact-button--secondary" href="mailto:<%= siteFacts.email %>?subject=<%= encodeURIComponent(isEn ? 'About my website' : 'Anfrage zu meiner Website') %>&amp;body=<%= encodeURIComponent(isEn ? 'Tell me briefly what you need or have in mind:' : 'Sag mir kurz was du benötigst oder was du dir vorstellst:') %>"><%= isEn ? 'Prefer to email me?' : 'Lieber per E-Mail schreiben' %></a>
+          </div>
+          <p class="contact-hero__note"><%= isEn ? 'No obligation. We’ll clarify the scope and costs before you decide.' : 'Unverbindlich. Umfang und Kosten klären wir, bevor du dich entscheidest.' %></p>
+        </div>
+        <aside class="contact-person" aria-labelledby="contact-person-name">
+          <div class="contact-person__intro">
+            <img src="/images/meinAvatar.webp" alt="<%= isEn ? 'Sören, your web designer in Berlin' : 'Sören, dein Webdesigner in Berlin' %>" width="480" height="480" decoding="async">
+            <div><p class="contact-eyebrow"><%= isEn ? 'Your point of contact' : 'Dein Ansprechpartner' %></p><h2 id="contact-person-name">Sören</h2><p><%= isEn ? 'Web designer and developer in Berlin' : 'Webdesigner und Entwickler in Berlin' %></p></div>
+          </div>
+          <p><%= isEn ? 'Your request comes straight to me. You don’t need to know the technical terms — we’ll figure out what makes sense together.' : 'Deine Anfrage landet direkt bei mir. Du musst die Fachbegriffe nicht kennen – wir finden gemeinsam heraus, was sinnvoll ist.' %></p>
+          <a href="mailto:<%= siteFacts.email %>"><%= siteFacts.email %></a>
+          <a class="contact-person__booking" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Or book a free consultation' : 'Oder ein Kennenlerngespräch vereinbaren' %><span aria-hidden="true"> ↗</span></a>
+        </aside>
       </div>
-      <ul class="contact-hero__facts" aria-label="<%= isEn ? 'Key request notes' : 'Wichtige Hinweise zur Anfrage' %>">
-        <li><%= isEn ? `Packages start from ${lowestPackagePriceLabel || 'EUR'}` : `Website-Pakete starten ab ${lowestPackagePriceLabel || ''}` %></li>
-        <li><%= isEn ? 'Special features are reviewed separately' : 'Sonderfunktionen werden separat geprüft' %></li>
-        <li><%= isEn ? 'The request is non-binding' : 'Die Anfrage ist unverbindlich' %></li>
+      <ul class="contact-hero__facts" aria-label="<%= isEn ? 'Request at a glance' : 'Deine Anfrage auf einen Blick' %>">
+        <li><strong><%= isEn ? 'Personal advice' : 'Persönliche Beratung' %></strong><span><%= isEn ? 'Directly with the person building your site.' : 'Direkt mit dem Menschen, der deine Website umsetzt.' %></span></li>
+        <li><strong><%= isEn ? 'A realistic starting point' : 'Ein klarer Einstieg' %></strong><span><%= isEn ? `Website packages from ${lowestPackagePriceLabel || 'EUR'}.` : `Website-Pakete ab ${lowestPackagePriceLabel || ''}.` %> <a href="<%= packagesHref %>"><%= isEn ? 'View packages' : 'Pakete ansehen' %></a></span></li>
+        <li><strong><%= isEn ? 'Room for your ideas' : 'Platz für deine Ideen' %></strong><span><%= isEn ? 'We’ll agree on features and scope together.' : 'Funktionen und Umfang stimmen wir gemeinsam ab.' %></span></li>
       </ul>
-    </div>
-  </section>
-
-  <section class="contact-intro-block">
-    <div class="container contact-intro-grid">
-      <article class="contact-info-card">
-        <h2><%= isEn ? 'What happens after your request?' : 'Was passiert nach deiner Anfrage?' %></h2>
-        <p>
-          <%= isEn
-            ? 'I review your details, classify the likely scope and ask follow-up questions if something important is missing.'
-            : 'Ich prüfe deine Angaben, ordne den wahrscheinlichen Umfang ein und frage nach, wenn wichtige Informationen fehlen.'
-          %>
-        </p>
-        <ul>
-          <li><%= isEn ? 'A rough budget range helps with a realistic recommendation.' : 'Ein grober Budgetrahmen hilft bei einer realistischen Empfehlung.' %></li>
-          <li><%= isEn ? 'If you are unsure, choose “Not sure yet”.' : 'Wenn du unsicher bist, wähle einfach „Noch unsicher“.' %></li>
-          <li><%= isEn ? 'Scope, add-ons and running costs are clarified before the project starts.' : 'Umfang, Zusatzleistungen und laufende Kosten werden vor Projektstart abgestimmt.' %></li>
-        </ul>
-      </article>
-      <article class="contact-info-card">
-        <h2><%= isEn ? 'Important scope notes' : 'Wichtige Abgrenzungen' %></h2>
-        <p>
-          <%= isEn
-            ? 'Booking systems, CMS, multilingual setup, shop functions, tracking, extensive animation and copywriting are not automatic standard package contents.'
-            : 'Buchungssysteme, CMS, Mehrsprachigkeit, Shop-Funktionen, Tracking, umfangreiche Animationen und Texterstellung sind nicht automatisch Standardpaket-Bestandteil.'
-          %>
-        </p>
-        <p>
-          <%= isEn
-            ? 'Hosting, domain, email, maintenance and third-party tools can create separate running costs.'
-            : 'Hosting, Domain, E-Mail, Wartung und Drittanbieter-Tools können separate laufende Kosten verursachen.'
-          %>
-        </p>
-      </article>
     </div>
   </section>
 
@@ -144,20 +112,20 @@
 
     <section class="contact-choice" aria-labelledby="contact-choice-title">
       <p class="contact-eyebrow"><%= isEn ? 'Choose request type' : 'Anfrageart wählen' %></p>
-      <h2 id="contact-choice-title"><%= isEn ? 'How much detail do you want to send?' : 'Wie ausführlich möchtest du anfragen?' %></h2>
+      <h2 id="contact-choice-title"><%= isEn ? 'How would you like to start?' : 'Wie möchtest du starten?' %></h2>
       <p>
         <%= isEn
-          ? 'Use the quick request for a first assessment. Use the detailed project request if you already want to define scope, package, budget and add-ons.'
-          : 'Nutze die Schnellanfrage für eine erste Einschätzung. Nutze die ausführliche Projektanfrage, wenn du Umfang, Paket, Budget und Zusatzwünsche direkt einordnen möchtest.'
+          ? 'A few details or a concrete plan: choose the route that feels right for you.'
+          : 'Ein paar Eckdaten oder schon ein konkreter Plan: Wähle den Weg, der gerade zu dir passt.'
         %>
       </p>
       <div class="contact-choice__actions" role="group" aria-label="<%= isEn ? 'Request type' : 'Anfrageart' %>">
         <button class="contact-choice__button" type="button" data-contact-mode="quick" aria-controls="contact-quick-panel" aria-expanded="false">
-          <span><%= isEn ? 'Quick request' : 'Schnellanfrage' %></span>
+          <span class="contact-choice__number" aria-hidden="true">01</span><span><%= isEn ? 'Quick request' : 'Schnellanfrage' %></span>
           <small><%= isEn ? 'Few fields for a first assessment' : 'Wenige Felder für eine erste Einschätzung' %></small>
         </button>
         <button class="contact-choice__button" type="button" data-contact-mode="detailed" aria-controls="contact-detailed-panel" aria-expanded="false">
-          <span><%= isEn ? 'Detailed project request' : 'Ausführliche Projektanfrage' %></span>
+          <span class="contact-choice__number" aria-hidden="true">02</span><span><%= isEn ? 'Detailed project request' : 'Ausführliche Projektanfrage' %></span>
           <small><%= isEn ? 'Project type, package, budget, timeline and add-ons' : 'Projektart, Paket, Budget, Zeitrahmen und Zusatzfunktionen' %></small>
         </button>
       </div>
@@ -187,7 +155,7 @@
           </div>
 
           <div class="contact-form-grid">
-            <div class="contact-field">
+            <div class="contact-field contact-field--full">
               <label for="quick-project-type"><%= isEn ? 'What do you want to request?' : 'Was möchtest du anfragen?' %> *</label>
               <select id="quick-project-type" name="projectType" required data-contact-event="project_type_selected">
                 <% quickProjectOptions.forEach((option) => { %>
@@ -202,11 +170,11 @@
             </div>
             <div class="contact-field">
               <label for="quick-name"><%= isEn ? 'Name' : 'Name' %> *</label>
-              <input id="quick-name" name="name" type="text" autocomplete="name" maxlength="120" required>
+              <input id="quick-name" name="name" placeholder="<%= isEn ? 'e.g. Alex Taylor' : 'z. B. Alex Müller' %>" type="text" autocomplete="name" maxlength="120" required>
             </div>
             <div class="contact-field">
               <label for="quick-email"><%= isEn ? 'Email' : 'E-Mail' %> *</label>
-              <input id="quick-email" name="email" type="email" autocomplete="email" maxlength="180" required>
+              <input id="quick-email" name="email" placeholder="<%= isEn ? 'alex@your-company.com' : 'alex@dein-unternehmen.de' %>" inputmode="email" type="email" autocomplete="email" maxlength="180" required>
             </div>
             <div class="contact-field contact-field--full">
               <label for="quick-message"><%= isEn ? 'What should I assess? (optional)' : 'Was soll ich einschätzen? (optional)' %></label>
@@ -639,7 +607,7 @@
               <div class="contact-form-grid">
                 <div class="contact-field">
                   <label for="nameInput"><%= isEn ? 'Name' : 'Name' %> *</label>
-                  <input id="nameInput" name="name" type="text" autocomplete="name" maxlength="120" value="<%= inputValue('name') %>" required>
+                  <input id="nameInput" name="name" placeholder="<%= isEn ? 'e.g. Alex Taylor' : 'z. B. Alex Müller' %>" type="text" autocomplete="name" maxlength="120" value="<%= inputValue('name') %>" required>
                 </div>
                 <div class="contact-field">
                   <label for="companyInput"><%= isEn ? 'Company (optional)' : 'Unternehmen (optional)' %></label>
@@ -647,7 +615,7 @@
                 </div>
                 <div class="contact-field">
                   <label for="emailInput"><%= isEn ? 'Email' : 'E-Mail' %> *</label>
-                  <input id="emailInput" name="email" type="email" autocomplete="email" maxlength="180" value="<%= inputValue('email') %>" required>
+                  <input id="emailInput" name="email" placeholder="<%= isEn ? 'alex@your-company.com' : 'alex@dein-unternehmen.de' %>" inputmode="email" type="email" autocomplete="email" maxlength="180" value="<%= inputValue('email') %>" required>
                 </div>
                 <div class="contact-field">
                   <label for="phoneInput"><%= isEn ? 'Phone (optional)' : 'Telefon (optional)' %></label>
@@ -688,6 +656,40 @@
     </section>
   </section>
 
+  <section class="contact-intro-block">
+    <div class="container contact-intro-grid">
+      <article class="contact-info-card">
+        <h2><%= isEn ? 'What happens after your request?' : 'So geht es nach deiner Anfrage weiter.' %></h2>
+        <p>
+          <%= isEn
+            ? 'I review your details, classify the likely scope and ask follow-up questions if something important is missing.'
+            : 'Ich lese deine Anfrage persönlich und schaue, welche Unterstützung zu deinem Vorhaben passt. Wenn mir etwas fehlt, frage ich nach.'
+          %>
+        </p>
+        <ul>
+          <li><%= isEn ? 'A rough budget range helps with a realistic recommendation.' : 'Ein grober Budgetrahmen hilft bei einer realistischen Empfehlung.' %></li>
+          <li><%= isEn ? 'If you are unsure, choose “Not sure yet”.' : 'Wenn du unsicher bist, wähle einfach „Noch unsicher“.' %></li>
+          <li><%= isEn ? 'Scope, add-ons and running costs are clarified before the project starts.' : 'Umfang, Zusatzleistungen und laufende Kosten werden vor Projektstart abgestimmt.' %></li>
+        </ul>
+      </article>
+      <article class="contact-info-card">
+        <h2><%= isEn ? 'Clear expectations from the start.' : 'Transparent von Anfang an.' %></h2>
+        <p>
+          <%= isEn
+            ? 'Booking systems, CMS, multilingual setup, shop functions, tracking, extensive animation and copywriting are not automatic standard package contents.'
+            : 'Du erhältst ein Angebot mit klar beschriebenen Leistungen. Besondere Funktionen wie Buchungssysteme, CMS, Mehrsprachigkeit oder Shops sowie zusätzliche Textarbeit klären und kalkulieren wir vorab.'
+          %>
+        </p>
+        <p>
+          <%= isEn
+            ? 'Hosting, domain, email, maintenance and third-party tools can create separate running costs.'
+            : 'Hosting, Domain, E-Mail, Wartung und Drittanbieter-Tools können separate laufende Kosten verursachen.'
+          %>
+        </p>
+      </article>
+    </div>
+  </section>
+
   <section class="container contact-alternatives" aria-labelledby="contact-alt-title">
     <h2 id="contact-alt-title"><%= isEn ? 'Other useful paths' : 'Alternative Kontaktmöglichkeiten' %></h2>
     <div class="contact-alt-grid">
@@ -726,7 +728,7 @@
       <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_final_start" data-cta-location="contact_final_cta"><%= isEn ? 'Start request' : 'Anfrage starten' %></a>
     </div>
   </section>
-<section class="container" aria-label="Kontaktdaten"><%- include('partials/business-contact') %></section>
+<section class="container contact-business" aria-label="Kontaktdaten"><%- include('partials/business-contact') %></section>
 </main>
 
 <%- include('partials/footer') %>
@@ -820,3 +822,6 @@
   });
 </script>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/kontakt.js') : '/js/kontakt.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+
+</body>
+</html>

@@ -9,11 +9,13 @@
       <div class="footer-main">
         <!-- LINKS: Logo + Newsletter -->
         <div class="footer-left">
+          <div class="footer-brand">
           <a href="<%= isEn ? '/en' : '/' %>" class="footerLogo">
             <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo" loading="lazy" />
           </a>
 
-          <%- include('business-contact', { displayFounderName: (typeof displayFounderName !== 'undefined' ? displayFounderName : null) }) %>
+          <%- include('business-contact', { compact: true }) %>
+          </div>
 
           <div class="newsletter">
             <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>

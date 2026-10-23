@@ -55,8 +55,12 @@ test('about page explains scope and answers practical questions without stale bi
   assert.match(text, /Hosting, Domain, E-Mail und Wartung/);
   assert.match(text, /separat vereinbart/);
   assert.ok($('main a[href="/pakete"]').length);
-  assert.ok($('main a[href="/kontakt"]').length);
-  assert.ok($('main a[href="tel:+4915511245048"]').length);
+  const mailButton = $('main a[href^="mailto:"]');
+  const mailUrl = new URL(mailButton.attr('href'));
+  assert.equal(mailUrl.pathname, 'kontakt@komplettwebdesign.de');
+  assert.equal(mailUrl.searchParams.get('subject'), 'Anfrage zu meiner Website');
+  assert.equal(mailUrl.searchParams.get('body'), 'Sag mir kurz was du benötigst oder was du dir vorstellst:');
+  assert.equal($('.about-contact a[href^="tel:"]').length, 0);
   assert.doesNotMatch(text, /29 Jahre|über 10 Jahre|Halbmarathon|Nachteule|Dutzenden realisierten Projekten|garantierte Google-Rankings/);
 });
 

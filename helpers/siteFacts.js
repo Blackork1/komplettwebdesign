@@ -36,7 +36,7 @@ export const SITE_FACTS = {
     'https://www.youtube.com/@komplettwebdesign',
     'https://www.tiktok.com/@komplett.webdesign'
   ],
-  googleProfileUrl: 'https://www.google.com/maps?cid=8211853018206635760',
+  googleProfileUrl: 'https://maps.app.goo.gl/vzJLbCvqWBdiK5RC7?g_st=ic',
   googleReviewUrl: 'https://g.page/r/CfAG7dHPXPZxEAE/review',
   googleRating: {
     ratingValue: 5.0,

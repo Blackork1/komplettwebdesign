@@ -201,3 +201,52 @@ body.about-page {
   .about-page .about-main *::before,
   .about-page .about-main *::after { scroll-behavior: auto; animation: none; transition: none; }
 }
+
+/* Einheitliche Projektüberschriften und gut erkennbare Schwerpunkte. */
+.about-page .about-proof__heading { margin-bottom: 42px; }
+.about-page .about-proof__heading span { color: var(--about-orange); }
+.about-page .about-main .about-project-title { font: 700 clamp(1.85rem, 3vw, 2.6rem)/1.2 var(--font-heading); letter-spacing: -.04em; margin: 0 0 28px; text-wrap: balance; }
+.about-page .about-proof__grid { align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.about-page .about-main .about-project-kicker { font: 700 clamp(1.2rem, 1.8vw, 1.5rem)/1.4 var(--font-heading); margin: 0 0 18px; color: var(--about-navy); }
+.about-page .about-showcase__intro { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.about-page .about-showcase__intro > div { display: flex; flex-direction: column; align-items: flex-start; }
+.about-page .about-showcase__intro p { margin-top: 0; }
+.about-page .about-showcase__intro .about-text-link { margin-top: auto; }
+.about-page .about-showcase__feature h4 { display: grid; gap: 12px; margin: 0 0 16px; font: 700 1.2rem/1.4 var(--font-heading); color: var(--about-navy); }
+.about-page .about-feature-label { width: fit-content; padding: 5px 10px; border: 1px solid #e7b4a3; border-radius: 3px; color: var(--about-orange); background: #fff4ef; font: 700 .74rem/1.3 var(--font-body); letter-spacing: .075em; text-transform: uppercase; }
+.about-page .about-highlights strong { min-height: 3em; }
+.about-page .about-steps h3 { min-height: 2.8em; }
+.about-page .about-close { display: block; }
+.about-page .about-faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 48px; align-items: start; }
+.about-page .about-faq h2 { margin: 16px 0 0; }
+.about-page .about-contact { display: block; margin-top: 58px; padding: 48px 0 0; border-left: 0; border-top: 1px solid var(--about-rule); }
+.about-page .about-contact > p { max-width: 680px; margin-top: 20px; }
+.about-page .about-contact__actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px; margin-top: 28px; }
+.about-page .about-contact .about-button { min-height: 56px; font-size: 1rem; padding: 15px 23px; }
+.about-page .about-main .about-button--secondary { color: var(--about-navy); background: #fff; border-color: #91a3b3; }
+.about-page .about-main .about-button--secondary:hover { color: var(--about-orange); border-color: var(--about-orange); background: #fff7f3; }
+.about-page .about-button svg { transition: transform .2s ease; }
+.about-page .about-button:hover svg { transform: translateX(3px); }
+.about-page .about-reveal { transition: opacity .5s ease, transform .5s ease; }
+.about-page .about-reveal.is-pending { opacity: 0; transform: translateY(12px); }
+.about-page .about-hero__copy { animation: about-intro .5s ease both; }
+.about-page .about-portrait { animation: about-intro .6s .08s ease both; }
+@keyframes about-intro { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 760px) {
+  .about-page .about-proof__heading { margin-bottom: 30px; }
+  .about-page .about-main .about-project-title { font-size: clamp(1.7rem, 7vw, 2.2rem); margin-bottom: 22px; }
+  .about-page .about-proof__grid,
+  .about-page .about-showcase__intro,
+  .about-page .about-faq { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .about-page .about-highlights strong,
+  .about-page .about-steps h3 { min-height: 0; }
+  .about-page .about-contact { margin-top: 38px; padding-top: 36px; }
+  .about-page .about-contact__actions { flex-direction: column; align-items: stretch; }
+  .about-page .about-contact .about-button { width: 100%; padding-inline: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-page .about-reveal.is-pending { opacity: 1; transform: none; }
+  .about-page .about-reveal,
+  .about-page .about-hero__copy,
+  .about-page .about-portrait { animation: none; transition: none; }
+}

@@ -1,27 +1,49 @@
-<%- include("../partials/head") %>
-<%- include('../partials/header') %>
+<%- include('../partials/head', { extraCssAssets: ['booking.css'] }) %>
 <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
-
-<section class="section booking-page-hero">
-  <div class="container">
-    <h1 class="white"><%= isEn ? 'Book a free consultation' : 'Beratungstermin buchen' %></h1>
-    <p class="booking-intro white">
-      <%= isEn
-        ? 'Pick a slot that works for you — we call you on time and the first call is free and non-binding.'
-        : 'Such dir im Kalender einen passenden Slot aus – wir melden uns pünktlich zum vereinbarten Zeitpunkt. Das Erstgespräch ist unverbindlich und kostenlos.' %>
-    </p>
+<body class="booking-page">
+<%- include('../partials/header') %>
+<main class="booking-main">
+  <div class="booking-shell">
+    <nav class="booking-breadcrumbs" aria-label="Breadcrumb">
+      <a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a><span aria-hidden="true">/</span><span aria-current="page"><%= isEn ? 'Consultation' : 'Kennenlerngespräch' %></span>
+    </nav>
+    <header class="booking-header">
+      <div>
+        <p class="booking-eyebrow"><%= isEn ? 'Your first step, with Sören.' : 'Dein erster Schritt. Persönlich mit Sören.' %></p>
+        <h1><%= isEn ? 'Let’s talk about' : 'Lass uns über deine' %> <em><%= isEn ? 'your website.' : 'Website sprechen.' %></em></h1>
+        <p class="booking-intro"><%= isEn ? 'Tell me about your business and what you have in mind. We’ll work out what your website needs and which next step makes sense.' : 'Erzähl mir von deinem Unternehmen und deiner Idee. Gemeinsam klären wir, was deine Website braucht und welcher nächste Schritt sinnvoll ist.' %></p>
+        <p class="booking-promise"><%= isEn ? 'Free. No obligation. Directly with me.' : 'Kostenlos. Unverbindlich. Direkt mit mir.' %></p>
+      </div>
+      <aside class="booking-outline" aria-labelledby="booking-outline-title">
+        <h2 id="booking-outline-title"><%= isEn ? 'What we’ll talk about' : 'Darüber sprechen wir' %></h2>
+        <ol>
+          <li><span>01</span><%= isEn ? 'Your business and your goals' : 'Dein Unternehmen und deine Ziele' %></li>
+          <li><span>02</span><%= isEn ? 'A new website or a fresh start' : 'Neue Website oder bestehender Auftritt' %></li>
+          <li><span>03</span><%= isEn ? 'A useful next step for you' : 'Ein passender nächster Schritt' %></li>
+        </ol>
+        <p><%= isEn ? 'An idea is enough. You don’t need a finished brief.' : 'Eine erste Idee reicht. Du brauchst kein fertiges Konzept.' %></p>
+      </aside>
+    </header>
 
     <% if (typeof booking_context !== 'undefined' && booking_context) { %>
       <div class="booking-context-banner">
-        <strong><%= isEn ? 'Your context:' : 'Dein Kontext:' %></strong>
-        <% if (booking_context.domain) { %><span><%= isEn ? 'Website' : 'Website' %>: <%= booking_context.domain %></span><% } %>
-        <% if (booking_context.score) { %><span>Score: <%= booking_context.score %>/100</span><% } %>
+        <strong><%= isEn ? 'For our conversation:' : 'Für unser Gespräch:' %></strong>
+        <% if (booking_context.domain) { %><span>Website: <%= booking_context.domain %></span><% } %>
+        <% if (booking_context.score !== null && booking_context.score !== undefined) { %><span>Score: <%= booking_context.score %>/100</span><% } %>
         <% if (booking_context.src) { %><span><%= isEn ? 'Source' : 'Anlass' %>: <%= booking_context.src %></span><% } %>
       </div>
     <% } %>
 
-    <%- include('../partials/booking_widget') %>
+    <section class="booking-appointment" aria-labelledby="booking-appointment-title">
+      <div class="booking-appointment__heading">
+        <h2 id="booking-appointment-title"><%= isEn ? 'Your appointment. Your next step.' : 'Dein Termin. Dein nächster Schritt.' %></h2>
+        <p><%= isEn ? 'We suggest the earliest available time from tomorrow. You can change the day and time.' : 'Der früheste freie Termin ab morgen ist für dich vorausgewählt. Tag und Uhrzeit kannst du ändern.' %></p>
+      </div>
+      <%- include('../partials/booking_widget') %>
+    </section>
+    <p class="booking-alternative"><%= isEn ? 'Prefer to write first?' : 'Du möchtest lieber erst schreiben?' %> <a href="mailto:<%= siteFacts.email %>?subject=<%= encodeURIComponent(isEn ? 'About my website' : 'Anfrage zu meiner Website') %>&amp;body=<%= encodeURIComponent(isEn ? 'Tell me briefly what you need or have in mind:' : 'Sag mir kurz was du benötigst oder was du dir vorstellst:') %>"><%= isEn ? 'Email me about your project' : 'Schreib mir dein Vorhaben' %><span aria-hidden="true"> ↗</span></a></p>
   </div>
-</section>
-
+</main>
 <%- include('../partials/footer') %>
+</body>
+</html>

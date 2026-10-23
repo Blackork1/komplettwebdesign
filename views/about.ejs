@@ -28,7 +28,7 @@
       </ul>
     </section>
 
-    <section class="about-intro about-shell" aria-labelledby="about-intro-title">
+    <section class="about-intro about-shell" aria-labelledby="about-intro-title" data-reveal>
       <div class="about-intro__heading">
         <h2 id="about-intro-title">Du musst kein Website-Profi sein.<br> Dafür hast du mich.</h2>
         <div class="about-intro__text">
@@ -50,6 +50,9 @@
 
     <section id="meine-arbeit" class="about-proof about-shell" aria-labelledby="about-proof-title">
       <% const project = aboutPage.featuredProject; %>
+      <h2 id="about-proof-title" class="about-proof__heading">Einblicke in meine Arbeit<span>.</span></h2>
+      <article class="about-featured-project" id="projekt-zur-alten-backstube" aria-labelledby="projekt-titel-zur-alten-backstube" data-reveal>
+      <h3 id="projekt-titel-zur-alten-backstube" class="about-project-title"><%= project.name %></h3>
       <div class="about-proof__grid">
         <a class="about-project-image" href="/referenzen/<%= project.slug %>" aria-label="Referenzprojekt <%= project.name %> ansehen">
           <picture>
@@ -58,7 +61,7 @@
           </picture>
         </a>
         <div class="about-proof__copy">
-          <h2 id="about-proof-title">Ein echter Betrieb.<br> Ein passender Webauftritt.</h2>
+          <p class="about-project-kicker">Atmosphäre zeigen. Reservierungen vereinfachen.</p>
           <p>Für das Café Zur alten Backstube habe ich Atmosphäre, Angebot und Kontaktwege zu einem stimmigen Webauftritt verbunden.</p>
           <a class="about-text-link about-text-link--accent" href="/referenzen/<%= project.slug %>">Projekt <%= project.name %> ansehen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
           <figure class="about-quote">
@@ -67,16 +70,17 @@
           </figure>
         </div>
       </div>
+      </article>
       <% aboutPage.showcases.forEach(example => { %>
-      <article class="about-showcase" id="projekt-<%= example.project.slug %>" aria-labelledby="projekt-titel-<%= example.project.slug %>">
+      <article class="about-showcase" id="projekt-<%= example.project.slug %>" aria-labelledby="projekt-titel-<%= example.project.slug %>" data-reveal>
+        <h3 class="about-project-title" id="projekt-titel-<%= example.project.slug %>"><%= example.project.name %></h3>
         <div class="about-showcase__intro">
           <div>
-            <h3 id="projekt-titel-<%= example.project.slug %>"><%= example.project.name %></h3>
             <p><%= example.description %></p>
             <a class="about-text-link about-text-link--accent" href="/referenzen/<%= example.project.slug %>">Projekt <%= example.project.name %> kennenlernen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
           </div>
           <div class="about-showcase__feature">
-            <h4><%= example.featureTitle %></h4>
+            <h4><span class="about-feature-label">Besonders</span><span><%= example.featureTitle.replace(/^Besonders:\s*/, '') %></span></h4>
             <p><%= example.featureText %></p>
             <a class="about-text-link" href="<%= example.featureUrl %>" target="_blank" rel="noopener"><%= example.featureLabel %> <span class="visually-hidden">(öffnet in einem neuen Tab)</span></a>
           </div>
@@ -96,7 +100,7 @@
       <% }) %>
     </section>
 
-    <section class="about-process" aria-labelledby="about-process-title">
+    <section class="about-process" aria-labelledby="about-process-title" data-reveal>
       <div class="about-shell">
         <h2 id="about-process-title">Ein klarer Ablauf. <em>Ein gutes Gefühl.</em></h2>
         <ol class="about-steps">
@@ -110,22 +114,26 @@
     <section class="about-close about-shell" aria-label="Fragen und persönlicher Kontakt">
       <div class="about-faq">
         <h2>Gut zu wissen<span>.</span></h2>
+        <div class="about-faq__items">
         <% aboutPage.faq.forEach(item => { %>
         <details>
           <summary><%= item.question %><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-7-7v14"/></svg></summary>
           <p><%= item.answer %></p>
         </details>
         <% }) %>
+        </div>
       </div>
-      <div class="about-contact">
+      <div class="about-contact" data-reveal>
         <h2>Erzähl mir, was du vorhast<span>.</span></h2>
         <p>Ob erste Website oder Relaunch: Wir klären gemeinsam, welcher nächste Schritt zu deinem Unternehmen passt.</p>
+        <div class="about-contact__actions">
         <a class="about-button" href="/booking" data-track="cta" data-cta-name="about_consultation" data-cta-location="about_contact">Kennenlerngespräch vereinbaren <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
-        <a class="about-text-link" href="/kontakt">Oder schreib mir dein Vorhaben</a>
-        <a class="about-phone" href="tel:<%= siteFacts.phone %>"><%= siteFacts.phoneDisplay %></a>
+        <a class="about-button about-button--secondary" href="mailto:<%= siteFacts.email %>?subject=<%= encodeURIComponent('Anfrage zu meiner Website') %>&amp;body=<%= encodeURIComponent('Sag mir kurz was du benötigst oder was du dir vorstellst:') %>">Oder schreib mir dein Vorhaben</a>
+        </div>
       </div>
     </section>
   </main>
+  <script src="<%= typeof jsAsset === 'function' ? jsAsset('js/about-page.js') : '/js/about-page.js' %>" defer></script>
   <%- include('partials/footer') %>
 </body>
 </html>

@@ -10,7 +10,7 @@ test('organization and person share canonical identities and confirmed NAP', asy
   assert.equal(org.telephone, '+4915511245048');
   assert.equal(org.address.postalCode, '10367');
   assert.equal(org.address.addressLocality, 'Berlin');
-  assert.ok(org.sameAs.some(url => url.includes('maps?cid=')));
+  assert.ok(org.sameAs.includes('https://maps.app.goo.gl/vzJLbCvqWBdiK5RC7?g_st=ic'));
   assert.ok(org.hasMap);
   assert.equal(person['@id'], 'https://www.komplettwebdesign.de/#person');
   assert.equal(person.worksFor['@id'], org['@id']);

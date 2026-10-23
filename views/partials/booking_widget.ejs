@@ -14,24 +14,25 @@
     prefillNote = parts.join(' · ');
   }
 %>
-<h2 class="kwd-booking-copy-title"><%= isEn ? 'Let us start your website together!' : 'Lass uns zusammen deine Website starten!' %></h2>
-<p class="kwd-booking-copy-text"><%= isEn ? 'Do you want to get your website built? Let us talk.' : 'Hast du Lust bekommen und möchtest eine Website erstellen lassen? Dann lass uns quatschen!' %></p>
-<p class="kwd-booking-copy-text"><%= isEn ? 'In a non-binding call, we find out how I can help you best. Even if you are not sure yet what you need, we can talk and find the right solution together. Sounds good? Then click the button and choose a time slot that works for you.' : 'In einem unverbindlichen Gespräch finden wir heraus, wie ich dir am besten helfen kann. Und selbst wenn du noch gar nicht genau weißt, was du brauchst - lass uns trotzdem reden und gemeinsam herausfinden, welche Lösung für dich passt. Klingt gut? Dann nichts wie los - klick einfach auf den Button und such dir einen passenden Zeitpunkt für ein Gespräch aus.' %></p>
 <div class="kwd-booking-widget" data-sitekey="<%= process.env.RECAPTCHA_SITEKEY %>" data-lng="<%= isEn ? 'en' : 'de' %>">
   <div class="kwd-booking-flow">
-    <aside class="kwd-cal-left">
+    <aside class="kwd-cal-left" aria-label="<%= isEn ? 'Choose your appointment date' : 'Termintag auswählen' %>">
+      <p class="kwd-panel-label"><span aria-hidden="true">01</span> <%= isEn ? 'Day and time' : 'Tag und Uhrzeit' %></p>
       <div class="kwd-cal-header">
         <button class="kwd-nav" type="button" data-dir="-1" aria-label="<%= isEn ? 'Previous month' : 'Vorheriger Monat' %>">‹</button>
         <h3 class="kwd-month-label"></h3>
         <button class="kwd-nav" type="button" data-dir="+1" aria-label="<%= isEn ? 'Next month' : 'Nächster Monat' %>">›</button>
       </div>
       <div class="kwd-weekday-row"></div>
-      <div class="kwd-grid-days"></div>
+      <div class="kwd-grid-days" aria-busy="true"></div>
+      <p class="kwd-calendar-legend"><span aria-hidden="true"></span><%= isEn ? 'Available days' : 'Tage mit freien Terminen' %></p>
+      <p class="kwd-timezone"><%= isEn ? 'All times are in Berlin local time.' : 'Alle Uhrzeiten in Berliner Ortszeit.' %></p>
     </aside>
 
     <section class="kwd-cal-right">
       <div class="kwd-step kwd-step-day">
-        <p class="kwd-hint"><%= isEn ? 'Click a day in the calendar with available appointments.' : 'Klicke im Kalender einen Tag mit freien Terminen an.' %></p>
+        <p class="kwd-hint" role="status" aria-live="polite"><%= isEn ? 'Finding your first available appointment…' : 'Dein nächster freier Termin wird gesucht …' %></p>
+        <button class="kwd-retry" type="button" hidden><%= isEn ? 'Try again' : 'Erneut versuchen' %></button>
       </div>
 
       <div class="kwd-step kwd-step-times" hidden>
@@ -42,8 +43,10 @@
       </div>
 
       <div class="kwd-step kwd-step-form" hidden>
-        <button type="button" class="kwd-back-btn" data-back="times">← <%= isEn ? 'Back to times' : 'Zurück zu den Uhrzeiten' %></button>
-        <h4 class="kwd-selected-summary"></h4>
+        <p class="kwd-panel-label"><span aria-hidden="true">02</span> <%= isEn ? 'Your details' : 'Deine Angaben' %></p>
+        <p class="kwd-selected-summary" aria-live="polite"></p>
+        <button type="button" class="kwd-back-btn" data-back="times"><%= isEn ? 'Change time' : 'Uhrzeit ändern' %> <span aria-hidden="true">↗</span></button>
+        <p class="kwd-selection-note"><%= isEn ? 'Not booked yet. You can also choose a different day in the calendar.' : 'Noch nicht gebucht. Einen anderen Tag wählst du direkt im Kalender.' %></p>
         <form class="kwd-booking-form" action="/booking" method="POST">
           <input type="hidden" name="slotId">
           <input type="hidden" name="locale" value="<%= isEn ? 'en' : 'de' %>">
@@ -51,28 +54,34 @@
 
           <label class="kwd-field">
             <span><%= isEn ? 'Name' : 'Name' %></span>
-            <input type="text" name="name" required autocomplete="name" aria-describedby="booking-name-help">
+            <input type="text" name="name" required minlength="2" maxlength="120" placeholder="<%= isEn ? 'e.g. Alex Taylor' : 'z. B. Alex Müller' %>" autocomplete="name" aria-describedby="booking-name-help">
             <small id="booking-name-help" class="form-help"><%= isEn ? 'Enter the name for the appointment confirmation.' : 'Gib den Namen für die Terminbestätigung ein.' %></small>
           </label>
 
+          <div class="kwd-stage kwd-email-stage">
           <label class="kwd-field">
             <span><%= isEn ? 'Email' : 'E-Mail' %></span>
-            <input type="email" name="email" required autocomplete="email" aria-describedby="booking-email-help">
+            <input type="email" name="email" required maxlength="254" placeholder="<%= isEn ? 'alex@your-company.com' : 'alex@dein-unternehmen.de' %>" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" aria-describedby="booking-email-help">
             <small id="booking-email-help" class="form-help"><%= isEn ? 'Use an address where you can receive the confirmation link.' : 'Nutze eine Adresse, unter der du die Terminbestätigung erhältst.' %></small>
           </label>
 
+          </div>
+          <div class="kwd-stage kwd-details-stage">
           <label class="kwd-field">
-            <span><%= isEn ? 'Note (optional)' : 'Bemerkung (optional)' %></span>
-            <textarea name="note" rows="3" aria-describedby="booking-note-help"><%= prefillNote %></textarea>
+            <span><%= isEn ? 'Your project (optional)' : 'Dein Vorhaben (optional)' %></span>
+            <textarea name="note" rows="3" maxlength="2000" placeholder="<%= isEn ? 'What do you need, or what do you have in mind? A few words are enough.' : 'Was benötigst du oder was stellst du dir vor? Ein paar Stichpunkte reichen.' %>" aria-describedby="booking-note-help"><%= prefillNote %></textarea>
             <small id="booking-note-help" class="form-help"><%= isEn ? 'Optional: add context for the call, for example your website or project goal.' : 'Optional: Ergänze kurz Kontext, zum Beispiel Website oder Projektziel.' %></small>
           </label>
 
-          <button class="btn btn-primary kwd-submit" type="submit"><%= isEn ? 'Book appointment' : 'Termin vereinbaren' %></button>
+          <p class="kwd-privacy"><%= isEn ? 'I use your details to arrange our conversation.' : 'Ich nutze deine Angaben, um unser Gespräch zu organisieren.' %> <a href="/datenschutz"><%= isEn ? 'Privacy policy' : 'Datenschutz' %></a></p>
+          <button class="btn btn-primary kwd-submit" type="submit"><%= isEn ? 'Book my free consultation' : 'Kennenlerngespräch vereinbaren' %> <span aria-hidden="true">→</span></button>
+          </div>
           <p class="form-msg" role="alert" aria-live="polite"></p>
         </form>
       </div>
     </section>
   </div>
+  <noscript><p class="kwd-no-script"><%= isEn ? 'Please enable JavaScript to choose a time, or email me to arrange an appointment.' : 'Aktiviere JavaScript für die Terminauswahl oder vereinbare dein Gespräch per E-Mail.' %></p></noscript>
 </div>
 
-<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/booking-widget.js') : '/js/booking-widget.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
+<script type="module" src="<%= (typeof jsAsset === 'function' ? jsAsset('js/booking-widget.js') : '/js/booking-widget.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
