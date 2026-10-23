@@ -95,7 +95,7 @@
 .back-to-top {
   align-items: center;
   backdrop-filter: blur(6px);
-  background: rgba(87, 87, 87, 0.712);
+  background: rgba(11, 42, 70, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 12px;
   color: #ffffff;
@@ -116,7 +116,7 @@
 }
 
 .back-to-top:hover {
-  background: rgba(0, 0, 0, 0.876);
+  background: #0b2a46;
   transform: translateY(-2px);
 }
 
@@ -140,6 +140,22 @@
   pointer-events: auto;
   visibility: visible;
   transform: translateY(0);
+}
+
+/* Handy: kleiner, rund, näher am Rand – erscheint nur beim Hochscrollen (footer.ejs) */
+@media (max-width: 768px) {
+  .back-to-top--fixed {
+    width: 40px;
+    height: 40px;
+    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    border-radius: 999px;
+  }
+
+  .back-to-top--fixed svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 /* ---------- Grafik-Container ---------- */

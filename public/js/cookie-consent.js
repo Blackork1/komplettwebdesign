@@ -156,12 +156,19 @@ document.addEventListener('DOMContentLoaded', () => {
     attachRevokeHandler(btn);
     return wrap;
   }
+  // Seiten mit dem normalen Footer bieten den Widerruf dort an („Cookies widerrufen“ unter Rechtliches).
+  // Der schwebende Button bleibt nur als Rückfall für Seiten ohne diesen Footer.
+  const footerRevokeButtons = Array.from(document.querySelectorAll('[data-cookie-revoke]'));
+  footerRevokeButtons.forEach(attachRevokeHandler);
+
   function showRevokeButton() {
+    if (footerRevokeButtons.length) return;
     if (!document.getElementById('cookie-revoke')) {
       document.body.appendChild(createRevokeButton());
     }
   }
   function attachRevokeHandler(btn) {
+    const label = btn.textContent;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       btn.disabled = true;
@@ -174,12 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
           blockAll();                                     // sofort blocken
           deleteCookiesByNameOrPrefix(ANALYTICS_COOKIE_NAMES); // GA-Cookies löschen
           document.getElementById('cookie-revoke')?.remove();
+          btn.disabled = false;
+          btn.textContent = label;
           showBanner();
         })
         .catch(err => {
           console.error(err);
           btn.disabled = false;
-          btn.textContent = 'Cookies widerrufen';
+          btn.textContent = label;
         });
     });
   }

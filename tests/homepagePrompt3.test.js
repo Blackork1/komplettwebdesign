@@ -83,7 +83,9 @@ test('homepage FAQ uses plus and minus accordion controls', () => {
 test('homepage prompt 3 design keeps previous visual assets and mobile overflow guards', () => {
   assert.match(homepage, /\/images\/icons\/gift1\.svg/);
   assert.match(homepage, /\/images\/icons\/support1\.svg/);
-  assert.match(homepage, /\/images\/code\.webp/);
+  assert.match(homepage, /\/images\/home-technik-node-ejs\.webp/);
+  assert.match(homepage, /\/images\/home-responsive-frontend\.webp/);
+  assert.doesNotMatch(homepage, /\/images\/code\.webp/);
   assert.match(homepage, /\/images\/wartung\.webp/);
   assert.match(homepage, /\/images\/home-fit-beratung\.webp/);
   assert.match(homepage, /home-reference-band img\s*{[\s\S]*?aspect-ratio:\s*16 \/ 9/);
@@ -163,9 +165,10 @@ test('homepage visual polish keeps spacing, slider headings and side navigation 
   assert.match(homepage, /\.home-page \.home-pricing-card \.package-description\s*{[\s\S]*?margin:\s*0\.2rem 0 0\.75rem[\s\S]*?line-height:\s*1\.38/);
   assert.match(homepage, /\.home-page \.home-pricing-card \.price\s*{[\s\S]*?margin:\s*0 0 0\.7rem[\s\S]*?line-height:\s*1/);
   assert.match(homepage, /\.home-page \.home-pricing-card \.features-list\s*{[\s\S]*?gap:\s*0\.42rem[\s\S]*?margin:\s*0 0 0\.85rem/);
-  assert.match(homepage, /@supports \(grid-template-rows: subgrid\)\s*{[\s\S]*?\.home-page \.home-pricing-track\s*{[\s\S]*?grid-auto-flow:\s*column[\s\S]*?grid-template-rows:\s*auto auto auto minmax\(0, 1fr\) auto/);
+  assert.match(homepage, /@supports \(grid-template-rows: subgrid\)\s*{[\s\S]*?\.home-page \.home-pricing-track\s*{[\s\S]*?grid-auto-flow:\s*column[\s\S]*?grid-template-rows:\s*auto auto auto auto minmax\(0, 1fr\) auto/);
+  assert.match(homepage, /\.home-page \.home-pricing-card \.home-package-media\s*{[\s\S]*?grid-row:\s*1/);
   assert.match(homepage, /@supports \(grid-template-rows: subgrid\)\s*{[\s\S]*?\.home-page \.home-pricing-card\s*{[\s\S]*?display:\s*grid[\s\S]*?grid-template-rows:\s*subgrid/);
-  assert.match(homepage, /\.home-page \.home-pricing-card \.p1rem\s*{[\s\S]*?grid-row:\s*2 \/ 6[\s\S]*?grid-template-rows:\s*subgrid/);
+  assert.match(homepage, /\.home-page \.home-pricing-card \.p1rem\s*{[\s\S]*?grid-row:\s*3 \/ 7[\s\S]*?grid-template-rows:\s*subgrid/);
   assert.match(homepage, /\.home-page \.home-pricing-card \.price\s*{[\s\S]*?grid-row:\s*2[\s\S]*?align-self:\s*start/);
   assert.doesNotMatch(homepage, /\.home-page \.home-pricing-card\.is-featured h3\s*{/);
   assert.match(homepage, /\.home-page \.home-price-tag\s*{[\s\S]*?position:\s*absolute[\s\S]*?top:\s*1rem[\s\S]*?left:\s*1rem/);

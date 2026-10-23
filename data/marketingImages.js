@@ -29,8 +29,8 @@ export const MARKETING_IMAGES = Object.freeze({
     source: ownSource
   }),
   homeTrust: freezeImage({
-    src: '/images/review-bg.webp',
-    alt: 'Website-Ansicht eines umgesetzten Projekts als visueller Vertrauensbeleg',
+    src: '/images/home-referenz-backstube.webp',
+    alt: 'Website-Ansicht des Referenzprojekts „Zur alten Backstube“ mit historischer Bäckerei-Fassade',
     source: ownSource
   }),
   webdesignHero: freezeImage({

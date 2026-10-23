@@ -134,8 +134,8 @@
 /* Reichweiten-Update: eigenständige Paket- und Branchenmotive */
 .home-page .home-package-media {
   aspect-ratio: 16 / 9;
-  border-radius: 16px 16px 8px 8px;
-  margin: -1rem -1rem 0.9rem;
+  border-radius: 12px;
+  margin: 0;
   overflow: hidden;
 }
 
@@ -992,8 +992,9 @@
     border-radius: 0;
   }
 
+  /* Abschnittsabstand: vorher bis 6.5rem (≈200 px zwischen zwei Abschnitten am Desktop) */
   .home-page .section {
-    padding: clamp(3.5rem, 7vw, 6.5rem) 0;
+    padding: clamp(2.75rem, 4.5vw, 4.25rem) 0;
   }
 
   .home-page>.section:not(#hero):not(#usp-strip) {
@@ -2083,7 +2084,8 @@
       display: grid;
       grid-auto-flow: column;
       grid-auto-columns: clamp(340px, 32vw, 360px);
-      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+      /* Bild, Titel, Beschreibung, Preis, Liste, Button */
+      grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
     }
 
     .home-page .home-pricing-card {
@@ -2092,9 +2094,13 @@
       grid-template-rows: subgrid;
     }
 
+    .home-page .home-pricing-card .home-package-media {
+      grid-row: 1;
+    }
+
     .home-page .home-pricing-card h3 {
       display: flex;
-      grid-row: 1;
+      grid-row: 2;
       align-items: center;
       justify-content: center;
       min-height: 1.7em;
@@ -2102,7 +2108,7 @@
 
     .home-page .home-pricing-card .p1rem {
       display: grid;
-      grid-row: 2 / 6;
+      grid-row: 3 / 7;
       grid-template-rows: subgrid;
       padding: 0.35rem 0 0;
     }
@@ -2161,6 +2167,11 @@
     margin: 1.6rem auto;
     max-width: 100%;
     aspect-ratio: 16 / 7;
+  }
+
+  /* Code-Bild im Technik-Abschnitt vollständig zeigen (eigenes Format statt 16:7 bzw. 4:3) */
+  .home-page #technik .home-wide-media {
+    aspect-ratio: 920 / 520;
   }
 
   .home-page .home-cta-panel {
@@ -2328,7 +2339,7 @@
     }
 
     .home-page .section {
-      padding: 3rem 0;
+      padding: 2.5rem 0;
     }
 
     .home-page .hero-main {

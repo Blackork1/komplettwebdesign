@@ -123,9 +123,9 @@
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=fed89ecaa003",
-      "hash": "fed89ecaa003",
-      "bytes": 35837
+      "href": "/extra.min.css?v=11ca196d5c99",
+      "hash": "11ca196d5c99",
+      "bytes": 36027
     },
     "faq.css": {
       "source": "faq.css",
@@ -144,9 +144,9 @@
     "footer.css": {
       "source": "footer.css",
       "output": "footer.min.css",
-      "href": "/footer.min.css?v=0cb3775335f9",
-      "hash": "0cb3775335f9",
-      "bytes": 8765
+      "href": "/footer.min.css?v=743240166177",
+      "hash": "743240166177",
+      "bytes": 9227
     },
     "handwerker.css": {
       "source": "handwerker.css",
@@ -165,9 +165,9 @@
     "home.css": {
       "source": "home.css",
       "output": "home.min.css",
-      "href": "/home.min.css?v=b43a78dfeee8",
-      "hash": "b43a78dfeee8",
-      "bytes": 46108
+      "href": "/home.min.css?v=8571d5e728d9",
+      "hash": "8571d5e728d9",
+      "bytes": 46209
     },
     "interaction-polish.css": {
       "source": "interaction-polish.css",

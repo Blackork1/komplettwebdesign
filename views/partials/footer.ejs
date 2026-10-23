@@ -57,6 +57,10 @@
               <% (column.links || []).forEach((link) => { %>
                 <a href="<%= footerHref(link) %>"><%= footerLabel(link) %></a>
               <% }) %>
+              <% if (column.label === 'Rechtliches') { %>
+                <%# Widerruf dauerhaft im Footer statt als schwebender Button über dem Inhalt (siehe cookie-consent.js) %>
+                <button type="button" class="footer-link-button" data-cookie-revoke><%= isEn ? 'Revoke cookies' : 'Cookies widerrufen' %></button>
+              <% } %>
             </nav>
           <% }) %>
         </div>
@@ -193,8 +197,18 @@
     var backToTop = document.querySelector('.back-to-top--fixed');
     if (!backToTop) return;
 
+    // Auf dem Handy nur beim Hochscrollen zeigen, damit der Button beim Lesen keinen Text verdeckt.
+    var mobile = window.matchMedia('(max-width: 768px)');
+    var lastY = window.scrollY;
+    var scrollingUp = false;
+
     function toggleBackToTop() {
-      var show = window.scrollY > window.innerHeight;
+      var y = window.scrollY;
+      if (Math.abs(y - lastY) > 6) {
+        scrollingUp = y < lastY;
+        lastY = y;
+      }
+      var show = y > window.innerHeight && (!mobile.matches || scrollingUp);
       backToTop.classList.toggle('is-visible', show);
     }
 

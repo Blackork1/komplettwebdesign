@@ -405,3 +405,31 @@
   .site-footer .footer-bottom span { text-align: left; }
   .site-footer .social-links { justify-content: flex-start; margin-top: 0; }
 }
+
+/* Cookie-Widerruf als Footer-Link (ersetzt den schwebenden Button) */
+.site-footer .footer-nav .footer-link-button {
+  appearance: none;
+  justify-self: start;
+  align-self: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.site-footer .footer-nav .footer-link-button:hover,
+.site-footer .footer-nav .footer-link-button:focus-visible {
+  text-decoration: underline;
+}
+
+.site-footer .footer-nav .footer-link-button:disabled {
+  cursor: progress;
+  opacity: .7;
+}
