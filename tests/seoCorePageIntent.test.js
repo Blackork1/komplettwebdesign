@@ -7,11 +7,11 @@ const main = readFileSync(new URL('../controllers/mainController.js', import.met
 const homepageTemplate = readFileSync(new URL('../views/index.ejs', import.meta.url), 'utf8');
 
 test('Startseite und Berliner Hauptseite besitzen getrennte H1 und Titel', () => {
-  const homepageH1 = 'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand';
+  const homepageH1 = 'Persönliche Websites für kleine Unternehmen in Berlin';
   assert.match(main, /Komplett Webdesign Berlin \| Websites für kleine Unternehmen/);
   assert.match(main, new RegExp(homepageH1));
-  assert.equal(webdesignBerlinPage.title, 'Website erstellen lassen Berlin | Webdesign & Preise');
-  assert.equal(webdesignBerlinPage.h1, 'Website erstellen lassen in Berlin');
+  assert.equal(webdesignBerlinPage.title, 'Webdesign Berlin | Website erstellen lassen');
+  assert.equal(webdesignBerlinPage.h1, 'Webdesign Berlin: Websites für dein Unternehmen');
   assert.notEqual(webdesignBerlinPage.h1, homepageH1);
 });
 

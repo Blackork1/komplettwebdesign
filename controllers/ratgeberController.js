@@ -89,7 +89,7 @@ export async function listGuides(req, res) {
   const dbFeaturedPosts = await findFeaturedGuidesSafe(5);
   const latestBlogPosts = await findLatestBlogPostsSafe(3);
   const pricing = res.locals.packagePricing || {};
-  const posts = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(dbPosts), pricing, { lng: 'de' }));
+  const posts = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(dbPosts), pricing, { lng: 'de' }), res.locals.packagePricing || {});
   const featuredPosts = mergeGuides(
     dbFeaturedPosts,
     SEO_GUIDE_CLUSTER.filter((guide) => guide.featured)
@@ -99,17 +99,17 @@ export async function listGuides(req, res) {
     title: 'Ratgeber – Webdesign, SEO, Kosten & Zeitpläne',
     description: 'Evergreen-Wissen zu Webdesign, Kosten, Ablauf, Relaunch und Local SEO für kleine Unternehmen in Berlin und Brandenburg.',
     posts,
-    featuredPosts: normalizeLegacyPublicCopy(renderPricingTokens(featuredPosts, pricing, { lng: 'de' })),
-    latestBlogPosts: normalizeLegacyPublicCopy(renderPricingTokens(latestBlogPosts, pricing, { lng: 'de' })).slice(0, 3)
+    featuredPosts: normalizeLegacyPublicCopy(renderPricingTokens(featuredPosts, pricing, { lng: 'de' }), res.locals.packagePricing || {}),
+    latestBlogPosts: normalizeLegacyPublicCopy(renderPricingTokens(latestBlogPosts, pricing, { lng: 'de' }), res.locals.packagePricing || {}).slice(0, 3)
   });
 }
 
 /* ---------- GET /ratgeber/:slug ---------- */
 export async function showGuide(req, res) {
-  let post = normalizeLegacyPublicCopy(await findGuideBySlugSafe(req.params.slug));
-  if (!post) post = normalizeLegacyPublicCopy(getSeoGuideBySlug(req.params.slug));
+  let post = normalizeLegacyPublicCopy(await findGuideBySlugSafe(req.params.slug), res.locals.packagePricing || {});
+  if (!post) post = normalizeLegacyPublicCopy(getSeoGuideBySlug(req.params.slug), res.locals.packagePricing || {});
   if (!post) return res.status(404).send('Ratgeber nicht gefunden');
-  post = normalizeLegacyPublicCopy(renderPricingTokens(post, res.locals.packagePricing || {}, { lng: 'de' }));
+  post = normalizeLegacyPublicCopy(renderPricingTokens(post, res.locals.packagePricing || {}, { lng: 'de' }), res.locals.packagePricing || {});
 
   // ISO-Timestamps mit Offset
   const publishedISO = isoOffset(post.created_at);
@@ -133,7 +133,7 @@ export async function showGuide(req, res) {
     helpers: {
       date: d => new Date(d).toLocaleDateString('de-DE')
     }
-  }), res.locals.packagePricing || {}, { lng: 'de' })));
+  }), res.locals.packagePricing || {}, { lng: 'de' }), res.locals.packagePricing || {}));
 
   // Beschreibung/Excerpt fallback
   let desc = (post.excerpt && post.excerpt.trim()) || '';
@@ -142,7 +142,7 @@ export async function showGuide(req, res) {
     desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
   }
 
-  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/ratgeber/${post.slug}` : `/ratgeber/${post.slug}`;
 
   // ---- SEO Head-Block als String (analog Blog) ----
@@ -190,12 +190,8 @@ export async function showGuide(req, res) {
       "width": 1200,
       "height": 675
     },
-    "author": { "@type": "Organization", "name": "Komplett Webdesign" },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Komplett Webdesign",
-      "logo": { "@type": "ImageObject", "url": `${base}/images/LogoTransparent.webp` }
-    },
+    "author": { "@id": `${base}/#person` },
+    "publisher": { "@id": `${base}/#organization` },
     "datePublished": publishedISO,
     "dateModified": modifiedISO
   }, null, 2)}
@@ -211,7 +207,7 @@ export async function showGuide(req, res) {
   </script>
   `;
 
-  const others = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(await findAllGuidesSafe()).filter((guide) => guide.slug !== post.slug), res.locals.packagePricing || {}, { lng: 'de' }));
+  const others = normalizeLegacyPublicCopy(renderPricingTokens(mergeGuides(await findAllGuidesSafe()).filter((guide) => guide.slug !== post.slug), res.locals.packagePricing || {}, { lng: 'de' }), res.locals.packagePricing || {});
 
   res.render('ratgeber/show', {
     // SEO/OG Variablen

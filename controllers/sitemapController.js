@@ -1,8 +1,9 @@
+import { shouldNoindexPublicPath, canonicalPublicPath } from '../middleware/publicSeo.js';
 // controllers/sitemapController.js
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
-import { REDIRECTED_BLOG_SLUGS } from "../data/blogRedirects.js";
+import { REDIRECTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
 import pricingService from "../services/pricingService.js";
 import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
 import {
@@ -35,10 +36,10 @@ function xmlEscape(str = "") {
     .replace(/'/g, "&apos;");
 }
 
-function toIso(value, fallbackIso) {
-  const date = new Date(value || fallbackIso);
-  if (Number.isNaN(date.getTime())) return fallbackIso;
-  return date.toISOString();
+function toIso(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 async function querySafe(sql, params = [], label = "query") {
@@ -63,12 +64,11 @@ async function getPackageSitemapRows() {
 export async function sitemapXml(req, res, next) {
   try {
     const base = resolveBaseUrl(req);
-    const nowIso = new Date().toISOString();
 
     // ---- DB: dynamische Inhalte ----
     const posts = await querySafe(
       `SELECT slug,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(updated_at, created_at) AS updated_at
          FROM posts
         WHERE published = true
           AND slug <> ALL($1::text[])`,
@@ -78,7 +78,7 @@ export async function sitemapXml(req, res, next) {
 
     const pages = await querySafe(
       `SELECT slug,
-              COALESCE(created_at, now()) AS updated_at
+              created_at AS updated_at
          FROM pages
         WHERE display = true`,
       [],
@@ -91,7 +91,7 @@ export async function sitemapXml(req, res, next) {
               name,
               title,
               description,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(updated_at, created_at) AS updated_at
          FROM industries
         ORDER BY name`,
       [],
@@ -101,7 +101,7 @@ export async function sitemapXml(req, res, next) {
     // Leistungen für /leistungen/:slug; die Berliner Preis-Seite behält ihre eigene URL.
     const leistungenPages = await querySafe(
       `SELECT slug,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(updated_at, created_at) AS updated_at
          FROM leistungen_pages
         WHERE is_published = true
           AND slug <> ALL($1::text[])
@@ -113,7 +113,7 @@ export async function sitemapXml(req, res, next) {
     // 👉 NEU: Ratgeber für /ratgeber/:slug
     const guides = await querySafe(
       `SELECT slug,
-              COALESCE(updated_at, created_at, now()) AS updated_at
+              COALESCE(updated_at, created_at) AS updated_at
          FROM ratgeber
         WHERE published = true
         ORDER BY created_at DESC`,
@@ -135,29 +135,24 @@ export async function sitemapXml(req, res, next) {
     // Bezirke
     const districtRoutesDe = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
       loc: `${base}/webdesign-berlin/${d.slug}`,
-      lastmod: nowIso,
-      changefreq: "weekly",
-      priority: 0.8
-    }));
-    const districtRoutesEn = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
-      loc: `${base}/en/webdesign-berlin/${d.slug}`,
-      lastmod: nowIso,
+      lastmod: "2026-10-23",
       changefreq: "weekly",
       priority: 0.8
     }));
 
+
     // CMS Pages
-    const pageRoutes = pages.map(p => ({
+    const pageRoutes = pages.filter(p => canonicalPublicPath(`/${p.slug}`) === `/${p.slug}` && !shouldNoindexPublicPath(`/${p.slug}`)).map(p => ({
       loc: `${base}/${p.slug}`,
-      lastmod: toIso(p.updated_at, nowIso),
+      lastmod: toIso(p.updated_at),
       changefreq: "weekly",
       priority: 0.8
     }));
 
     // Blogposts
     const postRoutes = posts.map(p => ({
-      loc: `${base}/blog/${p.slug}`,
-      lastmod: toIso(p.updated_at, nowIso),
+      loc: `${base}/blog/${canonicalBlogSlug(p.slug)}`,
+      lastmod: toIso(p.updated_at),
       changefreq: "weekly",
       priority: 0.8
     }));
@@ -165,14 +160,14 @@ export async function sitemapXml(req, res, next) {
     // Industries
     const industryRoutes = industries.filter(shouldIncludeIndustryInSitemap).map(r => ({
       loc: `${base}/branchen/webdesign-${normalizeIndustrySlug(r.slug)}`,
-      lastmod: toIso(r.updated_at, nowIso),
+      lastmod: toIso(r.updated_at),
       changefreq: "weekly",
       priority: 0.85
     }));
 
     const serviceRoutes = leistungenPages.map(s => ({
       loc: `${base}${canonicalLeistungPath(s.slug)}`,
-      lastmod: toIso(s.updated_at, nowIso),
+      lastmod: toIso(s.updated_at),
       changefreq: "weekly",
       priority: 0.8
     }));
@@ -180,14 +175,14 @@ export async function sitemapXml(req, res, next) {
     // 👉 NEU: Ratgeber-Detailseiten
     const guideRoutes = guides.map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
-      lastmod: toIso(g.updated_at, nowIso),
+      lastmod: toIso(g.updated_at),
       changefreq: "weekly",
       priority: 0.8
     }));
 
     const staticGuideRoutes = SEO_GUIDE_CLUSTER.map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
-      lastmod: toIso(g.updated_at, nowIso),
+      lastmod: toIso(g.updated_at),
       changefreq: "monthly",
       priority: g.featured ? 0.8 : 0.7
     }));
@@ -196,7 +191,7 @@ export async function sitemapXml(req, res, next) {
       .filter((pkg) => pkg?.allowDetailPage && pkg?.canonicalPath)
       .map((pkg) => ({
         loc: `${base}${pkg.canonicalPath}`,
-        lastmod: nowIso,
+        lastmod: toIso(pkg.updatedAt || pkg.createdAt),
         changefreq: "monthly",
         priority: pkg.packageKey === "individuell" ? 0.6 : 0.7
       }));
@@ -205,13 +200,12 @@ export async function sitemapXml(req, res, next) {
       ...staticRoutes,
       ...packageRoutes,
       ...districtRoutesDe,
-      ...districtRoutesEn,
       ...pageRoutes,
       ...postRoutes,
       ...industryRoutes,
       ...serviceRoutes,
-      ...staticGuideRoutes,
-      ...guideRoutes   // 👉 NEU aufnehmen
+      ...guideRoutes, // DB-Inhalte haben wie im Ratgeber-Controller Vorrang.
+      ...staticGuideRoutes
     ];
 
     const uniqueUrls = new Map();
@@ -225,9 +219,10 @@ export async function sitemapXml(req, res, next) {
     const urlset = allUrls.map(u => {
       const parts = [
         "  <url>",
-        `    <loc>${xmlEscape(u.loc)}</loc>`,
-        `    <lastmod>${xmlEscape(toIso(u.lastmod, nowIso))}</lastmod>`
+        `    <loc>${xmlEscape(u.loc)}</loc>`
       ];
+      const lastmod = toIso(u.lastmod);
+      if (lastmod) parts.push(`    <lastmod>${xmlEscape(lastmod)}</lastmod>`);
       if (u.changefreq) parts.push(`    <changefreq>${u.changefreq}</changefreq>`);
       if (u.priority != null) parts.push(`    <priority>${Number(u.priority).toFixed(1)}</priority>`);
       parts.push("  </url>");

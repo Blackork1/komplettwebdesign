@@ -1006,3 +1006,6 @@
     scroll-behavior: auto !important;
   }
 }
+
+.author-box { margin-top: 2rem; padding: 1.25rem; background: #f2f5f7; border-left: 3px solid #c93c0c; }
+.author-box p:last-child { margin-bottom: 0; }

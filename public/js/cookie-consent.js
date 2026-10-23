@@ -45,10 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const showBanner = () => {
     if (!banner) return;
     banner.classList.remove('hidden', 'is-hidden');
+    document.documentElement.classList.add('cookie-banner-open');
   };
   const hideBanner = () => {
     if (!banner) return;
     banner.classList.add('is-hidden');
+    document.documentElement.classList.remove('cookie-banner-open');
   };
 
   // ---------- Cookie-Utilities ----------

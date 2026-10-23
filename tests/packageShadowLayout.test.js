@@ -5,7 +5,7 @@ import test from 'node:test';
 const extraCss = readFileSync(new URL('../public/extra.css', import.meta.url), 'utf8');
 const packageListCss = readFileSync(new URL('../public/package-list.css', import.meta.url), 'utf8');
 const packageDetailCss = readFileSync(new URL('../public/package-detail.css', import.meta.url), 'utf8');
-const packageListTemplate = readFileSync(new URL('../views/packages_list.ejs', import.meta.url), 'utf8');
+const packageListTemplate = readFileSync(new URL('../views/packages_list.ejs', import.meta.url), 'utf8') + readFileSync(new URL('../views/partials/package-collection.ejs', import.meta.url), 'utf8');
 const packageDetailTemplate = readFileSync(new URL('../views/package_detail.ejs', import.meta.url), 'utf8');
 const interactionPolishCss = readFileSync(new URL('../public/interaction-polish.css', import.meta.url), 'utf8');
 

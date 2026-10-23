@@ -108,7 +108,7 @@ function getTokenExpiryDate() {
 }
 
 function baseUrl() {
-  const base = process.env.BASE_URL || process.env.CANONICAL_BASE_URL || 'https://komplettwebdesign.de';
+  const base = process.env.BASE_URL || process.env.CANONICAL_BASE_URL || 'https://www.komplettwebdesign.de';
   return String(base).replace(/\/$/, '');
 }
 

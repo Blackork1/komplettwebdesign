@@ -1,5 +1,5 @@
 <%
-const siteBase = (canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+const siteBase = (canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 const pageUrl = `${siteBase}${page.canonicalPath}`;
 const wdDistrictCards = Array.isArray(districtCards) ? districtCards : [];
 const webPageSchema = {
@@ -20,11 +20,7 @@ const serviceSchema = {
   "name": "Webdesign Berlin",
   "serviceType": "Webdesign und Website-Entwicklung",
   "description": page.description,
-  "provider": {
-    "@type": "Organization",
-    "name": "Komplett Webdesign",
-    "url": siteBase
-  },
+  "provider": { "@id": `${siteBase}/#organization` },
   "areaServed": [
     { "@type": "City", "name": "Berlin" },
     { "@type": "AdministrativeArea", "name": "Brandenburg" }

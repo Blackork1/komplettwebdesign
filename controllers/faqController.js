@@ -48,7 +48,7 @@ const categoryMeta = {
 /** HTML-Render der FAQ-Seite + eingebettetes JSON-LD
  *  Das JSON-LD umfasst GENAU die FAQs der ausgewählten Kategorie,
  *  sodass es 1:1 mit den sichtbaren Inhalten übereinstimmt. */
-export async function renderFaqPage(req, res) {
+export async function renderFaqPage(req, res, next) {
   try {
     // Kategorien + Meta anreichern
     const catsRaw = await getAllCategories();
@@ -60,18 +60,22 @@ export async function renderFaqPage(req, res) {
     }));
 
     // Ausgewählte Kategorie (per ?cat=)
-    const selectedId = parseInt(req.query.cat, 10) || categories[0]?.id;
+    const rawCategory = req.query.cat;
+    if (rawCategory !== undefined && (typeof rawCategory !== 'string' || !/^[1-9]\d*$/.test(rawCategory))) return next();
+    const selectedId = rawCategory === undefined ? categories[0]?.id : Number(rawCategory);
+    if (!categories.some(category => Number(category.id) === selectedId)) return next();
     const selectedCategory = await getCategoryById(selectedId);
+    if (!selectedCategory) return next();
 
     // FAQs der ausgewählten Kategorie
-    const faqs = normalizeLegacyPublicCopy(renderPricingTokens(await getFaqsByCategory(selectedId), res.locals.packagePricing || {}));
+    const faqs = normalizeLegacyPublicCopy(renderPricingTokens(await getFaqsByCategory(selectedId), res.locals.packagePricing || {}), res.locals.packagePricing || {});
 
     // JSON-LD nur für die auf der Seite gerenderten FAQs erzeugen
     const faqJsonLd = buildFaqJsonLd(faqs);
 
     // Caching für Besucher (anpassen wenn du Login/Personalisierung nutzt)
     res.set('Cache-Control', 'public, max-age=300');
-    const canonical = `${(res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '')}/faq`;
+    const canonical = `${(res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}/faq`;
 
     res.render('faq', {
       title: 'Häufige Fragen – Komplett Webdesign',
@@ -100,7 +104,7 @@ export async function renderFaqPage(req, res) {
  *  sonst kann Google die Nicht-Übereinstimmung bemängeln). */
 export async function serveFaqJsonLd(req, res) {
   try {
-    const allFaqs = normalizeLegacyPublicCopy(renderPricingTokens(await fetchAllFaqsGrouped(), res.locals.packagePricing || {}));
+    const allFaqs = normalizeLegacyPublicCopy(renderPricingTokens(await fetchAllFaqsGrouped(), res.locals.packagePricing || {}), res.locals.packagePricing || {});
     const jsonLd = buildFaqJsonLd(allFaqs);
     res.setHeader('Content-Type', 'application/ld+json; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=300');

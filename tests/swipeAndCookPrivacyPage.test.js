@@ -74,14 +74,14 @@ test('serves both privacy routes successfully over HTTP', async () => {
   }
 });
 
-test('links the page from the legal footer and static sitemap', () => {
+test('keeps app privacy out of the marketing footer and indexable sitemap', () => {
   const legal = footerNavigation.find((column) => column.label === 'Rechtliches');
   assert.ok(legal);
-  assert.ok(legal.links.some((link) => (
+  assert.ok(!legal.links.some((link) => (
     link.label === 'Swipe & Cook Datenschutz'
     && link.href === '/swipeandcook-datenschutz'
   )));
-  assert.ok(INDEXABLE_STATIC_ROUTES.some((route) => (
+  assert.ok(!INDEXABLE_STATIC_ROUTES.some((route) => (
     route.path === '/swipeandcook-datenschutz'
     && route.changefreq === 'yearly'
     && route.priority === 0.2

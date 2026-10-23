@@ -30,7 +30,7 @@ test('package detail schemas use canonical service names and cautious FAQ copy w
   const faq = schemas.find((schema) => schema['@type'] === 'FAQPage');
 
   assert.equal(service.name, 'Start-Paket');
-  assert.equal(service.provider['@type'], 'Organization');
+  assert.deepEqual(service.provider['@type'], ['Organization', 'ProfessionalService']);
   assert.equal(service.provider.url, 'https://www.komplettwebdesign.de/');
   assert.equal(schemas.some((schema) => schema['@type'] === 'Product'), false);
   assert.doesNotMatch(JSON.stringify(schemas), /"@type":"Offer"|"@type":"Product"|priceValidUntil|AggregateRating/);

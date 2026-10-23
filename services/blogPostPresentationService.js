@@ -1,8 +1,9 @@
+import { buildOrganizationSchema, buildPersonSchema } from '../helpers/entitySchema.js';
 import ejs from 'ejs';
 import * as cheerio from 'cheerio';
 import slugify from 'slugify';
 import { isoOffset } from '../util/date.js';
-import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { normalizeLegacyPublicCopy, stripEmbeddedStructuredData } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
 import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.js';
@@ -59,14 +60,10 @@ function renderStaticContent(content, pricing) {
 }
 
 function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
-  const legacyLocals = buildLegacyRenderLocals({
-    post,
-    modifiedISO,
-    publishedISO
-  });
-  return demoteContentH1(normalizeLegacyPublicCopy(
-    renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing)
-  ));
+  const legacyLocals = buildLegacyRenderLocals({ post, modifiedISO, publishedISO });
+  return stripEmbeddedStructuredData(demoteContentH1(normalizeLegacyPublicCopy(
+    renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing), pricing
+  )));
 }
 
 function riskAnchorsForHtml(html) {
@@ -155,7 +152,7 @@ function prepareRiskReview(html, rawRiskReview) {
 }
 
 function normalizeBaseUrl(value) {
-  return String(value || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/+$/, '');
+  return String(value || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/+$/, '');
 }
 
 export function buildBlogPostPageModel({
@@ -177,7 +174,7 @@ export function buildBlogPostPageModel({
 
   const postWithPricing = renderPricingTokens(rawPost, pricing);
   const post = rawPost.content_format === 'legacy_ejs' && !previewMode
-    ? normalizeLegacyPublicCopy(postWithPricing)
+    ? normalizeLegacyPublicCopy(postWithPricing, pricing)
     : postWithPricing;
   const publishedISO = isoOffset(post.published_at || post.created_at);
   const modifiedISO = isoOffset(post.updated_at || post.created_at);
@@ -217,14 +214,8 @@ export function buildBlogPostPageModel({
     : [];
   const organizationId = `${base}/#organization`;
   const structuredDataBlocks = previewMode ? [] : [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      '@id': organizationId,
-      name: 'Komplett Webdesign',
-      url: `${base}/`,
-      logo: { '@type': 'ImageObject', url: `${base}/images/LogoTransparent.webp` }
-    },
+    buildOrganizationSchema(base),
+    buildPersonSchema(base),
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
@@ -242,7 +233,7 @@ export function buildBlogPostPageModel({
       url: canonicalUrl,
       mainEntityOfPage: canonicalUrl,
       image: { '@type': 'ImageObject', url: post.image_url || '', width: 1200, height: 675 },
-      author: { '@id': organizationId },
+      author: { '@id': `${base}/#person` },
       publisher: { '@id': organizationId },
       datePublished: publishedISO,
       dateModified: modifiedISO

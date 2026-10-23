@@ -633,7 +633,7 @@ function buildDetailedLines({ locale, lead, result }) {
   const legalRisk = result.legalRisk || {};
   const relevance = result.relevance || {};
 
-  const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const contactUrl = (() => {
     if (result.cta?.primaryHref) {
       if (/^https?:\/\//i.test(result.cta.primaryHref)) return result.cta.primaryHref;
@@ -930,7 +930,7 @@ function buildPdfPageStream(lines = [], options = {}) {
   commands.push('0 G');
 
   const copy = TEXT[localeFrom(locale)];
-  const footerLeft = `${copy.footerWebsiteLabel} ${reportWebsite || 'https://komplettwebdesign.de'}`;
+  const footerLeft = `${copy.footerWebsiteLabel} ${reportWebsite || 'https://www.komplettwebdesign.de'}`;
   const footerRight = `${copy.pageLabel} ${pageNumber}/${pageCount}`;
 
   commands.push('BT');

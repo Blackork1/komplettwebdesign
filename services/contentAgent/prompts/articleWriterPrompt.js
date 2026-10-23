@@ -8,6 +8,7 @@ export function buildArticleWriterPrompt(input) {
   return {
     system: [
       buildBrandPolicy(),
+      'Formuliere metaTitle als vollständige Aussage mit höchstens 60 Zeichen und metaDescription als vollständigen Satz mit 140 bis 155 Zeichen. Kürze niemals mitten im Wort oder Gedanken; formuliere bei Überlänge neu.',
       'Schreibe den Artikel strikt nach dem Briefing und erfülle die dort festgelegte Suchintention sowie den konkreten Lesernutzen.',
       'Nutze nur interne Links, externe Quellen, Leistungen und Fakten aus dem Briefing.',
       'Setze die freigegebenen Lernregeln im Feld learningRules zusätzlich zum Briefing konkret um.',

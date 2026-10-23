@@ -34,9 +34,9 @@ export async function message(req, res) {
     searchIndustryEmbeddings(userQ, 5) // Anzahl Treffer nach Geschmack
   ]);
   const pricing = res.locals.packagePricing || {};
-  const faqs = normalizeLegacyPublicCopy(renderPricingTokens(rawFaqs, pricing));
-  const pages = normalizeLegacyPublicCopy(renderPricingTokens(rawPages, pricing));
-  const industries = normalizeLegacyPublicCopy(renderPricingTokens(rawIndustries, pricing));
+  const faqs = normalizeLegacyPublicCopy(renderPricingTokens(rawFaqs, pricing), res.locals.packagePricing || {});
+  const pages = normalizeLegacyPublicCopy(renderPricingTokens(rawPages, pricing), res.locals.packagePricing || {});
+  const industries = normalizeLegacyPublicCopy(renderPricingTokens(rawIndustries, pricing), res.locals.packagePricing || {});
 
   // 3) Kontextstrings bauen
   const faqCtx = faqs.map((f, i) =>
@@ -77,7 +77,7 @@ REGELN:
 - Antworte auf Deutsch in der Du-Form.
 - Nutze nur Informationen aus den obigen Blöcken, erfinde nichts dazu.
 - Wenn du auf eine Seite oder Branche verlinkst, verwende ausschließlich Pfade, die oben vorkommen.
-  Beispiel: <a href="https://komplettwebdesign.de/PFAD">Zur Seite</a>
+  Beispiel: <a href="https://www.komplettwebdesign.de/PFAD">Zur Seite</a>
 - Wenn nichts wirklich passt, sag ehrlich, dass es dazu noch keine Inhalte auf der Website gibt und verweise auf das Kontaktformular.
 `;
 

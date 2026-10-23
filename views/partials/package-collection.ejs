@@ -1,0 +1,66 @@
+<%
+const visiblePackages = Array.isArray(packages) ? packages.filter(pkg => pkg && pkg.isVisible !== false) : [];
+const contactPath = isEn ? '/en/kontakt' : '/kontakt';
+const canShowPackageDetail = pkg => pkg.allowDetailPage !== false && (pkg.canonicalPath || pkg.slug);
+const packageTitle = pkg => pkg.displayName || `${pkg.name}-Paket`;
+const packageUrl = pkg => canShowPackageDetail(pkg) ? `${isEn ? '/en' : ''}${pkg.canonicalPath || `/pakete/${pkg.slug}`}` : `${contactPath}?paket=${encodeURIComponent(pkg.packageKey || pkg.slug)}`;
+const packageText = pkg => pkg.shortDescription || pkg.description || pkg.positioning || '';
+const packagePrimaryCtaLabel = pkg => isEn ? `View ${pkg.name} package` : `${pkg.name}-Paket ansehen`;
+const packageContactUrl = pkg => `${contactPath}?paket=${encodeURIComponent(pkg.packageKey || pkg.slug)}`;
+const packageRequestLabel = pkg => isEn ? `Request ${pkg.name} package` : `${pkg.name}-Paket anfragen`;
+const featureText = item => typeof item === 'object' ? item.text : item;
+const packageImage = pkg => ({start:'/images/paket-start.webp',business:'/images/paket-business.webp',wachstum:'/images/paket-wachstum.webp',individuell:'/images/paket-individuell.webp'}[pkg.packageKey || pkg.slug] || '/images/preiseHero.webp');
+%>
+    <section id="paket-angebote" class="package-collection">
+      <div class="container">
+        <% if (visiblePackages.length) { %>
+        <% visiblePackages.forEach((pkg, index) => { %>
+        <% const features = Array.isArray(pkg.features) ? pkg.features.map(featureText).filter(Boolean).slice(0, 4) : []; %>
+        <article class="package-row <%= index % 2 === 1 ? 'is-reversed' : '' %>">
+          <div class="package-visual">
+            <div class="package-frame">
+              <a class="package-image-link" href="<%= packageUrl(pkg) %>" aria-label="<%= canShowPackageDetail(pkg) ? (isEn ? `Learn more about ${pkg.name}` : `Mehr erfahren über ${pkg.name}`) : (isEn ? `Request ${pkg.name}` : `${pkg.name}-Paket anfragen`) %>" data-track="cta" data-cta-name="packages_image_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
+                <img src="<%= packageImage(pkg) %>" alt="Visualisierung des Leistungsumfangs für <%= packageTitle(pkg) %>" loading="lazy" />
+              </a>
+            </div>
+            <div class="package-actions package-actions--image">
+              <a class="btn btn-primary" href="<%= packageUrl(pkg) %>" data-track="cta" data-cta-name="packages_details_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
+                <%= packagePrimaryCtaLabel(pkg) %>
+              </a>
+              <a class="btn btn-secondary" href="<%= packageContactUrl(pkg) %>" data-track="cta" data-cta-name="packages_consult_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>"><%= packageRequestLabel(pkg) %></a>
+            </div>
+          </div>
+          <div class="package-content">
+            <div class="package-header">
+              <span class="package-index">0<%= index + 1 %></span>
+              <span class="package-eyebrow"><%= isEn ? `${pkg.name} package` : `Paket ${pkg.name}` %></span>
+              <% if (pkg.isRecommended && pkg.recommendationLabel) { %>
+              <span class="package-eyebrow"><%= pkg.recommendationLabel %></span>
+              <% } %>
+            </div>
+            <h2 class="package-title"><%= packageTitle(pkg) %></h2>
+            <p class="package-description"><%= packageText(pkg) %></p>
+            <% if (features.length) { %>
+            <ul class="package-features">
+              <% features.forEach(feature => { %>
+              <li>
+                <img class="feature-icon" src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+                <span><%= feature %></span>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+            <div class="package-meta">
+              <span class="price-label"><%= isEn ? 'Starting at' : 'Preis' %></span>
+              <span class="price-amount"><%= pkg.priceLabel %></span>
+            </div>
+          </div>
+        </article>
+        <% }) %>
+        <% } else { %>
+        <div class="text-center py-5">
+          <p><%= isEn ? 'No packages are currently available. Please check back later.' : 'Aktuell sind keine Pakete verfügbar. Bitte schau später noch einmal vorbei.' %></p>
+        </div>
+        <% } %>
+      </div>
+    </section>

@@ -75,7 +75,7 @@ test('phase 11 services dropdown links to canonical service pages only', () => {
   assert.match(header, /child\.group/);
 
   assert.deepEqual(serviceHrefs, [
-    '/leistungen/',
+    '/leistungen',
     '/leistungen/landingpage-erstellen-lassen',
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',

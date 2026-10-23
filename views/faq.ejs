@@ -11,7 +11,7 @@ const structuredDataBlocks = (typeof faqJsonLd === 'string' && faqJsonLd.trim())
   <h1>Häufig gestellte Fragen</h1>
   <p>
     Kannst du die Antwort nicht finden? Ruf mich an unter
-    <a href="tel:+491551245048">+49 1551 245048</a>
+    <a href="tel:<%= typeof siteFacts !== 'undefined' ? siteFacts.phone : '' %>"><%= typeof siteFacts !== 'undefined' ? siteFacts.phoneDisplay : '' %></a>
     oder schreib eine Mail an
     <a href="mailto:kontakt@komplettwebdesign.de"
       >kontakt@komplettwebdesign.de</a

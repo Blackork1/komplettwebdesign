@@ -1,5 +1,6 @@
+import { buildOrganizationSchema } from './entitySchema.js';
 function normalizeBaseUrl(baseUrl) {
-  return String(baseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  return String(baseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 }
 
 function toAbsoluteUrl(url, baseUrl) {
@@ -49,13 +50,7 @@ export function buildIndustrySchemas({ industry = {}, url, baseUrl }) {
   const faqItems = Array.isArray(industry.faq_items) ? industry.faq_items : [];
 
   const graph = [
-    {
-      '@type': 'Organization',
-      '@id': orgId,
-      name: 'Komplett Webdesign',
-      url: base,
-      logo: `${base}/images/LogoTransparent.webp`
-    },
+    buildOrganizationSchema(base),
     {
       '@type': 'WebSite',
       '@id': websiteId,

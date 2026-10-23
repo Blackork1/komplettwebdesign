@@ -1,3 +1,5 @@
+import { buildOrganizationSchema } from '../helpers/entitySchema.js';
+import { SITE_FACTS } from '../helpers/siteFacts.js';
 // util/seoSchemas.js
 /**
  * Erzeugt JSON-LD für Paket-Detailseiten:
@@ -5,34 +7,6 @@
  *  - Service (zusätzliche Entity-Verankerung für GEO/Google Rich Results)
  *  - FAQPage nur aus sichtbaren Controller-/DB-Daten
  */
-function buildOrganization(baseUrl) {
-  const base = String(baseUrl || "https://komplettwebdesign.de").replace(/\/$/, "");
-  return {
-    "@type": "Organization",
-    "@id": `${base}/#organization`,
-    name: "Komplett Webdesign",
-    url: `${base}/`,
-    email: "kontakt@komplettwebdesign.de",
-    telephone: "+49 1551 245048",
-    logo: `${base}/images/LogoTransparent.webp`,
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      telephone: "+49 1551 245048",
-      email: "kontakt@komplettwebdesign.de",
-      areaServed: "DE",
-      availableLanguage: ["de-DE", "en"]
-    },
-    areaServed: [
-      { "@type": "City", name: "Berlin" },
-      { "@type": "State", name: "Brandenburg" },
-      { "@type": "Country", name: "Germany" }
-    ],
-    sameAs: [
-      `${base}/`
-    ]
-  };
-}
 
 function buildServiceSchema({ pack, url, baseUrl, lng }) {
   const isEn = lng === "en";
@@ -43,7 +17,7 @@ function buildServiceSchema({ pack, url, baseUrl, lng }) {
     : `${displayName}-Paket`;
   const englishServiceName = `${name || displayName} package`;
   const description = pack.shortDescription || pack.description || pack.positioning || "";
-  const org = buildOrganization(baseUrl);
+  const org = buildOrganizationSchema(baseUrl);
 
   return {
     "@context": "https://schema.org",
@@ -59,7 +33,7 @@ function buildServiceSchema({ pack, url, baseUrl, lng }) {
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: url,
-      servicePhone: "+49 1551 245048",
+      servicePhone: SITE_FACTS.phone,
       availableLanguage: ["de-DE", "en"]
     }
   };

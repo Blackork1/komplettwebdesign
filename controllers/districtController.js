@@ -1,3 +1,4 @@
+import { buildOrganizationSchema } from '../helpers/entitySchema.js';
 // controllers/districtController.js
 import { DISTRICTS, getDistrictBySlug } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
@@ -25,7 +26,7 @@ export async function renderDistrictPage(req, res, next) {
       : districtPage.metaTitle;
     const metaDescription =
       isEn
-        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting, maintenance, and chatbot support. Call now: +49 1551 245048.`
+        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting, maintenance, and chatbot support. Call now: ${SITE_FACTS.phoneDisplay}.`
         : districtPage.metaDescription;
     const pagePrefix = req.baseUrl?.startsWith("/en/") ? "/en/webdesign-berlin" : "/webdesign-berlin";
     const canonicalUrl = `${SITE_URL}${pagePrefix}/${slug}`;
@@ -92,8 +93,8 @@ export async function renderDistrictPage(req, res, next) {
         lng,
         district,
         company: "Komplett Webdesign",
-        phone: "+491551245048",
-        phoneDisplay: "01551 245048",
+        phone: SITE_FACTS.phone,
+        phoneDisplay: SITE_FACTS.phoneDisplay,
         hubPath: "/en/webdesign-berlin",
         districtPath: `/en/webdesign-berlin/${slug}`,
         contactPath: "/en/kontakt",
@@ -136,8 +137,8 @@ export async function renderDistrictPage(req, res, next) {
       title: metaTitle,
       description: metaDescription,
       company: "Komplett Webdesign",
-      phone: "+491551245048",
-      phoneDisplay: "01551 245048",
+      phone: SITE_FACTS.phone,
+      phoneDisplay: SITE_FACTS.phoneDisplay,
       lng,
       district,
       districtPage,
@@ -149,7 +150,7 @@ export async function renderDistrictPage(req, res, next) {
       faqItems: interpolatePricingTokens(buildGermanDistrictFaq(district.name), pricing, { lng }),
       districtServiceLinks: buildDistrictServiceLinks(slug),
       districtLastUpdatedIso: CONTENT_LAST_UPDATED_ISO,
-      seoGuides: SEO_GUIDE_CLUSTER.slice(0, 6).map((guide) => ({
+      seoGuides: interpolatePricingTokens(SEO_GUIDE_CLUSTER, pricing, { lng }).slice(0, 6).map((guide) => ({
         title: guide.title,
         excerpt: guide.excerpt,
         href: `/ratgeber/${guide.slug}`
@@ -160,7 +161,7 @@ export async function renderDistrictPage(req, res, next) {
   }
 }
 
-const SITE_URL = (process.env.CANONICAL_BASE_URL || process.env.BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+const SITE_URL = (process.env.CANONICAL_BASE_URL || process.env.BASE_URL || "https://www.komplettwebdesign.de").replace(/\/$/, "");
 const YOUTUBE_ID = "M_fYtNuPcGg";
 const VIDEO_UPLOAD_ISO = "2025-11-02T12:00:00+01:00";
 const CONTENT_LAST_UPDATED_ISO = "2026-04-23";
@@ -222,8 +223,8 @@ const DISTRICT_PAGE_COPY = {
     label: "Ost-Berlin im Wachstum",
     headline: "Webdesign für Lichtenberg - klar, schnell und lokal auffindbar",
     lead: "Lichtenberg wächst zwischen etabliertem Kiez, neuen Wohnquartieren und vielen kleinen Betrieben. Deine Website muss deshalb sofort verständlich machen, was du anbietest, wo du arbeitest und warum Kundinnen und Kunden dir vertrauen können.",
-    metaTitle: "Webdesign Lichtenberg | Website erstellen lassen ab {{lowestPackagePriceLabel.en}}",
-    metaDescription: "Komplett Webdesign erstellt Websites für Lichtenberg: lokale SEO, Texte, Design, Hosting und Wartung für kleine Unternehmen ab {{lowestPackagePriceLabel.en}}.",
+    metaTitle: "Webdesign Lichtenberg | Website erstellen lassen {{price.start}}",
+    metaDescription: "Komplett Webdesign erstellt Websites für Lichtenberg: lokale SEO, Texte, Design, Hosting und Wartung für kleine Unternehmen {{price.start}}.",
     heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194716/admin_gallery/joe7dzz6f0lql4uigcn9.webp",
     imageAlt: "Webdesigner von Komplett Webdesign für Projekte in Berlin Lichtenberg",
     neighborhoods: ["Alt-Lichtenberg", "Friedrichsfelde", "Karlshorst", "Rummelsburg"],
@@ -275,7 +276,7 @@ const DISTRICT_PAGE_COPY = {
     headline: "Webdesign für Berlin Mitte - professionell wirken, schnell Vertrauen gewinnen",
     lead: "In Mitte ist die Konkurrenz sichtbar und oft hochwertig. Deine Website muss professionell, glaubwürdig und sehr klar sein. Besonders wichtig sind Positionierung, Trust-Signale, schnelle Ladezeiten und ein sauberer Weg zur Anfrage.",
     metaTitle: "Webdesign Berlin Mitte | Professionelle Website erstellen lassen",
-    metaDescription: "Webdesign Berlin Mitte für Beratungen, Praxen, Immobilienmakler und lokale Dienstleister: SEO, Texte, Design und Tracking ab {{lowestPackagePriceLabel.en}}.",
+    metaDescription: "Webdesign Berlin Mitte für Beratungen, Praxen, Immobilienmakler und lokale Dienstleister: SEO, Texte, Design und Tracking {{price.start}}.",
     heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194773/admin_gallery/s4bjmdaw4yrjdf8hs7o0.webp",
     imageAlt: "Professionelles Webdesign für Unternehmen in Berlin Mitte",
     neighborhoods: ["Alexanderplatz", "Regierungsviertel", "Rosenthaler Platz", "Hackescher Markt"],
@@ -328,7 +329,7 @@ function buildGermanDistrictPage(slug, district) {
     ],
     googleRating: {
       label: "★★★★★ 5,0/5 · 4 Google-Rezensionen",
-      href: "https://share.google/6NAPsubZRs6yeSOrg",
+      href: SITE_FACTS.googleProfileUrl,
       cta: "Bewertungen auf Google lesen"
     },
     neighborhoods: [district.name, "Berlin"],
@@ -359,7 +360,7 @@ function buildGermanDistrictFaq(name) {
   return [
     {
       q: `Was kostet Webdesign in ${name}?`,
-      a: "Die Pakete starten mit Start {{price.start.en}}. Business beginnt bei {{price.business.en}}, Wachstum bei {{price.wachstum.en}} und individuelle Projekte bei {{price.individuell.en}}. Hosting, Domain, E-Mail und Wartung können separat dazukommen."
+      a: "Die Pakete starten mit Start {{price.start}}. Business kostet {{price.business}}, Wachstum {{price.wachstum}} und individuelle Projekte {{price.individuell}}. Hosting, Domain, E-Mail und Wartung können separat dazukommen."
     },
     {
       q: `Wie lange dauert eine Website für ${name}?`,
@@ -841,7 +842,7 @@ export function renderWebdesignBerlinHub(req, res) {
     { label: "Baukasten vs. professionelle Website", href: "/ratgeber/baukasten-vs-professionelle-website" }
   ];
 
-  const seoGuides = SEO_GUIDE_CLUSTER.map((guide) => ({
+  const seoGuides = interpolatePricingTokens(SEO_GUIDE_CLUSTER, res.locals.packagePricing || {}, { lng }).map((guide) => ({
     title: guide.title,
     excerpt: guide.excerpt,
     slug: guide.slug,
@@ -1226,24 +1227,7 @@ export function renderWebdesignBerlinHub(req, res) {
 
   // ---------- Schema Blocks ----------
   const schema = {
-    organization: {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "@id": `${SITE_URL}/#organization`,
-      "name": "Komplett Webdesign",
-      "url": `${SITE_URL}/`,
-      "logo": {
-        "@type": "ImageObject",
-        "url": toAbsUrl("/images/LogoTransparent.webp")
-      },
-      "sameAs": [
-        "https://www.linkedin.com/in/komplettwebdesign",
-        "https://instagram.com/komplettwebdesign",
-        "https://www.facebook.com/profile.php?id=61579580713573",
-        "https://www.youtube.com/@komplettwebdesign",
-        "https://www.tiktok.com/@komplett.webdesign"
-      ]
-    },
+    organization: buildOrganizationSchema(SITE_URL),
 
     website: {
       "@context": "https://schema.org",

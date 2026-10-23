@@ -1,7 +1,7 @@
 <%
   const siteBaseUrl = (typeof canonicalBaseUrl !== 'undefined' && canonicalBaseUrl
     ? canonicalBaseUrl
-    : 'https://komplettwebdesign.de').replace(/\/$/, '');
+    : 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const packagePathHints = ['/pakete/start', '/pakete/business', '/pakete/wachstum', '/pakete/individuell'];
   const visiblePackages = Array.isArray(packages) ? packages.filter((pkg) => pkg && pkg.isVisible !== false) : [];
   const contactPath = isEn ? '/en/kontakt' : '/kontakt';
@@ -140,7 +140,7 @@
           <h1 class="hero-title home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
             <%= isEn
               ? `Create a website in Berlin: packages${heroPriceLabel ? ` from ${heroPriceLabel.replace('€', 'EUR')}` : ''}`
-              : `Website erstellen lassen in Berlin: Pakete${heroPriceLabel ? ` ab ${heroPriceLabel}` : ''}`
+              : `Website-Pakete für dein Unternehmen${heroPriceLabel ? ` ${/^ab\s/.test(heroPriceLabel) ? heroPriceLabel : `ab ${heroPriceLabel}`}` : ''}`
             %>
           </h1>
           <h2 class="hero-subtitle unified-hero__lead home-hero-reveal home-hero-reveal--support animate-on-scroll">
@@ -233,59 +233,7 @@
       </div>
     </section>
 
-    <section id="paket-angebote" class="package-collection">
-      <div class="container">
-        <% if (visiblePackages.length) { %>
-        <% visiblePackages.forEach((pkg, index) => { %>
-        <% const features = Array.isArray(pkg.features) ? pkg.features.map(featureText).filter(Boolean).slice(0, 4) : []; %>
-        <article class="package-row <%= index % 2 === 1 ? 'is-reversed' : '' %>">
-          <div class="package-visual">
-            <div class="package-frame">
-              <a class="package-image-link" href="<%= packageUrl(pkg) %>" aria-label="<%= canShowPackageDetail(pkg) ? (isEn ? `Learn more about ${pkg.name}` : `Mehr erfahren über ${pkg.name}`) : (isEn ? `Request ${pkg.name}` : `${pkg.name}-Paket anfragen`) %>" data-track="cta" data-cta-name="packages_image_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
-                <img src="<%= packageImage(pkg) %>" alt="Visualisierung des Leistungsumfangs für <%= packageTitle(pkg) %>" loading="lazy" />
-              </a>
-            </div>
-            <div class="package-actions package-actions--image">
-              <a class="btn btn-primary" href="<%= packageUrl(pkg) %>" data-track="cta" data-cta-name="packages_details_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>">
-                <%= packagePrimaryCtaLabel(pkg) %>
-              </a>
-              <a class="btn btn-secondary" href="<%= packageContactUrl(pkg) %>" data-track="cta" data-cta-name="packages_consult_<%= pkg.slug %>" data-cta-location="packages_list" data-package-id="<%= pkg.packageKey %>"><%= packageRequestLabel(pkg) %></a>
-            </div>
-          </div>
-          <div class="package-content">
-            <div class="package-header">
-              <span class="package-index">0<%= index + 1 %></span>
-              <span class="package-eyebrow"><%= isEn ? `${pkg.name} package` : `Paket ${pkg.name}` %></span>
-              <% if (pkg.isRecommended && pkg.recommendationLabel) { %>
-              <span class="package-eyebrow"><%= pkg.recommendationLabel %></span>
-              <% } %>
-            </div>
-            <h2 class="package-title"><%= packageTitle(pkg) %></h2>
-            <p class="package-description"><%= packageText(pkg) %></p>
-            <% if (features.length) { %>
-            <ul class="package-features">
-              <% features.forEach(feature => { %>
-              <li>
-                <img class="feature-icon" src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
-                <span><%= feature %></span>
-              </li>
-              <% }) %>
-            </ul>
-            <% } %>
-            <div class="package-meta">
-              <span class="price-label"><%= isEn ? 'Starting at' : 'Preis' %></span>
-              <span class="price-amount"><%= pkg.priceLabel %></span>
-            </div>
-          </div>
-        </article>
-        <% }) %>
-        <% } else { %>
-        <div class="text-center py-5">
-          <p><%= isEn ? 'No packages are currently available. Please check back later.' : 'Aktuell sind keine Pakete verfügbar. Bitte schau später noch einmal vorbei.' %></p>
-        </div>
-        <% } %>
-      </div>
-    </section>
+    <%- include('partials/package-collection', { packages: visiblePackages, isEn }) %>
 
     <% if (visiblePackages.length) { %>
     <section id="paketwahl" class="packages-section packages-fit">

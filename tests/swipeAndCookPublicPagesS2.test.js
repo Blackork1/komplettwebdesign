@@ -281,16 +281,16 @@ test('der begrenzte Rechtstext-Renderer escaped aktive Inhalte und erlaubt nur s
   assert.doesNotMatch(html, /href="javascript:/);
 });
 
-test('verlinkt alle vier Seiten im rechtlichen Footer und in der statischen Sitemap', () => {
+test('hält App-Seiten aus dem Marketing-Footer und der indexierbaren Sitemap heraus', () => {
   const legal = footerNavigation.find((column) => column.label === 'Rechtliches');
   assert.ok(legal);
 
   for (const contract of pageContracts) {
-    assert.ok(legal.links.some((link) => (
+    assert.ok(!legal.links.some((link) => (
       link.label === contract.footerLabel
       && link.href === contract.path
     )), contract.path);
-    assert.ok(INDEXABLE_STATIC_ROUTES.some((route) => (
+    assert.ok(!INDEXABLE_STATIC_ROUTES.some((route) => (
       route.path === contract.path
       && route.changefreq === 'yearly'
       && route.priority === 0.2

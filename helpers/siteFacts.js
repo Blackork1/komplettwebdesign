@@ -17,10 +17,10 @@ export const SITE_FACTS = {
   brandName: 'Komplett Webdesign',
   legalName: 'Komplett Webdesign',
   founderName: 'Sören Blocksdorf',
-  baseUrlFallback: 'https://komplettwebdesign.de',
+  baseUrlFallback: 'https://www.komplettwebdesign.de',
   email: 'kontakt@komplettwebdesign.de',
-  phone: '+491551245048',
-  phoneDisplay: '01551 245048',
+  phone: '+4915511245048',
+  phoneDisplay: '+49 155 11245048',
   address: {
     streetAddress: 'Möllendorffstr 26',
     postalCode: '10367',
@@ -28,6 +28,14 @@ export const SITE_FACTS = {
     addressRegion: 'Berlin',
     addressCountry: 'DE'
   },
+  addressMapUrl: 'https://www.google.com/maps/search/?api=1&query=M%C3%B6llendorffstra%C3%9Fe+26%2C+10367+Berlin',
+  socialProfiles: [
+    'https://www.linkedin.com/in/komplettwebdesign',
+    'https://instagram.com/komplettwebdesign',
+    'https://www.facebook.com/profile.php?id=61579580713573',
+    'https://www.youtube.com/@komplettwebdesign',
+    'https://www.tiktok.com/@komplett.webdesign'
+  ],
   googleProfileUrl: 'https://www.google.com/maps?cid=8211853018206635760',
   googleReviewUrl: 'https://g.page/r/CfAG7dHPXPZxEAE/review',
   googleRating: {

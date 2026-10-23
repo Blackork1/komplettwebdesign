@@ -27,7 +27,8 @@
   background-size: cover, cover;
   color: #ffffff;
   padding: clamp(5rem, 9vw, 8rem) 0 clamp(3rem, 6vw, 5rem);
-  height: 100vh;
+  min-height: min(42rem, 90svh);
+  height: auto;
 }
 
 .contact-hero__inner {

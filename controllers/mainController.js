@@ -1,3 +1,4 @@
+import { SITE_FACTS } from '../helpers/siteFacts.js';
 import pool from '../util/db.js';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
@@ -10,10 +11,8 @@ import {
 import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
-// Öffentliches Google-Profil (aus sameAs im JSON-LD) – zentral hier gepflegt,
-// damit Trust-Sektion und "Alle Bewertungen"-Button konsistent bleiben.
-const GOOGLE_PROFILE_URL = 'https://www.google.com/maps/place/Komplett+Webdesign/@52.451726,11.6969877,8z/data=!3m1!4b1!4m6!3m5!1s0x40da1c9a5b81fab7:0x71f65ccfd1ed06f0!8m2!3d52.45906!4d13.0157992!16s%2Fg%2F11xs7y9j31?entry=ttu';
-const GOOGLE_REVIEW_URL  = 'https://g.page/r/CfAG7dHPXPZxEAE/review';
+const GOOGLE_PROFILE_URL = SITE_FACTS.googleProfileUrl;
+const GOOGLE_REVIEW_URL = SITE_FACTS.googleReviewUrl;
 const MIN_REVIEWS_FOR_AGGREGATE = 3;
 
 const HOMEPAGE_FAQ = {
@@ -111,7 +110,7 @@ const HOMEPAGE_I18N = {
     ogTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
     ogDescription: 'Individuelle Websites für kleine Unternehmen in Berlin mit klaren Leistungen, transparenten Paketen und persönlicher Umsetzung.',
     heroBadge: 'Komplett Webdesign aus Berlin',
-    heroTitle: 'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand',
+    heroTitle: 'Persönliche Websites für kleine Unternehmen in Berlin',
     heroTitle2: '',
     heroSubline: 'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin. Mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
     heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
@@ -276,7 +275,7 @@ export async function getIndex(req, res) {
   try {
     const lng = resolveHomeLanguage(req);
     const pagePath = lng === 'en' ? '/en' : '/';
-    const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+    const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
     const visiblePackages = res.locals.visiblePackages || await pricingService.getPackagesForHome();
     const packagePriceMap = res.locals.packagePriceMap || await pricingService.getPackagePriceMap();
     const lowestPackagePriceLabel = res.locals.lowestPackagePriceLabel || await pricingService.getLowestVisiblePackagePriceLabel();
@@ -391,7 +390,7 @@ export async function getIndex(req, res) {
       latestPost: latestPostLocalized,
       review: reviewLocalized,
       trustReviews,
-      reviewAggregate,
+      reviewAggregate: { avg: SITE_FACTS.googleRating.ratingValue, count: SITE_FACTS.googleRating.reviewCount },
       googleProfileUrl: GOOGLE_PROFILE_URL,
       googleReviewUrl: GOOGLE_REVIEW_URL,
       faq: homepageFaq,
@@ -425,9 +424,19 @@ export async function postDeleteUser(req, res) {
 
 export async function getAbout(req, res) {
   res.render('about', {
-    title: 'Über uns - Wer ist Komplett Webdesign?',
-    description: 'Erfahren Sie mehr über Komplett Webdesign und mich. Ich bin ein leidenschaftlicher Webentwickler aus Berlin, der es liebt, kreative und funktionale Websites zu erstellen.',
-    keywords: 'Webdesign,Webentwicklung,Über uns,Komplett Webdesign'
+    title: 'Über mich: Sören Blocksdorf | Webdesigner in Berlin',
+    description: 'Lerne Sören Blocksdorf kennen: dein persönlicher Webdesigner und Webentwickler für kleine Unternehmen in Berlin.',
+    keywords: 'Webdesign,Webentwicklung,Über mich,Komplett Webdesign',
+    structuredDataBlocks: [{
+      '@context': 'https://schema.org',
+      '@type': 'AboutPage',
+      '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/about#webpage`,
+      url: `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/about`,
+      name: 'Über Sören Blocksdorf',
+      mainEntity: { '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/#person` },
+      about: { '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/#organization` },
+      inLanguage: 'de-DE'
+    }]
   });
 }
 

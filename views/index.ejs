@@ -42,7 +42,7 @@ const currentLang = typeof lng !== 'undefined' ? lng : 'de';
 const isEn = currentLang === 'en';
 const schemaBase = (typeof canonicalBaseUrl !== 'undefined' && canonicalBaseUrl
   ? canonicalBaseUrl
-  : 'https://komplettwebdesign.de').replace(/\/$/, '');
+  : 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 const schemaHomeUrl = `${schemaBase}/`;
 const schemaOrgId = `${schemaBase}/#organization`;
 const schemaWebsiteId = `${schemaBase}/#website`;
@@ -77,66 +77,8 @@ const faqSchema = faqEntries.length ? {
 } : null;
 const structuredDataBlocks = [
   faqSchema,
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    '@id': schemaOrgId,
-    name: 'Komplett Webdesign',
-    url: schemaHomeUrl,
-    logo: {
-      '@type': 'ImageObject',
-      url: `${schemaBase}/images/LogoTransparent.webp`,
-      width: 400,
-      height: 400
-    },
-    image: [
-      `${schemaBase}/images/LogoTransparent.webp`,
-      `${schemaBase}/images/home-hero-klarblick-desktop.webp`
-    ],
-    description: `Persönliches Webdesign, technische SEO-Grundlagen und ${homePackagesPriceText}.`,
-    areaServed: [
-      { '@type': 'Country', name: 'Deutschland' },
-      { '@type': 'City', name: 'Berlin' },
-      { '@type': 'State', name: 'Brandenburg' }
-    ],
-    priceRange: homeLowestPackagePriceLabel ? `ab ${homeLowestPackagePriceLabel}` : 'nach Angebot',
-    email: 'kontakt@komplettwebdesign.de',
-    telephone: '+49 1551 245048',
-    sameAs: [
-      'https://www.instagram.com/KomplettWebdesign',
-      'https://www.facebook.com/profile.php?id=61579580713573',
-      'https://www.youtube.com/@KomplettWebdesign',
-      'https://www.threads.com/@komplettwebdesign',
-      'https://www.tiktok.com/@komplett.webdesign',
-      'https://www.linkedin.com/in/komplettwebdesign'
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+49 1551 245048',
-      email: 'kontakt@komplettwebdesign.de',
-      contactType: 'customer support',
-      availableLanguage: ['de', 'en']
-    }
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    '@id': schemaPersonId,
-    name: 'Sören Blocksdorf',
-    jobTitle: 'Webdesigner und Webentwickler',
-    description: 'Freiberuflicher Webdesigner und Entwickler aus Berlin mit Schwerpunkt auf individuellen Websites, technischer SEO-Grundlage und klarer Angebotsstruktur.',
-    url: schemaHomeUrl,
-    email: 'kontakt@komplettwebdesign.de',
-    telephone: '+49 1551 245048',
-    worksFor: { '@id': schemaOrgId },
-    knowsAbout: ['Webdesign', 'Webentwicklung', 'technische SEO-Grundlagen', 'Local SEO', 'Node.js', 'EJS'],
-    knowsLanguage: ['de', 'en'],
-    sameAs: [
-      'https://www.linkedin.com/in/komplettwebdesign',
-      'https://www.instagram.com/KomplettWebdesign',
-      'https://www.youtube.com/@KomplettWebdesign'
-    ]
-  },
+  typeof organizationSchema !== 'undefined' ? organizationSchema : null,
+  typeof personSchema !== 'undefined' ? personSchema : null,
   {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -165,12 +107,12 @@ const structuredDataBlocks = [
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     '@id': `${schemaBase}/#webpage`,
-    name: 'Website erstellen lassen in Berlin',
+    name: isEn ? 'Personal web design in Berlin' : 'Persönliches Webdesign in Berlin',
     description: `Komplett Webdesign plant und entwickelt individuelle Websites für kleine Unternehmen in Berlin. Technische SEO-Grundlagen, ${homePackagesPriceText} und separate Zusatzleistungen werden transparent abgegrenzt.`,
     url: schemaHomeUrl,
     inLanguage: isEn ? 'en-US' : 'de-DE',
     datePublished: '2024-01-01',
-    dateModified: new Date().toISOString().split('T')[0],
+    dateModified: '2026-10-23',
     isPartOf: { '@id': schemaWebsiteId },
     about: { '@id': schemaOrgId },
     author: { '@id': schemaPersonId },
@@ -225,6 +167,7 @@ const homePackageImages = {
               <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
                 <span class="home-hero-title-primary"><%= copy.heroTitle %></span>
               </h1>
+              <p class="home-author-intro"><%= isEn ? 'I’m Sören Blocksdorf, your web designer and developer in Berlin. I help small businesses plan and build their websites.' : 'Ich bin Sören Blocksdorf, dein Webdesigner und Webentwickler in Berlin. Ich begleite kleine Unternehmen von der Planung bis zur fertigen Website.' %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
               <% if (copy.heroTitle2) { %>
               <p class="home-hero-claim home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroTitle2 %></p>
               <% } %>
@@ -704,7 +647,7 @@ const homePackageImages = {
                   <% } %>
                   <div>
                     <div class="trust-review-author"><%= r.author %></div>
-                    <div class="trust-review-stars" aria-label="<%= r.rating %> von 5 Sternen">
+                    <div class="trust-review-stars" role="img" aria-label="<%= r.rating %> von 5 Sternen">
                       <% for (let i = 1; i <= 5; i++) { %>
                       <i class="fas fa-star<%= i <= r.rating ? '' : '-o' %>" aria-hidden="true"></i>
                       <% } %>

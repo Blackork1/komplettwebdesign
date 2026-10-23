@@ -13,6 +13,8 @@
             <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo" loading="lazy" />
           </a>
 
+          <%- include('business-contact') %>
+
           <div class="newsletter">
             <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
             <form action="/newsletter/signup" method="POST" class="newsletter-form" data-recaptcha="v3" data-recaptcha-action="newsletter_signup">

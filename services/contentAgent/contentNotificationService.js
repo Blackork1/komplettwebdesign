@@ -99,7 +99,7 @@ function canonicalAdminOrigin(value) {
     value,
     process.env.CANONICAL_BASE_URL,
     process.env.BASE_URL,
-    'https://komplettwebdesign.de'
+    'https://www.komplettwebdesign.de'
   ];
   for (const candidate of candidates) {
     try {
@@ -109,7 +109,7 @@ function canonicalAdminOrigin(value) {
       // Die nächste kanonische Quelle wird geprüft.
     }
   }
-  return 'https://komplettwebdesign.de';
+  return 'https://www.komplettwebdesign.de';
 }
 
 async function assertActiveLease(leaseGuard) {

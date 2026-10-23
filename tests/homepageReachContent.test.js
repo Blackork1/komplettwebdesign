@@ -32,7 +32,7 @@ function renderIndustrySection(lng = 'de') {
 }
 
 test('die deutsche Startseite beginnt mit Nutzen, Angebot und zwei eindeutigen Handlungen', () => {
-  assert.match(controller, /heroTitle:\s*'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand'/);
+  assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
   assert.match(controller, /Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin/);
   assert.match(controller, /heroCtaPrimary:\s*'Beratungsgespräch anfragen'/);
   assert.match(controller, /heroCtaSecondary:\s*'Pakete ansehen'/);

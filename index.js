@@ -1,3 +1,9 @@
+import { buildLlmsText, buildPricingMarkdown } from './helpers/llmsText.js';
+import pricingService from './services/pricingService.js';
+import { contentImage } from './helpers/contentImage.js';
+import { buildOrganizationSchema, buildPersonSchema } from './helpers/entitySchema.js';
+import { SITE_FACTS } from './helpers/siteFacts.js';
+import { publicSeoMiddleware, shouldNoindexPublicPath, canonicalPublicPath } from './middleware/publicSeo.js';
 import { webcrypto } from 'crypto';
 if (!global.crypto) {
   global.crypto = webcrypto;
@@ -115,6 +121,8 @@ const __dirname = path.dirname(__filename);
 // Cookie-Parser für Cookie-Zustimmung
 const app = express();
 Object.assign(app.locals, {
+  siteFacts: SITE_FACTS,
+  contentImage,
   escapeHtml,
   escapeJsonForHtml,
   safeComponentTag,
@@ -204,6 +212,32 @@ function resolveRequestBaseUrl(req) {
 }
 
 app.disable('x-powered-by');      
+app.use((req, res, next) => {
+  // Security headers for browser hardening and external security checks.
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com"
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  const forwardedProto = (req.get('x-forwarded-proto') || req.protocol || '')
+    .toString()
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  const isHttpsRequest = forwardedProto === 'https';
+
+  // HSTS only when HTTPS is in use (mainly production behind proxy/CDN).
+  if (isProd && isHttpsRequest) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+
+  next();
+});
+
 // Header unterdrücken
 // 2) nur in Production aktivieren
 if (isProd) {
@@ -227,7 +261,9 @@ if (isProd) {
 
     if (needsHttps || needsCanonicalHost) {
       // Pfad + Query aus req.originalUrl (inkl. "/kontakt" oder "?foo=bar")
-      const suffix = req.originalUrl || '/';
+      const original = req.originalUrl || '/';
+      const queryStart = original.indexOf('?');
+      const suffix = canonicalPublicPath(queryStart < 0 ? original : original.slice(0, queryStart)) + (queryStart < 0 ? '' : original.slice(queryStart));
       const targetHost = needsCanonicalHost ? configuredCanonicalHost : hostname;
       const redirectTo = `https://${targetHost}${suffix}`;
       return res.redirect(301, redirectTo);
@@ -237,32 +273,10 @@ if (isProd) {
   });
 }
 
+app.use(publicSeoMiddleware);
+
 app.use(compression());
 
-app.use((req, res, next) => {
-  // Security headers for browser hardening and external security checks.
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader(
-    'Content-Security-Policy',
-    "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
-  );
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  const forwardedProto = (req.get('x-forwarded-proto') || req.protocol || '')
-    .toString()
-    .split(',')[0]
-    .trim()
-    .toLowerCase();
-  const isHttpsRequest = forwardedProto === 'https';
-
-  // HSTS only when HTTPS is in use (mainly production behind proxy/CDN).
-  if (isProd && isHttpsRequest) {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
-  }
-
-  next();
-});
 
 app.use((req, res, next) => {
   const pathOnly = ((req.originalUrl || req.url || '/').split('?')[0] || '/').trim() || '/';
@@ -274,13 +288,15 @@ app.use((req, res, next) => {
   const base = configuredCanonicalBase || resolveRequestBaseUrl(req);
   const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
   const canonicalUrl = `${base}${normalizedPath === '/' ? '/' : normalizedPath}`;
-  const shouldNoindex = noIndexPrefixes.some((prefix) => req.path === prefix || req.path.startsWith(prefix));
+  const shouldNoindex = shouldNoindexPublicPath(normalizedPath) || noIndexPrefixes.some((prefix) => req.path === prefix || req.path.startsWith(prefix));
 
   res.locals.assetVersion = app.locals.assetVersion;
   res.locals.asset = app.locals.asset;
   res.locals.jsAsset = app.locals.jsAsset;
   res.locals.cssAsset = app.locals.cssAsset;
   res.locals.canonicalBaseUrl = base;
+  res.locals.organizationSchema = buildOrganizationSchema(base);
+  res.locals.personSchema = buildPersonSchema(base);
   res.locals.canonicalUrl = canonicalUrl;
   res.locals.currentPathname = normalizedPath;
   res.locals.currentSearch = queryString;
@@ -307,6 +323,12 @@ app.get('/demo/cq-compare', async (_req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+app.get(['/llms.txt', '/pricing.md'], async (req, res, next) => {
+  try {
+    const packages = await pricingService.getVisiblePackages();
+    res.type('text/plain').set('Cache-Control', 'public, max-age=300').send(req.path === '/pricing.md' ? buildPricingMarkdown(packages) : buildLlmsText(packages));
+  } catch (error) { next(error); }
 });
 app.use(express.static(publicDir, staticOpts));
 app.get('/assets/js/axios.min.js', (_req, res) => {

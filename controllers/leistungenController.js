@@ -680,7 +680,7 @@ export async function showLeistungPage(req, res, next) {
       return next();
     }
 
-    const row = normalizeLegacyPublicCopy(rows[0]);
+    const row = normalizeLegacyPublicCopy(rows[0], res.locals.packagePricing || {});
     const override = SERVICE_PAGE_OVERRIDES[slug] || {};
     const dbMetaDescription = trimOrEmpty(row.meta_description);
     const fallbackMetaDescription = trimOrEmpty(

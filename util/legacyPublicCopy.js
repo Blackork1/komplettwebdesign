@@ -1,3 +1,17 @@
+import { packages } from '../data/packages.js';
+import { buildPricingViewModel, interpolatePricingTokens } from './pricingViewModel.js';
+import { SITE_FACTS } from '../helpers/siteFacts.js';
+
+const fallbackPricing = buildPricingViewModel({
+  visiblePackages: packages,
+  lowestPackagePriceLabel: packages[0].priceLabel
+});
+const CURRENT_START = '{{price.start}}';
+const CURRENT_BUSINESS = '{{price.business}}';
+const CURRENT_GROWTH = '{{price.wachstum}}';
+const CURRENT_CUSTOM = '{{price.individuell}}';
+const CURRENT_PACKAGES = `Start ${CURRENT_START}, Business ${CURRENT_BUSINESS} und Wachstum ${CURRENT_GROWTH}`;
+
 const LEGACY_COPY_REPLACEMENTS = [
   [/&amp;nbsp;|&nbsp;|&#160;/gi, ' '],
   [/&uuml;/g, 'ü'],
@@ -30,59 +44,39 @@ const LEGACY_COPY_REPLACEMENTS = [
   [/sollte ich fuer Usability-Tests/g, 'sollte ich für Usability-Tests'],
   [/coden koennen fuer UX\/UI Design/g, 'coden können für UX/UI Design'],
   [/Tests moeglich/g, 'Tests möglich'],
-  [/Café Website erstellen lassen Berlin - günstig ab 499€ ☕/g, 'Café Website erstellen lassen Berlin | Webdesign nach aktueller Paketlogik'],
-  [/Blumenladen Website erstellen - Webdesign für Floristen Berlin ab 499€/g, 'Blumenladen Website erstellen - Webdesign für Floristen Berlin nach aktueller Paketlogik'],
-  [/Basis ab 499(?:&nbsp;|\s)*€?, mit Reservierung (?:&amp;|&)\s*SEO ab 899(?:&nbsp;|\s)*€?, individuell ab 1\.499(?:&nbsp;|\s)*€\.?/gi, 'Start, Business und Wachstum werden nach aktueller Paketlogik eingeordnet; Reservierung, SEO-Zusatzleistungen und Sonderfunktionen werden separat eingeordnet.'],
-  [/Ein professioneller Einstieg ist ab 499 EUR möglich\./gi, 'Ein professioneller Einstieg wird nach aktuellem Paketumfang eingeordnet.'],
-  [/Transparente Pakete ab 499 EUR/gi, 'Transparente Pakete nach aktueller Paketlogik'],
-  [/ab\s*499\s*,-\s*€/gi, 'nach aktueller Paketlogik'],
-  [/ab\s*499\s*€/gi, 'nach aktueller Paketlogik'],
-  [/ab\s*499\s*EUR/gi, 'nach aktueller Paketlogik'],
-  [/(?<![\d.])499\s*€/gi, 'aktueller Paketpreis'],
-  [/(?<![\d.])499\s*EUR/gi, 'aktueller Paketpreis'],
-  [/(?<![\d.])899\s*€/gi, 'aktueller Business-Paketrahmen'],
-  [/(?<![\d.])899\s*EUR/gi, 'aktueller Business-Paketrahmen'],
-  [/499\s*\/\s*899\s*\/\s*1\.499\s*€/gi, 'Start/Business/Wachstum'],
-  [/499\s*\/\s*899\s*\/\s*1\.499\s*EUR/gi, 'Start/Business/Wachstum'],
-  [/799(?:&nbsp;|\s)*€,\s*1\.499(?:&nbsp;|\s)*€\s*und\s*1\.499(?:&nbsp;|\s)*€/gi, 'Start, Business und Wachstum'],
-  [/799(?:&nbsp;|\s)*€\s*,\s*1\.499(?:&nbsp;|\s)*€\s*,\s*1\.499(?:&nbsp;|\s)*€/gi, 'Start, Business und Wachstum'],
-  [/799(?:&nbsp;|\s)*€\s*\/\s*1\.499(?:&nbsp;|\s)*€\s*\/\s*1\.499(?:&nbsp;|\s)*€/gi, 'Start/Business/Wachstum'],
-  [/(<strong>)799(?:&nbsp;|\s)*€(<\/strong>,\s*<strong>)1\.499(?:&nbsp;|\s)*€(<\/strong>,\s*<strong>)1\.499(?:&nbsp;|\s)*€(<\/strong>)/gi, '$1Start$2Business$3Wachstum$4'],
-  [/Komplett Webdesign Basis\s+799(?:&nbsp;|\s)*€/gi, 'Komplett Webdesign Start'],
-  [/Komplett Webdesign Business\s+1\.499(?:&nbsp;|\s)*€/gi, 'Komplett Webdesign Business'],
-  [/Komplett Webdesign Premium\s+1\.499(?:&nbsp;|\s)*€/gi, 'Komplett Webdesign Wachstum'],
-  [/(<td>)Komplett Webdesign Basis(<\/td>\s*<td>)799(?:&nbsp;|\s)*€(<\/td>)/gi, '$1Komplett Webdesign Start$2nach aktueller Paketlogik$3'],
-  [/(<td>)Komplett Webdesign Business(<\/td>\s*<td>)1\.499(?:&nbsp;|\s)*€(<\/td>)/gi, '$1Komplett Webdesign Business$2nach aktueller Paketlogik$3'],
-  [/(<td>)Komplett Webdesign Premium(<\/td>\s*<td>)1\.499(?:&nbsp;|\s)*€(<\/td>)/gi, '$1Komplett Webdesign Wachstum$2nach aktueller Paketlogik$3'],
-  [/Basis\s*\(\s*799(?:&nbsp;|\s)*€\s*\)/gi, 'Start'],
-  [/Premium\s*\(\s*1\.499(?:&nbsp;|\s)*€\s*\)/gi, 'Wachstum'],
-  [/Budgets:\s*ab 799(?:&nbsp;|\s)*€\s*\(Basis\),\s*1\.499(?:&nbsp;|\s)*€\s*\(Business\),\s*1\.499(?:&nbsp;|\s)*€\s*\(Premium\)/gi, 'Budgets: Start, Business und Wachstum'],
-  [/Angebotspakete:\s*Basis\s*\(\s*799(?:&nbsp;|\s)*€\s*\)\s*,\s*Business\s*\(\s*1\.499(?:&nbsp;|\s)*€\s*\)\s*,\s*Premium\s*\(\s*1\.499(?:&nbsp;|\s)*€\s*\)/gi, 'Angebotspakete: Start, Business und Wachstum'],
+  [/Café Website erstellen lassen Berlin - günstig ab 499€ ☕/g, `Café-Website erstellen lassen Berlin | ${CURRENT_START}`],
+  [/Blumenladen Website erstellen - Webdesign für Floristen Berlin ab 499€/g, `Blumenladen-Website erstellen lassen Berlin | ${CURRENT_START}`],
+  [/Basis ab 499\s*€?, mit Reservierung &\s*SEO ab 899\s*€?, individuell ab 1\.499\s*€\.?/gi, `${CURRENT_PACKAGES}; individuelle Funktionen ${CURRENT_CUSTOM}. Reservierung und zusätzliche SEO-Leistungen werden separat kalkuliert.`],
+  [/Zwischen\s+499\s*€(?:\s*\(Basis\))?\s+und\s+1\.499\s*€(?:\s*\(Premium\))?\s*(?:–|-|,)?\s*(?:je nach|abhängig vom) [^.]+\.?/gi, `${CURRENT_PACKAGES}. Zusatzleistungen werden separat kalkuliert.`],
+  [/499\s*\/\s*899\s*\/\s*1\.499\s*(?:€|EUR)/gi, CURRENT_PACKAGES],
+  [/799\s*€\s*(?:,|\/)\s*1\.499\s*€\s*(?:,|und|\/)\s*1\.499\s*€/gi, CURRENT_PACKAGES],
+  [/(<strong>)799\s*€(<\/strong>,\s*<strong>)1\.499\s*€(<\/strong>,\s*<strong>)1\.499\s*€(<\/strong>)/gi, `$1Start ${CURRENT_START}$2Business ${CURRENT_BUSINESS}$3Wachstum ${CURRENT_GROWTH}$4`],
+  [/(<td>)Komplett Webdesign Basis(<\/td>\s*<td>)(?:499|799)\s*€(<\/td>)/gi, `$1Komplett Webdesign Start$2${CURRENT_START}$3`],
+  [/(<td>)Komplett Webdesign Premium(<\/td>\s*<td>)1\.499\s*€(<\/td>)/gi, `$1Komplett Webdesign Wachstum$2${CURRENT_GROWTH}$3`],
+  [/\bBasis\s*(?:ab\s*)?(?:499|799)\s*(?:€|EUR)/gi, `Start ${CURRENT_START}`],
+  [/\bBusiness\s*(?:ab\s*|[:\-–]\s*)?899\s*(?:€|EUR)/gi, `Business ${CURRENT_BUSINESS}`],
+  [/\bPremium\s*(?:ab\s*|[:\-–]\s*)?1\.499\s*(?:€|EUR)/gi, `Wachstum ${CURRENT_GROWTH}`],
+  [/Basis\s*\(\s*799\s*€\s*\)/gi, `Start (${CURRENT_START})`],
+  [/Premium\s*\(\s*1\.499\s*€\s*\)/gi, `Wachstum (${CURRENT_GROWTH})`],
+  [/ab\s*499\s*(?:,-\s*)?(?:€|EUR)/gi, CURRENT_START],
+  [/(?<![\d.])499\s*(?:€|EUR)/gi, CURRENT_START],
+  [/(?<![\d.])899\s*(?:€|EUR)/gi, CURRENT_BUSINESS],
   [/(<h3 class="h5">)Basis(<\/h3>)/gi, '$1Start$2'],
   [/(<h3 class="h5">)Premium(<\/h3>)/gi, '$1Wachstum$2'],
   [/(<td>)Basis(<\/td>)/gi, '$1Start$2'],
   [/(<td>)Premium(<\/td>)/gi, '$1Wachstum$2'],
-  [/Basis\s+ab\s*499\s*€/gi, 'Start nach aktueller Paketlogik'],
-  [/Basis\s+ab\s*799\s*€/gi, 'Start nach aktueller Paketlogik'],
-  [/\bBasis\s+799(?:&nbsp;|\s)*€/gi, 'Start nach aktueller Paketlogik'],
-  [/Business\s+ab\s*899\s*€/gi, 'Business nach aktueller Paketlogik'],
-  [/\bBusiness\s+1\.499(?:&nbsp;|\s)*€/gi, 'Business nach aktueller Paketlogik'],
-  [/Business\s*[:\-–]\s*899\s*€/gi, 'Business: aktuelle Paketlogik'],
-  [/Premium\s*[:\-–]\s*1\.499\s*€/gi, 'Wachstum: aktuelle Paketlogik'],
-  [/Premium\s+ab\s*1\.499(?:\s|\u202f|&nbsp;)*€/gi, 'Wachstum nach aktueller Paketlogik'],
-  [/\bPremium\s+1\.499(?:&nbsp;|\s)*€/gi, 'Wachstum nach aktueller Paketlogik'],
-  [/Basis ab 799 €, Business ab 1\.499 €, Premium ab 1\.499(?:\s|\u202f|&nbsp;)*€\s*[–-]\s*je nach Seitenzahl, Funktionsumfang und Bildmaterial\. Laufende Kosten bleiben schlank und transparent\./gi, 'Start, Business und Wachstum werden nach aktueller Paketlogik eingeordnet; Umfang, Funktionen, Inhalte und laufende Kosten werden separat eingeordnet.'],
-  [/Laufende Kosten bleiben schlank und transparent\./gi, 'Laufende Kosten werden separat eingeordnet.'],
-  [/Zwischen\s+499(?:&nbsp;|\s)*€(?:\s*\(Basis\))?\s+und\s+1\.499(?:&nbsp;|\s)*€(?:\s*\(Premium\))?\s*(?:–|-|,)?\s*(?:je nach|abhängig vom) [^.]+\.?/gi, 'Start, Business und Wachstum werden nach aktueller Paketlogik eingeordnet; Zusatzleistungen werden separat eingeordnet.'],
-  [/mit Reservierung (?:&amp;|&)\s*SEO ab 899(?:&nbsp;|\s)*€/gi, 'mit Reservierung oder SEO-Zusatzleistung nach Aufwand'],
   [/Basis-Paket/g, 'Start-Paket'],
   [/Premium-Paket/g, 'Wachstum-Paket'],
   [/Zum Basis-Paket/g, 'Zum Start-Paket'],
   [/Zum Premium-Paket/g, 'Zum Wachstum-Paket'],
   [/Basis\/Business\/Premium/g, 'Start/Business/Wachstum'],
-  [/ab 799 € \(Basis\),\s*1\.499 € \(Business\),\s*1\.499 € \(Premium\)/gi, 'Start, Business und Wachstum'],
-  [/799(?:&nbsp;|\s)*€\s*\(Basis\),\s*1\.499(?:&nbsp;|\s)*€\s*\(Business\),\s*1\.499(?:&nbsp;|\s)*€\s*\(Premium\)/gi, 'Start, Business und Wachstum'],
-  [/Preisanker:\s*799(?:&nbsp;|\s)*€\s*\/\s*1\.499(?:&nbsp;|\s)*€\s*\/\s*1\.499(?:&nbsp;|\s)*€/gi, 'Preislogik: Start/Business/Wachstum'],
+  [/Laufende Kosten bleiben schlank und transparent\./gi, 'Laufende Kosten werden separat vereinbart.'],
+  [/(?:nach aktueller Paketlogik|aktueller Paketpreis|nach aktuellem Paketumfang)/gi, CURRENT_START],
+  [/aktueller Business-Paketrahmen/gi, CURRENT_BUSINESS],
+  [/aktuelle Paketlogik/gi, CURRENT_START],
+  [/tel:\+49\s*1525\s*4350378|tel:\+49\s*1551\s*245048/g, () => `tel:${SITE_FACTS.phone}`],
+  [/\+49[\s.-]*1525[\s.-]*4350378/g, () => SITE_FACTS.phoneDisplay],
+  [/\+49[\s.-]*1551[\s.-]*245048/g, () => SITE_FACTS.phoneDisplay],
   [/href="\/downloads\/vorteile-professionelle-website\.pdf"/g, 'href="/webdesign-berlin/kosten-preise-pakete"'],
   [/PDF: Vor- (?:&amp;|&)\s*Nachteile im Überblick \(bald verfügbar\)/g, 'Kosten- und Paketlogik ansehen'],
   [/\/pakete\/basis/g, '/pakete/start'],
@@ -138,16 +132,17 @@ const LEGACY_COPY_REPLACEMENTS = [
   [/alles inklusive/gi, 'klar abgegrenzter Umfang']
 ];
 
-export function normalizeLegacyPublicCopy(value) {
+export function normalizeLegacyPublicCopy(value, pricing = fallbackPricing) {
   if (typeof value === 'string') {
-    return LEGACY_COPY_REPLACEMENTS.reduce(
+    const normalized = LEGACY_COPY_REPLACEMENTS.reduce(
       (current, [pattern, replacement]) => current.replace(pattern, replacement),
       value
     );
+    return interpolatePricingTokens(normalized, pricing);
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeLegacyPublicCopy(item));
+    return value.map((item) => normalizeLegacyPublicCopy(item, pricing));
   }
 
   if (value instanceof Date) {
@@ -156,9 +151,13 @@ export function normalizeLegacyPublicCopy(value) {
 
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, normalizeLegacyPublicCopy(item)])
+      Object.entries(value).map(([key, item]) => [key, normalizeLegacyPublicCopy(item, pricing)])
     );
   }
 
   return value;
+}
+
+export function stripEmbeddedStructuredData(html) {
+  return String(html || '').replace(/<script\b(?=[^>]*\btype\s*=\s*["']application\/ld\+json["'])[^>]*>[\s\S]*?<\/script\s*>/gi, '');
 }

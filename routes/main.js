@@ -5,8 +5,7 @@ const router = express.Router();
 
 router.get('/', mainCtrl.getIndex);
 router.get('/de', (req, res) => {
-  req.params.lng = 'de';
-  return mainCtrl.getIndex(req, res);
+  return res.redirect(301, '/');
 });
 router.get('/en', (req, res) => {
   req.params.lng = 'en';

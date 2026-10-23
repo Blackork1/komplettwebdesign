@@ -146,7 +146,8 @@ const hasMorePosts = renderedCurrentPage < renderedTotalPages;
           <div class="rg-featured-list">
             <% (featuredPosts || []).forEach(function(post) { %>
             <a href="/blog/<%= post.slug %>" class="rg-featured-item" aria-label="<%= post.title %>">
-              <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="lazy" />
+              <% const postPicture = typeof contentImage === 'function' ? contentImage(post.image_url || '/images/default-blog.webp') : { src: post.image_url || '/images/default-blog.webp' }; %>
+              <img src="<%= postPicture.src %>"<% if (postPicture.srcset) { %> srcset="<%= postPicture.srcset %>" sizes="<%= postPicture.sizes %>"<% } %><% if (postPicture.width) { %> width="<%= postPicture.width %>" height="<%= postPicture.height %>"<% } %> alt="<%= post.title %>" loading="lazy" />
               <div>
                 <strong><%= post.title %></strong>
                 <% if (post.excerpt) { %>
@@ -179,7 +180,8 @@ const hasMorePosts = renderedCurrentPage < renderedTotalPages;
       <% (featuredPosts || []).forEach(function(post) { %>
       <article class="rg-featured-mobile-card">
         <a href="/blog/<%= post.slug %>" aria-label="<%= post.title %>">
-          <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="lazy" />
+          <% const postPicture = typeof contentImage === 'function' ? contentImage(post.image_url || '/images/default-blog.webp') : { src: post.image_url || '/images/default-blog.webp' }; %>
+              <img src="<%= postPicture.src %>"<% if (postPicture.srcset) { %> srcset="<%= postPicture.srcset %>" sizes="<%= postPicture.sizes %>"<% } %><% if (postPicture.width) { %> width="<%= postPicture.width %>" height="<%= postPicture.height %>"<% } %> alt="<%= post.title %>" loading="lazy" />
           <h3><%= post.title %></h3>
         </a>
       </article>

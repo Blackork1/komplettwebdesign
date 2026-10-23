@@ -1,3 +1,4 @@
+import { shouldIncludeIndustryInSitemap } from '../helpers/seoPagePolicy.js';
 // controllers/industriesController.js
 import pool from '../util/db.js';
 import { getIndustryBySlug } from '../models/industryModel.js'; // vorhanden bei dir
@@ -252,7 +253,7 @@ export async function listIndustries(req, res) {
 
     const visibleRows = rows
       .filter((r) => !isExcludedIndustry(r))
-      .map((r) => normalizeLegacyPublicCopy(r));
+      .map((r) => normalizeLegacyPublicCopy(r, res.locals.packagePricing || {}));
     const featured = visibleRows.filter(r => r.featured);
     const others   = visibleRows.filter(r => !r.featured);
     const industryGroups = buildIndustryGroups(visibleRows);
@@ -290,7 +291,7 @@ export async function listIndustries(req, res) {
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
   try {
-    const industry = normalizeLegacyPublicCopy(await getIndustryBySlug(slug));
+    const industry = normalizeLegacyPublicCopy(await getIndustryBySlug(slug), res.locals.packagePricing || {});
     if (!industry) {
       return res.status(404).render('404', {
         title: 'Branche nicht gefunden',
@@ -301,6 +302,10 @@ export async function showIndustryPage(req, res) {
     const baseUrl = resolveBaseUrl(req);
     const url = `${baseUrl}${req.originalUrl}`;
     const jsonLd = buildIndustrySchemas({ industry, url, baseUrl });
+    if (!shouldIncludeIndustryInSitemap(industry)) {
+      res.locals.robots = 'noindex,follow';
+      res.setHeader('X-Robots-Tag', 'noindex, follow');
+    }
 
     res.render('industries/show.ejs', {
       title: industry.title || (`Webdesign für ${industry.name}`),
