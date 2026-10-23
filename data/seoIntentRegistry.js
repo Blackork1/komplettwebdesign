@@ -40,6 +40,15 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     redirectTo: '/webdesign-berlin'
   }),
   freezeTarget({
+    path: '/webdesign-kleine-unternehmen-berlin',
+    intentId: 'brand-overview',
+    state: 'redirect',
+    priority: 'B',
+    primaryQuery: 'webdesign kleine unternehmen berlin',
+    requiredLinks: [],
+    redirectTo: '/'
+  }),
+  freezeTarget({
     path: '/pakete',
     intentId: 'webdesign-preise-berlin',
     state: 'active',

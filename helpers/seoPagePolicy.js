@@ -33,7 +33,6 @@ export const INDEXABLE_STATIC_ROUTES = [
   { path: '/leistungen/website-relaunch', changefreq: 'monthly', priority: 0.9 },
   { path: '/leistungen/website-audit', changefreq: 'monthly', priority: 0.82 },
   { path: '/leistungen/landingpage-erstellen-lassen', changefreq: 'monthly', priority: 0.85 },
-  { path: '/webdesign-kleine-unternehmen-berlin', changefreq: 'monthly', priority: 0.9 },
   { path: '/webdesign-berlin/kosten-preise-pakete', changefreq: 'monthly', priority: 0.9 },
   { path: '/leistungen/laufende-kosten-website', changefreq: 'monthly', priority: 0.75 },
   { path: '/leistungen/zusatzleistungen-webdesign', changefreq: 'monthly', priority: 0.75 },

@@ -94,7 +94,8 @@
   <% } %>
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-  <link rel="preload" href="<%= versionedAsset('assets/css/fa-solid-900.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <%# Gleiche URL wie in solid.min.css (url(fa-solid-900.woff2)), sonst lädt der Browser die Schrift doppelt. %>
+  <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
@@ -109,17 +110,13 @@
   <link rel="preload" href="<%= versionedAsset('fonts/inter-v19-latin-regular.woff2') %>" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="<%= versionedAsset('fonts/poppins-v23-latin-700.woff2') %>" as="font" type="font/woff2" crossorigin />
 
-  <link rel="preload" href="<%= versionedAsset('css/bootstrap.min.css') %>" as="style" />
   <link rel="stylesheet" href="<%= versionedAsset('css/bootstrap.min.css') %>" />
 
-  <link rel="preload" href="<%= cssAsset('css/main.css') %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset('css/main.css') %>" />
 
-  <link rel="preload" href="<%= cssAsset('unified-hero.css') %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset('unified-hero.css') %>" />
 
   <% if (shouldLoadInteractionPolish) { %>
-  <link rel="preload" href="<%= cssAsset('interaction-polish.css') %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset('interaction-polish.css') %>" />
   <% } %>
 
@@ -128,7 +125,6 @@
     <link rel="stylesheet" href="<%= cssAsset('extra.css') %>" />
   </noscript>
 
-  <link rel="preload" href="<%= cssAsset('footer.css') %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset('footer.css') %>" />
 
   <link rel="preload" href="<%= cssAsset('booking-widget.css') %>" as="style" onload="this.rel='stylesheet'" />
@@ -137,7 +133,6 @@
   </noscript>
 
   <% pageCssAssets.forEach((cssFile) => { %>
-  <link rel="preload" href="<%= cssAsset(cssFile) %>" as="style" />
   <link rel="stylesheet" href="<%= cssAsset(cssFile) %>" />
   <% }) %>
 

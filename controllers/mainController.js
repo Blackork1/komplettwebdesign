@@ -20,11 +20,11 @@ const HOMEPAGE_FAQ = {
   de: [
     {
       q: 'Was kostet eine Website bei Komplett Webdesign?',
-      a: 'Website-Pakete starten bei {{lowestPackagePriceLabel}} mit klar definiertem Umfang. Business-Websites starten bei {{price.business}}, Wachstum-Projekte bei {{price.wachstum}} und individuelle Anforderungen bei {{price.individuell}}.'
+      a: 'Website-Pakete starten bei {{lowestPackagePriceLabel}} mit klar definiertem Umfang. Business-Websites gibt es {{price.business}}, Wachstum-Projekte {{price.wachstum}} und individuelle Anforderungen {{price.individuell}}.'
     },
     {
       q: 'Warum starten die Pakete bei {{lowestPackagePriceLabel}}?',
-      a: 'Die Website wird individuell mit Node.js, EJS, CSS und JavaScript umgesetzt. Du bekommst keine Baukasten-Website und kein Standard-Theme, sondern serverseitig gerendertes HTML mit klarer technischer Grundlage.'
+      a: '{{lowestPackagePriceLabel}} deckt den kleinsten sinnvollen Umfang ab: eine kompakte individuelle Website oder einen Onepager mit eigenem Layout, responsiver Umsetzung, technischen SEO-Grundlagen, eingebundenen Inhalten, Kontaktformular und einer Feedbackrunde. Jede Website wird individuell mit Node.js, EJS, CSS und JavaScript entwickelt, ohne Baukasten oder Standard-Theme.'
     },
     {
       q: 'Welches Paket passt für mich?',
@@ -62,7 +62,7 @@ const HOMEPAGE_FAQ = {
   en: [
     {
       q: 'How much does it cost to have a website built?',
-      a: 'Website packages start at {{lowestPackagePriceLabel.en}} for clearly defined scope. Business projects start at {{price.business.en}}, larger websites or relaunches at {{price.wachstum.en}}. Custom functionality is estimated individually.'
+      a: 'Website packages start at {{lowestPackagePriceLabel.en}} for clearly defined scope. Business projects are priced {{price.business.en}}, larger websites or relaunches {{price.wachstum.en}}. Custom functionality is estimated individually.'
     },
     {
       q: 'How long until my website goes live?',
@@ -113,7 +113,7 @@ const HOMEPAGE_I18N = {
     heroBadge: 'Komplett Webdesign aus Berlin',
     heroTitle: 'Persönliche Websites für kleine Unternehmen in Berlin',
     heroTitle2: '',
-    heroSubline: 'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin. Mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
+    heroSubline: 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Ich plane, gestalte und betreue Websites für kleine Unternehmen – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
     heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
@@ -160,7 +160,7 @@ const HOMEPAGE_I18N = {
     heroBadge: 'Komplett Webdesign from Berlin',
     heroTitle: 'Get a custom website built in Berlin',
     heroTitle2: '',
-    heroSubline: 'Individual web design for small businesses, solo professionals and local service providers.',
+    heroSubline: 'I’m Sören, your web designer and developer in Berlin. I plan, design and maintain custom websites for small businesses, solo professionals and local service providers.',
     heroBullet1: 'Built with Node.js, EJS, CSS and JavaScript',
     heroBullet2: 'No builder website and no standard theme',
     heroBullet3: 'Packages from {{lowestPackagePriceLabel.en}} with clear scope boundaries',

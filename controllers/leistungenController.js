@@ -488,7 +488,7 @@ const SERVICE_PAGE_OVERRIDES = {
     ],
     proofBlock: {
       title: 'Preislogik auf einen Blick',
-      text: 'Start beginnt bei {{price.start}}, Business bei {{price.business}}, Wachstum bei {{price.wachstum}} und individuelle Projekte bei {{price.individuell}}. Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
+      text: 'Start gibt es {{price.start}}, Business {{price.business}}, Wachstum {{price.wachstum}} und individuelle Projekte {{price.individuell}}. Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
     },
     trustBlock: {
       title: 'Was separat geplant wird',

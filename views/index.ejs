@@ -167,11 +167,10 @@ const homePackageImages = {
               <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
                 <span class="home-hero-title-primary"><%= copy.heroTitle %></span>
               </h1>
-              <p class="home-author-intro"><%= isEn ? 'I’m Sören, your web designer and developer in Berlin. I help small businesses plan and build their websites.' : 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Ich begleite kleine Unternehmen von der Planung bis zur fertigen Website.' %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
               <% if (copy.heroTitle2) { %>
               <p class="home-hero-claim home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroTitle2 %></p>
               <% } %>
-              <h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroSubline %></h2>
+              <p class="home-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroSubline %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
               <ul class="home-hero-bullets" role="list">
                 <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
                   <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
@@ -410,7 +409,11 @@ const homePackageImages = {
                 <% }); %>
               </div>
             </div>
-            <p class="home-note"><%= copy.pricingTagline %></p>
+            <p class="home-note"><%= copy.pricingTagline %>
+              <% if (!isEn) { %>
+              Was eine Website in Berlin insgesamt kostet, erklärt der Ratgeber <a href="/ratgeber/website-kosten-berlin" class="linkColor">Website-Kosten in Berlin</a>.
+              <% } %>
+            </p>
           </div>
         </div>
       </div>
@@ -594,6 +597,9 @@ const homePackageImages = {
                 : 'Für den detaillierten Ablauf ist die vorhandene Ablaufseite die passende Vertiefung.'
               %>
               <a href="/ablauf" class="linkColor"><%= isEn ? 'View process page' : 'Ablauf ansehen' %></a>
+              <% if (!isEn) { %>
+              Wie lange ein Projekt dauert und was es kostet, zeigt der Ratgeber <a href="/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" class="linkColor">Ablauf, Dauer und Kosten</a>.
+              <% } %>
             </p>
           </div>
         </div>
@@ -796,6 +802,7 @@ const homePackageImages = {
               Your question is not listed? <a href="/en/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Get in touch</a>.
               <% } else { %>
               Deine Frage ist nicht dabei? <a href="/kontakt" class="linkColor" data-track="cta" data-cta-name="home_faq_contact" data-cta-location="home_faq">Schreib mir</a>.
+              Ausführliche Antworten findest du im <a href="/ratgeber" class="linkColor">Ratgeber</a> und im <a href="/blog" class="linkColor">Blog</a>.
               <% } %>
             </p>
           </div>

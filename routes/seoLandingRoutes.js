@@ -24,9 +24,8 @@ router.get('/leistungen/website-audit', renderLanding('website-audit'));
 router.get('/landingpage-erstellen-lassen', (_req, res) => res.redirect(301, '/leistungen/landingpage-erstellen-lassen'));
 router.get('/leistungen/landingpage-erstellen-lassen', renderLanding('landingpage-erstellen-lassen'));
 
-router.get('/webdesign-kleine-unternehmen-berlin', (req, res, next) => {
-  req.params.slug = 'webdesign-kleine-unternehmen-berlin';
-  return showSeoLandingPage(req, res, next);
+router.get('/webdesign-kleine-unternehmen-berlin', (_req, res) => {
+  return res.redirect(301, SEO_RECOVERY_REDIRECTS['/webdesign-kleine-unternehmen-berlin']);
 });
 
 router.get('/ablauf', (req, res, next) => {

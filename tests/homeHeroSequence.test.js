@@ -31,13 +31,14 @@ test('homepage hero has sequenced after-load reveal targets', () => {
   );
   assert.match(
     hero,
-    /<h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll">/
+    /<p class="home-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll">/
   );
   assert.match(
     hero,
     /<p class="home-hero-claim home-hero-reveal home-hero-reveal--support animate-on-scroll">/
   );
 
+  assert.doesNotMatch(hero, /<h2 class="home-hero-reveal/);
   assert.match(hero, /<ul class="home-hero-bullets" role="list">/);
   const bulletItems = hero.match(
     /<li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">/g
@@ -64,7 +65,7 @@ test('homepage hero has sequenced after-load reveal targets', () => {
 
   const h1Index = indexOf(/home-hero-reveal--h1/, 'H1 reveal');
   indexOf(/<span class="hero-badge mb-3 home-hero-reveal home-hero-reveal--support animate-on-scroll">/, 'badge reveal');
-  const h2Index = indexOf(/<h2 class="home-hero-reveal home-hero-reveal--support animate-on-scroll">/, 'H2 reveal');
+  const h2Index = indexOf(/<p class="home-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll">/, 'Lead reveal');
   const bulletsIndex = indexOf(/home-hero-bullets/, 'bullet reveal list');
   const actionsIndex = indexOf(/home-hero-reveal--actions/, 'CTA reveal');
   const trustIndex = indexOf(/home-hero-reveal--trust/, 'trust note reveal');

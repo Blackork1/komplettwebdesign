@@ -950,81 +950,6 @@ export const SEO_LANDING_PAGES = Object.freeze([
     ]
   },
   {
-    slug: 'webdesign-kleine-unternehmen-berlin',
-    path: '/webdesign-kleine-unternehmen-berlin',
-    primaryKeyword: 'webdesign kleine unternehmen berlin',
-    parentBreadcrumb: { label: 'Leistungen', href: '/leistungen' },
-    title: 'Webdesign für kleine Unternehmen in Berlin',
-    description: 'Webdesign für kleine Unternehmen in Berlin: professionelle Websites mit klaren Leistungen, Kontaktwegen, lokaler SEO-Grundlage und fairem Projektumfang.',
-    h1: 'Webdesign für kleine Unternehmen in Berlin',
-    intro: 'Kleine Unternehmen brauchen keine überladene Agentur-Website, sondern einen klaren Auftritt, der Vertrauen schafft und Anfragen leichter macht. Komplett Webdesign entwickelt Websites für lokale Dienstleister, Gastronomie, Handwerk und inhabergeführte Betriebe in Berlin.',
-    sections: [
-      {
-        eyebrow: 'Fokus',
-        heading: 'Klar zeigen, warum Kunden dich wählen sollten',
-        body: 'Viele kleine Unternehmen haben gute Leistungen, aber eine Website, die sie nicht deutlich genug erklärt. Die Seite wird deshalb um Angebot, Einwände, lokale Relevanz und einfache Kontaktaufnahme herum aufgebaut.',
-        points: [
-          'Leistungen und Nutzen schnell erfassbar machen',
-          'Vertrauen durch echte Informationen und Referenzen stärken',
-          'Kontaktwege sichtbar und wiederholbar platzieren'
-        ]
-      },
-      {
-        eyebrow: 'Struktur',
-        heading: 'Kompakt starten und sinnvoll wachsen',
-        body: 'Nicht jedes Unternehmen braucht sofort zwanzig Unterseiten. Sinnvoll ist eine Struktur, die zum aktuellen Angebot passt und später um Leistungen, Ratgeber oder lokale Seiten erweitert werden kann.',
-        points: [
-          'Onepager oder mehrseitige Firmenwebsite passend zum Umfang',
-          'Interne Links für Besucher und Suchmaschinen planen',
-          'Ausbaufähige Struktur statt kurzfristiger Insellösung'
-        ]
-      },
-      {
-        eyebrow: 'Betrieb',
-        heading: 'Alltagstauglich für kleine Teams',
-        body: 'Die Website soll im Tagesgeschäft helfen, nicht neue Arbeit erzeugen. Deshalb werden Inhalte, Formulare, Ladezeit und mobile Nutzung so geplant, dass Interessenten schnell finden, was sie brauchen.',
-        points: [
-          'Mobile Nutzung für lokale Suche priorisieren',
-          'Kontaktformular und Telefonklicks sauber einsetzen',
-          'Laufende Kosten transparent von Projektkosten trennen'
-        ]
-      }
-    ],
-    cta: {
-      label: 'Webdesign anfragen',
-      href: '/kontakt',
-      text: 'Schick kurz Branche, Ziel und gewünschten Umfang. Danach klären wir, welche Website-Struktur für dein Unternehmen passt.'
-    },
-    secondaryCta: {
-      label: 'Pakete vergleichen',
-      href: '/pakete'
-    },
-    faq: [
-      {
-        question: 'Welche Website passt zu einem kleinen Unternehmen?',
-        answer: 'Wenn du wenige Leistungen hast, reicht oft ein klarer Onepager. Bei mehreren Leistungen, Team, Referenzen oder SEO-Zielen ist eine mehrseitige Firmenwebsite meist sinnvoller.'
-      },
-      {
-        question: 'Ist lokales SEO für kleine Unternehmen enthalten?',
-        answer: 'Die SEO-Grundlage wird direkt mitgedacht: Seitenstruktur, lokale Begriffe, Metadaten, H1, interne Links und mobilfreundliche Darstellung.'
-      },
-      {
-        question: 'Kann ich klein starten und später erweitern?',
-        answer: 'Ja. Die Website kann bewusst so aufgebaut werden, dass später Leistungsseiten, Ratgeber, Referenzen oder weitere lokale Landingpages dazukommen.'
-      },
-      {
-        question: 'Brauche ich eigene Texte und Bilder?',
-        answer: 'Vorhandenes Material hilft, ist aber keine Voraussetzung. Texte können erstellt und vorhandene Bilder können sinnvoll ausgewählt oder durch passende Alternativen ersetzt werden.'
-      }
-    ],
-    internalLinks: [
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Komplette Website-Erstellung in Berlin' },
-      { label: 'Pakete', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen' },
-      { label: 'Website-Tester', href: '/website-tester', text: 'Bestehende Website kostenlos prüfen' },
-      { label: 'Kontakt', href: '/kontakt', text: 'Projektumfang einschätzen lassen' }
-    ]
-  },
-  {
     slug: 'ablauf',
     path: '/ablauf',
     primaryKeyword: 'website projekt ablauf berlin',
@@ -1114,7 +1039,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     internalLinks: [
       { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Vom Ablauf direkt zur Projektanfrage' },
       { label: 'Website Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Bestehende Website neu strukturieren' },
-      { label: 'Webdesign kleine Unternehmen', href: '/webdesign-kleine-unternehmen-berlin', text: 'Webdesign-Prozess für kleine Betriebe' },
+      { label: 'Websites für kleine Unternehmen', href: '/', text: 'Überblick, Pakete und Ansprechpartner' },
       { label: 'Website-Kosten', href: '/ratgeber/website-kosten-berlin', text: 'Budget und laufende Kosten einordnen' },
       { label: 'Kontakt', href: '/kontakt', text: 'Projektstart vorbereiten' }
     ]

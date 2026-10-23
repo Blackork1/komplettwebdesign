@@ -11,7 +11,6 @@ const HERO_KICKERS = Object.freeze({
   'website-relaunch-berlin': { icon: 'fa-arrows-rotate', label: 'Website-Relaunch' },
   'website-audit': { icon: 'fa-magnifying-glass-chart', label: 'Website-Prüfung' },
   'landingpage-erstellen-lassen': { icon: 'fa-bullseye', label: 'Landingpage-Fokus' },
-  'webdesign-kleine-unternehmen-berlin': { icon: 'fa-store', label: 'Kleine Unternehmen' },
   ablauf: { icon: 'fa-route', label: 'Projektablauf' }
 });
 
@@ -41,15 +40,6 @@ const HERO_PANELS = Object.freeze({
       { icon: 'fa-bullseye', text: 'Ziel, Angebot und Anfrageweg aufeinander abstimmen.' },
       { icon: 'fa-layer-group', text: 'Inhalte auf eine klare Entscheidung ausrichten.' },
       { icon: 'fa-scale-balanced', text: 'Tracking, Rechtliches und Betrieb separat abgrenzen.' }
-    ]
-  },
-  'webdesign-kleine-unternehmen-berlin': {
-    title: 'Was du realistisch bekommst',
-    text: 'Webdesign für kleine Unternehmen wird kompakt und ausbaufähig geplant. Ich prüfe, welche Seiten, Kontaktwege und Inhalte für den Start reichen.',
-    items: [
-      { icon: 'fa-location-dot', text: 'Leistungen, Einzugsgebiet und Kontaktwege sichtbar machen.' },
-      { icon: 'fa-seedling', text: 'Kompakt starten und spätere Erweiterungen offen halten.' },
-      { icon: 'fa-wallet', text: 'Pflegeaufwand und Budget realistisch einordnen.' }
     ]
   },
   ablauf: {

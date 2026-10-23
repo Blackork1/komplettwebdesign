@@ -336,7 +336,7 @@ export const webdesignBerlinPage = Object.freeze({
   faq: [
     {
       question: 'Was kostet Webdesign in Berlin bei Komplett Webdesign?',
-      answer: 'Start beginnt bei {{price.start}}, Business bei {{price.business}}, Wachstum bei {{price.wachstum}} und individuelle Projekte bei {{price.individuell}}. Die Preise beziehen sich auf die einmalige Erstellung im vereinbarten Umfang und gelten gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
+      answer: 'Start gibt es {{price.start}}, Business {{price.business}}, Wachstum {{price.wachstum}} und individuelle Projekte {{price.individuell}}. Die Preise beziehen sich auf die einmalige Erstellung im vereinbarten Umfang und gelten gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
     },
     {
       question: 'Für wen ist Komplett Webdesign geeignet?',

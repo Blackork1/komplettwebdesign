@@ -251,7 +251,7 @@ test('homepage hero uses the final recommended copy and a quieter CTA hierarchy'
   assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
   assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
   assert.match(controller, /heroTitle2:\s*''/);
-  assert.match(controller, /heroSubline:\s*'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin\./);
+  assert.match(controller, /heroSubline:\s*'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin\. Ich plane, gestalte und betreue Websites für kleine Unternehmen/);
   assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);
   assert.match(controller, /heroBullet2:\s*'Klare Pakete ab \{\{lowestPackagePriceLabel\}\} mit transparentem Leistungsumfang'/);
   assert.match(controller, /heroBullet3:\s*'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen'/);

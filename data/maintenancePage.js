@@ -406,7 +406,7 @@ export const maintenancePage = Object.freeze({
     },
     {
       question: 'Was kostet Website-Wartung?',
-      answer: 'Die Wartungspakete starten bei ab 39 €/Monat. Standard beginnt bei ab 79 €/Monat, Plus bei ab 129 €/Monat.'
+      answer: 'Die Wartungspakete starten bei 39 €/Monat. Standard beginnt bei 79 €/Monat, Plus bei 129 €/Monat.'
     },
     {
       question: 'Was ist im Wartungspaket enthalten?',

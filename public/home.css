@@ -1160,7 +1160,7 @@
     hyphens: none;
   }
 
-  .home-page .hero-main :is(h2, .home-hero-claim, .home-hero-bullets span, .home-hero-trust-note) {
+  .home-page .hero-main :is(h2, .home-hero-lead, .home-hero-claim, .home-hero-bullets span, .home-hero-trust-note) {
     overflow-wrap: normal;
     word-break: normal;
     hyphens: none;
@@ -1186,6 +1186,29 @@
   }
 
   .home-page .hero-main h2 .primaryColor {
+    color: var(--home-accent);
+  }
+
+  /* Ein gemeinsamer Einleitungsabsatz: Person + Leistungsumfang */
+  .home-page .hero-main .home-hero-lead {
+    max-width: 640px;
+    margin: 0 0 1.35rem;
+    color: var(--home-ink);
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0;
+  }
+
+  .home-page .hero-main .home-hero-lead a {
+    color: var(--home-accent-dark);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    white-space: nowrap;
+  }
+
+  .home-page .hero-main .home-hero-lead a:is(:hover, :focus-visible) {
     color: var(--home-accent);
   }
 
@@ -2211,6 +2234,7 @@
 
     .home-page .hero-main h1,
     .home-page .hero-main h2,
+    .home-page .hero-main .home-hero-lead,
     .home-page .hero-main .home-hero-claim,
     .home-page .home-hero-bullets {
       margin-left: 0;
@@ -2509,6 +2533,51 @@
   }
 
   @media (max-width: 540px) {
+    /* Handy: Buttons direkt nach dem Einleitungsabsatz im ersten Screen,
+       Stichpunkte danach. Die HTML-Reihenfolge bleibt unverändert. */
+    .home-page .hero-main .hero-content {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* Ältere Regeln setzen z. B. flex: 0 1 600px auf die H1;
+       in der Spalte würde das zur Höhe. */
+    .home-page .hero-main .hero-content > * {
+      flex: 0 0 auto;
+    }
+
+    .home-page .hero-main .hero-content > .hero-badge {
+      align-self: flex-start;
+    }
+
+    .home-page .hero-main .hero-section {
+      padding-top: 1.75rem;
+    }
+
+    .home-page .hero-main .home-hero-lead {
+      margin-bottom: 1.1rem;
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    .home-page .hero-main .hero-content > .hero-ctas,
+    .home-page .hero-main .hero-content > .home-hero-trust-note {
+      order: 1;
+    }
+
+    .home-page .hero-main .hero-content > .home-hero-trust-note {
+      margin-bottom: 1.1rem;
+    }
+
+    .home-page .hero-main .hero-content > .home-hero-bullets {
+      order: 2;
+    }
+
+    .home-page .hero-main h1 {
+      max-width: none;
+    }
+
     .home-page .home-hero-showcase {
       min-height: clamp(300px, 78vw, 380px);
       margin-top: 0.25rem;
@@ -2566,7 +2635,7 @@
     }
 
     .home-page .hero-main h1 {
-      font-size: clamp(1.85rem, 8vw, 2.2rem);
+      font-size: clamp(1.75rem, 7.2vw, 2.1rem);
     }
 
     .home-page h2 {

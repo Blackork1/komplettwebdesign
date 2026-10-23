@@ -11,7 +11,6 @@ const EXPECTED_SLUGS = [
   'website-relaunch-berlin',
   'website-audit',
   'landingpage-erstellen-lassen',
-  'webdesign-kleine-unternehmen-berlin',
   'ablauf'
 ];
 
@@ -58,7 +57,6 @@ test('seo landing pages expose exactly the planned static money pages', () => {
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
-    '/webdesign-kleine-unternehmen-berlin',
     '/ablauf'
   ]);
 });
@@ -405,7 +403,7 @@ test('seo landing route lookup returns known pages and null for missing slugs', 
   assert.equal(getSeoLandingPage('website-relaunch-berlin')?.primaryKeyword, 'website relaunch berlin');
   assert.equal(getSeoLandingPage('website-audit')?.primaryKeyword, 'website audit');
   assert.equal(getSeoLandingPage('landingpage-erstellen-lassen')?.primaryKeyword, 'landingpage erstellen lassen');
-  assert.equal(getSeoLandingPage('webdesign-kleine-unternehmen-berlin')?.primaryKeyword, 'webdesign kleine unternehmen berlin');
+  assert.equal(getSeoLandingPage('webdesign-kleine-unternehmen-berlin'), null);
   assert.equal(getSeoLandingPage('ablauf')?.primaryKeyword, 'website projekt ablauf berlin');
   assert.equal(getSeoLandingPage('webdesign-berlin'), null);
   assert.equal(getSeoLandingPage(''), null);
@@ -441,9 +439,9 @@ test('sitemap includes the static seo landing routes', () => {
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
-    '/webdesign-kleine-unternehmen-berlin',
     '/ablauf'
   ].forEach((path) => assert.ok(routes.includes(path), `missing sitemap route for ${path}`));
+  assert.ok(!routes.includes('/webdesign-kleine-unternehmen-berlin'));
 });
 
 test('seo landing metadata and template render breadcrumb hierarchy through leistungen', () => {
@@ -458,4 +456,21 @@ test('seo landing metadata and template render breadcrumb hierarchy through leis
   assert.match(templateSource, /aria-current="page"/);
   assert.match(templateSource, /seo-landing__visual-feature/);
   assert.match(templateSource, /page\.finalCta/);
+});
+
+test('die Unterseite für kleine Unternehmen leitet per 301 auf die Startseite', () => {
+  const routeLayer = seoLandingRoutes.stack.find(
+    (layer) => layer.route?.path === '/webdesign-kleine-unternehmen-berlin'
+  );
+  const redirectCalls = [];
+
+  assert.ok(routeLayer, 'die Redirect-Route muss registriert sein');
+  routeLayer.route.stack[0].handle({}, {
+    redirect(status, target) {
+      redirectCalls.push([status, target]);
+    }
+  });
+
+  assert.deepEqual(redirectCalls, [[301, '/']]);
+  assert.equal(SEO_RECOVERY_REDIRECTS['/webdesign-kleine-unternehmen-berlin'], '/');
 });

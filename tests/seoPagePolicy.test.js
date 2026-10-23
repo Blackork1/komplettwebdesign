@@ -20,7 +20,6 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',
     '/leistungen/local-seo',
-    '/webdesign-kleine-unternehmen-berlin',
     '/webdesign-berlin/kosten-preise-pakete',
     '/pakete',
     '/pakete/start',

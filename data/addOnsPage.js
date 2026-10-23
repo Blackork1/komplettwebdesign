@@ -467,7 +467,7 @@ export const addOnsPage = Object.freeze({
     },
     {
       question: 'Was kostet eine zusätzliche Unterseite?',
-      answer: 'Eine einfache zusätzliche Unterseite liegt häufig bei ab 120–250 €, abhängig von Inhalt, Struktur und Designumfang.'
+      answer: 'Eine einfache zusätzliche Unterseite liegt häufig bei 120–250 €, abhängig von Inhalt, Struktur und Designumfang.'
     },
     {
       question: 'Was ist der Unterschied zwischen Standardseite und SEO-Seite?',
@@ -479,7 +479,7 @@ export const addOnsPage = Object.freeze({
     },
     {
       question: 'Was kostet umfangreiche Texterstellung?',
-      answer: 'Für umfangreichere Website-Texte liegt der typische Rahmen bei ab 250–900 €, je nach Seitenanzahl, Briefing und Rechercheaufwand.'
+      answer: 'Für umfangreichere Website-Texte liegt der typische Rahmen bei 250–900 €, je nach Seitenanzahl, Briefing und Rechercheaufwand.'
     },
     {
       question: 'Sind Animationen sinnvoll?',
@@ -503,7 +503,7 @@ export const addOnsPage = Object.freeze({
     },
     {
       question: 'Was kostet Tracking?',
-      answer: 'Die technische Einrichtung liegt häufig bei ab 150–400 €, abhängig von Ereignissen, Tools und Consent-Anforderungen.'
+      answer: 'Die technische Einrichtung liegt häufig bei 150–400 €, abhängig von Ereignissen, Tools und Consent-Anforderungen.'
     },
     {
       question: 'Was ist Local SEO als Zusatzleistung?',
@@ -515,7 +515,7 @@ export const addOnsPage = Object.freeze({
     },
     {
       question: 'Was kostet Inhaltsmigration?',
-      answer: 'Inhaltsmigration liegt häufig bei ab 250–900 €, je nach Menge, Qualität, alter Struktur und Weiterleitungsbedarf.'
+      answer: 'Inhaltsmigration liegt häufig bei 250–900 €, je nach Menge, Qualität, alter Struktur und Weiterleitungsbedarf.'
     },
     {
       question: 'Wann wird aus Zusatzleistungen ein individuelles Projekt?',
