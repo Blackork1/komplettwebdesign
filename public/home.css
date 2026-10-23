@@ -134,6 +134,11 @@
 /* Reichweiten-Update: eigenständige Paket- und Branchenmotive */
 .home-page .home-package-media {
   aspect-ratio: 16 / 9;
+  /* WebKit (iOS) leitet sonst die Breite aus der gestreckten Zeilenhöhe ab
+     und das Bild ragt aus der Karte: Breite fest an die Spalte binden. */
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   margin: 0;
   overflow: hidden;
@@ -142,6 +147,7 @@
 .home-page .home-package-media img {
   display: block;
   height: 100%;
+  max-width: 100%;
   object-fit: cover;
   width: 100%;
 }
@@ -2091,11 +2097,14 @@
     .home-page .home-pricing-card {
       display: grid;
       grid-row: 1 / -1;
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: subgrid;
     }
 
     .home-page .home-pricing-card .home-package-media {
       grid-row: 1;
+      align-self: start;
+      justify-self: stretch;
     }
 
     .home-page .home-pricing-card h3 {
