@@ -1,441 +1,131 @@
 <%- include('partials/head', { extraCssAssets: ['about.css'] }) %>
-
 <body class="about-page">
-  <!-- Header / Navigation (falls eine Header-Partial existiert) -->
   <%- include('partials/header') %>
-
-  <section id="about-hero" class="hero-section circleBg unified-hero">
-    <div class="hero-content unified-hero__copy">
-      <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
-        <ol>
-          <li><a href="/">Startseite</a></li>
-          <li aria-current="page">Über mich</li>
-        </ol>
-      </nav>
-      <h1>Hallo, ich bin Sören <span class="wave">👋</span></h1>
-      <p class="subtitle unified-hero__lead">
-        Persönlicher Webdesigner aus Berlin für kleine Unternehmen, Selbstständige
-        und lokale Anbieter, die eine klare, schnelle und bezahlbare Website brauchen.
-      </p>
-    </div>
-    <div class="about-portrait-card">
-      <img
-        src="/images/meinAvatar.webp"
-        alt="Sören Blocksdorf Portrait"
-        class="profile-pic"
-        width="480" height="480" decoding="async"
-      />
-      <div class="about-portrait-card__copy">
-        <strong>Sören Blocksdorf</strong>
-        <span>Direkter Ansprechpartner von der ersten Idee bis zum Launch.</span>
+  <main class="about-main">
+    <section id="about-hero" class="about-hero" aria-labelledby="about-title">
+      <div class="about-shell about-hero__grid">
+        <div class="about-hero__copy">
+          <nav class="about-breadcrumbs" aria-label="Breadcrumb">
+            <ol><li><a href="/">Startseite</a></li><li aria-current="page">Über mich</li></ol>
+          </nav>
+          <h1 id="about-title">Ich bin <em>Sören.</em><br> <span class="about-title__role">Dein Webdesigner</span> in Berlin.</h1>
+          <p class="about-lead">Ich plane, gestalte und entwickle Websites für kleine Unternehmen. Mit direkter Abstimmung, verständlicher Beratung und einem klaren Weg bis zum Launch.</p>
+          <div class="about-actions">
+            <a class="about-button" href="/booking" data-track="cta" data-cta-name="about_consultation" data-cta-location="about_hero">Kennenlerngespräch vereinbaren</a>
+            <a class="about-text-link" href="#meine-arbeit">Meine Arbeit ansehen</a>
+          </div>
+          <p class="about-note">Unverbindlich. Wir sprechen erst über dein Vorhaben.</p>
+        </div>
+        <figure class="about-portrait">
+          <img src="/images/meinAvatar.webp" alt="Sören, dein persönlicher Webdesigner und Entwickler in Berlin" width="480" height="480" fetchpriority="high" decoding="async">
+          <figcaption>Sören · Webdesigner und Entwickler</figcaption>
+        </figure>
       </div>
-    </div>
-  </section>
-
-  <section id="about-intro" class="about-section two-column">
-    <h2>Über mich</h2>
-    <div class="column">
-      <p>
-        Hey! Schön, dass du hier vorbeischaust. Ich bin Sören Blocksdorf, 29
-        Jahre alt, und lebe und wirke in Berlin. Als Webdesigner und Entwickler
-        mit Herz und Humor erstelle ich
-        <strong>maßgeschneiderte Komplettlösungen</strong> für deine
-        Online-Präsenz. Was das heißt? Ganz einfach: Du bekommst bei mir alles
-        aus einer Hand – vom ersten Designentwurf über den Programmier-Code bis
-        hin zum Hosting und SEO. Und das Beste daran: Du kannst dich entspannt
-        zurücklehnen, während ich deine Vision zum Leben erwecke.
-      </p>
-      <p>
-        Stell dir vor, du hast eine großartige Idee für eine Website, weißt aber
-        nicht, wo du anfangen sollst. <strong>Genau da komme ich ins Spiel.</strong> Mit
-        mittlerweile über 10 Jahren Erfahrung in Webdesign und Webentwicklung
-        habe ich gelernt, Projekte effizient und zuverlässig umzusetzen.
-        Komplett Webdesign ist noch keine große Agentur mit hunderten Referenzen. Genau deshalb arbeite ich persönlich, fokussiert und nah am Projekt. Du bekommst keinen Standardprozess aus der Massenabfertigung, sondern direkte Betreuung vom ersten Gespräch bis zum Launch.
-        Schon als Jugendlicher habe ich
-        meine erste eigene kleine Website gebastelt – eine Fan-Seite zu meinem
-        damaligen Lieblingsspiel – und seitdem lässt mich die Faszination fürs
-        Web nicht mehr los.
-      </p>
-      <p>
-        Dabei lege ich großen Wert darauf, dass <em>du</em> dich verstanden
-        fühlst und wir auf Augenhöhe zusammenarbeiten. Ich duze meine Kundinnen
-        und Kunden, weil mir eine lockere, freundliche Atmosphäre wichtig ist –
-        schließlich arbeiten wir eng zusammen an deinem digitalen Zuhause!
-      </p>
-      <p>
-        Ob du als Existenzgründer:in gerade durchstartest, ein etabliertes
-        kleines Unternehmen leitest oder als Privatperson einfach eine tolle
-        Website möchtest – ich arbeite mit jedem gern zusammen, der eine
-        professionelle Web-Präsenz mit persönlicher Note sucht. Falls du nicht
-        aus Berlin kommst – keine Sorge: Dank Video-Calls und Online-Tools
-        können wir problemlos zusammenarbeiten, egal wo du gerade bist. Mir ist
-        vor allem wichtig, dass du dich gut aufgehoben fühlst – unabhängig von
-        Branche, Budget oder Vorkenntnissen.
-      </p>
-    </div>
-    <div class="column">
-      <p>
-        <strong>Kurz gesagt:</strong> Ich bin dein freundlicher Web-Nerd von
-        nebenan, der dafür sorgt, dass dein Projekt im Internet glänzt –
-        unkompliziert, zuverlässig und mit einem Lächeln.
-      </p>
-      <p>
-        Seit der Gründung meiner eigenen Webdesign-Agentur hat sich viel getan.
-        Was als kleiner Ein-Mann-Betrieb begann, ist heute ein
-        Full-Service-Dienstleister – klein, aber oho. Jede neue Herausforderung
-        spornt mich an, und ich bin stolz, mit jedem Projekt dazuzulernen.
-      </p>
-      <p>
-        <strong>Meine Philosophie:</strong> Webdesign darf Spaß machen – sowohl
-        mir bei der Umsetzung als auch dir beim Ergebnis. Deshalb mische ich
-        Professionalität mit einer Prise Humor. Ich glaube fest daran, dass man
-        die besten Ergebnisse erzielt, wenn die Zusammenarbeit auch ein bisschen
-        Freude bereitet. Du kannst also damit rechnen, dass wir beim Projekt
-        auch mal lachen – sei es über einen witzigen Platzhaltertext oder wenn
-        ich dir begeistert den zigsten Entwurf präsentiere, weil mir über Nacht
-        noch eine geniale Idee kam. Außerdem gilt: Auf mich ist Verlass –
-        Termine, Zusagen und Absprachen halte ich ein, und transparente
-        Kommunikation ist für mich selbstverständlich.
-      </p>
-      <p>
-        Als gebürtiger Berliner (und stolzer Koffein-Junkie) kenne ich die
-        Startup-Szene und die Bedürfnisse lokaler Unternehmen gut. Gleichzeitig
-        bin ich immer auf dem neuesten Stand, was moderne Webtechnologien und
-        Designtrends angeht. Von <strong>responsivem Design</strong> über
-        <strong>Suchmaschinenoptimierung (SEO)</strong> bis hin zu
-        Performance-Tuning – ich sorge dafür, dass deine Website nicht nur
-        hübsch aussieht, sondern auch technisch rockt. Und keine Sorge: Begriffe
-        wie HTML, CSS, JavaScript, Domain, Hoster, Datenbank & Co. musst du
-        nicht verstehen. Dafür hast du ja mich! Ich erkläre dir auf
-        verständliche Weise, was nötig ist, und nehme dir die technischen Hürden
-        ab. Berlin ist für mich übrigens nicht nur Heimat, sondern tägliche
-        Inspiration – die Vielfalt und Dynamik der Stadt spiegeln sich auch in
-        meinen Projekten wider.
-      </p>
-    </div>
-  </section>
-
-  <section id="decision-fit" class="about-section two-column">
-    <h2>Passt das zu deinem Projekt?</h2>
-    <div class="column">
-      <h3>Für wen ich der richtige Ansprechpartner bin</h3>
-      <ul class="services-list">
-        <li>
-          Kleine Unternehmen, Selbstständige und lokale Anbieter, die eine
-          professionelle Website ohne Agenturapparat möchten.
-        </li>
-        <li>
-          Gründer:innen und Betriebe, die klare Beratung, verständliche
-          Entscheidungen und direkte Abstimmung mit der umsetzenden Person
-          schätzen.
-        </li>
-        <li>
-          Projekte, bei denen Design, Technik, Texte, SEO-Grundlagen und Launch
-          aus einer Hand kommen sollen.
-        </li>
-        <li>
-          Bestehende Websites, die strukturierter, schneller, klarer oder
-          vertrauenswürdiger werden sollen.
-        </li>
+      <ul class="about-shell about-highlights" aria-label="Zusammenarbeit auf einen Blick">
+        <% aboutPage.highlights.forEach(item => { %>
+        <li><strong><%= item.title %></strong><p><%= item.text %></p></li>
+        <% }) %>
       </ul>
-    </div>
-    <div class="column">
-      <h3>Für wen ich nicht der richtige Anbieter bin</h3>
-      <ul class="services-list">
-        <li>
-          Unternehmen, die ein großes Team mit Account Management,
-          Strategieabteilung und dauerhaftem Kampagnenbetrieb erwarten.
-        </li>
-        <li>
-          Projekte, bei denen garantierte Google-Rankings, garantierte Leads
-          oder sofortige Umsatzergebnisse versprochen werden sollen.
-        </li>
-        <li>
-          Sehr umfangreiche Plattformen, komplexe Marktplätze oder
-          Enterprise-Systeme mit mehreren spezialisierten Entwicklungsteams.
-        </li>
-        <li>
-          Aufträge, bei denen möglichst billig und möglichst schnell wichtiger
-          ist als saubere Grundlage, ehrliche Beratung und verlässliche
-          Umsetzung.
-        </li>
-      </ul>
-    </div>
-  </section>
+    </section>
 
-  <section id="services" class="about-section two-column">
-    <h2>Was ich dir biete</h2>
-    <div class="column">
-      <p>
-        Bei mir bekommst du keinen Website-Baukasten von der Stange, sondern
-        eine <strong>persönlich begleitete Umsetzung</strong> für deinen Webauftritt.
-        Folgende Leistungen übernehme ich persönlich für dich:
-      </p>
-      <ul class="services-list">
-        <li>
-          <span class="icon">🎨</span> <strong>Design:</strong> Ein
-          individuelles, modernes Layout, das zu dir und deiner Zielgruppe
-          passt. Hier achte ich darauf, dass deine Marke sich im Design
-          widerspiegelt und Besucher sich sofort angesprochen fühlen.
-        </li>
-        <li>
-          <span class="icon">💻</span>
-          <strong>Code &amp; Entwicklung:</strong> Sauber programmiert mit
-          aktuellen Web-Technologien – damit alles schnell, sicher und
-          zuverlässig läuft. Ich habe einen hohen Anspruch an meinen Code:
-          wartbar, erweiterbar und nach modernen Standards.
-        </li>
-        <li>
-          <span class="icon">🚀</span>
-          <strong>Performance &amp; SEO:</strong> Optimierung der Ladezeiten und
-          Suchmaschinenfreundlichkeit, damit deine Seite nicht nur schön,
-          sondern auch erfolgreich ist. Von Bildkomprimierung bis
-          Keyword-Optimierung wird alles berücksichtigt, damit du bei Google
-          &amp; Co. glänzt.
-        </li>
-        <li>
-          <span class="icon">🔒</span>
-          <strong>Hosting &amp; Sicherheit:</strong> Einrichtung von Hosting,
-          Domain und SSL-Zertifikat. Backups, Sicherheitsupdates und Wartung
-          werden bei Bedarf separat abgestimmt. Datenschutzrelevante Grundlagen
-          berücksichtige ich technisch; eine Rechtsberatung ersetzt das nicht.
-        </li>
-        <li>
-          <span class="icon">🤝</span>
-          <strong>Support &amp; Betreuung:</strong> Auch nach dem Launch bin ich
-          für dich da – sei es für Updates, Erweiterungen oder einfach, um deine
-          Fragen zu beantworten. Du hast einen festen Ansprechpartner, der deine
-          Website in- und auswendig kennt und sich schnell um Anliegen kümmert.
-        </li>
-      </ul>
-    </div>
-    <div class="column">
-      <p>
-        Der Name meiner Agentur ist übrigens Programm:
-        <strong>Komplett Webdesign</strong> bedeutet, dass du dich um nichts
-        kümmern musst – ich übernehme wirklich alle Aspekte deines Webprojekts,
-        von A bis Z.
-      </p>
-      <p>
-        Und das alles in enger Abstimmung mit dir. Dein Input ist mir wichtig,
-        denn niemand kennt dein Business so gut wie du. Ich höre zu, berate dich
-        ehrlich und hole das Beste aus deinem Projekt heraus. Am Ende sollst du
-        nicht nur eine Website haben, sondern dich damit rundum wohl und stolz
-        fühlen.
-      </p>
-      <p>
-        Übrigens bin ich technisch flexibel: Ob ein schlanker Onepager, ein
-        WordPress-basiertes Blogsystem oder eine maßgeschneiderte Web-App – wir
-        wählen die Lösung, die für dich am meisten Sinn ergibt. Es gibt nicht
-        die eine Technologie, die immer richtig ist; wichtig ist, dass sie zu
-        deinen Zielen passt.
-      </p>
-      <p>
-        <em>Ach ja:</em> Ich arbeite außerdem nach dem Prinzip
-        <strong>„weniger ist mehr“</strong>. Lieber eine Webseite, die schlank,
-        schnell und zielgerichtet ist, als ein überfrachtetes Online-Monster,
-        das niemand bedienen kann. In der heutigen Zeit entscheidet der erste
-        Eindruck – und der passiert oft in Sekundenbruchteilen online. Daher
-        sorge ich dafür, dass deine Seite <strong>sofort überzeugt</strong>:
-        optisch, inhaltlich und technisch.
-      </p>
-    </div>
-  </section>
-
-  <section id="project-highlight" class="about-section highlight two-column">
-    <h2>Projekt-Highlight: Zur alten Backstube</h2>
-    <div class="column">
-      <p>
-        Eines meiner jüngsten Projekte, auf das ich besonders stolz bin, ist die
-        Webseite für das gemütliche Café
-        <a
-          href="https://www.zuraltenbackstube.de"
-          target="_blank"
-          rel="noopener"
-          >„Zur alten Backstube“</a
-        >
-        in Berlin-Rosenthal. Die Inhaber wünschten sich einen Internetauftritt,
-        der den Charme ihres Cafés einfängt – und gleichzeitig aktuellen
-        Webstandards entspricht. Von der warmen Farbgestaltung bis zur
-        Einbindung eines Online-Reservierungssystems habe ich hier eine
-        Komplettlösung umgesetzt.
-      </p>
-      <p>
-        Das Ergebnis kann sich sehen lassen: Die Seite empfängt dich mit großen,
-        einladenden Bildern von frisch gebackenem Kuchen und dem historischen
-        Ambiente der alten Backstube. Du findest dort alle wichtigen Infos auf
-        einen Blick – von der Geschichte des Cafés über die Öffnungszeiten bis
-        hin zur Möglichkeit, direkt online eine Feier im Café zu buchen. Durch
-        responsive Design macht die Seite auch auf dem Smartphone eine gute
-        Figur, sodass Gäste unterwegs schnell nachschauen können, was es Neues
-        gibt.
-      </p>
-      <p>
-        Für mich war dieses Projekt ein perfektes Beispiel dafür, wie Design und
-        Funktion Hand in Hand gehen: Die Nutzer erleben eine stimmige,
-        gemütliche Atmosphäre, während im Hintergrund moderne Web-Technik läuft
-        (inklusive SEO-Optimierung, damit das Café bei Google gefunden wird).
-        Die Rückmeldungen der Betreiber waren positiv, und die Website gibt dem
-        Café heute eine deutlich klarere digitale Anlaufstelle. Schau gern mal
-        vorbei – vielleicht bekommst du ja Lust auf Kaffee und Kuchen
-        <span class="emoji">😉</span>.
-      </p>
-    </div>
-    <div class="column">
-      <div class="project-image">
-        <img
-          src="/images/review-bg.webp"
-          alt="Screenshot der Website Zur alten Backstube"
-        />
-        <!-- Dieses Bild sollte idealerweise ein Screenshot oder Foto der erstellten Webseite zeigen -->
+    <section class="about-intro about-shell" aria-labelledby="about-intro-title">
+      <div class="about-intro__heading">
+        <h2 id="about-intro-title">Du musst kein Website-Profi sein.<br> Dafür hast du mich.</h2>
+        <div class="about-intro__text">
+          <p>Ich bin Sören Blocksdorf, der Mensch hinter Komplett Webdesign in Berlin. Ich mag es, wenn aus einer ersten Idee ein Webauftritt wird, der zu einem Unternehmen und den Menschen dahinter passt.</p>
+          <p>Du kennst deinen Betrieb. Ich bringe Struktur, Gestaltung und Technik zusammen. Ich höre zu, frage nach und erkläre dir die Entscheidungen so, dass du sie nachvollziehen kannst.</p>
+          <p>Ob du neu startest oder deine bestehende Website überarbeiten möchtest: Wir schauen zuerst auf dein Angebot, deine Kunden und dein Ziel. Daraus entwickeln wir den passenden nächsten Schritt.</p>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section id="workflow" class="about-section two-column">
-    <h2>So arbeiten wir zusammen</h2>
-    <div class="column">
-      <p>
-        Vielleicht fragst du dich, wie der Ablauf ist, wenn wir gemeinsam dein
-        Webprojekt starten. Keine Sorge, ich führe dich Schritt für Schritt
-        durch den Prozess:
-      </p>
-      <ol class="workflow-steps">
-        <li>
-          <strong>Kennenlerngespräch:</strong> Zuerst setzen wir uns
-          unverbindlich zusammen (telefonisch oder per Video-Call) und sprechen
-          über deine Ideen, Ziele und Wünsche. Hier lernen wir uns kennen –
-          schließlich soll die Chemie stimmen! In diesem Gespräch können wir
-          auch schon grob die Richtung deines Projekts abstecken und offene
-          Fragen klären.
-        </li>
-        <li>
-          <strong>Angebot &amp; Planung:</strong> Anhand unseres Gesprächs
-          erstelle ich dir ein maßgeschneidertes Angebot. Wenn alles passt,
-          planen wir gemeinsam das weitere Vorgehen. Du erhältst von mir einen
-          klaren Fahrplan, was als nächstes passiert, sodass du jederzeit den
-          Überblick behältst.
-        </li>
-        <li>
-          <strong>Designphase:</strong> Jetzt wird’s kreativ. Ich entwerfe erste
-          Layouts und Designs für deine Website. Du bekommst Mockups (z.B. in
-          Adobe XD oder Figma) zu sehen und wir stimmen uns eng ab, bis das
-          Design deinen Vorstellungen entspricht (und meine hohen Ansprüche
-          erfüllt). Dabei kannst du so viel Feedback geben, wie du möchtest –
-          der Feinschliff ist wichtig.
-        </li>
-        <li>
-          <strong>Umsetzung &amp; Entwicklung:</strong> Sobald das Design steht,
-          geht es an den Code. Ich entwickle deine Seite mit sauberem HTML, CSS
-          und JavaScript (und falls nötig, mit einem passenden Backend). Ich
-          teste alle Funktionen gründlich und stelle sicher, dass deine Seite in
-          verschiedenen Browsern und auf unterschiedlichen Geräten top aussieht.
-          Du kannst den Fortschritt live mitverfolgen – Transparenz ist mir
-          wichtig.
-        </li>
-        <li>
-          <strong>Feedback &amp; Revision:</strong> Du erhältst einen ersten
-          Prototypen deiner Website zum Ausprobieren. Jetzt bist du dran: Gib
-          mir dein Feedback! Was gefällt dir, was fehlt dir noch? In dieser
-          Phase feilen wir gemeinsam an den Details, bis alles perfekt ist.
-          Änderungen und Verbesserungen lassen sich hier am besten einarbeiten,
-          und ich bin da sehr geduldig – Hauptsache, du bist am Ende glücklich.
-        </li>
-        <li>
-          <strong>Launch &amp; Schulung:</strong> Wenn du rundum zufrieden bist,
-          geht die Seite online! 🎉 Ich kümmere mich um den Launch, die
-          Domain-Einrichtung und alles Technische, damit du einen stressfreien
-          Start hast. Auf Wunsch zeige ich dir anschließend in einer kurzen
-          Schulung, wie du kleine Änderungen selbst vornehmen oder Inhalte
-          aktualisieren kannst. So hast du die Kontrolle über deine Website,
-          wenn du das möchtest.
-        </li>
-        <li>
-          <strong>Betreuung:</strong> Auch nach dem Livegang lasse ich dich
-          nicht allein. Ob regelmäßige Backups, Sicherheitsupdates oder einfach
-          mal eine Frage zwischendurch – ich stehe dir weiterhin zur Seite.
-          Viele meiner Kunden schätzen es, einen verlässlichen Ansprechpartner
-          zu haben, der ihre Website betreut. Wenn du später zusätzliche
-          Funktionen oder Änderungen brauchst, helfe ich dir gerne dabei – dein
-          Online-Auftritt kann mit deinem Business mitwachsen.
-        </li>
+      <ol class="about-principles">
+        <% aboutPage.principles.forEach((item, index) => { %>
+        <li><span class="about-principles__number" aria-hidden="true"><%= String(index + 1).padStart(2, '0') %></span><h3><%= item.title %></h3><p><%= item.text %></p></li>
+        <% }) %>
       </ol>
-    </div>
-    <div class="column">
-      <p>
-        Wie du siehst, lege ich großen Wert auf eine persönliche und
-        transparente Zusammenarbeit. Du sollst jederzeit das Gefühl haben, Teil
-        des Projekts zu sein – schließlich geht es um deine Website. Und keine
-        Angst: Es gibt keine dummen Fragen. Lieber fragst du einmal mehr nach,
-        als dass du dich am Ende mit etwas unwohl fühlst.
-      </p>
-    </div>
-  </section>
+      <div class="about-scope">
+        <p>Von <a href="/webdesign-berlin">individuellem Webdesign</a> bis zum <a href="/leistungen/website-relaunch">Website-Relaunch</a>: Der Umfang richtet sich nach deinem Vorhaben. Hosting, Domain, E-Mail und Wartung werden separat vereinbart.</p>
+        <a class="about-text-link" href="/pakete">Website-Pakete und Leistungsumfang ansehen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+      </div>
+    </section>
 
-  <section id="personal-touch" class="about-section two-column">
-    <h2>Ein paar persönliche Fun Facts</h2>
-    <div class="column">
-      <p>
-        Zum Schluss noch ein paar Dinge, die du über mich vielleicht nicht
-        wusstest – einfach, damit du einen Eindruck bekommst, was für ein Mensch
-        hinter dem Bildschirm steckt:
-      </p>
-      <ul class="fun-facts">
-        <li>
-          <strong>Kaffee-Enthusiast:</strong> Ohne meinen Morgenkaffee läuft bei
-          mir gar nichts. Gute Ideen brauchen Koffein! Fun Fact: Mein Büro
-          duftet immer ein bisschen nach frisch gemahlenen Bohnen.
-        </li>
-        <li>
-          <strong>Nachteule:</strong> Die besten Geistesblitze kommen mir oft
-          spät in der Nacht. Kein Wunder also, dass ich manchmal E-Mails um 2
-          Uhr morgens abschicke (Antworten erwarte ich aber nicht um die Zeit!).
-          Trotz Nachtaktivität bin ich tagsüber natürlich erreichbar – notfalls
-          mit einer Extra-Tasse Kaffee.
-        </li>
-        <li>
-          <strong>Gaming &amp; Design:</strong> In meiner Freizeit zocke ich
-          gern mal – und ja, ich schaue mir dabei auch immer die Spiel-Menüs und
-          Interfaces an und überlege, wie man sie verbessern könnte.
-          Berufskrankheit! Das inspiriert mich oft zu neuen Webdesign-Ideen,
-          gerade was die Benutzerfreundlichkeit angeht.
-        </li>
-        <li>
-          <strong>Immer in Bewegung:</strong> Ausgleich muss sein. Wenn ich
-          nicht am Schreibtisch sitze, findet man mich draußen beim Joggen an
-          der Spree oder beim Spazieren durch die Berliner Kieze – frische Luft
-          inspiriert. Letztes Jahr bin ich sogar meinen ersten Halbmarathon
-          gelaufen. Die Ausdauer nehme ich mit in unsere Projekte.
-        </li>
-        <li>
-          <strong>Lebenslanges Lernen:</strong> Webdesign ist ein Feld, das sich
-          ständig verändert. Ich liebe es, neue Tools und Trends auszuprobieren.
-          Mein neuestes Spielzeug: eine 3D-Designsoftware, mit der man richtig
-          coole Web-Animationen bauen kann. Wer weiß, vielleicht siehst du ja
-          bald auf meiner Seite ein paar interaktive 3D-Effekte.
-        </li>
-      </ul>
-    </div>
-    <div class="column">
-      <p>
-        Jetzt kennst du mich schon ein Stückchen besser. Ich bin jedenfalls
-        gespannt, dich kennenzulernen und mehr über dein Projekt zu erfahren.
-        Zusammen machen wir dein Vorhaben zum Erfolg – und haben im besten Fall
-        auch noch eine Menge Spaß dabei!
-      </p>
-    </div>
-  </section>
+    <section id="meine-arbeit" class="about-proof about-shell" aria-labelledby="about-proof-title">
+      <% const project = aboutPage.featuredProject; %>
+      <div class="about-proof__grid">
+        <a class="about-project-image" href="/referenzen/<%= project.slug %>" aria-label="Referenzprojekt <%= project.name %> ansehen">
+          <picture>
+            <source media="(max-width: 600px)" srcset="/images/review-bg-mobile.webp">
+            <img src="<%= project.image %>" alt="<%= project.imageAlt %>" width="2048" height="1173" loading="lazy" decoding="async">
+          </picture>
+        </a>
+        <div class="about-proof__copy">
+          <h2 id="about-proof-title">Ein echter Betrieb.<br> Ein passender Webauftritt.</h2>
+          <p>Für das Café Zur alten Backstube habe ich Atmosphäre, Angebot und Kontaktwege zu einem stimmigen Webauftritt verbunden.</p>
+          <a class="about-text-link about-text-link--accent" href="/referenzen/<%= project.slug %>">Projekt <%= project.name %> ansehen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+          <figure class="about-quote">
+            <blockquote><p><%= project.quote %></p></blockquote>
+            <figcaption><%= project.quoteAuthor %> · Kundenstimme <a href="<%= siteFacts.googleProfileUrl %>" target="_blank" rel="noopener">Auf Google ansehen</a></figcaption>
+          </figure>
+        </div>
+      </div>
+      <% aboutPage.showcases.forEach(example => { %>
+      <article class="about-showcase" id="projekt-<%= example.project.slug %>" aria-labelledby="projekt-titel-<%= example.project.slug %>">
+        <div class="about-showcase__intro">
+          <div>
+            <h3 id="projekt-titel-<%= example.project.slug %>"><%= example.project.name %></h3>
+            <p><%= example.description %></p>
+            <a class="about-text-link about-text-link--accent" href="/referenzen/<%= example.project.slug %>">Projekt <%= example.project.name %> kennenlernen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+          </div>
+          <div class="about-showcase__feature">
+            <h4><%= example.featureTitle %></h4>
+            <p><%= example.featureText %></p>
+            <a class="about-text-link" href="<%= example.featureUrl %>" target="_blank" rel="noopener"><%= example.featureLabel %> <span class="visually-hidden">(öffnet in einem neuen Tab)</span></a>
+          </div>
+        </div>
+        <div class="about-showcase__screens about-showcase__screens--<%= example.screens.length %>">
+          <% example.screens.forEach(screen => { %>
+          <figure>
+            <a href="<%= screen.image %>" target="_blank" rel="noopener" aria-label="Screenshot vergrößern: <%= screen.caption %> – <%= example.project.name %> (öffnet in einem neuen Tab)">
+              <img src="<%= screen.image %>" srcset="<%= screen.image.replace('.webp', '-720.webp') %> 720w, <%= screen.image %> <%= screen.width %>w" sizes="(max-width: 760px) calc(100vw - 40px), <%= example.screens.length === 3 ? '(max-width: 1100px) calc((100vw - 104px) / 3), 411px' : '(max-width: 1100px) calc((100vw - 104px) / 2), 628px' %>" width="<%= screen.width %>" height="<%= screen.height %>" alt="<%= screen.alt %>" loading="lazy" decoding="async">
+            </a>
+            <figcaption><%= screen.caption %> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M7 7h10v10"/></svg></figcaption>
+          </figure>
+          <% }) %>
+        </div>
+        <a class="about-text-link about-showcase__live" href="<%= example.liveUrl %>" target="_blank" rel="noopener"><%= example.liveLabel %> <span class="visually-hidden">(öffnet in einem neuen Tab)</span></a>
+      </article>
+      <% }) %>
+    </section>
 
-  <section id="cta" class="cta-section">
-    <div class="booking-widget">
-      <!-- Einbindung des vorhandenen Buchungs-Widgets -->
-      <%- include('partials/booking_widget.ejs') %>
-    </div>
-    <p class="note">
-      *Keine Sorge, der Termin ist natürlich kostenlos und du gehst keine
-      Verpflichtungen ein. Ich freue mich einfach, von dir zu hören!
-    </p>
-  </section>
+    <section class="about-process" aria-labelledby="about-process-title">
+      <div class="about-shell">
+        <h2 id="about-process-title">Ein klarer Ablauf. <em>Ein gutes Gefühl.</em></h2>
+        <ol class="about-steps">
+          <% aboutPage.steps.forEach((step, index) => { %>
+          <li><span class="about-steps__number" aria-hidden="true"><%= String(index + 1).padStart(2, '0') %></span><h3><%= step.title %></h3><p><%= step.text %></p></li>
+          <% }) %>
+        </ol>
+      </div>
+    </section>
+
+    <section class="about-close about-shell" aria-label="Fragen und persönlicher Kontakt">
+      <div class="about-faq">
+        <h2>Gut zu wissen<span>.</span></h2>
+        <% aboutPage.faq.forEach(item => { %>
+        <details>
+          <summary><%= item.question %><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-7-7v14"/></svg></summary>
+          <p><%= item.answer %></p>
+        </details>
+        <% }) %>
+      </div>
+      <div class="about-contact">
+        <h2>Erzähl mir, was du vorhast<span>.</span></h2>
+        <p>Ob erste Website oder Relaunch: Wir klären gemeinsam, welcher nächste Schritt zu deinem Unternehmen passt.</p>
+        <a class="about-button" href="/booking" data-track="cta" data-cta-name="about_consultation" data-cta-location="about_contact">Kennenlerngespräch vereinbaren <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+        <a class="about-text-link" href="/kontakt">Oder schreib mir dein Vorhaben</a>
+        <a class="about-phone" href="tel:<%= siteFacts.phone %>"><%= siteFacts.phoneDisplay %></a>
+      </div>
+    </section>
+  </main>
   <%- include('partials/footer') %>
-
 </body>
+</html>

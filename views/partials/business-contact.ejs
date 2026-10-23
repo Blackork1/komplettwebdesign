@@ -1,6 +1,6 @@
 <% if (typeof siteFacts !== 'undefined') { %>
 <address class="business-contact">
-  <strong><%= siteFacts.brandName %> · <%= siteFacts.founderName %></strong><br>
+  <strong><%= siteFacts.brandName %> · <%= (typeof displayFounderName !== 'undefined' && displayFounderName) || siteFacts.founderName %></strong><br>
   <%= siteFacts.address.streetAddress %>, <%= siteFacts.address.postalCode %> <%= siteFacts.address.addressLocality %><br>
   <a href="tel:<%= siteFacts.phone %>"><%= siteFacts.phoneDisplay %></a> ·
   <a href="mailto:<%= siteFacts.email %>"><%= siteFacts.email %></a><br>

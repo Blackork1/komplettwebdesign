@@ -13,7 +13,7 @@
             <img src="/images/LogoWhite.svg" alt="Komplett Webdesign Logo" loading="lazy" />
           </a>
 
-          <%- include('business-contact') %>
+          <%- include('business-contact', { displayFounderName: (typeof displayFounderName !== 'undefined' ? displayFounderName : null) }) %>
 
           <div class="newsletter">
             <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
@@ -73,7 +73,7 @@
       </div>
     </footer>
   </div>
-  <a class="back-to-top back-to-top--fixed" href="#hero" aria-label="<%= isEn ? 'Back to top' : 'Zurück nach oben' %>">
+  <a class="back-to-top back-to-top--fixed" href="#top" aria-label="<%= isEn ? 'Back to top' : 'Zurück nach oben' %>">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
     </svg>

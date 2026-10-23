@@ -10,6 +10,7 @@ import {
 } from '../util/pricingViewModel.js';
 import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
+import { aboutPage } from '../data/aboutPage.js';
 
 const GOOGLE_PROFILE_URL = SITE_FACTS.googleProfileUrl;
 const GOOGLE_REVIEW_URL = SITE_FACTS.googleReviewUrl;
@@ -423,19 +424,35 @@ export async function postDeleteUser(req, res) {
 }
 
 export async function getAbout(req, res) {
+  const baseUrl = (res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback).replace(/\/+$/, '');
   res.render('about', {
-    title: 'Über mich: Sören Blocksdorf | Webdesigner in Berlin',
-    description: 'Lerne Sören Blocksdorf kennen: dein persönlicher Webdesigner und Webentwickler für kleine Unternehmen in Berlin.',
-    keywords: 'Webdesign,Webentwicklung,Über mich,Komplett Webdesign',
+    title: aboutPage.title,
+    description: aboutPage.description,
+    aboutPage,
+    siteFacts: SITE_FACTS,
+    disableInteractionPolish: true,
+    ogImage: `${baseUrl}/images/meinAvatar.webp`,
     structuredDataBlocks: [{
       '@context': 'https://schema.org',
       '@type': 'AboutPage',
-      '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/about#webpage`,
-      url: `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/about`,
-      name: 'Über Sören Blocksdorf',
-      mainEntity: { '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/#person` },
-      about: { '@id': `${res.locals.canonicalBaseUrl || SITE_FACTS.baseUrlFallback}/#organization` },
+      '@id': `${baseUrl}/about#webpage`,
+      url: `${baseUrl}/about`,
+      name: aboutPage.title,
+      description: aboutPage.description,
+      mainEntity: { '@id': `${baseUrl}/#person` },
+      about: { '@id': `${baseUrl}/#organization` },
+      primaryImageOfPage: { '@type': 'ImageObject', url: `${baseUrl}/images/meinAvatar.webp`, width: 480, height: 480 },
+      breadcrumb: { '@id': `${baseUrl}/about#breadcrumb` },
+      dateModified: aboutPage.modifiedAt,
       inLanguage: 'de-DE'
+    }, {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      '@id': `${baseUrl}/about#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${baseUrl}/` },
+        { '@type': 'ListItem', position: 2, name: 'Über mich', item: `${baseUrl}/about` }
+      ]
     }]
   });
 }

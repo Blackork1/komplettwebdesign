@@ -43,7 +43,6 @@ test('core marketing templates opt into the shared hero surface', () => {
     files.packagesList,
     files.packageDetail,
     files.websiteTester,
-    files.about,
     files.leistungenOverview,
     files.leistungenShow,
     files.seoLanding

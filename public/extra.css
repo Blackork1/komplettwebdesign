@@ -140,6 +140,7 @@
   margin-left: 0;
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
   position: fixed;
   right: 20px;
   transform: translateY(10px);
@@ -152,6 +153,7 @@
 .back-to-top--fixed.is-visible {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
   transform: translateY(0);
 }
 

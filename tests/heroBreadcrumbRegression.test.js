@@ -45,7 +45,8 @@ const staticServiceTemplates = [
 test('all unified hero templates expose breadcrumbs directly in the hero copy', () => {
   for (const template of heroTemplates) {
     const source = read(template);
-    assert.match(source, /unified-hero__breadcrumbs/, `${template} needs shared hero breadcrumbs`);
+    const breadcrumbs = template === 'views/about.ejs' ? /about-breadcrumbs/ : /unified-hero__breadcrumbs/;
+    assert.match(source, breadcrumbs, `${template} needs hero breadcrumbs`);
     assert.match(source, /aria-label="Breadcrumb"/, `${template} needs accessible breadcrumb label`);
   }
 });
@@ -169,7 +170,7 @@ test('leistung heroes use a shared leistungen breadcrumb, kicker and right-side 
 test('about hero uses a dedicated portrait treatment instead of the generic media frame', () => {
   const about = read('views/about.ejs');
 
-  assert.match(about, /about-portrait-card/);
+  assert.match(about, /<figure class="about-portrait">/);
   assert.doesNotMatch(about, /hero-image unified-hero__media-frame/);
 });
 

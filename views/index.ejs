@@ -167,7 +167,7 @@ const homePackageImages = {
               <h1 class="display-5 fw-bold mt-2 home-hero-reveal home-hero-reveal--h1 animate-on-scroll">
                 <span class="home-hero-title-primary"><%= copy.heroTitle %></span>
               </h1>
-              <p class="home-author-intro"><%= isEn ? 'I’m Sören Blocksdorf, your web designer and developer in Berlin. I help small businesses plan and build their websites.' : 'Ich bin Sören Blocksdorf, dein Webdesigner und Webentwickler in Berlin. Ich begleite kleine Unternehmen von der Planung bis zur fertigen Website.' %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
+              <p class="home-author-intro"><%= isEn ? 'I’m Sören, your web designer and developer in Berlin. I help small businesses plan and build their websites.' : 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Ich begleite kleine Unternehmen von der Planung bis zur fertigen Website.' %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
               <% if (copy.heroTitle2) { %>
               <p class="home-hero-claim home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroTitle2 %></p>
               <% } %>
@@ -903,7 +903,7 @@ const homePackageImages = {
       </div>
     </aside>
   </main>
-  <%- include('partials/footer') %>
+  <%- include('partials/footer', { displayFounderName: 'Sören' }) %>
 
   <!-- <script>
         const stripe = Stripe("<%= stripePublishable %>");

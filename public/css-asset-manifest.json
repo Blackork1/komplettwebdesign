@@ -4,9 +4,9 @@
     "about.css": {
       "source": "about.css",
       "output": "about.min.css",
-      "href": "/about.min.css?v=542189ab451b",
-      "hash": "542189ab451b",
-      "bytes": 7980
+      "href": "/about.min.css?v=187d33a39f66",
+      "hash": "187d33a39f66",
+      "bytes": 14676
     },
     "admin-appointments.css": {
       "source": "admin-appointments.css",
@@ -130,9 +130,9 @@
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=3288351b9ba0",
-      "hash": "3288351b9ba0",
-      "bytes": 35988
+      "href": "/extra.min.css?v=cdf499843134",
+      "hash": "cdf499843134",
+      "bytes": 36025
     },
     "faq.css": {
       "source": "faq.css",

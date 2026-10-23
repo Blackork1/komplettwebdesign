@@ -1,53 +1,93 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import ejs from 'ejs';
+import { load } from 'cheerio';
+import { referenceProjects } from '../data/referenceProjects.js';
 
-const honestPositioning =
-  'Komplett Webdesign ist noch keine große Agentur mit hunderten Referenzen. Genau deshalb arbeite ich persönlich, fokussiert und nah am Projekt. Du bekommst keinen Standardprozess aus der Massenabfertigung, sondern direkte Betreuung vom ersten Gespräch bis zum Launch.';
+async function renderAbout(baseUrl = 'https://www.komplettwebdesign.de') {
+  const { getAbout } = await import('../controllers/mainController.js');
+  let model;
+  await getAbout({}, {
+    locals: { canonicalBaseUrl: baseUrl },
+    render(view, values) { assert.equal(view, 'about'); model = values; }
+  });
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/about.ejs', import.meta.url)), model, {
+    includer(name, filename) { return name.startsWith('partials/') ? { template: ' ' } : { filename }; }
+  });
+  return { model, $: load(html) };
+}
 
-test('about page contains honest positioning and decision-fit sections', async () => {
-  const source = await readFile(new URL('../views/about.ejs', import.meta.url), 'utf8');
-
-  assert.ok(source.includes(honestPositioning));
-  assert.ok(source.includes('Für wen ich der richtige Ansprechpartner bin'));
-  assert.ok(source.includes('Für wen ich nicht der richtige Anbieter bin'));
+test('about page introduces the person and offers a direct next step before the project proof', async () => {
+  const { $ } = await renderAbout();
+  assert.equal($('main').length, 1);
+  assert.equal($('h1').length, 1);
+  assert.match($('h1').text().replace(/\s+/g, ' '), /Ich bin Sören\. Dein Webdesigner in Berlin\./);
+  const hero = $('#about-hero');
+  assert.equal(hero.find('a[href="/booking"]').text().trim(), 'Kennenlerngespräch vereinbaren');
+  assert.ok(hero.find('a[href="#meine-arbeit"]').length);
+  for (const link of $('main a[href^="#"]').toArray()) {
+    assert.equal($(`[id="${$(link).attr('href').slice(1)}"]`).length, 1, 'every in-page action has an unambiguous target');
+  }
 });
 
-test('about page does not contain unsupported experience and result overclaims', async () => {
-  const source = await readFile(new URL('../views/about.ejs', import.meta.url), 'utf8');
-
-  assert.equal(source.includes('Dutzenden realisierten Projekten'), false);
-  assert.equal(
-    source.includes('vom Familiencafé um die Ecke über Künstler und Berater bis hin zum Tech-Startup war schon alles dabei'),
-    false
-  );
-  assert.equal(source.includes('mehr Reservierungsanfragen über die Website als zuvor'), false);
+test('about page shows documented projects and an attributed customer quote', async () => {
+  const { $ } = await renderAbout();
+  const project = referenceProjects.find(item => item.slug === 'zur-alten-backstube');
+  const proof = $('#meine-arbeit');
+  assert.ok(proof.find('a[href="/referenzen/zur-alten-backstube"]').length);
+  assert.ok(proof.find('a[href="/referenzen/tm-sauber-mehr"]').length);
+  assert.equal(proof.find('blockquote p').text().trim(), project.quote);
+  assert.ok(proof.find('figcaption').text().includes(project.quoteAuthor));
+  assert.ok(proof.find(`img[src="${project.image}"]`).length);
+  for (const image of $('main img').toArray()) {
+    assert.ok(Number($(image).attr('width')) > 0);
+    assert.ok(Number($(image).attr('height')) > 0);
+    assert.ok($(image).attr('alt'));
+  }
 });
 
-test('about page passes page-specific css through the head partial', async () => {
-  const about = await readFile(new URL('../views/about.ejs', import.meta.url), 'utf8');
-  const head = await readFile(new URL('../views/partials/head.ejs', import.meta.url), 'utf8');
-
-  assert.match(about, /include\('partials\/head', \{ extraCssAssets: \['about\.css'\] \}\)/);
-  assert.match(head, /pageCssAssets\.forEach/);
-  assert.doesNotMatch(head, /locals\.seoExtra/);
+test('about page explains scope and answers practical questions without stale biography or result claims', async () => {
+  const { $ } = await renderAbout();
+  const text = $('main').text().replace(/\s+/g, ' ');
+  assert.equal($('main details').length, 3);
+  assert.equal($('main details summary').length, 3);
+  assert.match(text, /Hosting, Domain, E-Mail und Wartung/);
+  assert.match(text, /separat vereinbart/);
+  assert.ok($('main a[href="/pakete"]').length);
+  assert.ok($('main a[href="/kontakt"]').length);
+  assert.ok($('main a[href="tel:+4915511245048"]').length);
+  assert.doesNotMatch(text, /29 Jahre|über 10 Jahre|Halbmarathon|Nachteule|Dutzenden realisierten Projekten|garantierte Google-Rankings/);
 });
 
-test('about page keeps the refreshed hero while legacy content only gets readable text colors', async () => {
-  const css = await readFile(new URL('../public/about.css', import.meta.url), 'utf8');
-  const about = await readFile(new URL('../views/about.ejs', import.meta.url), 'utf8');
+test('about metadata and graph identify the canonical person and organization consistently', async () => {
+  const { model } = await renderAbout('https://www.komplettwebdesign.de/');
+  assert.match(model.title, /Sören.*Webdesigner.*Berlin/);
+  assert.ok(model.description.length >= 120 && model.description.length <= 165);
+  const about = model.structuredDataBlocks.find(node => node['@type'] === 'AboutPage');
+  assert.equal(about.url, 'https://www.komplettwebdesign.de/about');
+  assert.equal(about.mainEntity['@id'], 'https://www.komplettwebdesign.de/#person');
+  assert.equal(about.about['@id'], 'https://www.komplettwebdesign.de/#organization');
+  assert.equal(about.dateModified, '2026-10-23');
+  const breadcrumbs = model.structuredDataBlocks.find(node => node['@type'] === 'BreadcrumbList');
+  assert.deepEqual(breadcrumbs.itemListElement.map(item => item.item), [
+    'https://www.komplettwebdesign.de/', 'https://www.komplettwebdesign.de/about'
+  ]);
+});
 
-  assert.doesNotMatch(css, /(^|\n)body\s*\{/);
-  assert.match(css, /body\.about-page\s*\{[\s\S]*?background-color:\s*#0b2a46\s*!important/);
-  assert.match(css, /\.about-page\s+#about-hero\.unified-hero\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100svh;[\s\S]*?background:\s*radial-gradient[\s\S]*?#f4f7fb\s*!important/);
-  assert.match(css, /\.about-page\s+#about-hero\.unified-hero\s+\.hero-content\s*\{[\s\S]*?background:\s*transparent;[\s\S]*?box-shadow:\s*none;[\s\S]*?backdrop-filter:\s*none;[\s\S]*?padding:\s*0;/);
-  assert.match(css, /\.about-page\s+#about-hero\.unified-hero\s+h1\s*\{[\s\S]*?color:\s*#0b2a46\s*!important/);
-  assert.match(css, /\.about-page\s+#about-hero\.unified-hero\s+\.about-portrait-card\s*\{[\s\S]*?background:\s*linear-gradient[\s\S]*?#fff/);
-  assert.match(css, /\.about-page\s+\.about-section\s*\{[\s\S]*?color:\s*#d9d9d7/);
-  assert.doesNotMatch(css, /\.about-page\s+\.about-section\s*\{[\s\S]*?background:\s*linear-gradient[\s\S]*?#ffffff/);
-  assert.match(css, /\.about-page\s+\.about-section\s+h2\s*\{[\s\S]*?color:\s*#ff6538/);
-  assert.match(css, /\.about-page\s+\.cta-section\s*\{[\s\S]*?background-color:\s*#1d63a3/);
-  const ctaRule = css.match(/\.about-page\s+\.cta-section\s*\{[\s\S]*?\n\}/)?.[0] || '';
-  assert.doesNotMatch(ctaRule, /linear-gradient\(135deg,\s*rgba\(11,\s*42,\s*70/);
-  assert.doesNotMatch(about, /\.hero-content,\s*\n\s*\.hero-image\s*\{/);
+test('about examples show the requested 2026 festival edition, video pages and the Sauber contact flow', async () => {
+  const { $ } = await renderAbout();
+  const festival = $('#projekt-kurdisches-filmfestival');
+  assert.equal(festival.length, 1);
+  assert.match(festival.find('h3').text(), /Kurdisches Filmfestival/);
+  assert.ok(festival.find('img[src$="startseite-2026.webp"]').length);
+  assert.ok(festival.find('img[src$="video-2026.webp"]').length);
+  assert.ok(festival.find('img[src$="mediathek-2026.webp"]').length);
+  assert.ok(festival.find('a[href="https://www.kurdisches-filmfestival.de/archiv2026/de"]').length);
+  assert.ok(festival.find('a[href="https://www.kurdisches-filmfestival.de/archiv2026/video-de"]').length);
+  const sauber = $('#projekt-tm-sauber-mehr');
+  assert.equal(sauber.length, 1);
+  assert.ok(sauber.find('img[src$="kontakt.webp"]').length);
+  assert.ok(sauber.find('a[href="https://www.sauber-mehr.de/kontakt"]').length);
+  assert.match(sauber.text(), /Schritt für Schritt/);
 });

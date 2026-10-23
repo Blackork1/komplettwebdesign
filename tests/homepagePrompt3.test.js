@@ -136,7 +136,7 @@ test('homepage visibility cards link to their detail pages with image hover labe
 
 test('homepage visual cleanup keeps footer isolated and removes internal placeholder copy', () => {
   const mainClose = indexOfRequired(homepage, '</main>');
-  const footerInclude = indexOfRequired(homepage, "include('partials/footer')");
+  const footerInclude = indexOfRequired(homepage, "include('partials/footer'");
   assert.ok(footerInclude > mainClose, 'footer should render outside the scoped homepage main');
 
   assert.match(homepage, /\.home-page \.home-hero-showcase__main/);
