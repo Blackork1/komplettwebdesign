@@ -132,11 +132,6 @@
         <input name="cta_right_image" class="form-control mt-2" placeholder="Right" value="<%= row.cta_right_image || '' %>">
       </div>
 
-      <div class="col-12 form-check mt-3">
-        <input type="checkbox" id="rebuild_embeddings" name="rebuild_embeddings" class="form-check-input">
-        <label class="form-check-label" for="rebuild_embeddings">Embeddings nach Speichern neu aufbauen</label>
-      </div>
-
       <div class="col-md-12">
         <label class="form-label">Flexible Blöcke (JSON Array mit "position")</label>
         <textarea data-json-editor name="blocks" class="form-control" rows="12"><%= JSON.stringify(row.blocks || [], null, 2) %></textarea>

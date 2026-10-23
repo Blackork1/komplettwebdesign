@@ -2168,26 +2168,6 @@
     justify-content: center;
   }
 
-  .home-body .chat-button {
-    right: 0 !important;
-    bottom: 92px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 108px;
-    height: 50px;
-    padding: 0 1.1rem;
-    clip-path: none;
-    border-radius: 25px 0 0 25px;
-    font-weight: 800;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .home-body .chat-container {
-    max-width: calc(100vw - 24px);
-  }
-
   body.home-body .progress-line {
     background: rgba(11, 42, 70, 0.18);
   }
@@ -2361,16 +2341,6 @@
       margin-bottom: 0.9rem;
       font-size: 1rem;
       line-height: 1.45;
-    }
-
-    .home-body .chat-button {
-      right: 0 !important;
-      bottom: 4px;
-      width: 74px;
-      height: 38px;
-      padding: 0 0.7rem;
-      border-radius: 19px 0 0 19px;
-      font-size: 0.86rem;
     }
 
     .home-page .home-hero-bullets {

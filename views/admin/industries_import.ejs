@@ -17,18 +17,12 @@
         <input id="fileInput" type="file" accept=".json,application/json" class="form-control" />
       </div>
 
-      <div class="form-check mt-3">
-        <input class="form-check-input" type="checkbox" id="rebuildEmb" />
-        <label class="form-check-label" for="rebuildEmb">Embeddings nach Import neu aufbauen</label>
-      </div>
-
       <div class="mt-3 d-flex gap-2">
         <button id="btnPreview" class="btn btn-outline-secondary" disabled>Vorschau</button>
         <button id="btnImport" class="btn btn-primary" disabled>Import starten</button>
       </div>
 
       <form class="mt-3" method="post" action="/admin/industries/import/file" enctype="multipart/form-data">
-        <input type="hidden" name="rebuild_embeddings" value="on" id="fallbackRebuild">
         <div class="d-flex align-items-center gap-2">
           <input name="file" type="file" accept=".json,application/json" class="form-control" />
           <button class="btn btn-outline-primary">Fallback Upload</button>

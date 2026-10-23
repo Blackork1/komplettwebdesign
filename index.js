@@ -69,7 +69,6 @@ import faqRoutes from './routes/faq.js';
 import contactRoutes from "./routes/contactRoutes.js";
 import seoLandingRoutes from './routes/seoLandingRoutes.js';
 import referenceRoutes from './routes/referenceRoutes.js';
-import chatRoutes from './routes/chat.js';
 import adminGalleryRoutes from './routes/adminGalleryRoutes.js';
 import consentRoutes from './routes/consent.js';
 import shopRoutes from './routes/shopRoutes.js';
@@ -163,7 +162,6 @@ validateCssAssetManifest(cssAssetManifest, [
   'extra.css',
   'faq.css',
   'footer.css',
-  'chat.css',
   'home.css',
   'interaction-polish.css',
   'kontakt.css',
@@ -468,7 +466,6 @@ app.use('/en', packageRoutes);
 app.use(faqRoutes);
 app.use("/kontakt", contactRoutes);
 app.use("/en/kontakt", contactRoutes);
-app.use(chatRoutes);
 app.use(adminGalleryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use(shopRoutes);

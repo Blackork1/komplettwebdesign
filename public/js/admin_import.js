@@ -6,7 +6,6 @@
     const fileInput = document.getElementById('fileInput');
     const btnPreview = document.getElementById('btnPreview');
     const btnImport = document.getElementById('btnImport');
-    const rebuildEmb = document.getElementById('rebuildEmb');
 
     let items = null; // parsed list
 
@@ -77,7 +76,7 @@
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ items, rebuild_embeddings: rebuildEmb.checked })
+                body: JSON.stringify({ items })
             });
 
             const ctype = res.headers.get('content-type') || '';

@@ -1,5 +1,4 @@
 import pool from '../util/db.js';
-import { embedAsVector } from '../util/embeddings.js';
 
 
 export async function getAllCategories() {
@@ -30,23 +29,6 @@ export async function getCategoryById(id) {
   return rows[0];
 }
 
-export async function retrieveFaqs(question, topK = 5) {
-  const vec = await embedAsVector(question);
-
-  const { rows } = await pool.query(
-    `SELECT
-        id,
-        question,
-        answer,
-        embedding <=> $1::vector AS distance
-       FROM faq_entries
-      WHERE embedding IS NOT NULL
-   ORDER BY embedding <=> $1::vector
-      LIMIT $2`,
-    [vec, topK]
-  );
-  return rows;
-}
 export async function getPublishedFaqs(db) {
   const { rows } = await db.query(
     `SELECT id, category_id, question, answer

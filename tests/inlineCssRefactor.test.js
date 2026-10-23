@@ -39,8 +39,7 @@ test('global public partials use CSS classes instead of inline CSS', () => {
 test('public JavaScript toggles state classes instead of display inline styles', () => {
   for (const file of [
     'public/js/navToggle.js',
-    'public/js/cookie-consent.js',
-    'public/js/chat.js'
+    'public/js/cookie-consent.js'
   ]) {
     const source = read(file);
     assert.doesNotMatch(source, /\.style\.display\s*=/, `${file} must not set display through inline styles`);

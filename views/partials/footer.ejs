@@ -80,20 +80,6 @@
       <path d="M12 5l7 7-1.4 1.4L13 8.8V19h-2V8.8l-4.6 4.6L5 12z" />
     </svg>
   </a>
-  <!-- Floating Chat-Button -->
-  <button id="chat-toggle" class="btn btn-primary chat-button"><%= isEn ? 'Chat' : 'Chat' %></button>
-  <!-- Chat-Container -->
-  <div id="chat-container" class="chat-container" aria-hidden="true">
-    <div class="chat-header d-flex justify-content-between align-items-center p-2 border-bottom">
-      <strong>Chatbot</strong>
-      <button id="chat-close" type="button" class="btn-close" aria-label="<%= isEn ? 'Close chatbot' : 'Chatbot schließen' %>"></button>
-    </div>
-    <div id="chat-window" class="chat-window"></div>
-    <form id="chat-form" class="chat-form input-group">
-      <input id="chat-input" type="text" class="form-control" placeholder="<%= isEn ? 'Enter question...' : 'Frage eingeben...' %>" required />
-      <button class="btn btn-primary"><%= isEn ? 'Send' : 'Senden' %></button>
-    </form>
-  </div>
 </section>
 <%- include('cookie-banner') %>
 
@@ -115,7 +101,6 @@
 <% } %>
 <script src="<%= scriptAsset('js/tracking.js') %>" defer></script>
 
-<script src="<%= scriptAsset('js/chat.js') %>" defer></script>
 <script>
   (function() {
     var siteKey = "<%= process.env.RECAPTCHA_SITEKEY || '' %>";

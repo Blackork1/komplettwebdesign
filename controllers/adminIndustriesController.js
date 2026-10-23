@@ -1,6 +1,5 @@
 // controllers/adminIndustriesController.js
 import pool from '../util/db.js';
-import { rebuildIndustryEmbeddings } from '../scripts/embeddingsService.js';
 import * as Industry from '../models/industryModel.js'; // optional in anderen Controllern genutzt
 
 // ------------------------------------------------------------
@@ -81,7 +80,6 @@ function normalizeFieldValue(key, val) {
 function normalizeIndustryPayload(obj = {}) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (k === 'rebuild_embeddings') continue;   // 👈 Flag ignorieren
     if (k === 'id') continue;
     if (!ALLOWED_COLS.has(k)) {
       throw new Error(`Unbekanntes Feld "${k}" im Branchen-Import.`);
@@ -155,7 +153,7 @@ export async function importForm(req, res) {
 // ------------------------------------------------------------
 export async function importJSON(req, res) {
   try {
-    const { items, rebuild_embeddings } = req.body || {};
+    const { items } = req.body || {};
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'Payload muss { items: [...] } sein.' });
     }
@@ -168,9 +166,6 @@ export async function importJSON(req, res) {
       const existed = await rowExistsBySlug(data.slug);
       const row = await upsertIndustryDynamic(data);
 
-      if (rebuild_embeddings) {
-        try { await rebuildIndustryEmbeddings(row); } catch (e) { console.error('Embeddings:', e.message); }
-      }
       results.push({ slug: row.slug, name: row.name, action: existed ? 'updated' : 'inserted' });
     }
     return res.json({ ok: true, count: results.length, results });
@@ -191,7 +186,6 @@ export async function importFile(req, res) {
     }
     const text = req.file.buffer.toString('utf8').trim();
     const data = JSON.parse(text);
-    const rebuild_embeddings = !!req.body.rebuild_embeddings;
     const items = Array.isArray(data) ? data : [data];
 
     const results = [];
@@ -200,9 +194,6 @@ export async function importFile(req, res) {
       if (!obj.slug) obj.slug = slugify(obj.name);
       const existed = await rowExistsBySlug(obj.slug);
       const row = await upsertIndustryDynamic(obj);
-      if (rebuild_embeddings) {
-        try { await rebuildIndustryEmbeddings(row); } catch (e) { console.error('Embeddings:', e.message); }
-      }
       results.push({ slug: row.slug, name: row.name, action: existed ? 'updated' : 'inserted' });
     }
 
@@ -306,15 +297,11 @@ export async function create(req, res) {
   const simple = pick(b, keys);
   simple.slug = String(simple.slug || '').toLowerCase();
 
-  const row = await upsertIndustryDynamic({
+  await upsertIndustryDynamic({
     ...simple,
     hero_checks,
     ...parsed // enthält auch "blocks"
   });
-
-  if (b.rebuild_embeddings === 'on') {
-    try { await rebuildIndustryEmbeddings(row); } catch (e) { console.error('Embeddings:', e.message); }
-  }
 
   res.redirect('/admin/industries');
 }
@@ -360,16 +347,12 @@ export async function update(req, res) {
   const { rows: exist } = await pool.query(`SELECT id, slug FROM industries WHERE id=$1`, [id]);
   if (!exist.length) return res.status(404).send('Nicht gefunden');
 
-  const row = await upsertIndustryDynamic({
+  await upsertIndustryDynamic({
     ...b,
     slug: String(b.slug || exist[0].slug).toLowerCase(),
     hero_checks,
     ...parsed // enthält auch "blocks"
   });
-
-  if (b.rebuild_embeddings === 'on') {
-    try { await rebuildIndustryEmbeddings(row); } catch (e) { console.error('Embeddings:', e.message); }
-  }
 
   res.redirect('/admin/industries');
 }

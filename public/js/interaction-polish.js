@@ -61,7 +61,7 @@
 
   function isInsideStaticUi(element) {
     var staticContainer = element.closest(
-      'footer, .site-footer, #footer, .cookie-banner, #cookie-banner, .chat-container, .chat-button, .modal, script, style, noscript'
+      'footer, .site-footer, #footer, .cookie-banner, #cookie-banner, .modal, script, style, noscript'
     );
     if (staticContainer) return true;
 

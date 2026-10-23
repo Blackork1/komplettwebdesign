@@ -6,7 +6,6 @@ const blogControllerSource = readFileSync(new URL('../controllers/blogController
 const blogPresentationSource = readFileSync(new URL('../services/blogPostPresentationService.js', import.meta.url), 'utf8');
 const ratgeberControllerSource = readFileSync(new URL('../controllers/ratgeberController.js', import.meta.url), 'utf8');
 const faqControllerSource = readFileSync(new URL('../controllers/faqController.js', import.meta.url), 'utf8');
-const chatControllerSource = readFileSync(new URL('../controllers/chatController.js', import.meta.url), 'utf8');
 const slugControllerSource = readFileSync(new URL('../controllers/slugController.js', import.meta.url), 'utf8');
 
 test('Blog controller renders pricing tokens before public output', () => {
@@ -33,13 +32,6 @@ test('FAQ controller renders pricing tokens before visible FAQ and FAQPage JSON-
   assert.match(faqControllerSource, /renderPricingTokens\(await getFaqsByCategory/);
   assert.match(faqControllerSource, /renderPricingTokens\(await fetchAllFaqsGrouped/);
   assert.match(faqControllerSource, /buildFaqJsonLd\(faqs\)/);
-});
-
-test('Chat retrieval context is normalized with pricing tokens before OpenAI prompt usage', () => {
-  assert.match(chatControllerSource, /pricingTokenRenderer\.js/);
-  assert.match(chatControllerSource, /renderPricingTokens\(rawFaqs/);
-  assert.match(chatControllerSource, /renderPricingTokens\(rawPages/);
-  assert.match(chatControllerSource, /renderPricingTokens\(rawIndustries/);
 });
 
 test('Generic CMS slug controller renders pricing tokens in pages and components', () => {

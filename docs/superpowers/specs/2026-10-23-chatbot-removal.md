@@ -1,0 +1,9 @@
+# Website-Chat vollständig entfernen
+
+Der Nutzer beauftragt die vollständige Entfernung des Chatbots einschließlich der zugehörigen Bestandteile. Oberfläche im gemeinsamen Footer und auf der FAQ-Seite, Browsercode, CSS, API-Routen, Nachrichtenmodell und die ausschließlich für den Chat verwendete KI-Wissenssuche entfallen. Auch die Verwaltungsoptionen zum Neuaufbau dieser Wissenssuche und der überholte Datenschutzhinweis werden entfernt. Die bestehenden FAQs, Seiteninhalte, Branchenverwaltung und anderen KI-Funktionen bleiben erhalten.
+
+Die Umsetzung erfolgt im vorhandenen Release-Worktree. Die Veröffentlichung ist im laufenden Auftrag autorisiert. Nach erfolgreichem Deployment wird `scripts/decommissionWebsiteChatbot.sql` gegen die Anwendung ausgeführt: ausschließlich Chat-Nachrichten, Branchen-Suchvektoren und die Suchvektorspalten von FAQs und Seiten werden entfernt. Die Bereinigung läuft in einer Transaktion ohne CASCADE, nach einem geprüften Backup. Für eine Rückkehr zur Chat-Version wäre zusätzlich zum vorherigen Image die Wiederherstellung dieser Datenbankbereiche erforderlich.
+
+Verifikation: gerenderte deutsche und englische Footer sowie FAQ-Seite ohne Chat, unverändert nutzbare Kontaktmöglichkeiten und FAQ-Akkordeons, vollständige Testsuite, CSS-Build, lokale und öffentliche Seitenprüfung sowie 404 für ehemalige Chat-Endpunkte und Assets. Nach der Datenbankbereinigung werden ausschließlich Schema-Metadaten kontrolliert.
+
+Vor Veröffentlichung geprüft: 2299 Tests bestanden, 19 übersprungen, keine Fehler; CSS-Build mit 42 Quellen erfolgreich. Zwölf lokale Seiten liefern 200 ohne Chat-Oberfläche und Chat-Ladeverweise. Drei ehemalige API-Endpunkte und drei Chat-Assets liefern 404. FAQ-Akkordeon und mobile Kontaktseite im Browser geprüft. SQL zweimal erfolgreich gegen temporäre Testtabellen ausgeführt, Inhaltsdaten unverändert; unabhängiges Review ohne offene Befunde.

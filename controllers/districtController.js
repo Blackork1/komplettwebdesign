@@ -26,7 +26,7 @@ export async function renderDistrictPage(req, res, next) {
       : districtPage.metaTitle;
     const metaDescription =
       isEn
-        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting, maintenance, and chatbot support. Call now: ${SITE_FACTS.phoneDisplay}.`
+        ? `Web design in ${district.name} (Berlin) - landing pages and relaunches for freelancers and SMEs. CMS, SEO, hosting and maintenance. Call now: ${SITE_FACTS.phoneDisplay}.`
         : districtPage.metaDescription;
     const pagePrefix = req.baseUrl?.startsWith("/en/") ? "/en/webdesign-berlin" : "/webdesign-berlin";
     const canonicalUrl = `${SITE_URL}${pagePrefix}/${slug}`;
