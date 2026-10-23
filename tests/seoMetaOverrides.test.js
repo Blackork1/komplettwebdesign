@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { SHORT_SEO_TITLES, SEO_TITLE_MAX_LENGTH, resolveSeoTitle } from '../data/seoTitleOverrides.js';
+import {
+  SHORT_SEO_DESCRIPTIONS,
+  SHORT_SEO_TITLES,
+  SEO_DESCRIPTION_MAX_LENGTH,
+  SEO_TITLE_MAX_LENGTH,
+  resolveSeoDescription,
+  resolveSeoTitle
+} from '../data/seoMetaOverrides.js';
 import { referenceProjects } from '../data/referenceProjects.js';
 
 test('short replacement titles stay within the snippet budget', () => {
@@ -36,4 +43,19 @@ test('fixed page titles in code stay within 65 characters', async () => {
   for (const project of referenceProjects) {
     assert.ok((project.metaTitle || project.title).length <= 65, project.slug);
   }
+});
+
+test('short replacement descriptions are complete sentences within the snippet budget', () => {
+  for (const [path, description] of Object.entries(SHORT_SEO_DESCRIPTIONS)) {
+    assert.ok(description.length >= 110 && description.length <= 155, `${path}: ${description.length}`);
+    assert.match(description, /[.!?]$/, path);
+    assert.doesNotMatch(description, /\bSie\b|\{\{|€/, path);
+  }
+});
+
+test('stored descriptions win while they fit, long ones fall back to the short version', () => {
+  const longText = 'x'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 1);
+  assert.equal(resolveSeoDescription('/blog/wordpress-68', 'Kurz und vollständig.'), 'Kurz und vollständig.');
+  assert.equal(resolveSeoDescription('/blog/woche-1-was-ist-webdesign', longText), SHORT_SEO_DESCRIPTIONS['/blog/woche-1-was-ist-webdesign']);
+  assert.equal(resolveSeoDescription('/blog/unbekannt', longText), longText);
 });

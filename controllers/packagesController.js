@@ -100,7 +100,7 @@ function buildPackagesListMeta({ isEn, lowestPriceLabel }) {
     }
     : {
       title: `Website-Pakete und Preise${deLowest} | Berlin`,
-      description: `Vergleiche Website-Pakete${deLowest} für kleine Unternehmen in Berlin: klare Umfänge, technische SEO-Grundlagen, Zusatzleistungen und laufende Kosten getrennt eingeordnet.`,
+      description: `Vergleiche Website-Pakete${deLowest} für kleine Unternehmen in Berlin: klare Umfänge, SEO-Grundlagen und laufende Kosten getrennt erklärt.`,
       keywords: 'website erstellen berlin preise, webdesign pakete berlin, website paket kosten, leistungsumfang website, start business wachstum individuell, komplett webdesign'
     };
 }

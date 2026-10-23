@@ -6,7 +6,7 @@ import { isoOffset, isoAtNoon } from '../util/date.js';
 import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
-import { resolveSeoTitle } from '../data/seoTitleOverrides.js';
+import { resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
 function renderDbEjs(template, locals = {}) {
@@ -143,6 +143,8 @@ export async function showGuide(req, res) {
     desc = textOnly.slice(0, 160) + (textOnly.length > 160 ? '…' : '');
   }
 
+  const metaDescription = resolveSeoDescription(`/ratgeber/${post.slug}`, post.description || desc);
+
   const base = (res.locals.canonicalBaseUrl || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonicalUrl = base ? `${base}/ratgeber/${post.slug}` : `/ratgeber/${post.slug}`;
 
@@ -152,7 +154,7 @@ export async function showGuide(req, res) {
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="${ejs.escapeXML(post.title)}">
-  <meta property="og:description" content="${ejs.escapeXML(post.description || desc)}">
+  <meta property="og:description" content="${ejs.escapeXML(metaDescription)}">
   <meta property="og:url" content="${canonicalUrl}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:locale" content="de_DE">
@@ -182,7 +184,7 @@ export async function showGuide(req, res) {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "headline": post.title,
-    "description": post.description || desc,
+    "description": metaDescription,
     "url": canonicalUrl,
     "mainEntityOfPage": canonicalUrl,
     "image": {
@@ -213,7 +215,7 @@ export async function showGuide(req, res) {
   res.render('ratgeber/show', {
     // SEO/OG Variablen
     title: resolveSeoTitle(`/ratgeber/${post.slug}`, post.title),
-    description: post.description || desc,
+    description: metaDescription,
     excerpt: desc,
     og_image: post.image_url,
     og_url: canonicalUrl,

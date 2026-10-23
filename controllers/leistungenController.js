@@ -425,7 +425,7 @@ const SERVICE_PAGE_OVERRIDES = {
     keywordPrimary: 'website sicherheit berlin',
     keywordSecondary: ['datenschutz technische website', 'website sicherheit berlin'],
     metaTitle: 'Technische Website-Sicherheit in Berlin | Komplett Webdesign',
-    metaDescription: 'Technische Website-Sicherheit in Berlin: Rechtstexte einbinden, Consent-Setup vorbereiten, SSL, Backups und Sicherheitsgrundlagen sauber planen. Keine Rechtsberatung.',
+    metaDescription: 'Rechtstexte sauber einbinden, Consent vorbereiten, SSL und Backups planen: technische Sicherheitsgrundlagen für Websites in Berlin. Keine Rechtsberatung.',
     h1: 'Technische Website-Sicherheit in Berlin: Vertrauen sauber vorbereiten',
     answerBlock:
       'Diese Seite ordnet technische Grundlagen für Vertrauen und Betrieb ein: vorhandene Rechtstexte einbinden, Consent-Setup passend zu eingesetzten Tools vorbereiten, SSL, Backups und einfache Schutzmaßnahmen sauber planen. Das ist technische Unterstützung und keine Rechtsberatung; die rechtliche Prüfung sollte bei Bedarf separat erfolgen.',

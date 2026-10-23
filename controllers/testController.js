@@ -251,7 +251,7 @@ const BROKEN_LINK_PAGE_I18N = {
 const GEO_PAGE_I18N = {
   de: {
     title: 'GEO Tester kostenlos: KI-Suchsichtbarkeit prüfen',
-    description: 'Kostenloser GEO-Tester für deine Website. Prüfe Unterseiten auf GEO-Signale, erkenne Potenzial und erhalte den detaillierten Umsetzungsreport per Newsletter-Double-Opt-in.',
+    description: 'Kostenloser GEO-Tester: Prüfe, wie gut KI-Suchsysteme deine Unterseiten verstehen, und erhalte den ausführlichen Report nach Bestätigung per E-Mail.',
     keywords: 'geo tester, generative engine optimization, geo analyse website, ai suchmaschinen optimierung, llm sichtbarkeit website, geo check',
     ogTitle: 'GEO Tester kostenlos',
     ogDescription: 'Teste deine Website auf GEO-Readiness, erkenne Optimierungspotenziale und erhalte einen detaillierten GEO-Report per E-Mail.',

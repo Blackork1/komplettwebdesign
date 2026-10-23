@@ -5,7 +5,7 @@ import { getIndustryBySlug } from '../models/industryModel.js'; // vorhanden bei
 import pricingService from '../services/pricingService.js';
 import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
-import { resolveSeoTitle } from '../data/seoTitleOverrides.js';
+import { resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
 const INDUSTRY_CONTEXT_LINKS = Object.freeze({
