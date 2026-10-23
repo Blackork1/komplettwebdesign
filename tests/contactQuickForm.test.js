@@ -57,7 +57,7 @@ test('contact quick form posts localized recaptcha-protected requests with requi
   assert.match(quickForm, /<input type="hidden" name="source" value="contact-quick">/);
   assert.match(quickForm, /<input type="hidden" name="locale"/);
   assert.match(quickForm, /name="privacyConsent"[\s\S]*required/);
-  assert.match(quickForm, /Ich prüfe deine Angaben und melde mich mit einer ersten Einordnung zum passenden Paket oder nächsten Schritt\. Die Anfrage ist unverbindlich\./);
+  assert.match(quickForm, /Die Anfrage ist unverbindlich\./);
 });
 
 test('contact quick request accepts an empty message after required contact and consent checks', () => {

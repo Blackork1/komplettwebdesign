@@ -47,5 +47,5 @@ test('contact form package options and labels come from pricing DB data', () => 
   assert.match(contactControllerSource, /premium:\s*["']wachstum["']/);
 
   assert.doesNotMatch(contactTemplate, /Website-Pakete starten ab 799 €|Packages start from EUR 799/);
-  assert.match(contactTemplate, /lowestPackagePriceLabel/);
+  assert.match(contactTemplate, /getOptions\('packageInterest'\)/);
 });

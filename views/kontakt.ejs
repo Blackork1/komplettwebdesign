@@ -46,45 +46,24 @@
   const quickProjectRequiresWebsite = quickProjectOptions.some((option) => (
     option.value === selectedQuickProjectType && option.requiresWebsiteUrl
   ));
+  const contactTopics = [
+    { value: 'webdesign', title: isEn ? 'New website' : 'Neue Website', hint: isEn ? 'For your business' : 'Für dein Unternehmen' },
+    { value: 'website-relaunch', title: isEn ? 'Website relaunch' : 'Website überarbeiten', hint: isEn ? 'Design and functionality' : 'Design und Funktionen' },
+    { value: 'landingpage', title: 'Landingpage', hint: isEn ? 'For your offer' : 'Für dein Angebot' },
+    { value: 'website-audit', title: isEn ? 'Website check' : 'Website-Check', hint: isEn ? 'Review technology and SEO' : 'Technik und SEO prüfen' },
+    { value: 'local-seo', title: isEn ? 'Local SEO' : 'Google-Sichtbarkeit', hint: isEn ? 'Get found locally' : 'Lokal gefunden werden' },
+    { value: 'website-wartung', title: isEn ? 'Website maintenance' : 'Wartung und Pflege', hint: isEn ? 'Keep your website up to date' : 'Deine Website aktuell halten' }
+  ];
 %>
 <noscript>
   <link rel="stylesheet" href="<%= cssAsset('kontakt-noscript.css') %>">
 </noscript>
 
 <main class="contact-page-section">
-  <section class="contact-hero" aria-labelledby="contact-title">
-    <div class="container contact-hero__inner">
-      <nav class="contact-breadcrumb" aria-label="Breadcrumb">
-        <a href="<%= isEn ? '/en' : '/' %>"><%= isEn ? 'Home' : 'Startseite' %></a><span aria-hidden="true">/</span><span aria-current="page"><%= isEn ? 'Contact' : 'Kontakt' %></span>
-      </nav>
-      <div class="contact-hero__layout">
-        <div class="contact-hero__copy">
-          <p class="contact-eyebrow"><%= isEn ? 'A first idea is enough.' : 'Eine erste Idee reicht.' %></p>
-          <h1 id="contact-title"><%= isEn ? 'Tell me about' : 'Erzähl mir von' %> <em><%= isEn ? 'your website.' : 'deiner Website.' %></em></h1>
-          <p class="contact-hero__lead"><%= isEn ? 'A new website, a relaunch or support for your current site: tell me what you need. I’ll look at your project personally and get back to you with a useful next step.' : 'Ob neue Website, Relaunch oder Unterstützung für deinen bestehenden Auftritt: Schick mir kurz, was du brauchst. Ich schaue mir dein Vorhaben persönlich an und melde mich mit einem passenden nächsten Schritt.' %></p>
-          <div class="contact-hero__actions">
-            <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_hero_start" data-cta-location="contact_hero"><%= isEn ? 'Start my request' : 'Meine Anfrage starten' %><span aria-hidden="true"> →</span></a>
-            <a class="contact-button contact-button--secondary" href="mailto:<%= siteFacts.email %>?subject=<%= encodeURIComponent(isEn ? 'About my website' : 'Anfrage zu meiner Website') %>&amp;body=<%= encodeURIComponent(isEn ? 'Tell me briefly what you need or have in mind:' : 'Sag mir kurz was du benötigst oder was du dir vorstellst:') %>"><%= isEn ? 'Prefer to email me?' : 'Lieber per E-Mail schreiben' %></a>
-          </div>
-          <p class="contact-hero__note"><%= isEn ? 'No obligation. We’ll clarify the scope and costs before you decide.' : 'Unverbindlich. Umfang und Kosten klären wir, bevor du dich entscheidest.' %></p>
-        </div>
-        <aside class="contact-person" aria-labelledby="contact-person-name">
-          <div class="contact-person__intro">
-            <img src="/images/meinAvatar.webp" alt="<%= isEn ? 'Sören, your web designer in Berlin' : 'Sören, dein Webdesigner in Berlin' %>" width="480" height="480" decoding="async">
-            <div><p class="contact-eyebrow"><%= isEn ? 'Your point of contact' : 'Dein Ansprechpartner' %></p><h2 id="contact-person-name">Sören</h2><p><%= isEn ? 'Web designer and developer in Berlin' : 'Webdesigner und Entwickler in Berlin' %></p></div>
-          </div>
-          <p><%= isEn ? 'Your request comes straight to me. You don’t need to know the technical terms — we’ll figure out what makes sense together.' : 'Deine Anfrage landet direkt bei mir. Du musst die Fachbegriffe nicht kennen – wir finden gemeinsam heraus, was sinnvoll ist.' %></p>
-          <a href="mailto:<%= siteFacts.email %>"><%= siteFacts.email %></a>
-          <a class="contact-person__booking" href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Or book a free consultation' : 'Oder ein Kennenlerngespräch vereinbaren' %><span aria-hidden="true"> ↗</span></a>
-        </aside>
-      </div>
-      <ul class="contact-hero__facts" aria-label="<%= isEn ? 'Request at a glance' : 'Deine Anfrage auf einen Blick' %>">
-        <li><strong><%= isEn ? 'Personal advice' : 'Persönliche Beratung' %></strong><span><%= isEn ? 'Directly with the person building your site.' : 'Direkt mit dem Menschen, der deine Website umsetzt.' %></span></li>
-        <li><strong><%= isEn ? 'A realistic starting point' : 'Ein klarer Einstieg' %></strong><span><%= isEn ? `Website packages from ${lowestPackagePriceLabel || 'EUR'}.` : `Website-Pakete ab ${lowestPackagePriceLabel || ''}.` %> <a href="<%= packagesHref %>"><%= isEn ? 'View packages' : 'Pakete ansehen' %></a></span></li>
-        <li><strong><%= isEn ? 'Room for your ideas' : 'Platz für deine Ideen' %></strong><span><%= isEn ? 'We’ll agree on features and scope together.' : 'Funktionen und Umfang stimmen wir gemeinsam ab.' %></span></li>
-      </ul>
-    </div>
-  </section>
+  <header class="container contact-clean-header">
+    <h1 id="contact-title"><%= isEn ? 'How can I' : 'Wobei kann ich dir' %> <span><%= isEn ? 'help you?' : 'helfen?' %></span></h1>
+    <p><%= isEn ? 'Choose a topic and briefly tell me what you need.' : 'Wähle ein Thema und schreib mir kurz, was du brauchst.' %></p>
+  </header>
 
   <section id="anfrage" class="container contact-request">
     <% if (errorList.length) { %>
@@ -111,37 +90,22 @@
     <% } %>
 
     <section class="contact-choice" aria-labelledby="contact-choice-title">
-      <p class="contact-eyebrow"><%= isEn ? 'Choose request type' : 'Anfrageart wählen' %></p>
-      <h2 id="contact-choice-title"><%= isEn ? 'How would you like to start?' : 'Wie möchtest du starten?' %></h2>
-      <p>
-        <%= isEn
-          ? 'A few details or a concrete plan: choose the route that feels right for you.'
-          : 'Ein paar Eckdaten oder schon ein konkreter Plan: Wähle den Weg, der gerade zu dir passt.'
-        %>
-      </p>
-      <div class="contact-choice__actions" role="group" aria-label="<%= isEn ? 'Request type' : 'Anfrageart' %>">
-        <button class="contact-choice__button" type="button" data-contact-mode="quick" aria-controls="contact-quick-panel" aria-expanded="false">
-          <span class="contact-choice__number" aria-hidden="true">01</span><span><%= isEn ? 'Quick request' : 'Schnellanfrage' %></span>
-          <small><%= isEn ? 'Few fields for a first assessment' : 'Wenige Felder für eine erste Einschätzung' %></small>
+      <h2 id="contact-choice-title" class="visually-hidden"><%= isEn ? 'What do you need?' : 'Was möchtest du anfragen?' %></h2>
+      <div class="contact-choice__actions" role="group" aria-label="<%= isEn ? 'Request topic' : 'Thema deiner Anfrage' %>">
+        <% contactTopics.forEach(topic => { %>
+        <button class="contact-choice__button" type="button" data-contact-mode="quick" data-contact-project="<%= topic.value %>" aria-controls="contact-quick-panel" aria-expanded="false">
+          <span class="contact-topic__label"><strong><%= topic.title %></strong><small><%= topic.hint %></small></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
         </button>
-        <button class="contact-choice__button" type="button" data-contact-mode="detailed" aria-controls="contact-detailed-panel" aria-expanded="false">
-          <span class="contact-choice__number" aria-hidden="true">02</span><span><%= isEn ? 'Detailed project request' : 'Ausführliche Projektanfrage' %></span>
-          <small><%= isEn ? 'Project type, package, budget, timeline and add-ons' : 'Projektart, Paket, Budget, Zeitrahmen und Zusatzfunktionen' %></small>
-        </button>
+        <% }) %>
       </div>
+      <button class="contact-choice__more" type="button" data-contact-mode="detailed" aria-controls="contact-detailed-panel" aria-expanded="false"><%= isEn ? 'Detailed project request' : 'Ausführliche Projektanfrage' %> <span aria-hidden="true">↗</span></button>
     </section>
 
     <section class="contact-panel contact-quick" id="contact-quick-panel" aria-labelledby="contact-quick-title" hidden>
       <div class="contact-form-shell contact-form-shell--quick">
         <div class="contact-form-intro">
-          <p class="contact-eyebrow"><%= isEn ? 'Quick request' : 'Schnellanfrage' %></p>
           <h2 id="contact-quick-title"><%= isEn ? 'Get a first assessment' : 'Erste Einschätzung anfragen' %></h2>
-          <p>
-            <%= isEn
-              ? 'Send the essential details. If the request needs more context, I ask follow-up questions before estimating the scope.'
-              : 'Schick mir die wichtigsten Eckdaten. Wenn noch Kontext fehlt, frage ich nach, bevor ich den Umfang einschätze.'
-            %>
-          </p>
         </div>
 
         <form id="contactQuickForm" class="contact-form" action="<%= isEn ? '/en/kontakt/kurzanfrage' : '/kontakt/kurzanfrage' %>" method="POST" data-recaptcha="v3" data-recaptcha-action="contact_quick" data-form-variant="quick" data-event="contact_form_view">
@@ -178,7 +142,7 @@
             </div>
             <div class="contact-field contact-field--full">
               <label for="quick-message"><%= isEn ? 'What should I assess? (optional)' : 'Was soll ich einschätzen? (optional)' %></label>
-              <textarea id="quick-message" name="message" rows="5" maxlength="5000" placeholder="<%= isEn ? 'Briefly describe what you need, whether a website already exists and what the next step should clarify.' : 'Beschreibe kurz, was du brauchst, ob es bereits eine Website gibt und was der nächste Schritt klären soll.' %>"></textarea>
+              <textarea id="quick-message" name="message" rows="5" maxlength="5000" placeholder="<%= isEn ? 'Your idea in a few words…' : 'Deine Idee in ein paar Worten …' %>"></textarea>
               <p class="contact-help"><%= isEn ? 'A few bullet points are enough.' : 'Ein paar Stichpunkte reichen für den Anfang.' %></p>
             </div>
           </div>
@@ -194,10 +158,10 @@
             </span>
           </label>
 
-          <button class="contact-submit" type="submit" data-event="contact_form_submit"><%= isEn ? 'Request assessment' : 'Einschätzung anfragen' %></button>
+          <button class="contact-submit" type="submit" data-event="contact_form_submit"><%= isEn ? 'Send request' : 'Anfrage senden' %></button>
           <p class="contact-submit-note"><%= isEn
-            ? 'I will review your details and respond with an initial assessment of the suitable package or next step. The request is non-binding.'
-            : 'Ich prüfe deine Angaben und melde mich mit einer ersten Einordnung zum passenden Paket oder nächsten Schritt. Die Anfrage ist unverbindlich.'
+            ? 'The request is non-binding.'
+            : 'Die Anfrage ist unverbindlich.'
           %></p>
         </form>
       </div>
@@ -206,14 +170,7 @@
     <section class="contact-panel contact-detailed" id="contact-detailed-panel" aria-labelledby="contact-detailed-title" hidden>
       <div class="contact-form-shell">
         <div class="contact-form-intro">
-          <p class="contact-eyebrow"><%= isEn ? 'Detailed request' : 'Ausführliche Anfrage' %></p>
-          <h2 id="contact-detailed-title"><%= isEn ? 'Describe your project clearly' : 'Erzähle kurz von deinem Projekt' %></h2>
-          <p>
-            <%= isEn
-              ? 'This form asks for project type, package, budget, timeline, content and add-ons. Choose “not sure yet” wherever you do not know the answer.'
-              : 'Dieses Formular fragt Projektart, Paket, Budget, Zeitrahmen, Texte und Zusatzfunktionen ab. Wähle „Noch unsicher“, wenn du etwas noch nicht weißt.'
-            %>
-          </p>
+          <h2 id="contact-detailed-title"><%= isEn ? 'Your project' : 'Dein Projekt' %></h2>
         </div>
 
         <form id="kontaktForm" class="contact-form contact-form--detailed" action="<%= contactAction || contactBase %>" method="POST" data-form-variant="detailed" data-event="contact_form_view" data-form-has-errors="<%= errorList.length ? 'true' : 'false' %>">
@@ -656,79 +613,11 @@
     </section>
   </section>
 
-  <section class="contact-intro-block">
-    <div class="container contact-intro-grid">
-      <article class="contact-info-card">
-        <h2><%= isEn ? 'What happens after your request?' : 'So geht es nach deiner Anfrage weiter.' %></h2>
-        <p>
-          <%= isEn
-            ? 'I review your details, classify the likely scope and ask follow-up questions if something important is missing.'
-            : 'Ich lese deine Anfrage persönlich und schaue, welche Unterstützung zu deinem Vorhaben passt. Wenn mir etwas fehlt, frage ich nach.'
-          %>
-        </p>
-        <ul>
-          <li><%= isEn ? 'A rough budget range helps with a realistic recommendation.' : 'Ein grober Budgetrahmen hilft bei einer realistischen Empfehlung.' %></li>
-          <li><%= isEn ? 'If you are unsure, choose “Not sure yet”.' : 'Wenn du unsicher bist, wähle einfach „Noch unsicher“.' %></li>
-          <li><%= isEn ? 'Scope, add-ons and running costs are clarified before the project starts.' : 'Umfang, Zusatzleistungen und laufende Kosten werden vor Projektstart abgestimmt.' %></li>
-        </ul>
-      </article>
-      <article class="contact-info-card">
-        <h2><%= isEn ? 'Clear expectations from the start.' : 'Transparent von Anfang an.' %></h2>
-        <p>
-          <%= isEn
-            ? 'Booking systems, CMS, multilingual setup, shop functions, tracking, extensive animation and copywriting are not automatic standard package contents.'
-            : 'Du erhältst ein Angebot mit klar beschriebenen Leistungen. Besondere Funktionen wie Buchungssysteme, CMS, Mehrsprachigkeit oder Shops sowie zusätzliche Textarbeit klären und kalkulieren wir vorab.'
-          %>
-        </p>
-        <p>
-          <%= isEn
-            ? 'Hosting, domain, email, maintenance and third-party tools can create separate running costs.'
-            : 'Hosting, Domain, E-Mail, Wartung und Drittanbieter-Tools können separate laufende Kosten verursachen.'
-          %>
-        </p>
-      </article>
-    </div>
-  </section>
-
-  <section class="container contact-alternatives" aria-labelledby="contact-alt-title">
-    <h2 id="contact-alt-title"><%= isEn ? 'Other useful paths' : 'Alternative Kontaktmöglichkeiten' %></h2>
-    <div class="contact-alt-grid">
-      <a href="mailto:kontakt@komplettwebdesign.de" class="contact-alt-card">
-        <strong>E-Mail</strong>
-        <span>kontakt@komplettwebdesign.de</span>
-      </a>
-      <a href="<%= packagesHref %>" class="contact-alt-card">
-        <strong><%= isEn ? 'Package overview' : 'Paketübersicht' %></strong>
-        <span><%= isEn ? 'Compare Start, Business, Growth and Individual.' : 'Start, Business, Wachstum und Individuell vergleichen.' %></span>
-      </a>
-      <a href="<%= testerHref %>" class="contact-alt-card">
-        <strong><%= isEn ? 'Website check' : 'Website-Check' %></strong>
-        <span><%= isEn ? 'Useful if you already have a website.' : 'Sinnvoll, wenn es bereits eine Website gibt.' %></span>
-      </a>
-    </div>
-  </section>
-
-  <section class="container contact-faq" aria-labelledby="contact-faq-title">
-    <p class="contact-eyebrow"><%= isEn ? 'FAQ' : 'Häufige Fragen' %></p>
-    <h2 id="contact-faq-title"><%= isEn ? 'Frequently asked questions about the request' : 'Häufige Fragen zur Anfrage' %></h2>
-    <div class="contact-faq-grid">
-      <% (contactFaqs || []).forEach((item) => { %>
-        <article class="contact-faq-item">
-          <h3><%= item.question %></h3>
-          <p><%= item.answer %></p>
-        </article>
-      <% }) %>
-    </div>
-  </section>
-
-  <section class="contact-final-cta">
-    <div class="container contact-final-cta__inner">
-      <h2><%= isEn ? 'Ready to describe your project?' : 'Bereit, dein Projekt zu beschreiben?' %></h2>
-      <p><%= isEn ? 'Start with a few details. If something is unclear, choose “not sure yet”.' : 'Starte mit ein paar Eckdaten. Wenn etwas unklar ist, wähle einfach „Noch unsicher“.' %></p>
-      <a class="contact-button contact-button--primary" href="#anfrage" data-track="cta" data-event-name="contact_cta_click" data-cta-id="contact_final_start" data-cta-location="contact_final_cta"><%= isEn ? 'Start request' : 'Anfrage starten' %></a>
-    </div>
-  </section>
-<section class="container contact-business" aria-label="Kontaktdaten"><%- include('partials/business-contact') %></section>
+  <div class="container contact-direct">
+    <span><%= isEn ? 'Prefer to get in touch directly?' : 'Lieber direkt?' %></span>
+    <a href="mailto:<%= siteFacts.email %>?subject=<%= encodeURIComponent(isEn ? 'About my website' : 'Anfrage zu meiner Website') %>&amp;body=<%= encodeURIComponent(isEn ? 'Tell me briefly what you need or have in mind:' : 'Sag mir kurz was du benötigst oder was du dir vorstellst:') %>"><%= isEn ? 'Send an email' : 'E-Mail schreiben' %></a>
+    <a href="<%= isEn ? '/en/booking' : '/booking' %>"><%= isEn ? 'Book a consultation' : 'Kennenlerngespräch' %></a>
+  </div>
 </main>
 
 <%- include('partials/footer') %>
@@ -754,6 +643,7 @@
       quick: document.getElementById('contact-quick-panel'),
       detailed: document.getElementById('contact-detailed-panel')
     };
+    var quickProjectSelect = document.getElementById('quick-project-type');
 
     function showPanel(mode, shouldScroll) {
       Object.keys(panels).forEach(function(key) {
@@ -765,7 +655,8 @@
       });
 
       buttons.forEach(function(button) {
-        var active = button.dataset.contactMode === mode;
+        var active = button.dataset.contactMode === mode
+          && (mode !== 'quick' || !button.dataset.contactProject || button.dataset.contactProject === quickProjectSelect?.value);
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-expanded', active ? 'true' : 'false');
       });
@@ -802,9 +693,17 @@
       button.addEventListener('click', function() {
         var mode = button.dataset.contactMode;
         if (!panels[mode]) return;
+        if (mode === 'quick' && button.dataset.contactProject && quickProjectSelect) {
+          quickProjectSelect.value = button.dataset.contactProject;
+          quickProjectSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         history.replaceState(null, '', mode === 'quick' ? '#schnellanfrage' : '#projektanfrage');
         showPanel(mode, true);
       });
+    });
+
+    quickProjectSelect?.addEventListener('change', function() {
+      if (!panels.quick.hidden) showPanel('quick', false);
     });
 
     var contactParams = new URLSearchParams(window.location.search || '');

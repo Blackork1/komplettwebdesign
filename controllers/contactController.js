@@ -1075,7 +1075,7 @@ async function buildContactViewModel(req, res, overrides = {}) {
             baseUrl,
             url: canonical,
             lng,
-            faqs: contactFaqs
+            faqs: []
         }),
         alternateUrls: {
             de: `${baseUrl}/kontakt`,

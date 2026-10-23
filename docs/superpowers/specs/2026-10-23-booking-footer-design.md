@@ -30,3 +30,9 @@ Der Nutzer hat während der Umsetzung zusätzlich die vollständige gestalterisc
 - Lokale HTTP-Testfälle mit realem Frontend: morgen leer → Folgetag, aktueller Monat leer → nächster Monat, keine Termine → Hinweis, Slot-API-Fehler → Fehlermeldung mit Wiederholen-Aktion. Keine Buchung abgeschickt.
 - Kontaktformularvertrag vor/nach Umbau identisch: Kurzformular 11 Felder, Detailformular 160 Felder / 21 Schritte. Bedingte Audit-URL, Wechsel Kurz/Detail, Tastaturauswahl und Zurück-Navigation mit erhaltener Projektart im Browser geprüft. Verarbeitender Kontaktcontroller und kontakt.js unverändert.
 - Neun öffentliche Pfade inklusive deutscher/englischer Buchungs- und Kontaktseite erfolgreich gerendert. Footer enthält exakt den gewünschten Google-Link, Marke, Telefon und E-Mail; keine Anschrift oder Gründername.
+
+## Korrektur: Kontaktseite deutlich vereinfachen
+
+Die anschließende Nutzerkorrektur ersetzt die umfangreiche Kontaktgestaltung: kurzer Einstieg, ein Orientierungssatz und sechs direkt wählbare Anfragethemen auf weißem Grund mit wenigen blauen und orangefarbenen Akzenten. Nach der Themenwahl öffnet sich das Kurzformular mit passender Vorauswahl. Die ausführliche Anfrage bleibt als dezenter Link erreichbar, ebenso E-Mail und Kennenlerngespräch. Zusätzliche Profil-, Vorteils-, FAQ- und Abschlussblöcke entfallen. Ohne sichtbare FAQ wird auch kein FAQ-Schema ausgegeben.
+
+Die Einstiegsansicht wurde von 497 auf 57 sichtbare Wörter reduziert. Gerenderte Formularverträge bleiben gleich (11 beziehungsweise 160 Felder, 21 Detailschritte). Alle sechs Themen, abhängige URL-Pflichtfelder und der Wechsel zur Detailanfrage wurden im Browser geprüft. Bei 320, 390, 768 und 1440 px besteht kein horizontaler Überlauf. CSS-Build und vollständige Suite sind erfolgreich (2297 bestanden, 19 übersprungen); das unabhängige Review ergab keine relevanten Befunde.
