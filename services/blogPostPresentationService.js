@@ -8,6 +8,7 @@ import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
 import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.js';
 import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
+import { resolveSeoTitle } from '../data/seoTitleOverrides.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -199,7 +200,7 @@ export function buildBlogPostPageModel({
   const textOnly = stripHtml(renderedContent);
   const excerpt = String(post.excerpt || '').trim()
     || `${textOnly.slice(0, 160)}${textOnly.length > 160 ? '…' : ''}`;
-  const pageTitle = post.meta_title || post.title;
+  const pageTitle = resolveSeoTitle(`/blog/${post.slug}`, post.meta_title || post.title);
   const metaDescription = post.meta_description || post.description || excerpt;
   const ogTitle = post.og_title || post.title;
   const ogDescription = post.og_description || metaDescription;

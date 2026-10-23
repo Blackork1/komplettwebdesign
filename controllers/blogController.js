@@ -1,5 +1,7 @@
 import BlogPostModel from '../models/BlogPostModel.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { buildPostNavigation } from '../helpers/relatedPosts.js';
+import { createModifiedDateResolver } from '../helpers/contentDates.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { buildBlogPostPageModel } from '../services/blogPostPresentationService.js';
 
@@ -105,17 +107,32 @@ export async function listPostsPage(req, res) {
 }
 
 export async function showPost(req, res) {
-  const rawPost = await BlogPostModel.findBySlug(req.params.slug);
+  const [rawPost, candidates] = await Promise.all([
+    BlogPostModel.findBySlug(req.params.slug),
+    BlogPostModel.findRelatedCandidates().catch(() => [])
+  ]);
   if (!rawPost) return res.status(404).send('Artikel nicht gefunden');
   try {
     req.app.get('contentAttributionService')?.rememberArticle(req, rawPost);
   } catch {
     // Die öffentliche Artikelseite bleibt auch bei einem Trackingfehler erreichbar.
   }
-  return res.render('blog/show', buildBlogPostPageModel({
-    post: rawPost,
-    pricing: res.locals.packagePricing || {},
-    canonicalBaseUrl: res.locals.canonicalBaseUrl,
-    previewMode: false
-  }));
+  const pricing = res.locals.packagePricing || {};
+  const resolveModified = createModifiedDateResolver(candidates);
+  const postForPage = { ...rawPost, updated_at: resolveModified(rawPost) || rawPost.updated_at };
+  const navigation = buildPostNavigation(
+    rawPost,
+    normalizeLegacyPublicCopy(renderPricingTokens(candidates, pricing), pricing)
+  );
+  return res.render('blog/show', {
+    ...buildBlogPostPageModel({
+      post: postForPage,
+      pricing,
+      canonicalBaseUrl: res.locals.canonicalBaseUrl,
+      previewMode: false
+    }),
+    relatedPosts: navigation.related,
+    newerPost: navigation.newer,
+    olderPost: navigation.older
+  });
 }

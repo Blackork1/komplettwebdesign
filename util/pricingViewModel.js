@@ -20,6 +20,20 @@ export function formatPriceLabelForLocale(label = '', lng = 'de') {
   return lng === 'en' ? toEnglishPriceLabel(label) : String(label || '');
 }
 
+// Preis-Labels bringen „ab“ bzw. „from“ schon mit („ab 1.499 €“). Steht davor bereits
+// „bei“ oder „at“, entstünde „bei ab 1.499 €“ / „at from 1,499 EUR“. Nur vor Preisangaben.
+const PRICE_AHEAD = String.raw`(?=\d[\d.,\s–-]*(?:€|EUR))`;
+const DOUBLED_PRICE_PREFIXES = [
+  [new RegExp(String.raw`\bbei ab ${PRICE_AHEAD}`, 'g'), 'bei '],
+  [new RegExp(String.raw`\bab ab ${PRICE_AHEAD}`, 'g'), 'ab '],
+  [new RegExp(String.raw`\bat from ${PRICE_AHEAD}`, 'g'), 'from '],
+  [new RegExp(String.raw`\bfrom from ${PRICE_AHEAD}`, 'g'), 'from ']
+];
+
+export function tidyPricePhrases(text) {
+  return DOUBLED_PRICE_PREFIXES.reduce((current, [pattern, replacement]) => current.replace(pattern, replacement), String(text));
+}
+
 export function buildPricingViewModel({
   visiblePackages = [],
   packagePriceMap = {},
@@ -84,7 +98,7 @@ export function interpolatePricingTokens(value, pricingInput = {}, { lng = 'de' 
     : buildPricingViewModel(pricingInput);
 
   if (typeof value === 'string') {
-    return value.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_match, token) => replaceToken(token, pricing, lng));
+    return tidyPricePhrases(value.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_match, token) => replaceToken(token, pricing, lng)));
   }
 
   if (Array.isArray(value)) {

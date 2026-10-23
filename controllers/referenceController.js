@@ -90,7 +90,7 @@ export function showReference(req, res) {
   const canonicalUrl = `${baseUrl}/referenzen/${project.slug}`;
 
   return res.render('references/show', {
-    title: project.title,
+    title: project.metaTitle || project.title,
     description: project.metaDescription,
     canonicalUrl,
     structuredDataBlocks: detailStructuredData(project, baseUrl, canonicalUrl),

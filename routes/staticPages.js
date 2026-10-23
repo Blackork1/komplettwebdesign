@@ -304,7 +304,7 @@ router.get('/swipeandcook-konto-loeschen', (_req, res) => {
  */
 router.get('/hinweise-rechtstexte-seo-datenschutz', (_req, res) => {
   res.render('static/hinweise-rechtstexte-seo-datenschutz', {
-    title: 'Hinweise zu Rechtstexten, SEO und Datenschutz | Komplett Webdesign',
+    title: 'Hinweise zu Rechtstexten, SEO und Datenschutz',
     description: 'Wichtige Hinweise zur technischen Einbindung von Rechtstexten, SEO-Grenzen, Drittanbieter-Kosten und Datenschutz bei Website-Anfragen.',
     currentPathname: '/hinweise-rechtstexte-seo-datenschutz'
   });

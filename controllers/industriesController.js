@@ -5,6 +5,7 @@ import { getIndustryBySlug } from '../models/industryModel.js'; // vorhanden bei
 import pricingService from '../services/pricingService.js';
 import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
+import { resolveSeoTitle } from '../data/seoTitleOverrides.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
 const INDUSTRY_CONTEXT_LINKS = Object.freeze({
@@ -308,7 +309,7 @@ export async function showIndustryPage(req, res) {
     }
 
     res.render('industries/show.ejs', {
-      title: industry.title || (`Webdesign für ${industry.name}`),
+      title: resolveSeoTitle(`/branchen/${industry.slug || slug}`, industry.title || `Webdesign für ${industry.name}`),
       description: industry.description || (`Website-Erstellung & SEO für ${industry.name}`),
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,

@@ -228,9 +228,9 @@
     "ratgeber.css": {
       "source": "ratgeber.css",
       "output": "ratgeber.min.css",
-      "href": "/ratgeber.min.css?v=d0b5d8927408",
-      "hash": "d0b5d8927408",
-      "bytes": 16101
+      "href": "/ratgeber.min.css?v=25a4e7ced409",
+      "hash": "25a4e7ced409",
+      "bytes": 16842
     },
     "references.css": {
       "source": "references.css",
@@ -284,9 +284,9 @@
     "webdesign-berlin.css": {
       "source": "webdesign-berlin.css",
       "output": "webdesign-berlin.min.css",
-      "href": "/webdesign-berlin.min.css?v=ca870b29da44",
-      "hash": "ca870b29da44",
-      "bytes": 28532
+      "href": "/webdesign-berlin.min.css?v=b42c0f08943e",
+      "hash": "b42c0f08943e",
+      "bytes": 30586
     },
     "website-tester.css": {
       "source": "website-tester.css",

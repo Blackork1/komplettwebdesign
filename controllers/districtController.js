@@ -5,6 +5,7 @@ import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 import { webdesignBerlinPage } from "../data/webdesignBerlinPage.js";
 import { SITE_FACTS, formatGoogleRating } from "../helpers/siteFacts.js";
 import { interpolatePricingTokens } from "../util/pricingViewModel.js";
+import { DISTRICT_PAGES, DISTRICT_CONTENT_UPDATED_ISO } from "../data/districtPages.js";
 
 export async function renderDistrictPage(req, res, next) {
   try {
@@ -30,22 +31,22 @@ export async function renderDistrictPage(req, res, next) {
         : districtPage.metaDescription;
     const pagePrefix = req.baseUrl?.startsWith("/en/") ? "/en/webdesign-berlin" : "/webdesign-berlin";
     const canonicalUrl = `${SITE_URL}${pagePrefix}/${slug}`;
-    const districtCssHref = req.app.locals.cssAsset("district-berlin.css");
+    const districtCssHref = isEn ? req.app.locals.cssAsset("district-berlin.css") : "";
+    // Die englischen Bezirksseiten sind noindex: keine hreflang-Verweise darauf.
+    // Die deutschen Seiten nutzen das Design von /webdesign-berlin (webdesign-berlin.css im Template).
+    const ogImage = !isEn && districtPage.heroImage ? districtPage.heroImage : `${SITE_URL}/images/heroBg.webp`;
 
     res.locals.title = metaTitle;
     res.locals.description = metaDescription;
     res.locals.seoExtra = `
       <link rel="canonical" href="${canonicalUrl}">
-      <link rel="alternate" hreflang="de-DE" href="${SITE_URL}/webdesign-berlin/${slug}">
-      <link rel="alternate" hreflang="en" href="${SITE_URL}/en/webdesign-berlin/${slug}">
-      <link rel="alternate" hreflang="x-default" href="${SITE_URL}/webdesign-berlin/${slug}">
-      <link rel="preload" href="${districtCssHref}" as="style">
-      <link rel="stylesheet" href="${districtCssHref}">
+      ${isEn ? `<link rel="preload" href="${districtCssHref}" as="style">
+      <link rel="stylesheet" href="${districtCssHref}">` : ""}
       <meta property="og:title" content="${metaTitle}">
       <meta property="og:description" content="${metaDescription}">
       <meta property="og:url" content="${canonicalUrl}">
       <meta property="og:type" content="website">
-      <meta property="og:image" content="${SITE_URL}/images/heroBg.webp">
+      <meta property="og:image" content="${ogImage}">
     `;
 
     if (isEn) {
@@ -111,7 +112,7 @@ export async function renderDistrictPage(req, res, next) {
         faqItems: [
           {
             q: `How much does web design in ${district.name} cost?`,
-            a: "Most projects range between EUR 1,500 and EUR 4,500 depending on scope, content, and integrations."
+            a: `Packages: Start ${priceLabel("start") || "scoped offer"}, Business ${priceLabel("business") || "scoped offer"}, Growth ${priceLabel("wachstum") || "scoped offer"}. Hosting, domain, email and maintenance are agreed separately.`
           },
           {
             q: `How long does a website project in ${district.name} take?`,
@@ -139,6 +140,7 @@ export async function renderDistrictPage(req, res, next) {
       company: "Komplett Webdesign",
       phone: SITE_FACTS.phone,
       phoneDisplay: SITE_FACTS.phoneDisplay,
+      googleProfileUrl: SITE_FACTS.googleProfileUrl,
       lng,
       district,
       districtPage,
@@ -146,10 +148,16 @@ export async function renderDistrictPage(req, res, next) {
       districtPath: `/webdesign-berlin/${slug}`,
       contactPath: "/kontakt",
       packageCards: districtPackageCards,
-      processSteps: buildGermanProcessSteps(district.name),
-      faqItems: interpolatePricingTokens(buildGermanDistrictFaq(district.name), pricing, { lng }),
+      faqItems: interpolatePricingTokens(
+        [...(districtPage.faq || []), buildDistrictPriceFaq(district.name)],
+        pricing,
+        { lng }
+      ),
       districtServiceLinks: buildDistrictServiceLinks(slug),
-      districtLastUpdatedIso: CONTENT_LAST_UPDATED_ISO,
+      otherDistricts: DISTRICTS
+        .filter((item) => item.slug !== slug)
+        .map((item) => ({ name: item.name, href: `/webdesign-berlin/${item.slug}` })),
+      districtLastUpdatedIso: DISTRICT_CONTENT_UPDATED_ISO,
       seoGuides: interpolatePricingTokens(SEO_GUIDE_CLUSTER, pricing, { lng }).slice(0, 6).map((guide) => ({
         title: guide.title,
         excerpt: guide.excerpt,
@@ -218,167 +226,42 @@ function buildDistrictHubCards(lng = 'de') {
   });
 }
 
-const DISTRICT_PAGE_COPY = {
-  lichtenberg: {
-    label: "Ost-Berlin im Wachstum",
-    headline: "Webdesign für Lichtenberg - klar, schnell und lokal auffindbar",
-    lead: "Lichtenberg wächst zwischen etabliertem Kiez, neuen Wohnquartieren und vielen kleinen Betrieben. Deine Website muss deshalb sofort verständlich machen, was du anbietest, wo du arbeitest und warum Kundinnen und Kunden dir vertrauen können.",
-    metaTitle: "Webdesign Lichtenberg | Website erstellen lassen {{price.start}}",
-    metaDescription: "Komplett Webdesign erstellt Websites für Lichtenberg: lokale SEO, Texte, Design, Hosting und Wartung für kleine Unternehmen {{price.start}}.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194716/admin_gallery/joe7dzz6f0lql4uigcn9.webp",
-    imageAlt: "Webdesigner von Komplett Webdesign für Projekte in Berlin Lichtenberg",
-    neighborhoods: ["Alt-Lichtenberg", "Friedrichsfelde", "Karlshorst", "Rummelsburg"],
-    audiences: ["Handwerk", "Praxen", "lokale Dienstleister", "kleine Shops"],
-    proof: "Besonders wichtig sind klare Leistungsseiten, schnelle mobile Kontaktwege und lokale Signale für Suchanfragen aus Lichtenberg.",
-    localExamples: ["Projektanfragen mit Fotos", "Leistungsseiten pro Angebot", "Google-Business-Profil-Abgleich"]
-  },
-  friedrichshain: {
-    label: "Dicht, kreativ, umkämpft",
-    headline: "Webdesign für Friedrichshain - sichtbar werden, bevor Gäste und Kunden weiterklicken",
-    lead: "Friedrichshain ist schnell, dicht und vergleichsstark. Restaurants, Cafés, Studios, Shops und Dienstleister werden online innerhalb weniger Sekunden verglichen. Deine Website braucht deshalb eine klare Botschaft, starke mobile Führung und direkte Kontakt- oder Buchungswege.",
-    metaTitle: "Webdesign Friedrichshain | Website erstellen lassen Berlin",
-    metaDescription: "Website in Friedrichshain erstellen lassen: Webdesign, Local SEO, Texte und Conversion-Fokus für Cafés, Shops und lokale Dienstleister.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194808/admin_gallery/yrffluom7yifsi40ydlw.webp",
-    imageAlt: "Webdesign und lokale Sichtbarkeit für Unternehmen in Friedrichshain",
-    neighborhoods: ["Boxhagener Platz", "Warschauer Straße", "Ostkreuz", "Samariterviertel"],
-    audiences: ["Restaurants und Cafés", "Kreativbetriebe", "lokale Shops", "Dienstleister"],
-    proof: "Hier zählen schnelle Orientierung, sichtbare Öffnungszeiten, echte Bilder und klare Wege zu Reservierung, Anfrage oder Beratung.",
-    localExamples: ["Speisekarte als HTML", "Reservierungsbutton", "Event- und Angebotsseiten"]
-  },
-  "prenzlauer-berg": {
-    label: "Vertrauen und Qualität",
-    headline: "Webdesign für Prenzlauer Berg - hochwertig auftreten und Vertrauen aufbauen",
-    lead: "Prenzlauer Berg ist anspruchsvoll: Menschen vergleichen genauer, achten auf Vertrauen und erwarten eine moderne, ruhige Nutzerführung. Eine gute Website zeigt Qualität, beantwortet Einwände und macht den nächsten Schritt leicht.",
-    metaTitle: "Webdesign Prenzlauer Berg | Website erstellen lassen",
-    metaDescription: "Webdesign für Prenzlauer Berg: hochwertige Websites mit SEO, Texten, Kontaktformular und klarer Positionierung für lokale Unternehmen.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194857/admin_gallery/houih15c2s9ao7dimwtj.webp",
-    imageAlt: "Hochwertiges Webdesign für lokale Unternehmen in Prenzlauer Berg",
-    neighborhoods: ["Kollwitzkiez", "Helmholtzkiez", "Schönhauser Allee", "Bötzowviertel"],
-    audiences: ["Praxen", "Beauty und Wellness", "Beratung", "lokale Shops"],
-    proof: "Für diesen Bezirk funktionieren klare Expertise, vertrauensvolle Bilder, präzise FAQ-Bereiche und saubere Termin- oder Kontaktstrecken.",
-    localExamples: ["Terminbuchung", "Team- und Über-uns-Seite", "FAQ gegen Kaufunsicherheit"]
-  },
-  kreuzberg: {
-    label: "Vielfalt mit Tempo",
-    headline: "Webdesign für Kreuzberg - klare Angebote für einen sehr schnellen Markt",
-    lead: "Kreuzberg ist vielfältig, laut und direkt. Eine Website muss dort schnell zeigen, ob dein Angebot passt. Gute Struktur, mutige Positionierung und kurze Wege zur Anfrage entscheiden darüber, ob Besucher bleiben.",
-    metaTitle: "Webdesign Kreuzberg | Website erstellen lassen Berlin",
-    metaDescription: "Komplett Webdesign erstellt Websites für Kreuzberg: Design, SEO, Texte, Kontaktformulare und Buchungssysteme für lokale Unternehmen.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
-    imageAlt: "Conversion-orientiertes Webdesign für Unternehmen in Kreuzberg",
-    neighborhoods: ["Bergmannkiez", "Graefekiez", "Kottbusser Tor", "Wrangelkiez"],
-    audiences: ["Gastronomie", "Handwerk", "Beratung", "lokale Dienstleister"],
-    proof: "In Kreuzberg helfen ein klarer erster Bildschirm, kurze Formulare und eine starke mobile Darstellung besonders stark.",
-    localExamples: ["Telefonbutton", "Buchungsflow", "Leistungsübersicht ohne Umwege"]
-  },
-  mitte: {
-    label: "Zentral und anspruchsvoll",
-    headline: "Webdesign für Berlin Mitte - professionell wirken, schnell Vertrauen gewinnen",
-    lead: "In Mitte ist die Konkurrenz sichtbar und oft hochwertig. Deine Website muss professionell, glaubwürdig und sehr klar sein. Besonders wichtig sind Positionierung, Trust-Signale, schnelle Ladezeiten und ein sauberer Weg zur Anfrage.",
-    metaTitle: "Webdesign Berlin Mitte | Professionelle Website erstellen lassen",
-    metaDescription: "Webdesign Berlin Mitte für Beratungen, Praxen, Immobilienmakler und lokale Dienstleister: SEO, Texte, Design und Tracking {{price.start}}.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194773/admin_gallery/s4bjmdaw4yrjdf8hs7o0.webp",
-    imageAlt: "Professionelles Webdesign für Unternehmen in Berlin Mitte",
-    neighborhoods: ["Alexanderplatz", "Regierungsviertel", "Rosenthaler Platz", "Hackescher Markt"],
-    audiences: ["Beratung", "Immobilien", "Praxen", "Agenturen"],
-    proof: "Für Mitte sind hochwertige Angebotsseiten, nachvollziehbare Referenzen und klare Lead-Qualifizierung besonders wichtig.",
-    localExamples: ["Referenzblöcke", "Trust-Signale", "qualifizierendes Kontaktformular"]
-  },
-  charlottenburg: {
-    label: "Etabliert und kaufkräftig",
-    headline: "Webdesign für Charlottenburg - seriös, strukturiert und auf hochwertige Anfragen ausgerichtet",
-    lead: "Charlottenburg verbindet etablierte Unternehmen, Praxen, Immobilienangebote und hochwertige lokale Dienstleistungen. Deine Website sollte ruhig, seriös und sehr gut strukturiert sein, damit aus Besuchern gute Anfragen werden.",
-    metaTitle: "Webdesign Charlottenburg | Website erstellen lassen Berlin",
-    metaDescription: "Website in Charlottenburg erstellen lassen: seriöses Webdesign, lokale SEO, Texte, Buchungssysteme und Wartung für kleine Unternehmen.",
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194749/admin_gallery/fhjfv6rxlxgedyufvks1.webp",
-    imageAlt: "Seriöses Webdesign für Unternehmen in Berlin Charlottenburg",
-    neighborhoods: ["Kurfürstendamm", "Wilmersdorfer Straße", "Lietzensee", "Savignyplatz"],
-    audiences: ["Immobilienmakler", "Praxen", "Therapie", "Beauty und Wellness"],
-    proof: "In Charlottenburg zählen Glaubwürdigkeit, klare Preis- oder Leistungslogik und hochwertige Kontaktstrecken.",
-    localExamples: ["Anfrage mit Budgetrahmen", "Leistungslogik", "Buchungssystem"]
-  }
-};
+const DISTRICT_FALLBACK_IMAGE = "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp";
 
+// Eigenständige Inhalte je Bezirk stehen in data/districtPages.js.
 function buildGermanDistrictPage(slug, district) {
-  const fallback = {
-    label: "Berlin lokal",
-    headline: `Webdesign für ${district.name} - Website erstellen lassen mit klarem lokalen Fokus`,
-    lead: `In ${district.name} entscheidet deine Website oft vor dem ersten Gespräch, ob Besucher Vertrauen fassen. Wir verbinden Design, Texte, SEO und Technik, damit dein Angebot schnell verstanden und leichter angefragt wird.`,
-    metaTitle: `Webdesign ${district.name} | Website erstellen lassen Berlin`,
-    metaDescription: `Komplett Webdesign erstellt Websites für ${district.name}: Design, SEO, Texte, Hosting und Wartung für kleine Unternehmen in Berlin.`,
-    heroImage: "https://res.cloudinary.com/dvd2cd2be/image/upload/v1755194839/admin_gallery/rvkdyvpwrd25fcm9v3av.webp",
-    imageAlt: `Webdesign für Unternehmen in ${district.name}`,
-    answerBlock: `Webdesign in ${district.name} funktioniert am besten mit klarer Leistungsstruktur, lokal passender Sprache und direkter Kontaktführung. Genau darauf ist diese Seite ausgerichtet: Suchintention treffen, Vertrauen aufbauen und den nächsten Schritt einfach machen – vom ersten Besuch bis zur qualifizierten Anfrage.`,
-    proofBlock: `Du willst nicht nur Texte lesen, sondern echte Ergebnisse sehen. Deshalb zeigen wir dir hier zwei live Kundenprojekte aus Berlin. Beide Websites sind auf klare Leistungsdarstellung, mobile Nutzung und schnelle Kontaktaufnahme ausgerichtet.`,
-    trustBlock: `Bevor du anfragst, kannst du dir unser öffentliches Google-Profil ansehen. Dort findest du echte Bewertungen zur Zusammenarbeit, Kommunikation und Umsetzung - transparent und direkt nachvollziehbar.`,
-    proofSectionTitle: "Live-Referenzen aus echten Berliner Projekten",
-    trustSectionTitle: "Echte Google-Bewertungen zur Zusammenarbeit",
-    proofProjects: [
-      {
-        name: "Zur Alten Backstube",
-        url: "https://www.zuraltenbackstube.de",
-        label: "www.zuraltenbackstube.de",
-        summary: "Klare Angebotsstruktur, lokaler Bezug und ein direkter Weg zur Kontaktaufnahme."
-      },
-      {
-        name: "Sauber Mehr",
-        url: "https://www.sauber-mehr.de",
-        label: "www.sauber-mehr.de",
-        summary: "Servicefokussierte Seitenführung, damit Interessenten ohne Umwege anfragen können."
-      }
-    ],
+  const content = DISTRICT_PAGES[slug] || {};
+  const neighborhoodDetails = Array.isArray(content.neighborhoods) ? content.neighborhoods : [];
+  return {
+    ...content,
+    slug,
+    name: district.name,
+    h1: content.h1 || `Webdesign in ${district.name}`,
+    metaTitle: content.metaTitle || `Webdesign ${district.name} | Komplett Webdesign`,
+    metaDescription: content.metaDescription || `Websites für kleine Unternehmen in ${district.name}.`,
+    heroImage: content.heroImage || DISTRICT_FALLBACK_IMAGE,
+    imageAlt: content.imageAlt || `Webdesign für Unternehmen in ${district.name}`,
+    imageSize: content.imageSize || [720, 540],
+    // Für die Bezirkskarten auf /webdesign-berlin
+    proof: content.hubTeaser || `Websites für kleine Unternehmen in ${district.name}.`,
+    neighborhoods: neighborhoodDetails.map((area) => area.name),
+    neighborhoodDetails,
     googleRating: {
       label: "★★★★★ 5,0/5 · 4 Google-Rezensionen",
-      href: SITE_FACTS.googleProfileUrl,
-      cta: "Bewertungen auf Google lesen"
+      href: SITE_FACTS.googleProfileUrl
     },
-    neighborhoods: [district.name, "Berlin"],
-    audiences: ["lokale Dienstleister", "kleine Unternehmen", "Selbstständige"],
-    proof: "Wichtig sind klare Leistungen, lokale Suchbegriffe, schnelle mobile Nutzung und direkte Kontaktwege.",
-    localExamples: ["Leistungsseiten", "Kontaktformular", "SEO-Grundlage"]
+    references: [
+      { name: "Zur alten Backstube", href: "/referenzen/zur-alten-backstube", text: "Website für ein lokales Café mit klarer Angebotsstruktur, stimmiger Bildsprache und einfachen Kontaktwegen." },
+      { name: "TM Sauber & Mehr", href: "/referenzen/tm-sauber-mehr", text: "Website-Relaunch für einen Reinigungsbetrieb mit klaren Leistungen, Team-Seite und direktem Anfrageweg." }
+    ]
   };
+}
 
+function buildDistrictPriceFaq(name) {
   return {
-    ...fallback,
-    ...(DISTRICT_PAGE_COPY[slug] || {}),
-    slug,
-    name: district.name
+    q: `Was kostet eine Website in ${name}?`,
+    a: "Die Pakete: Start {{price.start}}, Business {{price.business}}, Wachstum {{price.wachstum}}, individuelle Projekte {{price.individuell}}. Hosting, Domain, E-Mail und Wartung kommen bei Bedarf separat dazu."
   };
-}
-
-function buildGermanProcessSteps(name) {
-  return [
-    { title: "01 Analyse", text: `Wir klären Angebot, Zielgruppe, Wettbewerb und lokale Suchintention in ${name}.` },
-    { title: "02 Struktur", text: "Wir planen Seiten, Texte, Anfragewege, interne Links und die passende Paketlogik." },
-    { title: "03 Design", text: "Du bekommst eine moderne Oberfläche, die zum Bezirk, zur Branche und zu deiner Zielgruppe passt." },
-    { title: "04 Umsetzung", text: "Wir bauen die Website mobiloptimiert, schnell, datenschutzbewusst und mit sauberer SEO-Grundlage." },
-    { title: "05 Launch", text: "Nach dem Test gehen Domain, Tracking, Sitemap und Search Console sauber live." }
-  ];
-}
-
-function buildGermanDistrictFaq(name) {
-  return [
-    {
-      q: `Was kostet Webdesign in ${name}?`,
-      a: "Die Pakete starten mit Start {{price.start}}. Business kostet {{price.business}}, Wachstum {{price.wachstum}} und individuelle Projekte {{price.individuell}}. Hosting, Domain, E-Mail und Wartung können separat dazukommen."
-    },
-    {
-      q: `Wie lange dauert eine Website für ${name}?`,
-      a: "Kompakte Start-Projekte sind meist schneller als größere Websites. Business- und Wachstum-Projekte hängen stärker von Umfang, Feedback und vorhandenen Inhalten ab."
-    },
-    {
-      q: "Ist SEO direkt enthalten?",
-      a: "Ja. Jede Website bekommt eine SEO-Grundlage mit sauberem Title, H1, Meta Description, Seitenstruktur, interner Verlinkung und lokaler Ausrichtung."
-    },
-    {
-      q: "Kann ein Buchungssystem oder Shop integriert werden?",
-      a: "Ja. Buchungssysteme, Shop-Funktionen und ähnliche Module sind möglich, werden aber nach Umfang separat geprüft und kalkuliert."
-    },
-    {
-      q: `Welche Seiten sind für ${name} besonders wichtig?`,
-      a: "In der Regel Startseite, klare Leistungsseiten, ein vertrauensstarker Über-uns-Bereich und eine direkte Kontakt- oder Buchungsstrecke. Diese Struktur sorgt dafür, dass Besucher schneller zu qualifizierten Anfragen werden."
-    }
-  ];
 }
 
 function buildDistrictServiceLinks(slug) {
@@ -865,7 +748,7 @@ export function renderWebdesignBerlinHub(req, res) {
       servicesTitle: "What is included in our web design service in Berlin?",
       packagesBadge: "Our packages",
       packagesTitle: "How much does a website in Berlin cost in 2026?",
-      packagesText1: `If you want to have a website built in Berlin, pricing depends mainly on scope, features, and content. Start begins at ${priceLabel("start") || "a scoped offer"}, Business at ${priceLabel("business") || "a scoped offer"}, Growth at ${priceLabel("wachstum") || "a scoped offer"} and individual projects at ${priceLabel("individuell") || "a custom estimate"}.`,
+      packagesText1: `If you want to have a website built in Berlin, pricing depends mainly on scope, features, and content. Start: ${priceLabel("start") || "scoped offer"}, Business: ${priceLabel("business") || "scoped offer"}, Growth: ${priceLabel("wachstum") || "scoped offer"}, individual projects: ${priceLabel("individuell") || "custom estimate"}.`,
       packagesText2: "More complex projects with shop functionality, booking systems, multilingual setup, or custom integrations can be higher. What matters most: your website should not only look good, but generate measurable inquiries and be technically clean for Google.",
       packagesText3: "Choose the package that fits your current stage and business goal:",
       packageBtnPrimary: "Choose package",
@@ -960,7 +843,7 @@ export function renderWebdesignBerlinHub(req, res) {
     };
 
   if (isEn) {
-    metaTitle = "Web Design Berlin: Get a Professional Website | Komplett Webdesign";
+    metaTitle = "Web Design Berlin: Professional Websites | Komplett Webdesign";
     metaDescription =
       `Get a website built in Berlin: modern web design, local SEO, hosting, and ongoing support for freelancers and SMEs ${lowestPackagePriceLabel || "by quote"}.`;
 

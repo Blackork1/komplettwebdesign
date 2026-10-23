@@ -88,7 +88,7 @@ const PAGE_I18N = {
     ]
   },
   en: {
-    title: 'Free Website Tester: Is my website outdated? | SEO & GEO Website Check',
+    title: 'Free Website Tester: SEO & GEO Check for Your Website',
     description: 'Run a free website test for SEO, GEO, technical quality, and trust signals. Find out if your website is outdated and needs an update.',
     keywords: 'free website tester, website test free, is my website outdated, does my website need an update, website seo check, geo website check, free website audit',
     ogTitle: 'Free Website Tester | Is my website outdated?',
@@ -143,7 +143,7 @@ const PAGE_I18N = {
 
 const BROKEN_LINK_PAGE_I18N = {
   de: {
-    title: 'Broken Links Tester kostenlos: Defekte Links finden & SEO verbessern',
+    title: 'Broken Links Tester kostenlos: Defekte Links finden',
     description: 'Kostenloser Broken-Links-Tester für interne und externe Links. Finde 404-Fehler, behebe Link-Probleme und verbessere Sichtbarkeit in Google.',
     keywords: 'broken links tester, defekte links finden, website link checker, tote links website, 404 links prüfen, seo links check, website tester links',
     ogTitle: 'Broken Links Tester kostenlos',
@@ -250,7 +250,7 @@ const BROKEN_LINK_PAGE_I18N = {
 
 const GEO_PAGE_I18N = {
   de: {
-    title: 'GEO Tester kostenlos: Generative Suchsichtbarkeit prüfen & verbessern',
+    title: 'GEO Tester kostenlos: KI-Suchsichtbarkeit prüfen',
     description: 'Kostenloser GEO-Tester für deine Website. Prüfe Unterseiten auf GEO-Signale, erkenne Potenzial und erhalte den detaillierten Umsetzungsreport per Newsletter-Double-Opt-in.',
     keywords: 'geo tester, generative engine optimization, geo analyse website, ai suchmaschinen optimierung, llm sichtbarkeit website, geo check',
     ogTitle: 'GEO Tester kostenlos',
@@ -464,7 +464,7 @@ const SEO_PAGE_I18N = {
 
 const META_PAGE_I18N = {
   de: {
-    title: 'Meta Tester kostenlos: Header, Title, Description, OG & Icons prüfen',
+    title: 'Meta Tester kostenlos: Title, Description & OG prüfen',
     description: 'Header-Meta-Tester für Website-Probleme: Prüfe Title, Description, H1, Open Graph, Twitter Cards, Canonical, Icons & weitere Head-Tags.',
     keywords: 'meta tester, header meta test, website meta checker, meta tags prüfen, title description prüfen, finde probleme auf meiner website, website tester, website head prüfen, og tags testen, twitter cards testen, favicon prüfen',
     ogTitle: 'Meta Tester kostenlos: Header und Meta-Tags prüfen',
@@ -516,7 +516,7 @@ const META_PAGE_I18N = {
     ]
   },
   en: {
-    title: 'Free Meta Tester: Check Header Tags, Title, Description, OG & Icons',
+    title: 'Free Meta Tester: Check Title, Description, OG & Icons',
     description: 'Website header meta checker to find problems on your website: title, meta description, H1, canonical, Open Graph, Twitter cards, icons, and head tags.',
     keywords: 'free meta tester, website header checker, meta tag checker, title description checker, find problems on my website, website tester, open graph checker, twitter card checker, favicon checker',
     ogTitle: 'Free Meta Tester: Website Header Metadata Audit',

@@ -2,6 +2,8 @@ import { shouldNoindexPublicPath, canonicalPublicPath } from '../middleware/publ
 // controllers/sitemapController.js
 import pool from "../util/db.js";
 import { DISTRICTS } from "../models/districtModel.js";
+import { DISTRICT_CONTENT_UPDATED_ISO } from "../data/districtPages.js";
+import { createModifiedDateResolver } from "../helpers/contentDates.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 import { REDIRECTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
 import pricingService from "../services/pricingService.js";
@@ -68,7 +70,8 @@ export async function sitemapXml(req, res, next) {
     // ---- DB: dynamische Inhalte ----
     const posts = await querySafe(
       `SELECT slug,
-              COALESCE(updated_at, created_at) AS updated_at
+              COALESCE(updated_at, created_at) AS updated_at,
+              COALESCE(published_at, created_at) AS published_at
          FROM posts
         WHERE published = true
           AND slug <> ALL($1::text[])`,
@@ -135,8 +138,8 @@ export async function sitemapXml(req, res, next) {
     // Bezirke
     const districtRoutesDe = DISTRICTS.filter((d) => shouldIncludeDistrictInSitemap(d.slug)).map(d => ({
       loc: `${base}/webdesign-berlin/${d.slug}`,
-      lastmod: "2026-10-23",
-      changefreq: "weekly",
+      lastmod: DISTRICT_CONTENT_UPDATED_ISO,
+      changefreq: "monthly",
       priority: 0.8
     }));
 
@@ -150,9 +153,11 @@ export async function sitemapXml(req, res, next) {
     }));
 
     // Blogposts
+    // Sammel-Zeitstempel einer Migration sind keine inhaltliche Änderung.
+    const resolvePostModified = createModifiedDateResolver(posts);
     const postRoutes = posts.map(p => ({
       loc: `${base}/blog/${canonicalBlogSlug(p.slug)}`,
-      lastmod: toIso(p.updated_at),
+      lastmod: toIso(resolvePostModified(p)),
       changefreq: "weekly",
       priority: 0.8
     }));

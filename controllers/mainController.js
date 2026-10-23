@@ -152,7 +152,7 @@ const HOMEPAGE_I18N = {
     faqSubline: 'Antworten auf die Fragen, die mir Interessenten am häufigsten stellen.'
   },
   en: {
-    seoTitle: 'Website Development Berlin – Packages from {{lowestPackagePriceLabel.en}} | Komplett Webdesign',
+    seoTitle: 'Website Development Berlin from {{lowestPackagePriceLabel.en}} | Komplett Webdesign',
     seoDescription: 'Have your website built in Berlin: custom web design, responsive implementation, technical SEO basics and clear packages from {{lowestPackagePriceLabel.en}}.',
     seoKeywords: 'website development berlin, web design berlin, berlin web designer, local seo berlin, website creation berlin',
     ogTitle: 'Website Development in Berlin – packages from {{lowestPackagePriceLabel.en}}',

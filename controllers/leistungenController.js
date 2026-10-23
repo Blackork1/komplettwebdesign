@@ -373,7 +373,7 @@ const SERVICE_PAGE_OVERRIDES = {
   'inhalte-texte-content': {
     keywordPrimary: 'website texte erstellen lassen berlin',
     keywordSecondary: ['webseitentexte berlin', 'content webdesign berlin'],
-    metaTitle: 'Website Texte erstellen lassen Berlin | Content, der Anfragen auslöst',
+    metaTitle: 'Website-Texte erstellen lassen Berlin: Content für Anfragen',
     metaDescription: 'Website Texte in Berlin erstellen lassen: klare Botschaften, lokale Relevanz und conversion-orientierte Inhalte für mehr Vertrauen und mehr qualifizierte Leads.',
     h1: 'Website Texte erstellen lassen in Berlin: Inhalte mit klarem Conversion-Fokus',
     answerBlock:
@@ -424,7 +424,7 @@ const SERVICE_PAGE_OVERRIDES = {
   'rechtliches-sicherheit': {
     keywordPrimary: 'website sicherheit berlin',
     keywordSecondary: ['datenschutz technische website', 'website sicherheit berlin'],
-    metaTitle: 'Technische Website-Sicherheit Berlin | Vertrauen sauber vorbereiten',
+    metaTitle: 'Technische Website-Sicherheit in Berlin | Komplett Webdesign',
     metaDescription: 'Technische Website-Sicherheit in Berlin: Rechtstexte einbinden, Consent-Setup vorbereiten, SSL, Backups und Sicherheitsgrundlagen sauber planen. Keine Rechtsberatung.',
     h1: 'Technische Website-Sicherheit in Berlin: Vertrauen sauber vorbereiten',
     answerBlock:

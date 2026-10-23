@@ -50,6 +50,8 @@ const LEGACY_COPY_REPLACEMENTS = [
   [/Zwischen\s+499\s*€(?:\s*\(Basis\))?\s+und\s+1\.499\s*€(?:\s*\(Premium\))?\s*(?:–|-|,)?\s*(?:je nach|abhängig vom) [^.]+\.?/gi, `${CURRENT_PACKAGES}. Zusatzleistungen werden separat kalkuliert.`],
   [/499\s*\/\s*899\s*\/\s*1\.499\s*(?:€|EUR)/gi, CURRENT_PACKAGES],
   [/799\s*€\s*(?:,|\/)\s*1\.499\s*€\s*(?:,|und|\/)\s*1\.499\s*€/gi, CURRENT_PACKAGES],
+  // Altbestand nach dem Einsetzen der Preise: „ab 1.499 € und 1.499 €“ (zweimal Business statt Wachstum)
+  [/(?:\bab\s+)?1\.499\s*€\s+und\s+1\.499\s*€/gi, `${CURRENT_BUSINESS} und ${CURRENT_GROWTH}`],
   [/(<strong>)799\s*€(<\/strong>,\s*<strong>)1\.499\s*€(<\/strong>,\s*<strong>)1\.499\s*€(<\/strong>)/gi, `$1Start ${CURRENT_START}$2Business ${CURRENT_BUSINESS}$3Wachstum ${CURRENT_GROWTH}$4`],
   [/(<td>)Komplett Webdesign Basis(<\/td>\s*<td>)(?:499|799)\s*€(<\/td>)/gi, `$1Komplett Webdesign Start$2${CURRENT_START}$3`],
   [/(<td>)Komplett Webdesign Premium(<\/td>\s*<td>)1\.499\s*€(<\/td>)/gi, `$1Komplett Webdesign Wachstum$2${CURRENT_GROWTH}$3`],

@@ -1,5 +1,5 @@
 import ejs from 'ejs';
-import { buildPricingViewModel, formatPriceLabelForLocale } from './pricingViewModel.js';
+import { buildPricingViewModel, formatPriceLabelForLocale, tidyPricePhrases } from './pricingViewModel.js';
 
 const TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
 
@@ -207,7 +207,7 @@ export function renderPricingTokens(value, pricingContext = {}, options = {}) {
   const lng = options.lng || 'de';
 
   function renderString(input) {
-    return String(input).replace(TOKEN_PATTERN, (match, token) => {
+    return tidyPricePhrases(String(input).replace(TOKEN_PATTERN, (match, token) => {
       const resolved = resolvePricingToken(token, pricingContext, { lng });
       if (!resolved.known) {
         unknownTokens.add(String(token || '').trim());
@@ -215,7 +215,7 @@ export function renderPricingTokens(value, pricingContext = {}, options = {}) {
       }
 
       return escape ? escapeHtml(resolved.value) : String(resolved.value ?? '');
-    });
+    }));
   }
 
   function renderEntry(entry) {

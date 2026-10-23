@@ -137,6 +137,17 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Blumenladen-Website planen', href: '/branchen/webdesign-blumenladen' }
   }),
   freezeTarget({
+    path: '/blog/webdesign-lichtenberg-berlin',
+    intentId: 'lichtenberg-website-informational',
+    state: 'active',
+    priority: 'C',
+    primaryQuery: 'website lokale unternehmen lichtenberg',
+    contentRole: 'Informativer Beitrag; die kommerzielle Suchabsicht liegt bei der Bezirksseite Lichtenberg',
+    requiredLinks: ['/webdesign-berlin/lichtenberg', '/pakete'],
+    primaryAction: { label: 'Webdesign in Lichtenberg', href: '/webdesign-berlin/lichtenberg' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+  }),
+  freezeTarget({
     path: '/blog/website-kosten-2025-einfach-erklaert',
     intentId: 'website-kosten-informational',
     state: 'active',

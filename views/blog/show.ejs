@@ -138,6 +138,41 @@
       </section>
       <% } %>
       <%- include('../partials/author-box') %>
+
+      <% const relatedList = (typeof relatedPosts !== 'undefined' && Array.isArray(relatedPosts)) ? relatedPosts : []; %>
+      <% const prevPost = typeof olderPost !== 'undefined' ? olderPost : null; %>
+      <% const nextPost = typeof newerPost !== 'undefined' ? newerPost : null; %>
+      <% if (!isPreview && (relatedList.length || prevPost || nextPost)) { %>
+      <section class="blog-related" aria-labelledby="blog-related-title">
+        <h2 id="blog-related-title">Passende Artikel</h2>
+        <% if (relatedList.length) { %>
+        <div class="rg-other-list blog-related__list">
+          <% relatedList.forEach((item) => { %>
+          <a href="/blog/<%= item.slug %>" class="rg-other-item">
+            <strong><%= item.title %></strong>
+            <% if (item.teaser) { %><p><%= item.teaser %></p><% } %>
+          </a>
+          <% }) %>
+        </div>
+        <% } %>
+        <% if (prevPost || nextPost) { %>
+        <nav class="blog-post-nav" aria-label="Vorheriger und nächster Artikel">
+          <% if (prevPost) { %>
+          <a href="/blog/<%= prevPost.slug %>" class="blog-post-nav__link blog-post-nav__link--prev" rel="prev">
+            <span class="blog-post-nav__label">Vorheriger Artikel</span>
+            <span class="blog-post-nav__title"><%= prevPost.title %></span>
+          </a>
+          <% } %>
+          <% if (nextPost) { %>
+          <a href="/blog/<%= nextPost.slug %>" class="blog-post-nav__link blog-post-nav__link--next" rel="next">
+            <span class="blog-post-nav__label">Nächster Artikel</span>
+            <span class="blog-post-nav__title"><%= nextPost.title %></span>
+          </a>
+          <% } %>
+        </nav>
+        <% } %>
+      </section>
+      <% } %>
     </article>
 
     <aside class="rg-detail-side" aria-label="Newsletter und nächste Schritte">

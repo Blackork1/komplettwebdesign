@@ -209,6 +209,19 @@ export default class BlogPostModel {
     return rows.map(withCanonicalBlogSlug);
   }
 
+  // Leichte Liste für „Passende Artikel“ und die Vor/Zurück-Navigation im Artikel.
+  static async findRelatedCandidates(db = pool) {
+    const { rows } = await db.query(
+      `SELECT id, slug, title, description, excerpt, category, created_at, updated_at, published_at
+       FROM posts
+       WHERE published = true
+         AND slug <> ALL($1::text[])
+       ORDER BY created_at DESC`,
+      [REDIRECTED_BLOG_SLUGS]
+    );
+    return rows.map(withCanonicalBlogSlug);
+  }
+
   static async findAllAdmin(db = pool) {
     const { rows } = await db.query(
       `SELECT * FROM posts ORDER BY created_at DESC`

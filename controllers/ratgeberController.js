@@ -6,6 +6,7 @@ import { isoOffset, isoAtNoon } from '../util/date.js';
 import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
+import { resolveSeoTitle } from '../data/seoTitleOverrides.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
 function renderDbEjs(template, locals = {}) {
@@ -211,7 +212,7 @@ export async function showGuide(req, res) {
 
   res.render('ratgeber/show', {
     // SEO/OG Variablen
-    title: post.title,
+    title: resolveSeoTitle(`/ratgeber/${post.slug}`, post.title),
     description: post.description || desc,
     excerpt: desc,
     og_image: post.image_url,

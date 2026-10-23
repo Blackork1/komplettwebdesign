@@ -120,6 +120,7 @@ export const referenceProjects = [
     name: 'Kurdisches Filmfestival Berlin',
     industry: 'Kultur, Festival und Streaming',
     title: 'Kurdisches Filmfestival Berlin: Festivalplattform mit Mediathek und Ticketshop',
+    metaTitle: 'Kurdisches Filmfestival Berlin: Plattform mit Mediathek',
     metaDescription: 'Referenzprojekt Kurdisches Filmfestival Berlin: mehrsprachige Festivalplattform mit Mediathek, News, Galerie, Ticketshop, Newsletter und Spendenbereich.',
     summary: 'Eine mehrsprachige Festivalplattform, die Filme, redaktionelle Inhalte, Ticketwege und Unterstützungsmöglichkeiten in einem eigenständigen digitalen Auftritt verbindet.',
     problem: 'Das Festival brauchte mehr als eine klassische Veranstaltungsseite. Filme, aktuelle Inhalte, Tickets, Spenden, Newsletter und mehrere Sprachfassungen mussten in einem verständlichen System zusammengeführt werden.',

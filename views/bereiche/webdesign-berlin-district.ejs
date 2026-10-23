@@ -1,26 +1,17 @@
 <%
-const districtUrl = `https://www.komplettwebdesign.de${districtPath}`;
+const siteBase = 'https://www.komplettwebdesign.de';
+const districtUrl = `${siteBase}${districtPath}`;
 const districtStartPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('start')) || '';
 const districtIndividuellPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('individuell')) || '';
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: (faqItems || []).map((faq) => ({
-    "@type": "Question",
-    name: faq.q,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: faq.a
-    }
-  }))
-};
+const heroSize = Array.isArray(districtPage.imageSize) ? districtPage.imageSize : [720, 540];
 const structuredDataBlocks = [
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "@id": `${districtUrl}#breadcrumb`,
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Startseite", item: "https://www.komplettwebdesign.de/" },
-      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://www.komplettwebdesign.de${hubPath}` },
+      { "@type": "ListItem", position: 1, name: "Startseite", item: `${siteBase}/` },
+      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `${siteBase}${hubPath}` },
       { "@type": "ListItem", position: 3, name: district.name, item: districtUrl }
     ]
   },
@@ -29,292 +20,238 @@ const structuredDataBlocks = [
     "@type": "Service",
     "@id": `${districtUrl}#service`,
     name: `Webdesign in ${district.name}`,
+    description: districtPage.metaDescription,
     url: districtUrl,
-    provider: { "@id": "https://www.komplettwebdesign.de/#organization" },
+    provider: { "@id": `${siteBase}/#organization` },
     image: districtPage.heroImage,
     priceRange: `${districtStartPriceLabel || 'nach Angebot'} bis ${districtIndividuellPriceLabel || 'nach Angebot'}`,
     areaServed: [
       { "@type": "City", name: "Berlin" },
       { "@type": "AdministrativeArea", name: district.name }
     ],
-    serviceType: ["Webdesign", "Website erstellen", "Local SEO", "Hosting", "Wartung", "Buchungssysteme"]
+    serviceType: ["Webdesign", "Website erstellen", "Local SEO", "Website-Relaunch"]
   },
-  faqSchema
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: (faqItems || []).map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a }
+    }))
+  }
 ];
 %>
-<%- include('../partials/head', { structuredDataBlocks }) %>
+<%- include('../partials/head', { structuredDataBlocks, extraCssAssets: ['webdesign-berlin.css'] }) %>
 <%- include('../partials/header') %>
 
-<main class="district-page" id="content">
-  <nav class="district-breadcrumb unified-hero__breadcrumbs" aria-label="Breadcrumb">
-    <ol>
-      <li><a href="/">Startseite</a></li>
-      <li><a href="<%= hubPath %>">Webdesign Berlin</a></li>
-      <li aria-current="page"><%= district.name %></li>
-    </ol>
-  </nav>
-
-  <section class="district-hero" aria-labelledby="district-hero-title">
-    <div class="district-hero__copy">
-      <p class="district-kicker"><span></span><%= districtPage.label %></p>
-      <h1 id="district-hero-title"><%= districtPage.headline %></h1>
-      <p class="district-lead"><%= districtPage.lead %></p>
-      <% if (districtPage.answerBlock) { %>
-      <p class="district-lead"><%= districtPage.answerBlock %></p>
-      <% } %>
-      <div class="district-hero__actions">
-        <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_hero_contact">
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          <span>Kostenloses Erstgespräch</span>
-        </a>
-        <a class="btn btn-secondary" href="/website-tester" data-track="district_hero_tester">
-          <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-          <span>Website testen</span>
-        </a>
-        <a class="btn btn-secondary" href="/pakete/business" data-track="district_hero_package">
-          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-          <span>Business-Paket ansehen</span>
-        </a>
-      </div>
-    </div>
-    <div class="district-hero__media">
-      <img src="<%= districtPage.heroImage %>" alt="<%= districtPage.imageAlt %>" width="760" height="620" loading="eager" decoding="async">
-      <div class="district-hero__stamp" aria-label="Komplett Webdesign Berlin">
-        <strong><%= district.name %></strong>
-        <span>Design · SEO · Technik</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="district-metrics" aria-label="Projekt-Eckdaten">
-    <div>
-      <span>Start</span>
-      <strong><%= districtStartPriceLabel || 'nach Angebot' %></strong>
-      <p>transparente Pakete</p>
-    </div>
-    <div>
-      <span>Start</span>
-      <strong>2-4 Wochen</strong>
-      <p>für kompakte Websites</p>
-    </div>
-    <div>
-      <span>Google</span>
-      <strong>5,0 Sterne</strong>
-      <p>4 Bewertungen</p>
-    </div>
-    <div>
-      <span>Support</span>
-      <strong>24 Stunden</strong>
-      <p>Antwortziel</p>
-    </div>
-  </section>
-
-  <section class="district-section district-section--split" aria-labelledby="district-fit-title">
-    <div>
-      <p class="district-eyebrow">Lokaler Fokus</p>
-      <h2 id="district-fit-title">Was deine Website in <%= district.name %> leisten muss</h2>
-      <p><%= districtPage.proof %></p>
-    </div>
-    <div class="district-checkgrid">
-      <% districtPage.localExamples.forEach((item, index) => { %>
-      <article class="district-mini-tile">
-        <span>0<%= index + 1 %></span>
-        <h3><%= item %></h3>
-        <p>Wird so eingebunden, dass Besucher schneller verstehen, warum dein Angebot passt.</p>
-      </article>
-      <% }) %>
-    </div>
-  </section>
-
-  <section class="district-section district-section--split" aria-labelledby="district-social-proof-title">
-    <div>
-      <p class="district-eyebrow">Google-Bewertungen</p>
-      <h2 id="district-social-proof-title"><%= districtPage.trustSectionTitle || "Vertrauen durch echte Google-Bewertungen" %></h2>
-      <p><%= districtPage.trustBlock %></p>
-      <% if (districtPage.googleRating && districtPage.googleRating.href) { %>
-      <a class="district-review-link" href="<%= districtPage.googleRating.href %>" target="_blank" rel="noopener">
-        <span><%= districtPage.googleRating.label || "★★★★★ 5,0/5 · 4 Google-Rezensionen" %></span>
-        <strong><%= districtPage.googleRating.cta || "Google-Bewertungen ansehen" %></strong>
-      </a>
-      <% } %>
-    </div>
-    <div>
-      <p class="district-eyebrow">Referenzen</p>
-      <h2 id="district-proof-title"><%= districtPage.proofSectionTitle || "Echte Projekte statt leere Versprechen" %></h2>
-      <p><%= districtPage.proofBlock %></p>
-      <% if (districtPage.proofProjects && districtPage.proofProjects.length) { %>
-      <ul class="district-proof-projects" aria-label="Aktuelle Webdesign-Projekte">
-        <% districtPage.proofProjects.forEach((project) => { %>
+<main class="webdesign-berlin-page webdesign-berlin district-bezirk" id="content">
+  <section id="hero" class="wd-container wd-hero unified-hero" aria-labelledby="district-hero-title">
+    <div class="wd-hero__copy unified-hero__copy">
+      <nav class="district-breadcrumb unified-hero__breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Startseite</a></li>
+          <li><a href="<%= hubPath %>">Webdesign Berlin</a></li>
+          <li aria-current="page"><%= district.name %></li>
+        </ol>
+      </nav>
+      <span class="wd-chip"><%= districtPage.label %></span>
+      <h1 id="district-hero-title"><%= districtPage.h1 %></h1>
+      <p class="wd-lead"><%= districtPage.lead %></p>
+      <% if (Array.isArray(districtPage.heroHighlights) && districtPage.heroHighlights.length) { %>
+      <ul class="wd-hero-bullets" aria-label="Schwerpunkte für <%= district.name %>">
+        <% districtPage.heroHighlights.forEach((item) => { %>
         <li>
-          <a href="<%= project.url %>" target="_blank" rel="noopener">
-            <strong><%= project.name %></strong>
-            <span><%= project.label %></span>
-          </a>
-          <% if (project.summary) { %>
-          <p><%= project.summary %></p>
-          <% } %>
+          <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+          <span><%= item %></span>
         </li>
         <% }) %>
       </ul>
       <% } %>
-    </div>
-  </section>
-
-  <section class="district-section" aria-labelledby="district-map-title">
-    <div class="district-section__headline">
-      <p class="district-eyebrow">Bezirkssignale</p>
-      <h2 id="district-map-title">Lokale Relevanz statt austauschbarer SEO-Texte</h2>
-      <p>Jede Bezirksseite bekommt klare lokale Anker. So wirken Inhalte natürlicher, hilfreicher und besser anschlussfähig für interne Links, Google Business Profile und spätere Ratgeber.</p>
-    </div>
-    <div class="district-neighborhoods">
-      <% districtPage.neighborhoods.forEach((area) => { %>
-      <span><%= area %></span>
-      <% }) %>
-    </div>
-  </section>
-
-  <section class="district-section district-section--dark" aria-labelledby="district-audience-title">
-    <div class="district-section__headline">
-      <p class="district-eyebrow">Branchen</p>
-      <h2 id="district-audience-title">Für wen wir in <%= district.name %> bauen</h2>
-      <p>Der Schwerpunkt bleibt auf kleinen Unternehmen, lokalen Dienstleistern und privaten Projekten mit realistischem Anfragepotenzial.</p>
-    </div>
-    <div class="district-audience-grid">
-      <% districtPage.audiences.forEach((audience) => { %>
-      <article>
-        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-        <h3><%= audience %></h3>
-        <p>Mit passenden Leistungsseiten, Vertrauenselementen und klaren Kontaktwegen.</p>
-      </article>
-      <% }) %>
-    </div>
-  </section>
-
-  <section class="district-section" aria-labelledby="district-packages-title">
-    <div class="district-section__headline district-section__headline--row">
-      <div>
-        <p class="district-eyebrow">Pakete</p>
-        <h2 id="district-packages-title">Website erstellen lassen in <%= district.name %></h2>
+      <div class="wd-actions">
+        <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_hero_contact">Kostenloses Erstgespräch</a>
+        <a class="btn btn-secondary" href="/pakete" data-track="district_hero_packages">Pakete ansehen</a>
       </div>
-      <a href="/ratgeber/website-kosten-berlin">Kosten im Detail lesen</a>
     </div>
-    <div class="district-package-grid">
-      <% packageCards.forEach((pkg) => { %>
-      <article class="district-package<%= pkg.featured ? ' district-package--featured' : '' %>">
-        <p><%= pkg.name %></p>
-        <h3><%= pkg.price %></h3>
-        <span><%= pkg.short %></span>
-        <ul>
-          <% pkg.features.forEach((feature) => { %>
-          <li><%= feature %></li>
-          <% }) %>
-        </ul>
-        <a href="<%= pkg.href %>">
-          <span>Paket ansehen</span>
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-        </a>
-      </article>
-      <% }) %>
-    </div>
-    <p class="district-note">Hosting, Domain, E-Mail und Wartung sind bei allen Paketen optional und werden passend zur Auswahl ergänzt.</p>
+    <figure class="wd-hero__media">
+      <img src="<%= districtPage.heroImage %>" alt="<%= districtPage.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
+    </figure>
   </section>
 
-  <section class="district-section district-section--process" aria-labelledby="district-process-title">
-    <p class="district-eyebrow">Ablauf</p>
-    <h2 id="district-process-title">Vom ersten Gespräch bis zur sichtbaren Website</h2>
-    <div class="district-process">
-      <% processSteps.forEach((step) => { %>
-      <article>
-        <strong><%= step.title %></strong>
-        <p><%= step.text %></p>
-      </article>
-      <% }) %>
-    </div>
-  </section>
-
-  <% if (districtServiceLinks && districtServiceLinks.length) { %>
-  <section class="district-section" aria-labelledby="district-links-title">
-    <div class="district-section__headline">
-      <p class="district-eyebrow">Nächste Schritte</p>
-      <h2 id="district-links-title">Passende Inhalte für dein Projekt in <%= district.name %></h2>
-    </div>
-    <div class="district-guide-grid">
-      <% districtServiceLinks.forEach((item) => { %>
-      <a href="<%= item.href %>">
-        <strong><%= item.label %></strong>
-        <span>Direkt zur passenden Unterseite für Planung, Umsetzung oder Paketentscheidung.</span>
-      </a>
+  <% if (districtPage.market) { %>
+  <section id="markt" class="wd-section" aria-labelledby="district-market-title">
+    <div class="wd-container wd-section-head">
+      <span class="wd-chip"><%= district.name %> verstehen</span>
+      <h2 id="district-market-title"><%= districtPage.market.title %></h2>
+      <% (districtPage.market.paragraphs || []).forEach((paragraph) => { %>
+      <p class="wd-lead"><%= paragraph %></p>
       <% }) %>
     </div>
   </section>
   <% } %>
 
-  <section class="district-tester-band" aria-labelledby="district-tester-title">
-    <div>
-      <p class="district-eyebrow">Website-Tester</p>
-      <h2 id="district-tester-title">Schon eine Website? Erst prüfen, dann sinnvoll umbauen.</h2>
-      <p>Der Tester zeigt technische, SEO- und Meta-Probleme. Das macht das Erstgespräch konkreter und verhindert, dass nur nach Gefühl optimiert wird.</p>
-    </div>
-    <a class="btn btn-primary" href="/website-tester" data-track="district_tester_band">
-      <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
-      <span>Website-Check starten</span>
-    </a>
-  </section>
-
-  <section class="district-section" aria-labelledby="district-guides-title">
-    <div class="district-section__headline">
-      <p class="district-eyebrow">Ratgeber</p>
-      <h2 id="district-guides-title">Nächste Schritte für dein Website-Projekt</h2>
-    </div>
-    <div class="district-guide-grid">
-      <% seoGuides.slice(0, 4).forEach((guide) => { %>
-      <a href="<%= guide.href %>">
-        <strong><%= guide.title %></strong>
-        <span><%= guide.excerpt %></span>
-      </a>
-      <% }) %>
+  <% if (districtPage.neighborhoodDetails && districtPage.neighborhoodDetails.length) { %>
+  <section id="kieze" class="wd-section wd-section--soft" aria-labelledby="district-places-title">
+    <div class="wd-container">
+      <div class="wd-section-head">
+        <span class="wd-chip">Kieze und Orte</span>
+        <h2 id="district-places-title">Wo deine Kundschaft in <%= district.name %> unterwegs ist</h2>
+      </div>
+      <div class="wd-grid wd-grid--two district-bezirk__places">
+        <% districtPage.neighborhoodDetails.forEach((area) => { %>
+        <article class="wd-card">
+          <h3><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <%= area.name %></h3>
+          <p><%= area.text %></p>
+        </article>
+        <% }) %>
+      </div>
     </div>
   </section>
+  <% } %>
 
-  <section class="district-section district-section--faq" aria-labelledby="district-faq-title">
-    <div class="district-section__headline">
-      <p class="district-eyebrow">FAQ</p>
-      <h2 id="district-faq-title">Häufige Fragen zu Webdesign in <%= district.name %></h2>
+  <% if (districtPage.audiences && districtPage.audiences.length) { %>
+  <section id="branchen" class="wd-section" aria-labelledby="district-audience-title">
+    <div class="wd-container">
+      <div class="wd-section-head">
+        <span class="wd-chip">Branchen</span>
+        <h2 id="district-audience-title">Typische Betriebe in <%= district.name %> und was ihre Website braucht</h2>
+      </div>
+      <div class="wd-grid wd-grid--two">
+        <% districtPage.audiences.forEach((audience) => { %>
+        <article class="wd-card">
+          <h3><%= audience.title %></h3>
+          <p><%= audience.text %></p>
+        </article>
+        <% }) %>
+      </div>
     </div>
-    <div class="district-faq">
-      <% faqItems.forEach((faq, index) => { %>
-      <details <%= index === 0 ? 'open' : '' %>>
-        <summary><%= faq.q %></summary>
-        <p><%= faq.a %></p>
-      </details>
-      <% }) %>
+  </section>
+  <% } %>
+
+  <% if (districtPage.example) { %>
+  <section id="beispiel" class="wd-section wd-section--soft" aria-labelledby="district-example-title">
+    <div class="wd-container wd-split">
+      <article class="wd-card">
+        <span class="wd-chip">Beispiel</span>
+        <h2 id="district-example-title"><%= districtPage.example.title %></h2>
+        <p><%= districtPage.example.intro %></p>
+        <ol class="wd-list wd-list--checks">
+          <% districtPage.example.pages.forEach((item) => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ol>
+      </article>
+      <article class="wd-card">
+        <h3><%= districtPage.example.focusTitle %></h3>
+        <ul class="wd-list wd-list--checks">
+          <% districtPage.example.focus.forEach((item) => { %>
+          <li><%= item %></li>
+          <% }) %>
+        </ul>
+        <% if (districtServiceLinks && districtServiceLinks.length) { %>
+        <div class="wd-link-row wd-link-row--split">
+          <% districtServiceLinks.forEach((item) => { %>
+          <a href="<%= item.href %>"><%= item.label %></a>
+          <% }) %>
+        </div>
+        <% } %>
+      </article>
+    </div>
+  </section>
+  <% } %>
+
+  <section id="pakete" class="wd-section" aria-labelledby="district-packages-title">
+    <div class="wd-container">
+      <div class="wd-section-head">
+        <span class="wd-chip">Preise</span>
+        <h2 id="district-packages-title">Website-Pakete für <%= district.name %></h2>
+        <% if (districtPage.packageLead) { %><p class="wd-lead"><%= districtPage.packageLead %></p><% } %>
+      </div>
+      <div class="wd-grid wd-grid--three district-bezirk__packages">
+        <% packageCards.forEach((pkg) => { %>
+        <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %>">
+          <% if (pkg.featured) { %>
+          <span class="wd-package__label">Häufig passend</span>
+          <% } else { %>
+          <span class="wd-package__label wd-package__label--placeholder" aria-hidden="true">Paket</span>
+          <% } %>
+          <h3><%= pkg.name %></h3>
+          <span class="wd-package__price"><%= pkg.price %></span>
+          <p><%= pkg.short %></p>
+          <ul class="wd-list">
+            <% pkg.features.forEach((feature) => { %>
+            <li><%= feature %></li>
+            <% }) %>
+          </ul>
+          <a class="btn btn-primary" href="<%= pkg.href %>"><%= pkg.name %>-Paket ansehen</a>
+        </article>
+        <% }) %>
+      </div>
+      <p class="district-bezirk__note">Hosting, Domain, E-Mail und Wartung sind optional und werden separat vereinbart. <a href="/ratgeber/website-kosten-berlin">Was eine Website in Berlin insgesamt kostet</a></p>
     </div>
   </section>
 
-  <section class="district-final" aria-labelledby="district-final-title">
-    <p class="district-eyebrow">Website erstellen lassen in <%= district.name %></p>
-    <h2 id="district-final-title">Bereit für eine Website, die lokal gefunden wird und klare Anfragewege bietet?</h2>
-    <p class="district-final__lead">
-      Komplett Webdesign übernimmt Design, Texte, OnPage-SEO und Technik für dein Website-Projekt in Berlin. Hosting und Wartung können separat vereinbart werden. Im kostenlosen Erstgespräch klären wir, welches Paket zu deinem Umfang passt und welche Seiten für <%= district.name %> wirklich wichtig sind.
-    </p>
-    <ul class="district-final__proof" aria-label="Vorteile von Komplett Webdesign">
-      <li>Klare Webdesign-Pakete <%= (typeof packagePriceLabel === 'function' && packagePriceLabel('start')) || 'nach Angebot' %></li>
-      <li>Lokale SEO-Grundlage für Berlin und <%= district.name %></li>
-      <li>Persönliche Betreuung statt anonymer Baukasten-Lösung</li>
-    </ul>
-    <div class="district-final__actions">
-      <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_final_contact">
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-        <span>Kostenloses Erstgespräch vereinbaren</span>
-      </a>
-      <a class="btn btn-secondary" href="/website-tester" data-track="district_final_tester">
-        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-        <span>Website vorher testen</span>
-      </a>
-      <a class="btn btn-secondary" href="tel:<%= phone %>">
-        <i class="fa-solid fa-phone" aria-hidden="true"></i>
-        <span><%= phoneDisplay %></span>
-      </a>
+  <section id="vertrauen" class="wd-section wd-section--soft" aria-labelledby="district-trust-title">
+    <div class="wd-container wd-split">
+      <article class="wd-card">
+        <span class="wd-chip">Bewertungen</span>
+        <h2 id="district-trust-title">Was Kundinnen und Kunden sagen</h2>
+        <p>Die Bewertungen zur Zusammenarbeit sind öffentlich im Google-Unternehmensprofil nachlesbar.</p>
+        <% if (districtPage.googleRating && districtPage.googleRating.href) { %>
+        <div class="wd-link-row">
+          <a href="<%= districtPage.googleRating.href %>" target="_blank" rel="noopener"><%= districtPage.googleRating.label %></a>
+        </div>
+        <% } %>
+      </article>
+      <article class="wd-card">
+        <h3>Referenzen aus Berlin</h3>
+        <ul class="wd-list district-bezirk__references">
+          <% (districtPage.references || []).forEach((project) => { %>
+          <li>
+            <span><a href="<%= project.href %>"><%= project.name %></a>: <%= project.text %></span>
+          </li>
+          <% }) %>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section id="faq" class="wd-section" aria-labelledby="district-faq-title">
+    <div class="wd-container">
+      <div class="wd-section-head">
+        <span class="wd-chip">FAQ</span>
+        <h2 id="district-faq-title">Häufige Fragen zu Websites in <%= district.name %></h2>
+      </div>
+      <div class="wd-faq">
+        <% faqItems.forEach((faq, index) => { %>
+        <details<%= index === 0 ? ' open' : '' %>>
+          <summary><%= faq.q %></summary>
+          <p><%= faq.a %></p>
+        </details>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section id="kontakt" class="wd-section wd-section--soft" aria-labelledby="district-cta-title">
+    <div class="wd-container">
+      <div class="wd-cta">
+        <h2 id="district-cta-title"><%= districtPage.cta ? districtPage.cta.title : `Website erstellen lassen in ${district.name}` %></h2>
+        <% if (districtPage.cta && districtPage.cta.text) { %><p class="wd-lead"><%= districtPage.cta.text %></p><% } %>
+        <div class="wd-actions">
+          <a class="btn btn-primary" href="<%= contactPath %>" data-track="district_final_contact">Kostenloses Erstgespräch</a>
+          <a class="btn btn-secondary" href="tel:<%= phone %>" data-track="district_final_phone"><%= phoneDisplay %></a>
+        </div>
+      </div>
+      <% if (Array.isArray(otherDistricts) && otherDistricts.length) { %>
+      <nav class="district-bezirk__others" aria-label="Weitere Bezirksseiten">
+        <span>Weitere Bezirke:</span>
+        <% otherDistricts.forEach((item) => { %>
+        <a href="<%= item.href %>"><%= item.name %></a>
+        <% }) %>
+        <a href="<%= hubPath %>">Alles zu Webdesign Berlin</a>
+      </nav>
+      <% } %>
     </div>
   </section>
 </main>
