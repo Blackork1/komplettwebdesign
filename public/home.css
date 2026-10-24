@@ -2901,8 +2901,11 @@
 /* Über mich auf der Startseite */
 .home-about {
   align-items: center;
+  column-gap: clamp(1.25rem, 3vw, 2.5rem);
   display: grid;
-  gap: clamp(1.25rem, 3vw, 2.5rem);
+  grid-template-areas:
+    "photo head"
+    "photo body";
   grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
 }
 
@@ -2911,12 +2914,23 @@
   border: 4px solid #fff;
   border-radius: 50%;
   box-shadow: 0 18px 40px rgba(11, 42, 70, 0.16);
+  grid-area: photo;
   height: auto;
   object-fit: cover;
   width: 100%;
 }
 
-.home-about__copy h2 {
+.home-about__head {
+  align-self: end;
+  grid-area: head;
+}
+
+.home-about__body {
+  align-self: start;
+  grid-area: body;
+}
+
+.home-about__head h2 {
   margin-top: 0;
 }
 
@@ -2958,13 +2972,35 @@
     grid-template-columns: 1fr;
   }
 
+  /* Handy: kleines Foto direkt neben der Überschrift, Text darunter in voller Breite */
   .home-about {
-    grid-template-columns: 1fr;
-    justify-items: start;
+    align-items: center;
+    column-gap: 1rem;
+    grid-template-areas:
+      "photo head"
+      "body body";
+    grid-template-columns: 88px minmax(0, 1fr);
+    row-gap: 1rem;
   }
 
   .home-page .home-about__photo {
-    max-width: 160px;
+    border-width: 3px;
+    box-shadow: 0 10px 24px rgba(11, 42, 70, 0.16);
+    max-width: 88px;
+  }
+
+  .home-about__head {
+    align-self: center;
+  }
+
+  .home-about__head .home-section-kicker {
+    margin-bottom: 0.45rem;
+  }
+
+  .home-page .home-about__head h2 {
+    font-size: clamp(1.3rem, 6vw, 1.6rem);
+    line-height: 1.2;
+    margin-bottom: 0;
   }
 
   .home-about__facts {

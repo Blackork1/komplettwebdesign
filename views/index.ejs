@@ -662,9 +662,11 @@ const homePackageImages = {
           <div class="inner-wrapper text-left animate-on-scroll">
             <div class="home-about">
               <img class="home-about__photo" src="/images/meinAvatar.webp" alt="<%= isEn ? 'Portrait of Sören, web designer in Berlin' : 'Porträt von Sören, Webdesigner in Berlin' %>" width="480" height="480" loading="lazy" decoding="async">
-              <div class="home-about__copy">
+              <div class="home-about__head">
                 <span class="home-section-kicker"><i class="fas fa-user" aria-hidden="true"></i><%= isEn ? 'About me' : 'Über mich' %></span>
                 <h2 id="home-about-title"><%= isEn ? 'I’m Sören, your web designer from Berlin' : 'Ich bin Sören, dein Webdesigner aus Berlin' %></h2>
+              </div>
+              <div class="home-about__body">
                 <p class="home-section-lead">
                   <%= isEn
                     ? 'For 5 years I have been building websites for small businesses. With me you talk to the same person from the first call to launch and beyond, the person who designs and codes your website.'

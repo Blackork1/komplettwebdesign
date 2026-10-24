@@ -112,9 +112,13 @@ test('der erste Abschnitt verlinkt die Berliner Hauptseite in einem vollständig
   assert.doesNotMatch(template, /Wenn du <a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a> möchtest/);
 });
 
-test('das Über-mich-Foto bleibt auf dem Handy klein', () => {
+test('auf dem Handy steht das Über-mich-Foto klein neben der Überschrift', () => {
   const css = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
+  const about = section('ueber-mich');
+  // Foto, Kopf (Kicker + H2) und Text sind getrennte Rasterbereiche.
+  assert.match(about, /class="home-about__photo"[\s\S]*?class="home-about__head"[\s\S]*?<h2 id="home-about-title">[\s\S]*?class="home-about__body"/);
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.home-about\s*\{[\s\S]*?"photo head"\s*"body body";[\s\S]*?grid-template-columns:\s*88px minmax\(0, 1fr\);/);
   // .home-page img setzt max-width: 100 %; die Foto-Regel braucht mindestens dieselbe Spezifität.
-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.home-page \.home-about__photo\s*\{\s*max-width:\s*160px;/);
+  assert.match(css, /\.home-page \.home-about__photo\s*\{[^}]*max-width:\s*88px;/);
   assert.doesNotMatch(css, /^\.home-about__photo\s*\{/m);
 });
