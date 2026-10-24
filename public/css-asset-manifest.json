@@ -172,9 +172,9 @@
     "home.css": {
       "source": "home.css",
       "output": "home.min.css",
-      "href": "/home.min.css?v=b29c71605bb6",
-      "hash": "b29c71605bb6",
-      "bytes": 50798
+      "href": "/home.min.css?v=6b99f7dd9e42",
+      "hash": "6b99f7dd9e42",
+      "bytes": 50949
     },
     "interaction-polish.css": {
       "source": "interaction-polish.css",

@@ -3,6 +3,8 @@
   // wer mehr wissen will, liest weiter. „Schreib mir“ öffnet auf Deutsch das Kontakt-Pop-up.
   const midVariant = typeof variant !== 'undefined' ? variant : 'start';
   const midEn = typeof isEn !== 'undefined' && isEn;
+  // Ohne Foto, wenn direkt danach ohnehin Sörens Bild kommt (z. B. „Über mich“).
+  const midShowPhoto = typeof showPhoto === 'undefined' ? true : Boolean(showPhoto);
   const midCopy = {
     start: {
       de: {
@@ -39,8 +41,10 @@
 %>
 <aside class="home-midcta" aria-label="<%= midEn ? 'Next step' : 'Nächster Schritt' %>">
   <div class="container">
-    <div class="home-midcta__inner">
+    <div class="home-midcta__inner<%= midShowPhoto ? '' : ' home-midcta__inner--text' %>">
+      <% if (midShowPhoto) { %>
       <img class="home-midcta__photo" src="<%= midPhoto %>" alt="<%= midEn ? 'Sören, web designer in Berlin' : 'Sören, Webdesigner in Berlin' %>" width="64" height="64" loading="lazy" decoding="async">
+      <% } %>
       <div class="home-midcta__copy">
         <p class="home-midcta__title"><%= midText.title %></p>
         <p class="home-midcta__text"><%= midText.text %></p>

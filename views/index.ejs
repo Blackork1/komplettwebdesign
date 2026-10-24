@@ -397,8 +397,6 @@ const homePackageImages = {
     </section>
     <% } %>
 
-    <%- include('partials/home-midcta', { variant: 'start', isEn }) %>
-
     <!-- 5) Paket-Teaser -->
     <section class="section" id="preise" data-reveal-immediate>
       <div class="container">
@@ -655,7 +653,7 @@ const homePackageImages = {
       </div>
     </section>
 
-    <%- include('partials/home-midcta', { variant: 'ablauf', isEn }) %>
+    <%- include('partials/home-midcta', { variant: 'ablauf', isEn, showPhoto: false }) %>
 
     <!-- 8b) Über mich -->
     <section class="section" id="ueber-mich" aria-labelledby="home-about-title">

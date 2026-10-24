@@ -2690,6 +2690,10 @@
   padding: clamp(1.1rem, 2.5vw, 1.6rem) clamp(1.1rem, 3vw, 2rem);
 }
 
+.home-midcta__inner--text {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .home-midcta__photo {
   border: 3px solid #fff;
   border-radius: 999px;
@@ -2744,6 +2748,10 @@
 @media (max-width: 991.98px) {
   .home-midcta__inner {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .home-midcta__inner--text {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .home-midcta__actions {
@@ -2898,7 +2906,7 @@
   grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
 }
 
-.home-about__photo {
+.home-page .home-about__photo {
   aspect-ratio: 1;
   border: 4px solid #fff;
   border-radius: 50%;
@@ -2955,7 +2963,7 @@
     justify-items: start;
   }
 
-  .home-about__photo {
+  .home-page .home-about__photo {
     max-width: 160px;
   }
 

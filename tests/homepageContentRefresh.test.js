@@ -20,9 +20,9 @@ function section(id) {
 }
 
 function renderProjects(lng = 'de') {
-  const projectBlock = template.match(/<% const homeProjectList[\s\S]*?<% } %>\n\n    <%- include\('partials\/home-midcta', \{ variant: 'start'/)?.[0];
+  const projectBlock = template.match(/<% const homeProjectList[\s\S]*?<\/section>\n    <% } %>/)?.[0];
   assert.ok(projectBlock, 'Projektblock fehlt');
-  const source = projectBlock.replace(/\n\n    <%- include\('partials\/home-midcta', \{ variant: 'start'$/, '');
+  const source = projectBlock;
   return load(render(source, { isEn: lng === 'en', homeProjects: localizedHomeProjects(lng) }));
 }
 
@@ -110,4 +110,11 @@ test('das Laufband nennt Vorteile statt Fachbegriffe', () => {
 test('der erste Abschnitt verlinkt die Berliner Hauptseite in einem vollständigen Satz', () => {
   assert.match(section('usp-strip'), /Du möchtest deine <a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a>\?/);
   assert.doesNotMatch(template, /Wenn du <a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a> möchtest/);
+});
+
+test('das Über-mich-Foto bleibt auf dem Handy klein', () => {
+  const css = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
+  // .home-page img setzt max-width: 100 %; die Foto-Regel braucht mindestens dieselbe Spezifität.
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.home-page \.home-about__photo\s*\{\s*max-width:\s*160px;/);
+  assert.doesNotMatch(css, /^\.home-about__photo\s*\{/m);
 });
