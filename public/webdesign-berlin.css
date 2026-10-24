@@ -1739,7 +1739,22 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.webdesign-berlin.handwerk-page .handwerk-page__card-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__card-head h3 {
+  font-size: clamp(1.05rem, 1.25vw, 1.2rem);
+  hyphens: manual;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
 .webdesign-berlin.handwerk-page .handwerk-page__essentials .fa-solid {
+  flex: 0 0 44px;
   align-items: center;
   background: rgba(239, 75, 28, 0.1);
   border-radius: 10px;

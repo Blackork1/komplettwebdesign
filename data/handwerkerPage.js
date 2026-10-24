@@ -89,7 +89,7 @@ export const HANDWERKER_PAGE = Object.freeze({
       { icon: 'fa-images', title: 'Projektbilder und Referenzen', text: 'Echte Fotos von Baustellen und fertigen Arbeiten, gern mit Vorher-Nachher, Ortsteil und zwei Sätzen zur Aufgabe. Stockfotos wirken im Handwerk schnell austauschbar.' },
       { icon: 'fa-phone', title: 'Kontakt mit einem Tipp', text: 'Telefon zum Antippen, WhatsApp, E-Mail und ein kurzes Anfrageformular. Auf dem Handy bleibt der Kontakt sichtbar, ohne dass jemand suchen muss.' },
       { icon: 'fa-award', title: 'Belege statt Floskeln', text: 'Meisterbrief, Innungsmitgliedschaft, Zertifizierungen, Garantien und Bewertungen. Das überzeugt mehr als „zuverlässig und kompetent“.' },
-      { icon: 'fa-people-group', title: 'Team und Ansprechpartner', text: 'Gesichter und Namen. Wer dich in die Wohnung oder auf die Baustelle lässt, möchte wissen, wer kommt.' },
+      { icon: 'fa-people-group', title: 'Team und Ansprech\u00ADpartner', text: 'Gesichter und Namen. Wer dich in die Wohnung oder auf die Baustelle lässt, möchte wissen, wer kommt.' },
       { icon: 'fa-user-plus', title: 'Karriere und Ausbildung', text: 'Offene Stellen, Ausbildungsplätze und ein einfacher Bewerbungsweg per Telefon, WhatsApp oder Formular.' },
       { icon: 'fa-scale-balanced', title: 'Impressum und Datenschutz', text: 'Beides ist Pflicht. Für Handwerksbetriebe gibt es beim Impressum ein paar Besonderheiten, die du weiter unten findest.' }
     ]
