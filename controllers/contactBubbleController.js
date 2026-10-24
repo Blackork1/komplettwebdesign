@@ -90,8 +90,7 @@ function buildOwnerMail({ message, email, page }) {
     <p><strong>E-Mail:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
     ${page ? `<p><strong>Gesendet von:</strong> https://www.komplettwebdesign.de${escapeHtml(page)}</p>` : ''}
     <p><strong>Nachricht:</strong></p>
-    <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-    <p>Antworte einfach auf diese Mail, sie geht direkt an die angegebene Adresse.</p>`;
+    <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>`;
   return {
     from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
     to: OWNER_ADDRESS,
