@@ -19,6 +19,7 @@ import nodemailer from "nodemailer";
 import { generateICS } from "../services/icsService.js";
 import { format } from "date-fns";
 import { renderBrandEmail } from "../services/emailTemplateService.js";
+import { logNewRequest, logOutgoingMail, ownerNotificationExtras, customerMessageId, summaryRowsToText } from "../services/mailInbox/requestLog.js";
 import pricingService from "../services/pricingService.js";
 import { toEnglishPriceLabel } from "../util/pricingViewModel.js";
 import {
@@ -1501,11 +1502,26 @@ export const processForm = [
 
             const transporter = createTransporter();
 
+            // Mailverlauf: Anfrage als Gespräch anlegen, Bestätigung und Hinweis daran hängen.
+            const userSubject = lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage";
+            const conversationId = await logNewRequest({
+                source: "kontaktformular",
+                subject: `Kontaktanfrage: ${safeSubjectText(normalized.name, "Kontakt")}`,
+                contactEmail: normalized.email,
+                contactName: normalized.name,
+                contactRequestId: contactRequest?.id ?? null,
+                bookingId: booking ? booking.id : null,
+                pagePath: lng === "en" ? "/en/kontakt" : "/kontakt",
+                bodyText: summaryRowsToText(adminRows)
+            });
+            const confirmationId = customerMessageId(conversationId, "bestaetigung");
+            const ownerExtras = ownerNotificationExtras(conversationId);
 
             await transporter.sendMail({
                 from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: normalized.email,
-                subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
+                ...(confirmationId ? { messageId: confirmationId } : {}),
+                subject: userSubject,
                 html: renderBrandEmail({
                     locale: lng,
                     subject: lng === "en" ? "Confirmation of your contact request" : "Bestätigung deiner Kontaktanfrage",
@@ -1515,17 +1531,28 @@ export const processForm = [
                 }),
                 attachments
             });
+            await logOutgoingMail({
+                conversationId,
+                kind: "bestaetigung",
+                toEmail: normalized.email,
+                subject: userSubject,
+                bodyHtml: userHtml,
+                messageId: confirmationId,
+                attachments: attachments.map(file => ({ filename: file.filename, contentType: file.contentType }))
+            });
             await transporter.sendMail({
                 from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: 'kontakt@komplettwebdesign.de',
                 replyTo: EMAIL_REGEX.test(normalized.email) ? normalized.email : undefined,
+                ...ownerExtras.mail,
                 subject: `Neue Kontaktanfrage von ${safeSubjectText(normalized.name, "Kontakt")}`,
                 html: renderBrandEmail({
-                    locale: lng,
+                    locale: "de",
                     subject: `Neue Kontaktanfrage von ${safeSubjectText(normalized.name, "Kontakt")}`,
                     headline: "Neue Kontaktanfrage",
                     preheader: "Neue Details über das Kontaktformular eingegangen.",
-                    bodyHtml: adminHtml
+                    bodyHtml: adminHtml,
+                    ...ownerExtras.cta
                 }),
                 attachments
             });
@@ -1859,15 +1886,33 @@ export async function processWebdesignBerlinForm(req, res) {
         contentType: file.mimetype
     }));
 
+    // Mailverlauf: nur mit gültiger Adresse, sonst kann niemand antworten.
+    const conversationId = hasValidEmail
+        ? await logNewRequest({
+            source: "webdesign-berlin",
+            subject: `Anfrage Webdesign Berlin: ${safeSubjectText(normalized.name, "Kontakt")}`,
+            contactEmail: normalized.email,
+            contactName: normalized.name || "",
+            contactRequestId: contactRequest?.id ?? null,
+            bookingId: booking?.id ?? null,
+            pagePath: lng === "en" ? "/en/webdesign-berlin" : "/webdesign-berlin",
+            bodyText: summaryRowsToText(adminSummaryRows)
+        })
+        : null;
+    const confirmationId = customerMessageId(conversationId, "bestaetigung");
+    const confirmationSubject = lng === "en"
+        ? "Confirmation of your request - Webdesign Berlin"
+        : "Bestätigung deiner Anfrage - Webdesign Berlin";
+    const ownerExtras = ownerNotificationExtras(conversationId);
+
     const mailPromises = [];
     if (hasValidEmail) {
         mailPromises.push(
             transporter.sendMail({
                 from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
                 to: normalized.email,
-                subject: lng === "en"
-                    ? "Confirmation of your request - Webdesign Berlin"
-                    : "Bestätigung deiner Anfrage - Webdesign Berlin",
+                ...(confirmationId ? { messageId: confirmationId } : {}),
+                subject: confirmationSubject,
                 html: renderBrandEmail({
                     locale: lng,
                     subject: lng === "en"
@@ -1877,7 +1922,16 @@ export async function processWebdesignBerlinForm(req, res) {
                     preheader: lng === "en" ? "I received your Webdesign Berlin request." : "Ich habe deine Webdesign-Berlin-Anfrage erhalten.",
                     bodyHtml: userHtml
                 })
-            }).catch(err => logSafeError("❌ Fehler beim Versand (Kunde Webdesign Berlin):", err))
+            })
+                .then(() => logOutgoingMail({
+                    conversationId,
+                    kind: "bestaetigung",
+                    toEmail: normalized.email,
+                    subject: confirmationSubject,
+                    bodyHtml: userHtml,
+                    messageId: confirmationId
+                }))
+                .catch(err => logSafeError("❌ Fehler beim Versand (Kunde Webdesign Berlin):", err))
         );
     }
     mailPromises.push(
@@ -1885,13 +1939,15 @@ export async function processWebdesignBerlinForm(req, res) {
             from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
             to: 'kontakt@komplettwebdesign.de',
             replyTo: hasValidEmail ? normalized.email : undefined,
+            ...ownerExtras.mail,
             subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,
             html: renderBrandEmail({
-                locale: lng,
+                locale: "de",
                 subject: `Neue Anfrage über webdesign-berlin auf (${lng})`,
                 headline: "Neue Webdesign-Berlin-Anfrage",
                 preheader: "Es wurde eine neue Anfrage mit Details eingereicht.",
-                bodyHtml: adminHtml
+                bodyHtml: adminHtml,
+                ...ownerExtras.cta
             }),
             attachments: adminAttachments
         }).catch(err => logSafeError("❌ Fehler beim Versand (Admin Webdesign Berlin):", err))

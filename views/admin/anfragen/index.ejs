@@ -1,0 +1,101 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="admin-card inbox">
+  <div class="inbox-head">
+    <h1 class="admin-page-title">
+      <i class="fa-solid fa-inbox"></i>
+      Anfragen
+    </h1>
+    <div class="inbox-head__actions">
+      <a class="inbox-btn inbox-btn--primary" href="/admin/anfragen/neu"><i class="fa-solid fa-pen"></i> Neue Mail</a>
+      <form method="POST" action="/admin/anfragen/sync">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <button type="submit" class="inbox-btn inbox-btn--ghost"><i class="fa-solid fa-rotate"></i> Postfach jetzt abrufen</button>
+      </form>
+    </div>
+  </div>
+  <p class="inbox-lead">
+    Jede Anfrage über deine Website wird hier ein eigener Verlauf: Anfrage, automatische Bestätigung, deine Antworten
+    und die Mails deiner Kontakte. Antworten aus deinem Mailprogramm landen über den Postfach-Abruf ebenfalls hier.
+  </p>
+
+  <% if (notice) { %>
+    <div class="mailversand-alert mailversand-alert--<%= notice.type === 'success' ? 'success' : 'error' %>" role="status">
+      <i class="fa-solid <%= notice.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' %>"></i>
+      <%= notice.message %>
+    </div>
+  <% } %>
+
+  <nav class="inbox-tabs" aria-label="Status-Filter">
+    <a href="/admin/anfragen<%= q ? '?q=' + encodeURIComponent(q) : '' %>" class="<%= !status ? 'is-active' : '' %>">Alle <span><%= summary.gesamt %></span></a>
+    <% Object.keys(statusLabels).forEach(function (key) { %>
+      <a href="/admin/anfragen?status=<%= key %><%= q ? '&q=' + encodeURIComponent(q) : '' %>" class="<%= status === key ? 'is-active' : '' %>">
+        <%= statusLabels[key] %> <span><%= summary[key] %></span>
+      </a>
+    <% }) %>
+  </nav>
+
+  <form class="inbox-search" method="GET" action="/admin/anfragen" role="search">
+    <% if (status) { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+    <label class="visually-hidden" for="inbox-q">Suche</label>
+    <input type="search" id="inbox-q" name="q" value="<%= q %>" placeholder="Name, E-Mail oder Betreff suchen">
+    <button type="submit" class="inbox-btn inbox-btn--ghost"><i class="fa-solid fa-magnifying-glass"></i> Suchen</button>
+  </form>
+
+  <% if (!conversations.length) { %>
+    <div class="inbox-empty">
+      <i class="fa-regular fa-envelope-open"></i>
+      <p><%= q || status ? 'Keine Anfragen für diese Auswahl.' : 'Noch keine Anfragen im Verlauf. Neue Anfragen über die Website erscheinen hier automatisch.' %></p>
+    </div>
+  <% } else { %>
+    <ul class="inbox-list">
+      <% conversations.forEach(function (item) { %>
+        <li class="inbox-item <%= item.unread_count > 0 ? 'is-unread' : '' %>">
+          <a href="/admin/anfragen/<%= item.id %>">
+            <div class="inbox-item__top">
+              <strong class="inbox-item__who"><%= item.contact_name || item.contact_email %></strong>
+              <span class="inbox-status inbox-status--<%= item.status %>"><%= statusLabels[item.status] || item.status %></span>
+              <time class="inbox-item__time"><%= item.lastAt %></time>
+            </div>
+            <div class="inbox-item__subject"><%= item.subject || '(ohne Betreff)' %></div>
+            <div class="inbox-item__snippet"><% if (item.lastFromYou) { %><span class="inbox-item__you">Du:</span> <% } %><%= item.last_snippet || '' %></div>
+            <div class="inbox-item__meta">
+              <span><i class="fa-solid fa-tag"></i> <%= item.sourceLabel %></span>
+              <% if (item.contact_name) { %><span><i class="fa-regular fa-envelope"></i> <%= item.contact_email %></span><% } %>
+              <span><i class="fa-regular fa-comments"></i> <%= item.message_count %></span>
+              <% if (item.unread_count > 0) { %><span class="inbox-badge"><%= item.unread_count %> neu</span><% } %>
+            </div>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+    <% if (page > 1 || hasMore) { %>
+      <nav class="inbox-pager" aria-label="Seiten">
+        <% const base = '/admin/anfragen?' + (status ? 'status=' + status + '&' : '') + (q ? 'q=' + encodeURIComponent(q) + '&' : ''); %>
+        <% if (page > 1) { %><a class="inbox-btn inbox-btn--ghost" href="<%= base %>seite=<%= page - 1 %>"><i class="fa-solid fa-arrow-left"></i> Neuer</a><% } %>
+        <% if (hasMore) { %><a class="inbox-btn inbox-btn--ghost" href="<%= base %>seite=<%= page + 1 %>">Älter <i class="fa-solid fa-arrow-right"></i></a><% } %>
+      </nav>
+    <% } %>
+  <% } %>
+
+  <section class="inbox-sync" aria-label="Postfach">
+    <h2><i class="fa-solid fa-server"></i> Postfach</h2>
+    <% if (sync.enabled) { %>
+      <p>Posteingang und Gesendet werden alle <%= sync.intervalMinutes %> Minuten abgerufen. Mails werden nur übernommen, wenn sie zu einem Verlauf gehören.</p>
+    <% } else { %>
+      <p>Der automatische Abruf ist hier aus. Er läuft auf dem Server, sobald die Mail-Zugangsdaten gesetzt sind.</p>
+    <% } %>
+    <% if (sync.states.length) { %>
+      <ul class="inbox-sync__list">
+        <% sync.states.forEach(function (state) { %>
+          <li>
+            <strong><%= state.mailbox %>:</strong> zuletzt <%= state.lastRunAt %>
+            <% if (state.error) { %><span class="inbox-sync__error">Fehler: <%= state.error %></span><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<%- include('../../partials/admin_footer') %>

@@ -77,6 +77,11 @@
           </div>
         </div>
 
+        <a href="/admin/anfragen" class="<%= isActivePath('/admin/anfragen') ? 'is-active' : '' %>" <% if (isActivePath('/admin/anfragen')) { %>aria-current="page"<% } %>>
+          <span class="ico"><i class="fa-solid fa-inbox"></i></span> Anfragen
+          <% if (typeof mailUnread !== 'undefined' && mailUnread > 0) { %><span class="admin-nav__badge" aria-label="<%= mailUnread %> ungelesen"><%= mailUnread > 99 ? '99+' : mailUnread %></span><% } %>
+        </a>
+
         <a href="/admin/content-agent" class="<%= isActivePath('/admin/content-agent') ? 'is-active' : '' %>" <% if (isActivePath('/admin/content-agent')) { %>aria-current="page"<% } %>>
           <span class="ico"><i class="fa-solid fa-wand-magic-sparkles"></i></span> Content-Agent
         </a>

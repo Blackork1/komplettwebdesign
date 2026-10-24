@@ -1,0 +1,110 @@
+<%- include('../../partials/admin_header') %>
+<% const token = typeof csrfToken !== 'undefined' ? csrfToken : ''; %>
+
+<div class="inbox-detail">
+  <a class="inbox-back" href="/admin/anfragen"><i class="fa-solid fa-arrow-left"></i> Alle Anfragen</a>
+
+  <% if (notFound) { %>
+    <div class="admin-card inbox-empty">
+      <i class="fa-regular fa-envelope-open"></i>
+      <p>Diese Anfrage gibt es nicht (mehr).</p>
+    </div>
+  <% } else { %>
+    <div class="inbox-detail__grid">
+      <section class="admin-card inbox-thread" aria-labelledby="inbox-thread-title">
+        <h1 class="inbox-thread__title" id="inbox-thread-title"><%= conversation.subject || '(ohne Betreff)' %></h1>
+
+        <% if (notice) { %>
+          <div class="mailversand-alert mailversand-alert--<%= notice.type === 'success' ? 'success' : 'error' %>" role="status">
+            <i class="fa-solid <%= notice.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' %>"></i>
+            <%= notice.message %>
+          </div>
+        <% } %>
+
+        <ol class="inbox-timeline">
+          <% messages.forEach(function (msg) { %>
+            <li class="inbox-msg inbox-msg--<%= msg.side %> inbox-msg--<%= msg.kind %>">
+              <div class="inbox-msg__head">
+                <span class="inbox-msg__kind"><%= msg.kindLabel %></span>
+                <strong class="inbox-msg__from"><%= msg.fromLabel %></strong>
+                <% if (msg.side === 'out' && msg.toEmail) { %><span class="inbox-msg__to">an <%= msg.toEmail %></span><% } %>
+                <time class="inbox-msg__time"><%= msg.sentAt %></time>
+              </div>
+              <% if (msg.subject && msg.side !== 'note') { %><div class="inbox-msg__subject"><%= msg.subject %></div><% } %>
+              <div class="inbox-msg__body"><%= msg.main %></div>
+              <% if (msg.quoted) { %>
+                <details class="inbox-msg__quote">
+                  <summary>Zitierten Verlauf anzeigen</summary>
+                  <div class="inbox-msg__quoted"><%= msg.quoted %></div>
+                </details>
+              <% } %>
+              <% if (msg.attachments.length) { %>
+                <ul class="inbox-msg__files">
+                  <% msg.attachments.forEach(function (file) { %>
+                    <li><i class="fa-regular fa-file"></i> <%= file.filename %><% if (file.size) { %> <span>(<%= Math.max(1, Math.round(file.size / 1024)) %> KB)</span><% } %></li>
+                  <% }) %>
+                </ul>
+                <% if (msg.side === 'in') { %><p class="inbox-msg__hint">Anhänge findest du in deinem Postfach.</p><% } %>
+              <% } %>
+            </li>
+          <% }) %>
+        </ol>
+        <div id="ende"></div>
+
+        <h2 class="inbox-section-title"><i class="fa-solid fa-reply"></i> Antworten an <%= conversation.contact_name || conversation.contact_email %></h2>
+        <%- include('_compose', { composeAction: '/admin/anfragen/' + conversation.id + '/antwort', form: form, withRecipient: false, submitLabel: 'Antwort senden' }) %>
+      </section>
+
+      <aside class="inbox-side">
+        <div class="admin-card">
+          <h2 class="inbox-side__title">Kontakt</h2>
+          <p class="inbox-side__contact">
+            <% if (conversation.contact_name) { %><strong><%= conversation.contact_name %></strong><br><% } %>
+            <a href="mailto:<%= conversation.contact_email %>"><%= conversation.contact_email %></a>
+          </p>
+          <dl class="inbox-side__facts">
+            <dt>Quelle</dt><dd><%= sourceLabel %></dd>
+            <% if (conversation.page_path) { %><dt>Seite</dt><dd><%= conversation.page_path %></dd><% } %>
+            <dt>Eingegangen</dt><dd><%= createdAt %></dd>
+            <% if (conversation.booking_id) { %><dt>Buchung</dt><dd><a href="/admin/bookings">Nr. <%= conversation.booking_id %> ansehen</a></dd><% } %>
+          </dl>
+          <a class="inbox-btn inbox-btn--ghost inbox-btn--block" href="/admin/anfragen/neu?an=<%= encodeURIComponent(conversation.contact_email) %>&name=<%= encodeURIComponent(conversation.contact_name || '') %>">
+            <i class="fa-solid fa-pen"></i> Neues Thema mit diesem Kontakt
+          </a>
+        </div>
+
+        <div class="admin-card">
+          <h2 class="inbox-side__title">Status</h2>
+          <form method="POST" action="/admin/anfragen/<%= conversation.id %>/status" class="inbox-status-form">
+            <input type="hidden" name="_csrf" value="<%= token %>">
+            <% statuses.forEach(function (key) { %>
+              <button type="submit" name="status" value="<%= key %>" class="inbox-status-btn inbox-status-btn--<%= key %> <%= conversation.status === key ? 'is-active' : '' %>" <%= conversation.status === key ? 'aria-pressed="true"' : 'aria-pressed="false"' %>>
+                <%= statusLabels[key] %>
+              </button>
+            <% }) %>
+          </form>
+          <p class="inbox-side__hint">Neue Mails des Kontakts setzen den Verlauf automatisch wieder auf „Offen“.</p>
+        </div>
+
+        <div class="admin-card">
+          <h2 class="inbox-side__title">Interne Notiz</h2>
+          <form method="POST" action="/admin/anfragen/<%= conversation.id %>/notiz" class="inbox-note-form mailversand-form">
+            <input type="hidden" name="_csrf" value="<%= token %>">
+            <label class="visually-hidden" for="inbox-note">Notiz</label>
+            <textarea id="inbox-note" name="note" rows="3" placeholder="Nur für dich sichtbar, z. B. „Angebot bis Freitag schicken“"></textarea>
+            <div class="submit-bar"><button type="submit" class="btn-ghost"><i class="fa-regular fa-note-sticky"></i> Notiz speichern</button></div>
+          </form>
+        </div>
+
+        <form method="POST" action="/admin/anfragen/sync" class="inbox-side__sync">
+          <input type="hidden" name="_csrf" value="<%= token %>">
+          <input type="hidden" name="zurueck" value="<%= conversation.id %>">
+          <button type="submit" class="inbox-btn inbox-btn--ghost inbox-btn--block"><i class="fa-solid fa-rotate"></i> Postfach jetzt abrufen</button>
+        </form>
+      </aside>
+    </div>
+  <% } %>
+</div>
+
+<script src="<%= asset('js/admin-inbox.js') %>" defer></script>
+<%- include('../../partials/admin_footer') %>

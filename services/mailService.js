@@ -6,6 +6,7 @@ import { enUS } from "date-fns/locale";
 import { generateToken } from "../util/bookingToken.js";
 import { normalizeLocale } from "../util/bookingLocale.js";
 import { renderBrandEmail } from "./emailTemplateService.js";
+import { ownerNotificationExtras } from "./mailInbox/requestLog.js";
 
 
 const transporter = nodemailer.createTransport({
@@ -275,7 +276,7 @@ function newsletterHintHtml({ locale = "de", unsubscribeToken = "" }) {
         : `<p>Wenn du den Newsletter nicht mehr erhalten möchtest, kannst du ihn jederzeit hier abbestellen: <a href="${url}">Newsletter abbestellen</a>.</p>`;
 }
 
-export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de" }) {
+export async function sendBookingMail({ to, name, appointment, type, bookingId = null, locale = "de", messageId = undefined }) {
     const isEn = normalizeLocale(locale) === "en";
     const isWithoutAppointment = !appointment || appointment.title === "Ohne Termin";
 
@@ -309,6 +310,7 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
         return transporter.sendMail({
             from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
             to,
+            ...(messageId ? { messageId } : {}),
             subject,
             html: renderBrandEmail({
                 locale,
@@ -382,6 +384,7 @@ export async function sendBookingMail({ to, name, appointment, type, bookingId =
     const mail = {
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to,
+        ...(messageId ? { messageId } : {}),
         subject,
         html: renderBrandEmail({
             locale,
@@ -1161,7 +1164,7 @@ export async function sendTesterFullGuideMail({
 }
 
 
-export async function sendAdminBookingInfo({ booking, appointment, type }) {
+export async function sendAdminBookingInfo({ booking, appointment, type, conversationId = null }) {
     const pretty = format(new Date(appointment.start_time), "EEEE, dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de });
     const subject = {
         new: `Neue Buchung: ${pretty}`,
@@ -1182,16 +1185,19 @@ export async function sendAdminBookingInfo({ booking, appointment, type }) {
         <p><strong>Termin:</strong> ${pretty}</p>
     `;
 
+    const extras = ownerNotificationExtras(conversationId);
     const mail = {
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: 'kontakt@komplettwebdesign.de',
+        ...extras.mail,
         subject,
         html: renderBrandEmail({
             locale: "de",
             subject,
             headline: "Neue Buchungsinformation",
             preheader: "Eine Buchung wurde aktualisiert.",
-            bodyHtml: html
+            bodyHtml: html,
+            ...extras.cta
         })
     };
     return transporter.sendMail(mail);

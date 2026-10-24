@@ -4,6 +4,7 @@
 import nodemailer from 'nodemailer';
 import { renderBrandEmail } from '../services/emailTemplateService.js';
 import * as ContactRequests from '../models/contactRequestModel.js';
+import { logNewRequest, ownerNotificationExtras } from '../services/mailInbox/requestLog.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OWNER_ADDRESS = 'kontakt@komplettwebdesign.de';
@@ -84,8 +85,9 @@ function isSameOrigin(req) {
   }
 }
 
-function buildOwnerMail({ message, email, page }) {
+export function buildOwnerMail({ message, email, page }, conversationId = null) {
   const subject = 'Neue Kurzanfrage über das Kontakt-Pop-up';
+  const extras = ownerNotificationExtras(conversationId);
   const bodyHtml = `
     <p><strong>E-Mail:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
     ${page ? `<p><strong>Gesendet von:</strong> https://www.komplettwebdesign.de${escapeHtml(page)}</p>` : ''}
@@ -95,15 +97,28 @@ function buildOwnerMail({ message, email, page }) {
     from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
     to: OWNER_ADDRESS,
     replyTo: email,
+    ...extras.mail,
     subject,
     html: renderBrandEmail({
       locale: 'de',
       subject,
       headline: 'Neue Kurzanfrage',
       preheader: 'Jemand hat dir über das Kontakt-Pop-up geschrieben.',
-      bodyHtml
+      bodyHtml,
+      ...extras.cta
     })
   };
+}
+
+function defaultLogRequest({ message, email, page }, contactRequest) {
+  return logNewRequest({
+    source: 'kurzanfrage',
+    subject: `Kurzanfrage: ${oneLine(message, 70)}`,
+    contactEmail: email,
+    contactRequestId: contactRequest?.id ?? null,
+    pagePath: page,
+    bodyText: message
+  });
 }
 
 function defaultSendMail(mail) {
@@ -137,6 +152,7 @@ function defaultSaveRequest({ message, email, page }) {
 export function createContactBubbleHandler({
   sendMail = defaultSendMail,
   saveRequest = defaultSaveRequest,
+  logRequest = defaultLogRequest,
   logger = console,
   now = () => Date.now()
 } = {}) {
@@ -149,14 +165,23 @@ export function createContactBubbleHandler({
     if (result.spam) return res.status(200).json({ success: true });
     if (!result.ok) return res.status(422).json({ success: false, field: result.field, message: result.message });
 
+    let contactRequest = null;
     try {
-      await saveRequest(result.data);
+      contactRequest = await saveRequest(result.data);
     } catch (error) {
       logger.error?.('Kurzanfrage konnte nicht gespeichert werden:', error?.message || error);
     }
 
+    // Mailverlauf: die Anfrage wird ein Gespräch, die Mail an Sören verlinkt darauf.
+    let conversationId = null;
     try {
-      await sendMail(buildOwnerMail(result.data));
+      conversationId = await logRequest(result.data, contactRequest);
+    } catch (error) {
+      logger.error?.('Kurzanfrage nicht im Mailverlauf gespeichert:', error?.message || error);
+    }
+
+    try {
+      await sendMail(buildOwnerMail(result.data, conversationId));
     } catch (error) {
       logger.error?.('Kurzanfrage konnte nicht gesendet werden:', error?.message || error);
       return res.status(502).json({

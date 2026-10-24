@@ -62,10 +62,11 @@ test('Validierung verlangt eine kurze Nachricht und eine gültige E-Mail', () =>
 });
 
 test('gültige Kurzanfrage wird gespeichert und landet mit Antwortadresse bei Sören', async () => {
-  const mails = []; const saved = [];
+  const mails = []; const saved = []; const logged = [];
   const handler = createContactBubbleHandler({
     sendMail: async (mail) => { mails.push(mail); },
-    saveRequest: async (data) => { saved.push(data); },
+    saveRequest: async (data) => { saved.push(data); return { id: 7 }; },
+    logRequest: async (data, request) => { logged.push({ data, request }); return 42; },
     now: () => NOW,
     logger: { error() {} }
   });
@@ -80,11 +81,35 @@ test('gültige Kurzanfrage wird gespeichert und landet mit Antwortadresse bei S�
   assert.match(mails[0].html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   assert.doesNotMatch(mails[0].html, /<script>alert/);
   assert.match(mails[0].html, /\/handwerker/);
+  // Mailverlauf: genau eine Mail, gekennzeichnet und mit Link ins Backend
+  assert.equal(logged.length, 1);
+  assert.equal(logged[0].request.id, 7);
+  assert.equal(mails[0].headers['X-KW-Notification'], '1');
+  assert.match(mails[0].messageId, /^<kw\.c42\.hinweis\.[a-f0-9]+@komplettwebdesign\.de>$/);
+  assert.match(mails[0].html, /https:\/\/www\.komplettwebdesign\.de\/admin\/anfragen\/42/);
+  assert.match(mails[0].html, /Im Backend öffnen und antworten/);
+});
+
+test('Kurzanfrage geht auch raus, wenn der Mailverlauf ausfällt', async () => {
+  const mails = [];
+  const handler = createContactBubbleHandler({
+    sendMail: async (mail) => { mails.push(mail); },
+    saveRequest: async () => ({ id: 1 }),
+    logRequest: async () => { throw new Error('DB down'); },
+    now: () => NOW,
+    logger: { error() {} }
+  });
+  const res = fakeRes();
+  await handler(fakeReq(validBody()), res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(mails.length, 1);
+  assert.equal(mails[0].messageId, undefined);
+  assert.doesNotMatch(mails[0].html, /admin\/anfragen/);
 });
 
 test('Spam wird stillschweigend verworfen, fremde Herkunft abgewiesen', async () => {
   let sent = 0;
-  const handler = createContactBubbleHandler({ sendMail: async () => { sent += 1; }, saveRequest: async () => {}, now: () => NOW });
+  const handler = createContactBubbleHandler({ sendMail: async () => { sent += 1; }, saveRequest: async () => {}, logRequest: async () => null, now: () => NOW });
   const spamRes = fakeRes();
   await handler(fakeReq(validBody({ website: 'bot' })), spamRes);
   assert.equal(spamRes.statusCode, 200);
@@ -98,6 +123,7 @@ test('Mailfehler wird ehrlich gemeldet, Speicherfehler blockiert den Versand nic
   const failing = createContactBubbleHandler({
     sendMail: async () => { throw new Error('SMTP down'); },
     saveRequest: async () => {},
+    logRequest: async () => null,
     now: () => NOW,
     logger: { error() {} }
   });
@@ -110,6 +136,7 @@ test('Mailfehler wird ehrlich gemeldet, Speicherfehler blockiert den Versand nic
   const dbDown = createContactBubbleHandler({
     sendMail: async () => { sent += 1; },
     saveRequest: async () => { throw new Error('DB down'); },
+    logRequest: async () => null,
     now: () => NOW,
     logger: { error() {} }
   });

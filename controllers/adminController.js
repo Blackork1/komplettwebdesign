@@ -1,5 +1,6 @@
 import pool from '../util/db.js';
 import { sendBookingMail, sendAdminComposedMail } from '../services/mailService.js';
+import { logOutgoingMail, conversationIdForBooking, customerMessageId } from '../services/mailInbox/requestLog.js';
 import { renderBrandEmail } from '../services/emailTemplateService.js';
 import { startOfMonth, addMonths, format } from 'date-fns';
 import { findLocaleMarker, normalizeLocale } from '../util/bookingLocale.js';
@@ -185,13 +186,24 @@ export async function confirmBooking(req, res) {
   const { rows: aptRows } = await pool.query(
     'SELECT * FROM appointments WHERE id = $1',
     [booking.appointment_id]);
+  const conversationId = await conversationIdForBooking(booking.id);
+  const messageId = customerMessageId(conversationId, 'termin');
   await sendBookingMail({
     to: booking.email,
     name: booking.name,
     appointment: aptRows[0],
     type: 'confirmed',
     bookingId: booking.id,
-    locale
+    locale,
+    messageId
+  });
+  await logOutgoingMail({
+    conversationId,
+    kind: 'termin',
+    toEmail: booking.email,
+    subject: locale === 'en' ? 'Appointment confirmed' : 'Termin bestätigt',
+    bodyText: 'Automatische Mail: Termin bestätigt, mit Kalendereintrag und Link zum Verwalten.',
+    messageId
   });
 
   res.redirect('/admin/bookings');
@@ -224,12 +236,23 @@ export async function cancelBooking(req, res) {
       [booking.appointment_id]);
   }
 
+  const conversationId = await conversationIdForBooking(booking.id);
+  const messageId = customerMessageId(conversationId, 'termin');
   await sendBookingMail({
     to: booking.email,
     name: booking.name,
     appointment,
     type: 'cancelled',
-    locale
+    locale,
+    messageId
+  });
+  await logOutgoingMail({
+    conversationId,
+    kind: 'termin',
+    toEmail: booking.email,
+    subject: locale === 'en' ? 'Appointment cancelled' : 'Termin abgesagt',
+    bodyText: 'Automatische Mail: Termin abgesagt.',
+    messageId
   });
 
   res.redirect('/admin/bookings');
@@ -252,7 +275,7 @@ function splitRecipients(raw = '') {
     .filter(Boolean);
 }
 
-function parseBodyToHtml(body = '') {
+export function parseBodyToHtml(body = '') {
   // Wenn der Text bereits HTML enthält (z. B. <p>, <a>, …), unverändert nutzen.
   const raw = String(body || '').trim();
   if (!raw) return '';
@@ -310,7 +333,7 @@ export async function mailversandPreview(req, res) {
   res.type('text/html').send(html);
 }
 
-function filesToAttachments(files = []) {
+export function filesToAttachments(files = []) {
   if (!Array.isArray(files)) return [];
   return files
     .filter((f) => f && f.buffer && f.originalname)
@@ -321,7 +344,7 @@ function filesToAttachments(files = []) {
     }));
 }
 
-function formatBytes(bytes) {
+export function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB'];
   let value = bytes;

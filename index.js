@@ -37,6 +37,9 @@ import { navbarMiddleware } from './helpers/navHelper.js';
 import consentMiddleware from './middleware/consentMiddleware.js';
 import { accessLog } from './middleware/accessLog.js';
 import { attachCsrfToken } from './middleware/csrf.js';
+import { mailUnreadBadge } from './controllers/adminInboxController.js';
+import { ensureMailInboxSchema } from './services/mailInbox/schema.js';
+import { startMailSync } from './services/mailInbox/mailSyncService.js';
 import pricingLocalsMiddleware from './middleware/pricingLocals.js';
 import { ensureAutoSlots } from './services/autoAppointmentService.js';
 import {
@@ -355,6 +358,7 @@ app.use(session({
 }));
 
 app.use(attachCsrfToken);
+app.use(mailUnreadBadge);
 app.use(consentMiddleware);               // setzt req/session/locals
 
 
@@ -490,4 +494,10 @@ app.use(errorController.get500);
 
 // Server starten
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server läuft auf Port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ Server läuft auf Port ${PORT}`);
+  // Mailverlauf: Tabellen legen sich selbst an, danach Postfach regelmäßig abrufen (nur wenn aktiviert).
+  ensureMailInboxSchema()
+    .then(() => startMailSync())
+    .catch((err) => console.error('Mailverlauf konnte nicht eingerichtet werden:', err?.message || err));
+});

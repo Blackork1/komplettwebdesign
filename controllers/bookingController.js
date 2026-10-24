@@ -4,6 +4,7 @@ import axios from 'axios';
 import * as Apt from '../models/appointmentModel.js';
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
+import { logNewRequest, logOutgoingMail, logCustomerEvent, conversationIdForBooking, customerMessageId } from '../services/mailInbox/requestLog.js';
 import pool from '../util/db.js';
 import { SITE_FACTS } from '../helpers/siteFacts.js';
 import { verifyToken } from '../util/bookingToken.js';
@@ -134,15 +135,37 @@ export async function createBooking(req, res) {
       locale
     );
 
-    /* 4) Buchungsbestätigung per E-Mail senden */
+    /* 4) Mailverlauf anlegen, Buchungsbestätigung per E-Mail senden */
+    const prettySlot = new Date(slot.start_time).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
+    const conversationId = await logNewRequest({
+      source: 'termin',
+      subject: `Terminanfrage: ${prettySlot}`,
+      contactEmail: booking.email,
+      contactName: booking.name,
+      bookingId: booking.id,
+      pagePath: '/booking',
+      bodyText: [`Termin: ${prettySlot}`, `Name: ${booking.name}`, `E-Mail: ${booking.email}`, req.body.note ? `Notiz: ${req.body.note}` : ''].filter(Boolean).join('\n')
+    });
+    const confirmationId = customerMessageId(conversationId, 'bestaetigung');
     await sendBookingMail({
       to: booking.email,
       name: booking.name,
       appointment: slot,
       type: 'pending',
       locale,
+      messageId: confirmationId
     });
-    await sendAdminBookingInfo({ booking, appointment: slot, type: 'new' });
+    await logOutgoingMail({
+      conversationId,
+      kind: 'bestaetigung',
+      toEmail: booking.email,
+      subject: locale === 'en' ? 'Appointment request received' : 'Terminanfrage eingegangen',
+      bodyText: locale === 'en'
+        ? `Automatic confirmation of the appointment request for ${prettySlot}.`
+        : `Automatische Bestätigung der Terminanfrage für ${prettySlot}.`,
+      messageId: confirmationId
+    });
+    await sendAdminBookingInfo({ booking, appointment: slot, type: 'new', conversationId });
 
     /* 5) Danke-Seite */
     return res.render('booking/thankyou', {
@@ -197,11 +220,23 @@ async function handleUserCancellation(req, res, action) {
       : extractLocaleFromNote(booking.note, 'de')
   });
 
+  const conversationId = await conversationIdForBooking(booking.id);
+  await logCustomerEvent({
+    conversationId,
+    fromEmail: booking.email,
+    fromName: booking.name,
+    subject: action === 'reschedule' ? 'Neuer Termin gewünscht' : 'Termin storniert',
+    bodyText: action === 'reschedule'
+      ? 'Über den Link in der Mail: Termin abgesagt, neuer Termin gewünscht.'
+      : 'Über den Link in der Mail: Termin storniert.'
+  });
+
   // FIX: hier war "slot" statt "apt"
   await sendAdminBookingInfo({
     booking,
     appointment: apt,
     type: action === 'reschedule' ? 'reschedule' : 'cancel',
+    conversationId
   });
 
   return res.render(

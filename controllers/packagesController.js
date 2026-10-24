@@ -8,6 +8,7 @@ import {
 import * as Book from '../models/bookingModel.js';
 import { sendBookingMail, sendAdminBookingInfo } from '../services/mailService.js';
 import { renderBrandEmail } from '../services/emailTemplateService.js';
+import { logNewRequest, logOutgoingMail, ownerNotificationExtras, customerMessageId } from '../services/mailInbox/requestLog.js';
 import pricingService from '../services/pricingService.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
 
@@ -136,20 +137,23 @@ function buildPackageContactAdminHtml({ pack, name, email, locale }) {
   `;
 }
 
-async function sendPackageContactAdminCopy({ pack, name, email, locale }) {
+async function sendPackageContactAdminCopy({ pack, name, email, locale, conversationId = null }) {
   const isEn = locale === 'en';
   const subject = `Neue Paketanfrage: ${pack?.name || pack?.displayName || 'Paket'}`;
+  const extras = ownerNotificationExtras(conversationId);
   return transporter.sendMail({
     from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
     to: 'kontakt@komplettwebdesign.de',
     replyTo: email,
+    ...extras.mail,
     subject,
     html: renderBrandEmail({
       locale: 'de',
       subject,
       headline: 'Neue Paketanfrage',
       preheader: `${pack?.name || pack?.displayName || 'Paket'} ohne direkt gebuchten Termin`,
-      bodyHtml: buildPackageContactAdminHtml({ pack, name, email, locale: isEn ? 'en' : 'de' })
+      bodyHtml: buildPackageContactAdminHtml({ pack, name, email, locale: isEn ? 'en' : 'de' }),
+      ...extras.cta
     })
   });
 }
@@ -464,9 +468,29 @@ export async function handleContact(req, res) {
       })
       : null;
 
+    const packName = pack.name || pack.displayName || 'Paket';
+    const conversationId = await logNewRequest({
+      source: lockedSlot ? 'termin' : 'paket',
+      subject: `Paketanfrage ${packName}${slotText ? ` mit Termin ${slotText}` : ''}`,
+      contactEmail: email,
+      contactName: name,
+      bookingId: booking?.id ?? null,
+      pagePath: `${isEn ? '/en' : ''}/pakete/${slug}`,
+      bodyText: [`Paket: ${packName}`, `Name: ${name}`, `E-Mail: ${email}`, slotText ? `Termin: ${slotText}` : 'Ohne Termin'].join('\n')
+    });
+    const confirmationId = customerMessageId(conversationId, 'bestaetigung');
+
     if (lockedSlot) {
-      await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending', locale });
-      await sendAdminBookingInfo({ booking, appointment: lockedSlot, type: 'new' });
+      await sendBookingMail({ to: email, name, appointment: lockedSlot, type: 'pending', locale, messageId: confirmationId });
+      await logOutgoingMail({
+        conversationId,
+        kind: 'bestaetigung',
+        toEmail: email,
+        subject: isEn ? 'Appointment request received' : 'Terminanfrage eingegangen',
+        bodyText: `Automatische Bestätigung der Terminanfrage (${slotText}).`,
+        messageId: confirmationId
+      });
+      await sendAdminBookingInfo({ booking, appointment: lockedSlot, type: 'new', conversationId });
     } else {
       const html = isEn
         ? `
@@ -492,6 +516,7 @@ export async function handleContact(req, res) {
       await transporter.sendMail({
         from: '"Komplett Webdesign" <kontakt@komplettwebdesign.de>',
         to: email,
+        ...(confirmationId ? { messageId: confirmationId } : {}),
         subject: isEn ? `Your request - ${pack.name} package` : `Deine Anfrage – ${pack.name}-Paket`,
         html: renderBrandEmail({
           locale,
@@ -501,11 +526,20 @@ export async function handleContact(req, res) {
           bodyHtml: html
         })
       });
+      await logOutgoingMail({
+        conversationId,
+        kind: 'bestaetigung',
+        toEmail: email,
+        subject: isEn ? `Your request - ${pack.name} package` : `Deine Anfrage – ${pack.name}-Paket`,
+        bodyHtml: html,
+        messageId: confirmationId
+      });
       await sendPackageContactAdminCopy({
         pack,
         name,
         email,
-        locale
+        locale,
+        conversationId
       });
     }
 

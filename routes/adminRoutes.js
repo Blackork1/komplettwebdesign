@@ -6,6 +6,8 @@ import { isAdmin } from '../middleware/auth.js';
 import * as autoCfg from '../controllers/autoConfigController.js';
 import * as websiteTesterAdmin from '../controllers/adminWebsiteTesterController.js';
 import * as newsletterAdmin from '../controllers/adminNewsletterController.js';
+import * as inbox from '../controllers/adminInboxController.js';
+import { verifyCsrfToken } from '../middleware/csrf.js';
 
 const router = express.Router();
 
@@ -64,6 +66,16 @@ router.post(
   admin.mailversandSend
 );
 router.post('/admin/mailversand/preview', isAdmin, admin.mailversandPreview);
+
+// Anfragen: Mailverlauf je Kontakt (multer vor der CSRF-Prüfung, damit _csrf im Body steht)
+router.get('/admin/anfragen', isAdmin, inbox.inboxList);
+router.get('/admin/anfragen/neu', isAdmin, inbox.inboxNewForm);
+router.post('/admin/anfragen/neu', isAdmin, mailUpload.array('attachments', 10), verifyCsrfToken, inbox.inboxCreate);
+router.post('/admin/anfragen/sync', isAdmin, verifyCsrfToken, inbox.inboxSync);
+router.get('/admin/anfragen/:id', isAdmin, inbox.inboxShow);
+router.post('/admin/anfragen/:id/antwort', isAdmin, mailUpload.array('attachments', 10), verifyCsrfToken, inbox.inboxReply);
+router.post('/admin/anfragen/:id/status', isAdmin, verifyCsrfToken, inbox.inboxSetStatus);
+router.post('/admin/anfragen/:id/notiz', isAdmin, verifyCsrfToken, inbox.inboxAddNote);
 router.get('/admin/website-tester', isAdmin, websiteTesterAdmin.websiteTesterPage);
 router.post('/admin/website-tester/config', isAdmin, websiteTesterAdmin.saveWebsiteTesterConfig);
 router.post('/admin/website-tester/broken-links/config', isAdmin, websiteTesterAdmin.saveBrokenLinksTesterConfig);

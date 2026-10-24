@@ -1,0 +1,77 @@
+<%
+  // Formular für Antworten und neue Mails. Erwartet: composeAction, form, withRecipient, submitLabel.
+  const cf = form || {};
+  const token = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<form class="inbox-compose mailversand-form" method="POST" action="<%= composeAction %>" enctype="multipart/form-data" data-inbox-compose>
+  <input type="hidden" name="_csrf" value="<%= token %>">
+
+  <% if (withRecipient) { %>
+    <div class="form-row mv-grid-2">
+      <div>
+        <label for="ic-to">An (E-Mail)</label>
+        <input type="email" id="ic-to" name="to" required value="<%= cf.to %>" placeholder="kunde@example.de">
+      </div>
+      <div>
+        <label for="ic-name">Name (optional)</label>
+        <input type="text" id="ic-name" name="name" value="<%= cf.name %>" maxlength="160" placeholder="Vor- und Nachname">
+      </div>
+    </div>
+  <% } %>
+
+  <div class="form-row">
+    <label for="ic-subject">Betreff</label>
+    <input type="text" id="ic-subject" name="subject" <%= withRecipient ? 'required' : '' %> value="<%= cf.subject %>" maxlength="200">
+  </div>
+
+  <div class="form-row">
+    <label for="ic-body">Nachricht</label>
+    <textarea id="ic-body" name="body" required placeholder="Hallo …&#10;&#10;Absätze mit einer Leerzeile trennen. Die Mail bekommt automatisch dein übliches Design mit Signatur."><%= cf.body %></textarea>
+    <span class="hint">Doppelter Zeilenumbruch = neuer Absatz. Einfache HTML-Auszeichnung wie &lt;strong&gt; oder &lt;a&gt; ist erlaubt.</span>
+  </div>
+
+  <details class="inbox-compose__more" <%= (cf.headline || cf.preheader || cf.ctaLabel || cf.locale === 'en') ? 'open' : '' %>>
+    <summary>Weitere Optionen: Überschrift, Button, Sprache</summary>
+    <div class="form-row mv-grid-2">
+      <div>
+        <label for="ic-headline">Überschrift in der Mail (optional)</label>
+        <input type="text" id="ic-headline" name="headline" value="<%= cf.headline %>" maxlength="160" placeholder="Sonst wird der Betreff genutzt">
+      </div>
+      <div>
+        <label for="ic-preheader">Vorschautext im Posteingang (optional)</label>
+        <input type="text" id="ic-preheader" name="preheader" value="<%= cf.preheader %>" maxlength="160">
+      </div>
+    </div>
+    <div class="form-row mv-grid-3">
+      <div>
+        <label for="ic-cta-label">Button-Text (optional)</label>
+        <input type="text" id="ic-cta-label" name="ctaLabel" value="<%= cf.ctaLabel %>" maxlength="80" placeholder="z. B. Termin buchen">
+      </div>
+      <div>
+        <label for="ic-cta-url">Button-Link</label>
+        <input type="url" id="ic-cta-url" name="ctaUrl" value="<%= cf.ctaUrl %>" placeholder="https://www.komplettwebdesign.de/booking">
+      </div>
+      <div>
+        <label for="ic-locale">Sprache der Vorlage</label>
+        <select id="ic-locale" name="locale">
+          <option value="de" <%= cf.locale !== 'en' ? 'selected' : '' %>>Deutsch</option>
+          <option value="en" <%= cf.locale === 'en' ? 'selected' : '' %>>Englisch</option>
+        </select>
+      </div>
+    </div>
+  </details>
+
+  <div class="form-row">
+    <label for="ic-attachments"><i class="fa-solid fa-paperclip"></i> Anhänge (max. 10 Dateien, 15 MB pro Datei, zusammen 25 MB)</label>
+    <input type="file" id="ic-attachments" name="attachments" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip">
+  </div>
+
+  <div class="submit-bar">
+    <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> <%= submitLabel %></button>
+    <button type="button" class="btn-ghost" data-inbox-preview><i class="fa-solid fa-eye"></i> Vorschau</button>
+  </div>
+
+  <div class="mailversand-preview is-hidden" data-inbox-preview-box>
+    <iframe title="Mailvorschau" data-inbox-preview-frame></iframe>
+  </div>
+</form>

@@ -1,0 +1,22 @@
+<%- include('../../partials/admin_header') %>
+
+<div class="inbox-detail inbox-detail--narrow">
+  <a class="inbox-back" href="/admin/anfragen"><i class="fa-solid fa-arrow-left"></i> Alle Anfragen</a>
+
+  <section class="admin-card">
+    <h1 class="admin-page-title"><i class="fa-solid fa-pen"></i> Neue Mail</h1>
+    <p class="inbox-lead">Startet einen neuen Verlauf. Antwortet der Kontakt, landet die Antwort über den Postfach-Abruf automatisch hier.</p>
+
+    <% if (notice) { %>
+      <div class="mailversand-alert mailversand-alert--<%= notice.type === 'success' ? 'success' : 'error' %>" role="status">
+        <i class="fa-solid <%= notice.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' %>"></i>
+        <%= notice.message %>
+      </div>
+    <% } %>
+
+    <%- include('_compose', { composeAction: '/admin/anfragen/neu', form: form, withRecipient: true, submitLabel: 'Mail senden' }) %>
+  </section>
+</div>
+
+<script src="<%= asset('js/admin-inbox.js') %>" defer></script>
+<%- include('../../partials/admin_footer') %>
