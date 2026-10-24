@@ -28,6 +28,10 @@ router.get('/webdesign-kleine-unternehmen-berlin', (_req, res) => {
   return res.redirect(301, SEO_RECOVERY_REDIRECTS['/webdesign-kleine-unternehmen-berlin']);
 });
 
+router.get('/ratgeber/website-fuer-handwerker-berlin', (_req, res) => {
+  return res.redirect(301, SEO_RECOVERY_REDIRECTS['/ratgeber/website-fuer-handwerker-berlin']);
+});
+
 router.get('/ablauf', (req, res, next) => {
   req.params.slug = 'ablauf';
   return showSeoLandingPage(req, res, next);

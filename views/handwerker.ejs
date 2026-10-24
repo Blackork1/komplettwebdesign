@@ -1,39 +1,311 @@
-<%- include('partials/head', { extraCssAssets: ['handwerker.css', 'package-list.css'] }) %>
+<%
+  const hw = handwerkerPage;
+  const faqList = Array.isArray(handwerkerFaq) ? handwerkerFaq : [];
+  const cards = Array.isArray(typeof packageCards !== 'undefined' ? packageCards : null) ? packageCards : [];
+  const heroSize = Array.isArray(hw.hero.imageSize) ? hw.hero.imageSize : [653, 436];
+  const updatedIso = typeof contentUpdatedIso !== 'undefined' ? contentUpdatedIso : '';
+  const updatedLabel = updatedIso ? new Date(`${updatedIso}T12:00:00Z`).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  const rating = typeof googleRating !== 'undefined' ? googleRating : null;
+  const phoneHref = typeof phone !== 'undefined' ? phone : '';
+  const phoneText = typeof phoneDisplay !== 'undefined' ? phoneDisplay : '';
+  const blocks = typeof structuredDataBlocks !== 'undefined' ? structuredDataBlocks : [];
+%>
+<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css'] }) %>
 <body>
   <%- include('partials/header') %>
-  <main class="packages-page">
-    <section class="packages-hero unified-hero" id="hero">
-      <div class="container hero-grid unified-hero__grid">
-        <div class="hero-copy unified-hero__copy">
-          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Startseite</a></li><li><a href="/branchen">Branchen</a></li><li aria-current="page">Handwerker</li></ol></nav>
-          <h1>Webdesign für Handwerksbetriebe in Berlin</h1>
-          <p class="unified-hero__lead">Zeige, welche Arbeiten du übernimmst, wo du tätig bist und wie Kunden dich erreichen. Ich entwickle deine Website mit klaren Leistungsseiten, echten Projektbildern und einfachen Anfragewegen.</p>
-          <p>Der Projektpreis richtet sich nach dem vereinbarten Paketumfang. Hosting, Domain, E-Mail und Wartung werden separat vereinbart.</p>
-          <div class="hero-actions unified-hero__actions"><a class="btn btn-primary" href="/kontakt">Handwerker-Website anfragen</a><a class="btn btn-secondary" href="#paket-angebote">Pakete vergleichen</a></div>
+  <main class="webdesign-berlin-page webdesign-berlin handwerk-page" id="content">
+    <section id="hero" class="wd-container wd-hero unified-hero" aria-labelledby="handwerk-hero-title">
+      <div class="wd-hero__copy unified-hero__copy">
+        <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Startseite</a></li>
+            <li><a href="/branchen">Branchen</a></li>
+            <li aria-current="page">Handwerker</li>
+          </ol>
+        </nav>
+        <span class="wd-chip"><%= hw.hero.chip %></span>
+        <h1 id="handwerk-hero-title"><%= hw.hero.h1 %></h1>
+        <p class="wd-lead"><%= hw.hero.lead %></p>
+        <ul class="wd-hero-bullets" aria-label="Schwerpunkte der Handwerker-Website">
+          <% hw.hero.highlights.forEach((item) => { %>
+          <li>
+            <img src="/images/icons/check.svg" alt="" width="26" height="26" loading="lazy">
+            <span><%= item %></span>
+          </li>
+          <% }) %>
+        </ul>
+        <div class="wd-actions">
+          <a class="btn btn-primary" href="/kontakt" data-track="handwerk_hero_contact">Kostenloses Erstgespräch</a>
+          <a class="btn btn-secondary" href="#preise" data-track="handwerk_hero_prices">Preise ansehen</a>
         </div>
-        <img src="/images/handwerker-min.webp" alt="Webdesign für Handwerksbetriebe" width="653" height="436" fetchpriority="high">
+      </div>
+      <figure class="wd-hero__media">
+        <img src="<%= hw.hero.image %>" alt="<%= hw.hero.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
+      </figure>
+    </section>
+
+    <section id="warum" class="wd-section" aria-labelledby="handwerk-why-title">
+      <div class="wd-container wd-split">
+        <div class="handwerk-page__why">
+          <span class="wd-chip">Ausgangslage</span>
+          <h2 id="handwerk-why-title"><%= hw.why.title %></h2>
+          <% hw.why.paragraphs.forEach((paragraph) => { %>
+          <p><%= paragraph %></p>
+          <% }) %>
+        </div>
+        <ul class="handwerk-page__stats" aria-label="Zahlen zum Handwerk">
+          <% hw.why.stats.forEach((stat) => { %>
+          <li class="wd-card">
+            <strong><%= stat.value %></strong>
+            <span><%= stat.label %></span>
+            <small>Quelle: <%= stat.source %></small>
+          </li>
+          <% }) %>
+        </ul>
       </div>
     </section>
-    <section class="packages-section"><div class="container">
-      <h2>Was deine Kunden auf der Website brauchen</h2>
-      <ul><li>Konkrete Leistungen und ein klar beschriebenes Einsatzgebiet.</li><li>Eigene Projektbilder und nachvollziehbare Referenzen.</li><li>Gut erreichbare Kontaktdaten und ein passendes Anfrageformular.</li><li>Eine übersichtliche Darstellung auf Smartphone, Tablet und Desktop.</li></ul>
-      <h2>So arbeiten wir zusammen</h2>
-      <p>Ich bin Sören Blocksdorf, dein Webdesigner und Webentwickler in Berlin. Gemeinsam klären wir Leistungen, Inhalte und Umfang. Anschließend folgen Entwurf, Umsetzung, Tests und Launch.</p>
-      <p>Für einen kompakten Onepager sind meist 2 bis 4 Wochen realistisch; eine mehrseitige Website braucht häufig 4 bis 6 Wochen. Den konkreten Zeitplan vereinbaren wir anhand deiner Inhalte, Rückmeldungen und Anforderungen.</p>
-      <p><a href="/ablauf">Projektablauf ansehen</a> · <a href="/ratgeber/website-fuer-handwerker-berlin">Ratgeber für Handwerker-Websites</a> · <a href="/leistungen/local-seo">Local SEO in Berlin</a></p>
-    </div></section>
-    <%- include('partials/package-collection', { packages, isEn: false }) %>
-    <section class="packages-section"><div class="container">
-      <h2>Häufige Fragen zu Handwerker-Websites</h2>
-      <% handwerkerFaq.forEach(faq => { %>
-      <details><summary><%= faq.q %></summary><p><%= faq.a %></p></details>
-      <% }); %>
-    </div></section>
-    <section class="packages-section"><div class="container">
-      <h2>Zusatzfunktionen und laufende Betreuung</h2>
-      <p>Buchungssysteme, zusätzliche Leistungsseiten, Texte und besondere Schnittstellen prüfen und kalkulieren wir nach Bedarf. Laufende Betreuung kannst du passend zu deinem Betrieb vereinbaren.</p>
-      <p><a href="/leistungen/zusatzleistungen-webdesign">Zusatzleistungen</a> · <a href="/leistungen/laufende-kosten-website">Laufende Kosten</a> · <a href="/kontakt">Projekt besprechen</a></p>
-    </div></section>
+
+    <section id="inhalte" class="wd-section wd-section--soft" aria-labelledby="handwerk-essentials-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">Inhalte</span>
+          <h2 id="handwerk-essentials-title"><%= hw.essentials.title %></h2>
+          <p class="wd-lead"><%= hw.essentials.intro %></p>
+        </div>
+        <div class="wd-grid handwerk-page__essentials">
+          <% hw.essentials.items.forEach((item) => { %>
+          <article class="wd-card">
+            <i class="fa-solid <%= item.icon %>" aria-hidden="true"></i>
+            <h3><%= item.title %></h3>
+            <p><%= item.text %></p>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="gewerke" class="wd-section" aria-labelledby="handwerk-trades-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">Gewerke</span>
+          <h2 id="handwerk-trades-title"><%= hw.trades.title %></h2>
+          <p class="wd-lead"><%= hw.trades.intro %></p>
+        </div>
+        <div class="wd-grid handwerk-page__trades">
+          <% hw.trades.items.forEach((trade) => { %>
+          <article class="wd-card">
+            <h3><%= trade.name %></h3>
+            <p class="handwerk-page__label">Sinnvolle Seiten</p>
+            <ul class="wd-list wd-list--checks">
+              <% trade.pages.forEach((item) => { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+            <p class="handwerk-page__label">So wird gesucht</p>
+            <p class="handwerk-page__searches">
+              <% trade.searches.forEach((search) => { %>
+              <span>„<%= search %>“</span>
+              <% }) %>
+            </p>
+          </article>
+          <% }) %>
+          <article class="wd-card handwerk-page__related">
+            <h3><%= hw.trades.related.title %></h3>
+            <p><%= hw.trades.related.text %></p>
+            <ul class="wd-list">
+              <% hw.trades.related.links.forEach((link) => { %>
+              <li><a href="<%= link.href %>"><%= link.label %></a></li>
+              <% }) %>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="anfrage" class="wd-section wd-section--soft" aria-labelledby="handwerk-inquiry-title">
+      <div class="wd-container wd-split">
+        <div>
+          <span class="wd-chip">Anfragen</span>
+          <h2 id="handwerk-inquiry-title"><%= hw.inquiry.title %></h2>
+          <p><%= hw.inquiry.text %></p>
+          <% hw.inquiry.notes.forEach((note) => { %>
+          <p class="handwerk-page__note"><%= note %></p>
+          <% }) %>
+        </div>
+        <div class="wd-card handwerk-page__form" aria-label="Beispiel für ein Anfrageformular">
+          <p class="handwerk-page__label">Beispiel: Felder im Anfrageformular</p>
+          <ol>
+            <% hw.inquiry.fields.forEach((field) => { %>
+            <li><strong><%= field.label %></strong><span><%= field.hint %></span></li>
+            <% }) %>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="google" class="wd-section" aria-labelledby="handwerk-local-title">
+      <div class="wd-container wd-split">
+        <div>
+          <span class="wd-chip">Local SEO</span>
+          <h2 id="handwerk-local-title"><%= hw.local.title %></h2>
+          <p><%= hw.local.text %></p>
+          <p class="handwerk-page__note"><%= hw.local.note %> <a href="/leistungen/local-seo">Local SEO in Berlin</a></p>
+        </div>
+        <article class="wd-card">
+          <h3>Darauf kommt es an</h3>
+          <ul class="wd-list wd-list--checks">
+            <% hw.local.checklist.forEach((item) => { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="karriere" class="wd-section wd-section--soft" aria-labelledby="handwerk-careers-title">
+      <div class="wd-container wd-split">
+        <div>
+          <span class="wd-chip">Fachkräfte</span>
+          <h2 id="handwerk-careers-title"><%= hw.careers.title %></h2>
+          <p><%= hw.careers.text %></p>
+        </div>
+        <article class="wd-card">
+          <h3>Das gehört auf die Karriereseite</h3>
+          <ul class="wd-list wd-list--checks">
+            <% hw.careers.items.forEach((item) => { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="impressum" class="wd-section" aria-labelledby="handwerk-legal-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">Pflichtangaben</span>
+          <h2 id="handwerk-legal-title"><%= hw.legal.title %></h2>
+          <p class="wd-lead"><%= hw.legal.intro %></p>
+        </div>
+        <article class="wd-card handwerk-page__legal">
+          <ul class="wd-list wd-list--checks">
+            <% hw.legal.items.forEach((item) => { %>
+            <li><%= item %></li>
+            <% }) %>
+          </ul>
+          <p class="handwerk-page__note"><%= hw.legal.note %></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="preise" class="wd-section wd-section--soft" aria-labelledby="handwerk-pricing-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">Preise</span>
+          <h2 id="handwerk-pricing-title"><%= hw.pricing.title %></h2>
+          <p class="wd-lead"><%= hw.pricing.lead %></p>
+        </div>
+        <% if (cards.length) { %>
+        <div class="wd-grid wd-grid--three handwerk-page__packages">
+          <% cards.forEach((pkg) => { %>
+          <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %>">
+            <% if (pkg.featured) { %>
+            <span class="wd-package__label">Häufig passend</span>
+            <% } else { %>
+            <span class="wd-package__label wd-package__label--placeholder" aria-hidden="true">Paket</span>
+            <% } %>
+            <h3><%= pkg.name %></h3>
+            <span class="wd-package__price"><%= pkg.price %></span>
+            <p><%= pkg.fit %></p>
+            <a class="btn btn-primary" href="<%= pkg.href %>"><%= pkg.name %>-Paket ansehen</a>
+          </article>
+          <% }) %>
+        </div>
+        <% } %>
+        <p class="handwerk-page__center-note"><%= hw.pricing.note %> <a href="/pakete">Alle Pakete vergleichen</a> · <a href="/leistungen/laufende-kosten-website">Laufende Kosten</a></p>
+      </div>
+    </section>
+
+    <section id="ablauf" class="wd-section" aria-labelledby="handwerk-process-title">
+      <div class="wd-container wd-split">
+        <div>
+          <span class="wd-chip">Ablauf</span>
+          <h2 id="handwerk-process-title"><%= hw.process.title %></h2>
+          <p><%= hw.process.duration %></p>
+          <div class="wd-link-row">
+            <% hw.serviceLinks.forEach((link) => { %>
+            <a href="<%= link.href %>"><%= link.label %></a>
+            <% }) %>
+          </div>
+        </div>
+        <ol class="wd-steps">
+          <% hw.process.steps.forEach((step) => { %>
+          <li>
+            <h3><%= step.title %></h3>
+            <p><%= step.text %></p>
+          </li>
+          <% }) %>
+        </ol>
+      </div>
+    </section>
+
+    <section id="referenz" class="wd-section wd-section--soft" aria-labelledby="handwerk-proof-title">
+      <div class="wd-container wd-split">
+        <article class="wd-card">
+          <span class="wd-chip">Referenz</span>
+          <h2 id="handwerk-proof-title"><%= hw.proof.title %></h2>
+          <p><%= hw.proof.reference.text %></p>
+          <div class="wd-link-row">
+            <a href="<%= hw.proof.reference.href %>">Projekt <%= hw.proof.reference.name %> ansehen</a>
+          </div>
+        </article>
+        <article class="wd-card">
+          <h3>Bewertungen auf Google</h3>
+          <p><%= hw.proof.ratingText %></p>
+          <% if (rating && rating.href) { %>
+          <div class="wd-link-row">
+            <a href="<%= rating.href %>" target="_blank" rel="noopener"><%= rating.label %></a>
+          </div>
+          <% } %>
+        </article>
+      </div>
+    </section>
+
+    <section id="faq" class="wd-section" aria-labelledby="handwerk-faq-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">FAQ</span>
+          <h2 id="handwerk-faq-title">Häufige Fragen zur Website für Handwerker</h2>
+        </div>
+        <div class="wd-faq">
+          <% faqList.forEach((faq, index) => { %>
+          <details<%= index === 0 ? ' open' : '' %>>
+            <summary><%= faq.q %></summary>
+            <p><%= faq.a %></p>
+          </details>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt" class="wd-section wd-section--soft" aria-labelledby="handwerk-cta-title">
+      <div class="wd-container">
+        <div class="wd-cta">
+          <h2 id="handwerk-cta-title"><%= hw.cta.title %></h2>
+          <p class="wd-lead"><%= hw.cta.text %></p>
+          <div class="wd-actions">
+            <a class="btn btn-primary" href="/kontakt" data-track="handwerk_final_contact">Kostenloses Erstgespräch</a>
+            <% if (phoneHref) { %><a class="btn btn-secondary" href="tel:<%= phoneHref %>" data-track="handwerk_final_phone"><%= phoneText %></a><% } %>
+          </div>
+        </div>
+        <aside class="handwerk-page__meta" aria-label="Autor und Quellen">
+          <p>Von <a href="/about">Sören Blocksdorf</a>, Webdesigner in Berlin<% if (updatedLabel) { %> · Stand: <time datetime="<%= updatedIso %>"><%= updatedLabel %></time><% } %></p>
+          <p>Quellen:
+            <% hw.sources.forEach((source, index) => { %><a href="<%= source.href %>" target="_blank" rel="noopener"><%= source.label %></a><%= index < hw.sources.length - 1 ? ' · ' : '' %><% }) %>
+          </p>
+        </aside>
+      </div>
+    </section>
   </main>
   <%- include('partials/footer') %>
 </body>

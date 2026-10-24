@@ -299,42 +299,6 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
     ]
   },
   {
-    title: 'Website für Handwerker in Berlin',
-    slug: 'website-fuer-handwerker-berlin',
-    excerpt: 'Welche Seiten, Inhalte, Referenzen und Anfragewege Handwerksbetriebe brauchen, um lokal bessere Anfragen zu bekommen.',
-    description: 'Website für Handwerker in Berlin: Seitenstruktur, lokale SEO, Referenzen, Anfrageformular, Vertrauen und Lead-Qualität.',
-    image_url: '/images/handwerker-min.webp',
-    category: 'Branchen',
-    featured: false,
-    published: true,
-    created_at: UPDATED_AT,
-    updated_at: UPDATED_AT,
-    content: `
-      <p><strong>Kurzantwort:</strong> Eine gute Handwerker-Website zeigt Leistungen, Einsatzgebiete, Referenzen, Verfügbarkeit und Kontaktwege so klar, dass Besucher schnell einschätzen können, ob der Betrieb zum Auftrag passt - und ohne Umwege eine Anfrage stellen.</p>
-      <h2>Wichtige Seiten für Handwerker</h2>
-      <ul>
-        <li><strong>Startseite:</strong> Gewerk, Einsatzgebiet, wichtigste Leistungen und Sofortkontakt auf einen Blick.</li>
-        <li><strong>Leistungsseiten:</strong> eigene Seiten für wichtige Gewerke, Schwerpunkte oder wiederkehrende Aufträge.</li>
-        <li><strong>Referenzen:</strong> echte Projekte mit Bildern, Ortsteil und kurzer Beschreibung der Aufgabe.</li>
-        <li><strong>Kontaktformular:</strong> Projektart, Bezirk, Zeitrahmen, Fotos und Rückrufwunsch abfragen.</li>
-        <li><strong>FAQ:</strong> Kosten, Ablauf, Vorlaufzeit, Material, Garantie und Einsatzgebiet erklären.</li>
-      </ul>
-      <h2>Lokale SEO für Berliner Bezirke</h2>
-      <p>Handwerker profitieren von klaren Leistungsseiten und lokalen Signalen: Bezirke, Einsatzgebiet, echte Projektbeispiele, Bewertungen und interne Links auf relevante Berliner Seiten. Wichtig ist, dass die Texte nicht austauschbar wirken, sondern konkret zeigen, welche Probleme gelöst werden.</p>
-      <h2>Lead-Qualität verbessern</h2>
-      <p>Ein gutes Formular fragt nicht zu viel, aber genug: Was soll gemacht werden? Wo ist das Projekt? Gibt es Fotos? Wann soll es starten? So entstehen weniger unpassende Anfragen und die erste Rückmeldung kann deutlich konkreter ausfallen.</p>
-      <h2>Vertrauen aufbauen</h2>
-      <p>Bei Handwerker-Websites zählen echte Signale: Projektfotos, Bewertungen, klare Ansprechpartner, nachvollziehbare Leistungen und ein verständlicher Ablauf. Besucher wollen wissen, ob du zuverlässig bist, in ihrem Gebiet arbeitest und ihr Problem schon öfter gelöst hast.</p>
-      <p><a class="btn btn-accent" href="/kontakt">Handwerker-Website anfragen</a> <a class="btn btn-outline-primary" href="/website-tester">Aktuelle Website testen</a></p>
-    `,
-    faq_json: [
-      faq('Was braucht eine Handwerker-Website?', 'Eine Handwerker-Website braucht klare Leistungen, Einsatzgebiet, Referenzen, schnelle Kontaktwege, Vertrauenselemente, mobile Darstellung und ein Formular, das wichtige Projektinfos abfragt.'),
-      faq('Sollte jede Leistung eine eigene Seite haben?', 'Für wichtige Leistungen ja. Eigene Leistungsseiten helfen Nutzern und Suchmaschinen, das Angebot klarer zu verstehen und passende lokale Suchanfragen abzudecken.'),
-      faq('Sind Projektfotos wichtig?', 'Ja. Echte Projektfotos und Referenzen schaffen Vertrauen, zeigen Qualität und verbessern die Anfragequalität.'),
-      faq('Was sollte ein Anfrageformular für Handwerker abfragen?', 'Sinnvoll sind Projektart, Ort oder Bezirk, gewünschter Zeitraum, Fotos, Kontaktdaten und ein Feld für kurze Zusatzinfos.')
-    ]
-  },
-  {
     title: 'Website für Restaurants und Cafés in Berlin',
     slug: 'website-fuer-restaurants-cafes-berlin',
     excerpt: 'Was Restaurant- und Café-Websites brauchen: Speisekarte, Reservierung, Öffnungszeiten, Events, Local SEO und mobile Geschwindigkeit.',

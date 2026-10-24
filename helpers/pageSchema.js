@@ -1,28 +1,10 @@
 import { buildOrganizationSchema } from './entitySchema.js';
 import { stripHtml } from './industrySchema.js';
 
-export const HANDWERKER_FAQ = [
-  {
-    q: 'Was kostet eine Handwerker-Website?',
-    a: 'Eine kompakte Handwerker-Website startet bei Komplett Webdesign üblicherweise im Start-Paket. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und stärkerer Struktur ist häufig das Business-Paket sinnvoll.'
-  },
-  {
-    q: 'Welche Inhalte braucht eine gute Handwerker-Website?',
-    a: 'Wichtig sind klare Leistungen, Einsatzgebiet, Referenzen, Bewertungen, ein verständlicher Ablauf, schnelle Kontaktwege und ein Anfrageformular, das Projektart, Ort, Zeitraum und Fotos abfragen kann.'
-  },
-  {
-    q: 'Hilft Local SEO Handwerksbetrieben bei besserer Auffindbarkeit?',
-    a: 'Ja. Local SEO hilft, wenn die Website konkrete Leistungen, Berliner Bezirke, Projektbeispiele, Kontaktwege und strukturierte Daten sauber verbindet. Das macht die Seite für Suchmaschinen und Interessenten leichter verständlich.'
-  },
-  {
-    q: 'Wie schnell kann eine Handwerker-Website online gehen?',
-    a: 'Ein kompakter Onepager ist oft innerhalb von 2 bis 4 Wochen realistisch. Eine mehrseitige Website mit Leistungsseiten, Referenzen, FAQ und SEO-Struktur braucht je nach Umfang meist 4 bis 6 Wochen.'
-  },
-  {
-    q: 'Kann ich Referenzen und Projektbilder später ergänzen?',
-    a: 'Ja. Referenzen, Vorher-Nachher-Bilder, Projektfotos und neue Leistungen können später ergänzt werden. Das ist besonders wichtig, weil echte Projekte Vertrauen aufbauen und lokale Suchbegriffe stärken.'
-  }
-];
+import { HANDWERKER_FAQ } from '../data/handwerkerPage.js';
+
+// Die FAQ liegt bei den Seiteninhalten, damit Seite und strukturierte Daten identisch bleiben.
+export { HANDWERKER_FAQ };
 
 function normalizeBaseUrl(baseUrl) {
   return String(baseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
@@ -42,7 +24,7 @@ function toIsoDate(value) {
   return date.toISOString().slice(0, 10);
 }
 
-export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
+export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl, faq = HANDWERKER_FAQ }) {
   const base = normalizeBaseUrl(baseUrl);
   const pageUrl = url || `${base}/handwerker`;
   const orgId = `${base}/#organization`;
@@ -51,8 +33,8 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
   const serviceId = `${pageUrl}#service`;
   const breadcrumbId = `${pageUrl}#breadcrumb`;
   const faqId = `${pageUrl}#faq`;
-  const title = page.title || 'Handwerker Website Berlin | Webdesign, SEO & Anfragen';
-  const description = page.description || 'Webdesign für Handwerker in Berlin mit klaren Leistungen, Referenzen, Local SEO und Anfragewegen.';
+  const title = page.title || 'Website für Handwerker in Berlin erstellen lassen';
+  const description = page.description || 'Webdesign für Handwerksbetriebe in Berlin: Leistungen, Einsatzgebiet, Projektbilder und Anfragewege klar zeigen.';
   const image = toAbsoluteUrl('/images/handwerker-min.webp', base);
   const dateModified = toIsoDate(page.updated_at || page.created_at);
 
@@ -85,7 +67,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
         '@type': 'Service',
         '@id': serviceId,
         name: 'Webdesign für Handwerker',
-        serviceType: 'Website-Erstellung, Local SEO und klare Anfragewege für Handwerksbetriebe',
+        serviceType: ['Website für Handwerker', 'Webdesign für Handwerksbetriebe', 'Homepage für Handwerker', 'Local SEO für Handwerker'],
         description,
         url: pageUrl,
         provider: { '@id': orgId },
@@ -111,7 +93,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
       {
         '@type': 'FAQPage',
         '@id': faqId,
-        mainEntity: HANDWERKER_FAQ.map((item) => ({
+        mainEntity: faq.map((item) => ({
           '@type': 'Question',
           name: stripHtml(item.q),
           acceptedAnswer: {

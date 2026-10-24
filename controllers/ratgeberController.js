@@ -7,6 +7,7 @@ import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
+import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
 function renderDbEjs(template, locals = {}) {
@@ -37,6 +38,8 @@ function guideTime(post) {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
+const isRedirectedGuide = (guide) => Boolean(SEO_RECOVERY_REDIRECTS[`/ratgeber/${guide?.slug}`]);
+
 function mergeGuides(dbGuides = [], staticGuides = SEO_GUIDE_CLUSTER) {
   const merged = new Map();
   staticGuides.forEach((guide) => {
@@ -45,7 +48,9 @@ function mergeGuides(dbGuides = [], staticGuides = SEO_GUIDE_CLUSTER) {
   dbGuides.forEach((guide) => {
     if (guide?.slug) merged.set(guide.slug, guide);
   });
-  return Array.from(merged.values()).sort((a, b) => guideTime(b) - guideTime(a));
+  return Array.from(merged.values())
+    .filter((guide) => !isRedirectedGuide(guide))
+    .sort((a, b) => guideTime(b) - guideTime(a));
 }
 
 async function findAllGuidesSafe() {

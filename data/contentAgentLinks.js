@@ -17,7 +17,7 @@ export const CONTENT_AGENT_LINKS = Object.freeze([
   { url: '/ratgeber/website-relaunch-berlin', type: 'guide', label: 'Wann sich ein Website-Relaunch lohnt' },
   { url: '/ratgeber/baukasten-vs-professionelle-website', type: 'guide', label: 'Baukasten und professionelle Website vergleichen' },
   { url: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten', type: 'guide', label: 'Ablauf eines Website-Projekts' },
-  { url: '/ratgeber/website-fuer-handwerker-berlin', type: 'guide', label: 'Website-Wissen für Handwerksbetriebe' },
+  { url: '/handwerker', type: 'industry', label: 'Website für Handwerker in Berlin' },
   { url: '/webdesign-berlin/lichtenberg', type: 'service', label: 'Webdesign für Betriebe in Lichtenberg' },
   { url: '/referenzen', type: 'reference', label: 'Umgesetzte Website-Projekte' },
   { url: '/website-tester', type: 'tool', label: 'Website kostenlos prüfen' }

@@ -2,6 +2,9 @@ import pool from '../util/db.js';
 import { buildHandwerkerPageSchemas, HANDWERKER_FAQ } from '../helpers/pageSchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
+import { interpolatePricingTokens } from '../util/pricingViewModel.js';
+import { HANDWERKER_PAGE, HANDWERKER_CONTENT_UPDATED_ISO } from '../data/handwerkerPage.js';
+import { SITE_FACTS, formatGoogleRating } from '../helpers/siteFacts.js';
 
 export async function getPageBySlug(req, res, next) {
   const slug = req.params.slug;
@@ -17,19 +20,7 @@ export async function getPageBySlug(req, res, next) {
     const page = normalizeLegacyPublicCopy(renderPricingTokens(pages[0], res.locals.packagePricing || {}), res.locals.packagePricing || {});
 
     if (page.slug === 'handwerker') {
-      const reviewedPage = {
-        ...page,
-        title: 'Handwerker-Website Berlin: Leistungen und Referenzen',
-        description: 'Webdesign für Handwerksbetriebe in Berlin: klare Leistungsseiten, Einsatzgebiet, Projektbilder und einfache Kontaktanfragen.',
-        updated_at: '2026-10-23'
-      };
-      return res.render('handwerker', {
-        title: reviewedPage.title,
-        description: reviewedPage.description,
-        packages: res.locals.visiblePackages || [],
-        handwerkerFaq: HANDWERKER_FAQ,
-        structuredDataBlocks: [buildHandwerkerPageSchemas({ page: reviewedPage, url: res.locals.canonicalUrl, baseUrl: res.locals.canonicalBaseUrl })]
-      });
+      return res.render('handwerker', buildHandwerkerViewModel(page, res.locals));
     }
 
     // Lade alle Komponenten der Seite
@@ -81,4 +72,50 @@ export async function getPageBySlug(req, res, next) {
     }
     res.status(500).send('Interner Serverfehler');
   }
+}
+
+const HANDWERKER_PACKAGE_KEYS = ['start', 'business', 'wachstum'];
+
+// Seite „Website für Handwerker in Berlin“: Inhalte aus data/handwerkerPage.js, Preise aus dem Katalog.
+export function buildHandwerkerViewModel(page = {}, locals = {}) {
+  const pricing = locals.packagePricing || {};
+  const handwerkerPage = interpolatePricingTokens(HANDWERKER_PAGE, pricing, { lng: 'de' });
+  const handwerkerFaq = interpolatePricingTokens(HANDWERKER_FAQ, pricing, { lng: 'de' });
+  // Ohne Preiskatalog bleibt kein leeres „| “ am Ende des Titels stehen.
+  const title = handwerkerPage.metaTitle.replace(/\s*\|\s*$/, '');
+  const description = handwerkerPage.metaDescription.replace(/\s*Pakete\s*\.\s*/, ' ').trim();
+  const visiblePackages = Array.isArray(locals.visiblePackages) ? locals.visiblePackages : [];
+  const priceLabel = (key) => (typeof pricing.priceLabel === 'function' ? pricing.priceLabel(key, 'de') : '');
+  const packageCards = HANDWERKER_PACKAGE_KEYS.map((key) => {
+    const pkg = visiblePackages.find((item) => String(item?.packageKey || item?.slug || '').toLowerCase() === key);
+    if (!pkg) return null;
+    return {
+      key,
+      name: pkg.name,
+      price: priceLabel(key) || pkg.priceLabel || '',
+      fit: handwerkerPage.pricing.fits[key],
+      href: pkg.canonicalPath || `/pakete/${key}`,
+      featured: key === 'business'
+    };
+  }).filter(Boolean);
+  const reviewedPage = { ...page, title, description, updated_at: HANDWERKER_CONTENT_UPDATED_ISO };
+
+  return {
+    title,
+    description,
+    packages: visiblePackages,
+    packageCards,
+    handwerkerPage,
+    handwerkerFaq,
+    googleRating: { label: formatGoogleRating('de'), href: SITE_FACTS.googleProfileUrl },
+    phone: SITE_FACTS.phone,
+    phoneDisplay: SITE_FACTS.phoneDisplay,
+    contentUpdatedIso: HANDWERKER_CONTENT_UPDATED_ISO,
+    structuredDataBlocks: [buildHandwerkerPageSchemas({
+      page: reviewedPage,
+      url: locals.canonicalUrl,
+      baseUrl: locals.canonicalBaseUrl,
+      faq: handwerkerFaq
+    })]
+  };
 }

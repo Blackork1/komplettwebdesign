@@ -5,6 +5,7 @@ import { DISTRICTS } from "../models/districtModel.js";
 import { DISTRICT_CONTENT_UPDATED_ISO } from "../data/districtPages.js";
 import { createModifiedDateResolver } from "../helpers/contentDates.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import { SEO_RECOVERY_REDIRECTS } from "../data/seoIntentRegistry.js";
 import { REDIRECTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
 import pricingService from "../services/pricingService.js";
 import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
@@ -178,14 +179,15 @@ export async function sitemapXml(req, res, next) {
     }));
 
     // 👉 NEU: Ratgeber-Detailseiten
-    const guideRoutes = guides.map(g => ({
+    const isRedirectedGuide = (g) => Boolean(SEO_RECOVERY_REDIRECTS[`/ratgeber/${g.slug}`]);
+    const guideRoutes = guides.filter(g => !isRedirectedGuide(g)).map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
       lastmod: toIso(g.updated_at),
       changefreq: "weekly",
       priority: 0.8
     }));
 
-    const staticGuideRoutes = SEO_GUIDE_CLUSTER.map(g => ({
+    const staticGuideRoutes = SEO_GUIDE_CLUSTER.filter(g => !isRedirectedGuide(g)).map(g => ({
       loc: `${base}/ratgeber/${g.slug}`,
       lastmod: toIso(g.updated_at),
       changefreq: "monthly",

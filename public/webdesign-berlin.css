@@ -1677,3 +1677,210 @@
     aspect-ratio: 4 / 3;
   }
 }
+
+/* Seite „Website für Handwerker“ (/handwerker) */
+.webdesign-berlin.handwerk-page .wd-hero .wd-chip {
+  margin: 0 0 14px;
+}
+
+.webdesign-berlin.handwerk-page .wd-card:not(.wd-package) {
+  align-content: start;
+}
+
+.webdesign-berlin.handwerk-page .wd-card:not(.wd-package) > p {
+  margin-bottom: 0;
+}
+
+.webdesign-berlin.handwerk-page .wd-card:not(.wd-package) > .wd-list {
+  margin-top: 0;
+}
+
+.webdesign-berlin.handwerk-page .wd-card h2 {
+  margin-top: 14px;
+}
+
+.webdesign-berlin.handwerk-page .wd-split > div > p + p {
+  margin-top: 0.9rem;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__stats {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__stats li {
+  display: grid;
+  gap: 4px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__stats strong {
+  color: var(--wd-accent);
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__stats span {
+  color: var(--wd-ink);
+  font-weight: 700;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__stats small,
+.webdesign-berlin.handwerk-page .handwerk-page__note,
+.webdesign-berlin.handwerk-page .handwerk-page__meta {
+  color: var(--wd-muted);
+  font-size: 0.9rem;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__essentials {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__essentials .fa-solid {
+  align-items: center;
+  background: rgba(239, 75, 28, 0.1);
+  border-radius: 10px;
+  color: var(--wd-accent);
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__trades h3 {
+  margin-bottom: 0;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__label {
+  color: var(--wd-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__searches span {
+  background: var(--wd-soft);
+  border: 1px solid var(--wd-line);
+  border-radius: 999px;
+  color: var(--wd-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 3px 10px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__related {
+  background: var(--wd-soft);
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__related .wd-list li::before {
+  content: "→";
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__form ol {
+  counter-reset: fields;
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__form li {
+  background: #fff;
+  border: 1px solid var(--wd-line);
+  border-radius: 8px;
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__form li strong {
+  color: var(--wd-ink);
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__form li span {
+  color: var(--wd-muted);
+  font-size: 0.9rem;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__legal {
+  margin: 0 auto;
+  max-width: 900px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__packages .wd-package {
+  flex: initial;
+  height: auto;
+  min-height: 0;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__packages .wd-package .btn {
+  margin-top: auto;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__center-note {
+  color: var(--wd-muted);
+  margin: 22px auto 0;
+  max-width: 820px;
+  text-align: center;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__center-note a,
+.webdesign-berlin.handwerk-page .handwerk-page__note a,
+.webdesign-berlin.handwerk-page .handwerk-page__meta a {
+  color: #bd3615;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__center-note a:hover,
+.webdesign-berlin.handwerk-page .handwerk-page__note a:hover,
+.webdesign-berlin.handwerk-page .handwerk-page__meta a:hover {
+  color: var(--wd-ink);
+  text-decoration: underline;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__meta {
+  margin: 22px auto 0;
+  max-width: 900px;
+  text-align: center;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__meta p {
+  font-size: 0.9rem;
+  margin: 0 0 6px;
+}
+
+.webdesign-berlin.handwerk-page .handwerk-page__meta a {
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .webdesign-berlin.handwerk-page .handwerk-page__essentials {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .webdesign-berlin.handwerk-page .wd-hero__media img {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+@media (max-width: 640px) {
+  .webdesign-berlin.handwerk-page .handwerk-page__essentials {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -137,6 +137,26 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Local-SEO-Ratgeber lesen', href: '/blog/seo-fuer-blumenladen' }
   }),
   freezeTarget({
+    path: '/handwerker',
+    intentId: 'website-fuer-handwerker-berlin',
+    state: 'active',
+    priority: 'A',
+    primaryQuery: 'website für handwerker berlin',
+    contentRole: 'Kommerzielle Seite für Handwerksbetriebe mit Gewerken, Inhalten, Preisen und Ablauf',
+    requiredLinks: ['/pakete', '/leistungen/local-seo'],
+    primaryAction: { label: 'Kostenloses Erstgespräch', href: '/kontakt' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+  }),
+  freezeTarget({
+    path: '/ratgeber/website-fuer-handwerker-berlin',
+    intentId: 'website-fuer-handwerker-berlin',
+    state: 'redirect',
+    priority: 'A',
+    primaryQuery: 'website für handwerker berlin',
+    requiredLinks: [],
+    redirectTo: '/handwerker'
+  }),
+  freezeTarget({
     path: '/blog/seo-fuer-blumenladen',
     intentId: 'seo-blumenladen-informational',
     state: 'active',

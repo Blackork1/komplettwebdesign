@@ -38,6 +38,6 @@ test('buildHandwerkerPageSchemas returns extractable WebPage, Service, breadcrum
 
   const faq = graph.find((node) => node['@type'] === 'FAQPage');
   assert.ok(faq.mainEntity.length >= 5);
-  assert.match(faq.mainEntity[0].name, /Handwerker-Website/);
+  assert.match(faq.mainEntity[0].name, /Website für Handwerker/);
   assert.doesNotMatch(faq.mainEntity[0].acceptedAnswer.text, /<[^>]+>/);
 });
