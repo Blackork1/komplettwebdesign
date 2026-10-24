@@ -1884,3 +1884,25 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Mobil: Abschnitte so breit wie der Hero (16 px Seitenabstand), ohne doppelten Innenabstand. */
+@media (max-width: 860px) {
+  .webdesign-berlin-page .wd-section {
+    padding-bottom: 40px;
+    padding-top: 40px;
+  }
+
+  .webdesign-berlin-page .wd-section > .wd-container {
+    margin-left: 16px;
+    margin-right: 16px;
+    max-width: none;
+    padding: 0;
+    width: auto;
+  }
+}
+
+@media (max-width: 580px) {
+  .webdesign-berlin-page .wd-card {
+    padding: 18px 16px;
+  }
+}

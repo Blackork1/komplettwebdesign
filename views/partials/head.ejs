@@ -94,8 +94,9 @@
   <% } %>
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-  <%# Gleiche URL wie in solid.min.css (url(fa-solid-900.woff2)), sonst lädt der Browser die Schrift doppelt. %>
-  <link rel="preload" href="/assets/css/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+  <%# Gleiche URL wie in solid.min.css (url(fa-solid-900.woff2?v=<Inhalts-Hash>)), sonst lädt der Browser die Schrift doppelt.
+     Der Hash sorgt dafür, dass Browser nach einem Schrift-Update die neue Datei laden statt der ein Jahr gecachten alten. %>
+  <link rel="preload" href="<%= versionedAsset('assets/css/fa-solid-900.woff2') %>" as="font" type="font/woff2" crossorigin />
 
   <link rel="preload" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
