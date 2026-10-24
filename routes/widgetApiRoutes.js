@@ -1,8 +1,12 @@
 import express from 'express';
 import * as Apt from '../models/appointmentModel.js';
 import pool from '../util/db.js';
+import { contactBubbleRateLimit, handleContactBubble } from '../controllers/contactBubbleController.js';
 
 const router = express.Router();
+
+/* Kurzanfrage aus dem Kontakt-Pop-up (Nachricht + E-Mail) */
+router.post('/api/kurzanfrage', contactBubbleRateLimit, handleContactBubble);
 
 /* Liefert die nächsten freien Slots als JSON */
 router.get('/api/slots', async (req, res) => {

@@ -1,0 +1,331 @@
+/* Kontakt-Pop-up unten rechts. Wird erst geladen, wenn das Pop-up erscheint. */
+.kwd-bubble {
+  --bubble-ink: #0b2a46;
+  --bubble-muted: #52606d;
+  --bubble-accent: #c93c0c;
+  --bubble-line: rgba(11, 42, 70, 0.12);
+  align-items: flex-end;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  gap: 12px;
+  position: fixed;
+  right: 20px;
+  z-index: 1045;
+}
+
+.kwd-bubble[hidden],
+.kwd-bubble [hidden] {
+  display: none !important;
+}
+
+.kwd-bubble p {
+  margin: 0;
+}
+
+.kwd-bubble__launcher {
+  background: #fff;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(11, 42, 70, 0.28), 0 0 0 2px var(--bubble-accent);
+  cursor: pointer;
+  height: 62px;
+  overflow: hidden;
+  padding: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 62px;
+}
+
+.kwd-bubble__launcher img {
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.kwd-bubble__launcher:hover,
+.kwd-bubble__launcher:focus-visible {
+  box-shadow: 0 12px 30px rgba(11, 42, 70, 0.32), 0 0 0 3px var(--bubble-accent);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.kwd-bubble__sr {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.kwd-bubble__teaser {
+  background: #fff;
+  border: 1px solid var(--bubble-line);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 16px 40px rgba(11, 42, 70, 0.18);
+  color: var(--bubble-ink);
+  display: grid;
+  font-size: 0.95rem;
+  gap: 6px;
+  line-height: 1.45;
+  max-width: 300px;
+  padding: 14px 40px 14px 16px;
+  position: relative;
+  transform-origin: bottom right;
+}
+
+.kwd-bubble__hello {
+  font-size: 1rem;
+}
+
+.kwd-bubble__slot {
+  color: var(--bubble-muted);
+  font-size: 0.9rem;
+}
+
+.kwd-bubble__teaser-action {
+  background: var(--bubble-accent);
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 4px;
+  padding: 7px 16px;
+}
+
+.kwd-bubble__teaser-action:hover,
+.kwd-bubble__teaser-action:focus-visible {
+  background: #a83109;
+}
+
+.kwd-bubble__close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--bubble-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.4rem;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 32px;
+}
+
+.kwd-bubble__close:hover,
+.kwd-bubble__close:focus-visible {
+  background: rgba(11, 42, 70, 0.08);
+  color: var(--bubble-ink);
+}
+
+.kwd-bubble__panel {
+  background: #fff;
+  border: 1px solid var(--bubble-line);
+  border-radius: 18px;
+  box-shadow: 0 22px 60px rgba(11, 42, 70, 0.24);
+  color: var(--bubble-ink);
+  max-height: min(78vh, 620px);
+  overflow: auto;
+  transform-origin: bottom right;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.kwd-bubble__head {
+  align-items: center;
+  border-bottom: 1px solid var(--bubble-line);
+  display: flex;
+  gap: 12px;
+  padding: 14px 48px 14px 16px;
+  position: relative;
+}
+
+.kwd-bubble__head img {
+  border-radius: 999px;
+  flex: 0 0 44px;
+  height: 44px;
+  object-fit: cover;
+  width: 44px;
+}
+
+.kwd-bubble__head .kwd-bubble__close {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.kwd-bubble__name {
+  font-weight: 800;
+}
+
+.kwd-bubble__role {
+  color: var(--bubble-muted);
+  font-size: 0.85rem;
+}
+
+.kwd-bubble__body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.kwd-bubble__question {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.kwd-bubble__cta {
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.kwd-bubble__link {
+  background: transparent;
+  border: 0;
+  color: #bd3615;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 4px 0;
+  text-align: center;
+}
+
+.kwd-bubble__link:hover,
+.kwd-bubble__link:focus-visible {
+  color: var(--bubble-ink);
+  text-decoration: underline;
+}
+
+.kwd-bubble__form label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: -6px;
+}
+
+.kwd-bubble__form textarea,
+.kwd-bubble__form input {
+  border: 1px solid rgba(11, 42, 70, 0.22);
+  border-radius: 10px;
+  color: var(--bubble-ink);
+  font: inherit;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.kwd-bubble__form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.kwd-bubble__form textarea:focus,
+.kwd-bubble__form input:focus {
+  border-color: var(--bubble-accent);
+  box-shadow: 0 0 0 3px rgba(201, 60, 12, 0.15);
+  outline: none;
+}
+
+.kwd-bubble__hp {
+  height: 1px;
+  left: -10000px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+.kwd-bubble__privacy,
+.kwd-bubble__status {
+  color: var(--bubble-muted);
+  font-size: 0.82rem;
+}
+
+.kwd-bubble__privacy a {
+  color: #bd3615;
+}
+
+.kwd-bubble__status:empty {
+  display: none;
+}
+
+.kwd-bubble__done {
+  font-size: 0.95rem;
+}
+
+/* Leichtes Aufpoppen beim Erscheinen und Öffnen */
+@keyframes kwd-bubble-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.kwd-bubble .is-popping {
+  animation: kwd-bubble-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.kwd-bubble__teaser.is-popping {
+  animation-delay: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kwd-bubble .is-popping {
+    animation: none;
+  }
+
+  .kwd-bubble__launcher {
+    transition: none;
+  }
+}
+
+/* „Nach oben“-Button rückt über das Pop-up */
+.has-contact-bubble .back-to-top--fixed {
+  bottom: 104px;
+}
+
+@media (max-width: 767.98px) {
+  .kwd-bubble {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+  }
+
+  .kwd-bubble__launcher {
+    height: 54px;
+    width: 54px;
+  }
+
+  .kwd-bubble__teaser {
+    font-size: 0.9rem;
+    max-width: calc(100vw - 32px);
+  }
+
+  .kwd-bubble__panel {
+    max-height: calc(100vh - 110px);
+  }
+
+  .has-contact-bubble .back-to-top--fixed {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media print {
+  .kwd-bubble {
+    display: none !important;
+  }
+}

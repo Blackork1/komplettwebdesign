@@ -1,0 +1,65 @@
+<%
+  // Kontakt-Pop-up unten rechts. Erscheint per Script nach Lesezeit oder Scrolltiefe.
+  // Nicht auf Kontakt-, Termin-, Rechts- und Danke-Seiten sowie auf den englischen Seiten.
+  const bubblePath = typeof currentPathname === 'string' ? currentPathname : '';
+  const bubbleExcluded = /^\/(?:en(?:\/|$)|kontakt|booking|impressum|datenschutz|hinweise-rechtstexte|swipeandcook|admin|newsletter)/i.test(bubblePath)
+    || /(?:thankyou|danke|bestaetig|confirm)/i.test(bubblePath);
+  const bubbleCss = typeof cssAsset === 'function' ? cssAsset('contact-bubble.css') : '/contact-bubble.css';
+  const bubbleJs = typeof jsAsset === 'function'
+    ? jsAsset('js/contact-bubble.js')
+    : `/js/contact-bubble.js?v=${encodeURIComponent(typeof assetVersion !== 'undefined' ? assetVersion : '1')}`;
+%>
+<% if (!bubbleExcluded) { %>
+<div class="kwd-bubble" data-contact-bubble data-css="<%= bubbleCss %>" hidden>
+  <div class="kwd-bubble__teaser" data-bubble-teaser>
+    <button type="button" class="kwd-bubble__close" data-bubble-dismiss aria-label="Hinweis schließen">&times;</button>
+    <p class="kwd-bubble__hello"><strong>Hi, ich bin Sören.</strong></p>
+    <p>Möchtest du dich jetzt gleich beraten lassen?</p>
+    <p class="kwd-bubble__slot" data-bubble-slot hidden>Es gibt noch freie Termine, der nächste am <span data-bubble-slot-text></span>.</p>
+    <button type="button" class="kwd-bubble__teaser-action" data-bubble-open data-track="contact_bubble_teaser" data-event-name="contact_bubble_open">Ja, gern</button>
+  </div>
+
+  <section class="kwd-bubble__panel" id="kwd-bubble-panel" role="dialog" aria-modal="false" aria-labelledby="kwd-bubble-title" data-bubble-panel hidden>
+    <header class="kwd-bubble__head">
+      <img src="/images/soeren-kontakt.webp" alt="" width="44" height="44" loading="lazy" decoding="async">
+      <div>
+        <p class="kwd-bubble__name" id="kwd-bubble-title">Sören Blocksdorf</p>
+        <p class="kwd-bubble__role">Webdesigner in Berlin · antwortet persönlich</p>
+      </div>
+      <button type="button" class="kwd-bubble__close" data-bubble-close aria-label="Fenster schließen">&times;</button>
+    </header>
+
+    <div class="kwd-bubble__body" data-bubble-step="start">
+      <p class="kwd-bubble__question">Möchtest du dich jetzt gleich beraten lassen?</p>
+      <p class="kwd-bubble__slot" data-bubble-slot hidden>Es gibt noch freie Termine, der nächste am <span data-bubble-slot-text></span>.</p>
+      <a class="btn btn-primary kwd-bubble__cta" href="/booking?src=kontakt-bubble" data-track="contact_bubble_booking" data-event-name="contact_bubble_booking">Kostenloses Erstgespräch buchen</a>
+      <button type="button" class="kwd-bubble__link" data-bubble-write data-track="contact_bubble_write" data-event-name="contact_bubble_write">Oder schreib mir direkt, was du brauchst</button>
+    </div>
+
+    <form class="kwd-bubble__body kwd-bubble__form" data-bubble-form novalidate hidden>
+      <label for="kwd-bubble-message">Was brauchst du?</label>
+      <textarea id="kwd-bubble-message" name="message" rows="4" minlength="10" maxlength="2000" required placeholder="z. B. Neue Website für meinen Malerbetrieb mit etwa fünf Seiten"></textarea>
+      <label for="kwd-bubble-email">Deine E-Mail für die Antwort</label>
+      <input id="kwd-bubble-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
+      <div class="kwd-bubble__hp" aria-hidden="true">
+        <label for="kwd-bubble-website">Website</label>
+        <input id="kwd-bubble-website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <p class="kwd-bubble__privacy">Ich nutze deine Angaben nur, um dir zu antworten. Mehr dazu in der <a href="/datenschutz">Datenschutzerklärung</a>.</p>
+      <button type="submit" class="btn btn-primary kwd-bubble__cta" data-track="contact_bubble_submit" data-event-name="contact_bubble_submit">Nachricht senden</button>
+      <p class="kwd-bubble__status" role="status" aria-live="polite" data-bubble-status></p>
+    </form>
+
+    <div class="kwd-bubble__body kwd-bubble__done" data-bubble-done tabindex="-1" hidden>
+      <p><strong>Danke, deine Nachricht ist angekommen.</strong></p>
+      <p>Ich melde mich per E-Mail bei dir.</p>
+    </div>
+  </section>
+
+  <button type="button" class="kwd-bubble__launcher" aria-expanded="false" aria-controls="kwd-bubble-panel" data-bubble-launcher data-track="contact_bubble_launcher" data-event-name="contact_bubble_open">
+    <img src="/images/soeren-kontakt.webp" alt="" width="56" height="56" decoding="async">
+    <span class="kwd-bubble__sr">Kontakt zu Sören öffnen</span>
+  </button>
+</div>
+<script type="module" src="<%= bubbleJs %>"></script>
+<% } %>
