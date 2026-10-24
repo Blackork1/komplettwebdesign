@@ -61,7 +61,7 @@ test('Leistungen navigation points to the Leistungen overview and no longer to r
     /Relaunch|Landingpage|Audit|Wartung|Zusatzleistungen|Local SEO|Laufende Website-Kosten/.test(link.label)
   );
   footerServiceLinks.forEach((link) => {
-    if (link.label === 'Webdesign Preise') return;
+    if (link.label === 'Website-Kosten') return;
     assert.match(link.href, /^\/leistungen\//, `${link.label} should live below /leistungen`);
   });
 });

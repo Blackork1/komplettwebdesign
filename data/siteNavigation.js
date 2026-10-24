@@ -137,7 +137,7 @@ export const footerNavigation = Object.freeze([
     label: 'Kosten & Betrieb',
     labelEn: 'Costs & operation',
     links: [
-      { label: 'Webdesign Preise', labelEn: 'Webdesign pricing', href: '/webdesign-berlin/kosten-preise-pakete' },
+      { label: 'Website-Kosten', labelEn: 'Website costs', href: '/webdesign-berlin/kosten-preise-pakete' },
       { label: 'Laufende Website-Kosten', labelEn: 'Running website costs', href: '/leistungen/laufende-kosten-website' },
       { label: 'Zusatzleistungen Webdesign', labelEn: 'Webdesign add-ons', href: '/leistungen/zusatzleistungen-webdesign' },
       { label: 'Website-Wartung', labelEn: 'Website maintenance', href: '/leistungen/website-wartung' }

@@ -262,7 +262,7 @@ const SERVICE_PAGE_OVERRIDES = {
     ],
     internalLinks: [
       { label: 'Inhalte & Texte (Content)', href: '/leistungen/inhalte-texte-content' },
-      { label: 'Kosten, Preise & Pakete', href: '/webdesign-berlin/kosten-preise-pakete' },
+      { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete' },
       { label: 'Business-Paket', href: '/pakete/business' },
       { label: 'Ratgeber: Website-Kosten Berlin', href: '/ratgeber/website-kosten-berlin' },
       { label: 'Webdesign Berlin Friedrichshain', href: '/webdesign-berlin/friedrichshain' }
@@ -474,10 +474,11 @@ const SERVICE_PAGE_OVERRIDES = {
   },
   'kosten-preise-pakete': {
     keywordPrimary: 'website kosten berlin',
-    keywordSecondary: ['website erstellen lassen berlin kosten', 'webdesign preise berlin'],
-    metaTitle: 'Webdesign Preise Berlin | Website-Pakete ab {{lowestPackagePriceLabel}}',
-    metaDescription: 'Webdesign Preise in Berlin transparent erklärt: Start {{price.start}}, Business {{price.business}}, Wachstum {{price.wachstum}} und individuelle Projekte {{price.individuell}}.',
-    h1: 'Webdesign Preise in Berlin: Was kostet eine Website?',
+    keywordSecondary: ['website erstellen lassen berlin kosten', 'was kostet eine website berlin'],
+    // „Webdesign Preise Berlin“ gehört zu /pakete. Diese Seite erklärt Kosten mit Beispielrechnungen.
+    metaTitle: 'Website-Kosten Berlin: Beispielrechnungen & Kostenfaktoren',
+    metaDescription: 'Was eine Website in Berlin kostet: vier Beispielrechnungen vom Onepager bis zum Projekt mit Sonderfunktionen, Preisfaktoren und laufende Kosten.',
+    h1: 'Website-Kosten in Berlin: Beispielrechnungen und Kostenfaktoren',
     heroSubtitle: 'Klare Website-Pakete für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin.',
     answerBlock:
       'Website-Kosten hängen vor allem von Seitenumfang, Inhalten, Funktionen und laufendem Betrieb ab. Die Paketpreise starten bei {{lowestPackagePriceLabel}} und zeigen dir früh, welcher Rahmen realistisch ist. Zusatzleistungen, Drittanbieter-Kosten und laufende Kosten werden separat eingeordnet, damit du Projektbudget und Betrieb sauber unterscheiden kannst.',

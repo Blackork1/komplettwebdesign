@@ -60,6 +60,17 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Leistungen einordnen', href: '/leistungen' }
   }),
   freezeTarget({
+    path: '/webdesign-berlin/kosten-preise-pakete',
+    intentId: 'website-kosten-berlin-beispielrechnungen',
+    state: 'active',
+    priority: 'B',
+    primaryQuery: 'website kosten berlin',
+    contentRole: 'Kostenerklärung mit Beispielrechnungen; „Webdesign Preise Berlin“ gehört zu /pakete',
+    requiredLinks: ['/pakete', '/leistungen/laufende-kosten-website'],
+    primaryAction: { label: 'Pakete vergleichen', href: '/pakete' },
+    supportingAction: { label: 'Laufende Kosten einordnen', href: '/leistungen/laufende-kosten-website' }
+  }),
+  freezeTarget({
     path: '/leistungen',
     intentId: 'webdesign-leistungen-overview',
     state: 'active',
@@ -177,6 +188,17 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     requiredLinks: ['/website-tester/seo', '/leistungen/website-audit'],
     primaryAction: { label: 'Website umfassend prüfen lassen', href: '/leistungen/website-audit' },
     supportingAction: { label: 'SEO-Test starten', href: '/website-tester/seo' }
+  }),
+  freezeTarget({
+    path: '/ratgeber/homepage-checker-website-check',
+    intentId: 'homepage-check-checkliste',
+    state: 'active',
+    priority: 'C',
+    primaryQuery: 'homepage check',
+    contentRole: 'Checkliste zum Selbstprüfen; „Webseite testen“ mit dem Tool gehört zu /website-tester',
+    requiredLinks: ['/website-tester', '/leistungen/website-audit'],
+    primaryAction: { label: 'Webseite kostenlos testen', href: '/website-tester' },
+    supportingAction: { label: 'Website-Audit ansehen', href: '/leistungen/website-audit' }
   }),
   freezeTarget({
     path: '/website-tester/seo',

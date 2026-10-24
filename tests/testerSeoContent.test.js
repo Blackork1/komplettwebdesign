@@ -7,7 +7,7 @@ const seoView = readFileSync(new URL('../views/seo_tester.ejs', import.meta.url)
 const websiteView = readFileSync(new URL('../views/test.ejs', import.meta.url), 'utf8');
 
 test('deutsche Tester besitzen klickbare Titel im Zielkorridor', () => {
-  assert.match(controller, /Kostenloser Website-Test: SEO, Technik und Sichtbarkeit/);
+  assert.match(controller, /Webseite testen kostenlos: Technik, Ladezeit & Sichtbarkeit/);
   assert.match(controller, /Kostenloser SEO-Test für Websites \| Komplett Webdesign/);
 });
 

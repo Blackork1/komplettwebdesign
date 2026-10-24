@@ -26,7 +26,8 @@ export const SHORT_SEO_TITLES = Object.freeze({
   '/blog/wordpress-68': 'WordPress 6.8: Neue Features, Performance und Sicherheit',
   '/branchen/webdesign-reinigung': 'Website für Reinigungsfirmen in Berlin erstellen lassen',
   '/branchen/webdesign-restaurant': 'Restaurant-Website Berlin: Speisekarte & Reservierung',
-  '/ratgeber/homepage-checker-website-check': 'Homepage-Checker 2026: Ist deine Website noch modern?',
+  // Checkliste zum Selbstprüfen; das Tool-Ranking für „Webseite testen“ gehört zu /website-tester.
+  '/ratgeber/homepage-checker-website-check': 'Homepage-Check 2026: Checkliste für eine moderne Website',
   '/ratgeber/was-ist-seo': 'Was ist SEO? Einfach erklärt für kleine Unternehmen'
 });
 

@@ -233,7 +233,7 @@ export const webdesignBerlinPage = Object.freeze({
     packages: packageTeaserItems,
     links: [
       { label: 'Paketübersicht öffnen', href: '/pakete' },
-      { label: 'Kosten- und Preisseite öffnen', href: '/webdesign-berlin/kosten-preise-pakete' }
+      { label: 'Website-Kosten einordnen', href: '/webdesign-berlin/kosten-preise-pakete' }
     ]
   },
   referenceProof: {
@@ -434,7 +434,7 @@ export const webdesignBerlinPage = Object.freeze({
     { label: 'Wachstum-Paket', href: '/pakete/wachstum' },
     { label: 'Individuelles Projekt', href: '/pakete/individuell' },
     { label: 'Kontakt', href: '/kontakt' },
-    { label: 'Kosten und Preise', href: '/webdesign-berlin/kosten-preise-pakete' },
+    { label: 'Website-Kosten', href: '/webdesign-berlin/kosten-preise-pakete' },
     { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
     { label: 'Zusatzleistungen Webdesign', href: '/leistungen/zusatzleistungen-webdesign' },
     { label: 'Website-Wartung', href: '/leistungen/website-wartung' },

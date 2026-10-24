@@ -155,7 +155,8 @@ function buildRenderLocals() {
 }
 
 test('kosten page controller contains current package prices and recurring cost separation', () => {
-  assert.match(controller, /Webdesign Preise in Berlin: Was kostet eine Website\?/);
+  assert.match(controller, /Website-Kosten in Berlin: Beispielrechnungen und Kostenfaktoren/);
+  assert.doesNotMatch(controller, /metaTitle: 'Webdesign Preise Berlin/);
 
   const examples = [
     ['Beispiel 1: Kompakter Onepager', '{{price.start}} einmalig'],

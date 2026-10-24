@@ -36,7 +36,7 @@ import { MARKETING_IMAGES } from '../data/marketingImages.js';
 
 const PAGE_I18N = {
   de: {
-    title: 'Kostenloser Website-Test: SEO, Technik und Sichtbarkeit',
+    title: 'Webseite testen kostenlos: Technik, Ladezeit & Sichtbarkeit',
     description: 'Teste deine Website kostenlos auf SEO, Technik, Ladezeit, Vertrauen und Auffindbarkeit. Du erhältst eine direkte Auswertung mit priorisierten Hinweisen.',
     keywords: 'website testen, website tester kostenlos, website kostenlos testen, ist meine website noch aktuell, muss ich meine website updaten, seo check website, geo check website',
     ogTitle: 'Website testen kostenlos | Ist meine Website noch aktuell?',

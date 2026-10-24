@@ -392,7 +392,11 @@ router.get('/webdesign-blumenladen', (_req, res) => {
   res.redirect(301, '/branchen/webdesign-blumenladen');
 });
 
-router.get(['/webdesign-preise', '/website-kosten-berlin'], (_req, res) => {
+router.get('/webdesign-preise', (_req, res) => {
+  res.redirect(301, '/pakete');
+});
+
+router.get('/website-kosten-berlin', (_req, res) => {
   res.redirect(301, '/webdesign-berlin/kosten-preise-pakete');
 });
 

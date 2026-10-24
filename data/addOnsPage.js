@@ -539,7 +539,7 @@ export const addOnsPage = Object.freeze({
     { label: 'Individuelles Projekt', href: '/pakete/individuell', text: 'Sonderfunktionen und größere Anforderungen einordnen' },
     { label: 'Projekt anfragen', href: '/kontakt', text: 'Zusatzleistung oder Erweiterung beschreiben' },
     { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website', text: 'Domain, E-Mail, Hosting, Wartung und Tools getrennt betrachten' },
-    { label: 'Kosten- und Preisseite', href: '/webdesign-berlin/kosten-preise-pakete', text: 'Einmalige Projektkosten und Beispiele ansehen' },
+    { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete', text: 'Einmalige Projektkosten und Beispiele ansehen' },
     { label: 'Website-Relaunch', href: '/leistungen/website-relaunch', text: 'Bestehende Website geordnet erneuern' },
     { label: 'Website-Tester', href: '/website-tester', text: 'Schnellen technischen Check starten' },
     { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Hauptleistung und lokale Ausrichtung ansehen' }

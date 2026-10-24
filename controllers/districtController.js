@@ -299,7 +299,7 @@ function buildDistrictServiceLinks(slug) {
     ],
     lichtenberg: [
       { label: "Responsives Design & Mobile", href: "/leistungen/responsives-design-mobile" },
-      { label: "Kosten, Preise & Pakete", href: "/webdesign-berlin/kosten-preise-pakete" },
+      { label: "Website-Kosten und Beispielrechnungen", href: "/webdesign-berlin/kosten-preise-pakete" },
       { label: "Business-Paket ansehen", href: "/pakete/business" }
     ]
   };
@@ -385,7 +385,7 @@ export function renderWebdesignBerlinHub(req, res) {
     // answerBlock:
     //   "Wenn du eine Website in Berlin erstellen lassen willst, brauchst du nicht nur Design, sondern eine klare Struktur für Sichtbarkeit und Abschluss. Genau darauf ist diese Seite gebaut: lokale Suchintention treffen, Vertrauen aufbauen und Besucher zielgerichtet in Erstgespräch, Kontakt oder Website-Check führen.",
      ctaPrimary: { label: "Kostenlose Ersteinschätzung anfragen", href: "/kontakt" },
-    ctaSecondary: { label: "Preise und Pakete ansehen", href: "/webdesign-berlin/kosten-preise-pakete" },
+    ctaSecondary: { label: "Preise und Pakete ansehen", href: "/pakete" },
     ctaTertiary: { label: "Website-Tester starten", href: "/website-tester" },
     rating: { label: formatGoogleRating(lng), href: SITE_FACTS.googleProfileUrl },
     image: {
