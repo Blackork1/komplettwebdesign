@@ -1,0 +1,73 @@
+/*
+ * Einheitlicher Seitenabstand auf dem Smartphone: Inhalte stehen auf allen Seiten 16 px vom Rand,
+ * genau wie der Hero. Die Datei wird im Head nach allen Seiten-Stylesheets geladen. Das !important
+ * ist bewusst gesetzt, weil einige Seiten ihr CSS erst im Body nachladen.
+ */
+@media (max-width: 767.98px) {
+  :root {
+    --kwd-mobile-gutter: 16px;
+  }
+
+  /* Hüllen auf Seitenebene: volle Breite, 16 px Innenabstand */
+  main .container,
+  main.container,
+  main .container-fluid,
+  main .container-sm,
+  main .container-md,
+  main .container-lg,
+  main .container-xl,
+  main .container-xxl,
+  main .about-shell,
+  main .faq-shell,
+  main .booking-shell,
+  main .wt-shell,
+  main .service-shell,
+  main .leistungen-hero-shell,
+  main .local-seo-shell,
+  main .running-costs-shell,
+  main .seo-landing__container,
+  main .references-container,
+  main .unified-hero__container,
+  main section.wd-container.wd-section,
+  .legal > .container,
+  .privacy > .container {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    padding-left: var(--kwd-mobile-gutter) !important;
+    padding-right: var(--kwd-mobile-gutter) !important;
+    width: 100% !important;
+  }
+
+  /* Verschachtelte Hüllen nicht doppelt einrücken */
+  main :is(.container, .container-fluid, .about-shell, .faq-shell, .booking-shell, .wt-shell, .service-shell, .leistungen-hero-shell, .local-seo-shell, .running-costs-shell, .seo-landing__container, .references-container)
+    :is(.container, .container-fluid, .about-shell, .faq-shell, .booking-shell, .wt-shell, .service-shell, .leistungen-hero-shell, .local-seo-shell, .running-costs-shell, .seo-landing__container, .references-container),
+  main.container :is(.container, .container-fluid) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Branchen-Einzelseiten nutzen eine eigene Außenhülle */
+  #ContainerMarginSetup {
+    margin-left: var(--kwd-mobile-gutter) !important;
+    margin-right: var(--kwd-mobile-gutter) !important;
+  }
+
+  /* Englische Webdesign-Seite: Abschnitte ohne eigenen Seitenabstand, die innere Hülle setzt die 16 px */
+  main.webdesign-berlin-page:not(.webdesign-berlin) > section.wd-section:not(.wd-container) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Footer auf allen Seiten */
+  .site-footer {
+    padding-left: var(--kwd-mobile-gutter) !important;
+    padding-right: var(--kwd-mobile-gutter) !important;
+  }
+
+  /* Ältere Leistungsseiten: Kästen bleiben bündig, mit schmalerem Innenabstand */
+  main .leistungen-content > section {
+    padding-left: var(--kwd-mobile-gutter) !important;
+    padding-right: var(--kwd-mobile-gutter) !important;
+  }
+}

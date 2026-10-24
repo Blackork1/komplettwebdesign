@@ -204,6 +204,13 @@
       "hash": "5cc9ded32ce5",
       "bytes": 79646
     },
+    "mobile-gutter.css": {
+      "source": "mobile-gutter.css",
+      "output": "mobile-gutter.min.css",
+      "href": "/mobile-gutter.min.css?v=6169772d945b",
+      "hash": "6169772d945b",
+      "bytes": 1639
+    },
     "package-detail.css": {
       "source": "package-detail.css",
       "output": "package-detail.min.css",

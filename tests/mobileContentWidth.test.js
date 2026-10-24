@@ -21,3 +21,23 @@ test('auf dem Handy haben Abschnitte denselben Seitenabstand wie der Hero', asyn
   const mobile = css.slice(css.lastIndexOf('@media (max-width: 860px)'));
   assert.match(mobile, /\.webdesign-berlin-page \.wd-section > \.wd-container \{[^}]*margin-left: 16px;[^}]*margin-right: 16px;[^}]*padding: 0;/);
 });
+
+test('alle öffentlichen Seiten laden die 16-px-Regel für Smartphones als letztes Stylesheet', async () => {
+  const head = (await read('views/partials/head.ejs')).toString();
+  const pageCss = head.indexOf("pageCssAssets.forEach");
+  const gutter = head.indexOf("cssAsset('mobile-gutter.css')");
+  assert.ok(pageCss > 0 && gutter > pageCss, 'mobile-gutter.css muss nach den Seiten-Stylesheets kommen');
+  const css = (await read('public/mobile-gutter.css')).toString();
+  assert.match(css, /@media \(max-width: 767\.98px\)/);
+  assert.match(css, /--kwd-mobile-gutter: 16px;/);
+  for (const wrapper of ['main .container', '.about-shell', '.wt-shell', '.service-shell', '.seo-landing__container', '.references-container', '.unified-hero__container', '.legal > .container', '.privacy > .container', '#ContainerMarginSetup', '.site-footer']) {
+    assert.ok(css.includes(wrapper), wrapper);
+  }
+});
+
+test('Button-Reihen der Kosten-Seiten brechen auf dem Handy um', async () => {
+  for (const file of ['webdesign-cafe', 'webdesign-blumenladen', 'kosten-einfache-websites', 'website-kosten-zeitplans']) {
+    const view = (await read(`views/static/kosten/${file}.ejs`)).toString();
+    assert.doesNotMatch(view, /class="mt-3(?: mt-lg-0)? d-flex gap-2"/, file);
+  }
+});

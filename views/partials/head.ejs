@@ -136,6 +136,8 @@
   <% pageCssAssets.forEach((cssFile) => { %>
   <link rel="stylesheet" href="<%= cssAsset(cssFile) %>" />
   <% }) %>
+  <%# Zuletzt: einheitlicher 16-px-Seitenabstand auf dem Smartphone für alle Seiten. %>
+  <link rel="stylesheet" href="<%= cssAsset('mobile-gutter.css') %>" media="(max-width: 767.98px)" />
 
   <% if (!trackingDisabled) { %>
   <!-- Stripe lazy loader (wie bei dir) -->
