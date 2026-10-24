@@ -332,3 +332,31 @@ test('Folgefenster weist die lokale Tagesabdeckung getrennt von vorhandenen Metr
   assert.match(db.calls[0].sql, /COUNT\(metric\.id\)::integer AS metric_row_count/i);
   assert.match(db.calls[0].sql, /coverage_summary\.coverage_day_count AS "coverageDayCount"/i);
 });
+
+test('die Lückensuche liefert den ersten Tag ohne Sync-Abdeckung ab dem ersten Sync', async () => {
+  const db = createQueryRecorder([{ rows: [{ missing_date: '2026-08-23' }] }]);
+  const repository = createContentSearchMetricsRepository(db);
+
+  const result = await repository.findEarliestMissingSyncDate({ from: '2026-04-27', to: '2026-10-23' });
+
+  assert.equal(result, '2026-08-23');
+  assert.equal(db.calls.length, 1);
+  assert.deepEqual(db.calls[0].params, ['2026-04-27', '2026-10-23']);
+  assert.match(db.calls[0].sql, /MIN\(metric_date\) AS day FROM content_search_metric_sync_days/);
+  assert.match(db.calls[0].sql, /GREATEST\(\$1::date, first_synced\.day\)/);
+  assert.match(db.calls[0].sql, /NOT EXISTS/);
+});
+
+test('ohne Lücke oder ohne bisherigen Sync meldet die Lückensuche nichts', async () => {
+  const repository = createContentSearchMetricsRepository(createQueryRecorder([{ rows: [] }]));
+
+  assert.equal(await repository.findEarliestMissingSyncDate({ from: '2026-04-27', to: '2026-10-23' }), null);
+});
+
+test('die Lückensuche lehnt ungültige Zeiträume ab', async () => {
+  const repository = createContentSearchMetricsRepository(createQueryRecorder());
+
+  await assert.rejects(repository.findEarliestMissingSyncDate({ from: '2026-10-24', to: '2026-10-23' }), TypeError);
+  await assert.rejects(repository.findEarliestMissingSyncDate({ from: '2026-13-01', to: '2026-10-23' }), TypeError);
+  await assert.rejects(repository.findEarliestMissingSyncDate({}), TypeError);
+});

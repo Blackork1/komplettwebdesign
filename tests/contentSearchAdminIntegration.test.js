@@ -260,11 +260,11 @@ test('manueller Sync verwendet lokales 28-Tage-Fenster und den atomaren Reposito
   assert.equal(res.redirectedTo, '/admin/content-agent/search-console?sync=queued');
 });
 
-test('fehlende GSC-Konfiguration und ein pausierter Agent verhindern den manuellen Sync', async () => {
+test('fehlende GSC-Konfiguration und ein technisch abgeschalteter Worker verhindern den manuellen Sync', async () => {
   for (const scenario of [
     { searchConsoleConfigured: false, enabled: true, agentEnabled: true },
     { searchConsoleConfigured: true, enabled: false, agentEnabled: true },
-    { searchConsoleConfigured: true, enabled: true, agentEnabled: false }
+    { searchConsoleConfigured: true, enabled: false, agentEnabled: false }
   ]) {
     let enqueueCalls = 0;
     const controller = createAdminContentAgentController(controllerDependencies({
@@ -289,6 +289,32 @@ test('fehlende GSC-Konfiguration und ein pausierter Agent verhindern den manuell
     assert.equal(enqueueCalls, 0);
     assert.equal(res.statusCode, 409);
   }
+});
+
+test('ein pausierter Content-Agent erlaubt den manuellen Search-Console-Abruf', async () => {
+  const jobs = [];
+  const controller = createAdminContentAgentController(controllerDependencies({
+    now: () => new Date('2026-07-13T22:30:00.000Z'),
+    runtimeConfig: { enabled: true, maxAttempts: 3, searchConsoleConfigured: true },
+    settingsRepository: {
+      async getSettings() {
+        return { agent_enabled: false, maximum_attempts: 5, timezone: 'Europe/Berlin' };
+      }
+    },
+    jobRepository: {
+      async enqueueManualSearchConsoleSyncJob(input) {
+        jobs.push(input);
+        return { id: 42, status: 'queued' };
+      }
+    }
+  }));
+  const res = response();
+
+  await controller.syncSearchConsoleAction({}, res, assert.fail);
+
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].payload.endDate, '2026-07-13');
+  assert.equal(res.redirectedTo, '/admin/content-agent/search-console?sync=queued');
 });
 
 test('Null-Enqueue ist ein fachlicher Konflikt und erzeugt keine Erfolgsmeldung', async () => {
@@ -429,4 +455,29 @@ test('Search-Console-View deaktiviert den Sync bei technischem Not-Aus und erkl�
   assert.match(html, /<button[^>]*type="submit"[^>]*disabled[^>]*>/);
   assert.match(html, /Technischer Hauptschalter[^<]*(?:deaktiviert|ausgeschaltet)/i);
   assert.doesNotMatch(html, /Google Search Console: Letzter Aufruf erfolgreich/);
+});
+
+test('bei pausiertem Agent bleibt der Abruf-Button aktiv und die Seite erklärt die Pause', async () => {
+  const html = await renderFile(fileURLToPath(viewUrl), {
+    title: 'Search Console',
+    currentPathname: '/admin/content-agent/search-console',
+    csrfToken: 'csrf-test',
+    cssAsset: (value) => `/assets/${value}`,
+    jsAsset: (value) => `/assets/${value}`,
+    searchConsoleConfigured: true,
+    searchConsoleProperty: 'komplettwebdesign.de',
+    agentEnabled: false,
+    technicalAgentEnabled: true,
+    syncQueued: false,
+    searchConsole: {
+      summary: {},
+      metrics: [],
+      opportunities: [],
+      provider: { healthy: true, statusLabel: 'Letzter Aufruf erfolgreich' }
+    }
+  });
+
+  assert.doesNotMatch(html, /<button[^>]*type="submit"[^>]*disabled[^>]*>/);
+  assert.match(html, /Google Search Console: Letzter Aufruf erfolgreich/);
+  assert.match(html, /Content-Agent ist pausiert\. Die Suchdaten werden trotzdem täglich abgerufen/);
 });

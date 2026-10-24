@@ -8,7 +8,6 @@
   const safeProvider = safeSearchConsole.provider || {};
   const csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
   const syncAvailable = searchConsoleConfigured === true
-    && agentEnabled === true
     && technicalAgentEnabled === true;
 %>
 
@@ -24,7 +23,7 @@
     </div>
     <div class="content-agent-actions">
       <span class="content-agent-readonly"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Nur Auswertung · keine Inhaltsänderung</span>
-      <form method="post" action="/admin/content-agent/search-console/sync" data-confirm="Search-Console-Daten für die letzten 28 Tage jetzt synchronisieren?">
+      <form method="post" action="/admin/content-agent/search-console/sync" data-confirm="Search-Console-Daten der letzten 28 Tage und fehlende Tage jetzt synchronisieren?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <button class="btn btn-primary" type="submit" <%= syncAvailable ? '' : 'disabled' %>>
           <i class="fa-solid fa-rotate" aria-hidden="true"></i> Search Console jetzt synchronisieren
@@ -43,10 +42,8 @@
     <div class="content-agent-notice"><i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i><div><strong>Technische Verbindung fehlt</strong><p>Die Search-Console-Konfiguration wird außerhalb des Dashboards eingerichtet. Bis dahin bleiben die gespeicherten Auswertungen lesbar.</p></div></div>
   <% } else if (technicalAgentEnabled !== true) { %>
     <div class="content-agent-notice"><i class="fa-solid fa-power-off" aria-hidden="true"></i><div><strong>Technischer Hauptschalter ist deaktiviert</strong><p>Ein manueller Abruf ist erst möglich, wenn der Content-Agent technisch freigegeben ist.</p></div></div>
-  <% } else if (agentEnabled !== true) { %>
-    <div class="content-agent-notice"><i class="fa-solid fa-pause" aria-hidden="true"></i><div><strong>Content-Agent ist pausiert</strong><p>Ein manueller Abruf ist erst nach der Aktivierung des Agenten möglich.</p></div></div>
   <% } else { %>
-    <div class="content-agent-notice"><span class="content-agent-status-dot <%= safeProvider.healthy ? 'is-online' : 'is-neutral' %>" aria-hidden="true"></span><div><strong>Google Search Console: <%= safeProvider.statusLabel || 'Noch kein Ergebnis' %></strong><p><%= safeProvider.lastSuccessAtLabel ? `Letzter erfolgreicher Abruf: ${safeProvider.lastSuccessAtLabel}` : 'Noch kein erfolgreicher Abruf gespeichert.' %><%= safeProvider.lastErrorCode ? ` · Fehlercode: ${safeProvider.lastErrorCode}` : '' %></p></div></div>
+    <div class="content-agent-notice"><span class="content-agent-status-dot <%= safeProvider.healthy ? 'is-online' : 'is-neutral' %>" aria-hidden="true"></span><div><strong>Google Search Console: <%= safeProvider.statusLabel || 'Noch kein Ergebnis' %></strong><p><%= safeProvider.lastSuccessAtLabel ? `Letzter erfolgreicher Abruf: ${safeProvider.lastSuccessAtLabel}` : 'Noch kein erfolgreicher Abruf gespeichert.' %><%= safeProvider.lastErrorCode ? ` · Fehlercode: ${safeProvider.lastErrorCode}` : '' %></p><% if (agentEnabled !== true) { %><p>Der Content-Agent ist pausiert. Die Suchdaten werden trotzdem täglich abgerufen, KI-Auswertungen laufen erst nach der Aktivierung.</p><% } %></div></div>
   <% } %>
 
   <aside class="content-gsc-signal-note" aria-label="Einordnung der Search-Console-Daten">

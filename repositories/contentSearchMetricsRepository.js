@@ -269,6 +269,36 @@ export function createContentSearchMetricsRepository(db = pool) {
       return rows;
     },
 
+    // Erster Tag ohne Sync-Abdeckung im Zeitraum. Tage vor dem allerersten Sync zählen nicht als Lücke.
+    async findEarliestMissingSyncDate({ from, to } = {}) {
+      const normalizedFrom = normalizeOptionalDate(from, 'from');
+      const normalizedTo = normalizeOptionalDate(to, 'to');
+      if (!normalizedFrom || !normalizedTo || normalizedFrom > normalizedTo) {
+        throw new TypeError('Für die Lückensuche wird ein gültiger Zeitraum benötigt.');
+      }
+      const { rows } = await db.query(`
+        WITH first_synced AS (
+          SELECT MIN(metric_date) AS day FROM content_search_metric_sync_days
+        )
+        SELECT to_char(candidate.day, 'YYYY-MM-DD') AS missing_date
+        FROM first_synced,
+          generate_series(
+            GREATEST($1::date, first_synced.day),
+            $2::date,
+            INTERVAL '1 day'
+          ) AS candidate(day)
+        WHERE first_synced.day IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM content_search_metric_sync_days covered
+            WHERE covered.metric_date = candidate.day::date
+          )
+        ORDER BY candidate.day
+        LIMIT 1
+      `, [normalizedFrom, normalizedTo]);
+      return rows[0]?.missing_date ?? null;
+    },
+
     async listAggregatedMetrics({ startDate, endDate, limit } = {}) {
       const normalizedLimit = normalizeLimit(limit);
       const params = [startDate, endDate];

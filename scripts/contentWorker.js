@@ -106,6 +106,41 @@ function canonicalIsoDate(value) {
     : value;
 }
 
+// Wie weit ein Search-Console-Sync zurückgreift, um ausgefallene Tage nachzuladen.
+// Google hält Suchdaten 16 Monate vor; 180 Tage halten einen einzelnen Lauf überschaubar.
+export const SEARCH_CONSOLE_MAX_BACKFILL_DAYS = 180;
+
+function shiftIsoDate(isoDate, days) {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function resolveSearchConsoleSyncRange(payload, findEarliestMissingSyncDate) {
+  if (typeof findEarliestMissingSyncDate !== 'function') return payload;
+  try {
+    const missingDate = canonicalIsoDate(await findEarliestMissingSyncDate({
+      from: shiftIsoDate(payload.endDate, -SEARCH_CONSOLE_MAX_BACKFILL_DAYS),
+      to: payload.endDate
+    }));
+    return missingDate && missingDate < payload.startDate
+      ? { ...payload, startDate: missingDate }
+      : payload;
+  } catch {
+    // Ohne Lückeninfo läuft wenigstens der reguläre Zeitraum.
+    return payload;
+  }
+}
+
+async function contentAgentIsActive(getSettings) {
+  if (typeof getSettings !== 'function') return true;
+  try {
+    return (await getSettings())?.agent_enabled === true;
+  } catch {
+    return false;
+  }
+}
+
 function articlePerformanceJobPayload(claim) {
   const payload = claim?.payload_json;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)
@@ -417,6 +452,7 @@ export function createProductionJobHandler({
   sendBlogNewsletter,
   sendBlogNewsletterDelivery,
   syncSearchConsoleRange,
+  findEarliestMissingSyncDate,
   listAggregatedSearchMetrics,
   buildSearchOpportunities,
   upsertSearchOpportunities,
@@ -799,8 +835,10 @@ export function createProductionJobHandler({
         required(syncSearchConsoleRange, 'syncSearchConsoleRange');
         required(recordProviderResult, 'recordProviderResult');
         required(enqueueJob, 'enqueueJob');
+        const syncRange = await resolveSearchConsoleSyncRange(payload, findEarliestMissingSyncDate);
+        if (typeof findEarliestMissingSyncDate === 'function') await assertActiveLease(leaseGuard);
         try {
-          await syncSearchConsoleRange({ ...payload, leaseGuard });
+          await syncSearchConsoleRange({ ...syncRange, leaseGuard });
         } catch (error) {
           await assertActiveLease(leaseGuard);
           await recordProviderResult({
@@ -842,6 +880,11 @@ export function createProductionJobHandler({
             'Die lokale Outcome-Auswertung konnte noch nicht eingeplant werden.',
             'CONTENT_REVISION_OUTCOME_ENQUEUE_DEFERRED'
           );
+        }
+        await assertActiveLease(leaseGuard);
+        // Die Artikel-Performance stößt KI-Erklärungen an. Bei pausiertem Agent entstehen keine KI-Kosten.
+        if (!(await contentAgentIsActive(getSettings))) {
+          return { status: 'completed' };
         }
         await assertActiveLease(leaseGuard);
         const performanceJob = await enqueueJob({
@@ -1653,6 +1696,9 @@ export function createProductionRuntime({
     syncSearchConsoleRange: searchConsoleSyncService
       ? (input) => searchConsoleSyncService.syncSearchConsoleRange(input)
       : null,
+    findEarliestMissingSyncDate: typeof searchMetricsRepository?.findEarliestMissingSyncDate === 'function'
+      ? (input) => searchMetricsRepository.findEarliestMissingSyncDate(input)
+      : null,
     listAggregatedSearchMetrics: searchMetricsRepository
       ? (input) => searchMetricsRepository.listAggregatedMetrics(input)
       : null,
@@ -1965,7 +2011,6 @@ export async function startContentWorker({
         configured: config.searchConsoleConfigured,
         schedule: config.searchConsoleSchedule,
         timezone: config.timezone,
-        getSettings,
         enqueueJob: jobRepository.enqueueJob
       })
     });

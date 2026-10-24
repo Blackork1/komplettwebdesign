@@ -4483,3 +4483,82 @@ test('package.json stellt Worker, Dry-Run und Healthcheck als npm-Skripte bereit
   assert.equal(packageJson.scripts['content-agent:dry-run'], 'node scripts/contentAgentDryRun.js');
   assert.equal(packageJson.scripts['content-agent:healthcheck'], 'node scripts/contentWorkerHealthcheck.js');
 });
+
+const noArticlePipeline = {
+  async createRun() { assert.fail('Für einen Search-Console-Sync darf kein Content-Run entstehen.'); },
+  async runPipeline() { assert.fail('Für einen Search-Console-Sync darf keine Artikelpipeline starten.'); }
+};
+
+test('der Search-Console-Sync lädt fehlende Tage nach, Analyse und Auswertung bleiben beim 28-Tage-Fenster', async () => {
+  const events = [];
+  const leaseGuard = async () => true;
+  const handler = createProductionJobHandler({
+    ...noArticlePipeline,
+    async findEarliestMissingSyncDate(input) {
+      events.push(['gap', input]);
+      return '2026-08-23';
+    },
+    async syncSearchConsoleRange(input) { events.push(['sync', { startDate: input.startDate, endDate: input.endDate }]); },
+    async recordProviderResult() {},
+    async enqueueJob(input) { events.push(['enqueue', input.jobType, input.payload]); return { id: 93 }; }
+  });
+
+  const result = await handler({
+    id: 82,
+    job_type: 'sync_search_console',
+    payload_json: { startDate: '2026-09-26', endDate: '2026-10-23' }
+  }, { leaseGuard });
+
+  assert.deepEqual(result, { status: 'completed' });
+  assert.deepEqual(events[0], ['gap', { from: '2026-04-26', to: '2026-10-23' }]);
+  assert.deepEqual(events[1], ['sync', { startDate: '2026-08-23', endDate: '2026-10-23' }]);
+  assert.deepEqual(events[2], ['enqueue', 'analyze_search_opportunities', { startDate: '2026-09-26', endDate: '2026-10-23' }]);
+});
+
+test('ohne Lücke oder bei einem Fehler der Lückensuche synchronisiert der Job den regulären Zeitraum', async () => {
+  for (const finder of [async () => null, async () => '2026-10-01', async () => { throw new Error('db weg'); }]) {
+    const synced = [];
+    const handler = createProductionJobHandler({
+      ...noArticlePipeline,
+      findEarliestMissingSyncDate: finder,
+      async syncSearchConsoleRange(input) { synced.push([input.startDate, input.endDate]); },
+      async recordProviderResult() {},
+      async enqueueJob() { return { id: 94 }; }
+    });
+
+    await handler({
+      id: 83,
+      job_type: 'sync_search_console',
+      payload_json: { startDate: '2026-09-26', endDate: '2026-10-23' }
+    }, { leaseGuard: async () => true });
+
+    assert.deepEqual(synced, [['2026-09-26', '2026-10-23']]);
+  }
+});
+
+test('bei pausiertem Content-Agent plant der Sync keine KI-gestützte Artikel-Performance ein', async () => {
+  for (const [settings, expectPerformance] of [
+    [async () => ({ agent_enabled: false }), false],
+    [async () => { throw new Error('Einstellungen nicht lesbar'); }, false],
+    [async () => ({ agent_enabled: true }), true]
+  ]) {
+    const jobTypes = [];
+    const handler = createProductionJobHandler({
+      ...noArticlePipeline,
+      getSettings: settings,
+      async syncSearchConsoleRange() {},
+      async recordProviderResult() {},
+      async enqueueJob(input) { jobTypes.push(input.jobType); return { id: 95 }; }
+    });
+
+    const result = await handler({
+      id: 84,
+      job_type: 'sync_search_console',
+      payload_json: { startDate: '2026-09-26', endDate: '2026-10-23' }
+    }, { leaseGuard: async () => true });
+
+    assert.deepEqual(result, { status: 'completed' });
+    assert.deepEqual(jobTypes.slice(0, 2), ['analyze_search_opportunities', 'evaluate_revision_outcomes']);
+    assert.equal(jobTypes.includes('evaluate_article_performance'), expectPerformance);
+  }
+});

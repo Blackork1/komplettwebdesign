@@ -1065,7 +1065,13 @@ export function createAdminContentAgentController(dependencies) {
             code: 'CONTENT_SEARCH_CONSOLE_NOT_CONFIGURED'
           });
         }
-        const settings = await requireAdminEnqueueEnabled();
+        // Der Datenabruf braucht nur den technisch aktiven Worker, nicht den eingeschalteten Agenten.
+        if (runtimeConfig.enabled !== true) {
+          throw Object.assign(new Error('Content-Agent deaktiviert.'), {
+            code: 'CONTENT_AGENT_DISABLED'
+          });
+        }
+        const settings = await settingsRepository.getSettings();
         const local = DateTime.fromJSDate(now(), {
           zone: settings.timezone || runtimeConfig.timezone || 'Europe/Berlin'
         });

@@ -21,7 +21,7 @@ test('ein unkonfigurierter Search-Console-Scheduler bleibt ohne Job und Fehler',
   assert.deepEqual(enqueued, []);
 });
 
-test('ein operativ pausierter Agent enqueued keinen Search-Console-Job', async () => {
+test('ein pausierter Content-Agent stoppt den täglichen Search-Console-Abruf nicht', async () => {
   const enqueued = [];
   let settingsCalls = 0;
 
@@ -37,8 +37,24 @@ test('ein operativ pausierter Agent enqueued keinen Search-Console-Job', async (
     now: () => new Date('2026-07-19T04:00:20.000Z')
   });
 
+  assert.equal(result.jobType, 'sync_search_console');
+  assert.equal(settingsCalls, 0);
+  assert.equal(enqueued.length, 1);
+});
+
+test('eine operative Pause stoppt den Search-Console-Abruf weiterhin', async () => {
+  const enqueued = [];
+
+  const result = await runSearchConsoleSchedulerTick({
+    configured: true,
+    operationallyEnabled: false,
+    schedule: '0 6 * * 0',
+    timezone: 'Europe/Berlin',
+    enqueueJob: async (job) => { enqueued.push(job); return job; },
+    now: () => new Date('2026-07-19T04:00:20.000Z')
+  });
+
   assert.equal(result, null);
-  assert.equal(settingsCalls, 1);
   assert.deepEqual(enqueued, []);
 });
 

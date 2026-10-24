@@ -23,21 +23,18 @@ function parseSchedule(value) {
   };
 }
 
+// Der Abruf hängt bewusst nicht am Schalter des Content-Agents: Suchdaten werden auch
+// gesammelt, wenn gerade keine Artikel entstehen. Fehlende Tage lädt der Worker beim Sync nach.
 export async function runSearchConsoleSchedulerTick({
   configured,
   schedule,
   timezone,
-  getSettings,
   operationallyEnabled,
   enqueueJob,
   now = () => new Date()
 }) {
   if (configured !== true) return null;
   if (operationallyEnabled === false) return null;
-  if (typeof getSettings === 'function') {
-    const settings = await getSettings();
-    if (settings?.agent_enabled !== true) return null;
-  }
   const { minute, hour, weekday } = parseSchedule(schedule);
   const local = DateTime.fromJSDate(now(), { zone: timezone });
   if (!local.isValid) throw new TypeError('Ungültige IANA-Zeitzone.');
