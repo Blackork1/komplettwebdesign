@@ -99,7 +99,9 @@ function initContactBubble() {
 
   const local = window.localStorage;
   const session = window.sessionStorage;
-  if (isSuppressed({ local, session })) return;
+  // Die Ruhezeit gilt nur für das automatische Erscheinen. Klickt jemand selbst auf „Schreib mir“,
+  // öffnet sich das Fenster trotzdem.
+  const autoAllowed = !isSuppressed({ local, session });
 
   const teaser = bubble.querySelector('[data-bubble-teaser]');
   const panel = bubble.querySelector('[data-bubble-panel]');
@@ -132,11 +134,7 @@ function initContactBubble() {
     element.classList.add('is-popping');
   }
 
-  async function trigger() {
-    if (triggered) return;
-    triggered = true;
-    stopWatching();
-    await whenCookieBannerClosed();
+  async function reveal() {
     const [, slot] = await Promise.all([loadStylesheet(bubble.dataset.css), fetchNextSlot()]);
     if (slot) {
       const label = formatSlotLabel(slot.start_time);
@@ -148,11 +146,39 @@ function initContactBubble() {
         }
       });
     }
-    safeSet(session, BUBBLE_SETTINGS.sessionKey, '1');
     bubble.hidden = false;
     document.documentElement.classList.add('has-contact-bubble');
+  }
+
+  async function trigger() {
+    if (triggered) return;
+    triggered = true;
+    stopWatching();
+    await whenCookieBannerClosed();
+    await reveal();
+    safeSet(session, BUBBLE_SETTINGS.sessionKey, '1');
     popIn(launcher);
     popIn(teaser);
+  }
+
+  function showWriteStep() {
+    startStep.hidden = true;
+    form.hidden = false;
+    formStartedAt = Date.now();
+    form.querySelector('textarea')?.focus({ preventScroll: true });
+  }
+
+  async function openFromCta(mode) {
+    stopWatching();
+    const wasHidden = bubble.hidden;
+    triggered = true;
+    if (wasHidden) await reveal();
+    if (wasHidden) popIn(launcher);
+    openPanel();
+    if (mode === 'write' && done.hidden) {
+      if (form.hidden) showWriteStep();
+      else form.querySelector('textarea')?.focus({ preventScroll: true });
+    }
   }
 
   function openPanel() {
@@ -185,11 +211,13 @@ function initContactBubble() {
     if (event.key === 'Escape' && !panel.hidden) closePanel();
   });
 
-  bubble.querySelector('[data-bubble-write]')?.addEventListener('click', () => {
-    startStep.hidden = true;
-    form.hidden = false;
-    formStartedAt = Date.now();
-    form.querySelector('textarea')?.focus({ preventScroll: true });
+  bubble.querySelector('[data-bubble-write]')?.addEventListener('click', showWriteStep);
+
+  document.addEventListener('click', (event) => {
+    const opener = event.target.closest?.('[data-contact-bubble-open]');
+    if (!opener) return;
+    event.preventDefault();
+    openFromCta(opener.getAttribute('data-contact-bubble-open'));
   });
 
   form.addEventListener('submit', async (event) => {
@@ -234,8 +262,10 @@ function initContactBubble() {
     }
   });
 
-  timer = setTimeout(trigger, BUBBLE_SETTINGS.delayMs);
-  window.addEventListener('scroll', onScroll, { passive: true });
+  if (autoAllowed) {
+    timer = setTimeout(trigger, BUBBLE_SETTINGS.delayMs);
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
 }
 
 if (typeof document !== 'undefined') {

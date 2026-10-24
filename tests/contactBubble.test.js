@@ -186,3 +186,20 @@ test('der Footer bindet das Pop-up ein und die Route ist registriert', async () 
   assert.match(css, /@keyframes kwd-bubble-pop/);
   assert.match(css, /prefers-reduced-motion: reduce[\s\S]*animation: none/);
 });
+
+test('Startseite holt Besucher zwischendurch ab, nicht erst am Seitenende', async () => {
+  const index = await readFile(new URL('../views/index.ejs', import.meta.url), 'utf8');
+  const start = index.indexOf("include('partials/home-midcta', { variant: 'start'");
+  const ablauf = index.indexOf("include('partials/home-midcta', { variant: 'ablauf'");
+  assert.ok(start > index.indexOf('id="leistungen"') && start < index.indexOf('id="preise"'), 'Zwischenstopp nach den Leistungen');
+  assert.ok(ablauf > index.indexOf('id="ablauf"') && ablauf < index.indexOf('id="trust"'), 'Zwischenstopp nach dem Ablauf');
+  const partial = fileURLToPath(new URL('../views/partials/home-midcta.ejs', import.meta.url));
+  const de = await ejs.renderFile(partial, { variant: 'start', isEn: false });
+  assert.match(de, /Weißt du schon, was du brauchst\?/);
+  assert.match(de, /href="\/booking\?src=home-start"/);
+  assert.match(de, /href="\/kontakt" data-contact-bubble-open="write"/);
+  assert.match(de, /href="#preise"/);
+  const en = await ejs.renderFile(partial, { variant: 'ablauf', isEn: true });
+  assert.match(en, /href="\/en\/kontakt"/);
+  assert.doesNotMatch(en, /data-contact-bubble-open/);
+});

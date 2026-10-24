@@ -1,0 +1,59 @@
+<%
+  // Zwischenstopp auf der Startseite: wer schon weiß, was er braucht, kommt direkt zum Gespräch;
+  // wer mehr wissen will, liest weiter. „Schreib mir“ öffnet auf Deutsch das Kontakt-Pop-up.
+  const midVariant = typeof variant !== 'undefined' ? variant : 'start';
+  const midEn = typeof isEn !== 'undefined' && isEn;
+  const midCopy = {
+    start: {
+      de: {
+        title: 'Weißt du schon, was du brauchst?',
+        text: 'Dann lass uns direkt sprechen oder schreib mir kurz, worum es geht. Wenn du noch mehr wissen willst, schau dich gern weiter um.',
+        more: 'Erst die Pakete ansehen',
+        moreHref: '#preise'
+      },
+      en: {
+        title: 'Already know what you need?',
+        text: 'Then let us talk right away or send me a short message. If you want to learn more first, keep looking around.',
+        more: 'See the packages first',
+        moreHref: '#preise'
+      }
+    },
+    ablauf: {
+      de: {
+        title: 'Klingt der Ablauf gut für dich?',
+        text: 'Dann vereinbare gleich ein kostenloses Erstgespräch oder schreib mir. Du willst vorher wissen, wie die Zusammenarbeit läuft? Lies weiter, was andere sagen.',
+        more: 'Erst die Bewertungen lesen',
+        moreHref: '#trust'
+      },
+      en: {
+        title: 'Does this process sound right for you?',
+        text: 'Then book a free first call or send me a message. Want to know more about working together first? Read what others say.',
+        more: 'Read the reviews first',
+        moreHref: '#trust'
+      }
+    }
+  };
+  const midText = (midCopy[midVariant] || midCopy.start)[midEn ? 'en' : 'de'];
+  const midPhoto = typeof asset === 'function' ? asset('images/soeren-kontakt.webp') : '/images/soeren-kontakt.webp';
+  const midBooking = midEn ? `/booking?lng=en&src=home-${midVariant}` : `/booking?src=home-${midVariant}`;
+%>
+<aside class="home-midcta" aria-label="<%= midEn ? 'Next step' : 'Nächster Schritt' %>">
+  <div class="container">
+    <div class="home-midcta__inner">
+      <img class="home-midcta__photo" src="<%= midPhoto %>" alt="<%= midEn ? 'Sören, web designer in Berlin' : 'Sören, Webdesigner in Berlin' %>" width="64" height="64" loading="lazy" decoding="async">
+      <div class="home-midcta__copy">
+        <p class="home-midcta__title"><%= midText.title %></p>
+        <p class="home-midcta__text"><%= midText.text %></p>
+      </div>
+      <div class="home-midcta__actions">
+        <a class="btn btn-primary" href="<%= midBooking %>" data-track="cta" data-cta-name="home_mid_<%= midVariant %>_booking" data-cta-location="home_mid_cta"><%= midEn ? 'Book a call' : 'Gespräch vereinbaren' %></a>
+        <% if (midEn) { %>
+        <a class="btn btn-secondary" href="/en/kontakt" data-track="cta" data-cta-name="home_mid_<%= midVariant %>_write" data-cta-location="home_mid_cta">Write to me</a>
+        <% } else { %>
+        <a class="btn btn-secondary" href="/kontakt" data-contact-bubble-open="write" data-track="cta" data-cta-name="home_mid_<%= midVariant %>_write" data-cta-location="home_mid_cta">Schreib mir</a>
+        <% } %>
+        <a class="home-midcta__more" href="<%= midText.moreHref %>"><%= midText.more %> <i class="fas fa-arrow-down" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </div>
+</aside>
